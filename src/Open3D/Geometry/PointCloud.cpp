@@ -234,7 +234,7 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 
     h_points = (double *)input.points_.data();
     if (!AlocateHstMemory(&hCumulants, outputSize, "hCumulants")) exit(1);
-    input.UpdateDevicePoints();
+    input.UpdateDeviceMemory();
     if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants")) exit(1);
 
     cumulantGPU(input.d_points_, nrPoints, d_cumulants);
@@ -328,21 +328,21 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     return nn_dis;
 }
 
-// update the memory assigned to d_points_
-bool PointCloud::UpdateDevicePoints() {
+// update the device memory on demand
+bool PointCloud::UpdateDeviceMemory(double **d_data,
+                                    const vector<Eigen::Vector3d> &data) {
     cudaError_t status = cudaSuccess;
 
-    if (d_points_ != NULL) {
-        if (cudaSuccess != cudaFree(d_points_)) return false;
-        d_points_ = NULL;
+    if (*d_data != NULL) {
+        if (cudaSuccess != cudaFree(*d_data)) return false;
+        *d_data = NULL;
     }
-    status = cudaMalloc((void **)d_points_,
-                        points_.size() * sizeof(Eigen::Vector3d));
+    status = cudaMalloc((void **)d_data, data.size() * sizeof(Eigen::Vector3d));
     if (cudaSuccess != status) return false;
 
-    double *h_points = (double *)points_.data();
-    size_t size = points_.size() * sizeof(Eigen::Vector3d);
-    status = cudaMemcpy(d_points_, h_points, size, cudaMemcpyHostToDevice);
+    double *h_points = (double *)data.data();
+    size_t size = data.size() * sizeof(Eigen::Vector3d);
+    status = cudaMemcpy(*d_data, h_points, size, cudaMemcpyHostToDevice);
     if (cudaSuccess != status) {
         printf("%s", cudaGetErrorString(status));
 
@@ -350,90 +350,59 @@ bool PointCloud::UpdateDevicePoints() {
     }
 
     return true;
+}  // namespace geometry
+
+// update the memory assigned to d_points_
+bool PointCloud::UpdateDevicePoints() {
+    return UpdateDeviceMemory(&d_points_, points_);
 }
 
 // update the memory assigned to d_normals_
 bool PointCloud::UpdateDeviceNormals() {
-    cudaError_t status = cudaSuccess;
-
-    if (d_normals_ != NULL) {
-        if (cudaSuccess != cudaFree(d_normals_)) return false;
-        d_normals_ = NULL;
-    }
-    status = cudaMalloc((void **)d_normals_,
-                        normals_.size() * sizeof(Eigen::Vector3d));
-    if (cudaSuccess != status) return false;
-
-    double *h_normals = (double *)normals_.data();
-    size_t size = normals_.size() * sizeof(Eigen::Vector3d);
-    status = cudaMemcpy(d_normals_, h_normals, size, cudaMemcpyHostToDevice);
-    if (cudaSuccess != status) {
-        printf("%s", cudaGetErrorString(status));
-
-        return true;
-    }
-
-    return true;
+    return UpdateDeviceMemory(&d_normals_, normals_);
 }
 
 // update the memory assigned to d_colors_
 bool PointCloud::UpdateDeviceColors() {
-    cudaError_t status = cudaSuccess;
-
-    if (d_colors_ != NULL) {
-        if (cudaSuccess != cudaFree(d_colors_)) return false;
-        d_colors_ = NULL;
-    }
-    status = cudaMalloc((void **)d_colors_,
-                        colors_.size() * sizeof(Eigen::Vector3d));
-    if (cudaSuccess != status) return false;
-
-    double *h_colors = (double *)colors_.data();
-    size_t size = colors_.size() * sizeof(Eigen::Vector3d);
-    status = cudaMemcpy(d_colors_, h_colors, size, cudaMemcpyHostToDevice);
-    if (cudaSuccess != status) {
-        printf("%s", cudaGetErrorString(status));
-
-        return true;
-    }
-
-    return true;
+    return UpdateDeviceMemory(&d_colors_, colors_);
 }
 
 // update cuda device pointers
 bool PointCloud::UpdateDeviceMemory() {
-    return UpdateDevicePoints() && UpdateDeviceNormals() && UpdateDeviceColors();
+    return UpdateDevicePoints() && UpdateDeviceNormals() &&
+           UpdateDeviceColors();
+}
+
+// perform cleanup
+bool PointCloud::ReleaseDeviceMemory(double **d_data) {
+    if (*d_data == NULL) return true;
+
+    if (cudaSuccess != cudaFree(*d_data)) return false;
+
+    *d_data = NULL;
+
+    return true;
 }
 
 // release the memory asigned to d_points_
 bool PointCloud::ReleaseDevicePoints() {
-    if (d_points_ != NULL) {
-        if (cudaSuccess != cudaFree(d_points_)) return false;
-        d_points_ = NULL;
-    }
+    return ReleaseDeviceMemory(&d_points_);
 }
 
 // release the memory asigned to d_normals_
 bool PointCloud::ReleaseDeviceNormals() {
-    if (d_normals_ != NULL) {
-        if (cudaSuccess != cudaFree(d_normals_)) return false;
-        d_normals_ = NULL;
-    }
+    return ReleaseDeviceMemory(&d_normals_);
 }
 
 // release the memory asigned to d_colors_
 bool PointCloud::ReleaseDeviceColors() {
-    if (d_colors_ != NULL) {
-        if (cudaSuccess != cudaFree(d_colors_)) return false;
-        d_colors_ = NULL;
-    }
+    return ReleaseDeviceMemory(&d_colors_);
 }
 
 // release the cuda device memory
 bool PointCloud::ReleaseDeviceMemory() {
-    ReleaseDevicePoints();
-    ReleaseDeviceNormals();
-    ReleaseDeviceColors();
+    return ReleaseDevicePoints() && ReleaseDeviceNormals() &&
+           ReleaseDeviceColors();
 
     return true;
 }
