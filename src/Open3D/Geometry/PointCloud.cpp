@@ -274,6 +274,45 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
 
     Matrix3f* cumulants = (Matrix3f*)hCumulants;
+    Matrix3f cumulant;
+    for (int i = 0; i < nrPoints; i++)
+    {
+        cumulant[0][0] += cumulants[i][0][0];
+        cumulant[0][1] += cumulants[i][0][1];
+        cumulant[0][2] += cumulants[i][0][2];
+        cumulant[1][0] += cumulants[i][1][0];
+        cumulant[1][1] += cumulants[i][1][1];
+        cumulant[1][2] += cumulants[i][1][2];
+        cumulant[2][0] += cumulants[i][2][0];
+        cumulant[2][1] += cumulants[i][2][1];
+        cumulant[2][2] += cumulants[i][2][2];
+    }
+    cumulant[0][0] /= inputSize;
+    cumulant[0][1] /= inputSize;
+    cumulant[0][2] /= inputSize;
+    cumulant[1][0] /= inputSize;
+    cumulant[1][1] /= inputSize;
+    cumulant[1][2] /= inputSize;
+    cumulant[2][0] /= inputSize;
+    cumulant[2][1] /= inputSize;
+    cumulant[2][2] /= inputSize;
+
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+
+    mean(0) = cumulant[0][0];
+    mean(1) = cumulant[0][1];
+    mean(2) = cumulant[0][2];
+
+    covariance(0, 0) = cumulant[1][0] - cumulant[0][0] * cumulant[0][0];
+    covariance(1, 1) = cumulant[2][0] - cumulant[0][1] * cumulant[0][1];
+    covariance(2, 2) = cumulant[2][2] - cumulant[0][2] * cumulant[0][2];
+    covariance(0, 1) = cumulant[1][1] - cumulant[0][0] * cumulant[0][1];
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulant[1][2] - cumulant[0][0] * cumulant[0][2];
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulant[2][1] - cumulant[0][1] * cumulant[0][2];
+    covariance(2, 1) = covariance(1, 2);
 
     // Free device global memory
     freeDev(&dPoints, "dPoints");
@@ -284,8 +323,8 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     free(hCumulants);
 
     // dummy output
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
+    // Eigen::Vector3d mean;
+    // Eigen::Matrix3d covariance;
     return std::make_tuple(mean, covariance);
 }
 
