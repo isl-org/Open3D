@@ -236,26 +236,16 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     float *dPoints = NULL;
     float *dCumulants = NULL;
 
-    if (!AlocateDevMemory(&hPoints, inputSize, "hPoints")) exit(1);
+    if (!AlocateHstMemory(&hPoints, inputSize, "hPoints")) exit(1);
     if (!AlocateHstMemory(&hCumulants, outputSize, "hCumulants")) exit(1);
     if (!AlocateDevMemory(&dPoints, inputSize, "dPoints")) exit(1);
     if (!AlocateDevMemory(&dCumulants, outputSize, "dCumulants")) exit(1);
 
-    double* hPoints_double = (double*)input.points_.data();
-
-    /*/// v0
+    // convert double to float
+    double* inputPoints = (double*)input.points_.data();
     for (int i = 0; i < inputSize; i++) {
-        cout << "Hi!" << endl;
-        hPoints[i] = (float)hPoints_double[i];
+        hPoints[i] = (float)inputPoints[i];
     }
-    /*/// v1
-    for (int i = 0; i < nrPoints; i++) {
-        cout << "Hi!" << endl;
-        hPoints[i * 3 + 0] = (float)input.points_[i][0];
-        hPoints[i * 3 + 1] = (float)input.points_[i][1];
-        hPoints[i * 3 + 2] = (float)input.points_[i][2];
-    }
-    //*///
 
     cout << setw(10) << input.points_[0][0];
     cout << setw(10) << input.points_[0][1];
