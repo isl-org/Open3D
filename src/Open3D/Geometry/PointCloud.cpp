@@ -213,10 +213,6 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
     }
-
-    int devID = 0;
-    cudaSetDevice(devID);
-
     // Error code to check return values for CUDA calls
     cudaError_t status = cudaSuccess;
 
