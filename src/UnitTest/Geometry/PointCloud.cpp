@@ -861,11 +861,11 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudMeanAndCovarianceCUDA) {
-    int size = 1000;
+    int size = (int)1e7;
     geometry::PointCloud pc;
 
-    Vector3d vmin(-100.0, -100.0, -100.0);
-    Vector3d vmax(+100.0, +100.0, +100.0);
+    Vector3d vmin(-1.0, -1.0, -1.0);
+    Vector3d vmax(+1.0, +1.0, +1.0);
 
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
