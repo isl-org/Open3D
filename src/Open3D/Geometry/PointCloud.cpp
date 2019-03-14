@@ -274,16 +274,6 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
         cumulant[2][2] += (double)cumulants[i][2][2];
     }
 
-    cumulant[0][0] /= nrPoints;
-    cumulant[0][1] /= nrPoints;
-    cumulant[0][2] /= nrPoints;
-    cumulant[1][0] /= nrPoints;
-    cumulant[1][1] /= nrPoints;
-    cumulant[1][2] /= nrPoints;
-    cumulant[2][0] /= nrPoints;
-    cumulant[2][1] /= nrPoints;
-    cumulant[2][2] /= nrPoints;
-
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
 

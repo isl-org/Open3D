@@ -55,17 +55,17 @@ __global__ void cumulant(float* data, int nrPoints, float* output) {
     c[2][1] += p[1] * p[2];
     c[2][2] += p[2] * p[2];
 
-    cumulants[gid][0][0] = c[0][0];
-    cumulants[gid][0][1] = c[0][1];
-    cumulants[gid][0][2] = c[0][2];
+    cumulants[gid][0][0] = c[0][0] / nrPoints;
+    cumulants[gid][0][1] = c[0][1] / nrPoints;
+    cumulants[gid][0][2] = c[0][2] / nrPoints;
 
-    cumulants[gid][1][0] = c[1][0];
-    cumulants[gid][1][1] = c[1][1];
-    cumulants[gid][1][2] = c[1][2];
+    cumulants[gid][1][0] = c[1][0] / nrPoints;
+    cumulants[gid][1][1] = c[1][1] / nrPoints;
+    cumulants[gid][1][2] = c[1][2] / nrPoints;
 
-    cumulants[gid][2][0] = c[2][0];
-    cumulants[gid][2][1] = c[2][1];
-    cumulants[gid][2][2] = c[2][2];
+    cumulants[gid][2][0] = c[2][0] / nrPoints;
+    cumulants[gid][2][1] = c[2][1] / nrPoints;
+    cumulants[gid][2][2] = c[2][2] / nrPoints;
 }
 
 // ---------------------------------------------------------------------------
