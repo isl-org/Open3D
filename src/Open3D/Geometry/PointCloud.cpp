@@ -33,8 +33,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Types/Vector3f.h"
 #include "Open3D/Types/Matrix3f.h"
+#include "Open3D/Types/Matrix3d.h"
 using namespace open3d;
 
 #include "Open3D/Utility/CUDA.cuh"
@@ -43,7 +43,9 @@ using namespace open3d;
 #include <iomanip>
 using namespace std;
 
-extern void dummyGPU(float* const dPoints, const int& nrPoints, float* const dCumulants);
+extern void dummyGPU(float *const dPoints,
+                     const int &nrPoints,
+                     float *const dCumulants);
 
 namespace open3d {
 namespace geometry {
@@ -206,8 +208,8 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     return std::make_tuple(mean, covariance);
 }
 
-std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceCUDA(
-        const PointCloud &input) {
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     if (input.IsEmpty()) {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
@@ -242,7 +244,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     if (!AlocateDevMemory(&dCumulants, outputSize, "dCumulants")) exit(1);
 
     // convert double to float
-    double* inputPoints = (double*)input.points_.data();
+    double *inputPoints = (double *)input.points_.data();
     for (int i = 0; i < inputSize; i++) {
         hPoints[i] = (float)inputPoints[i];
     }
@@ -263,8 +265,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     dummyGPU(dPoints, nrPoints, dCumulants);
     status = cudaGetLastError();
 
-    if (status != cudaSuccess)
-    {
+    if (status != cudaSuccess) {
         cout << "status: " << cudaGetErrorString(status) << endl;
         cout << "Failed to launch vectorAdd kernel" << endl;
         exit(1);
@@ -273,29 +274,30 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     // Copy results to the host
     CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
 
-    Matrix3f* cumulants = (Matrix3f*)hCumulants;
-    Matrix3f cumulant;
+    Matrix3f *cumulants = (Matrix3f *)hCumulants;
+    Matrix3d cumulant;
     for (int i = 0; i < nrPoints; i++)
     {
-        cumulant[0][0] += cumulants[i][0][0];
-        cumulant[0][1] += cumulants[i][0][1];
-        cumulant[0][2] += cumulants[i][0][2];
-        cumulant[1][0] += cumulants[i][1][0];
-        cumulant[1][1] += cumulants[i][1][1];
-        cumulant[1][2] += cumulants[i][1][2];
-        cumulant[2][0] += cumulants[i][2][0];
-        cumulant[2][1] += cumulants[i][2][1];
-        cumulant[2][2] += cumulants[i][2][2];
+        cumulant[0][0] += (double)cumulants[i][0][0];
+        cumulant[0][1] += (double)cumulants[i][0][1];
+        cumulant[0][2] += (double)cumulants[i][0][2];
+        cumulant[1][0] += (double)cumulants[i][1][0];
+        cumulant[1][1] += (double)cumulants[i][1][1];
+        cumulant[1][2] += (double)cumulants[i][1][2];
+        cumulant[2][0] += (double)cumulants[i][2][0];
+        cumulant[2][1] += (double)cumulants[i][2][1];
+        cumulant[2][2] += (double)cumulants[i][2][2];
     }
-    cumulant[0][0] /= inputSize;
-    cumulant[0][1] /= inputSize;
-    cumulant[0][2] /= inputSize;
-    cumulant[1][0] /= inputSize;
-    cumulant[1][1] /= inputSize;
-    cumulant[1][2] /= inputSize;
-    cumulant[2][0] /= inputSize;
-    cumulant[2][1] /= inputSize;
-    cumulant[2][2] /= inputSize;
+
+    cumulant[0][0] /= (double)nrPoints;
+    cumulant[0][1] /= (double)nrPoints;
+    cumulant[0][2] /= (double)nrPoints;
+    cumulant[1][0] /= (double)nrPoints;
+    cumulant[1][1] /= (double)nrPoints;
+    cumulant[1][2] /= (double)nrPoints;
+    cumulant[2][0] /= (double)nrPoints;
+    cumulant[2][1] /= (double)nrPoints;
+    cumulant[2][2] /= (double)nrPoints;
 
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
@@ -322,9 +324,6 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     free(hPoints);
     free(hCumulants);
 
-    // dummy output
-    // Eigen::Vector3d mean;
-    // Eigen::Matrix3d covariance;
     return std::make_tuple(mean, covariance);
 }
 
