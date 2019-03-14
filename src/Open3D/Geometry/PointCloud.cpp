@@ -34,8 +34,6 @@
 #include <cuda_runtime.h>
 
 #include "Open3D/Types/Matrix3f.h"
-#include "Open3D/Types/Matrix3d.h"
-using namespace open3d;
 
 #include "Open3D/Utility/CUDA.cuh"
 
