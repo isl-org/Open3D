@@ -42,8 +42,8 @@
 using namespace std;
 
 extern void cumulantGPU(double *const dPoints,
-                     const int &nrPoints,
-                     double *const dCumulants);
+                        const int &nrPoints,
+                        double *const dCumulants);
 
 namespace open3d {
 namespace geometry {
@@ -238,7 +238,6 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     if (!AlocateDevMemory(&dPoints, inputSize, "dPoints")) exit(1);
     if (!AlocateDevMemory(&dCumulants, outputSize, "dCumulants")) exit(1);
 
-
     // Copy input to the device
     CopyHst2DevMemory(hPoints, dPoints, inputSize);
 
@@ -255,9 +254,8 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
 
     Matrix3d *cumulants = (Matrix3d *)hCumulants;
-    Matrix3d cumulant = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-    for (int i = 0; i < nrPoints; i++)
-    {
+    Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    for (int i = 0; i < nrPoints; i++) {
         cumulant[0][0] += (double)cumulants[i][0][0];
         cumulant[0][1] += (double)cumulants[i][0][1];
         cumulant[0][2] += (double)cumulants[i][0][2];
@@ -292,6 +290,10 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
 
     // Free host memory
     free(hCumulants);
+
+    cout << "d_points_ = "  << ((input.d_points_  == NULL) ? "NULL" : "******") << endl;
+    cout << "d_normals_ = " << ((input.d_normals_ == NULL) ? "NULL" : "******") << endl;
+    cout << "d_colors_ = "  << ((input.d_colors_  == NULL) ? "NULL" : "******") << endl;
 
     return std::make_tuple(mean, covariance);
 }
@@ -333,6 +335,25 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
         }
     }
     return nn_dis;
+}
+
+// update cuda device pointers
+bool PointCloud::UpdateDeviceMemory() {
+    cudaError_t status = cudaSuccess;
+
+    status = cudaMalloc((void **)d_points_,
+                        points_.size() * sizeof(Eigen::Vector3d));
+    if (status != cudaSuccess) return false;
+
+    status = cudaMalloc((void **)d_normals_,
+                        normals_.size() * sizeof(Eigen::Vector3d));
+    if (status != cudaSuccess) return false;
+
+    status = cudaMalloc((void **)d_colors_,
+                        colors_.size() * sizeof(Eigen::Vector3d));
+    if (status != cudaSuccess) return false;
+
+    return true;
 }
 
 }  // namespace geometry

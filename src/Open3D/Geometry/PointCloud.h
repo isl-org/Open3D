@@ -88,6 +88,15 @@ public:
     std::vector<Eigen::Vector3d> points_;
     std::vector<Eigen::Vector3d> normals_;
     std::vector<Eigen::Vector3d> colors_;
+
+public: // cuda device pointers
+    double* d_points_{};
+    double* d_normals_{};
+    double* d_colors_{};
+
+public:
+    // update cuda device pointers
+    bool UpdateDeviceMemory();
 };
 
 /// Factory function to create a pointcloud from a depth image and a camera
