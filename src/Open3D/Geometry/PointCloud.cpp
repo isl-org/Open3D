@@ -41,7 +41,8 @@
 #include <iomanip>
 using namespace std;
 
-extern void cumulantGPU(double *const d_points,
+// compute cumulants on the GPU
+extern bool cumulantGPU(double *const d_points,
                         const int &nrPoints,
                         double *const d_cumulants);
 
@@ -231,17 +232,11 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     input.UpdateDevicePoints();
     if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants")) exit(1);
 
-    cumulantGPU(input.d_points_, nrPoints, d_cumulants);
-    status = cudaGetLastError();
-
-    if (cudaSuccess != status) {
-        cout << "status: " << cudaGetErrorString(status) << endl;
-        cout << "Failed to launch cuda kernel" << endl;
+    if (!cumulantGPU(input.d_points_, nrPoints, d_cumulants))
         exit(1);
-    }
 
     // Copy results to the host
-    CopyDev2HstMemory(d_cumulants, (double*)&h_cumulants[0], outputSize);
+    CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize);
 
     Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     for (int i = 0; i < nrPoints; i++) {
