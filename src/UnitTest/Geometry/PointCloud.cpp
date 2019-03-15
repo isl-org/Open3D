@@ -857,36 +857,6 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
     ExpectEQ(ref_covariance, covariance);
 }
 
-#ifdef OPEN3D_USE_CUDA
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PointCloud, ComputePointCloudMeanAndCovarianceCUDA) {
-    int size = 1 << 24;
-    geometry::PointCloud pc;
-
-    Vector3d vmin(-1.0, -1.0, -1.0);
-    Vector3d vmax(+1.0, +1.0, +1.0);
-
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
-
-    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc);
-    auto outputGPU = geometry::ComputePointCloudMeanAndCovarianceCUDA(pc);
-
-    Vector3d meanCPU = get<0>(outputCPU);
-    Matrix3d covarianceCPU = get<1>(outputCPU);
-
-    Vector3d meanGPU = get<0>(outputGPU);
-    Matrix3d covarianceGPU = get<1>(outputGPU);
-
-    ExpectEQ(meanCPU, meanGPU);
-    ExpectEQ(covarianceCPU, covarianceGPU);
-}
-
-#endif
-
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
