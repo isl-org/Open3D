@@ -207,6 +207,8 @@ if (WITH_CUDA)
                 list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart_static")
             endif()
         endif()
+
+        add_definitions(-DOPEN3D_USE_CUDA)
     else()
         message(STATUS "CUDA not found.")
     endif()

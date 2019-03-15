@@ -30,7 +30,7 @@
 #include <Open3D/Utility/Console.h>
 #include <Open3D/Geometry/KDTreeFlann.h>
 
-#ifdef __CUDACC__
+#ifdef OPEN3D_USE_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
 #endif
@@ -211,7 +211,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
-#ifdef __CUDACC__
+#ifdef OPEN3D_USE_CUDA
     if (input.IsEmpty()) {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
@@ -324,7 +324,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 // update the device memory on demand
 bool PointCloud::UpdateDeviceMemory(double **d_data,
                                     const vector<Eigen::Vector3d> &data) {
-#ifdef __CUDACC__
+#ifdef OPEN3D_USE_CUDA
     cudaError_t status = cudaSuccess;
 
     if (*d_data != NULL) {
@@ -370,7 +370,7 @@ bool PointCloud::UpdateDeviceMemory() {
 
 // perform cleanup
 bool PointCloud::ReleaseDeviceMemory(double **d_data) {
-#ifdef __CUDACC__
+#ifdef OPEN3D_USE_CUDA
     if (*d_data == NULL) return true;
 
     if (cudaSuccess != cudaFree(*d_data)) return false;
