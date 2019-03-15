@@ -73,11 +73,12 @@ __global__ void cumulant(double* data, int nrPoints, double* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
-bool cumulantGPU(double* const d_A, const int& nrPoints, double* const d_C) {
+bool cumulantGPU(double* const d_points, const int& nrPoints,
+    double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
-    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_A, nrPoints, d_C);
+    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
     cudaDeviceSynchronize();
 
     cudaError_t status = cudaGetLastError();
