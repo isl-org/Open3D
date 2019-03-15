@@ -26,10 +26,13 @@
 
 #include <stdio.h>
 
+#include "Open3D/Utility/CUDA.cuh"
 #include "Open3D/Types/Matrix3d.h"
 using namespace open3d;
 
 #include <iostream>
+#include <vector>
+#include <tuple>
 using namespace std;
 
 // ---------------------------------------------------------------------------
@@ -84,4 +87,80 @@ bool cumulantGPU(double* const d_A, const int& nrPoints, double* const d_C) {
     }
 
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// Compute PointCloud mean and covariance using the GPU
+// ---------------------------------------------------------------------------
+std::tuple<Vector3d, Matrix3d>
+meanAndCovarianceCUDA(double* d_points, const int& nrPoints) {
+    Vector3d mean{};
+    Matrix3d covariance = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
+    cout << "Running CUDA2..." << endl;
+
+    // host memory
+    vector<Matrix3d> h_cumulants(nrPoints);
+
+    int outputSize = h_cumulants.size() * Matrix3d::SIZE;
+
+    // allocate temporary device memory
+    double *d_cumulants = NULL;
+    if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants"))
+        return std::make_tuple(mean, covariance);
+
+    // execute on GPU
+    //*/// v0
+    if (!cumulantGPU(d_points, nrPoints, d_cumulants))
+        return std::make_tuple(mean, covariance);
+    /*/// v1
+    int threadsPerBlock = 256;
+    int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
+
+    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
+    cudaDeviceSynchronize();
+
+    cudaError_t status = cudaGetLastError();
+    if (cudaSuccess != status) {
+        cout << "status: " << cudaGetErrorString(status) << endl;
+        return std::make_tuple(mean, covariance);
+    }
+    //*///
+
+    // Copy results to the host
+    if (!CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize))
+        return std::make_tuple(mean, covariance);
+
+    // Free temporary device memory
+    if (!freeDev(&d_cumulants, "d_cumulants"))
+        return std::make_tuple(mean, covariance);
+
+    Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    for (int i = 0; i < h_cumulants.size(); i++) {
+        cumulant[0][0] += (double)h_cumulants[i][0][0];
+        cumulant[0][1] += (double)h_cumulants[i][0][1];
+        cumulant[0][2] += (double)h_cumulants[i][0][2];
+        cumulant[1][0] += (double)h_cumulants[i][1][0];
+        cumulant[1][1] += (double)h_cumulants[i][1][1];
+        cumulant[1][2] += (double)h_cumulants[i][1][2];
+        cumulant[2][0] += (double)h_cumulants[i][2][0];
+        cumulant[2][1] += (double)h_cumulants[i][2][1];
+        cumulant[2][2] += (double)h_cumulants[i][2][2];
+    }
+
+    mean[0] = cumulant[0][0];
+    mean[1] = cumulant[0][1];
+    mean[2] = cumulant[0][2];
+
+    covariance[0][0] = cumulant[1][0] - cumulant[0][0] * cumulant[0][0];
+    covariance[1][1] = cumulant[2][0] - cumulant[0][1] * cumulant[0][1];
+    covariance[2][2] = cumulant[2][2] - cumulant[0][2] * cumulant[0][2];
+    covariance[0][1] = cumulant[1][1] - cumulant[0][0] * cumulant[0][1];
+    covariance[1][0] = covariance[0][1];
+    covariance[0][2] = cumulant[1][2] - cumulant[0][0] * cumulant[0][2];
+    covariance[2][0] = covariance[0][2];
+    covariance[1][2] = cumulant[2][1] - cumulant[0][1] * cumulant[0][2];
+    covariance[2][1] = covariance[1][2];
+
+    return std::make_tuple(mean, covariance);
 }
