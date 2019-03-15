@@ -11,7 +11,9 @@ if (CMAKE_CUDA_COMPILER)
     add_library(Types OBJECT ${ALL_SOURCE_FILES}
                              ${ALL_HEADER_FILES}
                              ${CUDA_SOURCE_FILES})
-    set_target_properties(Types PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    set_target_properties(Types PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+        CUDA_STANDARD 11)
 else()
     add_library(Types OBJECT ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES})
 endif()
