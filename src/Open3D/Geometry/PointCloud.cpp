@@ -209,79 +209,6 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     return std::make_tuple(mean, covariance);
 }
 
-std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
-ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
-#ifdef OPEN3D_USE_CUDA
-    if (input.IsEmpty()) {
-        return std::make_tuple(Eigen::Vector3d::Zero(),
-                               Eigen::Matrix3d::Identity());
-    }
-
-    cout << "Running CUDA..." << endl;
-
-    // Error code to check return values for CUDA calls
-    cudaError_t status = cudaSuccess;
-
-    int nrPoints = input.points_.size();
-
-    // host memory
-    vector<Matrix3d> h_cumulants(nrPoints);
-
-    int outputSize = h_cumulants.size() * Matrix3d::SIZE;
-
-    // device memory
-    double *d_cumulants = NULL;
-
-    input.UpdateDevicePoints();
-    if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants")) exit(1);
-
-    if (!cumulantGPU(input.d_points_, nrPoints, d_cumulants))
-        exit(1);
-
-    // Copy results to the host
-    CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize);
-
-    Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    for (int i = 0; i < h_cumulants.size(); i++) {
-        cumulant[0][0] += (double)h_cumulants[i][0][0];
-        cumulant[0][1] += (double)h_cumulants[i][0][1];
-        cumulant[0][2] += (double)h_cumulants[i][0][2];
-        cumulant[1][0] += (double)h_cumulants[i][1][0];
-        cumulant[1][1] += (double)h_cumulants[i][1][1];
-        cumulant[1][2] += (double)h_cumulants[i][1][2];
-        cumulant[2][0] += (double)h_cumulants[i][2][0];
-        cumulant[2][1] += (double)h_cumulants[i][2][1];
-        cumulant[2][2] += (double)h_cumulants[i][2][2];
-    }
-
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
-
-    mean(0) = cumulant[0][0];
-    mean(1) = cumulant[0][1];
-    mean(2) = cumulant[0][2];
-
-    covariance(0, 0) = cumulant[1][0] - cumulant[0][0] * cumulant[0][0];
-    covariance(1, 1) = cumulant[2][0] - cumulant[0][1] * cumulant[0][1];
-    covariance(2, 2) = cumulant[2][2] - cumulant[0][2] * cumulant[0][2];
-    covariance(0, 1) = cumulant[1][1] - cumulant[0][0] * cumulant[0][1];
-    covariance(1, 0) = covariance(0, 1);
-    covariance(0, 2) = cumulant[1][2] - cumulant[0][0] * cumulant[0][2];
-    covariance(2, 0) = covariance(0, 2);
-    covariance(1, 2) = cumulant[2][1] - cumulant[0][1] * cumulant[0][2];
-    covariance(2, 1) = covariance(1, 2);
-
-    // Free device global memory
-    freeDev(&d_cumulants, "d_cumulants");
-
-    return std::make_tuple(mean, covariance);
-#else
-    cout << "Running CPU..." << endl;
-
-    return ComputePointCloudMeanAndCovariance(input);
-#endif
-}
-
 std::vector<double> ComputePointCloudMahalanobisDistance(
         const PointCloud &input) {
     std::vector<double> mahalanobis(input.points_.size());
@@ -321,10 +248,77 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     return nn_dis;
 }
 
+#ifdef OPEN3D_USE_CUDA
+
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
+    if (input.IsEmpty()) {
+        return std::make_tuple(Eigen::Vector3d::Zero(),
+                               Eigen::Matrix3d::Identity());
+    }
+
+    cout << "Running CUDA..." << endl;
+
+    // Error code to check return values for CUDA calls
+    cudaError_t status = cudaSuccess;
+
+    int nrPoints = input.points_.size();
+
+    // host memory
+    vector<Matrix3d> h_cumulants(nrPoints);
+
+    int outputSize = h_cumulants.size() * Matrix3d::SIZE;
+
+    // device memory
+    double *d_cumulants = NULL;
+
+    input.UpdateDevicePoints();
+    if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants")) exit(1);
+
+    if (!cumulantGPU(input.d_points_, nrPoints, d_cumulants)) exit(1);
+
+    // Copy results to the host
+    CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize);
+
+    Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    for (int i = 0; i < h_cumulants.size(); i++) {
+        cumulant[0][0] += (double)h_cumulants[i][0][0];
+        cumulant[0][1] += (double)h_cumulants[i][0][1];
+        cumulant[0][2] += (double)h_cumulants[i][0][2];
+        cumulant[1][0] += (double)h_cumulants[i][1][0];
+        cumulant[1][1] += (double)h_cumulants[i][1][1];
+        cumulant[1][2] += (double)h_cumulants[i][1][2];
+        cumulant[2][0] += (double)h_cumulants[i][2][0];
+        cumulant[2][1] += (double)h_cumulants[i][2][1];
+        cumulant[2][2] += (double)h_cumulants[i][2][2];
+    }
+
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+
+    mean(0) = cumulant[0][0];
+    mean(1) = cumulant[0][1];
+    mean(2) = cumulant[0][2];
+
+    covariance(0, 0) = cumulant[1][0] - cumulant[0][0] * cumulant[0][0];
+    covariance(1, 1) = cumulant[2][0] - cumulant[0][1] * cumulant[0][1];
+    covariance(2, 2) = cumulant[2][2] - cumulant[0][2] * cumulant[0][2];
+    covariance(0, 1) = cumulant[1][1] - cumulant[0][0] * cumulant[0][1];
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulant[1][2] - cumulant[0][0] * cumulant[0][2];
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulant[2][1] - cumulant[0][1] * cumulant[0][2];
+    covariance(2, 1) = covariance(1, 2);
+
+    // Free device global memory
+    freeDev(&d_cumulants, "d_cumulants");
+
+    return std::make_tuple(mean, covariance);
+}
+
 // update the device memory on demand
 bool PointCloud::UpdateDeviceMemory(double **d_data,
                                     const vector<Eigen::Vector3d> &data) {
-#ifdef OPEN3D_USE_CUDA
     cudaError_t status = cudaSuccess;
 
     if (*d_data != NULL) {
@@ -342,9 +336,6 @@ bool PointCloud::UpdateDeviceMemory(double **d_data,
 
         return true;
     }
-#endif
-
-    return true;
 }  // namespace geometry
 
 // update the memory assigned to d_points_
@@ -370,15 +361,11 @@ bool PointCloud::UpdateDeviceMemory() {
 
 // perform cleanup
 bool PointCloud::ReleaseDeviceMemory(double **d_data) {
-#ifdef OPEN3D_USE_CUDA
     if (*d_data == NULL) return true;
 
     if (cudaSuccess != cudaFree(*d_data)) return false;
 
     *d_data = NULL;
-#endif
-
-    return true;
 }
 
 // release the memory asigned to d_points_
@@ -403,6 +390,8 @@ bool PointCloud::ReleaseDeviceMemory() {
 
     return true;
 }
+
+#endif // OPEN3D_USE_CUDA
 
 }  // namespace geometry
 }  // namespace open3d

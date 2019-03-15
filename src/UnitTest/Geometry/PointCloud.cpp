@@ -857,6 +857,8 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
     ExpectEQ(ref_covariance, covariance);
 }
 
+#ifdef OPEN3D_USE_CUDA
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
@@ -882,6 +884,8 @@ TEST(PointCloud, ComputePointCloudMeanAndCovarianceCUDA) {
     ExpectEQ(meanCPU, meanGPU);
     ExpectEQ(covarianceCPU, covarianceGPU);
 }
+
+#endif
 
 // ----------------------------------------------------------------------------
 //
