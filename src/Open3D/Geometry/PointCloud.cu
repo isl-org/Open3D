@@ -94,7 +94,7 @@ bool cumulantGPU(double* const d_points, const int& nrPoints,
 // Compute PointCloud mean and covariance using the GPU
 // ---------------------------------------------------------------------------
 std::tuple<Vector3d, Matrix3d>
-meanAndCovarianceCUDA(double* d_points, const int& nrPoints) {
+meanAndCovarianceCUDA(double* const d_points, const int& nrPoints) {
     Vector3d mean{};
     Matrix3d covariance = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 

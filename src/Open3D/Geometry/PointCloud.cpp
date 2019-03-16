@@ -43,7 +43,7 @@ using namespace std;
 
 // compute mean and covariance on the GPU using CUDA
 extern std::tuple<open3d::Vector3d, open3d::Matrix3d> meanAndCovarianceCUDA(
-        double *d_points, const int &nrPoints);
+        double *const d_points, const int &nrPoints);
 #endif
 
 namespace open3d {
