@@ -171,7 +171,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
         return std::make_tuple(mean, covariance);
 
 #ifdef OPEN3D_USE_CUDA
-    if (input.use_cuda)
+    if (0 <= input.cuda_device_id)
         return ComputePointCloudMeanAndCovarianceCUDA(input);
     else
         return ComputePointCloudMeanAndCovarianceCPU(input);
@@ -265,7 +265,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     input.UpdateDevicePoints();
-    auto output = meanAndCovarianceCUDA(input.d_points_, input.points_.size());
+    auto output = meanAndCovarianceCUDA(input.cuda_device_id, input.d_points_, input.points_.size());
 
     Vector3d meanCUDA = get<0>(output);
     Matrix3d covarianceCUDA = get<1>(output);

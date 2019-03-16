@@ -97,7 +97,9 @@ public:  // cuda device pointers
     double *d_points_{};
     double *d_normals_{};
     double *d_colors_{};
-    bool use_cuda = true;
+    // set to -1 to execute on the CPU
+    // a non zero value must point to a valid device
+    int cuda_device_id = 0;
 
 public:
     // update the memory assigned to d_points_
@@ -260,6 +262,6 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input);
 
 // compute mean and covariance on the GPU using CUDA
 std::tuple<open3d::Vector3d, open3d::Matrix3d> meanAndCovarianceCUDA(
-        double *const d_points, const int &nrPoints);
+        const int& devID, double *const d_points, const int &nrPoints);
 
 #endif // OPEN3D_USE_CUDA

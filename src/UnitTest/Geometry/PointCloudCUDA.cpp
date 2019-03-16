@@ -51,10 +51,10 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    pc.use_cuda = false;
+    pc.cuda_device_id = -1;
     auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc);
 
-    pc.use_cuda = true;
+    pc.cuda_device_id = 0;
     auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pc);
 
     Eigen::Vector3d meanCPU = get<0>(outputCPU);

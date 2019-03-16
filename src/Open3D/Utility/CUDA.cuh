@@ -7,7 +7,7 @@
 
 namespace open3d {
     // Diplay info about the specified device.
-    void DeviceInfo(const int& devID);
+    std::string DeviceInfo(const int& devID);
     // Alocate device memory and perform validation.
     cudaError_t AlocateDevMemory(double** d, const size_t& numElements);
     // Copy data to the device.

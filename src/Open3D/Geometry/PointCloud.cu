@@ -73,11 +73,12 @@ __global__ void cumulant(double* data, int nrPoints, double* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
-cudaError_t cumulantGPU(double* const d_points, const int& nrPoints,
+cudaError_t cumulantGPU(const int& devID, double* const d_points, const int& nrPoints,
     double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
+    cudaSetDevice(devID);
     cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
     cudaDeviceSynchronize();
 
@@ -88,11 +89,11 @@ cudaError_t cumulantGPU(double* const d_points, const int& nrPoints,
 // Compute PointCloud mean and covariance using the GPU
 // ---------------------------------------------------------------------------
 std::tuple<Vector3d, Matrix3d>
-meanAndCovarianceCUDA(double* const d_points, const int& nrPoints) {
+meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoints) {
     Vector3d mean{};
     Matrix3d covariance = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
-    cout << "Running CUDA2..." << endl;
+    cout << "Running on " << DeviceInfo(0);
 
     cudaError_t status = cudaSuccess;
 
@@ -109,13 +110,14 @@ meanAndCovarianceCUDA(double* const d_points, const int& nrPoints) {
 
     // execute on GPU
     //*/// v0
-    status = cumulantGPU(d_points, nrPoints, d_cumulants);
+    status = cumulantGPU(devID, d_points, nrPoints, d_cumulants);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
     /*/// v1
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
+    cudaSetDevice(devID);
     cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
     cudaDeviceSynchronize();
 

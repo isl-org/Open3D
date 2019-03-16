@@ -2,23 +2,29 @@
 #include "CUDA.cuh"
 
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 // ----------------------------------------------------------------------------
 // Diplay info about the specified device.
 // ----------------------------------------------------------------------------
-void open3d::DeviceInfo(const int& devID)
+string open3d::DeviceInfo(const int& devID)
 {
+    if (-1 == devID)
+        return string();
+
     cudaDeviceProp deviceProp;
 
     cudaGetDeviceProperties(&deviceProp, devID);
 
-    cout << "GPU Device " << devID << ": ";
-    cout << deviceProp.name << ", ";
-    cout << "CUDA ";
-    cout << deviceProp.major << ".";
-    cout << deviceProp.minor << endl;
-    cout << endl;
+    stringstream info;
+    info << "GPU Device " << devID << ": ";
+    info << deviceProp.name << ", ";
+    info << "CUDA ";
+    info << deviceProp.major << ".";
+    info << deviceProp.minor << endl;
+
+    return info.str();
 }
 
 // ---------------------------------------------------------------------------
