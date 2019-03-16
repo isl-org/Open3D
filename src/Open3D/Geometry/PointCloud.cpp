@@ -279,47 +279,22 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     return std::make_tuple(mean, covariance);
 }
 
-// update the device memory on demand
-bool PointCloud::UpdateDeviceMemory(double **d_data,
-                                    const vector<Eigen::Vector3d> &data) {
-    cudaError_t status = cudaSuccess;
-
-    if (*d_data != NULL) {
-        if (cudaSuccess != cudaFree(*d_data)) return false;
-        *d_data = NULL;
-    }
-    status = cudaMalloc((void **)d_data, data.size() * sizeof(Eigen::Vector3d));
-    if (cudaSuccess != status) return false;
-
-    double *h_points = (double *)data.data();
-    size_t size = data.size() * sizeof(Eigen::Vector3d);
-    status = cudaMemcpy(*d_data, h_points, size, cudaMemcpyHostToDevice);
-    if (cudaSuccess != status) {
-        printf("%s", cudaGetErrorString(status));
-
-        return true;
-    }
-}  // namespace geometry
-
 // update the memory assigned to d_points_
 bool PointCloud::UpdateDevicePoints() {
-    return UpdateDeviceMemory(&d_points_, points_);
+    size_t size = points_.size() * sizeof(Eigen::Vector3d);
+    return UpdateDeviceMemory(&d_points_, (const double* const)points_.data(), size);
 }
 
 // update the memory assigned to d_normals_
 bool PointCloud::UpdateDeviceNormals() {
-    return UpdateDeviceMemory(&d_normals_, normals_);
+    size_t size = normals_.size() * sizeof(Eigen::Vector3d);
+    return UpdateDeviceMemory(&d_normals_, (const double* const)normals_.data(), size);
 }
 
 // update the memory assigned to d_colors_
 bool PointCloud::UpdateDeviceColors() {
-    return UpdateDeviceMemory(&d_colors_, colors_);
-}
-
-// update cuda device pointers
-bool PointCloud::UpdateDeviceMemory() {
-    return UpdateDevicePoints() && UpdateDeviceNormals() &&
-           UpdateDeviceColors();
+    size_t size = colors_.size() * sizeof(Eigen::Vector3d);
+    return UpdateDeviceMemory(&d_colors_, (const double* const)colors_.data(), size);
 }
 
 // perform cleanup
@@ -344,14 +319,6 @@ bool PointCloud::ReleaseDeviceNormals() {
 // release the memory asigned to d_colors_
 bool PointCloud::ReleaseDeviceColors() {
     return ReleaseDeviceMemory(&d_colors_);
-}
-
-// release the cuda device memory
-bool PointCloud::ReleaseDeviceMemory() {
-    return ReleaseDevicePoints() && ReleaseDeviceNormals() &&
-           ReleaseDeviceColors();
-
-    return true;
 }
 
 #endif  // OPEN3D_USE_CUDA

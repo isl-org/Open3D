@@ -99,11 +99,6 @@ public:  // cuda device pointers
     double *d_colors_{};
     bool use_cuda = true;
 
-private:
-    // update the device memory on demand
-    bool UpdateDeviceMemory(double **d_data,
-                            const std::vector<Eigen::Vector3d> &data);
-
 public:
     // update the memory assigned to d_points_
     bool UpdateDevicePoints();
@@ -111,8 +106,6 @@ public:
     bool UpdateDeviceNormals();
     // update the memory assigned to d_colors_
     bool UpdateDeviceColors();
-    // update cuda device pointers
-    bool UpdateDeviceMemory();
     // perform cleanup
     bool ReleaseDeviceMemory(double **d_data);
     // release the memory asigned to d_points_
@@ -121,8 +114,6 @@ public:
     bool ReleaseDeviceNormals();
     // release the memory asigned to d_colors_
     bool ReleaseDeviceColors();
-    // release the cuda device memory
-    bool ReleaseDeviceMemory();
 
 #endif // OPEN3D_USE_CUDA
 };

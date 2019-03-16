@@ -7,7 +7,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Diplay info about the specified device.
 // ----------------------------------------------------------------------------
-void DeviceInfo(const int& devID)
+void open3d::DeviceInfo(const int& devID)
 {
     cudaDeviceProp deviceProp;
 
@@ -24,7 +24,7 @@ void DeviceInfo(const int& devID)
 // ---------------------------------------------------------------------------
 // Alocate host memory and perform validation.
 // ---------------------------------------------------------------------------
-bool AlocateHstMemory(double** h, const int& numElements, const string& name)
+bool open3d::AlocateHstMemory(double** h, const int& numElements, const string& name)
 {
     size_t size = numElements * sizeof(double);
 
@@ -41,7 +41,7 @@ bool AlocateHstMemory(double** h, const int& numElements, const string& name)
 // ---------------------------------------------------------------------------
 // Alocate device memory and perform validation.
 // ---------------------------------------------------------------------------
-bool AlocateDevMemory(double** d, const int& numElements, const string& name)
+bool open3d::AlocateDevMemory(double** d, const int& numElements, const string& name)
 {
     cudaError_t status = cudaSuccess;
 
@@ -61,15 +61,16 @@ bool AlocateDevMemory(double** d, const int& numElements, const string& name)
 // ---------------------------------------------------------------------------
 // Initialize host memory.
 // ---------------------------------------------------------------------------
-void RandInit(double* h, const int& numElements)
+void open3d::RandInit(double* h, const int& numElements)
 {
     for (int i = 0; i < numElements; ++i)
         h[i] = rand()/(double)RAND_MAX;
 }
 
 // ---------------------------------------------------------------------------
+// Copy data to the device.
 // ---------------------------------------------------------------------------
-bool CopyHst2DevMemory(double* h, double* d, const int& numElements)
+bool open3d::CopyHst2DevMemory(double* h, double* d, const int& numElements)
 {
     cudaError_t status = cudaSuccess;
 
@@ -87,8 +88,9 @@ bool CopyHst2DevMemory(double* h, double* d, const int& numElements)
 }
 
 // ---------------------------------------------------------------------------
+// Copy data from the device.
 // ---------------------------------------------------------------------------
-bool CopyDev2HstMemory(double* d, double* h, const int& numElements)
+bool open3d::CopyDev2HstMemory(double* d, double* h, const int& numElements)
 {
     cudaError_t status = cudaSuccess;
 
@@ -106,8 +108,9 @@ bool CopyDev2HstMemory(double* d, double* h, const int& numElements)
 }
 
 // ---------------------------------------------------------------------------
+// Safely deallocate device memory.
 // ---------------------------------------------------------------------------
-bool freeDev(double** d, const string& name)
+bool open3d::freeDev(double** d, const string& name)
 {
     cudaError_t status = cudaSuccess;
 
@@ -124,3 +127,25 @@ bool freeDev(double** d, const string& name)
 
     return false;
 }
+
+// update the device memory on demand
+bool open3d::UpdateDeviceMemory(double **d_data,
+    const double* const data,
+    const size_t& size) {
+    cudaError_t status = cudaSuccess;
+
+    if (*d_data != NULL) {
+        status = cudaFree(*d_data);
+        if (cudaSuccess != status) return false;
+
+        *d_data = NULL;
+    }
+
+    status = cudaMalloc((void **)d_data, size * sizeof(double));
+    if (cudaSuccess != status) return false;
+
+    status = cudaMemcpy(*d_data, data, size, cudaMemcpyHostToDevice);
+    if (cudaSuccess != status) return false;
+
+    return true;
+}  // namespace geometry
