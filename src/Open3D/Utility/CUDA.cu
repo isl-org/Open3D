@@ -36,15 +36,6 @@ cudaError_t open3d::AlocateDevMemory(double** d, const size_t& numElements)
 }
 
 // ---------------------------------------------------------------------------
-// Initialize host memory.
-// ---------------------------------------------------------------------------
-void open3d::RandInit(double* h, const int& numElements)
-{
-    for (int i = 0; i < numElements; ++i)
-        h[i] = rand()/(double)RAND_MAX;
-}
-
-// ---------------------------------------------------------------------------
 // Copy data to the device.
 // ---------------------------------------------------------------------------
 cudaError_t open3d::CopyHst2DevMemory(double* h, double* d, const size_t& numElements)
