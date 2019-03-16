@@ -32,7 +32,6 @@
 
 #include <algorithm>
 
-using namespace Eigen;
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
@@ -46,8 +45,8 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     int size = 1 << 24;
     geometry::PointCloud pc;
 
-    Vector3d vmin(-1.0, -1.0, -1.0);
-    Vector3d vmax(+1.0, +1.0, +1.0);
+    Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
+    Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
@@ -58,11 +57,11 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     pc.use_cuda = true;
     auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pc);
 
-    Vector3d meanCPU = get<0>(outputCPU);
-    Matrix3d covarianceCPU = get<1>(outputCPU);
+    Eigen::Vector3d meanCPU = get<0>(outputCPU);
+    Eigen::Matrix3d covarianceCPU = get<1>(outputCPU);
 
-    Vector3d meanGPU = get<0>(outputGPU);
-    Matrix3d covarianceGPU = get<1>(outputGPU);
+    Eigen::Vector3d meanGPU = get<0>(outputGPU);
+    Eigen::Matrix3d covarianceGPU = get<1>(outputGPU);
 
     ExpectEQ(meanCPU, meanGPU);
     ExpectEQ(covarianceCPU, covarianceGPU);

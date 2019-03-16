@@ -28,10 +28,12 @@
 
 #include <tuple>
 #include <vector>
+#include <tuple>
 #include <memory>
 #include <Eigen/Core>
 #include <Open3D/Geometry/Geometry3D.h>
 #include <Open3D/Geometry/KDTreeSearchParam.h>
+#include "Open3D/Types/Matrix3d.h"
 
 namespace open3d {
 
@@ -262,3 +264,11 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input);
 
 }  // namespace geometry
 }  // namespace open3d
+
+#ifdef OPEN3D_USE_CUDA
+
+// compute mean and covariance on the GPU using CUDA
+std::tuple<open3d::Vector3d, open3d::Matrix3d> meanAndCovarianceCUDA(
+        double *const d_points, const int &nrPoints);
+
+#endif // OPEN3D_USE_CUDA

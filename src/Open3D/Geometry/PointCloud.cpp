@@ -30,18 +30,12 @@
 #include <Open3D/Utility/Console.h>
 #include <Open3D/Geometry/KDTreeFlann.h>
 
-#include "Open3D/Types/Matrix3d.h"
-
 #include <iostream>
 #include <iomanip>
 using namespace std;
 
 #ifdef OPEN3D_USE_CUDA
 #include "Open3D/Utility/CUDA.cuh"
-
-// compute mean and covariance on the GPU using CUDA
-extern std::tuple<open3d::Vector3d, open3d::Matrix3d> meanAndCovarianceCUDA(
-        double *const d_points, const int &nrPoints);
 #endif
 
 namespace open3d {
