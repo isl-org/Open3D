@@ -73,7 +73,7 @@ __global__ void cumulant(double* data, int nrPoints, double* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
-bool cumulantGPU(double* const d_points, const int& nrPoints,
+cudaError_t cumulantGPU(double* const d_points, const int& nrPoints,
     double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
@@ -81,13 +81,7 @@ bool cumulantGPU(double* const d_points, const int& nrPoints,
     cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
     cudaDeviceSynchronize();
 
-    cudaError_t status = cudaGetLastError();
-    if (cudaSuccess != status) {
-        cout << "status: " << cudaGetErrorString(status) << endl;
-        return false;
-    }
-
-    return true;
+    return cudaGetLastError();
 }
 
 // ---------------------------------------------------------------------------
@@ -100,6 +94,8 @@ meanAndCovarianceCUDA(double* const d_points, const int& nrPoints) {
 
     cout << "Running CUDA2..." << endl;
 
+    cudaError_t status = cudaSuccess;
+
     // host memory
     vector<Matrix3d> h_cumulants(nrPoints);
 
@@ -107,12 +103,14 @@ meanAndCovarianceCUDA(double* const d_points, const int& nrPoints) {
 
     // allocate temporary device memory
     double *d_cumulants = NULL;
-    if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants"))
+    status = AlocateDevMemory(&d_cumulants, outputSize);
+    if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // execute on GPU
     //*/// v0
-    if (!cumulantGPU(d_points, nrPoints, d_cumulants))
+    status = cumulantGPU(d_points, nrPoints, d_cumulants);
+    if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
     /*/// v1
     int threadsPerBlock = 256;
@@ -129,11 +127,13 @@ meanAndCovarianceCUDA(double* const d_points, const int& nrPoints) {
     //*///
 
     // Copy results to the host
-    if (!CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize))
+    status = CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize);
+    if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // Free temporary device memory
-    if (!freeDev(&d_cumulants, "d_cumulants"))
+    status = freeDev(&d_cumulants);
+    if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};

@@ -8,20 +8,17 @@
 namespace open3d {
     // Diplay info about the specified device.
     void DeviceInfo(const int& devID);
-    // Alocate host memory and perform validation.
-    bool AlocateHstMemory(double** h, const int& numElements, const std::string& name);
     // Alocate device memory and perform validation.
-    bool AlocateDevMemory(double** d, const int& numElements, const std::string& name);
+    cudaError_t AlocateDevMemory(double** d, const size_t& numElements);
     // Initialize host memory.
     void RandInit(double* h, const int& numElements);
     // Copy data to the device.
-    bool CopyHst2DevMemory(double* h, double* d, const int& numElements);
+    cudaError_t CopyHst2DevMemory(double* h, double* d, const size_t& numElements);
     // Copy data from the device.
-    bool CopyDev2HstMemory(double* d, double* h, const int& numElements);
+    cudaError_t CopyDev2HstMemory(double* d, double* h, const size_t& numElements);
     // Safely deallocate device memory.
-    bool freeDev(double** d, const std::string& name);
+    cudaError_t freeDev(double** d);
     // update the device memory on demand
-    bool UpdateDeviceMemory(double **d_data,
-        const double* const data,
-        const size_t& size);
+    cudaError_t UpdateDeviceMemory(double **d_data, const double* const data,
+        const size_t& numElements);
 }

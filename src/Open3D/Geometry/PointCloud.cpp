@@ -281,19 +281,19 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 
 // update the memory assigned to d_points_
 bool PointCloud::UpdateDevicePoints() {
-    size_t size = points_.size() * sizeof(Eigen::Vector3d);
+    size_t size = points_.size() * open3d::Vector3d::SIZE;
     return UpdateDeviceMemory(&d_points_, (const double* const)points_.data(), size);
 }
 
 // update the memory assigned to d_normals_
 bool PointCloud::UpdateDeviceNormals() {
-    size_t size = normals_.size() * sizeof(Eigen::Vector3d);
+    size_t size = normals_.size() * open3d::Vector3d::SIZE;
     return UpdateDeviceMemory(&d_normals_, (const double* const)normals_.data(), size);
 }
 
 // update the memory assigned to d_colors_
 bool PointCloud::UpdateDeviceColors() {
-    size_t size = colors_.size() * sizeof(Eigen::Vector3d);
+    size_t size = colors_.size() * open3d::Vector3d::SIZE;
     return UpdateDeviceMemory(&d_colors_, (const double* const)colors_.data(), size);
 }
 
