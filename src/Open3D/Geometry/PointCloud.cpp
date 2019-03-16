@@ -172,10 +172,12 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
         const PointCloud &input) {
-    if (input.IsEmpty()) {
-        return std::make_tuple(Eigen::Vector3d::Zero(),
-                               Eigen::Matrix3d::Identity());
-    }
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
+
+    if (input.IsEmpty())
+        return std::make_tuple(mean, covariance);
+
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
     for (const auto &point : input.points_) {
@@ -189,12 +191,13 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
     }
+
     cumulants /= (double)input.points_.size();
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
+
     mean(0) = cumulants(0);
     mean(1) = cumulants(1);
     mean(2) = cumulants(2);
+
     covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
     covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
     covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
@@ -204,6 +207,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     covariance(2, 0) = covariance(0, 2);
     covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
     covariance(2, 1) = covariance(1, 2);
+
     return std::make_tuple(mean, covariance);
 }
 
