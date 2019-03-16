@@ -171,6 +171,24 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
+        PointCloud &input) {
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
+
+    if (input.IsEmpty())
+        return std::make_tuple(mean, covariance);
+
+#ifdef OPEN3D_USE_CUDA
+    if (input.use_cuda)
+        return ComputePointCloudMeanAndCovarianceCUDA(input);
+    else
+        return ComputePointCloudMeanAndCovarianceCPU(input);
+#else
+    return ComputePointCloudMeanAndCovarianceCPU(input);
+#endif
+}
+
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceCPU(
         const PointCloud &input) {
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
     Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
@@ -212,7 +230,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
 }
 
 std::vector<double> ComputePointCloudMahalanobisDistance(
-        const PointCloud &input) {
+        PointCloud &input) {
     std::vector<double> mahalanobis(input.points_.size());
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;

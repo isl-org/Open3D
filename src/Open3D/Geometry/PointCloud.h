@@ -95,6 +95,7 @@ public:  // cuda device pointers
     double *d_points_{};
     double *d_normals_{};
     double *d_colors_{};
+    bool use_cuda = true;
 
 private:
     // update the device memory on demand
@@ -232,13 +233,18 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
 /// Function to compute the mean and covariance matrix
 /// of an \param input point cloud
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
-        const PointCloud &input);
+        PointCloud &input);
+
+/// Function to compute the mean and covariance matrix
+/// of an \param input point cloud
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+ComputePointCloudMeanAndCovarianceCPU(const PointCloud &input);
 
 /// Function to compute the Mahalanobis distance for points
 /// in an \param input point cloud
 /// https://en.wikipedia.org/wiki/Mahalanobis_distance
 std::vector<double> ComputePointCloudMahalanobisDistance(
-        const PointCloud &input);
+        PointCloud &input);
 
 /// Function to compute the distance from a point to its nearest neighbor in the
 /// \param input point cloud
