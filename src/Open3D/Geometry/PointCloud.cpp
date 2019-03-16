@@ -37,8 +37,6 @@
 using namespace std;
 
 #ifdef OPEN3D_USE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include "Open3D/Utility/CUDA.cuh"
 
 // compute mean and covariance on the GPU using CUDA

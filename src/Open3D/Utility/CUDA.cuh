@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <cuda_runtime.h>
+
 #include <string>
 
 void DeviceInfo(const int& devID);
