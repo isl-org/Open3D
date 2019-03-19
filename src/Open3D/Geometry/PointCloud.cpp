@@ -167,8 +167,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
     Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
 
-    if (input.IsEmpty())
-        return std::make_tuple(mean, covariance);
+    if (input.IsEmpty()) return std::make_tuple(mean, covariance);
 
 #ifdef OPEN3D_USE_CUDA
     if (0 <= input.cuda_device_id)
@@ -180,13 +179,12 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
 #endif
 }
 
-std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceCPU(
-        const PointCloud &input) {
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+ComputePointCloudMeanAndCovarianceCPU(const PointCloud &input) {
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
     Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
 
-    if (input.IsEmpty())
-        return std::make_tuple(mean, covariance);
+    if (input.IsEmpty()) return std::make_tuple(mean, covariance);
 
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
@@ -221,8 +219,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     return std::make_tuple(mean, covariance);
 }
 
-std::vector<double> ComputePointCloudMahalanobisDistance(
-        PointCloud &input) {
+std::vector<double> ComputePointCloudMahalanobisDistance(PointCloud &input) {
     std::vector<double> mahalanobis(input.points_.size());
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
@@ -265,7 +262,8 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     input.UpdateDevicePoints();
-    auto output = meanAndCovarianceCUDA(input.cuda_device_id, input.d_points_, input.points_.size());
+    auto output = meanAndCovarianceCUDA(input.cuda_device_id, input.d_points_,
+                                        input.points_.size());
 
     Vector3d meanCUDA = get<0>(output);
     Matrix3d covarianceCUDA = get<1>(output);
@@ -282,22 +280,22 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 // update the memory assigned to d_points_
 bool PointCloud::UpdateDevicePoints() {
     size_t size = points_.size() * open3d::Vector3d::SIZE;
-    return UpdateDeviceMemory(&d_points_, (const double* const)points_.data(),
-        size, cuda_device_id);
+    return UpdateDeviceMemory(&d_points_, (const double *const)points_.data(),
+                              size, cuda_device_id);
 }
 
 // update the memory assigned to d_normals_
 bool PointCloud::UpdateDeviceNormals() {
     size_t size = normals_.size() * open3d::Vector3d::SIZE;
-    return UpdateDeviceMemory(&d_normals_, (const double* const)normals_.data(),
-        size, cuda_device_id);
+    return UpdateDeviceMemory(&d_normals_, (const double *const)normals_.data(),
+                              size, cuda_device_id);
 }
 
 // update the memory assigned to d_colors_
 bool PointCloud::UpdateDeviceColors() {
     size_t size = colors_.size() * open3d::Vector3d::SIZE;
-    return UpdateDeviceMemory(&d_colors_, (const double* const)colors_.data(),
-        size, cuda_device_id);
+    return UpdateDeviceMemory(&d_colors_, (const double *const)colors_.data(),
+                              size, cuda_device_id);
 }
 
 // perform cleanup
