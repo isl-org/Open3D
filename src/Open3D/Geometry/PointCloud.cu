@@ -27,7 +27,8 @@
 #include <stdio.h>
 
 #include "Open3D/Utility/CUDA.cuh"
-#include "Open3D/Types/Matrix3d.h"
+// #include "Open3D/Types/Mat3d.h"
+#include "Open3D/Types/Mat.h"
 using namespace open3d;
 
 #include <iostream>
@@ -41,12 +42,13 @@ using namespace std;
 __global__ void cumulant(double* data, int nrPoints, double* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
-    Vector3d* points = (Vector3d*)data;
-    Matrix3d* cumulants = (Matrix3d*)output;
+    Vec3d* points = (Vec3d*)data;
+    Mat3d* cumulants = (Mat3d*)output;
 
-    Matrix3d c = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // initialize with zeros
+    Mat3d c{};
 
-    Vector3d p = points[gid];
+    Vec3d p = points[gid];
     c[0][0] += p[0];
     c[0][1] += p[1];
     c[0][2] += p[2];
@@ -88,19 +90,22 @@ cudaError_t cumulantGPU(const int& devID, double* const d_points, const int& nrP
 // ---------------------------------------------------------------------------
 // Compute PointCloud mean and covariance using the GPU
 // ---------------------------------------------------------------------------
-std::tuple<Vector3d, Matrix3d>
+std::tuple<Vec3d, Mat3d>
 meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoints) {
-    Vector3d mean{};
-    Matrix3d covariance = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    Vec3d mean{};
+    Mat3d covariance{};
+    covariance[0][0] = 1.0;
+    covariance[1][1] = 1.0;
+    covariance[2][2] = 1.0;
 
     cout << "Running on " << DeviceInfo(0);
 
     cudaError_t status = cudaSuccess;
 
     // host memory
-    vector<Matrix3d> h_cumulants(nrPoints);
+    vector<Mat3d> h_cumulants(nrPoints);
 
-    int outputSize = h_cumulants.size() * Matrix3d::SIZE;
+    int outputSize = h_cumulants.size() * Mat3d::Size;
 
     // allocate temporary device memory
     double *d_cumulants = NULL;
@@ -138,7 +143,8 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoi
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
-    Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    // initialize with zeros
+    Mat3d cumulant{};
     for (int i = 0; i < h_cumulants.size(); i++) {
         cumulant[0][0] += (double)h_cumulants[i][0][0];
         cumulant[0][1] += (double)h_cumulants[i][0][1];

@@ -26,7 +26,7 @@
 
 #include "TestUtility/UnitTest.h"
 
-#include "Open3D/Types/Types.h"
+#include "Open3D/Types/Mat.h"
 
 #include <iostream>
 using namespace std;
@@ -35,26 +35,26 @@ using namespace std;
 // Make sure the types are PODs.
 // ----------------------------------------------------------------------------
 TEST(BasicTypes, is_POD) {
-    EXPECT_TRUE(is_pod<open3d::Matrix3d>());
-    EXPECT_TRUE(is_pod<open3d::Matrix3f>());
-    EXPECT_TRUE(is_pod<open3d::Matrix4d>());
-    EXPECT_TRUE(is_pod<open3d::Matrix4f>());
-    EXPECT_TRUE(is_pod<open3d::Matrix6d>());
-    EXPECT_TRUE(is_pod<open3d::Matrix6f>());
+    EXPECT_TRUE(is_pod<open3d::Mat3d>());
+    EXPECT_TRUE(is_pod<open3d::Mat3f>());
+    EXPECT_TRUE(is_pod<open3d::Mat4d>());
+    EXPECT_TRUE(is_pod<open3d::Mat4f>());
+    EXPECT_TRUE(is_pod<open3d::Mat6d>());
+    EXPECT_TRUE(is_pod<open3d::Mat6f>());
 
-    EXPECT_TRUE(is_pod<open3d::Vector3d>());
-    EXPECT_TRUE(is_pod<open3d::Vector3f>());
-    EXPECT_TRUE(is_pod<open3d::Vector3i>());
+    EXPECT_TRUE(is_pod<open3d::Vec3d>());
+    EXPECT_TRUE(is_pod<open3d::Vec3f>());
+    EXPECT_TRUE(is_pod<open3d::Vec3i>());
 }
 
 // ----------------------------------------------------------------------------
 // Test reading/writing using the subscript operator.
 // ----------------------------------------------------------------------------
 TEST(BasicTypes, subscript_ops) {
-    open3d::Matrix3f m;
+    open3d::Mat3f m;
 
-    for (uint r = 0; r < m.ROWS; r++)
-        for (uint c = 0; c < m.COLS; c++) {
+    for (uint r = 0; r < m.Rows; r++)
+        for (uint c = 0; c < m.Cols; c++) {
             m[r][c] = r * 1.0f + c * 0.1f;
             EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
         }
@@ -63,9 +63,9 @@ TEST(BasicTypes, subscript_ops) {
     // m[3][2] = 1.0f;
     // m[2][3] = 2.0f;
 
-    open3d::Vector3f v;
+    open3d::Vec3f v;
 
-    for (uint c = 0; c < m.COLS; c++) {
+    for (uint c = 0; c < m.Cols; c++) {
         v[c] = c * 0.12f;
         EXPECT_FLOAT_EQ(v[c], c * 0.12f);
     }
@@ -76,27 +76,27 @@ TEST(BasicTypes, subscript_ops) {
 // Note: there's no need for an explicit cast operator, just use member s[...].
 // ----------------------------------------------------------------------------
 TEST(BasicTypes, cast) {
-    open3d::Matrix3f m;
+    open3d::Mat3f m;
     float* mf = (float*)m.s;
 
-    for (uint r = 0; r < m.ROWS; r++)
-        for (uint c = 0; c < m.COLS; c++) {
-            mf[r * m.COLS + c] = r * 1.0f + c * 0.1f;
-            EXPECT_FLOAT_EQ(mf[r * m.COLS + c], r * 1.0f + c * 0.1f);
+    for (uint r = 0; r < m.Rows; r++)
+        for (uint c = 0; c < m.Cols; c++) {
+            mf[r * m.Cols + c] = r * 1.0f + c * 0.1f;
+            EXPECT_FLOAT_EQ(mf[r * m.Cols + c], r * 1.0f + c * 0.1f);
             EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
         }
 
     // test memcpy
     float mcpy[9];
     memcpy(mcpy, mf, 9 * sizeof(float));
-    for (uint r = 0; r < m.ROWS; r++)
-        for (uint c = 0; c < m.COLS; c++)
-            EXPECT_FLOAT_EQ(mcpy[r * m.COLS + c], r * 1.0f + c * 0.1f);
+    for (uint r = 0; r < m.Rows; r++)
+        for (uint c = 0; c < m.Cols; c++)
+            EXPECT_FLOAT_EQ(mcpy[r * m.Cols + c], r * 1.0f + c * 0.1f);
 
-    open3d::Vector3f v;
+    open3d::Vec3f v;
     float* vf = (float*)v.s;
 
-    for (uint c = 0; c < m.COLS; c++) {
+    for (uint c = 0; c < m.Cols; c++) {
         vf[c] = c * 0.12f;
         EXPECT_FLOAT_EQ(vf[c], c * 0.12f);
         EXPECT_FLOAT_EQ(v[c], c * 0.12f);
@@ -111,27 +111,27 @@ TEST(BasicTypes, cast) {
 TEST(BasicTypes, sizeof_type) {
     EXPECT_EQ(3 * sizeof(double), sizeof(Eigen::Vector3d));
 
-    EXPECT_EQ(3 * 3 * sizeof(double), sizeof(open3d::Matrix3d));
-    EXPECT_EQ(3 * 3 * sizeof(float), sizeof(open3d::Matrix3f));
+    EXPECT_EQ(3 * 3 * sizeof(double), sizeof(open3d::Mat3d));
+    EXPECT_EQ(3 * 3 * sizeof(float), sizeof(open3d::Mat3f));
 
-    EXPECT_EQ(4 * 4 * sizeof(float), sizeof(open3d::Matrix4f));
-    EXPECT_EQ(4 * 4 * sizeof(double), sizeof(open3d::Matrix4d));
+    EXPECT_EQ(4 * 4 * sizeof(float), sizeof(open3d::Mat4f));
+    EXPECT_EQ(4 * 4 * sizeof(double), sizeof(open3d::Mat4d));
 
-    EXPECT_EQ(6 * 6 * sizeof(float), sizeof(open3d::Matrix6f));
-    EXPECT_EQ(6 * 6 * sizeof(double), sizeof(open3d::Matrix6d));
+    EXPECT_EQ(6 * 6 * sizeof(float), sizeof(open3d::Mat6f));
+    EXPECT_EQ(6 * 6 * sizeof(double), sizeof(open3d::Mat6d));
 
-    EXPECT_EQ(3 * sizeof(double), sizeof(open3d::Vector3d));
-    EXPECT_EQ(3 * sizeof(float), sizeof(open3d::Vector3f));
-    EXPECT_EQ(3 * sizeof(int), sizeof(open3d::Vector3i));
+    EXPECT_EQ(3 * sizeof(double), sizeof(open3d::Vec3d));
+    EXPECT_EQ(3 * sizeof(float), sizeof(open3d::Vec3f));
+    EXPECT_EQ(3 * sizeof(int), sizeof(open3d::Vec3i));
 }
 
 // ----------------------------------------------------------------------------
 // Test ==, !=, <=, >=.
 // ----------------------------------------------------------------------------
 TEST(BasicTypes, comparison_ops_float) {
-    open3d::Matrix3f m0 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
+    open3d::Mat3f m0 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
                            5.0f, 6.0f, 7.0f, 8.0f};
-    open3d::Matrix3f m1 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
+    open3d::Mat3f m1 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
                            5.0f, 6.0f, 7.0f, 8.0f};
     EXPECT_TRUE(m0 == m1);
     EXPECT_TRUE(m0 <= m1);
@@ -140,8 +140,8 @@ TEST(BasicTypes, comparison_ops_float) {
     EXPECT_TRUE(m0 != m1);
     EXPECT_TRUE(m0 >= m1);
 
-    open3d::Vector3f v0 = {0.0f, 0.1f, 0.2f};
-    open3d::Vector3f v1 = {0.0f, 0.1f, 0.2f};
+    open3d::Vec3f v0 = {0.0f, 0.1f, 0.2f};
+    open3d::Vec3f v1 = {0.0f, 0.1f, 0.2f};
     EXPECT_TRUE(v0 == v1);
     EXPECT_TRUE(v0 <= v1);
 
@@ -154,8 +154,8 @@ TEST(BasicTypes, comparison_ops_float) {
 // Test ==, !=, <=, >=.
 // ----------------------------------------------------------------------------
 TEST(BasicTypes, comparison_ops_double) {
-    open3d::Matrix3d m0 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
-    open3d::Matrix3d m1 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+    open3d::Mat3d m0 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+    open3d::Mat3d m1 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
     EXPECT_TRUE(m0 == m1);
     EXPECT_TRUE(m0 <= m1);
 
@@ -163,8 +163,8 @@ TEST(BasicTypes, comparison_ops_double) {
     EXPECT_TRUE(m0 != m1);
     EXPECT_TRUE(m0 >= m1);
 
-    open3d::Vector3d v0 = {0.0, 0.1, 0.2};
-    open3d::Vector3d v1 = {0.0, 0.1, 0.2};
+    open3d::Vec3d v0 = {0.0, 0.1, 0.2};
+    open3d::Vec3d v1 = {0.0, 0.1, 0.2};
     EXPECT_TRUE(v0 == v1);
     EXPECT_TRUE(v0 <= v1);
 

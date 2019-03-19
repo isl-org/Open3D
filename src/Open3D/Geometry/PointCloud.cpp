@@ -265,35 +265,35 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     auto output = meanAndCovarianceCUDA(input.cuda_device_id, input.d_points_,
                                         input.points_.size());
 
-    Vector3d meanCUDA = get<0>(output);
-    Matrix3d covarianceCUDA = get<1>(output);
+    Vec3d meanCUDA = get<0>(output);
+    Mat3d covarianceCUDA = get<1>(output);
 
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
 
-    memcpy(&mean, &meanCUDA, Vector3d::SIZE * sizeof(double));
-    memcpy(&covariance, &covarianceCUDA, Matrix3d::SIZE * sizeof(double));
+    memcpy(&mean, &meanCUDA, Vec3d::Size * sizeof(double));
+    memcpy(&covariance, &covarianceCUDA, Mat3d::Size * sizeof(double));
 
     return std::make_tuple(mean, covariance);
 }
 
 // update the memory assigned to d_points_
 bool PointCloud::UpdateDevicePoints() {
-    size_t size = points_.size() * open3d::Vector3d::SIZE;
+    size_t size = points_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&d_points_, (const double *const)points_.data(),
                               size, cuda_device_id);
 }
 
 // update the memory assigned to d_normals_
 bool PointCloud::UpdateDeviceNormals() {
-    size_t size = normals_.size() * open3d::Vector3d::SIZE;
+    size_t size = normals_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&d_normals_, (const double *const)normals_.data(),
                               size, cuda_device_id);
 }
 
 // update the memory assigned to d_colors_
 bool PointCloud::UpdateDeviceColors() {
-    size_t size = colors_.size() * open3d::Vector3d::SIZE;
+    size_t size = colors_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&d_colors_, (const double *const)colors_.data(),
                               size, cuda_device_id);
 }
