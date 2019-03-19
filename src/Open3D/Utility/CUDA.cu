@@ -8,8 +8,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Diplay info about the specified device.
 // ----------------------------------------------------------------------------
-string open3d::DeviceInfo(const int& devID)
-{
+string open3d::DeviceInfo(const int& devID) {
     if (-1 == devID)
         return string();
 
@@ -30,8 +29,8 @@ string open3d::DeviceInfo(const int& devID)
 // ---------------------------------------------------------------------------
 // Alocate device memory and perform validation.
 // ---------------------------------------------------------------------------
-cudaError_t open3d::AlocateDevMemory(double** d, const size_t& numElements)
-{
+cudaError_t open3d::AlocateDevMemory(double** d, const size_t& numElements,
+    const int& devID) {
     cudaError_t status = cudaSuccess;
 
     size_t size = numElements * sizeof(double);
@@ -44,8 +43,8 @@ cudaError_t open3d::AlocateDevMemory(double** d, const size_t& numElements)
 // ---------------------------------------------------------------------------
 // Copy data to the device.
 // ---------------------------------------------------------------------------
-cudaError_t open3d::CopyHst2DevMemory(double* h, double* d, const size_t& numElements)
-{
+cudaError_t open3d::CopyHst2DevMemory(double* h, double* d,
+    const size_t& numElements) {
     cudaError_t status = cudaSuccess;
 
     size_t size = numElements * sizeof(double);
@@ -58,8 +57,8 @@ cudaError_t open3d::CopyHst2DevMemory(double* h, double* d, const size_t& numEle
 // ---------------------------------------------------------------------------
 // Copy data from the device.
 // ---------------------------------------------------------------------------
-cudaError_t open3d::CopyDev2HstMemory(double* d, double* h, const size_t& numElements)
-{
+cudaError_t open3d::CopyDev2HstMemory(double* d, double* h,
+    const size_t& numElements) {
     cudaError_t status = cudaSuccess;
 
     size_t size = numElements * sizeof(double);
@@ -72,8 +71,7 @@ cudaError_t open3d::CopyDev2HstMemory(double* d, double* h, const size_t& numEle
 // ---------------------------------------------------------------------------
 // Safely deallocate device memory.
 // ---------------------------------------------------------------------------
-cudaError_t open3d::freeDev(double** d)
-{
+cudaError_t open3d::freeDev(double** d) {
     cudaError_t status = cudaSuccess;
 
     status = cudaFree(*d);
@@ -89,7 +87,8 @@ cudaError_t open3d::freeDev(double** d)
 // ---------------------------------------------------------------------------
 cudaError_t open3d::UpdateDeviceMemory(double **d_data,
     const double* const data,
-    const size_t& numElements) {
+    const size_t& numElements,
+    const int& devID) {
     cudaError_t status = cudaSuccess;
 
     if (*d_data != NULL) {
@@ -101,6 +100,7 @@ cudaError_t open3d::UpdateDeviceMemory(double **d_data,
 
     size_t size = numElements * sizeof(double);
 
+    cudaSetDevice(devID);
     status = cudaMalloc((void **)d_data, size);
     if (cudaSuccess != status) return status;
 
