@@ -101,7 +101,9 @@ RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
+        const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint(false));
 
 /// Functions for ICP registration
 RegistrationResult RegistrationICP(
@@ -146,7 +148,9 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation);
+        const Eigen::Matrix4d &transformation,
+        const TransformationEstimation &estimation = 
+                TransformationEstimationPointToPoint(false));
 
 }  // namespace registration
 }  // namespace open3d

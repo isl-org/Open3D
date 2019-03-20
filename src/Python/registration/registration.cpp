@@ -368,7 +368,9 @@ void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &registration::EvaluateRegistration,
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "transformation"_a = Eigen::Matrix4d::Identity());
+          "transformation"_a = Eigen::Matrix4d::Identity(),
+          "estimation_method"_a =
+                  registration::TransformationEstimationPointToPoint(false));
     m.def("registration_icp", &registration::RegistrationICP,
           "Function for ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
@@ -412,7 +414,9 @@ void pybind_registration_methods(py::module &m) {
           "Function for computing information matrix from "
           "registration::RegistrationResult",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "transformation_result"_a);
+          "transformation_result"_a,
+          "estimation_method"_a =
+                  registration::TransformationEstimationPointToPoint(false));
 }
 
 void pybind_registration(py::module &m) {

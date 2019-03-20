@@ -44,19 +44,17 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &target,
         const geometry::KDTreeFlann &target_kdtree,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
+        const Eigen::Matrix4d &transformation,
+        const TransformationEstimation &estimation) {
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
         return std::move(result);
     }
 
-    double error2 = 0.0;
-
 #ifdef _OPENMP
 #pragma omp parallel
     {
 #endif
-        double error2_private = 0.0;
         CorrespondenceSet correspondence_set_private;
 #ifdef _OPENMP
 #pragma omp for nowait
@@ -67,7 +65,6 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
             const auto &point = source.points_[i];
             if (target_kdtree.SearchHybrid(point, max_correspondence_distance,
                                            1, indices, dists) > 0) {
-                error2_private += dists[0];
                 correspondence_set_private.push_back(
                         Eigen::Vector2i(i, indices[0]));
             }
@@ -80,7 +77,6 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                 result.correspondence_set_.push_back(
                         correspondence_set_private[i]);
             }
-            error2 += error2_private;
         }
 #ifdef _OPENMP
     }
@@ -88,12 +84,11 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 
     if (result.correspondence_set_.empty()) {
         result.fitness_ = 0.0;
-        result.inlier_rmse_ = 0.0;
     } else {
         size_t corres_number = result.correspondence_set_.size();
         result.fitness_ = (double)corres_number / (double)source.points_.size();
-        result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
     }
+    result.inlier_rmse_ = estimation.ComputeRMSE(source,target,result.correspondence_set_);
     return std::move(result);
 }
 
@@ -102,26 +97,24 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
+        const Eigen::Matrix4d &transformation,
+        const TransformationEstimation &estimation) {
     RegistrationResult result(transformation);
-    double error2 = 0.0;
-    int good = 0;
+    CorrespondenceSet good;
     double max_dis2 = max_correspondence_distance * max_correspondence_distance;
     for (const auto &c : corres) {
         double dis2 =
                 (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
         if (dis2 < max_dis2) {
-            good++;
-            error2 += dis2;
+              good.push_back(c);
         }
     }
-    if (good == 0) {
+    if (good.size() == 0) {
         result.fitness_ = 0.0;
-        result.inlier_rmse_ = 0.0;
     } else {
-        result.fitness_ = (double)good / (double)corres.size();
-        result.inlier_rmse_ = std::sqrt(error2 / (double)good);
+        result.fitness_ = (double)good.size() / (double)corres.size();
     }
+    result.inlier_rmse_ = estimation.ComputeRMSE(source,target,good);
     return result;
 }
 
@@ -133,7 +126,8 @@ RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d
-                &transformation /* = Eigen::Matrix4d::Identity()*/) {
+                &transformation /* = Eigen::Matrix4d::Identity()*/,
+        const TransformationEstimation &estimation) {
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     geometry::PointCloud pcd = source;
@@ -141,7 +135,7 @@ RegistrationResult EvaluateRegistration(
         pcd.Transform(transformation);
     }
     return GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, target, kdtree, max_correspondence_distance, transformation, estimation);
 }
 
 RegistrationResult RegistrationICP(
@@ -175,7 +169,7 @@ RegistrationResult RegistrationICP(
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, target, kdtree, max_correspondence_distance, transformation, estimation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
                             result.fitness_, result.inlier_rmse_);
@@ -186,7 +180,7 @@ RegistrationResult RegistrationICP(
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
                 pcd, target, kdtree, max_correspondence_distance,
-                transformation);
+                transformation, estimation);
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
@@ -227,7 +221,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         pcd.Transform(transformation);
         auto this_result = EvaluateRANSACBasedOnCorrespondence(
                 pcd, target, corres, max_correspondence_distance,
-                transformation);
+                transformation, estimation);
         if (this_result.fitness_ > result.fitness_ ||
             (this_result.fitness_ == result.fitness_ &&
              this_result.inlier_rmse_ < result.inlier_rmse_)) {
@@ -336,7 +330,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 pcd.Transform(transformation);
                 auto this_result = GetRegistrationResultAndCorrespondences(
                         pcd, target, kdtree, max_correspondence_distance,
-                        transformation);
+                        transformation, estimation);
                 if (this_result.fitness_ > result_private.fitness_ ||
                     (this_result.fitness_ == result_private.fitness_ &&
                      this_result.inlier_rmse_ < result_private.inlier_rmse_)) {
@@ -375,7 +369,8 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
+        const Eigen::Matrix4d &transformation,
+        const TransformationEstimation &estimation) {
     geometry::PointCloud pcd = source;
     if (transformation.isIdentity() == false) {
         pcd.Transform(transformation);
@@ -384,7 +379,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     geometry::KDTreeFlann target_kdtree(target);
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, target_kdtree, max_correspondence_distance,
-            transformation);
+            transformation, estimation);
 
     // write q^*
     // see http://redwood-data.org/indoor/registration.html
