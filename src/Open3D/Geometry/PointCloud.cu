@@ -65,8 +65,8 @@ __global__ void cumulant(double* data, int nrPoints, double* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
-cudaError_t cumulantGPU(const int& devID, double* const d_points, const int& nrPoints,
-    double* const d_cumulants) {
+cudaError_t cumulantGPU(const int& devID, double* const d_points,
+    const int& nrPoints, double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
@@ -81,7 +81,8 @@ cudaError_t cumulantGPU(const int& devID, double* const d_points, const int& nrP
 // Compute PointCloud mean and covariance using the GPU
 // ---------------------------------------------------------------------------
 std::tuple<Vec3d, Mat3d>
-meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoints) {
+meanAndCovarianceCUDA(const int& devID, double* const d_points,
+    const int& nrPoints) {
     Vec3d mean{};
     Mat3d covariance{};
     covariance[0][0] = 1.0;
@@ -113,7 +114,8 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoi
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
     cudaSetDevice(devID);
-    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
+    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints,
+        d_cumulants);
     cudaDeviceSynchronize();
 
     cudaError_t status = cudaGetLastError();
@@ -124,7 +126,8 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoi
     //*///
 
     // Copy results to the host
-    status = CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize);
+    status = CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
+    outputSize);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
@@ -135,17 +138,8 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points, const int& nrPoi
 
     // initialize with zeros
     Mat3d cumulant{};
-    for (int i = 0; i < h_cumulants.size(); i++) {
-        cumulant[0][0] += (double)h_cumulants[i][0][0];
-        cumulant[0][1] += (double)h_cumulants[i][0][1];
-        cumulant[0][2] += (double)h_cumulants[i][0][2];
-        cumulant[1][0] += (double)h_cumulants[i][1][0];
-        cumulant[1][1] += (double)h_cumulants[i][1][1];
-        cumulant[1][2] += (double)h_cumulants[i][1][2];
-        cumulant[2][0] += (double)h_cumulants[i][2][0];
-        cumulant[2][1] += (double)h_cumulants[i][2][1];
-        cumulant[2][2] += (double)h_cumulants[i][2][2];
-    }
+    for (int i = 0; i < h_cumulants.size(); i++)
+        cumulant += h_cumulants[i];
 
     mean[0] = cumulant[0][0];
     mean[1] = cumulant[0][1];
