@@ -134,6 +134,14 @@ RegistrationResult EvaluateRegistration(
     if (transformation.isIdentity() == false) {
         pcd.Transform(transformation);
     }
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::PointToPlane &&
+        !target.HasNormals()) {
+        utility::PrintError(
+                "Error: TransformationEstimationPointToPlane requires "
+                "target point cloud to have pre-computed normal vectors.\n");
+        return RegistrationResult(transformation);
+    }
     return GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation, estimation);
 }
@@ -153,10 +161,10 @@ RegistrationResult RegistrationICP(
     }
     if (estimation.GetTransformationEstimationType() ==
                 TransformationEstimationType::PointToPlane &&
-        (!source.HasNormals() || !target.HasNormals())) {
+        !target.HasNormals()) {
         utility::PrintError(
                 "Error: TransformationEstimationPointToPlane requires "
-                "pre-computed normal vectors.\n");
+                "target point cloud to have pre-computed normal vectors.\n");
         return RegistrationResult(init);
     }
 
@@ -203,6 +211,14 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         /* = RANSACConvergenceCriteria()*/) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
+        return RegistrationResult();
+    }
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::PointToPlane &&
+        !target.HasNormals()) {
+        utility::PrintError(
+                "Error: TransformationEstimationPointToPlane requires "
+                "target point cloud to have pre-computed normal vectors.\n");
         return RegistrationResult();
     }
     std::srand((unsigned int)std::time(0));
@@ -374,6 +390,14 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     geometry::PointCloud pcd = source;
     if (transformation.isIdentity() == false) {
         pcd.Transform(transformation);
+    }
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::PointToPlane &&
+        !target.HasNormals()) {
+        utility::PrintError(
+                "Error: TransformationEstimationPointToPlane requires "
+                "target point cloud to have pre-computed normal vectors.\n");
+        return Eigen::Matrix6d::Identity();
     }
     RegistrationResult result;
     geometry::KDTreeFlann target_kdtree(target);
