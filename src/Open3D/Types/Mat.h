@@ -302,10 +302,21 @@ struct Mat {
     } Type;
 };
 
+// 1D tensor, row major, size 3
+template <typename T, uint COLS>
+using VecType = typename Vec<T, COLS>::Type;
+// 1D tensor, row major, size 3
+template <typename T>
+using Vec3 = typename Vec<T, 3>::Type;
+
+// 1D 1x3 tensor
+typedef Vec3<double> Vec3d;
+typedef Vec3<float> Vec3f;
+typedef Vec3<int> Vec3i;
+
 // 2D tensor, row major
 template <typename T, uint ROWS, uint COLS>
 using MatType = typename Mat<T, ROWS, COLS>::Type;
-
 // 2D tensor, row major, size 3x3
 template <typename T>
 using Mat3 = typename Mat<T, 3, 3>::Type;
@@ -315,14 +326,6 @@ using Mat4 = typename Mat<T, 4, 4>::Type;
 // 2D tensor, row major, size 6x6
 template <typename T>
 using Mat6 = typename Mat<T, 6, 6>::Type;
-
-// 1D tensor, row major, size 3
-template <typename T, uint COLS>
-using VecType = typename Vec<T, COLS>::Type;
-
-// 1D tensor, row major, size 3
-template <typename T>
-using Vec3 = typename Vec<T, 3>::Type;
 
 // 2D 3x3 tensor
 typedef Mat3<double> Mat3d;
@@ -335,9 +338,4 @@ typedef Mat4<float> Mat4f;
 // 2D 6x6 tensor
 typedef Mat6<double> Mat6d;
 typedef Mat6<float> Mat6f;
-
-// 1D 1x3 tensor
-typedef Vec3<double> Vec3d;
-typedef Vec3<float> Vec3f;
-typedef Vec3<int> Vec3i;
 }  // namespace open3d
