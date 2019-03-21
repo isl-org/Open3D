@@ -88,7 +88,8 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         size_t corres_number = result.correspondence_set_.size();
         result.fitness_ = (double)corres_number / (double)source.points_.size();
     }
-    result.inlier_rmse_ = estimation.ComputeRMSE(source,target,result.correspondence_set_);
+    result.inlier_rmse_ =
+            estimation.ComputeRMSE(source, target, result.correspondence_set_);
     return std::move(result);
 }
 
@@ -106,7 +107,7 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
         double dis2 =
                 (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
         if (dis2 < max_dis2) {
-              good.push_back(c);
+            good.push_back(c);
         }
     }
     if (good.size() == 0) {
@@ -114,7 +115,7 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
     } else {
         result.fitness_ = (double)good.size() / (double)corres.size();
     }
-    result.inlier_rmse_ = estimation.ComputeRMSE(source,target,good);
+    result.inlier_rmse_ = estimation.ComputeRMSE(source, target, good);
     return result;
 }
 
@@ -142,8 +143,9 @@ RegistrationResult EvaluateRegistration(
                 "target point cloud to have pre-computed normal vectors.\n");
         return RegistrationResult(transformation);
     }
-    return GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation, estimation);
+    return GetRegistrationResultAndCorrespondences(pcd, target, kdtree,
+                                                   max_correspondence_distance,
+                                                   transformation, estimation);
 }
 
 RegistrationResult RegistrationICP(
@@ -177,7 +179,8 @@ RegistrationResult RegistrationICP(
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation, estimation);
+            pcd, target, kdtree, max_correspondence_distance, transformation,
+            estimation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
                             result.fitness_, result.inlier_rmse_);
