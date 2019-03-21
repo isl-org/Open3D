@@ -123,14 +123,14 @@ bool EstimateNormals(
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
     bool has_normal = cloud.HasNormals();
     if (cloud.HasNormals() == false) {
-        cloud.normals_.h_data.resize(cloud.points_.h_data.size());
+        cloud.normals_.h_data.resize(cloud.points_.size());
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(cloud);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)cloud.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)cloud.points_.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
         Eigen::Vector3d normal;
@@ -167,7 +167,7 @@ bool OrientNormalsToAlignWithDirection(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)cloud.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)cloud.points_.size(); i++) {
         auto &normal = cloud.normals_.h_data[i];
         if (normal.norm() == 0.0) {
             normal = orientation_reference;
@@ -189,7 +189,7 @@ bool OrientNormalsTowardsCameraLocation(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)cloud.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)cloud.points_.size(); i++) {
         Eigen::Vector3d orientation_reference =
                 camera_location - cloud.points_.h_data[i];
         auto &normal = cloud.normals_.h_data[i];

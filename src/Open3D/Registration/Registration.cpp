@@ -61,7 +61,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (int i = 0; i < (int)source.points_.h_data.size(); i++) {
+        for (int i = 0; i < (int)source.points_.size(); i++) {
             std::vector<int> indices(1);
             std::vector<double> dists(1);
             const auto &point = source.points_.h_data[i];
@@ -92,7 +92,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     } else {
         size_t corres_number = result.correspondence_set_.size();
         result.fitness_ =
-                (double)corres_number / (double)source.points_.h_data.size();
+                (double)corres_number / (double)source.points_.size();
         result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
     }
     return std::move(result);
@@ -263,7 +263,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     bool finished_validation = false;
     int num_similar_features = 1;
     std::vector<std::vector<int>> similar_features(
-            source.points_.h_data.size());
+            source.points_.size());
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -291,7 +291,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 Eigen::Matrix4d transformation;
                 for (int j = 0; j < ransac_n; j++) {
                     int source_sample_id =
-                            std::rand() % (int)source.points_.h_data.size();
+                            std::rand() % (int)source.points_.size();
                     if (similar_features[source_sample_id].empty()) {
                         std::vector<int> indices(num_similar_features);
                         kdtree_feature.SearchKNN(

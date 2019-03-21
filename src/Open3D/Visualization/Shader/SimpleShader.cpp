@@ -149,9 +149,9 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    points.resize(pointcloud.points_.h_data.size());
-    colors.resize(pointcloud.points_.h_data.size());
-    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+    points.resize(pointcloud.points_.size());
+    colors.resize(pointcloud.points_.size());
+    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_.h_data[i];
         points[i] = point.cast<float>();
         Eigen::Vector3d color;
@@ -217,9 +217,9 @@ bool SimpleShaderForLineSet::PrepareBinding(
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
-    points.resize(lineset.lines_.h_data.size() * 2);
-    colors.resize(lineset.lines_.h_data.size() * 2);
-    for (size_t i = 0; i < lineset.lines_.h_data.size(); i++) {
+    points.resize(lineset.lines_.size() * 2);
+    colors.resize(lineset.lines_.size() * 2);
+    for (size_t i = 0; i < lineset.lines_.size(); i++) {
         const auto point_pair = lineset.GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
@@ -364,7 +364,7 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    auto n_voxels = voxelgrid.voxels_.h_data.size();
+    auto n_voxels = voxelgrid.voxels_.size();
     points.resize(n_voxels * 24);
     colors.resize(n_voxels * 24);
 

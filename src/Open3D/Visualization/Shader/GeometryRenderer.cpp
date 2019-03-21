@@ -274,7 +274,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     const auto &_option = (const RenderOptionWithEditing &)option;
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
-        if (index < pointcloud.points_.h_data.size()) {
+        if (index < pointcloud.points_.size()) {
             auto sphere = geometry::CreateMeshSphere(
                     view.GetBoundingBox().GetSize() *
                     _option.pointcloud_picker_sphere_size_);

@@ -88,7 +88,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     output->normals_.h_data = target.normals_.h_data;
     output->points_.h_data = target.points_.h_data;
 
-    size_t n_points = output->points_.h_data.size();
+    size_t n_points = output->points_.size();
     output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
 
     for (auto k = 0; k < n_points; k++) {

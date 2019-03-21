@@ -520,7 +520,7 @@ bool ReadPCDData(FILE *file,
 void RemoveNanData(geometry::PointCloud &pointcloud) {
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();
-    size_t old_point_num = pointcloud.points_.h_data.size();
+    size_t old_point_num = pointcloud.points_.size();
     size_t k = 0;                                 // new index
     for (size_t i = 0; i < old_point_num; i++) {  // old index
         if (std::isnan(pointcloud.points_.h_data[i](0)) == false &&
@@ -549,7 +549,7 @@ bool GenerateHeader(const geometry::PointCloud &pointcloud,
         return false;
     }
     header.version = "0.7";
-    header.width = (int)pointcloud.points_.h_data.size();
+    header.width = (int)pointcloud.points_.size();
     header.height = 1;
     header.points = header.width;
     header.fields.clear();
@@ -653,7 +653,7 @@ bool WritePCDData(FILE *file,
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();
     if (header.datatype == PCD_DATA_ASCII) {
-        for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
             const auto &point = pointcloud.points_.h_data[i];
             fprintf(file, "%.10g %.10g %.10g", point(0), point(1), point(2));
             if (has_normal) {
@@ -669,7 +669,7 @@ bool WritePCDData(FILE *file,
         }
     } else if (header.datatype == PCD_DATA_BINARY) {
         std::unique_ptr<float[]> data(new float[header.elementnum]);
-        for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
             const auto &point = pointcloud.points_.h_data[i];
             data[0] = (float)point(0);
             data[1] = (float)point(1);
@@ -694,7 +694,7 @@ bool WritePCDData(FILE *file,
                 (std::uint32_t)(header.elementnum * header.points);
         std::unique_ptr<float[]> buffer(new float[buffer_size]);
         std::unique_ptr<float[]> buffer_compressed(new float[buffer_size * 2]);
-        for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
             const auto &point = pointcloud.points_.h_data[i];
             buffer[0 * strip_size + i] = (float)point(0);
             buffer[1 * strip_size + i] = (float)point(1);

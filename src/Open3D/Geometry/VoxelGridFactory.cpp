@@ -93,7 +93,7 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
-    for (int i = 0; i < (int)input.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)input.points_.size(); i++) {
         ref_coord = (input.points_.h_data[i] - voxel_min_bound) / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
                 int(floor(ref_coord(2)));
@@ -108,8 +108,8 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     }
     utility::PrintDebug(
             "Pointcloud is voxelized from %d points to %d voxels.\n",
-            (int)input.points_.h_data.size(),
-            (int)output->voxels_.h_data.size());
+            (int)input.points_.size(),
+            (int)output->voxels_.size());
     return output;
 }
 

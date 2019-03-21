@@ -67,27 +67,27 @@ public:
     PointCloud operator+(const PointCloud &cloud) const;
 
 public:
-    bool HasPoints() const { return points_.h_data.size() > 0; }
+    bool HasPoints() const { return points_.size() > 0; }
 
     bool HasNormals() const {
-        return points_.h_data.size() > 0 &&
-               normals_.h_data.size() == points_.h_data.size();
+        return points_.size() > 0 &&
+               normals_.size() == points_.size();
     }
 
     bool HasColors() const {
-        return points_.h_data.size() > 0 &&
-               colors_.h_data.size() == points_.h_data.size();
+        return points_.size() > 0 &&
+               colors_.size() == points_.size();
     }
 
     void NormalizeNormals() {
-        for (size_t i = 0; i < normals_.h_data.size(); i++) {
+        for (size_t i = 0; i < normals_.size(); i++) {
             normals_.h_data[i].normalize();
         }
     }
 
     void PaintUniformColor(const Eigen::Vector3d &color) {
-        colors_.h_data.resize(points_.h_data.size());
-        for (size_t i = 0; i < points_.h_data.size(); i++) {
+        colors_.h_data.resize(points_.size());
+        for (size_t i = 0; i < points_.size(); i++) {
             colors_.h_data[i] = color;
         }
     }

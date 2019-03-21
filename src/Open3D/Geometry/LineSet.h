@@ -54,12 +54,12 @@ public:
     LineSet operator+(const LineSet &lineset) const;
 
 public:
-    bool HasPoints() const { return points_.h_data.size() > 0; }
+    bool HasPoints() const { return points_.size() > 0; }
 
-    bool HasLines() const { return HasPoints() && lines_.h_data.size() > 0; }
+    bool HasLines() const { return HasPoints() && lines_.size() > 0; }
 
     bool HasColors() const {
-        return HasLines() && colors_.h_data.size() == lines_.h_data.size();
+        return HasLines() && colors_.size() == lines_.size();
     }
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(

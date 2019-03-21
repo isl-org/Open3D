@@ -45,9 +45,9 @@ TEST(LineSet, Constructor) {
     EXPECT_EQ(3, ls.Dimension());
 
     // public member variables
-    EXPECT_EQ(0, ls.points_.h_data.size());
-    EXPECT_EQ(0, ls.lines_.h_data.size());
-    EXPECT_EQ(0, ls.colors_.h_data.size());
+    EXPECT_EQ(0, ls.points_.size());
+    EXPECT_EQ(0, ls.lines_.size());
+    EXPECT_EQ(0, ls.colors_.size());
 
     // public members
     EXPECT_TRUE(ls.IsEmpty());
@@ -256,22 +256,22 @@ TEST(LineSet, OperatorAppend) {
     geometry::LineSet ls(ls0);
     ls += ls1;
 
-    EXPECT_EQ(2 * size, ls.points_.h_data.size());
+    EXPECT_EQ(2 * size, ls.points_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(ls0.points_.h_data[i], ls.points_.h_data[i + 0]);
         ExpectEQ(ls1.points_.h_data[i], ls.points_.h_data[i + size]);
     }
 
-    EXPECT_EQ(2 * size, ls.lines_.h_data.size());
+    EXPECT_EQ(2 * size, ls.lines_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(ls0.lines_.h_data[i], ls.lines_.h_data[i + 0]);
 
         Eigen::Vector2i ls1_line_i = {ls1.lines_.h_data[i](0, 0) + size,
                                       ls1.lines_.h_data[i](1, 0) + size};
-        ExpectEQ(ls1_line_i, ls.lines_.h_data[i + ls0.lines_.h_data.size()]);
+        ExpectEQ(ls1_line_i, ls.lines_.h_data[i + ls0.lines_.size()]);
     }
 
-    EXPECT_EQ(2 * size, ls.colors_.h_data.size());
+    EXPECT_EQ(2 * size, ls.colors_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(ls0.colors_.h_data[i], ls.colors_.h_data[i + 0]);
         ExpectEQ(ls1.colors_.h_data[i], ls.colors_.h_data[i + size]);
@@ -319,22 +319,22 @@ TEST(LineSet, OperatorADD) {
 
     geometry::LineSet ls = ls0 + ls1;
 
-    EXPECT_EQ(2 * size, ls.points_.h_data.size());
+    EXPECT_EQ(2 * size, ls.points_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(ls0.points_.h_data[i], ls.points_.h_data[i + 0]);
         ExpectEQ(ls1.points_.h_data[i], ls.points_.h_data[i + size]);
     }
 
-    EXPECT_EQ(2 * size, ls.lines_.h_data.size());
+    EXPECT_EQ(2 * size, ls.lines_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(ls0.lines_.h_data[i], ls.lines_.h_data[i + 0]);
 
         Eigen::Vector2i ls1_line_i = {ls1.lines_.h_data[i](0, 0) + size,
                                       ls1.lines_.h_data[i](1, 0) + size};
-        ExpectEQ(ls1_line_i, ls.lines_.h_data[i + ls0.lines_.h_data.size()]);
+        ExpectEQ(ls1_line_i, ls.lines_.h_data[i + ls0.lines_.size()]);
     }
 
-    EXPECT_EQ(2 * size, ls.colors_.h_data.size());
+    EXPECT_EQ(2 * size, ls.colors_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(ls0.colors_.h_data[i], ls.colors_.h_data[i + 0]);
         ExpectEQ(ls1.colors_.h_data[i], ls.colors_.h_data[i + size]);

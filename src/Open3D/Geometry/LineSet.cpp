@@ -92,11 +92,11 @@ void LineSet::Transform(const Eigen::Matrix4d &transformation) {
 
 LineSet &LineSet::operator+=(const LineSet &lineset) {
     if (lineset.IsEmpty()) return (*this);
-    size_t old_point_num = points_.h_data.size();
-    size_t add_point_num = lineset.points_.h_data.size();
+    size_t old_point_num = points_.size();
+    size_t add_point_num = lineset.points_.size();
     size_t new_point_num = old_point_num + add_point_num;
-    size_t old_line_num = lines_.h_data.size();
-    size_t add_line_num = lineset.lines_.h_data.size();
+    size_t old_line_num = lines_.size();
+    size_t add_line_num = lineset.lines_.size();
     size_t new_line_num = old_line_num + add_line_num;
 
     if ((!HasLines() || HasColors()) && lineset.HasColors()) {

@@ -48,8 +48,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     int fi = 0, fj = 1;
     utility::PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
     bool swapped = false;
-    if (point_cloud_vec[fj].points_.h_data.size() >
-        point_cloud_vec[fi].points_.h_data.size()) {
+    if (point_cloud_vec[fj].points_.size() >
+        point_cloud_vec[fi].points_.size()) {
         int temp = fi;
         fi = fj;
         fj = temp;
@@ -57,8 +57,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     }
 
     // STEP 1) Initial matching
-    int nPti = int(point_cloud_vec[fi].points_.h_data.size());
-    int nPtj = int(point_cloud_vec[fj].points_.h_data.size());
+    int nPti = int(point_cloud_vec[fi].points_.size());
+    int nPtj = int(point_cloud_vec[fj].points_.size());
     geometry::KDTreeFlann feature_tree_i(features_vec[fi]);
     geometry::KDTreeFlann feature_tree_j(features_vec[fj]);
     std::vector<int> corresK;
@@ -195,7 +195,7 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         Eigen::Vector3d mean;
         mean.setZero();
 
-        int npti = static_cast<int>(point_cloud_vec[i].points_.h_data.size());
+        int npti = static_cast<int>(point_cloud_vec[i].points_.size());
         for (int ii = 0; ii < npti; ++ii)
             mean = mean + point_cloud_vec[i].points_.h_data[ii];
         mean = mean / npti;
@@ -225,7 +225,7 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
                         scale_global);
 
     for (int i = 0; i < num; ++i) {
-        int npti = static_cast<int>(point_cloud_vec[i].points_.h_data.size());
+        int npti = static_cast<int>(point_cloud_vec[i].points_.size());
         for (int ii = 0; ii < npti; ++ii) {
             point_cloud_vec[i].points_.h_data[ii] /= scale_global;
         }

@@ -134,10 +134,10 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    points.resize(pointcloud.points_.h_data.size() * 2);
+    points.resize(pointcloud.points_.size() * 2);
     double line_length =
             option.point_size_ * 0.01 * view.GetBoundingBox().GetSize();
-    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_.h_data[i];
         const auto &normal = pointcloud.normals_.h_data[i];
         points[i * 2] = point.cast<float>();

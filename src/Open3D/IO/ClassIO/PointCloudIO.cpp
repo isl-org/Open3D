@@ -95,7 +95,7 @@ bool ReadPointCloud(const std::string &filename,
     }
     bool success = map_itr->second(filename, pointcloud);
     utility::PrintDebug("Read geometry::PointCloud: %d vertices.\n",
-                        (int)pointcloud.points_.h_data.size());
+                        (int)pointcloud.points_.size());
     return success;
 }
 
@@ -120,7 +120,7 @@ bool WritePointCloud(const std::string &filename,
     bool success =
             map_itr->second(filename, pointcloud, write_ascii, compressed);
     utility::PrintDebug("Write geometry::PointCloud: %d vertices.\n",
-                        (int)pointcloud.points_.h_data.size());
+                        (int)pointcloud.points_.size());
     return success;
 }
 

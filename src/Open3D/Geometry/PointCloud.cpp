@@ -112,8 +112,8 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     // We do not use std::vector::insert to combine std::vector because it will
     // crash if the pointcloud is added to itself.
     if (cloud.IsEmpty()) return (*this);
-    size_t old_vert_num = points_.h_data.size();
-    size_t add_vert_num = cloud.points_.h_data.size();
+    size_t old_vert_num = points_.size();
+    size_t add_vert_num = cloud.points_.size();
     size_t new_vert_num = old_vert_num + add_vert_num;
     if ((!HasPoints() || HasNormals()) && cloud.HasNormals()) {
         normals_.h_data.resize(new_vert_num);
@@ -141,13 +141,13 @@ PointCloud PointCloud::operator+(const PointCloud &cloud) const {
 
 std::vector<double> ComputePointCloudToPointCloudDistance(
         const PointCloud &source, const PointCloud &target) {
-    std::vector<double> distances(source.points_.h_data.size());
+    std::vector<double> distances(source.points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)source.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)source.points_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
         if (kdtree.SearchKNN(source.points_.h_data[i], 1, indices, dists) ==
@@ -201,7 +201,7 @@ ComputePointCloudMeanAndCovarianceCPU(const PointCloud &input) {
         cumulants(8) += point(2) * point(2);
     }
 
-    cumulants /= (double)input.points_.h_data.size();
+    cumulants /= (double)input.points_.size();
 
     mean(0) = cumulants(0);
     mean(1) = cumulants(1);
@@ -221,7 +221,7 @@ ComputePointCloudMeanAndCovarianceCPU(const PointCloud &input) {
 }
 
 std::vector<double> ComputePointCloudMahalanobisDistance(PointCloud &input) {
-    std::vector<double> mahalanobis(input.points_.h_data.size());
+    std::vector<double> mahalanobis(input.points_.size());
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
     std::tie(mean, covariance) = ComputePointCloudMeanAndCovariance(input);
@@ -229,7 +229,7 @@ std::vector<double> ComputePointCloudMahalanobisDistance(PointCloud &input) {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)input.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)input.points_.size(); i++) {
         Eigen::Vector3d p = input.points_.h_data[i] - mean;
         mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
     }
@@ -238,12 +238,12 @@ std::vector<double> ComputePointCloudMahalanobisDistance(PointCloud &input) {
 
 std::vector<double> ComputePointCloudNearestNeighborDistance(
         const PointCloud &input) {
-    std::vector<double> nn_dis(input.points_.h_data.size());
+    std::vector<double> nn_dis(input.points_.size());
     KDTreeFlann kdtree(input);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)input.points_.h_data.size(); i++) {
+    for (int i = 0; i < (int)input.points_.size(); i++) {
         std::vector<int> indices(2);
         std::vector<double> dists(2);
         if (kdtree.SearchKNN(input.points_.h_data[i], 2, indices, dists) <= 1) {
@@ -280,7 +280,7 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 
 // update the memory assigned to points_.d_data
 bool PointCloud::UpdateDevicePoints() {
-    size_t size = points_.h_data.size() * open3d::Vec3d::Size;
+    size_t size = points_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&points_.d_data,
                               (const double *const)points_.h_data.data(), size,
                               cuda_device_id);
@@ -288,7 +288,7 @@ bool PointCloud::UpdateDevicePoints() {
 
 // update the memory assigned to normals_.d_data
 bool PointCloud::UpdateDeviceNormals() {
-    size_t size = normals_.h_data.size() * open3d::Vec3d::Size;
+    size_t size = normals_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&normals_.d_data,
                               (const double *const)normals_.h_data.data(), size,
                               cuda_device_id);
@@ -296,7 +296,7 @@ bool PointCloud::UpdateDeviceNormals() {
 
 // update the memory assigned to colors_.d_data
 bool PointCloud::UpdateDeviceColors() {
-    size_t size = colors_.h_data.size() * open3d::Vec3d::Size;
+    size_t size = colors_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&colors_.d_data,
                               (const double *const)colors_.h_data.data(), size,
                               cuda_device_id);

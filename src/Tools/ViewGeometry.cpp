@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             utility::PrintWarning("Failed adding point cloud.\n");
         }
-        if (pointcloud_ptr->points_.h_data.size() > 5000000) {
+        if (pointcloud_ptr->points_.size() > 5000000) {
             visualizer.GetRenderOption().point_size_ = 1.0;
         }
     }

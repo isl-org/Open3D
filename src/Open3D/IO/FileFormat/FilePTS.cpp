@@ -100,11 +100,11 @@ bool WritePointCloudToPTS(const std::string &filename,
         utility::PrintWarning("Write PTS failed: unable to open file.\n");
         return false;
     }
-    fprintf(file, "%d\r\n", (int)pointcloud.points_.h_data.size());
+    fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
     utility::ResetConsoleProgress(
-            static_cast<int>(pointcloud.points_.h_data.size()),
+            static_cast<int>(pointcloud.points_.size()),
             "Writinging PTS: ");
-    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_.h_data[i];
         if (pointcloud.HasColors() == false) {
             fprintf(file, "%.10f %.10f %.10f\r\n", point(0), point(1),

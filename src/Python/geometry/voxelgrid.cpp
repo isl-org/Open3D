@@ -42,7 +42,7 @@ void pybind_voxelgrid(py::module &m) {
             .def("__repr__",
                  [](const geometry::VoxelGrid &voxelgrid) {
                      return std::string("geometry::VoxelGrid with ") +
-                            std::to_string(voxelgrid.voxels_.h_data.size()) +
+                            std::to_string(voxelgrid.voxels_.size()) +
                             " voxels.";
                  })
             .def(py::self + py::self)
