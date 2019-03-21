@@ -64,7 +64,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
-option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
+option(WITH_OPENMP               "Use OpenMP multi-threading"               OFF)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)

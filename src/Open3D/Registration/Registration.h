@@ -86,7 +86,7 @@ class RegistrationResult {
 public:
     RegistrationResult(
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
-        : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+        : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0), iteration_number_(0) {}
     ~RegistrationResult() {}
 
 public:
@@ -94,6 +94,7 @@ public:
     CorrespondenceSet correspondence_set_;
     double inlier_rmse_;
     double fitness_;
+    int iteration_number_;
 };
 
 /// Function for evaluation

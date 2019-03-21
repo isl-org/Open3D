@@ -191,6 +191,7 @@ RegistrationResult RegistrationICP(
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
+            result.iteration_number_ = i;
             break;
         }
     }
@@ -232,10 +233,11 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             (this_result.fitness_ == result.fitness_ &&
              this_result.inlier_rmse_ < result.inlier_rmse_)) {
             result = this_result;
+            result.iteration_number_ = itr;
         }
     }
-    utility::PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
-                        result.inlier_rmse_);
+    utility::PrintDebug("RANSAC: Iteration %d, Fitness %.4f, RMSE %.4f\n",
+            result.iteration_number_, result.fitness_, result.inlier_rmse_);
     return result;
 }
 
@@ -341,6 +343,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                     (this_result.fitness_ == result_private.fitness_ &&
                      this_result.inlier_rmse_ < result_private.inlier_rmse_)) {
                     result_private = this_result;
+                    result_private.iteration_number_ = itr;
                 }
 #ifdef _OPENMP
 #pragma omp critical
@@ -366,8 +369,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     }
 #endif
     utility::PrintDebug("total_validation : %d\n", total_validation);
-    utility::PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
-                        result.inlier_rmse_);
+    utility::PrintDebug("RANSAC: Iteration %d, Fitness %.4f, RMSE %.4f\n",
+                        result.iteration_number_, result.fitness_, result.inlier_rmse_);
     return result;
 }
 

@@ -351,10 +351,14 @@ void pybind_registration_classes(py::module &m) {
                            &registration::RegistrationResult::inlier_rmse_)
             .def_readwrite("fitness",
                            &registration::RegistrationResult::fitness_)
+            .def_readwrite("iteration_number",
+                           &registration::RegistrationResult::iteration_number_)
             .def("__repr__", [](const registration::RegistrationResult &rr) {
                 return std::string(
-                               "registration::RegistrationResult with fitness "
+                               "registration::RegistrationResult with iteration number "
                                "= ") +
+                       std::to_string(rr.iteration_number_) +
+                       std::string(", fitness = ") +
                        std::to_string(rr.fitness_) +
                        std::string(", inlier_rmse = ") +
                        std::to_string(rr.inlier_rmse_) +
