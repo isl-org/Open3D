@@ -412,6 +412,12 @@ using Vec2 = typename Vec<T, 2>::Type;
 // 1D tensor, row major, size 3
 template <typename T>
 using Vec3 = typename Vec<T, 3>::Type;
+// 1D tensor, row major, size 4
+template <typename T>
+using Vec4 = typename Vec<T, 4>::Type;
+// 1D tensor, row major, size 6
+template <typename T>
+using Vec6 = typename Vec<T, 6>::Type;
 
 // 1D 1x2 tensor
 typedef Vec2<int> Vec2i;
@@ -420,6 +426,14 @@ typedef Vec2<int> Vec2i;
 typedef Vec3<double> Vec3d;
 typedef Vec3<float> Vec3f;
 typedef Vec3<int> Vec3i;
+
+// 1D 1x4 tensor
+typedef Vec4<double> Vec4d;
+typedef Vec4<float> Vec4f;
+
+// 1D 1x6 tensor
+typedef Vec6<double> Vec6d;
+typedef Vec6<float> Vec6f;
 
 // 2D tensor, row major
 template <typename T, uint ROWS, uint COLS>
