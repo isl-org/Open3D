@@ -91,8 +91,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         result.inlier_rmse_ = 0.0;
     } else {
         size_t corres_number = result.correspondence_set_.size();
-        result.fitness_ =
-                (double)corres_number / (double)source.points_.size();
+        result.fitness_ = (double)corres_number / (double)source.points_.size();
         result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
     }
     return std::move(result);
@@ -262,8 +261,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     int total_validation = 0;
     bool finished_validation = false;
     int num_similar_features = 1;
-    std::vector<std::vector<int>> similar_features(
-            source.points_.size());
+    std::vector<std::vector<int>> similar_features(source.points_.size());
 
 #ifdef _OPENMP
 #pragma omp parallel

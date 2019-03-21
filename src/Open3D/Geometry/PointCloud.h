@@ -70,13 +70,11 @@ public:
     bool HasPoints() const { return points_.size() > 0; }
 
     bool HasNormals() const {
-        return points_.size() > 0 &&
-               normals_.size() == points_.size();
+        return points_.size() > 0 && normals_.size() == points_.size();
     }
 
     bool HasColors() const {
-        return points_.size() > 0 &&
-               colors_.size() == points_.size();
+        return points_.size() > 0 && colors_.size() == points_.size();
     }
 
     void NormalizeNormals() {

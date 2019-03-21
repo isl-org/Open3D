@@ -58,8 +58,7 @@ public:
     bool HasVoxels() const { return voxels_.size() > 0; }
 
     bool HasColors() const {
-        return voxels_.size() > 0 &&
-               colors_.size() == voxels_.size();
+        return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
 
 public:

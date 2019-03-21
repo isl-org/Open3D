@@ -445,9 +445,8 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ResetConsoleProgress(
-            static_cast<int>(pointcloud.points_.size()),
-            "Writing PLY: ");
+    utility::ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
+                                  "Writing PLY: ");
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const Eigen::Vector3d &point = pointcloud.points_.h_data[i];
@@ -718,8 +717,7 @@ bool WriteLineSetToPLY(const std::string &filename,
     ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
-    ply_add_element(ply_file, "edge",
-                    static_cast<long>(lineset.lines_.size()));
+    ply_add_element(ply_file, "edge", static_cast<long>(lineset.lines_.size()));
     ply_add_property(ply_file, "vertex1", PLY_INT, PLY_INT, PLY_INT);
     ply_add_property(ply_file, "vertex2", PLY_INT, PLY_INT, PLY_INT);
     if (lineset.HasColors()) {
@@ -734,8 +732,7 @@ bool WriteLineSetToPLY(const std::string &filename,
     }
 
     utility::ResetConsoleProgress(
-            static_cast<int>(lineset.points_.size() +
-                             lineset.lines_.size()),
+            static_cast<int>(lineset.points_.size() + lineset.lines_.size()),
             "Writing PLY: ");
 
     for (size_t i = 0; i < lineset.points_.size(); i++) {
@@ -870,8 +867,8 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ResetConsoleProgress(
-            static_cast<int>(voxelgrid.voxels_.size()), "Writing PLY: ");
+    utility::ResetConsoleProgress(static_cast<int>(voxelgrid.voxels_.size()),
+                                  "Writing PLY: ");
 
     const Eigen::Vector3d &origin = voxelgrid.origin_;
     ply_write(ply_file, origin(0));

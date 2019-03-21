@@ -149,8 +149,7 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
     bool has_normals = input.HasNormals();
     bool has_colors = input.HasColors();
 
-    std::vector<bool> mask =
-            std::vector<bool>(input.points_.size(), invert);
+    std::vector<bool> mask = std::vector<bool>(input.points_.size(), invert);
     for (size_t i : indices) {
         mask[i] = !invert;
     }
@@ -166,8 +165,7 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.size(),
-            (int)output->points_.size());
+            (int)input.points_.size(), (int)output->points_.size());
     return output;
 }
 
@@ -288,8 +286,7 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.size(),
-            (int)output->points_.size());
+            (int)input.points_.size(), (int)output->points_.size());
     return output;
 }
 
@@ -362,8 +359,7 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.size(),
-            (int)output->points_.size());
+            (int)input.points_.size(), (int)output->points_.size());
     return std::make_tuple(output, cubic_id);
 }
 

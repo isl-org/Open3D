@@ -44,8 +44,7 @@ void pybind_pointcloud(py::module &m) {
             .def("__repr__",
                  [](const geometry::PointCloud &pcd) {
                      return std::string("geometry::PointCloud with ") +
-                            std::to_string(pcd.points_.size()) +
-                            " points.";
+                            std::to_string(pcd.points_.size()) + " points.";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
