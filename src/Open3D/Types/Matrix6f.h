@@ -37,15 +37,13 @@ typedef struct _Matrix6f {
 
     Vector6f s[ROWS];
 
-    OPEN3D_FUNC_DECL inline
-    Vector6f& operator[](const uint &i) {
+    OPEN3D_FUNC_DECL inline Vector6f& operator[](const uint& i) {
         assert(i < ROWS);
 
         return s[i];
     }
 
-    OPEN3D_FUNC_DECL inline
-    const Vector6f& operator[](const uint &i) const {
+    OPEN3D_FUNC_DECL inline const Vector6f& operator[](const uint& i) const {
         assert(i < ROWS);
 
         return s[i];

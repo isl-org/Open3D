@@ -116,7 +116,8 @@ void convert(int argc,
         auto pcd = geometry::SelectDownSample(*pointcloud_ptr, indices);
         utility::PrintDebug(
                 "Based on Mahalanobis distance, %d points were filtered.\n",
-                (int)(pointcloud_ptr->points_.h_data.size() - pcd->points_.h_data.size()));
+                (int)(pointcloud_ptr->points_.h_data.size() -
+                      pcd->points_.h_data.size()));
         pointcloud_ptr = pcd;
     }
 

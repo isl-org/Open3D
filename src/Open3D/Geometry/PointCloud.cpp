@@ -150,7 +150,8 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
     for (int i = 0; i < (int)source.points_.h_data.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
-        if (kdtree.SearchKNN(source.points_.h_data[i], 1, indices, dists) == 0) {
+        if (kdtree.SearchKNN(source.points_.h_data[i], 1, indices, dists) ==
+            0) {
             utility::PrintDebug(
                     "[ComputePointCloudToPointCloudDistance] Found a point "
                     "without neighbors.\n");
@@ -261,9 +262,9 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
-    input.UpdateDevicePoints();
-    auto output = meanAndCovarianceCUDA(input.cuda_device_id, input.d_points_,
-                                        input.points_.h_data.size());
+    auto output =
+            meanAndCovarianceCUDA(input.points_.cuda_device_id,
+                                  input.points_.d_data, input.points_.size());
 
     Vec3d meanCUDA = get<0>(output);
     Mat3d covarianceCUDA = get<1>(output);
@@ -277,25 +278,28 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     return std::make_tuple(mean, covariance);
 }
 
-// update the memory assigned to d_points_
+// update the memory assigned to points_.d_data
 bool PointCloud::UpdateDevicePoints() {
     size_t size = points_.h_data.size() * open3d::Vec3d::Size;
-    return UpdateDeviceMemory(&d_points_, (const double *const)points_.h_data.data(),
-                              size, cuda_device_id);
+    return UpdateDeviceMemory(&points_.d_data,
+                              (const double *const)points_.h_data.data(), size,
+                              cuda_device_id);
 }
 
-// update the memory assigned to d_normals_
+// update the memory assigned to normals_.d_data
 bool PointCloud::UpdateDeviceNormals() {
     size_t size = normals_.h_data.size() * open3d::Vec3d::Size;
-    return UpdateDeviceMemory(&d_normals_, (const double *const)normals_.h_data.data(),
-                              size, cuda_device_id);
+    return UpdateDeviceMemory(&normals_.d_data,
+                              (const double *const)normals_.h_data.data(), size,
+                              cuda_device_id);
 }
 
-// update the memory assigned to d_colors_
+// update the memory assigned to colors_.d_data
 bool PointCloud::UpdateDeviceColors() {
     size_t size = colors_.h_data.size() * open3d::Vec3d::Size;
-    return UpdateDeviceMemory(&d_colors_, (const double *const)colors_.h_data.data(),
-                              size, cuda_device_id);
+    return UpdateDeviceMemory(&colors_.d_data,
+                              (const double *const)colors_.h_data.data(), size,
+                              cuda_device_id);
 }
 
 // perform cleanup
@@ -307,19 +311,19 @@ bool PointCloud::ReleaseDeviceMemory(double **d_data) {
     *d_data = NULL;
 }
 
-// release the memory asigned to d_points_
+// release the memory asigned to points_.d_data
 bool PointCloud::ReleaseDevicePoints() {
-    return ReleaseDeviceMemory(&d_points_);
+    return ReleaseDeviceMemory(&points_.d_data);
 }
 
-// release the memory asigned to d_normals_
+// release the memory asigned to normals_.d_data
 bool PointCloud::ReleaseDeviceNormals() {
-    return ReleaseDeviceMemory(&d_normals_);
+    return ReleaseDeviceMemory(&normals_.d_data);
 }
 
-// release the memory asigned to d_colors_
+// release the memory asigned to colors_.d_data
 bool PointCloud::ReleaseDeviceColors() {
-    return ReleaseDeviceMemory(&d_colors_);
+    return ReleaseDeviceMemory(&colors_.d_data);
 }
 
 #endif  // OPEN3D_USE_CUDA

@@ -134,8 +134,8 @@ bool EstimateNormals(
         std::vector<int> indices;
         std::vector<double> distance2;
         Eigen::Vector3d normal;
-        if (kdtree.Search(cloud.points_.h_data[i], search_param, indices, distance2) >=
-            3) {
+        if (kdtree.Search(cloud.points_.h_data[i], search_param, indices,
+                          distance2) >= 3) {
             normal = ComputeNormal(cloud, indices);
             if (normal.norm() == 0.0) {
                 if (has_normal) {

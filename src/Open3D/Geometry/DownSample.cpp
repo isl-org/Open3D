@@ -149,7 +149,8 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
     bool has_normals = input.HasNormals();
     bool has_colors = input.HasColors();
 
-    std::vector<bool> mask = std::vector<bool>(input.points_.h_data.size(), invert);
+    std::vector<bool> mask =
+            std::vector<bool>(input.points_.h_data.size(), invert);
     for (size_t i : indices) {
         mask[i] = !invert;
     }
@@ -157,13 +158,16 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
     for (size_t i = 0; i < input.points_.h_data.size(); i++) {
         if (mask[i]) {
             output->points_.h_data.push_back(input.points_.h_data[i]);
-            if (has_normals) output->normals_.h_data.push_back(input.normals_.h_data[i]);
-            if (has_colors) output->colors_.h_data.push_back(input.colors_.h_data[i]);
+            if (has_normals)
+                output->normals_.h_data.push_back(input.normals_.h_data[i]);
+            if (has_colors)
+                output->colors_.h_data.push_back(input.colors_.h_data[i]);
         }
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.h_data.size(), (int)output->points_.h_data.size());
+            (int)input.points_.h_data.size(),
+            (int)output->points_.h_data.size());
     return output;
 }
 
@@ -275,7 +279,8 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.h_data.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
-            output->normals_.h_data.push_back(accpoint.second.GetAverageNormal());
+            output->normals_.h_data.push_back(
+                    accpoint.second.GetAverageNormal());
         }
         if (has_colors) {
             output->colors_.h_data.push_back(accpoint.second.GetAverageColor());
@@ -283,7 +288,8 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.h_data.size(), (int)output->points_.h_data.size());
+            (int)input.points_.h_data.size(),
+            (int)output->points_.h_data.size());
     return output;
 }
 
@@ -313,7 +319,8 @@ VoxelDownSampleAndTrace(const PointCloud &input,
             voxelindex_to_accpoint;
     int cid_temp[3] = {1, 2, 4};
     for (size_t i = 0; i < input.points_.h_data.size(); i++) {
-        auto ref_coord = (input.points_.h_data[i] - voxel_min_bound) / voxel_size;
+        auto ref_coord =
+                (input.points_.h_data[i] - voxel_min_bound) / voxel_size;
         auto voxel_index = Eigen::Vector3i(int(floor(ref_coord(0))),
                                            int(floor(ref_coord(1))),
                                            int(floor(ref_coord(2))));
@@ -334,13 +341,15 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.h_data.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
-            output->normals_.h_data.push_back(accpoint.second.GetAverageNormal());
+            output->normals_.h_data.push_back(
+                    accpoint.second.GetAverageNormal());
         }
         if (has_colors) {
             if (approximate_class) {
                 output->colors_.h_data.push_back(accpoint.second.GetMaxClass());
             } else {
-                output->colors_.h_data.push_back(accpoint.second.GetAverageColor());
+                output->colors_.h_data.push_back(
+                        accpoint.second.GetAverageColor());
             }
         }
         auto original_id = accpoint.second.GetOriginalID();
@@ -353,7 +362,8 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.h_data.size(), (int)output->points_.h_data.size());
+            (int)input.points_.h_data.size(),
+            (int)output->points_.h_data.size());
     return std::make_tuple(output, cubic_id);
 }
 
@@ -411,8 +421,8 @@ RemoveRadiusOutliers(const PointCloud &input,
     for (auto i = 0; i < input.points_.h_data.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        int nb_neighbors = kdtree.SearchRadius(input.points_.h_data[i], search_radius,
-                                               tmp_indices, dist);
+        int nb_neighbors = kdtree.SearchRadius(
+                input.points_.h_data[i], search_radius, tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
     }
     std::vector<size_t> indices;
@@ -452,7 +462,8 @@ RemoveStatisticalOutliers(const PointCloud &input,
     for (auto i = 0; i < input.points_.h_data.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        kdtree.SearchKNN(input.points_.h_data[i], nb_neighbors, tmp_indices, dist);
+        kdtree.SearchKNN(input.points_.h_data[i], nb_neighbors, tmp_indices,
+                         dist);
         double mean = -1;
         if (dist.size() > 0) {
             valid_distances++;

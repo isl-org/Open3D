@@ -27,7 +27,6 @@
 #include <stdio.h>
 
 #include "Open3D/Utility/CUDA.cuh"
-// #include "Open3D/Types/Mat3d.h"
 #include "Open3D/Types/Mat.h"
 using namespace open3d;
 
@@ -39,7 +38,7 @@ using namespace std;
 // ---------------------------------------------------------------------------
 // cumulant kernel
 // ---------------------------------------------------------------------------
-__global__ void cumulant(double* data, int nrPoints, double* output) {
+__global__ void cumulant(double* data, uint nrPoints, double* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     Vec3d* points = (Vec3d*)data;
@@ -66,7 +65,7 @@ __global__ void cumulant(double* data, int nrPoints, double* output) {
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
 cudaError_t cumulantGPU(const int& devID, double* const d_points,
-    const int& nrPoints, double* const d_cumulants) {
+    const uint& nrPoints, double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
@@ -82,7 +81,7 @@ cudaError_t cumulantGPU(const int& devID, double* const d_points,
 // ---------------------------------------------------------------------------
 std::tuple<Vec3d, Mat3d>
 meanAndCovarianceCUDA(const int& devID, double* const d_points,
-    const int& nrPoints) {
+    const uint& nrPoints) {
     Vec3d mean{};
     Mat3d covariance{};
     covariance[0][0] = 1.0;
@@ -101,12 +100,14 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points,
     // allocate temporary device memory
     double *d_cumulants = NULL;
     status = AlocateDevMemory(&d_cumulants, outputSize);
+    DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // execute on GPU
     //*/// v0
     status = cumulantGPU(devID, d_points, nrPoints, d_cumulants);
+    DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
     /*/// v1
@@ -119,6 +120,7 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points,
     cudaDeviceSynchronize();
 
     cudaError_t status = cudaGetLastError();
+    DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status) {
         cout << "status: " << cudaGetErrorString(status) << endl;
         return std::make_tuple(mean, covariance);
@@ -128,11 +130,13 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points,
     // Copy results to the host
     status = CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
     outputSize);
+    DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // Free temporary device memory
     status = freeDev(&d_cumulants);
+    DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 

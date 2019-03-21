@@ -165,9 +165,10 @@ int main(int argc, char *argv[]) {
         std::vector<double> distance2(1);
         int correspondence_num = 0;
         double rmse = 0.0;
-        for (auto i = 0; i < source.points_.h_data.size(); i++) {
-            if (kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_.h_data[i], 1,
-                                                     indices, distance2) > 0) {
+        for (auto i = 0; i < source.points_.size(); i++) {
+            if (kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_.h_data[i],
+                                                     1, indices,
+                                                     distance2) > 0) {
                 if (distance2[0] < threshold2) {
                     correspondence_num++;
                     double new_dis =

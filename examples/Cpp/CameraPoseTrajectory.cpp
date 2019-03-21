@@ -60,12 +60,13 @@ int main(int argc, char *argv[]) {
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
             pcd->colors_.h_data.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {
-                pcd->colors_.h_data.resize(pcd->points_.h_data.size(), color_palette[i]);
+                pcd->colors_.h_data.resize(pcd->points_.size(),
+                                           color_palette[i]);
             } else {
-                pcd->colors_.h_data.resize(pcd->points_.h_data.size(),
-                                    (Eigen::Vector3d::Random() +
-                                     Eigen::Vector3d::Constant(1.0)) *
-                                            0.5);
+                pcd->colors_.h_data.resize(pcd->points_.size(),
+                                           (Eigen::Vector3d::Random() +
+                                            Eigen::Vector3d::Constant(1.0)) *
+                                                   0.5);
             }
             pcds.push_back(pcd);
         }

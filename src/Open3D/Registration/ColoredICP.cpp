@@ -94,9 +94,10 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     for (auto k = 0; k < n_points; k++) {
         const Eigen::Vector3d &vt = output->points_.h_data[k];
         const Eigen::Vector3d &nt = output->normals_.h_data[k];
-        double it = (output->colors_.h_data[k](0) + output->colors_.h_data[k](1) +
-                     output->colors_.h_data[k](2)) /
-                    3.0;
+        double it =
+                (output->colors_.h_data[k](0) + output->colors_.h_data[k](1) +
+                 output->colors_.h_data[k](2)) /
+                3.0;
 
         std::vector<int> point_idx;
         std::vector<double> point_squared_distance;
@@ -173,10 +174,12 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
                 // project vs into vt's tangential plane
                 Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-                double is = (source.colors_.h_data[cs](0) + source.colors_.h_data[cs](1) +
+                double is = (source.colors_.h_data[cs](0) +
+                             source.colors_.h_data[cs](1) +
                              source.colors_.h_data[cs](2)) /
                             3.0;
-                double it = (target.colors_.h_data[ct](0) + target.colors_.h_data[ct](1) +
+                double it = (target.colors_.h_data[ct](0) +
+                             target.colors_.h_data[ct](1) +
                              target.colors_.h_data[ct](2)) /
                             3.0;
                 const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
@@ -228,12 +231,14 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
         const Eigen::Vector3d &vt = target.points_.h_data[ct];
         const Eigen::Vector3d &nt = target.normals_.h_data[ct];
         Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-        double is = (source.colors_.h_data[cs](0) + source.colors_.h_data[cs](1) +
-                     source.colors_.h_data[cs](2)) /
-                    3.0;
-        double it = (target.colors_.h_data[ct](0) + target.colors_.h_data[ct](1) +
-                     target.colors_.h_data[ct](2)) /
-                    3.0;
+        double is =
+                (source.colors_.h_data[cs](0) + source.colors_.h_data[cs](1) +
+                 source.colors_.h_data[cs](2)) /
+                3.0;
+        double it =
+                (target.colors_.h_data[ct](0) + target.colors_.h_data[ct](1) +
+                 target.colors_.h_data[ct](2)) /
+                3.0;
         const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
         double is0_proj = (dit.dot(vs_proj - vt)) + it;
         double residual_geometric = sqrt_lambda_geometric * (vs - vt).dot(nt);

@@ -527,8 +527,10 @@ void RemoveNanData(geometry::PointCloud &pointcloud) {
             std::isnan(pointcloud.points_.h_data[i](1)) == false &&
             std::isnan(pointcloud.points_.h_data[i](0)) == false) {
             pointcloud.points_.h_data[k] = pointcloud.points_.h_data[i];
-            if (has_normal) pointcloud.normals_.h_data[k] = pointcloud.normals_.h_data[i];
-            if (has_color) pointcloud.colors_.h_data[k] = pointcloud.colors_.h_data[i];
+            if (has_normal)
+                pointcloud.normals_.h_data[k] = pointcloud.normals_.h_data[i];
+            if (has_color)
+                pointcloud.colors_.h_data[k] = pointcloud.colors_.h_data[i];
             k++;
         }
     }

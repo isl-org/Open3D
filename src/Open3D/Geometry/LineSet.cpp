@@ -113,9 +113,9 @@ LineSet &LineSet::operator+=(const LineSet &lineset) {
     }
     lines_.h_data.resize(new_line_num);
     for (size_t i = 0; i < add_line_num; i++) {
-        lines_.h_data[old_line_num + i] =
-                Eigen::Vector2i(lineset.lines_.h_data[i](0) + (int)old_point_num,
-                                lineset.lines_.h_data[i](1) + (int)old_point_num);
+        lines_.h_data[old_line_num + i] = Eigen::Vector2i(
+                lineset.lines_.h_data[i](0) + (int)old_point_num,
+                lineset.lines_.h_data[i](1) + (int)old_point_num);
     }
     return (*this);
 }

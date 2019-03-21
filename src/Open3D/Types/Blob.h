@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include<vector>
+#include <vector>
 #include "Mat.h"
 
 namespace open3d {
@@ -34,8 +34,15 @@ namespace open3d {
 template <typename T>
 struct Blob {
     typedef struct _Type {
-        std::vector<T> h_data;
-        T* d_data;
+        // host data container
+        std::vector<T> h_data{};
+        // device data pointer
+        double* d_data{};
+        // device id
+        // set to -1 to execute on the CPU
+        int cuda_device_id = 0;
+        // number of elements in this structure
+        inline size_t size() const { return h_data.size(); }
     } Type;
 };
 }  // namespace open3d

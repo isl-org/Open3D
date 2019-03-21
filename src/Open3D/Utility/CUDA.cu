@@ -26,6 +26,19 @@ string open3d::DeviceInfo(const int& devID) {
     return info.str();
 }
 
+// ----------------------------------------------------------------------------
+// Display debug info.
+// Requires building the project in debug mode.
+// ----------------------------------------------------------------------------
+void open3d::DebugInfo(const string& function_name, const cudaError_t& status) {
+    #ifndef NDEBUG
+    if (cudaSuccess != status) {
+        string error_message = cudaGetErrorString(status);
+        printf("%20s: %s\n", function_name.c_str(), error_message.c_str());
+    }
+    #endif
+}
+
 // ---------------------------------------------------------------------------
 // Alocate device memory and perform validation.
 // ---------------------------------------------------------------------------
@@ -33,9 +46,13 @@ cudaError_t open3d::AlocateDevMemory(double** d, const size_t& numElements,
     const int& devID) {
     cudaError_t status = cudaSuccess;
 
+    if (CPU == devID) return status;
+
     size_t size = numElements * sizeof(double);
 
+    cudaSetDevice(devID);
     status = cudaMalloc((void **)d, size);
+    DebugInfo("AlocateDevMemory", status);
 
     return status;
 }
@@ -51,6 +68,8 @@ cudaError_t open3d::CopyHst2DevMemory(double* h, double* d,
 
     status = cudaMemcpy(d, h, size, cudaMemcpyHostToDevice);
 
+    DebugInfo("CopyHst2DevMemory", status);
+
     return status;
 }
 
@@ -65,6 +84,8 @@ cudaError_t open3d::CopyDev2HstMemory(double* d, double* h,
 
     status = cudaMemcpy(h, d, size, cudaMemcpyDeviceToHost);
 
+    DebugInfo("CopyDev2HstMemory", status);
+
     return status;
 }
 
@@ -75,6 +96,7 @@ cudaError_t open3d::freeDev(double** d) {
     cudaError_t status = cudaSuccess;
 
     status = cudaFree(*d);
+    DebugInfo("freeDev", status);
 
     if (cudaSuccess == status)
         *d = NULL;
@@ -91,8 +113,11 @@ cudaError_t open3d::UpdateDeviceMemory(double **d_data,
     const int& devID) {
     cudaError_t status = cudaSuccess;
 
+    if (CPU == devID) return status;
+
     if (*d_data != NULL) {
         status = cudaFree(*d_data);
+        DebugInfo("UpdateDeviceMemory", status);
         if (cudaSuccess != status) return status;
 
         *d_data = NULL;
@@ -102,9 +127,11 @@ cudaError_t open3d::UpdateDeviceMemory(double **d_data,
 
     cudaSetDevice(devID);
     status = cudaMalloc((void **)d_data, size);
+    DebugInfo("UpdateDeviceMemory", status);
     if (cudaSuccess != status) return status;
 
     status = cudaMemcpy(*d_data, data, size, cudaMemcpyHostToDevice);
+    DebugInfo("UpdateDeviceMemory", status);
     if (cudaSuccess != status) return status;
 
     return status;

@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     }
     std::string binname =
             utility::filesystem::GetFileNameWithoutExtension(argv[1]) + ".bin";
-    std::vector<double> distances(pcd->points_.h_data.size());
+    std::vector<double> distances(pcd->points_.size());
     if (utility::ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
         distances = geometry::ComputePointCloudMahalanobisDistance(*pcd);
         FILE *f = fopen(binname.c_str(), "wb");
@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
             utility::PrintInfo("Cannot open bin file.\n");
             return 1;
         }
-        if (fread(distances.data(), sizeof(double), pcd->points_.h_data.size(), f) !=
-            pcd->points_.h_data.size()) {
+        if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
+            pcd->points_.size()) {
             utility::PrintInfo("Cannot open bin file.\n");
             return 1;
         }
@@ -91,9 +91,9 @@ int main(int argc, char *argv[]) {
         utility::PrintInfo("Max distance must be a positive value.\n");
         return 1;
     }
-    pcd->colors_.h_data.resize(pcd->points_.h_data.size());
+    pcd->colors_.h_data.resize(pcd->points_.size());
     visualization::ColorMapHot colormap;
-    for (size_t i = 0; i < pcd->points_.h_data.size(); i++) {
+    for (size_t i = 0; i < pcd->points_.size(); i++) {
         pcd->colors_.h_data[i] = colormap.GetColor(distances[i] / max_distance);
     }
     if (utility::ProgramOptionExists(argc, argv, "--write_color_back")) {

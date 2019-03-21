@@ -146,13 +146,13 @@ int main(int argc, char *argv[]) {
         auto pcd_target = io::CreatePointCloudFromFile(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd");
         pcd_target->colors_.h_data.clear();
-        pcd_target->colors_.h_data.resize(pcd_target->points_.h_data.size(),
-                                   color_palette[0]);
+        pcd_target->colors_.h_data.resize(pcd_target->points_.size(),
+                                          color_palette[0]);
         auto pcd_source = io::CreatePointCloudFromFile(
                 pcd_dirname + "cloud_bin_" + std::to_string(j) + ".pcd");
         pcd_source->colors_.h_data.clear();
-        pcd_source->colors_.h_data.resize(pcd_source->points_.h_data.size(),
-                                   color_palette[1]);
+        pcd_source->colors_.h_data.resize(pcd_source->points_.size(),
+                                          color_palette[1]);
         pcd_source->Transform(transformations[k]);
         visualization::DrawGeometriesWithCustomAnimation(
                 {pcd_target, pcd_source}, "ViewPCDMatch", 1600, 900);

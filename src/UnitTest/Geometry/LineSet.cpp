@@ -90,7 +90,8 @@ TEST(LineSet, Clear) {
     EXPECT_FALSE(ls.IsEmpty());
 
     ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), ls.GetMinBound());
-    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431), ls.GetMaxBound());
+    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+             ls.GetMaxBound());
 
     EXPECT_TRUE(ls.HasPoints());
     EXPECT_TRUE(ls.HasLines());
@@ -165,7 +166,8 @@ TEST(LineSet, GetMaxBound) {
 
     Eigen::Vector3d maxBound = ls.GetMaxBound();
 
-    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431), ls.GetMaxBound());
+    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+             ls.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -173,15 +175,15 @@ TEST(LineSet, GetMaxBound) {
 // ----------------------------------------------------------------------------
 TEST(LineSet, Transform) {
     vector<Eigen::Vector3d> ref_points = {{396.870588, 1201.976471, 880.472941},
-                                   {320.792157, 1081.976471, 829.139608},
-                                   {269.027451, 818.447059, 406.786667},
-                                   {338.831373, 1001.192157, 614.237647},
-                                   {423.537255, 1153.349020, 483.727843},
-                                   {432.949020, 1338.447059, 964.512157},
-                                   {140.007843, 444.721569, 189.296471},
-                                   {292.164706, 763.152941, 317.178824},
-                                   {134.517647, 407.858824, 192.002353},
-                                   {274.909804, 802.368627, 218.747451}};
+                                          {320.792157, 1081.976471, 829.139608},
+                                          {269.027451, 818.447059, 406.786667},
+                                          {338.831373, 1001.192157, 614.237647},
+                                          {423.537255, 1153.349020, 483.727843},
+                                          {432.949020, 1338.447059, 964.512157},
+                                          {140.007843, 444.721569, 189.296471},
+                                          {292.164706, 763.152941, 317.178824},
+                                          {134.517647, 407.858824, 192.002353},
+                                          {274.909804, 802.368627, 218.747451}};
 
     vector<Eigen::Vector2i> ref_lines = {
             {839, 392}, {780, 796}, {909, 196}, {333, 764}, {274, 552},
@@ -229,11 +231,13 @@ TEST(LineSet, OperatorAppend) {
     ls1.lines_.h_data.resize(size);
     ls1.colors_.h_data.resize(size);
 
-    Rand(ls0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+         0);
     Rand(ls0.lines_.h_data, Zero2i, Eigen::Vector2i(size - 1, size - 1), 0);
     Rand(ls0.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(ls1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+         0);
     Rand(ls1.lines_.h_data, Zero2i, Eigen::Vector2i(size - 1, size - 1), 0);
     Rand(ls1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
@@ -263,7 +267,7 @@ TEST(LineSet, OperatorAppend) {
         ExpectEQ(ls0.lines_.h_data[i], ls.lines_.h_data[i + 0]);
 
         Eigen::Vector2i ls1_line_i = {ls1.lines_.h_data[i](0, 0) + size,
-                               ls1.lines_.h_data[i](1, 0) + size};
+                                      ls1.lines_.h_data[i](1, 0) + size};
         ExpectEQ(ls1_line_i, ls.lines_.h_data[i + ls0.lines_.h_data.size()]);
     }
 
@@ -291,11 +295,13 @@ TEST(LineSet, OperatorADD) {
     ls1.lines_.h_data.resize(size);
     ls1.colors_.h_data.resize(size);
 
-    Rand(ls0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+         0);
     Rand(ls0.lines_.h_data, Zero2i, Eigen::Vector2i(size - 1, size - 1), 0);
     Rand(ls0.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(ls1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+         0);
     Rand(ls1.lines_.h_data, Zero2i, Eigen::Vector2i(size - 1, size - 1), 0);
     Rand(ls1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
@@ -324,7 +330,7 @@ TEST(LineSet, OperatorADD) {
         ExpectEQ(ls0.lines_.h_data[i], ls.lines_.h_data[i + 0]);
 
         Eigen::Vector2i ls1_line_i = {ls1.lines_.h_data[i](0, 0) + size,
-                               ls1.lines_.h_data[i](1, 0) + size};
+                                      ls1.lines_.h_data[i](1, 0) + size};
         ExpectEQ(ls1_line_i, ls.lines_.h_data[i + ls0.lines_.h_data.size()]);
     }
 
@@ -440,28 +446,29 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     int size = 10;
 
     vector<Eigen::Vector3d> ref_points = {{839.215686, 392.156863, 780.392157},
-                                   {796.078431, 909.803922, 196.078431},
-                                   {333.333333, 764.705882, 274.509804},
-                                   {552.941176, 474.509804, 627.450980},
-                                   {364.705882, 509.803922, 949.019608},
-                                   {913.725490, 635.294118, 713.725490},
-                                   {141.176471, 603.921569, 15.686275},
-                                   {239.215686, 133.333333, 803.921569},
-                                   {152.941176, 400.000000, 129.411765},
-                                   {105.882353, 996.078431, 215.686275},
-                                   {839.215686, 392.156863, 780.392157},
-                                   {796.078431, 909.803922, 196.078431},
-                                   {333.333333, 764.705882, 274.509804},
-                                   {552.941176, 474.509804, 627.450980},
-                                   {364.705882, 509.803922, 949.019608},
-                                   {913.725490, 635.294118, 713.725490},
-                                   {141.176471, 603.921569, 15.686275},
-                                   {239.215686, 133.333333, 803.921569},
-                                   {152.941176, 400.000000, 129.411765},
-                                   {105.882353, 996.078431, 215.686275}};
+                                          {796.078431, 909.803922, 196.078431},
+                                          {333.333333, 764.705882, 274.509804},
+                                          {552.941176, 474.509804, 627.450980},
+                                          {364.705882, 509.803922, 949.019608},
+                                          {913.725490, 635.294118, 713.725490},
+                                          {141.176471, 603.921569, 15.686275},
+                                          {239.215686, 133.333333, 803.921569},
+                                          {152.941176, 400.000000, 129.411765},
+                                          {105.882353, 996.078431, 215.686275},
+                                          {839.215686, 392.156863, 780.392157},
+                                          {796.078431, 909.803922, 196.078431},
+                                          {333.333333, 764.705882, 274.509804},
+                                          {552.941176, 474.509804, 627.450980},
+                                          {364.705882, 509.803922, 949.019608},
+                                          {913.725490, 635.294118, 713.725490},
+                                          {141.176471, 603.921569, 15.686275},
+                                          {239.215686, 133.333333, 803.921569},
+                                          {152.941176, 400.000000, 129.411765},
+                                          {105.882353, 996.078431, 215.686275}};
 
-    vector<Eigen::Vector2i> ref_lines = {{8, 13}, {7, 17}, {9, 11}, {3, 17}, {2, 15},
-                                  {4, 16}, {3, 15}, {9, 19}, {6, 17}, {1, 16}};
+    vector<Eigen::Vector2i> ref_lines = {{8, 13}, {7, 17}, {9, 11}, {3, 17},
+                                         {2, 15}, {4, 16}, {3, 15}, {9, 19},
+                                         {6, 17}, {1, 16}};
 
     geometry::PointCloud pc0;
     geometry::PointCloud pc1;
@@ -475,12 +482,16 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     pc1.normals_.h_data.resize(size);
     pc1.colors_.h_data.resize(size);
 
-    Rand(pc0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc0.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+         0);
+    Rand(pc0.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0),
+         Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     Rand(pc0.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc1.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+         0);
+    Rand(pc1.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0),
+         Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     Rand(pc1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     Raw raw;

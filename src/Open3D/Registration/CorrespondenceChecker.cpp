@@ -66,7 +66,8 @@ bool CorrespondenceCheckerBasedOnDistance::Check(
         Eigen::Vector3d pt_trans =
                 (transformation * Eigen::Vector4d(pt(0), pt(1), pt(2), 1.0))
                         .block<3, 1>(0, 0);
-        if ((target.points_.h_data[c(1)] - pt_trans).norm() > distance_threshold_) {
+        if ((target.points_.h_data[c(1)] - pt_trans).norm() >
+            distance_threshold_) {
             return false;
         }
     }

@@ -40,7 +40,8 @@ void pybind_lineset(py::module &m) {
     lineset.def("__repr__",
                 [](const geometry::LineSet &lineset) {
                     return std::string("geometry::LineSet with ") +
-                           std::to_string(lineset.lines_.h_data.size()) + " lines.";
+                           std::to_string(lineset.lines_.h_data.size()) +
+                           " lines.";
                 })
             .def(py::self + py::self)
             .def(py::self += py::self)

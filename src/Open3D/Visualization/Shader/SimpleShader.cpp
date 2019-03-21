@@ -390,7 +390,8 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
     for (size_t i = 0; i < n_voxels; i++) {
         std::vector<Eigen::Vector3f> vertex;
         for (size_t d = 0; d < 8; d++)
-            vertex.push_back(voxelgrid.voxels_.h_data[i].cast<float>() + disp[d]);
+            vertex.push_back(voxelgrid.voxels_.h_data[i].cast<float>() +
+                             disp[d]);
         Eigen::Vector3f base_vertex = (vertex[0] * voxelgrid.voxel_size_) +
                                       voxelgrid.origin_.cast<float>();
         for (size_t j = 0; j < 6; j++) {

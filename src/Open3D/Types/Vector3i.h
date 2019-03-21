@@ -37,15 +37,13 @@ typedef struct _Vector3i {
 
     int s[ROWS][COLS];
 
-    OPEN3D_FUNC_DECL inline
-    int &operator[](const uint &i) {
+    OPEN3D_FUNC_DECL inline int &operator[](const uint &i) {
         assert(i < COLS);
 
         return s[0][i];
     }
 
-    OPEN3D_FUNC_DECL inline
-    const int &operator[](const uint &i) const {
+    OPEN3D_FUNC_DECL inline const int &operator[](const uint &i) const {
         assert(i < COLS);
 
         return s[0][i];

@@ -206,14 +206,14 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygon::CropPointCloudInRectangle(const geometry::PointCloud &input,
                                             const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInRectangle(input.points_.h_data, view));
+    return geometry::SelectDownSample(
+            input, CropInRectangle(input.points_.h_data, view));
 }
 
 std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const geometry::PointCloud &input, const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInPolygon(input.points_.h_data, view));
+    return geometry::SelectDownSample(
+            input, CropInPolygon(input.points_.h_data, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>

@@ -108,7 +108,8 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     }
     utility::PrintDebug(
             "Pointcloud is voxelized from %d points to %d voxels.\n",
-            (int)input.points_.h_data.size(), (int)output->voxels_.h_data.size());
+            (int)input.points_.h_data.size(),
+            (int)output->voxels_.h_data.size());
     return output;
 }
 

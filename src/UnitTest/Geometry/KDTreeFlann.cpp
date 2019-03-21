@@ -109,8 +109,8 @@ TEST(KDTreeFlann, SearchRadius) {
     vector<int> indices;
     vector<double> distance2;
 
-    int result =
-            kdtree.SearchRadius<Eigen::Vector3d>(query, radius, indices, distance2);
+    int result = kdtree.SearchRadius<Eigen::Vector3d>(query, radius, indices,
+                                                      distance2);
 
     EXPECT_EQ(result, 21);
 
@@ -148,8 +148,8 @@ TEST(KDTreeFlann, SearchHybrid) {
     vector<int> indices;
     vector<double> distance2;
 
-    int result = kdtree.SearchHybrid<Eigen::Vector3d>(query, radius, max_nn, indices,
-                                               distance2);
+    int result = kdtree.SearchHybrid<Eigen::Vector3d>(query, radius, max_nn,
+                                                      indices, distance2);
 
     EXPECT_EQ(result, 15);
 

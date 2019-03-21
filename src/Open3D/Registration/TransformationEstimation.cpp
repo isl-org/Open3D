@@ -40,7 +40,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     if (corres.empty()) return 0.0;
     double err = 0.0;
     for (const auto &c : corres) {
-        err += (source.points_.h_data[c[0]] - target.points_.h_data[c[1]]).squaredNorm();
+        err += (source.points_.h_data[c[0]] - target.points_.h_data[c[1]])
+                       .squaredNorm();
     }
     return std::sqrt(err / (double)corres.size());
 }
