@@ -91,9 +91,9 @@ public:
     }
 
 public:
-    Blob<Eigen::Vector3d>::Type points_;
-    Blob<Eigen::Vector3d>::Type normals_;
-    Blob<Eigen::Vector3d>::Type colors_;
+    Blob<Eigen::Vector3d, double>::Type points_;
+    Blob<Eigen::Vector3d, double>::Type normals_;
+    Blob<Eigen::Vector3d, double>::Type colors_;
 
 #ifdef OPEN3D_USE_CUDA
 

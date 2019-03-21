@@ -31,13 +31,13 @@
 
 namespace open3d {
 // 1D tensor, row major
-template <typename T>
+template <typename V, typename T>
 struct Blob {
     typedef struct _Type {
         // host data container
-        std::vector<T> h_data{};
+        std::vector<V> h_data{};
         // device data pointer
-        double* d_data{};
+        T* d_data{};
         // device id
         // set to -1 to execute on the CPU
         int cuda_device_id = 0;
