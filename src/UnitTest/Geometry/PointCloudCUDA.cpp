@@ -48,8 +48,8 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
+    pc.points_.h_data.resize(size);
+    Rand(pc.points_.h_data, vmin, vmax, 0);
 
     pc.cuda_device_id = -1;
     auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc);

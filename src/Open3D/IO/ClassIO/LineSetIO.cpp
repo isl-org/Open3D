@@ -84,7 +84,7 @@ bool ReadLineSet(const std::string &filename,
     }
     bool success = map_itr->second(filename, lineset);
     utility::PrintDebug("Read geometry::LineSet: %d vertices.\n",
-                        (int)lineset.points_.size());
+                        (int)lineset.points_.h_data.size());
     return success;
 }
 
@@ -107,7 +107,7 @@ bool WriteLineSet(const std::string &filename,
     }
     bool success = map_itr->second(filename, lineset, write_ascii, compressed);
     utility::PrintDebug("Write geometry::LineSet: %d vertices.\n",
-                        (int)lineset.points_.size());
+                        (int)lineset.points_.h_data.size());
     return success;
 }
 

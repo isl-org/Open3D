@@ -209,13 +209,13 @@ int main(int argc, char **argv) {
 
     vis_source.CreateVisualizerWindow("Source Point Cloud", 1280, 720, 10, 100);
     vis_source.AddGeometry(source_ptr);
-    if (source_ptr->points_.size() > 5000000) {
+    if (source_ptr->points_.h_data.size() > 5000000) {
         vis_source.GetRenderOption().point_size_ = 1.0;
     }
     vis_source.BuildUtilities();
     vis_target.CreateVisualizerWindow("Target Point Cloud", 1280, 720, 10, 880);
     vis_target.AddGeometry(target_ptr);
-    if (target_ptr->points_.size() > 5000000) {
+    if (target_ptr->points_.h_data.size() > 5000000) {
         vis_target.GetRenderOption().point_size_ = 1.0;
     }
     vis_target.BuildUtilities();

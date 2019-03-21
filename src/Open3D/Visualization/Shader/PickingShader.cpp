@@ -147,10 +147,10 @@ bool PickingShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    points.resize(pointcloud.points_.size());
-    indices.resize(pointcloud.points_.size());
-    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const auto &point = pointcloud.points_[i];
+    points.resize(pointcloud.points_.h_data.size());
+    indices.resize(pointcloud.points_.h_data.size());
+    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        const auto &point = pointcloud.points_.h_data[i];
         points[i] = point.cast<float>();
         indices[i] = (float)i;
     }

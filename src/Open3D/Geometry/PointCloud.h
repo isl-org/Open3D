@@ -33,8 +33,7 @@
 #include <Eigen/Core>
 #include <Open3D/Geometry/Geometry3D.h>
 #include <Open3D/Geometry/KDTreeSearchParam.h>
-// #include "Open3D/Types/Matrix3d.h"
-#include "Open3D/Types/Mat.h"
+#include "Open3D/Types/Blob.h"
 
 namespace open3d {
 
@@ -64,33 +63,33 @@ public:
     PointCloud operator+(const PointCloud &cloud) const;
 
 public:
-    bool HasPoints() const { return points_.size() > 0; }
+    bool HasPoints() const { return points_.h_data.size() > 0; }
 
     bool HasNormals() const {
-        return points_.size() > 0 && normals_.size() == points_.size();
+        return points_.h_data.size() > 0 && normals_.h_data.size() == points_.h_data.size();
     }
 
     bool HasColors() const {
-        return points_.size() > 0 && colors_.size() == points_.size();
+        return points_.h_data.size() > 0 && colors_.h_data.size() == points_.h_data.size();
     }
 
     void NormalizeNormals() {
-        for (size_t i = 0; i < normals_.size(); i++) {
-            normals_[i].normalize();
+        for (size_t i = 0; i < normals_.h_data.size(); i++) {
+            normals_.h_data[i].normalize();
         }
     }
 
     void PaintUniformColor(const Eigen::Vector3d &color) {
-        colors_.resize(points_.size());
-        for (size_t i = 0; i < points_.size(); i++) {
-            colors_[i] = color;
+        colors_.h_data.resize(points_.h_data.size());
+        for (size_t i = 0; i < points_.h_data.size(); i++) {
+            colors_.h_data[i] = color;
         }
     }
 
 public:
-    std::vector<Eigen::Vector3d> points_;
-    std::vector<Eigen::Vector3d> normals_;
-    std::vector<Eigen::Vector3d> colors_;
+    Blob<Eigen::Vector3d>::Type points_;
+    Blob<Eigen::Vector3d>::Type normals_;
+    Blob<Eigen::Vector3d>::Type colors_;
 
 #ifdef OPEN3D_USE_CUDA
 

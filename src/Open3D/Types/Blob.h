@@ -24,35 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "LineSet.h"
+#pragma once
 
-#include <Eigen/Dense>
-#include <Open3D/Geometry/PointCloud.h>
+#include<vector>
+#include "Mat.h"
 
 namespace open3d {
-namespace geometry {
-
-std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-        const PointCloud &cloud0,
-        const PointCloud &cloud1,
-        const std::vector<std::pair<int, int>> &correspondences) {
-    auto lineset_ptr = std::make_shared<LineSet>();
-    size_t point0_size = cloud0.points_.h_data.size();
-    size_t point1_size = cloud1.points_.h_data.size();
-    lineset_ptr->points_.h_data.resize(point0_size + point1_size);
-    for (size_t i = 0; i < point0_size; i++)
-        lineset_ptr->points_.h_data[i] = cloud0.points_.h_data[i];
-    for (size_t i = 0; i < point1_size; i++)
-        lineset_ptr->points_.h_data[point0_size + i] = cloud1.points_.h_data[i];
-
-    size_t corr_size = correspondences.size();
-    lineset_ptr->lines_.h_data.resize(corr_size);
-    for (size_t i = 0; i < corr_size; i++)
-        lineset_ptr->lines_.h_data[i] =
-                Eigen::Vector2i(correspondences[i].first,
-                                point0_size + correspondences[i].second);
-    return lineset_ptr;
-}
-
-}  // namespace geometry
+// 1D tensor, row major
+template <typename T>
+struct Blob {
+    typedef struct _Type {
+        std::vector<T> h_data;
+        T* d_data;
+    } Type;
+};
 }  // namespace open3d

@@ -48,7 +48,7 @@ public:
                   int index) {
         coordinate_ = voxel_index;
         if (cloud.HasColors()) {
-            color_ += cloud.colors_[index];
+            color_ += cloud.colors_.h_data[index];
         }
         num_of_points_++;
     }
@@ -93,22 +93,22 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
-    for (int i = 0; i < (int)input.points_.size(); i++) {
-        ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
+    for (int i = 0; i < (int)input.points_.h_data.size(); i++) {
+        ref_coord = (input.points_.h_data[i] - voxel_min_bound) / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
                 int(floor(ref_coord(2)));
         voxelindex_to_accpoint[voxel_index].AddPoint(voxel_index, input, i);
     }
     bool has_colors = input.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
-        output->voxels_.push_back(accpoint.second.GetVoxelCoordinate());
+        output->voxels_.h_data.push_back(accpoint.second.GetVoxelCoordinate());
         if (has_colors) {
-            output->colors_.push_back(accpoint.second.GetAverageColor());
+            output->colors_.h_data.push_back(accpoint.second.GetAverageColor());
         }
     }
     utility::PrintDebug(
             "Pointcloud is voxelized from %d points to %d voxels.\n",
-            (int)input.points_.size(), (int)output->voxels_.size());
+            (int)input.points_.h_data.size(), (int)output->voxels_.h_data.size());
     return output;
 }
 

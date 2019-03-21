@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         std::vector<int> indices(1);
         std::vector<double> distance2(1);
         int correspondence_num = 0;
-        for (const auto &pt : source.points_) {
+        for (const auto &pt : source.points_.h_data) {
             if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
                                                      distance2) > 0) {
                 if (distance2[0] < threshold2) {
@@ -225,11 +225,11 @@ int main(int argc, char *argv[]) {
             }
         }
         total_correspondence_num += correspondence_num;
-        total_point_num += (int)source.points_.size();
+        total_point_num += (int)source.points_.h_data.size();
         utility::PrintInfo("#%d <-- #%d : %d out of %d (%.2f%%).\n",
                            pair_ids[k].first, pair_ids[k].second,
-                           correspondence_num, (int)source.points_.size(),
-                           correspondence_num * 100.0 / source.points_.size());
+                           correspondence_num, (int)source.points_.h_data.size(),
+                           correspondence_num * 100.0 / source.points_.h_data.size());
     }
     utility::PrintWarning("Total %d out of %d (%.2f%% coverage).\n\n",
                           total_correspondence_num, total_point_num,
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 
         for (auto k = 0; k < pair_ids.size(); k++) {
             geometry::PointCloud source = pcds[pair_ids[k].second];
-            total_point_num += (int)source.points_.size();
+            total_point_num += (int)source.points_.h_data.size();
         }
         std::vector<double> true_dis(total_point_num, -1.0);
         total_point_num = 0;
@@ -266,9 +266,9 @@ int main(int argc, char *argv[]) {
             int positive = 0;
             int correspondence_num = 0;
             std::vector<bool> has_correspondence(
-                    pcds[pair_ids[k].second].points_.size(), false);
-            for (auto i = 0; i < source.points_.size(); i++) {
-                const auto &pt = source.points_[i];
+                    pcds[pair_ids[k].second].points_.h_data.size(), false);
+            for (auto i = 0; i < source.points_.h_data.size(); i++) {
+                const auto &pt = source.points_.h_data[i];
                 if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
                                                          distance2) > 0) {
                     if (distance2[0] < threshold2) {
@@ -281,14 +281,14 @@ int main(int argc, char *argv[]) {
 #pragma omp parallel for schedule(static) \
         num_threads(16) private(indices, fdistance2)
 #endif
-            for (auto i = 0; i < source.points_.size(); i++) {
+            for (auto i = 0; i < source.points_.h_data.size(); i++) {
                 if (has_correspondence[i]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
                                 feature_trees[pair_ids[k].second].data_, i, 1,
                                 indices, fdistance2) > 0) {
                         double new_dis =
-                                (source.points_[i] -
-                                 pcds[pair_ids[k].first].points_[indices[0]])
+                                (source.points_.h_data[i] -
+                                 pcds[pair_ids[k].first].points_.h_data[indices[0]])
                                         .norm();
                         true_dis[total_point_num + i] = new_dis;
                         if (new_dis < threshold) {
@@ -302,12 +302,12 @@ int main(int argc, char *argv[]) {
             }
             total_correspondence_num += correspondence_num;
             total_positive += positive;
-            total_point_num += (int)source.points_.size();
+            total_point_num += (int)source.points_.h_data.size();
             utility::PrintInfo(
                     "#%d <-- #%d : %d out of %d out of %d (%.2f%% w.r.t. "
                     "correspondences).\n",
                     pair_ids[k].first, pair_ids[k].second, positive,
-                    correspondence_num, (int)source.points_.size(),
+                    correspondence_num, (int)source.points_.h_data.size(),
                     positive * 100.0 / correspondence_num);
         }
         utility::PrintWarning(

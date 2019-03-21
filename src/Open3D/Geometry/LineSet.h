@@ -30,6 +30,7 @@
 #include <memory>
 #include <Eigen/Core>
 #include <Open3D/Geometry/Geometry3D.h>
+#include "Open3D/Types/Blob.h"
 
 namespace open3d {
 namespace geometry {
@@ -53,23 +54,23 @@ public:
     LineSet operator+(const LineSet &lineset) const;
 
 public:
-    bool HasPoints() const { return points_.size() > 0; }
+    bool HasPoints() const { return points_.h_data.size() > 0; }
 
-    bool HasLines() const { return HasPoints() && lines_.size() > 0; }
+    bool HasLines() const { return HasPoints() && lines_.h_data.size() > 0; }
 
     bool HasColors() const {
-        return HasLines() && colors_.size() == lines_.size();
+        return HasLines() && colors_.h_data.size() == lines_.h_data.size();
     }
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
             size_t i) const {
-        return std::make_pair(points_[lines_[i][0]], points_[lines_[i][1]]);
+        return std::make_pair(points_.h_data[lines_.h_data[i][0]], points_.h_data[lines_.h_data[i][1]]);
     }
 
 public:
-    std::vector<Eigen::Vector3d> points_;
-    std::vector<Eigen::Vector2i> lines_;
-    std::vector<Eigen::Vector3d> colors_;
+    Blob<Eigen::Vector3d>::Type points_;
+    Blob<Eigen::Vector2i>::Type lines_;
+    Blob<Eigen::Vector3d>::Type colors_;
 };
 
 /// Factory function to create a lineset from two pointclouds and a

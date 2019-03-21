@@ -98,7 +98,7 @@ std::shared_ptr<geometry::PointCloud> SelectionPolygonVolume::CropPointCloud(
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygonVolume::CropPointCloudInPolygon(
         const geometry::PointCloud &input) const {
-    return geometry::SelectDownSample(input, CropInPolygon(input.points_));
+    return geometry::SelectDownSample(input, CropInPolygon(input.points_.h_data));
 }
 
 std::shared_ptr<geometry::TriangleMesh>

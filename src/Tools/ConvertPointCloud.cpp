@@ -72,7 +72,7 @@ void convert(int argc,
     using namespace open3d;
     using namespace open3d::utility::filesystem;
     auto pointcloud_ptr = io::CreatePointCloudFromFile(file_in.c_str());
-    size_t point_num_in = pointcloud_ptr->points_.size();
+    size_t point_num_in = pointcloud_ptr->points_.h_data.size();
     bool processed = false;
 
     // clip
@@ -108,7 +108,7 @@ void convert(int argc,
         auto mahalanobis =
                 geometry::ComputePointCloudMahalanobisDistance(*pointcloud_ptr);
         std::vector<size_t> indices;
-        for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
+        for (size_t i = 0; i < pointcloud_ptr->points_.h_data.size(); i++) {
             if (mahalanobis[i] < mahalanobis_threshold) {
                 indices.push_back(i);
             }
@@ -116,7 +116,7 @@ void convert(int argc,
         auto pcd = geometry::SelectDownSample(*pointcloud_ptr, indices);
         utility::PrintDebug(
                 "Based on Mahalanobis distance, %d points were filtered.\n",
-                (int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
+                (int)(pointcloud_ptr->points_.h_data.size() - pcd->points_.h_data.size()));
         pointcloud_ptr = pcd;
     }
 
@@ -180,7 +180,7 @@ void convert(int argc,
         processed = true;
     }
 
-    size_t point_num_out = pointcloud_ptr->points_.size();
+    size_t point_num_out = pointcloud_ptr->points_.h_data.size();
     if (processed) {
         utility::PrintInfo(
                 "Processed point cloud from %d points to %d points.\n",

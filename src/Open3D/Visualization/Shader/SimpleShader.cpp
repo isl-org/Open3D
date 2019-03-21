@@ -149,10 +149,10 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    points.resize(pointcloud.points_.size());
-    colors.resize(pointcloud.points_.size());
-    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const auto &point = pointcloud.points_[i];
+    points.resize(pointcloud.points_.h_data.size());
+    colors.resize(pointcloud.points_.h_data.size());
+    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        const auto &point = pointcloud.points_.h_data[i];
         points[i] = point.cast<float>();
         Eigen::Vector3d color;
         switch (option.point_color_option_) {
@@ -172,7 +172,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Default:
             default:
                 if (pointcloud.HasColors()) {
-                    color = pointcloud.colors_[i];
+                    color = pointcloud.colors_.h_data[i];
                 } else {
                     color = global_color_map.GetColor(
                             view.GetBoundingBox().GetZPercentage(point(2)));
@@ -217,15 +217,15 @@ bool SimpleShaderForLineSet::PrepareBinding(
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
-    points.resize(lineset.lines_.size() * 2);
-    colors.resize(lineset.lines_.size() * 2);
-    for (size_t i = 0; i < lineset.lines_.size(); i++) {
+    points.resize(lineset.lines_.h_data.size() * 2);
+    colors.resize(lineset.lines_.h_data.size() * 2);
+    for (size_t i = 0; i < lineset.lines_.h_data.size(); i++) {
         const auto point_pair = lineset.GetLineCoordinate(i);
         points[i * 2] = point_pair.first.cast<float>();
         points[i * 2 + 1] = point_pair.second.cast<float>();
         Eigen::Vector3d color;
         if (lineset.HasColors()) {
-            color = lineset.colors_[i];
+            color = lineset.colors_.h_data[i];
         } else {
             color = Eigen::Vector3d::Zero();
         }
@@ -364,7 +364,7 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    auto n_voxels = voxelgrid.voxels_.size();
+    auto n_voxels = voxelgrid.voxels_.h_data.size();
     points.resize(n_voxels * 24);
     colors.resize(n_voxels * 24);
 
@@ -390,7 +390,7 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
     for (size_t i = 0; i < n_voxels; i++) {
         std::vector<Eigen::Vector3f> vertex;
         for (size_t d = 0; d < 8; d++)
-            vertex.push_back(voxelgrid.voxels_[i].cast<float>() + disp[d]);
+            vertex.push_back(voxelgrid.voxels_.h_data[i].cast<float>() + disp[d]);
         Eigen::Vector3f base_vertex = (vertex[0] * voxelgrid.voxel_size_) +
                                       voxelgrid.origin_.cast<float>();
         for (size_t j = 0; j < 6; j++) {
@@ -417,7 +417,7 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
                         break;
                     case RenderOption::MeshColorOption::Color:
                         if (voxelgrid.HasColors()) {
-                            color = voxelgrid.colors_[i];
+                            color = voxelgrid.colors_.h_data[i];
                             break;
                         }
                     case RenderOption::MeshColorOption::Default:

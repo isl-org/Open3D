@@ -61,8 +61,8 @@ TEST(KDTreeFlann, SearchKNN) {
     Eigen::Vector3d vmin(0.0, 0.0, 0.0);
     Eigen::Vector3d vmax(10.0, 10.0, 10.0);
 
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
+    pc.points_.h_data.resize(size);
+    Rand(pc.points_.h_data, vmin, vmax, 0);
 
     geometry::KDTreeFlann kdtree(pc);
 
@@ -99,8 +99,8 @@ TEST(KDTreeFlann, SearchRadius) {
     Eigen::Vector3d vmin(0.0, 0.0, 0.0);
     Eigen::Vector3d vmax(10.0, 10.0, 10.0);
 
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
+    pc.points_.h_data.resize(size);
+    Rand(pc.points_.h_data, vmin, vmax, 0);
 
     geometry::KDTreeFlann kdtree(pc);
 
@@ -137,8 +137,8 @@ TEST(KDTreeFlann, SearchHybrid) {
     Eigen::Vector3d vmin(0.0, 0.0, 0.0);
     Eigen::Vector3d vmax(10.0, 10.0, 10.0);
 
-    pc.points_.resize(size);
-    Rand(pc.points_, vmin, vmax, 0);
+    pc.points_.h_data.resize(size);
+    Rand(pc.points_.h_data, vmin, vmax, 0);
 
     geometry::KDTreeFlann kdtree(pc);
 

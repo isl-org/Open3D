@@ -30,6 +30,7 @@
 #include <memory>
 #include <Eigen/Core>
 #include <Open3D/Geometry/Geometry3D.h>
+#include "Open3D/Types/Blob.h"
 
 namespace open3d {
 namespace geometry {
@@ -54,17 +55,17 @@ public:
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
 public:
-    bool HasVoxels() const { return voxels_.size() > 0; }
+    bool HasVoxels() const { return voxels_.h_data.size() > 0; }
 
     bool HasColors() const {
-        return voxels_.size() > 0 && colors_.size() == voxels_.size();
+        return voxels_.h_data.size() > 0 && colors_.h_data.size() == voxels_.h_data.size();
     }
 
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::vector<Eigen::Vector3i> voxels_;
-    std::vector<Eigen::Vector3d> colors_;
+    Blob<Eigen::Vector3i>::Type voxels_;
+    Blob<Eigen::Vector3d>::Type colors_;
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(

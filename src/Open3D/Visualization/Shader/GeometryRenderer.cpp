@@ -274,7 +274,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     const auto &_option = (const RenderOptionWithEditing &)option;
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
-        if (index < pointcloud.points_.size()) {
+        if (index < pointcloud.points_.h_data.size()) {
             auto sphere = geometry::CreateMeshSphere(
                     view.GetBoundingBox().GetSize() *
                     _option.pointcloud_picker_sphere_size_);
@@ -284,7 +284,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
                     sphere->vertices_.size(),
                     color_palette[i % NUM_OF_COLOR_PALETTE]);
             Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
-            trans.block<3, 1>(0, 3) = pointcloud.points_[index];
+            trans.block<3, 1>(0, 3) = pointcloud.points_.h_data[index];
             sphere->Transform(trans);
             phong_shader_.InvalidateGeometry();
             if (phong_shader_.Render(*sphere, option, view) == false) {

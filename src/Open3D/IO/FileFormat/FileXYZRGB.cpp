@@ -48,8 +48,8 @@ bool ReadPointCloudFromXYZRGB(const std::string &filename,
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf", &x, &y, &z, &r, &g,
                    &b) == 6) {
-            pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
-            pointcloud.colors_.push_back(Eigen::Vector3d(r, g, b));
+            pointcloud.points_.h_data.push_back(Eigen::Vector3d(x, y, z));
+            pointcloud.colors_.h_data.push_back(Eigen::Vector3d(r, g, b));
         }
     }
 
@@ -72,9 +72,9 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
         return false;
     }
 
-    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const Eigen::Vector3d &point = pointcloud.points_[i];
-        const Eigen::Vector3d &color = pointcloud.colors_[i];
+    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        const Eigen::Vector3d &point = pointcloud.points_.h_data[i];
+        const Eigen::Vector3d &color = pointcloud.colors_.h_data[i];
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
                     point(1), point(2), color(0), color(1), color(2)) < 0) {
             utility::PrintWarning(

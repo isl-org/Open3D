@@ -40,7 +40,7 @@ void pybind_lineset(py::module &m) {
     lineset.def("__repr__",
                 [](const geometry::LineSet &lineset) {
                     return std::string("geometry::LineSet with ") +
-                           std::to_string(lineset.lines_.size()) + " lines.";
+                           std::to_string(lineset.lines_.h_data.size()) + " lines.";
                 })
             .def(py::self + py::self)
             .def(py::self += py::self)
@@ -48,7 +48,7 @@ void pybind_lineset(py::module &m) {
             .def("has_lines", &geometry::LineSet::HasLines)
             .def("has_colors", &geometry::LineSet::HasColors)
             .def("normalize_normals", &geometry::LineSet::GetLineCoordinate)
-            .def_readwrite("points", &geometry::LineSet::points_)
-            .def_readwrite("lines", &geometry::LineSet::lines_)
-            .def_readwrite("colors", &geometry::LineSet::colors_);
+            .def_readwrite("points", &geometry::LineSet::points_.h_data)
+            .def_readwrite("lines", &geometry::LineSet::lines_.h_data)
+            .def_readwrite("colors", &geometry::LineSet::colors_.h_data);
 }

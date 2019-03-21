@@ -223,12 +223,12 @@ bool PhongShaderForPointCloud::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    points.resize(pointcloud.points_.size());
-    normals.resize(pointcloud.points_.size());
-    colors.resize(pointcloud.points_.size());
-    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const auto &point = pointcloud.points_[i];
-        const auto &normal = pointcloud.normals_[i];
+    points.resize(pointcloud.points_.h_data.size());
+    normals.resize(pointcloud.points_.h_data.size());
+    colors.resize(pointcloud.points_.h_data.size());
+    for (size_t i = 0; i < pointcloud.points_.h_data.size(); i++) {
+        const auto &point = pointcloud.points_.h_data[i];
+        const auto &normal = pointcloud.normals_.h_data[i];
         points[i] = point.cast<float>();
         normals[i] = normal.cast<float>();
         Eigen::Vector3d color;
@@ -249,7 +249,7 @@ bool PhongShaderForPointCloud::PrepareBinding(
             case RenderOption::PointColorOption::Default:
             default:
                 if (pointcloud.HasColors()) {
-                    color = pointcloud.colors_[i];
+                    color = pointcloud.colors_.h_data[i];
                 } else {
                     color = global_color_map.GetColor(
                             view.GetBoundingBox().GetZPercentage(point(2)));

@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
             return 0;
         }
         vis.AddGeometry(pcd_ptr);
-        if (pcd_ptr->points_.size() > 5000000) {
+        if (pcd_ptr->points_.h_data.size() > 5000000) {
             vis.GetRenderOption().point_size_ = 1.0;
         }
     } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {

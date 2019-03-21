@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         cloud_ptr->NormalizeNormals();
-        cloud_ptr->colors_.resize(cloud_ptr->points_.size());
+        cloud_ptr->colors_.h_data.resize(cloud_ptr->points_.h_data.size());
         double color_index = 0.0;
         double color_index_step = 0.05;
 
         auto update_colors_func = [&cloud_ptr](double index) {
             auto color_map_ptr = visualization::GetGlobalColorMap();
-            for (auto &c : cloud_ptr->colors_) {
+            for (auto &c : cloud_ptr->colors_.h_data) {
                 c = color_map_ptr->GetColor(index);
             }
         };

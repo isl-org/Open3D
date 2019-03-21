@@ -41,11 +41,11 @@ bool CorrespondenceCheckerBasedOnEdgeLength::Check(
     for (auto i = 0; i < corres.size(); i++) {
         for (auto j = i + 1; j < corres.size(); j++) {
             // check edge ij
-            double dis_source = (source.points_[corres[i](0)] -
-                                 source.points_[corres[j](0)])
+            double dis_source = (source.points_.h_data[corres[i](0)] -
+                                 source.points_.h_data[corres[j](0)])
                                         .norm();
-            double dis_target = (target.points_[corres[i](1)] -
-                                 target.points_[corres[j](1)])
+            double dis_target = (target.points_.h_data[corres[i](1)] -
+                                 target.points_.h_data[corres[j](1)])
                                         .norm();
             if (dis_source < dis_target * similarity_threshold_ ||
                 dis_target < dis_source * similarity_threshold_) {
@@ -62,11 +62,11 @@ bool CorrespondenceCheckerBasedOnDistance::Check(
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     for (const auto &c : corres) {
-        const auto &pt = source.points_[c(0)];
+        const auto &pt = source.points_.h_data[c(0)];
         Eigen::Vector3d pt_trans =
                 (transformation * Eigen::Vector4d(pt(0), pt(1), pt(2), 1.0))
                         .block<3, 1>(0, 0);
-        if ((target.points_[c(1)] - pt_trans).norm() > distance_threshold_) {
+        if ((target.points_.h_data[c(1)] - pt_trans).norm() > distance_threshold_) {
             return false;
         }
     }
@@ -86,12 +86,12 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
     }
     double cos_normal_angle_threshold = std::cos(normal_angle_threshold_);
     for (const auto &c : corres) {
-        const auto &normal = source.normals_[c(0)];
+        const auto &normal = source.normals_.h_data[c(0)];
         Eigen::Vector3d normal_trans =
                 (transformation *
                  Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0))
                         .block<3, 1>(0, 0);
-        if (target.normals_[c(1)].dot(normal_trans) <
+        if (target.normals_.h_data[c(1)].dot(normal_trans) <
             cos_normal_angle_threshold) {
             return false;
         }

@@ -48,8 +48,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     int fi = 0, fj = 1;
     utility::PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
     bool swapped = false;
-    if (point_cloud_vec[fj].points_.size() >
-        point_cloud_vec[fi].points_.size()) {
+    if (point_cloud_vec[fj].points_.h_data.size() >
+        point_cloud_vec[fi].points_.h_data.size()) {
         int temp = fi;
         fi = fj;
         fj = temp;
@@ -57,8 +57,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     }
 
     // STEP 1) Initial matching
-    int nPti = int(point_cloud_vec[fi].points_.size());
-    int nPtj = int(point_cloud_vec[fj].points_.size());
+    int nPti = int(point_cloud_vec[fi].points_.h_data.size());
+    int nPtj = int(point_cloud_vec[fj].points_.h_data.size());
     geometry::KDTreeFlann feature_tree_i(features_vec[fi]);
     geometry::KDTreeFlann feature_tree_j(features_vec[fj]);
     std::vector<int> corresK;
@@ -141,17 +141,17 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         idj2 = corres_cross[rand2].second;
 
         // collect 3 points from i-th fragment
-        Eigen::Vector3d pti0 = point_cloud_vec[fi].points_[idi0];
-        Eigen::Vector3d pti1 = point_cloud_vec[fi].points_[idi1];
-        Eigen::Vector3d pti2 = point_cloud_vec[fi].points_[idi2];
+        Eigen::Vector3d pti0 = point_cloud_vec[fi].points_.h_data[idi0];
+        Eigen::Vector3d pti1 = point_cloud_vec[fi].points_.h_data[idi1];
+        Eigen::Vector3d pti2 = point_cloud_vec[fi].points_.h_data[idi2];
         double li0 = (pti0 - pti1).norm();
         double li1 = (pti1 - pti2).norm();
         double li2 = (pti2 - pti0).norm();
 
         // collect 3 points from j-th fragment
-        Eigen::Vector3d ptj0 = point_cloud_vec[fj].points_[idj0];
-        Eigen::Vector3d ptj1 = point_cloud_vec[fj].points_[idj1];
-        Eigen::Vector3d ptj2 = point_cloud_vec[fj].points_[idj2];
+        Eigen::Vector3d ptj0 = point_cloud_vec[fj].points_.h_data[idj0];
+        Eigen::Vector3d ptj1 = point_cloud_vec[fj].points_.h_data[idj1];
+        Eigen::Vector3d ptj2 = point_cloud_vec[fj].points_.h_data[idj2];
         double lj0 = (ptj0 - ptj1).norm();
         double lj1 = (ptj1 - ptj2).norm();
         double lj2 = (ptj2 - ptj0).norm();
@@ -195,19 +195,19 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         Eigen::Vector3d mean;
         mean.setZero();
 
-        int npti = static_cast<int>(point_cloud_vec[i].points_.size());
+        int npti = static_cast<int>(point_cloud_vec[i].points_.h_data.size());
         for (int ii = 0; ii < npti; ++ii)
-            mean = mean + point_cloud_vec[i].points_[ii];
+            mean = mean + point_cloud_vec[i].points_.h_data[ii];
         mean = mean / npti;
         pcd_mean_vec.push_back(mean);
 
         utility::PrintDebug("normalize points :: mean = [%f %f %f]\n", mean(0),
                             mean(1), mean(2));
         for (int ii = 0; ii < npti; ++ii)
-            point_cloud_vec[i].points_[ii] -= mean;
+            point_cloud_vec[i].points_.h_data[ii] -= mean;
 
         for (int ii = 0; ii < npti; ++ii) {
-            Eigen::Vector3d p(point_cloud_vec[i].points_[ii]);
+            Eigen::Vector3d p(point_cloud_vec[i].points_.h_data[ii]);
             double temp = p.norm();
             if (temp > max_scale) max_scale = temp;
         }
@@ -225,9 +225,9 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
                         scale_global);
 
     for (int i = 0; i < num; ++i) {
-        int npti = static_cast<int>(point_cloud_vec[i].points_.size());
+        int npti = static_cast<int>(point_cloud_vec[i].points_.h_data.size());
         for (int ii = 0; ii < npti; ++ii) {
-            point_cloud_vec[i].points_[ii] /= scale_global;
+            point_cloud_vec[i].points_.h_data[ii] /= scale_global;
         }
     }
     return std::make_tuple(pcd_mean_vec, scale_global, scale_start);
@@ -264,8 +264,8 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
             int ii = corres[c].first;
             int jj = corres[c].second;
             Eigen::Vector3d p, q;
-            p = point_cloud_vec[i].points_[ii];
-            q = point_cloud_copy_j.points_[jj];
+            p = point_cloud_vec[i].points_.h_data[ii];
+            q = point_cloud_copy_j.points_.h_data[jj];
             Eigen::Vector3d rpq = p - q;
 
             int c2 = c;

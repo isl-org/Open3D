@@ -44,7 +44,7 @@ void pybind_pointcloud(py::module &m) {
             .def("__repr__",
                  [](const geometry::PointCloud &pcd) {
                      return std::string("geometry::PointCloud with ") +
-                            std::to_string(pcd.points_.size()) + " points.";
+                            std::to_string(pcd.points_.h_data.size()) + " points.";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
@@ -54,9 +54,9 @@ void pybind_pointcloud(py::module &m) {
             .def("normalize_normals", &geometry::PointCloud::NormalizeNormals)
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor)
-            .def_readwrite("points", &geometry::PointCloud::points_)
-            .def_readwrite("normals", &geometry::PointCloud::normals_)
-            .def_readwrite("colors", &geometry::PointCloud::colors_);
+            .def_readwrite("points", &geometry::PointCloud::points_.h_data)
+            .def_readwrite("normals", &geometry::PointCloud::normals_.h_data)
+            .def_readwrite("colors", &geometry::PointCloud::colors_.h_data);
 }
 
 void pybind_pointcloud_methods(py::module &m) {
