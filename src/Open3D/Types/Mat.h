@@ -79,6 +79,20 @@ struct Vec {
 
             return true;
         }
+        OPEN3D_FUNC_DECL inline bool operator<(const _Type &v) {
+            #pragma unroll
+            for (uint c = 0; c < COLS; c++)
+                if (s[c] >= v[c]) return false;
+
+            return true;
+        }
+        OPEN3D_FUNC_DECL inline bool operator>(const _Type &v) {
+            #pragma unroll
+            for (uint c = 0; c < COLS; c++)
+                if (s[c] <= v[c]) return false;
+
+            return true;
+        }
         // addition
         OPEN3D_FUNC_DECL inline _Type operator+(const _Type &v) const {
             _Type output;
@@ -169,6 +183,30 @@ struct Vec {
 
             return *this;
         }
+        OPEN3D_FUNC_DECL inline T squaredNorm() const {
+            T output = (T)0;
+            #pragma unroll
+            for (uint c = 0; c < COLS; c++) output += s[c] * s[c];
+
+            return output;
+        }
+        OPEN3D_FUNC_DECL inline void normalize() {
+            T norm = sqrt(squaredNorm());
+            #pragma unroll
+            for (uint c = 0; c < COLS; c++) s[c] /= norm;
+        }
+        OPEN3D_FUNC_DECL inline _Type cross(const _Type& v) const {
+            static_assert(1 == Rows, "must be a 1x3 vector");
+            static_assert(3 == COLS, "must be a 1x3 vector");
+
+            _Type output{};
+            output[0] = s[1] * v.s[2] - s[2] * v.s[1];
+            output[1] = s[2] * v.s[0] - s[0] * v.s[2];
+            output[2] = s[0] * v.s[1] - s[1] * v.s[0];
+
+            return output;
+        }
+
     } Type;
 };
 
@@ -225,6 +263,24 @@ struct Mat {
                 #pragma unroll
                 for (uint c = 0; c < COLS; c++)
                     if (s[r][c] < m.s[r][c]) return false;
+
+            return true;
+        }
+        OPEN3D_FUNC_DECL inline bool operator<(const _Type &m) {
+            #pragma unroll
+            for (uint r = 0; r < ROWS; r++)
+                #pragma unroll
+                for (uint c = 0; c < COLS; c++)
+                    if (s[r][c] >= m.s[r][c]) return false;
+
+            return true;
+        }
+        OPEN3D_FUNC_DECL inline bool operator>(const _Type &m) {
+            #pragma unroll
+            for (uint r = 0; r < ROWS; r++)
+                #pragma unroll
+                for (uint c = 0; c < COLS; c++)
+                    if (s[r][c] <= m.s[r][c]) return false;
 
             return true;
         }
@@ -347,12 +403,18 @@ struct Mat {
     } Type;
 };
 
-// 1D tensor, row major, size 3
+// 1D tensor, row major
 template <typename T, uint COLS>
 using VecType = typename Vec<T, COLS>::Type;
+// 1D tensor, row major, size 2
+template <typename T>
+using Vec2 = typename Vec<T, 2>::Type;
 // 1D tensor, row major, size 3
 template <typename T>
 using Vec3 = typename Vec<T, 3>::Type;
+
+// 1D 1x2 tensor
+typedef Vec2<int> Vec2i;
 
 // 1D 1x3 tensor
 typedef Vec3<double> Vec3d;
