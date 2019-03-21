@@ -394,61 +394,95 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     if (transformation.isIdentity() == false) {
         pcd.Transform(transformation);
     }
-    if (estimation.GetTransformationEstimationType() ==
-                TransformationEstimationType::PointToPlane &&
-        !target.HasNormals()) {
-        utility::PrintError(
-                "Error: TransformationEstimationPointToPlane requires "
-                "target point cloud to have pre-computed normal vectors.\n");
-        return Eigen::Matrix6d::Identity();
-    }
     RegistrationResult result;
     geometry::KDTreeFlann target_kdtree(target);
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, target_kdtree, max_correspondence_distance,
             transformation, estimation);
-
-    // write q^*
-    // see http://redwood-data.org/indoor/registration.html
-    // note: I comes first in this implementation
     Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::PointToPlane) {
+        if (!target.HasNormals()) {
+            // not printing error messsage here,
+            // since GetRegistrationResultAndCorrespondences
+            // aready printed that by now
+            return Eigen::Matrix6d::Identity();
+        }
+        Eigen::Matrix3d rotation = transformation.block<3, 3>(0, 0);
 #ifdef _OPENMP
 #pragma omp parallel
-    {
+        {
 #endif
-        Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
-        Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
+            Eigen::Matrix6d GTG_private;
+            Eigen::Matrix<double, 3, 6> G_private;
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (auto c = 0; c < result.correspondence_set_.size(); c++) {
-            int t = result.correspondence_set_[c](1);
-            double x = target.points_[t](0);
-            double y = target.points_[t](1);
-            double z = target.points_[t](2);
-            G_r_private.setZero();
-            G_r_private(1) = z;
-            G_r_private(2) = -y;
-            G_r_private(3) = 1.0;
-            GTG_private.noalias() += G_r_private * G_r_private.transpose();
-            G_r_private.setZero();
-            G_r_private(0) = -z;
-            G_r_private(2) = x;
-            G_r_private(4) = 1.0;
-            GTG_private.noalias() += G_r_private * G_r_private.transpose();
-            G_r_private.setZero();
-            G_r_private(0) = y;
-            G_r_private(1) = -x;
-            G_r_private(5) = 1.0;
-            GTG_private.noalias() += G_r_private * G_r_private.transpose();
-        }
+            for (auto c = 0; c < result.correspondence_set_.size(); c++) {
+                int t = result.correspondence_set_[c](1);
+                Eigen::Vector3d p = target.points_[t];
+                Eigen::Vector3d n = target.normals_[t];
+                // clang-format off
+                G_private <<
+                  0, p[2], -p[1], 1, 0, 0,
+                  -p[2], 0, p[0], 0, 1, 0,
+                  p[1], -p[0], 0, 0, 0, 1;
+                // clang-format on
+                GTG_private.noalias() = G_private.transpose() *
+                                        rotation.transpose() * n *
+                                        n.transpose() * rotation * G_private;
+            }
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        { GTG += GTG_private; }
+            { GTG += GTG_private; }
 #ifdef _OPENMP
-    }
+        }
 #endif
+    }
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::PointToPoint) {
+        // write q^*
+        // see http://redwood-data.org/indoor/registration.html
+        // note: I comes first in this implementation
+#ifdef _OPENMP
+#pragma omp parallel
+        {
+#endif
+            Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
+            Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
+            for (auto c = 0; c < result.correspondence_set_.size(); c++) {
+                int t = result.correspondence_set_[c](1);
+                double x = target.points_[t](0);
+                double y = target.points_[t](1);
+                double z = target.points_[t](2);
+                G_r_private.setZero();
+                G_r_private(1) = z;
+                G_r_private(2) = -y;
+                G_r_private(3) = 1.0;
+                GTG_private.noalias() += G_r_private * G_r_private.transpose();
+                G_r_private.setZero();
+                G_r_private(0) = -z;
+                G_r_private(2) = x;
+                G_r_private(4) = 1.0;
+                GTG_private.noalias() += G_r_private * G_r_private.transpose();
+                G_r_private.setZero();
+                G_r_private(0) = y;
+                G_r_private(1) = -x;
+                G_r_private(5) = 1.0;
+                GTG_private.noalias() += G_r_private * G_r_private.transpose();
+            }
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+            { GTG += GTG_private; }
+#ifdef _OPENMP
+        }
+#endif
+    }
     return std::move(GTG);
 }
 
