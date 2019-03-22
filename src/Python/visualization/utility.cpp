@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "visualization.h"
+#include "Python/visualization/visualization.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Utility/FileSystem.h>
 #include <Open3D/Geometry/PointCloud.h>
@@ -75,6 +76,23 @@ void pybind_visualization_utility(py::module &m) {
                            &visualization::SelectionPolygonVolume::axis_max_);
 }
 
+// Visualization util functions have similar arguments, sharing arg docstrings
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"callback_function",
+                 "Call back function to be triggered at a key press event."},
+                {"filename", "The file path."},
+                {"geometry_list", "List of geometries to be visualized."},
+                {"height", "The height of the visualization window."},
+                {"key_to_callback", "Map of key to call back functions."},
+                {"left", "The left margin of the visualization window."},
+                {"optional_view_trajectory_json_file",
+                 "Camera trajectory json file path for custom animation."},
+                {"top", "The top margin of the visualization window."},
+                {"width", "The width of the visualization window."},
+                {"window_name",
+                 "The displayed title of the visualization window."}};
+
 void pybind_visualization_utility_methods(py::module &m) {
     m.def("draw_geometries",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
@@ -90,6 +108,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "Function to draw a list of geometry::Geometry objects",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_custom_animation",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -108,6 +129,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50,
           "optional_view_trajectory_json_file"_a = "");
+    docstring::FunctionDocInject(m, "draw_geometries_with_custom_animation",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_animation_callback",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -127,6 +151,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "geometry_list"_a, "callback_function"_a, "window_name"_a = "Open3D",
           "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50,
           py::return_value_policy::reference);
+    docstring::FunctionDocInject(m, "draw_geometries_with_animation_callback",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_key_callbacks",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -147,6 +174,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "key-callback mapping",
           "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
           "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries_with_key_callbacks",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_editing",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -159,6 +189,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "interaction",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries_with_editing",
+                                 map_shared_argument_docstrings);
+
     m.def("read_selection_polygon_volume",
           [](const std::string &filename) {
               visualization::SelectionPolygonVolume vol;
@@ -167,4 +200,6 @@ void pybind_visualization_utility_methods(py::module &m) {
           },
           "Function to read visualization::SelectionPolygonVolume from file",
           "filename"_a);
+    docstring::FunctionDocInject(m, "read_selection_polygon_volume",
+                                 map_shared_argument_docstrings);
 }

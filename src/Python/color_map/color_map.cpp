@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 #include <Open3D/ColorMap/ColorMapOptimization.h>
 #include <Open3D/Camera/PinholeCameraTrajectory.h>
+#include "Python/docstring.h"
 
 using namespace open3d;
 
@@ -106,6 +107,12 @@ void pybind_color_map_methods(py::module &m) {
           "Function for color mapping of reconstructed scenes via optimization",
           "mesh"_a, "imgs_rgbd"_a, "camera"_a,
           "option"_a = color_map::ColorMapOptimizationOption());
+    docstring::FunctionDocInject(
+            m, "color_map_optimization",
+            {{"mesh", "The input geometry mesh."},
+             {"imgs_rgbd", "A list of RGBD images seen by cameras."},
+             {"camera", "Cameras' parameters."},
+             {"option", "The ColorMap optimization option."}});
 }
 
 void pybind_color_map(py::module &m) {

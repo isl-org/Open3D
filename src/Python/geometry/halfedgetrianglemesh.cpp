@@ -26,6 +26,7 @@
 
 #include "Python/geometry/geometry_trampoline.h"
 #include "Python/geometry/geometry.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/HalfEdgeTriangleMesh.h>
 #include <sstream>
@@ -106,5 +107,9 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                                    ordered_half_edge_from_vertex_);
 
     m.def("create_half_edge_mesh_from_mesh",
-          &geometry::CreateHalfEdgeMeshFromMesh, "mesh"_a);
+          &geometry::CreateHalfEdgeMeshFromMesh, "mesh"_a,
+          "Convert HalfEdgeTriangleMesh from TriangleMesh. Throws exception if "
+          "the input mesh is not manifolds");
+    docstring::FunctionDocInject(m, "create_half_edge_mesh_from_mesh",
+                                 {{"mesh", "The input TriangleMesh"}});
 }

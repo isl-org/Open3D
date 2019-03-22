@@ -39,6 +39,8 @@ public:
     std::string name_ = "";
     std::string type_ = "";
     std::string default_ = "";
+    // Long default values are not displayed in signature, but in docstrings
+    std::string long_default_ = "";
     std::string body_ = "";
 };
 

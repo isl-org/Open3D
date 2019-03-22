@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Python/registration/registration.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/PointCloud.h>
 #include <Open3D/Registration/Feature.h>
@@ -33,6 +34,7 @@
 #include <Open3D/Registration/Registration.h>
 #include <Open3D/Registration/FastGlobalRegistration.h>
 #include <Open3D/Registration/ColoredICP.h>
+#include "Python/docstring.h"
 
 using namespace open3d;
 
@@ -364,11 +366,44 @@ void pybind_registration_classes(py::module &m) {
             });
 }
 
+// Registration functions have similar arguments, sharing arg docstrings
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"checkers", "checkers"},
+                {"corres",
+                 "Checker class to check if two point clouds can be "
+                 "aligned. "
+                 "One of "
+                 "(``registration::CorrespondenceCheckerBasedOnEdgeLength``, "
+                 "``registration::CorrespondenceCheckerBasedOnDistance``, "
+                 "``registration::CorrespondenceCheckerBasedOnNormal``)"},
+                {"criteria", "Convergence criteria"},
+                {"estimation_method",
+                 "Estimation method. One of "
+                 "(``registration::TransformationEstimationPointToPoint``, "
+                 "``registration::TransformationEstimationPointToPlane``)"},
+                {"init", "Initial transformation estimation"},
+                {"lambda_geometric", "lambda_geometric value"},
+                {"max_correspondence_distance",
+                 "Maximum correspondence points-pair distance."},
+                {"option", "Registration option"},
+                {"ransac_n", "Fit ransac with ``ransac_n`` correspondences"},
+                {"source_feature", "Source point cloud feature."},
+                {"source", "The source point cloud."},
+                {"target_feature", "Target point cloud feature."},
+                {"target", "The target point cloud."},
+                {"transformation",
+                 "The 4x4 transformation matrix to transform ``source`` to "
+                 "``target``"}};
+
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &registration::EvaluateRegistration,
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a = Eigen::Matrix4d::Identity());
+    docstring::FunctionDocInject(m, "evaluate_registration",
+                                 map_shared_argument_docstrings);
+
     m.def("registration_icp", &registration::RegistrationICP,
           "Function for ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
@@ -376,12 +411,18 @@ void pybind_registration_methods(py::module &m) {
           "estimation_method"_a =
                   registration::TransformationEstimationPointToPoint(false),
           "criteria"_a = registration::ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m, "registration_icp",
+                                 map_shared_argument_docstrings);
+
     m.def("registration_colored_icp", &registration::RegistrationColoredICP,
           "Function for Colored ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
           "criteria"_a = registration::ICPConvergenceCriteria(),
           "lambda_geometric"_a = 0.968);
+    docstring::FunctionDocInject(m, "registration_colored_icp",
+                                 map_shared_argument_docstrings);
+
     m.def("registration_ransac_based_on_correspondence",
           &registration::RegistrationRANSACBasedOnCorrespondence,
           "Function for global RANSAC registration based on a set of "
@@ -391,6 +432,10 @@ void pybind_registration_methods(py::module &m) {
                   registration::TransformationEstimationPointToPoint(false),
           "ransac_n"_a = 6,
           "criteria"_a = registration::RANSACConvergenceCriteria());
+    docstring::FunctionDocInject(m,
+                                 "registration_ransac_based_on_correspondence",
+                                 map_shared_argument_docstrings);
+
     m.def("registration_ransac_based_on_feature_matching",
           &registration::RegistrationRANSACBasedOnFeatureMatching,
           "Function for global RANSAC registration based on feature matching",
@@ -402,17 +447,27 @@ void pybind_registration_methods(py::module &m) {
           "checkers"_a = std::vector<std::reference_wrapper<
                   const registration::CorrespondenceChecker>>(),
           "criteria"_a = registration::RANSACConvergenceCriteria(100000, 100));
+    docstring::FunctionDocInject(
+            m, "registration_ransac_based_on_feature_matching",
+            map_shared_argument_docstrings);
+
     m.def("registration_fast_based_on_feature_matching",
           &registration::FastGlobalRegistration,
           "Function for fast global registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "option"_a = registration::FastGlobalRegistrationOption());
+    docstring::FunctionDocInject(m,
+                                 "registration_fast_based_on_feature_matching",
+                                 map_shared_argument_docstrings);
+
     m.def("get_information_matrix_from_point_clouds",
           &registration::GetInformationMatrixFromPointClouds,
-          "Function for computing information matrix from "
-          "registration::RegistrationResult",
+          "Function for computing information matrix from transformation "
+          "matrix",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "transformation_result"_a);
+          "transformation"_a);
+    docstring::FunctionDocInject(m, "get_information_matrix_from_point_clouds",
+                                 map_shared_argument_docstrings);
 }
 
 void pybind_registration(py::module &m) {

@@ -26,6 +26,7 @@
 
 #include "Python/geometry/geometry_trampoline.h"
 #include "Python/geometry/geometry.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/PointCloud.h>
 #include <Open3D/Geometry/VoxelGrid.h>
@@ -60,4 +61,8 @@ void pybind_voxelgrid_methods(py::module &m) {
           &geometry::CreateSurfaceVoxelGridFromPointCloud,
           "Function to make voxels from scanned point cloud", "point_cloud"_a,
           "voxel_size"_a);
+    docstring::FunctionDocInject(
+            m, "create_surface_voxel_grid_from_point_cloud",
+            {{"point_cloud", "The input point cloud."},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
 }

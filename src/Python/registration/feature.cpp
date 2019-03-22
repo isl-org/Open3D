@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Python/registration/registration.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/PointCloud.h>
 #include <Open3D/Registration/Feature.h>
@@ -54,4 +55,8 @@ void pybind_feature_methods(py::module &m) {
     m.def("compute_fpfh_feature", &registration::ComputeFPFHFeature,
           "Function to compute FPFH feature for a point cloud", "input"_a,
           "search_param"_a);
+    docstring::FunctionDocInject(
+            m, "compute_fpfh_feature",
+            {{"input", "The Input point cloud."},
+             {"search_param", "KDTree KNN search parameter."}});
 }

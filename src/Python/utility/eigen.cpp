@@ -25,6 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Python/open3d_pybind.h"
+#include "Python/docstring.h"
+
+using namespace open3d;
 
 namespace pybind11 {
 
