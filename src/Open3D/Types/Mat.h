@@ -459,4 +459,10 @@ typedef Mat4<float> Mat4f;
 // 2D 6x6 tensor
 typedef Mat6<double> Mat6d;
 typedef Mat6<float> Mat6f;
+
+typedef Vec3d Point;
+typedef Vec3d Normal;
+typedef Vec3d Color;
+typedef Vec2i Line;
+typedef Vec3i Voxel;
 }  // namespace open3d

@@ -64,8 +64,8 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    Blob<Eigen::Vector3i, int>::Type voxels_;
-    Blob<Eigen::Vector3d, double>::Type colors_;
+    Voxels voxels_;
+    Colors colors_;
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(

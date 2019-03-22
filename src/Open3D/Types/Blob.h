@@ -51,4 +51,10 @@ struct Blob {
         inline size_t size() const { return h_data.size(); }
     } Type;
 };
+
+typedef Blob<Eigen::Vector3d, double>::Type Points;
+typedef Blob<Eigen::Vector3d, double>::Type Normals;
+typedef Blob<Eigen::Vector3d, double>::Type Colors;
+typedef Blob<Eigen::Vector2i, int>::Type Lines;
+typedef Blob<Eigen::Vector3i, int>::Type Voxels;
 }  // namespace open3d

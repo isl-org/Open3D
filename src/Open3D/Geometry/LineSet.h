@@ -68,9 +68,9 @@ public:
     }
 
 public:
-    Blob<Eigen::Vector3d, double>::Type points_;
-    Blob<Eigen::Vector2i, int>::Type lines_;
-    Blob<Eigen::Vector3d, double>::Type colors_;
+    Points points_;
+    Lines lines_;
+    Colors colors_;
 };
 
 /// Factory function to create a lineset from two pointclouds and a
