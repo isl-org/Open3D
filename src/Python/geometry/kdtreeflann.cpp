@@ -33,22 +33,35 @@
 using namespace open3d;
 
 void pybind_kdtreeflann(py::module &m) {
+    // open3d.geometry.KDTreeSearchParam
     py::class_<geometry::KDTreeSearchParam> kdtreesearchparam(
-            m, "KDTreeSearchParam", "KDTreeSearchParam");
+            m, "KDTreeSearchParam", "Base class for KDTree search parameters.");
     kdtreesearchparam.def("get_search_type",
-                          &geometry::KDTreeSearchParam::GetSearchType);
-    py::enum_<geometry::KDTreeSearchParam::SearchType>(kdtreesearchparam,
-                                                       "Type", py::arithmetic())
+                          &geometry::KDTreeSearchParam::GetSearchType,
+                          "Get the search type (KNN, Radius, Hybrid) for the "
+                          "search parameter.");
+    docstring::ClassMethodDocInject(m, "KDTreeSearchParam", "get_search_type");
+
+    // open3d.geometry.KDTreeSearchParam.Type
+    py::enum_<geometry::KDTreeSearchParam::SearchType> kdtree_search_param_type(
+            kdtreesearchparam, "Type", py::arithmetic());
+    kdtree_search_param_type
             .value("KNNSearch", geometry::KDTreeSearchParam::SearchType::Knn)
             .value("RadiusSearch",
                    geometry::KDTreeSearchParam::SearchType::Radius)
             .value("HybridSearch",
                    geometry::KDTreeSearchParam::SearchType::Hybrid)
             .export_values();
+    kdtree_search_param_type.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for Geometry types.";
+            }),
+            py::none(), py::none(), "");
 
+    // open3d.geometry.KDTreeSearchParamKNN
     py::class_<geometry::KDTreeSearchParamKNN> kdtreesearchparam_knn(
             m, "KDTreeSearchParamKNN", kdtreesearchparam,
-            "KDTreeSearchParamKNN");
+            "KDTree search parameters for pure KNN search.");
     kdtreesearchparam_knn.def(py::init<int>(), "knn"_a = 30)
             .def("__repr__",
                  [](const geometry::KDTreeSearchParamKNN &param) {
@@ -57,11 +70,13 @@ void pybind_kdtreeflann(py::module &m) {
                                     "= ") +
                             std::to_string(param.knn_);
                  })
-            .def_readwrite("knn", &geometry::KDTreeSearchParamKNN::knn_);
+            .def_readwrite("knn", &geometry::KDTreeSearchParamKNN::knn_,
+                           "``knn`` neighbors will be searched.");
 
+    // open3d.geometry.KDTreeSearchParamRadius
     py::class_<geometry::KDTreeSearchParamRadius> kdtreesearchparam_radius(
             m, "KDTreeSearchParamRadius", kdtreesearchparam,
-            "KDTreeSearchParamRadius");
+            "KDTree search parameters for pure radius search.");
     kdtreesearchparam_radius.def(py::init<double>(), "radius"_a)
             .def("__repr__",
                  [](const geometry::KDTreeSearchParamRadius &param) {
@@ -71,11 +86,13 @@ void pybind_kdtreeflann(py::module &m) {
                             std::to_string(param.radius_);
                  })
             .def_readwrite("radius",
-                           &geometry::KDTreeSearchParamRadius::radius_);
+                           &geometry::KDTreeSearchParamRadius::radius_,
+                           "Search radius.");
 
+    // open3d.geometry.KDTreeSearchParamHybrid
     py::class_<geometry::KDTreeSearchParamHybrid> kdtreesearchparam_hybrid(
             m, "KDTreeSearchParamHybrid", kdtreesearchparam,
-            "KDTreeSearchParamHybrid");
+            "KDTree search parameters for hybrid KNN and radius search.");
     kdtreesearchparam_hybrid
             .def(py::init<double, int>(), "radius"_a, "max_nn"_a)
             .def("__repr__",
@@ -87,12 +104,25 @@ void pybind_kdtreeflann(py::module &m) {
                             " and max_nn = " + std::to_string(param.max_nn_);
                  })
             .def_readwrite("radius",
-                           &geometry::KDTreeSearchParamHybrid::radius_)
-            .def_readwrite("max_nn",
-                           &geometry::KDTreeSearchParamHybrid::max_nn_);
+                           &geometry::KDTreeSearchParamHybrid::radius_,
+                           "Search radius.")
+            .def_readwrite(
+                    "max_nn", &geometry::KDTreeSearchParamHybrid::max_nn_,
+                    "At maximum, ``max_nn`` neighbors will be searched.");
 
+    // open3d.geometry.KDTreeFlann
+    static const std::unordered_map<std::string, std::string>
+            map_kd_tree_flann_method_docs = {
+                    {"query", "The input query point."},
+                    {"radius", "Search radius."},
+                    {"max_nn",
+                     "At maximum, ``max_nn`` neighbors will be searched."},
+                    {"knn", "``knn`` neighbors will be searched."},
+                    {"feature", "Feature data."},
+                    {"data", "Matrix data."}};
     py::class_<geometry::KDTreeFlann, std::shared_ptr<geometry::KDTreeFlann>>
-            kdtreeflann(m, "KDTreeFlann", "KDTreeFlann");
+            kdtreeflann(m, "KDTreeFlann",
+                        "KDTree with FLANN for nearest neighbor search.");
     kdtreeflann.def(py::init<>())
             .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
             .def("set_matrix_data", &geometry::KDTreeFlann::SetMatrixData,
@@ -219,4 +249,26 @@ void pybind_kdtreeflann(py::module &m) {
                      return std::make_tuple(k, indices, distance2);
                  },
                  "query"_a, "radius"_a, "max_nn"_a);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_3d",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_xd",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_knn_vector_3d",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_knn_vector_xd",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_radius_vector_3d",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_radius_vector_xd",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_vector_3d",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_vector_xd",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "set_feature",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "set_geometry",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "set_matrix_data",
+                                    map_kd_tree_flann_method_docs);
 }

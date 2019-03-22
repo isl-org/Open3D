@@ -35,7 +35,11 @@ using namespace open3d;
 void pybind_trianglemesh(py::module &m) {
     py::class_<geometry::TriangleMesh, PyGeometry3D<geometry::TriangleMesh>,
                std::shared_ptr<geometry::TriangleMesh>, geometry::Geometry3D>
-            trianglemesh(m, "TriangleMesh", "TriangleMesh");
+            trianglemesh(m, "TriangleMesh",
+                         "TriangleMesh class. Triangle mesh contains vertices "
+                         "and triangles represented by the indices to the "
+                         "vertices. Optionally, the mesh may also contain "
+                         "triangle normals, vertex normals and vertex colors.");
     py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
     trianglemesh
@@ -66,28 +70,76 @@ void pybind_trianglemesh(py::module &m) {
             .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
-            .def("has_vertices", &geometry::TriangleMesh::HasVertices)
-            .def("has_triangles", &geometry::TriangleMesh::HasTriangles)
+            .def("has_vertices", &geometry::TriangleMesh::HasVertices,
+                 "Returns ``True`` if the mesh contains vertices.")
+            .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
+                 "Returns ``True`` if the mesh contains triangles.")
             .def("has_vertex_normals",
-                 &geometry::TriangleMesh::HasVertexNormals)
-            .def("has_vertex_colors", &geometry::TriangleMesh::HasVertexColors)
+                 &geometry::TriangleMesh::HasVertexNormals,
+                 "Returns ``True`` if the mesh contains vertex normals.")
+            .def("has_vertex_colors", &geometry::TriangleMesh::HasVertexColors,
+                 "Returns ``True`` if the mesh contains vertex colors.")
             .def("has_triangle_normals",
-                 &geometry::TriangleMesh::HasTriangleNormals)
+                 &geometry::TriangleMesh::HasTriangleNormals,
+                 "Returns ``True`` if the mesh contains triangle normals.")
             .def("has_adjacency_list",
-                 &geometry::TriangleMesh::HasAdjacencyList)
-            .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals)
+                 &geometry::TriangleMesh::HasAdjacencyList,
+                 "Returns ``True`` if the mesh contains adjacency normals.")
+            .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
+                 "Normalize both triangle normals and vertex normals to legnth "
+                 "1.")
             .def("paint_uniform_color",
-                 &geometry::TriangleMesh::PaintUniformColor)
-            .def_readwrite("vertices", &geometry::TriangleMesh::vertices_)
+                 &geometry::TriangleMesh::PaintUniformColor,
+                 "Assign uniform color to all vertices.")
+            .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
+                           "``float64`` array of shape ``(num_vertices, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Vertex "
+                           "coordinates.")
             .def_readwrite("vertex_normals",
-                           &geometry::TriangleMesh::vertex_normals_)
-            .def_readwrite("vertex_colors",
-                           &geometry::TriangleMesh::vertex_colors_)
-            .def_readwrite("triangles", &geometry::TriangleMesh::triangles_)
+                           &geometry::TriangleMesh::vertex_normals_,
+                           "``float64`` array of shape ``(num_vertices, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Vertex "
+                           "normals.")
+            .def_readwrite(
+                    "vertex_colors", &geometry::TriangleMesh::vertex_colors_,
+                    "``float64`` array of shape ``(num_vertices, 3)``, "
+                    "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                    "data: RGB colors of vertices.")
+            .def_readwrite("triangles", &geometry::TriangleMesh::triangles_,
+                           "``int`` array of shape ``(num_triangles, 3)``, use "
+                           "``numpy.asarray()`` to access data: List of "
+                           "triangles denoted by the index of points forming "
+                           "the triangle.")
             .def_readwrite("triangle_normals",
-                           &geometry::TriangleMesh::triangle_normals_)
-            .def_readwrite("adjacency_list",
-                           &geometry::TriangleMesh::adjacency_list_);
+                           &geometry::TriangleMesh::triangle_normals_,
+                           "``float64`` array of shape ``(num_triangles, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Triangle "
+                           "normals.")
+            .def_readwrite(
+                    "adjacency_list", &geometry::TriangleMesh::adjacency_list_,
+                    "List of Sets: The set ``adjacency_list[i]`` contains the "
+                    "indices of adjacent vertices of vertex i.");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "compute_adjacency_list");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "compute_triangle_normals");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "compute_vertex_normals");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_adjacency_list");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "has_triangle_normals",
+            {{"normalized",
+              "Set to ``True`` to normalize the normal to length 1."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "has_vertex_normals",
+            {{"normalized",
+              "Set to ``True`` to normalize the normal to length 1."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertices");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {

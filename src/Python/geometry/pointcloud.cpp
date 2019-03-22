@@ -38,7 +38,10 @@ using namespace open3d;
 void pybind_pointcloud(py::module &m) {
     py::class_<geometry::PointCloud, PyGeometry3D<geometry::PointCloud>,
                std::shared_ptr<geometry::PointCloud>, geometry::Geometry3D>
-            pointcloud(m, "PointCloud", "PointCloud");
+            pointcloud(m, "PointCloud",
+                       "PointCloud class. A point cloud consists of point "
+                       "coordinates, and optionally point colors and point "
+                       "normals.");
     py::detail::bind_default_constructor<geometry::PointCloud>(pointcloud);
     py::detail::bind_copy_functions<geometry::PointCloud>(pointcloud);
     pointcloud
@@ -49,15 +52,36 @@ void pybind_pointcloud(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_points", &geometry::PointCloud::HasPoints)
-            .def("has_normals", &geometry::PointCloud::HasNormals)
-            .def("has_colors", &geometry::PointCloud::HasColors)
-            .def("normalize_normals", &geometry::PointCloud::NormalizeNormals)
+            .def("has_points", &geometry::PointCloud::HasPoints,
+                 "Returns ``True`` if the point cloud contains points.")
+            .def("has_normals", &geometry::PointCloud::HasNormals,
+                 "Returns ``True`` if the point cloud contains point normals.")
+            .def("has_colors", &geometry::PointCloud::HasColors,
+                 "Returns ``True`` if the point cloud contains point colors.")
+            .def("normalize_normals", &geometry::PointCloud::NormalizeNormals,
+                 "Normalize point normals to length 1.")
             .def("paint_uniform_color",
-                 &geometry::PointCloud::PaintUniformColor)
-            .def_readwrite("points", &geometry::PointCloud::points_)
-            .def_readwrite("normals", &geometry::PointCloud::normals_)
-            .def_readwrite("colors", &geometry::PointCloud::colors_);
+                 &geometry::PointCloud::PaintUniformColor, "color"_a,
+                 "Assign uniform color to all points.")
+            .def_readwrite("points", &geometry::PointCloud::points_,
+                           "``float64`` array of shape ``(num_points, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "coordinates.")
+            .def_readwrite("normals", &geometry::PointCloud::normals_,
+                           "``float64`` array of shape ``(num_points, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "normals.")
+            .def_readwrite(
+                    "colors", &geometry::PointCloud::colors_,
+                    "``float64`` array of shape ``(num_points, 3)``, "
+                    "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                    "data: RGB colors of points.");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
+    docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
+    docstring::ClassMethodDocInject(m, "PointCloud", "paint_uniform_color",
+                                    {{"color", "RGB color."}});
 }
 
 void pybind_pointcloud_methods(py::module &m) {
