@@ -125,11 +125,25 @@ protected:
     std::string pybind_doc_ = "";
 };
 
-/// Parse pybind docstring to FunctionDoc and inject argument docstrings
+/// Parse pybind docstring to FunctionDoc and inject argument docstrings for
+/// functions
 void FunctionDocInject(
         py::module& pybind_module,
         const std::string& function_name,
         const std::unordered_map<std::string, std::string>& map_parameter_docs =
                 std::unordered_map<std::string, std::string>());
+
+/// Parse pybind docstring to FunctionDoc and inject argument docstrings for
+/// class methods
+void ClassMethodDocInject(
+        py::module& pybind_module,
+        const std::string& class_name,
+        const std::string& function_name,
+        const std::unordered_map<std::string, std::string>&
+                map_parameter_body_docs =
+                        std::unordered_map<std::string, std::string>());
+
+extern py::handle static_property;
+
 }  // namespace docstring
 }  // namespace open3d

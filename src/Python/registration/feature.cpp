@@ -33,14 +33,20 @@
 using namespace open3d;
 
 void pybind_feature(py::module &m) {
+    // open3d.registration.Feature
     py::class_<registration::Feature, std::shared_ptr<registration::Feature>>
-            feature(m, "Feature", "Feature");
+            feature(m, "Feature", "Class to store featrues for registration.");
     py::detail::bind_default_constructor<registration::Feature>(feature);
     py::detail::bind_copy_functions<registration::Feature>(feature);
-    feature.def("resize", &registration::Feature::Resize, "dim"_a, "n"_a)
-            .def("dimension", &registration::Feature::Dimension)
-            .def("num", &registration::Feature::Num)
-            .def_readwrite("data", &registration::Feature::data_)
+    feature.def("resize", &registration::Feature::Resize, "dim"_a, "n"_a,
+                "Resize feature data buffer to ``dim x n``.")
+            .def("dimension", &registration::Feature::Dimension,
+                 "Returns feature dimensions per point.")
+            .def("num", &registration::Feature::Num,
+                 "Returns number of points.")
+            .def_readwrite("data", &registration::Feature::data_,
+                           "``dim x n`` float64 numpy array: Data buffer "
+                           "storing features.")
             .def("__repr__", [](const registration::Feature &f) {
                 return std::string(
                                "registration::Feature class with dimension "
@@ -49,6 +55,11 @@ void pybind_feature(py::module &m) {
                        std::string(" and num = ") + std::to_string(f.Num()) +
                        std::string("\nAccess its data via data member.");
             });
+    docstring::ClassMethodDocInject(m, "Feature", "dimension");
+    docstring::ClassMethodDocInject(m, "Feature", "num");
+    docstring::ClassMethodDocInject(m, "Feature", "resize",
+                                    {{"dim", "Feature dimension per point."},
+                                     {"n", "Number of points."}});
 }
 
 void pybind_feature_methods(py::module &m) {

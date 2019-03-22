@@ -81,7 +81,7 @@ public:
     int max_validation_;
 };
 
-/// Class that contains the registration result
+/// Class that contains the registration results
 class RegistrationResult {
 public:
     RegistrationResult(

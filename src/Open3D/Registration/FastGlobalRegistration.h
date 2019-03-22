@@ -70,7 +70,7 @@ public:
     bool decrease_mu_;
     // Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
     double maximum_correspondence_distance_;
-    // Maximum number of iteration
+    // Maximum number of iterations
     int iteration_number_;
     // Similarity measure used for tuples of feature points.
     double tuple_scale_;
