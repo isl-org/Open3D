@@ -322,7 +322,7 @@ TEST(PointCloud, PaintUniformColor) {
     EXPECT_TRUE(pc.HasColors());
 
     for (size_t i = 0; i < pc.colors_.size(); i++)
-        ExpectEQ(Eigen::Vector3d(233.0, 171.0, 53.0), pc.colors_.h_data[i]);
+        ExpectEQ(Eigen::Vector3d(233.0, 171.0, 53.0), pc.colors_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -371,20 +371,20 @@ TEST(PointCloud, OperatorAppend) {
 
     EXPECT_EQ(2 * size, pc.points_.size());
     for (size_t i = 0; i < size; i++) {
-        ExpectEQ(pc0.points_.h_data[i], pc.points_.h_data[0 + i]);
-        ExpectEQ(pc1.points_.h_data[i], pc.points_.h_data[size + i]);
+        ExpectEQ(pc0.points_[i], pc.points_[0 + i]);
+        ExpectEQ(pc1.points_[i], pc.points_[size + i]);
     }
 
     EXPECT_EQ(2 * size, pc.normals_.size());
     for (size_t i = 0; i < size; i++) {
-        ExpectEQ(pc0.normals_.h_data[i], pc.normals_.h_data[0 + i]);
-        ExpectEQ(pc1.normals_.h_data[i], pc.normals_.h_data[size + i]);
+        ExpectEQ(pc0.normals_[i], pc.normals_[0 + i]);
+        ExpectEQ(pc1.normals_[i], pc.normals_[size + i]);
     }
 
     EXPECT_EQ(2 * size, pc.colors_.size());
     for (size_t i = 0; i < size; i++) {
-        ExpectEQ(pc0.colors_.h_data[i], pc.colors_.h_data[0 + i]);
-        ExpectEQ(pc1.colors_.h_data[i], pc.colors_.h_data[size + i]);
+        ExpectEQ(pc0.colors_[i], pc.colors_[0 + i]);
+        ExpectEQ(pc1.colors_[i], pc.colors_[size + i]);
     }
 }
 
@@ -433,20 +433,20 @@ TEST(PointCloud, OperatorADD) {
 
     EXPECT_EQ(2 * size, pc.points_.size());
     for (size_t i = 0; i < size; i++) {
-        ExpectEQ(pc0.points_.h_data[i], pc.points_.h_data[0 + i]);
-        ExpectEQ(pc1.points_.h_data[i], pc.points_.h_data[size + i]);
+        ExpectEQ(pc0.points_[i], pc.points_[0 + i]);
+        ExpectEQ(pc1.points_[i], pc.points_[size + i]);
     }
 
     EXPECT_EQ(2 * size, pc.normals_.size());
     for (size_t i = 0; i < size; i++) {
-        ExpectEQ(pc0.normals_.h_data[i], pc.normals_.h_data[0 + i]);
-        ExpectEQ(pc1.normals_.h_data[i], pc.normals_.h_data[size + i]);
+        ExpectEQ(pc0.normals_[i], pc.normals_[0 + i]);
+        ExpectEQ(pc1.normals_[i], pc.normals_[size + i]);
     }
 
     EXPECT_EQ(2 * size, pc.colors_.size());
     for (size_t i = 0; i < size; i++) {
-        ExpectEQ(pc0.colors_.h_data[i], pc.colors_.h_data[0 + i]);
-        ExpectEQ(pc1.colors_.h_data[i], pc.colors_.h_data[size + i]);
+        ExpectEQ(pc0.colors_[i], pc.colors_[0 + i]);
+        ExpectEQ(pc1.colors_[i], pc.colors_[size + i]);
     }
 }
 

@@ -102,20 +102,20 @@ LineSet &LineSet::operator+=(const LineSet &lineset) {
     if ((!HasLines() || HasColors()) && lineset.HasColors()) {
         colors_.h_data.resize(new_line_num);
         for (size_t i = 0; i < add_line_num; i++) {
-            colors_.h_data[old_line_num + i] = lineset.colors_.h_data[i];
+            colors_[old_line_num + i] = lineset.colors_[i];
         }
     } else {
         colors_.h_data.clear();
     }
     points_.h_data.resize(new_point_num);
     for (size_t i = 0; i < add_point_num; i++) {
-        points_.h_data[old_point_num + i] = lineset.points_.h_data[i];
+        points_[old_point_num + i] = lineset.points_[i];
     }
     lines_.h_data.resize(new_line_num);
     for (size_t i = 0; i < add_line_num; i++) {
-        lines_.h_data[old_line_num + i] = Eigen::Vector2i(
-                lineset.lines_.h_data[i](0) + (int)old_point_num,
-                lineset.lines_.h_data[i](1) + (int)old_point_num);
+        lines_[old_line_num + i] =
+                Eigen::Vector2i(lineset.lines_[i](0) + (int)old_point_num,
+                                lineset.lines_[i](1) + (int)old_point_num);
     }
     return (*this);
 }

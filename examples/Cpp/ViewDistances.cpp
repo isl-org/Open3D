@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     pcd->colors_.h_data.resize(pcd->points_.size());
     visualization::ColorMapHot colormap;
     for (size_t i = 0; i < pcd->points_.size(); i++) {
-        pcd->colors_.h_data[i] = colormap.GetColor(distances[i] / max_distance);
+        pcd->colors_[i] = colormap.GetColor(distances[i] / max_distance);
     }
     if (utility::ProgramOptionExists(argc, argv, "--write_color_back")) {
         io::WritePointCloud(argv[1], *pcd);

@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     if (cloud_ptr->HasColors() == false) {
         cloud_ptr->colors_.h_data.resize(cloud_ptr->points_.size());
         for (size_t i = 0; i < cloud_ptr->points_.size(); i++) {
-            cloud_ptr->colors_.h_data[i].setZero();
+            cloud_ptr->colors_[i].setZero();
         }
     }
 
@@ -75,11 +75,10 @@ int main(int argc, char **argv) {
 
     for (size_t i = 0; i < indices_vec.size(); i++) {
         utility::PrintInfo("%d, %f\n", (int)indices_vec[i], sqrt(dists_vec[i]));
-        cloud_ptr->colors_.h_data[indices_vec[i]] =
-                Eigen::Vector3d(1.0, 0.0, 0.0);
+        cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(1.0, 0.0, 0.0);
     }
 
-    cloud_ptr->colors_.h_data[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
+    cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
 
     float r = float(sqrt(dists_vec[nn - 1]) * 2.0);
     Matrix<double> query1((double *)cloud_ptr->points_.h_data.data() + 3 * 99,
@@ -90,10 +89,9 @@ int main(int argc, char **argv) {
     utility::PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {
         utility::PrintInfo("%d, %f\n", (int)indices_vec[i], sqrt(dists_vec[i]));
-        cloud_ptr->colors_.h_data[indices_vec[i]] =
-                Eigen::Vector3d(0.0, 0.0, 1.0);
+        cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(0.0, 0.0, 1.0);
     }
-    cloud_ptr->colors_.h_data[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
+    cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
     visualization::DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
@@ -113,7 +111,7 @@ int main(int argc, char **argv) {
     if (new_cloud_ptr->HasColors() == false) {
         new_cloud_ptr->colors_.h_data.resize(new_cloud_ptr->points_.size());
         for (size_t i = 0; i < new_cloud_ptr->points_.size(); i++) {
-            new_cloud_ptr->colors_.h_data[i].setZero();
+            new_cloud_ptr->colors_[i].setZero();
         }
     }
 
@@ -121,31 +119,31 @@ int main(int argc, char **argv) {
     kdtree.SetGeometry(*new_cloud_ptr);
     std::vector<int> new_indices_vec(nn);
     std::vector<double> new_dists_vec(nn);
-    kdtree.SearchKNN(new_cloud_ptr->points_.h_data[0], nn, new_indices_vec,
+    kdtree.SearchKNN(new_cloud_ptr->points_[0], nn, new_indices_vec,
                      new_dists_vec);
 
     for (size_t i = 0; i < new_indices_vec.size(); i++) {
         utility::PrintInfo("%d, %f\n", (int)new_indices_vec[i],
                            sqrt(new_dists_vec[i]));
-        new_cloud_ptr->colors_.h_data[new_indices_vec[i]] =
+        new_cloud_ptr->colors_[new_indices_vec[i]] =
                 Eigen::Vector3d(1.0, 0.0, 0.0);
     }
 
-    new_cloud_ptr->colors_.h_data[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
+    new_cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
 
-    k = kdtree.SearchRadius(new_cloud_ptr->points_.h_data[99], r,
-                            new_indices_vec, new_dists_vec);
+    k = kdtree.SearchRadius(new_cloud_ptr->points_[99], r, new_indices_vec,
+                            new_dists_vec);
 
     utility::PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {
         utility::PrintInfo("%d, %f\n", (int)new_indices_vec[i],
                            sqrt(new_dists_vec[i]));
-        new_cloud_ptr->colors_.h_data[new_indices_vec[i]] =
+        new_cloud_ptr->colors_[new_indices_vec[i]] =
                 Eigen::Vector3d(0.0, 0.0, 1.0);
     }
-    new_cloud_ptr->colors_.h_data[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
+    new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
-    k = kdtree.Search(new_cloud_ptr->points_.h_data[199],
+    k = kdtree.Search(new_cloud_ptr->points_[199],
                       geometry::KDTreeSearchParamRadius(r), new_indices_vec,
                       new_dists_vec);
 
@@ -153,10 +151,10 @@ int main(int argc, char **argv) {
     for (int i = 0; i < k; i++) {
         utility::PrintInfo("%d, %f\n", (int)new_indices_vec[i],
                            sqrt(new_dists_vec[i]));
-        new_cloud_ptr->colors_.h_data[new_indices_vec[i]] =
+        new_cloud_ptr->colors_[new_indices_vec[i]] =
                 Eigen::Vector3d(0.0, 0.0, 1.0);
     }
-    new_cloud_ptr->colors_.h_data[199] = Eigen::Vector3d(0.0, 1.0, 1.0);
+    new_cloud_ptr->colors_[199] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
     visualization::DrawGeometries({new_cloud_ptr}, "TestKDTree", 1600, 900);
     return 0;

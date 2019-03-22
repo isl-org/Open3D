@@ -150,7 +150,7 @@ bool PickingShaderForPointCloud::PrepareBinding(
     points.resize(pointcloud.points_.size());
     indices.resize(pointcloud.points_.size());
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const auto &point = pointcloud.points_.h_data[i];
+        const auto &point = pointcloud.points_[i];
         points[i] = point.cast<float>();
         indices[i] = (float)i;
     }

@@ -79,14 +79,14 @@ public:
 
     void NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
-            normals_.h_data[i].normalize();
+            normals_[i].normalize();
         }
     }
 
     void PaintUniformColor(const Eigen::Vector3d &color) {
         colors_.h_data.resize(points_.size());
         for (size_t i = 0; i < points_.size(); i++) {
-            colors_.h_data[i] = color;
+            colors_[i] = color;
         }
     }
 

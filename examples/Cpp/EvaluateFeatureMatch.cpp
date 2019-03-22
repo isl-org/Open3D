@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
             std::vector<bool> has_correspondence(
                     pcds[pair_ids[k].second].points_.size(), false);
             for (auto i = 0; i < source.points_.size(); i++) {
-                const auto &pt = source.points_.h_data[i];
+                const auto &pt = source.points_[i];
                 if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
                                                          distance2) > 0) {
                     if (distance2[0] < threshold2) {
@@ -286,10 +286,10 @@ int main(int argc, char *argv[]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
                                 feature_trees[pair_ids[k].second].data_, i, 1,
                                 indices, fdistance2) > 0) {
-                        double new_dis = (source.points_.h_data[i] -
-                                          pcds[pair_ids[k].first]
-                                                  .points_.h_data[indices[0]])
-                                                 .norm();
+                        double new_dis =
+                                (source.points_[i] -
+                                 pcds[pair_ids[k].first].points_[indices[0]])
+                                        .norm();
                         true_dis[total_point_num + i] = new_dis;
                         if (new_dis < threshold) {
 #ifdef _OPENMP

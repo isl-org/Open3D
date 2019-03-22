@@ -284,7 +284,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
                     sphere->vertices_.size(),
                     color_palette[i % NUM_OF_COLOR_PALETTE]);
             Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
-            trans.block<3, 1>(0, 3) = pointcloud.points_.h_data[index];
+            trans.block<3, 1>(0, 3) = pointcloud.points_[index];
             sphere->Transform(trans);
             phong_shader_.InvalidateGeometry();
             if (phong_shader_.Render(*sphere, option, view) == false) {

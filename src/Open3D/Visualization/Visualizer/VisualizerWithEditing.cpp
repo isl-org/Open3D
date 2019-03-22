@@ -609,7 +609,7 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
             } else {
                 const auto &point =
                         ((const geometry::PointCloud &)(*geometry_ptrs_[0]))
-                                .points_.h_data[index];
+                                .points_[index];
                 utility::PrintInfo(
                         "Picked point #%d (%.2f, %.2f, %.2f) to add in "
                         "queue.\n",

@@ -80,8 +80,8 @@ std::shared_ptr<Feature> ComputeSPFHFeature(
 #pragma omp parallel for schedule(static)
 #endif
     for (int i = 0; i < (int)input.points_.size(); i++) {
-        const auto &point = input.points_.h_data[i];
-        const auto &normal = input.normals_.h_data[i];
+        const auto &point = input.points_[i];
+        const auto &normal = input.normals_[i];
         std::vector<int> indices;
         std::vector<double> distance2;
         if (kdtree.Search(point, search_param, indices, distance2) > 1) {
@@ -89,9 +89,9 @@ std::shared_ptr<Feature> ComputeSPFHFeature(
             double hist_incr = 100.0 / (double)(indices.size() - 1);
             for (size_t k = 1; k < indices.size(); k++) {
                 // skip the point itself, compute histogram
-                auto pf = ComputePairFeatures(
-                        point, normal, input.points_.h_data[indices[k]],
-                        input.normals_.h_data[indices[k]]);
+                auto pf = ComputePairFeatures(point, normal,
+                                              input.points_[indices[k]],
+                                              input.normals_[indices[k]]);
                 int h_index = (int)(floor(11 * (pf(0) + M_PI) / (2.0 * M_PI)));
                 if (h_index < 0) h_index = 0;
                 if (h_index >= 11) h_index = 10;
@@ -131,7 +131,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
 #pragma omp parallel for schedule(static)
 #endif
     for (int i = 0; i < (int)input.points_.size(); i++) {
-        const auto &point = input.points_.h_data[i];
+        const auto &point = input.points_[i];
         std::vector<int> indices;
         std::vector<double> distance2;
         if (kdtree.Search(point, search_param, indices, distance2) > 1) {

@@ -86,7 +86,7 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
     for (size_t i = 0; i < indices.size(); i++) {
-        const Eigen::Vector3d &point = cloud.points_.h_data[indices[i]];
+        const Eigen::Vector3d &point = cloud.points_[indices[i]];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
         cumulants(2) += point(2);
@@ -134,22 +134,22 @@ bool EstimateNormals(
         std::vector<int> indices;
         std::vector<double> distance2;
         Eigen::Vector3d normal;
-        if (kdtree.Search(cloud.points_.h_data[i], search_param, indices,
-                          distance2) >= 3) {
+        if (kdtree.Search(cloud.points_[i], search_param, indices, distance2) >=
+            3) {
             normal = ComputeNormal(cloud, indices);
             if (normal.norm() == 0.0) {
                 if (has_normal) {
-                    normal = cloud.normals_.h_data[i];
+                    normal = cloud.normals_[i];
                 } else {
                     normal = Eigen::Vector3d(0.0, 0.0, 1.0);
                 }
             }
-            if (has_normal && normal.dot(cloud.normals_.h_data[i]) < 0.0) {
+            if (has_normal && normal.dot(cloud.normals_[i]) < 0.0) {
                 normal *= -1.0;
             }
-            cloud.normals_.h_data[i] = normal;
+            cloud.normals_[i] = normal;
         } else {
-            cloud.normals_.h_data[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
+            cloud.normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
         }
     }
 
@@ -168,7 +168,7 @@ bool OrientNormalsToAlignWithDirection(
 #pragma omp parallel for schedule(static)
 #endif
     for (int i = 0; i < (int)cloud.points_.size(); i++) {
-        auto &normal = cloud.normals_.h_data[i];
+        auto &normal = cloud.normals_[i];
         if (normal.norm() == 0.0) {
             normal = orientation_reference;
         } else if (normal.dot(orientation_reference) < 0.0) {
@@ -191,8 +191,8 @@ bool OrientNormalsTowardsCameraLocation(
 #endif
     for (int i = 0; i < (int)cloud.points_.size(); i++) {
         Eigen::Vector3d orientation_reference =
-                camera_location - cloud.points_.h_data[i];
-        auto &normal = cloud.normals_.h_data[i];
+                camera_location - cloud.points_[i];
+        auto &normal = cloud.normals_[i];
         if (normal.norm() == 0.0) {
             normal = orientation_reference;
             if (normal.norm() == 0.0) {

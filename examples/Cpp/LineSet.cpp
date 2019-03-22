@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     kdtree.SetGeometry(*cloud_ptr);
     std::vector<int> indices_vec(nn);
     std::vector<double> dists_vec(nn);
-    kdtree.SearchKNN(cloud_ptr->points_.h_data[0], nn, indices_vec, dists_vec);
+    kdtree.SearchKNN(cloud_ptr->points_[0], nn, indices_vec, dists_vec);
     for (int i = 0; i < nn; i++) {
         correspondences.push_back(std::make_pair(0, indices_vec[i]));
     }
@@ -82,8 +82,7 @@ int main(int argc, char **argv) {
                              trans_to_origin);
     correspondences.clear();
     for (size_t i = 0; i < new_cloud_ptr->points_.size(); i++) {
-        kdtree.SearchKNN(new_cloud_ptr->points_.h_data[i], 1, indices_vec,
-                         dists_vec);
+        kdtree.SearchKNN(new_cloud_ptr->points_[i], 1, indices_vec, dists_vec);
         correspondences.push_back(std::make_pair(indices_vec[0], (int)i));
     }
     auto new_lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
@@ -93,9 +92,9 @@ int main(int argc, char **argv) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
         if ((point_pair.first - point_pair.second).norm() <
             0.05 * bounding_box.GetSize()) {
-            new_lineset_ptr->colors_.h_data[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
+            new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
-            new_lineset_ptr->colors_.h_data[i] = Eigen::Vector3d(0.0, 0.0, 0.0);
+            new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);
         }
     }
     visualization::DrawGeometries({cloud_ptr, new_cloud_ptr, new_lineset_ptr});

@@ -37,10 +37,16 @@ struct Blob {
         // host data container
         std::vector<V> h_data{};
         // device data pointer
-        T* d_data{};
+        T *d_data{};
         // device id
         // set to -1 to execute on the CPU
         int cuda_device_id = 0;
+
+        // subscript operator: readwrite, host side only
+        inline V &operator[](const uint &i) { return h_data[i]; }
+        // subscript operator: readonly, host side only
+        inline const V &operator[](const uint &i) const { return h_data[i]; }
+
         // number of elements in this structure
         inline size_t size() const { return h_data.size(); }
     } Type;

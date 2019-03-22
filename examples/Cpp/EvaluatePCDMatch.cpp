@@ -166,14 +166,13 @@ int main(int argc, char *argv[]) {
         int correspondence_num = 0;
         double rmse = 0.0;
         for (auto i = 0; i < source.points_.size(); i++) {
-            if (kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_.h_data[i],
-                                                     1, indices,
-                                                     distance2) > 0) {
+            if (kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_[i], 1,
+                                                     indices, distance2) > 0) {
                 if (distance2[0] < threshold2) {
                     correspondence_num++;
                     double new_dis =
-                            (source.points_.h_data[i] -
-                             pcds[pair_ids[k].first].points_.h_data[indices[0]])
+                            (source.points_[i] -
+                             pcds[pair_ids[k].first].points_[indices[0]])
                                     .norm();
                     rmse += new_dis * new_dis;
                 }

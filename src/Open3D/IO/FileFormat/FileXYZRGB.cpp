@@ -73,8 +73,8 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
     }
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const Eigen::Vector3d &point = pointcloud.points_.h_data[i];
-        const Eigen::Vector3d &color = pointcloud.colors_.h_data[i];
+        const Eigen::Vector3d &point = pointcloud.points_[i];
+        const Eigen::Vector3d &color = pointcloud.colors_[i];
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
                     point(1), point(2), color(0), color(1), color(2)) < 0) {
             utility::PrintWarning(

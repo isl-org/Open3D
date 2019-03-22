@@ -92,12 +92,11 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
 
     for (auto k = 0; k < n_points; k++) {
-        const Eigen::Vector3d &vt = output->points_.h_data[k];
-        const Eigen::Vector3d &nt = output->normals_.h_data[k];
-        double it =
-                (output->colors_.h_data[k](0) + output->colors_.h_data[k](1) +
-                 output->colors_.h_data[k](2)) /
-                3.0;
+        const Eigen::Vector3d &vt = output->points_[k];
+        const Eigen::Vector3d &nt = output->normals_[k];
+        double it = (output->colors_[k](0) + output->colors_[k](1) +
+                     output->colors_[k](2)) /
+                    3.0;
 
         std::vector<int> point_idx;
         std::vector<double> point_squared_distance;
@@ -112,11 +111,11 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             b.setZero();
             for (auto i = 1; i < nn; i++) {
                 int P_adj_idx = point_idx[i];
-                Eigen::Vector3d vt_adj = output->points_.h_data[P_adj_idx];
+                Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
                 Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
-                double it_adj = (output->colors_.h_data[P_adj_idx](0) +
-                                 output->colors_.h_data[P_adj_idx](1) +
-                                 output->colors_.h_data[P_adj_idx](2)) /
+                double it_adj = (output->colors_[P_adj_idx](0) +
+                                 output->colors_[P_adj_idx](1) +
+                                 output->colors_[P_adj_idx](2)) /
                                 3.0;
                 A(i - 1, 0) = (vt_proj(0) - vt(0));
                 A(i - 1, 1) = (vt_proj(1) - vt(1));
@@ -161,9 +160,9 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                 std::vector<double> &r) {
                 size_t cs = corres[i][0];
                 size_t ct = corres[i][1];
-                const Eigen::Vector3d &vs = source.points_.h_data[cs];
-                const Eigen::Vector3d &vt = target.points_.h_data[ct];
-                const Eigen::Vector3d &nt = target.normals_.h_data[ct];
+                const Eigen::Vector3d &vs = source.points_[cs];
+                const Eigen::Vector3d &vt = target.points_[ct];
+                const Eigen::Vector3d &nt = target.normals_[ct];
 
                 J_r.resize(2);
                 r.resize(2);
@@ -174,13 +173,11 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
                 // project vs into vt's tangential plane
                 Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-                double is = (source.colors_.h_data[cs](0) +
-                             source.colors_.h_data[cs](1) +
-                             source.colors_.h_data[cs](2)) /
+                double is = (source.colors_[cs](0) + source.colors_[cs](1) +
+                             source.colors_[cs](2)) /
                             3.0;
-                double it = (target.colors_.h_data[ct](0) +
-                             target.colors_.h_data[ct](1) +
-                             target.colors_.h_data[ct](2)) /
+                double it = (target.colors_[ct](0) + target.colors_[ct](1) +
+                             target.colors_[ct](2)) /
                             3.0;
                 const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
                 double is0_proj = (dit.dot(vs_proj - vt)) + it;
@@ -227,18 +224,16 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     for (size_t i = 0; i < corres.size(); i++) {
         size_t cs = corres[i][0];
         size_t ct = corres[i][1];
-        const Eigen::Vector3d &vs = source.points_.h_data[cs];
-        const Eigen::Vector3d &vt = target.points_.h_data[ct];
-        const Eigen::Vector3d &nt = target.normals_.h_data[ct];
+        const Eigen::Vector3d &vs = source.points_[cs];
+        const Eigen::Vector3d &vt = target.points_[ct];
+        const Eigen::Vector3d &nt = target.normals_[ct];
         Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-        double is =
-                (source.colors_.h_data[cs](0) + source.colors_.h_data[cs](1) +
-                 source.colors_.h_data[cs](2)) /
-                3.0;
-        double it =
-                (target.colors_.h_data[ct](0) + target.colors_.h_data[ct](1) +
-                 target.colors_.h_data[ct](2)) /
-                3.0;
+        double is = (source.colors_[cs](0) + source.colors_[cs](1) +
+                     source.colors_[cs](2)) /
+                    3.0;
+        double it = (target.colors_[ct](0) + target.colors_[ct](1) +
+                     target.colors_[ct](2)) /
+                    3.0;
         const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
         double is0_proj = (dit.dot(vs_proj - vt)) + it;
         double residual_geometric = sqrt_lambda_geometric * (vs - vt).dot(nt);

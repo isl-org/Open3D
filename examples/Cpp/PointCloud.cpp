@@ -46,13 +46,13 @@ void PrintPointCloud(const open3d::geometry::PointCloud &pointcloud) {
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         if (pointcloud_has_normal) {
-            const Eigen::Vector3d &point = pointcloud.points_.h_data[i];
-            const Eigen::Vector3d &normal = pointcloud.normals_.h_data[i];
+            const Eigen::Vector3d &point = pointcloud.points_[i];
+            const Eigen::Vector3d &normal = pointcloud.normals_[i];
             utility::PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n", point(0),
                                 point(1), point(2), normal(0), normal(1),
                                 normal(2));
         } else {
-            const Eigen::Vector3d &point = pointcloud.points_.h_data[i];
+            const Eigen::Vector3d &point = pointcloud.points_[i];
             utility::PrintDebug("%.6f %.6f %.6f\n", point(0), point(1),
                                 point(2));
         }
@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
                     *pcd, open3d::geometry::KDTreeSearchParamKNN(20));
         }
     }
-    std::cout << pcd->normals_.h_data[0] << std::endl;
-    std::cout << pcd->normals_.h_data[10] << std::endl;
+    std::cout << pcd->normals_[0] << std::endl;
+    std::cout << pcd->normals_[10] << std::endl;
 
     {
         utility::ScopeTimer timer("Normal estimation with Radius 0.01666");
@@ -91,8 +91,8 @@ int main(int argc, char *argv[]) {
                     *pcd, open3d::geometry::KDTreeSearchParamRadius(0.01666));
         }
     }
-    std::cout << pcd->normals_.h_data[0] << std::endl;
-    std::cout << pcd->normals_.h_data[10] << std::endl;
+    std::cout << pcd->normals_[0] << std::endl;
+    std::cout << pcd->normals_[10] << std::endl;
 
     {
         utility::ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
@@ -102,8 +102,8 @@ int main(int argc, char *argv[]) {
                     open3d::geometry::KDTreeSearchParamHybrid(0.01666, 60));
         }
     }
-    std::cout << pcd->normals_.h_data[0] << std::endl;
-    std::cout << pcd->normals_.h_data[10] << std::endl;
+    std::cout << pcd->normals_[0] << std::endl;
+    std::cout << pcd->normals_[10] << std::endl;
 
     auto downpcd = geometry::VoxelDownSample(*pcd, 0.05);
 

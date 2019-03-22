@@ -41,14 +41,14 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
     size_t point1_size = cloud1.points_.size();
     lineset_ptr->points_.h_data.resize(point0_size + point1_size);
     for (size_t i = 0; i < point0_size; i++)
-        lineset_ptr->points_.h_data[i] = cloud0.points_.h_data[i];
+        lineset_ptr->points_[i] = cloud0.points_[i];
     for (size_t i = 0; i < point1_size; i++)
-        lineset_ptr->points_.h_data[point0_size + i] = cloud1.points_.h_data[i];
+        lineset_ptr->points_[point0_size + i] = cloud1.points_[i];
 
     size_t corr_size = correspondences.size();
     lineset_ptr->lines_.h_data.resize(corr_size);
     for (size_t i = 0; i < corr_size; i++)
-        lineset_ptr->lines_.h_data[i] =
+        lineset_ptr->lines_[i] =
                 Eigen::Vector2i(correspondences[i].first,
                                 point0_size + correspondences[i].second);
     return lineset_ptr;

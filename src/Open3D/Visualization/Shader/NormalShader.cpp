@@ -156,8 +156,8 @@ bool NormalShaderForPointCloud::PrepareBinding(
     points.resize(pointcloud.points_.size());
     normals.resize(pointcloud.points_.size());
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-        const auto &point = pointcloud.points_.h_data[i];
-        const auto &normal = pointcloud.normals_.h_data[i];
+        const auto &point = pointcloud.points_[i];
+        const auto &normal = pointcloud.normals_[i];
         points[i] = point.cast<float>();
         normals[i] = normal.cast<float>();
     }
