@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Benchmark/benchmark_pre.py
+# examples/Python/Benchmark/benchmark_pre.py
 
 import os
 import sys
