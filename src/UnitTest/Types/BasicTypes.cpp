@@ -28,6 +28,8 @@
 
 #include "Open3D/Types/Mat.h"
 
+#include <Eigen/Geometry>
+
 #include <iostream>
 using namespace std;
 
@@ -279,4 +281,62 @@ TEST(BasicTypes, random) {
         EXPECT_TRUE(-10 <= vi[c]);
         EXPECT_TRUE(vi[c] <= 15);
     }
+}
+
+// ----------------------------------------------------------------------------
+// Test normalize.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, normalize) {
+    open3d::Vec3d v0{};
+
+    v0 = open3d::Vec3d::Random();
+
+    Eigen::Vector3d ev0 = Eigen::Vector3d(v0[0], v0[1], v0[2]);
+
+    v0.normalize();
+    ev0.normalize();
+
+    EXPECT_EQ(v0[0], ev0[0]);
+    EXPECT_EQ(v0[1], ev0[1]);
+    EXPECT_EQ(v0[2], ev0[2]);
+}
+
+// ----------------------------------------------------------------------------
+// Test dot.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, dot) {
+    open3d::Vec3d v0{};
+    open3d::Vec3d v1{};
+
+    v0 = open3d::Vec3d::Random();
+    v1 = open3d::Vec3d::Random();
+
+    Eigen::Vector3d ev0 = Eigen::Vector3d(v0[0], v0[1], v0[2]);
+    Eigen::Vector3d ev1 = Eigen::Vector3d(v1[0], v1[1], v1[2]);
+
+    auto open3d_dot = v0.dot(v1);
+    auto eigen_dot = ev0.dot(ev1);
+
+    EXPECT_EQ(eigen_dot, open3d_dot);
+}
+
+// ----------------------------------------------------------------------------
+// Test cross.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, cross) {
+    open3d::Vec3d v0{};
+    open3d::Vec3d v1{};
+
+    v0 = open3d::Vec3d::Random();
+    v1 = open3d::Vec3d::Random();
+
+    Eigen::Vector3d ev0 = Eigen::Vector3d(v0[0], v0[1], v0[2]);
+    Eigen::Vector3d ev1 = Eigen::Vector3d(v1[0], v1[1], v1[2]);
+
+    auto open3d_cross = v0.cross(v1);
+    auto eigen_cross = ev0.cross(ev1);
+
+    EXPECT_EQ(eigen_cross[0], open3d_cross[0]);
+    EXPECT_EQ(eigen_cross[1], open3d_cross[1]);
+    EXPECT_EQ(eigen_cross[2], open3d_cross[2]);
 }
