@@ -170,3 +170,121 @@ TEST(BasicTypes, comparison_ops_double) {
     EXPECT_TRUE(v0 != v1);
     EXPECT_TRUE(v0 >= v1);
 }
+
+// ----------------------------------------------------------------------------
+// Test clearing the basic data types.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, zero) {
+    open3d::Mat3d m{};
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 0.0);
+
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++)
+            m[r][c] = r * open3d::Mat3d::Cols + c;
+
+    m.setZero();
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 0.0);
+
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++)
+            m[r][c] = r * open3d::Mat3d::Cols + c;
+
+    m = open3d::Mat3d::Zero();
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 0.0);
+
+    open3d::Vec3d v{};
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 0.0);
+
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) v[c] = c;
+    v.setZero();
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 0.0);
+
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) v[c] = c;
+    v = open3d::Vec3d::Zero();
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 0.0);
+}
+
+// ----------------------------------------------------------------------------
+// Test initializing to ones.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, ones) {
+    open3d::Mat3d m{};
+    m = open3d::Mat3d::Ones();
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 1.0);
+
+    open3d::Vec3d v{};
+    v = open3d::Vec3d::Ones();
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 1.0);
+}
+
+// ----------------------------------------------------------------------------
+// Test initializing with identity.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, setIdentity) {
+    open3d::Mat3d m{};
+    m.setIdentity();
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+            if (r == c)
+                EXPECT_EQ(m[r][c], 1.0);
+            else
+                EXPECT_EQ(m[r][c], 0.0);
+        }
+
+    m.setZero();
+    m = open3d::Mat3d::Identity();
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+            if (r == c)
+                EXPECT_EQ(m[r][c], 1.0);
+            else
+                EXPECT_EQ(m[r][c], 0.0);
+        }
+}
+
+// ----------------------------------------------------------------------------
+// Test initializing to random values between [-1, 1).
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, random) {
+    open3d::Mat3d m{};
+    m = open3d::Mat3d::Random(-10.0, 15);
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+            EXPECT_TRUE(-10.0 <= m[r][c]);
+            EXPECT_TRUE(m[r][c] < 15.0);
+            cout << m[r][c] << endl;
+        }
+    cout << endl;
+
+    open3d::Mat3i mi{};
+    mi = open3d::Mat3i::Random(-10, 15);
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+            EXPECT_TRUE(-10 <= mi[r][c]);
+            EXPECT_TRUE(mi[r][c] < 15);
+            cout << mi[r][c] << endl;
+        }
+    cout << endl;
+
+    open3d::Vec3d v{};
+    v = open3d::Vec3d::Random(-10.0, 15.0);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+        EXPECT_TRUE(-10.0 <= v[c]);
+        EXPECT_TRUE(v[c] < 15.0);
+        cout << v[c] << endl;
+    }
+    cout << endl;
+
+    open3d::Vec3i vi{};
+    vi = open3d::Vec3i::Random(-10, 15);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+        EXPECT_TRUE(-10 <= vi[c]);
+        EXPECT_TRUE(vi[c] < 15);
+        cout << vi[c] << endl;
+    }
+    cout << endl;
+}
