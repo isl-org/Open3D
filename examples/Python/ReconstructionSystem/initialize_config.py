@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/ReconstructionSystem/initialize_config.py
+# examples/Python/ReconstructionSystem/initialize_config.py
 
 
 def set_default_value(config, key, value):
