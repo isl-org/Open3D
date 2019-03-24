@@ -235,9 +235,10 @@ struct Vec {
         static OPEN3D_FUNC_DECL inline _Type Random(const T &min = (T)-1,
                                                     const T &max = (T)1) {
             _Type output{};
+            utility::Random<T> random(min, max);
 
 #pragma unroll
-            for (uint c = 0; c < COLS; c++) output.s[c] = utility::Next<T>(min, max);
+            for (uint c = 0; c < COLS; c++) output.s[c] = random.Next();
 
             return output;
         }
@@ -458,11 +459,12 @@ struct Mat {
         static OPEN3D_FUNC_DECL inline _Type Random(const T &min = (T)-1,
                                                     const T &max = (T)1) {
             _Type output{};
+            utility::Random<T> random(min, max);
 
 #pragma unroll
             for (uint r = 0; r < ROWS; r++)
 #pragma unroll
-                for (uint c = 0; c < COLS; c++) output.s[r][c] = utility::Next<T>(min, max);
+                for (uint c = 0; c < COLS; c++) output.s[r][c] = random.Next();
 
             return output;
         }

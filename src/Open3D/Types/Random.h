@@ -49,21 +49,18 @@ struct Query<int> {
     typedef std::uniform_int_distribution<int> Type;
 };
 
-template<typename T>
+template <typename T>
 class Random {
-
-};
-
-template<typename T>
-T Next(const T &min = (T)-1, const T &max = (T)1) {
-    T output{};
-
-    // setup randomness machine
+private:
     std::random_device device;
-    std::mt19937 engine(device());
-    typename Query<T>::Type query(min, max);
+    std::mt19937 engine;
+    typename Query<T>::Type query;
 
-    return query(engine);
-}
+public:
+    // setup randomness machine
+    Random(const T &min, const T &max) : engine(device()), query(min, max) {}
+    // generate the next random variable
+    T Next() { return query(engine); }
+};
 }  // namespace utility
 }  // namespace open3d
