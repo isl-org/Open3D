@@ -33,6 +33,7 @@
 #include <Open3D/Registration/Registration.h>
 #include <Open3D/Registration/FastGlobalRegistration.h>
 #include <Open3D/Registration/ColoredICP.h>
+#include "Open3D/Types/Blob.h"
 
 using namespace open3d;
 
@@ -49,14 +50,14 @@ public:
     double ComputeRMSE(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const registration::CorrespondenceSet &corres) const override {
+            const CorrespondenceSet &corres) const override {
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
                                target, corres);
     }
     Eigen::Matrix4d ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const registration::CorrespondenceSet &corres) const override {
+            const CorrespondenceSet &corres) const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Matrix4d, TransformationEstimationBase,
                                source, target, corres);
     }
@@ -68,7 +69,7 @@ public:
     using CorrespondenceCheckerBase::CorrespondenceCheckerBase;
     bool Check(const geometry::PointCloud &source,
                const geometry::PointCloud &target,
-               const registration::CorrespondenceSet &corres,
+               const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override {
         PYBIND11_OVERLOAD_PURE(bool, CorrespondenceCheckerBase, source, target,
                                corres, transformation);

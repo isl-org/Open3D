@@ -28,6 +28,8 @@
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
+#include "Open3D/Types/Blob.h"
+
 namespace open3d {
 
 void VisualizerForAlignment::PrintVisualizerHelp() {
@@ -286,7 +288,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
         return false;
     }
     registration::TransformationEstimationPointToPoint p2p(with_scaling_);
-    registration::CorrespondenceSet corres;
+    CorrespondenceSet corres;
     for (size_t i = 0; i < source_idx.size(); i++) {
         corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
     }

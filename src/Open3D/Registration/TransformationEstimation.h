@@ -31,6 +31,8 @@
 #include <string>
 #include <Eigen/Core>
 
+#include "Open3D/Types/Blob.h"
+
 namespace open3d {
 
 namespace geometry {
@@ -38,8 +40,6 @@ class PointCloud;
 }
 
 namespace registration {
-
-typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,

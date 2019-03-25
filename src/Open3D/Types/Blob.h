@@ -35,6 +35,9 @@ namespace open3d {
 template <typename V, typename T>
 struct Blob {
     typedef struct _Type {
+        _Type() {}
+        _Type(const int& size) : h_data(size) {}
+
         // host data container
         std::vector<V> h_data{};
         // device data pointer
@@ -70,6 +73,7 @@ struct Blob {
         inline typename std::vector<V>::const_iterator end() const noexcept {
             return h_data.end();
         }
+        inline bool empty() const noexcept { return h_data.empty(); }
         // forward the call to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position,
@@ -128,4 +132,5 @@ typedef Blob3d Triangle_normals;
 typedef Blob2i Lines;
 typedef Blob3i Voxels;
 typedef Blob3i Triangles;
+typedef Blob2i CorrespondenceSet;
 }  // namespace open3d
