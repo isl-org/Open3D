@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
         auto update_colors_func = [&cloud_ptr](double index) {
             auto color_map_ptr = visualization::GetGlobalColorMap();
-            for (auto &c : cloud_ptr->colors_.h_data) {
+            for (auto &c : cloud_ptr->colors_) {
                 c = color_map_ptr->GetColor(index);
             }
         };

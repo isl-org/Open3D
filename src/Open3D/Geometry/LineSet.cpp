@@ -82,7 +82,7 @@ Eigen::Vector3d LineSet::GetMaxBound() const {
 }
 
 void LineSet::Transform(const Eigen::Matrix4d &transformation) {
-    for (auto &point : points_.h_data) {
+    for (auto &point : points_) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(point(0), point(1), point(2), 1.0);

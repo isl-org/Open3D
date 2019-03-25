@@ -94,13 +94,13 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
 }
 
 void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
-    for (auto &point : points_.h_data) {
+    for (auto &point : points_) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(point(0), point(1), point(2), 1.0);
         point = new_point.block<3, 1>(0, 0);
     }
-    for (auto &normal : normals_.h_data) {
+    for (auto &normal : normals_) {
         Eigen::Vector4d new_normal =
                 transformation *
                 Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0);

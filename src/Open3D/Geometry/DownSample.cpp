@@ -177,7 +177,7 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
     std::vector<std::vector<int>> vertex_to_triangle_temp(
             input.vertices_.size());
     int triangle_id = 0;
-    for (auto triangle : input.triangles_.h_data) {
+    for (auto triangle : input.triangles_) {
         for (int i = 0; i < 3; i++)
             vertex_to_triangle_temp[triangle(i)].push_back(triangle_id);
         triangle_id++;
