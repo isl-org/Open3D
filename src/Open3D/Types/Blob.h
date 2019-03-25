@@ -73,6 +73,7 @@ struct Blob {
         inline typename std::vector<V>::const_iterator end() const noexcept {
             return h_data.end();
         }
+        // forward the call to std:vector<V>::empty()
         inline bool empty() const noexcept { return h_data.empty(); }
         // forward the call to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
