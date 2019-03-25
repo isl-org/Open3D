@@ -188,7 +188,7 @@ ComputePointCloudMeanAndCovarianceCPU(const PointCloud &input) {
 
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
-    for (const auto &point : input.points_.h_data) {
+    for (const auto &point : input.points_) {
         cumulants(0) += point(0);
         cumulants(1) += point(1);
         cumulants(2) += point(2);

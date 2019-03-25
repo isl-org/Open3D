@@ -83,7 +83,7 @@ void ScalableTSDFVolume::Integrate(
     std::unordered_set<Eigen::Vector3i,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             touched_volume_units_;
-    for (const auto &point : pointcloud->points_.h_data) {
+    for (const auto &point : pointcloud->points_) {
         auto min_bound = LocateVolumeUnit(
                 point - Eigen::Vector3d(sdf_trunc_, sdf_trunc_, sdf_trunc_));
         auto max_bound = LocateVolumeUnit(

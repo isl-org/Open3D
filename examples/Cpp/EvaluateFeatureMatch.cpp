@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         std::vector<int> indices(1);
         std::vector<double> distance2(1);
         int correspondence_num = 0;
-        for (const auto &pt : source.points_.h_data) {
+        for (const auto &pt : source.points_) {
             if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
                                                      distance2) > 0) {
                 if (distance2[0] < threshold2) {
