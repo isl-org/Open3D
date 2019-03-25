@@ -83,9 +83,9 @@ TEST(PointCloud, Clear) {
     pc.normals_.resize(size);
     pc.colors_.resize(size);
 
-    Rand(pc.points_.h_data, vmin, vmax, 0);
-    Rand(pc.normals_.h_data, vmin, vmax, 0);
-    Rand(pc.colors_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
+    Rand(pc.normals_, vmin, vmax, 0);
+    Rand(pc.colors_, vmin, vmax, 0);
 
     ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), pc.GetMinBound());
     ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
@@ -124,7 +124,7 @@ TEST(PointCloud, IsEmpty) {
 
     pc.points_.resize(size);
 
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     EXPECT_FALSE(pc.IsEmpty());
 }
@@ -142,7 +142,7 @@ TEST(PointCloud, GetMinBound) {
 
     pc.points_.resize(size);
 
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     Eigen::Vector3d minBound = pc.GetMinBound();
 
@@ -162,7 +162,7 @@ TEST(PointCloud, GetMaxBound) {
 
     pc.points_.resize(size);
 
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     Eigen::Vector3d maxBound = pc.GetMaxBound();
 
@@ -204,10 +204,10 @@ TEST(PointCloud, Transform) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     pc.normals_.resize(size);
-    Rand(pc.normals_.h_data, vmin, vmax, 0);
+    Rand(pc.normals_, vmin, vmax, 0);
 
     Eigen::Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90,
@@ -291,7 +291,7 @@ TEST(PointCloud, NormalizeNormals) {
 
     pc.normals_.resize(size);
 
-    Rand(pc.normals_.h_data, vmin, vmax, 0);
+    Rand(pc.normals_, vmin, vmax, 0);
 
     pc.NormalizeNormals();
 
@@ -313,7 +313,7 @@ TEST(PointCloud, PaintUniformColor) {
 
     pc.points_.resize(size);
 
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     EXPECT_FALSE(pc.HasColors());
 
@@ -342,17 +342,17 @@ TEST(PointCloud, OperatorAppend) {
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+    Rand(pc0.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);
-    Rand(pc0.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0),
+    Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc0.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+    Rand(pc1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);
-    Rand(pc1.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0),
+    Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(pc1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Eigen::Vector3d> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
@@ -405,17 +405,17 @@ TEST(PointCloud, OperatorADD) {
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+    Rand(pc0.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);
-    Rand(pc0.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0),
+    Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc0.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
+    Rand(pc1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);
-    Rand(pc1.normals_.h_data, Eigen::Vector3d(-1.0, -1.0, -1.0),
+    Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(pc1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Eigen::Vector3d> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
@@ -494,7 +494,7 @@ TEST(PointCloud, SelectDownSample) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     vector<size_t> indices(size / 4);
     Rand(indices, 0, size, 0);
@@ -574,9 +574,9 @@ TEST(PointCloud, VoxelDownSample) {
     pc.normals_.resize(size);
     pc.colors_.resize(size);
 
-    Rand(pc.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc.normals_.h_data, Zero3d, Eigen::Vector3d(10.0, 10.0, 10.0), 0);
-    Rand(pc.colors_.h_data, Zero3d, Eigen::Vector3d(255.0, 255.0, 255.0), 0);
+    Rand(pc.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc.normals_, Zero3d, Eigen::Vector3d(10.0, 10.0, 10.0), 0);
+    Rand(pc.colors_, Zero3d, Eigen::Vector3d(255.0, 255.0, 255.0), 0);
 
     double voxel_size = 0.5;
     auto output_pc = geometry::VoxelDownSample(pc, voxel_size);
@@ -629,7 +629,7 @@ TEST(PointCloud, UniformDownSample) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     size_t every_k_points = 4;
     auto output_pc = geometry::UniformDownSample(pc, every_k_points);
@@ -648,7 +648,7 @@ TEST(PointCloud, CropPointCloud) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     Eigen::Vector3d minBound(200.0, 200.0, 200.0);
     Eigen::Vector3d maxBound(800.0, 800.0, 800.0);
@@ -691,7 +691,7 @@ TEST(PointCloud, EstimateNormals) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     bool result = geometry::EstimateNormals(pc);
 
@@ -731,7 +731,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     bool result = geometry::EstimateNormals(pc);
     result = geometry::OrientNormalsToAlignWithDirection(
@@ -792,7 +792,7 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     bool result = geometry::EstimateNormals(pc);
     result = geometry::OrientNormalsTowardsCameraLocation(
@@ -850,7 +850,7 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     auto output = geometry::ComputePointCloudMeanAndCovariance(pc);
 
@@ -898,7 +898,7 @@ TEST(PointCloud, ComputePointCloudMahalanobisDistance) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     vector<double> distance =
             geometry::ComputePointCloudMahalanobisDistance(pc);
@@ -940,7 +940,7 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance) {
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     pc.points_.resize(size);
-    Rand(pc.points_.h_data, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     vector<double> distance =
             geometry::ComputePointCloudNearestNeighborDistance(pc);

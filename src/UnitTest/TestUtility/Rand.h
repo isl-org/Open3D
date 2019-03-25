@@ -26,9 +26,10 @@
 
 #pragma once
 
-#include <Open3D/Utility/Eigen.h>
-
 #include <Eigen/Core>
+#include <Open3D/Utility/Eigen.h>
+#include "Open3D/Types/Blob.h"
+
 #include <vector>
 
 namespace unit_test {
@@ -53,9 +54,30 @@ void Rand(std::vector<Eigen::Vector2i>& v,
           const Eigen::Vector2i& vmax,
           const int& seed);
 
+// Initialize an Blob2i.
+// Output range: [vmin:vmax].
+void Rand(open3d::Blob2i& v,
+          const Eigen::Vector2i& vmin,
+          const Eigen::Vector2i& vmax,
+          const int& seed);
+
+// Initialize an Eigen::Vector2d vector.
+// Output range: [vmin:vmax].
+void Rand(std::vector<Eigen::Vector2d>& v,
+          const Eigen::Vector2d& vmin,
+          const Eigen::Vector2d& vmax,
+          const int& seed);
+
 // Initialize an Eigen::Vector2d vector.
 // Output range: [vmin:vmax].
 void Rand(std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator>& v,
+          const Eigen::Vector2d& vmin,
+          const Eigen::Vector2d& vmax,
+          const int& seed);
+
+// Initialize a Blob2d.
+// Output range: [vmin:vmax].
+void Rand(open3d::Blob2d& v,
           const Eigen::Vector2d& vmin,
           const Eigen::Vector2d& vmax,
           const int& seed);
@@ -67,11 +89,32 @@ void Rand(std::vector<Eigen::Vector3i>& v,
           const Eigen::Vector3i& vmax,
           const int& seed);
 
+// Initialize a Blob3i.
+// Output range: [vmin:vmax].
+void Rand(open3d::Blob3i& v,
+          const Eigen::Vector3i& vmin,
+          const Eigen::Vector3i& vmax,
+          const int& seed);
+
 // Initialize an Eigen::Vector3d vector.
 // Output range: [vmin:vmax].
 void Rand(std::vector<Eigen::Vector3d>& v,
           const Eigen::Vector3d& vmin,
           const Eigen::Vector3d& vmax,
+          const int& seed);
+
+// Initialize a Blob3d vector.
+// Output range: [vmin:vmax].
+void Rand(open3d::Blob3d& v,
+          const Eigen::Vector3d& vmin,
+          const Eigen::Vector3d& vmax,
+          const int& seed);
+
+// Initialize an Eigen::Vector4i vector.
+// Output range: [vmin:vmax].
+void Rand(std::vector<Eigen::Vector4i>& v,
+          const int& vmin,
+          const int& vmax,
           const int& seed);
 
 // Initialize an Eigen::Vector4i vector.
@@ -80,6 +123,10 @@ void Rand(std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator>& v,
           const int& vmin,
           const int& vmax,
           const int& seed);
+
+// Initialize Blob4i vector.
+// Output range: [vmin:vmax].
+void Rand(open3d::Blob4i& v, const int& vmin, const int& vmax, const int& seed);
 
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].

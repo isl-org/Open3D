@@ -157,6 +157,8 @@ struct Blob {
 
 typedef Blob<Eigen::Vector2i, int>::Type Blob2i;
 typedef Blob<Eigen::Vector3i, int>::Type Blob3i;
+typedef Blob<Eigen::Vector4i, int>::Type Blob4i;
+typedef Blob<Eigen::Vector2d, double>::Type Blob2d;
 typedef Blob<Eigen::Vector3d, double>::Type Blob3d;
 
 typedef Blob3d Points;

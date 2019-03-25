@@ -92,6 +92,17 @@ void unit_test::Rand(vector<Vector2i> &v,
 }
 
 // ----------------------------------------------------------------------------
+// Initialize an Blob2i.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(open3d::Blob2i &v,
+                     const Eigen::Vector2i &vmin,
+                     const Eigen::Vector2i &vmax,
+                     const int &seed) {
+    Rand(v.h_data, vmin, vmax, seed);
+};
+
+// ----------------------------------------------------------------------------
 // Initialize an Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -114,6 +125,37 @@ void unit_test::Rand(vector<Vector3i> &v,
 }
 
 // ----------------------------------------------------------------------------
+// Initialize a Blob3i.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(open3d::Blob3i &v,
+                     const Eigen::Vector3i &vmin,
+                     const Eigen::Vector3i &vmax,
+                     const int &seed) {
+    Rand(v.h_data, vmin, vmax, seed);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an Vector2d vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(vector<Vector2d> &v,
+                     const Vector2d &vmin,
+                     const Vector2d &vmax,
+                     const int &seed) {
+    Raw raw(seed);
+
+    Vector2d factor;
+    factor(0, 0) = vmax(0, 0) - vmin(0, 0);
+    factor(1, 0) = vmax(1, 0) - vmin(1, 0);
+
+    for (size_t i = 0; i < v.size(); i++) {
+        v[i](0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
+        v[i](1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -131,6 +173,17 @@ void unit_test::Rand(vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
         v[i](0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
         v[i](1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
     }
+}
+
+// ----------------------------------------------------------------------------
+// Initialize a Blob2d.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(open3d::Blob2d &v,
+                     const Eigen::Vector2d &vmin,
+                     const Eigen::Vector2d &vmax,
+                     const int &seed) {
+    Rand(v.h_data, vmin, vmax, seed);
 }
 
 // ----------------------------------------------------------------------------
@@ -156,6 +209,37 @@ void unit_test::Rand(vector<Vector3d> &v,
 }
 
 // ----------------------------------------------------------------------------
+// Initialize a Blob3d vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(open3d::Blob3d &v,
+                     const Eigen::Vector3d &vmin,
+                     const Eigen::Vector3d &vmax,
+                     const int &seed) {
+    Rand(v.h_data, vmin, vmax, seed);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an Vector4i vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(vector<Vector4i> &v,
+                     const int &vmin,
+                     const int &vmax,
+                     const int &seed) {
+    Raw raw(seed);
+
+    double factor = (double)(vmax - vmin) / Raw::VMAX;
+
+    for (size_t i = 0; i < v.size(); i++) {
+        v[i](0, 0) = vmin + (int)(raw.Next<int>() * factor);
+        v[i](1, 0) = vmin + (int)(raw.Next<int>() * factor);
+        v[i](2, 0) = vmin + (int)(raw.Next<int>() * factor);
+        v[i](3, 0) = vmin + (int)(raw.Next<int>() * factor);
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -173,6 +257,17 @@ void unit_test::Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
         v[i](2, 0) = vmin + (int)(raw.Next<int>() * factor);
         v[i](3, 0) = vmin + (int)(raw.Next<int>() * factor);
     }
+}
+
+// ----------------------------------------------------------------------------
+// Initialize Blob4i vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(open3d::Blob4i &v,
+                     const int &vmin,
+                     const int &vmax,
+                     const int &seed) {
+    Rand(v.h_data, vmin, vmax, seed);
 }
 
 // ----------------------------------------------------------------------------
