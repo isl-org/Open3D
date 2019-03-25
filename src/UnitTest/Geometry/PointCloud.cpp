@@ -342,14 +342,12 @@ TEST(PointCloud, OperatorAppend) {
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
-         0);
+    Rand(pc0.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     Rand(pc0.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
-         0);
+    Rand(pc1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     Rand(pc1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
@@ -405,14 +403,12 @@ TEST(PointCloud, OperatorADD) {
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
-         0);
+    Rand(pc0.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     Rand(pc0.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
-         0);
+    Rand(pc1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0),
          Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     Rand(pc1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
