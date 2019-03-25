@@ -89,11 +89,11 @@ TEST(TriangleMesh, Clear) {
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    Rand(tm.vertices_, dmin, dmax, 0);
-    Rand(tm.vertex_normals_, dmin, dmax, 0);
-    Rand(tm.vertex_colors_, dmin, dmax, 0);
-    Rand(tm.triangles_, imin, imax, 0);
-    Rand(tm.triangle_normals_, dmin, dmax, 0);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm.vertex_colors_.h_data, dmin, dmax, 0);
+    Rand(tm.triangles_.h_data, imin, imax, 0);
+    Rand(tm.triangle_normals_.h_data, dmin, dmax, 0);
 
     EXPECT_FALSE(tm.IsEmpty());
 
@@ -148,7 +148,7 @@ TEST(TriangleMesh, GetMinBound) {
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
 
     Vector3d minBound = tm.GetMinBound();
 
@@ -167,7 +167,7 @@ TEST(TriangleMesh, GetMaxBound) {
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
 
     Vector3d maxBound = tm.GetMaxBound();
 
@@ -224,9 +224,9 @@ TEST(TriangleMesh, Transform) {
     tm.vertex_normals_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    Rand(tm.vertices_, dmin, dmax, 0);
-    Rand(tm.vertex_normals_, dmin, dmax, 0);
-    Rand(tm.triangle_normals_, dmin, dmax, 0);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm.triangle_normals_.h_data, dmin, dmax, 0);
 
     Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90,
@@ -234,9 +234,9 @@ TEST(TriangleMesh, Transform) {
 
     tm.Transform(transformation);
 
-    ExpectEQ(ref_vertices, tm.vertices_);
-    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
-    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
+    ExpectEQ(ref_vertices, tm.vertices_.h_data);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_.h_data);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -266,17 +266,17 @@ TEST(TriangleMesh, OperatorAppend) {
     tm1.triangles_.resize(size);
     tm1.triangle_normals_.resize(size);
 
-    Rand(tm0.vertices_, dmin, dmax, 0);
-    Rand(tm0.vertex_normals_, dmin, dmax, 0);
-    Rand(tm0.vertex_colors_, dmin, dmax, 0);
-    Rand(tm0.triangles_, imin, imax, 0);
-    Rand(tm0.triangle_normals_, dmin, dmax, 0);
+    Rand(tm0.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm0.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm0.vertex_colors_.h_data, dmin, dmax, 0);
+    Rand(tm0.triangles_.h_data, imin, imax, 0);
+    Rand(tm0.triangle_normals_.h_data, dmin, dmax, 0);
 
-    Rand(tm1.vertices_, dmin, dmax, 0);
-    Rand(tm1.vertex_normals_, dmin, dmax, 0);
-    Rand(tm1.vertex_colors_, dmin, dmax, 1);
-    Rand(tm1.triangles_, imin, imax, 0);
-    Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm1.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm1.vertex_colors_.h_data, dmin, dmax, 1);
+    Rand(tm1.triangles_.h_data, imin, imax, 0);
+    Rand(tm1.triangle_normals_.h_data, dmin, dmax, 0);
 
     geometry::TriangleMesh tm(tm0);
     tm += tm1;
@@ -343,17 +343,17 @@ TEST(TriangleMesh, OperatorADD) {
     tm1.triangles_.resize(size);
     tm1.triangle_normals_.resize(size);
 
-    Rand(tm0.vertices_, dmin, dmax, 0);
-    Rand(tm0.vertex_normals_, dmin, dmax, 0);
-    Rand(tm0.vertex_colors_, dmin, dmax, 0);
-    Rand(tm0.triangles_, imin, imax, 0);
-    Rand(tm0.triangle_normals_, dmin, dmax, 0);
+    Rand(tm0.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm0.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm0.vertex_colors_.h_data, dmin, dmax, 0);
+    Rand(tm0.triangles_.h_data, imin, imax, 0);
+    Rand(tm0.triangle_normals_.h_data, dmin, dmax, 0);
 
-    Rand(tm1.vertices_, dmin, dmax, 0);
-    Rand(tm1.vertex_normals_, dmin, dmax, 0);
-    Rand(tm1.vertex_colors_, dmin, dmax, 1);
-    Rand(tm1.triangles_, imin, imax, 0);
-    Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm1.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm1.vertex_colors_.h_data, dmin, dmax, 1);
+    Rand(tm1.triangles_.h_data, imin, imax, 0);
+    Rand(tm1.triangle_normals_.h_data, dmin, dmax, 0);
 
     geometry::TriangleMesh tm = tm0 + tm1;
 
@@ -433,14 +433,14 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
         tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeTriangleNormals();
 
-    ExpectEQ(ref, tm.triangle_normals_);
+    ExpectEQ(ref, tm.triangle_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -473,14 +473,14 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
         tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeVertexNormals();
 
-    ExpectEQ(ref, tm.vertex_normals_);
+    ExpectEQ(ref, tm.vertex_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -498,9 +498,9 @@ TEST(TriangleMesh, ComputeAdjacencyList) {
     geometry::TriangleMesh tm;
     tm.vertices_.insert(tm.vertices_.end(), std::begin(vertices),
                         std::end(vertices));
-    tm.triangles_ = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 2, 3),
-                     Eigen::Vector3i(0, 3, 4), Eigen::Vector3i(0, 4, 1),
-                     Eigen::Vector3i(1, 2, 4), Eigen::Vector3i(2, 3, 4)};
+    tm.triangles_.h_data = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 2, 3),
+                            Eigen::Vector3i(0, 3, 4), Eigen::Vector3i(0, 4, 1),
+                            Eigen::Vector3i(1, 2, 4), Eigen::Vector3i(2, 3, 4)};
     EXPECT_FALSE(tm.HasAdjacencyList());
     tm.ComputeAdjacencyList();
     EXPECT_TRUE(tm.HasAdjacencyList());
@@ -650,27 +650,27 @@ TEST(TriangleMesh, Purge) {
     tm1.triangles_.resize(size);
     tm1.triangle_normals_.resize(size);
 
-    Rand(tm0.vertices_, dmin, dmax, 0);
-    Rand(tm0.vertex_normals_, dmin, dmax, 0);
-    Rand(tm0.vertex_colors_, dmin, dmax, 0);
-    Rand(tm0.triangles_, imin, imax, 0);
-    Rand(tm0.triangle_normals_, dmin, dmax, 0);
+    Rand(tm0.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm0.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm0.vertex_colors_.h_data, dmin, dmax, 0);
+    Rand(tm0.triangles_.h_data, imin, imax, 0);
+    Rand(tm0.triangle_normals_.h_data, dmin, dmax, 0);
 
-    Rand(tm1.vertices_, dmin, dmax, 0);
-    Rand(tm1.vertex_normals_, dmin, dmax, 0);
-    Rand(tm1.vertex_colors_, dmin, dmax, 1);
-    Rand(tm1.triangles_, imin, imax, 0);
-    Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm1.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm1.vertex_colors_.h_data, dmin, dmax, 1);
+    Rand(tm1.triangles_.h_data, imin, imax, 0);
+    Rand(tm1.triangle_normals_.h_data, dmin, dmax, 0);
 
     geometry::TriangleMesh tm = tm0 + tm1;
 
     tm.Purge();
 
-    ExpectEQ(ref_vertices, tm.vertices_);
-    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
-    ExpectEQ(ref_vertex_colors, tm.vertex_colors_);
-    ExpectEQ(ref_triangles, tm.triangles_);
-    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
+    ExpectEQ(ref_vertices, tm.vertices_.h_data);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_.h_data);
+    ExpectEQ(ref_vertex_colors, tm.vertex_colors_.h_data);
+    ExpectEQ(ref_triangles, tm.triangles_.h_data);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -796,13 +796,13 @@ TEST(TriangleMesh, NormalizeNormals) {
 
     tm.vertex_normals_.resize(size);
     tm.triangle_normals_.resize(size);
-    Rand(tm.vertex_normals_, dmin, dmax, 0);
-    Rand(tm.triangle_normals_, dmin, dmax, 1);
+    Rand(tm.vertex_normals_.h_data, dmin, dmax, 0);
+    Rand(tm.triangle_normals_.h_data, dmin, dmax, 1);
 
     tm.NormalizeNormals();
 
-    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
-    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_.h_data);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -953,22 +953,22 @@ TEST(TriangleMesh, SelectDownSample) {
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    Rand(tm.vertices_, dmin, dmax, 0);
-    Rand(tm.vertex_normals_, dmin, dmax, 1);
-    Rand(tm.vertex_colors_, dmin, dmax, 2);
-    Rand(tm.triangles_, imin, imax, 3);
-    Rand(tm.triangle_normals_, dmin, dmax, 4);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm.vertex_normals_.h_data, dmin, dmax, 1);
+    Rand(tm.vertex_colors_.h_data, dmin, dmax, 2);
+    Rand(tm.triangles_.h_data, imin, imax, 3);
+    Rand(tm.triangle_normals_.h_data, dmin, dmax, 4);
 
     vector<size_t> indices(size / 40);
     Rand(indices, 0, size - 1, 0);
 
     auto output_tm = geometry::SelectDownSample(tm, indices);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_);
-    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
-    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
-    ExpectEQ(ref_triangles, output_tm->triangles_);
-    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
+    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
+    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_.h_data);
+    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_.h_data);
+    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
+    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -1019,22 +1019,22 @@ TEST(TriangleMesh, CropTriangleMesh) {
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    Rand(tm.vertices_, dmin, dmax, 0);
-    Rand(tm.vertex_normals_, dmin, dmax, 1);
-    Rand(tm.vertex_colors_, dmin, dmax, 2);
-    Rand(tm.triangles_, imin, imax, 3);
-    Rand(tm.triangle_normals_, dmin, dmax, 4);
+    Rand(tm.vertices_.h_data, dmin, dmax, 0);
+    Rand(tm.vertex_normals_.h_data, dmin, dmax, 1);
+    Rand(tm.vertex_colors_.h_data, dmin, dmax, 2);
+    Rand(tm.triangles_.h_data, imin, imax, 3);
+    Rand(tm.triangle_normals_.h_data, dmin, dmax, 4);
 
     Vector3d cropBoundMin(300.0, 300.0, 300.0);
     Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
     auto output_tm = geometry::CropTriangleMesh(tm, cropBoundMin, cropBoundMax);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_);
-    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
-    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
-    ExpectEQ(ref_triangles, output_tm->triangles_);
-    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
+    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
+    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_.h_data);
+    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_.h_data);
+    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
+    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -1108,8 +1108,8 @@ TEST(TriangleMesh, CreateMeshSphere) {
 
     auto output_tm = geometry::CreateMeshSphere(1.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_);
-    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
+    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -1161,8 +1161,8 @@ TEST(TriangleMesh, CreateMeshCylinder) {
 
     auto output_tm = geometry::CreateMeshCylinder(1.0, 2.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_);
-    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
+    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -1181,8 +1181,8 @@ TEST(TriangleMesh, CreateMeshCone) {
 
     auto output_tm = geometry::CreateMeshCone(1.0, 2.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_);
-    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
+    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -1227,8 +1227,8 @@ TEST(TriangleMesh, CreateMeshArrow) {
 
     auto output_tm = geometry::CreateMeshArrow(1.0, 1.5, 2.0, 1.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_);
-    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
+    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
 }
 
 // ----------------------------------------------------------------------------
@@ -1308,9 +1308,9 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     sort(indices.begin(), indices.end());
     auto output = geometry::SelectDownSample(*output_tm, indices);
 
-    ExpectEQ(ref_vertices, output->vertices_);
-    ExpectEQ(ref_vertex_normals, output->vertex_normals_);
-    ExpectEQ(ref_vertex_colors, output->vertex_colors_);
-    ExpectEQ(ref_triangles, output->triangles_);
-    ExpectEQ(ref_triangle_normals, output->triangle_normals_);
+    ExpectEQ(ref_vertices, output->vertices_.h_data);
+    ExpectEQ(ref_vertex_normals, output->vertex_normals_.h_data);
+    ExpectEQ(ref_vertex_colors, output->vertex_colors_.h_data);
+    ExpectEQ(ref_triangles, output->triangles_.h_data);
+    ExpectEQ(ref_triangle_normals, output->triangle_normals_.h_data);
 }

@@ -208,7 +208,8 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                             double f0 = std::abs((double)f[edge_to_vert[i][0]]);
                             double f1 = std::abs((double)f[edge_to_vert[i][1]]);
                             pt(edge_index(3)) += f0 * voxel_length_ / (f0 + f1);
-                            mesh->vertices_.push_back(pt + origin_);
+                            mesh->vertices_.push_back(
+                                    Eigen::Vector3d(pt + origin_));
                             if (color_type_ != TSDFVolumeColorType::None) {
                                 const auto &c0 = c[edge_to_vert[i][0]];
                                 const auto &c1 = c[edge_to_vert[i][1]];

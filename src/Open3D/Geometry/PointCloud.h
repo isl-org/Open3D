@@ -100,7 +100,7 @@ public:
 public:
     // device id
     // set to -1 to execute on the CPU
-    int cuda_device_id = 0;
+    int cuda_device_id = -1;
 
     inline void SetDeviceID(const int &id) {
         if (cuda_device_id != id) {
