@@ -48,8 +48,8 @@ geometry::TriangleMesh get_mesh_two_triangles() {
     std::vector<Eigen::Vector3i> triangles{Eigen::Vector3i(0, 2, 1),
                                            Eigen::Vector3i(1, 2, 3)};
     geometry::TriangleMesh mesh;
-    mesh.vertices_.h_data = vertices;
-    mesh.triangles_.h_data = triangles;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
     return mesh;
 }
 
@@ -69,8 +69,8 @@ geometry::TriangleMesh get_mesh_four_triangles_disconnect() {
             Eigen::Vector3i(0, 2, 1), Eigen::Vector3i(1, 2, 3),
             Eigen::Vector3i(4, 6, 5), Eigen::Vector3i(5, 6, 7)};
     geometry::TriangleMesh mesh;
-    mesh.vertices_.h_data = vertices;
-    mesh.triangles_.h_data = triangles;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
     return mesh;
 }
 
@@ -89,8 +89,8 @@ geometry::TriangleMesh get_mesh_two_triangles_flipped() {
     std::vector<Eigen::Vector3i> triangles{Eigen::Vector3i(0, 2, 1),
                                            Eigen::Vector3i(1, 3, 2)};
     geometry::TriangleMesh mesh;
-    mesh.vertices_.h_data = vertices;
-    mesh.triangles_.h_data = triangles;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
     return mesh;
 }
 
@@ -116,8 +116,8 @@ geometry::TriangleMesh get_mesh_two_triangles_invalid_vertex() {
     std::vector<Eigen::Vector3i> triangles{Eigen::Vector3i(0, 2, 1),
                                            Eigen::Vector3i(2, 3, 4)};
     geometry::TriangleMesh mesh;
-    mesh.vertices_.h_data = vertices;
-    mesh.triangles_.h_data = triangles;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
     return mesh;
 }
 
@@ -144,8 +144,8 @@ geometry::TriangleMesh get_mesh_hexagon() {
             Eigen::Vector3i(1, 3, 4), Eigen::Vector3i(2, 5, 3),
             Eigen::Vector3i(3, 5, 6), Eigen::Vector3i(3, 6, 4)};
     geometry::TriangleMesh mesh;
-    mesh.vertices_.h_data = vertices;
-    mesh.triangles_.h_data = triangles;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
     return mesh;
 }
 
@@ -172,8 +172,8 @@ geometry::TriangleMesh get_mesh_partial_hexagon() {
             Eigen::Vector3i(1, 3, 4), Eigen::Vector3i(2, 5, 3),
             Eigen::Vector3i(3, 5, 6)};
     geometry::TriangleMesh mesh;
-    mesh.vertices_.h_data = vertices;
-    mesh.triangles_.h_data = triangles;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
     return mesh;
 }
 

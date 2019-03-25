@@ -498,7 +498,7 @@ TEST(TriangleMesh, ComputeAdjacencyList) {
     geometry::TriangleMesh tm;
     tm.vertices_.insert(tm.vertices_.end(), std::begin(vertices),
                         std::end(vertices));
-    tm.triangles_.h_data = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 2, 3),
+    tm.triangles_ = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 2, 3),
                             Eigen::Vector3i(0, 3, 4), Eigen::Vector3i(0, 4, 1),
                             Eigen::Vector3i(1, 2, 4), Eigen::Vector3i(2, 3, 4)};
     EXPECT_FALSE(tm.HasAdjacencyList());

@@ -84,9 +84,9 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     tree.SetGeometry(target);
 
     auto output = std::make_shared<PointCloudForColoredICP>();
-    output->colors_.h_data = target.colors_.h_data;
-    output->normals_.h_data = target.normals_.h_data;
-    output->points_.h_data = target.points_.h_data;
+    output->colors_ = target.colors_;
+    output->normals_ = target.normals_;
+    output->points_ = target.points_;
 
     size_t n_points = output->points_.size();
     output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());

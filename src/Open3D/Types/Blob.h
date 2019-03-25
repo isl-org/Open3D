@@ -42,7 +42,7 @@ struct Blob {
         // note: how to deal with device data?
         _Type(const _Type &t)
             : h_data(t.h_data),
-            //   d_data(t.d_data),
+              // d_data(t.d_data),
               cuda_device_id(t.cuda_device_id) {}
 
         // host data container
@@ -58,6 +58,11 @@ struct Blob {
         // subscript operator: readonly, host side only
         inline const V &operator[](const uint &i) const { return h_data[i]; }
 
+        inline _Type &operator=(const std::vector<V> &v) {
+            h_data = std::vector<V>(v);
+
+            return *this;
+        }
         // redirect to std:vector<V>::operator=(...)
         // note: how to deal with device data?
         inline _Type &operator=(const _Type &t) {
@@ -76,7 +81,7 @@ struct Blob {
         }
         // redirect to std:vector<V>::operator=(...)
         inline _Type &operator=(std::initializer_list<V> il) {
-            return h_data = il;
+            h_data = il;
 
             return *this;
         }
