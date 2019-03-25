@@ -172,22 +172,22 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                     Eigen::Vector3d p = p0;
                                     p(i) = (p0(i) * r1 + p1(i) * r0) /
                                            (r0 + r1);
-                                    pointcloud->points_.h_data.push_back(p);
+                                    pointcloud->points_.push_back(p);
                                     if (color_type_ ==
                                         TSDFVolumeColorType::RGB8) {
-                                        pointcloud->colors_.h_data.push_back(
+                                        pointcloud->colors_.push_back(
                                                 ((c0 * r1 + c1 * r0) /
                                                  (r0 + r1) / 255.0f)
                                                         .cast<double>());
                                     } else if (color_type_ ==
                                                TSDFVolumeColorType::Gray32) {
-                                        pointcloud->colors_.h_data.push_back(
+                                        pointcloud->colors_.push_back(
                                                 ((c0 * r1 + c1 * r0) /
                                                  (r0 + r1))
                                                         .cast<double>());
                                     }
                                     // has_normal
-                                    pointcloud->normals_.h_data.push_back(
+                                    pointcloud->normals_.push_back(
                                             GetNormalAt(p));
                                 }
                             }

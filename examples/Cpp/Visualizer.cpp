@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         cloud_ptr->NormalizeNormals();
-        cloud_ptr->colors_.h_data.resize(cloud_ptr->points_.size());
+        cloud_ptr->colors_.resize(cloud_ptr->points_.size());
         double color_index = 0.0;
         double color_index_step = 0.05;
 

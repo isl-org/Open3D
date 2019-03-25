@@ -122,25 +122,23 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
                                 float r1 = std::fabs(f1);
                                 Eigen::Vector3d p = p0;
                                 p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
-                                pointcloud->points_.h_data.push_back(p +
-                                                                     origin_);
+                                pointcloud->points_.push_back(p + origin_);
                                 if (color_type_ == TSDFVolumeColorType::RGB8) {
-                                    pointcloud->colors_.h_data.push_back(
+                                    pointcloud->colors_.push_back(
                                             ((color_[IndexOf(idx0)] * r1 +
                                               color_[IndexOf(idx1)] * r0) /
                                              (r0 + r1) / 255.0f)
                                                     .cast<double>());
                                 } else if (color_type_ ==
                                            TSDFVolumeColorType::Gray32) {
-                                    pointcloud->colors_.h_data.push_back(
+                                    pointcloud->colors_.push_back(
                                             ((color_[IndexOf(idx0)] * r1 +
                                               color_[IndexOf(idx1)] * r0) /
                                              (r0 + r1))
                                                     .cast<double>());
                                 }
                                 // has_normal
-                                pointcloud->normals_.h_data.push_back(
-                                        GetNormalAt(p));
+                                pointcloud->normals_.push_back(GetNormalAt(p));
                             }
                         }
                     }
@@ -250,9 +248,9 @@ UniformTSDFVolume::ExtractVoxelPointCloud() {
             for (int z = 0; z < resolution_; z++, pt(2) += voxel_length_,
                      p_tsdf++, p_weight++, p_color += 3) {
                 if (*p_weight != 0.0f && *p_tsdf < 0.98f && *p_tsdf >= -0.98f) {
-                    voxel->points_.h_data.push_back(pt + origin_);
+                    voxel->points_.push_back(pt + origin_);
                     double c = (static_cast<double>(*p_tsdf) + 1.0) * 0.5;
-                    voxel->colors_.h_data.push_back(Eigen::Vector3d(c, c, c));
+                    voxel->colors_.push_back(Eigen::Vector3d(c, c, c));
                 }
             }
         }

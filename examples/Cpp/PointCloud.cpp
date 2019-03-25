@@ -112,10 +112,10 @@ int main(int argc, char *argv[]) {
     geometry::PointCloud pointcloud;
     PrintPointCloud(pointcloud);
 
-    pointcloud.points_.h_data.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-    pointcloud.points_.h_data.push_back(Eigen::Vector3d(1.0, 0.0, 0.0));
-    pointcloud.points_.h_data.push_back(Eigen::Vector3d(0.0, 1.0, 0.0));
-    pointcloud.points_.h_data.push_back(Eigen::Vector3d(0.0, 0.0, 1.0));
+    pointcloud.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
+    pointcloud.points_.push_back(Eigen::Vector3d(1.0, 0.0, 0.0));
+    pointcloud.points_.push_back(Eigen::Vector3d(0.0, 1.0, 0.0));
+    pointcloud.points_.push_back(Eigen::Vector3d(0.0, 0.0, 1.0));
     PrintPointCloud(pointcloud);
 
     // 2. test pointcloud IO.

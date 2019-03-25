@@ -101,9 +101,9 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     }
     bool has_colors = input.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
-        output->voxels_.h_data.push_back(accpoint.second.GetVoxelCoordinate());
+        output->voxels_.push_back(accpoint.second.GetVoxelCoordinate());
         if (has_colors) {
-            output->colors_.h_data.push_back(accpoint.second.GetAverageColor());
+            output->colors_.push_back(accpoint.second.GetAverageColor());
         }
     }
     utility::PrintDebug(

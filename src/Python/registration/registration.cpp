@@ -47,10 +47,9 @@ public:
         PYBIND11_OVERLOAD_PURE(registration::TransformationEstimationType,
                                TransformationEstimationBase, void);
     }
-    double ComputeRMSE(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const override {
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const CorrespondenceSet &corres) const override {
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
                                target, corres);
     }

@@ -50,7 +50,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
-    pc.points_.h_data.resize(size);
+    pc.points_.resize(size);
     Rand(pc.points_.h_data, vmin, vmax, 0);
 
     int nrGPUs = 0;

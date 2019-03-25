@@ -47,7 +47,7 @@ bool ReadPointCloudFromXYZ(const std::string &filename,
 
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
-            pointcloud.points_.h_data.push_back(Eigen::Vector3d(x, y, z));
+            pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
         }
     }
 

@@ -42,9 +42,9 @@ namespace open3d {
 namespace geometry {
 
 void PointCloud::Clear() {
-    points_.h_data.clear();
-    normals_.h_data.clear();
-    colors_.h_data.clear();
+    points_.clear();
+    normals_.clear();
+    colors_.clear();
 }
 
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
@@ -54,17 +54,17 @@ Eigen::Vector3d PointCloud::GetMinBound() const {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
     auto itr_x = std::min_element(
-            points_.h_data.begin(), points_.h_data.end(),
+            points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(0) < b(0);
             });
     auto itr_y = std::min_element(
-            points_.h_data.begin(), points_.h_data.end(),
+            points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(1) < b(1);
             });
     auto itr_z = std::min_element(
-            points_.h_data.begin(), points_.h_data.end(),
+            points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(2) < b(2);
             });
@@ -76,17 +76,17 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
     auto itr_x = std::max_element(
-            points_.h_data.begin(), points_.h_data.end(),
+            points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(0) < b(0);
             });
     auto itr_y = std::max_element(
-            points_.h_data.begin(), points_.h_data.end(),
+            points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(1) < b(1);
             });
     auto itr_z = std::max_element(
-            points_.h_data.begin(), points_.h_data.end(),
+            points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(2) < b(2);
             });
@@ -116,20 +116,20 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     size_t add_vert_num = cloud.points_.size();
     size_t new_vert_num = old_vert_num + add_vert_num;
     if ((!HasPoints() || HasNormals()) && cloud.HasNormals()) {
-        normals_.h_data.resize(new_vert_num);
+        normals_.resize(new_vert_num);
         for (size_t i = 0; i < add_vert_num; i++)
             normals_[old_vert_num + i] = cloud.normals_[i];
     } else {
-        normals_.h_data.clear();
+        normals_.clear();
     }
     if ((!HasPoints() || HasColors()) && cloud.HasColors()) {
-        colors_.h_data.resize(new_vert_num);
+        colors_.resize(new_vert_num);
         for (size_t i = 0; i < add_vert_num; i++)
             colors_[old_vert_num + i] = cloud.colors_[i];
     } else {
-        colors_.h_data.clear();
+        colors_.clear();
     }
-    points_.h_data.resize(new_vert_num);
+    points_.resize(new_vert_num);
     for (size_t i = 0; i < add_vert_num; i++)
         points_[old_vert_num + i] = cloud.points_[i];
     return (*this);
@@ -281,7 +281,7 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 bool PointCloud::UpdateDevicePoints() {
     size_t size = points_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&points_.d_data,
-                              (const double *const)points_.h_data.data(), size,
+                              (const double *const)points_.data(), size,
                               cuda_device_id);
 }
 
@@ -289,7 +289,7 @@ bool PointCloud::UpdateDevicePoints() {
 bool PointCloud::UpdateDeviceNormals() {
     size_t size = normals_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&normals_.d_data,
-                              (const double *const)normals_.h_data.data(), size,
+                              (const double *const)normals_.data(), size,
                               cuda_device_id);
 }
 
@@ -297,7 +297,7 @@ bool PointCloud::UpdateDeviceNormals() {
 bool PointCloud::UpdateDeviceColors() {
     size_t size = colors_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&colors_.d_data,
-                              (const double *const)colors_.h_data.data(), size,
+                              (const double *const)colors_.data(), size,
                               cuda_device_id);
 }
 

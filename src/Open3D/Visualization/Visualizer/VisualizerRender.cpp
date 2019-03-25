@@ -428,7 +428,7 @@ void Visualizer::CaptureDepthPointCloud(
             if (p_depth[j] == 1.0) {
                 continue;
             }
-            depth_pointcloud.points_.h_data.push_back(GLHelper::Unproject(
+            depth_pointcloud.points_.push_back(GLHelper::Unproject(
                     Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]), mvp_matrix,
                     view_control_ptr_->GetWindowWidth(),
                     view_control_ptr_->GetWindowHeight()));

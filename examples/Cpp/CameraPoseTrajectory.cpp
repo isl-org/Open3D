@@ -58,15 +58,14 @@ int main(int argc, char *argv[]) {
         if (utility::filesystem::FileExists(buff)) {
             auto pcd = io::CreatePointCloudFromFile(buff);
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
-            pcd->colors_.h_data.clear();
+            pcd->colors_.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {
-                pcd->colors_.h_data.resize(pcd->points_.size(),
-                                           color_palette[i]);
+                pcd->colors_.resize(pcd->points_.size(), color_palette[i]);
             } else {
-                pcd->colors_.h_data.resize(pcd->points_.size(),
-                                           (Eigen::Vector3d::Random() +
-                                            Eigen::Vector3d::Constant(1.0)) *
-                                                   0.5);
+                pcd->colors_.resize(pcd->points_.size(),
+                                    (Eigen::Vector3d::Random() +
+                                     Eigen::Vector3d::Constant(1.0)) *
+                                            0.5);
             }
             pcds.push_back(pcd);
         }

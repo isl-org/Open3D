@@ -384,9 +384,9 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     state.color_index = 0;
 
     pointcloud.Clear();
-    pointcloud.points_.h_data.resize(state.vertex_num);
-    pointcloud.normals_.h_data.resize(state.normal_num);
-    pointcloud.colors_.h_data.resize(state.color_num);
+    pointcloud.points_.resize(state.vertex_num);
+    pointcloud.normals_.resize(state.normal_num);
+    pointcloud.colors_.resize(state.color_num);
 
     utility::ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
 
@@ -667,9 +667,9 @@ bool ReadLineSetFromPLY(const std::string &filename,
     state.color_index = 0;
 
     lineset.Clear();
-    lineset.points_.h_data.resize(state.vertex_num);
-    lineset.lines_.h_data.resize(state.line_num);
-    lineset.colors_.h_data.resize(state.color_num);
+    lineset.points_.resize(state.vertex_num);
+    lineset.lines_.resize(state.line_num);
+    lineset.colors_.resize(state.color_num);
 
     utility::ResetConsoleProgress(
             state.vertex_num + state.line_num + state.color_num,
@@ -802,8 +802,8 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     state.color_index = 0;
 
     voxelgrid.Clear();
-    voxelgrid.voxels_.h_data.resize(state.voxel_num);
-    voxelgrid.colors_.h_data.resize(state.color_num);
+    voxelgrid.voxels_.resize(state.voxel_num);
+    voxelgrid.colors_.resize(state.color_num);
 
     utility::ResetConsoleProgress(state.voxel_num + state.color_num,
                                   "Reading PLY: ");

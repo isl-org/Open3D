@@ -62,7 +62,7 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
         case Geometry::GeometryType::PointCloud:
             return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
                     (const double *)((const PointCloud &)geometry)
-                            .points_.h_data.data(),
+                            .points_.data(),
                     3, ((const PointCloud &)geometry).points_.size()));
         case Geometry::GeometryType::TriangleMesh:
         case Geometry::GeometryType::HalfEdgeTriangleMesh:

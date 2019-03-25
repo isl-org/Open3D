@@ -156,10 +156,9 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
 
     for (size_t i = 0; i < input.points_.size(); i++) {
         if (mask[i]) {
-            output->points_.h_data.push_back(input.points_[i]);
-            if (has_normals)
-                output->normals_.h_data.push_back(input.normals_[i]);
-            if (has_colors) output->colors_.h_data.push_back(input.colors_[i]);
+            output->points_.push_back(input.points_[i]);
+            if (has_normals) output->normals_.push_back(input.normals_[i]);
+            if (has_colors) output->colors_.push_back(input.colors_[i]);
         }
     }
     utility::PrintDebug(
@@ -274,13 +273,12 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     bool has_normals = input.HasNormals();
     bool has_colors = input.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
-        output->points_.h_data.push_back(accpoint.second.GetAveragePoint());
+        output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
-            output->normals_.h_data.push_back(
-                    accpoint.second.GetAverageNormal());
+            output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
         if (has_colors) {
-            output->colors_.h_data.push_back(accpoint.second.GetAverageColor());
+            output->colors_.push_back(accpoint.second.GetAverageColor());
         }
     }
     utility::PrintDebug(
@@ -334,17 +332,15 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
     for (auto accpoint : voxelindex_to_accpoint) {
-        output->points_.h_data.push_back(accpoint.second.GetAveragePoint());
+        output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
-            output->normals_.h_data.push_back(
-                    accpoint.second.GetAverageNormal());
+            output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
         if (has_colors) {
             if (approximate_class) {
-                output->colors_.h_data.push_back(accpoint.second.GetMaxClass());
+                output->colors_.push_back(accpoint.second.GetMaxClass());
             } else {
-                output->colors_.h_data.push_back(
-                        accpoint.second.GetAverageColor());
+                output->colors_.push_back(accpoint.second.GetAverageColor());
             }
         }
         auto original_id = accpoint.second.GetOriginalID();

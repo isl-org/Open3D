@@ -336,17 +336,17 @@ bool ReadPCDData(FILE *file,
                  geometry::PointCloud &pointcloud) {
     // The header should have been checked
     if (header.has_points) {
-        pointcloud.points_.h_data.resize(header.points);
+        pointcloud.points_.resize(header.points);
     } else {
         utility::PrintDebug(
                 "[ReadPCDData] Fields for point data are not complete.\n");
         return false;
     }
     if (header.has_normals) {
-        pointcloud.normals_.h_data.resize(header.points);
+        pointcloud.normals_.resize(header.points);
     }
     if (header.has_colors) {
-        pointcloud.colors_.h_data.resize(header.points);
+        pointcloud.colors_.resize(header.points);
     }
     if (header.datatype == PCD_DATA_ASCII) {
         char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -532,9 +532,9 @@ void RemoveNanData(geometry::PointCloud &pointcloud) {
             k++;
         }
     }
-    pointcloud.points_.h_data.resize(k);
-    if (has_normal) pointcloud.normals_.h_data.resize(k);
-    if (has_color) pointcloud.colors_.h_data.resize(k);
+    pointcloud.points_.resize(k);
+    if (has_normal) pointcloud.normals_.resize(k);
+    if (has_color) pointcloud.colors_.resize(k);
     utility::PrintDebug("[Purge] %d nan points have been removed.\n",
                         (int)(old_point_num - k));
 }

@@ -123,7 +123,7 @@ bool EstimateNormals(
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
     bool has_normal = cloud.HasNormals();
     if (cloud.HasNormals() == false) {
-        cloud.normals_.h_data.resize(cloud.points_.size());
+        cloud.normals_.resize(cloud.points_.size());
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(cloud);

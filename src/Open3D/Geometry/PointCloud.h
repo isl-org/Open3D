@@ -84,7 +84,7 @@ public:
     }
 
     void PaintUniformColor(const Eigen::Vector3d &color) {
-        colors_.h_data.resize(points_.size());
+        colors_.resize(points_.size());
         for (size_t i = 0; i < points_.size(); i++) {
             colors_[i] = color;
         }

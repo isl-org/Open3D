@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
     }
     auto new_lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
             *cloud_ptr, *new_cloud_ptr, correspondences);
-    new_lineset_ptr->colors_.h_data.resize(new_lineset_ptr->lines_.size());
+    new_lineset_ptr->colors_.resize(new_lineset_ptr->lines_.size());
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
         if ((point_pair.first - point_pair.second).norm() <

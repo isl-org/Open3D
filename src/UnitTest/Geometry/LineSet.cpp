@@ -79,9 +79,9 @@ TEST(LineSet, Clear) {
 
     geometry::LineSet ls;
 
-    ls.points_.h_data.resize(size);
-    ls.lines_.h_data.resize(size);
-    ls.colors_.h_data.resize(size);
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+    ls.colors_.resize(size);
 
     Rand(ls.points_.h_data, dmin, dmax, 0);
     Rand(ls.lines_.h_data, imin, imax, 0);
@@ -122,7 +122,7 @@ TEST(LineSet, IsEmpty) {
 
     EXPECT_TRUE(ls.IsEmpty());
 
-    ls.points_.h_data.resize(size);
+    ls.points_.resize(size);
 
     Rand(ls.points_.h_data, vmin, vmax, 0);
 
@@ -140,7 +140,7 @@ TEST(LineSet, GetMinBound) {
 
     geometry::LineSet ls;
 
-    ls.points_.h_data.resize(size);
+    ls.points_.resize(size);
 
     Rand(ls.points_.h_data, vmin, vmax, 0);
 
@@ -160,7 +160,7 @@ TEST(LineSet, GetMaxBound) {
 
     geometry::LineSet ls;
 
-    ls.points_.h_data.resize(size);
+    ls.points_.resize(size);
 
     Rand(ls.points_.h_data, vmin, vmax, 0);
 
@@ -198,10 +198,10 @@ TEST(LineSet, Transform) {
     Eigen::Vector2i imin(0, 0);
     Eigen::Vector2i imax(1000, 1000);
 
-    ls.points_.h_data.resize(size);
+    ls.points_.resize(size);
     Rand(ls.points_.h_data, dmin, dmax, 0);
 
-    ls.lines_.h_data.resize(size);
+    ls.lines_.resize(size);
     Rand(ls.lines_.h_data, imin, imax, 0);
 
     Eigen::Matrix4d transformation;
@@ -223,13 +223,13 @@ TEST(LineSet, OperatorAppend) {
     geometry::LineSet ls0;
     geometry::LineSet ls1;
 
-    ls0.points_.h_data.resize(size);
-    ls0.lines_.h_data.resize(size);
-    ls0.colors_.h_data.resize(size);
+    ls0.points_.resize(size);
+    ls0.lines_.resize(size);
+    ls0.colors_.resize(size);
 
-    ls1.points_.h_data.resize(size);
-    ls1.lines_.h_data.resize(size);
-    ls1.colors_.h_data.resize(size);
+    ls1.points_.resize(size);
+    ls1.lines_.resize(size);
+    ls1.colors_.resize(size);
 
     Rand(ls0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);
@@ -242,16 +242,16 @@ TEST(LineSet, OperatorAppend) {
     Rand(ls1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Eigen::Vector3d> p;
-    p.insert(p.end(), ls0.points_.h_data.begin(), ls0.points_.h_data.end());
-    p.insert(p.end(), ls1.points_.h_data.begin(), ls1.points_.h_data.end());
+    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
+    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
     vector<Eigen::Vector2i> n;
-    n.insert(n.end(), ls0.lines_.h_data.begin(), ls0.lines_.h_data.end());
-    n.insert(n.end(), ls1.lines_.h_data.begin(), ls1.lines_.h_data.end());
+    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
+    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
     vector<Eigen::Vector3d> c;
-    c.insert(c.end(), ls0.colors_.h_data.begin(), ls0.colors_.h_data.end());
-    c.insert(c.end(), ls1.colors_.h_data.begin(), ls1.colors_.h_data.end());
+    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
+    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
     geometry::LineSet ls(ls0);
     ls += ls1;
@@ -287,13 +287,13 @@ TEST(LineSet, OperatorADD) {
     geometry::LineSet ls0;
     geometry::LineSet ls1;
 
-    ls0.points_.h_data.resize(size);
-    ls0.lines_.h_data.resize(size);
-    ls0.colors_.h_data.resize(size);
+    ls0.points_.resize(size);
+    ls0.lines_.resize(size);
+    ls0.colors_.resize(size);
 
-    ls1.points_.h_data.resize(size);
-    ls1.lines_.h_data.resize(size);
-    ls1.colors_.h_data.resize(size);
+    ls1.points_.resize(size);
+    ls1.lines_.resize(size);
+    ls1.colors_.resize(size);
 
     Rand(ls0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);
@@ -306,16 +306,16 @@ TEST(LineSet, OperatorADD) {
     Rand(ls1.colors_.h_data, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Eigen::Vector3d> p;
-    p.insert(p.end(), ls0.points_.h_data.begin(), ls0.points_.h_data.end());
-    p.insert(p.end(), ls1.points_.h_data.begin(), ls1.points_.h_data.end());
+    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
+    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
     vector<Eigen::Vector2i> n;
-    n.insert(n.end(), ls0.lines_.h_data.begin(), ls0.lines_.h_data.end());
-    n.insert(n.end(), ls1.lines_.h_data.begin(), ls1.lines_.h_data.end());
+    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
+    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
     vector<Eigen::Vector3d> c;
-    c.insert(c.end(), ls0.colors_.h_data.begin(), ls0.colors_.h_data.end());
-    c.insert(c.end(), ls1.colors_.h_data.begin(), ls1.colors_.h_data.end());
+    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
+    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
     geometry::LineSet ls = ls0 + ls1;
 
@@ -351,7 +351,7 @@ TEST(LineSet, HasPoints) {
 
     EXPECT_FALSE(ls.HasPoints());
 
-    ls.points_.h_data.resize(size);
+    ls.points_.resize(size);
 
     EXPECT_TRUE(ls.HasPoints());
 }
@@ -366,8 +366,8 @@ TEST(LineSet, HasLines) {
 
     EXPECT_FALSE(ls.HasLines());
 
-    ls.points_.h_data.resize(size);
-    ls.lines_.h_data.resize(size);
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
 
     EXPECT_TRUE(ls.HasLines());
 }
@@ -382,9 +382,9 @@ TEST(LineSet, HasColors) {
 
     EXPECT_FALSE(ls.HasColors());
 
-    ls.points_.h_data.resize(size);
-    ls.lines_.h_data.resize(size);
-    ls.colors_.h_data.resize(size);
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+    ls.colors_.resize(size);
 
     EXPECT_TRUE(ls.HasColors());
 }
@@ -424,10 +424,10 @@ TEST(LineSet, GetLineCoordinate) {
     Eigen::Vector2i imin(0, 0);
     Eigen::Vector2i imax(size - 1, size - 1);
 
-    ls.points_.h_data.resize(size);
+    ls.points_.resize(size);
     Rand(ls.points_.h_data, dmin, dmax, 0);
 
-    ls.lines_.h_data.resize(size);
+    ls.lines_.resize(size);
     Rand(ls.lines_.h_data, imin, imax, 0);
 
     EXPECT_EQ(ref_points.size(), size);
@@ -474,13 +474,13 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     geometry::PointCloud pc1;
     vector<pair<int, int>> correspondence(size);
 
-    pc0.points_.h_data.resize(size);
-    pc0.normals_.h_data.resize(size);
-    pc0.colors_.h_data.resize(size);
+    pc0.points_.resize(size);
+    pc0.normals_.resize(size);
+    pc0.colors_.resize(size);
 
-    pc1.points_.h_data.resize(size);
-    pc1.normals_.h_data.resize(size);
-    pc1.colors_.h_data.resize(size);
+    pc1.points_.resize(size);
+    pc1.normals_.resize(size);
+    pc1.colors_.resize(size);
 
     Rand(pc0.points_.h_data, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0),
          0);

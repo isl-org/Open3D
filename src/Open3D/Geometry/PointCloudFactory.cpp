@@ -58,7 +58,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     int num_valid_pixels = CountValidDepthPixels(depth, stride);
-    pointcloud->points_.h_data.resize(num_valid_pixels);
+    pointcloud->points_.resize(num_valid_pixels);
     int cnt = 0;
     for (int i = 0; i < depth.height_; i += stride) {
         for (int j = 0; j < depth.width_; j += stride) {
@@ -88,8 +88,8 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
     auto principal_point = intrinsic.GetPrincipalPoint();
     double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
     int num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
-    pointcloud->points_.h_data.resize(num_valid_pixels);
-    pointcloud->colors_.h_data.resize(num_valid_pixels);
+    pointcloud->points_.resize(num_valid_pixels);
+    pointcloud->colors_.resize(num_valid_pixels);
     int cnt = 0;
     for (int i = 0; i < image.depth_.height_; i++) {
         float *p = (float *)(image.depth_.data_.data() +

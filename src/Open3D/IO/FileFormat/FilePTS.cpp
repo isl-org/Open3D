@@ -64,10 +64,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 fclose(file);
                 return false;
             }
-            pointcloud.points_.h_data.resize(num_of_pts);
+            pointcloud.points_.resize(num_of_pts);
             if (num_of_fields >= 7) {
                 // X Y Z I R G B
-                pointcloud.colors_.h_data.resize(num_of_pts);
+                pointcloud.colors_.resize(num_of_pts);
             }
         }
         double x, y, z;
