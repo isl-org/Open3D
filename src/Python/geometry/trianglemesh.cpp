@@ -26,6 +26,7 @@
 
 #include "Python/geometry/geometry_trampoline.h"
 #include "Python/geometry/geometry.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/TriangleMesh.h>
 
@@ -90,35 +91,111 @@ void pybind_trianglemesh(py::module &m) {
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
+    // Overloaded function, do not inject docs. Keep commented out for future.
     m.def("select_down_sample",
           (std::shared_ptr<geometry::TriangleMesh>(*)(
                   const geometry::TriangleMesh &,
                   const std::vector<size_t> &)) &
                   geometry::SelectDownSample,
           "Function to select mesh from input triangle mesh into output "
-          "triangle mesh",
+          "triangle mesh. ``input``: The input triangle mesh. ``indices``: "
+          "Indices of vertices to be selected.",
           "input"_a, "indices"_a);
+    // docstring::FunctionDocInject(
+    //         m, "select_down_sample",
+    //         {{"input", "The input triangle mesh."},
+    //          {"indices", "Indices of vertices to be selected."}});
+
     m.def("crop_triangle_mesh", &geometry::CropTriangleMesh,
           "Function to crop input triangle mesh into output triangle mesh",
           "input"_a, "min_bound"_a, "max_bound"_a);
+    docstring::FunctionDocInject(
+            m, "crop_triangle_mesh",
+            {{"input", "The input triangle mesh."},
+             {"min_bound", "Minimum bound for vertex coordinate."},
+             {"max_bound", "Maximum bound for vertex coordinate."}});
+
     m.def("create_mesh_box", &geometry::CreateMeshBox,
-          "Factory function to create a box", "width"_a = 1.0, "height"_a = 1.0,
-          "depth"_a = 1.0);
+          "Factory function to create a box. The left bottom corner on the "
+          "front will be placed at (0, 0, 0).",
+          "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0);
+    docstring::FunctionDocInject(m, "create_mesh_box",
+                                 {{"width", "x-directional length."},
+                                  {"height", "y-directional length."},
+                                  {"depth", "z-directional length."}});
+
     m.def("create_mesh_sphere", &geometry::CreateMeshSphere,
-          "Factory function to create a sphere mesh", "radius"_a = 1.0,
-          "resolution"_a = 20);
+          "Factory function to create a sphere mesh centered at (0, 0, 0).",
+          "radius"_a = 1.0, "resolution"_a = 20);
+    docstring::FunctionDocInject(
+            m, "create_mesh_sphere",
+            {{"radius", "The radius of the sphere."},
+             {"resolution",
+              "The resolution of the sphere. The longitues will be split into "
+              "``resolution`` segments (i.e. there are ``resolution + 1`` "
+              "latitude lines including the north and south pole). The "
+              "latitudes will be split into ```2 * resolution`` segments (i.e. "
+              "there are ``2 * resolution`` longitude lines.)"}});
+
     m.def("create_mesh_cylinder", &geometry::CreateMeshCylinder,
           "Factory function to create a cylinder mesh", "radius"_a = 1.0,
           "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4);
+    docstring::FunctionDocInject(
+            m, "create_mesh_cylinder",
+            {{"radius", "The radius of the cylinder."},
+             {"height",
+              "The height of the cylinder. The axis of the cylinder will be "
+              "from (0, 0, -height/2) to (0, 0, height/2)."},
+             {"resolution",
+              " The circle will be split into ``resolution`` segments"},
+             {"split",
+              "The ``height`` will be split into ``split`` segments."}});
+
     m.def("create_mesh_cone", &geometry::CreateMeshCone,
           "Factory function to create a cone mesh", "radius"_a = 1.0,
           "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1);
+    docstring::FunctionDocInject(
+            m, "create_mesh_cone",
+            {{"radius", "The radius of the cone."},
+             {"height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, 0) to (0, 0, height)."},
+             {"resolution",
+              "The circle will be split into ``resolution`` segments"},
+             {"split",
+              "The ``height`` will be split into ``split`` segments."}});
+
     m.def("create_mesh_arrow", &geometry::CreateMeshArrow,
           "Factory function to create an arrow mesh", "cylinder_radius"_a = 1.0,
           "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,
           "cone_height"_a = 4.0, "resolution"_a = 20, "cylinder_split"_a = 4,
           "cone_split"_a = 1);
+    docstring::FunctionDocInject(
+            m, "create_mesh_arrow",
+            {{"cylinder_radius", "The radius of the cylinder."},
+             {"cone_radius", "The radius of the cone."},
+             {"cylinder_height",
+              "The height of the cylinder. The cylinder is from (0, 0, 0) to "
+              "(0, 0, cylinder_height)"},
+             {"cone_height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, cylinder_height) to (0, 0, cylinder_height + cone_height)"},
+             {"resolution",
+              "The cone will be split into ``resolution`` segments."},
+             {"cylinder_split",
+              "The ``cylinder_height`` will be split into ``cylinder_split`` "
+              "segments."},
+             {"cone_split",
+              "The ``cone_height`` will be split into ``cone_split`` "
+              "segments."}});
+
     m.def("create_mesh_coordinate_frame", &geometry::CreateMeshCoordinateFrame,
-          "Factory function to create a coordinate frame mesh", "size"_a = 1.0,
-          "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
+          "Factory function to create a coordinate frame mesh. The coordinate "
+          "frame will be centered at ``origin``. The x, y, z axis will be "
+          "rendered as red, green, and blue arrows respectively.",
+          "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
+    docstring::FunctionDocInject(
+            m, "create_mesh_coordinate_frame",
+            {{"size", "The size of the coordinate frame."},
+             {"origin", "The origin of the cooridnate frame."}});
 }

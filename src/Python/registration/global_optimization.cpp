@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Python/registration/registration.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Registration/PoseGraph.h>
 #include <Open3D/Registration/GlobalOptimization.h>
@@ -294,4 +295,13 @@ void pybind_global_optimization_methods(py::module &m) {
           },
           "Function to optimize registration::PoseGraph", "pose_graph"_a,
           "method"_a, "criteria"_a, "option"_a);
+    docstring::FunctionDocInject(
+            m, "global_optimization",
+            {{"pose_graph", "The pose_graph to be optimized (in-place)."},
+             {"method",
+              "Global optimization method. Either "
+              "``registration::GlobalOptimizationGaussNewton()`` or "
+              "``registration::GlobalOptimizationLevenbergMarquardt()``."},
+             {"criteria", "Global optimization convergence criteria."},
+             {"option", "Global optimization option."}});
 }

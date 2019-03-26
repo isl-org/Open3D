@@ -25,12 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include "Python/odometry/odometry.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/Image.h>
 #include <Open3D/Geometry/RGBDImage.h>
 #include <Open3D/Odometry/Odometry.h>
 #include <Open3D/Odometry/OdometryOption.h>
 #include <Open3D/Odometry/RGBDOdometryJacobian.h>
+
 using namespace open3d;
 
 template <class RGBDOdometryJacobianBase = odometry::RGBDOdometryJacobian>
@@ -143,12 +145,26 @@ void pybind_odometry_classes(py::module &m) {
 
 void pybind_odometry_methods(py::module &m) {
     m.def("compute_rgbd_odometry", &odometry::ComputeRGBDOdometry,
-          "Function to estimate 6D rigid motion from two RGBD image pairs",
+          "Function to estimate 6D rigid motion from two RGBD image pairs. "
+          "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
           "rgbd_source"_a, "rgbd_target"_a,
           "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
           "odo_init"_a = Eigen::Matrix4d::Identity(),
           "jacobian"_a = odometry::RGBDOdometryJacobianFromHybridTerm(),
           "option"_a = odometry::OdometryOption());
+    docstring::FunctionDocInject(
+            m, "compute_rgbd_odometry",
+            {
+                    {"rgbd_source", "Source RGBD image."},
+                    {"rgbd_target", "Target RGBD image."},
+                    {"pinhole_camera_intrinsic", "Camera intrinsic parameters"},
+                    {"odo_init", "Initial 4x4 motion matrix estimation."},
+                    {"jacobian",
+                     "The odometry Jacobian method to use. Can be "
+                     "``odometry::RGBDOdometryJacobianFromHybridTerm()`` or "
+                     "``odometry::RGBDOdometryJacobianFromColorTerm().``"},
+                    {"option", "Odometry hyper parameteres."},
+            });
 }
 
 void pybind_odometry(py::module &m) {

@@ -29,6 +29,7 @@
 
 #include "Python/io/io.h"
 #include "Python/docstring.h"
+
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Camera/PinholeCameraTrajectory.h"
 #include "Open3D/IO/ClassIO/FeatureIO.h"
@@ -45,7 +46,7 @@ using namespace open3d;
 
 // IO functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
-        map_io_argument_docstrings = {
+        map_shared_argument_docstrings = {
                 {"filename", "Path to file."},
                 // Write options
                 {"compressed",
@@ -85,7 +86,7 @@ void pybind_io(py::module &m) {
              },
              "Function to read Image from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_image",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_image",
              [](const std::string &filename, const geometry::Image &image,
@@ -95,7 +96,7 @@ void pybind_io(py::module &m) {
              "Function to write Image to file", "filename"_a, "image"_a,
              "quality"_a = 90);
     docstring::FunctionDocInject(m_io, "write_image",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     // open3d::geometry::LineSet
     m_io.def("read_line_set",
@@ -107,7 +108,7 @@ void pybind_io(py::module &m) {
              "Function to read LineSet from file", "filename"_a,
              "format"_a = "auto");
     docstring::FunctionDocInject(m_io, "read_line_set",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_line_set",
              [](const std::string &filename, const geometry::LineSet &line_set,
@@ -118,7 +119,7 @@ void pybind_io(py::module &m) {
              "Function to write LineSet to file", "filename"_a, "line_set"_a,
              "write_ascii"_a = false, "compressed"_a = false);
     docstring::FunctionDocInject(m_io, "write_line_set",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     // open3d::geometry::PointCloud
     m_io.def("read_point_cloud",
@@ -130,7 +131,7 @@ void pybind_io(py::module &m) {
              "Function to read PointCloud from file", "filename"_a,
              "format"_a = "auto");
     docstring::FunctionDocInject(m_io, "read_point_cloud",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_point_cloud",
              [](const std::string &filename,
@@ -142,7 +143,7 @@ void pybind_io(py::module &m) {
              "Function to write PointCloud to file", "filename"_a,
              "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     // open3d::geometry::TriangleMesh
     m_io.def("read_triangle_mesh",
@@ -153,7 +154,7 @@ void pybind_io(py::module &m) {
              },
              "Function to read TriangleMesh from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_triangle_mesh",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_triangle_mesh",
              [](const std::string &filename, const geometry::TriangleMesh &mesh,
@@ -164,7 +165,7 @@ void pybind_io(py::module &m) {
              "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
              "write_ascii"_a = false, "compressed"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     // open3d::geometry::VoxelGrid
     m_io.def("read_voxel_grid",
@@ -176,7 +177,7 @@ void pybind_io(py::module &m) {
              "Function to read VoxelGrid from file", "filename"_a,
              "format"_a = "auto");
     docstring::FunctionDocInject(m_io, "read_voxel_grid",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_voxel_grid",
              [](const std::string &filename,
@@ -188,7 +189,7 @@ void pybind_io(py::module &m) {
              "Function to write VoxelGrid to file", "filename"_a,
              "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false);
     docstring::FunctionDocInject(m_io, "write_voxel_grid",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     // open3d::camera
     m_io.def("read_pinhole_camera_intrinsic",
@@ -199,7 +200,7 @@ void pybind_io(py::module &m) {
              },
              "Function to read PinholeCameraIntrinsic from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_pinhole_camera_intrinsic",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_pinhole_camera_intrinsic",
              [](const std::string &filename,
@@ -209,7 +210,7 @@ void pybind_io(py::module &m) {
              "Function to write PinholeCameraIntrinsic to file", "filename"_a,
              "intrinsic"_a);
     docstring::FunctionDocInject(m_io, "write_pinhole_camera_intrinsic",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("read_pinhole_camera_parameters",
              [](const std::string &filename) {
@@ -220,7 +221,7 @@ void pybind_io(py::module &m) {
              "Function to read PinholeCameraParameters from file",
              "filename"_a);
     docstring::FunctionDocInject(m_io, "read_pinhole_camera_parameters",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_pinhole_camera_parameters",
              [](const std::string &filename,
@@ -230,7 +231,7 @@ void pybind_io(py::module &m) {
              "Function to write PinholeCameraParameters to file", "filename"_a,
              "parameters"_a);
     docstring::FunctionDocInject(m_io, "write_pinhole_camera_parameters",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("read_pinhole_camera_trajectory",
              [](const std::string &filename) {
@@ -241,7 +242,7 @@ void pybind_io(py::module &m) {
              "Function to read PinholeCameraTrajectory from file",
              "filename"_a);
     docstring::FunctionDocInject(m_io, "read_pinhole_camera_trajectory",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_pinhole_camera_trajectory",
              [](const std::string &filename,
@@ -251,7 +252,7 @@ void pybind_io(py::module &m) {
              "Function to write PinholeCameraTrajectory to file", "filename"_a,
              "trajectory"_a);
     docstring::FunctionDocInject(m_io, "write_pinhole_camera_trajectory",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     // open3d::registration
     m_io.def("read_feature",
@@ -262,7 +263,7 @@ void pybind_io(py::module &m) {
              },
              "Function to read registration.Feature from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_feature",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_feature",
              [](const std::string &filename,
@@ -271,7 +272,7 @@ void pybind_io(py::module &m) {
              },
              "Function to write Feature to file", "filename"_a, "feature"_a);
     docstring::FunctionDocInject(m_io, "write_feature",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("read_pose_graph",
              [](const std::string &filename) {
@@ -281,7 +282,7 @@ void pybind_io(py::module &m) {
              },
              "Function to read PoseGraph from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_pose_graph",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_pose_graph",
              [](const std::string &filename,
@@ -291,5 +292,5 @@ void pybind_io(py::module &m) {
              "Function to write PoseGraph to file", "filename"_a,
              "pose_graph"_a);
     docstring::FunctionDocInject(m_io, "write_pose_graph",
-                                 map_io_argument_docstrings);
+                                 map_shared_argument_docstrings);
 }

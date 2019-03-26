@@ -26,6 +26,7 @@
 
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Open3D.h>
 using namespace open3d;

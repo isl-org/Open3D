@@ -24,6 +24,8 @@ Open3D: A Modern Library for 3D Data Processing
     compilation
     contribute
 
+.. _tutorial_index:
+
 .. toctree::
     :maxdepth: 1
     :caption: Tutorial

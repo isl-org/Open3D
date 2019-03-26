@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "Python/open3d_pybind.h"
+#include "Python/docstring.h"
+
 #include "Open3D/Utility/Console.h"
 
 using namespace open3d;
@@ -38,8 +40,16 @@ void pybind_console(py::module &m) {
             .value("Debug", utility::VerbosityLevel::VerboseDebug)
             .value("Always", utility::VerbosityLevel::VerboseAlways)
             .export_values();
+
     m.def("set_verbosity_level", &utility::SetVerbosityLevel,
-          "Set global verbosity level of open3d", py::arg("verbosity_level"));
+          "Set global verbosity level of Open3D", py::arg("verbosity_level"));
+    docstring::FunctionDocInject(
+            m, "set_verbosity_level",
+            {{"verbosity_level",
+              "Messages with equal or less than ``verbosity_level`` verbosity "
+              "will be printed."}});
+
     m.def("get_verbosity_level", &utility::GetVerbosityLevel,
-          "Get global verbosity level of open3d");
+          "Get global verbosity level of Open3D");
+    docstring::FunctionDocInject(m, "get_verbosity_level");
 }

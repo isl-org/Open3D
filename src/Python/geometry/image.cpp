@@ -30,7 +30,31 @@
 #include <Open3D/Geometry/Image.h>
 #include <Open3D/Geometry/RGBDImage.h>
 
+#include "Python/docstring.h"
+
 using namespace open3d;
+
+// Image functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"color", "The color image."},
+                {"convert_rgb_to_intensity",
+                 "Whether to convert RGB image to intensity image."},
+                {"depth", "The depth image."},
+                {"depth_scale",
+                 "The ratio to scale depth values. The depth values will first "
+                 "be scaled and then truncated."},
+                {"depth_trunc",
+                 "Depth values larger than ``depth_trunc`` gets truncated to "
+                 "0. The depth values will first be scaled and then "
+                 "truncated."},
+                {"filter_type", "The filter type to be applied."},
+                {"image", "The Image object."},
+                {"image_pyramid", "The ImagePyramid object"},
+                {"num_of_levels ", "Levels of the image pyramid"},
+                {"with_gaussian_filter",
+                 "When ``True``, image in the pyramid will first be filtered "
+                 "by a 3x3 Gaussian kernel before downsampling."}};
 
 void pybind_image(py::module &m) {
     py::class_<geometry::Image, PyGeometry2D<geometry::Image>,
@@ -173,6 +197,9 @@ void pybind_image_methods(py::module &m) {
               }
           },
           "Function to filter geometry::Image", "image"_a, "filter_type"_a);
+    docstring::FunctionDocInject(m, "filter_image",
+                                 map_shared_argument_docstrings);
+
     m.def("create_image_pyramid",
           [](const geometry::Image &input, size_t num_of_levels,
              bool with_gaussian_filter) {
@@ -190,6 +217,9 @@ void pybind_image_methods(py::module &m) {
           },
           "Function to create geometry::ImagePyramid", "image"_a,
           "num_of_levels"_a, "with_gaussian_filter"_a);
+    docstring::FunctionDocInject(m, "create_image_pyramid",
+                                 map_shared_argument_docstrings);
+
     m.def("filter_image_pyramid",
           [](const geometry::ImagePyramid &input,
              geometry::Image::FilterType filter_type) {
@@ -198,21 +228,35 @@ void pybind_image_methods(py::module &m) {
           },
           "Function to filter geometry::ImagePyramid", "image_pyramid"_a,
           "filter_type"_a);
+    docstring::FunctionDocInject(m, "filter_image_pyramid",
+                                 map_shared_argument_docstrings);
+
     m.def("create_rgbd_image_from_color_and_depth",
           &geometry::CreateRGBDImageFromColorAndDepth,
           "Function to make geometry::RGBDImage", "color"_a, "depth"_a,
           "depth_scale"_a = 1000.0, "depth_trunc"_a = 3.0,
           "convert_rgb_to_intensity"_a = true);
+    docstring::FunctionDocInject(m, "create_rgbd_image_from_color_and_depth",
+                                 map_shared_argument_docstrings);
+
     m.def("create_rgbd_image_from_tum_format",
           &geometry::CreateRGBDImageFromTUMFormat,
           "Function to make geometry::RGBDImage (for TUM format)", "color"_a,
           "depth"_a, "convert_rgb_to_intensity"_a = true);
+    docstring::FunctionDocInject(m, "create_rgbd_image_from_tum_format",
+                                 map_shared_argument_docstrings);
+
     m.def("create_rgbd_image_from_sun_format",
           &geometry::CreateRGBDImageFromSUNFormat,
           "Function to make geometry::RGBDImage (for SUN format)", "color"_a,
           "depth"_a, "convert_rgb_to_intensity"_a = true);
+    docstring::FunctionDocInject(m, "create_rgbd_image_from_sun_format",
+                                 map_shared_argument_docstrings);
+
     m.def("create_rgbd_image_from_nyu_format",
           &geometry::CreateRGBDImageFromNYUFormat,
           "Function to make geometry::RGBDImage (for NYU format)", "color"_a,
           "depth"_a, "convert_rgb_to_intensity"_a = true);
+    docstring::FunctionDocInject(m, "create_rgbd_image_from_nyu_format",
+                                 map_shared_argument_docstrings);
 }

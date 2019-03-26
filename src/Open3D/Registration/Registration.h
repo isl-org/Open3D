@@ -141,7 +141,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const RANSACConvergenceCriteria &criteria =
                 RANSACConvergenceCriteria());
 
-/// Function for computing information matrix from RegistrationResult
+/// Function for computing information matrix from transformation matrix
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
