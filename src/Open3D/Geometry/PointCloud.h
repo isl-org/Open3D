@@ -100,15 +100,15 @@ public:
 public:
     // device id
     // set to -1 to execute on the CPU
-    int cuda_device_id = -1;
+    int device_id = -1;
 
     inline void SetDeviceID(const int &id) {
-        if (cuda_device_id != id) {
-            cuda_device_id = id;
+        if (device_id != id) {
+            device_id = id;
 
-            points_.cuda_device_id = id;
-            normals_.cuda_device_id = id;
-            colors_.cuda_device_id = id;
+            points_.device_id = id;
+            normals_.device_id = id;
+            colors_.device_id = id;
 
             UpdateDevicePoints();
             UpdateDeviceNormals();

@@ -170,7 +170,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     if (input.IsEmpty()) return std::make_tuple(mean, covariance);
 
 #ifdef OPEN3D_USE_CUDA
-    if (0 <= input.cuda_device_id)
+    if (0 <= input.device_id)
         return ComputePointCloudMeanAndCovarianceCUDA(input);
     else
         return ComputePointCloudMeanAndCovarianceCPU(input);
@@ -262,8 +262,8 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     auto output =
-            meanAndCovarianceCUDA(input.points_.cuda_device_id,
-                                  input.points_.d_data, input.points_.size());
+            meanAndCovarianceCUDA(input.points_.device_id, input.points_.d_data,
+                                  input.points_.size());
 
     Vec3d meanCUDA = get<0>(output);
     Mat3d covarianceCUDA = get<1>(output);
@@ -282,7 +282,7 @@ bool PointCloud::UpdateDevicePoints() {
     size_t size = points_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&points_.d_data,
                               (const double *const)points_.data(), size,
-                              cuda_device_id);
+                              device_id);
 }
 
 // update the memory assigned to normals_.d_data
@@ -290,7 +290,7 @@ bool PointCloud::UpdateDeviceNormals() {
     size_t size = normals_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&normals_.d_data,
                               (const double *const)normals_.data(), size,
-                              cuda_device_id);
+                              device_id);
 }
 
 // update the memory assigned to colors_.d_data
@@ -298,7 +298,7 @@ bool PointCloud::UpdateDeviceColors() {
     size_t size = colors_.size() * open3d::Vec3d::Size;
     return UpdateDeviceMemory(&colors_.d_data,
                               (const double *const)colors_.data(), size,
-                              cuda_device_id);
+                              device_id);
 }
 
 // perform cleanup

@@ -474,10 +474,11 @@ struct Mat {
         OPEN3D_FUNC_DECL inline typename Mat<T, R, C>::_Type block(
                 const uint &offset_r, const uint &offset_c) {
             typename Mat<T, R, C>::_Type output{};
-// #pragma unroll
-//             for (uint r = 0; r < ROWS; r++)
-// #pragma unroll
-//                 for (uint c = 0; c < COLS; c++) output.s[r][c] = (T)1.0;
+            // #pragma unroll
+            //             for (uint r = 0; r < ROWS; r++)
+            // #pragma unroll
+            //                 for (uint c = 0; c < COLS; c++) output.s[r][c] =
+            //                 (T)1.0;
 
             return output;
         }

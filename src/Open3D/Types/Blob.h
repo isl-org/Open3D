@@ -30,28 +30,51 @@
 #include <vector>
 #include "Mat.h"
 
+#ifdef OPEN3D_USE_CUDA
+#include "Open3D/Utility/CUDA.cuh"
+#endif
+
 namespace open3d {
 // 1D tensor, row major
 template <typename V, typename T>
 struct Blob {
     typedef struct _Type {
         _Type() {}
-        _Type(const int &size) : h_data(size) {}
-
+        _Type(const int &num_elements, const int &device_id = CPU)
+            : num_elements(num_elements), device_id(device_id) {
+            Initialize();
+        }
         // copy constructor
         // note: how to deal with device data?
         _Type(const _Type &t)
-            : h_data(t.h_data),
-              // d_data(t.d_data),
-              cuda_device_id(t.cuda_device_id) {}
+            : num_elements(t.num_elements), device_id(t.device_id) {
+            Initialize();
+        }
+        ~_Type() { Reset(); }
 
+        // allocate memory
+        void Initialize() {
+            if ((CPU == device_id) && (h_data.size() == 0))
+                h_data = std::vector<V>(num_elements);
+
+            if ((CPU < device_id) && (NULL != d_data))
+                AllocateDeviceMemory(&d_data, num_elements);
+        }
+        // deallocate memory
+        void Reset() {
+            h_data.clear();
+            ReleaseDeviceMemory(&d_data);
+            num_elements = 0;
+        }
+
+        // total number of elements in this structure
+        size_t num_elements{};
         // host data container
         std::vector<V> h_data{};
         // device data pointer
         T *d_data{};
         // device id
-        // set to -1 to execute on the CPU
-        int cuda_device_id = 0;
+        int device_id = CPU;
 
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) { return h_data[i]; }
@@ -152,6 +175,7 @@ struct Blob {
         inline void resize(size_t n, const V &val) { h_data.resize(n, val); }
         // redirect to std:vector<V>::size()
         inline size_t size() const { return h_data.size(); }
+        inline size_t d_size() const { return num_elements; }
     } Type;
 };
 

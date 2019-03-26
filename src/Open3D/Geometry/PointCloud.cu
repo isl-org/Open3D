@@ -99,7 +99,7 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points,
 
     // allocate temporary device memory
     double *d_cumulants = NULL;
-    status = AlocateDevMemory(&d_cumulants, outputSize);
+    status = AllocateDeviceMemory(&d_cumulants, outputSize);
     DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
@@ -135,7 +135,7 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points,
         return std::make_tuple(mean, covariance);
 
     // Free temporary device memory
-    status = freeDev(&d_cumulants);
+    status = ReleaseDeviceMemory(&d_cumulants);
     DebugInfo("meanAndCovarianceCUDA", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
