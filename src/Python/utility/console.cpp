@@ -32,14 +32,20 @@
 using namespace open3d;
 
 void pybind_console(py::module &m) {
-    py::enum_<utility::VerbosityLevel>(m, "VerbosityLevel", py::arithmetic(),
-                                       "VerbosityLevel")
-            .value("Error", utility::VerbosityLevel::VerboseError)
+    py::enum_<utility::VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
+                                          "VerbosityLevel");
+    vl.value("Error", utility::VerbosityLevel::VerboseError)
             .value("Warning", utility::VerbosityLevel::VerboseWarning)
             .value("Info", utility::VerbosityLevel::VerboseInfo)
             .value("Debug", utility::VerbosityLevel::VerboseDebug)
             .value("Always", utility::VerbosityLevel::VerboseAlways)
             .export_values();
+    // Trick to write docs without listing the members in the enum class again.
+    vl.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for VerbosityLevel.";
+            }),
+            py::none(), py::none(), "");
 
     m.def("set_verbosity_level", &utility::SetVerbosityLevel,
           "Set global verbosity level of Open3D", py::arg("verbosity_level"));

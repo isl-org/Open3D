@@ -36,7 +36,9 @@ using namespace open3d;
 void pybind_voxelgrid(py::module &m) {
     py::class_<geometry::VoxelGrid, PyGeometry3D<geometry::VoxelGrid>,
                std::shared_ptr<geometry::VoxelGrid>, geometry::Geometry3D>
-            voxelgrid(m, "VoxelGrid");
+            voxelgrid(m, "VoxelGrid",
+                      "VoxelGrid is a collection of voxels which are aligned "
+                      "in grid.");
     py::detail::bind_default_constructor<geometry::VoxelGrid>(voxelgrid);
     py::detail::bind_copy_functions<geometry::VoxelGrid>(voxelgrid);
     voxelgrid
@@ -48,12 +50,25 @@ void pybind_voxelgrid(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_voxels", &geometry::VoxelGrid::HasVoxels)
-            .def("has_colors", &geometry::VoxelGrid::HasColors)
-            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_)
-            .def_readwrite("colors", &geometry::VoxelGrid::colors_)
-            .def_readwrite("origin", &geometry::VoxelGrid::origin_)
+            .def("has_voxels", &geometry::VoxelGrid::HasVoxels,
+                 "Returns ``True`` if the voxel grid contains voxels.")
+            .def("has_colors", &geometry::VoxelGrid::HasColors,
+                 "Returns ``True`` if the voxel grid contains voxel colors.")
+            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
+                           "``int`` array of shape ``(num_voxels, 3)``: "
+                           "Voxel coordinates. use ``numpy.asarray()`` to "
+                           "access data.")
+            .def_readwrite(
+                    "colors", &geometry::VoxelGrid::colors_,
+                    "``float64`` array of shape ``(num_voxels, 3)``, "
+                    "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                    "data: RGB colors of voxels.")
+            .def_readwrite("origin", &geometry::VoxelGrid::origin_,
+                           "``float64`` vector of length 3: Coorindate of the "
+                           "origin point.")
             .def_readwrite("voxel_size", &geometry::VoxelGrid::voxel_size_);
+    docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");
+    docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
 }
 
 void pybind_voxelgrid_methods(py::module &m) {

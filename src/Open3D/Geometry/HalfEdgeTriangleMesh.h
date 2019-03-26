@@ -68,7 +68,7 @@ public:
     /// True if half-edges have already been computed
     bool HasHalfEdges() const;
 
-    /// Query manifold boundary half edges
+    /// Query manifold boundary half edges from a starting vertex
     /// If query vertex is not on boundary, empty vector will be returned
     std::vector<int> BoundaryHalfEdgesFromVertex(int vertex_index) const;
 

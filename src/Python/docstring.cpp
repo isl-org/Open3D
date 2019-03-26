@@ -37,6 +37,50 @@
 namespace open3d {
 namespace docstring {
 
+// ref: enum_base in pybind11.h
+py::handle static_property =
+        py::handle((PyObject*)py::detail::get_internals().static_property_type);
+
+void ClassMethodDocInject(py::module& pybind_module,
+                          const std::string& class_name,
+                          const std::string& function_name,
+                          const std::unordered_map<std::string, std::string>&
+                                  map_parameter_body_docs) {
+    // Get function
+    PyObject* module = pybind_module.ptr();
+    PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
+    PyObject* class_method_obj =
+            PyObject_GetAttrString(class_obj, function_name.c_str());
+    if (Py_TYPE(class_method_obj) != &PyInstanceMethod_Type) {
+        return;
+    }
+    PyInstanceMethodObject* class_method =
+            (PyInstanceMethodObject*)class_method_obj;
+    PyObject* f_obj = class_method->func;
+    if (Py_TYPE(f_obj) != &PyCFunction_Type) {
+        return;
+    }
+    PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
+
+    // TODO: parse __init__ separately, currently __init__ can be overloaded
+    // which might cause parsing error. So they are skipped.
+    if (function_name == "__init__") {
+        return;
+    }
+
+    // Parse existing docstring to FunctionDoc
+    FunctionDoc fd(f->m_ml->ml_doc);
+
+    // Inject docstring
+    for (ArgumentDoc& ad : fd.argument_docs_) {
+        if (map_parameter_body_docs.find(ad.name_) !=
+            map_parameter_body_docs.end()) {
+            ad.body_ = map_parameter_body_docs.at(ad.name_);
+        }
+    }
+    f->m_ml->ml_doc = strdup(fd.ToGoogleDocString().c_str());
+}
+
 void FunctionDocInject(py::module& pybind_module,
                        const std::string& function_name,
                        const std::unordered_map<std::string, std::string>&
@@ -150,10 +194,14 @@ std::string FunctionDoc::ToGoogleDocString() const {
     }
 
     // Arguments
-    if (argument_docs_.size() != 0) {
+    if (argument_docs_.size() != 0 &&
+        !(argument_docs_.size() == 1 && argument_docs_[0].name_ == "self")) {
         rc << std::endl;
         rc << "Args:" << std::endl;
         for (const ArgumentDoc& argument_doc : argument_docs_) {
+            if (argument_doc.name_ == "self") {
+                continue;
+            }
             rc << indent << argument_doc.name_ << " (" << argument_doc.type_;
             if (argument_doc.default_ != "") {
                 rc << ", optional";

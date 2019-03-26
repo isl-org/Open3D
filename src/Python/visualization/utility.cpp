@@ -38,7 +38,8 @@ using namespace open3d;
 
 void pybind_visualization_utility(py::module &m) {
     py::class_<visualization::SelectionPolygonVolume> selection_volume(
-            m, "SelectionPolygonVolume");
+            m, "SelectionPolygonVolume",
+            "Select a polygon volume for cropping.");
     py::detail::bind_default_constructor<visualization::SelectionPolygonVolume>(
             selection_volume);
     py::detail::bind_copy_functions<visualization::SelectionPolygonVolume>(
@@ -49,13 +50,13 @@ void pybind_visualization_utility(py::module &m) {
                     const geometry::PointCloud &input) {
                      return s.CropPointCloud(input);
                  },
-                 "input"_a)
+                 "input"_a, "Function to crop point cloud.")
             .def("crop_triangle_mesh",
                  [](const visualization::SelectionPolygonVolume &s,
                     const geometry::TriangleMesh &input) {
                      return s.CropTriangleMesh(input);
                  },
-                 "input"_a)
+                 "input"_a, "Function to crop crop triangle mesh.")
             .def("__repr__",
                  [](const visualization::SelectionPolygonVolume &s) {
                      return std::string(
@@ -66,14 +67,25 @@ void pybind_visualization_utility(py::module &m) {
                  })
             .def_readwrite(
                     "orthogonal_axis",
-                    &visualization::SelectionPolygonVolume::orthogonal_axis_)
+                    &visualization::SelectionPolygonVolume::orthogonal_axis_,
+                    "string: one of ``{x, y, z}``.")
             .def_readwrite(
                     "bounding_polygon",
-                    &visualization::SelectionPolygonVolume::bounding_polygon_)
+                    &visualization::SelectionPolygonVolume::bounding_polygon_,
+                    "``(n, 3)`` float64 numpy array: Bounding polygon "
+                    "boundary.")
             .def_readwrite("axis_min",
-                           &visualization::SelectionPolygonVolume::axis_min_)
+                           &visualization::SelectionPolygonVolume::axis_min_,
+                           "float: Minimum axis value.")
             .def_readwrite("axis_max",
-                           &visualization::SelectionPolygonVolume::axis_max_);
+                           &visualization::SelectionPolygonVolume::axis_max_,
+                           "float: Maximum axis value.");
+    docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
+                                    "crop_point_cloud",
+                                    {{"input", "The input point cloud."}});
+    docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
+                                    "crop_triangle_mesh",
+                                    {{"input", "The input triangle mesh."}});
 }
 
 // Visualization util functions have similar arguments, sharing arg docstrings

@@ -156,7 +156,7 @@ void pybind_eigen_vector_of_vector(py::module &m,
 
     // Bare bones interface
     // We choose to disable them because they do not support slice indices
-    // such as [:,:]. It is recommanded to convert it to numpy.asarray()
+    // such as [:,:]. It is recommended to convert it to numpy.asarray()
     // to access raw data.
     // v.def("__getitem__", [](const std::vector<Eigen::Vector3d> &v,
     //        std::pair<size_t, size_t> i) {
