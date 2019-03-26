@@ -32,6 +32,7 @@
 
 #include <iostream>
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 // Make sure the types are PODs.
@@ -361,4 +362,20 @@ TEST(BasicTypes, parenthesis) {
         v(c) = c;
         EXPECT_EQ(v[c], v(c));
     }
+}
+
+// ----------------------------------------------------------------------------
+// Test the block<>() operator.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, block) {
+    open3d::Mat3d m = open3d::Mat3d::Random(-10.0, 15);
+    Eigen::Matrix3d em{};
+    em << m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2],
+            m[2][0], m[2][1], m[2][2];
+
+    Eigen::Vector3d ev = em.block<3, 1>(0, 0);
+
+    Print<double, 3, 3>(m);
+    Print(em);
+    Print(ev);
 }
