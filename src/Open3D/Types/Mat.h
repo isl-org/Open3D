@@ -43,6 +43,20 @@ struct Vec {
 
         T s[COLS];
 
+        // parenthesis operator: readwrite
+        OPEN3D_FUNC_DECL inline T &operator()(const uint &i) {
+            // catch error in debug mode
+            assert(i < Cols);
+
+            return s[i];
+        }
+        // parenthesis operator: readonly
+        OPEN3D_FUNC_DECL inline const T &operator()(const uint &i) const {
+            // catch error in debug mode
+            assert(i < Cols);
+
+            return s[i];
+        }
         // subscript operator: readwrite
         OPEN3D_FUNC_DECL inline T &operator[](const uint &i) {
             // catch error in debug mode
@@ -255,6 +269,24 @@ struct Mat {
 
         typename Vec<T, COLS>::Type s[ROWS];
 
+        // parenthesis operator: readwrite
+        OPEN3D_FUNC_DECL inline T &operator()(const uint &row,
+                                              const uint &col) {
+            // catch error in debug mode
+            assert(row < Rows);
+            assert(col < COLS);
+
+            return s[row][col];
+        }
+        // parenthesis operator: readonly
+        OPEN3D_FUNC_DECL inline const T &operator()(const uint &row,
+                                                    const uint &col) const {
+            // catch error in debug mode
+            assert(row < Rows);
+            assert(col < COLS);
+
+            return s[row][col];
+        }
         // subscript operator: readwrite
         OPEN3D_FUNC_DECL inline typename Vec<T, COLS>::Type &operator[](
                 const uint &i) {

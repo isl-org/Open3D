@@ -340,3 +340,25 @@ TEST(BasicTypes, cross) {
     EXPECT_EQ(eigen_cross[1], open3d_cross[1]);
     EXPECT_EQ(eigen_cross[2], open3d_cross[2]);
 }
+
+// ----------------------------------------------------------------------------
+// Test indexing using the parenthesis operator.
+// ----------------------------------------------------------------------------
+TEST(BasicTypes, parenthesis) {
+    open3d::Mat3d m{};
+    m = open3d::Mat3d::Random(-10.0, 15);
+    for (uint r = 0; r < open3d::Mat3d::Rows; r++)
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+            EXPECT_EQ(m[r][c], m(r, c));
+            m(r, c);
+            EXPECT_EQ(m[r][c], m(r, c));
+        }
+
+    open3d::Vec3d v{};
+    v = open3d::Vec3d::Random(-10.0, 15.0);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
+        EXPECT_EQ(v[c], v(c));
+        v(c) = c;
+        EXPECT_EQ(v[c], v(c));
+    }
+}
