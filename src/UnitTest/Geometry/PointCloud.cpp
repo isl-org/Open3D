@@ -215,8 +215,8 @@ TEST(PointCloud, Transform) {
 
     pc.Transform(transformation);
 
-    ExpectEQ(ref_points, pc.points_.h_data);
-    ExpectEQ(ref_normals, pc.normals_.h_data);
+    ExpectEQ(ref_points, pc.points_);
+    ExpectEQ(ref_normals, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -295,7 +295,7 @@ TEST(PointCloud, NormalizeNormals) {
 
     pc.NormalizeNormals();
 
-    ExpectEQ(ref, pc.normals_.h_data);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -502,7 +502,7 @@ TEST(PointCloud, SelectDownSample) {
 
     auto output_pc = geometry::SelectDownSample(pc, indices);
 
-    ExpectEQ(ref, output_pc->points_.h_data);
+    ExpectEQ(ref, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -583,9 +583,9 @@ TEST(PointCloud, VoxelDownSample) {
     Sort::Do(output_pc->normals_.h_data);
     Sort::Do(output_pc->colors_.h_data);
 
-    ExpectEQ(ref_points, output_pc->points_.h_data);
-    ExpectEQ(ref_normals, output_pc->normals_.h_data);
-    ExpectEQ(ref_colors, output_pc->colors_.h_data);
+    ExpectEQ(ref_points, output_pc->points_);
+    ExpectEQ(ref_normals, output_pc->normals_);
+    ExpectEQ(ref_colors, output_pc->colors_);
 }
 
 // ----------------------------------------------------------------------------
@@ -630,7 +630,7 @@ TEST(PointCloud, UniformDownSample) {
     size_t every_k_points = 4;
     auto output_pc = geometry::UniformDownSample(pc, every_k_points);
 
-    ExpectEQ(ref, output_pc->points_.h_data);
+    ExpectEQ(ref, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -691,7 +691,7 @@ TEST(PointCloud, EstimateNormals) {
 
     bool result = geometry::EstimateNormals(pc);
 
-    ExpectEQ(ref, pc.normals_.h_data);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -733,7 +733,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     result = geometry::OrientNormalsToAlignWithDirection(
             pc, Eigen::Vector3d(1.5, 0.5, 3.3));
 
-    ExpectEQ(ref, pc.normals_.h_data);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -794,7 +794,7 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation) {
     result = geometry::OrientNormalsTowardsCameraLocation(
             pc, Eigen::Vector3d(1.5, 0.5, 3.3));
 
-    ExpectEQ(ref, pc.normals_.h_data);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -992,7 +992,7 @@ TEST(PointCloud, CreatePointCloudFromDepthImage) {
 
     auto output_pc = geometry::CreatePointCloudFromDepthImage(image, intrinsic);
 
-    ExpectEQ(ref, output_pc->points_.h_data);
+    ExpectEQ(ref, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1035,8 +1035,8 @@ void TEST_CreatePointCloudFromRGBDImage(
     auto output_pc =
             geometry::CreatePointCloudFromRGBDImage(rgbd_image, intrinsic);
 
-    ExpectEQ(ref_points, output_pc->points_.h_data);
-    ExpectEQ(ref_colors, output_pc->colors_.h_data);
+    ExpectEQ(ref_points, output_pc->points_);
+    ExpectEQ(ref_colors, output_pc->colors_);
 }
 
 // ----------------------------------------------------------------------------

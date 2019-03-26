@@ -210,8 +210,8 @@ TEST(LineSet, Transform) {
 
     ls.Transform(transformation);
 
-    ExpectEQ(ref_points, ls.points_.h_data);
-    ExpectEQ(ref_lines, ls.lines_.h_data);
+    ExpectEQ(ref_points, ls.points_);
+    ExpectEQ(ref_lines, ls.lines_);
 }
 
 // ----------------------------------------------------------------------------
@@ -499,6 +499,6 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     auto ls = CreateLineSetFromPointCloudCorrespondences(pc0, pc1,
                                                          correspondence);
 
-    ExpectEQ(ref_points, ls->points_.h_data);
-    ExpectEQ(ref_lines, ls->lines_.h_data);
+    ExpectEQ(ref_points, ls->points_);
+    ExpectEQ(ref_lines, ls->lines_);
 }

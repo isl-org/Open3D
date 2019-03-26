@@ -234,9 +234,9 @@ TEST(TriangleMesh, Transform) {
 
     tm.Transform(transformation);
 
-    ExpectEQ(ref_vertices, tm.vertices_.h_data);
-    ExpectEQ(ref_vertex_normals, tm.vertex_normals_.h_data);
-    ExpectEQ(ref_triangle_normals, tm.triangle_normals_.h_data);
+    ExpectEQ(ref_vertices, tm.vertices_);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -440,7 +440,7 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
 
     tm.ComputeTriangleNormals();
 
-    ExpectEQ(ref, tm.triangle_normals_.h_data);
+    ExpectEQ(ref, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -480,7 +480,7 @@ TEST(TriangleMesh, ComputeVertexNormals) {
 
     tm.ComputeVertexNormals();
 
-    ExpectEQ(ref, tm.vertex_normals_.h_data);
+    ExpectEQ(ref, tm.vertex_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -666,11 +666,11 @@ TEST(TriangleMesh, Purge) {
 
     tm.Purge();
 
-    ExpectEQ(ref_vertices, tm.vertices_.h_data);
-    ExpectEQ(ref_vertex_normals, tm.vertex_normals_.h_data);
-    ExpectEQ(ref_vertex_colors, tm.vertex_colors_.h_data);
-    ExpectEQ(ref_triangles, tm.triangles_.h_data);
-    ExpectEQ(ref_triangle_normals, tm.triangle_normals_.h_data);
+    ExpectEQ(ref_vertices, tm.vertices_);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
+    ExpectEQ(ref_vertex_colors, tm.vertex_colors_);
+    ExpectEQ(ref_triangles, tm.triangles_);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -801,8 +801,8 @@ TEST(TriangleMesh, NormalizeNormals) {
 
     tm.NormalizeNormals();
 
-    ExpectEQ(ref_vertex_normals, tm.vertex_normals_.h_data);
-    ExpectEQ(ref_triangle_normals, tm.triangle_normals_.h_data);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -964,11 +964,11 @@ TEST(TriangleMesh, SelectDownSample) {
 
     auto output_tm = geometry::SelectDownSample(tm, indices);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
-    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_.h_data);
-    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_.h_data);
-    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
-    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_.h_data);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
+    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1030,11 +1030,11 @@ TEST(TriangleMesh, CropTriangleMesh) {
 
     auto output_tm = geometry::CropTriangleMesh(tm, cropBoundMin, cropBoundMax);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
-    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_.h_data);
-    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_.h_data);
-    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
-    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_.h_data);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
+    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1108,8 +1108,8 @@ TEST(TriangleMesh, CreateMeshSphere) {
 
     auto output_tm = geometry::CreateMeshSphere(1.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
-    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1161,8 +1161,8 @@ TEST(TriangleMesh, CreateMeshCylinder) {
 
     auto output_tm = geometry::CreateMeshCylinder(1.0, 2.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
-    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1181,8 +1181,8 @@ TEST(TriangleMesh, CreateMeshCone) {
 
     auto output_tm = geometry::CreateMeshCone(1.0, 2.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
-    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1227,8 +1227,8 @@ TEST(TriangleMesh, CreateMeshArrow) {
 
     auto output_tm = geometry::CreateMeshArrow(1.0, 1.5, 2.0, 1.0, 5);
 
-    ExpectEQ(ref_vertices, output_tm->vertices_.h_data);
-    ExpectEQ(ref_triangles, output_tm->triangles_.h_data);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1308,9 +1308,9 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     sort(indices.begin(), indices.end());
     auto output = geometry::SelectDownSample(*output_tm, indices);
 
-    ExpectEQ(ref_vertices, output->vertices_.h_data);
-    ExpectEQ(ref_vertex_normals, output->vertex_normals_.h_data);
-    ExpectEQ(ref_vertex_colors, output->vertex_colors_.h_data);
-    ExpectEQ(ref_triangles, output->triangles_.h_data);
-    ExpectEQ(ref_triangle_normals, output->triangle_normals_.h_data);
+    ExpectEQ(ref_vertices, output->vertices_);
+    ExpectEQ(ref_vertex_normals, output->vertex_normals_);
+    ExpectEQ(ref_vertex_colors, output->vertex_colors_);
+    ExpectEQ(ref_triangles, output->triangles_);
+    ExpectEQ(ref_triangle_normals, output->triangle_normals_);
 }
