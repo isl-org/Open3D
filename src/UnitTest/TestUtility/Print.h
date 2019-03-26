@@ -59,7 +59,7 @@ void Print(const Eigen::Matrix<T, M, N>& matrix,
         std::cout << std::setw((tabs + 1) * TAB_SIZE) << "";
 
         for (int n = 0; n < N; n++) {
-            std::cout << std::setw(width) << matrix(n, m);
+            std::cout << std::setw(width) << matrix(m, n);
             if (m != (M - 1) || n != (N - 1)) std::cout << ",";
         }
     }
