@@ -650,8 +650,8 @@ TEST(PointCloud, CropPointCloud) {
     Eigen::Vector3d maxBound(800.0, 800.0, 800.0);
     auto output_pc = geometry::CropPointCloud(pc, minBound, maxBound);
 
-    ExpectLE(minBound, output_pc->points_.h_data);
-    ExpectGE(maxBound, output_pc->points_.h_data);
+    ExpectLE(minBound, output_pc->points_);
+    ExpectGE(maxBound, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
