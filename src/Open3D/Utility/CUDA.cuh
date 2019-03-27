@@ -67,8 +67,8 @@ cudaError_t AllocateDeviceMemory(T** d_data,
 
 // Copy data to the device.
 template <typename T>
-cudaError_t CopyHst2DevMemory(T* h_data,
-                              T* d_data,
+cudaError_t CopyHst2DevMemory(const T* const h_data,
+                              T* const d_data,
                               const size_t& num_elements) {
     cudaError_t status = cudaSuccess;
 
@@ -83,8 +83,8 @@ cudaError_t CopyHst2DevMemory(T* h_data,
 
 // Copy data from the device.
 template <typename T>
-cudaError_t CopyDev2HstMemory(T* d_data,
-                              T* h_data,
+cudaError_t CopyDev2HstMemory(const T* const d_data,
+                              T* const h_data,
                               const size_t& num_elements) {
     cudaError_t status = cudaSuccess;
 
@@ -108,38 +108,6 @@ cudaError_t ReleaseDeviceMemory(T** d_data) {
     DebugInfo("ReleaseDeviceMemory", status);
 
     if (cudaSuccess == status) *d_data = NULL;
-
-    return status;
-}
-
-// update the device memory on demand
-template <typename T>
-cudaError_t UpdateDeviceMemory(
-        T** d_data,
-        const T* const h_data,
-        const size_t& num_elements,
-        const DeviceID::Type& device_id = DeviceID::CPU) {
-    cudaError_t status = cudaSuccess;
-
-    int gpu_id = DeviceID::GPU_ID(device_id);
-
-    // no GPU was selected
-    if (gpu_id < 0) return status;
-
-    ReleaseDeviceMemory(d_data);
-    DebugInfo("UpdateDeviceMemory:01", status);
-    if (cudaSuccess != status) return status;
-
-    size_t num_bytes = num_elements * sizeof(T);
-
-    cudaSetDevice(gpu_id);
-    status = cudaMalloc((void**)d_data, num_bytes);
-    DebugInfo("UpdateDeviceMemory:02", status);
-    if (cudaSuccess != status) return status;
-
-    status = cudaMemcpy(*d_data, h_data, num_bytes, cudaMemcpyHostToDevice);
-    DebugInfo("UpdateDeviceMemory:03", status);
-    if (cudaSuccess != status) return status;
 
     return status;
 }

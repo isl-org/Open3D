@@ -109,6 +109,10 @@ public:
             normals_.device_id = device_id;
             colors_.device_id = device_id;
 
+            points_.Initialize();
+            normals_.Initialize();
+            colors_.Initialize();
+
             UpdateDevicePoints();
             UpdateDeviceNormals();
             UpdateDeviceColors();
