@@ -170,10 +170,10 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     if (input.IsEmpty()) return std::make_tuple(mean, covariance);
 
 #ifdef OPEN3D_USE_CUDA
-    if (0 <= input.device_id)
-        return ComputePointCloudMeanAndCovarianceCUDA(input);
-    else
+    if (DeviceID::CPU == input.device_id)
         return ComputePointCloudMeanAndCovarianceCPU(input);
+    else
+        return ComputePointCloudMeanAndCovarianceCUDA(input);
 #else
     return ComputePointCloudMeanAndCovarianceCPU(input);
 #endif

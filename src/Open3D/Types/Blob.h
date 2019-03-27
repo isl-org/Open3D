@@ -48,7 +48,7 @@ struct Blob {
         // copy constructor
         // note: how to deal with device data?
         _Type(const _Type &t)
-            : num_elements(t.num_elements), device_id(t.device_id) {
+            : h_data(t.h_data), num_elements(t.num_elements), device_id(t.device_id) {
             Initialize();
         }
         ~_Type() { Reset(); }

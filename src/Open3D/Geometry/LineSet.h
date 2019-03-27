@@ -40,6 +40,11 @@ class PointCloud;
 class LineSet : public Geometry3D {
 public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
+    LineSet(const LineSet &ls)
+        : Geometry3D(Geometry::GeometryType::LineSet),
+          points_(ls.points_),
+          lines_(ls.lines_),
+          colors_(ls.colors_) {}
     ~LineSet() override {}
 
 public:

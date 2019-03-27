@@ -218,7 +218,7 @@ TEST(LineSet, Transform) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, OperatorAppend) {
-    int size = 100;
+    int size = 10;
 
     geometry::LineSet ls0;
     geometry::LineSet ls1;
@@ -239,19 +239,8 @@ TEST(LineSet, OperatorAppend) {
     Rand(ls1.lines_, Zero2i, Eigen::Vector2i(size - 1, size - 1), 0);
     Rand(ls1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
-    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
-    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
-
-    vector<Eigen::Vector2i> n;
-    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
-    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
-
-    vector<Eigen::Vector3d> c;
-    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
-    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
-
     geometry::LineSet ls(ls0);
+    cout << ls.points_.size() << endl;
     ls += ls1;
 
     EXPECT_EQ(2 * size, ls.points_.size());
@@ -300,18 +289,6 @@ TEST(LineSet, OperatorADD) {
     Rand(ls1.points_, Zero3d, Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(ls1.lines_, Zero2i, Eigen::Vector2i(size - 1, size - 1), 0);
     Rand(ls1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
-
-    vector<Eigen::Vector3d> p;
-    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
-    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
-
-    vector<Eigen::Vector2i> n;
-    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
-    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
-
-    vector<Eigen::Vector3d> c;
-    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
-    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
     geometry::LineSet ls = ls0 + ls1;
 
