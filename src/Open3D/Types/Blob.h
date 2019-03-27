@@ -40,7 +40,8 @@ template <typename V, typename T>
 struct Blob {
     typedef struct _Type {
         _Type() {}
-        _Type(const int &num_elements, const int &device_id = CPU)
+        _Type(const int &num_elements,
+              const DeviceID::Type &device_id = DeviceID::CPU)
             : num_elements(num_elements), device_id(device_id) {
             Initialize();
         }
@@ -53,13 +54,16 @@ struct Blob {
         ~_Type() { Reset(); }
 
         // allocate memory
-        void Initialize() {
-            if ((CPU == device_id) && (h_data.size() == 0))
+        void Initialize(const int &num_elements,
+                        const DeviceID::Type &device_id) {
+            if ((0 == h_data.size()) && (DeviceID::CPU & device_id))
                 h_data = std::vector<V>(num_elements);
 
-            if ((CPU < device_id) && (NULL != d_data))
-                AllocateDeviceMemory(&d_data, num_elements);
+            if (NULL != d_data)
+                AllocateDeviceMemory(&d_data, num_elements * sizeof(V),
+                                     device_id);
         }
+        void Initialize() { Initialize(num_elements, device_id); }
         // deallocate memory
         void Reset() {
             h_data.clear();
@@ -69,12 +73,14 @@ struct Blob {
 
         // total number of elements in this structure
         size_t num_elements{};
+        // device id
+        DeviceID::Type device_id = DeviceID::CPU;
         // host data container
         std::vector<V> h_data{};
         // device data pointer
         T *d_data{};
-        // device id
-        int device_id = CPU;
+
+        inline int GPU_ID() { return DeviceID::GPU_ID(device_id); }
 
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) { return h_data[i]; }

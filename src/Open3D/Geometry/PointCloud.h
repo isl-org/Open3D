@@ -50,9 +50,9 @@ class PointCloud : public Geometry3D {
 public:
     PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud){};
     ~PointCloud() override {
-        ReleaseDevicePoints();
-        ReleaseDeviceNormals();
-        ReleaseDeviceColors();
+        points_.Reset();
+        normals_.Reset();
+        colors_.Reset();
     };
 
 public:
@@ -99,16 +99,15 @@ public:
 
 public:
     // device id
-    // set to -1 to execute on the CPU
-    int device_id = -1;
+    DeviceID::Type device_id = DeviceID::CPU;
 
-    inline void SetDeviceID(const int &id) {
-        if (device_id != id) {
-            device_id = id;
+    inline void SetDeviceID(const DeviceID::Type &device_id) {
+        if (this->device_id != device_id) {
+            this->device_id = device_id;
 
-            points_.device_id = id;
-            normals_.device_id = id;
-            colors_.device_id = id;
+            points_.device_id = device_id;
+            normals_.device_id = device_id;
+            colors_.device_id = device_id;
 
             UpdateDevicePoints();
             UpdateDeviceNormals();
@@ -123,14 +122,6 @@ public:
     bool UpdateDeviceNormals();
     // update the memory assigned to d_colors_
     bool UpdateDeviceColors();
-    // perform cleanup
-    bool ReleaseDeviceMemory(double **d_data);
-    // release the memory asigned to d_points_
-    bool ReleaseDevicePoints();
-    // release the memory asigned to d_normals_
-    bool ReleaseDeviceNormals();
-    // release the memory asigned to d_colors_
-    bool ReleaseDeviceColors();
 
 #endif  // OPEN3D_USE_CUDA
 };
@@ -276,6 +267,8 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input);
 
 // compute mean and covariance on the GPU using CUDA
 std::tuple<open3d::Vec3d, open3d::Mat3d> meanAndCovarianceCUDA(
-        const int &devID, double *const d_points, const uint &nrPoints);
+        double *const d_points,
+        const uint &nrPoints,
+        const open3d::DeviceID::Type &device_id);
 
 #endif  // OPEN3D_USE_CUDA

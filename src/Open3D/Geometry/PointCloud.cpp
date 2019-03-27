@@ -262,8 +262,8 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     auto output =
-            meanAndCovarianceCUDA(input.points_.device_id, input.points_.d_data,
-                                  input.points_.size());
+            meanAndCovarianceCUDA(input.points_.d_data, input.points_.size(),
+                                  input.points_.device_id);
 
     Vec3d meanCUDA = get<0>(output);
     Mat3d covarianceCUDA = get<1>(output);
@@ -299,30 +299,6 @@ bool PointCloud::UpdateDeviceColors() {
     return UpdateDeviceMemory(&colors_.d_data,
                               (const double *const)colors_.data(), size,
                               device_id);
-}
-
-// perform cleanup
-bool PointCloud::ReleaseDeviceMemory(double **d_data) {
-    if (*d_data == NULL) return true;
-
-    if (cudaSuccess != cudaFree(*d_data)) return false;
-
-    *d_data = NULL;
-}
-
-// release the memory asigned to points_.d_data
-bool PointCloud::ReleaseDevicePoints() {
-    return ReleaseDeviceMemory(&points_.d_data);
-}
-
-// release the memory asigned to normals_.d_data
-bool PointCloud::ReleaseDeviceNormals() {
-    return ReleaseDeviceMemory(&normals_.d_data);
-}
-
-// release the memory asigned to colors_.d_data
-bool PointCloud::ReleaseDeviceColors() {
-    return ReleaseDeviceMemory(&colors_.d_data);
 }
 
 #endif  // OPEN3D_USE_CUDA

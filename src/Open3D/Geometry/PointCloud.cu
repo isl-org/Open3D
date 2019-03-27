@@ -64,12 +64,12 @@ __global__ void cumulant(double* data, uint nrPoints, double* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
-cudaError_t cumulantGPU(const int& devID, double* const d_points,
+cudaError_t cumulantGPU(const int& gpu_id, double* const d_points,
     const uint& nrPoints, double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
-    cudaSetDevice(devID);
+    cudaSetDevice(gpu_id);
     cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints, d_cumulants);
     cudaDeviceSynchronize();
 
@@ -80,8 +80,8 @@ cudaError_t cumulantGPU(const int& devID, double* const d_points,
 // Compute PointCloud mean and covariance using the GPU
 // ---------------------------------------------------------------------------
 std::tuple<Vec3d, Mat3d>
-meanAndCovarianceCUDA(const int& devID, double* const d_points,
-    const uint& nrPoints) {
+meanAndCovarianceCUDA(double* const d_points,
+    const uint& nrPoints, const DeviceID::Type& device_id) {
     Vec3d mean{};
     Mat3d covariance{};
     covariance[0][0] = 1.0;
@@ -99,44 +99,27 @@ meanAndCovarianceCUDA(const int& devID, double* const d_points,
 
     // allocate temporary device memory
     double *d_cumulants = NULL;
-    status = AllocateDeviceMemory(&d_cumulants, outputSize);
-    DebugInfo("meanAndCovarianceCUDA", status);
+    status = AllocateDeviceMemory(&d_cumulants, outputSize * sizeof(double), device_id);
+    DebugInfo("meanAndCovarianceCUDA:01", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // execute on GPU
-    //*/// v0
-    status = cumulantGPU(devID, d_points, nrPoints, d_cumulants);
-    DebugInfo("meanAndCovarianceCUDA", status);
+    status = cumulantGPU(DeviceID::GPU_ID(device_id), d_points, nrPoints, d_cumulants);
+    DebugInfo("meanAndCovarianceCUDA:02", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
-    /*/// v1
-    int threadsPerBlock = 256;
-    int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
-
-    cudaSetDevice(devID);
-    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints,
-        d_cumulants);
-    cudaDeviceSynchronize();
-
-    cudaError_t status = cudaGetLastError();
-    DebugInfo("meanAndCovarianceCUDA", status);
-    if (cudaSuccess != status) {
-        cout << "status: " << cudaGetErrorString(status) << endl;
-        return std::make_tuple(mean, covariance);
-    }
-    //*///
 
     // Copy results to the host
     status = CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
     outputSize);
-    DebugInfo("meanAndCovarianceCUDA", status);
+    DebugInfo("meanAndCovarianceCUDA:03", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // Free temporary device memory
     status = ReleaseDeviceMemory(&d_cumulants);
-    DebugInfo("meanAndCovarianceCUDA", status);
+    DebugInfo("meanAndCovarianceCUDA:04", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 

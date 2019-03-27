@@ -6,8 +6,39 @@
 #include <string>
 
 namespace open3d {
-// set cuda device id to -1 in order to execute on the cpu
-const int CPU = -1;
+// This enum is used for managing memory and execution for multiple devices.
+// At them moment, it supports 1xCPU and up to 8xGPUs.
+// We can have at most 1xCPU and 1xGPU simultaneously.
+namespace DeviceID {
+enum Type {
+    GPU_00 = 1 << 0,
+    GPU_01 = 1 << 1,
+    GPU_02 = 1 << 2,
+    GPU_03 = 1 << 3,
+    GPU_04 = 1 << 4,
+    GPU_05 = 1 << 5,
+    GPU_06 = 1 << 6,
+    GPU_07 = 1 << 7,
+    CPU = 1 << 8
+};
+
+inline int GPU_ID(const DeviceID::Type& device_id) {
+    // if present, a GPU id must be greater than zero
+    // a negative value means no GPU was selected
+    int gpu_id = -1;
+
+    if (DeviceID::GPU_00 & device_id) gpu_id = 0;
+    if (DeviceID::GPU_01 & device_id) gpu_id = 1;
+    if (DeviceID::GPU_02 & device_id) gpu_id = 2;
+    if (DeviceID::GPU_03 & device_id) gpu_id = 3;
+    if (DeviceID::GPU_04 & device_id) gpu_id = 4;
+    if (DeviceID::GPU_05 & device_id) gpu_id = 5;
+    if (DeviceID::GPU_06 & device_id) gpu_id = 6;
+    if (DeviceID::GPU_07 & device_id) gpu_id = 7;
+
+    return gpu_id;
+}
+}  // namespace DeviceID
 
 // Diplay info about the specified device.
 std::string DeviceInfo(const int& device_id);
@@ -17,17 +48,18 @@ void DebugInfo(const std::string& function_name, const cudaError_t& status);
 
 // Alocate device memory and perform validation.
 template <typename T>
-cudaError_t AllocateDeviceMemory(T** d,
-                             const size_t& num_elements,
-                             const int& device_id = 0) {
+cudaError_t AllocateDeviceMemory(T** d_data,
+                                 const size_t& num_bytes,
+                                 const DeviceID::Type& device_id) {
     cudaError_t status = cudaSuccess;
 
-    if (CPU == device_id) return status;
+    int gpu_id = DeviceID::GPU_ID(device_id);
 
-    size_t num_bytes = num_elements * sizeof(T);
+    // no GPU was selected
+    if (gpu_id < 0) return status;
 
-    cudaSetDevice(device_id);
-    status = cudaMalloc((void**)d, num_bytes);
+    cudaSetDevice(gpu_id);
+    status = cudaMalloc((void**)d_data, num_bytes);
     DebugInfo("AllocateDeviceMemory", status);
 
     return status;
@@ -35,12 +67,14 @@ cudaError_t AllocateDeviceMemory(T** d,
 
 // Copy data to the device.
 template <typename T>
-cudaError_t CopyHst2DevMemory(T* h, T* d, const size_t& num_elements) {
+cudaError_t CopyHst2DevMemory(T* h_data,
+                              T* d_data,
+                              const size_t& num_elements) {
     cudaError_t status = cudaSuccess;
 
     size_t num_bytes = num_elements * sizeof(T);
 
-    status = cudaMemcpy(d, h, num_bytes, cudaMemcpyHostToDevice);
+    status = cudaMemcpy(d_data, h_data, num_bytes, cudaMemcpyHostToDevice);
 
     DebugInfo("CopyHst2DevMemory", status);
 
@@ -49,12 +83,14 @@ cudaError_t CopyHst2DevMemory(T* h, T* d, const size_t& num_elements) {
 
 // Copy data from the device.
 template <typename T>
-cudaError_t CopyDev2HstMemory(T* d, T* h, const size_t& num_elements) {
+cudaError_t CopyDev2HstMemory(T* d_data,
+                              T* h_data,
+                              const size_t& num_elements) {
     cudaError_t status = cudaSuccess;
 
     size_t num_bytes = num_elements * sizeof(T);
 
-    status = cudaMemcpy(h, d, num_bytes, cudaMemcpyDeviceToHost);
+    status = cudaMemcpy(h_data, d_data, num_bytes, cudaMemcpyDeviceToHost);
 
     DebugInfo("CopyDev2HstMemory", status);
 
@@ -63,44 +99,46 @@ cudaError_t CopyDev2HstMemory(T* d, T* h, const size_t& num_elements) {
 
 // Safely deallocate device memory.
 template <typename T>
-cudaError_t ReleaseDeviceMemory(T** d) {
+cudaError_t ReleaseDeviceMemory(T** d_data) {
     cudaError_t status = cudaSuccess;
 
-    status = cudaFree(*d);
+    if (NULL == *d_data) return status;
+
+    status = cudaFree(*d_data);
     DebugInfo("ReleaseDeviceMemory", status);
 
-    if (cudaSuccess == status) *d = NULL;
+    if (cudaSuccess == status) *d_data = NULL;
 
     return status;
 }
 
 // update the device memory on demand
 template <typename T>
-cudaError_t UpdateDeviceMemory(T** d_data,
-                               const T* const data,
-                               const size_t& num_elements,
-                               const int& device_id = 0) {
+cudaError_t UpdateDeviceMemory(
+        T** d_data,
+        const T* const h_data,
+        const size_t& num_elements,
+        const DeviceID::Type& device_id = DeviceID::CPU) {
     cudaError_t status = cudaSuccess;
 
-    if (CPU == device_id) return status;
+    int gpu_id = DeviceID::GPU_ID(device_id);
 
-    if (*d_data != NULL) {
-        status = cudaFree(*d_data);
-        DebugInfo("UpdateDeviceMemory", status);
-        if (cudaSuccess != status) return status;
+    // no GPU was selected
+    if (gpu_id < 0) return status;
 
-        *d_data = NULL;
-    }
+    ReleaseDeviceMemory(d_data);
+    DebugInfo("UpdateDeviceMemory:01", status);
+    if (cudaSuccess != status) return status;
 
     size_t num_bytes = num_elements * sizeof(T);
 
-    cudaSetDevice(device_id);
+    cudaSetDevice(gpu_id);
     status = cudaMalloc((void**)d_data, num_bytes);
-    DebugInfo("UpdateDeviceMemory", status);
+    DebugInfo("UpdateDeviceMemory:02", status);
     if (cudaSuccess != status) return status;
 
-    status = cudaMemcpy(*d_data, data, num_bytes, cudaMemcpyHostToDevice);
-    DebugInfo("UpdateDeviceMemory", status);
+    status = cudaMemcpy(*d_data, h_data, num_bytes, cudaMemcpyHostToDevice);
+    DebugInfo("UpdateDeviceMemory:03", status);
     if (cudaSuccess != status) return status;
 
     return status;
