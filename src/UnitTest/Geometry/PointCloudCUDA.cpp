@@ -49,7 +49,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
-    open3d::Points points(num_elements, open3d::DeviceID::CPU);
+    open3d::Points points(num_elements, open3d::cuda::DeviceID::CPU);
     Rand(points, vmin, vmax, 0);
 
     geometry::PointCloud point_cloud;
@@ -59,10 +59,10 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     cudaGetDeviceCount(&nrGPUs);
     cout << "nr GPUs: " << nrGPUs << endl;
 
-    point_cloud.SetDeviceID(open3d::DeviceID::CPU);
+    point_cloud.SetDeviceID(open3d::cuda::DeviceID::CPU);
     auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(point_cloud);
 
-    point_cloud.SetDeviceID(open3d::DeviceID::GPU_00);
+    point_cloud.SetDeviceID(open3d::cuda::DeviceID::GPU_00);
     auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(point_cloud);
 
     Eigen::Vector3d meanCPU = get<0>(outputCPU);

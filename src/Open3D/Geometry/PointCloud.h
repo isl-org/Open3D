@@ -99,9 +99,9 @@ public:
 
 public:
     // device id
-    DeviceID::Type device_id = DeviceID::CPU;
+    cuda::DeviceID::Type device_id = cuda::DeviceID::CPU;
 
-    inline void SetDeviceID(const DeviceID::Type &device_id) {
+    inline void SetDeviceID(const cuda::DeviceID::Type &device_id) {
         if (this->device_id != device_id) {
             this->device_id = device_id;
 
@@ -273,6 +273,6 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input);
 std::tuple<open3d::Vec3d, open3d::Mat3d> meanAndCovarianceCUDA(
         double *const d_points,
         const uint &nrPoints,
-        const open3d::DeviceID::Type &device_id);
+        const open3d::cuda::DeviceID::Type &device_id);
 
 #endif  // OPEN3D_USE_CUDA

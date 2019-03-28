@@ -170,7 +170,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     if (input.IsEmpty()) return std::make_tuple(mean, covariance);
 
 #ifdef OPEN3D_USE_CUDA
-    if (DeviceID::CPU == input.device_id)
+    if (cuda::DeviceID::CPU == input.device_id)
         return ComputePointCloudMeanAndCovarianceCPU(input);
     else
         return ComputePointCloudMeanAndCovarianceCUDA(input);
@@ -280,21 +280,21 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 // update the memory assigned to points_.d_data
 bool PointCloud::UpdateDevicePoints() {
     size_t size = points_.size() * open3d::Vec3d::Size;
-    return CopyHst2DevMemory((const double *const)points_.data(),
+    return cuda::CopyHst2DevMemory((const double *const)points_.data(),
                              points_.d_data, size);
 }
 
 // update the memory assigned to normals_.d_data
 bool PointCloud::UpdateDeviceNormals() {
     size_t size = normals_.size() * open3d::Vec3d::Size;
-    return CopyHst2DevMemory((const double *const)normals_.data(),
+    return cuda::CopyHst2DevMemory((const double *const)normals_.data(),
                              normals_.d_data, size);
 }
 
 // update the memory assigned to colors_.d_data
 bool PointCloud::UpdateDeviceColors() {
     size_t size = colors_.size() * open3d::Vec3d::Size;
-    return CopyHst2DevMemory((const double *const)colors_.data(),
+    return cuda::CopyHst2DevMemory((const double *const)colors_.data(),
                              colors_.d_data, size);
 }
 

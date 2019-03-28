@@ -81,14 +81,14 @@ cudaError_t cumulantGPU(const int& gpu_id, double* const d_points,
 // ---------------------------------------------------------------------------
 std::tuple<Vec3d, Mat3d>
 meanAndCovarianceCUDA(double* const d_points,
-    const uint& nrPoints, const DeviceID::Type& device_id) {
+    const uint& nrPoints, const cuda::DeviceID::Type& device_id) {
     Vec3d mean{};
     Mat3d covariance{};
     covariance[0][0] = 1.0;
     covariance[1][1] = 1.0;
     covariance[2][2] = 1.0;
 
-    cout << "Running on " << DeviceInfo(0);
+    cout << "Running on " << cuda::DeviceInfo(0);
 
     cudaError_t status = cudaSuccess;
 
@@ -99,27 +99,27 @@ meanAndCovarianceCUDA(double* const d_points,
 
     // allocate temporary device memory
     double *d_cumulants = NULL;
-    status = AllocateDeviceMemory(&d_cumulants, outputSize * sizeof(double), device_id);
-    DebugInfo("meanAndCovarianceCUDA:01", status);
+    status = cuda::AllocateDeviceMemory(&d_cumulants, outputSize * sizeof(double), device_id);
+    cuda::DebugInfo("meanAndCovarianceCUDA:01", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // execute on GPU
-    status = cumulantGPU(DeviceID::GPU_ID(device_id), d_points, nrPoints, d_cumulants);
-    DebugInfo("meanAndCovarianceCUDA:02", status);
+    status = cumulantGPU(cuda::DeviceID::GPU_ID(device_id), d_points, nrPoints, d_cumulants);
+    cuda::DebugInfo("meanAndCovarianceCUDA:02", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // Copy results to the host
-    status = CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
+    status = cuda::CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
     outputSize);
-    DebugInfo("meanAndCovarianceCUDA:03", status);
+    cuda::DebugInfo("meanAndCovarianceCUDA:03", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
     // Free temporary device memory
-    status = ReleaseDeviceMemory(&d_cumulants);
-    DebugInfo("meanAndCovarianceCUDA:04", status);
+    status = cuda::ReleaseDeviceMemory(&d_cumulants);
+    cuda::DebugInfo("meanAndCovarianceCUDA:04", status);
     if (cudaSuccess != status)
         return std::make_tuple(mean, covariance);
 
