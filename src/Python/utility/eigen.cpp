@@ -91,9 +91,11 @@ std::vector<EigenVector> py_array_to_vectors_int(
 
 namespace {
 
-template <typename Scalar>
-void pybind_eigen_vector_of_scalar(py::module &m,
-                                   const std::string &bind_name) {
+template <typename Scalar,
+          typename Vector = std::vector<Scalar>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
+        py::module &m, const std::string &bind_name) {
     auto vec = py::bind_vector<std::vector<Scalar>>(m, bind_name,
                                                     py::buffer_protocol());
     vec.def_buffer([](std::vector<Scalar> &v) -> py::buffer_info {
@@ -116,13 +118,18 @@ void pybind_eigen_vector_of_scalar(py::module &m,
     //    new (&v) std::vector<Scalar>(info.shape[0]);
     //    memcpy(v.data(), info.ptr, sizeof(Scalar) * v.size());
     //});
+    return vec;
 }
 
-template <typename EigenVector, typename InitFunc>
-void pybind_eigen_vector_of_vector(py::module &m,
-                                   const std::string &bind_name,
-                                   const std::string &repr_name,
-                                   InitFunc init_func) {
+template <typename EigenVector,
+          typename Vector = std::vector<EigenVector>,
+          typename holder_type = std::unique_ptr<Vector>,
+          typename InitFunc>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name,
+        InitFunc init_func) {
     typedef typename EigenVector::Scalar Scalar;
     auto vec = py::bind_vector_without_repr<std::vector<EigenVector>>(
             m, bind_name, py::buffer_protocol());
@@ -147,12 +154,13 @@ void pybind_eigen_vector_of_vector(py::module &m,
     });
 
     // py::detail must be after custom constructor
-    using Vector = std::vector<EigenVector>;
     using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
     py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
     py::detail::vector_if_equal_operator<Vector, Class_>(vec);
     py::detail::vector_modifiers<Vector, Class_>(vec);
     py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
 
     // Bare bones interface
     // We choose to disable them because they do not support slice indices
@@ -184,12 +192,15 @@ void pybind_eigen_vector_of_vector(py::module &m,
     //});
 }
 
-template <typename EigenMatrix>
-void pybind_eigen_vector_of_matrix(py::module &m,
-                                   const std::string &bind_name,
-                                   const std::string &repr_name) {
+template <typename EigenMatrix,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenMatrix>,
+          typename Vector = std::vector<EigenMatrix, EigenAllocator>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name) {
     typedef typename EigenMatrix::Scalar Scalar;
-    typedef typename Eigen::aligned_allocator<EigenMatrix> EigenAllocator;
     auto vec = py::bind_vector_without_repr<
             std::vector<EigenMatrix, EigenAllocator>>(m, bind_name,
                                                       py::buffer_protocol());
@@ -220,28 +231,118 @@ void pybind_eigen_vector_of_matrix(py::module &m,
             });
 
     // py::detail must be after custom constructor
-    using Vector = std::vector<EigenMatrix, EigenAllocator>;
     using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
     py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
     py::detail::vector_if_equal_operator<Vector, Class_>(vec);
     py::detail::vector_modifiers<Vector, Class_>(vec);
     py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
 }
 
 }  // unnamed namespace
 
 void pybind_eigen(py::module &m) {
-    pybind_eigen_vector_of_scalar<int>(m, "IntVector");
-    pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
-    pybind_eigen_vector_of_vector<Eigen::Vector3d>(
+    auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
+    intvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert int32 numpy array of shape ``(n,)`` to Open3D format.)";
+            }),
+            py::none(), py::none(), "");
+
+    auto doublevector =
+            pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
+    doublevector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert float64 numpy array of shape ``(n,)`` to Open3D format.)";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector3dvector = pybind_eigen_vector_of_vector<Eigen::Vector3d>(
             m, "Vector3dVector", "std::vector<Eigen::Vector3d>",
             py::py_array_to_vectors_double<Eigen::Vector3d>);
-    pybind_eigen_vector_of_vector<Eigen::Vector3i>(
+    vector3dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert float64 numpy array of shape ``(n, 3)`` to Open3D format..
+
+Example usage
+
+.. code-block:: python
+
+    import open3d
+    import numpy as np
+
+    pcd = open3d.geometry.PointCloud()
+    np_points = np.random.rand(100, 3)
+
+    # From numpy to Open3D
+    pcd.points = open3d.utility.Vector3dVector(np_points)
+
+    # From Open3D to numpy
+    np_points = np.asarray(pcd.points)
+)";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector3ivector = pybind_eigen_vector_of_vector<Eigen::Vector3i>(
             m, "Vector3iVector", "std::vector<Eigen::Vector3i>",
             py::py_array_to_vectors_int<Eigen::Vector3i>);
-    pybind_eigen_vector_of_vector<Eigen::Vector2i>(
+    vector3ivector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert int32 numpy array of shape ``(n, 3)`` to Open3D format..
+
+Example usage
+
+.. code-block:: python
+
+    import open3d
+    import numpy as np
+
+    # Example mesh
+    # x, y coordinates:
+    # [0: (-1, 2)]__________[1: (1, 2)]
+    #             \        /\
+    #              \  (0) /  \
+    #               \    / (1)\
+    #                \  /      \
+    #      [2: (0, 0)]\/________\[3: (2, 0)]
+    #
+    # z coordinate: 0
+
+    mesh = open3d.geometry.TriangleMesh()
+    np_vertices = np.array([[-1, 2, 0],
+                            [1, 2, 0],
+                            [0, 0, 0],
+                            [2, 0, 0]])
+    np_triangles = np.array([[0, 2, 1],
+                             [1, 2, 3]]).astype(np.int32)
+    mesh.vertices = open3d.Vector3dVector(np_vertices)
+
+    # From numpy to Open3D
+    mesh.triangles = open3d.Vector3iVector(np_triangles)
+
+    # From Open3D to numpy
+    np_triangles = np.asarray(mesh.triangles)
+)";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector2ivector = pybind_eigen_vector_of_vector<Eigen::Vector2i>(
             m, "Vector2iVector", "std::vector<Eigen::Vector2i>",
             py::py_array_to_vectors_int<Eigen::Vector2i>);
-    pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(
+    vector2ivector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert int32 numpy array of shape ``(n, 2)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto matrix4dvector = pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(
             m, "Matrix4dVector", "std::vector<Eigen::Matrix4d>");
+    matrix4dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
 }

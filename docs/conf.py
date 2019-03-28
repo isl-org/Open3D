@@ -66,8 +66,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Open3D'
-copyright = u'2018, Qianyi Zhou and Jaesik Park'
-author = u'Qianyi Zhou and Jaesik Park'
+copyright = u'2018 - 2019, www.open3d.org'
+author = u'www.open3d.org'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -116,6 +116,13 @@ todo_include_todos = False
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Force table wrap: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # override wide tables in RTD theme
+        ],
+     }
 
 # added by Jaesik to hide "View page source"
 html_show_sourcelink = False
