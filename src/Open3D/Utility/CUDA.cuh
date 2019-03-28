@@ -65,6 +65,42 @@ cudaError_t AllocateDeviceMemory(T** d_data,
     return status;
 }
 
+// Copy data between the host and the device in any combination.
+template <typename T>
+cudaError_t Copy(const T* const src,
+                 T* const dst,
+                 const size_t& num_elements,
+                 const cudaMemcpyKind& kind) {
+    cudaError_t status = cudaSuccess;
+
+    size_t num_bytes = num_elements * sizeof(T);
+
+    status = cudaMemcpy(dst, src, num_bytes, kind);
+
+    switch (kind)
+    {
+            case cudaMemcpyHostToHost:
+                DebugInfo("cudaMemcpyHostToHost", status);
+                break;
+            case cudaMemcpyHostToDevice:
+                DebugInfo("cudaMemcpyHostToDevice", status);
+                break;
+            case cudaMemcpyDeviceToHost:
+                DebugInfo("cudaMemcpyDeviceToHost", status);
+                break;
+            case cudaMemcpyDeviceToDevice:
+                DebugInfo("cudaMemcpyDeviceToDevice", status);
+                break;
+            case cudaMemcpyDefault:
+                DebugInfo("cudaMemcpyDefault", status);
+                break;
+            default:
+                break;
+        }
+
+    return status;
+}
+
 // Copy data from the host to the device.
 template <typename T>
 cudaError_t CopyHst2DevMemory(const T* const h_data,
@@ -106,7 +142,8 @@ cudaError_t CopyDev2DevMemory(const T* const d_data_src,
 
     size_t num_bytes = num_elements * sizeof(T);
 
-    status = cudaMemcpy(d_data_dst, d_data_src, num_bytes, cudaMemcpyDeviceToDevice);
+    status = cudaMemcpy(d_data_dst, d_data_src, num_bytes,
+                        cudaMemcpyDeviceToDevice);
 
     DebugInfo("CopyDev2DevMemory", status);
 
