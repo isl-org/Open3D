@@ -89,16 +89,36 @@ struct Blob {
         // subscript operator: readonly, host side only
         inline const V &operator[](const uint &i) const { return h_data[i]; }
 
+        // initialize with host data
         inline _Type &operator=(const std::vector<V> &v) {
+            // reset pointers, reinitialize than copy the data to hst/dev pointers
             h_data = std::vector<V>(v);
+
+            // copy to host
+            if (DeviceID::CPU == device_id)
+                memcpy(h_data.data(), t.h_data.data(), t.h_data.size() * sizeof(T));
+
+            // copy to device
+            if (DeviceID::GPU == device_id)
+                CopyHst2DevMemory(d_data, t.h_data.data(), num_elements);
 
             return *this;
         }
         // redirect to std:vector<V>::operator=(...)
         // note: how to deal with device data?
         inline _Type &operator=(const _Type &t) {
-            h_data = std::vector<V>(t.h_data);
-            // d_data = t.d_data;
+            num_elements = t.num_elements;
+            device_id = t.devide_id;
+
+            Initialize();
+
+            // copy host data
+            if (DeviceID::CPU == device_id)
+                memcpy(h_data.data(), t.h_data.data(), t.h_data.size() * sizeof(T));
+
+            // copy device data
+            if (DeviceID::GPU == device_id)
+                CopyDev2DevMemory(d_data, t.d_data, num_elements);
 
             return *this;
         }
