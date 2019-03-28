@@ -65,7 +65,7 @@ cudaError_t AllocateDeviceMemory(T** d_data,
     return status;
 }
 
-// Copy data to the device.
+// Copy data from the host to the device.
 template <typename T>
 cudaError_t CopyHst2DevMemory(const T* const h_data,
                               T* const d_data,
@@ -81,7 +81,7 @@ cudaError_t CopyHst2DevMemory(const T* const h_data,
     return status;
 }
 
-// Copy data from the device.
+// Copy data from the device to the host.
 template <typename T>
 cudaError_t CopyDev2HstMemory(const T* const d_data,
                               T* const h_data,
@@ -93,6 +93,22 @@ cudaError_t CopyDev2HstMemory(const T* const d_data,
     status = cudaMemcpy(h_data, d_data, num_bytes, cudaMemcpyDeviceToHost);
 
     DebugInfo("CopyDev2HstMemory", status);
+
+    return status;
+}
+
+// Copy data from the device to the device.
+template <typename T>
+cudaError_t CopyDev2DevMemory(const T* const d_data_src,
+                              T* const d_data_dst,
+                              const size_t& num_elements) {
+    cudaError_t status = cudaSuccess;
+
+    size_t num_bytes = num_elements * sizeof(T);
+
+    status = cudaMemcpy(d_data_dst, d_data_src, num_bytes, cudaMemcpyDeviceToDevice);
+
+    DebugInfo("CopyDev2DevMemory", status);
 
     return status;
 }
