@@ -6,6 +6,7 @@
 #include <string>
 
 namespace open3d {
+    namespace cuda {
 // This enum is used for managing memory and execution for multiple devices.
 // At them moment, it supports 1xCPU and up to 8xGPUs.
 // We can have at most 1xCPU and 1xGPU simultaneously.
@@ -164,5 +165,5 @@ cudaError_t ReleaseDeviceMemory(T** d_data) {
 
     return status;
 }
-
+    } // namespace cuda
 }  // namespace open3d

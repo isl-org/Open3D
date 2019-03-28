@@ -8,7 +8,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Diplay info about the specified device.
 // ----------------------------------------------------------------------------
-string open3d::DeviceInfo(const int& device_id) {
+string open3d::cuda::DeviceInfo(const int& device_id) {
     if (-1 == device_id) return string();
 
     cudaDeviceProp deviceProp;
@@ -29,7 +29,7 @@ string open3d::DeviceInfo(const int& device_id) {
 // Display debug info.
 // Requires building the project in debug mode.
 // ----------------------------------------------------------------------------
-void open3d::DebugInfo(const string& function_name, const cudaError_t& status) {
+void open3d::cuda::DebugInfo(const string& function_name, const cudaError_t& status) {
 #ifndef NDEBUG
     if (cudaSuccess != status) {
         string error_message = cudaGetErrorString(status);
