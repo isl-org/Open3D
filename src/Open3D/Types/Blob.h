@@ -71,6 +71,7 @@ struct Blob {
             h_data.clear();
             ReleaseDeviceMemory(&d_data);
             num_elements = 0;
+            device_id = DeviceID::CPU;
         }
 
         // total number of elements in this structure
@@ -90,23 +91,53 @@ struct Blob {
         inline const V &operator[](const uint &i) const { return h_data[i]; }
 
         // initialize with host data
+        // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(const std::vector<V> &v) {
-            // reset pointers, reinitialize than copy the data to hst/dev pointers
-            h_data = std::vector<V>(v);
 
-            // copy to host
+            DeviceID::Type bkp_device_id = device_id;
+
+            Reset();
+
+            num_elements = v.size();
+            device_id = bkp_device_id;
+
+            Initialize();
+
+            // initialize host memory
+            if (DeviceID::CPU == device_id)
+                memcpy(h_data.data(), v.data(), v.size() * sizeof(T));
+
+            // initialize device memory
+            if (DeviceID::CPU != device_id)
+                CopyHst2DevMemory((const T* const)v.data(), d_data, num_elements * sizeof(V));
+
+            return *this;
+        }
+        // initialize from another Blob
+        // reset pointers, reinitialize and copy the data to hst/dev pointers
+        inline _Type &operator=(const _Type &t) {
+            Reset();
+
+            num_elements = t.num_elements;
+            device_id = t.device_id;
+
+            Initialize();
+
+            // copy host data
             if (DeviceID::CPU == device_id)
                 memcpy(h_data.data(), t.h_data.data(), t.h_data.size() * sizeof(T));
 
-            // copy to device
-            if (DeviceID::GPU == device_id)
-                CopyHst2DevMemory(d_data, t.h_data.data(), num_elements);
+            // copy device data
+            if (DeviceID::CPU != device_id)
+                CopyDev2DevMemory(d_data, t.d_data, num_elements);
 
             return *this;
         }
         // redirect to std:vector<V>::operator=(...)
         // note: how to deal with device data?
-        inline _Type &operator=(const _Type &t) {
+        inline _Type &operator=(_Type &&t) {
+            Reset();
+
             num_elements = t.num_elements;
             device_id = t.devide_id;
 
@@ -117,16 +148,8 @@ struct Blob {
                 memcpy(h_data.data(), t.h_data.data(), t.h_data.size() * sizeof(T));
 
             // copy device data
-            if (DeviceID::GPU == device_id)
+            if (DeviceID::CPU != device_id)
                 CopyDev2DevMemory(d_data, t.d_data, num_elements);
-
-            return *this;
-        }
-        // redirect to std:vector<V>::operator=(...)
-        // note: how to deal with device data?
-        inline _Type &operator=(_Type &&t) {
-            h_data = t.h_data;
-            // d_data = t.d_data;
 
             return *this;
         }
