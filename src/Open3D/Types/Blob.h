@@ -93,7 +93,6 @@ struct Blob {
         // initialize with host data
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(const std::vector<V> &v) {
-
             DeviceID::Type bkp_device_id = device_id;
 
             Reset();
@@ -109,7 +108,8 @@ struct Blob {
 
             // initialize device memory
             if (DeviceID::CPU != device_id)
-                CopyHst2DevMemory((const T* const)v.data(), d_data, num_elements * sizeof(V));
+                CopyHst2DevMemory((const T *const)v.data(), d_data,
+                                  num_elements * sizeof(V));
 
             return *this;
         }
@@ -125,7 +125,8 @@ struct Blob {
 
             // copy host data
             if (DeviceID::CPU == device_id)
-                memcpy(h_data.data(), t.h_data.data(), t.h_data.size() * sizeof(T));
+                memcpy(h_data.data(), t.h_data.data(),
+                       t.h_data.size() * sizeof(T));
 
             // copy device data
             if (DeviceID::CPU != device_id)
@@ -145,7 +146,8 @@ struct Blob {
 
             // copy host data
             if (DeviceID::CPU == device_id)
-                memcpy(h_data.data(), t.h_data.data(), t.h_data.size() * sizeof(T));
+                memcpy(h_data.data(), t.h_data.data(),
+                       t.h_data.size() * sizeof(T));
 
             // copy device data
             if (DeviceID::CPU != device_id)
