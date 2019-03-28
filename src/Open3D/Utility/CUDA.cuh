@@ -6,7 +6,7 @@
 #include <string>
 
 namespace open3d {
-    namespace cuda {
+namespace cuda {
 // This enum is used for managing memory and execution for multiple devices.
 // At them moment, it supports 1xCPU and up to 8xGPUs.
 // We can have at most 1xCPU and 1xGPU simultaneously.
@@ -78,26 +78,25 @@ cudaError_t Copy(const T* const src,
 
     status = cudaMemcpy(dst, src, num_bytes, kind);
 
-    switch (kind)
-    {
-            case cudaMemcpyHostToHost:
-                DebugInfo("cudaMemcpyHostToHost", status);
-                break;
-            case cudaMemcpyHostToDevice:
-                DebugInfo("cudaMemcpyHostToDevice", status);
-                break;
-            case cudaMemcpyDeviceToHost:
-                DebugInfo("cudaMemcpyDeviceToHost", status);
-                break;
-            case cudaMemcpyDeviceToDevice:
-                DebugInfo("cudaMemcpyDeviceToDevice", status);
-                break;
-            case cudaMemcpyDefault:
-                DebugInfo("cudaMemcpyDefault", status);
-                break;
-            default:
-                break;
-        }
+    switch (kind) {
+        case cudaMemcpyHostToHost:
+            DebugInfo("cudaMemcpyHostToHost", status);
+            break;
+        case cudaMemcpyHostToDevice:
+            DebugInfo("cudaMemcpyHostToDevice", status);
+            break;
+        case cudaMemcpyDeviceToHost:
+            DebugInfo("cudaMemcpyDeviceToHost", status);
+            break;
+        case cudaMemcpyDeviceToDevice:
+            DebugInfo("cudaMemcpyDeviceToDevice", status);
+            break;
+        case cudaMemcpyDefault:
+            DebugInfo("cudaMemcpyDefault", status);
+            break;
+        default:
+            break;
+    }
 
     return status;
 }
@@ -123,8 +122,7 @@ template <typename T>
 cudaError_t CopyDev2DevMemory(const T* const d_data_src,
                               T* const d_data_dst,
                               const size_t& num_elements) {
-    return Copy(d_data_src, d_data_dst, num_elements,
-                        cudaMemcpyDeviceToDevice);
+    return Copy(d_data_src, d_data_dst, num_elements, cudaMemcpyDeviceToDevice);
 }
 
 // Safely deallocate device memory.
@@ -141,5 +139,5 @@ cudaError_t ReleaseDeviceMemory(T** d_data) {
 
     return status;
 }
-    } // namespace cuda
+}  // namespace cuda
 }  // namespace open3d

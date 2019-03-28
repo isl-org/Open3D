@@ -29,7 +29,8 @@ string open3d::cuda::DeviceInfo(const int& device_id) {
 // Display debug info.
 // Requires building the project in debug mode.
 // ----------------------------------------------------------------------------
-void open3d::cuda::DebugInfo(const string& function_name, const cudaError_t& status) {
+void open3d::cuda::DebugInfo(const string& function_name,
+                             const cudaError_t& status) {
 #ifndef NDEBUG
     if (cudaSuccess != status) {
         string error_message = cudaGetErrorString(status);

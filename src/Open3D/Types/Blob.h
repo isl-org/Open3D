@@ -63,7 +63,7 @@ struct Blob {
 
             if (NULL != d_data)
                 cuda::AllocateDeviceMemory(&d_data, num_elements * sizeof(V),
-                                     device_id);
+                                           device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
         // deallocate memory
@@ -109,7 +109,7 @@ struct Blob {
             // initialize device memory
             if (cuda::DeviceID::CPU != device_id)
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
-                                  num_elements * sizeof(V));
+                                        num_elements * sizeof(V));
 
             return *this;
         }
