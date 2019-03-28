@@ -28,14 +28,14 @@ inline int GPU_ID(const DeviceID::Type& device_id) {
     // a negative value means no GPU was selected
     int gpu_id = -1;
 
-    if (DeviceID::GPU_00 & device_id) gpu_id = 0;
-    if (DeviceID::GPU_01 & device_id) gpu_id = 1;
-    if (DeviceID::GPU_02 & device_id) gpu_id = 2;
-    if (DeviceID::GPU_03 & device_id) gpu_id = 3;
-    if (DeviceID::GPU_04 & device_id) gpu_id = 4;
-    if (DeviceID::GPU_05 & device_id) gpu_id = 5;
-    if (DeviceID::GPU_06 & device_id) gpu_id = 6;
-    if (DeviceID::GPU_07 & device_id) gpu_id = 7;
+    if (DeviceID::GPU_00 & device_id) return 0;
+    if (DeviceID::GPU_01 & device_id) return 1;
+    if (DeviceID::GPU_02 & device_id) return 2;
+    if (DeviceID::GPU_03 & device_id) return 3;
+    if (DeviceID::GPU_04 & device_id) return 4;
+    if (DeviceID::GPU_05 & device_id) return 5;
+    if (DeviceID::GPU_06 & device_id) return 6;
+    if (DeviceID::GPU_07 & device_id) return 7;
 
     return gpu_id;
 }
@@ -50,7 +50,7 @@ void DebugInfo(const std::string& function_name, const cudaError_t& status);
 // Alocate device memory and perform validation.
 template <typename T>
 cudaError_t AllocateDeviceMemory(T** d_data,
-                                 const size_t& num_bytes,
+                                 const size_t& num_elements,
                                  const DeviceID::Type& device_id) {
     cudaError_t status = cudaSuccess;
 
@@ -58,6 +58,9 @@ cudaError_t AllocateDeviceMemory(T** d_data,
 
     // no GPU was selected
     if (gpu_id < 0) return status;
+
+    size_t num_bytes = num_elements * sizeof(T);
+    printf("allocate %d\n", (int)num_elements);
 
     cudaSetDevice(gpu_id);
     status = cudaMalloc((void**)d_data, num_bytes);
@@ -75,6 +78,7 @@ cudaError_t Copy(const T* const src,
     cudaError_t status = cudaSuccess;
 
     size_t num_bytes = num_elements * sizeof(T);
+    printf("copy %d\n", (int)num_elements);
 
     status = cudaMemcpy(dst, src, num_bytes, kind);
 
