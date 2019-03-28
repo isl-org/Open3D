@@ -48,9 +48,7 @@ struct Blob {
         // copy constructor
         // note: how to deal with device data?
         _Type(const _Type &t)
-            : h_data(t.h_data),
-              num_elements(t.num_elements),
-              device_id(t.device_id) {
+            : num_elements(t.num_elements), device_id(t.device_id) {
             Initialize();
         }
         ~_Type() { Reset(); }
@@ -61,8 +59,9 @@ struct Blob {
             if ((0 == h_data.size()) && (cuda::DeviceID::CPU & device_id))
                 h_data = std::vector<V>(num_elements);
 
+            printf("Initialize(%d, %d)\n", num_elements, device_id);
             if (NULL != d_data)
-                cuda::AllocateDeviceMemory(&d_data, num_elements * sizeof(V),
+                cuda::AllocateDeviceMemory(&d_data, num_elements * open3d::Vec3d::Size,
                                            device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
@@ -109,7 +108,7 @@ struct Blob {
             // initialize device memory
             if (cuda::DeviceID::CPU != device_id)
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
-                                        num_elements * sizeof(V));
+                                        num_elements * open3d::Vec3d::Size);
 
             return *this;
         }
@@ -130,12 +129,12 @@ struct Blob {
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data, num_elements);
+                cuda::CopyDev2DevMemory(d_data, t.d_data, num_elements * open3d::Vec3d::Size);
 
             return *this;
         }
-        // redirect to std:vector<V>::operator=(...)
-        // note: how to deal with device data?
+        // initialize from another Blob
+        // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(_Type &&t) {
             Reset();
 
@@ -151,13 +150,31 @@ struct Blob {
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data, num_elements);
+                cuda::CopyDev2DevMemory(d_data, t.d_data, num_elements * open3d::Vec3d::Size);
 
             return *this;
         }
-        // redirect to std:vector<V>::operator=(...)
+        // initialize from an initializer list
+        // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(std::initializer_list<V> il) {
-            h_data = il;
+            cuda::DeviceID::Type bkp_device_id = device_id;
+
+            Reset();
+
+            std::vector<V> v(il);
+            num_elements = v.size();
+            device_id = bkp_device_id;
+
+            Initialize();
+
+            // initialize host memory
+            if (cuda::DeviceID::CPU == device_id)
+                memcpy(h_data.data(), v.data(), v.size() * sizeof(T));
+
+            // initialize device memory
+            if (cuda::DeviceID::CPU != device_id)
+                cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
+                                        num_elements * open3d::Vec3d::Size);
 
             return *this;
         }
@@ -227,8 +244,7 @@ struct Blob {
         // redirect to std:vector<V>::resize(...)
         inline void resize(size_t n, const V &val) { h_data.resize(n, val); }
         // redirect to std:vector<V>::size()
-        inline size_t size() const { return h_data.size(); }
-        inline size_t d_size() const { return num_elements; }
+        inline size_t size() const { return num_elements; }
     } Type;
 };
 
