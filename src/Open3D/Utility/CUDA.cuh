@@ -65,6 +65,9 @@ cudaError_t AllocateDeviceMemory(T** d_data,
     status = cudaMalloc((void**)d_data, num_bytes);
     DebugInfo("AllocateDeviceMemory", status);
 
+    cudaMemset(*d_data, 0, num_bytes);
+    DebugInfo("AllocateDeviceMemory:init_zeros", status);
+
     return status;
 }
 

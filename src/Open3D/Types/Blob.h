@@ -50,6 +50,15 @@ struct Blob {
         _Type(const _Type &t)
             : num_elements(t.num_elements), device_id(t.device_id) {
             Initialize();
+
+            // copy host data
+            if (cuda::DeviceID::CPU == device_id)
+                memcpy(h_data.data(), t.h_data.data(),
+                       t.h_data.size() * sizeof(V));
+
+            // copy device data
+            if (cuda::DeviceID::CPU != device_id)
+                cuda::CopyDev2DevMemory(d_data, t.d_data, num_of_Ts());
         }
         ~_Type() { Reset(); }
 
@@ -60,8 +69,7 @@ struct Blob {
                 h_data = std::vector<V>(num_elements);
 
             if (NULL == d_data)
-                cuda::AllocateDeviceMemory(&d_data, num_elements * open3d::Vec3d::Size,
-                                           device_id);
+                cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
         // deallocate memory
@@ -102,12 +110,12 @@ struct Blob {
 
             // initialize host memory
             if (cuda::DeviceID::CPU == device_id)
-                memcpy(h_data.data(), v.data(), v.size() * sizeof(T));
+                memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
             if (cuda::DeviceID::CPU != device_id)
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
-                                        num_elements * open3d::Vec3d::Size);
+                                        num_of_Ts());
 
             return *this;
         }
@@ -123,13 +131,11 @@ struct Blob {
 
             // copy host data
             if (cuda::DeviceID::CPU == device_id)
-                memcpy(h_data.data(), t.h_data.data(),
-                       t.h_data.size() * sizeof(T));
+                memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data,
-                                        num_elements * open3d::Vec3d::Size);
+                cuda::CopyDev2DevMemory(d_data, t.d_data, num_of_Ts());
 
             return *this;
         }
@@ -145,13 +151,11 @@ struct Blob {
 
             // copy host data
             if (cuda::DeviceID::CPU == device_id)
-                memcpy(h_data.data(), t.h_data.data(),
-                       t.h_data.size() * sizeof(T));
+                memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data,
-                                        num_elements * open3d::Vec3d::Size);
+                cuda::CopyDev2DevMemory(d_data, t.d_data, num_of_Ts());
 
             return *this;
         }
@@ -170,52 +174,103 @@ struct Blob {
 
             // initialize host memory
             if (cuda::DeviceID::CPU == device_id)
-                memcpy(h_data.data(), v.data(), v.size() * sizeof(T));
+                memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
             if (cuda::DeviceID::CPU != device_id)
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
-                                        num_elements * open3d::Vec3d::Size);
+                                        num_of_Ts());
 
             return *this;
         }
 
         // redirect to std:vector<V>::data()
-        inline V *data() noexcept { return h_data.data(); }
+        inline V *data() noexcept {
+            // host only
+            if (cuda::DeviceID::CPU == device_id) return h_data.data();
+
+            return NULL;
+        }
         // redirect to std:vector<V>::data()
-        inline const V *data() const noexcept { return h_data.data(); }
+        inline const V *data() const noexcept {
+            // host only
+            if (cuda::DeviceID::CPU == device_id) return h_data.data();
+
+            return NULL;
+        }
         // redirect to std:vector<V>::begin()
         inline typename std::vector<V>::iterator begin() noexcept {
-            return h_data.begin();
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id) output = h_data.begin();
+
+            return output;
         }
         // redirect to std:vector<V>::begin()
         inline typename std::vector<V>::const_iterator begin() const noexcept {
-            return h_data.begin();
+            typename std::vector<V>::const_iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id) output = h_data.begin();
+
+            return output;
         }
-        // redirect to std:vector<V>::clear()
-        inline void clear() noexcept { h_data.clear(); }
+        inline void clear() noexcept {
+            // clear host memory
+            // redirect to std:vector<V>::clear()
+            if (cuda::DeviceID::CPU == device_id) h_data.clear();
+
+            // clear device memory
+            if (cuda::DeviceID::CPU != device_id)
+                cuda::ReleaseDeviceMemory(&d_data);
+
+            num_elements = 0;
+        }
         // redirect to std:vector<V>::end()
         inline typename std::vector<V>::iterator end() noexcept {
-            return h_data.end();
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id) output = h_data.end();
+
+            return output;
         }
         // redirect to std:vector<V>::end()
         inline typename std::vector<V>::const_iterator end() const noexcept {
-            return h_data.end();
+            typename std::vector<V>::const_iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id) output = h_data.end();
+
+            return output;
         }
         // redirect to std:vector<V>::empty()
-        inline bool empty() const noexcept { return h_data.empty(); }
+        inline bool empty() const noexcept { return num_elements <= 0; }
         // redirect to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position,
                 const V &val) {
-            h_data.insert(position, val);
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id)
+                output = h_data.insert(position, val);
+
+            return output;
         }
         // redirect to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position,
                 size_t n,
                 const V &val) {
-            h_data.insert(position, n, val);
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id)
+                output = h_data.insert(position, n, val);
+
+            return output;
         }
         // redirect to std:vector<V>::insert(...)
         template <typename InputIterator>
@@ -223,29 +278,95 @@ struct Blob {
                 typename std::vector<V>::const_iterator position,
                 InputIterator first,
                 InputIterator last) {
-            h_data.insert(position, first, last);
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id)
+                output = h_data.insert(position, first, last);
+
+            return output;
         }
         // redirect to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position, V &&val) {
-            h_data.insert(position, val);
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id)
+                output = h_data.insert(position, val);
+
+            return output;
         }
         // redirect to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position,
                 std::initializer_list<V> il) {
-            h_data.insert(position, il);
+            typename std::vector<V>::iterator output;
+
+            // host only
+            if (cuda::DeviceID::CPU == device_id)
+                output = h_data.insert(position, il);
+
+            return output;
         }
         // redirect to std:vector<V>::push_back(...)
-        inline void push_back(const V &val) { h_data.push_back(val); }
+        inline void push_back(const V &val) {
+            // host only
+            if (cuda::DeviceID::CPU == device_id) h_data.push_back(val);
+        }
         // redirect to std:vector<V>::push_back(...)
-        inline void push_back(V &&val) { h_data.push_back(val); }
+        inline void push_back(V &&val) {
+            // host only
+            if (cuda::DeviceID::CPU == device_id) h_data.push_back(val);
+        }
+        //
+        inline void resize(size_t n) {
+            if (num_elements == n) return;
+
+            num_elements = n;
+
+            // resize host data
+            // redirect std:vector<V>::resize(...)
+            if (cuda::DeviceID::CPU == device_id) h_data.resize(n);
+
+            // resize device data
+            // delete memory and reallocate
+            // doesn't preserve memory
+            // initialize with zeros
+            if (cuda::DeviceID::CPU != device_id) {
+                cuda::ReleaseDeviceMemory(&d_data);
+                cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
+            }
+        }
         // redirect to std:vector<V>::resize(...)
-        inline void resize(size_t n) { h_data.resize(n); }
-        // redirect to std:vector<V>::resize(...)
-        inline void resize(size_t n, const V &val) { h_data.resize(n, val); }
-        // redirect to std:vector<V>::size()
+        inline void resize(size_t n, const V &val) {
+            if (num_elements == n) return;
+
+            num_elements = n;
+
+            // resize host data
+            // redirect std:vector<V>::resize(...)
+            if (cuda::DeviceID::CPU == device_id) h_data.resize(n, val);
+
+            // resize device data
+            // delete memory and reallocate
+            // doesn't preserve existing data
+            // doesn't init with val but with zeros
+            if (cuda::DeviceID::CPU != device_id) {
+                cuda::ReleaseDeviceMemory(&d_data);
+                cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
+            }
+        }
+        // number of elements
         inline size_t size() const { return num_elements; }
+
+    private:
+        // number of T elements
+        inline size_t num_of_Ts() const {
+            return num_elements * sizeof(V) / sizeof(T);
+        }
+        // number of bytes
+        inline size_t num_of_bytes() const { return num_elements * sizeof(V); }
     } Type;
 };
 
