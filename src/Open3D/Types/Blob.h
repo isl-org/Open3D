@@ -59,8 +59,7 @@ struct Blob {
             if ((0 == h_data.size()) && (cuda::DeviceID::CPU & device_id))
                 h_data = std::vector<V>(num_elements);
 
-            printf("Initialize(%d, %d)\n", num_elements, device_id);
-            if (NULL != d_data)
+            if (NULL == d_data)
                 cuda::AllocateDeviceMemory(&d_data, num_elements * open3d::Vec3d::Size,
                                            device_id);
         }
@@ -129,7 +128,8 @@ struct Blob {
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data, num_elements * open3d::Vec3d::Size);
+                cuda::CopyDev2DevMemory(d_data, t.d_data,
+                                        num_elements * open3d::Vec3d::Size);
 
             return *this;
         }
@@ -150,7 +150,8 @@ struct Blob {
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data, num_elements * open3d::Vec3d::Size);
+                cuda::CopyDev2DevMemory(d_data, t.d_data,
+                                        num_elements * open3d::Vec3d::Size);
 
             return *this;
         }
