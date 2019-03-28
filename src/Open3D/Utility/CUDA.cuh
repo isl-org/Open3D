@@ -60,7 +60,6 @@ cudaError_t AllocateDeviceMemory(T** d_data,
     if (gpu_id < 0) return status;
 
     size_t num_bytes = num_elements * sizeof(T);
-    printf("allocate %d\n", (int)num_elements);
 
     cudaSetDevice(gpu_id);
     status = cudaMalloc((void**)d_data, num_bytes);
@@ -78,7 +77,6 @@ cudaError_t Copy(const T* const src,
     cudaError_t status = cudaSuccess;
 
     size_t num_bytes = num_elements * sizeof(T);
-    printf("copy %d\n", (int)num_elements);
 
     status = cudaMemcpy(dst, src, num_bytes, kind);
 

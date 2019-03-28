@@ -280,10 +280,8 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 // update the memory assigned to points_.d_data
 bool PointCloud::UpdateDevicePoints() {
     size_t size = points_.size() * open3d::Vec3d::Size;
-    printf("before *******************\n");
     bool test = cuda::CopyHst2DevMemory((const double *const)points_.data(),
                                    points_.d_data, size);
-    printf("after  *******************\n");
 
     return test;
 }
