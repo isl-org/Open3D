@@ -311,3 +311,20 @@ TEST(BlobType, Assignment_operator_CPU_GPU) {
 
     ExpectEQ(b0.h_data, b1_d_data);
 }
+
+// ----------------------------------------------------------------------------
+// Assignment operator - from vector - CPU only.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Assignment_operator_vector_CPU) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * 3;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    vector<Eigen::Vector3d> v(num_elements);
+    Rand((double* const)v.data(), num_doubles, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(num_elements, device_id);
+    b0 = v;
+
+    ExpectEQ(b0.h_data, v);
+}
