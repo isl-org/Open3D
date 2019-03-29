@@ -224,3 +224,25 @@ TEST(BlobType, Reset) {
     EXPECT_TRUE(NULL == b0.d_data);
     EXPECT_EQ(b0.size(), 0);
 }
+
+// ----------------------------------------------------------------------------
+// Assignment operator - CPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Assignment_operator_CPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    open3d::Blob3d b0(num_elements, device_id);
+    Rand((double* const)b0.h_data.data(), b0.size() * 3, 0.0, 10.0, 0);
+
+    open3d::Blob3d b1 = b0;
+
+    EXPECT_EQ(b1.num_elements, num_elements);
+    EXPECT_EQ(b1.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b1.h_data.size(), num_elements);
+    EXPECT_FALSE(b1.h_data.empty());
+    EXPECT_TRUE(NULL == b1.d_data);
+    EXPECT_EQ(b1.size(), num_elements);
+
+    ExpectEQ(b0.h_data, b1.h_data);
+}
