@@ -349,3 +349,26 @@ TEST(BlobType, Assignment_operator_vector_GPU) {
 
     ExpectEQ(b0_d_data, v);
 }
+
+// ----------------------------------------------------------------------------
+// Assignment operator - from vector - CPU and GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Assignment_operator_vector_CPU_GPU) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * 3;
+    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
+            open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
+
+    vector<Eigen::Vector3d> v(num_elements);
+    Rand((double* const)v.data(), num_doubles, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(num_elements, device_id);
+    b0 = v;
+
+    vector<Eigen::Vector3d> b0_d_data(num_elements);
+    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
+                                    num_doubles);
+
+    ExpectEQ(b0.h_data, v);
+    ExpectEQ(b0_d_data, v);
+}
