@@ -117,16 +117,17 @@ TEST(BlobType, Copy_constructor_CPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Copy_constructor_GPU) {
     size_t num_elements = 100;
+    size_t num_doubles = num_elements * 3;
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
 
-    open3d::Blob<Eigen::Vector3d, double>::Type b0(num_elements, device_id);
+    open3d::Blob3d b0(num_elements, device_id);
 
     // random initialization of b0
     vector<Eigen::Vector3d> b0_h_data(num_elements);
     Rand((double* const)b0_h_data.data(), num_elements * 3, 0.0, 10.0, 0);
-    open3d::cuda::CopyHst2DevMemory((const double* const)b0_h_data.data(), b0.d_data, num_elements);
+    open3d::cuda::CopyHst2DevMemory((const double* const)b0_h_data.data(), b0.d_data, num_doubles);
 
-    open3d::Blob<Eigen::Vector3d, double>::Type b1(b0);
+    open3d::Blob3d b1(b0);
 
     EXPECT_EQ(b1.num_elements, num_elements);
     EXPECT_EQ(b1.device_id, open3d::cuda::DeviceID::GPU_00);
@@ -136,7 +137,7 @@ TEST(BlobType, Copy_constructor_GPU) {
     EXPECT_EQ(b1.size(), num_elements);
 
     vector<Eigen::Vector3d> b1_h_data(num_elements);
-    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_h_data.data(), num_elements);
+    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_h_data.data(), num_doubles);
 
     ExpectEQ(b0_h_data, b1_h_data);
 }
