@@ -71,8 +71,14 @@ void pybind_global_optimization(py::module &m) {
             });
 
     // open3d.registration.PoseGraphNodeVector
-    py::bind_vector<std::vector<registration::PoseGraphNode>>(
-            m, "PoseGraphNodeVector");
+    auto pose_graph_node_vector =
+            py::bind_vector<std::vector<registration::PoseGraphNode>>(
+                    m, "PoseGraphNodeVector");
+    pose_graph_node_vector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Vector of PoseGraphNode";
+            }),
+            py::none(), py::none(), "");
 
     // open3d.registration.PoseGraphEdge
     py::class_<registration::PoseGraphEdge,
@@ -125,8 +131,14 @@ void pybind_global_optimization(py::module &m) {
             });
 
     // open3d.registration.PoseGraphEdgeVector
-    py::bind_vector<std::vector<registration::PoseGraphEdge>>(
-            m, "PoseGraphEdgeVector");
+    auto pose_graph_edge_vector =
+            py::bind_vector<std::vector<registration::PoseGraphEdge>>(
+                    m, "PoseGraphEdgeVector");
+    pose_graph_edge_vector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Vector of PoseGraphEdge";
+            }),
+            py::none(), py::none(), "");
 
     // open3d.registration.PoseGraph
     py::class_<registration::PoseGraph,
@@ -210,7 +222,7 @@ void pybind_global_optimization(py::module &m) {
 
     py::class_<registration::GlobalOptimizationConvergenceCriteria> criteria(
             m, "GlobalOptimizationConvergenceCriteria",
-            "GlobalOptimizationConvergenceCriteria");
+            "Convergence criteria of GlobalOptimization.");
     py::detail::bind_default_constructor<
             registration::GlobalOptimizationConvergenceCriteria>(criteria);
     py::detail::bind_copy_functions<
@@ -282,7 +294,7 @@ void pybind_global_optimization(py::module &m) {
                  });
 
     py::class_<registration::GlobalOptimizationOption> option(
-            m, "GlobalOptimizationOption", "GlobalOptimizationOption");
+            m, "GlobalOptimizationOption", "Option for GlobalOptimization.");
     py::detail::bind_default_constructor<
             registration::GlobalOptimizationOption>(option);
     py::detail::bind_copy_functions<registration::GlobalOptimizationOption>(

@@ -55,7 +55,7 @@ static const std::unordered_map<std::string, std::string>
 void pybind_visualizer(py::module &m) {
     py::class_<visualization::Visualizer, PyVisualizer<>,
                std::shared_ptr<visualization::Visualizer>>
-            visualizer(m, "Visualizer", "Visualizer");
+            visualizer(m, "Visualizer", "The main Visualizer class.");
     py::detail::bind_default_constructor<visualization::Visualizer>(visualizer);
     visualizer
             .def("__repr__",
@@ -121,7 +121,7 @@ void pybind_visualizer(py::module &m) {
                PyVisualizer<visualization::VisualizerWithKeyCallback>,
                std::shared_ptr<visualization::VisualizerWithKeyCallback>>
             visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
-                           "VisualizerWithKeyCallback");
+                           "Visualizer with custom key callack capabilities.");
     py::detail::bind_default_constructor<
             visualization::VisualizerWithKeyCallback>(visualizer_key);
     visualizer_key
@@ -141,7 +141,7 @@ void pybind_visualizer(py::module &m) {
                PyVisualizer<visualization::VisualizerWithEditing>,
                std::shared_ptr<visualization::VisualizerWithEditing>>
             visualizer_edit(m, "VisualizerWithEditing", visualizer,
-                            "VisualizerWithEditing");
+                            "Visualizer with editing capabilities.");
     py::detail::bind_default_constructor<visualization::VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit.def(py::init<double, bool, const std::string &>())

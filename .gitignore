@@ -25,3 +25,4 @@ node_modules/
 static/
 **/package-lock.json
 *.old*
+docs/python_api/
