@@ -64,7 +64,7 @@ matrix:
       dist: xenial
       sudo: true
       language: python
-      python: "3.6"
+      python: "2.7"
       addons:
         apt:
           sources:
@@ -79,7 +79,7 @@ matrix:
       dist: xenial
       sudo: required
       language: python
-      python: "3.6"
+      python: "3.5"
       addons:
         apt:
           sources:
@@ -111,7 +111,7 @@ matrix:
       dist: xenial
       sudo: required
       language: python
-      python: "3.6"
+      python: "3.7" # Xenial has Python 3.7 on travis
       addons:
         apt:
           sources:
