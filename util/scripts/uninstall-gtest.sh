@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
 
 cd /usr/local/lib
 sudo rm -f lib*.a

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
 REAL_PATH=$(dirname $(realpath ${0}))
 

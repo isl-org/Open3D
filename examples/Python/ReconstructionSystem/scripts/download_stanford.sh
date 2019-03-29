@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
+
 process_stanford_scene()
 {
     DATA_NAME=$1

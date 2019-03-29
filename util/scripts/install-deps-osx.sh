@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
 
 which -s brew
 if [[ $? != 0 ]] ; then

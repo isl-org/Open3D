@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
 # display help on the required command line arguments
 if [ $# -eq 0 ] || [ $# -eq 1 ] || [ "${1}" = "--help" ]; then
