@@ -31,7 +31,7 @@ matrix:
       script:
         - mkdir build
         - cd build
-        - cmake ..
+        - cmake -DPYTHON_EXECUTABLE=`which python` ..
         - make check-style
 
     # Build docs only
