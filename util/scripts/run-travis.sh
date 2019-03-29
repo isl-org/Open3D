@@ -15,6 +15,7 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
           -DBUILD_UNIT_TESTS=ON \
           -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
+          -DPYTHON_EXECUTABLE=`which python` \
           ..
 else
     cmake -DBUILD_SHARED_LIBS=$SHARED \
@@ -26,6 +27,7 @@ else
           -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON \
           -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
+          -DPYTHON_EXECUTABLE=`which python` \
           ..
 fi
 echo

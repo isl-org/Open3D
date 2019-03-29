@@ -56,7 +56,7 @@ matrix:
         - cmake -DPYTHON_EXECUTABLE=`which python` ..
         - make install-pip-package -j$NPROC
         - python -c "from open3d import *; import open3d; print(open3d)"
-        - ./util/scripts/make-documentation.sh
+        - ../util/scripts/make-documentation.sh
 
     # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
