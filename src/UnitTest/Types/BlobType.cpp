@@ -47,7 +47,7 @@ TEST(BlobType, is_POD) {
 // Default constructor.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Default_constructor) {
-    open3d::Blob<Eigen::Vector3d, double>::Type b3d;
+    open3d::Blob3d b3d;
 
     EXPECT_EQ(b3d.num_elements, 0);
     EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::CPU);
@@ -63,7 +63,7 @@ TEST(BlobType, Initialization_constructor_CPU) {
     size_t num_elements = 100;
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
-    open3d::Blob<Eigen::Vector3d, double>::Type b3d(num_elements, device_id);
+    open3d::Blob3d b3d(num_elements, device_id);
 
     EXPECT_EQ(b3d.num_elements, num_elements);
     EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::CPU);
@@ -80,7 +80,7 @@ TEST(BlobType, Initialization_constructor_GPU) {
     size_t num_elements = 100;
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
 
-    open3d::Blob<Eigen::Vector3d, double>::Type b3d(num_elements, device_id);
+    open3d::Blob3d b3d(num_elements, device_id);
 
     EXPECT_EQ(b3d.num_elements, num_elements);
     EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::GPU_00);
@@ -97,10 +97,10 @@ TEST(BlobType, Copy_constructor_CPU) {
     size_t num_elements = 100;
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
-    open3d::Blob<Eigen::Vector3d, double>::Type b0(num_elements, device_id);
+    open3d::Blob3d b0(num_elements, device_id);
     Rand((double* const)b0.h_data.data(), b0.size() * 3, 0.0, 10.0, 0);
 
-    open3d::Blob<Eigen::Vector3d, double>::Type b1(b0);
+    open3d::Blob3d b1(b0);
 
     EXPECT_EQ(b1.num_elements, num_elements);
     EXPECT_EQ(b1.device_id, open3d::cuda::DeviceID::CPU);
