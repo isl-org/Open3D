@@ -42,3 +42,16 @@ TEST(BlobType, is_POD) {
     EXPECT_FALSE(is_pod<open3d::Blob3i>());
     EXPECT_FALSE(is_pod<open3d::Blob3d>());
 }
+
+// ----------------------------------------------------------------------------
+// Default constructor.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Default_constructor) {
+    open3d::Blob<Eigen::Vector3d, double>::Type b3d;
+
+    EXPECT_EQ(b3d.num_elements, 0);
+    EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b3d.h_data.size(), 0);
+    EXPECT_TRUE(NULL == b3d.d_data);
+    EXPECT_EQ(b3d.size(), 0);
+}
