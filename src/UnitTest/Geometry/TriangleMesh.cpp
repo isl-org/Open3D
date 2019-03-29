@@ -272,11 +272,11 @@ TEST(TriangleMesh, OperatorAppend) {
     Rand(tm0.triangles_, imin, imax, 0);
     Rand(tm0.triangle_normals_, dmin, dmax, 0);
 
-    Rand(tm1.vertices_, dmin, dmax, 0);
-    Rand(tm1.vertex_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_, dmin, dmax, 1);
+    Rand(tm1.vertex_normals_, dmin, dmax, 1);
     Rand(tm1.vertex_colors_, dmin, dmax, 1);
-    Rand(tm1.triangles_, imin, imax, 0);
-    Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.triangles_, imin, imax, 1);
+    Rand(tm1.triangle_normals_, dmin, dmax, 1);
 
     geometry::TriangleMesh tm(tm0);
     tm += tm1;
@@ -349,11 +349,11 @@ TEST(TriangleMesh, OperatorADD) {
     Rand(tm0.triangles_, imin, imax, 0);
     Rand(tm0.triangle_normals_, dmin, dmax, 0);
 
-    Rand(tm1.vertices_, dmin, dmax, 0);
-    Rand(tm1.vertex_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_, dmin, dmax, 1);
+    Rand(tm1.vertex_normals_, dmin, dmax, 1);
     Rand(tm1.vertex_colors_, dmin, dmax, 1);
-    Rand(tm1.triangles_, imin, imax, 0);
-    Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.triangles_, imin, imax, 1);
+    Rand(tm1.triangle_normals_, dmin, dmax, 1);
 
     geometry::TriangleMesh tm = tm0 + tm1;
 
@@ -656,11 +656,11 @@ TEST(TriangleMesh, Purge) {
     Rand(tm0.triangles_, imin, imax, 0);
     Rand(tm0.triangle_normals_, dmin, dmax, 0);
 
-    Rand(tm1.vertices_, dmin, dmax, 0);
-    Rand(tm1.vertex_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_, dmin, dmax, 1);
+    Rand(tm1.vertex_normals_, dmin, dmax, 1);
     Rand(tm1.vertex_colors_, dmin, dmax, 1);
-    Rand(tm1.triangles_, imin, imax, 0);
-    Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.triangles_, imin, imax, 1);
+    Rand(tm1.triangle_normals_, dmin, dmax, 1);
 
     geometry::TriangleMesh tm = tm0 + tm1;
 
