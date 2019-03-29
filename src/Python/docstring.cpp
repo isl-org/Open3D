@@ -51,12 +51,11 @@ void ClassMethodDocInject(py::module& pybind_module,
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
     PyObject* class_method_obj =
             PyObject_GetAttrString(class_obj, function_name.c_str());
-    if (Py_TYPE(class_method_obj) != &PyInstanceMethod_Type) {
+    if (Py_TYPE(class_method_obj) != &PyMethod_Type) {
         return;
     }
-    PyInstanceMethodObject* class_method =
-            (PyInstanceMethodObject*)class_method_obj;
-    PyObject* f_obj = class_method->func;
+    PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
+    PyObject* f_obj = class_method->im_func;
     if (Py_TYPE(f_obj) != &PyCFunction_Type) {
         return;
     }

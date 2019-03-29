@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
 set -ev
 
 sudo apt-get update
