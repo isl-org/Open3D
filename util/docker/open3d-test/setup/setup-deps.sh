@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
 # install Open3D dependencies
 apt-get update -qq

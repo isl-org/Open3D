@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
 # options for the 1st argument
 declare -a python_version=(python python3)

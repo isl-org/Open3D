@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
 # list of the supported ubuntu versions
 declare -a ubuntu_version=(14.04 16.04 18.04)

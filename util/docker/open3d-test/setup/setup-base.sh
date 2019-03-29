@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
 # install the minimal Open3D dependencies
 # - xorg-dev replaced with just 4 out of ~60 dependencies:

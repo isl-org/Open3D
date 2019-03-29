@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# set -e  # TODO: enable error code checking for each command
+#!/bin/bash
 
 REAL_PATH=$(dirname $(realpath ${0}))
 
