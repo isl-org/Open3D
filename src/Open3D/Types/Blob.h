@@ -52,7 +52,7 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 memcpy(h_data.data(), t.h_data.data(),
                        t.h_data.size() * sizeof(V));
 
@@ -109,7 +109,7 @@ struct Blob {
             Initialize();
 
             // initialize host memory
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
@@ -130,7 +130,7 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
@@ -150,7 +150,7 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
@@ -173,7 +173,7 @@ struct Blob {
             Initialize();
 
             // initialize host memory
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
@@ -219,7 +219,7 @@ struct Blob {
         inline void clear() noexcept {
             // clear host memory
             // redirect to std:vector<V>::clear()
-            if (cuda::DeviceID::CPU == device_id) h_data.clear();
+            if (cuda::DeviceID::CPU & device_id) h_data.clear();
 
             // clear device memory
             if (cuda::DeviceID::CPU != device_id)
@@ -327,7 +327,7 @@ struct Blob {
 
             // resize host data
             // redirect std:vector<V>::resize(...)
-            if (cuda::DeviceID::CPU == device_id) h_data.resize(n);
+            if (cuda::DeviceID::CPU & device_id) h_data.resize(n);
 
             // resize device data
             // delete memory and reallocate
@@ -346,7 +346,7 @@ struct Blob {
 
             // resize host data
             // redirect std:vector<V>::resize(...)
-            if (cuda::DeviceID::CPU == device_id) h_data.resize(n, val);
+            if (cuda::DeviceID::CPU & device_id) h_data.resize(n, val);
 
             // resize device data
             // delete memory and reallocate
