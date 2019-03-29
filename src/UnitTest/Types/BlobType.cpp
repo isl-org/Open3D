@@ -278,3 +278,36 @@ TEST(BlobType, Assignment_operator_GPU) {
 
     ExpectEQ(b0_d_data, b1_d_data);
 }
+
+// ----------------------------------------------------------------------------
+// Assignment operator - CPU and GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Assignment_operator_CPU_GPU) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * 3;
+    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
+            open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
+
+    open3d::Blob3d b0(num_elements, device_id);
+    Rand((double* const)b0.h_data.data(), num_doubles, 0.0, 10.0, 0);
+    open3d::cuda::CopyHst2DevMemory((const double* const)b0.h_data.data(),
+                                    b0.d_data, num_doubles);
+
+    open3d::Blob3d b1 = b0;
+
+    EXPECT_EQ(b1.num_elements, num_elements);
+    EXPECT_TRUE(open3d::cuda::DeviceID::CPU & b1.device_id);
+    EXPECT_TRUE(open3d::cuda::DeviceID::GPU_00 & b1.device_id);
+    EXPECT_EQ(b1.h_data.size(), num_elements);
+    EXPECT_FALSE(b1.h_data.empty());
+    EXPECT_TRUE(NULL != b1.d_data);
+    EXPECT_EQ(b1.size(), num_elements);
+
+    ExpectEQ(b0.h_data, b1.h_data);
+
+    vector<Eigen::Vector3d> b1_d_data(num_elements);
+    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
+                                    num_doubles);
+
+    ExpectEQ(b0.h_data, b1_d_data);
+}
