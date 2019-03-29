@@ -46,13 +46,14 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - cmake
+            - doxygen
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
         - cd build
         - which python
         - python -V
-        - pip install -U -q sphinx sphinx_rtd_theme
+        - pip install -U -q sphinx sphinx-rtd-theme
         - cmake -DPYTHON_EXECUTABLE=`which python` ..
         - make install-pip-package -j$NPROC
         - python -c "from open3d import *; import open3d; print(open3d)"
