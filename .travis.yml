@@ -126,14 +126,17 @@ matrix:
     # compiled using clang shipped with xcode10.1
     - os: osx
       osx_image: xcode10.1
+      before_install:
+        - ./util/scripts/install-deps-osx.sh
+        - ./util/scripts/install-gtest.sh
       script: travis_wait 30 ./util/scripts/run-travis.sh
-      before_install: ./util/scripts/setup-osx.sh
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+      before_install:
+        - ./util/scripts/install-gtest.sh
       script: travis_wait 30 ./util/scripts/run-travis.sh
-      before_install: ./util/scripts/setup-osx.sh
 
     - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
       script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
