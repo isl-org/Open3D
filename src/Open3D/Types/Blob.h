@@ -187,14 +187,14 @@ struct Blob {
         // redirect to std:vector<V>::data()
         inline V *data() noexcept {
             // host only
-            if (cuda::DeviceID::CPU == device_id) return h_data.data();
+            if (cuda::DeviceID::CPU & device_id) return h_data.data();
 
             return NULL;
         }
         // redirect to std:vector<V>::data()
         inline const V *data() const noexcept {
             // host only
-            if (cuda::DeviceID::CPU == device_id) return h_data.data();
+            if (cuda::DeviceID::CPU & device_id) return h_data.data();
 
             return NULL;
         }
@@ -203,7 +203,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id) output = h_data.begin();
+            if (cuda::DeviceID::CPU & device_id) output = h_data.begin();
 
             return output;
         }
@@ -212,7 +212,7 @@ struct Blob {
             typename std::vector<V>::const_iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id) output = h_data.begin();
+            if (cuda::DeviceID::CPU & device_id) output = h_data.begin();
 
             return output;
         }
@@ -232,7 +232,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id) output = h_data.end();
+            if (cuda::DeviceID::CPU & device_id) output = h_data.end();
 
             return output;
         }
@@ -241,7 +241,7 @@ struct Blob {
             typename std::vector<V>::const_iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id) output = h_data.end();
+            if (cuda::DeviceID::CPU & device_id) output = h_data.end();
 
             return output;
         }
@@ -254,7 +254,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, val);
 
             return output;
@@ -267,7 +267,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, n, val);
 
             return output;
@@ -281,7 +281,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, first, last);
 
             return output;
@@ -292,7 +292,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, val);
 
             return output;
@@ -304,7 +304,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU == device_id)
+            if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, il);
 
             return output;
@@ -312,12 +312,12 @@ struct Blob {
         // redirect to std:vector<V>::push_back(...)
         inline void push_back(const V &val) {
             // host only
-            if (cuda::DeviceID::CPU == device_id) h_data.push_back(val);
+            if (cuda::DeviceID::CPU & device_id) h_data.push_back(val);
         }
         // redirect to std:vector<V>::push_back(...)
         inline void push_back(V &&val) {
             // host only
-            if (cuda::DeviceID::CPU == device_id) h_data.push_back(val);
+            if (cuda::DeviceID::CPU & device_id) h_data.push_back(val);
         }
         //
         inline void resize(size_t n) {
