@@ -15,7 +15,7 @@ matrix:
   include:
     # Style check only
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: true
       language: python
       python: "3.6"
@@ -23,14 +23,10 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-xenial-5.0
           packages:
-            - gcc-4.9
-            - g++-4.9
-            - cmake-data # to use cmake 3.0 or more recent
             - cmake
             - clang-format-5.0
-      env: CC='gcc-4.9' CXX='g++-4.9'
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
@@ -38,9 +34,9 @@ matrix:
         - cmake ..
         - make check-style
 
-    # Default environment of Ubuntu 14.04
+    # Build docs only
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: true
       language: python
       python: "3.6"
@@ -49,16 +45,37 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.9
-            - g++-4.9
-            - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      env: CC='gcc-4.9' CXX='g++-4.9'
+      before_install: ./util/scripts/setup-linux.sh
+      script:
+        - mkdir build
+        - cd build
+        - which python
+        - python -V
+        - pip install -U -q sphinx sphinx_rtd_theme
+        - cmake -DPYTHON_EXECUTABLE=`which python` ..
+        - make install-pip-package -j$NPROC
+        - python -c "from open3d import *; import open3d; print(open3d)"
+        - ./util/scripts/make-documentation.sh
+
+    # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=OFF
+    - os: linux
+      dist: xenial
+      sudo: true
+      language: python
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - cmake
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
+    # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       language: python
       python: "3.6"
@@ -67,16 +84,14 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.9
-            - g++-4.9
-            - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      env: SHARED=ON CC='gcc-4.9' CXX='g++-4.9'
+      env: SHARED=ON
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
+    # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       language: python
       python: "3.6"
@@ -85,19 +100,14 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.9
-            - g++-4.9
-            - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON CC='gcc-4.9' CXX='g++-4.9'
+      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
-    # Similar environment of Ubuntu 16.04 (gcc 5.4)
-    # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
-    # another option is to use docker.
+    # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       language: python
       python: "3.6"
@@ -106,11 +116,8 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-6
-            - g++-6
-            - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON CC='gcc-6' CXX='g++-6'
+      env: SHARED=ON BUILD_DEPENDENCY_FROM_SOURCE=ON
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
