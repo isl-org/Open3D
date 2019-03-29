@@ -91,6 +91,24 @@ TEST(BlobType, Initialization_constructor_GPU) {
 }
 
 // ----------------------------------------------------------------------------
+// Initialization constructor - CPU and GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Initialization_constructor_CPU_GPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
+
+    open3d::Blob3d b3d(num_elements, device_id);
+
+    EXPECT_EQ(b3d.num_elements, num_elements);
+    EXPECT_TRUE(open3d::cuda::DeviceID::CPU & b3d.device_id);
+    EXPECT_TRUE(open3d::cuda::DeviceID::GPU_00 & b3d.device_id);
+    EXPECT_EQ(b3d.h_data.size(), num_elements);
+    EXPECT_FALSE(b3d.h_data.empty());
+    EXPECT_TRUE(NULL != b3d.d_data);
+    EXPECT_EQ(b3d.size(), num_elements);
+}
+
+// ----------------------------------------------------------------------------
 // Copy constructor - CPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Copy_constructor_CPU) {
