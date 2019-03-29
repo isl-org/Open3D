@@ -58,7 +58,7 @@ struct Blob {
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(d_data, t.d_data, num_of_Ts());
+                cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
         }
         ~_Type() { Reset(); }
 
