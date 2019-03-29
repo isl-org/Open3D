@@ -230,8 +230,8 @@ class SphinxDocsBuilder:
         # Hard-coded parameters for python API docs generation for now
         # Directory structure for the Open3D python package:
         # open3d
-        # ├── __init__.py
-        # └── open3d.so  # Actual name depends on OS and python version
+        # - __init__.py
+        # - open3d.so  # Actual name depends on OS and python version
         self.c_module = "open3d.open3d"  # Points to the open3d.so
         self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
