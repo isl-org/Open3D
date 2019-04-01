@@ -493,11 +493,10 @@ TEST(TriangleMesh, ComputeAdjacencyList) {
     Eigen::Vector3d C(-1, 1, 0);   // 2
     Eigen::Vector3d D(-1, -1, 0);  // 3
     Eigen::Vector3d E(1, -1, 0);   // 4
-    std::vector<Eigen::Vector3d> vertices{A, B, C, D, E};
+    std::vector<Eigen::Vector3d> v{A, B, C, D, E};
 
     geometry::TriangleMesh tm;
-    tm.vertices_.insert(tm.vertices_.end(), std::begin(vertices),
-                        std::end(vertices));
+    tm.vertices_.insert(tm.vertices_.end(), v.begin(), v.end());
     tm.triangles_ = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 2, 3),
                      Eigen::Vector3i(0, 3, 4), Eigen::Vector3i(0, 4, 1),
                      Eigen::Vector3i(1, 2, 4), Eigen::Vector3i(2, 3, 4)};
