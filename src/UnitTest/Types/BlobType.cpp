@@ -402,3 +402,30 @@ TEST(BlobType, Clear) {
     EXPECT_TRUE(NULL == b0.d_data);
     EXPECT_EQ(b0.size(), 0);
 }
+
+// ----------------------------------------------------------------------------
+// begin() & end() iterators - CPU only.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Begin_end_CPU) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * 3;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    vector<Eigen::Vector3d> v(num_elements);
+    Rand((double* const)v.data(), num_doubles, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(num_elements, device_id);
+    b0 = v;
+
+    EXPECT_EQ(b0.size(), v.size());
+    if (b0.size() != v.size())
+        return;
+
+    std::vector<Eigen::Vector3d>::iterator it0;
+    std::vector<Eigen::Vector3d>::iterator itv;
+    for(it0 = b0.begin(), itv = v.begin(); it0 != b0.end() && itv != v.end(); it0++, itv++) {
+        EXPECT_NEAR((*it0)[0], (*itv)[0], unit_test::THRESHOLD);
+        EXPECT_NEAR((*it0)[1], (*itv)[1], unit_test::THRESHOLD);
+        EXPECT_NEAR((*it0)[2], (*itv)[2], unit_test::THRESHOLD);
+    }
+}
