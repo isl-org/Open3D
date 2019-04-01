@@ -257,6 +257,8 @@ struct Blob {
             if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, val);
 
+            num_elements = h_data.size();
+
             return output;
         }
         // redirect to std:vector<V>::insert(...)
@@ -269,6 +271,8 @@ struct Blob {
             // host only
             if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, n, val);
+
+            num_elements = h_data.size();
 
             return output;
         }
@@ -284,6 +288,8 @@ struct Blob {
             if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, first, last);
 
+            num_elements = h_data.size();
+
             return output;
         }
         // redirect to std:vector<V>::insert(...)
@@ -294,6 +300,8 @@ struct Blob {
             // host only
             if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, val);
+
+            num_elements = h_data.size();
 
             return output;
         }
@@ -306,6 +314,8 @@ struct Blob {
             // host only
             if (cuda::DeviceID::CPU & device_id)
                 output = h_data.insert(position, il);
+
+            num_elements = h_data.size();
 
             return output;
         }
