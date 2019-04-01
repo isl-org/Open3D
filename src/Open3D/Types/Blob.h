@@ -247,6 +247,9 @@ struct Blob {
         }
         // redirect to std:vector<V>::empty()
         inline bool empty() const noexcept { return num_elements <= 0; }
+
+        // TODO: insert works only on the host side for the moment.
+        // Q: how to deal with device side?
         // redirect to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position,
