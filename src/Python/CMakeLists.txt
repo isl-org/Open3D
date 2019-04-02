@@ -53,6 +53,9 @@ pybind11_add_module(${PACKAGE_NAME}
 )
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
+if (${PYTHON_VERSION_MAJOR} EQUAL 2)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
+endif ()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/Python`
