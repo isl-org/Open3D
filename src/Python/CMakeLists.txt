@@ -32,6 +32,13 @@ execute_process(
 )
 message(STATUS "Using Python version: ${PYTHON_VERSION}")
 
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d' % (sys.version_info.major,))"
+    OUTPUT_VARIABLE PYTHON_VERSION_MAJOR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
+
 set(PACKAGE_NAME open3d)
 
 file(GLOB_RECURSE PY_ALL_HEADER_FILES "*.h")
