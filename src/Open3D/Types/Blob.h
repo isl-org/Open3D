@@ -326,11 +326,15 @@ struct Blob {
         inline void push_back(const V &val) {
             // host only
             if (cuda::DeviceID::CPU & device_id) h_data.push_back(val);
+
+            num_elements = h_data.size();
         }
         // redirect to std:vector<V>::push_back(...)
         inline void push_back(V &&val) {
             // host only
             if (cuda::DeviceID::CPU & device_id) h_data.push_back(val);
+
+            num_elements = h_data.size();
         }
         //
         inline void resize(size_t n) {
