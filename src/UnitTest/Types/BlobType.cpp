@@ -418,12 +418,12 @@ TEST(BlobType, Begin_end_CPU) {
     b0 = v;
 
     EXPECT_EQ(b0.size(), v.size());
-    if (b0.size() != v.size())
-        return;
+    if (b0.size() != v.size()) return;
 
     std::vector<Eigen::Vector3d>::iterator it0;
     std::vector<Eigen::Vector3d>::iterator itv;
-    for(it0 = b0.begin(), itv = v.begin(); it0 != b0.end() && itv != v.end(); it0++, itv++) {
+    for (it0 = b0.begin(), itv = v.begin(); it0 != b0.end() && itv != v.end();
+         it0++, itv++) {
         EXPECT_NEAR((*it0)[0], (*itv)[0], unit_test::THRESHOLD);
         EXPECT_NEAR((*it0)[1], (*itv)[1], unit_test::THRESHOLD);
         EXPECT_NEAR((*it0)[2], (*itv)[2], unit_test::THRESHOLD);
