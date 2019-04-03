@@ -388,6 +388,20 @@ TEST(BlobType, Reset) {
 }
 
 // ----------------------------------------------------------------------------
+// Subscript operator - CPU only.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Subscript_operator_CPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    open3d::Blob3d b0(num_elements, device_id);
+    Rand((double* const)b0.h_data.data(), b0.size() * 3, 0.0, 10.0, 0);
+
+    for (size_t i = 0; i < num_elements; i++)
+        ExpectEQ(b0[i], b0.h_data[i]);
+}
+
+// ----------------------------------------------------------------------------
 // Assignment operator - CPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_CPU) {
