@@ -108,29 +108,6 @@ struct Blob {
         // subscript operator: readonly, host side only
         inline const V &operator[](const uint &i) const { return h_data[i]; }
 
-        // initialize with host data
-        // reset pointers, reinitialize and copy the data to hst/dev pointers
-        inline _Type &operator=(const std::vector<V> &v) {
-            cuda::DeviceID::Type bkp_device_id = device_id;
-
-            Reset();
-
-            num_elements = v.size();
-            device_id = bkp_device_id;
-
-            Initialize();
-
-            // initialize host memory
-            if (cuda::DeviceID::CPU & device_id)
-                memcpy(h_data.data(), v.data(), num_of_bytes());
-
-            // initialize device memory
-            if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
-                                        num_of_Ts());
-
-            return *this;
-        }
         // initialize from another Blob
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(const _Type &t) {
@@ -159,15 +136,42 @@ struct Blob {
             num_elements = t.num_elements;
             device_id = t.device_id;
 
+            // move host data
+            if (cuda::DeviceID::CPU & device_id) {
+                h_data = std::move(t.h_data);
+            }
+
+            // move device data
+            if (cuda::DeviceID::CPU != device_id) {
+                d_data = t.d_data;
+                t.d_data = NULL;
+            }
+
+            t.num_elements = 0;
+            t.device_id = cuda::DeviceID::CPU;
+
+            return *this;
+        }
+        // initialize with host data
+        // reset pointers, reinitialize and copy the data to hst/dev pointers
+        inline _Type &operator=(const std::vector<V> &v) {
+            cuda::DeviceID::Type bkp_device_id = device_id;
+
+            Reset();
+
+            num_elements = v.size();
+            device_id = bkp_device_id;
+
             Initialize();
 
-            // copy host data
+            // initialize host memory
             if (cuda::DeviceID::CPU & device_id)
-                memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
+                memcpy(h_data.data(), v.data(), num_of_bytes());
 
-            // copy device data
+            // initialize device memory
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
+                cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
+                                        num_of_Ts());
 
             return *this;
         }
