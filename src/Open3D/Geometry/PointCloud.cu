@@ -92,7 +92,8 @@ std::tuple<Vec3d, Mat3d> meanAndCovarianceCUDA(
     covariance[1][1] = 1.0;
     covariance[2][2] = 1.0;
 
-    cout << "Running on " << cuda::DeviceInfo(0);
+    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
+    cout << "Running on " << cuda::DeviceInfo(gpu_id);
 
     cudaError_t status = cudaSuccess;
 
@@ -108,7 +109,6 @@ std::tuple<Vec3d, Mat3d> meanAndCovarianceCUDA(
     if (cudaSuccess != status) return std::make_tuple(mean, covariance);
 
     // execute on GPU
-    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
     status = cumulantGPU(gpu_id, d_points, nrPoints, d_cumulants);
     cuda::DebugInfo("meanAndCovarianceCUDA:02", status);
     if (cudaSuccess != status) return std::make_tuple(mean, covariance);
