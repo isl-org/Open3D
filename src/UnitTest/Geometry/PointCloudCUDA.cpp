@@ -44,26 +44,25 @@ using namespace unit_test;
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
+    int nrGPUs = 0;
+    cudaGetDeviceCount(&nrGPUs);
+    cout << "nr GPUs: " << nrGPUs << endl;
+
     int num_elements = 1 << 24;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
-    open3d::Points points(num_elements, open3d::cuda::DeviceID::CPU);
+    vector<Eigen::Vector3d> points(num_elements);
     Rand(points, vmin, vmax, 0);
 
-    geometry::PointCloud point_cloud;
-    point_cloud.points_ = points;
+    geometry::PointCloud pcCPU;
+    pcCPU.points_ = open3d::Blob3d(points, open3d::cuda::DeviceID::CPU);
+    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pcCPU);
 
-    int nrGPUs = 0;
-    cudaGetDeviceCount(&nrGPUs);
-    cout << "nr GPUs: " << nrGPUs << endl;
-
-    point_cloud.SetDeviceID(open3d::cuda::DeviceID::CPU);
-    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(point_cloud);
-
-    point_cloud.SetDeviceID(open3d::cuda::DeviceID::GPU_00);
-    auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(point_cloud);
+    geometry::PointCloud pcGPU;
+    pcGPU.points_ = open3d::Blob3d(points, open3d::cuda::DeviceID::GPU_00);
+    auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pcGPU);
 
     Eigen::Vector3d meanCPU = get<0>(outputCPU);
     Eigen::Matrix3d covarianceCPU = get<1>(outputCPU);
