@@ -136,7 +136,7 @@ TEST(BlobType, Copy_constructor_CPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Copy_constructor_GPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
 
     open3d::Blob3d b0(num_elements, device_id);
@@ -168,7 +168,7 @@ TEST(BlobType, Copy_constructor_GPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Copy_constructor_CPU_GPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
             open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
 
@@ -201,10 +201,11 @@ TEST(BlobType, Copy_constructor_CPU_GPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Move_constructor_CPU) {
     size_t num_elements = 100;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
     vector<Eigen::Vector3d> points(num_elements);
-    Rand((double* const)points.data(), num_elements * 3, 0.0, 10.0, 0);
+    Rand((double* const)points.data(), num_doubles, 0.0, 10.0, 0);
 
     open3d::Blob3d b0(num_elements, device_id);
     memcpy((double* const)b0.h_data.data(), (const double* const)points.data(),
@@ -229,11 +230,48 @@ TEST(BlobType, Move_constructor_CPU) {
 }
 
 // ----------------------------------------------------------------------------
+// Move constructor - GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Move_constructor_GPU) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand((double* const)points.data(), num_doubles, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(num_elements, device_id);
+    open3d::cuda::CopyHst2DevMemory((const double* const)points.data(),
+                                    b0.d_data, num_doubles);
+
+    open3d::Blob3d b1(std::move(b0));
+
+    EXPECT_EQ(b1.num_elements, num_elements);
+    EXPECT_EQ(b1.device_id, open3d::cuda::DeviceID::GPU_00);
+    EXPECT_EQ(b1.h_data.size(), 0);
+    EXPECT_TRUE(b1.h_data.empty());
+    EXPECT_TRUE(NULL != b1.d_data);
+    EXPECT_EQ(b1.size(), num_elements);
+
+    EXPECT_EQ(b0.num_elements, 0);
+    EXPECT_EQ(b0.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b0.h_data.size(), 0);
+    EXPECT_TRUE(NULL == b0.d_data);
+    EXPECT_EQ(b0.size(), 0);
+
+    vector<Eigen::Vector3d> b1_d_data(num_elements);
+    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
+                                    num_doubles);
+
+    ExpectEQ(points, b1_d_data);
+}
+
+// ----------------------------------------------------------------------------
 // Reset - CPU and GPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Reset) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
             open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
 
@@ -284,7 +322,7 @@ TEST(BlobType, Assignment_operator_CPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_GPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
 
     open3d::Blob3d b0(num_elements, device_id);
@@ -316,7 +354,7 @@ TEST(BlobType, Assignment_operator_GPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_CPU_GPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
             open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
 
@@ -349,7 +387,7 @@ TEST(BlobType, Assignment_operator_CPU_GPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_vector_CPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
     vector<Eigen::Vector3d> v(num_elements);
@@ -366,7 +404,7 @@ TEST(BlobType, Assignment_operator_vector_CPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_vector_GPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
 
     vector<Eigen::Vector3d> v(num_elements);
@@ -387,7 +425,7 @@ TEST(BlobType, Assignment_operator_vector_GPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_vector_CPU_GPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
             open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
 
@@ -410,7 +448,7 @@ TEST(BlobType, Assignment_operator_vector_CPU_GPU) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Clear) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
             open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
 
@@ -440,7 +478,7 @@ TEST(BlobType, Clear) {
 // ----------------------------------------------------------------------------
 TEST(BlobType, Begin_end_CPU) {
     size_t num_elements = 100;
-    size_t num_doubles = num_elements * 3;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
     vector<Eigen::Vector3d> v(num_elements);
