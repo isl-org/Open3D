@@ -98,28 +98,6 @@ public:
 #ifdef OPEN3D_USE_CUDA
 
 public:
-    // device id
-    cuda::DeviceID::Type device_id = cuda::DeviceID::CPU;
-
-    inline void SetDeviceID(const cuda::DeviceID::Type &device_id) {
-        if (this->device_id != device_id) {
-            this->device_id = device_id;
-
-            points_.device_id = device_id;
-            normals_.device_id = device_id;
-            colors_.device_id = device_id;
-
-            points_.Initialize();
-            normals_.Initialize();
-            colors_.Initialize();
-
-            UpdateDevicePoints();
-            UpdateDeviceNormals();
-            UpdateDeviceColors();
-        }
-    }
-
-public:
     // update the memory assigned to d_points_
     bool UpdateDevicePoints();
     // update the memory assigned to d_normals_
