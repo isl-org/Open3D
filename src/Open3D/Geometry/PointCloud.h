@@ -94,18 +94,6 @@ public:
     Points points_;
     Normals normals_;
     Colors colors_;
-
-#ifdef OPEN3D_USE_CUDA
-
-public:
-    // update the memory assigned to d_points_
-    bool UpdateDevicePoints();
-    // update the memory assigned to d_normals_
-    bool UpdateDeviceNormals();
-    // update the memory assigned to d_colors_
-    bool UpdateDeviceColors();
-
-#endif  // OPEN3D_USE_CUDA
 };
 
 /// Factory function to create a pointcloud from a depth image and a camera
