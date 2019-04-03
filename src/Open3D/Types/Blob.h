@@ -118,7 +118,7 @@ struct Blob {
         // subscript operator: readonly, host side only
         inline const V &operator[](const uint &i) const { return h_data[i]; }
 
-        // initialize from another Blob
+        // copy from another Blob
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(const _Type &t) {
             Reset();
@@ -138,7 +138,7 @@ struct Blob {
 
             return *this;
         }
-        // initialize from another Blob
+        // move from another Blob
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(_Type &&t) {
             Reset();
