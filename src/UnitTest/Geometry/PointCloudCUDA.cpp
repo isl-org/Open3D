@@ -56,13 +56,13 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     vector<Eigen::Vector3d> points(num_elements);
     Rand(points, vmin, vmax, 0);
 
-    geometry::PointCloud pcCPU;
-    pcCPU.points_ = open3d::Blob3d(points, open3d::cuda::DeviceID::CPU);
-    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pcCPU);
+    geometry::PointCloud pc_cpu;
+    pc_cpu.points_ = open3d::Blob3d(points, open3d::cuda::DeviceID::CPU);
+    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
-    geometry::PointCloud pcGPU;
-    pcGPU.points_ = open3d::Blob3d(points, open3d::cuda::DeviceID::GPU_00);
-    auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pcGPU);
+    geometry::PointCloud pc_gpu;
+    pc_gpu.points_ = open3d::Blob3d(points, open3d::cuda::DeviceID::GPU_00);
+    auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
 
     Eigen::Vector3d meanCPU = get<0>(outputCPU);
     Eigen::Matrix3d covarianceCPU = get<1>(outputCPU);
