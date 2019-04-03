@@ -297,6 +297,40 @@ TEST(BlobType, Initialization_constructor_CPU_GPU) {
 }
 
 // ----------------------------------------------------------------------------
+// Initialize - CPU and GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Initialize) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
+    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
+            open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
+
+    open3d::Blob3d b0(num_elements, device_id);
+
+    EXPECT_EQ(b0.num_elements, num_elements);
+    EXPECT_TRUE(b0.device_id == device_id);
+    EXPECT_EQ(b0.h_data.size(), num_elements);
+    EXPECT_FALSE(b0.h_data.empty());
+    EXPECT_TRUE(NULL != b0.d_data);
+    EXPECT_EQ(b0.size(), num_elements);
+
+    const Eigen::Vector3d* const b0_h_data = b0.h_data.data();
+    const double* const b0_d_data = b0.d_data;
+
+    // already initialized, shouldn't change anything
+    b0.Initialize();
+
+    EXPECT_EQ(b0.num_elements, num_elements);
+    EXPECT_TRUE(b0.device_id == device_id);
+    EXPECT_EQ(b0.h_data.size(), num_elements);
+    EXPECT_EQ(b0.h_data.data(), b0_h_data);
+    EXPECT_EQ(b0.d_data, b0_d_data);
+    EXPECT_FALSE(b0.h_data.empty());
+    EXPECT_TRUE(NULL != b0.d_data);
+    EXPECT_EQ(b0.size(), num_elements);
+}
+
+// ----------------------------------------------------------------------------
 // Reset - CPU and GPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Reset) {

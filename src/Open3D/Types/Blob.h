@@ -87,6 +87,9 @@ struct Blob {
         // allocate memory
         void Initialize(const int &num_elements,
                         const cuda::DeviceID::Type &device_id) {
+            this->num_elements = num_elements;
+            this->device_id = device_id;
+
             if ((0 == h_data.size()) && (cuda::DeviceID::CPU & device_id))
                 h_data = std::vector<V>(num_elements);
 
