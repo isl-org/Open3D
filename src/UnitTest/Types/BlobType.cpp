@@ -647,8 +647,7 @@ TEST(BlobType, Assignment_operator_initializer_list_GPU) {
           {-0.238700, -0.937064, 0.254819},  {-0.518237, -0.540189, -0.663043},
           {-0.238700, -0.937064, 0.254819},  {0.080943, -0.502095, -0.861016}};
 
-    size_t num_doubles =
-            ref.size() * sizeof(Eigen::Vector3d) / sizeof(double);
+    size_t num_doubles = ref.size() * sizeof(Eigen::Vector3d) / sizeof(double);
 
     vector<Eigen::Vector3d> b0_d_data(ref.size());
     open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
