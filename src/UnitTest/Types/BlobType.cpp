@@ -57,59 +57,6 @@ TEST(BlobType, Default_constructor) {
 }
 
 // ----------------------------------------------------------------------------
-// Initialization constructor - CPU.
-// ----------------------------------------------------------------------------
-TEST(BlobType, Initialization_constructor_CPU) {
-    size_t num_elements = 100;
-    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
-
-    open3d::Blob3d b3d(num_elements, device_id);
-
-    EXPECT_EQ(b3d.num_elements, num_elements);
-    EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::CPU);
-    EXPECT_EQ(b3d.h_data.size(), num_elements);
-    EXPECT_FALSE(b3d.h_data.empty());
-    EXPECT_TRUE(NULL == b3d.d_data);
-    EXPECT_EQ(b3d.size(), num_elements);
-}
-
-// ----------------------------------------------------------------------------
-// Initialization constructor - GPU.
-// ----------------------------------------------------------------------------
-TEST(BlobType, Initialization_constructor_GPU) {
-    size_t num_elements = 100;
-    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
-
-    open3d::Blob3d b3d(num_elements, device_id);
-
-    EXPECT_EQ(b3d.num_elements, num_elements);
-    EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::GPU_00);
-    EXPECT_EQ(b3d.h_data.size(), 0);
-    EXPECT_TRUE(b3d.h_data.empty());
-    EXPECT_TRUE(NULL != b3d.d_data);
-    EXPECT_EQ(b3d.size(), num_elements);
-}
-
-// ----------------------------------------------------------------------------
-// Initialization constructor - CPU and GPU.
-// ----------------------------------------------------------------------------
-TEST(BlobType, Initialization_constructor_CPU_GPU) {
-    size_t num_elements = 100;
-    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
-            open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
-
-    open3d::Blob3d b3d(num_elements, device_id);
-
-    EXPECT_EQ(b3d.num_elements, num_elements);
-    EXPECT_TRUE(open3d::cuda::DeviceID::CPU & b3d.device_id);
-    EXPECT_TRUE(open3d::cuda::DeviceID::GPU_00 & b3d.device_id);
-    EXPECT_EQ(b3d.h_data.size(), num_elements);
-    EXPECT_FALSE(b3d.h_data.empty());
-    EXPECT_TRUE(NULL != b3d.d_data);
-    EXPECT_EQ(b3d.size(), num_elements);
-}
-
-// ----------------------------------------------------------------------------
 // Copy constructor - CPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Copy_constructor_CPU) {
@@ -294,6 +241,59 @@ TEST(BlobType, Move_constructor_CPU_GPU) {
 
     ExpectEQ(points, b1.h_data);
     ExpectEQ(points, b1_d_data);
+}
+
+// ----------------------------------------------------------------------------
+// Initialization constructor - CPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Initialization_constructor_CPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    open3d::Blob3d b3d(num_elements, device_id);
+
+    EXPECT_EQ(b3d.num_elements, num_elements);
+    EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b3d.h_data.size(), num_elements);
+    EXPECT_FALSE(b3d.h_data.empty());
+    EXPECT_TRUE(NULL == b3d.d_data);
+    EXPECT_EQ(b3d.size(), num_elements);
+}
+
+// ----------------------------------------------------------------------------
+// Initialization constructor - GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Initialization_constructor_GPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
+
+    open3d::Blob3d b3d(num_elements, device_id);
+
+    EXPECT_EQ(b3d.num_elements, num_elements);
+    EXPECT_EQ(b3d.device_id, open3d::cuda::DeviceID::GPU_00);
+    EXPECT_EQ(b3d.h_data.size(), 0);
+    EXPECT_TRUE(b3d.h_data.empty());
+    EXPECT_TRUE(NULL != b3d.d_data);
+    EXPECT_EQ(b3d.size(), num_elements);
+}
+
+// ----------------------------------------------------------------------------
+// Initialization constructor - CPU and GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Initialization_constructor_CPU_GPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
+            open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
+
+    open3d::Blob3d b3d(num_elements, device_id);
+
+    EXPECT_EQ(b3d.num_elements, num_elements);
+    EXPECT_TRUE(open3d::cuda::DeviceID::CPU & b3d.device_id);
+    EXPECT_TRUE(open3d::cuda::DeviceID::GPU_00 & b3d.device_id);
+    EXPECT_EQ(b3d.h_data.size(), num_elements);
+    EXPECT_FALSE(b3d.h_data.empty());
+    EXPECT_TRUE(NULL != b3d.d_data);
+    EXPECT_EQ(b3d.size(), num_elements);
 }
 
 // ----------------------------------------------------------------------------
