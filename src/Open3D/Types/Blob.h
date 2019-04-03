@@ -373,8 +373,6 @@ struct Blob {
         inline void resize(size_t n) {
             if (num_elements == n) return;
 
-            num_elements = n;
-
             // resize host data
             // redirect std:vector<V>::resize(...)
             if (cuda::DeviceID::CPU & device_id) h_data.resize(n);
@@ -384,9 +382,17 @@ struct Blob {
             // doesn't preserve memory
             // initialize with zeros
             if (cuda::DeviceID::CPU != device_id) {
+                T* new_d_data = NULL;
+                cuda::AllocateDeviceMemory(&new_d_data, n * sizeof(V) / sizeof(T), device_id);
+
+                size_t min_size = (n < num_elements ? n : num_elements) * sizeof(V)/ sizeof(T);
+                cuda::CopyDev2DevMemory(&d_data, &new_d_data, min_size);
+
                 cuda::ReleaseDeviceMemory(&d_data);
-                cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
+                d_data = new_d_data;
             }
+
+            num_elements = n;
         }
         // redirect to std:vector<V>::resize(...)
         inline void resize(size_t n, const V &val) {
