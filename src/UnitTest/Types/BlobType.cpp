@@ -197,6 +197,38 @@ TEST(BlobType, Copy_constructor_CPU_GPU) {
 }
 
 // ----------------------------------------------------------------------------
+// Move constructor - CPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Move_constructor_CPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand((double* const)points.data(), num_elements * 3, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(num_elements, device_id);
+    memcpy((double* const)b0.h_data.data(), (const double* const)points.data(),
+           num_elements * sizeof(Eigen::Vector3d));
+
+    open3d::Blob3d b1(move(b0));
+
+    EXPECT_EQ(b1.num_elements, num_elements);
+    EXPECT_EQ(b1.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b1.h_data.size(), num_elements);
+    EXPECT_FALSE(b1.h_data.empty());
+    EXPECT_TRUE(NULL == b1.d_data);
+    EXPECT_EQ(b1.size(), num_elements);
+
+    EXPECT_EQ(b0.num_elements, 0);
+    EXPECT_EQ(b0.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b0.h_data.size(), 0);
+    EXPECT_TRUE(NULL == b0.d_data);
+    EXPECT_EQ(b0.size(), 0);
+
+    ExpectEQ(points, b1.h_data);
+}
+
+// ----------------------------------------------------------------------------
 // Reset - CPU and GPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Reset) {
