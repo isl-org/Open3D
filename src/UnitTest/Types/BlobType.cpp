@@ -207,10 +207,7 @@ TEST(BlobType, Move_constructor_CPU) {
     vector<Eigen::Vector3d> points(num_elements);
     Rand((double* const)points.data(), num_doubles, 0.0, 10.0, 0);
 
-    open3d::Blob3d b0(num_elements, device_id);
-    memcpy((double* const)b0.h_data.data(), (const double* const)points.data(),
-           num_elements * sizeof(Eigen::Vector3d));
-
+    open3d::Blob3d b0(points, device_id);
     open3d::Blob3d b1(move(b0));
 
     EXPECT_EQ(b1.num_elements, num_elements);
@@ -240,10 +237,7 @@ TEST(BlobType, Move_constructor_GPU) {
     vector<Eigen::Vector3d> points(num_elements);
     Rand((double* const)points.data(), num_doubles, 0.0, 10.0, 0);
 
-    open3d::Blob3d b0(num_elements, device_id);
-    open3d::cuda::CopyHst2DevMemory((const double* const)points.data(),
-                                    b0.d_data, num_doubles);
-
+    open3d::Blob3d b0(points, device_id);
     open3d::Blob3d b1(std::move(b0));
 
     EXPECT_EQ(b1.num_elements, num_elements);
@@ -263,6 +257,42 @@ TEST(BlobType, Move_constructor_GPU) {
     open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
                                     num_doubles);
 
+    ExpectEQ(points, b1_d_data);
+}
+
+// ----------------------------------------------------------------------------
+// Move constructor - CPU & GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Move_constructor_CPU_GPU) {
+    size_t num_elements = 1;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
+    open3d::cuda::DeviceID::Type device_id = (open3d::cuda::DeviceID::Type)(
+            open3d::cuda::DeviceID::CPU | open3d::cuda::DeviceID::GPU_00);
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand((double* const)points.data(), num_doubles, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(points, device_id);
+    open3d::Blob3d b1(std::move(b0));
+
+    EXPECT_EQ(b1.num_elements, num_elements);
+    EXPECT_EQ(b1.device_id, device_id);
+    EXPECT_EQ(b1.h_data.size(), num_elements);
+    EXPECT_FALSE(b1.h_data.empty());
+    EXPECT_TRUE(NULL != b1.d_data);
+    EXPECT_EQ(b1.size(), num_elements);
+
+    EXPECT_EQ(b0.num_elements, 0);
+    EXPECT_EQ(b0.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b0.h_data.size(), 0);
+    EXPECT_TRUE(NULL == b0.d_data);
+    EXPECT_EQ(b0.size(), 0);
+
+    vector<Eigen::Vector3d> b1_d_data(num_elements);
+    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
+                                    num_doubles);
+
+    ExpectEQ(points, b1.h_data);
     ExpectEQ(points, b1_d_data);
 }
 
