@@ -760,7 +760,22 @@ TEST(BlobType, Begin_end_CPU) {
 }
 
 // ----------------------------------------------------------------------------
-// Insert - CPU only.
+// Insert - same value n times - CPU only.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Insert_value_n_CPU) {
+    Eigen::Vector3d ref = {-0.282003, -0.866394, -0.412111};
+
+    open3d::Blob3d b0(0, open3d::cuda::DeviceID::CPU);
+
+    size_t n = 100;
+    b0.insert(b0.end(), n, ref);
+
+    for (size_t i = 0; i < n; i++)
+        ExpectEQ(b0[i], ref);
+}
+
+// ----------------------------------------------------------------------------
+// Insert - vector - CPU only.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Insert_vector_CPU) {
     vector<Eigen::Vector3d> ref = {{-0.282003, -0.866394, -0.412111},
