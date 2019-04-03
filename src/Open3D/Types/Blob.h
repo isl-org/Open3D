@@ -46,7 +46,6 @@ struct Blob {
             Initialize();
         }
         // copy constructor
-        // note: how to deal with device data?
         _Type(const _Type &t)
             : num_elements(t.num_elements), device_id(t.device_id) {
             Initialize();
@@ -60,6 +59,19 @@ struct Blob {
             if (cuda::DeviceID::CPU != device_id)
                 cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
         }
+        // init constructor
+        _Type(const std::vector<V> &v, const cuda::DeviceID::Type &device_id)
+            : num_elements(v.size()), device_id(device_id) {
+            Initialize();
+
+            // init host data
+            if (cuda::DeviceID::CPU & device_id)
+                memcpy(h_data.data(), v.data(), v.size() * sizeof(V));
+
+            // init device data
+            if (cuda::DeviceID::CPU != device_id)
+                cuda::CopyHst2DevMemory((const double* const)v.data(), d_data, num_of_Ts());
+        }
         ~_Type() { Reset(); }
 
         // allocate memory
@@ -68,7 +80,7 @@ struct Blob {
             if ((0 == h_data.size()) && (cuda::DeviceID::CPU & device_id))
                 h_data = std::vector<V>(num_elements);
 
-            if (NULL == d_data)
+            if ((NULL == d_data) && (cuda::DeviceID::CPU != device_id))
                 cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
@@ -145,7 +157,7 @@ struct Blob {
             Reset();
 
             num_elements = t.num_elements;
-            device_id = t.devide_id;
+            device_id = t.device_id;
 
             Initialize();
 
