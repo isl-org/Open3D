@@ -58,6 +58,16 @@ struct Blob {
             if (cuda::DeviceID::CPU != device_id)
                 cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
         }
+        // move constructor
+        _Type(_Type &&t)
+            : num_elements(t.num_elements),
+              device_id(t.device_id),
+              h_data(std::move(t.h_data)),
+              d_data(t.d_data) {
+            t.d_data = NULL;
+            t.num_elements = 0;
+            t.device_id = cuda::DeviceID::CPU;
+        }
         // init constructor
         _Type(const std::vector<V> &v, const cuda::DeviceID::Type &device_id)
             : num_elements(v.size()), device_id(device_id) {
