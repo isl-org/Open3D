@@ -117,9 +117,15 @@ struct Blob {
         inline int GPU_ID() { return cuda::DeviceID::GPU_ID(device_id); }
 
         // subscript operator: readwrite, host side only
-        inline V &operator[](const uint &i) { return h_data[i]; }
+        inline V &operator[](const uint &i) {
+            if (cuda::DeviceID::CPU & device_id)
+                return h_data[i];
+        }
         // subscript operator: readonly, host side only
-        inline const V &operator[](const uint &i) const { return h_data[i]; }
+        inline const V &operator[](const uint &i) const {
+            if (cuda::DeviceID::CPU & device_id)
+                return h_data[i];
+        }
 
         // copy from another Blob
         // reset pointers, reinitialize and copy the data to hst/dev pointers
