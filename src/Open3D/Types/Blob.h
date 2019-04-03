@@ -52,8 +52,7 @@ struct Blob {
 
             // copy host data
             if (cuda::DeviceID::CPU & device_id)
-                memcpy(h_data.data(), t.h_data.data(),
-                       t.h_data.size() * sizeof(V));
+                memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
             if (cuda::DeviceID::CPU != device_id)
@@ -66,11 +65,12 @@ struct Blob {
 
             // init host data
             if (cuda::DeviceID::CPU & device_id)
-                memcpy(h_data.data(), v.data(), v.size() * sizeof(V));
+                memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // init device data
             if (cuda::DeviceID::CPU != device_id)
-                cuda::CopyHst2DevMemory((const double* const)v.data(), d_data, num_of_Ts());
+                cuda::CopyHst2DevMemory((const double *const)v.data(), d_data,
+                                        num_of_Ts());
         }
         ~_Type() { Reset(); }
 
