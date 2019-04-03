@@ -880,8 +880,7 @@ TEST(BlobType, Push_back_CPU) {
 
     open3d::Blob3d b0(0, open3d::cuda::DeviceID::CPU);
 
-    for(size_t i = 0; i < ref.size(); i++)
-        b0.push_back(ref[i]);
+    for (size_t i = 0; i < ref.size(); i++) b0.push_back(ref[i]);
 
     ExpectEQ(b0.h_data, ref);
 }
