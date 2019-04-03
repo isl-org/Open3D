@@ -388,14 +388,34 @@ TEST(BlobType, Reset) {
 }
 
 // ----------------------------------------------------------------------------
-// Subscript operator - CPU only.
+// Subscript operator - readonly - CPU only.
 // ----------------------------------------------------------------------------
-TEST(BlobType, Subscript_operator_CPU) {
+TEST(BlobType, Subscript_operator_ro_CPU) {
     size_t num_elements = 100;
     open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
     open3d::Blob3d b0(num_elements, device_id);
     Rand((double* const)b0.h_data.data(), b0.size() * 3, 0.0, 10.0, 0);
+
+    for (size_t i = 0; i < num_elements; i++)
+        ExpectEQ(b0[i], b0.h_data[i]);
+}
+
+// ----------------------------------------------------------------------------
+// Subscript operator - readwrite - CPU only.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Subscript_operator_rw_CPU) {
+    size_t num_elements = 100;
+    size_t num_doubles = num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand((double* const)points.data(), num_doubles, 0.0, 10.0, 0);
+
+    open3d::Blob3d b0(num_elements, device_id);
+
+    for (size_t i = 0; i < num_elements; i++)
+        b0[i] = b0.h_data[i];
 
     for (size_t i = 0; i < num_elements; i++)
         ExpectEQ(b0[i], b0.h_data[i]);
