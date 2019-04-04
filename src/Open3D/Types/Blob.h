@@ -369,7 +369,10 @@ struct Blob {
 
             num_elements = h_data.size();
         }
-        //
+        // resize the memory allocated for storage.
+        // this will actually resize both the host data and device data.
+        // we could, in principle, avoid the resize depending on the usecase.
+        // in the current mode memory is released/allocated on the spot.
         inline void resize(size_t n) {
             if (num_elements == n) return;
 
@@ -379,14 +382,14 @@ struct Blob {
 
             // resize device data
             // delete memory and reallocate
-            // doesn't preserve memory
+            // preserve memory
             // initialize with zeros
             if (cuda::DeviceID::CPU != device_id) {
                 T* new_d_data = NULL;
                 cuda::AllocateDeviceMemory(&new_d_data, n * sizeof(V) / sizeof(T), device_id);
 
                 size_t min_size = (n < num_elements ? n : num_elements) * sizeof(V)/ sizeof(T);
-                cuda::CopyDev2DevMemory(&d_data, &new_d_data, min_size);
+                cuda::CopyDev2DevMemory(d_data, new_d_data, min_size);
 
                 cuda::ReleaseDeviceMemory(&d_data);
                 d_data = new_d_data;

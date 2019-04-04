@@ -949,7 +949,6 @@ TEST(BlobType, Resize_GPU) {
     vector<Eigen::Vector3d> b0_d_data{};
     size_t num_doubles = 0;
 
-
     open3d::Blob3d b0(ref, open3d::cuda::DeviceID::GPU_00);
 
     b0.resize(ref.size() << 1);
@@ -960,30 +959,29 @@ TEST(BlobType, Resize_GPU) {
                                     num_doubles);
 
     EXPECT_EQ(b0.size(), ref.size() << 1);
-    ExpectEQ(b0_d_data[0], ref[0]);
-    // for(size_t i = 0; i < ref.size(); i++)
-    //     ExpectEQ(b0_d_data[i], ref[i]);
+    for(size_t i = 0; i < ref.size(); i++)
+        ExpectEQ(b0_d_data[i], ref[i]);
 
-    // b0.resize(ref.size());
+    b0.resize(ref.size());
 
-    // b0_d_data = vector<Eigen::Vector3d>(b0.size());
-    // num_doubles = b0.size() * sizeof(Eigen::Vector3d) / sizeof(double);
-    // open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
-    //                                 num_doubles);
+    b0_d_data = vector<Eigen::Vector3d>(b0.size());
+    num_doubles = b0.size() * sizeof(Eigen::Vector3d) / sizeof(double);
+    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
+                                    num_doubles);
 
-    // EXPECT_EQ(b0.size(), ref.size());
-    // ExpectEQ(b0_d_data, ref);
+    EXPECT_EQ(b0.size(), ref.size());
+    ExpectEQ(b0_d_data, ref);
 
-    // b0.resize(ref.size() >> 1);
+    b0.resize(ref.size() >> 1);
 
-    // b0_d_data = vector<Eigen::Vector3d>(b0.size());
-    // num_doubles = b0.size() * sizeof(Eigen::Vector3d) / sizeof(double);
-    // open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
-    //                                 num_doubles);
+    b0_d_data = vector<Eigen::Vector3d>(b0.size());
+    num_doubles = b0.size() * sizeof(Eigen::Vector3d) / sizeof(double);
+    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
+                                    num_doubles);
 
-    // EXPECT_EQ(b0.size(), ref.size() >> 1);
-    // for(size_t i = 0; i < b0.size(); i++)
-    //     ExpectEQ(b0_d_data[i], ref[i]);
+    EXPECT_EQ(b0.size(), ref.size() >> 1);
+    for(size_t i = 0; i < b0.size(); i++)
+        ExpectEQ(b0_d_data[i], ref[i]);
 }
 
 // ----------------------------------------------------------------------------
