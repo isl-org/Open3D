@@ -394,9 +394,7 @@ struct Blob {
                 num_elements = data.size();
             }
         }
-        inline void push_back(V &&val) {
-            push_back(val);
-        }
+        inline void push_back(V &&val) { push_back(val); }
         // resize the memory allocated for storage.
         // this will actually resize both the host data and device data.
         // we could, in principle, avoid the resize depending on the usecase.
