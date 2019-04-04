@@ -97,6 +97,10 @@ struct Blob {
                 cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
+        // allocate CPU memory and copy GPU memory, if any, to it.
+        void Port2CPU();
+        // allocate GPU memory and copy CPU memory, if any, to it.
+        void Port2GPU();
         // deallocate memory
         void Reset() {
             h_data.clear();
@@ -360,19 +364,36 @@ struct Blob {
 
             return output;
         }
-        // redirect to std:vector<V>::push_back(...)
         inline void push_back(const V &val) {
             // host only
-            if (cuda::DeviceID::CPU & device_id) h_data.push_back(val);
+            if (cuda::DeviceID::CPU & device_id) {
+                // redirect to std:vector<V>::push_back(...)
+                h_data.push_back(val);
 
-            num_elements = h_data.size();
+                num_elements = h_data.size();
+            }
+
+            // device side
+            // delete/reallocate device memory
+            // Note: the overhead can be reduced at the cost of more complexity
+            if (cuda::DeviceID::CPU != device_id) {
+                std::vector<V> data(num_elements);
+                cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
+                                        num_of_Ts());
+
+                cuda::ReleaseDeviceMemory(&d_data);
+
+                data.push_back(val);
+
+                size_t new_size = data.size() * sizeof(V) / sizeof(T);
+                cuda::AllocateDeviceMemory(&d_data, new_size, device_id);
+
+                cuda::CopyHst2DevMemory((const T *const)data.data(), d_data,
+                                        new_size);
+            }
         }
-        // redirect to std:vector<V>::push_back(...)
         inline void push_back(V &&val) {
-            // host only
-            if (cuda::DeviceID::CPU & device_id) h_data.push_back(val);
-
-            num_elements = h_data.size();
+            push_back(val);
         }
         // resize the memory allocated for storage.
         // this will actually resize both the host data and device data.
