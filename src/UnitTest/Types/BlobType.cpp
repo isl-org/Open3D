@@ -911,8 +911,7 @@ TEST(BlobType, Resize_CPU) {
     b0.resize(ref.size() << 1);
 
     EXPECT_EQ(b0.size(), ref.size() << 1);
-    for(size_t i = 0; i < ref.size(); i++)
-        ExpectEQ(b0[i], ref[i]);
+    for (size_t i = 0; i < ref.size(); i++) ExpectEQ(b0[i], ref[i]);
 
     b0.resize(ref.size());
 
@@ -922,8 +921,7 @@ TEST(BlobType, Resize_CPU) {
     b0.resize(ref.size() >> 1);
 
     EXPECT_EQ(b0.size(), ref.size() >> 1);
-    for(size_t i = 0; i < b0.size(); i++)
-        ExpectEQ(b0[i], ref[i]);
+    for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0[i], ref[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -960,8 +958,7 @@ TEST(BlobType, Resize_GPU) {
                                     num_doubles);
 
     EXPECT_EQ(b0.size(), ref.size() << 1);
-    for(size_t i = 0; i < ref.size(); i++)
-        ExpectEQ(b0_d_data[i], ref[i]);
+    for (size_t i = 0; i < ref.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
 
     b0.resize(ref.size());
 
@@ -981,8 +978,7 @@ TEST(BlobType, Resize_GPU) {
                                     num_doubles);
 
     EXPECT_EQ(b0.size(), ref.size() >> 1);
-    for(size_t i = 0; i < b0.size(); i++)
-        ExpectEQ(b0_d_data[i], ref[i]);
+    for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1006,17 +1002,15 @@ TEST(BlobType, Resize_value_CPU) {
                                    {-0.238700, -0.937064, 0.254819},
                                    {0.080943, -0.502095, -0.861016}};
 
-    Eigen::Vector3d value = { 1.1111, 2.22222, 3.333333 };
+    Eigen::Vector3d value = {1.1111, 2.22222, 3.333333};
 
     open3d::Blob3d b0(ref, open3d::cuda::DeviceID::CPU);
 
     b0.resize((ref.size() << 1), value);
 
     EXPECT_EQ(b0.size(), ref.size() << 1);
-    for(size_t i = 0; i < ref.size(); i++)
-        ExpectEQ(b0[i], ref[i]);
-    for (size_t i = ref.size(); i < b0.size(); i++)
-        ExpectEQ(b0[i], value);
+    for (size_t i = 0; i < ref.size(); i++) ExpectEQ(b0[i], ref[i]);
+    for (size_t i = ref.size(); i < b0.size(); i++) ExpectEQ(b0[i], value);
 
     b0.resize(ref.size(), value);
 
@@ -1026,8 +1020,7 @@ TEST(BlobType, Resize_value_CPU) {
     b0.resize(ref.size() >> 1, value);
 
     EXPECT_EQ(b0.size(), ref.size() >> 1);
-    for(size_t i = 0; i < b0.size(); i++)
-        ExpectEQ(b0[i], ref[i]);
+    for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0[i], ref[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1051,7 +1044,7 @@ TEST(BlobType, Resize_value_GPU) {
                                    {-0.238700, -0.937064, 0.254819},
                                    {0.080943, -0.502095, -0.861016}};
 
-    Eigen::Vector3d value = { 1.1111, 2.22222, 3.333333 };
+    Eigen::Vector3d value = {1.1111, 2.22222, 3.333333};
 
     vector<Eigen::Vector3d> b0_d_data{};
     size_t num_doubles = 0;
@@ -1066,8 +1059,7 @@ TEST(BlobType, Resize_value_GPU) {
                                     num_doubles);
 
     EXPECT_EQ(b0.size(), ref.size() << 1);
-    for(size_t i = 0; i < ref.size(); i++)
-        ExpectEQ(b0_d_data[i], ref[i]);
+    for (size_t i = 0; i < ref.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
     for (size_t i = ref.size(); i < b0.size(); i++)
         ExpectEQ(b0_d_data[i], value);
 
@@ -1089,6 +1081,5 @@ TEST(BlobType, Resize_value_GPU) {
                                     num_doubles);
 
     EXPECT_EQ(b0.size(), ref.size() >> 1);
-    for(size_t i = 0; i < b0.size(); i++)
-        ExpectEQ(b0_d_data[i], ref[i]);
+    for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
 }

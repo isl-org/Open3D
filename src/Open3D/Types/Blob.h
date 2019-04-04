@@ -283,17 +283,18 @@ struct Blob {
 
         // TODO: insert works only on the host side for the moment.
         // Q: how to deal with device side?
-        // redirect to std:vector<V>::insert(...)
         inline typename std::vector<V>::iterator insert(
                 typename std::vector<V>::const_iterator position,
                 const V &val) {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id)
+            if (cuda::DeviceID::CPU & device_id) {
+                // redirect to std:vector<V>::insert(...)
                 output = h_data.insert(position, val);
 
-            num_elements = h_data.size();
+                num_elements = h_data.size();
+            }
 
             return output;
         }
@@ -305,10 +306,11 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id)
+            if (cuda::DeviceID::CPU & device_id) {
                 output = h_data.insert(position, n, val);
 
-            num_elements = h_data.size();
+                num_elements = h_data.size();
+            }
 
             return output;
         }
@@ -321,10 +323,11 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id)
+            if (cuda::DeviceID::CPU & device_id) {
                 output = h_data.insert(position, first, last);
 
-            num_elements = h_data.size();
+                num_elements = h_data.size();
+            }
 
             return output;
         }
@@ -334,10 +337,11 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id)
+            if (cuda::DeviceID::CPU & device_id) {
                 output = h_data.insert(position, val);
 
-            num_elements = h_data.size();
+                num_elements = h_data.size();
+            }
 
             return output;
         }
@@ -348,10 +352,11 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id)
+            if (cuda::DeviceID::CPU & device_id) {
                 output = h_data.insert(position, il);
 
-            num_elements = h_data.size();
+                num_elements = h_data.size();
+            }
 
             return output;
         }
@@ -385,7 +390,8 @@ struct Blob {
             // Note: the overhead can be reduced at the cost of more complexity
             if (cuda::DeviceID::CPU != device_id) {
                 std::vector<V> data(num_elements);
-                cuda::CopyDev2HstMemory(d_data, (T* const)data.data(), num_of_Ts());
+                cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
+                                        num_of_Ts());
 
                 cuda::ReleaseDeviceMemory(&d_data);
 
@@ -394,7 +400,8 @@ struct Blob {
                 size_t new_size = n * sizeof(V) / sizeof(T);
                 cuda::AllocateDeviceMemory(&d_data, new_size, device_id);
 
-                cuda::CopyHst2DevMemory((const T* const)data.data(), d_data, new_size);
+                cuda::CopyHst2DevMemory((const T *const)data.data(), d_data,
+                                        new_size);
             }
 
             num_elements = n;
@@ -412,7 +419,8 @@ struct Blob {
             // Note: the overhead can be reduced at the cost of more complexity
             if (cuda::DeviceID::CPU != device_id) {
                 std::vector<V> data(num_elements);
-                cuda::CopyDev2HstMemory(d_data, (T* const)data.data(), num_of_Ts());
+                cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
+                                        num_of_Ts());
 
                 cuda::ReleaseDeviceMemory(&d_data);
 
@@ -421,7 +429,8 @@ struct Blob {
                 size_t new_size = n * sizeof(V) / sizeof(T);
                 cuda::AllocateDeviceMemory(&d_data, new_size, device_id);
 
-                cuda::CopyHst2DevMemory((const T* const)data.data(), d_data, new_size);
+                cuda::CopyHst2DevMemory((const T *const)data.data(), d_data,
+                                        new_size);
             }
 
             num_elements = n;
