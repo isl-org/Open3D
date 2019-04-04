@@ -390,6 +390,8 @@ struct Blob {
 
                 cuda::CopyHst2DevMemory((const T *const)data.data(), d_data,
                                         new_size);
+
+                num_elements = data.size();
             }
         }
         inline void push_back(V &&val) {
