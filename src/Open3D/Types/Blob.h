@@ -381,18 +381,20 @@ struct Blob {
             if (cuda::DeviceID::CPU & device_id) h_data.resize(n);
 
             // resize device data
-            // delete memory and reallocate
-            // preserve memory
-            // initialize with zeros
+            // delete/reallocate device memory
+            // Note: the overhead can be reduced at the cost of more complexity
             if (cuda::DeviceID::CPU != device_id) {
-                T* new_d_data = NULL;
-                cuda::AllocateDeviceMemory(&new_d_data, n * sizeof(V) / sizeof(T), device_id);
-
-                size_t min_size = (n < num_elements ? n : num_elements) * sizeof(V)/ sizeof(T);
-                cuda::CopyDev2DevMemory(d_data, new_d_data, min_size);
+                std::vector<V> data(num_elements);
+                cuda::CopyDev2HstMemory(d_data, (T* const)data.data(), num_of_Ts());
 
                 cuda::ReleaseDeviceMemory(&d_data);
-                d_data = new_d_data;
+
+                data.resize(n);
+
+                size_t new_size = n * sizeof(V) / sizeof(T);
+                cuda::AllocateDeviceMemory(&d_data, new_size, device_id);
+
+                cuda::CopyHst2DevMemory((const T* const)data.data(), d_data, new_size);
             }
 
             num_elements = n;
@@ -401,20 +403,28 @@ struct Blob {
         inline void resize(size_t n, const V &val) {
             if (num_elements == n) return;
 
-            num_elements = n;
-
             // resize host data
             // redirect std:vector<V>::resize(...)
             if (cuda::DeviceID::CPU & device_id) h_data.resize(n, val);
 
             // resize device data
-            // delete memory and reallocate
-            // doesn't preserve existing data
-            // doesn't init with val but with zeros
+            // delete/reallocate device memory
+            // Note: the overhead can be reduced at the cost of more complexity
             if (cuda::DeviceID::CPU != device_id) {
+                std::vector<V> data(num_elements);
+                cuda::CopyDev2HstMemory(d_data, (T* const)data.data(), num_of_Ts());
+
                 cuda::ReleaseDeviceMemory(&d_data);
-                cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
+
+                data.resize(n, val);
+
+                size_t new_size = n * sizeof(V) / sizeof(T);
+                cuda::AllocateDeviceMemory(&d_data, new_size, device_id);
+
+                cuda::CopyHst2DevMemory((const T* const)data.data(), d_data, new_size);
             }
+
+            num_elements = n;
         }
         // number of elements
         inline size_t size() const { return num_elements; }
