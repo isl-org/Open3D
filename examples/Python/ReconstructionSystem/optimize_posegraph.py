@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/ReconstructionSystem/optimize_posegraph.py
+# examples/Python/ReconstructionSystem/optimize_posegraph.py
 
 import sys
 from open3d import *

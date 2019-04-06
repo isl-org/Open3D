@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
 
 wget https://github.com/google/googletest/archive/release-1.8.0.tar.gz -O /tmp/release-1.8.0.tar.gz
 cd /tmp/

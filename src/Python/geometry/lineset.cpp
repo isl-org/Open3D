@@ -26,6 +26,7 @@
 
 #include "Python/geometry/geometry_trampoline.h"
 #include "Python/geometry/geometry.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/LineSet.h>
 
@@ -34,7 +35,10 @@ using namespace open3d;
 void pybind_lineset(py::module &m) {
     py::class_<geometry::LineSet, PyGeometry3D<geometry::LineSet>,
                std::shared_ptr<geometry::LineSet>, geometry::Geometry3D>
-            lineset(m, "LineSet", "LineSet");
+            lineset(m, "LineSet",
+                    "LineSet define a sets of lines in 3D. A typical "
+                    "application is to display the point cloud correspondence "
+                    "paris.");
     py::detail::bind_default_constructor<geometry::LineSet>(lineset);
     py::detail::bind_copy_functions<geometry::LineSet>(lineset);
     lineset.def("__repr__",
@@ -44,11 +48,31 @@ void pybind_lineset(py::module &m) {
                 })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_points", &geometry::LineSet::HasPoints)
-            .def("has_lines", &geometry::LineSet::HasLines)
-            .def("has_colors", &geometry::LineSet::HasColors)
-            .def("normalize_normals", &geometry::LineSet::GetLineCoordinate)
-            .def_readwrite("points", &geometry::LineSet::points_)
-            .def_readwrite("lines", &geometry::LineSet::lines_)
-            .def_readwrite("colors", &geometry::LineSet::colors_);
+            .def("has_points", &geometry::LineSet::HasPoints,
+                 "Returns ``True`` if the object contains points.")
+            .def("has_lines", &geometry::LineSet::HasLines,
+                 "Returns ``True`` if the object contains lines.")
+            .def("has_colors", &geometry::LineSet::HasColors,
+                 "Returns ``True`` if the object's lines contain contain "
+                 "colors.")
+            .def("get_line_coordinate", &geometry::LineSet::GetLineCoordinate,
+                 "line_index"_a)
+            .def_readwrite("points", &geometry::LineSet::points_,
+                           "``float64`` array of shape ``(num_points, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "coordinates.")
+            .def_readwrite("lines", &geometry::LineSet::lines_,
+                           "``int`` array of shape ``(num_lines, 2)``, use "
+                           "``numpy.asarray()`` to access data: Lines denoted "
+                           "by the index of points forming the line.")
+            .def_readwrite(
+                    "colors", &geometry::LineSet::colors_,
+                    "``float64`` array of shape ``(num_lines, 3)``, "
+                    "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
+                    "data: RGB colors of lines.");
+    docstring::ClassMethodDocInject(m, "LineSet", "has_colors");
+    docstring::ClassMethodDocInject(m, "LineSet", "has_lines");
+    docstring::ClassMethodDocInject(m, "LineSet", "has_points");
+    docstring::ClassMethodDocInject(m, "LineSet", "get_line_coordinate",
+                                    {{"line_index", "Index of the line."}});
 }

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Advanced/outlier_removal.py
+# examples/Python/Advanced/outlier_removal.py
 
 from open3d import *
 

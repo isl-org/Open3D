@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "visualization.h"
+#include "Python/visualization/visualization.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Utility/FileSystem.h>
 #include <Open3D/Geometry/PointCloud.h>
@@ -37,7 +38,8 @@ using namespace open3d;
 
 void pybind_visualization_utility(py::module &m) {
     py::class_<visualization::SelectionPolygonVolume> selection_volume(
-            m, "SelectionPolygonVolume");
+            m, "SelectionPolygonVolume",
+            "Select a polygon volume for cropping.");
     py::detail::bind_default_constructor<visualization::SelectionPolygonVolume>(
             selection_volume);
     py::detail::bind_copy_functions<visualization::SelectionPolygonVolume>(
@@ -48,13 +50,13 @@ void pybind_visualization_utility(py::module &m) {
                     const geometry::PointCloud &input) {
                      return s.CropPointCloud(input);
                  },
-                 "input"_a)
+                 "input"_a, "Function to crop point cloud.")
             .def("crop_triangle_mesh",
                  [](const visualization::SelectionPolygonVolume &s,
                     const geometry::TriangleMesh &input) {
                      return s.CropTriangleMesh(input);
                  },
-                 "input"_a)
+                 "input"_a, "Function to crop crop triangle mesh.")
             .def("__repr__",
                  [](const visualization::SelectionPolygonVolume &s) {
                      return std::string(
@@ -65,15 +67,43 @@ void pybind_visualization_utility(py::module &m) {
                  })
             .def_readwrite(
                     "orthogonal_axis",
-                    &visualization::SelectionPolygonVolume::orthogonal_axis_)
+                    &visualization::SelectionPolygonVolume::orthogonal_axis_,
+                    "string: one of ``{x, y, z}``.")
             .def_readwrite(
                     "bounding_polygon",
-                    &visualization::SelectionPolygonVolume::bounding_polygon_)
+                    &visualization::SelectionPolygonVolume::bounding_polygon_,
+                    "``(n, 3)`` float64 numpy array: Bounding polygon "
+                    "boundary.")
             .def_readwrite("axis_min",
-                           &visualization::SelectionPolygonVolume::axis_min_)
+                           &visualization::SelectionPolygonVolume::axis_min_,
+                           "float: Minimum axis value.")
             .def_readwrite("axis_max",
-                           &visualization::SelectionPolygonVolume::axis_max_);
+                           &visualization::SelectionPolygonVolume::axis_max_,
+                           "float: Maximum axis value.");
+    docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
+                                    "crop_point_cloud",
+                                    {{"input", "The input point cloud."}});
+    docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
+                                    "crop_triangle_mesh",
+                                    {{"input", "The input triangle mesh."}});
 }
+
+// Visualization util functions have similar arguments, sharing arg docstrings
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"callback_function",
+                 "Call back function to be triggered at a key press event."},
+                {"filename", "The file path."},
+                {"geometry_list", "List of geometries to be visualized."},
+                {"height", "The height of the visualization window."},
+                {"key_to_callback", "Map of key to call back functions."},
+                {"left", "The left margin of the visualization window."},
+                {"optional_view_trajectory_json_file",
+                 "Camera trajectory json file path for custom animation."},
+                {"top", "The top margin of the visualization window."},
+                {"width", "The width of the visualization window."},
+                {"window_name",
+                 "The displayed title of the visualization window."}};
 
 void pybind_visualization_utility_methods(py::module &m) {
     m.def("draw_geometries",
@@ -90,6 +120,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "Function to draw a list of geometry::Geometry objects",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_custom_animation",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -108,6 +141,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50,
           "optional_view_trajectory_json_file"_a = "");
+    docstring::FunctionDocInject(m, "draw_geometries_with_custom_animation",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_animation_callback",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -127,6 +163,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "geometry_list"_a, "callback_function"_a, "window_name"_a = "Open3D",
           "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50,
           py::return_value_policy::reference);
+    docstring::FunctionDocInject(m, "draw_geometries_with_animation_callback",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_key_callbacks",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -147,6 +186,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "key-callback mapping",
           "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
           "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries_with_key_callbacks",
+                                 map_shared_argument_docstrings);
+
     m.def("draw_geometries_with_editing",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
@@ -159,6 +201,9 @@ void pybind_visualization_utility_methods(py::module &m) {
           "interaction",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries_with_editing",
+                                 map_shared_argument_docstrings);
+
     m.def("read_selection_polygon_volume",
           [](const std::string &filename) {
               visualization::SelectionPolygonVolume vol;
@@ -167,4 +212,6 @@ void pybind_visualization_utility_methods(py::module &m) {
           },
           "Function to read visualization::SelectionPolygonVolume from file",
           "filename"_a);
+    docstring::FunctionDocInject(m, "read_selection_polygon_volume",
+                                 map_shared_argument_docstrings);
 }

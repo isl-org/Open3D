@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
+
 process_redwood_object()
 {
     DATA_NUM=$1

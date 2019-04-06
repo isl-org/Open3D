@@ -73,7 +73,7 @@ public:
             const CorrespondenceSetPixelWise &corresps) const = 0;
 };
 
-/// Function to Compute Jacobian using color term
+/// Class to compute Jacobian using color term
 /// Energy: (I_p-I_q)^2
 /// reference:
 /// F. Steinbrucker, J. Sturm, and D. Cremers.
@@ -99,7 +99,7 @@ public:
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
-/// Function to Compute Jacobian using hybrid term
+/// Class to compute Jacobian using hybrid term
 /// Energy: (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
 /// reference:
 /// J. Park, Q.-Y. Zhou, and V. Koltun
