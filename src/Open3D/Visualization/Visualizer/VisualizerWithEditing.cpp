@@ -171,7 +171,7 @@ void VisualizerWithEditing::BuildUtilities() {
     success = true;
     pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
     if (geometry_ptrs_.empty() ||
-        pointcloud_picker_ptr_->SetPointCloud(geometry_ptrs_[0]) == false) {
+        pointcloud_picker_ptr_->SetPointCloud(editing_geometry_ptr_) == false) {
         success = false;
     }
     pointcloud_picker_renderer_ptr_ =
@@ -188,7 +188,7 @@ void VisualizerWithEditing::BuildUtilities() {
 
 int VisualizerWithEditing::PickPoint(double x, double y) {
     auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
-    if (renderer_ptr->AddGeometry(geometry_ptrs_[0]) == false) {
+    if (renderer_ptr->AddGeometry(editing_geometry_ptr_) == false) {
         return -1;
     }
     const auto &view = GetViewControl();
@@ -609,7 +609,7 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
                 utility::PrintInfo("No point has been picked.\n");
             } else {
                 const auto &point =
-                        ((const geometry::PointCloud &)(*geometry_ptrs_[0]))
+                        ((const geometry::PointCloud &)(*editing_geometry_ptr_))
                                 .points_[index];
                 utility::PrintInfo(
                         "Picked point #%d (%.2f, %.2f, %.2f) to add in "
@@ -657,17 +657,17 @@ void VisualizerWithEditing::SaveCroppingResult(
     std::string volume_filename =
             utility::filesystem::GetFileNameWithoutExtension(filename) +
             ".json";
-    if (geometry_ptrs_[0]->GetGeometryType() ==
+    if (editing_geometry_ptr_->GetGeometryType() ==
         geometry::Geometry::GeometryType::PointCloud)
         io::WritePointCloud(ply_filename,
-                            (const geometry::PointCloud &)(*geometry_ptrs_[0]));
-    else if (geometry_ptrs_[0]->GetGeometryType() ==
+                            (const geometry::PointCloud &)(*editing_geometry_ptr_));
+    else if (editing_geometry_ptr_->GetGeometryType() ==
                      geometry::Geometry::GeometryType::TriangleMesh ||
-             geometry_ptrs_[0]->GetGeometryType() ==
+             editing_geometry_ptr_->GetGeometryType() ==
                      geometry::Geometry::GeometryType::HalfEdgeTriangleMesh)
         io::WriteTriangleMesh(
                 ply_filename,
-                (const geometry::TriangleMesh &)(*geometry_ptrs_[0]));
+                (const geometry::TriangleMesh &)(*editing_geometry_ptr_));
     io::WriteIJsonConvertible(
             volume_filename,
             *selection_polygon_ptr_->CreateSelectionPolygonVolume(
