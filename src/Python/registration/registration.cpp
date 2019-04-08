@@ -228,6 +228,7 @@ The homogeneous transformation is given by
 Sets :math:`c = 1` if ``with_scaling`` is ``False``.
 )");
 
+
     // ope3dn.registration.TransformationEstimationPointToPlane:
     // TransformationEstimation
     py::class_<registration::TransformationEstimationPointToPlane,
