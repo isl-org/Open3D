@@ -62,8 +62,8 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
                                 open3d::cuda::DeviceID::CPU);
 
     geometry::PointCloud pc_cpu;
-    *points_cpu = points;
     pc_cpu.points_ = *points_cpu;
+    pc_cpu.points_ = points;
     auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
     open3d::Points* points_gpu = (open3d::Points*)open3d::Tensor::create(shape,
@@ -71,8 +71,8 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
                                 open3d::cuda::DeviceID::GPU_00);
 
     geometry::PointCloud pc_gpu;
-    *points_gpu = points;
     pc_gpu.points_ = *points_gpu;
+    pc_gpu.points_ = points;
     auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
 
     Eigen::Vector3d meanCPU = get<0>(outputCPU);
