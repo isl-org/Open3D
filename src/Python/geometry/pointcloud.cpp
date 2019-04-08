@@ -229,9 +229,8 @@ point is:
     m.def("compute_point_cloud_to_point_cloud_distance",
           &geometry::ComputePointCloudToPointCloudDistance,
           "For each point in the source point cloud, compute the distance to "
-          "the target point cloud."
-          "source"_a,
-          "target"_a);
+          "the target point cloud.",
+          "source"_a, "target"_a);
     docstring::FunctionDocInject(
             m, "compute_point_cloud_to_point_cloud_distance",
             {{"source",
