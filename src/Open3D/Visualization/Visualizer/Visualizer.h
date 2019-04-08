@@ -215,8 +215,7 @@ protected:
 
     // geometry to be rendered
     std::map<std::shared_ptr<const geometry::Geometry>, int> geometry_ptrs_;
-    int geometry_id_;
-
+    
     // geometry renderers
     std::map<std::shared_ptr<glsl::GeometryRenderer>, int>
             geometry_renderer_ptrs_;
