@@ -361,7 +361,7 @@ bool Visualizer::RemoveGeometry(
     }
     ResetViewPoint();
     utility::PrintDebug(
-            "Add geometry and update bounding box to %s\n",
+            "Remove geometry and update bounding box to %s\n",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     geometry_id_ += 1;
     return UpdateGeometry();

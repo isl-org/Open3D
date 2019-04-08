@@ -92,6 +92,9 @@ void pybind_visualizer(py::module &m) {
                  "Function to add geometry to the scene and create "
                  "corresponding shaders",
                  "geometry"_a)
+            .def("remove_geometry", &visualization::Visualizer::RemoveGeometry,
+                 "Function to remove geometry",
+                 "geometry"_a)
             .def("get_view_control", &visualization::Visualizer::GetViewControl,
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
@@ -154,6 +157,8 @@ void pybind_visualizer(py::module &m) {
                  &visualization::VisualizerWithEditing::GetPickedPoints,
                  "Function to get picked points");
     docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "remove_geometry",
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer",
                                     "capture_depth_float_buffer",
