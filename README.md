@@ -28,8 +28,8 @@ Open3D is an open-source library that supports rapid development of software tha
 
 ## Supported OSes and compilers
 
-* Ubuntu 16.04 or later: GCC 4.9 or later [![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
-* macOS: XCode 8.0 or later [![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
+* Ubuntu 16.04 or later: GCC 4.9 or later [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/Open3D)
+* macOS: XCode 8.0 or later [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/Open3D)
 * Windows: Visual Studio 2015 update 3 or later [![Build status](https://ci.appveyor.com/api/projects/status/sau3yewsyxaxpkqe?svg=true)](https://ci.appveyor.com/project/syncle/open3d)
 
 ## Citation
