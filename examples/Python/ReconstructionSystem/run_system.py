@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/ReconstructionSystem/run_system.py
+# examples/Python/ReconstructionSystem/run_system.py
 
 import os
 import sys

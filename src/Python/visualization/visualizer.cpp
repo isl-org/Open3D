@@ -24,8 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "visualization.h"
-#include "visualization_trampoline.h"
+#include "Python/visualization/visualization.h"
+#include "Python/visualization/visualization_trampoline.h"
+#include "Python/docstring.h"
 
 #include <Open3D/Geometry/Image.h>
 #include <Open3D/Visualization/Visualizer/Visualizer.h>
@@ -34,16 +35,32 @@
 
 using namespace open3d;
 
+// Functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_visualizer_docstrings = {
+                {"callback_func", "The call back function."},
+                {"depth_scale",
+                 "Scale depth value when capturing the depth image."},
+                {"do_render", "Set to ``True`` to do render."},
+                {"filename", "Path to file."},
+                {"geometry", "The ``Geometry`` object."},
+                {"height", "Height of window."},
+                {"left", "Left margin of the window to the screen."},
+                {"top", "Top margin of the window to the screen."},
+                {"visible", "Whether the window is visible."},
+                {"width", "Width of the window."},
+                {"window_name", "Window title name."},
+};
+
 void pybind_visualizer(py::module &m) {
     py::class_<visualization::Visualizer, PyVisualizer<>,
                std::shared_ptr<visualization::Visualizer>>
-            visualizer(m, "Visualizer", "Visualizer");
+            visualizer(m, "Visualizer", "The main Visualizer class.");
     py::detail::bind_default_constructor<visualization::Visualizer>(visualizer);
     visualizer
             .def("__repr__",
                  [](const visualization::Visualizer &vis) {
-                     return std::string(
-                                    "visualization::Visualizer with name ") +
+                     return std::string("Visualizer with name ") +
                             vis.GetWindowName();
                  })
             .def("create_window",
@@ -76,13 +93,11 @@ void pybind_visualizer(py::module &m) {
                  "corresponding shaders",
                  "geometry"_a)
             .def("get_view_control", &visualization::Visualizer::GetViewControl,
-                 "Function to retrieve the associated "
-                 "visualization::ViewControl",
+                 "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
             .def("get_render_option",
                  &visualization::Visualizer::GetRenderOption,
-                 "Function to retrieve the associated "
-                 "visualization::RenderOption",
+                 "Function to retrieve the associated ``RenderOption``",
                  py::return_value_policy::reference_internal)
             .def("capture_screen_float_buffer",
                  &visualization::Visualizer::CaptureScreenFloatBuffer,
@@ -106,15 +121,14 @@ void pybind_visualizer(py::module &m) {
                PyVisualizer<visualization::VisualizerWithKeyCallback>,
                std::shared_ptr<visualization::VisualizerWithKeyCallback>>
             visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
-                           "VisualizerWithKeyCallback");
+                           "Visualizer with custom key callack capabilities.");
     py::detail::bind_default_constructor<
             visualization::VisualizerWithKeyCallback>(visualizer_key);
     visualizer_key
             .def("__repr__",
                  [](const visualization::VisualizerWithKeyCallback &vis) {
                      return std::string(
-                                    "visualization::VisualizerWithKeyCallback "
-                                    "with name ") +
+                                    "VisualizerWithKeyCallback with name ") +
                             vis.GetWindowName();
                  })
             .def("register_key_callback",
@@ -127,20 +141,55 @@ void pybind_visualizer(py::module &m) {
                PyVisualizer<visualization::VisualizerWithEditing>,
                std::shared_ptr<visualization::VisualizerWithEditing>>
             visualizer_edit(m, "VisualizerWithEditing", visualizer,
-                            "VisualizerWithEditing");
+                            "Visualizer with editing capabilities.");
     py::detail::bind_default_constructor<visualization::VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit.def(py::init<double, bool, const std::string &>())
             .def("__repr__",
                  [](const visualization::VisualizerWithEditing &vis) {
-                     return std::string(
-                                    "visualization::VisualizerWithEditing with "
-                                    "name ") +
+                     return std::string("VisualizerWithEditing with name ") +
                             vis.GetWindowName();
                  })
             .def("get_picked_points",
                  &visualization::VisualizerWithEditing::GetPickedPoints,
                  "Function to get picked points");
+    docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer",
+                                    "capture_depth_float_buffer",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "capture_depth_image",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer",
+                                    "capture_screen_float_buffer",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "capture_screen_image",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "close",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "create_window",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "destroy_window",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "get_render_option",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "get_view_control",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "get_window_name",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "poll_events",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer",
+                                    "register_animation_callback",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "reset_view_point",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "run",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "update_geometry",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "update_renderer",
+                                    map_visualizer_docstrings);
 }
 
 void pybind_visualizer_method(py::module &m) {}

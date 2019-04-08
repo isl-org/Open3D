@@ -37,6 +37,60 @@
 namespace open3d {
 namespace docstring {
 
+// ref: enum_base in pybind11.h
+py::handle static_property =
+        py::handle((PyObject*)py::detail::get_internals().static_property_type);
+
+void ClassMethodDocInject(py::module& pybind_module,
+                          const std::string& class_name,
+                          const std::string& function_name,
+                          const std::unordered_map<std::string, std::string>&
+                                  map_parameter_body_docs) {
+    // Get function
+    PyObject* module = pybind_module.ptr();
+    PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
+    PyObject* class_method_obj =
+            PyObject_GetAttrString(class_obj, function_name.c_str());
+
+#ifdef PYTHON_2_FALLBACK
+    if (Py_TYPE(class_method_obj) != &PyMethod_Type) {
+        return;
+    }
+    PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
+    PyObject* f_obj = class_method->im_func;
+#else
+    if (Py_TYPE(class_method_obj) != &PyInstanceMethod_Type) {
+        return;
+    }
+    PyInstanceMethodObject* class_method =
+            (PyInstanceMethodObject*)class_method_obj;
+    PyObject* f_obj = class_method->func;
+#endif
+
+    if (Py_TYPE(f_obj) != &PyCFunction_Type) {
+        return;
+    }
+    PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
+
+    // TODO: parse __init__ separately, currently __init__ can be overloaded
+    // which might cause parsing error. So they are skipped.
+    if (function_name == "__init__") {
+        return;
+    }
+
+    // Parse existing docstring to FunctionDoc
+    FunctionDoc fd(f->m_ml->ml_doc);
+
+    // Inject docstring
+    for (ArgumentDoc& ad : fd.argument_docs_) {
+        if (map_parameter_body_docs.find(ad.name_) !=
+            map_parameter_body_docs.end()) {
+            ad.body_ = map_parameter_body_docs.at(ad.name_);
+        }
+    }
+    f->m_ml->ml_doc = strdup(fd.ToGoogleDocString().c_str());
+}
+
 void FunctionDocInject(py::module& pybind_module,
                        const std::string& function_name,
                        const std::unordered_map<std::string, std::string>&
@@ -86,7 +140,7 @@ void FunctionDoc::ParseSummary() {
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
                 result_type_pos +
-                utility::WordLength(pybind_doc_, result_type_pos, "._:");
+                utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
         size_t summary_len = pybind_doc_.size() - summary_start_pos;
         if (summary_len > 0) {
             std::string summary =
@@ -114,7 +168,8 @@ void FunctionDoc::ParseReturn() {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
                 result_type_pos,
-                utility::WordLength(pybind_doc_, result_type_pos, "._:"));
+                utility::WordLength(pybind_doc_, result_type_pos,
+                                    "._:,[]() ,"));
         return_doc_.type_ = StringCleanAll(return_type);
     }
 }
@@ -149,19 +204,48 @@ std::string FunctionDoc::ToGoogleDocString() const {
     }
 
     // Arguments
-    if (argument_docs_.size() != 0) {
+    if (argument_docs_.size() != 0 &&
+        !(argument_docs_.size() == 1 && argument_docs_[0].name_ == "self")) {
         rc << std::endl;
         rc << "Args:" << std::endl;
         for (const ArgumentDoc& argument_doc : argument_docs_) {
+            if (argument_doc.name_ == "self") {
+                continue;
+            }
             rc << indent << argument_doc.name_ << " (" << argument_doc.type_;
             if (argument_doc.default_ != "") {
                 rc << ", optional";
+            }
+            if (argument_doc.default_ != "" &&
+                argument_doc.long_default_ == "") {
+                rc << ", default=" << argument_doc.default_;
             }
             rc << ")";
             if (argument_doc.body_ != "") {
                 rc << ": " << argument_doc.body_;
             }
-            rc << std::endl;
+            if (argument_doc.long_default_ != "") {
+                std::vector<std::string> lines;
+                utility::SplitString(lines, argument_doc.long_default_, "\n",
+                                     true);
+                rc << " Default value:" << std::endl << std::endl;
+                bool prev_line_is_listing = false;
+                for (std::string& line : lines) {
+                    line = StringCleanAll(line);
+                    if (line[0] == '-') {  // listing
+                        // Add empty line before listing
+                        if (!prev_line_is_listing) {
+                            rc << std::endl;
+                        }
+                        prev_line_is_listing = true;
+                    } else {
+                        prev_line_is_listing = false;
+                    }
+                    rc << indent << indent << line << std::endl;
+                }
+            } else {
+                rc << std::endl;
+            }
         }
     }
 
@@ -195,16 +279,31 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
 
     // Argument with default value
     std::regex rgx_with_default(
-            "([A-Za-z_][A-Za-z\\d_]*): ([A-Za-z_][A-Za-z\\d_:\\.]*) = (.*)");
+            "([A-Za-z_][A-Za-z\\d_]*): "
+            "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,]*) = (.*)");
     std::smatch matches;
     if (std::regex_search(argument_token, matches, rgx_with_default)) {
         argument_doc.name_ = matches[1].str();
         argument_doc.type_ = NamespaceFix(matches[2].str());
         argument_doc.default_ = matches[3].str();
-    } else {
+
+        // Handle long default value. Long default has multiple lines and thus
+        // they are not displayed in  signature, but in docstrings.
+        size_t default_start_pos = matches.position(3);
+        if (default_start_pos + argument_doc.default_.size() <
+            argument_token.size()) {
+            argument_doc.long_default_ = argument_token.substr(
+                    default_start_pos,
+                    argument_token.size() - default_start_pos);
+            argument_doc.default_ = "(with default value)";
+        }
+    }
+
+    else {
         // Argument without default value
         std::regex rgx_without_default(
-                "([A-Za-z_][A-Za-z\\d_]*): ([A-Za-z_][A-Za-z\\d_:\\.]*)");
+                "([A-Za-z_][A-Za-z\\d_]*): "
+                "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,]*)");
         if (std::regex_search(argument_token, matches, rgx_without_default)) {
             argument_doc.name_ = matches[1].str();
             argument_doc.type_ = NamespaceFix(matches[2].str());
@@ -245,7 +344,7 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
     // The 1st argument's end pos is 2nd argument's start pos - 2 and etc.
     // The last argument's end pos is the location of the parenthesis before ->
     std::vector<size_t> argument_end_positions;
-    for (size_t i = 0; i < argument_start_positions.size() - 1; ++i) {
+    for (size_t i = 0; i + 1 < argument_start_positions.size(); ++i) {
         argument_end_positions.push_back(argument_start_positions[i + 1] - 2);
     }
     std::size_t arrow_pos = str.rfind(") -> ");

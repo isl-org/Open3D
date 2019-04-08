@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -e
 
 # Open3D's Python Tutorial require following packages
 # - numpy

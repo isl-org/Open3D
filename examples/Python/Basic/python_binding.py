@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Basic/python_binding.py
+# examples/Python/Basic/python_binding.py
 
 import numpy as np
 

@@ -23,6 +23,7 @@
 import sphinx_rtd_theme
 import sys
 import os
+import re
 
 # Import open3d raw python package with the highest priority
 # This is a trick to show open3d.open3d as open3d in the docs
@@ -65,8 +66,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Open3D'
-copyright = u'2018, Qianyi Zhou and Jaesik Park'
-author = u'Qianyi Zhou and Jaesik Park'
+copyright = u'2018 - 2019, www.open3d.org'
+author = u'www.open3d.org'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -115,6 +116,13 @@ todo_include_todos = False
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Force table wrap: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # override wide tables in RTD theme
+        ],
+     }
 
 # added by Jaesik to hide "View page source"
 html_show_sourcelink = False
@@ -176,5 +184,45 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-# added by Jaesik to list Python members using the source order
-autodoc_member_order = 'bysource'
+# Version 0: Added by Jaesik to list Python members using the source order
+# Version 1: Changed to 'groupwise': __init__ first, then methods, then
+#            properties. Within each, sorted alphabetically.
+autodoc_member_order = 'groupwise'
+
+
+def is_enum_class(func, func_name):
+    def import_from_str(class_name):
+        components = class_name.split('.')
+        mod = __import__(components[0])
+        for comp in components[1:]:
+            mod = getattr(mod, comp)
+        return mod
+
+    is_enum = False
+    try:
+        if func_name == "name" and "self: handle" in func.__doc__:
+            is_enum = True
+        else:
+            pattern = re.escape(func_name) + r"\(self: ([a-zA-Z0-9_\.]*).*\)"
+            m = re.match(pattern, func.__doc__)
+            if m:
+                c_name = m.groups()[0]
+                c = import_from_str(c_name)
+                if hasattr(c, "__entries"):
+                    is_enum = True
+    except:
+        pass
+    return is_enum
+
+
+# Keep the __init__ function doc
+def skip(app, what, name, obj, would_skip, options):
+    if name in {"__init__", "name"}:
+        if is_enum_class(obj, name):
+            return True
+        else:
+            return False
+    return would_skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)

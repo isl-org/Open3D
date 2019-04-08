@@ -68,8 +68,9 @@ public:
     }
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
-            size_t i) const {
-        return std::make_pair(points_[lines_[i][0]], points_[lines_[i][1]]);
+            size_t line_index) const {
+        return std::make_pair(points_[lines_[line_index][0]],
+                              points_[lines_[line_index][1]]);
     }
 
 public:

@@ -162,10 +162,10 @@ RemoveRadiusOutliers(const PointCloud &input,
                      double search_radius);
 
 /// Function to remove points that are further away from their
-/// \param nb_neighbour neighbours in average.
+/// \param nb_neighbor neighbors in average.
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 RemoveStatisticalOutliers(const PointCloud &input,
-                          size_t nb_neighbours,
+                          size_t nb_neighbors,
                           double std_ratio);
 
 /// Function to compute the normals of a point cloud

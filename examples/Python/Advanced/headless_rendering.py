@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Advanced/headless_rendering.py
+# examples/Python/Advanced/headless_rendering.py
 
 import os
 from open3d import *

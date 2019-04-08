@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Utility/file.py
+# examples/Python/Utility/file.py
 
 from os import listdir, makedirs
 from os.path import exists, isfile, join, splitext

@@ -49,6 +49,8 @@ namespace color_map {
 class ColorMapOptimizationOption {
 public:
     ColorMapOptimizationOption(
+            // Attention: when you update the defaults, update the docstrings in
+            // Python/color_map/color_map.cpp
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
             double non_rigid_anchor_point_weight = 0.316,

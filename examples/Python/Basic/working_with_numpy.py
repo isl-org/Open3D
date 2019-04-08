@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Basic/working_with_numpy.py
+# examples/Python/Basic/working_with_numpy.py
 
 import copy
 import numpy as np
