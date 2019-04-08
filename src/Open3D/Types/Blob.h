@@ -35,10 +35,21 @@
 #endif
 
 namespace open3d {
-// 1D tensor, row major
+
+// data set shape
+typedef struct _Shape {
+    size_t rows;
+    size_t cols;
+} Shape;
+
+// data set element type
+enum class DataType { FP_64 = 0, FP_32, INT_32 };
+
+class ComplexType {};
+
 template <typename V, typename T>
 struct Blob {
-    typedef struct _Type {
+    typedef struct _Type : ComplexType {
         _Type() {}
         _Type(const int &num_elements,
               const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU)
@@ -486,4 +497,24 @@ typedef Blob2i Lines;
 typedef Blob3i Voxels;
 typedef Blob3i Triangles;
 typedef Blob2i CorrespondenceSet;
+
+class Tensor {
+public:
+    // Tensor(const Shape& shape, const DataType& type);
+    static ComplexType *create(
+            const Shape &shape,
+            const DataType &type,
+            const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU) {
+        if (shape.cols == 3 && type == DataType::FP_64)
+            return new Blob3d(shape.rows, device_id);
+
+        if (shape.cols == 3 && type == DataType::INT_32)
+            return new Blob3i(shape.rows, device_id);
+
+        if (shape.cols == 2 && type == DataType::INT_32)
+            return new Blob2i(shape.rows, device_id);
+
+        return NULL;
+    };
+};
 }  // namespace open3d
