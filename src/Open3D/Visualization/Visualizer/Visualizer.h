@@ -118,6 +118,10 @@ public:
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
+    
+    std::pair<bool, std::shared_ptr<glsl::GeometryRenderer>>
+            GetRendererPointer(std::shared_ptr<const geometry::Geometry> geometry_ptr);
+
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
@@ -214,7 +218,7 @@ protected:
     int geometry_id_;
 
     // geometry renderers
-    std::vector<std::shared_ptr<glsl::GeometryRenderer>>
+    std::map<std::shared_ptr<glsl::GeometryRenderer>, int>
             geometry_renderer_ptrs_;
 
     // utilities owned by the Visualizer

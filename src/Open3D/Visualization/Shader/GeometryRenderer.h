@@ -64,6 +64,7 @@ public:
     virtual bool UpdateGeometry() = 0;
 
     bool HasGeometry() const { return bool(geometry_ptr_); }
+    std::shared_ptr<const geometry::Geometry> GetGeometry() const { return geometry_ptr_; }
 
     bool IsVisible() const { return is_visible_; }
     void SetVisible(bool visible) { is_visible_ = visible; };

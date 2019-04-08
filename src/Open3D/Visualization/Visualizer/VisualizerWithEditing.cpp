@@ -105,7 +105,7 @@ bool VisualizerWithEditing::AddGeometry(
         return false;
     }
     geometry_ptrs_.insert(std::make_pair(editing_geometry_ptr_, geometry_id_));
-    geometry_renderer_ptrs_.push_back(editing_geometry_renderer_ptr_);
+    geometry_renderer_ptrs_.insert(std::make_pair(editing_geometry_renderer_ptr_, geometry_id_));
     ResetViewPoint(true);
     utility::PrintDebug(
             "Add geometry and update bounding box to %s\n",
