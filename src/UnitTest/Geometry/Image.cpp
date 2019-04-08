@@ -151,14 +151,14 @@ TEST(Image, FloatValueAt) {
     im[1 * width + 0] = 4.0f;
     im[1 * width + 1] = 4.0f;
 
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, THRESHOLD);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, THRESHOLD);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, THRESHOLD);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, THRESHOLD);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, THRESHOLD);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, THRESHOLD);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, THRESHOLD);
+    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -464,10 +464,10 @@ TEST(Image, PointerAt) {
     im[1 * width + 0] = 2.0f;
     im[1 * width + 1] = 3.0f;
 
-    EXPECT_NEAR(0.0f, *geometry::PointerAt<float>(image, 0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, *geometry::PointerAt<float>(image, 1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, *geometry::PointerAt<float>(image, 0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(3.0f, *geometry::PointerAt<float>(image, 1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0f, *geometry::PointerAt<float>(image, 0, 0), THRESHOLD);
+    EXPECT_NEAR(1.0f, *geometry::PointerAt<float>(image, 1, 0), THRESHOLD);
+    EXPECT_NEAR(2.0f, *geometry::PointerAt<float>(image, 0, 1), THRESHOLD);
+    EXPECT_NEAR(3.0f, *geometry::PointerAt<float>(image, 1, 1), THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------

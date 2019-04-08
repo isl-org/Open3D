@@ -30,6 +30,7 @@
 #include <memory>
 #include <Eigen/Core>
 #include <Open3D/Geometry/Geometry3D.h>
+#include "Open3D/Types/Blob.h"
 
 namespace open3d {
 namespace geometry {
@@ -39,6 +40,11 @@ class PointCloud;
 class LineSet : public Geometry3D {
 public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
+    LineSet(const LineSet &ls)
+        : Geometry3D(Geometry::GeometryType::LineSet),
+          points_(ls.points_),
+          lines_(ls.lines_),
+          colors_(ls.colors_) {}
     ~LineSet() override {}
 
 public:
@@ -68,9 +74,9 @@ public:
     }
 
 public:
-    std::vector<Eigen::Vector3d> points_;
-    std::vector<Eigen::Vector2i> lines_;
-    std::vector<Eigen::Vector3d> colors_;
+    Points points_;
+    Lines lines_;
+    Colors colors_;
 };
 
 /// Factory function to create a lineset from two pointclouds and a

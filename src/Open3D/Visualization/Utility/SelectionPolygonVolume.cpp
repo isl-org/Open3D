@@ -98,7 +98,8 @@ std::shared_ptr<geometry::PointCloud> SelectionPolygonVolume::CropPointCloud(
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygonVolume::CropPointCloudInPolygon(
         const geometry::PointCloud &input) const {
-    return geometry::SelectDownSample(input, CropInPolygon(input.points_));
+    return geometry::SelectDownSample(input,
+                                      CropInPolygon(input.points_.h_data));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
@@ -119,7 +120,8 @@ SelectionPolygonVolume::CropTriangleMesh(
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygonVolume::CropTriangleMeshInPolygon(
         const geometry::TriangleMesh &input) const {
-    return geometry::SelectDownSample(input, CropInPolygon(input.vertices_));
+    return geometry::SelectDownSample(input,
+                                      CropInPolygon(input.vertices_.h_data));
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(

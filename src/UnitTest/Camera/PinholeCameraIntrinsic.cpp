@@ -182,8 +182,8 @@ TEST(PinholeCameraIntrinsic, GetFocalLength) {
 
     pair<double, double> output = intrinsic.GetFocalLength();
 
-    EXPECT_NEAR(fx, output.first, THRESHOLD_1E_6);
-    EXPECT_NEAR(fy, output.second, THRESHOLD_1E_6);
+    EXPECT_NEAR(fx, output.first, THRESHOLD);
+    EXPECT_NEAR(fy, output.second, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -208,8 +208,8 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
 
     pair<double, double> output = intrinsic.GetPrincipalPoint();
 
-    EXPECT_NEAR(cx, output.first, THRESHOLD_1E_6);
-    EXPECT_NEAR(cy, output.second, THRESHOLD_1E_6);
+    EXPECT_NEAR(cx, output.first, THRESHOLD);
+    EXPECT_NEAR(cy, output.second, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -234,7 +234,7 @@ TEST(PinholeCameraIntrinsic, GetSkew) {
 
     double output = intrinsic.GetSkew();
 
-    EXPECT_NEAR(0.0, output, THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, output, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------

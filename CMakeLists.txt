@@ -2,10 +2,11 @@
 # https://cmake.org/cmake/help/v3.0/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.12.2)
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
+    cmake_policy(SET CMP0072 OLD)
 endif()
 
 # central location for specifying the Open3D version
@@ -65,6 +66,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # config options
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
 option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
+option(WITH_CUDA                 "Use CUDA acceleration"                    ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
@@ -151,7 +153,10 @@ elseif (UNIX)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
-    add_compile_options(-Wno-unused-result)
+
+    # had to disable this option to avoid nvcc fatal error: unknown option 'Wno-unused-result'
+    # add_compile_options(-Wno-unused-result)
+
     add_definitions(-O3)
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
@@ -159,11 +164,11 @@ elseif (UNIX)
     set(BUILD_LIBREALSENSE OFF)
 endif ()
 
-# Set OpenMP
+# enable OpenMP
 if (WITH_OPENMP)
     find_package(OpenMP QUIET)
     if (OPENMP_FOUND)
-        message(STATUS "Using installed OpenMP ${OpenMP_VERSION}")
+        message(STATUS "Using OpenMP ${OpenMP_VERSION}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
@@ -174,6 +179,39 @@ if (WITH_OPENMP)
     else ()
         message(STATUS "OpenMP NOT found")
     endif ()
+endif ()
+
+# enable CUDA
+if (WITH_CUDA)
+    include(CheckLanguage)
+    check_language(CUDA)
+    if (CMAKE_CUDA_COMPILER)
+        # https://gitlab.kitware.com/cmake/cmake/issues/17559#note_457076
+        set(CMAKE_CUDA_FLAGS "" CACHE STRING "")
+        if (BUILD_SHARED_LIBS)
+            if (CMAKE_CUDA_FLAGS)
+                list(REMOVE_ITEM CMAKE_CUDA_FLAGS "-cudart static")
+            endif()
+            string(APPEND CMAKE_CUDA_FLAGS "-cudart shared")
+        endif()
+
+        enable_language(CUDA)
+        message(STATUS "Using CUDA ${CMAKE_CUDA_COMPILER_VERSION}")
+
+        # https://gitlab.kitware.com/cmake/cmake/issues/17559#note_506364
+        if (BUILD_SHARED_LIBS)
+            if (CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES)
+                list( REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart_static")
+            endif()
+            if (CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES)
+                list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart_static")
+            endif()
+        endif()
+
+        add_definitions(-DOPEN3D_USE_CUDA)
+    else()
+        message(STATUS "CUDA not found.")
+    endif()
 endif ()
 
 # recursively parse and return the entire directory tree.
@@ -208,6 +246,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/3rdparty
     ${3RDPARTY_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 # Open3D library

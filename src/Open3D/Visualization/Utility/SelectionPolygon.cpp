@@ -206,28 +206,28 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygon::CropPointCloudInRectangle(const geometry::PointCloud &input,
                                             const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInRectangle(input.points_, view));
+    return geometry::SelectDownSample(
+            input, CropInRectangle(input.points_.h_data, view));
 }
 
 std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const geometry::PointCloud &input, const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInPolygon(input.points_, view));
+    return geometry::SelectDownSample(
+            input, CropInPolygon(input.points_.h_data, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygon::CropTriangleMeshInRectangle(
         const geometry::TriangleMesh &input, const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInRectangle(input.vertices_, view));
+    return geometry::SelectDownSample(
+            input, CropInRectangle(input.vertices_.h_data, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygon::CropTriangleMeshInPolygon(const geometry::TriangleMesh &input,
                                             const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInPolygon(input.vertices_, view));
+    return geometry::SelectDownSample(
+            input, CropInPolygon(input.vertices_.h_data, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(

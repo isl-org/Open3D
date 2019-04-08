@@ -63,16 +63,16 @@ void pybind_pointcloud(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
                  "Assign uniform color to all points.")
-            .def_readwrite("points", &geometry::PointCloud::points_,
+            .def_readwrite("points", &geometry::PointCloud::points_.h_data,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "coordinates.")
-            .def_readwrite("normals", &geometry::PointCloud::normals_,
+            .def_readwrite("normals", &geometry::PointCloud::normals_.h_data,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "normals.")
             .def_readwrite(
-                    "colors", &geometry::PointCloud::colors_,
+                    "colors", &geometry::PointCloud::colors_.h_data,
                     "``float64`` array of shape ``(num_points, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of points.");

@@ -30,6 +30,14 @@
 #include <Open3D/Utility/Console.h>
 #include <Open3D/Geometry/KDTreeFlann.h>
 
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+#ifdef OPEN3D_USE_CUDA
+#include "Open3D/Utility/CUDA.cuh"
+#endif
+
 namespace open3d {
 namespace geometry {
 
@@ -155,11 +163,29 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
-        const PointCloud &input) {
-    if (input.IsEmpty()) {
-        return std::make_tuple(Eigen::Vector3d::Zero(),
-                               Eigen::Matrix3d::Identity());
-    }
+        PointCloud &input) {
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
+
+    if (input.IsEmpty()) return std::make_tuple(mean, covariance);
+
+#ifdef OPEN3D_USE_CUDA
+    if (cuda::DeviceID::CPU == input.points_.device_id)
+        return ComputePointCloudMeanAndCovarianceCPU(input);
+    else
+        return ComputePointCloudMeanAndCovarianceCUDA(input);
+#else
+    return ComputePointCloudMeanAndCovarianceCPU(input);
+#endif
+}
+
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+ComputePointCloudMeanAndCovarianceCPU(const PointCloud &input) {
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
+
+    if (input.IsEmpty()) return std::make_tuple(mean, covariance);
+
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
     for (const auto &point : input.points_) {
@@ -173,12 +199,13 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
     }
+
     cumulants /= (double)input.points_.size();
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
+
     mean(0) = cumulants(0);
     mean(1) = cumulants(1);
     mean(2) = cumulants(2);
+
     covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
     covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
     covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
@@ -188,11 +215,11 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     covariance(2, 0) = covariance(0, 2);
     covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
     covariance(2, 1) = covariance(1, 2);
+
     return std::make_tuple(mean, covariance);
 }
 
-std::vector<double> ComputePointCloudMahalanobisDistance(
-        const PointCloud &input) {
+std::vector<double> ComputePointCloudMahalanobisDistance(PointCloud &input) {
     std::vector<double> mahalanobis(input.points_.size());
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
@@ -229,6 +256,28 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     }
     return nn_dis;
 }
+
+#ifdef OPEN3D_USE_CUDA
+
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
+    auto output =
+            meanAndCovarianceCUDA(input.points_.d_data, input.points_.size(),
+                                  input.points_.device_id);
+
+    Vec3d meanCUDA = get<0>(output);
+    Mat3d covarianceCUDA = get<1>(output);
+
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+
+    memcpy(&mean, &meanCUDA, Vec3d::Size * sizeof(double));
+    memcpy(&covariance, &covarianceCUDA, Mat3d::Size * sizeof(double));
+
+    return std::make_tuple(mean, covariance);
+}
+
+#endif  // OPEN3D_USE_CUDA
 
 }  // namespace geometry
 }  // namespace open3d

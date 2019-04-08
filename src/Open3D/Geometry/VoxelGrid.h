@@ -30,6 +30,7 @@
 #include <memory>
 #include <Eigen/Core>
 #include <Open3D/Geometry/Geometry3D.h>
+#include "Open3D/Types/Blob.h"
 
 namespace open3d {
 namespace geometry {
@@ -63,8 +64,8 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::vector<Eigen::Vector3i> voxels_;
-    std::vector<Eigen::Vector3d> colors_;
+    Voxels voxels_;
+    Colors colors_;
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(

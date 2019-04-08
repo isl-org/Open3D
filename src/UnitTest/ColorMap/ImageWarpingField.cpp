@@ -136,11 +136,11 @@ TEST(ImageWarpingField, DISABLED_Constructor) {
     // EXPECT_EQ(21, field.anchor_w_);
     // EXPECT_EQ(16, field.anchor_h_);
 
-    // EXPECT_NEAR(16, field.anchor_step_, unit_test::THRESHOLD_1E_6);
+    // EXPECT_NEAR(16, field.anchor_step_, unit_test::THRESHOLD);
 
     // EXPECT_EQ(672, field.flow_.size());
     // for (size_t i = 0; i < field.flow_.size(); i++)
-    //     EXPECT_NEAR(ref[i], field.flow_[i], unit_test::THRESHOLD_1E_6);
+    //     EXPECT_NEAR(ref[i], field.flow_[i], unit_test::THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------

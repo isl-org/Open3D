@@ -32,6 +32,7 @@
 #include <Eigen/Core>
 
 #include <Open3D/Geometry/Geometry3D.h>
+#include "Open3D/Types/Blob.h"
 
 namespace open3d {
 namespace geometry {
@@ -121,11 +122,11 @@ public:
     }
 
 public:
-    std::vector<Eigen::Vector3d> vertices_;
-    std::vector<Eigen::Vector3d> vertex_normals_;
-    std::vector<Eigen::Vector3d> vertex_colors_;
-    std::vector<Eigen::Vector3i> triangles_;
-    std::vector<Eigen::Vector3d> triangle_normals_;
+    Vertices vertices_;
+    Vertex_normals vertex_normals_;
+    Vertex_colors vertex_colors_;
+    Triangles triangles_;
+    Triangle_normals triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
 };
 

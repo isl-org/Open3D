@@ -31,14 +31,15 @@
 #include <vector>
 
 #include <Eigen/Core>
+#include "Open3D/Types/Blob.h"
 
 namespace unit_test {
 // tab size used for formatting ref data.
 static const int TAB_SIZE = 4;
 
-// Print a Matrix<T, M, N>.
-template <class T, int M, int N>
-void Print(const Eigen::Matrix<T, M, N>& matrix,
+// Print an Eigen::Matrix<T, ROWS, COLS>.
+template <class T, int ROWS, int COLS>
+void Print(const Eigen::Matrix<T, ROWS, COLS>& matrix,
            const int& tabs = 1,
            const char& terminator = ';') {
     int precision = 0;
@@ -54,13 +55,13 @@ void Print(const Eigen::Matrix<T, M, N>& matrix,
 
     std::cout << std::setw(tabs * TAB_SIZE) << "{";
 
-    for (int m = 0; m < M; m++) {
+    for (int m = 0; m < ROWS; m++) {
         std::cout << std::endl;
         std::cout << std::setw((tabs + 1) * TAB_SIZE) << "";
 
-        for (int n = 0; n < N; n++) {
-            std::cout << std::setw(width) << matrix(n, m);
-            if (m != (M - 1) || n != (N - 1)) std::cout << ",";
+        for (int n = 0; n < COLS; n++) {
+            std::cout << std::setw(width) << matrix(m, n);
+            if (m != (ROWS - 1) || n != (COLS - 1)) std::cout << ",";
         }
     }
 
@@ -72,9 +73,45 @@ void Print(const Eigen::Matrix<T, M, N>& matrix,
     if (',' != terminator) std::cout << std::endl;
 }
 
-// Print a vector of Matrix<T, M, N>.
-template <class T, int M, int N>
-void Print(const std::vector<Eigen::Matrix<T, M, N>>& v,
+// Print an open3d::Mat<T, ROWS, COLS>.
+template <class T, uint ROWS, uint COLS>
+void Print(const typename open3d::Mat<T, ROWS, COLS>::Type& matrix,
+           const int& tabs = 1,
+           const char& terminator = ';') {
+    int precision = 0;
+    int width = 5;
+
+    if (std::is_floating_point<T>::value) {
+        precision = 6;
+        width = 12;
+
+        std::cout << std::fixed;
+        std::cout << std::setprecision(precision);
+    }
+
+    std::cout << std::setw(tabs * TAB_SIZE) << "{";
+
+    for (int m = 0; m < ROWS; m++) {
+        std::cout << std::endl;
+        std::cout << std::setw((tabs + 1) * TAB_SIZE) << "";
+
+        for (int n = 0; n < COLS; n++) {
+            std::cout << std::setw(width) << matrix(m, n);
+            if (m != (ROWS - 1) || n != (COLS - 1)) std::cout << ",";
+        }
+    }
+
+    std::cout << std::endl;
+    std::cout << std::setw(tabs * TAB_SIZE) << "}";
+
+    if (';' == terminator || ',' == terminator) std::cout << terminator;
+
+    if (',' != terminator) std::cout << std::endl;
+}
+
+// Print a vector of Eigen::Matrix<T, ROWS, COLS>.
+template <class T, int ROWS, int COLS>
+void Print(const std::vector<Eigen::Matrix<T, ROWS, COLS>>& v,
            const int& tabs = 1,
            const char& terminator = ';') {
     std::cout << std::setw(tabs * TAB_SIZE) << "{";

@@ -30,7 +30,6 @@
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
 
-using namespace Eigen;
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
@@ -59,15 +58,15 @@ TEST(KDTreeFlann, SearchKNN) {
 
     geometry::PointCloud pc;
 
-    Vector3d vmin(0.0, 0.0, 0.0);
-    Vector3d vmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(10.0, 10.0, 10.0);
 
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
     geometry::KDTreeFlann kdtree(pc);
 
-    Vector3d query = {1.647059, 4.392157, 8.784314};
+    Eigen::Vector3d query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
     vector<int> indices;
     vector<double> distance2;
@@ -97,21 +96,21 @@ TEST(KDTreeFlann, SearchRadius) {
 
     geometry::PointCloud pc;
 
-    Vector3d vmin(0.0, 0.0, 0.0);
-    Vector3d vmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(10.0, 10.0, 10.0);
 
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
     geometry::KDTreeFlann kdtree(pc);
 
-    Vector3d query = {1.647059, 4.392157, 8.784314};
+    Eigen::Vector3d query = {1.647059, 4.392157, 8.784314};
     double radius = 5.0;
     vector<int> indices;
     vector<double> distance2;
 
-    int result =
-            kdtree.SearchRadius<Vector3d>(query, radius, indices, distance2);
+    int result = kdtree.SearchRadius<Eigen::Vector3d>(query, radius, indices,
+                                                      distance2);
 
     EXPECT_EQ(result, 21);
 
@@ -135,22 +134,22 @@ TEST(KDTreeFlann, SearchHybrid) {
 
     geometry::PointCloud pc;
 
-    Vector3d vmin(0.0, 0.0, 0.0);
-    Vector3d vmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(10.0, 10.0, 10.0);
 
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
     geometry::KDTreeFlann kdtree(pc);
 
-    Vector3d query = {1.647059, 4.392157, 8.784314};
+    Eigen::Vector3d query = {1.647059, 4.392157, 8.784314};
     int max_nn = 15;
     double radius = 5.0;
     vector<int> indices;
     vector<double> distance2;
 
-    int result = kdtree.SearchHybrid<Vector3d>(query, radius, max_nn, indices,
-                                               distance2);
+    int result = kdtree.SearchHybrid<Eigen::Vector3d>(query, radius, max_nn,
+                                                      indices, distance2);
 
     EXPECT_EQ(result, 15);
 
