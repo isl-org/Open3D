@@ -46,5 +46,5 @@ Please cite [our work](https://arxiv.org/abs/1801.09847) if you use Open3D.
 
 ## Ecosystem
 
-* [Open3D-PointNet:](https://github.com/IntelVCL/Open3D-PointNet) A fork of PyTorch PointNet for point cloud classification and semantic segmentation compatible with Open3D.
-* [Open3D-PointNet++:](https://github.com/IntelVCL/Open3D-PointNet2-Semantic3D) A re-implementation of PointNet++ using Open3D to enable real-time semantic segmentation of LIDAR point clouds.
+* [Open3D-PointNet:](https://github.com/intel-isl/Open3D-PointNet) A fork of PyTorch PointNet for point cloud classification and semantic segmentation compatible with Open3D.
+* [Open3D-PointNet++:](https://github.com/intel-isl/Open3D-PointNet2-Semantic3D) A re-implementation of PointNet++ using Open3D to enable real-time semantic segmentation of LIDAR point clouds.

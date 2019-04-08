@@ -33,7 +33,7 @@ date
 echo
 
 docker container exec -it -w /root ${CONTAINER_NAME} bash -c '\
-        git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
+        git clone --recursive https://github.com/intel-isl/Open3D.git open3d && \
         bash'
 echo
 

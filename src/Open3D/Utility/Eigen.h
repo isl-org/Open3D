@@ -38,7 +38,7 @@ typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 /// Use Eigen::DontAlign for matrices inside classes which are exposed in the
-/// Open3D headers https://github.com/IntelVCL/Open3D/issues/653
+/// Open3D headers https://github.com/intel-isl/Open3D/issues/653
 typedef Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Matrix6d_u;
 typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
 

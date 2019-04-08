@@ -7,7 +7,7 @@
     "private": true,
     "repository": {
         "type": "git",
-        "url": "https://github.com/IntelVCL/Open3D.git"
+        "url": "https://github.com/intel-isl/Open3D.git"
     },
     "keywords": [
         "jupyter",
