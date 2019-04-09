@@ -240,7 +240,6 @@ TEST(LineSet, OperatorAppend) {
     Rand(ls1.colors_, Zero3d, Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     geometry::LineSet ls(ls0);
-    cout << ls.points_.size() << endl;
     ls += ls1;
 
     EXPECT_EQ(2 * size, ls.points_.size());
