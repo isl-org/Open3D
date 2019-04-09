@@ -57,18 +57,16 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
     Rand(points, vmin, vmax, 0);
 
     open3d::Shape shape = {num_elements, 3};
-    auto points_cpu = open3d::Tensor::create(shape,
-                                open3d::DataType::FP_64,
-                                open3d::cuda::DeviceID::CPU);
+    auto points_cpu = open3d::Tensor::create(shape, open3d::DataType::FP_64,
+                                             open3d::cuda::DeviceID::CPU);
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = *static_pointer_cast<open3d::Points>(points_cpu);
     pc_cpu.points_ = points;
     auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
-    auto points_gpu = open3d::Tensor::create(shape,
-                                open3d::DataType::FP_64,
-                                open3d::cuda::DeviceID::GPU_00);
+    auto points_gpu = open3d::Tensor::create(shape, open3d::DataType::FP_64,
+                                             open3d::cuda::DeviceID::GPU_00);
 
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = *static_pointer_cast<open3d::Points>(points_gpu);
