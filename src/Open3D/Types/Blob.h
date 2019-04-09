@@ -127,8 +127,6 @@ struct Blob {
         // device data pointer
         T *d_data{};
 
-        inline int GPU_ID() { return cuda::DeviceID::GPU_ID(device_id); }
-
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) {
             if (cuda::DeviceID::CPU & device_id) return h_data[i];
