@@ -36,13 +36,13 @@ echo
 
 if [ "${3}" = "py2" ] || [ "${3}" = "py3" ]; then
     docker container exec -it ${CONTAINER_NAME} /bin/bash -c '\
-        git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
+        git clone --recursive https://github.com/intel-isl/Open3D.git open3d && \
         ./test.sh Release ${LINK_TYPE} $ENV_TYPE'
 elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
     # the conda settings in .bashrc only work with interactive shells
     # for this reason we need to explicitly activate conda here
     docker container exec -e CONDA_DIR="${CONDA_DIR}" -it ${CONTAINER_NAME} /bin/bash -c '\
-        git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
+        git clone --recursive https://github.com/intel-isl/Open3D.git open3d && \
         source ${CONDA_DIR}/bin/activate && \
         ./test.sh Release ${LINK_TYPE} $ENV_TYPE'
 fi

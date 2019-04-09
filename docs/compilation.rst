@@ -13,11 +13,11 @@ The basic tools needed are `git <https://git-scm.com/>`_,
 C++11, such as gcc 4.8+, Visual Studio 2015 update 3+, or XCode 8.0+. If Python
 binding is needed, make sure Python 2.7 or 3.5+ is installed.
 
-Download source code from the `repository <https://github.com/IntelVCL/Open3D>`_.
+Download source code from the `repository <https://github.com/intel-isl/Open3D>`_.
 
 .. code-block:: bash
 
-    git clone --recursive https://github.com/IntelVCL/Open3D
+    git clone --recursive https://github.com/intel-isl/Open3D
 
 .. _compilation_ubuntu:
 
@@ -200,7 +200,7 @@ To Install/uninstall the Open3D as a C++ library (headers and binaries):
 
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`create_cplusplus_project`, starting from
-`this example CMake file <https://github.com/IntelVCL/Open3D/tree/master/docs/_static/C%2B%2B>`_.
+`this example CMake file <https://github.com/intel-isl/Open3D/tree/master/docs/_static/C%2B%2B>`_.
 
 .. _compilation_osx:
 
@@ -340,7 +340,7 @@ shell:
     ``PYTHON_EXECUTABLE`` CMake variable) and the Python version for command
     line environment (type ``python -V``). They should match. If it is not,
     please follow :ref:`compilation_ubuntu_python_binding` in docs. In addition,
-    `python binding issue  <https://github.com/IntelVCL/Open3D/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22python+binding%22+>`_
+    `python binding issue  <https://github.com/intel-isl/Open3D/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22python+binding%22+>`_
     on Github repository has helpful notes from Open3D users.
 
 .. _compilation_options:
