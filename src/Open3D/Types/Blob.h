@@ -110,10 +110,6 @@ struct Blob {
                 cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
-        // allocate CPU memory and copy GPU memory, if any, to it.
-        void Port2CPU();
-        // allocate GPU memory and copy CPU memory, if any, to it.
-        void Port2GPU();
         // deallocate memory
         void Reset() {
             h_data.clear();
