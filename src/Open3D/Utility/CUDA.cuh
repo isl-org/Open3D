@@ -20,6 +20,8 @@ enum Type {
     GPU_05 = 1 << 5,
     GPU_06 = 1 << 6,
     GPU_07 = 1 << 7,
+    // TODO: 32 GPUs
+    // what if 100 GPUs
     CPU = 1 << 8
 };
 

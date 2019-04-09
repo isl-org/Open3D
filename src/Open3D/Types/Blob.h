@@ -27,6 +27,8 @@
 #pragma once
 
 #include <initializer_list>
+// #include <iostream>
+#include <memory>
 #include <vector>
 #include "Mat.h"
 
@@ -35,10 +37,21 @@
 #endif
 
 namespace open3d {
-// 1D tensor, row major
+
+// data set shape
+typedef struct _Shape {
+    size_t rows;
+    size_t cols;
+} Shape;
+
+// data set element type
+enum class DataType { FP_64 = 0, FP_32, INT_32 };
+
+class ComplexType {};
+
 template <typename V, typename T>
 struct Blob {
-    typedef struct _Type {
+    typedef struct _Type : ComplexType {
         _Type() {}
         _Type(const int &num_elements,
               const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU)
@@ -97,10 +110,6 @@ struct Blob {
                 cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
-        // allocate CPU memory and copy GPU memory, if any, to it.
-        void Port2CPU();
-        // allocate GPU memory and copy CPU memory, if any, to it.
-        void Port2GPU();
         // deallocate memory
         void Reset() {
             h_data.clear();
@@ -117,8 +126,6 @@ struct Blob {
         std::vector<V> h_data{};
         // device data pointer
         T *d_data{};
-
-        inline int GPU_ID() { return cuda::DeviceID::GPU_ID(device_id); }
 
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) {
@@ -486,4 +493,24 @@ typedef Blob2i Lines;
 typedef Blob3i Voxels;
 typedef Blob3i Triangles;
 typedef Blob2i CorrespondenceSet;
+
+class Tensor {
+public:
+    // Tensor(const Shape& shape, const DataType& type);
+    static std::shared_ptr<ComplexType> create(
+            const Shape &shape,
+            const DataType &type,
+            const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU) {
+        if (shape.cols == 3 && type == DataType::FP_64)
+            return std::make_shared<Blob3d>(shape.rows, device_id);
+
+        if (shape.cols == 3 && type == DataType::INT_32)
+            return std::make_shared<Blob3i>(shape.rows, device_id);
+
+        if (shape.cols == 2 && type == DataType::INT_32)
+            return std::make_shared<Blob2i>(shape.rows, device_id);
+
+        return NULL;
+    };
+};
 }  // namespace open3d
