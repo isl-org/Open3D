@@ -27,6 +27,8 @@
 #pragma once
 
 #include <initializer_list>
+// #include <iostream>
+#include <memory>
 #include <vector>
 #include "Mat.h"
 
@@ -501,18 +503,18 @@ typedef Blob2i CorrespondenceSet;
 class Tensor {
 public:
     // Tensor(const Shape& shape, const DataType& type);
-    static ComplexType *create(
+    static std::shared_ptr<ComplexType> create(
             const Shape &shape,
             const DataType &type,
             const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU) {
         if (shape.cols == 3 && type == DataType::FP_64)
-            return new Blob3d(shape.rows, device_id);
+            return std::make_shared<Blob3d>(shape.rows, device_id);
 
         if (shape.cols == 3 && type == DataType::INT_32)
-            return new Blob3i(shape.rows, device_id);
+            return std::make_shared<Blob3i>(shape.rows, device_id);
 
         if (shape.cols == 2 && type == DataType::INT_32)
-            return new Blob2i(shape.rows, device_id);
+            return std::make_shared<Blob2i>(shape.rows, device_id);
 
         return NULL;
     };
