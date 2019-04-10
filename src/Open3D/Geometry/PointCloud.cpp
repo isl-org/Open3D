@@ -63,6 +63,19 @@ Eigen::Vector3d PointCloud::GetMinBound() const {
 #endif
 }
 
+Eigen::Vector3d PointCloud::GetMaxBound() const {
+    if (!HasPoints()) return Eigen::Vector3d::Zero();
+
+#ifdef OPEN3D_USE_CUDA
+    if (cuda::DeviceID::CPU == points_.device_id)
+        return GetMaxBoundCPU();
+    else
+        return GetMaxBoundGPU();
+#else
+    return GetMaxBoundCPU();
+#endif
+}
+
 Eigen::Vector3d PointCloud::GetMinBoundCPU() const {
     auto itr_x = std::min_element(
             points_.begin(), points_.end(),
@@ -81,23 +94,6 @@ Eigen::Vector3d PointCloud::GetMinBoundCPU() const {
             });
 
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
-}
-
-Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
-    return Eigen::Vector3d::Zero();
-}
-
-Eigen::Vector3d PointCloud::GetMaxBound() const {
-    if (!HasPoints()) return Eigen::Vector3d::Zero();
-
-#ifdef OPEN3D_USE_CUDA
-    if (cuda::DeviceID::CPU == points_.device_id)
-        return GetMaxBoundCPU();
-    else
-        return GetMaxBoundGPU();
-#else
-    return GetMaxBoundCPU();
-#endif
 }
 
 Eigen::Vector3d PointCloud::GetMaxBoundCPU() const {
@@ -119,9 +115,17 @@ Eigen::Vector3d PointCloud::GetMaxBoundCPU() const {
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
+#ifdef OPEN3D_USE_CUDA
+
+Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
+    return Eigen::Vector3d::Zero();
+}
+
 Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
     return Eigen::Vector3d::Zero();
 }
+
+#endif
 
 void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     for (auto &point : points_) {
