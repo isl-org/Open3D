@@ -290,9 +290,9 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
-    auto output =
-            ComputeMeanAndCovarianceGPU(input.points_.d_data, input.points_.size(),
-                                  input.points_.device_id);
+    auto output = ComputeMeanAndCovarianceGPU(input.points_.d_data,
+                                              input.points_.size(),
+                                              input.points_.device_id);
 
     Vec3d meanCUDA = get<0>(output);
     Mat3d covarianceCUDA = get<1>(output);
