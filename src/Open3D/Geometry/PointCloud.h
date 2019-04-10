@@ -62,6 +62,8 @@ public:
     Eigen::Vector3d GetMinBoundCPU() const;
     Eigen::Vector3d GetMinBoundGPU() const;
     Eigen::Vector3d GetMaxBound() const override;
+    Eigen::Vector3d GetMaxBoundCPU() const;
+    Eigen::Vector3d GetMaxBoundGPU() const;
     void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
