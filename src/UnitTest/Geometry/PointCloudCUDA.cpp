@@ -43,10 +43,10 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 // using the Blob<...>::Type
 // ----------------------------------------------------------------------------
-TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
+TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance) {
     int nrGPUs = 0;
     cudaGetDeviceCount(&nrGPUs);
-    cout << "nr GPUs: " << nrGPUs << endl;
+    EXPECT_TRUE(0 < nrGPUs);
 
     int num_elements = 1 << 24;
 
@@ -58,29 +58,29 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA) {
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
-    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
+    auto output_cpu = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
-    auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
+    auto output_gpu = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
 
-    Eigen::Vector3d meanCPU = get<0>(outputCPU);
-    Eigen::Matrix3d covarianceCPU = get<1>(outputCPU);
+    Eigen::Vector3d mean_cpu = get<0>(output_cpu);
+    Eigen::Matrix3d covariance_cpu = get<1>(output_cpu);
 
-    Eigen::Vector3d meanGPU = get<0>(outputGPU);
-    Eigen::Matrix3d covarianceGPU = get<1>(outputGPU);
+    Eigen::Vector3d mean_gpu = get<0>(output_gpu);
+    Eigen::Matrix3d covariance_gpu = get<1>(output_gpu);
 
-    ExpectEQ(meanCPU, meanGPU);
-    ExpectEQ(covarianceCPU, covarianceGPU);
+    ExpectEQ(mean_cpu, mean_gpu);
+    ExpectEQ(covariance_cpu, covariance_gpu);
 }
 
 // ----------------------------------------------------------------------------
 // using the Tensor
 // ----------------------------------------------------------------------------
-TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA_Tensor) {
+TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance_Tensor) {
     int nrGPUs = 0;
     cudaGetDeviceCount(&nrGPUs);
-    cout << "nr GPUs: " << nrGPUs << endl;
+    EXPECT_TRUE(0 < nrGPUs);
 
     size_t num_elements = 1 << 24;
 
@@ -97,7 +97,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA_Tensor) {
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = *static_pointer_cast<open3d::Points>(points_cpu);
     pc_cpu.points_ = points;
-    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
+    auto output_cpu = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
     auto points_gpu = open3d::Tensor::create(shape, open3d::DataType::FP_64,
                                              open3d::cuda::DeviceID::GPU_00);
@@ -105,16 +105,16 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovarianceCUDA_Tensor) {
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = *static_pointer_cast<open3d::Points>(points_gpu);
     pc_gpu.points_ = points;
-    auto outputGPU = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
+    auto output_gpu = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
 
-    Eigen::Vector3d meanCPU = get<0>(outputCPU);
-    Eigen::Matrix3d covarianceCPU = get<1>(outputCPU);
+    Eigen::Vector3d mean_cpu = get<0>(output_cpu);
+    Eigen::Matrix3d covariance_cpu = get<1>(output_cpu);
 
-    Eigen::Vector3d meanGPU = get<0>(outputGPU);
-    Eigen::Matrix3d covarianceGPU = get<1>(outputGPU);
+    Eigen::Vector3d mean_gpu = get<0>(output_gpu);
+    Eigen::Matrix3d covariance_gpu = get<1>(output_gpu);
 
-    ExpectEQ(meanCPU, meanGPU);
-    ExpectEQ(covarianceCPU, covarianceGPU);
+    ExpectEQ(mean_cpu, mean_gpu);
+    ExpectEQ(covariance_cpu, covariance_gpu);
 }
 
 #endif
