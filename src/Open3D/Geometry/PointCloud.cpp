@@ -311,7 +311,7 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     // allocate temporary device memory
     double *d_cumulants = NULL;
     status = cuda::AllocateDeviceMemory(&d_cumulants, outputSize, device_id);
-    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:01", status);
+    cuda::DebugInfo("ComputePointCloudMeanAndCovarianceGPU:01", status);
     if (cudaSuccess != status) return default_output;
 
     // execute on GPU
@@ -321,18 +321,18 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     cudaSetDevice(gpu_id);
     status = meanAndCovarianceAccumulatorHelper(gpu_id, d_points, nrPoints,
                                                 d_cumulants);
-    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:02", status);
+    cuda::DebugInfo("ComputePointCloudMeanAndCovarianceGPU:02", status);
     if (cudaSuccess != status) return default_output;
 
     // Copy results to the host
     status = cuda::CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
                                      outputSize);
-    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:03", status);
+    cuda::DebugInfo("ComputePointCloudMeanAndCovarianceGPU:03", status);
     if (cudaSuccess != status) return default_output;
 
     // Free temporary device memory
     status = cuda::ReleaseDeviceMemory(&d_cumulants);
-    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:04", status);
+    cuda::DebugInfo("ComputePointCloudMeanAndCovarianceGPU:04", status);
     if (cudaSuccess != status) return default_output;
 
     // initialize with zeros
