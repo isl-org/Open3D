@@ -239,10 +239,9 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input);
 
 #ifdef OPEN3D_USE_CUDA
 
-// compute mean and covariance on the GPU using CUDA
-std::tuple<open3d::Vec3d, open3d::Mat3d> ComputeMeanAndCovarianceGPU(
-        double *const d_points,
-        const uint &nrPoints,
-        const open3d::cuda::DeviceID::Type &device_id);
+cudaError_t meanAndCovarianceAccumulatorHelper(const int &gpu_id,
+                                               double *const d_points,
+                                               const uint &nrPoints,
+                                               double *const d_cumulants);
 
 #endif  // OPEN3D_USE_CUDA

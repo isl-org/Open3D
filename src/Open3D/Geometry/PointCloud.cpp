@@ -37,6 +37,7 @@ using namespace std;
 #ifdef OPEN3D_USE_CUDA
 #include "Open3D/Utility/CUDA.cuh"
 #endif
+#include "Open3D/Types/Mat.h"
 
 namespace open3d {
 namespace geometry {
@@ -290,18 +291,69 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
-    auto output = ComputeMeanAndCovarianceGPU(input.points_.d_data,
-                                              input.points_.size(),
-                                              input.points_.device_id);
+    auto default_output = std::make_tuple(Eigen::Vector3d::Zero(),
+                                          Eigen::Matrix3d::Identity());
 
-    Vec3d meanCUDA = get<0>(output);
-    Mat3d covarianceCUDA = get<1>(output);
+    size_t nrPoints = input.points_.size();
+    double *d_points = input.points_.d_data;
+    cuda::DeviceID::Type device_id = input.points_.device_id;
 
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d covariance;
+    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
+    cout << "Running on " << cuda::DeviceInfo(gpu_id);
 
-    memcpy(&mean, &meanCUDA, Vec3d::Size * sizeof(double));
-    memcpy(&covariance, &covarianceCUDA, Mat3d::Size * sizeof(double));
+    cudaError_t status = cudaSuccess;
+
+    // host memory
+    vector<Eigen::Matrix3d> h_cumulants(nrPoints);
+
+    int outputSize = h_cumulants.size() * 9;  // Mat3d::Size;
+
+    // allocate temporary device memory
+    double *d_cumulants = NULL;
+    status = cuda::AllocateDeviceMemory(&d_cumulants, outputSize, device_id);
+    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:01", status);
+    if (cudaSuccess != status) return default_output;
+
+    // execute on GPU
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (nrPoints + threadsPerBlock - 1) / threadsPerBlock;
+
+    cudaSetDevice(gpu_id);
+    status = meanAndCovarianceAccumulatorHelper(gpu_id, d_points, nrPoints,
+                                                d_cumulants);
+    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:02", status);
+    if (cudaSuccess != status) return default_output;
+
+    // Copy results to the host
+    status = cuda::CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0],
+                                     outputSize);
+    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:03", status);
+    if (cudaSuccess != status) return default_output;
+
+    // Free temporary device memory
+    status = cuda::ReleaseDeviceMemory(&d_cumulants);
+    cuda::DebugInfo("ComputeMeanAndCovarianceGPU:04", status);
+    if (cudaSuccess != status) return default_output;
+
+    // initialize with zeros
+    Eigen::Matrix3d cumulant = Eigen::Matrix3d::Zero();
+    for (int i = 0; i < h_cumulants.size(); i++) cumulant += h_cumulants[i];
+
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    mean(0) = cumulant(0);
+    mean(1) = cumulant(1);
+    mean(2) = cumulant(2);
+
+    Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
+    covariance(0, 0) = cumulant(3) - cumulant(0) * cumulant(0);
+    covariance(1, 1) = cumulant(6) - cumulant(1) * cumulant(1);
+    covariance(2, 2) = cumulant(8) - cumulant(2) * cumulant(2);
+    covariance(0, 1) = cumulant(4) - cumulant(0) * cumulant(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulant(5) - cumulant(0) * cumulant(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulant(7) - cumulant(1) * cumulant(2);
+    covariance(2, 1) = covariance(1, 2);
 
     return std::make_tuple(mean, covariance);
 }
