@@ -95,12 +95,8 @@ std::tuple<Vec3d, Mat3d> ComputeMeanAndCovarianceGPU(
         const uint& nrPoints,
         const cuda::DeviceID::Type& device_id) {
     Vec3d mean{};
-    Mat3d covariance{};
+    Mat3d covariance = Mat3d::Identity();
     auto default_output = std::make_tuple(mean, covariance);
-
-    covariance[0][0] = 1.0;
-    covariance[1][1] = 1.0;
-    covariance[2][2] = 1.0;
 
     int gpu_id = cuda::DeviceID::GPU_ID(device_id);
     cout << "Running on " << cuda::DeviceInfo(gpu_id);
