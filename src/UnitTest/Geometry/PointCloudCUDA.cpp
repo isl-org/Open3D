@@ -43,6 +43,33 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 // using the Blob<...>::Type
 // ----------------------------------------------------------------------------
+TEST(PointCloudCUDA, GetMinBound) {
+    int nrGPUs = 0;
+    cudaGetDeviceCount(&nrGPUs);
+    EXPECT_TRUE(0 < nrGPUs);
+
+    int num_elements = 1 << 24;
+
+    Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
+    Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand(points, vmin, vmax, 0);
+
+    geometry::PointCloud pc_cpu;
+    pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    auto output_cpu = pc_cpu.GetMinBound();
+
+    geometry::PointCloud pc_gpu;
+    pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    auto output_gpu = pc_gpu.GetMinBound();
+
+    ExpectEQ(output_cpu, output_gpu);
+}
+
+// ----------------------------------------------------------------------------
+// using the Blob<...>::Type
+// ----------------------------------------------------------------------------
 TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance) {
     int nrGPUs = 0;
     cudaGetDeviceCount(&nrGPUs);
