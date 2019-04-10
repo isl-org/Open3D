@@ -52,9 +52,9 @@ __device__ void accumulate(Mat3d* c, Vec3d p) {
 }
 
 // ---------------------------------------------------------------------------
-// cumulant kernel
+// meanAndCovarianceAccumulator kernel
 // ---------------------------------------------------------------------------
-__global__ void cumulant(double* data, uint nrPoints, double* output) {
+__global__ void meanAndCovarianceAccumulator(double* data, uint nrPoints, double* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     Vec3d* points = (Vec3d*)data;
@@ -101,7 +101,7 @@ std::tuple<Vec3d, Mat3d> ComputeMeanAndCovarianceGPU(
     int blocksPerGrid = (nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
     cudaSetDevice(gpu_id);
-    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints,
+    meanAndCovarianceAccumulator<<<blocksPerGrid, threadsPerBlock>>>(d_points, nrPoints,
                                                  d_cumulants);
     status = cudaGetLastError();
     cuda::DebugInfo("ComputeMeanAndCovarianceGPU:02", status);
