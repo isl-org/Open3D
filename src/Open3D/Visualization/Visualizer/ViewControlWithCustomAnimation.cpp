@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControlWithCustomAnimation.h"
+#include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
 
-#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
+#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
 
 namespace open3d {
 namespace visualization {

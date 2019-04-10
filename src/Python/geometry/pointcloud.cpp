@@ -24,14 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/geometry/geometry_trampoline.h"
-#include "Python/geometry/geometry.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Geometry/RGBDImage.h"
 #include "Python/docstring.h"
-
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Geometry/Image.h>
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Camera/PinholeCameraIntrinsic.h>
+#include "Python/geometry/geometry.h"
+#include "Python/geometry/geometry_trampoline.h"
 
 using namespace open3d;
 

@@ -27,11 +27,11 @@
 #pragma once
 
 #include <Python/open3d_pybind.h>
-#include <Open3D/Geometry/Geometry.h>
-#include <Open3D/Geometry/Geometry2D.h>
-#include <Open3D/Geometry/Geometry3D.h>
-#include <Open3D/Geometry/TriangleMesh.h>
 
+#include "Open3D/Geometry/Geometry.h"
+#include "Open3D/Geometry/Geometry2D.h"
+#include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Python/geometry/geometry.h"
 
 using namespace open3d;

@@ -27,9 +27,8 @@
 #pragma once
 
 #include <iostream>
-
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace unit_test {
 // Class for "generating" data.

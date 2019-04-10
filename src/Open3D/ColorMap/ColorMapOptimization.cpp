@@ -24,19 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ColorMapOptimization.h"
+#include "Open3D/ColorMap/ColorMapOptimization.h"
 
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
-#include <Open3D/ColorMap/ColorMapOptimizationJacobian.h>
-#include <Open3D/ColorMap/ImageWarpingField.h>
-#include <Open3D/ColorMap/TriangleMeshAndImageUtilities.h>
-#include <Open3D/Geometry/Image.h>
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/Utility/Console.h>
-#include <Open3D/Utility/Eigen.h>
-#include <Open3D/IO/ClassIO/ImageWarpingFieldIO.h>
-#include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/ColorMap/ColorMapOptimizationJacobian.h"
+#include "Open3D/ColorMap/ImageWarpingField.h"
+#include "Open3D/ColorMap/TriangleMeshAndImageUtilities.h"
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/IO/ClassIO/ImageWarpingFieldIO.h"
+#include "Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Eigen.h"
 
 namespace open3d {
 

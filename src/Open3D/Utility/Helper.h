@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <tuple>
 #include <functional>
-#include <vector>
 #include <string>
+#include <tuple>
+#include <vector>
 
 namespace open3d {
 namespace utility {

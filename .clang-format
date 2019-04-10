@@ -8,3 +8,4 @@ SortIncludes: false
 ContinuationIndentWidth: 8
 AccessModifierOffset: -4
 BinPackParameters: false
+SortIncludes: true

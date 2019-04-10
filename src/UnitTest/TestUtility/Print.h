@@ -26,11 +26,10 @@
 
 #pragma once
 
-#include <iostream>
-#include <iomanip>
-#include <vector>
-
 #include <Eigen/Core>
+#include <iomanip>
+#include <iostream>
+#include <vector>
 
 namespace unit_test {
 // tab size used for formatting ref data.

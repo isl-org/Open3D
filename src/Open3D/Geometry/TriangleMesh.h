@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include <vector>
-#include <unordered_set>
-#include <memory>
 #include <Eigen/Core>
+#include <memory>
+#include <unordered_set>
+#include <vector>
 
-#include <Open3D/Geometry/Geometry3D.h>
+#include "Open3D/Geometry/Geometry3D.h"
 
 namespace open3d {
 namespace geometry {

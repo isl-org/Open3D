@@ -24,14 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <string>
-#include <unordered_map>
-#include <tuple>
-#include <unordered_set>
-#include <sstream>
-#include <regex>
-
 #include "Python/docstring.h"
+
+#include <regex>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {

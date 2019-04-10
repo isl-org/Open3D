@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <tuple>
-#include <vector>
 #include <Eigen/Core>
 #include <Eigen/StdVector>
+#include <tuple>
+#include <vector>
 
 namespace Eigen {
 

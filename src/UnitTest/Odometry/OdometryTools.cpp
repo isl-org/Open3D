@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "OdometryTools.h"
+#include "UnitTest/Odometry/OdometryTools.h"
 
 using namespace open3d;
 using namespace std;

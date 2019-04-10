@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
+#include "Open3D/Visualization/Visualizer/Visualizer.h"
 
 namespace open3d {
 namespace visualization {

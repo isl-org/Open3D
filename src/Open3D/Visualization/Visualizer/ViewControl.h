@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include <Open3D/Geometry/Geometry.h>
-#include <Open3D/Camera/PinholeCameraParameters.h>
-#include <Open3D/Visualization/Visualizer/ViewParameters.h>
-#include <Open3D/Visualization/Utility/BoundingBox.h>
-#include <Open3D/Visualization/Utility/GLHelper.h>
+#include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/Geometry.h"
+#include "Open3D/Visualization/Utility/BoundingBox.h"
+#include "Open3D/Visualization/Utility/GLHelper.h"
+#include "Open3D/Visualization/Visualizer/ViewParameters.h"
 
 namespace open3d {
 namespace visualization {

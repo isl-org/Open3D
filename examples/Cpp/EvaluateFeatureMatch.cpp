@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <flann/flann.hpp>
 #include <iostream>
 #include <memory>
 
-#include <flann/flann.hpp>
-
-#include <Open3D/Open3D.h>
+#include "Open3D/Open3D.h"
 
 class KDTreeFlannFeature {
 public:

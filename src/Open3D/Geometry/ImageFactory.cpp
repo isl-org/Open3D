@@ -24,9 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Image.h"
-
-#include <Open3D/Camera/PinholeCameraIntrinsic.h>
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Geometry/Image.h"
 
 namespace open3d {
 namespace geometry {

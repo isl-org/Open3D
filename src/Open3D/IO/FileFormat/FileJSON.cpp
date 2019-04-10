@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
-
+#include <json/json.h>
 #include <fstream>
 #include <sstream>
-#include <json/json.h>
-#include <Open3D/Utility/Console.h>
+
+#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 

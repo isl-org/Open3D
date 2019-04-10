@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "IJsonConvertible.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 #include <json/json.h>
 

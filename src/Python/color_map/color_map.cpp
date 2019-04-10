@@ -26,10 +26,10 @@
 
 #include "Python/color_map/color_map.h"
 
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/ColorMap/ColorMapOptimization.h>
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/ColorMap/ColorMapOptimization.h"
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Python/docstring.h"
 
 using namespace open3d;

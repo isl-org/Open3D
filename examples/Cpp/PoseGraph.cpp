@@ -26,9 +26,9 @@
 
 #include <cstdio>
 
-#include <Open3D/Open3D.h>
-#include <Open3D/Registration/PoseGraph.h>
-#include <Open3D/Registration/GlobalOptimization.h>
+#include "Open3D/Open3D.h"
+#include "Open3D/Registration/GlobalOptimization.h"
+#include "Open3D/Registration/PoseGraph.h"
 
 using namespace open3d;
 
