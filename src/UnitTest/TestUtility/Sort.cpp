@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Sort.h"
+#include "UnitTest/TestUtility/Sort.h"
 
 using namespace std;
 

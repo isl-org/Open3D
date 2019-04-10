@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Print.h"
+#include "UnitTest/TestUtility/Print.h"
 
 #include <iostream>
 

@@ -24,12 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ImageWarpingFieldIO.h"
+#include "Open3D/IO/ClassIO/ImageWarpingFieldIO.h"
 
 #include <unordered_map>
-#include <Open3D/Utility/Console.h>
-#include <Open3D/Utility/FileSystem.h>
-#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
+
+#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 

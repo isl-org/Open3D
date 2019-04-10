@@ -24,22 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FileSystem.h"
+#include "Open3D/Utility/FileSystem.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #ifdef WINDOWS
-#include <dirent/dirent.h>
 #include <direct.h>
+#include <dirent/dirent.h>
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
 #else
-#include <sys/stat.h>
 #include <dirent.h>
-#include <unistd.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 namespace open3d {

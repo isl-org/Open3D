@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <string>
-
-#include <Eigen/Core>
+#include <GL/glew.h>  // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
+#include <Eigen/Core>
+#include <string>
 
 namespace open3d {
 namespace visualization {

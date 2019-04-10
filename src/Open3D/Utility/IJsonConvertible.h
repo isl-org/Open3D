@@ -27,7 +27,8 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Open3D/Utility/Eigen.h>
+
+#include "Open3D/Utility/Eigen.h"
 
 namespace Json {
 class Value;

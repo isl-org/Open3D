@@ -26,11 +26,12 @@
 
 #pragma once
 
-#include <vector>
-#include <tuple>
 #include <Eigen/Core>
-#include <Open3D/Utility/IJsonConvertible.h>
-#include <Open3D/Visualization/Visualizer/ViewParameters.h>
+#include <tuple>
+#include <vector>
+
+#include "Open3D/Utility/IJsonConvertible.h"
+#include "Open3D/Visualization/Visualizer/ViewParameters.h"
 
 namespace open3d {
 namespace visualization {

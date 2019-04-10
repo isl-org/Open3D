@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <vector>
+#include <Eigen/Core>
 #include <memory>
 #include <string>
-#include <Eigen/Core>
+#include <vector>
 
 namespace open3d {
 

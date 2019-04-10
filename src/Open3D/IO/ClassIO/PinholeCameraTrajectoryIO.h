@@ -27,7 +27,8 @@
 #pragma once
 
 #include <string>
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
+
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
 
 namespace open3d {
 namespace io {

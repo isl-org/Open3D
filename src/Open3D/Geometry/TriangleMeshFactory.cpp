@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TriangleMesh.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace geometry {

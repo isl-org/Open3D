@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <Open3D/Geometry/Image.h>
-#include <Open3D/Visualization/Shader/ShaderWrapper.h>
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Visualization/Shader/ShaderWrapper.h"
 
 namespace open3d {
 namespace visualization {

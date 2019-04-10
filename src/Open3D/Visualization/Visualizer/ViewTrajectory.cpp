@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewTrajectory.h"
+#include "Open3D/Visualization/Visualizer/ViewTrajectory.h"
 
-#include <Eigen/Dense>
 #include <json/json.h>
-#include <Open3D/Utility/Console.h>
+#include <Eigen/Dense>
+
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace visualization {

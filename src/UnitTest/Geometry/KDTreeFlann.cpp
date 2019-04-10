@@ -24,11 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TestUtility/UnitTest.h"
-
+#include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Geometry/KDTreeFlann.h"
+#include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
 using namespace open3d;

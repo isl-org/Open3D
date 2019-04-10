@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TriangleMeshAndImageUtilities.h"
+#include "Open3D/ColorMap/TriangleMeshAndImageUtilities.h"
 
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
-#include <Open3D/ColorMap/ImageWarpingField.h>
-#include <Open3D/Geometry/Image.h>
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Geometry/TriangleMesh.h>
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/ColorMap/ImageWarpingField.h"
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace color_map {

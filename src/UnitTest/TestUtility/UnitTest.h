@@ -36,9 +36,9 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "Print.h"
-#include "Rand.h"
-#include "Sort.h"
+#include "UnitTest/TestUtility/Print.h"
+#include "UnitTest/TestUtility/Rand.h"
+#include "UnitTest/TestUtility/Sort.h"
 
 namespace unit_test {
 // thresholds for comparing floating point values

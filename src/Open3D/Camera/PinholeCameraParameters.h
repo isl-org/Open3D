@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include <Open3D/Camera/PinholeCameraIntrinsic.h>
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
 
 namespace open3d {
 namespace camera {

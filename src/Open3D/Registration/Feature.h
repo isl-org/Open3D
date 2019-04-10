@@ -26,10 +26,11 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include <Eigen/Core>
-#include <Open3D/Geometry/KDTreeSearchParam.h>
+#include <memory>
+#include <vector>
+
+#include "Open3D/Geometry/KDTreeSearchParam.h"
 
 namespace open3d {
 

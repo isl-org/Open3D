@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Eigen.h"
-#include <Eigen/Sparse>
+#include "Open3D/Utility/Eigen.h"
 
 #include <Eigen/Geometry>
-#include <Open3D/Utility/Console.h>
+#include <Eigen/Sparse>
+
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace utility {

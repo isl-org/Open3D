@@ -24,11 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/geometry/geometry_trampoline.h"
-#include "Python/geometry/geometry.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Python/docstring.h"
-
-#include <Open3D/Geometry/TriangleMesh.h>
+#include "Python/geometry/geometry.h"
+#include "Python/geometry/geometry_trampoline.h"
 
 using namespace open3d;
 

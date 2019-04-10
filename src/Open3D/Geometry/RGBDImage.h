@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <Open3D/Geometry/Geometry2D.h>
-#include <Open3D/Geometry/Image.h>
+#include "Open3D/Geometry/Geometry2D.h"
+#include "Open3D/Geometry/Image.h"
 
 namespace open3d {
 namespace geometry {

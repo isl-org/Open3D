@@ -29,8 +29,8 @@
 #include <Eigen/Core>
 #include <unordered_map>
 
-#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace geometry {
