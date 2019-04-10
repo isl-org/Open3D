@@ -50,9 +50,20 @@ void PointCloud::Clear() {
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
 
 Eigen::Vector3d PointCloud::GetMinBound() const {
-    if (!HasPoints()) {
+    if (!HasPoints())
         return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
+
+#ifdef OPEN3D_USE_CUDA
+    if (cuda::DeviceID::CPU == points_.device_id)
+        return GetMinBoundCPU();
+    else
+        return GetMinBoundGPU();
+#else
+        return GetMinBoundCPU();
+#endif
+}
+
+Eigen::Vector3d PointCloud::GetMinBoundCPU() const {
     auto itr_x = std::min_element(
             points_.begin(), points_.end(),
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
@@ -68,7 +79,12 @@ Eigen::Vector3d PointCloud::GetMinBound() const {
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a(2) < b(2);
             });
+
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+}
+
+Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
+        return Eigen::Vector3d(0.0, 0.0, 0.0);
 }
 
 Eigen::Vector3d PointCloud::GetMaxBound() const {

@@ -59,6 +59,8 @@ public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
+    Eigen::Vector3d GetMinBoundCPU() const;
+    Eigen::Vector3d GetMinBoundGPU() const;
     Eigen::Vector3d GetMaxBound() const override;
     void Transform(const Eigen::Matrix4d &transformation) override;
 
