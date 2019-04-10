@@ -202,7 +202,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     if (cuda::DeviceID::CPU == input.points_.device_id)
         return ComputePointCloudMeanAndCovarianceCPU(input);
     else
-        return ComputePointCloudMeanAndCovarianceCUDA(input);
+        return ComputePointCloudMeanAndCovarianceGPU(input);
 #else
     return ComputePointCloudMeanAndCovarianceCPU(input);
 #endif
@@ -289,7 +289,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 #ifdef OPEN3D_USE_CUDA
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
-ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
+ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     auto output =
             meanAndCovarianceCUDA(input.points_.d_data, input.points_.size(),
                                   input.points_.device_id);

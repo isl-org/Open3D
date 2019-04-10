@@ -230,7 +230,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 /// Function to compute the mean and covariance matrix
 /// of an \param input point cloud
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
-ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input);
+ComputePointCloudMeanAndCovarianceGPU(PointCloud &input);
 
 #endif  // OPEN3D_USE_CUDA
 
