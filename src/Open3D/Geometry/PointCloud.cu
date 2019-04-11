@@ -71,7 +71,7 @@ __global__ void meanAndCovarianceAccumulator(double* data,
 }
 
 // ---------------------------------------------------------------------------
-// helper function calls the cumulant CUDA kernel
+// call the meanAndCovarianceAccumulator CUDA kernel
 // ---------------------------------------------------------------------------
 cudaError_t meanAndCovarianceAccumulatorHelper(const int& gpu_id,
                                                double* const d_points,
@@ -83,7 +83,39 @@ cudaError_t meanAndCovarianceAccumulatorHelper(const int& gpu_id,
     cudaSetDevice(gpu_id);
     meanAndCovarianceAccumulator<<<blocksPerGrid, threadsPerBlock>>>(
             d_points, nr_points, d_cumulants);
-    cudaDeviceSynchronize();
+
+    return cudaGetLastError();
+}
+
+// ---------------------------------------------------------------------------
+// transform kernel
+// ---------------------------------------------------------------------------
+__global__ void transform(double* data, uint num_elements, Mat4d t) {
+    int gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    Vec3d* points = (Vec3d*)data;
+    Vec3d v = points[gid];
+
+    t[0][0] * v[0] + t[0][1] * v[1] + t[0][2] * v[2] + t[0][3] * 1.0;
+    t[1][0] * v[0] + t[1][1] * v[1] + t[1][2] * v[2] + t[1][3] * 1.0;
+    t[2][0] * v[0] + t[2][1] * v[1] + t[2][2] * v[2] + t[2][3] * 1.0;
+    t[3][0] * v[0] + t[3][1] * v[1] + t[3][2] * v[2] + t[3][3] * 1.0;
+
+    points[gid] = v;
+}
+
+// ---------------------------------------------------------------------------
+// call the transform CUDA kernel
+// ---------------------------------------------------------------------------
+cudaError_t transformHelper(const int& gpu_id,
+                            double* data,
+                            uint num_elements,
+                            Mat4d t) {
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (num_elements + threadsPerBlock - 1) / threadsPerBlock;
+
+    cudaSetDevice(gpu_id);
+    transform<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, t);
 
     return cudaGetLastError();
 }
