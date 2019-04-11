@@ -93,6 +93,35 @@ TEST(PointCloudCUDA, GetMaxBound) {
 }
 
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+TEST(PointCloudCUDA, Transform) {
+    int nrGPUs = 0;
+    cudaGetDeviceCount(&nrGPUs);
+    EXPECT_TRUE(0 < nrGPUs);
+
+    Eigen::Matrix4d transformation = Eigen::Matrix4d::Random();
+
+    int num_elements = 10;
+
+    Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
+    Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand(points, vmin, vmax, 0);
+
+    geometry::PointCloud pc_cpu;
+    pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_cpu.Transform(transformation);
+
+    geometry::PointCloud pc_gpu;
+    pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.Transform(transformation);
+
+    // ExpectEQ(pc_cpu.points_.h_data, pc_gpu.points_.d_data);
+    // EXPECT_TRUE(pc_cpu.points_ == pc_gpu.points_);
+}
+
+// ----------------------------------------------------------------------------
 // using the Blob<...>::Type
 // ----------------------------------------------------------------------------
 TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance) {
