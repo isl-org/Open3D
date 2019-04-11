@@ -67,6 +67,10 @@ public:
     Eigen::Vector3d GetMaxBoundGPU() const;
 #endif
     void Transform(const Eigen::Matrix4d &transformation) override;
+    void TransformCPU(const Eigen::Matrix4d &transformation);
+#ifdef OPEN3D_USE_CUDA
+    void TransformGPU(const Eigen::Matrix4d &transformation);
+#endif
 
 public:
     PointCloud &operator+=(const PointCloud &cloud);

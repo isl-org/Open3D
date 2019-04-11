@@ -128,6 +128,17 @@ Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
 #endif
 
 void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
+#ifdef OPEN3D_USE_CUDA
+    if (cuda::DeviceID::CPU == points_.device_id)
+        return TransformCPU(transformation);
+    else
+        return TransformGPU(transformation);
+#else
+        return TransformCPU(transformation);
+#endif
+}
+
+void PointCloud::TransformCPU(const Eigen::Matrix4d &transformation) {
     for (auto &point : points_) {
         Eigen::Vector4d new_point =
                 transformation *
@@ -141,6 +152,13 @@ void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
         normal = new_normal.block<3, 1>(0, 0);
     }
 }
+
+#ifdef OPEN3D_USE_CUDA
+
+void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
+}
+
+#endif
 
 PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     // We do not use std::vector::insert to combine std::vector because it will
