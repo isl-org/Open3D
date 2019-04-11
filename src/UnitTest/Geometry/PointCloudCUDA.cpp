@@ -109,15 +109,21 @@ TEST(PointCloudCUDA, Transform) {
     vector<Eigen::Vector3d> points(num_elements);
     Rand(points, vmin, vmax, 0);
 
+    vector<Eigen::Vector3d> normals(num_elements);
+    Rand(points, vmin, vmax, 1);
+
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_cpu.normals_ = open3d::Points(normals, open3d::cuda::DeviceID::CPU);
     pc_cpu.Transform(transformation);
 
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.normals_ = open3d::Points(normals, open3d::cuda::DeviceID::GPU_00);
     pc_gpu.Transform(transformation);
 
     EXPECT_TRUE(pc_cpu.points_ == pc_gpu.points_);
+    EXPECT_TRUE(pc_cpu.normals_ == pc_gpu.normals_);
 }
 
 // ----------------------------------------------------------------------------
