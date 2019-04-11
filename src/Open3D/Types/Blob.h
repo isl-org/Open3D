@@ -136,6 +136,34 @@ struct Blob {
             if (cuda::DeviceID::CPU & device_id) return h_data[i];
         }
 
+        // compare contents for equality
+        inline bool operator== (const _Type& r) {
+            if (num_elements != r.num_elements)
+                return false;
+
+            // host-host
+            if ((cuda::DeviceID::CPU & device_id) && (cuda::DeviceID::CPU & r.device_id))
+                return h_data == r.h_data;
+
+            // host-device
+            if ((cuda::DeviceID::CPU & device_id) && (cuda::DeviceID::CPU != r.device_id))
+                return false;
+
+            // device-host
+            if ((cuda::DeviceID::CPU != device_id) && (cuda::DeviceID::CPU & r.device_id))
+                return false;
+
+            // device-device
+            if ((cuda::DeviceID::CPU != device_id) && (cuda::DeviceID::CPU != r.device_id))
+                return false;
+
+            return false;
+        }
+        // compare contents for inequality
+        inline bool operator!= (const _Type& r) {
+            return !(*this == r);
+        }
+
         // copy from another Blob
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(const _Type &t) {

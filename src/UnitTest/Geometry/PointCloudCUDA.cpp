@@ -117,8 +117,7 @@ TEST(PointCloudCUDA, Transform) {
     pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
     pc_gpu.Transform(transformation);
 
-    // ExpectEQ(pc_cpu.points_.h_data, pc_gpu.points_.d_data);
-    // EXPECT_TRUE(pc_cpu.points_ == pc_gpu.points_);
+    EXPECT_TRUE(pc_cpu.points_ == pc_gpu.points_);
 }
 
 // ----------------------------------------------------------------------------
