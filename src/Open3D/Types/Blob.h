@@ -64,11 +64,11 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (cuda::DeviceID::CPU & device_id)
+            if (OnCPU())
                 memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
-            if (cuda::DeviceID::CPU != device_id)
+            if (OnGPU())
                 cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
         }
         // move constructor
@@ -87,11 +87,11 @@ struct Blob {
             Initialize();
 
             // init host data
-            if (cuda::DeviceID::CPU & device_id)
+            if (OnCPU())
                 memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // init device data
-            if (cuda::DeviceID::CPU != device_id)
+            if (OnGPU())
                 cuda::CopyHst2DevMemory((const double *const)v.data(), d_data,
                                         num_of_Ts());
         }
@@ -103,10 +103,10 @@ struct Blob {
             this->num_elements = num_elements;
             this->device_id = device_id;
 
-            if ((0 == h_data.size()) && (cuda::DeviceID::CPU & device_id))
+            if ((0 == h_data.size()) && (OnCPU()))
                 h_data = std::vector<V>(num_elements);
 
-            if ((NULL == d_data) && (cuda::DeviceID::CPU != device_id))
+            if ((NULL == d_data) && (OnGPU()))
                 cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
         }
         void Initialize() { Initialize(num_elements, device_id); }
@@ -127,13 +127,22 @@ struct Blob {
         // device data pointer
         T *d_data{};
 
+        // return true if the device_id includes the CPU.
+        inline bool OnCPU() const {
+            return cuda::DeviceID::CPU & device_id;
+        }
+        // return true if the device_id matches with one of the GPUs.
+        inline bool OnGPU() const {
+            return cuda::DeviceID::CPU != device_id;
+        }
+
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) {
-            if (cuda::DeviceID::CPU & device_id) return h_data[i];
+            if (OnCPU()) return h_data[i];
         }
         // subscript operator: readonly, host side only
         inline const V &operator[](const uint &i) const {
-            if (cuda::DeviceID::CPU & device_id) return h_data[i];
+            if (OnCPU()) return h_data[i];
         }
 
         // compare contents for equality
@@ -142,19 +151,19 @@ struct Blob {
                 return false;
 
             // host-host
-            if ((cuda::DeviceID::CPU & device_id) && (cuda::DeviceID::CPU & r.device_id))
+            if (OnCPU() && r.OnCPU())
                 return h_data == r.h_data;
 
             // host-device
-            if ((cuda::DeviceID::CPU & device_id) && (cuda::DeviceID::CPU != r.device_id))
+            if (OnCPU() && r.OnGPU())
                 return false;
 
             // device-host
-            if ((cuda::DeviceID::CPU != device_id) && (cuda::DeviceID::CPU & r.device_id))
+            if (OnGPU() && r.OnCPU())
                 return false;
 
             // device-device
-            if ((cuda::DeviceID::CPU != device_id) && (cuda::DeviceID::CPU != r.device_id))
+            if (OnGPU() && r.OnGPU())
                 return false;
 
             return false;
@@ -175,11 +184,11 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (cuda::DeviceID::CPU & device_id)
+            if (OnCPU())
                 memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
-            if (cuda::DeviceID::CPU != device_id)
+            if (OnGPU())
                 cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
 
             return *this;
@@ -193,12 +202,12 @@ struct Blob {
             device_id = t.device_id;
 
             // move host data
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 h_data = std::move(t.h_data);
             }
 
             // move device data
-            if (cuda::DeviceID::CPU != device_id) {
+            if (OnGPU()) {
                 d_data = t.d_data;
                 t.d_data = NULL;
             }
@@ -221,11 +230,11 @@ struct Blob {
             Initialize();
 
             // initialize host memory
-            if (cuda::DeviceID::CPU & device_id)
+            if (OnCPU())
                 memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
-            if (cuda::DeviceID::CPU != device_id)
+            if (OnGPU())
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
                                         num_of_Ts());
 
@@ -245,11 +254,11 @@ struct Blob {
             Initialize();
 
             // initialize host memory
-            if (cuda::DeviceID::CPU & device_id)
+            if (OnCPU())
                 memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
-            if (cuda::DeviceID::CPU != device_id)
+            if (OnGPU())
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
                                         num_of_Ts());
 
@@ -259,14 +268,14 @@ struct Blob {
         // redirect to std:vector<V>::data()
         inline V *data() noexcept {
             // host only
-            if (cuda::DeviceID::CPU & device_id) return h_data.data();
+            if (OnCPU()) return h_data.data();
 
             return NULL;
         }
         // redirect to std:vector<V>::data()
         inline const V *data() const noexcept {
             // host only
-            if (cuda::DeviceID::CPU & device_id) return h_data.data();
+            if (OnCPU()) return h_data.data();
 
             return NULL;
         }
@@ -275,7 +284,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) output = h_data.begin();
+            if (OnCPU()) output = h_data.begin();
 
             return output;
         }
@@ -284,17 +293,17 @@ struct Blob {
             typename std::vector<V>::const_iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) output = h_data.begin();
+            if (OnCPU()) output = h_data.begin();
 
             return output;
         }
         inline void clear() noexcept {
             // clear host memory
             // redirect to std:vector<V>::clear()
-            if (cuda::DeviceID::CPU & device_id) h_data.clear();
+            if (OnCPU()) h_data.clear();
 
             // clear device memory
-            if (cuda::DeviceID::CPU != device_id)
+            if (OnGPU())
                 cuda::ReleaseDeviceMemory(&d_data);
 
             num_elements = 0;
@@ -304,7 +313,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) output = h_data.end();
+            if (OnCPU()) output = h_data.end();
 
             return output;
         }
@@ -313,7 +322,7 @@ struct Blob {
             typename std::vector<V>::const_iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) output = h_data.end();
+            if (OnCPU()) output = h_data.end();
 
             return output;
         }
@@ -328,7 +337,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 // redirect to std:vector<V>::insert(...)
                 output = h_data.insert(position, val);
 
@@ -345,7 +354,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 output = h_data.insert(position, n, val);
 
                 num_elements = h_data.size();
@@ -362,7 +371,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 output = h_data.insert(position, first, last);
 
                 num_elements = h_data.size();
@@ -376,7 +385,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 output = h_data.insert(position, val);
 
                 num_elements = h_data.size();
@@ -391,7 +400,7 @@ struct Blob {
             typename std::vector<V>::iterator output;
 
             // host only
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 output = h_data.insert(position, il);
 
                 num_elements = h_data.size();
@@ -401,7 +410,7 @@ struct Blob {
         }
         inline void push_back(const V &val) {
             // host only
-            if (cuda::DeviceID::CPU & device_id) {
+            if (OnCPU()) {
                 // redirect to std:vector<V>::push_back(...)
                 h_data.push_back(val);
 
@@ -411,7 +420,7 @@ struct Blob {
             // device side
             // delete/reallocate device memory
             // Note: the overhead can be reduced at the cost of more complexity
-            if (cuda::DeviceID::CPU != device_id) {
+            if (OnGPU()) {
                 std::vector<V> data(num_elements);
                 cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
                                         num_of_Ts());
@@ -439,12 +448,12 @@ struct Blob {
 
             // resize host data
             // redirect std:vector<V>::resize(...)
-            if (cuda::DeviceID::CPU & device_id) h_data.resize(n);
+            if (OnCPU()) h_data.resize(n);
 
             // resize device data
             // delete/reallocate device memory
             // Note: the overhead can be reduced at the cost of more complexity
-            if (cuda::DeviceID::CPU != device_id) {
+            if (OnGPU()) {
                 std::vector<V> data(num_elements);
                 cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
                                         num_of_Ts());
@@ -468,12 +477,12 @@ struct Blob {
 
             // resize host data
             // redirect std:vector<V>::resize(...)
-            if (cuda::DeviceID::CPU & device_id) h_data.resize(n, val);
+            if (OnCPU()) h_data.resize(n, val);
 
             // resize device data
             // delete/reallocate device memory
             // Note: the overhead can be reduced at the cost of more complexity
-            if (cuda::DeviceID::CPU != device_id) {
+            if (OnGPU()) {
                 std::vector<V> data(num_elements);
                 cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
                                         num_of_Ts());
