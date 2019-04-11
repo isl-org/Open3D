@@ -78,7 +78,7 @@ void Visualizer::Render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
-        renderer_ptr.first->Render(*render_option_ptr_, *view_control_ptr_);
+        renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
     }
     for (const auto &renderer_ptr : utility_renderer_ptrs_) {
         renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
@@ -91,7 +91,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
     if (reset_bounding_box) {
         view_control_ptr_->ResetBoundingBox();
         for (const auto &geometry_ptr : geometry_ptrs_) {
-            view_control_ptr_->FitInGeometry(*(geometry_ptr.first));
+            view_control_ptr_->FitInGeometry(*(geometry_ptr));
         }
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();

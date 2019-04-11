@@ -28,9 +28,9 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <unordered_set>
 #include <memory>
 #include <string>
-#include <map>
 
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Visualization/Shader/GeometryRenderer.h"
@@ -117,9 +117,8 @@ public:
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
-    
-    std::pair<bool, std::shared_ptr<glsl::GeometryRenderer>>
-            GetRendererPointer(std::shared_ptr<const geometry::Geometry> geometry_ptr);
+    std::pair<bool, std::shared_ptr<glsl::GeometryRenderer>> GetRendererPointer(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
@@ -213,10 +212,10 @@ protected:
     std::unique_ptr<RenderOption> render_option_ptr_;
 
     // geometry to be rendered
-    std::map<std::shared_ptr<const geometry::Geometry>, int> geometry_ptrs_;
+    std::unordered_set<std::shared_ptr<const geometry::Geometry>> geometry_ptrs_;
 
     // geometry renderers
-    std::map<std::shared_ptr<glsl::GeometryRenderer>, int>
+    std::unordered_set<std::shared_ptr<glsl::GeometryRenderer>>
             geometry_renderer_ptrs_;
 
     // utilities owned by the Visualizer

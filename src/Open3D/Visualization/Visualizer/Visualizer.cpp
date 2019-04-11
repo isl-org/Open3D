@@ -322,9 +322,9 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-               geometry::Geometry::GeometryType::TriangleMesh ||
+                       geometry::Geometry::GeometryType::TriangleMesh ||
                geometry_ptr->GetGeometryType() ==
-               geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
+                       geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
@@ -338,8 +338,8 @@ bool Visualizer::AddGeometry(
     } else {
         return false;
     }
-    geometry_renderer_ptrs_.insert(std::make_pair(renderer_ptr, 0));
-    geometry_ptrs_.insert(std::make_pair(geometry_ptr, 0));
+    geometry_renderer_ptrs_.insert(renderer_ptr);
+    geometry_ptrs_.insert(geometry_ptr);
     view_control_ptr_->FitInGeometry(*geometry_ptr);
     ResetViewPoint();
     utility::PrintDebug(
@@ -356,12 +356,11 @@ bool Visualizer::RemoveGeometry(
     glfwMakeContextCurrent(window_);
     std::shared_ptr<glsl::GeometryRenderer> geometry_renderer_delete;
     for (auto &geometry_renderer_ptr : geometry_renderer_ptrs_) {
-        if (geometry_renderer_ptr.first->GetGeometry() == geometry_ptr)
-            geometry_renderer_delete = geometry_renderer_ptr.first;
+        if (geometry_renderer_ptr->GetGeometry() == geometry_ptr)
+            geometry_renderer_delete = geometry_renderer_ptr;
     }
     geometry_renderer_ptrs_.erase(geometry_renderer_delete);
     geometry_ptrs_.erase(geometry_ptr);
-    view_control_ptr_->FitInGeometry(*geometry_ptr);
     ResetViewPoint();
     utility::PrintDebug(
             "Remove geometry and update bounding box to %s\n",
@@ -373,7 +372,7 @@ bool Visualizer::UpdateGeometry() {
     glfwMakeContextCurrent(window_);
     bool success = true;
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
-        success = (success && renderer_ptr.first->UpdateGeometry());
+        success = (success && renderer_ptr->UpdateGeometry());
     }
     UpdateRender();
     return success;
