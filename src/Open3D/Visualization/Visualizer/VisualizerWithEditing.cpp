@@ -106,7 +106,8 @@ bool VisualizerWithEditing::AddGeometry(
         return false;
     }
     geometry_ptrs_.insert(std::make_pair(editing_geometry_ptr_, 0));
-    geometry_renderer_ptrs_.insert(std::make_pair(editing_geometry_renderer_ptr_, 0));
+    geometry_renderer_ptrs_.insert(
+            std::make_pair(editing_geometry_renderer_ptr_, 0));
     ResetViewPoint(true);
     utility::PrintDebug(
             "Add geometry and update bounding box to %s\n",
@@ -659,8 +660,9 @@ void VisualizerWithEditing::SaveCroppingResult(
             ".json";
     if (editing_geometry_ptr_->GetGeometryType() ==
         geometry::Geometry::GeometryType::PointCloud)
-        io::WritePointCloud(ply_filename,
-                            (const geometry::PointCloud &)(*editing_geometry_ptr_));
+        io::WritePointCloud(
+                ply_filename,
+                (const geometry::PointCloud &)(*editing_geometry_ptr_));
     else if (editing_geometry_ptr_->GetGeometryType() ==
                      geometry::Geometry::GeometryType::TriangleMesh ||
              editing_geometry_ptr_->GetGeometryType() ==

@@ -28,9 +28,9 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
 
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Visualization/Shader/GeometryRenderer.h"
@@ -117,9 +117,8 @@ public:
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
-    
-    std::pair<bool, std::shared_ptr<glsl::GeometryRenderer>>
-            GetRendererPointer(std::shared_ptr<const geometry::Geometry> geometry_ptr);
+    std::pair<bool, std::shared_ptr<glsl::GeometryRenderer>> GetRendererPointer(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
