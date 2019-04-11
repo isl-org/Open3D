@@ -30,6 +30,7 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <string>
+#include <map>
 
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Visualization/Shader/GeometryRenderer.h"
