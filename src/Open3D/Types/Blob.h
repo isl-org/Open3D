@@ -64,12 +64,10 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (OnCPU())
-                memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
+            if (OnCPU()) memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
-            if (OnGPU())
-                cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
+            if (OnGPU()) cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
         }
         // move constructor
         _Type(_Type &&t)
@@ -87,8 +85,7 @@ struct Blob {
             Initialize();
 
             // init host data
-            if (OnCPU())
-                memcpy(h_data.data(), v.data(), num_of_bytes());
+            if (OnCPU()) memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // init device data
             if (OnGPU())
@@ -128,13 +125,9 @@ struct Blob {
         T *d_data{};
 
         // return true if the device_id includes the CPU.
-        inline bool OnCPU() const {
-            return cuda::DeviceID::CPU & device_id;
-        }
+        inline bool OnCPU() const { return cuda::DeviceID::CPU & device_id; }
         // return true if the device_id matches with one of the GPUs.
-        inline bool OnGPU() const {
-            return cuda::DeviceID::CPU != device_id;
-        }
+        inline bool OnGPU() const { return cuda::DeviceID::CPU != device_id; }
 
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) {
@@ -146,32 +139,32 @@ struct Blob {
         }
 
         // compare contents for equality
-        inline bool operator== (const _Type& r) {
-            if (num_elements != r.num_elements)
-                return false;
+        inline bool operator==(const _Type &r) {
+            if (num_elements != r.num_elements) return false;
 
             // host-host
-            if (OnCPU() && r.OnCPU())
-                return h_data == r.h_data;
+            if (OnCPU() && r.OnCPU()) return h_data == r.h_data;
 
             // host-device
-            if (OnCPU() && r.OnGPU())
-                return false;
+            if (OnCPU() && r.OnGPU()) {
+                return h_data == r.ReadGPU();
+            }
 
             // device-host
-            if (OnGPU() && r.OnCPU())
-                return false;
+            if (OnGPU() && r.OnCPU()) {
+                return ReadGPU() == r.h_data;
+            }
 
             // device-device
-            if (OnGPU() && r.OnGPU())
-                return false;
+            if (OnGPU() && r.OnGPU()) {
+                // TODO: do it on the GPU
+                return ReadGPU() == r.ReadGPU();
+            }
 
             return false;
         }
         // compare contents for inequality
-        inline bool operator!= (const _Type& r) {
-            return !(*this == r);
-        }
+        inline bool operator!=(const _Type &r) { return !(*this == r); }
 
         // copy from another Blob
         // reset pointers, reinitialize and copy the data to hst/dev pointers
@@ -184,12 +177,10 @@ struct Blob {
             Initialize();
 
             // copy host data
-            if (OnCPU())
-                memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
+            if (OnCPU()) memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
             // copy device data
-            if (OnGPU())
-                cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
+            if (OnGPU()) cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
 
             return *this;
         }
@@ -230,8 +221,7 @@ struct Blob {
             Initialize();
 
             // initialize host memory
-            if (OnCPU())
-                memcpy(h_data.data(), v.data(), num_of_bytes());
+            if (OnCPU()) memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
             if (OnGPU())
@@ -254,8 +244,7 @@ struct Blob {
             Initialize();
 
             // initialize host memory
-            if (OnCPU())
-                memcpy(h_data.data(), v.data(), num_of_bytes());
+            if (OnCPU()) memcpy(h_data.data(), v.data(), num_of_bytes());
 
             // initialize device memory
             if (OnGPU())
@@ -303,8 +292,7 @@ struct Blob {
             if (OnCPU()) h_data.clear();
 
             // clear device memory
-            if (OnGPU())
-                cuda::ReleaseDeviceMemory(&d_data);
+            if (OnGPU()) cuda::ReleaseDeviceMemory(&d_data);
 
             num_elements = 0;
         }
@@ -510,6 +498,12 @@ struct Blob {
         }
         // number of bytes
         inline size_t num_of_bytes() const { return num_elements * sizeof(V); }
+        inline std::vector<V> ReadGPU() const {
+            std::vector<V> data(num_elements);
+            cuda::CopyDev2HstMemory(d_data, (T *const)data.data(), num_of_Ts());
+
+            return data;
+        }
     } Type;
 };
 
