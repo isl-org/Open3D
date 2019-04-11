@@ -26,9 +26,8 @@
 
 #pragma once
 
-#include "TestUtility/UnitTest.h"
-
 #include "Open3D/Geometry/Image.h"
+#include "TestUtility/UnitTest.h"
 
 namespace odometry_tools {
 std::shared_ptr<open3d::geometry::Image> GenerateImage(

@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TriangleMesh.h"
-
-#include <unordered_map>
-#include <tuple>
+#include "Open3D/Geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
-#include <Open3D/Utility/Helper.h>
-#include <Open3D/Utility/Console.h>
+#include <tuple>
+#include <unordered_map>
+
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

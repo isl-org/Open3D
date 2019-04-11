@@ -27,7 +27,8 @@
 #pragma once
 
 #include <string>
-#include <Open3D/Geometry/TriangleMesh.h>
+
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace io {

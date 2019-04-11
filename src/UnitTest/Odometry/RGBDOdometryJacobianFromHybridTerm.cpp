@@ -24,11 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TestUtility/UnitTest.h"
-#include "OdometryTools.h"
-
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/Odometry/RGBDOdometryJacobian.h"
+#include "TestUtility/UnitTest.h"
+#include "UnitTest/Odometry/OdometryTools.h"
 
 using namespace Eigen;
 using namespace odometry_tools;

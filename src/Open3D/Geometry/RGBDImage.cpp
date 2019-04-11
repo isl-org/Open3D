@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RGBDImage.h"
+#include "Open3D/Geometry/RGBDImage.h"
 
 namespace open3d {
 namespace geometry {

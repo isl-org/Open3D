@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
+#include "Open3D/Visualization/Visualizer/Visualizer.h"
 
-#include <Open3D/Geometry/TriangleMesh.h>
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 

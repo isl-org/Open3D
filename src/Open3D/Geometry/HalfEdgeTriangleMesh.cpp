@@ -25,8 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
-#include "Open3D/Utility/Helper.h"
+
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace geometry {

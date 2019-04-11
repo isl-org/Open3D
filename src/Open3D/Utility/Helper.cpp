@@ -24,9 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Helper.h"
-#include <unordered_set>
+#include "Open3D/Utility/Helper.h"
+
 #include <cctype>
+#include <unordered_set>
 
 namespace open3d {
 namespace utility {

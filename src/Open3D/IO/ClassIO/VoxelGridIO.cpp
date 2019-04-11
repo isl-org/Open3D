@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VoxelGridIO.h"
+#include "Open3D/IO/ClassIO/VoxelGridIO.h"
 
 #include <unordered_map>
-#include <Open3D/Utility/Console.h>
-#include <Open3D/Utility/FileSystem.h>
+
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 

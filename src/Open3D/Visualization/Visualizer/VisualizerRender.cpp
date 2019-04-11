@@ -24,17 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
-
-#include <Open3D/Visualization/Visualizer/ViewParameters.h>
-#include <Open3D/Visualization/Visualizer/ViewTrajectory.h>
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
-#include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/IO/ClassIO/ImageIO.h>
-#include <Open3D/IO/ClassIO/PointCloudIO.h>
-#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
-
-#include <Open3D/Visualization/Utility/GLHelper.h>
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
+#include "Open3D/IO/ClassIO/ImageIO.h"
+#include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include "Open3D/Visualization/Utility/GLHelper.h"
+#include "Open3D/Visualization/Visualizer/ViewParameters.h"
+#include "Open3D/Visualization/Visualizer/ViewTrajectory.h"
+#include "Open3D/Visualization/Visualizer/Visualizer.h"
 
 namespace open3d {
 namespace visualization {

@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ScalableTSDFVolume.h"
+#include "Open3D/Integration/ScalableTSDFVolume.h"
 
 #include <unordered_set>
 
-#include <Open3D/Utility/Console.h>
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Integration/UniformTSDFVolume.h>
-#include <Open3D/Integration/MarchingCubesConst.h>
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Integration/MarchingCubesConst.h"
+#include "Open3D/Integration/UniformTSDFVolume.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace integration {

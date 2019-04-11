@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "DrawGeometry.h"
+#include "Open3D/Visualization/Utility/DrawGeometry.h"
 
-#include <Open3D/Visualization/Visualizer/Visualizer.h>
-#include <Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h>
-#include <Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h>
-#include <Open3D/Visualization/Visualizer/VisualizerWithEditing.h>
-#include <Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h>
-#include <Open3D/Visualization/Visualizer/ViewControlWithEditing.h>
+#include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
+#include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
+#include "Open3D/Visualization/Visualizer/Visualizer.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 
 namespace open3d {
 namespace visualization {

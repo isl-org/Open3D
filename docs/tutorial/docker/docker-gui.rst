@@ -23,7 +23,7 @@ Usage notes
 Docker files
 ````````````
 
-The docker setup files and tools can be found under `Open3d/util/docker/open3d-xvfb <https://github.com/IntelVCL/Open3D/tree/docker/util/docker/open3d-xvfb>`_.
+The docker setup files and tools can be found under `Open3d/util/docker/open3d-xvfb <https://github.com/intel-isl/Open3D/tree/docker/util/docker/open3d-xvfb>`_.
 
     - Dockerfile
     - setup

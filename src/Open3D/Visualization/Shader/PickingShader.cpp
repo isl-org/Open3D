@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PickingShader.h"
+#include "Open3D/Visualization/Shader/PickingShader.h"
 
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Visualization/Shader/Shader.h>
-#include <Open3D/Visualization/Utility/ColorMap.h>
-#include <Open3D/Visualization/Utility/GLHelper.h>
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Visualization/Shader/Shader.h"
+#include "Open3D/Visualization/Utility/ColorMap.h"
+#include "Open3D/Visualization/Utility/GLHelper.h"
 
 namespace open3d {
 namespace visualization {

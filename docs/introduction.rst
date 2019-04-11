@@ -41,6 +41,6 @@ Resources
 ======================
 
 * Website: `www.open3d.org <http://www.open3d.org>`_
-* Code: `github.com/IntelVCL/Open3D <https://github.com/IntelVCL/Open3D>`_
+* Code: `github.com/intel-isl/Open3D <https://github.com/intel-isl/Open3D>`_
 * Document: `www.open3d.org/docs <http://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_

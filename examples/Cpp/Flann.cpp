@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
+#include <flann/flann.hpp>
 #include <vector>
 
-#include <flann/flann.hpp>
-#include <Open3D/Open3D.h>
+#include "Open3D/Open3D.h"
 
 int main(int argc, char **argv) {
     using namespace open3d;

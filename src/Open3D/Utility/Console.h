@@ -26,10 +26,9 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
-
 #include <Eigen/Core>
+#include <string>
+#include <vector>
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
 namespace open3d {

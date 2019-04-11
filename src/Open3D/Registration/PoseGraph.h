@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include <Open3D/Utility/IJsonConvertible.h>
-#include <Open3D/Utility/Eigen.h>
+#include "Open3D/Utility/Eigen.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace registration {

@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Timer.h"
+#include "Open3D/Utility/Timer.h"
 
 #include <chrono>
 
-#include <Open3D/Utility/Console.h>
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace utility {

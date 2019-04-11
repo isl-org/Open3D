@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "NormalShader.h"
+#include "Open3D/Visualization/Shader/NormalShader.h"
 
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/Visualization/Shader/Shader.h>
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Visualization/Shader/Shader.h"
 
 namespace open3d {
 namespace visualization {

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "LineSet.h"
+#include "Open3D/Geometry/LineSet.h"
 
 namespace open3d {
 namespace geometry {

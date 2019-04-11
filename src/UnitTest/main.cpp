@@ -25,12 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include <gtest/gtest.h>
+#include <string>
 
 #include "TestUtility/Print.h"
 #include "TestUtility/Rand.h"
 #include "TestUtility/Raw.h"
-
-#include <string>
 using namespace std;
 
 int main(int argc, char **argv) {

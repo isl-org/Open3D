@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include <Eigen/Core>
+#include <memory>
+#include <vector>
 
-#include <Open3D/Geometry/Geometry.h>
-#include <Open3D/Geometry/KDTreeSearchParam.h>
-#include <Open3D/Registration/Feature.h>
+#include "Open3D/Geometry/Geometry.h"
+#include "Open3D/Geometry/KDTreeSearchParam.h"
+#include "Open3D/Registration/Feature.h"
 
 namespace flann {
 template <typename T>

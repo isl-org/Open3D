@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "GLHelper.h"
+#include "Open3D/Visualization/Utility/GLHelper.h"
 
-#include <cmath>
 #include <Eigen/Dense>
+#include <cmath>
 
 namespace open3d {
 namespace visualization {
