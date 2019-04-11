@@ -316,7 +316,7 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     auto default_output = std::make_tuple(Eigen::Vector3d::Zero(),
                                           Eigen::Matrix3d::Identity());
 
-    size_t nrPoints = input.points_.size();
+    size_t nr_points = input.points_.size();
     double *d_points = input.points_.d_data;
     cuda::DeviceID::Type device_id = input.points_.device_id;
 
@@ -326,7 +326,7 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     cudaError_t status = cudaSuccess;
 
     // host memory
-    vector<Eigen::Matrix3d> h_cumulants(nrPoints);
+    vector<Eigen::Matrix3d> h_cumulants(nr_points);
 
     int outputSize = h_cumulants.size() * 9;  // Mat3d::Size;
 
@@ -338,10 +338,10 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
 
     // execute on GPU
     int threadsPerBlock = 256;
-    int blocksPerGrid = (nrPoints + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = (nr_points + threadsPerBlock - 1) / threadsPerBlock;
 
     cudaSetDevice(gpu_id);
-    status = meanAndCovarianceAccumulatorHelper(gpu_id, d_points, nrPoints,
+    status = meanAndCovarianceAccumulatorHelper(gpu_id, d_points, nr_points,
                                                 d_cumulants);
     cuda::DebugInfo("ComputePointCloudMeanAndCovarianceGPU:02", status);
     if (cudaSuccess != status) return default_output;

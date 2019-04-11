@@ -54,7 +54,7 @@ __device__ void accumulate(Mat3d* c, Vec3d p) {
 // meanAndCovarianceAccumulator kernel
 // ---------------------------------------------------------------------------
 __global__ void meanAndCovarianceAccumulator(double* data,
-                                             uint nrPoints,
+                                             uint nr_points,
                                              double* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -67,7 +67,7 @@ __global__ void meanAndCovarianceAccumulator(double* data,
 
     accumulate(&c, p);
 
-    cumulants[gid] = c / nrPoints;
+    cumulants[gid] = c / nr_points;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,14 +75,14 @@ __global__ void meanAndCovarianceAccumulator(double* data,
 // ---------------------------------------------------------------------------
 cudaError_t meanAndCovarianceAccumulatorHelper(const int& gpu_id,
                                                double* const d_points,
-                                               const uint& nrPoints,
+                                               const uint& nr_points,
                                                double* const d_cumulants) {
     int threadsPerBlock = 256;
-    int blocksPerGrid = (nrPoints + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = (nr_points + threadsPerBlock - 1) / threadsPerBlock;
 
     cudaSetDevice(gpu_id);
     meanAndCovarianceAccumulator<<<blocksPerGrid, threadsPerBlock>>>(
-            d_points, nrPoints, d_cumulants);
+            d_points, nr_points, d_cumulants);
     cudaDeviceSynchronize();
 
     return cudaGetLastError();
