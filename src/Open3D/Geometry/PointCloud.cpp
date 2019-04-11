@@ -134,7 +134,7 @@ void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     else
         return TransformGPU(transformation);
 #else
-        return TransformCPU(transformation);
+    return TransformCPU(transformation);
 #endif
 }
 
@@ -155,8 +155,7 @@ void PointCloud::TransformCPU(const Eigen::Matrix4d &transformation) {
 
 #ifdef OPEN3D_USE_CUDA
 
-void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
-}
+void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {}
 
 #endif
 
