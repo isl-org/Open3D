@@ -259,5 +259,9 @@ cudaError_t getMinBoundHelper(const open3d::cuda::DeviceID::Type& device_id,
                               double* const data,
                               const uint& num_elements,
                               double* const output);
+cudaError_t getMaxBoundHelper(const open3d::cuda::DeviceID::Type& device_id,
+                              double* const data,
+                              const uint& num_elements,
+                              double* const output);
 
 #endif  // OPEN3D_USE_CUDA

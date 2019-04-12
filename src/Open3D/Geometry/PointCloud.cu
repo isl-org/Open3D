@@ -129,6 +129,41 @@ cudaError_t getMinBoundHelper(const cuda::DeviceID::Type& device_id,
 }
 
 // ---------------------------------------------------------------------------
+// getMaxBounds kernel
+// ---------------------------------------------------------------------------
+__global__ void getMaxBound(double* data, uint num_elements, double* output) {
+    int gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    Vec3d* points = (Vec3d*)data;
+    Vec3d* maxBounds = (Vec3d*)output;
+
+    Vec3d p = points[gid];
+
+    maxBounds[gid] = p;
+}
+
+// ---------------------------------------------------------------------------
+// call the getMaxBounds CUDA kernel
+// ---------------------------------------------------------------------------
+cudaError_t getMaxBoundHelper(const cuda::DeviceID::Type& device_id,
+                              double* const data,
+                              const uint& num_elements,
+                              double* const output) {
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (num_elements + threadsPerBlock - 1) / threadsPerBlock;
+
+    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
+    cuda::DeviceInfo(gpu_id);
+
+    cudaSetDevice(gpu_id);
+    getMaxBound<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, output);
+
+    // this is kept here for debug purposes only
+    cudaDeviceSynchronize();
+    return cudaGetLastError();
+}
+
+// ---------------------------------------------------------------------------
 // transform kernel
 // ---------------------------------------------------------------------------
 __global__ void transform(double* data, uint num_elements, Mat4d t, Vec4d c) {

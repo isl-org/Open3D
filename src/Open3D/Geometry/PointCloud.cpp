@@ -139,7 +139,24 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
 }
 
 Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
-    return Eigen::Vector3d::Zero();
+    size_t num_elements = points_.size();
+    double *data = points_.d_data;
+    cuda::DeviceID::Type device_id = points_.device_id;
+    vector<open3d::Vec3d> maxBounds(num_elements);
+    double *output = (double*)maxBounds.data();
+
+    cudaError_t status = cudaSuccess;
+
+    // get lower bounds on GPU
+    status = getMinBoundHelper(device_id, data, num_elements, output);
+    cuda::DebugInfo("GetMaxBoundGPU:01", status);
+    if (cudaSuccess != status) return Eigen::Vector3d::Zero();
+
+    auto it = std::max_element(maxBounds.begin(), maxBounds.end());
+
+    Eigen::Vector3d maxBound((*it)[0], (*it)[1], (*it)[2]);
+
+    return maxBound;
 }
 
 #endif
