@@ -26,8 +26,8 @@
 
 #pragma once
 
+#include <algorithm>
 #include <initializer_list>
-// #include <iostream>
 #include <memory>
 #include <vector>
 #include "Mat.h"
@@ -147,7 +147,17 @@ struct Blob {
 
             // host-device
             if (OnCPU() && r.OnGPU()) {
-                return h_data == r.ReadGPU();
+                // return h_data == r.ReadGPU();
+                std::vector<V> r_h_data = r.ReadGPU();
+                bool test =
+                        std::equal(h_data.begin(), h_data.end(), r_h_data.end(),
+                                   [](const V &a, const V &b) -> bool {
+                                       for (size_t i = 0; i < a.size(); i++)
+                                           if (abs(a[0] - b(0)) > 1e-6)
+                                               return false;
+                                       return true;
+                                   });
+                return test;
             }
 
             // device-host

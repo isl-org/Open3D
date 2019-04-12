@@ -162,8 +162,7 @@ void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
     open3d::Mat4d t{};
 
     for (size_t r = 0; r < t.Rows; r++)
-        for (size_t c = 0; c < t.Cols; c++)
-            t[r][c] = transformation(r, c);
+        for (size_t c = 0; c < t.Cols; c++) t[r][c] = transformation(r, c);
 
     cudaError_t status = cudaSuccess;
 
