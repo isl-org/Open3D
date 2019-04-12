@@ -70,7 +70,8 @@ void pybind_trianglemesh(py::module &m) {
             .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
-            .def("sample_points_uniformly", &geometry::TriangleMesh::SamplePointsUniformly,
+            .def("sample_points_uniformly",
+                 &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly points from the mesh",
                  "number_of_points"_a = 100)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
