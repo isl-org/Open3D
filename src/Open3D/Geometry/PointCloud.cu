@@ -88,6 +88,7 @@ cudaError_t meanAndCovarianceAccumulatorHelper(
     meanAndCovarianceAccumulator<<<blocksPerGrid, threadsPerBlock>>>(
             d_points, nr_points, d_cumulants);
 
+    // this kept here for debug purposes only
     cudaDeviceSynchronize();
     return cudaGetLastError();
 }
@@ -126,6 +127,7 @@ cudaError_t transformHelper(const cuda::DeviceID::Type& device_id,
     cudaSetDevice(gpu_id);
     transform<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, t, c);
 
+    // this kept here for debug purposes only
     cudaDeviceSynchronize();
     return cudaGetLastError();
 }
