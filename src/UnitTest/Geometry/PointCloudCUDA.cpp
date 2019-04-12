@@ -101,7 +101,7 @@ TEST(PointCloudCUDA, Transform) {
 
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Random();
 
-    int num_elements = 10;
+    int num_elements = 1;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -110,7 +110,7 @@ TEST(PointCloudCUDA, Transform) {
     Rand(points, vmin, vmax, 0);
 
     vector<Eigen::Vector3d> normals(num_elements);
-    Rand(points, vmin, vmax, 1);
+    Rand(normals, vmin, vmax, 1);
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
@@ -122,8 +122,11 @@ TEST(PointCloudCUDA, Transform) {
     pc_gpu.normals_ = open3d::Points(normals, open3d::cuda::DeviceID::GPU_00);
     pc_gpu.Transform(transformation);
 
-    EXPECT_TRUE(pc_cpu.points_ == pc_gpu.points_);
-    EXPECT_TRUE(pc_cpu.normals_ == pc_gpu.normals_);
+    vector<Eigen::Vector3d> pc_gpu_points_ = pc_gpu.points_.ReadGPU();
+    ExpectEQ(pc_cpu.points_.h_data, pc_gpu_points_);
+
+    vector<Eigen::Vector3d> pc_gpu_normals_ = pc_gpu.normals_.ReadGPU();
+    ExpectEQ(pc_cpu.normals_.h_data, pc_gpu_normals_);
 }
 
 // ----------------------------------------------------------------------------
