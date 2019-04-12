@@ -146,22 +146,14 @@ struct Blob {
             if (OnCPU() && r.OnCPU()) return h_data == r.h_data;
 
             // host-device
-            if (OnCPU() && r.OnGPU()) {
-                // return h_data == r.ReadGPU();
-                std::vector<V> r_h_data = r.ReadGPU();
-                return std::equal(h_data.begin(), h_data.end(), r_h_data.end(), &Near);
-            }
+            if (OnCPU() && r.OnGPU()) return h_data == r.ReadGPU();
 
             // device-host
-            if (OnGPU() && r.OnCPU()) {
-                return ReadGPU() == r.h_data;
-            }
+            if (OnGPU() && r.OnCPU()) return ReadGPU() == r.h_data;
 
             // device-device
-            if (OnGPU() && r.OnGPU()) {
-                // TODO: do it on the GPU
-                return ReadGPU() == r.ReadGPU();
-            }
+            // TODO: do it on the GPU
+            if (OnGPU() && r.OnGPU()) return ReadGPU() == r.ReadGPU();
 
             return false;
         }
