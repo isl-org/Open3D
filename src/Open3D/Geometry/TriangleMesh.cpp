@@ -25,10 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/PointCloud.h"
 
 #include <Eigen/Dense>
 #include <tuple>
 #include <unordered_map>
+#include <random>
 
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/Helper.h"
@@ -213,6 +215,74 @@ void TriangleMesh::Purge() {
     RemoveNonManifoldVertices();
 }
 
+std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
+  size_t number_of_points) {
+    if(number_of_points == 0 || triangles_.size() == 0) {
+        return std::make_shared<PointCloud>();
+    }
+
+    // Compute area of each triangle and sum surface area
+    std::vector<double> triangle_areas(triangles_.size());
+    double surface_area = 0;
+    for(size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        double triangle_area = TriangleArea(tidx);
+        triangle_areas[tidx] = triangle_area;
+        surface_area += triangle_area;
+    }
+
+    // triangle areas to cdf
+    triangle_areas[0] /= surface_area;
+    for(size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
+        triangle_areas[tidx] = triangle_areas[tidx] / surface_area +
+                               triangle_areas[tidx - 1];
+    }
+
+    // sample point cloud
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    auto pcd = std::make_shared<PointCloud>();
+    pcd->points_.resize(number_of_points);
+    if(has_vert_normal) {
+        pcd->normals_.resize(number_of_points);
+    }
+    if(has_vert_color) {
+        pcd->colors_.resize(number_of_points);
+    }
+    size_t point_idx = 0;
+    for(size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        size_t n = std::round(triangle_areas[tidx] * number_of_points);
+        while(point_idx < n) {
+            double r1 = dist(mt);
+            double r2 = dist(mt);
+            double a = (1 - std::sqrt(r1));
+            double b = std::sqrt(r1) * (1 - r2);
+            double c = std::sqrt(r1) * r2;
+
+            const Eigen::Vector3i& triangle = triangles_[tidx];
+            pcd->points_[point_idx] = a * vertices_[triangle(0)] +
+                                      b * vertices_[triangle(1)] +
+                                      c * vertices_[triangle(2)];
+            if(has_vert_normal) {
+                pcd->normals_[point_idx] = a * vertex_normals_[triangle(0)] +
+                                           b * vertex_normals_[triangle(1)] +
+                                           c * vertex_normals_[triangle(2)];
+            }
+            if(has_vert_color) {
+                pcd->colors_[point_idx] = a * vertex_colors_[triangle(0)] +
+                                          b * vertex_colors_[triangle(1)] +
+                                          c * vertex_colors_[triangle(2)];
+            }
+
+            point_idx++;
+        }
+    }
+
+    return pcd;
+}
+
 void TriangleMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
@@ -367,6 +437,17 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
     utility::PrintDebug(
             "[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
             (int)(old_triangle_num - k));
+}
+
+double TriangleMesh::TriangleArea(size_t triangle_idx) {
+    const Eigen::Vector3i& triangle = triangles_[triangle_idx];
+    const Eigen::Vector3d& vertex0 = vertices_[triangle(0)];
+    const Eigen::Vector3d& vertex1 = vertices_[triangle(1)];
+    const Eigen::Vector3d& vertex2 = vertices_[triangle(2)];
+    const Eigen::Vector3d x = vertex0 - vertex1;
+    const Eigen::Vector3d y = vertex0 - vertex2;
+    double area = 0.5 * x.cross(y).norm();
+    return area;
 }
 
 }  // namespace geometry
