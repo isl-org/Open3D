@@ -149,15 +149,7 @@ struct Blob {
             if (OnCPU() && r.OnGPU()) {
                 // return h_data == r.ReadGPU();
                 std::vector<V> r_h_data = r.ReadGPU();
-                bool test =
-                        std::equal(h_data.begin(), h_data.end(), r_h_data.end(),
-                                   [](const V &a, const V &b) -> bool {
-                                       for (size_t i = 0; i < a.size(); i++)
-                                           if (abs(a[0] - b(0)) > 1e-6)
-                                               return false;
-                                       return true;
-                                   });
-                return test;
+                return std::equal(h_data.begin(), h_data.end(), r_h_data.end(), &Near);
             }
 
             // device-host
@@ -508,6 +500,14 @@ struct Blob {
         }
         // number of bytes
         inline size_t num_of_bytes() const { return num_elements * sizeof(V); }
+        static inline bool Near(const V& a, const V& b) {
+            for (size_t i = 0; i < a.size(); i++)
+                if (abs(a[i] - b[i]) > 1e-6)
+                    return false;
+            return true;
+        }
+
+    public:
         inline std::vector<V> ReadGPU() const {
             std::vector<V> data(num_elements);
             cuda::CopyDev2HstMemory(d_data, (T *const)data.data(), num_of_Ts());
