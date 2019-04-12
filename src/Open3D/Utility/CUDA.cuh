@@ -44,7 +44,7 @@ inline int GPU_ID(const DeviceID::Type& device_id) {
 }  // namespace DeviceID
 
 // Diplay info about the specified device.
-std::string DeviceInfo(const int& device_id);
+void DeviceInfo(const int& device_id);
 // Display debug info.
 // Requires building the project in debug mode.
 void DebugInfo(const std::string& function_name, const cudaError_t& status);

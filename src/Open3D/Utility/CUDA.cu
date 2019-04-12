@@ -8,21 +8,17 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Diplay info about the specified device.
 // ----------------------------------------------------------------------------
-string open3d::cuda::DeviceInfo(const int& device_id) {
-    if (-1 == device_id) return string();
+void open3d::cuda::DeviceInfo(const int& device_id) {
+#ifndef NDEBUG
+    if (-1 == device_id) return;
 
     cudaDeviceProp deviceProp;
 
     cudaGetDeviceProperties(&deviceProp, device_id);
 
-    stringstream info;
-    info << "GPU Device " << device_id << ": ";
-    info << deviceProp.name << ", ";
-    info << "CUDA ";
-    info << deviceProp.major << ".";
-    info << deviceProp.minor << endl;
-
-    return info.str();
+    printf("GPU Device %d: %s, CUDA %d.%d\n", device_id, deviceProp.name,
+           deviceProp.major, deviceProp.minor);
+#endif
 }
 
 // ----------------------------------------------------------------------------
