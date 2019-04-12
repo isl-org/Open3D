@@ -95,16 +95,16 @@ cudaError_t meanAndCovarianceAccumulatorHelper(
 // ---------------------------------------------------------------------------
 // transform kernel
 // ---------------------------------------------------------------------------
-__global__ void transform(double* data, uint num_elements, Mat4d t) {
+__global__ void transform(double* data, uint num_elements, Mat4d t, Vec4d c) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     Vec3d* points = (Vec3d*)data;
     Vec3d v = points[gid];
     Vec3d output{};
 
-    output[0] = t[0][0] * v[0] + t[0][1] * v[1] + t[0][2] * v[2] + t[0][3] * 1.0;
-    output[1] = t[1][0] * v[0] + t[1][1] * v[1] + t[1][2] * v[2] + t[1][3] * 1.0;
-    output[2] = t[2][0] * v[0] + t[2][1] * v[1] + t[2][2] * v[2] + t[2][3] * 1.0;
+    output[0] = t[0][0] * v[0] + t[0][1] * v[1] + t[0][2] * v[2] + t[0][3] * c[0];
+    output[1] = t[1][0] * v[0] + t[1][1] * v[1] + t[1][2] * v[2] + t[1][3] * c[1];
+    output[2] = t[2][0] * v[0] + t[2][1] * v[1] + t[2][2] * v[2] + t[2][3] * c[2];
 
     points[gid] = output;
 }
@@ -115,7 +115,8 @@ __global__ void transform(double* data, uint num_elements, Mat4d t) {
 cudaError_t transformHelper(const cuda::DeviceID::Type& device_id,
                             double* const data,
                             const uint& num_elements,
-                            const open3d::Mat4d& t) {
+                            const open3d::Mat4d& t,
+                            const open3d::Vec4d& c) {
     int threadsPerBlock = 256;
     int blocksPerGrid = (num_elements + threadsPerBlock - 1) / threadsPerBlock;
 
@@ -123,7 +124,7 @@ cudaError_t transformHelper(const cuda::DeviceID::Type& device_id,
     cuda::DeviceInfo(gpu_id);
 
     cudaSetDevice(gpu_id);
-    transform<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, t);
+    transform<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, t, c);
 
     cudaDeviceSynchronize();
     return cudaGetLastError();

@@ -253,6 +253,7 @@ cudaError_t meanAndCovarianceAccumulatorHelper(
 cudaError_t transformHelper(const open3d::cuda::DeviceID::Type &device_id,
                             double *const data,
                             const uint &num_elements,
-                            const open3d::Mat4d &t);
+                            const open3d::Mat4d &t,
+                            const open3d::Vec4d& c);
 
 #endif  // OPEN3D_USE_CUDA
