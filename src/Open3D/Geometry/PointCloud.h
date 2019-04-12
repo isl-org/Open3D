@@ -245,9 +245,14 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input);
 
 #ifdef OPEN3D_USE_CUDA
 
-cudaError_t meanAndCovarianceAccumulatorHelper(const int &gpu_id,
-                                               double *const d_points,
-                                               const uint &nrPoints,
-                                               double *const d_cumulants);
+cudaError_t meanAndCovarianceAccumulatorHelper(
+        const open3d::cuda::DeviceID::Type &device_id,
+        double *const d_points,
+        const uint &nrPoints,
+        double *const d_cumulants);
+cudaError_t transformHelper(const open3d::cuda::DeviceID::Type &device_id,
+                            double *const data,
+                            const uint &num_elements,
+                            const open3d::Mat4d &t);
 
 #endif  // OPEN3D_USE_CUDA

@@ -73,17 +73,22 @@ __global__ void meanAndCovarianceAccumulator(double* data,
 // ---------------------------------------------------------------------------
 // call the meanAndCovarianceAccumulator CUDA kernel
 // ---------------------------------------------------------------------------
-cudaError_t meanAndCovarianceAccumulatorHelper(const int& gpu_id,
-                                               double* const d_points,
-                                               const uint& nr_points,
-                                               double* const d_cumulants) {
+cudaError_t meanAndCovarianceAccumulatorHelper(
+        const cuda::DeviceID::Type& device_id,
+        double* const d_points,
+        const uint& nr_points,
+        double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid = (nr_points + threadsPerBlock - 1) / threadsPerBlock;
+
+    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
+    cuda::DeviceInfo(gpu_id);
 
     cudaSetDevice(gpu_id);
     meanAndCovarianceAccumulator<<<blocksPerGrid, threadsPerBlock>>>(
             d_points, nr_points, d_cumulants);
 
+    cudaDeviceSynchronize();
     return cudaGetLastError();
 }
 
@@ -107,15 +112,19 @@ __global__ void transform(double* data, uint num_elements, Mat4d t) {
 // ---------------------------------------------------------------------------
 // call the transform CUDA kernel
 // ---------------------------------------------------------------------------
-cudaError_t transformHelper(const int& gpu_id,
-                            double* data,
-                            uint num_elements,
-                            Mat4d t) {
+cudaError_t transformHelper(const cuda::DeviceID::Type& device_id,
+                            double* const data,
+                            const uint& num_elements,
+                            const open3d::Mat4d& t) {
     int threadsPerBlock = 256;
     int blocksPerGrid = (num_elements + threadsPerBlock - 1) / threadsPerBlock;
+
+    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
+    cuda::DeviceInfo(gpu_id);
 
     cudaSetDevice(gpu_id);
     transform<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, t);
 
+    cudaDeviceSynchronize();
     return cudaGetLastError();
 }

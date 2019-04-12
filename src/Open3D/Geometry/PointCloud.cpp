@@ -155,7 +155,34 @@ void PointCloud::TransformCPU(const Eigen::Matrix4d &transformation) {
 
 #ifdef OPEN3D_USE_CUDA
 
-void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {}
+void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
+    size_t num_elements = 0;
+    double *data = NULL;
+    cuda::DeviceID::Type device_id = cuda::DeviceID::CPU;
+    open3d::Mat4d t{};
+
+    for (size_t r = 0; r < t.Rows; r++)
+        for (size_t c = 0; c < t.Cols; c++)
+            t[r][c] = transformation(r, c);
+
+    cudaError_t status = cudaSuccess;
+
+    // transform points_ on GPU
+    num_elements = points_.size();
+    data = points_.d_data;
+    device_id = points_.device_id;
+    status = transformHelper(device_id, data, num_elements, t);
+    cuda::DebugInfo("TransformGPU:01", status);
+    if (cudaSuccess != status) return;
+
+    // transform normals_ on GPU
+    num_elements = normals_.size();
+    data = normals_.d_data;
+    device_id = normals_.device_id;
+    status = transformHelper(device_id, data, num_elements, t);
+    cuda::DebugInfo("TransformGPU:02", status);
+    if (cudaSuccess != status) return;
+}
 
 #endif
 
@@ -319,9 +346,6 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     double *d_points = input.points_.d_data;
     cuda::DeviceID::Type device_id = input.points_.device_id;
 
-    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
-    cout << "Running on " << cuda::DeviceInfo(gpu_id);
-
     cudaError_t status = cudaSuccess;
 
     // host memory
@@ -336,11 +360,7 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
     if (cudaSuccess != status) return default_output;
 
     // execute on GPU
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (nr_points + threadsPerBlock - 1) / threadsPerBlock;
-
-    cudaSetDevice(gpu_id);
-    status = meanAndCovarianceAccumulatorHelper(gpu_id, d_points, nr_points,
+    status = meanAndCovarianceAccumulatorHelper(device_id, d_points, nr_points,
                                                 d_cumulants);
     cuda::DebugInfo("ComputePointCloudMeanAndCovarianceGPU:02", status);
     if (cudaSuccess != status) return default_output;
