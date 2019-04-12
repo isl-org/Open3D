@@ -88,7 +88,42 @@ cudaError_t meanAndCovarianceAccumulatorHelper(
     meanAndCovarianceAccumulator<<<blocksPerGrid, threadsPerBlock>>>(
             d_points, nr_points, d_cumulants);
 
-    // this kept here for debug purposes only
+    // this is kept here for debug purposes only
+    cudaDeviceSynchronize();
+    return cudaGetLastError();
+}
+
+// ---------------------------------------------------------------------------
+// getMinBounds kernel
+// ---------------------------------------------------------------------------
+__global__ void getMinBound(double* data, uint num_elements, double* output) {
+    int gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    Vec3d* points = (Vec3d*)data;
+    Vec3d* minBounds = (Vec3d*)output;
+
+    Vec3d p = points[gid];
+
+    minBounds[gid] = p;
+}
+
+// ---------------------------------------------------------------------------
+// call the getMinBounds CUDA kernel
+// ---------------------------------------------------------------------------
+cudaError_t getMinBoundHelper(const cuda::DeviceID::Type& device_id,
+                              double* const data,
+                              const uint& num_elements,
+                              double* const output) {
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (num_elements + threadsPerBlock - 1) / threadsPerBlock;
+
+    int gpu_id = cuda::DeviceID::GPU_ID(device_id);
+    cuda::DeviceInfo(gpu_id);
+
+    cudaSetDevice(gpu_id);
+    getMinBound<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, output);
+
+    // this is kept here for debug purposes only
     cudaDeviceSynchronize();
     return cudaGetLastError();
 }
@@ -127,7 +162,7 @@ cudaError_t transformHelper(const cuda::DeviceID::Type& device_id,
     cudaSetDevice(gpu_id);
     transform<<<blocksPerGrid, threadsPerBlock>>>(data, num_elements, t, c);
 
-    // this kept here for debug purposes only
+    // this is kept here for debug purposes only
     cudaDeviceSynchronize();
     return cudaGetLastError();
 }
