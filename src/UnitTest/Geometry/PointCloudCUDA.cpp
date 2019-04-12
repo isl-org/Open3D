@@ -114,12 +114,12 @@ TEST(PointCloudCUDA, Transform) {
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
-    pc_cpu.normals_ = open3d::Points(normals, open3d::cuda::DeviceID::CPU);
+    pc_cpu.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::CPU);
     pc_cpu.Transform(transformation);
 
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
-    pc_gpu.normals_ = open3d::Points(normals, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::GPU_00);
     pc_gpu.Transform(transformation);
 
     vector<Eigen::Vector3d> pc_gpu_points_ = pc_gpu.points_.ReadGPU();
