@@ -57,8 +57,8 @@ public:
     };
 
 public:
-    Image() : Geometry2D(Geometry::GeometryType::Image){};
-    ~Image() override{};
+    Image() : Geometry2D(Geometry::GeometryType::Image) {}
+    ~Image() override {}
 
 public:
     void Clear() override;

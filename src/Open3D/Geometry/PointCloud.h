@@ -47,8 +47,8 @@ class RGBDImage;
 
 class PointCloud : public Geometry3D {
 public:
-    PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud){};
-    ~PointCloud() override{};
+    PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
+    ~PointCloud() override {}
 
 public:
     void Clear() override;

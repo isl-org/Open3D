@@ -43,8 +43,8 @@ public:
     };
 
 public:
-    ColorMap(){};
-    virtual ~ColorMap(){};
+    ColorMap() {}
+    virtual ~ColorMap() {}
 
 public:
     /// Function to get a color from a value in [0..1]
