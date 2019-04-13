@@ -49,7 +49,7 @@ public:
         preference_loop_closure_ =
                 preference_loop_closure < 0.0 ? 1.0 : preference_loop_closure;
     };
-    ~GlobalOptimizationOption(){};
+    ~GlobalOptimizationOption() {}
 
 public:
     /// See reference list in GlobalOptimization.h
@@ -97,7 +97,7 @@ public:
                         ? 1. / 3.
                         : lower_scale_factor;
     };
-    ~GlobalOptimizationConvergenceCriteria(){};
+    ~GlobalOptimizationConvergenceCriteria() {}
 
 public:
     /// maximum iteration number for iterative optmization module.

@@ -40,7 +40,7 @@ def depth_to_pcd(depth, intrinsic, extrinsic, w, h):
     uu_vector = uu.ravel()
     vv_vector = vv.ravel()
     depth_vector = np.asarray(depth, dtype=np.float32).ravel()
-    
+
     uvd = np.asarray([uu_vector * depth_vector,
                       vv_vector * depth_vector,
                       depth_vector])
@@ -66,7 +66,7 @@ model = read_triangle_mesh("../../TestData/bathtub_0154.ply")
 print("visualize model")
 draw_geometries([model])
 
-# rescale geometry 
+# rescale geometry
 sphere = preprocess(sphere)
 model = preprocess(model)
 
@@ -92,7 +92,7 @@ for xyz in sphere.vertices:
     centers_pts[i,:] = c[:3]
     i += 1
     ctr.convert_from_pinhole_camera_parameters(param)
-    
+
     # capture depth image and make a point cloud
     vis.poll_events()
     vis.update_renderer()

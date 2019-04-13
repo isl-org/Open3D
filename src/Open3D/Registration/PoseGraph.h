@@ -38,7 +38,7 @@ namespace registration {
 class PoseGraphNode : public utility::IJsonConvertible {
 public:
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
-        : pose_(pose){};
+        : pose_(pose) {}
     ~PoseGraphNode();
 
 public:
@@ -63,7 +63,7 @@ public:
           transformation_(transformation),
           information_(information),
           uncertain_(uncertain),
-          confidence_(confidence){};
+          confidence_(confidence) {}
     ~PoseGraphEdge();
 
 public:

@@ -38,8 +38,8 @@ namespace geometry {
 
 class TriangleMesh : public Geometry3D {
 public:
-    TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh){};
-    ~TriangleMesh() override{};
+    TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {}
+    ~TriangleMesh() override {}
 
 public:
     void Clear() override;
@@ -66,7 +66,7 @@ public:
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
-    TriangleMesh(Geometry::GeometryType type) : Geometry3D(type){};
+    TriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
     virtual void RemoveDuplicatedVertices();
     virtual void RemoveDuplicatedTriangles();
     virtual void RemoveNonManifoldVertices();
