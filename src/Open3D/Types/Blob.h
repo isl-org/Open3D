@@ -179,7 +179,6 @@ struct Blob {
             return *this;
         }
         // move from another Blob
-        // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(_Type &&t) {
             Reset();
 
