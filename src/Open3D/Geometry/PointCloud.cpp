@@ -192,7 +192,9 @@ void PointCloud::TransformCPU(const Eigen::Matrix4d &transformation) {
 void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
     size_t num_elements = 0;
     double *data = NULL;
-    cuda::DeviceID::Type device_id = cuda::DeviceID::CPU;
+
+    // Note: this expects that both the points_ and the normals_ are on the GPU
+    cuda::DeviceID::Type device_id = points_.device_id;
     open3d::Mat4d t{};
     open3d::Vec4d c{};
 
@@ -204,7 +206,6 @@ void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
     // transform points_ on GPU
     num_elements = points_.size();
     data = points_.d_data;
-    device_id = points_.device_id;
     c = { 1.0, 1.0, 1.0, 1.0 };
     status = transformHelper(device_id, data, num_elements, t, c);
     cuda::DebugInfo("TransformGPU:01", status);
@@ -213,7 +214,6 @@ void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
     // transform normals_ on GPU
     num_elements = normals_.size();
     data = normals_.d_data;
-    device_id = normals_.device_id;
     c = { 0.0, 0.0, 0.0, 0.0 };
     status = transformHelper(device_id, data, num_elements, t, c);
     cuda::DebugInfo("TransformGPU:02", status);
