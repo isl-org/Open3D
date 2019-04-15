@@ -491,10 +491,9 @@ struct Blob {
         }
         // number of bytes
         inline size_t num_of_bytes() const { return num_elements * sizeof(V); }
-        static inline bool Near(const V& a, const V& b) {
+        static inline bool Near(const V &a, const V &b) {
             for (size_t i = 0; i < a.size(); i++)
-                if (abs(a[i] - b[i]) > 1e-6)
-                    return false;
+                if (abs(a[i] - b[i]) > 1e-6) return false;
             return true;
         }
 
