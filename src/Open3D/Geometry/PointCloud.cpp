@@ -149,17 +149,11 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
     cuda::DebugInfo("GetMinBoundGPU:04", status);
     if (cudaSuccess != status) return default_output;
 
-    auto itr_x = std::min_element(
-            minBounds.begin(), minBounds.end(),
-            [](const Vec3d &a, const Vec3d &b) { return a(0) < b(0); });
-    auto itr_y = std::min_element(
-            minBounds.begin(), minBounds.end(),
-            [](const Vec3d &a, const Vec3d &b) { return a(1) < b(1); });
-    auto itr_z = std::min_element(
-            minBounds.begin(), minBounds.end(),
-            [](const Vec3d &a, const Vec3d &b) { return a(2) < b(2); });
+    Vec3d test{DBL_MAX, DBL_MAX, DBL_MAX};
+    for (size_t i = 0; i < minBounds.size(); i++)
+        test = Vec3d::MinBound(test, minBounds[i]);
 
-    Eigen::Vector3d minBound((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+    Eigen::Vector3d minBound(test[0], test[1], test[2]);
 
     return minBound;
 }
@@ -195,19 +189,13 @@ Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
     cuda::DebugInfo("GetMaxBoundGPU:04", status);
     if (cudaSuccess != status) return default_output;
 
-    auto itr_x = std::min_element(
-            maxBounds.begin(), maxBounds.end(),
-            [](const Vec3d &a, const Vec3d &b) { return a(0) > b(0); });
-    auto itr_y = std::min_element(
-            maxBounds.begin(), maxBounds.end(),
-            [](const Vec3d &a, const Vec3d &b) { return a(1) > b(1); });
-    auto itr_z = std::min_element(
-            maxBounds.begin(), maxBounds.end(),
-            [](const Vec3d &a, const Vec3d &b) { return a(2) > b(2); });
+    Vec3d test{DBL_MIN, DBL_MIN, DBL_MIN};
+    for (size_t i = 0; i < maxBounds.size(); i++)
+        test = Vec3d::MaxBound(test, maxBounds[i]);
 
-    Eigen::Vector3d minBound((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+    Eigen::Vector3d maxBound(test[0], test[1], test[2]);
 
-    return minBound;
+    return maxBound;
 }
 
 #endif
