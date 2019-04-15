@@ -256,6 +256,23 @@ struct Vec {
 
             return output;
         }
+
+        static _Type MinBound(const _Type& a, const _Type& b) {
+            _Type output = _Type::Zero();
+
+#pragma unroll
+            for (uint c = 0; c < COLS; c++) output[c] = (a[c] < b[c]) ? a[c] : b[c];
+
+            return output;
+        }
+        static _Type MaxBound(const _Type& a, const _Type& b) {
+            _Type output = _Type::Zero();
+
+#pragma unroll
+            for (uint c = 0; c < COLS; c++) output[c] = (a[c] > b[c]) ? a[c] : b[c];
+
+            return output;
+        }
     } Type;
 };
 
