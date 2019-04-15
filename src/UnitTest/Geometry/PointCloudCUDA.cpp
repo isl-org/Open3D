@@ -53,16 +53,7 @@ TEST(PointCloudCUDA, GetMinBound) {
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
     vector<Eigen::Vector3d> points(num_elements);
-    //*/// original
     Rand(points, vmin, vmax, 0);
-    /*/// test
-    for (size_t i = 0; i < num_elements / 3; i++)
-        points[i] = Eigen::Vector3d(-0.5, 0.0, 0.0);
-    for (size_t i = num_elements / 3; i < 2 * num_elements / 3; i++)
-        points[i] = Eigen::Vector3d(0.0, -0.3, 0.0);
-    for (size_t i = 2 * num_elements / 3; i < num_elements; i++)
-        points[i] = Eigen::Vector3d(0.0, 0.0, -0.1);
-    //*/  //
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
