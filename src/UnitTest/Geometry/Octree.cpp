@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <json/json.h>
 #include <iostream>
 #include <memory>
 
@@ -209,7 +210,7 @@ TEST(Octree, FragmentPLYCheckClone) {
     geometry::Octree src_octree(5);
     src_octree.ConvertFromPointCloud(pcd, true, 0.01);
 
-    // Build dst_octree
+    // Build dst_octree clone
     geometry::Octree dst_octree(src_octree);
 
     // Also checks the equal operator
@@ -263,4 +264,20 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
     octree.ConvertFromPointCloud(pcd, true, 0.01);
     ExpectEQ(octree.origin_, Eigen::Vector3d(-2, -1, 0));  // Auto-centered
     EXPECT_EQ(octree.size_, 4.04);  // 4.04 = 4 * (1 + 0.01)
+}
+
+TEST(Octree, ConvertToJsonValue) {
+    geometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    size_t max_depth = 5;
+    geometry::Octree src_octree(max_depth);
+    src_octree.ConvertFromPointCloud(pcd, true, 0.01);
+
+    Json::Value json_value;
+    src_octree.ConvertToJsonValue(json_value);
+
+    geometry::Octree dst_octree;
+    dst_octree.ConvertFromJsonValue(json_value);
+
+    EXPECT_TRUE(src_octree == dst_octree);
 }

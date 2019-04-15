@@ -30,6 +30,7 @@
 #include <memory>
 
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace geometry {
@@ -40,6 +41,7 @@ class PointCloud;
 /// OctreeNodeInfo is computed on the fly
 class OctreeNodeInfo {
 public:
+    OctreeNodeInfo() {}
     OctreeNodeInfo(const Eigen::Vector3d& origin,
                    const double& size,
                    const size_t& depth,
@@ -49,6 +51,8 @@ public:
           depth_(depth),
           child_index_(child_index) {}
     ~OctreeNodeInfo() {}
+
+public:
     Eigen::Vector3d origin_ = Eigen::Vector3d(0, 0, 0);
     double size_ = 0;
     size_t depth_ = 0;
@@ -95,7 +99,7 @@ public:
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
 
-class Octree : public Geometry3D {
+class Octree : public Geometry3D, public utility::IJsonConvertible {
 public:
     Octree() : Geometry3D(Geometry::GeometryType::Octree) {}
     Octree(const size_t& max_depth)
@@ -117,6 +121,8 @@ public:
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     void Transform(const Eigen::Matrix4d& transformation) override;
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
