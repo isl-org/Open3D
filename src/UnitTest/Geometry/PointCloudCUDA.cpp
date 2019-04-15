@@ -47,13 +47,22 @@ TEST(PointCloudCUDA, GetMinBound) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    int num_elements = 1 << 24;
+    size_t num_elements = 1 << 24;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
 
     vector<Eigen::Vector3d> points(num_elements);
+    //*/// original
     Rand(points, vmin, vmax, 0);
+    /*/// test
+    for (size_t i = 0; i < num_elements / 3; i++)
+        points[i] = Eigen::Vector3d(-0.5, 0.0, 0.0);
+    for (size_t i = num_elements / 3; i < 2 * num_elements / 3; i++)
+        points[i] = Eigen::Vector3d(0.0, -0.3, 0.0);
+    for (size_t i = 2 * num_elements / 3; i < num_elements; i++)
+        points[i] = Eigen::Vector3d(0.0, 0.0, -0.1);
+    //*/  //
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
@@ -73,7 +82,7 @@ TEST(PointCloudCUDA, GetMaxBound) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    int num_elements = 1 << 24;
+    size_t num_elements = 1 << 24;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -101,7 +110,7 @@ TEST(PointCloudCUDA, Transform) {
 
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Random();
 
-    int num_elements = 1 << 24;
+    size_t num_elements = 1 << 24;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -120,9 +129,6 @@ TEST(PointCloudCUDA, Transform) {
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
     pc_gpu.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::GPU_00);
-
-    vector<Eigen::Vector3d> pc_gpu_normals1 = pc_gpu.normals_.ReadGPU();
-
     pc_gpu.Transform(transformation);
 
     vector<Eigen::Vector3d> pc_gpu_points = pc_gpu.points_.ReadGPU();
@@ -140,7 +146,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    int num_elements = 1 << 24;
+    size_t num_elements = 1 << 24;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
