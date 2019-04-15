@@ -126,8 +126,6 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
     double *d_data = points_.d_data;
     cuda::DeviceID::Type device_id = points_.device_id;
     vector<open3d::Vec3d> minBounds(num_elements);
-
-    //*/// v0 - original
     double * const output = (double * const)minBounds.data();
 
     // allocate temporary device memory
@@ -150,14 +148,6 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
     status = cuda::ReleaseDeviceMemory(&d_output);
     cuda::DebugInfo("GetMinBoundGPU:04", status);
     if (cudaSuccess != status) return default_output;
-    /*/// v1 - test
-    vector<Eigen::Vector3d> points = points_.ReadGPU();
-    for (size_t i = 0; i < points.size(); i++) {
-        minBounds[i][0] = points[i][0];
-        minBounds[i][1] = points[i][1];
-        minBounds[i][2] = points[i][2];
-    }
-    //*///
 
     auto itr_x = std::min_element(
             minBounds.begin(), minBounds.end(),
@@ -175,24 +165,49 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
 }
 
 Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
+    cudaError_t status = cudaSuccess;
+
+    Eigen::Vector3d default_output = Eigen::Vector3d(DBL_MAX, DBL_MAX, DBL_MAX);
     size_t num_elements = points_.size();
     double *d_data = points_.d_data;
     cuda::DeviceID::Type device_id = points_.device_id;
     vector<open3d::Vec3d> maxBounds(num_elements);
-    double *output = (double *)maxBounds.data();
+    double * const output = (double * const)maxBounds.data();
 
-    cudaError_t status = cudaSuccess;
+    // allocate temporary device memory
+    double *d_output = NULL;
+    int output_size = num_elements * 3;
+    status = cuda::AllocateDeviceMemory(&d_output, output_size, device_id);
+    cuda::DebugInfo("GetMaxBoundGPU:01", status);
+    if (cudaSuccess != status) return default_output;
 
     // get lower bounds on GPU
-    status = getMinBoundHelper(device_id, d_data, num_elements, output);
-    cuda::DebugInfo("GetMaxBoundGPU:01", status);
-    if (cudaSuccess != status) return Eigen::Vector3d::Zero();
+    status = getMinBoundHelper(device_id, d_data, num_elements, d_output);
+    cuda::DebugInfo("GetMaxBoundGPU:02", status);
+    if (cudaSuccess != status) return default_output;
 
-    auto it = std::max_element(maxBounds.begin(), maxBounds.end());
+    status = cuda::CopyDev2HstMemory(d_output, output, output_size);
+    cuda::DebugInfo("GetMaxBoundGPU:02", status);
+    if (cudaSuccess != status) return default_output;
 
-    Eigen::Vector3d maxBound((*it)[0], (*it)[1], (*it)[2]);
+    // Free temporary device memory
+    status = cuda::ReleaseDeviceMemory(&d_output);
+    cuda::DebugInfo("GetMaxBoundGPU:04", status);
+    if (cudaSuccess != status) return default_output;
 
-    return maxBound;
+    auto itr_x = std::min_element(
+            maxBounds.begin(), maxBounds.end(),
+            [](const Vec3d &a, const Vec3d &b) { return a(0) > b(0); });
+    auto itr_y = std::min_element(
+            maxBounds.begin(), maxBounds.end(),
+            [](const Vec3d &a, const Vec3d &b) { return a(1) > b(1); });
+    auto itr_z = std::min_element(
+            maxBounds.begin(), maxBounds.end(),
+            [](const Vec3d &a, const Vec3d &b) { return a(2) > b(2); });
+
+    Eigen::Vector3d minBound((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+
+    return minBound;
 }
 
 #endif
