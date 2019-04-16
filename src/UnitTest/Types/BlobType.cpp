@@ -770,6 +770,38 @@ TEST(BlobType, Add_operator_GPU_GPU) {
 }
 
 // ----------------------------------------------------------------------------
+// operator+= - both args on the CPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Append_operator_CPU_CPU) {
+    size_t num_elements = 100;
+
+    vector<Eigen::Vector3d> b0_h_data(num_elements);
+    Rand((double* const)b0_h_data.data(), num_elements * 3, 0.0, 10.0, 0);
+
+    vector<Eigen::Vector3d> b1_h_data(num_elements);
+    Rand((double* const)b1_h_data.data(), num_elements * 3, 0.0, 10.0, 1);
+
+    size_t ref_size = b0_h_data.size() + b1_h_data.size();
+
+    open3d::Blob3d b0(b0_h_data, open3d::cuda::DeviceID::CPU);
+    open3d::Blob3d b1(b1_h_data, open3d::cuda::DeviceID::CPU);
+    b0 += b1;
+
+    EXPECT_EQ(b0.num_elements, ref_size);
+    EXPECT_EQ(b0.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b0.h_data.size(), ref_size);
+    EXPECT_FALSE(b0.h_data.empty());
+    EXPECT_TRUE(NULL == b0.d_data);
+    EXPECT_EQ(b0.size(), ref_size);
+
+    for (size_t i = 0; i < num_elements; i++)
+        ExpectEQ(b0_h_data[i], b0.h_data[i]);
+
+    for (size_t i = 0; i < b1.size(); i++)
+        ExpectEQ(b1.h_data[i], b0.h_data[i + num_elements]);
+}
+
+// ----------------------------------------------------------------------------
 // Clear - CPU and GPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Clear) {
