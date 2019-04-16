@@ -247,7 +247,7 @@ struct Blob {
             return *this;
         }
 
-        // append two Blobs
+        // compose two Blobs to form another
         inline _Type operator+(const _Type &t) {
             // what if *this and t are on different devices?
             if (device_id != t.device_id)
@@ -271,6 +271,12 @@ struct Blob {
             }
 
             return output;
+        }
+        // append two Blobs
+        inline _Type &operator+=(const _Type &t) {
+            *this = *this + t;
+
+            return *this;
         }
 
         // redirect to std:vector<V>::data()
