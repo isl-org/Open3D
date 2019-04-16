@@ -802,6 +802,44 @@ TEST(BlobType, Append_operator_CPU_CPU) {
 }
 
 // ----------------------------------------------------------------------------
+// operator+= - both args on the GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Append_operator_GPU_GPU) {
+    size_t num_elements = 100;
+
+    vector<Eigen::Vector3d> b0_h_data(num_elements);
+    Rand((double* const)b0_h_data.data(), num_elements * 3, 0.0, 10.0, 0);
+
+    vector<Eigen::Vector3d> b1_h_data(num_elements);
+    Rand((double* const)b1_h_data.data(), num_elements * 3, 0.0, 10.0, 1);
+
+    size_t ref_size = b0_h_data.size() + b1_h_data.size();
+
+    open3d::Blob3d b0(b0_h_data, open3d::cuda::DeviceID::GPU_00);
+    open3d::Blob3d b1(b1_h_data, open3d::cuda::DeviceID::GPU_00);
+    b0 += b1;
+
+    EXPECT_EQ(b0.num_elements, ref_size);
+    EXPECT_EQ(b0.device_id, open3d::cuda::DeviceID::GPU_00);
+    EXPECT_TRUE(b0.h_data.empty());
+    EXPECT_TRUE(NULL != b0.d_data);
+    EXPECT_EQ(b0.size(), ref_size);
+
+    vector<Eigen::Vector3d> b0_d_data(b0.size());
+    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
+                                    b0.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    vector<Eigen::Vector3d> b1_d_data(b1.size());
+    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
+                                    b1.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+
+    for (size_t i = 0; i < num_elements; i++)
+        ExpectEQ(b0_h_data[i], b0_d_data[i]);
+
+    for (size_t i = 0; i < b1.size(); i++)
+        ExpectEQ(b1_d_data[i], b0_d_data[i + num_elements]);
+}
+
+// ----------------------------------------------------------------------------
 // Clear - CPU and GPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Clear) {
