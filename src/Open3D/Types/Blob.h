@@ -247,6 +247,33 @@ struct Blob {
             return *this;
         }
 
+        // append two Blobs
+        inline _Type operator+(const _Type &t) {
+            // what if *this and t are on different devices?
+            _Type default_output;
+            if (device_id != t.device_id)
+                return default_output;
+
+            size_t out_num_elements = num_elements + t.num_elements;
+            cuda::DeviceID::Type out_device_id = device_id;
+
+            _Type output(out_num_elements, out_device_id);
+
+            // copy host data
+            if (OnCPU()) {
+                memcpy(output.h_data.data(), h_data.data(), num_of_bytes());
+                memcpy(output.h_data.data() + num_elements, t.h_data.data(), t.num_of_bytes());
+            }
+
+            // copy device data
+            if (OnGPU()) {
+                cuda::CopyDev2DevMemory(output.d_data, d_data, num_of_Ts());
+                cuda::CopyDev2DevMemory(output.d_data + num_of_Ts(), t.d_data, t.num_of_Ts());
+            }
+
+            return output;
+        }
+
         // redirect to std:vector<V>::data()
         inline V *data() noexcept {
             // host only
