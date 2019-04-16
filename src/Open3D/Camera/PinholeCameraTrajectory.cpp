@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PinholeCameraIntrinsic.h"
-#include "PinholeCameraTrajectory.h"
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
 
 #include <json/json.h>
-#include <Open3D/Utility/Console.h>
+
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace camera {

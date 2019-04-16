@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerWithCustomAnimation.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
 
 #include <thread>
 
-#include <Open3D/Utility/FileSystem.h>
-#include <Open3D/Utility/Console.h>
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
-#include <Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h>
-#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
 
 namespace open3d {
 namespace visualization {

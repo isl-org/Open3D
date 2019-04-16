@@ -26,12 +26,13 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <tuple>
 #include <Eigen/Core>
-#include <Open3D/Odometry/OdometryOption.h>
-#include <Open3D/Utility/Eigen.h>
+#include <iostream>
+#include <tuple>
+#include <vector>
+
+#include "Open3D/Odometry/OdometryOption.h"
+#include "Open3D/Utility/Eigen.h"
 
 namespace open3d {
 

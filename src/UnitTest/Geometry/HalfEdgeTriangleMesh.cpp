@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
-#include "Open3D/Utility/Helper.h"
-#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
-#include "TestUtility/UnitTest.h"
-
 #include <iostream>
 #include <string>
+
+#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
+#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+#include "Open3D/Utility/Helper.h"
+#include "TestUtility/UnitTest.h"
 
 using namespace open3d;
 using namespace unit_test;

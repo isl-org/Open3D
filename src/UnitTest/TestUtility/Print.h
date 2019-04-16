@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include <iostream>
+#include <Eigen/Core>
 #include <iomanip>
+#include <iostream>
 #include <vector>
 
-#include <Eigen/Core>
 #include "Open3D/Types/Blob.h"
 
 namespace unit_test {

@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudPicker.h"
+#include "Open3D/Visualization/Utility/PointCloudPicker.h"
 
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Utility/Console.h>
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace visualization {

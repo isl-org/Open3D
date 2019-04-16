@@ -26,13 +26,13 @@
 
 #pragma once
 
+#include <Eigen/Core>
+#include <memory>
 #include <tuple>
 #include <vector>
-#include <tuple>
-#include <memory>
-#include <Eigen/Core>
-#include <Open3D/Geometry/Geometry3D.h>
-#include <Open3D/Geometry/KDTreeSearchParam.h>
+
+#include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/KDTreeSearchParam.h"
 #include "Open3D/Types/Blob.h"
 
 namespace open3d {
@@ -48,12 +48,12 @@ class RGBDImage;
 
 class PointCloud : public Geometry3D {
 public:
-    PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud){};
+    PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
     ~PointCloud() override {
         points_.Reset();
         normals_.Reset();
         colors_.Reset();
-    };
+    }
 
 public:
     void Clear() override;

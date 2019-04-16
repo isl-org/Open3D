@@ -44,8 +44,8 @@ endif()
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
-set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
+set(PROJECT_CODE    "https://github.com/intel-isl/Open3D")
+set(PROJECT_ISSUES  "https://github.com/intel-isl/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"

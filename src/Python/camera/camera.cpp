@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Open3D/Camera/PinholeCameraIntrinsic.h>
-#include <Open3D/Camera/PinholeCameraTrajectory.h>
-
-#include "Python/docstring.h"
 #include "Python/camera/camera.h"
+
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Python/docstring.h"
 
 using namespace open3d;
 

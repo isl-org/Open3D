@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include <Eigen/Core>
+#include <memory>
+#include <vector>
 
-#include <Open3D/Geometry/Geometry2D.h>
-#include <Open3D/Utility/Console.h>
+#include "Open3D/Geometry/Geometry2D.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
@@ -57,8 +57,8 @@ public:
     };
 
 public:
-    Image() : Geometry2D(Geometry::GeometryType::Image){};
-    ~Image() override{};
+    Image() : Geometry2D(Geometry::GeometryType::Image) {}
+    ~Image() override {}
 
 public:
     void Clear() override;

@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "CorrespondenceChecker.h"
+#include "Open3D/Registration/CorrespondenceChecker.h"
 
 #include <Eigen/Dense>
-#include <Open3D/Utility/Console.h>
-#include <Open3D/Geometry/PointCloud.h>
+
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace registration {

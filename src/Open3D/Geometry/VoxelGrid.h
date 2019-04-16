@@ -26,10 +26,11 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include <Eigen/Core>
-#include <Open3D/Geometry/Geometry3D.h>
+#include <memory>
+#include <vector>
+
+#include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Types/Blob.h"
 
 namespace open3d {
@@ -40,8 +41,8 @@ class TriangleMesh;
 
 class VoxelGrid : public Geometry3D {
 public:
-    VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid){};
-    ~VoxelGrid() override{};
+    VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
+    ~VoxelGrid() override {}
 
 public:
     void Clear() override;

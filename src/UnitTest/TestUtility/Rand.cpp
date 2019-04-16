@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Rand.h"
-#include "Raw.h"
+#include "UnitTest/TestUtility/Rand.h"
 
 #include <iostream>
+
+#include "UnitTest/TestUtility/Raw.h"
 
 using namespace Eigen;
 using namespace std;

@@ -14,8 +14,8 @@ Issues and pull requests
 
 The ``master`` branch is used only for stable development versions of Open3D. Any code change is made through four steps using the `issues and pull requests system <https://help.github.com/categories/collaborating-with-issues-and-pull-requests/>`_.
 
-1. An `issue <https://github.com/IntelVCL/Open3D/issues>`_ is opened for a feature request or a bug fix.
-2. A contributor starts a new branch or forks the repository, makes changes, and submits a `pull request <https://github.com/IntelVCL/Open3D/pulls>`_.
+1. An `issue <https://github.com/intel-isl/Open3D/issues>`_ is opened for a feature request or a bug fix.
+2. A contributor starts a new branch or forks the repository, makes changes, and submits a `pull request <https://github.com/intel-isl/Open3D/pulls>`_.
 3. Code change is reviewed and discussed in the pull request. Modifications are made to address the issues raised in the discussion.
 4. One of the admins merges the pull request to the master branch.
 
@@ -111,7 +111,7 @@ macOS
 
 .. code:: bash
 
-   curl https://raw.githubusercontent.com/IntelVCL/Open3D-3rdparty/master/clang-format/clang-format%405.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
+   curl https://raw.githubusercontent.com/intel-isl/Open3D-3rdparty/master/clang-format/clang-format%405.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
    brew install clang-format@5
    clang-format --version
 

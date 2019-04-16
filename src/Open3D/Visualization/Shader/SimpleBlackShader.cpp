@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "SimpleBlackShader.h"
+#include "Open3D/Visualization/Shader/SimpleBlackShader.h"
 
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/Visualization/Shader/Shader.h>
-#include <Open3D/Visualization/Utility/ColorMap.h>
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Visualization/Shader/Shader.h"
+#include "Open3D/Visualization/Utility/ColorMap.h"
 
 namespace open3d {
 namespace visualization {

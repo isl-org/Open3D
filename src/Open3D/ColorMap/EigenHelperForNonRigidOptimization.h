@@ -26,9 +26,9 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <tuple>
 #include <vector>
-#include <Eigen/Core>
 
 namespace Eigen {
 

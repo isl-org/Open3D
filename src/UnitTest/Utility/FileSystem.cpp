@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TestUtility/UnitTest.h"
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <algorithm>
 
 #include "Open3D/Utility/FileSystem.h"
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <algorithm>
+#include "TestUtility/UnitTest.h"
 
 using namespace open3d;
 using namespace std;

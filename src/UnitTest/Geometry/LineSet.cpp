@@ -24,11 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TestUtility/UnitTest.h"
-#include "TestUtility/Raw.h"
-
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "TestUtility/Raw.h"
+#include "TestUtility/UnitTest.h"
 
 using namespace open3d;
 using namespace std;

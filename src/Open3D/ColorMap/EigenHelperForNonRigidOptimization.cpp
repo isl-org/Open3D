@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "EigenHelperForNonRigidOptimization.h"
+#include "Open3D/ColorMap/EigenHelperForNonRigidOptimization.h"
 
-#include <Open3D/Utility/Console.h>
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace color_map {

@@ -29,8 +29,8 @@
 #include <Eigen/Core>
 #include <unordered_map>
 
-#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace geometry {
@@ -59,7 +59,7 @@ public:
 
 public:
     HalfEdgeTriangleMesh()
-        : TriangleMesh(Geometry::GeometryType::HalfEdgeTriangleMesh){};
+        : TriangleMesh(Geometry::GeometryType::HalfEdgeTriangleMesh) {}
 
     /// Compute and update half edges, half edge can only be computed if the
     /// mesh is a manifold. Returns true if half edges are computed.
@@ -87,7 +87,7 @@ public:
     HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
 
 protected:
-    HalfEdgeTriangleMesh(Geometry::GeometryType type) : TriangleMesh(type){};
+    HalfEdgeTriangleMesh(Geometry::GeometryType type) : TriangleMesh(type) {}
     void RemoveDuplicatedVertices() override;
     void RemoveDuplicatedTriangles() override;
     void RemoveNonManifoldVertices() override;

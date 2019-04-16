@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ImageMaskShader.h"
+#include "Open3D/Visualization/Shader/ImageMaskShader.h"
 
 #include <algorithm>
 
-#include <Open3D/Geometry/Image.h>
-#include <Open3D/Visualization/Shader/Shader.h>
-#include <Open3D/Visualization/Visualizer/RenderOptionWithEditing.h>
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Visualization/Shader/Shader.h"
+#include "Open3D/Visualization/Visualizer/RenderOptionWithEditing.h"
 
 namespace open3d {
 namespace visualization {

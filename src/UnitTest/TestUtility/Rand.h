@@ -27,10 +27,10 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Open3D/Utility/Eigen.h>
-#include "Open3D/Types/Blob.h"
-
 #include <vector>
+
+#include "Open3D/Utility/Eigen.h"
+#include "Open3D/Types/Blob.h"
 
 namespace unit_test {
 // Initialize an Eigen::Vector3d.

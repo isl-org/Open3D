@@ -29,13 +29,14 @@
 #pragma warning(disable : 4267)
 #endif
 
-#include "KDTreeFlann.h"
+#include "Open3D/Geometry/KDTreeFlann.h"
 
 #include <flann/flann.hpp>
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/Geometry/HalfEdgeTriangleMesh.h>
-#include <Open3D/Utility/Console.h>
+
+#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace geometry {

@@ -24,11 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Open3D/Open3D.h>
-#include <Open3D/Geometry/PointCloud.h>
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Utility/Helper.h>
-#include <Open3D/Open3D.h>
+#include "Open3D/Open3D.h"
 
 using namespace open3d;
 

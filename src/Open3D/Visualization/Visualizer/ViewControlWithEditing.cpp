@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControlWithEditing.h"
+#include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
 
 namespace open3d {
 namespace visualization {

@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include <Open3D/Utility/IJsonConvertible.h>
-#include <Open3D/Utility/Eigen.h>
+#include "Open3D/Utility/Eigen.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace registration {
@@ -38,7 +38,7 @@ namespace registration {
 class PoseGraphNode : public utility::IJsonConvertible {
 public:
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
-        : pose_(pose){};
+        : pose_(pose) {}
     ~PoseGraphNode();
 
 public:
@@ -63,7 +63,7 @@ public:
           transformation_(transformation),
           information_(information),
           uncertain_(uncertain),
-          confidence_(confidence){};
+          confidence_(confidence) {}
     ~PoseGraphEdge();
 
 public:

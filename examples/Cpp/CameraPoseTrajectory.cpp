@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
 #include <iostream>
 #include <memory>
-#include <Eigen/Dense>
 
-#include <Open3D/Open3D.h>
+#include "Open3D/Open3D.h"
 
 int main(int argc, char *argv[]) {
     using namespace open3d;

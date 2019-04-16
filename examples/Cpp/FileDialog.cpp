@@ -25,7 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
-#include <Open3D/Open3D.h>
+
+#include "Open3D/Open3D.h"
 
 void PrintHelp() {
     using namespace open3d;

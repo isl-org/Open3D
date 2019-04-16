@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <Open3D/Geometry/Geometry2D.h>
-#include <Open3D/Geometry/Image.h>
+#include "Open3D/Geometry/Geometry2D.h"
+#include "Open3D/Geometry/Image.h"
 
 namespace open3d {
 namespace geometry {
@@ -37,9 +37,9 @@ namespace geometry {
 /// If you have other format, convert it first.
 class RGBDImage {
 public:
-    RGBDImage(){};
+    RGBDImage() {}
     RGBDImage(const Image &color, const Image &depth)
-        : color_(color), depth_(depth){};
+        : color_(color), depth_(depth) {}
     ~RGBDImage() {
         color_.Clear();
         depth_.Clear();
