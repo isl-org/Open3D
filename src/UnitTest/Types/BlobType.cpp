@@ -730,6 +730,46 @@ TEST(BlobType, Add_operator_CPU) {
 }
 
 // ----------------------------------------------------------------------------
+// operator+ - GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Add_operator_GPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
+
+    vector<Eigen::Vector3d> b0_h_data(num_elements);
+    Rand((double* const)b0_h_data.data(), num_elements * 3, 0.0, 10.0, 0);
+
+    vector<Eigen::Vector3d> b1_h_data(num_elements);
+    Rand((double* const)b1_h_data.data(), num_elements * 3, 0.0, 10.0, 1);
+
+    open3d::Blob3d b0(b0_h_data, device_id);
+    open3d::Blob3d b1(b1_h_data, device_id);
+    open3d::Blob3d b2 = b0 + b1;
+
+    EXPECT_EQ(b2.num_elements, b0.size() + b1.size());
+    EXPECT_EQ(b2.device_id, open3d::cuda::DeviceID::GPU_00);
+    EXPECT_TRUE(b2.h_data.empty());
+    EXPECT_TRUE(NULL != b2.d_data);
+    EXPECT_EQ(b2.size(), b0.size() + b1.size());
+
+    vector<Eigen::Vector3d> b0_d_data(b0.size());
+    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
+                                    b0.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    vector<Eigen::Vector3d> b1_d_data(b1.size());
+    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
+                                    b1.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    vector<Eigen::Vector3d> b2_d_data(b2.size());
+    open3d::cuda::CopyDev2HstMemory(b2.d_data, (double* const)b2_d_data.data(),
+                                    b2.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+
+    for (size_t i = 0; i < b0.size(); i++)
+        ExpectEQ(b0_d_data[i], b2_d_data[i]);
+
+    for (size_t i = 0; i < b1.size(); i++)
+        ExpectEQ(b1_d_data[i], b2_d_data[i + b0.size()]);
+}
+
+// ----------------------------------------------------------------------------
 // Clear - CPU and GPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Clear) {

@@ -250,9 +250,8 @@ struct Blob {
         // append two Blobs
         inline _Type operator+(const _Type &t) {
             // what if *this and t are on different devices?
-            _Type default_output;
             if (device_id != t.device_id)
-                return default_output;
+                return _Type();
 
             size_t out_num_elements = num_elements + t.num_elements;
             cuda::DeviceID::Type out_device_id = device_id;
@@ -267,8 +266,8 @@ struct Blob {
 
             // copy device data
             if (OnGPU()) {
-                cuda::CopyDev2DevMemory(output.d_data, d_data, num_of_Ts());
-                cuda::CopyDev2DevMemory(output.d_data + num_of_Ts(), t.d_data, t.num_of_Ts());
+                cuda::CopyDev2DevMemory(d_data, output.d_data, num_of_Ts());
+                cuda::CopyDev2DevMemory(t.d_data, output.d_data + num_of_Ts(), t.num_of_Ts());
             }
 
             return output;
