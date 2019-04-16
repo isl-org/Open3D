@@ -262,29 +262,18 @@ void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
 #endif
 
 PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
-    // We do not use std::vector::insert to combine std::vector because it will
-    // crash if the pointcloud is added to itself.
     if (cloud.IsEmpty()) return (*this);
-    size_t old_vert_num = points_.size();
-    size_t add_vert_num = cloud.points_.size();
-    size_t new_vert_num = old_vert_num + add_vert_num;
-    if ((!HasPoints() || HasNormals()) && cloud.HasNormals()) {
-        normals_.resize(new_vert_num);
-        for (size_t i = 0; i < add_vert_num; i++)
-            normals_[old_vert_num + i] = cloud.normals_[i];
-    } else {
-        normals_.clear();
-    }
-    if ((!HasPoints() || HasColors()) && cloud.HasColors()) {
-        colors_.resize(new_vert_num);
-        for (size_t i = 0; i < add_vert_num; i++)
-            colors_[old_vert_num + i] = cloud.colors_[i];
-    } else {
-        colors_.clear();
-    }
-    points_.resize(new_vert_num);
-    for (size_t i = 0; i < add_vert_num; i++)
-        points_[old_vert_num + i] = cloud.points_[i];
+
+    if ((!HasPoints() || HasNormals()) && cloud.HasNormals())
+        normals_ += cloud.normals_;
+    else normals_.clear();
+
+    if ((!HasPoints() || HasColors()) && cloud.HasColors())
+        colors_ += cloud.colors_;
+    else colors_.clear();
+
+    points_ += cloud.points_;
+
     return (*this);
 }
 
