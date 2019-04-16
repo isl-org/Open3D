@@ -35,7 +35,7 @@ using namespace std;
 using namespace unit_test;
 
 // ----------------------------------------------------------------------------
-// Make sure the types are PODs.
+// Not a POD.
 // ----------------------------------------------------------------------------
 TEST(BlobType, is_POD) {
     EXPECT_FALSE(is_pod<open3d::Blob2i>());
@@ -698,6 +698,35 @@ TEST(BlobType, Assignment_operator_initializer_list_CPU_GPU) {
 
     ExpectEQ(b0.h_data, ref);
     ExpectEQ(b0_d_data, ref);
+}
+
+// ----------------------------------------------------------------------------
+// operator+ - CPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Add_operator_CPU) {
+    size_t num_elements = 100;
+    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
+
+    open3d::Blob3d b0(num_elements, device_id);
+    Rand((double* const)b0.h_data.data(), b0.size() * 3, 0.0, 10.0, 0);
+
+    open3d::Blob3d b1(num_elements, device_id);
+    Rand((double* const)b1.h_data.data(), b1.size() * 3, 0.0, 10.0, 1);
+
+    open3d::Blob3d b2 = b0 + b1;
+
+    EXPECT_EQ(b2.num_elements, b0.size() + b1.size());
+    EXPECT_EQ(b2.device_id, open3d::cuda::DeviceID::CPU);
+    EXPECT_EQ(b2.h_data.size(), b0.size() + b1.size());
+    EXPECT_FALSE(b2.h_data.empty());
+    EXPECT_TRUE(NULL == b2.d_data);
+    EXPECT_EQ(b2.size(), b0.size() + b1.size());
+
+    for (size_t i = 0; i < b0.size(); i++)
+        ExpectEQ(b0.h_data[i], b2.h_data[i]);
+
+    for (size_t i = 0; i < b1.size(); i++)
+        ExpectEQ(b1.h_data[i], b2.h_data[i + b0.size()]);
 }
 
 // ----------------------------------------------------------------------------
