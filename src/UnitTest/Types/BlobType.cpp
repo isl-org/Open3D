@@ -701,18 +701,19 @@ TEST(BlobType, Assignment_operator_initializer_list_CPU_GPU) {
 }
 
 // ----------------------------------------------------------------------------
-// operator+ - CPU.
+// operator+ - both args on the CPU.
 // ----------------------------------------------------------------------------
-TEST(BlobType, Add_operator_CPU) {
+TEST(BlobType, Add_operator_CPU_CPU) {
     size_t num_elements = 100;
-    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::CPU;
 
-    open3d::Blob3d b0(num_elements, device_id);
-    Rand((double* const)b0.h_data.data(), b0.size() * 3, 0.0, 10.0, 0);
+    vector<Eigen::Vector3d> b0_h_data(num_elements);
+    Rand((double* const)b0_h_data.data(), num_elements * 3, 0.0, 10.0, 0);
 
-    open3d::Blob3d b1(num_elements, device_id);
-    Rand((double* const)b1.h_data.data(), b1.size() * 3, 0.0, 10.0, 1);
+    vector<Eigen::Vector3d> b1_h_data(num_elements);
+    Rand((double* const)b1_h_data.data(), num_elements * 3, 0.0, 10.0, 1);
 
+    open3d::Blob3d b0(b0_h_data, open3d::cuda::DeviceID::CPU);
+    open3d::Blob3d b1(b1_h_data, open3d::cuda::DeviceID::CPU);
     open3d::Blob3d b2 = b0 + b1;
 
     EXPECT_EQ(b2.num_elements, b0.size() + b1.size());
@@ -730,11 +731,10 @@ TEST(BlobType, Add_operator_CPU) {
 }
 
 // ----------------------------------------------------------------------------
-// operator+ - GPU.
+// operator+ - both args on the GPU.
 // ----------------------------------------------------------------------------
-TEST(BlobType, Add_operator_GPU) {
+TEST(BlobType, Add_operator_GPU_GPU) {
     size_t num_elements = 100;
-    open3d::cuda::DeviceID::Type device_id = open3d::cuda::DeviceID::GPU_00;
 
     vector<Eigen::Vector3d> b0_h_data(num_elements);
     Rand((double* const)b0_h_data.data(), num_elements * 3, 0.0, 10.0, 0);
@@ -742,8 +742,8 @@ TEST(BlobType, Add_operator_GPU) {
     vector<Eigen::Vector3d> b1_h_data(num_elements);
     Rand((double* const)b1_h_data.data(), num_elements * 3, 0.0, 10.0, 1);
 
-    open3d::Blob3d b0(b0_h_data, device_id);
-    open3d::Blob3d b1(b1_h_data, device_id);
+    open3d::Blob3d b0(b0_h_data, open3d::cuda::DeviceID::GPU_00);
+    open3d::Blob3d b1(b1_h_data, open3d::cuda::DeviceID::GPU_00);
     open3d::Blob3d b2 = b0 + b1;
 
     EXPECT_EQ(b2.num_elements, b0.size() + b1.size());
