@@ -29,7 +29,9 @@
 
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace open3d;
@@ -263,4 +265,14 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
     octree.ConvertFromPointCloud(pcd, true, 0.01);
     ExpectEQ(octree.origin_, Eigen::Vector3d(-2, -1, 0));  // Auto-centered
     EXPECT_EQ(octree.size_, 4.04);  // 4.04 = 4 * (1 + 0.01)
+}
+
+TEST(Octree, ToVoxelGrid) {
+    geometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    size_t max_depth = 7;
+    geometry::Octree octree(max_depth);
+    octree.ConvertFromPointCloud(pcd);
+    std::shared_ptr<geometry::VoxelGrid> voxel_grid = octree.ToVoxelGrid();
+    // visualization::DrawGeometries({voxel_grid});
 }
