@@ -81,9 +81,9 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
             [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
                 return a(2) < b(2);
             });
-    return Eigen::Vector3d((*itr_x)(0) * voxel_size_ + origin_(0),
-                           (*itr_y)(1) * voxel_size_ + origin_(1),
-                           (*itr_z)(2) * voxel_size_ + origin_(2));
+    return Eigen::Vector3d(((*itr_x)(0) + 1) * voxel_size_ + origin_(0),
+                           ((*itr_y)(1) + 1) * voxel_size_ + origin_(1),
+                           ((*itr_z)(2) + 1) * voxel_size_ + origin_(2));
 }
 
 void VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {

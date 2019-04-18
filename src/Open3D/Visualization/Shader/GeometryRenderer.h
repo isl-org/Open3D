@@ -27,6 +27,7 @@
 #pragma once
 
 #include "Open3D/Geometry/Geometry.h"
+#include "Open3D/Visualization/Shader/CuboidShader.h"
 #include "Open3D/Visualization/Shader/ImageMaskShader.h"
 #include "Open3D/Visualization/Shader/ImageShader.h"
 #include "Open3D/Visualization/Shader/NormalShader.h"
@@ -145,7 +146,7 @@ public:
     bool UpdateGeometry() override;
 
 protected:
-    SimpleShaderForVoxelGrid simple_voxelgrid_shader_;
+    CuboidShaderForVoxelGrid cuboid_shader_for_voxel_grid_;
 };
 
 class ImageRenderer : public GeometryRenderer {

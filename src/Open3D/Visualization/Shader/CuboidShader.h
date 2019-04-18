@@ -36,12 +36,13 @@ namespace visualization {
 
 namespace glsl {
 
-class SimpleShader : public ShaderWrapper {
+class CuboidShader : public ShaderWrapper {
 public:
-    ~SimpleShader() override { Release(); }
+    CuboidShader() : CuboidShader("CuboidShader") {}
+    ~CuboidShader() override { Release(); }
 
 protected:
-    SimpleShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    CuboidShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
 protected:
     bool Compile() final;
@@ -62,19 +63,28 @@ protected:
                                 const RenderOption &option,
                                 const ViewControl &view,
                                 std::vector<Eigen::Vector3f> &points,
-                                std::vector<Eigen::Vector3f> &colors) = 0;
+                                std::vector<Eigen::Vector3f> &colors,
+                                std::vector<Eigen::Vector3f> &line_points,
+                                std::vector<Eigen::Vector3f> &line_colors) = 0;
 
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_color_;
     GLuint vertex_color_buffer_;
+    GLuint line_vertex_position_;
+    GLuint line_vertex_position_buffer_;
+    GLuint line_vertex_color_;
+    GLuint line_vertex_color_buffer_;
     GLuint MVP_;
+
+    GLenum line_draw_arrays_mode_ = GL_LINES;
+    GLsizei line_draw_arrays_size_ = 0;
 };
 
-class SimpleShaderForPointCloud : public SimpleShader {
+class CuboidShaderForVoxelGrid : public CuboidShader {
 public:
-    SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
+    CuboidShaderForVoxelGrid() : CuboidShader("CuboidShaderForVoxelGrid") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,
@@ -84,38 +94,9 @@ protected:
                         const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
-                        std::vector<Eigen::Vector3f> &colors) final;
-};
-
-class SimpleShaderForLineSet : public SimpleShader {
-public:
-    SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
-
-protected:
-    bool PrepareRendering(const geometry::Geometry &geometry,
-                          const RenderOption &option,
-                          const ViewControl &view) final;
-    bool PrepareBinding(const geometry::Geometry &geometry,
-                        const RenderOption &option,
-                        const ViewControl &view,
-                        std::vector<Eigen::Vector3f> &points,
-                        std::vector<Eigen::Vector3f> &colors) final;
-};
-
-class SimpleShaderForTriangleMesh : public SimpleShader {
-public:
-    SimpleShaderForTriangleMesh()
-        : SimpleShader("SimpleShaderForTriangleMesh") {}
-
-protected:
-    bool PrepareRendering(const geometry::Geometry &geometry,
-                          const RenderOption &option,
-                          const ViewControl &view) final;
-    bool PrepareBinding(const geometry::Geometry &geometry,
-                        const RenderOption &option,
-                        const ViewControl &view,
-                        std::vector<Eigen::Vector3f> &points,
-                        std::vector<Eigen::Vector3f> &colors) final;
+                        std::vector<Eigen::Vector3f> &colors,
+                        std::vector<Eigen::Vector3f> &line_points,
+                        std::vector<Eigen::Vector3f> &line_colors) final;
 };
 
 }  // namespace glsl
