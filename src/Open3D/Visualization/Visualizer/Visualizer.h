@@ -117,9 +117,12 @@ public:
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
-    std::pair<bool, std::shared_ptr<glsl::GeometryRenderer>> GetRendererPointer(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr);
-
+    /// Function to remove geometry from the scene
+    /// 1. After calling this function, the Visualizer releases the pointer of
+    /// the geometry object.
+    /// 2. This function MUST be called after CreateVisualizerWindow().
+    /// 3. This function returns FALSE if the geometry to be removed is not
+    /// added by AddGeometry
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
