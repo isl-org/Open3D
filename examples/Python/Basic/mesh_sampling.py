@@ -8,8 +8,8 @@ import numpy as np
 from open3d import *
 
 if __name__ == "__main__":
-  mesh = read_triangle_mesh('bathtub_0154.ply')
-  draw_geometries([mesh])
+    mesh = read_triangle_mesh('bathtub_0154.ply')
+    draw_geometries([mesh])
 
-  pcd = mesh.sample_points_uniformly(5000)
-  draw_geometries(pcd)
+    pcd = mesh.sample_points_uniformly(5000)
+    draw_geometries(pcd)
