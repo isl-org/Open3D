@@ -104,7 +104,7 @@ bool PointCloudPickingRenderer::UpdateGeometry() {
 bool VoxelGridRenderer::Render(const RenderOption &option,
                                const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
-    return simple_voxelgrid_shader_.Render(*geometry_ptr_, option, view);
+    return cuboid_shader_for_voxel_grid_.Render(*geometry_ptr_, option, view);
 }
 
 bool VoxelGridRenderer::AddGeometry(
@@ -118,7 +118,7 @@ bool VoxelGridRenderer::AddGeometry(
 }
 
 bool VoxelGridRenderer::UpdateGeometry() {
-    simple_voxelgrid_shader_.InvalidateGeometry();
+    cuboid_shader_for_voxel_grid_.InvalidateGeometry();
     return true;
 }
 
