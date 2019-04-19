@@ -264,7 +264,7 @@ TEST(HalfEdgeTriangleMesh, Constructor_TwoTrianglesFlipped) {
                  std::runtime_error);  // Non-manifold
 }
 
-TEST(HalfEdgeTriangleMesh, Constructo_rTwoTrianglesInvalidVertex) {
+TEST(HalfEdgeTriangleMesh, Constructor_TwoTrianglesInvalidVertex) {
     geometry::TriangleMesh mesh = get_mesh_two_triangles_invalid_vertex();
     ASSERT_THROW(geometry::CreateHalfEdgeMeshFromMesh(mesh),
                  std::runtime_error);  // Non-manifold
