@@ -144,7 +144,8 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "sample_points_uniformly");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "sample_points_uniformly");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
