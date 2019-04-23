@@ -210,7 +210,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance_Tensor) {
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-TEST(PointCloudCUDA, ReadWritePointCloud_CPU) {
+TEST(PointCloudCUDA, IO_CPU) {
     int nrGPUs = 0;
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
@@ -250,7 +250,7 @@ TEST(PointCloudCUDA, ReadWritePointCloud_CPU) {
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-TEST(PointCloudCUDA, ReadWritePointCloud_GPU) {
+TEST(PointCloudCUDA, IO_GPU) {
     int nrGPUs = 0;
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
