@@ -218,6 +218,9 @@ TEST(PointCloudCUDA, ReadWritePointCloud_CPU) {
     const string file_name("test.ply");
     utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseError);
 
+    geometry::PointCloud pc_write;
+    geometry::PointCloud pc_read;
+
     size_t num_elements = 1 << 10;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
@@ -225,21 +228,24 @@ TEST(PointCloudCUDA, ReadWritePointCloud_CPU) {
 
     vector<Eigen::Vector3d> points(num_elements);
     Rand(points, vmin, vmax, 0);
+    pc_write.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
 
     vector<Eigen::Vector3d> normals(num_elements);
     Rand(normals, vmin, vmax, 1);
-
-    geometry::PointCloud pc_write;
-    pc_write.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
     pc_write.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::CPU);
-    EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
 
-    geometry::PointCloud pc_read;
+    // Read/WritePointCloud don't handle the colors at this time
+    // vector<Eigen::Vector3d> colors(num_elements);
+    // Rand(colors, vmin, vmax, 2);
+    // pc_write.colors_ = open3d::Colors(colors, open3d::cuda::DeviceID::CPU);
+
+    EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
     EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
     EXPECT_TRUE(utility::filesystem::FileExists(file_name));
 
     ExpectEQ(points, pc_read.points_.h_data);
     ExpectEQ(normals, pc_read.normals_.h_data);
+    // ExpectEQ(colors, pc_read.colors_.h_data);
 }
 
 #endif
