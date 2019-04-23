@@ -162,8 +162,8 @@ void pybind_camera_classes(py::module &m) {
     pinhole_traj
             .def_readwrite("parameters",
                            &camera::PinholeCameraTrajectory::parameters_,
-                           "``List(open3d.camera.PinholeCameraIntrinsic)``: "
-                           "List of PinholeCameraIntrinsic objects.")
+                           "``List(open3d.camera.PinholeCameraParameters)``: "
+                           "List of PinholeCameraParameters objects.")
             .def("__repr__", [](const camera::PinholeCameraTrajectory &c) {
                 return std::string("camera::PinholeCameraTrajectory class.\n") +
                        std::string("Access its data via camera_parameters.");
