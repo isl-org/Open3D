@@ -27,6 +27,7 @@
 #include "Open3D/Visualization/Shader/SimpleShader.h"
 
 #include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/VoxelGrid.h"
@@ -35,8 +36,33 @@
 
 namespace open3d {
 namespace visualization {
-
 namespace glsl {
+
+// Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
+const static std::vector<Eigen::Vector3i> cuboid_vertex_offsets{
+        Eigen::Vector3i(0, 0, 0), Eigen::Vector3i(1, 0, 0),
+        Eigen::Vector3i(0, 1, 0), Eigen::Vector3i(1, 1, 0),
+        Eigen::Vector3i(0, 0, 1), Eigen::Vector3i(1, 0, 1),
+        Eigen::Vector3i(0, 1, 1), Eigen::Vector3i(1, 1, 1),
+};
+
+// Vertex indices of 12 triangles in a cuboid, for right-handed manifold mesh
+const static std::vector<Eigen::Vector3i> cuboid_triangles_vertex_indices{
+        Eigen::Vector3i(0, 2, 1), Eigen::Vector3i(0, 1, 4),
+        Eigen::Vector3i(0, 4, 2), Eigen::Vector3i(5, 1, 7),
+        Eigen::Vector3i(5, 7, 4), Eigen::Vector3i(5, 4, 1),
+        Eigen::Vector3i(3, 7, 1), Eigen::Vector3i(3, 1, 2),
+        Eigen::Vector3i(3, 2, 7), Eigen::Vector3i(6, 4, 7),
+        Eigen::Vector3i(6, 7, 2), Eigen::Vector3i(6, 2, 4),
+};
+
+// Vertex indices of 12 lines in a cuboid
+const static std::vector<Eigen::Vector2i> cuboid_lines_vertex_indices{
+        Eigen::Vector2i(0, 1), Eigen::Vector2i(0, 2), Eigen::Vector2i(0, 4),
+        Eigen::Vector2i(3, 1), Eigen::Vector2i(3, 2), Eigen::Vector2i(3, 7),
+        Eigen::Vector2i(5, 1), Eigen::Vector2i(5, 4), Eigen::Vector2i(5, 7),
+        Eigen::Vector2i(6, 2), Eigen::Vector2i(6, 4), Eigen::Vector2i(6, 7),
+};
 
 bool SimpleShader::Compile() {
     if (CompileShaders(SimpleVertexShader, NULL, SimpleFragmentShader) ==
@@ -327,7 +353,358 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
     return true;
 }
 
-}  // namespace glsl
+bool SimpleShaderForVoxelGridLine::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    return true;
+}
 
+bool SimpleShaderForVoxelGridLine::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    const geometry::VoxelGrid &voxel_grid =
+            (const geometry::VoxelGrid &)geometry;
+    if (voxel_grid.HasVoxels() == false) {
+        PrintShaderWarning("Binding failed with empty voxel grid.");
+        return false;
+    }
+    const ColorMap &global_color_map = *GetGlobalColorMap();
+    auto num_voxels = voxel_grid.voxels_.size();
+    points.clear();  // Final size: num_voxels * 12 * 2
+    colors.clear();  // Final size: num_voxels * 12 * 2
+
+    for (size_t voxel_idx = 0; voxel_idx < num_voxels; voxel_idx++) {
+        // 8 vertices in a voxel
+        Eigen::Vector3f base_vertex =
+                voxel_grid.origin_.cast<float>() +
+                voxel_grid.voxels_[voxel_idx].cast<float>() *
+                        voxel_grid.voxel_size_;
+        std::vector<Eigen::Vector3f> vertices;
+        for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
+            vertices.push_back(base_vertex + vertex_offset.cast<float>() *
+                                                     voxel_grid.voxel_size_);
+        }
+
+        // Voxel color (applied to all points)
+        Eigen::Vector3d voxel_color;
+        switch (option.mesh_color_option_) {
+            case RenderOption::MeshColorOption::XCoordinate:
+                voxel_color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetXPercentage(base_vertex(0)));
+                break;
+            case RenderOption::MeshColorOption::YCoordinate:
+                voxel_color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetYPercentage(base_vertex(1)));
+                break;
+            case RenderOption::MeshColorOption::ZCoordinate:
+                voxel_color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetZPercentage(base_vertex(2)));
+                break;
+            case RenderOption::MeshColorOption::Color:
+                if (voxel_grid.HasColors()) {
+                    voxel_color = voxel_grid.colors_[voxel_idx];
+                    break;
+                }
+            case RenderOption::MeshColorOption::Default:
+            default:
+                voxel_color = option.default_mesh_color_;
+                break;
+        }
+        Eigen::Vector3f voxel_color_f = voxel_color.cast<float>();
+
+        // 12 lines
+        for (const Eigen::Vector2i &line_vertex_indices :
+             cuboid_lines_vertex_indices) {
+            points.push_back(vertices[line_vertex_indices(0)]);
+            points.push_back(vertices[line_vertex_indices(1)]);
+            colors.push_back(voxel_color_f);
+            colors.push_back(voxel_color_f);
+        }
+    }
+
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+    return true;
+}
+
+bool SimpleShaderForVoxelGridFace::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    return true;
+}
+
+bool SimpleShaderForVoxelGridFace::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    const geometry::VoxelGrid &voxel_grid =
+            (const geometry::VoxelGrid &)geometry;
+    if (voxel_grid.HasVoxels() == false) {
+        PrintShaderWarning("Binding failed with empty voxel grid.");
+        return false;
+    }
+    const ColorMap &global_color_map = *GetGlobalColorMap();
+    auto num_voxels = voxel_grid.voxels_.size();
+    points.clear();  // Final size: num_voxels * 36
+    colors.clear();  // Final size: num_voxels * 36
+
+    for (size_t voxel_idx = 0; voxel_idx < num_voxels; voxel_idx++) {
+        // 8 vertices in a voxel
+        Eigen::Vector3f base_vertex =
+                voxel_grid.origin_.cast<float>() +
+                voxel_grid.voxels_[voxel_idx].cast<float>() *
+                        voxel_grid.voxel_size_;
+        std::vector<Eigen::Vector3f> vertices;
+        for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
+            vertices.push_back(base_vertex + vertex_offset.cast<float>() *
+                                                     voxel_grid.voxel_size_);
+        }
+
+        // Voxel color (applied to all points)
+        Eigen::Vector3d voxel_color;
+        switch (option.mesh_color_option_) {
+            case RenderOption::MeshColorOption::XCoordinate:
+                voxel_color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetXPercentage(base_vertex(0)));
+                break;
+            case RenderOption::MeshColorOption::YCoordinate:
+                voxel_color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetYPercentage(base_vertex(1)));
+                break;
+            case RenderOption::MeshColorOption::ZCoordinate:
+                voxel_color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetZPercentage(base_vertex(2)));
+                break;
+            case RenderOption::MeshColorOption::Color:
+                if (voxel_grid.HasColors()) {
+                    voxel_color = voxel_grid.colors_[voxel_idx];
+                    break;
+                }
+            case RenderOption::MeshColorOption::Default:
+            default:
+                voxel_color = option.default_mesh_color_;
+                break;
+        }
+        Eigen::Vector3f voxel_color_f = voxel_color.cast<float>();
+
+        // 12 triangles in a voxel
+        for (const Eigen::Vector3i &triangle_vertex_indices :
+             cuboid_triangles_vertex_indices) {
+            points.push_back(vertices[triangle_vertex_indices(0)]);
+            points.push_back(vertices[triangle_vertex_indices(1)]);
+            points.push_back(vertices[triangle_vertex_indices(2)]);
+            colors.push_back(voxel_color_f);
+            colors.push_back(voxel_color_f);
+            colors.push_back(voxel_color_f);
+        }
+    }
+
+    draw_arrays_mode_ = GL_TRIANGLES;
+    draw_arrays_size_ = GLsizei(points.size());
+
+    return true;
+}
+
+bool SimpleShaderForOctreeFace::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Octree) {
+        PrintShaderWarning("Rendering type is not geometry::Octree.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    return true;
+}
+
+bool SimpleShaderForOctreeFace::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Octree) {
+        PrintShaderWarning("Rendering type is not geometry::Octree.");
+        return false;
+    }
+    const geometry::Octree &octree = (const geometry::Octree &)geometry;
+    if (octree.IsEmpty()) {
+        PrintShaderWarning("Binding failed with empty octree.");
+        return false;
+    }
+    const ColorMap &global_color_map = *GetGlobalColorMap();
+    points.clear();  // Final size: num_voxels * 36
+    colors.clear();  // Final size: num_voxels * 36
+
+    auto f = [&points, &colors, &option, &global_color_map, &view](
+                     const std::shared_ptr<geometry::OctreeNode> &node,
+                     const std::shared_ptr<geometry::OctreeNodeInfo> &node_info)
+            -> void {
+        if (auto leaf_node =
+                    std::dynamic_pointer_cast<geometry::OctreeLeafNode>(node)) {
+            // All vertex in the voxel share the same color
+            Eigen::Vector3f base_vertex = node_info->origin_.cast<float>();
+            std::vector<Eigen::Vector3f> vertices;
+            for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
+                vertices.push_back(base_vertex +
+                                   vertex_offset.cast<float>() *
+                                           float(node_info->size_));
+            }
+
+            Eigen::Vector3d voxel_color;
+            switch (option.mesh_color_option_) {
+                case RenderOption::MeshColorOption::XCoordinate:
+                    voxel_color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetXPercentage(
+                                    base_vertex(0)));
+                    break;
+                case RenderOption::MeshColorOption::YCoordinate:
+                    voxel_color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetYPercentage(
+                                    base_vertex(1)));
+                    break;
+                case RenderOption::MeshColorOption::ZCoordinate:
+                    voxel_color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetZPercentage(
+                                    base_vertex(2)));
+                    break;
+                case RenderOption::MeshColorOption::Color:
+                    voxel_color = leaf_node->color_;
+                    break;
+                case RenderOption::MeshColorOption::Default:
+                default:
+                    voxel_color = option.default_mesh_color_;
+                    break;
+            }
+            Eigen::Vector3f voxel_color_f = voxel_color.cast<float>();
+
+            // 12 triangles in a voxel
+            for (const Eigen::Vector3i &triangle_vertex_indices :
+                 cuboid_triangles_vertex_indices) {
+                points.push_back(vertices[triangle_vertex_indices(0)]);
+                points.push_back(vertices[triangle_vertex_indices(1)]);
+                points.push_back(vertices[triangle_vertex_indices(2)]);
+                colors.push_back(voxel_color_f);
+                colors.push_back(voxel_color_f);
+                colors.push_back(voxel_color_f);
+            }
+        }
+    };
+
+    octree.Traverse(f);
+
+    draw_arrays_mode_ = GL_TRIANGLES;
+    draw_arrays_size_ = GLsizei(points.size());
+
+    return true;
+}
+
+bool SimpleShaderForOctreeLine::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Octree) {
+        PrintShaderWarning("Rendering type is not geometry::Octree.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    return true;
+}
+
+bool SimpleShaderForOctreeLine::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Octree) {
+        PrintShaderWarning("Rendering type is not geometry::Octree.");
+        return false;
+    }
+    const geometry::Octree &octree = (const geometry::Octree &)geometry;
+    if (octree.IsEmpty()) {
+        PrintShaderWarning("Binding failed with empty octree.");
+        return false;
+    }
+    const ColorMap &global_color_map = *GetGlobalColorMap();
+    points.clear();  // Final size: num_voxels * 36
+    colors.clear();  // Final size: num_voxels * 36
+
+    auto f = [&points, &colors](
+                     const std::shared_ptr<geometry::OctreeNode> &node,
+                     const std::shared_ptr<geometry::OctreeNodeInfo> &node_info)
+            -> void {
+
+        Eigen::Vector3f base_vertex = node_info->origin_.cast<float>();
+        std::vector<Eigen::Vector3f> vertices;
+        for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
+            vertices.push_back(base_vertex + vertex_offset.cast<float>() *
+                                                     float(node_info->size_));
+        }
+        Eigen::Vector3f voxel_color = Eigen::Vector3f::Zero();
+        if (auto leaf_node =
+                    std::dynamic_pointer_cast<geometry::OctreeLeafNode>(node)) {
+            voxel_color = leaf_node->color_.cast<float>();
+        }
+
+        for (const Eigen::Vector2i &line_vertex_indices :
+             cuboid_lines_vertex_indices) {
+            points.push_back(vertices[line_vertex_indices(0)]);
+            points.push_back(vertices[line_vertex_indices(1)]);
+            colors.push_back(voxel_color);
+            colors.push_back(voxel_color);
+        }
+    };
+
+    octree.Traverse(f);
+
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+
+    return true;
+}
+
+}  // namespace glsl
 }  // namespace visualization
 }  // namespace open3d
