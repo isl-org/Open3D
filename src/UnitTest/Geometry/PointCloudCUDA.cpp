@@ -29,6 +29,8 @@
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include "Open3D/Utility/FileSystem.h"
 
 #include <algorithm>
 
@@ -204,6 +206,40 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance_Tensor) {
 
     ExpectEQ(mean_cpu, mean_gpu);
     ExpectEQ(covariance_cpu, covariance_gpu);
+}
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+TEST(PointCloudCUDA, ReadWritePointCloud_CPU) {
+    int nrGPUs = 0;
+    cudaGetDeviceCount(&nrGPUs);
+    EXPECT_TRUE(0 < nrGPUs);
+
+    const string file_name("test.ply");
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseError);
+
+    size_t num_elements = 1 << 10;
+
+    Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
+    Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand(points, vmin, vmax, 0);
+
+    vector<Eigen::Vector3d> normals(num_elements);
+    Rand(normals, vmin, vmax, 1);
+
+    geometry::PointCloud pc_write;
+    pc_write.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_write.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::CPU);
+    EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
+
+    geometry::PointCloud pc_read;
+    EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
+    EXPECT_TRUE(utility::filesystem::FileExists(file_name));
+
+    ExpectEQ(points, pc_read.points_.h_data);
+    ExpectEQ(normals, pc_read.normals_.h_data);
 }
 
 #endif
