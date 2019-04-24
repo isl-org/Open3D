@@ -142,20 +142,7 @@ struct Blob {
         inline bool operator==(const _Type &r) {
             if (num_elements != r.num_elements) return false;
 
-            // host-host
-            if (OnCPU() && r.OnCPU()) return h_data == r.h_data;
-
-            // host-device
-            if (OnCPU() && r.OnGPU()) return h_data == r.ReadGPU();
-
-            // device-host
-            if (OnGPU() && r.OnCPU()) return ReadGPU() == r.h_data;
-
-            // device-device
-            // TODO: do it on the GPU
-            if (OnGPU() && r.OnGPU()) return ReadGPU() == r.ReadGPU();
-
-            return false;
+            return Read() == r.Read();
         }
         // compare contents for inequality
         inline bool operator!=(const _Type &r) { return !(*this == r); }
@@ -530,11 +517,19 @@ struct Blob {
         }
 
     public:
-        inline std::vector<V> ReadGPU() const {
-            std::vector<V> data(num_elements);
-            cuda::CopyDev2HstMemory(d_data, (T *const)data.data(), num_of_Ts());
+        inline std::vector<V> Read() const {
 
-            return data;
+            // copy host data
+            if (OnCPU()) return h_data;
+
+            // copy device data
+            if (OnGPU()) {
+                std::vector<V> data(num_elements);
+                cuda::CopyDev2HstMemory(d_data, (T *const)data.data(), num_of_Ts());
+                return data;
+            }
+
+            return std::vector<V>();
         }
     } Type;
 };
