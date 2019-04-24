@@ -157,7 +157,9 @@ elseif (UNIX)
     # had to disable this option to avoid nvcc fatal error: unknown option 'Wno-unused-result'
     # add_compile_options(-Wno-unused-result)
 
-    add_definitions(-O3)
+    # had to disable this option to avoid nvcc fatal error: redefinition of argument 'optimize'
+    # add_definitions(-O3)
+
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
     message(STATUS "Disable RealSense since it is not fully supported on Linux.")
