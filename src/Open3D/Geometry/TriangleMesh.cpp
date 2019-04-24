@@ -335,8 +335,6 @@ void TriangleMesh::FilterSmoothSimple(int number_of_iterations) {
         ComputeAdjacencyList();
     }
 
-    // TODO: cotangent weighting
-
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
 
@@ -375,10 +373,64 @@ void TriangleMesh::FilterSmoothSimple(int number_of_iterations) {
     }
 }
 
+void TriangleMesh::FilterSmoothLaplacian(int number_of_iterations,
+                                         double lambda) {
+    if (!HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
+
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        std::vector<Eigen::Vector3d> prev_vertices = vertices_;
+        std::vector<Eigen::Vector3d> prev_vertex_normals = vertex_normals_;
+        std::vector<Eigen::Vector3d> prev_vertex_colors = vertex_colors_;
+
+        for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+            Eigen::Vector3d vertex_sum(0, 0, 0);
+            Eigen::Vector3d normal_sum(0, 0, 0);
+            Eigen::Vector3d color_sum(0, 0, 0);
+            double total_weight = 0;
+            for (int nbidx : adjacency_list_[vidx]) {
+                auto diff = prev_vertices[vidx] - prev_vertices[nbidx];
+                double dist = diff.norm();
+                double weight = 1. / (dist + 1e-12);
+                total_weight += weight;
+
+                vertex_sum += weight * prev_vertices[nbidx];
+                if (has_vert_normal) {
+                    normal_sum += weight * prev_vertex_normals[nbidx];
+                }
+                if (has_vert_color) {
+                    color_sum += weight * prev_vertex_colors[nbidx];
+                }
+            }
+
+            vertices_[vidx] =
+                    prev_vertices[vidx] +
+                    lambda * (vertex_sum / total_weight - prev_vertices[vidx]);
+            if (has_vert_normal) {
+                vertex_normals_[vidx] = prev_vertex_normals[vidx] +
+                                        lambda * (normal_sum / total_weight -
+                                                  prev_vertex_normals[vidx]);
+            }
+            if (has_vert_color) {
+                vertex_colors_[vidx] = prev_vertex_colors[vidx] +
+                                       lambda * (color_sum / total_weight -
+                                                 prev_vertex_colors[vidx]);
+            }
+        }
+    }
+}
+
 void TriangleMesh::FilterSmoothTaubin(int number_of_iterations,
                                       double lambda,
                                       double mu) {
-    // TODO
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        FilterSmoothLaplacian(1, lambda);
+        FilterSmoothLaplacian(1, -mu);
+    }
 }
 
 void TriangleMesh::RemoveDuplicatedVertices() {

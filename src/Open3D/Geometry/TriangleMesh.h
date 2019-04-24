@@ -73,8 +73,11 @@ public:
     /// Function to sharpen triangle mesh
     void FilterSharpen(int number_of_iterations, double strength);
 
-    /// Function to smooth triangle mesh with simple neibhbour average
+    /// Function to smooth triangle mesh with simple neighbour average
     void FilterSmoothSimple(int number_of_iterations);
+
+    /// Function to smooth triangle mesh using Laplacian
+    void FilterSmoothLaplacian(int number_of_iterations, double lambda);
 
     /// Function to smooth triangle mesh using method of Taubin
     void FilterSmoothTaubin(int number_of_iterations, double lambda, double mu);
