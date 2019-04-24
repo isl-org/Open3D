@@ -494,6 +494,28 @@ TEST(BlobType, Equality_operator_GPU_CPU) {
 }
 
 // ----------------------------------------------------------------------------
+// Equality operator - GPU vs. GPU.
+// ----------------------------------------------------------------------------
+TEST(BlobType, Equality_operator_GPU_GPU) {
+    size_t num_elements = 100;
+
+    Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
+    Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
+
+    vector<Eigen::Vector3d> points(num_elements);
+    Rand(points, vmin, vmax, 0);
+
+    open3d::Blob3d b0(points, open3d::cuda::DeviceID::GPU_00);
+    open3d::Blob3d b1(points, open3d::cuda::DeviceID::GPU_00);
+
+    EXPECT_TRUE(b1 == b0);
+
+    b1.push_back(Eigen::Vector3d::Zero());
+
+    EXPECT_TRUE(b1 != b0);
+}
+
+// ----------------------------------------------------------------------------
 // Assignment operator - CPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Assignment_operator_CPU) {
