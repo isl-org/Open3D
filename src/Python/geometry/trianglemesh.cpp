@@ -74,6 +74,16 @@ void pybind_trianglemesh(py::module &m) {
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly points from the mesh",
                  "number_of_points"_a = 100)
+            .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
+                 "Function to sharpen mesh", "number_of_iterations"_a = 1,
+                 "strength" = 1)
+            .def("filter_smooth_simple",
+                 &geometry::TriangleMesh::FilterSmoothSimple,
+                 "Function to sharpen mesh", "number_of_iterations"_a = 1)
+            .def("filter_smooth_taubin",
+                 &geometry::TriangleMesh::FilterSmoothTaubin,
+                 "Function to sharpen mesh", "number_of_iterations"_a = 1,
+                 "lambda" = 0.5, "mu" = 0.53)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -146,6 +156,9 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "sample_points_uniformly");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_sharpen");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_simple");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_taubin");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {

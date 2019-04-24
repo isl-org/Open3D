@@ -67,7 +67,17 @@ public:
     void Purge();
 
     /// Function to sample number_of_points points uniformly from the mesh
-    std::shared_ptr<PointCloud> SamplePointsUniformly(size_t number_of_points);
+    std::shared_ptr<PointCloud> SamplePointsUniformly(
+            size_t number_of_points) const;
+
+    /// Function to sharpen triangle mesh
+    void FilterSharpen(int number_of_iterations, double strength);
+
+    /// Function to smooth triangle mesh with simple neibhbour average
+    void FilterSmoothSimple(int number_of_iterations);
+
+    /// Function to smooth triangle mesh using method of Taubin
+    void FilterSmoothTaubin(int number_of_iterations, double lambda, double mu);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
@@ -79,7 +89,7 @@ protected:
 
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index
-    virtual double TriangleArea(size_t triangle_idx);
+    virtual double TriangleArea(size_t triangle_idx) const;
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }

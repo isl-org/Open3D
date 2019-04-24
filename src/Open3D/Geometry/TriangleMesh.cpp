@@ -216,7 +216,7 @@ void TriangleMesh::Purge() {
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points) {
+        size_t number_of_points) const {
     if (number_of_points == 0 || triangles_.size() == 0) {
         return std::make_shared<PointCloud>();
     }
@@ -281,6 +281,104 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     }
 
     return pcd;
+}
+
+void TriangleMesh::FilterSharpen(int number_of_iterations, double strength) {
+    if (!HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
+
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        std::vector<Eigen::Vector3d> prev_vertices = vertices_;
+        std::vector<Eigen::Vector3d> prev_vertex_normals = vertex_normals_;
+        std::vector<Eigen::Vector3d> prev_vertex_colors = vertex_colors_;
+
+        for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+            Eigen::Vector3d vertex_sum(0, 0, 0);
+            Eigen::Vector3d normal_sum(0, 0, 0);
+            Eigen::Vector3d color_sum(0, 0, 0);
+            for (int nbidx : adjacency_list_[vidx]) {
+                vertex_sum += prev_vertices[nbidx];
+                if (has_vert_normal) {
+                    normal_sum += prev_vertex_normals[nbidx];
+                }
+                if (has_vert_color) {
+                    color_sum += prev_vertex_colors[nbidx];
+                }
+            }
+
+            size_t nb_size = adjacency_list_[vidx].size();
+            vertices_[vidx] =
+                    prev_vertices[vidx] +
+                    strength * (prev_vertices[vidx] * nb_size - vertex_sum);
+            if (has_vert_normal) {
+                vertex_normals_[vidx] =
+                        prev_vertex_normals[vidx] +
+                        strength * (prev_vertex_normals[vidx] * nb_size -
+                                    normal_sum);
+            }
+            if (has_vert_color) {
+                vertex_colors_[vidx] =
+                        prev_vertex_colors[vidx] +
+                        strength * (prev_vertex_colors[vidx] * nb_size -
+                                    color_sum);
+            }
+        }
+    }
+}
+
+void TriangleMesh::FilterSmoothSimple(int number_of_iterations) {
+    if (!HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
+
+    // TODO: cotangent weighting
+
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        std::vector<Eigen::Vector3d> prev_vertices = vertices_;
+        std::vector<Eigen::Vector3d> prev_vertex_normals = vertex_normals_;
+        std::vector<Eigen::Vector3d> prev_vertex_colors = vertex_colors_;
+
+        for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+            Eigen::Vector3d vertex_sum(0, 0, 0);
+            Eigen::Vector3d normal_sum(0, 0, 0);
+            Eigen::Vector3d color_sum(0, 0, 0);
+            for (int nbidx : adjacency_list_[vidx]) {
+                vertex_sum += prev_vertices[nbidx];
+                if (has_vert_normal) {
+                    normal_sum += prev_vertex_normals[nbidx];
+                }
+                if (has_vert_color) {
+                    color_sum += prev_vertex_colors[nbidx];
+                }
+            }
+
+            size_t nb_size = adjacency_list_[vidx].size();
+            vertices_[vidx] =
+                    (prev_vertices[vidx] + vertex_sum) / (1 + nb_size);
+            if (has_vert_normal) {
+                vertex_normals_[vidx] =
+                        (prev_vertex_normals[vidx] + normal_sum) /
+                        (1 + nb_size);
+            }
+            if (has_vert_color) {
+                vertex_colors_[vidx] =
+                        (prev_vertex_colors[vidx] + color_sum) / (1 + nb_size);
+            }
+        }
+    }
+}
+
+void TriangleMesh::FilterSmoothTaubin(int number_of_iterations,
+                                      double lambda,
+                                      double mu) {
+    // TODO
 }
 
 void TriangleMesh::RemoveDuplicatedVertices() {
@@ -439,7 +537,7 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
             (int)(old_triangle_num - k));
 }
 
-double TriangleMesh::TriangleArea(size_t triangle_idx) {
+double TriangleMesh::TriangleArea(size_t triangle_idx) const {
     const Eigen::Vector3i &triangle = triangles_[triangle_idx];
     const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
