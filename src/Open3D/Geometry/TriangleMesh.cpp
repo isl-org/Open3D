@@ -450,5 +450,28 @@ double TriangleMesh::TriangleArea(size_t triangle_idx) {
     return area;
 }
 
+bool TriangleMesh::IsWatertight() const {
+    typedef std::tuple<int, int> Edge;
+    std::unordered_set<Edge, utility::hash_tuple::hash<Edge>> edges;
+    for (auto triangle : triangles_) {
+        int min0 = std::min(triangle(0), triangle(1));
+        int max0 = std::max(triangle(0), triangle(1));
+        edges.emplace(Edge(min0, max0));
+
+        int min1 = std::min(triangle(0), triangle(2));
+        int max1 = std::max(triangle(0), triangle(2));
+        edges.emplace(Edge(min1, max1));
+
+        int min2 = std::min(triangle(1), triangle(2));
+        int max2 = std::max(triangle(1), triangle(2));
+        edges.emplace(Edge(min2, max2));
+    }
+
+    int E = edges.size();
+    int V = vertices_.size();
+    int F = triangles_.size();
+    return V + F - E == 2;
+}
+
 }  // namespace geometry
 }  // namespace open3d

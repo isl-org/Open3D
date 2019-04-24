@@ -129,6 +129,11 @@ public:
         }
     }
 
+    /// Function to check if the given mesh is watertight
+    /// A watertight mesh is a closed 2-manifold and satisfies the
+    /// Euler-Poincaré characteristic V + F - E = 2
+    bool IsWatertight() const;
+
 public:
     std::vector<Eigen::Vector3d> vertices_;
     std::vector<Eigen::Vector3d> vertex_normals_;
