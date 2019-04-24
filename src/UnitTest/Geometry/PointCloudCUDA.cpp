@@ -124,10 +124,10 @@ TEST(PointCloudCUDA, Transform) {
     pc_gpu.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::GPU_00);
     pc_gpu.Transform(transformation);
 
-    vector<Eigen::Vector3d> pc_gpu_points = pc_gpu.points_.ReadGPU();
+    vector<Eigen::Vector3d> pc_gpu_points = pc_gpu.points_.Read();
     ExpectEQ(pc_cpu.points_.h_data, pc_gpu_points);
 
-    vector<Eigen::Vector3d> pc_gpu_normals = pc_gpu.normals_.ReadGPU();
+    vector<Eigen::Vector3d> pc_gpu_normals = pc_gpu.normals_.Read();
     ExpectEQ(pc_cpu.normals_.h_data, pc_gpu_normals);
 }
 
@@ -283,13 +283,13 @@ TEST(PointCloudCUDA, IO_GPU) {
     EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
     EXPECT_TRUE(utility::filesystem::FileExists(file_name));
 
-    vector<Eigen::Vector3d> pc_read_points = pc_read.points_.ReadGPU();
+    vector<Eigen::Vector3d> pc_read_points = pc_read.points_.Read();
     ExpectEQ(points, pc_read_points);
 
-    vector<Eigen::Vector3d> pc_read_normals = pc_read.normals_.ReadGPU();
+    vector<Eigen::Vector3d> pc_read_normals = pc_read.normals_.Read();
     ExpectEQ(normals, pc_read_normals);
 
-    // vector<Eigen::Vector3d> pc_read_colors = pc_read.colors_.ReadGPU();
+    // vector<Eigen::Vector3d> pc_read_colors = pc_read.colors_.Read();
     // ExpectEQ(colors, pc_read_colors);
 }
 
