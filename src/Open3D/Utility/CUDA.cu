@@ -7,6 +7,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 // Diplay info about the specified device.
+// Requires building the project in debug mode.
 // ----------------------------------------------------------------------------
 void open3d::cuda::DeviceInfo(const int& device_id) {
 #ifndef NDEBUG
