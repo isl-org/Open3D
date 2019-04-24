@@ -49,7 +49,7 @@ TEST(PointCloudCUDA, GetMinBound) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    size_t num_elements = 1 << 24;
+    size_t num_elements = 1 << 20;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -75,7 +75,7 @@ TEST(PointCloudCUDA, GetMaxBound) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    size_t num_elements = 1 << 24;
+    size_t num_elements = 1 << 20;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -103,7 +103,7 @@ TEST(PointCloudCUDA, Transform) {
 
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Random();
 
-    size_t num_elements = 1 << 24;
+    size_t num_elements = 1 << 20;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -139,7 +139,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    size_t num_elements = 1 << 24;
+    size_t num_elements = 1 << 20;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -173,7 +173,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance_Tensor) {
     cudaGetDeviceCount(&nrGPUs);
     EXPECT_TRUE(0 < nrGPUs);
 
-    size_t num_elements = 1 << 24;
+    size_t num_elements = 1 << 20;
 
     Eigen::Vector3d vmin(-1.0, -1.0, -1.0);
     Eigen::Vector3d vmax(+1.0, +1.0, +1.0);
@@ -241,7 +241,7 @@ TEST(PointCloudCUDA, IO_CPU) {
 
     EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
     EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
-    EXPECT_TRUE(utility::filesystem::FileExists(file_name));
+    EXPECT_TRUE(utility::filesystem::RemoveFile(file_name));
 
     ExpectEQ(points, pc_read.points_.h_data);
     ExpectEQ(normals, pc_read.normals_.h_data);
@@ -281,7 +281,7 @@ TEST(PointCloudCUDA, IO_GPU) {
 
     EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
     EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
-    EXPECT_TRUE(utility::filesystem::FileExists(file_name));
+    EXPECT_TRUE(utility::filesystem::RemoveFile(file_name));
 
     vector<Eigen::Vector3d> pc_read_points = pc_read.points_.Read();
     ExpectEQ(points, pc_read_points);
