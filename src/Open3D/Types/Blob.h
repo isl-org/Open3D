@@ -54,7 +54,7 @@ struct Blob {
     typedef struct _Type : ComplexType {
         _Type() {}
         _Type(const int &num_elements,
-              const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU)
+              const DeviceID::Type &device_id = DeviceID::CPU)
             : num_elements(num_elements), device_id(device_id) {
             Initialize();
         }
@@ -77,10 +77,10 @@ struct Blob {
               d_data(t.d_data) {
             t.d_data = NULL;
             t.num_elements = 0;
-            t.device_id = cuda::DeviceID::CPU;
+            t.device_id = DeviceID::CPU;
         }
         // init constructor
-        _Type(const std::vector<V> &v, const cuda::DeviceID::Type &device_id)
+        _Type(const std::vector<V> &v, const DeviceID::Type &device_id)
             : num_elements(v.size()), device_id(device_id) {
             Initialize();
 
@@ -96,7 +96,7 @@ struct Blob {
 
         // allocate memory
         void Initialize(const int &num_elements,
-                        const cuda::DeviceID::Type &device_id) {
+                        const DeviceID::Type &device_id) {
             this->num_elements = num_elements;
             this->device_id = device_id;
 
@@ -112,22 +112,22 @@ struct Blob {
             h_data.clear();
             cuda::ReleaseDeviceMemory(&d_data);
             num_elements = 0;
-            device_id = cuda::DeviceID::CPU;
+            device_id = DeviceID::CPU;
         }
 
         // total number of elements in this structure
         size_t num_elements{};
         // device id
-        cuda::DeviceID::Type device_id = cuda::DeviceID::CPU;
+        DeviceID::Type device_id = DeviceID::CPU;
         // host data container
         std::vector<V> h_data{};
         // device data pointer
         T *d_data{};
 
         // return true if the device_id includes the CPU.
-        inline bool OnCPU() const { return cuda::DeviceID::CPU & device_id; }
+        inline bool OnCPU() const { return DeviceID::CPU & device_id; }
         // return true if the device_id matches with one of the GPUs.
-        inline bool OnGPU() const { return cuda::DeviceID::CPU != device_id; }
+        inline bool OnGPU() const { return DeviceID::CPU != device_id; }
 
         // subscript operator: readwrite, host side only
         inline V &operator[](const uint &i) {
@@ -184,14 +184,14 @@ struct Blob {
             }
 
             t.num_elements = 0;
-            t.device_id = cuda::DeviceID::CPU;
+            t.device_id = DeviceID::CPU;
 
             return *this;
         }
         // initialize with host data
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(const std::vector<V> &v) {
-            cuda::DeviceID::Type bkp_device_id = device_id;
+            DeviceID::Type bkp_device_id = device_id;
 
             Reset();
 
@@ -213,7 +213,7 @@ struct Blob {
         // initialize from an initializer list
         // reset pointers, reinitialize and copy the data to hst/dev pointers
         inline _Type &operator=(std::initializer_list<V> il) {
-            cuda::DeviceID::Type bkp_device_id = device_id;
+            DeviceID::Type bkp_device_id = device_id;
 
             Reset();
 
@@ -241,7 +241,7 @@ struct Blob {
                 return _Type();
 
             size_t out_num_elements = num_elements + t.num_elements;
-            cuda::DeviceID::Type out_device_id = device_id;
+            DeviceID::Type out_device_id = device_id;
 
             _Type output(out_num_elements, out_device_id);
 
@@ -558,7 +558,7 @@ public:
     static std::shared_ptr<ComplexType> create(
             const Shape &shape,
             const DataType &type,
-            const cuda::DeviceID::Type &device_id = cuda::DeviceID::CPU) {
+            const DeviceID::Type &device_id = DeviceID::CPU) {
         if (shape.cols == 3 && type == DataType::FP_64)
             return std::make_shared<Blob3d>(shape.rows, device_id);
 

@@ -56,7 +56,7 @@ Eigen::Vector3d PointCloud::GetMinBound() const {
     if (!HasPoints()) return Eigen::Vector3d::Zero();
 
 #ifdef OPEN3D_USE_CUDA
-    if (cuda::DeviceID::CPU == points_.device_id)
+    if (DeviceID::CPU == points_.device_id)
         return GetMinBoundCPU();
     else
         return GetMinBoundGPU();
@@ -69,7 +69,7 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
     if (!HasPoints()) return Eigen::Vector3d::Zero();
 
 #ifdef OPEN3D_USE_CUDA
-    if (cuda::DeviceID::CPU == points_.device_id)
+    if (DeviceID::CPU == points_.device_id)
         return GetMaxBoundCPU();
     else
         return GetMaxBoundGPU();
@@ -125,7 +125,7 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
     Eigen::Vector3d default_output = Eigen::Vector3d(DBL_MAX, DBL_MAX, DBL_MAX);
     size_t num_elements = points_.size();
     double *d_data = points_.d_data;
-    cuda::DeviceID::Type device_id = points_.device_id;
+    DeviceID::Type device_id = points_.device_id;
     vector<open3d::Vec3d> minBounds(num_elements);
     double * const output = (double * const)minBounds.data();
 
@@ -165,7 +165,7 @@ Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
     Eigen::Vector3d default_output = Eigen::Vector3d(DBL_MAX, DBL_MAX, DBL_MAX);
     size_t num_elements = points_.size();
     double *d_data = points_.d_data;
-    cuda::DeviceID::Type device_id = points_.device_id;
+    DeviceID::Type device_id = points_.device_id;
     vector<open3d::Vec3d> maxBounds(num_elements);
     double * const output = (double * const)maxBounds.data();
 
@@ -203,7 +203,7 @@ Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
 
 void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
 #ifdef OPEN3D_USE_CUDA
-    if (cuda::DeviceID::CPU == points_.device_id)
+    if (DeviceID::CPU == points_.device_id)
         return TransformCPU(transformation);
     else
         return TransformGPU(transformation);
@@ -234,7 +234,7 @@ void PointCloud::TransformGPU(const Eigen::Matrix4d &transformation) {
     double *d_data = NULL;
 
     // Note: this expects that both the points_ and the normals_ are on the GPU
-    cuda::DeviceID::Type device_id = points_.device_id;
+    DeviceID::Type device_id = points_.device_id;
     open3d::Mat4d t{};
     open3d::Vec4d c{};
 
@@ -313,7 +313,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     if (input.IsEmpty()) return std::make_tuple(mean, covariance);
 
 #ifdef OPEN3D_USE_CUDA
-    if (cuda::DeviceID::CPU == input.points_.device_id)
+    if (DeviceID::CPU == input.points_.device_id)
         return ComputePointCloudMeanAndCovarianceCPU(input);
     else
         return ComputePointCloudMeanAndCovarianceGPU(input);
@@ -409,7 +409,7 @@ ComputePointCloudMeanAndCovarianceGPU(PointCloud &input) {
 
     size_t nr_points = input.points_.size();
     double *d_points = input.points_.d_data;
-    cuda::DeviceID::Type device_id = input.points_.device_id;
+    DeviceID::Type device_id = input.points_.device_id;
 
     cudaError_t status = cudaSuccess;
 

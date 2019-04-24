@@ -58,11 +58,11 @@ TEST(PointCloudCUDA, GetMinBound) {
     Rand(points, vmin, vmax, 0);
 
     geometry::PointCloud pc_cpu;
-    pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_cpu.points_ = open3d::Points(points, open3d::DeviceID::CPU);
     auto output_cpu = pc_cpu.GetMinBound();
 
     geometry::PointCloud pc_gpu;
-    pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.points_ = open3d::Points(points, open3d::DeviceID::GPU_00);
     auto output_gpu = pc_gpu.GetMinBound();
 
     ExpectEQ(output_cpu, output_gpu);
@@ -84,11 +84,11 @@ TEST(PointCloudCUDA, GetMaxBound) {
     Rand(points, vmin, vmax, 0);
 
     geometry::PointCloud pc_cpu;
-    pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_cpu.points_ = open3d::Points(points, open3d::DeviceID::CPU);
     auto output_cpu = pc_cpu.GetMaxBound();
 
     geometry::PointCloud pc_gpu;
-    pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.points_ = open3d::Points(points, open3d::DeviceID::GPU_00);
     auto output_gpu = pc_gpu.GetMaxBound();
 
     ExpectEQ(output_cpu, output_gpu);
@@ -115,13 +115,13 @@ TEST(PointCloudCUDA, Transform) {
     Rand(normals, vmin, vmax, 1);
 
     geometry::PointCloud pc_cpu;
-    pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
-    pc_cpu.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::CPU);
+    pc_cpu.points_ = open3d::Points(points, open3d::DeviceID::CPU);
+    pc_cpu.normals_ = open3d::Normals(normals, open3d::DeviceID::CPU);
     pc_cpu.Transform(transformation);
 
     geometry::PointCloud pc_gpu;
-    pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
-    pc_gpu.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.points_ = open3d::Points(points, open3d::DeviceID::GPU_00);
+    pc_gpu.normals_ = open3d::Normals(normals, open3d::DeviceID::GPU_00);
     pc_gpu.Transform(transformation);
 
     vector<Eigen::Vector3d> pc_gpu_points = pc_gpu.points_.Read();
@@ -148,11 +148,11 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance) {
     Rand(points, vmin, vmax, 0);
 
     geometry::PointCloud pc_cpu;
-    pc_cpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_cpu.points_ = open3d::Points(points, open3d::DeviceID::CPU);
     auto output_cpu = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
     geometry::PointCloud pc_gpu;
-    pc_gpu.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    pc_gpu.points_ = open3d::Points(points, open3d::DeviceID::GPU_00);
     auto output_gpu = geometry::ComputePointCloudMeanAndCovariance(pc_gpu);
 
     Eigen::Vector3d mean_cpu = get<0>(output_cpu);
@@ -183,7 +183,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance_Tensor) {
 
     open3d::Shape shape = {num_elements, 3};
     auto points_cpu = open3d::Tensor::create(shape, open3d::DataType::FP_64,
-                                             open3d::cuda::DeviceID::CPU);
+                                             open3d::DeviceID::CPU);
 
     geometry::PointCloud pc_cpu;
     pc_cpu.points_ = *static_pointer_cast<open3d::Points>(points_cpu);
@@ -191,7 +191,7 @@ TEST(PointCloudCUDA, ComputePointCloudMeanAndCovariance_Tensor) {
     auto output_cpu = geometry::ComputePointCloudMeanAndCovariance(pc_cpu);
 
     auto points_gpu = open3d::Tensor::create(shape, open3d::DataType::FP_64,
-                                             open3d::cuda::DeviceID::GPU_00);
+                                             open3d::DeviceID::GPU_00);
 
     geometry::PointCloud pc_gpu;
     pc_gpu.points_ = *static_pointer_cast<open3d::Points>(points_gpu);
@@ -228,16 +228,16 @@ TEST(PointCloudCUDA, IO_CPU) {
 
     vector<Eigen::Vector3d> points(num_elements);
     Rand(points, vmin, vmax, 0);
-    pc_write.points_ = open3d::Points(points, open3d::cuda::DeviceID::CPU);
+    pc_write.points_ = open3d::Points(points, open3d::DeviceID::CPU);
 
     vector<Eigen::Vector3d> normals(num_elements);
     Rand(normals, vmin, vmax, 1);
-    pc_write.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::CPU);
+    pc_write.normals_ = open3d::Normals(normals, open3d::DeviceID::CPU);
 
     // Read/WritePointCloud don't handle the colors at this time
     // vector<Eigen::Vector3d> colors(num_elements);
     // Rand(colors, vmin, vmax, 2);
-    // pc_write.colors_ = open3d::Colors(colors, open3d::cuda::DeviceID::CPU);
+    // pc_write.colors_ = open3d::Colors(colors, open3d::DeviceID::CPU);
 
     EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
     EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
@@ -268,16 +268,16 @@ TEST(PointCloudCUDA, IO_GPU) {
 
     vector<Eigen::Vector3d> points(num_elements);
     Rand(points, vmin, vmax, 0);
-    pc_write.points_ = open3d::Points(points, open3d::cuda::DeviceID::GPU_00);
+    pc_write.points_ = open3d::Points(points, open3d::DeviceID::GPU_00);
 
     vector<Eigen::Vector3d> normals(num_elements);
     Rand(normals, vmin, vmax, 1);
-    pc_write.normals_ = open3d::Normals(normals, open3d::cuda::DeviceID::GPU_00);
+    pc_write.normals_ = open3d::Normals(normals, open3d::DeviceID::GPU_00);
 
     // Read/WritePointCloud don't handle the colors at this time
     // vector<Eigen::Vector3d> colors(num_elements);
     // Rand(colors, vmin, vmax, 2);
-    // pc_write.colors_ = open3d::Colors(colors, open3d::cuda::DeviceID::GPU_00);
+    // pc_write.colors_ = open3d::Colors(colors, open3d::DeviceID::GPU_00);
 
     EXPECT_TRUE(io::WritePointCloud(file_name, pc_write));
     EXPECT_TRUE(io::ReadPointCloud(file_name, pc_read));
