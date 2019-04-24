@@ -428,7 +428,7 @@ TEST(BlobType, Subscript_operator_rw_CPU) {
 }
 
 // ----------------------------------------------------------------------------
-// Equality operator - CPU.
+// Equality operator - CPU vs. CPU.
 // ----------------------------------------------------------------------------
 TEST(BlobType, Equality_operator_CPU_CPU) {
     size_t num_elements = 100;
