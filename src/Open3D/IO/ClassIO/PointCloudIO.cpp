@@ -94,9 +94,15 @@ bool ReadPointCloud(const std::string &filename,
                 "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
-    bool success = map_itr->second(filename, pointcloud);
+
+    geometry::PointCloud local;
+    bool success = map_itr->second(filename, local);
     utility::PrintDebug("Read geometry::PointCloud: %d vertices.\n",
-                        (int)pointcloud.points_.size());
+                        (int)local.points_.size());
+    pointcloud.points_ = local.points_.h_data;
+    pointcloud.normals_ = local.normals_.h_data;
+    pointcloud.colors_ = local.colors_.h_data;
+
     return success;
 }
 
@@ -118,10 +124,16 @@ bool WritePointCloud(const std::string &filename,
                 "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
+
+    geometry::PointCloud local;
+    local.points_ = pointcloud.points_.Read();
+    local.normals_ = pointcloud.normals_.Read();
+    local.colors_ = pointcloud.colors_.Read();
+
     bool success =
-            map_itr->second(filename, pointcloud, write_ascii, compressed);
+            map_itr->second(filename, local, write_ascii, compressed);
     utility::PrintDebug("Write geometry::PointCloud: %d vertices.\n",
-                        (int)pointcloud.points_.size());
+                        (int)local.points_.size());
     return success;
 }
 
