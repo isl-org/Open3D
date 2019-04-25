@@ -41,9 +41,6 @@ TEST(VoxelGrid, Bounds) {
                            Eigen::Vector3i(0, 0, 3)};
     ExpectEQ(voxel_grid->GetMinBound(), Eigen::Vector3d(0, 0, 0));
     ExpectEQ(voxel_grid->GetMaxBound(), Eigen::Vector3d(10, 15, 20));
-
-    // Uncomment the line below for visualization test
-    // visualization::DrawGeometries({voxel_grid});
 }
 
 TEST(VoxelGrid, Visualization) {
