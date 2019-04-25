@@ -41,6 +41,7 @@ class TriangleMesh;
 class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
+    VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
 
 public:

@@ -29,6 +29,13 @@
 namespace open3d {
 namespace geometry {
 
+VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
+    : Geometry3D(Geometry::GeometryType::VoxelGrid),
+      voxel_size_(src_voxel_grid.voxel_size_),
+      origin_(src_voxel_grid.origin_),
+      voxels_(src_voxel_grid.voxels_),
+      colors_(src_voxel_grid.colors_) {}
+
 void VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3d::Zero();
