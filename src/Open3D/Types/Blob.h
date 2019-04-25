@@ -36,6 +36,8 @@
 #include "Open3D/Utility/CUDA.cuh"
 #endif
 
+#include "Open3D/Types/DeviceID.h"
+
 namespace open3d {
 
 // data set shape
@@ -66,8 +68,10 @@ struct Blob {
             // copy host data
             if (OnCPU()) memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
+#ifdef OPEN3D_USE_CUDA
             // copy device data
             if (OnGPU()) cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
+#endif
         }
         // move constructor
         _Type(_Type &&t)
@@ -87,10 +91,12 @@ struct Blob {
             // init host data
             if (OnCPU()) memcpy(h_data.data(), v.data(), num_of_bytes());
 
+#ifdef OPEN3D_USE_CUDA
             // init device data
             if (OnGPU())
                 cuda::CopyHst2DevMemory((const double *const)v.data(), d_data,
                                         num_of_Ts());
+#endif
         }
         ~_Type() { Reset(); }
 
@@ -103,14 +109,20 @@ struct Blob {
             if ((0 == h_data.size()) && (OnCPU()))
                 h_data = std::vector<V>(num_elements);
 
+#ifdef OPEN3D_USE_CUDA
             if ((NULL == d_data) && (OnGPU()))
                 cuda::AllocateDeviceMemory(&d_data, num_of_Ts(), device_id);
+#endif
         }
         void Initialize() { Initialize(num_elements, device_id); }
         // deallocate memory
         void Reset() {
             h_data.clear();
+
+#ifdef OPEN3D_USE_CUDA
             cuda::ReleaseDeviceMemory(&d_data);
+#endif
+
             num_elements = 0;
             device_id = DeviceID::CPU;
         }
@@ -160,8 +172,10 @@ struct Blob {
             // copy host data
             if (OnCPU()) memcpy(h_data.data(), t.h_data.data(), num_of_bytes());
 
+#ifdef OPEN3D_USE_CUDA
             // copy device data
             if (OnGPU()) cuda::CopyDev2DevMemory(t.d_data, d_data, num_of_Ts());
+#endif
 
             return *this;
         }
@@ -177,11 +191,13 @@ struct Blob {
                 h_data = std::move(t.h_data);
             }
 
+#ifdef OPEN3D_USE_CUDA
             // move device data
             if (OnGPU()) {
                 d_data = t.d_data;
                 t.d_data = NULL;
             }
+#endif
 
             t.num_elements = 0;
             t.device_id = DeviceID::CPU;
@@ -203,10 +219,12 @@ struct Blob {
             // initialize host memory
             if (OnCPU()) memcpy(h_data.data(), v.data(), num_of_bytes());
 
+#ifdef OPEN3D_USE_CUDA
             // initialize device memory
             if (OnGPU())
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
                                         num_of_Ts());
+#endif
 
             return *this;
         }
@@ -226,10 +244,12 @@ struct Blob {
             // initialize host memory
             if (OnCPU()) memcpy(h_data.data(), v.data(), num_of_bytes());
 
+#ifdef OPEN3D_USE_CUDA
             // initialize device memory
             if (OnGPU())
                 cuda::CopyHst2DevMemory((const T *const)v.data(), d_data,
                                         num_of_Ts());
+#endif
 
             return *this;
         }
@@ -251,11 +271,13 @@ struct Blob {
                 memcpy(output.h_data.data() + num_elements, t.h_data.data(), t.num_of_bytes());
             }
 
+#ifdef OPEN3D_USE_CUDA
             // copy device data
             if (OnGPU()) {
                 cuda::CopyDev2DevMemory(d_data, output.d_data, num_of_Ts());
                 cuda::CopyDev2DevMemory(t.d_data, output.d_data + num_of_Ts(), t.num_of_Ts());
             }
+#endif
 
             return output;
         }
@@ -303,8 +325,10 @@ struct Blob {
             // redirect to std:vector<V>::clear()
             if (OnCPU()) h_data.clear();
 
+#ifdef OPEN3D_USE_CUDA
             // clear device memory
             if (OnGPU()) cuda::ReleaseDeviceMemory(&d_data);
+#endif
 
             num_elements = 0;
         }
@@ -417,6 +441,7 @@ struct Blob {
                 num_elements = h_data.size();
             }
 
+#ifdef OPEN3D_USE_CUDA
             // device side
             // delete/reallocate device memory
             // Note: the overhead can be reduced at the cost of more complexity
@@ -437,6 +462,7 @@ struct Blob {
 
                 num_elements = data.size();
             }
+#endif
         }
         inline void push_back(V &&val) { push_back(val); }
         // resize the memory allocated for storage.
@@ -450,6 +476,7 @@ struct Blob {
             // redirect std:vector<V>::resize(...)
             if (OnCPU()) h_data.resize(n);
 
+#ifdef OPEN3D_USE_CUDA
             // resize device data
             // delete/reallocate device memory
             // Note: the overhead can be reduced at the cost of more complexity
@@ -468,6 +495,7 @@ struct Blob {
                 cuda::CopyHst2DevMemory((const T *const)data.data(), d_data,
                                         new_size);
             }
+#endif
 
             num_elements = n;
         }
@@ -479,6 +507,7 @@ struct Blob {
             // redirect std:vector<V>::resize(...)
             if (OnCPU()) h_data.resize(n, val);
 
+#ifdef OPEN3D_USE_CUDA
             // resize device data
             // delete/reallocate device memory
             // Note: the overhead can be reduced at the cost of more complexity
@@ -497,6 +526,7 @@ struct Blob {
                 cuda::CopyHst2DevMemory((const T *const)data.data(), d_data,
                                         new_size);
             }
+#endif
 
             num_elements = n;
         }
@@ -522,12 +552,14 @@ struct Blob {
             // copy host data
             if (OnCPU()) return h_data;
 
+#ifdef OPEN3D_USE_CUDA
             // copy device data
             if (OnGPU()) {
                 std::vector<V> data(num_elements);
                 cuda::CopyDev2HstMemory(d_data, (T *const)data.data(), num_of_Ts());
                 return data;
             }
+#endif
 
             return std::vector<V>();
         }
