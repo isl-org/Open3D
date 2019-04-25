@@ -1037,7 +1037,7 @@ TEST(BlobType, Clear_CPU) {
     open3d::Blob3d b0(num_elements, device_id);
 
     EXPECT_EQ(b0.num_elements, num_elements);
-    EXPECT_TRUE(open3d::DeviceID::CPU == b0.device_id);
+    EXPECT_EQ(b0.device_id, open3d::DeviceID::CPU);
     EXPECT_EQ(b0.h_data.size(), num_elements);
     EXPECT_FALSE(b0.h_data.empty());
     EXPECT_TRUE(NULL == b0.d_data);
@@ -1046,7 +1046,7 @@ TEST(BlobType, Clear_CPU) {
     b0.clear();
 
     EXPECT_EQ(b0.num_elements, 0);
-    EXPECT_TRUE(open3d::DeviceID::CPU == b0.device_id);
+    EXPECT_EQ(b0.device_id, open3d::DeviceID::CPU);
     EXPECT_EQ(b0.h_data.size(), 0);
     EXPECT_TRUE(b0.h_data.empty());
     EXPECT_TRUE(NULL == b0.d_data);
@@ -1066,7 +1066,7 @@ TEST(BlobType, Clear_GPU) {
     open3d::Blob3d b0(num_elements, device_id);
 
     EXPECT_EQ(b0.num_elements, num_elements);
-    EXPECT_TRUE(open3d::DeviceID::GPU_00 == b0.device_id);
+    EXPECT_EQ(b0.device_id, open3d::DeviceID::GPU_00);
     EXPECT_EQ(b0.h_data.size(), 0);
     EXPECT_TRUE(b0.h_data.empty());
     EXPECT_TRUE(NULL != b0.d_data);
@@ -1075,7 +1075,7 @@ TEST(BlobType, Clear_GPU) {
     b0.clear();
 
     EXPECT_EQ(b0.num_elements, 0);
-    EXPECT_TRUE(open3d::DeviceID::CPU == b0.device_id);
+    EXPECT_EQ(b0.device_id, open3d::DeviceID::GPU_00);
     EXPECT_EQ(b0.h_data.size(), 0);
     EXPECT_TRUE(b0.h_data.empty());
     EXPECT_TRUE(NULL == b0.d_data);
@@ -1087,7 +1087,7 @@ TEST(BlobType, Clear_GPU) {
 // ----------------------------------------------------------------------------
 // Clear - CPU and GPU.
 // ----------------------------------------------------------------------------
-TEST(BlobType, Clear_CPU_GPU {
+TEST(BlobType, Clear_CPU_GPU) {
     size_t num_elements = 100;
     size_t num_doubles =
             num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
