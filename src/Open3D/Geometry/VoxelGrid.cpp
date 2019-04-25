@@ -105,5 +105,10 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
     throw std::runtime_error("VoxelGrid::operator+ is not supported");
 }
 
+Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
+    Eigen::Vector3d voxel_f = (point - origin_) / voxel_size_;
+    return Eigen::floor(Eigen::Array3d(voxel_f)).cast<int>();
+}
+
 }  // namespace geometry
 }  // namespace open3d

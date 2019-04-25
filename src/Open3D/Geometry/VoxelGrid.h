@@ -57,10 +57,10 @@ public:
 
 public:
     bool HasVoxels() const { return voxels_.size() > 0; }
-
     bool HasColors() const {
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
+    Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
 public:
     double voxel_size_;
