@@ -385,7 +385,7 @@ TEST(BlobType, Initialize_args) {
 // ----------------------------------------------------------------------------
 // Reset - CPU and GPU.
 // ----------------------------------------------------------------------------
-TEST(BlobType, Reset) {
+TEST(BlobType, Reset_CPU_GPU) {
     size_t num_elements = 100;
     size_t num_doubles =
             num_elements * sizeof(Eigen::Vector3d) / sizeof(double);
