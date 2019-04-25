@@ -94,16 +94,15 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
 }
 
 void VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
-    // not implemented.
+    throw std::runtime_error("VoxelGrid::Transform is not supported");
 }
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
-    // not implemented.
-    return (*this);
+    throw std::runtime_error("VoxelGrid::operator+= is not supported");
 }
 
 VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
-    return (VoxelGrid(*this) += voxelgrid);
+    throw std::runtime_error("VoxelGrid::operator+ is not supported");
 }
 
 }  // namespace geometry
