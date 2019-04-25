@@ -191,6 +191,16 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
                                              int resolution = 20,
                                              int split = 1);
 
+/// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
+/// The torus will be centered at (0, 0, 0) and a radius of \param torus_radius.
+/// The tube of the torus will have a radius of \param tube_radius.
+/// The number of segments in radial and tubular direction are \param
+/// radial_resolution and \param tubular_resolution respectively.
+std::shared_ptr<TriangleMesh> CreateMeshTorus(double torus_radius = 1.0,
+                                              double tube_radius = 0.5,
+                                              int radial_resolution = 30,
+                                              int tubular_resolution = 20);
+
 /// Factory function to create an arrow mesh (TriangleMeshFactory.cpp)
 /// The axis of the cone with \param cone_radius will be along the z-axis.
 /// The cylinder with \param cylinder_radius is from

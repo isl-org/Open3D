@@ -227,6 +227,21 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"split",
               "The ``height`` will be split into ``split`` segments."}});
 
+    m.def("create_mesh_torus", &geometry::CreateMeshTorus,
+          "Factory function to create a torus mesh", "torus_radius"_a = 1.0,
+          "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
+          "tubular_resolution"_a = 20);
+    docstring::FunctionDocInject(
+            m, "create_mesh_torus",
+            {{"torus_radius",
+              "The radius from the center of the torus to the center of the "
+              "tube."},
+             {"tube_radius", "The radius of the torus tube."},
+             {"radial_resolution",
+              "The number of segments along the radial direction."},
+             {"tubular_resolution",
+              "The number of segments along the tubular direction."}});
+
     m.def("create_mesh_arrow", &geometry::CreateMeshArrow,
           "Factory function to create an arrow mesh", "cylinder_radius"_a = 1.0,
           "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,

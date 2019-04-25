@@ -870,6 +870,7 @@ TEST(TriangleMesh, IsWatertight) {
     EXPECT_EQ(geometry::CreateMeshSphere()->IsWatertight(), true);
     EXPECT_EQ(geometry::CreateMeshCylinder()->IsWatertight(), true);
     EXPECT_EQ(geometry::CreateMeshCone()->IsWatertight(), true);
+    EXPECT_EQ(geometry::CreateMeshTorus()->IsWatertight(), true);
 
     geometry::TriangleMesh mesh0;
     mesh0.vertices_ = {{0, 0, 0},  {1, 0, 0},  {1, 1, 0}, {1, 1, 1},
