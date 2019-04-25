@@ -43,6 +43,14 @@ TEST(VoxelGrid, Bounds) {
     ExpectEQ(voxel_grid->GetMaxBound(), Eigen::Vector3d(10, 15, 20));
 }
 
+TEST(VoxelGrid, GetVoxel) {
+    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
+    voxel_grid->voxel_size_ = 5;
+    ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 0, 0)),
+             Eigen::Vector3i(0, 0, 0));
+}
+
 TEST(VoxelGrid, Visualization) {
     auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
     voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
