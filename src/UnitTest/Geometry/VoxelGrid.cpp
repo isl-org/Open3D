@@ -49,6 +49,15 @@ TEST(VoxelGrid, GetVoxel) {
     voxel_grid->voxel_size_ = 5;
     ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 0, 0)),
              Eigen::Vector3i(0, 0, 0));
+    ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 1, 0)),
+             Eigen::Vector3i(0, 0, 0));
+    // Test near boundary voxel_size_ == 5
+    ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 4.9, 0)),
+             Eigen::Vector3i(0, 0, 0));
+    ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 5, 0)),
+             Eigen::Vector3i(0, 1, 0));
+    ExpectEQ(voxel_grid->GetVoxel(Eigen::Vector3d(0, 5.1, 0)),
+             Eigen::Vector3i(0, 1, 0));
 }
 
 TEST(VoxelGrid, Visualization) {
