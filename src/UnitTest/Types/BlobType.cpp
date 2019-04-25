@@ -78,6 +78,7 @@ TEST(BlobType, Copy_constructor_CPU) {
     ExpectEQ(b0.h_data, b1.h_data);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Copy constructor - GPU.
 // ----------------------------------------------------------------------------
@@ -110,7 +111,9 @@ TEST(BlobType, Copy_constructor_GPU) {
 
     ExpectEQ(b0_d_data, b1_d_data);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Copy constructor - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -144,6 +147,7 @@ TEST(BlobType, Copy_constructor_CPU_GPU) {
 
     ExpectEQ(b0.h_data, b1_d_data);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Move constructor - CPU.
@@ -176,6 +180,7 @@ TEST(BlobType, Move_constructor_CPU) {
     ExpectEQ(points, b1.h_data);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Move constructor - GPU.
 // ----------------------------------------------------------------------------
@@ -210,7 +215,9 @@ TEST(BlobType, Move_constructor_GPU) {
 
     ExpectEQ(points, b1_d_data);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Move constructor - CPU & GPU.
 // ----------------------------------------------------------------------------
@@ -247,6 +254,7 @@ TEST(BlobType, Move_constructor_CPU_GPU) {
     ExpectEQ(points, b1.h_data);
     ExpectEQ(points, b1_d_data);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Initialization constructor - CPU.
@@ -265,6 +273,7 @@ TEST(BlobType, Initialization_constructor_CPU) {
     EXPECT_EQ(b3d.size(), num_elements);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Initialization constructor - GPU.
 // ----------------------------------------------------------------------------
@@ -281,7 +290,9 @@ TEST(BlobType, Initialization_constructor_GPU) {
     EXPECT_TRUE(NULL != b3d.d_data);
     EXPECT_EQ(b3d.size(), num_elements);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Initialization constructor - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -300,7 +311,9 @@ TEST(BlobType, Initialization_constructor_CPU_GPU) {
     EXPECT_TRUE(NULL != b3d.d_data);
     EXPECT_EQ(b3d.size(), num_elements);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Initialize - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -335,7 +348,9 @@ TEST(BlobType, Initialize) {
     EXPECT_TRUE(NULL != b0.d_data);
     EXPECT_EQ(b0.size(), num_elements);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Initialize - with args - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -364,7 +379,9 @@ TEST(BlobType, Initialize_args) {
     EXPECT_TRUE(NULL != b0.d_data);
     EXPECT_EQ(b0.size(), num_elements);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Reset - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -394,6 +411,7 @@ TEST(BlobType, Reset) {
     EXPECT_TRUE(NULL == b0.d_data);
     EXPECT_EQ(b0.size(), 0);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Subscript operator - readonly - CPU only.
@@ -449,6 +467,7 @@ TEST(BlobType, Equality_operator_CPU_CPU) {
     EXPECT_TRUE(b1 != b0);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Equality operator - CPU vs. GPU.
 // ----------------------------------------------------------------------------
@@ -470,7 +489,9 @@ TEST(BlobType, Equality_operator_CPU_GPU) {
 
     EXPECT_TRUE(b1 != b0);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Equality operator - GPU vs. CPU.
 // ----------------------------------------------------------------------------
@@ -492,7 +513,9 @@ TEST(BlobType, Equality_operator_GPU_CPU) {
 
     EXPECT_TRUE(b1 != b0);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Equality operator - GPU vs. GPU.
 // ----------------------------------------------------------------------------
@@ -514,6 +537,7 @@ TEST(BlobType, Equality_operator_GPU_GPU) {
 
     EXPECT_TRUE(b1 != b0);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Assignment operator - CPU.
@@ -537,6 +561,7 @@ TEST(BlobType, Assignment_operator_CPU) {
     ExpectEQ(b0.h_data, b1.h_data);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Assignment operator - GPU.
 // ----------------------------------------------------------------------------
@@ -569,7 +594,9 @@ TEST(BlobType, Assignment_operator_GPU) {
 
     ExpectEQ(b0_d_data, b1_d_data);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Assignment operator - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -603,6 +630,7 @@ TEST(BlobType, Assignment_operator_CPU_GPU) {
 
     ExpectEQ(b0.h_data, b1_d_data);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Assignment operator - from vector - CPU only.
@@ -622,6 +650,7 @@ TEST(BlobType, Assignment_operator_vector_CPU) {
     ExpectEQ(b0.h_data, v);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Assignment operator - from vector - GPU only.
 // ----------------------------------------------------------------------------
@@ -643,7 +672,9 @@ TEST(BlobType, Assignment_operator_vector_GPU) {
 
     ExpectEQ(b0_d_data, v);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Assignment operator - from vector - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -667,6 +698,7 @@ TEST(BlobType, Assignment_operator_vector_CPU_GPU) {
     ExpectEQ(b0.h_data, v);
     ExpectEQ(b0_d_data, v);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Assignment operator - from initializer list - CPU only.
@@ -703,6 +735,7 @@ TEST(BlobType, Assignment_operator_initializer_list_CPU) {
     ExpectEQ(b0.h_data, ref);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Assignment operator - from initializer list - GPU only.
 // ----------------------------------------------------------------------------
@@ -743,7 +776,9 @@ TEST(BlobType, Assignment_operator_initializer_list_GPU) {
 
     ExpectEQ(b0_d_data, ref);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Assignment operator - from initializer list - CPU & GPU.
 // ----------------------------------------------------------------------------
@@ -787,6 +822,7 @@ TEST(BlobType, Assignment_operator_initializer_list_CPU_GPU) {
     ExpectEQ(b0.h_data, ref);
     ExpectEQ(b0_d_data, ref);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // operator+ - both args on the CPU.
@@ -818,6 +854,7 @@ TEST(BlobType, Add_operator_CPU_CPU) {
         ExpectEQ(b1.h_data[i], b2.h_data[i + b0.size()]);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // operator+ - both args on the GPU.
 // ----------------------------------------------------------------------------
@@ -856,6 +893,7 @@ TEST(BlobType, Add_operator_GPU_GPU) {
     for (size_t i = 0; i < b1.size(); i++)
         ExpectEQ(b1_d_data[i], b2_d_data[i + b0.size()]);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // operator+= - both args on the CPU.
@@ -889,6 +927,7 @@ TEST(BlobType, Append_operator_CPU_CPU) {
         ExpectEQ(b1.h_data[i], b0.h_data[i + num_elements]);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // operator+= - both args on the GPU.
 // ----------------------------------------------------------------------------
@@ -926,7 +965,9 @@ TEST(BlobType, Append_operator_GPU_GPU) {
     for (size_t i = 0; i < b1.size(); i++)
         ExpectEQ(b1_d_data[i], b0_d_data[i + num_elements]);
 }
+#endif
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Clear - CPU and GPU.
 // ----------------------------------------------------------------------------
@@ -957,6 +998,7 @@ TEST(BlobType, Clear) {
     EXPECT_TRUE(NULL == b0.d_data);
     EXPECT_EQ(b0.size(), 0);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // begin() & end() iterators - CPU only.
@@ -1112,6 +1154,7 @@ TEST(BlobType, Push_back_CPU) {
     ExpectEQ(b0.h_data, ref);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Push back - GPU.
 // Functional but has a high memory communication overhead.
@@ -1146,6 +1189,7 @@ TEST(BlobType, Push_back_GPU) {
     EXPECT_EQ(b0.size(), ref.size());
     for (size_t i = 0; i < ref.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Resize - CPU only.
@@ -1186,6 +1230,7 @@ TEST(BlobType, Resize_CPU) {
     for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0[i], ref[i]);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Resize - GPU only.
 // ----------------------------------------------------------------------------
@@ -1242,6 +1287,7 @@ TEST(BlobType, Resize_GPU) {
     EXPECT_EQ(b0.size(), ref.size() >> 1);
     for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
 }
+#endif
 
 // ----------------------------------------------------------------------------
 // Resize - with value - CPU only.
@@ -1285,6 +1331,7 @@ TEST(BlobType, Resize_value_CPU) {
     for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0[i], ref[i]);
 }
 
+#ifdef OPEN3D_USE_CUDA
 // ----------------------------------------------------------------------------
 // Resize - with value - GPU only.
 // ----------------------------------------------------------------------------
@@ -1345,3 +1392,4 @@ TEST(BlobType, Resize_value_GPU) {
     EXPECT_EQ(b0.size(), ref.size() >> 1);
     for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0_d_data[i], ref[i]);
 }
+#endif
