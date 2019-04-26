@@ -53,6 +53,8 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxels.")
             .def("has_colors", &geometry::VoxelGrid::HasColors,
                  "Returns ``True`` if the voxel grid contains voxel colors.")
+            .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
+                 "Returns voxel index given query point.")
             .def_readwrite("voxels", &geometry::VoxelGrid::voxels_.h_data,
                            "``int`` array of shape ``(num_voxels, 3)``: "
                            "Voxel coordinates. use ``numpy.asarray()`` to "
@@ -68,6 +70,8 @@ void pybind_voxelgrid(py::module &m) {
             .def_readwrite("voxel_size", &geometry::VoxelGrid::voxel_size_);
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
+    docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
+                                    {{"point", "The query point."}});
 }
 
 void pybind_voxelgrid_methods(py::module &m) {

@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/PointCloud.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
@@ -669,6 +670,44 @@ TEST(TriangleMesh, Purge) {
     ExpectEQ(ref_vertex_colors, tm.vertex_colors_);
     ExpectEQ(ref_triangles, tm.triangles_);
     ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(TriangleMesh, SamplePointsUniformly) {
+    auto mesh_empty = geometry::TriangleMesh();
+    auto pcd_empty = mesh_empty.SamplePointsUniformly(100);
+    EXPECT_TRUE(pcd_empty->points_.size() == 0);
+    EXPECT_TRUE(pcd_empty->colors_.size() == 0);
+    EXPECT_TRUE(pcd_empty->normals_.size() == 0);
+
+    vector<Vector3d> vertices = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
+    vector<Vector3i> triangles = {{0, 1, 2}};
+
+    auto mesh_simple = geometry::TriangleMesh();
+    mesh_simple.vertices_ = vertices;
+    mesh_simple.triangles_ = triangles;
+
+    size_t n_points = 100;
+    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == 0);
+    EXPECT_TRUE(pcd_simple->normals_.size() == 0);
+
+    vector<Vector3d> colors = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
+    vector<Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
+    mesh_simple.vertex_colors_ = colors;
+    mesh_simple.vertex_normals_ = normals;
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
+        ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 1, 0));
+    }
 }
 
 // ----------------------------------------------------------------------------

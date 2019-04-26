@@ -42,6 +42,7 @@ class TriangleMesh;
 class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
+    VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
 
 public:
@@ -57,10 +58,10 @@ public:
 
 public:
     bool HasVoxels() const { return voxels_.size() > 0; }
-
     bool HasColors() const {
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
+    Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
 public:
     double voxel_size_;

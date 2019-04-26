@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/PointCloud.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
@@ -69,6 +70,10 @@ void pybind_trianglemesh(py::module &m) {
             .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
+            .def("sample_points_uniformly",
+                 &geometry::TriangleMesh::SamplePointsUniformly,
+                 "Function to uniformly points from the mesh",
+                 "number_of_points"_a = 100)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -139,6 +144,8 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "sample_points_uniformly");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {

@@ -91,7 +91,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
     if (reset_bounding_box) {
         view_control_ptr_->ResetBoundingBox();
         for (const auto &geometry_ptr : geometry_ptrs_) {
-            view_control_ptr_->FitInGeometry(*geometry_ptr);
+            view_control_ptr_->FitInGeometry(*(geometry_ptr));
         }
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();

@@ -37,6 +37,8 @@
 namespace open3d {
 namespace geometry {
 
+class PointCloud;
+
 class TriangleMesh : public Geometry3D {
 public:
     TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {}
@@ -65,6 +67,9 @@ public:
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
 
+    /// Function to sample number_of_points points uniformly from the mesh
+    std::shared_ptr<PointCloud> SamplePointsUniformly(size_t number_of_points);
+
 protected:
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
@@ -72,6 +77,10 @@ protected:
     virtual void RemoveDuplicatedTriangles();
     virtual void RemoveNonManifoldVertices();
     virtual void RemoveNonManifoldTriangles();
+
+    /// Function that computes the area of a mesh triangle identified by the
+    /// triangle index
+    virtual double TriangleArea(size_t triangle_idx);
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }
