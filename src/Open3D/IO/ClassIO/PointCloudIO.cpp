@@ -130,8 +130,7 @@ bool WritePointCloud(const std::string &filename,
     local.normals_ = pointcloud.normals_.Read();
     local.colors_ = pointcloud.colors_.Read();
 
-    bool success =
-            map_itr->second(filename, local, write_ascii, compressed);
+    bool success = map_itr->second(filename, local, write_ascii, compressed);
     utility::PrintDebug("Write geometry::PointCloud: %d vertices.\n",
                         (int)local.points_.size());
     return success;

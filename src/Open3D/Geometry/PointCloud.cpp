@@ -31,9 +31,9 @@
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Utility/Console.h"
 
-#include <iostream>
 #include <cfloat>
 #include <iomanip>
+#include <iostream>
 using namespace std;
 
 #ifdef OPEN3D_USE_CUDA
@@ -127,7 +127,7 @@ Eigen::Vector3d PointCloud::GetMinBoundGPU() const {
     double *d_data = points_.d_data;
     DeviceID::Type device_id = points_.device_id;
     vector<open3d::Vec3d> minBounds(num_elements);
-    double * const output = (double * const)minBounds.data();
+    double *const output = (double *const)minBounds.data();
 
     // allocate temporary device memory
     double *d_output = NULL;
@@ -167,7 +167,7 @@ Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
     double *d_data = points_.d_data;
     DeviceID::Type device_id = points_.device_id;
     vector<open3d::Vec3d> maxBounds(num_elements);
-    double * const output = (double * const)maxBounds.data();
+    double *const output = (double *const)maxBounds.data();
 
     // allocate temporary device memory
     double *d_output = NULL;
@@ -267,11 +267,13 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
 
     if ((!HasPoints() || HasNormals()) && cloud.HasNormals())
         normals_ += cloud.normals_;
-    else normals_.clear();
+    else
+        normals_.clear();
 
     if ((!HasPoints() || HasColors()) && cloud.HasColors())
         colors_ += cloud.colors_;
-    else colors_.clear();
+    else
+        colors_.clear();
 
     points_ += cloud.points_;
 

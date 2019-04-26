@@ -61,5 +61,5 @@ inline int GPU_ID(const DeviceID::Type& device_id) {
 
     return gpu_id;
 }
-} // namespace DeviceID
-} // namespace open3d
+}  // namespace DeviceID
+}  // namespace open3d

@@ -29,8 +29,8 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "Open3D/Utility/Eigen.h"
 #include "Open3D/Types/Blob.h"
+#include "Open3D/Utility/Eigen.h"
 
 namespace unit_test {
 // Initialize an Eigen::Vector3d.

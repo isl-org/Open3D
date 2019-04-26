@@ -905,8 +905,7 @@ TEST(BlobType, Add_operator_CPU_CPU) {
     EXPECT_TRUE(NULL == b2.d_data);
     EXPECT_EQ(b2.size(), b0.size() + b1.size());
 
-    for (size_t i = 0; i < b0.size(); i++)
-        ExpectEQ(b0.h_data[i], b2.h_data[i]);
+    for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0.h_data[i], b2.h_data[i]);
 
     for (size_t i = 0; i < b1.size(); i++)
         ExpectEQ(b1.h_data[i], b2.h_data[i + b0.size()]);
@@ -936,17 +935,19 @@ TEST(BlobType, Add_operator_GPU_GPU) {
     EXPECT_EQ(b2.size(), b0.size() + b1.size());
 
     vector<Eigen::Vector3d> b0_d_data(b0.size());
-    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
-                                    b0.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    open3d::cuda::CopyDev2HstMemory(
+            b0.d_data, (double* const)b0_d_data.data(),
+            b0.size() * sizeof(Eigen::Vector3d) / sizeof(double));
     vector<Eigen::Vector3d> b1_d_data(b1.size());
-    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
-                                    b1.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    open3d::cuda::CopyDev2HstMemory(
+            b1.d_data, (double* const)b1_d_data.data(),
+            b1.size() * sizeof(Eigen::Vector3d) / sizeof(double));
     vector<Eigen::Vector3d> b2_d_data(b2.size());
-    open3d::cuda::CopyDev2HstMemory(b2.d_data, (double* const)b2_d_data.data(),
-                                    b2.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    open3d::cuda::CopyDev2HstMemory(
+            b2.d_data, (double* const)b2_d_data.data(),
+            b2.size() * sizeof(Eigen::Vector3d) / sizeof(double));
 
-    for (size_t i = 0; i < b0.size(); i++)
-        ExpectEQ(b0_d_data[i], b2_d_data[i]);
+    for (size_t i = 0; i < b0.size(); i++) ExpectEQ(b0_d_data[i], b2_d_data[i]);
 
     for (size_t i = 0; i < b1.size(); i++)
         ExpectEQ(b1_d_data[i], b2_d_data[i + b0.size()]);
@@ -1011,11 +1012,13 @@ TEST(BlobType, Append_operator_GPU_GPU) {
     EXPECT_EQ(b0.size(), ref_size);
 
     vector<Eigen::Vector3d> b0_d_data(b0.size());
-    open3d::cuda::CopyDev2HstMemory(b0.d_data, (double* const)b0_d_data.data(),
-                                    b0.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    open3d::cuda::CopyDev2HstMemory(
+            b0.d_data, (double* const)b0_d_data.data(),
+            b0.size() * sizeof(Eigen::Vector3d) / sizeof(double));
     vector<Eigen::Vector3d> b1_d_data(b1.size());
-    open3d::cuda::CopyDev2HstMemory(b1.d_data, (double* const)b1_d_data.data(),
-                                    b1.size() * sizeof(Eigen::Vector3d) / sizeof(double));
+    open3d::cuda::CopyDev2HstMemory(
+            b1.d_data, (double* const)b1_d_data.data(),
+            b1.size() * sizeof(Eigen::Vector3d) / sizeof(double));
 
     for (size_t i = 0; i < num_elements; i++)
         ExpectEQ(b0_h_data[i], b0_d_data[i]);

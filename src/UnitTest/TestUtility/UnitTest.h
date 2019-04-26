@@ -36,10 +36,10 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "Open3D/Types/Blob.h"
 #include "UnitTest/TestUtility/Print.h"
 #include "UnitTest/TestUtility/Rand.h"
 #include "UnitTest/TestUtility/Sort.h"
-#include "Open3D/Types/Blob.h"
 
 namespace unit_test {
 // thresholds for comparing floating point values

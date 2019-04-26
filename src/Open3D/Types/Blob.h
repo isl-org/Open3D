@@ -257,8 +257,7 @@ struct Blob {
         // compose two Blobs to form another
         inline _Type operator+(const _Type &t) {
             // what if *this and t are on different devices?
-            if (device_id != t.device_id)
-                return _Type();
+            if (device_id != t.device_id) return _Type();
 
             size_t out_num_elements = num_elements + t.num_elements;
             DeviceID::Type out_device_id = device_id;
@@ -268,14 +267,16 @@ struct Blob {
             // copy host data
             if (OnCPU()) {
                 memcpy(output.h_data.data(), h_data.data(), num_of_bytes());
-                memcpy(output.h_data.data() + num_elements, t.h_data.data(), t.num_of_bytes());
+                memcpy(output.h_data.data() + num_elements, t.h_data.data(),
+                       t.num_of_bytes());
             }
 
 #ifdef OPEN3D_USE_CUDA
             // copy device data
             if (OnGPU()) {
                 cuda::CopyDev2DevMemory(d_data, output.d_data, num_of_Ts());
-                cuda::CopyDev2DevMemory(t.d_data, output.d_data + num_of_Ts(), t.num_of_Ts());
+                cuda::CopyDev2DevMemory(t.d_data, output.d_data + num_of_Ts(),
+                                        t.num_of_Ts());
             }
 #endif
 
@@ -548,7 +549,6 @@ struct Blob {
 
     public:
         inline std::vector<V> Read() const {
-
             // copy host data
             if (OnCPU()) return h_data;
 
@@ -556,7 +556,8 @@ struct Blob {
             // copy device data
             if (OnGPU()) {
                 std::vector<V> data(num_elements);
-                cuda::CopyDev2HstMemory(d_data, (T *const)data.data(), num_of_Ts());
+                cuda::CopyDev2HstMemory(d_data, (T *const)data.data(),
+                                        num_of_Ts());
                 return data;
             }
 #endif

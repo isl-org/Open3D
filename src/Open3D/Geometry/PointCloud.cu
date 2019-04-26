@@ -26,13 +26,13 @@
 
 #include <stdio.h>
 
-#include "Open3D/Utility/CUDA.cuh"
 #include "Open3D/Types/Mat.h"
+#include "Open3D/Utility/CUDA.cuh"
 using namespace open3d;
 
 #include <iostream>
-#include <vector>
 #include <tuple>
+#include <vector>
 using namespace std;
 
 // ---------------------------------------------------------------------------
@@ -73,11 +73,10 @@ __global__ void meanAndCovarianceAccumulator(double* data,
 // ---------------------------------------------------------------------------
 // call the meanAndCovarianceAccumulator CUDA kernel
 // ---------------------------------------------------------------------------
-cudaError_t meanAndCovarianceAccumulatorHelper(
-        const DeviceID::Type& device_id,
-        double* const d_points,
-        const uint& nr_points,
-        double* const d_cumulants) {
+cudaError_t meanAndCovarianceAccumulatorHelper(const DeviceID::Type& device_id,
+                                               double* const d_points,
+                                               const uint& nr_points,
+                                               double* const d_cumulants) {
     int threadsPerBlock = 256;
     int blocksPerGrid = (nr_points + threadsPerBlock - 1) / threadsPerBlock;
 
@@ -173,9 +172,12 @@ __global__ void transform(double* data, uint num_elements, Mat4d t, Vec4d c) {
     Vec3d v = points[gid];
     Vec3d output{};
 
-    output[0] = t[0][0] * v[0] + t[0][1] * v[1] + t[0][2] * v[2] + t[0][3] * c[0];
-    output[1] = t[1][0] * v[0] + t[1][1] * v[1] + t[1][2] * v[2] + t[1][3] * c[1];
-    output[2] = t[2][0] * v[0] + t[2][1] * v[1] + t[2][2] * v[2] + t[2][3] * c[2];
+    output[0] =
+            t[0][0] * v[0] + t[0][1] * v[1] + t[0][2] * v[2] + t[0][3] * c[0];
+    output[1] =
+            t[1][0] * v[0] + t[1][1] * v[1] + t[1][2] * v[2] + t[1][3] * c[1];
+    output[2] =
+            t[2][0] * v[0] + t[2][1] * v[1] + t[2][2] * v[2] + t[2][3] * c[2];
 
     points[gid] = output;
 }
