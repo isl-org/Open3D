@@ -68,6 +68,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
 
     Eigen::VectorXd x(b.size());
 
+#ifndef EIGEN_MPL2_ONLY
     if (prefer_sparse) {
         Eigen::SparseMatrix<double> A_sparse = A.sparseView();
         // TODO: avoid deprecated API SimplicialCholesky
@@ -85,6 +86,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
             PrintInfo("Cholesky decompose failed, switched to dense solver\n");
         }
     }
+#endif
 
     x = A.ldlt().solve(b);
     return std::make_tuple(true, std::move(x));
