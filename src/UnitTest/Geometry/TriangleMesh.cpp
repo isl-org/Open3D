@@ -938,6 +938,28 @@ TEST(TriangleMesh, IsVertexManifold) {
     EXPECT_EQ(mesh1.IsVertexManifold(), false);
 }
 
+TEST(TriangleMesh, IsSelfIntersecting) {
+    EXPECT_EQ(geometry::CreateMeshBox()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshSphere()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshCylinder()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshCone()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshTorus()->IsSelfIntersecting(), false);
+
+    // simple intersection
+    geometry::TriangleMesh mesh0;
+    mesh0.vertices_ = {{0, 0, 0},      {0, 1, 0}, {1, 0, 0}, {1, 1, 0},
+                       {0.5, 0.5, -1}, {0, 1, 1}, {1, 0, 1}};
+    mesh0.triangles_ = {{0, 1, 2}, {1, 2, 3}, {4, 5, 6}};
+    EXPECT_EQ(mesh0.IsSelfIntersecting(), true);
+
+    // co-planar intersection
+    geometry::TriangleMesh mesh1;
+    mesh1.vertices_ = {{0, 0, 0},     {0, 1, 0},     {1, 0, 0},
+                       {0.1, 0.1, 0}, {0.1, 1.1, 0}, {1.1, 0.1, 0}};
+    mesh1.triangles_ = {{0, 1, 2}, {3, 4, 5}};
+    EXPECT_EQ(mesh1.IsSelfIntersecting(), true);
+}
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------

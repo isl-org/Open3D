@@ -143,6 +143,10 @@ public:
     /// (Two or more faces connected only by a vertex and not by an edge.)
     bool IsVertexManifold() const;
 
+    /// Function that tests if the triangle mesh is self-intersecting.
+    /// Tests each triangle pair for intersection.
+    bool IsSelfIntersecting() const;
+
 public:
     std::vector<Eigen::Vector3d> vertices_;
     std::vector<Eigen::Vector3d> vertex_normals_;

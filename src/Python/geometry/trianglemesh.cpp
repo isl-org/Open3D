@@ -104,6 +104,9 @@ void pybind_trianglemesh(py::module &m) {
             .def("is_vertex_manifold",
                  &geometry::TriangleMesh::IsVertexManifold,
                  "Tests if all vertices of the triangle mesh are manifold")
+            .def("is_self_intersecting",
+                 &geometry::TriangleMesh::IsSelfIntersecting,
+                 "Tests the triangle mesh is self-intersecting")
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -156,6 +159,7 @@ void pybind_trianglemesh(py::module &m) {
                                     "euler_poincare_characteristic");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_edge_manifold");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_self_intersecting");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "sample_points_uniformly");
