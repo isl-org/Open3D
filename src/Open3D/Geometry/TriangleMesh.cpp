@@ -28,6 +28,7 @@
 #include "Open3D/Geometry/PointCloud.h"
 
 #include <Eigen/Dense>
+#include <queue>
 #include <random>
 #include <tuple>
 #include <unordered_map>
@@ -471,6 +472,106 @@ int TriangleMesh::EulerPoincareCharacteristic() const {
     int V = vertices_.size();
     int F = triangles_.size();
     return V + F - E;
+}
+
+bool TriangleMesh::IsEdgeManifold(
+        bool allow_boundary_edges /* = true */) const {
+    typedef std::tuple<int, int> Edge;
+    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>> edges;
+    for (auto triangle : triangles_) {
+        int min0 = std::min(triangle(0), triangle(1));
+        int max0 = std::max(triangle(0), triangle(1));
+        Edge e0(min0, max0);
+        if (edges.count(e0) == 0) {
+            edges[e0] = 1;
+        } else {
+            edges[e0] += 1;
+        }
+
+        int min1 = std::min(triangle(0), triangle(2));
+        int max1 = std::max(triangle(0), triangle(2));
+        Edge e1(min1, max1);
+        if (edges.count(e1) == 0) {
+            edges[e1] = 1;
+        } else {
+            edges[e1] += 1;
+        }
+
+        int min2 = std::min(triangle(1), triangle(2));
+        int max2 = std::max(triangle(1), triangle(2));
+        Edge e2(min2, max2);
+        if (edges.count(e2) == 0) {
+            edges[e2] = 1;
+        } else {
+            edges[e2] += 1;
+        }
+    }
+
+    for (auto &kv : edges) {
+        if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
+            (!allow_boundary_edges && kv.second != 2)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TriangleMesh::IsVertexManifold() const {
+    typedef std::tuple<int, int> Edge;
+
+    std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto &tria = triangles_[tidx];
+        vert_to_triangles[tria(0)].emplace(tidx);
+        vert_to_triangles[tria(1)].emplace(tidx);
+        vert_to_triangles[tria(2)].emplace(tidx);
+    }
+
+    for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+        const auto &triangles = vert_to_triangles[vidx];
+        if (triangles.size() == 0) {
+            continue;
+        }
+
+        // collect edges and vertices
+        std::unordered_map<int, std::unordered_set<int>> edges;
+        for (int tidx : triangles) {
+            const auto &triangle = triangles_[tidx];
+            if (triangle(0) != vidx && triangle(1) != vidx) {
+                edges[triangle(0)].emplace(triangle(1));
+                edges[triangle(1)].emplace(triangle(0));
+            } else if (triangle(0) != vidx && triangle(2) != vidx) {
+                edges[triangle(0)].emplace(triangle(2));
+                edges[triangle(2)].emplace(triangle(0));
+            } else if (triangle(1) != vidx && triangle(2) != vidx) {
+                edges[triangle(1)].emplace(triangle(2));
+                edges[triangle(2)].emplace(triangle(1));
+            }
+        }
+
+        // test if vertices are connected
+        std::queue<int> next;
+        std::unordered_set<int> visited;
+        next.push(edges.begin()->first);
+        visited.emplace(edges.begin()->first);
+        while (!next.empty()) {
+            int vert = next.front();
+            next.pop();
+
+            for (auto nb : edges[vert]) {
+                if (visited.count(nb) == 0) {
+                    visited.emplace(nb);
+                    next.emplace(nb);
+                }
+            }
+        }
+        if (visited.size() != edges.size()) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 }  // namespace geometry

@@ -98,6 +98,12 @@ void pybind_trianglemesh(py::module &m) {
             .def("euler_poincare_characteristic",
                  &geometry::TriangleMesh::EulerPoincareCharacteristic,
                  "Computes Euler-Poincare charasterisitc V + F - E")
+            .def("is_edge_manifold", &geometry::TriangleMesh::IsEdgeManifold,
+                 "Tests if the triangle mesh is edge manifold",
+                 "allow_boundary_edges"_a = true)
+            .def("is_vertex_manifold",
+                 &geometry::TriangleMesh::IsVertexManifold,
+                 "Tests if all vertices of the triangle mesh are manifold")
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -146,7 +152,10 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertices");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_watertight");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "euler_poincare_characteristic");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_edge_manifold");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "sample_points_uniformly");
