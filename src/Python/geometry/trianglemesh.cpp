@@ -95,9 +95,9 @@ void pybind_trianglemesh(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
                  "Assign uniform color to all vertices.")
-            .def("is_watertight", &geometry::TriangleMesh::IsWatertight,
-                 "Checks if the mesh is a 2-manifold (iff Euler-Poincare "
-                 "characteristic V + F - E = 2 is satisfied)")
+            .def("euler_poincare_characteristic",
+                 &geometry::TriangleMesh::EulerPoincareCharacteristic,
+                 "Computes Euler-Poincare charasterisitc V + F - E")
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "

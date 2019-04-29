@@ -450,7 +450,7 @@ double TriangleMesh::TriangleArea(size_t triangle_idx) {
     return area;
 }
 
-bool TriangleMesh::IsWatertight() const {
+int TriangleMesh::EulerPoincareCharacteristic() const {
     typedef std::tuple<int, int> Edge;
     std::unordered_set<Edge, utility::hash_tuple::hash<Edge>> edges;
     for (auto triangle : triangles_) {
@@ -470,7 +470,7 @@ bool TriangleMesh::IsWatertight() const {
     int E = edges.size();
     int V = vertices_.size();
     int F = triangles_.size();
-    return V + F - E == 2;
+    return V + F - E;
 }
 
 }  // namespace geometry

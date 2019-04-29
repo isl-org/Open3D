@@ -866,23 +866,28 @@ TEST(TriangleMesh, PaintUniformColor) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, IsWatertight) {
-    EXPECT_EQ(geometry::CreateMeshSphere()->IsWatertight(), true);
-    EXPECT_EQ(geometry::CreateMeshCylinder()->IsWatertight(), true);
-    EXPECT_EQ(geometry::CreateMeshCone()->IsWatertight(), true);
-    EXPECT_EQ(geometry::CreateMeshTorus()->IsWatertight(), true);
+TEST(TriangleMesh, EulerPoincareCharacteristic) {
+    EXPECT_EQ(geometry::CreateMeshSphere()->EulerPoincareCharacteristic() == 2,
+              true);
+    EXPECT_EQ(
+            geometry::CreateMeshCylinder()->EulerPoincareCharacteristic() == 2,
+            true);
+    EXPECT_EQ(geometry::CreateMeshCone()->EulerPoincareCharacteristic() == 2,
+              true);
+    EXPECT_EQ(geometry::CreateMeshTorus()->EulerPoincareCharacteristic() == 0,
+              true);
 
     geometry::TriangleMesh mesh0;
     mesh0.vertices_ = {{0, 0, 0},  {1, 0, 0},  {1, 1, 0}, {1, 1, 1},
                        {-1, 0, 0}, {-1, 1, 0}, {-1, 1, 1}};
     mesh0.triangles_ = {{0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2, 3},
                         {0, 4, 5}, {0, 4, 6}, {0, 5, 6}, {4, 5, 6}};
-    EXPECT_EQ(mesh0.IsWatertight(), false);
+    EXPECT_EQ(mesh0.EulerPoincareCharacteristic() == 3, true);
 
     geometry::TriangleMesh mesh1;
     mesh1.vertices_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 0, 2}, {1, 0.5, 1}};
     mesh1.triangles_ = {{0, 1, 2}, {1, 2, 3}, {1, 2, 4}};
-    EXPECT_EQ(mesh1.IsWatertight(), false);
+    EXPECT_EQ(mesh1.EulerPoincareCharacteristic() == 1, true);
 }
 
 // ----------------------------------------------------------------------------
