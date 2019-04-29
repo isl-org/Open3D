@@ -13,6 +13,7 @@ def test_mesh(noise=0):
         vertices = np.asarray(mesh.vertices)
         vertices += np.random.uniform(0, noise, size=vertices.shape)
         mesh.vertices = Vector3dVector(vertices)
+    mesh.compute_vertex_normals()
     return mesh
 
 if __name__ == '__main__':
