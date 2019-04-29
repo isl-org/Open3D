@@ -29,6 +29,13 @@
 namespace open3d {
 namespace geometry {
 
+VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
+    : Geometry3D(Geometry::GeometryType::VoxelGrid),
+      voxel_size_(src_voxel_grid.voxel_size_),
+      origin_(src_voxel_grid.origin_),
+      voxels_(src_voxel_grid.voxels_),
+      colors_(src_voxel_grid.colors_) {}
+
 void VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3d::Zero();
@@ -40,63 +47,43 @@ bool VoxelGrid::IsEmpty() const { return !HasVoxels(); }
 
 Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
+        return origin_;
+    } else {
+        Eigen::Array3i min_voxel = voxels_[0];
+        for (const Eigen::Vector3i &voxel : voxels_) {
+            min_voxel = min_voxel.min(voxel.array());
+        }
+        return min_voxel.cast<double>() * voxel_size_ + origin_.array();
     }
-    auto itr_x = std::min_element(
-            voxels_.begin(), voxels_.end(),
-            [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
-                return a(0) < b(0);
-            });
-    auto itr_y = std::min_element(
-            voxels_.begin(), voxels_.end(),
-            [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
-                return a(1) < b(1);
-            });
-    auto itr_z = std::min_element(
-            voxels_.begin(), voxels_.end(),
-            [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
-                return a(2) < b(2);
-            });
-    return Eigen::Vector3d((*itr_x)(0) * voxel_size_ + origin_(0),
-                           (*itr_y)(1) * voxel_size_ + origin_(1),
-                           (*itr_z)(2) * voxel_size_ + origin_(2));
 }
 
 Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
+        return origin_;
+    } else {
+        Eigen::Array3i max_voxel = voxels_[0];
+        for (const Eigen::Vector3i &voxel : voxels_) {
+            max_voxel = max_voxel.max(voxel.array());
+        }
+        return (max_voxel.cast<double>() + 1) * voxel_size_ + origin_.array();
     }
-    auto itr_x = std::max_element(
-            voxels_.begin(), voxels_.end(),
-            [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
-                return a(0) < b(0);
-            });
-    auto itr_y = std::max_element(
-            voxels_.begin(), voxels_.end(),
-            [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
-                return a(1) < b(1);
-            });
-    auto itr_z = std::max_element(
-            voxels_.begin(), voxels_.end(),
-            [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) {
-                return a(2) < b(2);
-            });
-    return Eigen::Vector3d(((*itr_x)(0) + 1) * voxel_size_ + origin_(0),
-                           ((*itr_y)(1) + 1) * voxel_size_ + origin_(1),
-                           ((*itr_z)(2) + 1) * voxel_size_ + origin_(2));
 }
 
 void VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
-    // not implemented.
+    throw std::runtime_error("VoxelGrid::Transform is not supported");
 }
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
-    // not implemented.
-    return (*this);
+    throw std::runtime_error("VoxelGrid::operator+= is not supported");
 }
 
 VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
-    return (VoxelGrid(*this) += voxelgrid);
+    throw std::runtime_error("VoxelGrid::operator+ is not supported");
+}
+
+Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
+    Eigen::Vector3d voxel_f = (point - origin_) / voxel_size_;
+    return Eigen::floor(voxel_f.array()).cast<int>();
 }
 
 }  // namespace geometry
