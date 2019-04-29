@@ -55,12 +55,12 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxel colors.")
             .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
-            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_.h_data,
+            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
                            "``int`` array of shape ``(num_voxels, 3)``: "
                            "Voxel coordinates. use ``numpy.asarray()`` to "
                            "access data.")
             .def_readwrite(
-                    "colors", &geometry::VoxelGrid::colors_.h_data,
+                    "colors", &geometry::VoxelGrid::colors_,
                     "``float64`` array of shape ``(num_voxels, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of voxels.")

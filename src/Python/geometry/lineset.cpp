@@ -56,16 +56,16 @@ void pybind_lineset(py::module &m) {
                  "colors.")
             .def("get_line_coordinate", &geometry::LineSet::GetLineCoordinate,
                  "line_index"_a)
-            .def_readwrite("points", &geometry::LineSet::points_.h_data,
+            .def_readwrite("points", &geometry::LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "coordinates.")
-            .def_readwrite("lines", &geometry::LineSet::lines_.h_data,
+            .def_readwrite("lines", &geometry::LineSet::lines_,
                            "``int`` array of shape ``(num_lines, 2)``, use "
                            "``numpy.asarray()`` to access data: Lines denoted "
                            "by the index of points forming the line.")
             .def_readwrite(
-                    "colors", &geometry::LineSet::colors_.h_data,
+                    "colors", &geometry::LineSet::colors_,
                     "``float64`` array of shape ``(num_lines, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of lines.");

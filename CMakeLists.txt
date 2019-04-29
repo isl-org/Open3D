@@ -63,6 +63,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# relocation R_X86_64_32 against `.bss' can not be used when
+# making a shared object; recompile with -fPIC
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # config options
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
 option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
