@@ -42,6 +42,13 @@ void pybind_trianglemesh(py::module &m) {
                          "triangle normals, vertex normals and vertex colors.");
     py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
+    py::enum_<geometry::TriangleMesh::SimplificationContraction>(
+            m, "SimplificationContraction")
+            .value("Average",
+                   geometry::TriangleMesh::SimplificationContraction::Average)
+            .value("Quadric",
+                   geometry::TriangleMesh::SimplificationContraction::Quadric)
+            .export_values();
     trianglemesh
             .def("__repr__",
                  [](const geometry::TriangleMesh &mesh) {
@@ -74,6 +81,19 @@ void pybind_trianglemesh(py::module &m) {
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly points from the mesh",
                  "number_of_points"_a = 100)
+            .def("subdivide_midpoint",
+                 &geometry::TriangleMesh::SubdivideMidpoint,
+                 "Function subdivide mesh using midpoint algorithm",
+                 "number_of_iterations"_a = 1)
+            .def("simplify_vertex_clustering",
+                 &geometry::TriangleMesh::SimplifyVertexClustering,
+                 "Function to simplify mesh vertex clustering", "voxel_size"_a,
+                 "contraction"_a = geometry::TriangleMesh::
+                         SimplificationContraction::Average)
+            .def("simplify_quadric_decimation",
+                 &geometry::TriangleMesh::SimplifyQuadricDecimation,
+                 "Function to simplify mesh using quadric error decimation",
+                 "target_number_of_triangles"_a)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -146,6 +166,11 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "sample_points_uniformly");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "subdivide_midpoint");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "simplify_vertex_clustering");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "simplify_quadric_decimation");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
