@@ -26,3 +26,4 @@ static/
 **/package-lock.json
 *.old*
 docs/python_api/
+_vimrc_local.vim
