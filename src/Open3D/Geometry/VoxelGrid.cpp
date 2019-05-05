@@ -83,7 +83,7 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
     Eigen::Vector3d voxel_f = (point - origin_) / voxel_size_;
-    return Eigen::floor(voxel_f.array()).cast<int>();
+    return (Eigen::floor(voxel_f.array())).cast<int>();
 }
 
 }  // namespace geometry
