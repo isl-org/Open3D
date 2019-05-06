@@ -26,20 +26,11 @@
 
 #pragma once
 
-#include "Python/open3d_pybind.h"
+#include "Open3D/Geometry/Octree.h"
 
-void pybind_geometry(py::module &m);
-
-void pybind_pointcloud(py::module &m);
-void pybind_voxelgrid(py::module &m);
-void pybind_lineset(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_halfedgetrianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_pointcloud_methods(py::module &m);
-void pybind_voxelgrid_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_octree_methods(py::module &m);
-void pybind_octree(py::module &m);
+// Trampoline classes for octree datastructures
+template <class OctreeNodeBase = geometry::OctreeNode>
+class PyOctreeNode : public OctreeNodeBase {
+public:
+    using OctreeNodeBase::OctreeNodeBase;
+};
