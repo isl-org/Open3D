@@ -77,23 +77,6 @@ void pybind_trianglemesh(py::module &m) {
             .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
-            .def("sample_points_uniformly",
-                 &geometry::TriangleMesh::SamplePointsUniformly,
-                 "Function to uniformly points from the mesh",
-                 "number_of_points"_a = 100)
-            .def("subdivide_midpoint",
-                 &geometry::TriangleMesh::SubdivideMidpoint,
-                 "Function subdivide mesh using midpoint algorithm",
-                 "number_of_iterations"_a = 1)
-            .def("simplify_vertex_clustering",
-                 &geometry::TriangleMesh::SimplifyVertexClustering,
-                 "Function to simplify mesh vertex clustering", "voxel_size"_a,
-                 "contraction"_a = geometry::TriangleMesh::
-                         SimplificationContraction::Average)
-            .def("simplify_quadric_decimation",
-                 &geometry::TriangleMesh::SimplifyQuadricDecimation,
-                 "Function to simplify mesh using quadric error decimation",
-                 "target_number_of_triangles"_a)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -164,13 +147,6 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "sample_points_uniformly");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "subdivide_midpoint");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "simplify_vertex_clustering");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "simplify_quadric_decimation");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
@@ -197,6 +173,49 @@ void pybind_trianglemesh_methods(py::module &m) {
             {{"input", "The input triangle mesh."},
              {"min_bound", "Minimum bound for vertex coordinate."},
              {"max_bound", "Maximum bound for vertex coordinate."}});
+
+    m.def("sample_points_uniformly", &geometry::SamplePointsUniformly,
+          "Function to uniformly points from the mesh", "input"_a,
+          "number_of_points"_a = 100);
+    docstring::FunctionDocInject(
+            m, "sample_points_uniformly",
+            {{"input", "The input triangle mesh."},
+             {"number_of_points",
+              "Number of points that should be uniformly sampled."}});
+
+    m.def("subdivide_midpoint", &geometry::SubdivideMidpoint,
+          "Function subdivide mesh using midpoint algorithm.", "input"_a,
+          "number_of_iterations"_a = 1);
+    docstring::FunctionDocInject(
+            m, "subdivide_midpoint",
+            {{"input", "The input triangle mesh."},
+             {"number_of_iterations",
+              "Number of iterations. A single iteration splits each triangle "
+              "into four triangles that cover the same surface."}});
+
+    m.def("simplify_vertex_clustering", &geometry::SimplifyVertexClustering,
+          "Function to simplify mesh vertex clustering", "input"_a,
+          "voxel_size"_a,
+          "contraction"_a =
+                  geometry::TriangleMesh::SimplificationContraction::Average);
+    docstring::FunctionDocInject(
+            m, "simplify_vertex_clustering",
+            {{"input", "The input triangle mesh."},
+             {"voxel_size",
+              "The size of the voxel within vertices are pooled."},
+             {"contraction",
+              "Method to aggregate vertex information. Average computes a "
+              "simple average, Quadric minimizes the distance to the adjacent "
+              "planes."}});
+    m.def("simplify_quadric_decimation", &geometry::SimplifyQuadricDecimation,
+          "Function to simplify mesh using quadric error decimation", "input"_a,
+          "target_number_of_triangles"_a);
+    docstring::FunctionDocInject(
+            m, "simplify_quadric_decimation",
+            {{"input", "The input triangle mesh."},
+             {"target_number_of_triangles",
+              "The number of triangles that the simplified mesh should have. "
+              "It is not guranteed that this number will be reached."}});
 
     m.def("create_mesh_box", &geometry::CreateMeshBox,
           "Factory function to create a box. The left bottom corner on the "

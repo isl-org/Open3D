@@ -40,6 +40,8 @@ namespace geometry {
 
 class PointCloud;
 
+typedef std::tuple<int, int> Edge;
+
 class TriangleMesh : public Geometry3D {
 public:
     enum class SimplificationContraction { Average, Quadric };
@@ -70,53 +72,13 @@ public:
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
 
-    /// Function to sample number_of_points points uniformly from the mesh
-    std::shared_ptr<PointCloud> SamplePointsUniformly(size_t number_of_points);
-
-    /// Function to subdivide triangle mesh using the simple midpoint algorithm.
-    /// Each triangle is subdivided into four triangles per iteration and the
-    /// new vertices lie on the midpoint of the triangle edges.
-    void SubdivideMidpoint(int number_of_iterations);
-
-    /// Function to simplify mesh using Vertex Clustering
-    void SimplifyVertexClustering(double voxel_size,
-                                  SimplificationContraction contraction =
-                                          SimplificationContraction::Average);
-
-    /// Function to simplify mesh using Quadric Error Metric Decimation by
-    /// Garland and Heckbert.
-    void SimplifyQuadricDecimation(int target_number_of_triangles);
-
 protected:
-    typedef std::tuple<int, int> Edge;
-
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
     virtual void RemoveDuplicatedVertices();
     virtual void RemoveDuplicatedTriangles();
     virtual void RemoveNonManifoldVertices();
     virtual void RemoveNonManifoldTriangles();
-
-    virtual std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
-    EdgeTriangleCount() const;
-
-    /// Function that computes the area of a mesh triangle
-    virtual double TriangleArea(const Eigen::Vector3d &p0,
-                                const Eigen::Vector3d &p1,
-                                const Eigen::Vector3d &p2) const;
-
-    /// Function that computes the area of a mesh triangle identified by the
-    /// triangle index
-    virtual double TriangleArea(size_t triangle_idx);
-
-    /// Function that computes the plane equation from the three points.
-    virtual Eigen::Vector4d TrianglePlane(const Eigen::Vector3d &p0,
-                                          const Eigen::Vector3d &p1,
-                                          const Eigen::Vector3d &p2) const;
-
-    /// Function that computes the plane equation of a mesh triangle identified
-    /// by the triangle index.
-    virtual Eigen::Vector4d TrianglePlane(size_t triangle_idx) const;
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }
@@ -166,6 +128,19 @@ public:
         }
     }
 
+    /// Function that counts the number of faces an edge belongs.
+    /// Returns a map of Edge (vertex0, vertex1) to number of faces.
+    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+    GetEdgeTriangleCount() const;
+
+    /// Function that computes the area of a mesh triangle identified by the
+    /// triangle index
+    double GetTriangleArea(size_t triangle_idx) const;
+
+    /// Function that computes the plane equation of a mesh triangle identified
+    /// by the triangle index.
+    Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
+
 public:
     std::vector<Eigen::Vector3d> vertices_;
     std::vector<Eigen::Vector3d> vertex_normals_;
@@ -174,6 +149,41 @@ public:
     std::vector<Eigen::Vector3d> triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
 };
+
+/// Function that computes the area of a mesh triangle
+double ComputeTriangleArea(const Eigen::Vector3d &p0,
+                           const Eigen::Vector3d &p1,
+                           const Eigen::Vector3d &p2);
+
+/// Function that computes the plane equation from the three points.
+/// If the three points are co-linear, then this function returns the invalid
+/// plane (0, 0, 0, 0).
+Eigen::Vector4d ComputeTrianglePlane(const Eigen::Vector3d &p0,
+                                     const Eigen::Vector3d &p1,
+                                     const Eigen::Vector3d &p2);
+
+/// Function to sample number_of_points points uniformly from the mesh
+std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
+                                                  size_t number_of_points);
+
+/// Function to subdivide triangle mesh using the simple midpoint algorithm.
+/// Each triangle is subdivided into four triangles per iteration and the
+/// new vertices lie on the midpoint of the triangle edges.
+std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh &input,
+                                                int number_of_iterations);
+
+/// Function to simplify mesh using Vertex Clustering.
+/// The result can be a non-manifold mesh.
+std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
+        const TriangleMesh &input,
+        double voxel_size,
+        TriangleMesh::SimplificationContraction contraction =
+                TriangleMesh::SimplificationContraction::Average);
+
+/// Function to simplify mesh using Quadric Error Metric Decimation by
+/// Garland and Heckbert.
+std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
+        const TriangleMesh &input, int target_number_of_triangles);
 
 /// Function to select points from \param input TriangleMesh into
 /// \return output TriangleMesh
