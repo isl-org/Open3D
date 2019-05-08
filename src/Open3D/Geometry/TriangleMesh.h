@@ -172,6 +172,12 @@ std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
 std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh &input,
                                                 int number_of_iterations);
 
+/// Function to subdivide triangle mesh using Loop's scheme.
+/// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles", 1987.
+/// Each triangle is subdivided into four triangles per iteration.
+std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh &input,
+                                            int number_of_iterations);
+
 /// Function to simplify mesh using Vertex Clustering.
 /// The result can be a non-manifold mesh.
 std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
