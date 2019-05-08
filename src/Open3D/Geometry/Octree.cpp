@@ -216,14 +216,6 @@ void Octree::Clear() {
     size_ = 0;
 }
 
-void Octree::Clear(bool reset_bounds) {
-    if (reset_bounds) {
-        Clear();
-    } else {
-        root_node_ = nullptr;
-    }
-}
-
 bool Octree::IsEmpty() const { throw std::runtime_error("Not implemented"); }
 Eigen::Vector3d Octree::GetMinBound() const {
     throw std::runtime_error("Not implemented");
@@ -238,27 +230,23 @@ void Octree::Transform(const Eigen::Matrix4d& transformation) {
 }
 
 void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
-                                   bool reset_bounds,
                                    double size_expand) {
     if (size_expand > 1 || size_expand < 0) {
         throw std::runtime_error("size_expand shall be between 0 and 1");
     }
 
     // Set bounds
-    Clear(reset_bounds);
-    if (reset_bounds) {
-        // Reset with automatic centering
-        Eigen::Array3d min_bound = point_cloud.GetMinBound();
-        Eigen::Array3d max_bound = point_cloud.GetMaxBound();
-        Eigen::Array3d center = (min_bound + max_bound) / 2;
-        Eigen::Array3d half_sizes = center - min_bound;
-        double max_half_size = half_sizes.maxCoeff();
-        origin_ = min_bound.min(center - max_half_size);
-        if (max_half_size == 0) {
-            size_ = size_expand;
-        } else {
-            size_ = max_half_size * 2 * (1 + size_expand);
-        }
+    Clear();
+    Eigen::Array3d min_bound = point_cloud.GetMinBound();
+    Eigen::Array3d max_bound = point_cloud.GetMaxBound();
+    Eigen::Array3d center = (min_bound + max_bound) / 2;
+    Eigen::Array3d half_sizes = center - min_bound;
+    double max_half_size = half_sizes.maxCoeff();
+    origin_ = min_bound.min(center - max_half_size);
+    if (max_half_size == 0) {
+        size_ = size_expand;
+    } else {
+        size_ = max_half_size * 2 * (1 + size_expand);
     }
 
     // Insert points

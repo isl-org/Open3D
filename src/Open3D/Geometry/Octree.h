@@ -28,6 +28,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
 
@@ -81,12 +82,16 @@ public:
 /// - children_[7]: origin == (1, 1, 1), size == 1, furthest from child 0
 class OctreeInternalNode : public OctreeNode {
 public:
+    OctreeInternalNode() : children_(8) {}
     static std::shared_ptr<OctreeNodeInfo> GetInsertionNodeInfo(
             const std::shared_ptr<OctreeNodeInfo>& node_info,
             const Eigen::Vector3d& point);
 
 public:
-    std::shared_ptr<OctreeNode> children_[8];
+    // Use vector instead of C-array for Pybind11, otherwise, need to define
+    // more helper functions
+    // https://github.com/pybind/pybind11/issues/546#issuecomment-265707318
+    std::vector<std::shared_ptr<OctreeNode>> children_;
 };
 
 class OctreeLeafNode : public OctreeNode {
@@ -112,7 +117,6 @@ public:
 
 public:
     void Clear() override;
-    void Clear(bool reset_bounds);
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
@@ -120,7 +124,6 @@ public:
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
-                               bool reset_bounds = true,
                                double size_expand = 0.01);
 
     /// Root of the octree

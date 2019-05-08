@@ -207,7 +207,7 @@ TEST(Octree, FragmentPLYCheckClone) {
     geometry::PointCloud pcd;
     io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
     geometry::Octree src_octree(5);
-    src_octree.ConvertFromPointCloud(pcd, true, 0.01);
+    src_octree.ConvertFromPointCloud(pcd, 0.01);
 
     // Build dst_octree
     geometry::Octree dst_octree(src_octree);
@@ -228,7 +228,7 @@ TEST(Octree, FragmentPLYLocate) {
     io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
     size_t max_depth = 5;
     geometry::Octree octree(max_depth);
-    octree.ConvertFromPointCloud(pcd, true, 0.01);
+    octree.ConvertFromPointCloud(pcd, 0.01);
 
     // Try locating a few points
     for (size_t idx = 0; idx < pcd.points_.size(); idx += 200) {
@@ -248,7 +248,7 @@ TEST(Octree, ConvertFromPointCloudBoundSinglePoint) {
     geometry::PointCloud pcd;
     pcd.points_.push_back(Eigen::Vector3d(0, 0, 0));
     pcd.colors_.push_back(Eigen::Vector3d(0, 0.1, 0.2));
-    octree.ConvertFromPointCloud(pcd, true, 0.01);
+    octree.ConvertFromPointCloud(pcd, 0.01);
     ExpectEQ(octree.origin_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(octree.size_, 0.01);
 }
@@ -260,7 +260,7 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
     pcd.points_.push_back(Eigen::Vector3d(0, 2, 4));
     pcd.colors_.push_back(Eigen::Vector3d(0, 0.1, 0.2));
     pcd.colors_.push_back(Eigen::Vector3d(0.3, 0.4, 0.5));
-    octree.ConvertFromPointCloud(pcd, true, 0.01);
+    octree.ConvertFromPointCloud(pcd, 0.01);
     ExpectEQ(octree.origin_, Eigen::Vector3d(-2, -1, 0));  // Auto-centered
     EXPECT_EQ(octree.size_, 4.04);  // 4.04 = 4 * (1 + 0.01)
 }
