@@ -60,5 +60,13 @@ bool WritePinholeCameraTrajectoryToLOG(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 
+bool ReadPinholeCameraTrajectoryFromTUM(
+        const std::string &filename,
+        camera::PinholeCameraTrajectory &trajectory);
+
+bool WritePinholeCameraTrajectoryToTUM(
+        const std::string &filename,
+        const camera::PinholeCameraTrajectory &trajectory);
+
 }  // namespace io
 }  // namespace open3d
