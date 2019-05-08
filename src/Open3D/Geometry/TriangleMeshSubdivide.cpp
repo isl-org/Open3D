@@ -99,7 +99,7 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
         mesh->triangles_ = new_triangles;
     }
 
-    if(input.HasTriangleNormals()) {
+    if (input.HasTriangleNormals()) {
         mesh->ComputeTriangleNormals();
     }
 

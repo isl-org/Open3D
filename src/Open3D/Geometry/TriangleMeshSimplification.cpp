@@ -258,7 +258,7 @@ std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
         tidx++;
     }
 
-    if(input.HasTriangleNormals()) {
+    if (input.HasTriangleNormals()) {
         mesh->ComputeTriangleNormals();
     }
 
@@ -535,7 +535,7 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
     }
     mesh->triangles_.resize(next_free);
 
-    if(input.HasTriangleNormals()) {
+    if (input.HasTriangleNormals()) {
         mesh->ComputeTriangleNormals();
     }
 
