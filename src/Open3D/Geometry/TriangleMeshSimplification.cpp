@@ -258,6 +258,10 @@ std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
         tidx++;
     }
 
+    if(input.HasTriangleNormals()) {
+        mesh->ComputeTriangleNormals();
+    }
+
     return mesh;
 }
 
@@ -414,7 +418,7 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             Eigen::Vector3d vert0 = mesh->vertices_[tria(0)];
             Eigen::Vector3d vert1 = mesh->vertices_[tria(1)];
             Eigen::Vector3d vert2 = mesh->vertices_[tria(2)];
-            Eigen::Vector3d norm_before = (vert2 - vert0).cross(vert2 - vert1);
+            Eigen::Vector3d norm_before = (vert1 - vert0).cross(vert2 - vert0);
             norm_before /= norm_before.norm();
 
             if (vidx1 == tria(0)) {
@@ -425,9 +429,9 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
                 vert2 = vbars[edge];
             }
 
-            Eigen::Vector3d norm_after = (vert2 - vert0).cross(vert2 - vert1);
+            Eigen::Vector3d norm_after = (vert1 - vert0).cross(vert2 - vert0);
             norm_after /= norm_after.norm();
-            if (norm_before.dot(norm_before) < 0) {
+            if (norm_before.dot(norm_after) < 0) {
                 flipped = true;
                 break;
             }
@@ -530,6 +534,10 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
         }
     }
     mesh->triangles_.resize(next_free);
+
+    if(input.HasTriangleNormals()) {
+        mesh->ComputeTriangleNormals();
+    }
 
     return mesh;
 }

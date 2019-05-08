@@ -45,6 +45,7 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
 
     bool has_vert_normal = input.HasVertexNormals();
     bool has_vert_color = input.HasVertexColors();
+    bool has_tria_normal = input.HasTriangleNormals();
     // Compute and return midpoint.
     // Also adds edge - new vertex refrence to new_verts map.
     auto SubdivideEdge =
@@ -96,6 +97,10 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
                     Eigen::Vector3i(vidx01, vidx12, vidx20);
         }
         mesh->triangles_ = new_triangles;
+    }
+
+    if(input.HasTriangleNormals()) {
+        mesh->ComputeTriangleNormals();
     }
 
     return mesh;
