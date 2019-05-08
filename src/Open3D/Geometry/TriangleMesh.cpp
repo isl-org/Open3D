@@ -28,7 +28,6 @@
 #include "Open3D/Geometry/PointCloud.h"
 
 #include <Eigen/Dense>
-#include <queue>
 #include <random>
 #include <tuple>
 
@@ -214,31 +213,31 @@ void TriangleMesh::Purge() {
     RemoveNonManifoldVertices();
 }
 
-std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points) {
-    if (number_of_points == 0 || triangles_.size() == 0) {
+std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
+                                                  size_t number_of_points) {
+    if (number_of_points == 0 || input.triangles_.size() == 0) {
         return std::make_shared<PointCloud>();
     }
 
     // Compute area of each triangle and sum surface area
-    std::vector<double> triangle_areas(triangles_.size());
+    std::vector<double> triangle_areas(input.triangles_.size());
     double surface_area = 0;
-    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        double triangle_area = TriangleArea(tidx);
+    for (size_t tidx = 0; tidx < input.triangles_.size(); ++tidx) {
+        double triangle_area = input.GetTriangleArea(tidx);
         triangle_areas[tidx] = triangle_area;
         surface_area += triangle_area;
     }
 
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
-    for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
+    for (size_t tidx = 1; tidx < input.triangles_.size(); ++tidx) {
         triangle_areas[tidx] =
                 triangle_areas[tidx] / surface_area + triangle_areas[tidx - 1];
     }
 
     // sample point cloud
-    bool has_vert_normal = HasVertexNormals();
-    bool has_vert_color = HasVertexColors();
+    bool has_vert_normal = input.HasVertexNormals();
+    bool has_vert_color = input.HasVertexColors();
     std::random_device rd;
     std::mt19937 mt(rd());
     std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -251,7 +250,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
         pcd->colors_.resize(number_of_points);
     }
     size_t point_idx = 0;
-    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+    for (size_t tidx = 0; tidx < input.triangles_.size(); ++tidx) {
         size_t n = std::round(triangle_areas[tidx] * number_of_points);
         while (point_idx < n) {
             double r1 = dist(mt);
@@ -260,19 +259,21 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
             double b = std::sqrt(r1) * (1 - r2);
             double c = std::sqrt(r1) * r2;
 
-            const Eigen::Vector3i &triangle = triangles_[tidx];
-            pcd->points_[point_idx] = a * vertices_[triangle(0)] +
-                                      b * vertices_[triangle(1)] +
-                                      c * vertices_[triangle(2)];
+            const Eigen::Vector3i &triangle = input.triangles_[tidx];
+            pcd->points_[point_idx] = a * input.vertices_[triangle(0)] +
+                                      b * input.vertices_[triangle(1)] +
+                                      c * input.vertices_[triangle(2)];
             if (has_vert_normal) {
-                pcd->normals_[point_idx] = a * vertex_normals_[triangle(0)] +
-                                           b * vertex_normals_[triangle(1)] +
-                                           c * vertex_normals_[triangle(2)];
+                pcd->normals_[point_idx] =
+                        a * input.vertex_normals_[triangle(0)] +
+                        b * input.vertex_normals_[triangle(1)] +
+                        c * input.vertex_normals_[triangle(2)];
             }
             if (has_vert_color) {
-                pcd->colors_[point_idx] = a * vertex_colors_[triangle(0)] +
-                                          b * vertex_colors_[triangle(1)] +
-                                          c * vertex_colors_[triangle(2)];
+                pcd->colors_[point_idx] =
+                        a * input.vertex_colors_[triangle(0)] +
+                        b * input.vertex_colors_[triangle(1)] +
+                        c * input.vertex_colors_[triangle(2)];
             }
 
             point_idx++;
@@ -280,55 +281,6 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     }
 
     return pcd;
-}
-
-void TriangleMesh::SubdivideMidpoint(int number_of_iterations) {
-    bool has_vert_normal = HasVertexNormals();
-    bool has_vert_color = HasVertexColors();
-    for (int iter = 0; iter < number_of_iterations; ++iter) {
-        std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
-                new_verts;
-        std::vector<Eigen::Vector3i> new_triangles(4 * triangles_.size());
-        auto get_add_edge = [&](int vidx0, int vidx1) {
-            int min = std::min(vidx0, vidx1);
-            int max = std::max(vidx0, vidx1);
-            Edge edge(min, max);
-            if (new_verts.count(edge) == 0) {
-                vertices_.push_back(0.5 * (vertices_[min] + vertices_[max]));
-                if (has_vert_normal) {
-                    vertex_normals_.push_back(0.5 * (vertex_normals_[min] +
-                                                     vertex_normals_[max]));
-                }
-                if (has_vert_color) {
-                    vertex_colors_.push_back(
-                            0.5 * (vertex_colors_[min] + vertex_colors_[max]));
-                }
-                int v01idx = vertices_.size() - 1;
-                new_verts[edge] = v01idx;
-                return v01idx;
-            } else {
-                return new_verts[edge];
-            }
-        };
-        for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-            const auto &triangle = triangles_[tidx];
-            int vidx0 = triangle(0);
-            int vidx1 = triangle(1);
-            int vidx2 = triangle(2);
-            int vidx01 = get_add_edge(vidx0, vidx1);
-            int vidx12 = get_add_edge(vidx1, vidx2);
-            int vidx20 = get_add_edge(vidx2, vidx0);
-            new_triangles[tidx * 4 + 0] =
-                    Eigen::Vector3i(vidx0, vidx01, vidx20);
-            new_triangles[tidx * 4 + 1] =
-                    Eigen::Vector3i(vidx01, vidx1, vidx12);
-            new_triangles[tidx * 4 + 2] =
-                    Eigen::Vector3i(vidx12, vidx2, vidx20);
-            new_triangles[tidx * 4 + 3] =
-                    Eigen::Vector3i(vidx01, vidx12, vidx20);
-        }
-        triangles_ = new_triangles;
-    }
 }
 
 void TriangleMesh::RemoveDuplicatedVertices() {
@@ -487,63 +439,67 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
             (int)(old_triangle_num - k));
 }
 
-std::unordered_map<TriangleMesh::Edge,
-                   int,
-                   utility::hash_tuple::hash<TriangleMesh::Edge>>
-TriangleMesh::EdgeTriangleCount() const {
-    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>> edges;
-    auto add_edge = [&](int vidx0, int vidx1) {
+std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+TriangleMesh::GetEdgeTriangleCount() const {
+    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+            trias_per_edge;
+    auto AddEdge = [&](int vidx0, int vidx1) {
         int min0 = std::min(vidx0, vidx1);
         int max0 = std::max(vidx0, vidx1);
         Edge edge(min0, max0);
-        if (edges.count(edge) == 0) {
-            edges[edge] = 1;
+        if (trias_per_edge.count(edge) == 0) {
+            trias_per_edge[edge] = 1;
         } else {
-            edges[edge] += 1;
+            trias_per_edge[edge] += 1;
         }
     };
     for (auto triangle : triangles_) {
-        add_edge(triangle(0), triangle(1));
-        add_edge(triangle(0), triangle(2));
-        add_edge(triangle(1), triangle(2));
+        AddEdge(triangle(0), triangle(1));
+        AddEdge(triangle(1), triangle(2));
+        AddEdge(triangle(2), triangle(0));
     }
-    return edges;
+    return trias_per_edge;
 }
 
-double TriangleMesh::TriangleArea(const Eigen::Vector3d &p0,
-                                  const Eigen::Vector3d &p1,
-                                  const Eigen::Vector3d &p2) const {
+double ComputeTriangleArea(const Eigen::Vector3d &p0,
+                           const Eigen::Vector3d &p1,
+                           const Eigen::Vector3d &p2) {
     const Eigen::Vector3d x = p0 - p1;
     const Eigen::Vector3d y = p0 - p2;
     double area = 0.5 * x.cross(y).norm();
     return area;
 }
 
-double TriangleMesh::TriangleArea(size_t triangle_idx) {
+double TriangleMesh::GetTriangleArea(size_t triangle_idx) const {
     const Eigen::Vector3i &triangle = triangles_[triangle_idx];
     const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
-    return TriangleArea(vertex0, vertex1, vertex2);
+    return ComputeTriangleArea(vertex0, vertex1, vertex2);
 }
 
-Eigen::Vector4d TriangleMesh::TrianglePlane(const Eigen::Vector3d &p0,
-                                            const Eigen::Vector3d &p1,
-                                            const Eigen::Vector3d &p2) const {
+Eigen::Vector4d ComputeTrianglePlane(const Eigen::Vector3d &p0,
+                                     const Eigen::Vector3d &p1,
+                                     const Eigen::Vector3d &p2) {
     const Eigen::Vector3d e0 = p1 - p0;
     const Eigen::Vector3d e1 = p2 - p0;
     Eigen::Vector3d abc = e0.cross(e1);
+    double norm = abc.norm();
+    // if the three points are co-linear, return invalid plane
+    if (norm == 0) {
+        return Eigen::Vector4d(0, 0, 0, 0);
+    }
     abc /= abc.norm();
     double d = -abc.dot(p0);
     return Eigen::Vector4d(abc(0), abc(1), abc(2), d);
 }
 
-Eigen::Vector4d TriangleMesh::TrianglePlane(size_t triangle_idx) const {
+Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
     const Eigen::Vector3i &triangle = triangles_[triangle_idx];
     const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
-    return TrianglePlane(vertex0, vertex1, vertex2);
+    return ComputeTrianglePlane(vertex0, vertex1, vertex2);
 }
 
 }  // namespace geometry
