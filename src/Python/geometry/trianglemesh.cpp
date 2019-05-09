@@ -235,6 +235,33 @@ void pybind_trianglemesh_methods(py::module &m) {
                                   {"height", "y-directional length."},
                                   {"depth", "z-directional length."}});
 
+    m.def("create_mesh_tetrahedron", &geometry::CreateMeshTetrahedron,
+          "Factory function to create a tetrahedron. The centroid of the mesh "
+          "will be placed at (0, 0, 0) and the vertices have a distance of "
+          "radius to the center.",
+          "radius"_a = 1.0);
+    docstring::FunctionDocInject(
+            m, "create_mesh_tetrahedron",
+            {{"radius", "Distance from centroid to mesh vetices."}});
+
+    m.def("create_mesh_octahedron", &geometry::CreateMeshOctahedron,
+          "Factory function to create a octahedron. The centroid of the mesh "
+          "will be placed at (0, 0, 0) and the vertices have a distance of "
+          "radius to the center.",
+          "radius"_a = 1.0);
+    docstring::FunctionDocInject(
+            m, "create_mesh_octahedron",
+            {{"radius", "Distance from centroid to mesh vetices."}});
+
+    m.def("create_mesh_icosahedron", &geometry::CreateMeshIcosahedron,
+          "Factory function to create a icosahedron. The centroid of the mesh "
+          "will be placed at (0, 0, 0) and the vertices have a distance of "
+          "radius to the center.",
+          "radius"_a = 1.0);
+    docstring::FunctionDocInject(
+            m, "create_mesh_icosahedron",
+            {{"radius", "Distance from centroid to mesh vetices."}});
+
     m.def("create_mesh_sphere", &geometry::CreateMeshSphere,
           "Factory function to create a sphere mesh centered at (0, 0, 0).",
           "radius"_a = 1.0, "resolution"_a = 20);

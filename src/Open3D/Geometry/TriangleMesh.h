@@ -205,6 +205,21 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
         const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound);
 
+/// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshTetrahedron(double radius = 1.0);
+
+/// Factory function to create a octahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshOctahedron(double radius = 1.0);
+
+/// Factory function to create a icosahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshIcosahedron(double radius = 1.0);
+
 /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
 /// The left bottom corner on the front will be placed at (0, 0, 0).
 /// The \param width is x-directional length, and \param height and \param depth
