@@ -56,6 +56,7 @@ static const std::unordered_map<
         file_extension_to_trajectory_read_function{
                 {"log", ReadPinholeCameraTrajectoryFromLOG},
                 {"json", ReadPinholeCameraTrajectoryFromJSON},
+                {"txt", ReadPinholeCameraTrajectoryFromTUM},
         };
 
 static const std::unordered_map<
@@ -65,6 +66,7 @@ static const std::unordered_map<
         file_extension_to_trajectory_write_function{
                 {"log", WritePinholeCameraTrajectoryToLOG},
                 {"json", WritePinholeCameraTrajectoryToJSON},
+                {"txt", WritePinholeCameraTrajectoryToTUM},
         };
 
 }  // unnamed namespace
