@@ -6,30 +6,33 @@
 
 import copy
 from open3d import *
-import time
 
-def geometry_generator():
-    mesh = read_triangle_mesh("../../TestData/bathtub_0154.ply")
-    yield mesh
+flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
-    # TODO point set
-    # TODO line set
+def draw_geometries_flip(pcds):
+    pcds_transform = []
+    for pcd in pcds:
+        pcd_temp = copy.deepcopy(pcd)
+        pcd_temp.transform(flip_transform)
+        pcds_transform.append(pcd_temp)
+    draw_geometries(pcds_transform)
 
-def animate(geom):
-    vis = Visualizer()
-    vis.create_window()
-    vis.add_geometry(geom)
 
-    scales = [s for np.linspace(2, 0.1, 10)] + [s for np.linspace(0.1, 2, 10)]
-    print(geom)
-    print(scales)
-    for scale in scales:
-        geom.scale(scale)
-        vis.update_geometry()
-        vis.poll_events()
-        vis.update_renderer()
-        time.sleep(50)
+def draw_registration_result(source, target, transformation):
+    source_temp = copy.deepcopy(source)
+    target_temp = copy.deepcopy(target)
+    source_temp.paint_uniform_color([1, 0.706, 0])
+    target_temp.paint_uniform_color([0, 0.651, 0.929])
+    source_temp.transform(transformation)
+    source_temp.transform(flip_transform)
+    target_temp.transform(flip_transform)
+    draw_geometries([source_temp, target_temp])
 
-if __name__ == "__main__":
-    for geom in geometry_generator():
-        animate(geom)
+
+def draw_registration_result_original_color(source, target, transformation):
+    source_temp = copy.deepcopy(source)
+    target_temp = copy.deepcopy(target)
+    source_temp.transform(transformation)
+    source_temp.transform(flip_transform)
+    target_temp.transform(flip_transform)
+    draw_geometries([source_temp, target_temp])
