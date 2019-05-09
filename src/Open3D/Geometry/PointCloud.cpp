@@ -101,6 +101,28 @@ void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     }
 }
 
+void PointCloud::Translate(const Eigen::Vector3d &translation) {
+    for (auto &point : points_) {
+        point += translation;
+    }
+}
+
+void PointCloud::Scale(const double scale) {
+    for (auto &point : points_) {
+        point *= scale;
+    }
+}
+
+void PointCloud::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
+    for (auto &point : points_) {
+        point = R * point;
+    }
+    for (auto &normal : normals_) {
+        normal = R * normal;
+    }
+}
+
 PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     // We do not use std::vector::insert to combine std::vector because it will
     // crash if the pointcloud is added to itself.

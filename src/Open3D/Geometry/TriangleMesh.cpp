@@ -114,6 +114,31 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
     }
 }
 
+void TriangleMesh::Translate(const Eigen::Vector3d &translation) {
+    for (auto &vertex : vertices_) {
+        vertex += translation;
+    }
+}
+
+void TriangleMesh::Scale(const double scale) {
+    for (auto &vertex : vertices_) {
+        vertex *= scale;
+    }
+}
+
+void TriangleMesh::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
+    for (auto &vertex : vertices_) {
+        vertex = R * vertex;
+    }
+    for (auto &normal : vertex_normals_) {
+        normal = R * normal;
+    }
+    for (auto &normal : triangle_normals_) {
+        normal = R * normal;
+    }
+}
+
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();

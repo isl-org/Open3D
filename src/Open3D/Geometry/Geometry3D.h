@@ -29,12 +29,15 @@
 #include <Eigen/Core>
 
 #include "Open3D/Geometry/Geometry.h"
+#include "Open3D/Utility/Eigen.h"
 
 namespace open3d {
 namespace geometry {
 
 class Geometry3D : public Geometry {
 public:
+    enum class EulerRotation { XYZ, YZX, ZXY, XZY, ZYX, YXZ };
+
     ~Geometry3D() override {}
 
 protected:
@@ -45,7 +48,44 @@ public:
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;
     virtual Eigen::Vector3d GetMaxBound() const = 0;
-    virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
+    virtual void Transform(const Eigen::Matrix4d& transformation) = 0;
+    virtual void Translate(const Eigen::Vector3d& translation) = 0;
+    virtual void Scale(const double scale) = 0;
+    virtual void Rotate(const Eigen::Vector3d& rotation,
+                        EulerRotation type = EulerRotation::XYZ) = 0;
+
+protected:
+    Eigen::Matrix3d GetRotationMatrix(
+            const Eigen::Vector3d& rotation,
+            EulerRotation type = EulerRotation::XYZ) const {
+        if (type == EulerRotation::XYZ) {
+            return open3d::utility::RotationMatrixX(rotation(0)) *
+                   open3d::utility::RotationMatrixY(rotation(1)) *
+                   open3d::utility::RotationMatrixZ(rotation(2));
+        } else if (type == EulerRotation::YZX) {
+            return open3d::utility::RotationMatrixY(rotation(0)) *
+                   open3d::utility::RotationMatrixZ(rotation(1)) *
+                   open3d::utility::RotationMatrixX(rotation(2));
+        } else if (type == EulerRotation::ZXY) {
+            return open3d::utility::RotationMatrixZ(rotation(0)) *
+                   open3d::utility::RotationMatrixX(rotation(1)) *
+                   open3d::utility::RotationMatrixY(rotation(2));
+        } else if (type == EulerRotation::XZY) {
+            return open3d::utility::RotationMatrixX(rotation(0)) *
+                   open3d::utility::RotationMatrixZ(rotation(1)) *
+                   open3d::utility::RotationMatrixY(rotation(2));
+        } else if (type == EulerRotation::ZYX) {
+            return open3d::utility::RotationMatrixZ(rotation(0)) *
+                   open3d::utility::RotationMatrixY(rotation(1)) *
+                   open3d::utility::RotationMatrixX(rotation(2));
+        } else if (type == EulerRotation::YXZ) {
+            return open3d::utility::RotationMatrixY(rotation(0)) *
+                   open3d::utility::RotationMatrixX(rotation(1)) *
+                   open3d::utility::RotationMatrixZ(rotation(2));
+        } else {
+            return Eigen::Matrix3d::Identity();
+        }
+    }
 };
 
 }  // namespace geometry

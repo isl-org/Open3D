@@ -90,6 +90,25 @@ void LineSet::Transform(const Eigen::Matrix4d &transformation) {
     }
 }
 
+void LineSet::Translate(const Eigen::Vector3d &translation) {
+    for (auto &point : points_) {
+        point += translation;
+    }
+}
+
+void LineSet::Scale(const double scale) {
+    for (auto &point : points_) {
+        point *= scale;
+    }
+}
+
+void LineSet::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
+    for (auto &point : points_) {
+        point = R * point;
+    }
+}
+
 LineSet &LineSet::operator+=(const LineSet &lineset) {
     if (lineset.IsEmpty()) return (*this);
     size_t old_point_num = points_.size();

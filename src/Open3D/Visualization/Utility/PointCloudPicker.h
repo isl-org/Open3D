@@ -52,6 +52,10 @@ public:
     Eigen::Vector3d GetMinBound() const final;
     Eigen::Vector3d GetMaxBound() const final;
     void Transform(const Eigen::Matrix4d& transformation) override;
+    void Translate(const Eigen::Vector3d& translation) override;
+    void Scale(const double scale) override;
+    void Rotate(const Eigen::Vector3d& rotation,
+                EulerRotation type = EulerRotation::XYZ) override;
     bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
 
 public:

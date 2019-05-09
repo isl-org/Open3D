@@ -278,5 +278,26 @@ template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
         int iteration_num, bool verbose);
 // clang-format on
 
+Eigen::Matrix3d RotationMatrixX(double radians) {
+    Eigen::Matrix3d rot;
+    rot << 1, 0, 0, 0, std::cos(radians), -std::sin(radians), 0,
+            std::sin(radians), std::cos(radians);
+    return rot;
+}
+
+Eigen::Matrix3d RotationMatrixY(double radians) {
+    Eigen::Matrix3d rot;
+    rot << std::cos(radians), 0, std::sin(radians), 0, 1, 0, -std::sin(radians),
+            0, std::cos(radians);
+    return rot;
+}
+
+Eigen::Matrix3d RotationMatrixZ(double radians) {
+    Eigen::Matrix3d rot;
+    rot << std::cos(radians), -std::sin(radians), 0, std::sin(radians),
+            std::cos(radians), 0, 0, 0, 1;
+    return rot;
+}
+
 }  // namespace utility
 }  // namespace open3d

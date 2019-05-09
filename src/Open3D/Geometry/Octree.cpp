@@ -229,6 +229,18 @@ void Octree::Transform(const Eigen::Matrix4d& transformation) {
     throw std::runtime_error("Not implemented");
 }
 
+void Octree::Translate(const Eigen::Vector3d& translation) {
+    throw std::runtime_error("Not implemented");
+}
+
+void Octree::Scale(const double scale) {
+    throw std::runtime_error("Not implemented");
+}
+
+void Octree::Rotate(const Eigen::Vector3d& rotation, EulerRotation type) {
+    throw std::runtime_error("Not implemented");
+}
+
 void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
                                    double size_expand) {
     if (size_expand > 1 || size_expand < 0) {

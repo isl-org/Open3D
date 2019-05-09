@@ -73,6 +73,18 @@ void VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     throw std::runtime_error("VoxelGrid::Transform is not supported");
 }
 
+void VoxelGrid::Translate(const Eigen::Vector3d &translation) {
+    throw std::runtime_error("Not implemented");
+}
+
+void VoxelGrid::Scale(const double scale) {
+    throw std::runtime_error("Not implemented");
+}
+
+void VoxelGrid::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+    throw std::runtime_error("Not implemented");
+}
+
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     throw std::runtime_error("VoxelGrid::operator+= is not supported");
 }
