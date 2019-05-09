@@ -91,7 +91,7 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const {
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
+TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
     for (auto &vertex : vertices_) {
         Eigen::Vector4d new_point =
                 transformation *
@@ -112,21 +112,25 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
                                                  triangle_normal(2), 0.0);
         triangle_normal = new_normal.block<3, 1>(0, 0);
     }
+    return *this;
 }
 
-void TriangleMesh::Translate(const Eigen::Vector3d &translation) {
+TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation) {
     for (auto &vertex : vertices_) {
         vertex += translation;
     }
+    return *this;
 }
 
-void TriangleMesh::Scale(const double scale) {
+TriangleMesh &TriangleMesh::Scale(const double scale) {
     for (auto &vertex : vertices_) {
         vertex *= scale;
     }
+    return *this;
 }
 
-void TriangleMesh::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
+                                   EulerRotation type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {
         vertex = R * vertex;
@@ -137,6 +141,7 @@ void TriangleMesh::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
     for (auto &normal : triangle_normals_) {
         normal = R * normal;
     }
+    return *this;
 }
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {

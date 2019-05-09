@@ -47,11 +47,11 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d &transformation) override;
-    void Translate(const Eigen::Vector3d &translation) override;
-    void Scale(const double scale) override;
-    void Rotate(const Eigen::Vector3d &rotation,
-                EulerRotation type = EulerRotation::XYZ) override;
+    LineSet &Transform(const Eigen::Matrix4d &transformation) override;
+    LineSet &Translate(const Eigen::Vector3d &translation) override;
+    LineSet &Scale(const double scale) override;
+    LineSet &Rotate(const Eigen::Vector3d &rotation,
+                    EulerRotation type = EulerRotation::XYZ) override;
 
 public:
     LineSet &operator+=(const LineSet &lineset);

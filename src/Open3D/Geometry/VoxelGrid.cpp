@@ -69,20 +69,25 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     }
 }
 
-void VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
+VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     throw std::runtime_error("VoxelGrid::Transform is not supported");
+    return *this;
 }
 
-void VoxelGrid::Translate(const Eigen::Vector3d &translation) {
+VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation) {
     throw std::runtime_error("Not implemented");
+    return *this;
 }
 
-void VoxelGrid::Scale(const double scale) {
+VoxelGrid &VoxelGrid::Scale(const double scale) {
     throw std::runtime_error("Not implemented");
+    return *this;
 }
 
-void VoxelGrid::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
+                             EulerRotation type) {
     throw std::runtime_error("Not implemented");
+    return *this;
 }
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {

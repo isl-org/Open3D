@@ -56,7 +56,7 @@ public:
     Eigen::Vector3d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
     }
-    void Transform(const Eigen::Matrix4d &transformation) override {
+    Geometry3DBase& Transform(const Eigen::Matrix4d& transformation) override {
         PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
     }
 };

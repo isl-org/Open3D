@@ -54,21 +54,27 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     }
 }
 
-void PointCloudPicker::Transform(const Eigen::Matrix4d& /*transformation*/) {
+PointCloudPicker& PointCloudPicker::Transform(
+        const Eigen::Matrix4d& /*transformation*/) {
     // Do nothing
+    return *this;
 }
 
-void PointCloudPicker::Translate(const Eigen::Vector3d& translation) {
+PointCloudPicker& PointCloudPicker::Translate(
+        const Eigen::Vector3d& translation) {
     // Do nothing
+    return *this;
 }
 
-void PointCloudPicker::Scale(const double scale) {
+PointCloudPicker& PointCloudPicker::Scale(const double scale) {
     // Do nothing
+    return *this;
 }
 
-void PointCloudPicker::Rotate(const Eigen::Vector3d& rotation,
-                              EulerRotation type) {
+PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Vector3d& rotation,
+                                           EulerRotation type) {
     // Do nothing
+    return *this;
 }
 
 bool PointCloudPicker::SetPointCloud(

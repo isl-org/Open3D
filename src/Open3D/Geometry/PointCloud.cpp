@@ -86,7 +86,7 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
+PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     for (auto &point : points_) {
         Eigen::Vector4d new_point =
                 transformation *
@@ -99,21 +99,25 @@ void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
                 Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0);
         normal = new_normal.block<3, 1>(0, 0);
     }
+    return *this;
 }
 
-void PointCloud::Translate(const Eigen::Vector3d &translation) {
+PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
     for (auto &point : points_) {
         point += translation;
     }
+    return *this;
 }
 
-void PointCloud::Scale(const double scale) {
+PointCloud &PointCloud::Scale(const double scale) {
     for (auto &point : points_) {
         point *= scale;
     }
+    return *this;
 }
 
-void PointCloud::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
+                               EulerRotation type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
         point = R * point;
@@ -121,6 +125,7 @@ void PointCloud::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
     for (auto &normal : normals_) {
         normal = R * normal;
     }
+    return *this;
 }
 
 PointCloud &PointCloud::operator+=(const PointCloud &cloud) {

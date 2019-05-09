@@ -81,32 +81,36 @@ Eigen::Vector3d LineSet::GetMaxBound() const {
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-void LineSet::Transform(const Eigen::Matrix4d &transformation) {
+LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {
     for (auto &point : points_) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(point(0), point(1), point(2), 1.0);
         point = new_point.block<3, 1>(0, 0);
     }
+    return *this;
 }
 
-void LineSet::Translate(const Eigen::Vector3d &translation) {
+LineSet &LineSet::Translate(const Eigen::Vector3d &translation) {
     for (auto &point : points_) {
         point += translation;
     }
+    return *this;
 }
 
-void LineSet::Scale(const double scale) {
+LineSet &LineSet::Scale(const double scale) {
     for (auto &point : points_) {
         point *= scale;
     }
+    return *this;
 }
 
-void LineSet::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
         point = R * point;
     }
+    return *this;
 }
 
 LineSet &LineSet::operator+=(const LineSet &lineset) {

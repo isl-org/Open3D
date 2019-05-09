@@ -48,11 +48,11 @@ public:
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;
     virtual Eigen::Vector3d GetMaxBound() const = 0;
-    virtual void Transform(const Eigen::Matrix4d& transformation) = 0;
-    virtual void Translate(const Eigen::Vector3d& translation) = 0;
-    virtual void Scale(const double scale) = 0;
-    virtual void Rotate(const Eigen::Vector3d& rotation,
-                        EulerRotation type = EulerRotation::XYZ) = 0;
+    virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
+    virtual Geometry3D& Translate(const Eigen::Vector3d& translation) = 0;
+    virtual Geometry3D& Scale(const double scale) = 0;
+    virtual Geometry3D& Rotate(const Eigen::Vector3d& rotation,
+                               EulerRotation type = EulerRotation::XYZ) = 0;
 
 protected:
     Eigen::Matrix3d GetRotationMatrix(
