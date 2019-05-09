@@ -192,6 +192,7 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"number_of_iterations",
               "Number of iterations. A single iteration splits each triangle "
               "into four triangles that cover the same surface."}});
+
     m.def("subdivide_loop", &geometry::SubdivideLoop,
           "Function subdivide mesh using Loop's algorithm.", "input"_a,
           "number_of_iterations"_a = 1);
