@@ -137,6 +137,14 @@ public:
     /// triangle index
     double GetTriangleArea(size_t triangle_idx) const;
 
+    /// Function that computes the surface area of the mesh, i.e. the sum of
+    /// the individual triangle surfaces.
+    double GetSurfaceArea() const;
+
+    /// Function that computes the surface area of the mesh, i.e. the sum of
+    /// the individual triangle surfaces.
+    double GetSurfaceArea(std::vector<double>& triangle_areas) const;
+
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
@@ -162,9 +170,17 @@ Eigen::Vector4d ComputeTrianglePlane(const Eigen::Vector3d &p0,
                                      const Eigen::Vector3d &p1,
                                      const Eigen::Vector3d &p2);
 
-/// Function to sample number_of_points points uniformly from the mesh
+/// Function to sample \param number_of_points points uniformly from the mesh
 std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
                                                   size_t number_of_points);
+
+/// Function to sample \param number_of_points points (blue noise).
+/// Based on the method presented in Yuksel, "Sample Elimination for Generating
+/// The PointCloud \param pcl_init is used for sample elimination if given,
+/// otherwise a PointCloud is first uniformly sampled with
+/// \param init_number_of_points x \param number_of_points number of points.
+/// Poisson Disk Sample Sets", EUROGRAPHICS, 2015
+std::shared_ptr<PointCloud> SamplePointsPoissonDisk(const TriangleMesh &input, size_t number_of_points, double init_factor = 5, const std::shared_ptr<PointCloud> pcl_init = nullptr);
 
 /// Function to subdivide triangle mesh using the simple midpoint algorithm.
 /// Each triangle is subdivided into four triangles per iteration and the
