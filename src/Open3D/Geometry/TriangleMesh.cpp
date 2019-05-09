@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 
 #include <Eigen/Dense>
@@ -214,7 +215,11 @@ void TriangleMesh::Purge() {
     RemoveNonManifoldVertices();
 }
 
-std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input, size_t number_of_points, std::vector<double>& triangle_areas, double surface_area) {
+std::shared_ptr<PointCloud> SamplePointsUniformly(
+        const TriangleMesh &input,
+        size_t number_of_points,
+        std::vector<double> &triangle_areas,
+        double surface_area) {
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < input.triangles_.size(); ++tidx) {
@@ -272,7 +277,13 @@ std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input, siz
 
 std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
                                                   size_t number_of_points) {
-    if (number_of_points == 0 || input.triangles_.size() == 0) {
+    if (number_of_points <= 0) {
+        utility::PrintWarning("[SamplePointsUniformly] number_of_points <= 0");
+        return std::make_shared<PointCloud>();
+    }
+    if (input.triangles_.size() == 0) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] input mesh has no triangles");
         return std::make_shared<PointCloud>();
     }
 
@@ -280,12 +291,34 @@ std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
     std::vector<double> triangle_areas;
     double surface_area = input.GetSurfaceArea(triangle_areas);
 
-    return SamplePointsUniformly(input, number_of_points, triangle_areas, surface_area);
+    return SamplePointsUniformly(input, number_of_points, triangle_areas,
+                                 surface_area);
 }
 
-std::shared_ptr<PointCloud> SamplePointsPoissonDisk(const TriangleMesh &input, size_t number_of_points, double init_factor /* = 5 */, const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) {
-    // TODO: add error messages
-    if (number_of_points == 0 || input.triangles_.size() == 0 || init_factor < 1 || (pcl_init != nullptr && pcl_init->points_.size() < number_of_points)) {
+std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
+        const TriangleMesh &input,
+        size_t number_of_points,
+        double init_factor /* = 5 */,
+        const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) {
+    if (number_of_points <= 0) {
+        utility::PrintWarning("[SamplePointsUniformly] number_of_points <= 0");
+        return std::make_shared<PointCloud>();
+    }
+    if (input.triangles_.size() == 0) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] input mesh has no triangles");
+        return std::make_shared<PointCloud>();
+    }
+    if (pcl_init == nullptr && init_factor < 1) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] either pass pcl_init with #points > "
+                "number_of_points or init_factor > 1");
+        return std::make_shared<PointCloud>();
+    }
+    if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] either pass pcl_init with #points > "
+                "number_of_points, or init_factor > 1");
         return std::make_shared<PointCloud>();
     }
 
@@ -296,9 +329,9 @@ std::shared_ptr<PointCloud> SamplePointsPoissonDisk(const TriangleMesh &input, s
     // Compute init points using uniform sampling
     std::shared_ptr<PointCloud> pcl;
     if (pcl_init == nullptr) {
-        pcl = SamplePointsUniformly(input, init_factor * number_of_points, triangle_areas, surface_area);
-    }
-    else {
+        pcl = SamplePointsUniformly(input, init_factor * number_of_points,
+                                    triangle_areas, surface_area);
+    } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
         pcl->normals_ = pcl_init->normals_;
@@ -306,36 +339,21 @@ std::shared_ptr<PointCloud> SamplePointsPoissonDisk(const TriangleMesh &input, s
     }
 
     // Set-up sample elimination
-    // TODO: use kdtree
-    auto GetPoints = [&](const Eigen::Vector3d& query, double radius, std::vector<int>& indices, std::vector<double>& dists2) {
-        indices.clear();
-        dists2.clear();
-        double radius2 = radius * radius;
-        for(size_t pidx = 0; pidx < pcl->points_.size(); ++pidx) {
-            const auto& pt = pcl->points_[pidx];
-            const Eigen::Vector3d diff = query - pt;
-            double dist2 = diff.dot(diff);
-            if(dist2 <= radius2) {
-                indices.push_back(pidx);
-                dists2.push_back(dist2);
-            }
-        }
-    };
-
-    double alpha = 8;  // constant defined in paper
-    double beta = 0.5;  // constant defined in paper
+    double alpha = 8;    // constant defined in paper
+    double beta = 0.5;   // constant defined in paper
     double gamma = 1.5;  // constant defined in paper
     double ratio = double(number_of_points) / double(pcl->points_.size());
-    double r_max = 2 * std::sqrt((surface_area / number_of_points) / (2 * std::sqrt(3.)));
+    double r_max = 2 * std::sqrt((surface_area / number_of_points) /
+                                 (2 * std::sqrt(3.)));
     double r_min = r_max * beta * (1 - std::pow(ratio, gamma));
-    printf("r_max = %f, r_min=%f\n", r_max, r_min);
 
     std::vector<double> weights(pcl->points_.size());
     std::vector<bool> deleted(pcl->points_.size(), false);
+    KDTreeFlann kdtree(*pcl);
 
     auto WeightFcn = [&](double d2) {
         double d = std::sqrt(d2);
-        if(d < r_min) {
+        if (d < r_min) {
             d = r_min;
         }
         return std::pow(1 - d / r_max, alpha);
@@ -344,58 +362,55 @@ std::shared_ptr<PointCloud> SamplePointsPoissonDisk(const TriangleMesh &input, s
     auto ComputePointWeight = [&](int pidx0) {
         std::vector<int> nbs;
         std::vector<double> dists2;
-        GetPoints(pcl->points_[pidx0], r_max, nbs, dists2);
+        kdtree.SearchRadius(pcl->points_[pidx0], r_max, nbs, dists2);
         double weight = 0;
-        // printf("    compute weight %d\n", pidx0);
-        for(size_t nbidx = 0; nbidx < nbs.size(); ++nbidx) {
+        for (size_t nbidx = 0; nbidx < nbs.size(); ++nbidx) {
             int pidx1 = nbs[nbidx];
             // only count weights if not the same point if not deleted
-            if(pidx0 == pidx1 || deleted[pidx1]) {
+            if (pidx0 == pidx1 || deleted[pidx1]) {
                 continue;
             }
             weight += WeightFcn(dists2[nbidx]);
         }
 
-        // printf("    assign %d weight of %f\n", pidx0, weight);
         weights[pidx0] = weight;
     };
 
     // init weights and priority queue
     typedef std::tuple<int, double> QueueEntry;
-    auto WeightCmp = [](const QueueEntry& a, const QueueEntry& b) {
+    auto WeightCmp = [](const QueueEntry &a, const QueueEntry &b) {
         return std::get<1>(a) < std::get<1>(b);
     };
-    std::priority_queue<QueueEntry, std::vector<QueueEntry>, decltype(WeightCmp)> queue(WeightCmp);
-    for(size_t pidx0 = 0; pidx0 < pcl->points_.size(); ++pidx0) {
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>,
+                        decltype(WeightCmp)>
+            queue(WeightCmp);
+    for (size_t pidx0 = 0; pidx0 < pcl->points_.size(); ++pidx0) {
         ComputePointWeight(pidx0);
         queue.push(QueueEntry(pidx0, weights[pidx0]));
     };
 
     // sample elimination
     int current_number_of_points = pcl->points_.size();
-    while(current_number_of_points > number_of_points) {
+    while (current_number_of_points > number_of_points) {
         int pidx;
         double weight;
         std::tie(pidx, weight) = queue.top();
         queue.pop();
-        // printf("get %d with weight %f from queue\n", pidx, weight);
 
-        //test if the entry is up to date (because of reinsert)
-        if(deleted[pidx] || weight != weights[pidx]) {
-            // printf("  already deleted or outdated\n");
+        // test if the entry is up to date (because of reinsert)
+        if (deleted[pidx] || weight != weights[pidx]) {
             continue;
         }
 
         // delete current sample
-        // printf("  delete\n");
         deleted[pidx] = true;
         current_number_of_points--;
 
         // update weights
         std::vector<int> nbs;
         std::vector<double> dists2;
-        GetPoints(pcl->points_[pidx], 2 * r_max, nbs, dists2);
-        for(int nb : nbs) {
+        kdtree.SearchRadius(pcl->points_[pidx], r_max, nbs, dists2);
+        for (int nb : nbs) {
             ComputePointWeight(nb);
             queue.push(QueueEntry(nb, weights[nb]));
         }
@@ -632,7 +647,7 @@ double TriangleMesh::GetSurfaceArea() const {
     return surface_area;
 }
 
-double TriangleMesh::GetSurfaceArea(std::vector<double>& triangle_areas) const {
+double TriangleMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
     double surface_area = 0;
     triangle_areas.resize(triangles_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {

@@ -190,7 +190,8 @@ void pybind_trianglemesh_methods(py::module &m) {
             m, "sample_points_poisson_disk",
             {{"input", "The input triangle mesh."},
              {"number_of_points", "Number of points that should be sampled."},
-             {"init_factor", "Factor for the initial uniformly sampled PointCloud."},
+             {"init_factor",
+              "Factor for the initial uniformly sampled PointCloud."},
              {"pcl", "PointCloud that is used for sample elimination."}});
 
     m.def("subdivide_midpoint", &geometry::SubdivideMidpoint,

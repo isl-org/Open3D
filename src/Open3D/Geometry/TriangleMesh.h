@@ -143,7 +143,7 @@ public:
 
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
-    double GetSurfaceArea(std::vector<double>& triangle_areas) const;
+    double GetSurfaceArea(std::vector<double> &triangle_areas) const;
 
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
@@ -180,7 +180,11 @@ std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
 /// otherwise a PointCloud is first uniformly sampled with
 /// \param init_number_of_points x \param number_of_points number of points.
 /// Poisson Disk Sample Sets", EUROGRAPHICS, 2015
-std::shared_ptr<PointCloud> SamplePointsPoissonDisk(const TriangleMesh &input, size_t number_of_points, double init_factor = 5, const std::shared_ptr<PointCloud> pcl_init = nullptr);
+std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
+        const TriangleMesh &input,
+        size_t number_of_points,
+        double init_factor = 5,
+        const std::shared_ptr<PointCloud> pcl_init = nullptr);
 
 /// Function to subdivide triangle mesh using the simple midpoint algorithm.
 /// Each triangle is subdivided into four triangles per iteration and the
