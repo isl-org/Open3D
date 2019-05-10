@@ -187,9 +187,6 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
                 Update(nb);
             }
         }
-
-        Eigen::Vector3d nvert = new_mesh->vertices_[vidx];
-        Eigen::Vector3d overt = old_mesh->vertices_[vidx];
     };
 
     auto SubdivideEdge = [&](int vidx0, int vidx1,
