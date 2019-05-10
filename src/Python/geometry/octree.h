@@ -26,54 +26,11 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <memory>
-#include <vector>
+#include "Open3D/Geometry/Octree.h"
 
-#include "Open3D/Geometry/Geometry3D.h"
-
-namespace open3d {
-namespace geometry {
-
-class PointCloud;
-class TriangleMesh;
-class Octree;
-
-class VoxelGrid : public Geometry3D {
+// Trampoline classes for octree datastructures
+template <class OctreeNodeBase = geometry::OctreeNode>
+class PyOctreeNode : public OctreeNodeBase {
 public:
-    VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
-    VoxelGrid(const VoxelGrid &src_voxel_grid);
-    ~VoxelGrid() override {}
-
-public:
-    void Clear() override;
-    bool IsEmpty() const override;
-    Eigen::Vector3d GetMinBound() const override;
-    Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d &transformation) override;
-
-public:
-    VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
-    VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
-
-public:
-    bool HasVoxels() const { return voxels_.size() > 0; }
-    bool HasColors() const {
-        return voxels_.size() > 0 && colors_.size() == voxels_.size();
-    }
-    Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
-
-    void FromOctree(const Octree &octree);
-
-public:
-    double voxel_size_;
-    Eigen::Vector3d origin_;
-    std::vector<Eigen::Vector3i> voxels_;
-    std::vector<Eigen::Vector3d> colors_;
+    using OctreeNodeBase::OctreeNodeBase;
 };
-
-std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input, double voxel_size);
-
-}  // namespace geometry
-}  // namespace open3d
