@@ -131,6 +131,9 @@ public:
     /// TODO: add documentation
     bool IsOrientable() const;
 
+    /// TODO: add documentation
+    bool OrientTriangles();
+
     /// Function that counts the number of faces an edge belongs.
     /// Returns a map of Edge (vertex0, vertex1) to number of faces.
     std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>

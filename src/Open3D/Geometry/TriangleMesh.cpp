@@ -439,7 +439,8 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
             (int)(old_triangle_num - k));
 }
 
-bool TriangleMesh::IsOrientable() const {
+template <typename F>
+bool OrientTriangleHelper(const std::vector<Eigen::Vector3i>& triangles, F& swap) {
     std::unordered_map<Edge, Edge, utility::hash_tuple::hash<Edge>> edge_to_orientation;
     auto CreateEdge = [](int vidx0, int vidx1) {
         return Edge(std::min(vidx0, vidx1), std::min(vidx0, vidx1));
@@ -456,8 +457,8 @@ bool TriangleMesh::IsOrientable() const {
         }
         return true;
     };
-    for(size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        const auto& triangle = triangles_[tidx];
+    for(size_t tidx = 0; tidx < triangles.size(); ++tidx) {
+        const auto& triangle = triangles[tidx];
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
@@ -477,12 +478,15 @@ bool TriangleMesh::IsOrientable() const {
             // one flip is allowed
             if(exist01 && std::get<0>(edge_to_orientation.at(key01)) == vidx0) {
                 std::swap(vidx0, vidx1);
+                swap(tidx, 0, 1);
             }
             else if(exist12 && std::get<0>(edge_to_orientation.at(key12)) == vidx1) {
                 std::swap(vidx1, vidx2);
+                swap(tidx, 1, 2);
             }
             else if(exist20 && std::get<0>(edge_to_orientation.at(key20)) == vidx2) {
                 std::swap(vidx2, vidx0);
+                swap(tidx, 2, 0);
             }
 
             // check if each edge looks in different direction compared to
@@ -500,6 +504,19 @@ bool TriangleMesh::IsOrientable() const {
     }
     return true;
 }
+
+bool TriangleMesh::IsOrientable() const {
+    auto swap = [](int, int, int) {};
+    return OrientTriangleHelper(triangles_, swap);
+}
+
+bool TriangleMesh::OrientTriangles() {
+    auto swap = [&](int tidx, int idx0, int idx1) {
+        std::swap(triangles_[tidx](idx0), triangles_[tidx](idx1));
+    };
+    return OrientTriangleHelper(triangles_, swap);
+}
+
 
 std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
 TriangleMesh::GetEdgeTriangleCount() const {
