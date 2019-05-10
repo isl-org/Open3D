@@ -132,9 +132,9 @@ public:
     int EulerPoincareCharacteristic() const;
 
     /// Function that checks if the given triangle mesh is edge-manifold.
-    /// A mesh is edge­manifold if each edge is bounding either one or two triangles.
-    /// If allow_boundary_edges is set to false, than retuns false if there
-    /// exists boundary edges.
+    /// A mesh is edge­manifold if each edge is bounding either one or two
+    /// triangles. If allow_boundary_edges is set to false, than retuns false if
+    /// there exists boundary edges.
     bool IsEdgeManifold(bool allow_boundary_edges = true) const;
 
     /// Function that checks if all vertices in the triangle mesh are manifold.
