@@ -72,7 +72,7 @@ PointCloudPicker& PointCloudPicker::Scale(const double scale) {
 }
 
 PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Vector3d& rotation,
-                                           EulerRotation type) {
+                                           RotationType type) {
     // Do nothing
     return *this;
 }

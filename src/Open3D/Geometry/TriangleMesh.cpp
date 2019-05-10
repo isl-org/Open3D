@@ -130,7 +130,7 @@ TriangleMesh &TriangleMesh::Scale(const double scale) {
 }
 
 TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
-                                   EulerRotation type) {
+                                   RotationType type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {
         vertex = R * vertex;

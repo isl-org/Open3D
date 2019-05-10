@@ -85,7 +85,7 @@ VoxelGrid &VoxelGrid::Scale(const double scale) {
 }
 
 VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
-                             EulerRotation type) {
+                             RotationType type) {
     throw std::runtime_error("Not implemented");
     return *this;
 }

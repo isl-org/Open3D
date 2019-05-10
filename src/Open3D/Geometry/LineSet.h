@@ -51,7 +51,7 @@ public:
     LineSet &Translate(const Eigen::Vector3d &translation) override;
     LineSet &Scale(const double scale) override;
     LineSet &Rotate(const Eigen::Vector3d &rotation,
-                    EulerRotation type = EulerRotation::XYZ) override;
+                    RotationType type = RotationType::XYZ) override;
 
 public:
     LineSet &operator+=(const LineSet &lineset);

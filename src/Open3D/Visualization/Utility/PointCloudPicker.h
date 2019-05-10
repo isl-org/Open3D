@@ -55,7 +55,7 @@ public:
     PointCloudPicker& Translate(const Eigen::Vector3d& translation) override;
     PointCloudPicker& Scale(const double scale) override;
     PointCloudPicker& Rotate(const Eigen::Vector3d& rotation,
-                             EulerRotation type = EulerRotation::XYZ) override;
+                             RotationType type = RotationType::XYZ) override;
     bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
 
 public:

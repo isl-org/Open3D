@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Utility/Eigen.h"
@@ -36,7 +37,7 @@ namespace geometry {
 
 class Geometry3D : public Geometry {
 public:
-    enum class EulerRotation { XYZ, YZX, ZXY, XZY, ZYX, YXZ };
+    enum class RotationType { XYZ, YZX, ZXY, XZY, ZYX, YXZ, AxisAngle };
 
     ~Geometry3D() override {}
 
@@ -52,36 +53,39 @@ public:
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation) = 0;
     virtual Geometry3D& Scale(const double scale) = 0;
     virtual Geometry3D& Rotate(const Eigen::Vector3d& rotation,
-                               EulerRotation type = EulerRotation::XYZ) = 0;
+                               RotationType type = RotationType::XYZ) = 0;
 
 protected:
     Eigen::Matrix3d GetRotationMatrix(
             const Eigen::Vector3d& rotation,
-            EulerRotation type = EulerRotation::XYZ) const {
-        if (type == EulerRotation::XYZ) {
+            RotationType type = RotationType::XYZ) const {
+        if (type == RotationType::XYZ) {
             return open3d::utility::RotationMatrixX(rotation(0)) *
                    open3d::utility::RotationMatrixY(rotation(1)) *
                    open3d::utility::RotationMatrixZ(rotation(2));
-        } else if (type == EulerRotation::YZX) {
+        } else if (type == RotationType::YZX) {
             return open3d::utility::RotationMatrixY(rotation(0)) *
                    open3d::utility::RotationMatrixZ(rotation(1)) *
                    open3d::utility::RotationMatrixX(rotation(2));
-        } else if (type == EulerRotation::ZXY) {
+        } else if (type == RotationType::ZXY) {
             return open3d::utility::RotationMatrixZ(rotation(0)) *
                    open3d::utility::RotationMatrixX(rotation(1)) *
                    open3d::utility::RotationMatrixY(rotation(2));
-        } else if (type == EulerRotation::XZY) {
+        } else if (type == RotationType::XZY) {
             return open3d::utility::RotationMatrixX(rotation(0)) *
                    open3d::utility::RotationMatrixZ(rotation(1)) *
                    open3d::utility::RotationMatrixY(rotation(2));
-        } else if (type == EulerRotation::ZYX) {
+        } else if (type == RotationType::ZYX) {
             return open3d::utility::RotationMatrixZ(rotation(0)) *
                    open3d::utility::RotationMatrixY(rotation(1)) *
                    open3d::utility::RotationMatrixX(rotation(2));
-        } else if (type == EulerRotation::YXZ) {
+        } else if (type == RotationType::YXZ) {
             return open3d::utility::RotationMatrixY(rotation(0)) *
                    open3d::utility::RotationMatrixX(rotation(1)) *
                    open3d::utility::RotationMatrixZ(rotation(2));
+        } else if (type == RotationType::AxisAngle) {
+            const double phi = rotation.norm();
+            return Eigen::AngleAxisd(phi, rotation / phi).toRotationMatrix();
         } else {
             return Eigen::Matrix3d::Identity();
         }

@@ -117,7 +117,7 @@ PointCloud &PointCloud::Scale(const double scale) {
 }
 
 PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
-                               EulerRotation type) {
+                               RotationType type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
         point = R * point;

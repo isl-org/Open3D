@@ -57,7 +57,7 @@ public:
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
     }
     Geometry3DBase& Transform(const Eigen::Matrix4d& transformation) override {
-        PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
+        PYBIND11_OVERLOAD_PURE(Geometry3DBase&, Geometry3DBase, transformation);
     }
 };
 

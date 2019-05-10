@@ -37,11 +37,11 @@ def animate(geom):
     vis.add_geometry(geom)
 
     scales = [0.9 for _ in range(30)] + [1/0.9 for _ in range(30)]
-    phis = [(np.pi/30, 0, np.pi/30) for _ in range(60)]
+    axisangles = [(0.2/np.sqrt(2), 0.2/np.sqrt(2), 0) for _ in range(60)]
     ts = [(0.1, 0.1, -0.1) for _ in range(30)] + [(-0.1, -0.1, 0.1)  for _ in range(30)]
 
-    for scale, phi, t in zip(scales, phis, ts):
-        geom.scale(scale).rotate(phi)
+    for scale, aa, t in zip(scales, axisangles, ts):
+        geom.scale(scale).rotate(aa, type=RotationType.AxisAngle)
         vis.update_geometry()
         vis.poll_events()
         vis.update_renderer()

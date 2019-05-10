@@ -124,7 +124,7 @@ public:
     Octree& Translate(const Eigen::Vector3d& translation) override;
     Octree& Scale(const double scale) override;
     Octree& Rotate(const Eigen::Vector3d& rotation,
-                   EulerRotation type = EulerRotation::XYZ) override;
+                   RotationType type = RotationType::XYZ) override;
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,

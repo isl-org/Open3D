@@ -72,13 +72,14 @@ void pybind_geometry_classes(py::module &m) {
             .export_values();
 
     // open3d.geometry.Geometry3D
-    py::enum_<geometry::Geometry3D::EulerRotation>(m, "EulerRotation")
-            .value("XYZ", geometry::Geometry3D::EulerRotation::XYZ)
-            .value("YZX", geometry::Geometry3D::EulerRotation::YZX)
-            .value("ZXY", geometry::Geometry3D::EulerRotation::ZXY)
-            .value("XZY", geometry::Geometry3D::EulerRotation::XZY)
-            .value("ZYX", geometry::Geometry3D::EulerRotation::ZYX)
-            .value("YXZ", geometry::Geometry3D::EulerRotation::YXZ)
+    py::enum_<geometry::Geometry3D::RotationType>(m, "RotationType")
+            .value("XYZ", geometry::Geometry3D::RotationType::XYZ)
+            .value("YZX", geometry::Geometry3D::RotationType::YZX)
+            .value("ZXY", geometry::Geometry3D::RotationType::ZXY)
+            .value("XZY", geometry::Geometry3D::RotationType::XZY)
+            .value("ZYX", geometry::Geometry3D::RotationType::ZYX)
+            .value("YXZ", geometry::Geometry3D::RotationType::YXZ)
+            .value("AxisAngle", geometry::Geometry3D::RotationType::AxisAngle)
             .export_values();
 
     py::class_<geometry::Geometry3D, PyGeometry3D<geometry::Geometry3D>,
@@ -100,12 +101,21 @@ void pybind_geometry_classes(py::module &m) {
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
                  "rotation"_a,
-                 "type"_a = geometry::Geometry3D::EulerRotation::XYZ);
+                 "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "transform");
     docstring::ClassMethodDocInject(m, "Geometry3D", "translate");
-    docstring::ClassMethodDocInject(m, "Geometry3D", "rotate");
+    docstring::ClassMethodDocInject(
+            m, "Geometry3D", "rotate",
+            {{"rotation",
+              "A 3D vector that either defines the three angles for "
+              "Euler rotation, or in the axis-angle representation "
+              "the normalized vector defines the axis of rotation and "
+              "the norm the angle around this axis."},
+             {"type",
+              "Type of rotation, i.e., an Euler format, or "
+              "axis-angle."}});
 
     // open3d.geometry.Geometry2D
     py::class_<geometry::Geometry2D, PyGeometry2D<geometry::Geometry2D>,

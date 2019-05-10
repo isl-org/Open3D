@@ -105,7 +105,7 @@ LineSet &LineSet::Scale(const double scale) {
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation, EulerRotation type) {
+LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation, RotationType type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
         point = R * point;
