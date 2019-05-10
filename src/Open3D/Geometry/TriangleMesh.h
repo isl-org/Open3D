@@ -128,6 +128,9 @@ public:
         }
     }
 
+    /// TODO: add documentation
+    bool IsOrientable() const;
+
     /// Function that counts the number of faces an edge belongs.
     /// Returns a map of Edge (vertex0, vertex1) to number of faces.
     std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
@@ -258,6 +261,16 @@ std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius = 1.0,
 std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
         double size = 1.0,
         const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
+
+/// TODO
+/// Assumes edge manifold.
+std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split = 70,
+                                                int width_split = 15,
+                                                int twists = 1,
+                                                double radius = 1,
+                                                double flatness = 1,
+                                                double width = 1,
+                                                double scale = 10);
 
 }  // namespace geometry
 }  // namespace open3d

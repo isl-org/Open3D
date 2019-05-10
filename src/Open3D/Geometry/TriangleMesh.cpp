@@ -439,6 +439,68 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
             (int)(old_triangle_num - k));
 }
 
+bool TriangleMesh::IsOrientable() const {
+    std::unordered_map<Edge, Edge, utility::hash_tuple::hash<Edge>> edge_to_orientation;
+    auto CreateEdge = [](int vidx0, int vidx1) {
+        return Edge(std::min(vidx0, vidx1), std::min(vidx0, vidx1));
+    };
+    auto VerifyAndAdd = [&](int vidx0, int vidx1) {
+        Edge key = CreateEdge(vidx0, vidx1);
+        if(edge_to_orientation.count(key) > 0) {
+            if(std::get<0>(edge_to_orientation.at(key)) == vidx0) {
+                return false;
+            }
+        }
+        else {
+           edge_to_orientation[key] = Edge(vidx0, vidx1);
+        }
+        return true;
+    };
+    for(size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto& triangle = triangles_[tidx];
+        int vidx0 = triangle(0);
+        int vidx1 = triangle(1);
+        int vidx2 = triangle(2);
+        Edge key01 = CreateEdge(vidx0, vidx1);
+        Edge key12 = CreateEdge(vidx1, vidx2);
+        Edge key20 = CreateEdge(vidx2, vidx0);
+        bool exist01 = edge_to_orientation.count(key01) > 0;
+        bool exist12 = edge_to_orientation.count(key12) > 0;
+        bool exist20 = edge_to_orientation.count(key20) > 0;
+
+        if(!(exist01 || exist12 || exist20)) {
+            edge_to_orientation[key01] = Edge(vidx0, vidx1);
+            edge_to_orientation[key12] = Edge(vidx1, vidx2);
+            edge_to_orientation[key20] = Edge(vidx2, vidx0);
+        }
+        else {
+            // one flip is allowed
+            if(exist01 && std::get<0>(edge_to_orientation.at(key01)) == vidx0) {
+                std::swap(vidx0, vidx1);
+            }
+            else if(exist12 && std::get<0>(edge_to_orientation.at(key12)) == vidx1) {
+                std::swap(vidx1, vidx2);
+            }
+            else if(exist20 && std::get<0>(edge_to_orientation.at(key20)) == vidx2) {
+                std::swap(vidx2, vidx0);
+            }
+
+            // check if each edge looks in different direction compared to
+            // existing ones if not existend, add the edge to map
+            if(!VerifyAndAdd(vidx0, vidx1)) {
+                return false;
+            }
+            if(!VerifyAndAdd(vidx1, vidx2)) {
+                return false;
+            }
+            if(!VerifyAndAdd(vidx2, vidx0)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
 TriangleMesh::GetEdgeTriangleCount() const {
     std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
