@@ -678,7 +678,7 @@ TEST(TriangleMesh, Purge) {
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
-    auto pcd_empty = mesh_empty.SamplePointsUniformly(100);
+    auto pcd_empty = geometry::SamplePointsUniformly(mesh_empty, 100);
     EXPECT_TRUE(pcd_empty->points_.size() == 0);
     EXPECT_TRUE(pcd_empty->colors_.size() == 0);
     EXPECT_TRUE(pcd_empty->normals_.size() == 0);
@@ -691,7 +691,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     mesh_simple.triangles_ = triangles;
 
     size_t n_points = 100;
-    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    auto pcd_simple = geometry::SamplePointsUniformly(mesh_simple, n_points);
     EXPECT_TRUE(pcd_simple->points_.size() == n_points);
     EXPECT_TRUE(pcd_simple->colors_.size() == 0);
     EXPECT_TRUE(pcd_simple->normals_.size() == 0);
@@ -700,7 +700,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     vector<Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
     mesh_simple.vertex_colors_ = colors;
     mesh_simple.vertex_normals_ = normals;
-    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    pcd_simple = geometry::SamplePointsUniformly(mesh_simple, n_points);
     EXPECT_TRUE(pcd_simple->points_.size() == n_points);
     EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);

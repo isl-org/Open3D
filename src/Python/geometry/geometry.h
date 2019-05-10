@@ -41,3 +41,5 @@ void pybind_pointcloud_methods(py::module &m);
 void pybind_voxelgrid_methods(py::module &m);
 void pybind_trianglemesh_methods(py::module &m);
 void pybind_image_methods(py::module &m);
+void pybind_octree_methods(py::module &m);
+void pybind_octree(py::module &m);
