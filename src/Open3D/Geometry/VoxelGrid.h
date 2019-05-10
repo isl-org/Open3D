@@ -37,6 +37,7 @@ namespace geometry {
 
 class PointCloud;
 class TriangleMesh;
+class Octree;
 
 class VoxelGrid : public Geometry3D {
 public:
@@ -65,6 +66,8 @@ public:
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
+
+    void FromOctree(const Octree &octree);
 
 public:
     double voxel_size_;
