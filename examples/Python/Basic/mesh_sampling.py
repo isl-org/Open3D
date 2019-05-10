@@ -50,7 +50,7 @@ def bunny_mesh():
         shutil.rmtree(os.path.join(os.path.dirname(bunny_path), 'bunny'))
     return read_triangle_mesh(bunny_path)
 
-def time_fcn(fcn, *fcn_args, runs=3):
+def time_fcn(fcn, *fcn_args, runs=5):
     times = []
     for _ in range(runs):
         tic = time.time()
@@ -65,6 +65,34 @@ def mesh_generator():
     yield armadillo_mesh()
 
 if __name__ == "__main__":
+    plane = create_mesh_plane()
+    draw_geometries([plane])
+
+    print('Uniform sampling can yield clusters of points on the surface')
+    pcd = sample_points_uniformly(plane, number_of_points=500)
+    draw_geometries([pcd])
+
+    print('Poisson disk sampling can evenly distributes the points on the surface.')
+    print('The method implements sample elimination.')
+    print('Therefore, the method starts with a sampled point cloud and removes '
+          'point to satisfy the sampling criterion.')
+    print('The method supports two options to provide the initial point cloud')
+    print('1) Default via the parameter init_factor: The method first samples '
+          'uniformly a point cloud from the mesh with '
+          'init_factor x number_of_points and uses this for the elimination')
+    pcd = sample_points_poisson_disk(plane, number_of_points=500, init_factor=5)
+    draw_geometries([pcd])
+
+    print('2) one can provide an own point cloud and pass it to the '
+          'sample_points_poisson_disk method. Then this point cloud is used '
+          'for elimination.')
+    print('Initial point cloud')
+    pcd = sample_points_uniformly(plane, number_of_points=2500)
+    draw_geometries([pcd])
+    pcd = sample_points_poisson_disk(plane, number_of_points=500, pcl=pcd)
+    draw_geometries([pcd])
+
+    print('Timings')
     for mesh in mesh_generator():
         mesh.compute_vertex_normals()
         draw_geometries([mesh])
