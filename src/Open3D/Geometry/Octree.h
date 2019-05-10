@@ -97,6 +97,18 @@ public:
 
 class OctreeLeafNode : public OctreeNode {
 public:
+    virtual bool operator==(const OctreeLeafNode& other) const = 0;
+    virtual std::shared_ptr<OctreeLeafNode> Clone() const = 0;
+};
+
+class OctreeColorLeafNode : public OctreeLeafNode {
+public:
+    bool operator==(const OctreeLeafNode& other) const override;
+    std::shared_ptr<OctreeLeafNode> Clone() const override;
+    static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+    GetUpdateFunction(const Eigen::Vector3d& color);
+
     // TODO: flexible data, with lambda function for handling node
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
@@ -143,10 +155,11 @@ public:
     size_t max_depth_ = 0;
 
     /// Insert point
-    /// TODO: Running average of color
-    /// TODO: Lambda function for handling node
-    void InsertPoint(const Eigen::Vector3d& point,
-                     const Eigen::Vector3d& color);
+    void InsertPoint(
+            const Eigen::Vector3d& point,
+            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+            const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
+                    f_update);
 
     /// DFS traversal of Octree from the root, with callback function called
     /// for each node
@@ -185,10 +198,13 @@ private:
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f);
 
-    void InsertPointRecurse(const std::shared_ptr<OctreeNode>& node,
-                            const std::shared_ptr<OctreeNodeInfo>& node_info,
-                            const Eigen::Vector3d& point,
-                            const Eigen::Vector3d& color);
+    void InsertPointRecurse(
+            const std::shared_ptr<OctreeNode>& node,
+            const std::shared_ptr<OctreeNodeInfo>& node_info,
+            const Eigen::Vector3d& point,
+            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+            const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
+                    f_update);
 };
 
 }  // namespace geometry
