@@ -26,6 +26,10 @@
 
 #include "Open3D/Geometry/VoxelGrid.h"
 
+#include <unordered_map>
+
+#include "Open3D/Geometry/Octree.h"
+
 namespace open3d {
 namespace geometry {
 
@@ -84,6 +88,45 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
     Eigen::Vector3d voxel_f = (point - origin_) / voxel_size_;
     return (Eigen::floor(voxel_f.array())).cast<int>();
+}
+
+void VoxelGrid::FromOctree(const Octree &octree) {
+    // Get leaf nodes and their node_info
+    std::unordered_map<std::shared_ptr<OctreeLeafNode>,
+                       std::shared_ptr<OctreeNodeInfo>>
+            map_node_to_node_info;
+    auto f_collect_nodes =
+            [&map_node_to_node_info](
+                    const std::shared_ptr<OctreeNode> &node,
+                    const std::shared_ptr<OctreeNodeInfo> &node_info) -> void {
+        if (auto leaf_node = std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
+            map_node_to_node_info[leaf_node] = node_info;
+        }
+    };
+    octree.Traverse(f_collect_nodes);
+
+    // Prepare dimensions for voxel
+    origin_ = octree.origin_;
+    voxel_size_ = octree.size_;  // Maximum possible voxel size
+    voxels_.clear();
+    colors_.clear();
+    for (const auto &it : map_node_to_node_info) {
+        voxel_size_ = std::min(voxel_size_, it.second->size_);
+    }
+
+    // Convert nodes to voxels
+    for (const auto &it : map_node_to_node_info) {
+        const std::shared_ptr<OctreeLeafNode> &node = it.first;
+        const std::shared_ptr<OctreeNodeInfo> &node_info = it.second;
+        Eigen::Array3d node_center =
+                Eigen::Array3d(node_info->origin_) + node_info->size_ / 2.0;
+        Eigen::Vector3i voxel =
+                Eigen::floor((node_center - Eigen::Array3d(origin_)) /
+                             voxel_size_)
+                        .cast<int>();
+        voxels_.push_back(voxel);
+        colors_.push_back(node->color_);
+    }
 }
 
 }  // namespace geometry

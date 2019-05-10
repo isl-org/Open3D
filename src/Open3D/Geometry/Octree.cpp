@@ -31,6 +31,7 @@
 #include <unordered_map>
 
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -397,6 +398,12 @@ Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
     };
     Traverse(f_locate_leaf_node);
     return std::make_pair(target_leaf_node, target_leaf_node_info);
+}
+
+std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {
+    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    voxel_grid->FromOctree(*this);
+    return voxel_grid;
 }
 
 }  // namespace geometry

@@ -36,6 +36,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class VoxelGrid;
 
 /// Design decision: do not store origin and size of a node in OctreeNode
 /// OctreeNodeInfo is computed on the fly
@@ -172,6 +173,9 @@ public:
 
     /// Returns true if the Octree is completely the same, used for testing
     bool operator==(const Octree& other) const;
+
+    /// Convert to voxel grid
+    std::shared_ptr<geometry::VoxelGrid> ToVoxelGrid() const;
 
 private:
     static void TraverseRecurse(
