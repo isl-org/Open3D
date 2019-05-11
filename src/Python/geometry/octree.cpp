@@ -118,7 +118,7 @@ void pybind_octree(py::module &m) {
                 }
                 std::ostringstream repr;
                 repr << "OctreeInternalNode with " << num_children
-                     << "non-empty child nodes";
+                     << " non-empty child nodes";
                 return repr.str();
             });
     py::detail::bind_default_constructor<geometry::OctreeInternalNode>(
@@ -131,25 +131,60 @@ void pybind_octree(py::module &m) {
     docstring::ClassMethodDocInject(m, "OctreeInternalNode", "__init__");
 
     // geometry::OctreeLeafNode
-    py::class_<geometry::OctreeLeafNode, PyOctreeNode<geometry::OctreeLeafNode>,
+    py::class_<geometry::OctreeLeafNode,
+               PyOctreeLeafNode<geometry::OctreeLeafNode>,
                std::shared_ptr<geometry::OctreeLeafNode>, geometry::OctreeNode>
-            octree_leaf_node(m, "OctreeLeafNode",
-                             "OctreeLeafNode class, conataining color.");
-    octree_leaf_node.def(
-            "__repr__", [](const geometry::OctreeLeafNode &leaf_node) {
-                std::ostringstream repr;
-                repr << "OctreeLeafNode with color [" << leaf_node.color_(0)
-                     << ", " << leaf_node.color_(1) << ", "
-                     << leaf_node.color_(2) << "]";
-                return repr.str();
-            });
-    py::detail::bind_default_constructor<geometry::OctreeLeafNode>(
-            octree_leaf_node);
-    py::detail::bind_copy_functions<geometry::OctreeLeafNode>(octree_leaf_node);
-    octree_leaf_node.def_readwrite(
-            "color", &geometry::OctreeLeafNode::color_,
-            "(3, 1) float numpy array: Color of the node.");
+            octree_leaf_node(m, "OctreeLeafNode", "OctreeLeafNode base class.");
+    octree_leaf_node
+            .def("__repr__",
+                 [](const geometry::OctreeLeafNode &leaf_node) {
+                     std::ostringstream repr;
+                     repr << "OctreeLeafNode base class";
+                     return repr.str();
+                 })
+            .def("__eq__", &geometry::OctreeLeafNode::operator==, "other"_a,
+                 "Check equality of OctreeLeafNode.")
+            .def("clone", &geometry::OctreeLeafNode::Clone,
+                 "Clone this OctreeLeafNode.");
+
     docstring::ClassMethodDocInject(m, "OctreeLeafNode", "__init__");
+
+    // geometry::OctreeColorLeafNode
+    py::class_<geometry::OctreeColorLeafNode,
+               PyOctreeLeafNode<geometry::OctreeColorLeafNode>,
+               std::shared_ptr<geometry::OctreeColorLeafNode>,
+               geometry::OctreeLeafNode>
+            octree_color_leaf_node(m, "OctreeColorLeafNode",
+                                   "OctreeColorLeafNode class is an "
+                                   "OctreeLeafNode containing color.");
+    octree_color_leaf_node
+            .def("__repr__",
+                 [](const geometry::OctreeColorLeafNode &color_leaf_node) {
+                     std::ostringstream repr;
+                     repr << "OctreeColorLeafNode with color ["
+                          << color_leaf_node.color_(0) << ", "
+                          << color_leaf_node.color_(1) << ", "
+                          << color_leaf_node.color_(2) << "]";
+                     return repr.str();
+                 })
+            .def_readwrite("color", &geometry::OctreeColorLeafNode::color_,
+                           "(3, 1) float numpy array: Color of the node.")
+            .def_static("get_init_function",
+                        &geometry::OctreeColorLeafNode::GetInitFunction,
+                        "Get lambda function for initializing OctreeLeafNode. "
+                        "When the init function is called, an empty "
+                        "OctreeColorLeafNode is created.")
+            .def_static("get_update_function",
+                        &geometry::OctreeColorLeafNode::GetUpdateFunction,
+                        "color"_a,
+                        "Get lambda function for updating OctreeLeafNode. When "
+                        "called, the update function update the corresponding "
+                        "node with the input color.");
+
+    py::detail::bind_default_constructor<geometry::OctreeColorLeafNode>(
+            octree_color_leaf_node);
+    py::detail::bind_copy_functions<geometry::OctreeColorLeafNode>(
+            octree_color_leaf_node);
 
     // geometry::Octree
     py::class_<geometry::Octree, PyGeometry3D<geometry::Octree>,
@@ -178,16 +213,15 @@ void pybind_octree(py::module &m) {
                      return repr.str();
                  })
             .def("insert_point", &geometry::Octree::InsertPoint, "point"_a,
-                 "color"_a, "Insert a point with color to the octree.")
+                 "f_init"_a, "f_update"_a, "Insert a point to the octree.")
             .def("locate_leaf_node", &geometry::Octree::LocateLeafNode,
                  "point"_a,
-                 "Returns leaf OctreeNode and OctreeNodeInfo where the query "
+                 "Returns leaf OctreeNode and OctreeNodeInfo where the query"
                  "point should reside.")
             .def_static("is_point_in_bound", &geometry::Octree::IsPointInBound,
                         "point"_a, "origin"_a, "size"_a,
-                        "Return true if point within bound, that is, origin <= "
-                        "point "
-                        "< origin + size")
+                        "Return true if point within bound, that is, origin<= "
+                        "point < origin + size")
             .def("convert_from_point_cloud",
                  &geometry::Octree::ConvertFromPointCloud, "point_cloud"_a,
                  "size_expand"_a = 0.01, "Convert octree from point cloud.")
@@ -201,6 +235,7 @@ void pybind_octree(py::module &m) {
                            "outer bound.")
             .def_readwrite("max_depth", &geometry::Octree::max_depth_,
                            "int: Maximum depth of the octree.");
+
     docstring::ClassMethodDocInject(m, "Octree", "__init__");
     docstring::ClassMethodDocInject(m, "Octree", "insert_point",
                                     map_octree_argument_docstrings);

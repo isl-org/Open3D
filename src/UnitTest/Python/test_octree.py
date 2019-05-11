@@ -71,12 +71,28 @@ def test_octree_OctreeNodeInfo():
     np.testing.assert_equal(node_info.child_index, child_index)
 
 
-def test_octree_OctreeLeafNode():
-    leaf_node = o3d.geometry.OctreeLeafNode()
+def test_octree_OctreeColorLeafNode():
+    color_leaf_node = o3d.geometry.OctreeColorLeafNode()
     color = [0.1, 0.2, 0.3]
-    leaf_node.color = color
-    np.testing.assert_equal(leaf_node.color, color)
+    color_leaf_node.color = color
+    np.testing.assert_equal(color_leaf_node.color, color)
 
+    # Test copy constructor
+    color_leaf_node_copy = o3d.geometry.OctreeColorLeafNode(color_leaf_node)
+    np.testing.assert_equal(color_leaf_node_copy.color, color)
+
+    # Test OctreeLeafNode's inherited operator== function
+    assert color_leaf_node == color_leaf_node_copy
+    assert color_leaf_node_copy == color_leaf_node
+
+    # Test OctreeLeafNode's inherited clone() function
+    color_leaf_node_clone = color_leaf_node.clone()
+    np.testing.assert_equal(color_leaf_node_clone.color, color)
+    assert color_leaf_node == color_leaf_node_clone
+    assert color_leaf_node_clone == color_leaf_node
+
+def test_octree_init():
+    octree = o3d.geometry.Octree(1, [0, 0, 0], 2)
 
 def test_octree_convert_from_point_cloud():
     octree = o3d.geometry.Octree(1, [0, 0, 0], 2)
@@ -90,13 +106,17 @@ def test_octree_convert_from_point_cloud():
 def test_octree_insert_point():
     octree = o3d.geometry.Octree(1, [0, 0, 0], 2)
     for point, color in zip(_eight_cubes_points, _eight_cubes_colors):
-        octree.insert_point(point, color)
+        f_init = o3d.geometry.OctreeColorLeafNode.get_init_function()
+        f_update = o3d.geometry.OctreeColorLeafNode.get_update_function(color)
+        octree.insert_point(point, f_init, f_update)
 
 
 def test_octree_node_access():
     octree = o3d.geometry.Octree(1, [0, 0, 0], 2)
     for point, color in zip(_eight_cubes_points, _eight_cubes_colors):
-        octree.insert_point(point, color)
+        f_init = o3d.geometry.OctreeColorLeafNode.get_init_function()
+        f_update = o3d.geometry.OctreeColorLeafNode.get_update_function(color)
+        octree.insert_point(point, f_init, f_update)
     for i in range(8):
         np.testing.assert_equal(
             octree.root_node.children[i].color, _eight_cubes_colors[i]
