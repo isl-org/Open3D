@@ -69,7 +69,9 @@ OctreeColorLeafNode::GetInitFunction() {
 
 std::function<void(std::shared_ptr<OctreeLeafNode>)>
 OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
-    return [&color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
+    // Here the captured "color" cannot be a refernce, must be a copy,
+    // otherwise pybind does not have the correct value
+    return [color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
         if (auto color_leaf_node =
                     std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(
                             node)) {
