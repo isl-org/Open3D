@@ -57,6 +57,7 @@ We generally follow the `Google C++ Style Guide <https://google.github.io/styleg
 
 Another good reading for modern C++ coding style is `C++ Core Guidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_
 
+Another good reading for modern Python coding style is `Python Core Guidelines <https://github.com/google/styleguide/blob/gh-pages/pyguide.md>`_
 
 Automated style Checker
 ========================
