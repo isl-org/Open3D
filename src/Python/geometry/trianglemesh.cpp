@@ -98,9 +98,18 @@ void pybind_trianglemesh(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
                  "Assign uniform color to all vertices.")
-            .def("is_watertight", &geometry::TriangleMesh::IsWatertight,
-                 "Checks if the mesh is a 2-manifold (iff Euler-Poincare "
-                 "characteristic V + F - E = 2 is satisfied)")
+            .def("euler_poincare_characteristic",
+                 &geometry::TriangleMesh::EulerPoincareCharacteristic,
+                 "Computes Euler-Poincare charasterisitc V + F - E")
+            .def("is_edge_manifold", &geometry::TriangleMesh::IsEdgeManifold,
+                 "Tests if the triangle mesh is edge manifold",
+                 "allow_boundary_edges"_a = true)
+            .def("is_vertex_manifold",
+                 &geometry::TriangleMesh::IsVertexManifold,
+                 "Tests if all vertices of the triangle mesh are manifold")
+            .def("is_self_intersecting",
+                 &geometry::TriangleMesh::IsSelfIntersecting,
+                 "Tests the triangle mesh is self-intersecting")
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -149,7 +158,11 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertices");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_watertight");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "euler_poincare_characteristic");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_edge_manifold");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_self_intersecting");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
 }
 
@@ -270,6 +283,21 @@ void pybind_trianglemesh_methods(py::module &m) {
               "The circle will be split into ``resolution`` segments"},
              {"split",
               "The ``height`` will be split into ``split`` segments."}});
+
+    m.def("create_mesh_torus", &geometry::CreateMeshTorus,
+          "Factory function to create a torus mesh", "torus_radius"_a = 1.0,
+          "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
+          "tubular_resolution"_a = 20);
+    docstring::FunctionDocInject(
+            m, "create_mesh_torus",
+            {{"torus_radius",
+              "The radius from the center of the torus to the center of the "
+              "tube."},
+             {"tube_radius", "The radius of the torus tube."},
+             {"radial_resolution",
+              "The number of segments along the radial direction."},
+             {"tubular_resolution",
+              "The number of segments along the tubular direction."}});
 
     m.def("create_mesh_arrow", &geometry::CreateMeshArrow,
           "Factory function to create an arrow mesh", "cylinder_radius"_a = 1.0,

@@ -128,10 +128,23 @@ public:
         }
     }
 
-    /// Function to check if the given mesh is watertight
-    /// A watertight mesh is a closed 2-manifold and satisfies the
-    /// Euler-Poincaré characteristic V + F - E = 2
-    bool IsWatertight() const;
+    /// Function that computes the Euler-Poincaré characteristic V + F - E
+    int EulerPoincareCharacteristic() const;
+
+    /// Function that checks if the given triangle mesh is edge-manifold.
+    /// A mesh is edge­manifold if each edge is bounding either one or two
+    /// triangles. If allow_boundary_edges is set to false, than retuns false if
+    /// there exists boundary edges.
+    bool IsEdgeManifold(bool allow_boundary_edges = true) const;
+
+    /// Function that checks if all vertices in the triangle mesh are manifold.
+    /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
+    /// (Two or more faces connected only by a vertex and not by an edge.)
+    bool IsVertexManifold() const;
+
+    /// Function that tests if the triangle mesh is self-intersecting.
+    /// Tests each triangle pair for intersection.
+    bool IsSelfIntersecting() const;
 
     /// Function that counts the number of faces an edge belongs.
     /// Returns a map of Edge (vertex0, vertex1) to number of faces.
@@ -237,6 +250,16 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
                                              double height = 2.0,
                                              int resolution = 20,
                                              int split = 1);
+
+/// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
+/// The torus will be centered at (0, 0, 0) and a radius of \param torus_radius.
+/// The tube of the torus will have a radius of \param tube_radius.
+/// The number of segments in radial and tubular direction are \param
+/// radial_resolution and \param tubular_resolution respectively.
+std::shared_ptr<TriangleMesh> CreateMeshTorus(double torus_radius = 1.0,
+                                              double tube_radius = 0.5,
+                                              int radial_resolution = 30,
+                                              int tubular_resolution = 20);
 
 /// Factory function to create an arrow mesh (TriangleMeshFactory.cpp)
 /// The axis of the cone with \param cone_radius will be along the z-axis.

@@ -866,22 +866,98 @@ TEST(TriangleMesh, PaintUniformColor) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, IsWatertight) {
-    EXPECT_EQ(geometry::CreateMeshSphere()->IsWatertight(), true);
-    EXPECT_EQ(geometry::CreateMeshCylinder()->IsWatertight(), true);
-    EXPECT_EQ(geometry::CreateMeshCone()->IsWatertight(), true);
+TEST(TriangleMesh, EulerPoincareCharacteristic) {
+    EXPECT_EQ(geometry::CreateMeshBox()->EulerPoincareCharacteristic() == 2,
+              true);
+    EXPECT_EQ(geometry::CreateMeshSphere()->EulerPoincareCharacteristic() == 2,
+              true);
+    EXPECT_EQ(
+            geometry::CreateMeshCylinder()->EulerPoincareCharacteristic() == 2,
+            true);
+    EXPECT_EQ(geometry::CreateMeshCone()->EulerPoincareCharacteristic() == 2,
+              true);
+    EXPECT_EQ(geometry::CreateMeshTorus()->EulerPoincareCharacteristic() == 0,
+              true);
 
     geometry::TriangleMesh mesh0;
     mesh0.vertices_ = {{0, 0, 0},  {1, 0, 0},  {1, 1, 0}, {1, 1, 1},
                        {-1, 0, 0}, {-1, 1, 0}, {-1, 1, 1}};
     mesh0.triangles_ = {{0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2, 3},
                         {0, 4, 5}, {0, 4, 6}, {0, 5, 6}, {4, 5, 6}};
-    EXPECT_EQ(mesh0.IsWatertight(), false);
+    EXPECT_EQ(mesh0.EulerPoincareCharacteristic() == 3, true);
 
     geometry::TriangleMesh mesh1;
     mesh1.vertices_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 0, 2}, {1, 0.5, 1}};
     mesh1.triangles_ = {{0, 1, 2}, {1, 2, 3}, {1, 2, 4}};
-    EXPECT_EQ(mesh1.IsWatertight(), false);
+    EXPECT_EQ(mesh1.EulerPoincareCharacteristic() == 1, true);
+}
+
+TEST(TriangleMesh, IsEdgeManifold) {
+    EXPECT_EQ(geometry::CreateMeshBox()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::CreateMeshSphere()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::CreateMeshCylinder()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::CreateMeshCone()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::CreateMeshTorus()->IsEdgeManifold(true), true);
+
+    EXPECT_EQ(geometry::CreateMeshBox()->IsEdgeManifold(false), true);
+    EXPECT_EQ(geometry::CreateMeshSphere()->IsEdgeManifold(false), true);
+    EXPECT_EQ(geometry::CreateMeshCylinder()->IsEdgeManifold(false), true);
+    EXPECT_EQ(geometry::CreateMeshCone()->IsEdgeManifold(false), true);
+    EXPECT_EQ(geometry::CreateMeshTorus()->IsEdgeManifold(false), true);
+
+    geometry::TriangleMesh mesh0;
+    mesh0.vertices_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 0, 2}, {1, 0.5, 1}};
+    mesh0.triangles_ = {{0, 1, 2}, {1, 2, 3}, {1, 2, 4}};
+    EXPECT_EQ(mesh0.IsEdgeManifold(true), false);
+    EXPECT_EQ(mesh0.IsEdgeManifold(false), false);
+
+    geometry::TriangleMesh mesh1;
+    mesh1.vertices_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 0, 2}};
+    mesh1.triangles_ = {{0, 1, 2}, {1, 2, 3}};
+    EXPECT_EQ(mesh1.IsEdgeManifold(true), true);
+    EXPECT_EQ(mesh1.IsEdgeManifold(false), false);
+}
+
+TEST(TriangleMesh, IsVertexManifold) {
+    EXPECT_EQ(geometry::CreateMeshBox()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::CreateMeshSphere()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::CreateMeshCylinder()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::CreateMeshCone()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::CreateMeshTorus()->IsVertexManifold(), true);
+
+    geometry::TriangleMesh mesh0;
+    mesh0.vertices_ = {{0, 0, 0}, {1, 1, 1},  {1, 0, 1},
+                       {0, 1, 1}, {1, 1, -1}, {1, 0, -1}};
+    mesh0.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 4, 5}};
+    EXPECT_EQ(mesh0.IsVertexManifold(), false);
+
+    geometry::TriangleMesh mesh1;
+    mesh1.vertices_ = {{0, 0, 0},  {1, 1, 1},  {1, 0, 1}, {0, 1, 1},
+                       {1, 1, -1}, {1, 0, -1}, {0, 1, -1}};
+    mesh1.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 4, 5}, {0, 5, 6}};
+    EXPECT_EQ(mesh1.IsVertexManifold(), false);
+}
+
+TEST(TriangleMesh, IsSelfIntersecting) {
+    EXPECT_EQ(geometry::CreateMeshBox()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshSphere()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshCylinder()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshCone()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::CreateMeshTorus()->IsSelfIntersecting(), false);
+
+    // simple intersection
+    geometry::TriangleMesh mesh0;
+    mesh0.vertices_ = {{0, 0, 0},      {0, 1, 0}, {1, 0, 0}, {1, 1, 0},
+                       {0.5, 0.5, -1}, {0, 1, 1}, {1, 0, 1}};
+    mesh0.triangles_ = {{0, 1, 2}, {1, 2, 3}, {4, 5, 6}};
+    EXPECT_EQ(mesh0.IsSelfIntersecting(), true);
+
+    // co-planar intersection
+    geometry::TriangleMesh mesh1;
+    mesh1.vertices_ = {{0, 0, 0},     {0, 1, 0},     {1, 0, 0},
+                       {0.1, 0.1, 0}, {0.1, 1.1, 0}, {1.1, 0.1, 0}};
+    mesh1.triangles_ = {{0, 1, 2}, {3, 4, 5}};
+    EXPECT_EQ(mesh1.IsSelfIntersecting(), true);
 }
 
 // ----------------------------------------------------------------------------
