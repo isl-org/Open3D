@@ -254,13 +254,22 @@ void Octree::Clear() {
     size_ = 0;
 }
 
-bool Octree::IsEmpty() const { throw std::runtime_error("Not implemented"); }
+bool Octree::IsEmpty() const { return root_node_ == nullptr; }
+
 Eigen::Vector3d Octree::GetMinBound() const {
-    throw std::runtime_error("Not implemented");
+    if (IsEmpty()) {
+        return Eigen::Vector3d::Zero();
+    } else {
+        return origin_;
+    }
 }
 
 Eigen::Vector3d Octree::GetMaxBound() const {
-    throw std::runtime_error("Not implemented");
+    if (IsEmpty()) {
+        return Eigen::Vector3d::Zero();
+    } else {
+        return origin_ + Eigen::Vector3d(size_, size_, size_);
+    }
 }
 
 void Octree::Transform(const Eigen::Matrix4d& transformation) {
