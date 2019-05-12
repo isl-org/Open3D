@@ -73,10 +73,6 @@ public:
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
 
-    /// Function to sample number_of_points points uniformly from the mesh
-    std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points) const;
-
     /// Function to sharpen triangle mesh
     void FilterSharpen(int number_of_iterations,
                        double strength,
@@ -104,10 +100,6 @@ protected:
     virtual void RemoveDuplicatedTriangles();
     virtual void RemoveNonManifoldVertices();
     virtual void RemoveNonManifoldTriangles();
-
-    /// Function that computes the area of a mesh triangle identified by the
-    /// triangle index
-    virtual double TriangleArea(size_t triangle_idx) const;
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }

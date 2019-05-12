@@ -83,10 +83,6 @@ void pybind_trianglemesh(py::module &m) {
             .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
-            .def("sample_points_uniformly",
-                 &geometry::TriangleMesh::SamplePointsUniformly,
-                 "Function to uniformly points from the mesh",
-                 "number_of_points"_a = 100)
             .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
                  "Function to sharpen mesh", "number_of_iterations"_a = 1,
                  "strength"_a = 1,
@@ -175,8 +171,6 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "sample_points_uniformly");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_sharpen");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_simple");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
