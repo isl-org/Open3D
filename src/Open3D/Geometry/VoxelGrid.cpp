@@ -108,16 +108,18 @@ Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
 }
 
 void VoxelGrid::FromOctree(const Octree &octree) {
+    // TODO: currently only handles color leaf nodes
     // Get leaf nodes and their node_info
-    std::unordered_map<std::shared_ptr<OctreeLeafNode>,
+    std::unordered_map<std::shared_ptr<OctreeColorLeafNode>,
                        std::shared_ptr<OctreeNodeInfo>>
             map_node_to_node_info;
     auto f_collect_nodes =
             [&map_node_to_node_info](
                     const std::shared_ptr<OctreeNode> &node,
                     const std::shared_ptr<OctreeNodeInfo> &node_info) -> void {
-        if (auto leaf_node = std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
-            map_node_to_node_info[leaf_node] = node_info;
+        if (auto color_leaf_node =
+                    std::dynamic_pointer_cast<OctreeColorLeafNode>(node)) {
+            map_node_to_node_info[color_leaf_node] = node_info;
         }
     };
     octree.Traverse(f_collect_nodes);
@@ -133,7 +135,7 @@ void VoxelGrid::FromOctree(const Octree &octree) {
 
     // Convert nodes to voxels
     for (const auto &it : map_node_to_node_info) {
-        const std::shared_ptr<OctreeLeafNode> &node = it.first;
+        const std::shared_ptr<OctreeColorLeafNode> &node = it.first;
         const std::shared_ptr<OctreeNodeInfo> &node_info = it.second;
         Eigen::Array3d node_center =
                 Eigen::Array3d(node_info->origin_) + node_info->size_ / 2.0;

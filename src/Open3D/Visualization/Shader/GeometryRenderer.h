@@ -27,7 +27,6 @@
 #pragma once
 
 #include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Visualization/Shader/CuboidShader.h"
 #include "Open3D/Visualization/Shader/ImageMaskShader.h"
 #include "Open3D/Visualization/Shader/ImageShader.h"
 #include "Open3D/Visualization/Shader/NormalShader.h"
@@ -149,7 +148,23 @@ public:
     bool UpdateGeometry() override;
 
 protected:
-    CuboidShaderForVoxelGrid cuboid_shader_for_voxel_grid_;
+    SimpleShaderForVoxelGridLine simple_shader_for_voxel_grid_line_;
+    SimpleShaderForVoxelGridFace simple_shader_for_voxel_grid_face_;
+};
+
+class OctreeRenderer : public GeometryRenderer {
+public:
+    ~OctreeRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForOctreeLine simple_shader_for_octree_line_;
+    SimpleShaderForOctreeFace simple_shader_for_octree_face_;
 };
 
 class ImageRenderer : public GeometryRenderer {
