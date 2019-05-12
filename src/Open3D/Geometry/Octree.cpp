@@ -31,6 +31,7 @@
 #include <unordered_map>
 
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -59,6 +60,45 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
     return child_node_info;
 }
 
+std::function<std::shared_ptr<OctreeLeafNode>()>
+OctreeColorLeafNode::GetInitFunction() {
+    return []() -> std::shared_ptr<geometry::OctreeLeafNode> {
+        return std::make_shared<geometry::OctreeColorLeafNode>();
+    };
+}
+
+std::function<void(std::shared_ptr<OctreeLeafNode>)>
+OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
+    // Here the captured "color" cannot be a refernce, must be a copy,
+    // otherwise pybind does not have the correct value
+    return [color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
+        if (auto color_leaf_node =
+                    std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(
+                            node)) {
+            color_leaf_node->color_ = color;
+        } else {
+            throw std::runtime_error(
+                    "Internal error: leaf node must be OctreeLeafNode");
+        }
+    };
+}
+
+std::shared_ptr<OctreeLeafNode> OctreeColorLeafNode::Clone() const {
+    auto cloned_node = std::make_shared<OctreeColorLeafNode>();
+    cloned_node->color_ = color_;
+    return cloned_node;
+}
+
+bool OctreeColorLeafNode::operator==(const OctreeLeafNode& that) const {
+    try {
+        const OctreeColorLeafNode& that_color_node =
+                dynamic_cast<const OctreeColorLeafNode&>(that);
+        return this->color_.isApprox(that_color_node.color_);
+    } catch (const std::exception& ex) {
+        return false;
+    }
+}
+
 Octree::Octree(const Octree& src_octree)
     : Geometry3D(Geometry::GeometryType::Octree),
       max_depth_(src_octree.max_depth_),
@@ -79,9 +119,7 @@ Octree::Octree(const Octree& src_octree)
         } else if (auto src_leaf_node =
                            std::dynamic_pointer_cast<OctreeLeafNode>(
                                    src_node)) {
-            auto dst_leaf_node = std::make_shared<OctreeLeafNode>();
-            dst_leaf_node->color_ = src_leaf_node->color_;
-            map_src_to_dst_node[src_leaf_node] = dst_leaf_node;
+            map_src_to_dst_node[src_leaf_node] = src_leaf_node->Clone();
         } else {
             throw std::runtime_error("Internal error: unknown node type");
         }
@@ -200,7 +238,7 @@ bool Octree::operator==(const Octree& that) const {
                 std::dynamic_pointer_cast<OctreeLeafNode>(that_node);
         if (this_leaf_node != nullptr && that_leaf_node != nullptr) {
             is_same_node_type = true;
-            rc = rc && this_leaf_node->color_.isApprox(this_leaf_node->color_);
+            rc = rc && (*this_leaf_node) == (*that_leaf_node);
         }
         // Handle case where node types are different
         rc = rc && is_same_node_type;
@@ -216,21 +254,22 @@ void Octree::Clear() {
     size_ = 0;
 }
 
-void Octree::Clear(bool reset_bounds) {
-    if (reset_bounds) {
-        Clear();
+bool Octree::IsEmpty() const { return root_node_ == nullptr; }
+
+Eigen::Vector3d Octree::GetMinBound() const {
+    if (IsEmpty()) {
+        return Eigen::Vector3d::Zero();
     } else {
-        root_node_ = nullptr;
+        return origin_;
     }
 }
 
-bool Octree::IsEmpty() const { throw std::runtime_error("Not implemented"); }
-Eigen::Vector3d Octree::GetMinBound() const {
-    throw std::runtime_error("Not implemented");
-}
-
 Eigen::Vector3d Octree::GetMaxBound() const {
-    throw std::runtime_error("Not implemented");
+    if (IsEmpty()) {
+        return Eigen::Vector3d::Zero();
+    } else {
+        return origin_ + Eigen::Vector3d(size_, size_, size_);
+    }
 }
 
 void Octree::Transform(const Eigen::Matrix4d& transformation) {
@@ -238,56 +277,56 @@ void Octree::Transform(const Eigen::Matrix4d& transformation) {
 }
 
 void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
-                                   bool reset_bounds,
                                    double size_expand) {
     if (size_expand > 1 || size_expand < 0) {
         throw std::runtime_error("size_expand shall be between 0 and 1");
     }
 
     // Set bounds
-    Clear(reset_bounds);
-    if (reset_bounds) {
-        // Reset with automatic centering
-        Eigen::Array3d min_bound = point_cloud.GetMinBound();
-        Eigen::Array3d max_bound = point_cloud.GetMaxBound();
-        Eigen::Array3d center = (min_bound + max_bound) / 2;
-        Eigen::Array3d half_sizes = center - min_bound;
-        double max_half_size = half_sizes.maxCoeff();
-        origin_ = min_bound.min(center - max_half_size);
-        if (max_half_size == 0) {
-            size_ = size_expand;
-        } else {
-            size_ = max_half_size * 2 * (1 + size_expand);
-        }
+    Clear();
+    Eigen::Array3d min_bound = point_cloud.GetMinBound();
+    Eigen::Array3d max_bound = point_cloud.GetMaxBound();
+    Eigen::Array3d center = (min_bound + max_bound) / 2;
+    Eigen::Array3d half_sizes = center - min_bound;
+    double max_half_size = half_sizes.maxCoeff();
+    origin_ = min_bound.min(center - max_half_size);
+    if (max_half_size == 0) {
+        size_ = size_expand;
+    } else {
+        size_ = max_half_size * 2 * (1 + size_expand);
     }
 
     // Insert points
     for (size_t idx = 0; idx < point_cloud.points_.size(); idx++) {
-        const Eigen::Vector3d& point = point_cloud.points_[idx];
-        const Eigen::Vector3d& color = point_cloud.colors_[idx];
-        InsertPoint(point, color);
+        InsertPoint(point_cloud.points_[idx],
+                    geometry::OctreeColorLeafNode::GetInitFunction(),
+                    geometry::OctreeColorLeafNode::GetUpdateFunction(
+                            point_cloud.colors_[idx]));
     }
 }
 
-void Octree::InsertPoint(const Eigen::Vector3d& point,
-                         const Eigen::Vector3d& color) {
+void Octree::InsertPoint(
+        const Eigen::Vector3d& point,
+        const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+        const std::function<void(std::shared_ptr<OctreeLeafNode>)>& f_update) {
     if (root_node_ == nullptr) {
         if (max_depth_ == 0) {
-            root_node_ = std::make_shared<OctreeLeafNode>();
+            root_node_ = f_init();
         } else {
             root_node_ = std::make_shared<OctreeInternalNode>();
         }
     }
     auto root_node_info =
             std::make_shared<OctreeNodeInfo>(origin_, size_, 0, 0);
-    InsertPointRecurse(root_node_, root_node_info, point, color);
+    InsertPointRecurse(root_node_, root_node_info, point, f_init, f_update);
 }
 
 void Octree::InsertPointRecurse(
         const std::shared_ptr<OctreeNode>& node,
         const std::shared_ptr<OctreeNodeInfo>& node_info,
         const Eigen::Vector3d& point,
-        const Eigen::Vector3d& color) {
+        const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+        const std::function<void(std::shared_ptr<OctreeLeafNode>)>& f_update) {
     if (!IsPointInBound(point, node_info->origin_, node_info->size_)) {
         return;
     }
@@ -295,7 +334,7 @@ void Octree::InsertPointRecurse(
         return;
     } else if (node_info->depth_ == max_depth_) {
         if (auto leaf_node = std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
-            leaf_node->color_ = color;
+            f_update(leaf_node);
         } else {
             throw std::runtime_error(
                     "Internal error: leaf node must be OctreeLeafNode");
@@ -307,12 +346,11 @@ void Octree::InsertPointRecurse(
             std::shared_ptr<OctreeNodeInfo> child_node_info =
                     internal_node->GetInsertionNodeInfo(node_info, point);
 
-            // Init child node if not yet initialized
+            // Create child node with factory function
             size_t child_index = child_node_info->child_index_;
             if (internal_node->children_[child_index] == nullptr) {
                 if (node_info->depth_ == max_depth_ - 1) {
-                    internal_node->children_[child_index] =
-                            std::make_shared<OctreeLeafNode>();
+                    internal_node->children_[child_index] = f_init();
                 } else {
                     internal_node->children_[child_index] =
                             std::make_shared<OctreeInternalNode>();
@@ -321,10 +359,11 @@ void Octree::InsertPointRecurse(
 
             // Insert to the child
             InsertPointRecurse(internal_node->children_[child_index],
-                               child_node_info, point, color);
+                               child_node_info, point, f_init, f_update);
         } else {
             throw std::runtime_error(
-                    "Internal error: internal node must be OctreeInternalNode");
+                    "Internal error: internal node must be "
+                    "OctreeInternalNode");
         }
     }
 }
@@ -392,7 +431,8 @@ std::pair<std::shared_ptr<OctreeLeafNode>, std::shared_ptr<OctreeNodeInfo>>
 Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
     // TODO: add early stoping to callback function when the target has been
     //       found, i.e. add return value to callback function.
-    // TODO: consider adding node's depth as parameter to the callback function.
+    // TODO: consider adding node's depth as parameter to the callback
+    // function.
     std::shared_ptr<OctreeLeafNode> target_leaf_node = nullptr;
     std::shared_ptr<OctreeNodeInfo> target_leaf_node_info = nullptr;
     auto f_locate_leaf_node =
@@ -409,6 +449,12 @@ Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
     };
     Traverse(f_locate_leaf_node);
     return std::make_pair(target_leaf_node, target_leaf_node_info);
+}
+
+std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {
+    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    voxel_grid->FromOctree(*this);
+    return voxel_grid;
 }
 
 }  // namespace geometry
