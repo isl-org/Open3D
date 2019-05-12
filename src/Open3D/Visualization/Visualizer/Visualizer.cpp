@@ -316,6 +316,12 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::Octree) {
+        renderer_ptr = std::make_shared<glsl::OctreeRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::LineSet) {
         renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
