@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <iostream>
 #include <memory>
 
 #include "Open3D/Geometry/Octree.h"
@@ -296,5 +295,15 @@ TEST(Octree, ToVoxelGrid) {
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd);
     std::shared_ptr<geometry::VoxelGrid> voxel_grid = octree.ToVoxelGrid();
+    // Uncomment the line below for visualization test
     // visualization::DrawGeometries({voxel_grid});
+}
+
+TEST(Octree, Visualization) {
+    geometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    auto octree = std::make_shared<geometry::Octree>(6);
+    octree->ConvertFromPointCloud(pcd, 0.01);
+    // Uncomment the line below for visualization test
+    // visualization::DrawGeometries({octree});
 }
