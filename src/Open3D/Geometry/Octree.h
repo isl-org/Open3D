@@ -133,7 +133,11 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d& transformation) override;
+    Octree& Transform(const Eigen::Matrix4d& transformation) override;
+    Octree& Translate(const Eigen::Vector3d& translation) override;
+    Octree& Scale(const double scale) override;
+    Octree& Rotate(const Eigen::Vector3d& rotation,
+                   RotationType type = RotationType::XYZ) override;
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
