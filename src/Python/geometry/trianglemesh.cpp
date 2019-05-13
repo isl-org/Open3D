@@ -200,6 +200,17 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"number_of_points",
               "Number of points that should be uniformly sampled."}});
 
+    m.def("sample_points_poisson_disk", &geometry::SamplePointsPoissonDisk,
+          "Function to points from the mesh (blue noise)", "input"_a,
+          "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr);
+    docstring::FunctionDocInject(
+            m, "sample_points_poisson_disk",
+            {{"input", "The input triangle mesh."},
+             {"number_of_points", "Number of points that should be sampled."},
+             {"init_factor",
+              "Factor for the initial uniformly sampled PointCloud."},
+             {"pcl", "PointCloud that is used for sample elimination."}});
+
     m.def("subdivide_midpoint", &geometry::SubdivideMidpoint,
           "Function subdivide mesh using midpoint algorithm.", "input"_a,
           "number_of_iterations"_a = 1);
@@ -209,6 +220,16 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"number_of_iterations",
               "Number of iterations. A single iteration splits each triangle "
               "into four triangles that cover the same surface."}});
+
+    m.def("subdivide_loop", &geometry::SubdivideLoop,
+          "Function subdivide mesh using Loop's algorithm.", "input"_a,
+          "number_of_iterations"_a = 1);
+    docstring::FunctionDocInject(
+            m, "subdivide_loop",
+            {{"input", "The input triangle mesh."},
+             {"number_of_iterations",
+              "Number of iterations. A single iteration splits each triangle "
+              "into four triangles."}});
 
     m.def("simplify_vertex_clustering", &geometry::SimplifyVertexClustering,
           "Function to simplify mesh vertex clustering", "input"_a,
@@ -242,6 +263,33 @@ void pybind_trianglemesh_methods(py::module &m) {
                                  {{"width", "x-directional length."},
                                   {"height", "y-directional length."},
                                   {"depth", "z-directional length."}});
+
+    m.def("create_mesh_tetrahedron", &geometry::CreateMeshTetrahedron,
+          "Factory function to create a tetrahedron. The centroid of the mesh "
+          "will be placed at (0, 0, 0) and the vertices have a distance of "
+          "radius to the center.",
+          "radius"_a = 1.0);
+    docstring::FunctionDocInject(
+            m, "create_mesh_tetrahedron",
+            {{"radius", "Distance from centroid to mesh vetices."}});
+
+    m.def("create_mesh_octahedron", &geometry::CreateMeshOctahedron,
+          "Factory function to create a octahedron. The centroid of the mesh "
+          "will be placed at (0, 0, 0) and the vertices have a distance of "
+          "radius to the center.",
+          "radius"_a = 1.0);
+    docstring::FunctionDocInject(
+            m, "create_mesh_octahedron",
+            {{"radius", "Distance from centroid to mesh vetices."}});
+
+    m.def("create_mesh_icosahedron", &geometry::CreateMeshIcosahedron,
+          "Factory function to create a icosahedron. The centroid of the mesh "
+          "will be placed at (0, 0, 0) and the vertices have a distance of "
+          "radius to the center.",
+          "radius"_a = 1.0);
+    docstring::FunctionDocInject(
+            m, "create_mesh_icosahedron",
+            {{"radius", "Distance from centroid to mesh vetices."}});
 
     m.def("create_mesh_sphere", &geometry::CreateMeshSphere,
           "Factory function to create a sphere mesh centered at (0, 0, 0).",

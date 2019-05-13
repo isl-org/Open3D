@@ -29,6 +29,81 @@
 namespace open3d {
 namespace geometry {
 
+std::shared_ptr<TriangleMesh> CreateMeshTetrahedron(double radius /* = 1.0*/) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    mesh->vertices_.push_back(radius *
+                              Eigen::Vector3d(std::sqrt(8. / 9.), 0, -1. / 3.));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-std::sqrt(2. / 9.),
+                                                       std::sqrt(2. / 3.),
+                                                       -1. / 3.));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-std::sqrt(2. / 9.),
+                                                       -std::sqrt(2. / 3.),
+                                                       -1. / 3.));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0., 0., 1.));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 2, 1));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 3, 2));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 3));
+    mesh->triangles_.push_back(Eigen::Vector3i(1, 2, 3));
+    return mesh;
+}
+
+std::shared_ptr<TriangleMesh> CreateMeshOctahedron(double radius /* = 1.0*/) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(1, 0, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, 1, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, 0, 1));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-1, 0, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, -1, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, 0, -1));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 2));
+    mesh->triangles_.push_back(Eigen::Vector3i(1, 3, 2));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 4, 2));
+    mesh->triangles_.push_back(Eigen::Vector3i(4, 0, 2));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 5, 1));
+    mesh->triangles_.push_back(Eigen::Vector3i(1, 5, 3));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 5, 4));
+    mesh->triangles_.push_back(Eigen::Vector3i(4, 5, 0));
+    return mesh;
+}
+
+std::shared_ptr<TriangleMesh> CreateMeshIcosahedron(double radius /* = 1.0*/) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    const double p = (1. + std::sqrt(5.)) / 2.;
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-1, 0, p));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(1, 0, p));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(1, 0, -p));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-1, 0, -p));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, -p, 1));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, p, 1));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, p, -1));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(0, -p, -1));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-p, -1, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(p, -1, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(p, 1, 0));
+    mesh->vertices_.push_back(radius * Eigen::Vector3d(-p, 1, 0));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 4, 1));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 1, 5));
+    mesh->triangles_.push_back(Eigen::Vector3i(1, 4, 9));
+    mesh->triangles_.push_back(Eigen::Vector3i(1, 9, 10));
+    mesh->triangles_.push_back(Eigen::Vector3i(1, 10, 5));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 8, 4));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 11, 8));
+    mesh->triangles_.push_back(Eigen::Vector3i(0, 5, 11));
+    mesh->triangles_.push_back(Eigen::Vector3i(5, 6, 11));
+    mesh->triangles_.push_back(Eigen::Vector3i(5, 10, 6));
+    mesh->triangles_.push_back(Eigen::Vector3i(4, 8, 7));
+    mesh->triangles_.push_back(Eigen::Vector3i(4, 7, 9));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 6, 2));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 2, 7));
+    mesh->triangles_.push_back(Eigen::Vector3i(2, 6, 10));
+    mesh->triangles_.push_back(Eigen::Vector3i(2, 10, 9));
+    mesh->triangles_.push_back(Eigen::Vector3i(2, 9, 7));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 11, 6));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 8, 11));
+    mesh->triangles_.push_back(Eigen::Vector3i(3, 7, 8));
+    return mesh;
+}
+
 std::shared_ptr<TriangleMesh> CreateMeshBox(double width /* = 1.0*/,
                                             double height /* = 1.0*/,
                                             double depth /* = 1.0*/) {
