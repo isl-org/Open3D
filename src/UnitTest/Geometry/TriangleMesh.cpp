@@ -714,6 +714,100 @@ TEST(TriangleMesh, SamplePointsUniformly) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+TEST(TriangleMesh, FilterSharpen) {
+    auto mesh = geometry::TriangleMesh();
+    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+
+    mesh.FilterSharpen(1, 1);
+    std::vector<Eigen::Vector3d> ref1 = {
+            {0, 0, 0}, {4, 0, 0}, {0, 4, 0}, {-4, 0, 0}, {0, -4, 0}};
+    ExpectEQ(mesh.vertices_, ref1);
+
+    mesh.FilterSharpen(9, 0.1);
+    std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
+                                         {42.417997, 0, 0},
+                                         {0, 42.417997, 0},
+                                         {-42.417997, 0, 0},
+                                         {0, -42.417997, 0}};
+    ExpectEQ(mesh.vertices_, ref2);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(TriangleMesh, FilterSmoothSimple) {
+    auto mesh = geometry::TriangleMesh();
+    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+
+    mesh.FilterSmoothSimple(1);
+    std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
+                                         {0.25, 0, 0},
+                                         {0, 0.25, 0},
+                                         {-0.25, 0, 0},
+                                         {0, -0.25, 0}};
+    ExpectEQ(mesh.vertices_, ref1);
+
+    mesh.FilterSmoothSimple(3);
+    std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
+                                         {0.003906, 0, 0},
+                                         {0, 0.003906, 0},
+                                         {-0.003906, 0, 0},
+                                         {0, -0.003906, 0}};
+    ExpectEQ(mesh.vertices_, ref2);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(TriangleMesh, FilterSmoothLaplacian) {
+    auto mesh = geometry::TriangleMesh();
+    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+
+    mesh.FilterSmoothLaplacian(1, 0.5);
+    std::vector<Eigen::Vector3d> ref1 = {
+            {0, 0, 0}, {0.5, 0, 0}, {0, 0.5, 0}, {-0.5, 0, 0}, {0, -0.5, 0}};
+    ExpectEQ(mesh.vertices_, ref1);
+
+    mesh.FilterSmoothLaplacian(10, 0.5);
+    std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
+                                         {0.000488, 0, 0},
+                                         {0, 0.000488, 0},
+                                         {-0.000488, 0, 0},
+                                         {0, -0.000488, 0}};
+    ExpectEQ(mesh.vertices_, ref2);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(TriangleMesh, FilterSmoothTaubin) {
+    auto mesh = geometry::TriangleMesh();
+    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+
+    mesh.FilterSmoothTaubin(1, 0.5, 0.53);
+    std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
+                                         {0.765, 0, 0},
+                                         {0, 0.765, 0},
+                                         {-0.765, 0, 0},
+                                         {0, -0.765, 0}};
+    ExpectEQ(mesh.vertices_, ref1);
+
+    mesh.FilterSmoothTaubin(10, 0.5, 0.53);
+    std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
+                                         {0.052514, 0, 0},
+                                         {0, 0.052514, 0},
+                                         {-0.052514, 0, 0},
+                                         {0, -0.052514, 0}};
+    ExpectEQ(mesh.vertices_, ref2);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(TriangleMesh, HasVertices) {
     int size = 100;
 

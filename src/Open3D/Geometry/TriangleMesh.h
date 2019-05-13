@@ -45,6 +45,7 @@ typedef std::tuple<int, int> Edge;
 class TriangleMesh : public Geometry3D {
 public:
     enum class SimplificationContraction { Average, Quadric };
+    enum class FilterScope { All, Color, Normal, Vertex };
 
     TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {}
     ~TriangleMesh() override {}
@@ -75,6 +76,26 @@ public:
 
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
+
+    /// Function to sharpen triangle mesh
+    void FilterSharpen(int number_of_iterations,
+                       double strength,
+                       FilterScope scope = FilterScope::All);
+
+    /// Function to smooth triangle mesh with simple neighbour average
+    void FilterSmoothSimple(int number_of_iterations,
+                            FilterScope scope = FilterScope::All);
+
+    /// Function to smooth triangle mesh using Laplacian
+    void FilterSmoothLaplacian(int number_of_iterations,
+                               double lambda,
+                               FilterScope scope = FilterScope::All);
+
+    /// Function to smooth triangle mesh using method of Taubin
+    void FilterSmoothTaubin(int number_of_iterations,
+                            double lambda,
+                            double mu,
+                            FilterScope scope = FilterScope::All);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base

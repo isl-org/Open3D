@@ -306,6 +306,191 @@ std::shared_ptr<PointCloud> SamplePointsUniformly(
     return pcd;
 }
 
+void TriangleMesh::FilterSharpen(int number_of_iterations,
+                                 double strength,
+                                 FilterScope scope) {
+    if (!HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
+
+    bool filter_vertex =
+            scope == FilterScope::All || scope == FilterScope::Vertex;
+    bool filter_normal =
+            (scope == FilterScope::All || scope == FilterScope::Normal) &&
+            HasVertexNormals();
+    bool filter_color =
+            (scope == FilterScope::All || scope == FilterScope::Color) &&
+            HasVertexColors();
+
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        std::vector<Eigen::Vector3d> prev_vertices = vertices_;
+        std::vector<Eigen::Vector3d> prev_vertex_normals = vertex_normals_;
+        std::vector<Eigen::Vector3d> prev_vertex_colors = vertex_colors_;
+
+        for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+            Eigen::Vector3d vertex_sum(0, 0, 0);
+            Eigen::Vector3d normal_sum(0, 0, 0);
+            Eigen::Vector3d color_sum(0, 0, 0);
+            for (int nbidx : adjacency_list_[vidx]) {
+                if (filter_vertex) {
+                    vertex_sum += prev_vertices[nbidx];
+                }
+                if (filter_normal) {
+                    normal_sum += prev_vertex_normals[nbidx];
+                }
+                if (filter_color) {
+                    color_sum += prev_vertex_colors[nbidx];
+                }
+            }
+
+            size_t nb_size = adjacency_list_[vidx].size();
+            if (filter_vertex) {
+                vertices_[vidx] =
+                        prev_vertices[vidx] +
+                        strength * (prev_vertices[vidx] * nb_size - vertex_sum);
+            }
+            if (filter_normal) {
+                vertex_normals_[vidx] =
+                        prev_vertex_normals[vidx] +
+                        strength * (prev_vertex_normals[vidx] * nb_size -
+                                    normal_sum);
+            }
+            if (filter_color) {
+                vertex_colors_[vidx] =
+                        prev_vertex_colors[vidx] +
+                        strength * (prev_vertex_colors[vidx] * nb_size -
+                                    color_sum);
+            }
+        }
+    }
+}
+
+void TriangleMesh::FilterSmoothSimple(int number_of_iterations,
+                                      FilterScope scope) {
+    if (!HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
+
+    bool filter_vertex =
+            scope == FilterScope::All || scope == FilterScope::Vertex;
+    bool filter_normal =
+            (scope == FilterScope::All || scope == FilterScope::Normal) &&
+            HasVertexNormals();
+    bool filter_color =
+            (scope == FilterScope::All || scope == FilterScope::Color) &&
+            HasVertexColors();
+
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        std::vector<Eigen::Vector3d> prev_vertices = vertices_;
+        std::vector<Eigen::Vector3d> prev_vertex_normals = vertex_normals_;
+        std::vector<Eigen::Vector3d> prev_vertex_colors = vertex_colors_;
+
+        for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+            Eigen::Vector3d vertex_sum(0, 0, 0);
+            Eigen::Vector3d normal_sum(0, 0, 0);
+            Eigen::Vector3d color_sum(0, 0, 0);
+            for (int nbidx : adjacency_list_[vidx]) {
+                if (filter_vertex) {
+                    vertex_sum += prev_vertices[nbidx];
+                }
+                if (filter_normal) {
+                    normal_sum += prev_vertex_normals[nbidx];
+                }
+                if (filter_color) {
+                    color_sum += prev_vertex_colors[nbidx];
+                }
+            }
+
+            size_t nb_size = adjacency_list_[vidx].size();
+            if (filter_vertex) {
+                vertices_[vidx] =
+                        (prev_vertices[vidx] + vertex_sum) / (1 + nb_size);
+            }
+            if (filter_normal) {
+                vertex_normals_[vidx] =
+                        (prev_vertex_normals[vidx] + normal_sum) /
+                        (1 + nb_size);
+            }
+            if (filter_color) {
+                vertex_colors_[vidx] =
+                        (prev_vertex_colors[vidx] + color_sum) / (1 + nb_size);
+            }
+        }
+    }
+}
+
+void TriangleMesh::FilterSmoothLaplacian(int number_of_iterations,
+                                         double lambda,
+                                         FilterScope scope) {
+    if (!HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
+
+    bool filter_vertex =
+            scope == FilterScope::All || scope == FilterScope::Vertex;
+    bool filter_normal =
+            (scope == FilterScope::All || scope == FilterScope::Normal) &&
+            HasVertexNormals();
+    bool filter_color =
+            (scope == FilterScope::All || scope == FilterScope::Color) &&
+            HasVertexColors();
+
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        std::vector<Eigen::Vector3d> prev_vertices = vertices_;
+        std::vector<Eigen::Vector3d> prev_vertex_normals = vertex_normals_;
+        std::vector<Eigen::Vector3d> prev_vertex_colors = vertex_colors_;
+
+        for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+            Eigen::Vector3d vertex_sum(0, 0, 0);
+            Eigen::Vector3d normal_sum(0, 0, 0);
+            Eigen::Vector3d color_sum(0, 0, 0);
+            double total_weight = 0;
+            for (int nbidx : adjacency_list_[vidx]) {
+                auto diff = prev_vertices[vidx] - prev_vertices[nbidx];
+                double dist = diff.norm();
+                double weight = 1. / (dist + 1e-12);
+                total_weight += weight;
+
+                if (filter_vertex) {
+                    vertex_sum += weight * prev_vertices[nbidx];
+                }
+                if (filter_normal) {
+                    normal_sum += weight * prev_vertex_normals[nbidx];
+                }
+                if (filter_color) {
+                    color_sum += weight * prev_vertex_colors[nbidx];
+                }
+            }
+
+            if (filter_vertex) {
+                vertices_[vidx] = prev_vertices[vidx] +
+                                  lambda * (vertex_sum / total_weight -
+                                            prev_vertices[vidx]);
+            }
+            if (filter_normal) {
+                vertex_normals_[vidx] = prev_vertex_normals[vidx] +
+                                        lambda * (normal_sum / total_weight -
+                                                  prev_vertex_normals[vidx]);
+            }
+            if (filter_color) {
+                vertex_colors_[vidx] = prev_vertex_colors[vidx] +
+                                       lambda * (color_sum / total_weight -
+                                                 prev_vertex_colors[vidx]);
+            }
+        }
+    }
+}
+
+void TriangleMesh::FilterSmoothTaubin(int number_of_iterations,
+                                      double lambda,
+                                      double mu,
+                                      FilterScope scope) {
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        FilterSmoothLaplacian(1, lambda, scope);
+        FilterSmoothLaplacian(1, -mu, scope);
+    }
+}
+
 std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
                                                   size_t number_of_points) {
     if (number_of_points <= 0) {
@@ -342,13 +527,15 @@ std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
     }
     if (pcl_init == nullptr && init_factor < 1) {
         utility::PrintWarning(
-                "[SamplePointsUniformly] either pass pcl_init with #points > "
+                "[SamplePointsUniformly] either pass pcl_init with #points "
+                "> "
                 "number_of_points or init_factor > 1");
         return std::make_shared<PointCloud>();
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
         utility::PrintWarning(
-                "[SamplePointsUniformly] either pass pcl_init with #points > "
+                "[SamplePointsUniformly] either pass pcl_init with #points "
+                "> "
                 "number_of_points, or init_factor > 1");
         return std::make_shared<PointCloud>();
     }
@@ -525,8 +712,8 @@ void TriangleMesh::RemoveDuplicatedTriangles() {
     size_t k = 0;
     for (size_t i = 0; i < old_triangle_num; i++) {
         Index3 index;
-        // We first need to find the minimum index. Because triangle (0-1-2) and
-        // triangle (2-0-1) are the same.
+        // We first need to find the minimum index. Because triangle (0-1-2)
+        // and triangle (2-0-1) are the same.
         if (triangles_[i](0) <= triangles_[i](1)) {
             if (triangles_[i](0) <= triangles_[i](2)) {
                 index = std::make_tuple(triangles_[i](0), triangles_[i](1),
@@ -605,8 +792,8 @@ void TriangleMesh::RemoveNonManifoldVertices() {
 }
 
 void TriangleMesh::RemoveNonManifoldTriangles() {
-    // Non-manifold triangles are degenerate triangles that have one vertex as
-    // its multiple end-points. They are usually the product of removing
+    // Non-manifold triangles are degenerate triangles that have one vertex
+    // as its multiple end-points. They are usually the product of removing
     // duplicated vertices.
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
@@ -626,7 +813,8 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
         ComputeAdjacencyList();
     }
     utility::PrintDebug(
-            "[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
+            "[RemoveNonManifoldTriangles] %d triangles have been "
+            "removed.\n",
             (int)(old_triangle_num - k));
 }
 

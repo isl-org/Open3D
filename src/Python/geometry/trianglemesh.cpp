@@ -49,6 +49,12 @@ void pybind_trianglemesh(py::module &m) {
             .value("Quadric",
                    geometry::TriangleMesh::SimplificationContraction::Quadric)
             .export_values();
+    py::enum_<geometry::TriangleMesh::FilterScope>(m, "FilterScope")
+            .value("All", geometry::TriangleMesh::FilterScope::All)
+            .value("Color", geometry::TriangleMesh::FilterScope::Color)
+            .value("Normal", geometry::TriangleMesh::FilterScope::Normal)
+            .value("Vertex", geometry::TriangleMesh::FilterScope::Vertex)
+            .export_values();
     trianglemesh
             .def("__repr__",
                  [](const geometry::TriangleMesh &mesh) {
@@ -77,6 +83,24 @@ void pybind_trianglemesh(py::module &m) {
             .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
+            .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
+                 "Function to sharpen mesh", "number_of_iterations"_a = 1,
+                 "strength"_a = 1,
+                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+            .def("filter_smooth_simple",
+                 &geometry::TriangleMesh::FilterSmoothSimple,
+                 "Function to smooth mesh", "number_of_iterations"_a = 1,
+                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+            .def("filter_smooth_laplacian",
+                 &geometry::TriangleMesh::FilterSmoothLaplacian,
+                 "Function to smooth mesh", "number_of_iterations"_a = 1,
+                 "lambda"_a = 0.5,
+                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+            .def("filter_smooth_taubin",
+                 &geometry::TriangleMesh::FilterSmoothTaubin,
+                 "Function to smooth mesh", "number_of_iterations"_a = 1,
+                 "lambda"_a = 0.5, "mu"_a = 0.53,
+                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -164,6 +188,11 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_self_intersecting");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_sharpen");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_simple");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "filter_smooth_laplacian");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_taubin");
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
