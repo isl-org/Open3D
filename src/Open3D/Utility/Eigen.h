@@ -113,5 +113,9 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         int iteration_num,
         bool verbose = true);
 
+Eigen::Matrix3d RotationMatrixX(double radians);
+Eigen::Matrix3d RotationMatrixY(double radians);
+Eigen::Matrix3d RotationMatrixZ(double radians);
+
 }  // namespace utility
 }  // namespace open3d

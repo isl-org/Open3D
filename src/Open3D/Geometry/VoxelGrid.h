@@ -50,7 +50,11 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d &transformation) override;
+    VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
+    VoxelGrid &Translate(const Eigen::Vector3d &translation) override;
+    VoxelGrid &Scale(const double scale) override;
+    VoxelGrid &Rotate(const Eigen::Vector3d &rotation,
+                      RotationType type = RotationType::XYZ) override;
 
 public:
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
