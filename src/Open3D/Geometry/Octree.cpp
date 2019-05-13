@@ -272,8 +272,24 @@ Eigen::Vector3d Octree::GetMaxBound() const {
     }
 }
 
-void Octree::Transform(const Eigen::Matrix4d& transformation) {
+Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     throw std::runtime_error("Not implemented");
+    return *this;
+}
+
+Octree& Octree::Translate(const Eigen::Vector3d& translation) {
+    throw std::runtime_error("Not implemented");
+    return *this;
+}
+
+Octree& Octree::Scale(const double scale) {
+    throw std::runtime_error("Not implemented");
+    return *this;
+}
+
+Octree& Octree::Rotate(const Eigen::Vector3d& rotation, RotationType type) {
+    throw std::runtime_error("Not implemented");
+    return *this;
 }
 
 void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,

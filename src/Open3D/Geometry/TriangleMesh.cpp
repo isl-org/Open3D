@@ -25,9 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/IntersectionTest.h"
+#include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 
 #include <Eigen/Dense>
+#include <queue>
 #include <random>
 #include <tuple>
 
@@ -91,7 +94,7 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const {
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
+TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
     for (auto &vertex : vertices_) {
         Eigen::Vector4d new_point =
                 transformation *
@@ -112,6 +115,36 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
                                                  triangle_normal(2), 0.0);
         triangle_normal = new_normal.block<3, 1>(0, 0);
     }
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation) {
+    for (auto &vertex : vertices_) {
+        vertex += translation;
+    }
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Scale(const double scale) {
+    for (auto &vertex : vertices_) {
+        vertex *= scale;
+    }
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
+                                   RotationType type) {
+    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
+    for (auto &vertex : vertices_) {
+        vertex = R * vertex;
+    }
+    for (auto &normal : vertex_normals_) {
+        normal = R * normal;
+    }
+    for (auto &normal : triangle_normals_) {
+        normal = R * normal;
+    }
+    return *this;
 }
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
@@ -213,21 +246,11 @@ void TriangleMesh::Purge() {
     RemoveNonManifoldVertices();
 }
 
-std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
-                                                  size_t number_of_points) {
-    if (number_of_points == 0 || input.triangles_.size() == 0) {
-        return std::make_shared<PointCloud>();
-    }
-
-    // Compute area of each triangle and sum surface area
-    std::vector<double> triangle_areas(input.triangles_.size());
-    double surface_area = 0;
-    for (size_t tidx = 0; tidx < input.triangles_.size(); ++tidx) {
-        double triangle_area = input.GetTriangleArea(tidx);
-        triangle_areas[tidx] = triangle_area;
-        surface_area += triangle_area;
-    }
-
+std::shared_ptr<PointCloud> SamplePointsUniformly(
+        const TriangleMesh &input,
+        size_t number_of_points,
+        std::vector<double> &triangle_areas,
+        double surface_area) {
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < input.triangles_.size(); ++tidx) {
@@ -468,6 +491,176 @@ void TriangleMesh::FilterSmoothTaubin(int number_of_iterations,
     }
 }
 
+std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
+                                                  size_t number_of_points) {
+    if (number_of_points <= 0) {
+        utility::PrintWarning("[SamplePointsUniformly] number_of_points <= 0");
+        return std::make_shared<PointCloud>();
+    }
+    if (input.triangles_.size() == 0) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] input mesh has no triangles");
+        return std::make_shared<PointCloud>();
+    }
+
+    // Compute area of each triangle and sum surface area
+    std::vector<double> triangle_areas;
+    double surface_area = input.GetSurfaceArea(triangle_areas);
+
+    return SamplePointsUniformly(input, number_of_points, triangle_areas,
+                                 surface_area);
+}
+
+std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
+        const TriangleMesh &input,
+        size_t number_of_points,
+        double init_factor /* = 5 */,
+        const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) {
+    if (number_of_points <= 0) {
+        utility::PrintWarning("[SamplePointsUniformly] number_of_points <= 0");
+        return std::make_shared<PointCloud>();
+    }
+    if (input.triangles_.size() == 0) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] input mesh has no triangles");
+        return std::make_shared<PointCloud>();
+    }
+    if (pcl_init == nullptr && init_factor < 1) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] either pass pcl_init with #points "
+                "> "
+                "number_of_points or init_factor > 1");
+        return std::make_shared<PointCloud>();
+    }
+    if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
+        utility::PrintWarning(
+                "[SamplePointsUniformly] either pass pcl_init with #points "
+                "> "
+                "number_of_points, or init_factor > 1");
+        return std::make_shared<PointCloud>();
+    }
+
+    // Compute area of each triangle and sum surface area
+    std::vector<double> triangle_areas;
+    double surface_area = input.GetSurfaceArea(triangle_areas);
+
+    // Compute init points using uniform sampling
+    std::shared_ptr<PointCloud> pcl;
+    if (pcl_init == nullptr) {
+        pcl = SamplePointsUniformly(input, init_factor * number_of_points,
+                                    triangle_areas, surface_area);
+    } else {
+        pcl = std::make_shared<PointCloud>();
+        pcl->points_ = pcl_init->points_;
+        pcl->normals_ = pcl_init->normals_;
+        pcl->colors_ = pcl_init->colors_;
+    }
+
+    // Set-up sample elimination
+    double alpha = 8;    // constant defined in paper
+    double beta = 0.5;   // constant defined in paper
+    double gamma = 1.5;  // constant defined in paper
+    double ratio = double(number_of_points) / double(pcl->points_.size());
+    double r_max = 2 * std::sqrt((surface_area / number_of_points) /
+                                 (2 * std::sqrt(3.)));
+    double r_min = r_max * beta * (1 - std::pow(ratio, gamma));
+
+    std::vector<double> weights(pcl->points_.size());
+    std::vector<bool> deleted(pcl->points_.size(), false);
+    KDTreeFlann kdtree(*pcl);
+
+    auto WeightFcn = [&](double d2) {
+        double d = std::sqrt(d2);
+        if (d < r_min) {
+            d = r_min;
+        }
+        return std::pow(1 - d / r_max, alpha);
+    };
+
+    auto ComputePointWeight = [&](int pidx0) {
+        std::vector<int> nbs;
+        std::vector<double> dists2;
+        kdtree.SearchRadius(pcl->points_[pidx0], r_max, nbs, dists2);
+        double weight = 0;
+        for (size_t nbidx = 0; nbidx < nbs.size(); ++nbidx) {
+            int pidx1 = nbs[nbidx];
+            // only count weights if not the same point if not deleted
+            if (pidx0 == pidx1 || deleted[pidx1]) {
+                continue;
+            }
+            weight += WeightFcn(dists2[nbidx]);
+        }
+
+        weights[pidx0] = weight;
+    };
+
+    // init weights and priority queue
+    typedef std::tuple<int, double> QueueEntry;
+    auto WeightCmp = [](const QueueEntry &a, const QueueEntry &b) {
+        return std::get<1>(a) < std::get<1>(b);
+    };
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>,
+                        decltype(WeightCmp)>
+            queue(WeightCmp);
+    for (size_t pidx0 = 0; pidx0 < pcl->points_.size(); ++pidx0) {
+        ComputePointWeight(pidx0);
+        queue.push(QueueEntry(pidx0, weights[pidx0]));
+    };
+
+    // sample elimination
+    int current_number_of_points = pcl->points_.size();
+    while (current_number_of_points > number_of_points) {
+        int pidx;
+        double weight;
+        std::tie(pidx, weight) = queue.top();
+        queue.pop();
+
+        // test if the entry is up to date (because of reinsert)
+        if (deleted[pidx] || weight != weights[pidx]) {
+            continue;
+        }
+
+        // delete current sample
+        deleted[pidx] = true;
+        current_number_of_points--;
+
+        // update weights
+        std::vector<int> nbs;
+        std::vector<double> dists2;
+        kdtree.SearchRadius(pcl->points_[pidx], r_max, nbs, dists2);
+        for (int nb : nbs) {
+            ComputePointWeight(nb);
+            queue.push(QueueEntry(nb, weights[nb]));
+        }
+    }
+
+    // update pcl
+    bool has_vert_normal = pcl->HasNormals();
+    bool has_vert_color = pcl->HasColors();
+    int next_free = 0;
+    for (size_t idx = 0; idx < pcl->points_.size(); ++idx) {
+        if (!deleted[idx]) {
+            pcl->points_[next_free] = pcl->points_[idx];
+            if (has_vert_normal) {
+                pcl->normals_[next_free] = pcl->normals_[idx];
+            }
+            if (has_vert_color) {
+                pcl->colors_[next_free] = pcl->colors_[idx];
+            }
+            next_free++;
+        }
+    }
+    pcl->points_.resize(next_free);
+    if (has_vert_normal) {
+        pcl->normals_.resize(next_free);
+    }
+    if (has_vert_color) {
+        pcl->colors_.resize(next_free);
+    }
+
+    return pcl;
+}
+
 void TriangleMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t,
@@ -519,8 +712,8 @@ void TriangleMesh::RemoveDuplicatedTriangles() {
     size_t k = 0;
     for (size_t i = 0; i < old_triangle_num; i++) {
         Index3 index;
-        // We first need to find the minimum index. Because triangle (0-1-2) and
-        // triangle (2-0-1) are the same.
+        // We first need to find the minimum index. Because triangle (0-1-2)
+        // and triangle (2-0-1) are the same.
         if (triangles_[i](0) <= triangles_[i](1)) {
             if (triangles_[i](0) <= triangles_[i](2)) {
                 index = std::make_tuple(triangles_[i](0), triangles_[i](1),
@@ -599,8 +792,8 @@ void TriangleMesh::RemoveNonManifoldVertices() {
 }
 
 void TriangleMesh::RemoveNonManifoldTriangles() {
-    // Non-manifold triangles are degenerate triangles that have one vertex as
-    // its multiple end-points. They are usually the product of removing
+    // Non-manifold triangles are degenerate triangles that have one vertex
+    // as its multiple end-points. They are usually the product of removing
     // duplicated vertices.
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
@@ -620,7 +813,8 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
         ComputeAdjacencyList();
     }
     utility::PrintDebug(
-            "[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
+            "[RemoveNonManifoldTriangles] %d triangles have been "
+            "removed.\n",
             (int)(old_triangle_num - k));
 }
 
@@ -663,6 +857,26 @@ double TriangleMesh::GetTriangleArea(size_t triangle_idx) const {
     return ComputeTriangleArea(vertex0, vertex1, vertex2);
 }
 
+double TriangleMesh::GetSurfaceArea() const {
+    double surface_area = 0;
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        double triangle_area = GetTriangleArea(tidx);
+        surface_area += triangle_area;
+    }
+    return surface_area;
+}
+
+double TriangleMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
+    double surface_area = 0;
+    triangle_areas.resize(triangles_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        double triangle_area = GetTriangleArea(tidx);
+        triangle_areas[tidx] = triangle_area;
+        surface_area += triangle_area;
+    }
+    return surface_area;
+}
+
 Eigen::Vector4d ComputeTrianglePlane(const Eigen::Vector3d &p0,
                                      const Eigen::Vector3d &p1,
                                      const Eigen::Vector3d &p2) {
@@ -685,6 +899,154 @@ Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
     return ComputeTrianglePlane(vertex0, vertex1, vertex2);
+}
+
+int TriangleMesh::EulerPoincareCharacteristic() const {
+    std::unordered_set<Edge, utility::hash_tuple::hash<Edge>> edges;
+    for (auto triangle : triangles_) {
+        int min0 = std::min(triangle(0), triangle(1));
+        int max0 = std::max(triangle(0), triangle(1));
+        edges.emplace(Edge(min0, max0));
+
+        int min1 = std::min(triangle(0), triangle(2));
+        int max1 = std::max(triangle(0), triangle(2));
+        edges.emplace(Edge(min1, max1));
+
+        int min2 = std::min(triangle(1), triangle(2));
+        int max2 = std::max(triangle(1), triangle(2));
+        edges.emplace(Edge(min2, max2));
+    }
+
+    int E = edges.size();
+    int V = vertices_.size();
+    int F = triangles_.size();
+    return V + F - E;
+}
+
+bool TriangleMesh::IsEdgeManifold(
+        bool allow_boundary_edges /* = true */) const {
+    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>> edges;
+    for (auto triangle : triangles_) {
+        int min0 = std::min(triangle(0), triangle(1));
+        int max0 = std::max(triangle(0), triangle(1));
+        Edge e0(min0, max0);
+        if (edges.count(e0) == 0) {
+            edges[e0] = 1;
+        } else {
+            edges[e0] += 1;
+        }
+
+        int min1 = std::min(triangle(0), triangle(2));
+        int max1 = std::max(triangle(0), triangle(2));
+        Edge e1(min1, max1);
+        if (edges.count(e1) == 0) {
+            edges[e1] = 1;
+        } else {
+            edges[e1] += 1;
+        }
+
+        int min2 = std::min(triangle(1), triangle(2));
+        int max2 = std::max(triangle(1), triangle(2));
+        Edge e2(min2, max2);
+        if (edges.count(e2) == 0) {
+            edges[e2] = 1;
+        } else {
+            edges[e2] += 1;
+        }
+    }
+
+    for (auto &kv : edges) {
+        if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
+            (!allow_boundary_edges && kv.second != 2)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TriangleMesh::IsVertexManifold() const {
+    std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto &tria = triangles_[tidx];
+        vert_to_triangles[tria(0)].emplace(tidx);
+        vert_to_triangles[tria(1)].emplace(tidx);
+        vert_to_triangles[tria(2)].emplace(tidx);
+    }
+
+    for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+        const auto &triangles = vert_to_triangles[vidx];
+        if (triangles.size() == 0) {
+            continue;
+        }
+
+        // collect edges and vertices
+        std::unordered_map<int, std::unordered_set<int>> edges;
+        for (int tidx : triangles) {
+            const auto &triangle = triangles_[tidx];
+            if (triangle(0) != vidx && triangle(1) != vidx) {
+                edges[triangle(0)].emplace(triangle(1));
+                edges[triangle(1)].emplace(triangle(0));
+            } else if (triangle(0) != vidx && triangle(2) != vidx) {
+                edges[triangle(0)].emplace(triangle(2));
+                edges[triangle(2)].emplace(triangle(0));
+            } else if (triangle(1) != vidx && triangle(2) != vidx) {
+                edges[triangle(1)].emplace(triangle(2));
+                edges[triangle(2)].emplace(triangle(1));
+            }
+        }
+
+        // test if vertices are connected
+        std::queue<int> next;
+        std::unordered_set<int> visited;
+        next.push(edges.begin()->first);
+        visited.emplace(edges.begin()->first);
+        while (!next.empty()) {
+            int vert = next.front();
+            next.pop();
+
+            for (auto nb : edges[vert]) {
+                if (visited.count(nb) == 0) {
+                    visited.emplace(nb);
+                    next.emplace(nb);
+                }
+            }
+        }
+        if (visited.size() != edges.size()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TriangleMesh::IsSelfIntersecting() const {
+    for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
+        const Eigen::Vector3i &tria0 = triangles_[tidx0];
+        const Eigen::Vector3d &p0 = vertices_[tria0(0)];
+        const Eigen::Vector3d &p1 = vertices_[tria0(1)];
+        const Eigen::Vector3d &p2 = vertices_[tria0(2)];
+        for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
+            const Eigen::Vector3i &tria1 = triangles_[tidx1];
+            // check if neighbour triangle
+            if (tria0(0) == tria1(0) || tria0(0) == tria1(1) ||
+                tria0(0) == tria1(2) || tria0(1) == tria1(0) ||
+                tria0(1) == tria1(1) || tria0(1) == tria1(2) ||
+                tria0(2) == tria1(0) || tria0(2) == tria1(1) ||
+                tria0(2) == tria1(2)) {
+                continue;
+            }
+
+            // check for intersection
+            const Eigen::Vector3d &q0 = vertices_[tria1(0)];
+            const Eigen::Vector3d &q1 = vertices_[tria1(1)];
+            const Eigen::Vector3d &q2 = vertices_[tria1(2)];
+            if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 }  // namespace geometry
