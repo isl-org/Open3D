@@ -196,6 +196,12 @@ std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
 std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh &input,
                                                 int number_of_iterations);
 
+/// Function to subdivide triangle mesh using Loop's scheme.
+/// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles", 1987.
+/// Each triangle is subdivided into four triangles per iteration.
+std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh &input,
+                                            int number_of_iterations);
+
 /// Function to simplify mesh using Vertex Clustering.
 /// The result can be a non-manifold mesh.
 std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
@@ -222,6 +228,21 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
         const TriangleMesh &input,
         const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound);
+
+/// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshTetrahedron(double radius = 1.0);
+
+/// Factory function to create a octahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshOctahedron(double radius = 1.0);
+
+/// Factory function to create a icosahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshIcosahedron(double radius = 1.0);
 
 /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
 /// The left bottom corner on the front will be placed at (0, 0, 0).
