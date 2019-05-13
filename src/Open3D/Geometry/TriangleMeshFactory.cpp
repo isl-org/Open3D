@@ -260,6 +260,50 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius /* = 1.0*/,
     return mesh_ptr;
 }
 
+std::shared_ptr<TriangleMesh> CreateMeshTorus(
+        double torus_radius /* = 1.0 */,
+        double tube_radius /* = 0.5 */,
+        int radial_resolution /* = 20 */,
+        int tubular_resolution /* = 20 */) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    if (torus_radius <= 0 || tube_radius >= torus_radius ||
+        radial_resolution <= 0 || tubular_resolution <= 0) {
+        return mesh;
+    }
+
+    mesh->vertices_.resize(radial_resolution * tubular_resolution);
+    mesh->triangles_.resize(2 * radial_resolution * tubular_resolution);
+    auto vert_idx = [&](int uidx, int vidx) {
+        return uidx * tubular_resolution + vidx;
+    };
+    double u_step = 2 * M_PI / double(radial_resolution);
+    double v_step = 2 * M_PI / double(tubular_resolution);
+    for (int uidx = 0; uidx < radial_resolution; ++uidx) {
+        double u = uidx * u_step;
+        Eigen::Vector3d w(cos(u), sin(u), 0);
+        for (int vidx = 0; vidx < tubular_resolution; ++vidx) {
+            double v = vidx * v_step;
+            mesh->vertices_[vert_idx(uidx, vidx)] =
+                    torus_radius * w + tube_radius * cos(v) * w +
+                    Eigen::Vector3d(0, 0, tube_radius * sin(v));
+
+            int tri_idx = (uidx * tubular_resolution + vidx) * 2;
+            mesh->triangles_[tri_idx + 0] = Eigen::Vector3i(
+                    vert_idx((uidx + 1) % radial_resolution, vidx),
+                    vert_idx((uidx + 1) % radial_resolution,
+                             (vidx + 1) % tubular_resolution),
+                    vert_idx(uidx, vidx));
+            mesh->triangles_[tri_idx + 1] = Eigen::Vector3i(
+                    vert_idx(uidx, vidx),
+                    vert_idx((uidx + 1) % radial_resolution,
+                             (vidx + 1) % tubular_resolution),
+                    vert_idx(uidx, (vidx + 1) % tubular_resolution));
+        }
+    }
+
+    return mesh;
+}
+
 std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius /* = 1.0*/,
                                               double cone_radius /* = 1.5*/,
                                               double cylinder_height /* = 5.0*/,

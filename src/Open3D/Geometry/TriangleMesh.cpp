@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/IntersectionTest.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 
@@ -710,6 +711,154 @@ Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
     return ComputeTrianglePlane(vertex0, vertex1, vertex2);
+}
+
+int TriangleMesh::EulerPoincareCharacteristic() const {
+    std::unordered_set<Edge, utility::hash_tuple::hash<Edge>> edges;
+    for (auto triangle : triangles_) {
+        int min0 = std::min(triangle(0), triangle(1));
+        int max0 = std::max(triangle(0), triangle(1));
+        edges.emplace(Edge(min0, max0));
+
+        int min1 = std::min(triangle(0), triangle(2));
+        int max1 = std::max(triangle(0), triangle(2));
+        edges.emplace(Edge(min1, max1));
+
+        int min2 = std::min(triangle(1), triangle(2));
+        int max2 = std::max(triangle(1), triangle(2));
+        edges.emplace(Edge(min2, max2));
+    }
+
+    int E = edges.size();
+    int V = vertices_.size();
+    int F = triangles_.size();
+    return V + F - E;
+}
+
+bool TriangleMesh::IsEdgeManifold(
+        bool allow_boundary_edges /* = true */) const {
+    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>> edges;
+    for (auto triangle : triangles_) {
+        int min0 = std::min(triangle(0), triangle(1));
+        int max0 = std::max(triangle(0), triangle(1));
+        Edge e0(min0, max0);
+        if (edges.count(e0) == 0) {
+            edges[e0] = 1;
+        } else {
+            edges[e0] += 1;
+        }
+
+        int min1 = std::min(triangle(0), triangle(2));
+        int max1 = std::max(triangle(0), triangle(2));
+        Edge e1(min1, max1);
+        if (edges.count(e1) == 0) {
+            edges[e1] = 1;
+        } else {
+            edges[e1] += 1;
+        }
+
+        int min2 = std::min(triangle(1), triangle(2));
+        int max2 = std::max(triangle(1), triangle(2));
+        Edge e2(min2, max2);
+        if (edges.count(e2) == 0) {
+            edges[e2] = 1;
+        } else {
+            edges[e2] += 1;
+        }
+    }
+
+    for (auto &kv : edges) {
+        if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
+            (!allow_boundary_edges && kv.second != 2)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TriangleMesh::IsVertexManifold() const {
+    std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto &tria = triangles_[tidx];
+        vert_to_triangles[tria(0)].emplace(tidx);
+        vert_to_triangles[tria(1)].emplace(tidx);
+        vert_to_triangles[tria(2)].emplace(tidx);
+    }
+
+    for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+        const auto &triangles = vert_to_triangles[vidx];
+        if (triangles.size() == 0) {
+            continue;
+        }
+
+        // collect edges and vertices
+        std::unordered_map<int, std::unordered_set<int>> edges;
+        for (int tidx : triangles) {
+            const auto &triangle = triangles_[tidx];
+            if (triangle(0) != vidx && triangle(1) != vidx) {
+                edges[triangle(0)].emplace(triangle(1));
+                edges[triangle(1)].emplace(triangle(0));
+            } else if (triangle(0) != vidx && triangle(2) != vidx) {
+                edges[triangle(0)].emplace(triangle(2));
+                edges[triangle(2)].emplace(triangle(0));
+            } else if (triangle(1) != vidx && triangle(2) != vidx) {
+                edges[triangle(1)].emplace(triangle(2));
+                edges[triangle(2)].emplace(triangle(1));
+            }
+        }
+
+        // test if vertices are connected
+        std::queue<int> next;
+        std::unordered_set<int> visited;
+        next.push(edges.begin()->first);
+        visited.emplace(edges.begin()->first);
+        while (!next.empty()) {
+            int vert = next.front();
+            next.pop();
+
+            for (auto nb : edges[vert]) {
+                if (visited.count(nb) == 0) {
+                    visited.emplace(nb);
+                    next.emplace(nb);
+                }
+            }
+        }
+        if (visited.size() != edges.size()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TriangleMesh::IsSelfIntersecting() const {
+    for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
+        const Eigen::Vector3i &tria0 = triangles_[tidx0];
+        const Eigen::Vector3d &p0 = vertices_[tria0(0)];
+        const Eigen::Vector3d &p1 = vertices_[tria0(1)];
+        const Eigen::Vector3d &p2 = vertices_[tria0(2)];
+        for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
+            const Eigen::Vector3i &tria1 = triangles_[tidx1];
+            // check if neighbour triangle
+            if (tria0(0) == tria1(0) || tria0(0) == tria1(1) ||
+                tria0(0) == tria1(2) || tria0(1) == tria1(0) ||
+                tria0(1) == tria1(1) || tria0(1) == tria1(2) ||
+                tria0(2) == tria1(0) || tria0(2) == tria1(1) ||
+                tria0(2) == tria1(2)) {
+                continue;
+            }
+
+            // check for intersection
+            const Eigen::Vector3d &q0 = vertices_[tria1(0)];
+            const Eigen::Vector3d &q1 = vertices_[tria1(1)];
+            const Eigen::Vector3d &q2 = vertices_[tria1(2)];
+            if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 }  // namespace geometry
