@@ -34,3 +34,19 @@ class PyOctreeNode : public OctreeNodeBase {
 public:
     using OctreeNodeBase::OctreeNodeBase;
 };
+
+// Trampoline classes for octree datastructures
+template <class OctreeLeafNodeBase = geometry::OctreeLeafNode>
+class PyOctreeLeafNode : public PyOctreeNode<OctreeLeafNodeBase> {
+public:
+    using PyOctreeNode<OctreeLeafNodeBase>::PyOctreeNode;
+
+    bool operator==(const geometry::OctreeLeafNode& other) const override {
+        PYBIND11_OVERLOAD_PURE(bool, OctreeLeafNodeBase, other);
+    };
+
+    std::shared_ptr<geometry::OctreeLeafNode> Clone() const override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::OctreeLeafNode>,
+                               OctreeLeafNodeBase, );
+    };
+};

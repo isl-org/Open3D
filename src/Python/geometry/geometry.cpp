@@ -72,6 +72,16 @@ void pybind_geometry_classes(py::module &m) {
             .export_values();
 
     // open3d.geometry.Geometry3D
+    py::enum_<geometry::Geometry3D::RotationType>(m, "RotationType")
+            .value("XYZ", geometry::Geometry3D::RotationType::XYZ)
+            .value("YZX", geometry::Geometry3D::RotationType::YZX)
+            .value("ZXY", geometry::Geometry3D::RotationType::ZXY)
+            .value("XZY", geometry::Geometry3D::RotationType::XZY)
+            .value("ZYX", geometry::Geometry3D::RotationType::ZYX)
+            .value("YXZ", geometry::Geometry3D::RotationType::YXZ)
+            .value("AxisAngle", geometry::Geometry3D::RotationType::AxisAngle)
+            .export_values();
+
     py::class_<geometry::Geometry3D, PyGeometry3D<geometry::Geometry3D>,
                std::shared_ptr<geometry::Geometry3D>, geometry::Geometry>
             geometry3d(m, "Geometry3D",
@@ -83,10 +93,29 @@ void pybind_geometry_classes(py::module &m) {
                  "Returns max bounds for geometry coordinates.")
             .def("transform", &geometry::Geometry3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
-                 "coordinates.");
+                 "coordinates.")
+            .def("translate", &geometry::Geometry3D::Translate,
+                 "Apply translation to the geometry coordinates.")
+            .def("scale", &geometry::Geometry3D::Scale,
+                 "Apply scaling to the geometry coordinates.")
+            .def("rotate", &geometry::Geometry3D::Rotate,
+                 "Apply rotation to the geometry coordinates and normals.",
+                 "rotation"_a,
+                 "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "transform");
+    docstring::ClassMethodDocInject(m, "Geometry3D", "translate");
+    docstring::ClassMethodDocInject(
+            m, "Geometry3D", "rotate",
+            {{"rotation",
+              "A 3D vector that either defines the three angles for "
+              "Euler rotation, or in the axis-angle representation "
+              "the normalized vector defines the axis of rotation and "
+              "the norm the angle around this axis."},
+             {"type",
+              "Type of rotation, i.e., an Euler format, or "
+              "axis-angle."}});
 
     // open3d.geometry.Geometry2D
     py::class_<geometry::Geometry2D, PyGeometry2D<geometry::Geometry2D>,
