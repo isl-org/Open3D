@@ -171,12 +171,21 @@ public:
     /// Tests each triangle pair for intersection.
     bool IsSelfIntersecting() const;
 
-    bool IsIntersecting(const TriangleMesh& other) const;
+    /// Function that test if the bounding boxes of the triangle meshes are
+    /// intersecting.
+    bool IsBoundingBoxIntersecting(const TriangleMesh &other) const;
 
-    /// TODO: add documentation
+    /// Function that tests if the triangle mesh intersects another triangle
+    /// mesh. Tests each triangle against each other triangle.
+    bool IsIntersecting(const TriangleMesh &other) const;
+
+    /// Function that tests if the given triangle mesh is orientable, i.e.
+    /// the triangles can oriented in such a way that all normals point
+    /// towards the outside.
     bool IsOrientable() const;
 
-    /// TODO: add documentation
+    /// If the mesh is orientable then this functions re-arranges the triangles
+    /// such that all normals point towards the outside/inside.
     bool OrientTriangles();
 
     /// Function that counts the number of faces an edge belongs.
@@ -369,7 +378,7 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split = 70,
                                                 double radius = 1,
                                                 double flatness = 1,
                                                 double width = 1,
-                                                double scale = 10);
+                                                double scale = 1);
 
 }  // namespace geometry
 }  // namespace open3d

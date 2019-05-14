@@ -31,6 +31,22 @@
 namespace open3d {
 namespace geometry {
 
+bool IntersectingAABBAABB(const Eigen::Vector3d& min0,
+                          const Eigen::Vector3d& max0,
+                          const Eigen::Vector3d& min1,
+                          const Eigen::Vector3d& max1) {
+    if (max0(0) < min1(0) || min0(0) > max1(0)) {
+        return false;
+    }
+    if (max0(1) < min1(1) || min0(1) > max1(1)) {
+        return false;
+    }
+    if (max0(2) < min1(2) || min0(2) > max1(2)) {
+        return false;
+    }
+    return true;
+}
+
 bool IntersectingTriangleTriangle3d(const Eigen::Vector3d& p0,
                                     const Eigen::Vector3d& p1,
                                     const Eigen::Vector3d& p2,

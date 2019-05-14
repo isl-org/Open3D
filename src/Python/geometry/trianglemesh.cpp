@@ -134,6 +134,15 @@ void pybind_trianglemesh(py::module &m) {
             .def("is_self_intersecting",
                  &geometry::TriangleMesh::IsSelfIntersecting,
                  "Tests the triangle mesh is self-intersecting")
+            .def("is_intersecting", &geometry::TriangleMesh::IsIntersecting,
+                 "Tests the triangle mesh is intersecting the other triangle "
+                 "mesh")
+            .def("is_orientable", &geometry::TriangleMesh::IsOrientable,
+                 "Tests the triangle mesh is orientable")
+            .def("orient_triangles", &geometry::TriangleMesh::OrientTriangles,
+                 "If the mesh is orientable this function orients all "
+                 "triangles such that all normals point towards the same "
+                 "direction")
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -187,6 +196,9 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_edge_manifold");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_self_intersecting");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_intersecting");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_orientable");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "orient_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_sharpen");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_simple");
@@ -411,15 +423,18 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"origin", "The origin of the cooridnate frame."}});
 
     m.def("create_mesh_moebius", &geometry::CreateMeshMoebius,
-          "TODO",
-          "length_split"_a = 70, "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1, "width"_a = 1, "scale"_a = 10);
+          "Factory function to create a Moebius strip.", "length_split"_a = 70,
+          "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
+          "flatness"_a = 1, "width"_a = 1, "scale"_a = 1);
     docstring::FunctionDocInject(
             m, "create_mesh_moebius",
-            {{"length_split", "TODO."},
-             {"width_split", "TODO."},
-             {"twists", "TODO."},
-             {"radius", "TODO."},
-             {"flatness", "TODO."},
-             {"width", "TODO."},
-             {"scale", "TODO."}});
+            {{"length_split",
+              "The number of segments along the Moebius strip."},
+             {"width_split",
+              "The number of segments along the width of the Moebius strip."},
+             {"twists", "Number of twists of the Moebius strip."},
+             {"radius", "The radius of the Moebius strip."},
+             {"flatness", "Controls the flatness/height of the Moebius strip."},
+             {"width", "Width of the Moebius strip."},
+             {"scale", "Scale the complete Moebius strip."}});
 }

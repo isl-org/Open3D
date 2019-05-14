@@ -819,25 +819,62 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
 }
 
 template <typename F>
-bool OrientTriangleHelper(const std::vector<Eigen::Vector3i>& triangles, F& swap) {
-    std::unordered_map<Edge, Edge, utility::hash_tuple::hash<Edge>> edge_to_orientation;
+bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
+                          F &swap) {
+    std::unordered_map<Edge, Edge, utility::hash_tuple::hash<Edge>>
+            edge_to_orientation;
+    std::unordered_set<int> unvisited_triangles;
+    std::unordered_map<Edge, std::unordered_set<int>,
+                       utility::hash_tuple::hash<Edge>>
+            adjacent_triangles;
+    std::queue<int> triangle_queue;
+
     auto CreateEdge = [](int vidx0, int vidx1) {
-        return Edge(std::min(vidx0, vidx1), std::min(vidx0, vidx1));
+        return Edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
     };
     auto VerifyAndAdd = [&](int vidx0, int vidx1) {
         Edge key = CreateEdge(vidx0, vidx1);
-        if(edge_to_orientation.count(key) > 0) {
-            if(std::get<0>(edge_to_orientation.at(key)) == vidx0) {
+        if (edge_to_orientation.count(key) > 0) {
+            if (std::get<0>(edge_to_orientation.at(key)) == vidx0) {
                 return false;
             }
-        }
-        else {
-           edge_to_orientation[key] = Edge(vidx0, vidx1);
+        } else {
+            edge_to_orientation[key] = Edge(vidx0, vidx1);
         }
         return true;
     };
-    for(size_t tidx = 0; tidx < triangles.size(); ++tidx) {
-        const auto& triangle = triangles[tidx];
+    auto AddTriangleNbsToQueue = [&](const Edge &edge) {
+        for (int nb_tidx : adjacent_triangles[edge]) {
+            triangle_queue.push(nb_tidx);
+        }
+    };
+
+    for (size_t tidx = 0; tidx < triangles.size(); ++tidx) {
+        unvisited_triangles.insert(tidx);
+        const auto &triangle = triangles[tidx];
+        int vidx0 = triangle(0);
+        int vidx1 = triangle(1);
+        int vidx2 = triangle(2);
+        adjacent_triangles[CreateEdge(vidx0, vidx1)].insert(tidx);
+        adjacent_triangles[CreateEdge(vidx1, vidx2)].insert(tidx);
+        adjacent_triangles[CreateEdge(vidx2, vidx0)].insert(tidx);
+    }
+
+    while (!unvisited_triangles.empty()) {
+        int tidx;
+        if (triangle_queue.empty()) {
+            tidx = *unvisited_triangles.begin();
+        } else {
+            tidx = triangle_queue.front();
+            triangle_queue.pop();
+        }
+        if (unvisited_triangles.count(tidx) > 0) {
+            unvisited_triangles.erase(tidx);
+        } else {
+            continue;
+        }
+
+        const auto &triangle = triangles[tidx];
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
@@ -848,45 +885,49 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i>& triangles, F& swap
         bool exist12 = edge_to_orientation.count(key12) > 0;
         bool exist20 = edge_to_orientation.count(key20) > 0;
 
-        if(!(exist01 || exist12 || exist20)) {
+        if (!(exist01 || exist12 || exist20)) {
             edge_to_orientation[key01] = Edge(vidx0, vidx1);
             edge_to_orientation[key12] = Edge(vidx1, vidx2);
             edge_to_orientation[key20] = Edge(vidx2, vidx0);
-        }
-        else {
+        } else {
             // one flip is allowed
-            if(exist01 && std::get<0>(edge_to_orientation.at(key01)) == vidx0) {
+            if (exist01 &&
+                std::get<0>(edge_to_orientation.at(key01)) == vidx0) {
                 std::swap(vidx0, vidx1);
                 swap(tidx, 0, 1);
-            }
-            else if(exist12 && std::get<0>(edge_to_orientation.at(key12)) == vidx1) {
+            } else if (exist12 &&
+                       std::get<0>(edge_to_orientation.at(key12)) == vidx1) {
                 std::swap(vidx1, vidx2);
                 swap(tidx, 1, 2);
-            }
-            else if(exist20 && std::get<0>(edge_to_orientation.at(key20)) == vidx2) {
+            } else if (exist20 &&
+                       std::get<0>(edge_to_orientation.at(key20)) == vidx2) {
                 std::swap(vidx2, vidx0);
                 swap(tidx, 2, 0);
             }
 
             // check if each edge looks in different direction compared to
             // existing ones if not existend, add the edge to map
-            if(!VerifyAndAdd(vidx0, vidx1)) {
+            if (!VerifyAndAdd(vidx0, vidx1)) {
                 return false;
             }
-            if(!VerifyAndAdd(vidx1, vidx2)) {
+            if (!VerifyAndAdd(vidx1, vidx2)) {
                 return false;
             }
-            if(!VerifyAndAdd(vidx2, vidx0)) {
+            if (!VerifyAndAdd(vidx2, vidx0)) {
                 return false;
             }
         }
+
+        AddTriangleNbsToQueue(key01);
+        AddTriangleNbsToQueue(key12);
+        AddTriangleNbsToQueue(key20);
     }
     return true;
 }
 
 bool TriangleMesh::IsOrientable() const {
-    auto swap = [](int, int, int) {};
-    return OrientTriangleHelper(triangles_, swap);
+    auto no_op = [](int, int, int) {};
+    return OrientTriangleHelper(triangles_, no_op);
 }
 
 bool TriangleMesh::OrientTriangles() {
@@ -895,7 +936,6 @@ bool TriangleMesh::OrientTriangles() {
     };
     return OrientTriangleHelper(triangles_, swap);
 }
-
 
 std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
 TriangleMesh::GetEdgeTriangleCount() const {
@@ -1128,17 +1168,25 @@ bool TriangleMesh::IsSelfIntersecting() const {
     return false;
 }
 
-bool TriangleMesh::IsIntersecting(const TriangleMesh& other) const {
+bool TriangleMesh::IsBoundingBoxIntersecting(const TriangleMesh &other) const {
+    return IntersectingAABBAABB(GetMinBound(), GetMaxBound(),
+                                other.GetMinBound(), other.GetMaxBound());
+}
+
+bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
+    if (!IsBoundingBoxIntersecting(other)) {
+        return false;
+    }
     for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
         const Eigen::Vector3i &tria0 = triangles_[tidx0];
         const Eigen::Vector3d &p0 = vertices_[tria0(0)];
         const Eigen::Vector3d &p1 = vertices_[tria0(1)];
         const Eigen::Vector3d &p2 = vertices_[tria0(2)];
         for (size_t tidx1 = 0; tidx1 < other.triangles_.size(); ++tidx1) {
-            const Eigen::Vector3i &tria1 = triangles_[tidx1];
-            const Eigen::Vector3d &q0 = vertices_[tria1(0)];
-            const Eigen::Vector3d &q1 = vertices_[tria1(1)];
-            const Eigen::Vector3d &q2 = vertices_[tria1(2)];
+            const Eigen::Vector3i &tria1 = other.triangles_[tidx1];
+            const Eigen::Vector3d &q0 = other.vertices_[tria1(0)];
+            const Eigen::Vector3d &q1 = other.vertices_[tria1(1)];
+            const Eigen::Vector3d &q2 = other.vertices_[tria1(2)];
             if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 return true;
             }
