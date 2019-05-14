@@ -135,7 +135,11 @@ build, please see :ref:`compilation_options`.
 
 .. code-block:: bash
 
-    make -j
+    # On Ubuntu
+    make -j$(nproc)
+
+    # On macOS
+    make -j$(sysctl -n hw.physicalcpu)
 
 .. _compilation_ubuntu_install:
 

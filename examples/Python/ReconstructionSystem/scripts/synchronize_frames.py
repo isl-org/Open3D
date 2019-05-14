@@ -59,7 +59,11 @@ def run_synchronization(args):
         if args.debug_mode:
             print(temp_name)
             print(new_name)
-        os.rename(temp_name, new_name)
+        if not exists(temp_name):
+            assert(i+1 == len(color_files))
+            os.remove(color_files[-1])
+        else:
+            os.rename(temp_name, new_name)
     shutil.rmtree(os.path.join(folder_path, "temp"))
 
 if __name__ == '__main__':
