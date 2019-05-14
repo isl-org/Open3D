@@ -9,9 +9,8 @@ from open3d import *
 
 if __name__ == "__main__":
     print('start')
-    mesh = create_mesh_moebius()
-    print(mesh)
+    mesh = create_mesh_moebius(length_split=120, width=2, twists=1)
+    print(mesh.is_orientable())
     pcl = PointCloud()
     pcl.points = mesh.vertices
-    print(pcl)
     draw_geometries([mesh, pcl])

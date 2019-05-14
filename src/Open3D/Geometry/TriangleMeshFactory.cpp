@@ -372,7 +372,7 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
                                                 double radius /* = 1 */,
                                                 double flatness /* = 1 */,
                                                 double width /* = 1 */,
-                                                double scale /* = 10 */) {
+                                                double scale /* = 1 */) {
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->vertices_.resize(length_split * width_split);
 
@@ -384,7 +384,6 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
         double sin_u = std::sin(u);
         for (int vidx = 0; vidx < width_split; ++vidx) {
             int idx = uidx * width_split + vidx;
-            // printf("%d = %d * %d + %d (%d)\n", idx, uidx, width_split, vidx,
             // length_split);
             double v = -width / 2.0 + vidx * v_step;
             double alpha = twists * 0.5 * u;
@@ -411,8 +410,8 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
                                         (uidx + 1) * width_split + vidx + 1));
             } else {
                 mesh->triangles_.push_back(
-                        Eigen::Vector3i(uidx * width_split + vidx,
-                                        uidx * width_split + vidx + 1,
+                        Eigen::Vector3i(uidx * width_split + vidx + 1,
+                                        uidx * width_split + vidx,
                                         (uidx + 1) * width_split + vidx));
                 mesh->triangles_.push_back(
                         Eigen::Vector3i(uidx * width_split + vidx + 1,
@@ -427,11 +426,12 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
         if (twists % 2 == 1) {
             if ((uidx + vidx) % 2 == 0) {
                 mesh->triangles_.push_back(
-                        Eigen::Vector3i(uidx * width_split + vidx,
-                                        (width_split - 1) - (vidx + 1),
+                        Eigen::Vector3i(
+                             (width_split - 1) - (vidx + 1), uidx * width_split + vidx,
                                         uidx * width_split + vidx + 1));
                 mesh->triangles_.push_back(Eigen::Vector3i(
-                        uidx * width_split + vidx, (width_split - 1) - vidx,
+                        (width_split - 1) - vidx,
+                        uidx * width_split + vidx,
                         (width_split - 1) - (vidx + 1)));
             } else {
                 mesh->triangles_.push_back(
@@ -439,20 +439,23 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
                                         uidx * width_split + vidx + 1,
                                         (width_split - 1) - vidx));
                 mesh->triangles_.push_back(Eigen::Vector3i(
-                        uidx * width_split + vidx + 1, (width_split - 1) - vidx,
+                        (width_split - 1) - vidx,
+                        uidx * width_split + vidx + 1,
                         (width_split - 1) - (vidx + 1)));
             }
         } else {
             if ((uidx + vidx) % 2 == 0) {
                 mesh->triangles_.push_back(
-                        Eigen::Vector3i(uidx * width_split + vidx, vidx + 1,
+                        Eigen::Vector3i(
+                                        uidx * width_split + vidx,vidx + 1,
                                         uidx * width_split + vidx + 1));
                 mesh->triangles_.push_back(Eigen::Vector3i(
                         uidx * width_split + vidx, vidx, vidx + 1));
             } else {
                 mesh->triangles_.push_back(
                         Eigen::Vector3i(uidx * width_split + vidx,
-                                        uidx * width_split + vidx + 1, vidx));
+                                        vidx,
+                                        uidx * width_split + vidx + 1));
                 mesh->triangles_.push_back(Eigen::Vector3i(
                         uidx * width_split + vidx + 1, vidx, vidx + 1));
             }

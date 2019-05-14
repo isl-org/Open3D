@@ -412,7 +412,7 @@ void pybind_trianglemesh_methods(py::module &m) {
 
     m.def("create_mesh_moebius", &geometry::CreateMeshMoebius, "TODO",
           "length_split"_a = 70, "width_split"_a = 15, "twists"_a = 1,
-          "raidus"_a = 1, "flatness"_a = 1, "width"_a = 1, "scale"_a = 10);
+          "raidus"_a = 1, "flatness"_a = 1, "width"_a = 1, "scale"_a = 1);
     docstring::FunctionDocInject(m, "create_mesh_moebius",
                                  {{"length_split", "TODO."},
                                   {"width_split", "TODO."},

@@ -367,7 +367,7 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split = 70,
                                                 double radius = 1,
                                                 double flatness = 1,
                                                 double width = 1,
-                                                double scale = 10);
+                                                double scale = 1);
 
 }  // namespace geometry
 }  // namespace open3d
