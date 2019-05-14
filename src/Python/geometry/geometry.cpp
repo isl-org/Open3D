@@ -144,6 +144,7 @@ void pybind_geometry(py::module &m) {
     pybind_pointcloud_methods(m_submodule);
     pybind_voxelgrid_methods(m_submodule);
     pybind_trianglemesh_methods(m_submodule);
+    pybind_lineset_methods(m_submodule);
     pybind_image_methods(m_submodule);
     pybind_octree_methods(m_submodule);
     pybind_octree(m_submodule);

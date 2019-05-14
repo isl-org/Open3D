@@ -29,6 +29,7 @@
 #include <Eigen/Dense>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
+#include "Open3D/Geometry/Qhull.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -256,6 +257,11 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
         }
     }
     return nn_dis;
+}
+
+std::shared_ptr<TriangleMesh> ComputePointCloudConvexHull(
+        const PointCloud &input) {
+    return ComputeConvexHull(input.points_);
 }
 
 }  // namespace geometry

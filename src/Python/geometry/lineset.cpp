@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Geometry/PointCloud.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
@@ -56,6 +57,8 @@ void pybind_lineset(py::module &m) {
                  "colors.")
             .def("get_line_coordinate", &geometry::LineSet::GetLineCoordinate,
                  "line_index"_a)
+            .def("paint_uniform_color", &geometry::LineSet::PaintUniformColor,
+                 "Assign uniform color to all lines.")
             .def_readwrite("points", &geometry::LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -74,4 +77,24 @@ void pybind_lineset(py::module &m) {
     docstring::ClassMethodDocInject(m, "LineSet", "has_points");
     docstring::ClassMethodDocInject(m, "LineSet", "get_line_coordinate",
                                     {{"line_index", "Index of the line."}});
+}
+
+void pybind_lineset_methods(py::module &m) {
+    m.def("create_line_set_from_point_cloud_correspondences",
+          &geometry::CreateLineSetFromPointCloudCorrespondences,
+          "Factory function to create a lineset from two pointclouds and a "
+          "correspondence set.",
+          "cloud0"_a, "cloud1"_a, "correspondences"_a);
+    docstring::FunctionDocInject(
+            m, "create_line_set_from_point_cloud_correspondences",
+            {{"cloud0", "First point cloud."},
+             {"cloud1", "Second point cloud."},
+             {"correspondences", "Set of correspondences."}});
+
+    m.def("create_line_set_from_triangle_mesh",
+          &geometry::CreateLineSetFromTriangleMesh,
+          "Factory function to create a lineset from edges of a triangle mesh.",
+          "mesh"_a);
+    docstring::FunctionDocInject(m, "create_line_set_from_triangle_mesh",
+                                 {{"mesh", "The input triangle mesh."}});
 }

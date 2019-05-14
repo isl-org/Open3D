@@ -261,4 +261,10 @@ point is:
     docstring::FunctionDocInject(
             m, "compute_point_cloud_nearest_neighbor_distance",
             {{"input", "The input point cloud."}});
+
+    m.def("compute_point_cloud_convex_hull",
+          &geometry::ComputePointCloudConvexHull,
+          "Computes the convex hull of the point cloud.", "input"_a);
+    docstring::FunctionDocInject(m, "compute_point_cloud_convex_hull",
+                                 {{"input", "The input point cloud."}});
 }
