@@ -171,6 +171,8 @@ public:
     /// Tests each triangle pair for intersection.
     bool IsSelfIntersecting() const;
 
+    bool IsIntersecting(const TriangleMesh& other) const;
+
     /// TODO: add documentation
     bool IsOrientable() const;
 

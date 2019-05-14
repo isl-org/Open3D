@@ -1128,5 +1128,24 @@ bool TriangleMesh::IsSelfIntersecting() const {
     return false;
 }
 
+bool TriangleMesh::IsIntersecting(const TriangleMesh& other) const {
+    for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
+        const Eigen::Vector3i &tria0 = triangles_[tidx0];
+        const Eigen::Vector3d &p0 = vertices_[tria0(0)];
+        const Eigen::Vector3d &p1 = vertices_[tria0(1)];
+        const Eigen::Vector3d &p2 = vertices_[tria0(2)];
+        for (size_t tidx1 = 0; tidx1 < other.triangles_.size(); ++tidx1) {
+            const Eigen::Vector3i &tria1 = triangles_[tidx1];
+            const Eigen::Vector3d &q0 = vertices_[tria1(0)];
+            const Eigen::Vector3d &q1 = vertices_[tria1(1)];
+            const Eigen::Vector3d &q2 = vertices_[tria1(2)];
+            if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 }  // namespace geometry
 }  // namespace open3d
