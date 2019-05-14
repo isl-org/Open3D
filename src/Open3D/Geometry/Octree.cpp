@@ -69,7 +69,9 @@ OctreeColorLeafNode::GetInitFunction() {
 
 std::function<void(std::shared_ptr<OctreeLeafNode>)>
 OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
-    return [&color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
+    // Here the captured "color" cannot be a refernce, must be a copy,
+    // otherwise pybind does not have the correct value
+    return [color](std::shared_ptr<geometry::OctreeLeafNode> node) -> void {
         if (auto color_leaf_node =
                     std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(
                             node)) {
@@ -252,17 +254,42 @@ void Octree::Clear() {
     size_ = 0;
 }
 
-bool Octree::IsEmpty() const { throw std::runtime_error("Not implemented"); }
+bool Octree::IsEmpty() const { return root_node_ == nullptr; }
+
 Eigen::Vector3d Octree::GetMinBound() const {
-    throw std::runtime_error("Not implemented");
+    if (IsEmpty()) {
+        return Eigen::Vector3d::Zero();
+    } else {
+        return origin_;
+    }
 }
 
 Eigen::Vector3d Octree::GetMaxBound() const {
-    throw std::runtime_error("Not implemented");
+    if (IsEmpty()) {
+        return Eigen::Vector3d::Zero();
+    } else {
+        return origin_ + Eigen::Vector3d(size_, size_, size_);
+    }
 }
 
-void Octree::Transform(const Eigen::Matrix4d& transformation) {
+Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     throw std::runtime_error("Not implemented");
+    return *this;
+}
+
+Octree& Octree::Translate(const Eigen::Vector3d& translation) {
+    throw std::runtime_error("Not implemented");
+    return *this;
+}
+
+Octree& Octree::Scale(const double scale) {
+    throw std::runtime_error("Not implemented");
+    return *this;
+}
+
+Octree& Octree::Rotate(const Eigen::Vector3d& rotation, RotationType type) {
+    throw std::runtime_error("Not implemented");
+    return *this;
 }
 
 void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
