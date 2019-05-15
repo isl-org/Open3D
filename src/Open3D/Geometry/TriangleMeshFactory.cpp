@@ -377,7 +377,7 @@ std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
     mesh->vertices_.resize(length_split * width_split);
 
     double u_step = 2 * M_PI / length_split;
-    double v_step = width / width_split;
+    double v_step = width / (width_split - 1);
     for (int uidx = 0; uidx < length_split; ++uidx) {
         double u = uidx * u_step;
         double cos_u = std::cos(u);

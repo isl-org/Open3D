@@ -830,11 +830,11 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
             adjacent_triangles;
     std::queue<int> triangle_queue;
 
-    auto CreateEdge = [](int vidx0, int vidx1) {
+    auto CreateOrderedEdge = [](int vidx0, int vidx1) {
         return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
     };
     auto VerifyAndAdd = [&](int vidx0, int vidx1) {
-        Eigen::Vector2i key = CreateEdge(vidx0, vidx1);
+        Eigen::Vector2i key = CreateOrderedEdge(vidx0, vidx1);
         if (edge_to_orientation.count(key) > 0) {
             if (edge_to_orientation.at(key)(0) == vidx0) {
                 return false;
@@ -856,9 +856,9 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        adjacent_triangles[CreateEdge(vidx0, vidx1)].insert(tidx);
-        adjacent_triangles[CreateEdge(vidx1, vidx2)].insert(tidx);
-        adjacent_triangles[CreateEdge(vidx2, vidx0)].insert(tidx);
+        adjacent_triangles[CreateOrderedEdge(vidx0, vidx1)].insert(tidx);
+        adjacent_triangles[CreateOrderedEdge(vidx1, vidx2)].insert(tidx);
+        adjacent_triangles[CreateOrderedEdge(vidx2, vidx0)].insert(tidx);
     }
 
     while (!unvisited_triangles.empty()) {
@@ -879,9 +879,9 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        Eigen::Vector2i key01 = CreateEdge(vidx0, vidx1);
-        Eigen::Vector2i key12 = CreateEdge(vidx1, vidx2);
-        Eigen::Vector2i key20 = CreateEdge(vidx2, vidx0);
+        Eigen::Vector2i key01 = CreateOrderedEdge(vidx0, vidx1);
+        Eigen::Vector2i key12 = CreateOrderedEdge(vidx1, vidx2);
+        Eigen::Vector2i key20 = CreateOrderedEdge(vidx2, vidx0);
         bool exist01 = edge_to_orientation.count(key01) > 0;
         bool exist12 = edge_to_orientation.count(key12) > 0;
         bool exist20 = edge_to_orientation.count(key20) > 0;
@@ -924,15 +924,15 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
 }
 
 bool TriangleMesh::IsOrientable() const {
-    auto no_op = [](int, int, int) {};
-    return OrientTriangleHelper(triangles_, no_op);
+    auto NoOp = [](int, int, int) {};
+    return OrientTriangleHelper(triangles_, NoOp);
 }
 
 bool TriangleMesh::OrientTriangles() {
-    auto swap = [&](int tidx, int idx0, int idx1) {
+    auto SwapTriangleOrder = [&](int tidx, int idx0, int idx1) {
         std::swap(triangles_[tidx](idx0), triangles_[tidx](idx1));
     };
-    return OrientTriangleHelper(triangles_, swap);
+    return OrientTriangleHelper(triangles_, SwapTriangleOrder);
 }
 
 std::unordered_map<Eigen::Vector2i,
@@ -1134,26 +1134,26 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const {
     std::vector<Eigen::Vector2i> self_intersecting_triangles;
     for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
-        const Eigen::Vector3i &tria0 = triangles_[tidx0];
-        const Eigen::Vector3d &p0 = vertices_[tria0(0)];
-        const Eigen::Vector3d &p1 = vertices_[tria0(1)];
-        const Eigen::Vector3d &p2 = vertices_[tria0(2)];
+        const Eigen::Vector3i &tria_p = triangles_[tidx0];
+        const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
+        const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
+        const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
         bool added_tidx0 = false;
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
-            const Eigen::Vector3i &tria1 = triangles_[tidx1];
+            const Eigen::Vector3i &tria_q = triangles_[tidx1];
             // check if neighbour triangle
-            if (tria0(0) == tria1(0) || tria0(0) == tria1(1) ||
-                tria0(0) == tria1(2) || tria0(1) == tria1(0) ||
-                tria0(1) == tria1(1) || tria0(1) == tria1(2) ||
-                tria0(2) == tria1(0) || tria0(2) == tria1(1) ||
-                tria0(2) == tria1(2)) {
+            if (tria_p(0) == tria_q(0) || tria_p(0) == tria_q(1) ||
+                tria_p(0) == tria_q(2) || tria_p(1) == tria_q(0) ||
+                tria_p(1) == tria_q(1) || tria_p(1) == tria_q(2) ||
+                tria_p(2) == tria_q(0) || tria_p(2) == tria_q(1) ||
+                tria_p(2) == tria_q(2)) {
                 continue;
             }
 
             // check for intersection
-            const Eigen::Vector3d &q0 = vertices_[tria1(0)];
-            const Eigen::Vector3d &q1 = vertices_[tria1(1)];
-            const Eigen::Vector3d &q2 = vertices_[tria1(2)];
+            const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
+            const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
+            const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
             if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 self_intersecting_triangles.push_back(
                         Eigen::Vector2i(tidx0, tidx1));
@@ -1177,15 +1177,15 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
         return false;
     }
     for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
-        const Eigen::Vector3i &tria0 = triangles_[tidx0];
-        const Eigen::Vector3d &p0 = vertices_[tria0(0)];
-        const Eigen::Vector3d &p1 = vertices_[tria0(1)];
-        const Eigen::Vector3d &p2 = vertices_[tria0(2)];
+        const Eigen::Vector3i &tria_p = triangles_[tidx0];
+        const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
+        const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
+        const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
         for (size_t tidx1 = 0; tidx1 < other.triangles_.size(); ++tidx1) {
-            const Eigen::Vector3i &tria1 = other.triangles_[tidx1];
-            const Eigen::Vector3d &q0 = other.vertices_[tria1(0)];
-            const Eigen::Vector3d &q1 = other.vertices_[tria1(1)];
-            const Eigen::Vector3d &q2 = other.vertices_[tria1(2)];
+            const Eigen::Vector3i &tria_q = other.triangles_[tidx1];
+            const Eigen::Vector3d &q0 = other.vertices_[tria_q(0)];
+            const Eigen::Vector3d &q1 = other.vertices_[tria_q(1)];
+            const Eigen::Vector3d &q2 = other.vertices_[tria_q(2)];
             if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 return true;
             }
