@@ -1,0 +1,54 @@
+body { 
+    margin-left: 1em; 
+    margin-right: 1em; 
+    font-family: "Verdana", sans-serif; 
+}
+
+tt {
+    font-family: "Andale Mono", monospace; 
+}
+
+h1, h2, h3, h4 { margin-left: 0em; }
+
+
+h3 { padding-top: 1em; }
+
+p { margin-left: 1em; }
+
+p.name { 
+    font-family: "Andale Mono", monospace; 
+    padding-top: 1em;
+    margin-left: 0em; 
+}
+
+a[href] { color: #7f0000; }
+
+blockquote { margin-left: 3em; }
+
+pre.example {
+    background: #cbb;
+    padding: 1em;
+    margin-left: 1em;
+    font-family: "Andale Mono", monospace; 
+    font-size: small;
+}
+
+hr { 
+    margin-left: 0em;
+	background: #7f0000; 
+	border: 0px;
+	height: 1px;
+}
+
+ul { list-style-type: disc; }
+
+table.index { border: 1px #7f0000; }
+table.index td { text-align: left; vertical-align: top; }
+table.index ul { padding-top: 0em; margin-top: 0em; }
+
+h1:first-letter, 
+h2:first-letter, 
+h2:first-letter, 
+h3:first-letter { color: #7f0000; }
+
+div.header, div.footer { margin-left: 0em; }
