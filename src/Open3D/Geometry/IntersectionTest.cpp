@@ -53,7 +53,7 @@ bool IntersectingTriangleTriangle3d(const Eigen::Vector3d& p0,
                                     const Eigen::Vector3d& q0,
                                     const Eigen::Vector3d& q1,
                                     const Eigen::Vector3d& q2) {
-    return tri_tri_overlap_test_3d(
+    return NoDivTriTriIsect(
             const_cast<double*>(p0.data()), const_cast<double*>(p1.data()),
             const_cast<double*>(p2.data()), const_cast<double*>(q0.data()),
             const_cast<double*>(q1.data()), const_cast<double*>(q2.data()));

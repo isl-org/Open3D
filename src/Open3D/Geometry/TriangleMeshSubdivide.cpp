@@ -50,12 +50,13 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
     // Compute and return midpoint.
     // Also adds edge - new vertex refrence to new_verts map.
     auto SubdivideEdge =
-            [&](std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>&
+            [&](std::unordered_map<Eigen::Vector2i, int,
+                                   utility::hash_eigen::hash<Eigen::Vector2i>>&
                         new_verts,
                 int vidx0, int vidx1) {
                 int min = std::min(vidx0, vidx1);
                 int max = std::max(vidx0, vidx1);
-                Edge edge(min, max);
+                Eigen::Vector2i edge(min, max);
                 if (new_verts.count(edge) == 0) {
                     mesh->vertices_.push_back(0.5 * (mesh->vertices_[min] +
                                                      mesh->vertices_[max]));
@@ -77,7 +78,8 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
                 }
             };
     for (int iter = 0; iter < number_of_iterations; ++iter) {
-        std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+        std::unordered_map<Eigen::Vector2i, int,
+                           utility::hash_eigen::hash<Eigen::Vector2i>>
                 new_verts;
         std::vector<Eigen::Vector3i> new_triangles(4 * mesh->triangles_.size());
         for (size_t tidx = 0; tidx < mesh->triangles_.size(); ++tidx) {
@@ -109,15 +111,16 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
 
 std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
                                             int number_of_iterations) {
-    typedef std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+    typedef std::unordered_map<Eigen::Vector2i, int,
+                               utility::hash_eigen::hash<Eigen::Vector2i>>
             EdgeNewVertMap;
-    typedef std::unordered_map<Edge, std::unordered_set<int>,
-                               utility::hash_tuple::hash<Edge>>
+    typedef std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
+                               utility::hash_eigen::hash<Eigen::Vector2i>>
             EdgeTrianglesMap;
     typedef std::vector<std::unordered_set<int>> VertexNeighbours;
 
     auto CreateEdge = [](int vidx0, int vidx1) {
-        return Edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
     };
 
     bool has_vert_normal = input.HasVertexNormals();
@@ -132,7 +135,7 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
         // check if boundary edge and get nb vertices in that case
         std::unordered_set<int> boundary_nbs;
         for (int nb : nbs) {
-            const Edge edge = CreateEdge(vidx, nb);
+            const Eigen::Vector2i edge = CreateEdge(vidx, nb);
             if (edge_to_triangles.at(edge).size() == 1) {
                 boundary_nbs.insert(nb);
             }
@@ -194,7 +197,7 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
                              std::shared_ptr<TriangleMesh>& new_mesh,
                              EdgeNewVertMap& new_verts,
                              const EdgeTrianglesMap& edge_to_triangles) {
-        Edge edge = CreateEdge(vidx0, vidx1);
+        Eigen::Vector2i edge = CreateEdge(vidx0, vidx1);
         if (new_verts.count(edge) == 0) {
             Eigen::Vector3d new_vert =
                     old_mesh->vertices_[vidx0] + old_mesh->vertices_[vidx1];
@@ -284,11 +287,11 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
     VertexNeighbours vertex_neighbours(input.vertices_.size());
     for (size_t tidx = 0; tidx < input.triangles_.size(); ++tidx) {
         const auto& tria = input.triangles_[tidx];
-        Edge e0 = CreateEdge(tria(0), tria(1));
+        Eigen::Vector2i e0 = CreateEdge(tria(0), tria(1));
         edge_to_triangles[e0].insert(tidx);
-        Edge e1 = CreateEdge(tria(1), tria(2));
+        Eigen::Vector2i e1 = CreateEdge(tria(1), tria(2));
         edge_to_triangles[e1].insert(tidx);
-        Edge e2 = CreateEdge(tria(2), tria(0));
+        Eigen::Vector2i e2 = CreateEdge(tria(2), tria(0));
         edge_to_triangles[e2].insert(tidx);
 
         if (edge_to_triangles[e0].size() > 2 ||

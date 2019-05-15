@@ -31,6 +31,22 @@ def mesh_generator():
 
     yield 'knot', read_triangle_mesh('../../TestData/knot.ply')
 
+    verts = np.array([[-1,0,0], [0,1,0], [1,0,0], [0,-1,0], [0,0,1]], dtype=np.float64)
+    triangles = np.array([[0,1,3], [1,2,3], [1,3,4]])
+    mesh = TriangleMesh()
+    mesh.vertices = Vector3dVector(verts)
+    mesh.triangles = Vector3iVector(triangles)
+    yield 'non-manifold edge', mesh
+
+    verts = np.array([[-1,0,-1], [1,0,-1], [0,1,-1], [0,0,0],
+                      [-1,0,1], [1,0,1], [0,1,1]], dtype=np.float64)
+    triangles = np.array([[0,1,2], [0,1,3], [1,2,3], [2,0,3],
+                          [4,5,6], [4,5,3], [5,6,3], [4,6,3]])
+    mesh = TriangleMesh()
+    mesh.vertices = Vector3dVector(verts)
+    mesh.triangles = Vector3iVector(triangles)
+    yield 'non-manifold vertex', mesh
+
     mesh = create_mesh_box()
     mesh.triangles = Vector3iVector(np.asarray(mesh.triangles)[:-2])
     yield 'open box', mesh
@@ -42,6 +58,16 @@ def mesh_generator():
     mesh1.transform(T)
     mesh = cat_meshes(mesh0, mesh1)
     yield 'boxes', mesh
+
+def edges_to_lineset(mesh, edges, color):
+    ls = LineSet()
+    ls.points = mesh.vertices
+    ls.lines = edges
+    colors = np.empty((np.asarray(edges).shape[0], 3))
+    colors[:] = color
+    ls.colors = Vector3dVector(colors)
+    return ls
+
 
 def check_properties(name, mesh):
     def fmt_bool(b):
@@ -63,12 +89,44 @@ def check_properties(name, mesh):
     mesh.compute_vertex_normals()
     draw_geometries([mesh])
 
+    if not edge_manifold:
+        edges = mesh.get_non_manifold_edges(allow_boundary_edges=True)
+        print('  # visualize non-manifold edges (allow_boundary_edges=True)')
+        draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,0,0))])
+    if not edge_manifold_boundary:
+        edges = mesh.get_non_manifold_edges(allow_boundary_edges=False)
+        print('  # visualize non-manifold edges (allow_boundary_edges=False)')
+        draw_geometries([mesh, edges_to_lineset(mesh, edges, (0,1,0))])
+    if not vertex_manifold:
+        verts = np.asarray(mesh.get_non_manifold_vertices())
+        print('  # visualize non-manifold vertices')
+        pcl = PointCloud()
+        pcl.points = Vector3dVector(np.asarray(mesh.vertices)[verts])
+        pcl.paint_uniform_color((0,0,1))
+        draw_geometries([mesh, pcl])
+    if self_intersecting:
+        intersecting_triangles = np.asarray(mesh.get_self_intersecting_triangles())
+        intersecting_triangles = intersecting_triangles[0:1]
+        intersecting_triangles = np.unique(intersecting_triangles)
+        print('  # visualize self-intersecting triangles')
+        triangles = np.asarray(mesh.triangles)[intersecting_triangles]
+        edges = [np.vstack((triangles[:,i], triangles[:,j])) for i,j in [(0,1), (1,2), (2,0)]]
+        edges = np.hstack(edges).T
+        edges = Vector2iVector(edges)
+        draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,1,0))])
+
 if __name__ == "__main__":
     # test mesh properties
+    print('#'*80)
+    print('Test mesh properties')
+    print('#'*80)
     for name, mesh in mesh_generator():
         check_properties(name, mesh)
 
     # fix triangle orientation
+    print('#'*80)
+    print('Fix triangle orientation')
+    print('#'*80)
     for name, mesh in mesh_generator():
         mesh.compute_vertex_normals()
         triangles = np.asarray(mesh.triangles)
@@ -82,6 +140,9 @@ if __name__ == "__main__":
         draw_geometries([mesh])
 
     # intersection tests
+    print('#'*80)
+    print('Intersection tests')
+    print('#'*80)
     np.random.seed(30)
     bbox = create_mesh_box(20,20,20).translate((-10,-10,-10))
     meshes = [create_mesh_box() for _ in range(20)]

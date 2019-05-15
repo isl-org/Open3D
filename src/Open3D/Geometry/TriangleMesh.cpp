@@ -821,29 +821,30 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
 template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                           F &swap) {
-    std::unordered_map<Edge, Edge, utility::hash_tuple::hash<Edge>>
+    std::unordered_map<Eigen::Vector2i, Eigen::Vector2i,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
             edge_to_orientation;
     std::unordered_set<int> unvisited_triangles;
-    std::unordered_map<Edge, std::unordered_set<int>,
-                       utility::hash_tuple::hash<Edge>>
+    std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
             adjacent_triangles;
     std::queue<int> triangle_queue;
 
     auto CreateEdge = [](int vidx0, int vidx1) {
-        return Edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
     };
     auto VerifyAndAdd = [&](int vidx0, int vidx1) {
-        Edge key = CreateEdge(vidx0, vidx1);
+        Eigen::Vector2i key = CreateEdge(vidx0, vidx1);
         if (edge_to_orientation.count(key) > 0) {
-            if (std::get<0>(edge_to_orientation.at(key)) == vidx0) {
+            if (edge_to_orientation.at(key)(0) == vidx0) {
                 return false;
             }
         } else {
-            edge_to_orientation[key] = Edge(vidx0, vidx1);
+            edge_to_orientation[key] = Eigen::Vector2i(vidx0, vidx1);
         }
         return true;
     };
-    auto AddTriangleNbsToQueue = [&](const Edge &edge) {
+    auto AddTriangleNbsToQueue = [&](const Eigen::Vector2i &edge) {
         for (int nb_tidx : adjacent_triangles[edge]) {
             triangle_queue.push(nb_tidx);
         }
@@ -878,29 +879,26 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        Edge key01 = CreateEdge(vidx0, vidx1);
-        Edge key12 = CreateEdge(vidx1, vidx2);
-        Edge key20 = CreateEdge(vidx2, vidx0);
+        Eigen::Vector2i key01 = CreateEdge(vidx0, vidx1);
+        Eigen::Vector2i key12 = CreateEdge(vidx1, vidx2);
+        Eigen::Vector2i key20 = CreateEdge(vidx2, vidx0);
         bool exist01 = edge_to_orientation.count(key01) > 0;
         bool exist12 = edge_to_orientation.count(key12) > 0;
         bool exist20 = edge_to_orientation.count(key20) > 0;
 
         if (!(exist01 || exist12 || exist20)) {
-            edge_to_orientation[key01] = Edge(vidx0, vidx1);
-            edge_to_orientation[key12] = Edge(vidx1, vidx2);
-            edge_to_orientation[key20] = Edge(vidx2, vidx0);
+            edge_to_orientation[key01] = Eigen::Vector2i(vidx0, vidx1);
+            edge_to_orientation[key12] = Eigen::Vector2i(vidx1, vidx2);
+            edge_to_orientation[key20] = Eigen::Vector2i(vidx2, vidx0);
         } else {
             // one flip is allowed
-            if (exist01 &&
-                std::get<0>(edge_to_orientation.at(key01)) == vidx0) {
+            if (exist01 && edge_to_orientation.at(key01)(0) == vidx0) {
                 std::swap(vidx0, vidx1);
                 swap(tidx, 0, 1);
-            } else if (exist12 &&
-                       std::get<0>(edge_to_orientation.at(key12)) == vidx1) {
+            } else if (exist12 && edge_to_orientation.at(key12)(0) == vidx1) {
                 std::swap(vidx1, vidx2);
                 swap(tidx, 1, 2);
-            } else if (exist20 &&
-                       std::get<0>(edge_to_orientation.at(key20)) == vidx2) {
+            } else if (exist20 && edge_to_orientation.at(key20)(0) == vidx2) {
                 std::swap(vidx2, vidx0);
                 swap(tidx, 2, 0);
             }
@@ -937,14 +935,17 @@ bool TriangleMesh::OrientTriangles() {
     return OrientTriangleHelper(triangles_, swap);
 }
 
-std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+std::unordered_map<Eigen::Vector2i,
+                   int,
+                   utility::hash_eigen::hash<Eigen::Vector2i>>
 TriangleMesh::GetEdgeTriangleCount() const {
-    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+    std::unordered_map<Eigen::Vector2i, int,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
             trias_per_edge;
     auto AddEdge = [&](int vidx0, int vidx1) {
         int min0 = std::min(vidx0, vidx1);
         int max0 = std::max(vidx0, vidx1);
-        Edge edge(min0, max0);
+        Eigen::Vector2i edge(min0, max0);
         if (trias_per_edge.count(edge) == 0) {
             trias_per_edge[edge] = 1;
         } else {
@@ -1021,19 +1022,21 @@ Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
 }
 
 int TriangleMesh::EulerPoincareCharacteristic() const {
-    std::unordered_set<Edge, utility::hash_tuple::hash<Edge>> edges;
+    std::unordered_set<Eigen::Vector2i,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            edges;
     for (auto triangle : triangles_) {
         int min0 = std::min(triangle(0), triangle(1));
         int max0 = std::max(triangle(0), triangle(1));
-        edges.emplace(Edge(min0, max0));
+        edges.emplace(Eigen::Vector2i(min0, max0));
 
         int min1 = std::min(triangle(0), triangle(2));
         int max1 = std::max(triangle(0), triangle(2));
-        edges.emplace(Edge(min1, max1));
+        edges.emplace(Eigen::Vector2i(min1, max1));
 
         int min2 = std::min(triangle(1), triangle(2));
         int max2 = std::max(triangle(1), triangle(2));
-        edges.emplace(Edge(min2, max2));
+        edges.emplace(Eigen::Vector2i(min2, max2));
     }
 
     int E = edges.size();
@@ -1042,49 +1045,32 @@ int TriangleMesh::EulerPoincareCharacteristic() const {
     return V + F - E;
 }
 
-bool TriangleMesh::IsEdgeManifold(
+std::vector<Eigen::Vector2i> TriangleMesh::GetNonManifoldEdges(
         bool allow_boundary_edges /* = true */) const {
-    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>> edges;
-    for (auto triangle : triangles_) {
-        int min0 = std::min(triangle(0), triangle(1));
-        int max0 = std::max(triangle(0), triangle(1));
-        Edge e0(min0, max0);
-        if (edges.count(e0) == 0) {
-            edges[e0] = 1;
-        } else {
-            edges[e0] += 1;
-        }
-
-        int min1 = std::min(triangle(0), triangle(2));
-        int max1 = std::max(triangle(0), triangle(2));
-        Edge e1(min1, max1);
-        if (edges.count(e1) == 0) {
-            edges[e1] = 1;
-        } else {
-            edges[e1] += 1;
-        }
-
-        int min2 = std::min(triangle(1), triangle(2));
-        int max2 = std::max(triangle(1), triangle(2));
-        Edge e2(min2, max2);
-        if (edges.count(e2) == 0) {
-            edges[e2] = 1;
-        } else {
-            edges[e2] += 1;
+    auto edges = GetEdgeTriangleCount();
+    std::vector<Eigen::Vector2i> non_manifold_edges;
+    for (auto &kv : edges) {
+        if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
+            (!allow_boundary_edges && kv.second != 2)) {
+            non_manifold_edges.push_back(kv.first);
         }
     }
+    return non_manifold_edges;
+}
 
+bool TriangleMesh::IsEdgeManifold(
+        bool allow_boundary_edges /* = true */) const {
+    auto edges = GetEdgeTriangleCount();
     for (auto &kv : edges) {
         if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
             (!allow_boundary_edges && kv.second != 2)) {
             return false;
         }
     }
-
     return true;
 }
 
-bool TriangleMesh::IsVertexManifold() const {
+std::vector<int> TriangleMesh::GetNonManifoldVertices() const {
     std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto &tria = triangles_[tidx];
@@ -1093,6 +1079,7 @@ bool TriangleMesh::IsVertexManifold() const {
         vert_to_triangles[tria(2)].emplace(tidx);
     }
 
+    std::vector<int> non_manifold_verts;
     for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
         const auto &triangles = vert_to_triangles[vidx];
         if (triangles.size() == 0) {
@@ -1132,19 +1119,26 @@ bool TriangleMesh::IsVertexManifold() const {
             }
         }
         if (visited.size() != edges.size()) {
-            return false;
+            non_manifold_verts.push_back(vidx);
         }
     }
 
-    return true;
+    return non_manifold_verts;
 }
 
-bool TriangleMesh::IsSelfIntersecting() const {
+bool TriangleMesh::IsVertexManifold() const {
+    return GetNonManifoldVertices().empty();
+}
+
+std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
+        const {
+    std::vector<Eigen::Vector2i> self_intersecting_triangles;
     for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
         const Eigen::Vector3i &tria0 = triangles_[tidx0];
         const Eigen::Vector3d &p0 = vertices_[tria0(0)];
         const Eigen::Vector3d &p1 = vertices_[tria0(1)];
         const Eigen::Vector3d &p2 = vertices_[tria0(2)];
+        bool added_tidx0 = false;
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria1 = triangles_[tidx1];
             // check if neighbour triangle
@@ -1161,11 +1155,16 @@ bool TriangleMesh::IsSelfIntersecting() const {
             const Eigen::Vector3d &q1 = vertices_[tria1(1)];
             const Eigen::Vector3d &q2 = vertices_[tria1(2)];
             if (IntersectingTriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
-                return true;
+                self_intersecting_triangles.push_back(
+                        Eigen::Vector2i(tidx0, tidx1));
             }
         }
     }
-    return false;
+    return self_intersecting_triangles;
+}
+
+bool TriangleMesh::IsSelfIntersecting() const {
+    return !GetSelfIntersectingTriangles().empty();
 }
 
 bool TriangleMesh::IsBoundingBoxIntersecting(const TriangleMesh &other) const {

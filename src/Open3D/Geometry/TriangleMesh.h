@@ -40,8 +40,6 @@ namespace geometry {
 
 class PointCloud;
 
-typedef std::tuple<int, int> Edge;
-
 class TriangleMesh : public Geometry3D {
 public:
     enum class SimplificationContraction { Average, Quadric };
@@ -156,22 +154,37 @@ public:
     /// Function that computes the Euler-Poincaré characteristic V + F - E
     int EulerPoincareCharacteristic() const;
 
+    /// Function that returns the non-manifold edges of the triangle mesh.
+    /// If \param allow_boundary_edges is set to false, than also boundary
+    /// edges are returned
+    std::vector<Eigen::Vector2i> GetNonManifoldEdges(
+            bool allow_boundary_edges = true) const;
+
     /// Function that checks if the given triangle mesh is edge-manifold.
     /// A mesh is edge­manifold if each edge is bounding either one or two
     /// triangles. If allow_boundary_edges is set to false, than retuns false if
     /// there exists boundary edges.
     bool IsEdgeManifold(bool allow_boundary_edges = true) const;
 
+    /// Function that returns a list of non-manifold vertex indices.
+    /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
+    /// (Two or more faces connected only by a vertex and not by an edge.)
+    std::vector<int> GetNonManifoldVertices() const;
+
     /// Function that checks if all vertices in the triangle mesh are manifold.
     /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
     /// (Two or more faces connected only by a vertex and not by an edge.)
     bool IsVertexManifold() const;
 
+    /// Function that returns a list of triangles that are intersecting the
+    /// mesh.
+    std::vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
+
     /// Function that tests if the triangle mesh is self-intersecting.
     /// Tests each triangle pair for intersection.
     bool IsSelfIntersecting() const;
 
-    /// Function that test if the bounding boxes of the triangle meshes are
+    /// Function that tests if the bounding boxes of the triangle meshes are
     /// intersecting.
     bool IsBoundingBoxIntersecting(const TriangleMesh &other) const;
 
@@ -188,9 +201,11 @@ public:
     /// such that all normals point towards the outside/inside.
     bool OrientTriangles();
 
-    /// Function that counts the number of faces an edge belongs.
+    /// Function that counts the number of faces an edge belongs to.
     /// Returns a map of Edge (vertex0, vertex1) to number of faces.
-    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+    std::unordered_map<Eigen::Vector2i,
+                       int,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
     GetEdgeTriangleCount() const;
 
     /// Function that computes the area of a mesh triangle identified by the
@@ -370,8 +385,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
         double size = 1.0,
         const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
-/// TODO
-/// Assumes edge manifold.
+/// Factory function to create a Moebius strip.
 std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split = 70,
                                                 int width_split = 15,
                                                 int twists = 1,

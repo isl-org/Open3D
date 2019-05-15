@@ -128,12 +128,23 @@ void pybind_trianglemesh(py::module &m) {
             .def("is_edge_manifold", &geometry::TriangleMesh::IsEdgeManifold,
                  "Tests if the triangle mesh is edge manifold",
                  "allow_boundary_edges"_a = true)
+            .def("get_non_manifold_edges",
+                 &geometry::TriangleMesh::GetNonManifoldEdges,
+                 "Get list of non-manifold edges.",
+                 "allow_boundary_edges"_a = true)
             .def("is_vertex_manifold",
                  &geometry::TriangleMesh::IsVertexManifold,
-                 "Tests if all vertices of the triangle mesh are manifold")
+                 "Tests if all vertices of the triangle mesh are manifold.")
+            .def("get_non_manifold_vertices",
+                 &geometry::TriangleMesh::GetNonManifoldVertices,
+                 "Returns a list of indices to non-manifold vertices.")
             .def("is_self_intersecting",
                  &geometry::TriangleMesh::IsSelfIntersecting,
                  "Tests the triangle mesh is self-intersecting")
+            .def("get_self_intersecting_triangles",
+                 &geometry::TriangleMesh::GetSelfIntersectingTriangles,
+                 "Returns a list of indices to triangles that intersect the "
+                 "mesh.")
             .def("is_intersecting", &geometry::TriangleMesh::IsIntersecting,
                  "Tests the triangle mesh is intersecting the other triangle "
                  "mesh")
@@ -194,8 +205,14 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "euler_poincare_characteristic");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_edge_manifold");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "get_non_manifold_edges");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "get_non_manifold_vertices");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_self_intersecting");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "get_self_intersecting_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_intersecting");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_orientable");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "orient_triangles");
