@@ -6,3 +6,7 @@
 	path = 3rdparty/Eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
 	branch = master
+[submodule "3rdparty/googletest"]
+	path = 3rdparty/googletest
+	url = https://github.com/google/googletest.git
+	branch = master
