@@ -18,3 +18,7 @@
 	path = 3rdparty/libjpeg-turbo
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
 	branch = master
+[submodule "3rdparty/libpng"]
+	path = 3rdparty/libpng
+	url = https://github.com/glennrp/libpng.git
+	branch = master
