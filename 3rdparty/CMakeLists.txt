@@ -123,6 +123,8 @@ if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # https://github.com/IntelVCL/Open3D/issues/9
     message(STATUS "Building JSONCPP from source, without installing headers")
     add_subdirectory(jsoncpp)
+    set(JSONCPP_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include")
+    set(JSONCPP_LIBRARIES jsoncpp_lib)
     set(BUILD_JSONCPP ON)
 else ()
     if (BUILD_JSONCPP)
@@ -137,6 +139,8 @@ else ()
 
     if (BUILD_JSONCPP)
         add_subdirectory(jsoncpp)
+        set(JSONCPP_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include")
+        set(JSONCPP_LIBRARIES jsoncpp_lib)
     endif ()
 endif ()
 
