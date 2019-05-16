@@ -2,3 +2,7 @@
 	path = 3rdparty/pybind11
 	url = https://github.com/pybind/pybind11.git
 	branch = master
+[submodule "3rdparty/eigen-git-mirror"]
+	path = 3rdparty/Eigen
+	url = https://github.com/eigenteam/eigen-git-mirror.git
+	branch = master
