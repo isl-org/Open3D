@@ -167,9 +167,10 @@ if (BUILD_PNG)
     option(PNG_SHARED "Build shared lib" OFF)
     option(PNG_STATIC "Build static lib" ON)
     option(PNG_TESTS  "Build libpng tests" OFF)
+    option(PNG_BUILD_ZLIB "Custom zlib Location, else find_package is used" ON)
     add_subdirectory(zlib)
     add_subdirectory(libpng)
-    list(APPEND PNG_LIBRARIES zlibstatic)
+    set(PNG_LIBRARIES png16_static zlibstatic)
 endif ()
 
 # PyBind
