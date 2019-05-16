@@ -28,6 +28,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
 
@@ -35,6 +36,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class VoxelGrid;
 
 /// Design decision: do not store origin and size of a node in OctreeNode
 /// OctreeNodeInfo is computed on the fly
@@ -81,16 +83,32 @@ public:
 /// - children_[7]: origin == (1, 1, 1), size == 1, furthest from child 0
 class OctreeInternalNode : public OctreeNode {
 public:
+    OctreeInternalNode() : children_(8) {}
     static std::shared_ptr<OctreeNodeInfo> GetInsertionNodeInfo(
             const std::shared_ptr<OctreeNodeInfo>& node_info,
             const Eigen::Vector3d& point);
 
 public:
-    std::shared_ptr<OctreeNode> children_[8];
+    // Use vector instead of C-array for Pybind11, otherwise, need to define
+    // more helper functions
+    // https://github.com/pybind/pybind11/issues/546#issuecomment-265707318
+    std::vector<std::shared_ptr<OctreeNode>> children_;
 };
 
 class OctreeLeafNode : public OctreeNode {
 public:
+    virtual bool operator==(const OctreeLeafNode& other) const = 0;
+    virtual std::shared_ptr<OctreeLeafNode> Clone() const = 0;
+};
+
+class OctreeColorLeafNode : public OctreeLeafNode {
+public:
+    bool operator==(const OctreeLeafNode& other) const override;
+    std::shared_ptr<OctreeLeafNode> Clone() const override;
+    static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
+    static std::function<void(std::shared_ptr<OctreeLeafNode>)>
+    GetUpdateFunction(const Eigen::Vector3d& color);
+
     // TODO: flexible data, with lambda function for handling node
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
@@ -112,15 +130,17 @@ public:
 
 public:
     void Clear() override;
-    void Clear(bool reset_bounds);
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d& transformation) override;
+    Octree& Transform(const Eigen::Matrix4d& transformation) override;
+    Octree& Translate(const Eigen::Vector3d& translation) override;
+    Octree& Scale(const double scale) override;
+    Octree& Rotate(const Eigen::Vector3d& rotation,
+                   RotationType type = RotationType::XYZ) override;
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
-                               bool reset_bounds = true,
                                double size_expand = 0.01);
 
     /// Root of the octree
@@ -139,10 +159,11 @@ public:
     size_t max_depth_ = 0;
 
     /// Insert point
-    /// TODO: Running average of color
-    /// TODO: Lambda function for handling node
-    void InsertPoint(const Eigen::Vector3d& point,
-                     const Eigen::Vector3d& color);
+    void InsertPoint(
+            const Eigen::Vector3d& point,
+            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+            const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
+                    f_update);
 
     /// DFS traversal of Octree from the root, with callback function called
     /// for each node
@@ -170,6 +191,9 @@ public:
     /// Returns true if the Octree is completely the same, used for testing
     bool operator==(const Octree& other) const;
 
+    /// Convert to voxel grid
+    std::shared_ptr<geometry::VoxelGrid> ToVoxelGrid() const;
+
 private:
     static void TraverseRecurse(
             const std::shared_ptr<OctreeNode>& node,
@@ -178,10 +202,13 @@ private:
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f);
 
-    void InsertPointRecurse(const std::shared_ptr<OctreeNode>& node,
-                            const std::shared_ptr<OctreeNodeInfo>& node_info,
-                            const Eigen::Vector3d& point,
-                            const Eigen::Vector3d& color);
+    void InsertPointRecurse(
+            const std::shared_ptr<OctreeNode>& node,
+            const std::shared_ptr<OctreeNodeInfo>& node_info,
+            const Eigen::Vector3d& point,
+            const std::function<std::shared_ptr<OctreeLeafNode>()>& f_init,
+            const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
+                    f_update);
 };
 
 }  // namespace geometry

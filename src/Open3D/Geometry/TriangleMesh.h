@@ -28,19 +28,26 @@
 
 #include <Eigen/Core>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Types/Blob.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace geometry {
 
 class PointCloud;
 
+typedef std::tuple<int, int> Edge;
+
 class TriangleMesh : public Geometry3D {
 public:
+    enum class SimplificationContraction { Average, Quadric };
+    enum class FilterScope { All, Color, Normal, Vertex };
+
     TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {}
     ~TriangleMesh() override {}
 
@@ -49,7 +56,11 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d &transformation) override;
+    TriangleMesh &Transform(const Eigen::Matrix4d &transformation) override;
+    TriangleMesh &Translate(const Eigen::Vector3d &translation) override;
+    TriangleMesh &Scale(const double scale) override;
+    TriangleMesh &Rotate(const Eigen::Vector3d &rotation,
+                         RotationType type = RotationType::XYZ) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
@@ -67,8 +78,25 @@ public:
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
 
-    /// Function to sample number_of_points points uniformly from the mesh
-    std::shared_ptr<PointCloud> SamplePointsUniformly(size_t number_of_points);
+    /// Function to sharpen triangle mesh
+    void FilterSharpen(int number_of_iterations,
+                       double strength,
+                       FilterScope scope = FilterScope::All);
+
+    /// Function to smooth triangle mesh with simple neighbour average
+    void FilterSmoothSimple(int number_of_iterations,
+                            FilterScope scope = FilterScope::All);
+
+    /// Function to smooth triangle mesh using Laplacian
+    void FilterSmoothLaplacian(int number_of_iterations,
+                               double lambda,
+                               FilterScope scope = FilterScope::All);
+
+    /// Function to smooth triangle mesh using method of Taubin
+    void FilterSmoothTaubin(int number_of_iterations,
+                            double lambda,
+                            double mu,
+                            FilterScope scope = FilterScope::All);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
@@ -77,10 +105,6 @@ protected:
     virtual void RemoveDuplicatedTriangles();
     virtual void RemoveNonManifoldVertices();
     virtual void RemoveNonManifoldTriangles();
-
-    /// Function that computes the area of a mesh triangle identified by the
-    /// triangle index
-    virtual double TriangleArea(size_t triangle_idx);
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }
@@ -130,6 +154,45 @@ public:
         }
     }
 
+    /// Function that computes the Euler-Poincaré characteristic V + F - E
+    int EulerPoincareCharacteristic() const;
+
+    /// Function that checks if the given triangle mesh is edge-manifold.
+    /// A mesh is edge­manifold if each edge is bounding either one or two
+    /// triangles. If allow_boundary_edges is set to false, than retuns false if
+    /// there exists boundary edges.
+    bool IsEdgeManifold(bool allow_boundary_edges = true) const;
+
+    /// Function that checks if all vertices in the triangle mesh are manifold.
+    /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
+    /// (Two or more faces connected only by a vertex and not by an edge.)
+    bool IsVertexManifold() const;
+
+    /// Function that tests if the triangle mesh is self-intersecting.
+    /// Tests each triangle pair for intersection.
+    bool IsSelfIntersecting() const;
+
+    /// Function that counts the number of faces an edge belongs.
+    /// Returns a map of Edge (vertex0, vertex1) to number of faces.
+    std::unordered_map<Edge, int, utility::hash_tuple::hash<Edge>>
+    GetEdgeTriangleCount() const;
+
+    /// Function that computes the area of a mesh triangle identified by the
+    /// triangle index
+    double GetTriangleArea(size_t triangle_idx) const;
+
+    /// Function that computes the surface area of the mesh, i.e. the sum of
+    /// the individual triangle surfaces.
+    double GetSurfaceArea() const;
+
+    /// Function that computes the surface area of the mesh, i.e. the sum of
+    /// the individual triangle surfaces.
+    double GetSurfaceArea(std::vector<double> &triangle_areas) const;
+
+    /// Function that computes the plane equation of a mesh triangle identified
+    /// by the triangle index.
+    Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
+
 public:
     Vertices vertices_;
     Vertex_normals vertex_normals_;
@@ -138,6 +201,59 @@ public:
     Triangle_normals triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
 };
+
+/// Function that computes the area of a mesh triangle
+double ComputeTriangleArea(const Eigen::Vector3d &p0,
+                           const Eigen::Vector3d &p1,
+                           const Eigen::Vector3d &p2);
+
+/// Function that computes the plane equation from the three points.
+/// If the three points are co-linear, then this function returns the invalid
+/// plane (0, 0, 0, 0).
+Eigen::Vector4d ComputeTrianglePlane(const Eigen::Vector3d &p0,
+                                     const Eigen::Vector3d &p1,
+                                     const Eigen::Vector3d &p2);
+
+/// Function to sample \param number_of_points points uniformly from the mesh
+std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
+                                                  size_t number_of_points);
+
+/// Function to sample \param number_of_points points (blue noise).
+/// Based on the method presented in Yuksel, "Sample Elimination for Generating
+/// Poisson Disk Sample Sets", EUROGRAPHICS, 2015
+/// The PointCloud \param pcl_init is used for sample elimination if given,
+/// otherwise a PointCloud is first uniformly sampled with
+/// \param init_number_of_points x \param number_of_points number of points.
+std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
+        const TriangleMesh &input,
+        size_t number_of_points,
+        double init_factor = 5,
+        const std::shared_ptr<PointCloud> pcl_init = nullptr);
+
+/// Function to subdivide triangle mesh using the simple midpoint algorithm.
+/// Each triangle is subdivided into four triangles per iteration and the
+/// new vertices lie on the midpoint of the triangle edges.
+std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh &input,
+                                                int number_of_iterations);
+
+/// Function to subdivide triangle mesh using Loop's scheme.
+/// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles", 1987.
+/// Each triangle is subdivided into four triangles per iteration.
+std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh &input,
+                                            int number_of_iterations);
+
+/// Function to simplify mesh using Vertex Clustering.
+/// The result can be a non-manifold mesh.
+std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
+        const TriangleMesh &input,
+        double voxel_size,
+        TriangleMesh::SimplificationContraction contraction =
+                TriangleMesh::SimplificationContraction::Average);
+
+/// Function to simplify mesh using Quadric Error Metric Decimation by
+/// Garland and Heckbert.
+std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
+        const TriangleMesh &input, int target_number_of_triangles);
 
 /// Function to select points from \param input TriangleMesh into
 /// \return output TriangleMesh
@@ -152,6 +268,21 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
         const TriangleMesh &input,
         const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound);
+
+/// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshTetrahedron(double radius = 1.0);
+
+/// Factory function to create a octahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshOctahedron(double radius = 1.0);
+
+/// Factory function to create a icosahedron mesh (trianglemeshfactory.cpp).
+/// the mesh centroid will be at (0,0,0) and \param radius defines the distance
+/// from the center to the mesh vertices.
+std::shared_ptr<TriangleMesh> CreateMeshIcosahedron(double radius = 1.0);
 
 /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
 /// The left bottom corner on the front will be placed at (0, 0, 0).
@@ -186,6 +317,16 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
                                              double height = 2.0,
                                              int resolution = 20,
                                              int split = 1);
+
+/// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
+/// The torus will be centered at (0, 0, 0) and a radius of \param torus_radius.
+/// The tube of the torus will have a radius of \param tube_radius.
+/// The number of segments in radial and tubular direction are \param
+/// radial_resolution and \param tubular_resolution respectively.
+std::shared_ptr<TriangleMesh> CreateMeshTorus(double torus_radius = 1.0,
+                                              double tube_radius = 0.5,
+                                              int radial_resolution = 30,
+                                              int tubular_resolution = 20);
 
 /// Factory function to create an arrow mesh (TriangleMeshFactory.cpp)
 /// The axis of the cone with \param cone_radius will be along the z-axis.

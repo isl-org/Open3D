@@ -53,7 +53,11 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d &transformation) override;
+    LineSet &Transform(const Eigen::Matrix4d &transformation) override;
+    LineSet &Translate(const Eigen::Vector3d &translation) override;
+    LineSet &Scale(const double scale) override;
+    LineSet &Rotate(const Eigen::Vector3d &rotation,
+                    RotationType type = RotationType::XYZ) override;
 
 public:
     LineSet &operator+=(const LineSet &lineset);

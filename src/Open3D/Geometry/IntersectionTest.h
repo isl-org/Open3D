@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,41 +27,14 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <memory>
-#include <vector>
-
-#include "Open3D/Geometry/Geometry3D.h"
 
 namespace open3d {
-
 namespace geometry {
-class PointCloud;
-}
-namespace visualization {
-
-/// A utility class to store picked points of a pointcloud
-class PointCloudPicker : public geometry::Geometry3D {
-public:
-    PointCloudPicker()
-        : geometry::Geometry3D(geometry::Geometry::GeometryType::Unspecified) {}
-    ~PointCloudPicker() override {}
-
-public:
-    void Clear() override;
-    bool IsEmpty() const override;
-    Eigen::Vector3d GetMinBound() const final;
-    Eigen::Vector3d GetMaxBound() const final;
-    PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
-    PointCloudPicker& Translate(const Eigen::Vector3d& translation) override;
-    PointCloudPicker& Scale(const double scale) override;
-    PointCloudPicker& Rotate(const Eigen::Vector3d& rotation,
-                             RotationType type = RotationType::XYZ) override;
-    bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
-
-public:
-    std::shared_ptr<const geometry::Geometry> pointcloud_ptr_;
-    std::vector<size_t> picked_indices_;
-};
-
-}  // namespace visualization
+bool IntersectingTriangleTriangle3d(const Eigen::Vector3d& p0,
+                                    const Eigen::Vector3d& p1,
+                                    const Eigen::Vector3d& p2,
+                                    const Eigen::Vector3d& q0,
+                                    const Eigen::Vector3d& q1,
+                                    const Eigen::Vector3d& q2);
+}  // namespace geometry
 }  // namespace open3d

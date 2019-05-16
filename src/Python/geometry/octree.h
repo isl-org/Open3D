@@ -26,42 +26,27 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <memory>
-#include <vector>
+#include "Open3D/Geometry/Octree.h"
 
-#include "Open3D/Geometry/Geometry3D.h"
-
-namespace open3d {
-
-namespace geometry {
-class PointCloud;
-}
-namespace visualization {
-
-/// A utility class to store picked points of a pointcloud
-class PointCloudPicker : public geometry::Geometry3D {
+// Trampoline classes for octree datastructures
+template <class OctreeNodeBase = geometry::OctreeNode>
+class PyOctreeNode : public OctreeNodeBase {
 public:
-    PointCloudPicker()
-        : geometry::Geometry3D(geometry::Geometry::GeometryType::Unspecified) {}
-    ~PointCloudPicker() override {}
-
-public:
-    void Clear() override;
-    bool IsEmpty() const override;
-    Eigen::Vector3d GetMinBound() const final;
-    Eigen::Vector3d GetMaxBound() const final;
-    PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
-    PointCloudPicker& Translate(const Eigen::Vector3d& translation) override;
-    PointCloudPicker& Scale(const double scale) override;
-    PointCloudPicker& Rotate(const Eigen::Vector3d& rotation,
-                             RotationType type = RotationType::XYZ) override;
-    bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
-
-public:
-    std::shared_ptr<const geometry::Geometry> pointcloud_ptr_;
-    std::vector<size_t> picked_indices_;
+    using OctreeNodeBase::OctreeNodeBase;
 };
 
-}  // namespace visualization
-}  // namespace open3d
+// Trampoline classes for octree datastructures
+template <class OctreeLeafNodeBase = geometry::OctreeLeafNode>
+class PyOctreeLeafNode : public PyOctreeNode<OctreeLeafNodeBase> {
+public:
+    using PyOctreeNode<OctreeLeafNodeBase>::PyOctreeNode;
+
+    bool operator==(const geometry::OctreeLeafNode& other) const override {
+        PYBIND11_OVERLOAD_PURE(bool, OctreeLeafNodeBase, other);
+    };
+
+    std::shared_ptr<geometry::OctreeLeafNode> Clone() const override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::OctreeLeafNode>,
+                               OctreeLeafNodeBase, );
+    };
+};

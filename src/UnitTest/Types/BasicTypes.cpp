@@ -59,7 +59,7 @@ TEST(BasicTypes, subscript_ops) {
     for (uint r = 0; r < m.Rows; r++)
         for (uint c = 0; c < m.Cols; c++) {
             m[r][c] = r * 1.0f + c * 0.1f;
-            EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
+            EXPECT_NEAR(m[r][c], r * 1.0f + c * 0.1f, THRESHOLD);
         }
 
     // will fail assert in debug mode due to out of bounds accesses
@@ -70,7 +70,7 @@ TEST(BasicTypes, subscript_ops) {
 
     for (uint c = 0; c < m.Cols; c++) {
         v[c] = c * 0.12f;
-        EXPECT_FLOAT_EQ(v[c], c * 0.12f);
+        EXPECT_NEAR(v[c], c * 0.12f, THRESHOLD);
     }
 }
 
@@ -85,8 +85,8 @@ TEST(BasicTypes, cast) {
     for (uint r = 0; r < m.Rows; r++)
         for (uint c = 0; c < m.Cols; c++) {
             mf[r * m.Cols + c] = r * 1.0f + c * 0.1f;
-            EXPECT_FLOAT_EQ(mf[r * m.Cols + c], r * 1.0f + c * 0.1f);
-            EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
+            EXPECT_NEAR(mf[r * m.Cols + c], r * 1.0f + c * 0.1f, THRESHOLD);
+            EXPECT_NEAR(m[r][c], r * 1.0f + c * 0.1f, THRESHOLD);
         }
 
     // test memcpy
@@ -94,15 +94,15 @@ TEST(BasicTypes, cast) {
     memcpy(mcpy, mf, 9 * sizeof(float));
     for (uint r = 0; r < m.Rows; r++)
         for (uint c = 0; c < m.Cols; c++)
-            EXPECT_FLOAT_EQ(mcpy[r * m.Cols + c], r * 1.0f + c * 0.1f);
+            EXPECT_NEAR(mcpy[r * m.Cols + c], r * 1.0f + c * 0.1f, THRESHOLD);
 
     open3d::Vec3f v;
     float* vf = (float*)v.s;
 
     for (uint c = 0; c < m.Cols; c++) {
         vf[c] = c * 0.12f;
-        EXPECT_FLOAT_EQ(vf[c], c * 0.12f);
-        EXPECT_FLOAT_EQ(v[c], c * 0.12f);
+        EXPECT_NEAR(vf[c], c * 0.12f, THRESHOLD);
+        EXPECT_NEAR(v[c], c * 0.12f, THRESHOLD);
     }
 }
 
@@ -180,7 +180,7 @@ TEST(BasicTypes, comparison_ops_double) {
 TEST(BasicTypes, zero) {
     open3d::Mat3d m{};
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
-        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 0.0);
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(m[r][c], 0.0, THRESHOLD);
 
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
         for (uint c = 0; c < open3d::Mat3d::Cols; c++)
@@ -188,7 +188,7 @@ TEST(BasicTypes, zero) {
 
     m.setZero();
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
-        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 0.0);
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(m[r][c], 0.0, THRESHOLD);
 
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
         for (uint c = 0; c < open3d::Mat3d::Cols; c++)
@@ -196,18 +196,18 @@ TEST(BasicTypes, zero) {
 
     m = open3d::Mat3d::Zero();
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
-        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 0.0);
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(m[r][c], 0.0, THRESHOLD);
 
     open3d::Vec3d v{};
-    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 0.0);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(v[c], 0.0, THRESHOLD);
 
     for (uint c = 0; c < open3d::Mat3d::Cols; c++) v[c] = c;
     v.setZero();
-    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 0.0);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(v[c], 0.0, THRESHOLD);
 
     for (uint c = 0; c < open3d::Mat3d::Cols; c++) v[c] = c;
     v = open3d::Vec3d::Zero();
-    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 0.0);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(v[c], 0.0, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -217,11 +217,11 @@ TEST(BasicTypes, ones) {
     open3d::Mat3d m{};
     m = open3d::Mat3d::Ones();
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
-        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(m[r][c], 1.0);
+        for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(m[r][c], 1.0, THRESHOLD);
 
     open3d::Vec3d v{};
     v = open3d::Vec3d::Ones();
-    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_EQ(v[c], 1.0);
+    for (uint c = 0; c < open3d::Mat3d::Cols; c++) EXPECT_NEAR(v[c], 1.0, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -233,9 +233,9 @@ TEST(BasicTypes, setIdentity) {
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
         for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
             if (r == c)
-                EXPECT_EQ(m[r][c], 1.0);
+                EXPECT_NEAR(m[r][c], 1.0, THRESHOLD);
             else
-                EXPECT_EQ(m[r][c], 0.0);
+                EXPECT_NEAR(m[r][c], 0.0, THRESHOLD);
         }
 
     m.setZero();
@@ -243,9 +243,9 @@ TEST(BasicTypes, setIdentity) {
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
         for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
             if (r == c)
-                EXPECT_EQ(m[r][c], 1.0);
+                EXPECT_NEAR(m[r][c], 1.0, THRESHOLD);
             else
-                EXPECT_EQ(m[r][c], 0.0);
+                EXPECT_NEAR(m[r][c], 0.0, THRESHOLD);
         }
 }
 
@@ -297,9 +297,9 @@ TEST(BasicTypes, normalize) {
     v0.normalize();
     ev0.normalize();
 
-    EXPECT_EQ(v0[0], ev0[0]);
-    EXPECT_EQ(v0[1], ev0[1]);
-    EXPECT_EQ(v0[2], ev0[2]);
+    EXPECT_NEAR(v0[0], ev0[0], THRESHOLD);
+    EXPECT_NEAR(v0[1], ev0[1], THRESHOLD);
+    EXPECT_NEAR(v0[2], ev0[2], THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -318,7 +318,7 @@ TEST(BasicTypes, dot) {
     auto open3d_dot = v0.dot(v1);
     auto eigen_dot = ev0.dot(ev1);
 
-    EXPECT_EQ(eigen_dot, open3d_dot);
+    EXPECT_NEAR(eigen_dot, open3d_dot, THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -337,9 +337,9 @@ TEST(BasicTypes, cross) {
     auto open3d_cross = v0.cross(v1);
     auto eigen_cross = ev0.cross(ev1);
 
-    EXPECT_EQ(eigen_cross[0], open3d_cross[0]);
-    EXPECT_EQ(eigen_cross[1], open3d_cross[1]);
-    EXPECT_EQ(eigen_cross[2], open3d_cross[2]);
+    EXPECT_NEAR(eigen_cross[0], open3d_cross[0], THRESHOLD);
+    EXPECT_NEAR(eigen_cross[1], open3d_cross[1], THRESHOLD);
+    EXPECT_NEAR(eigen_cross[2], open3d_cross[2], THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
@@ -350,17 +350,17 @@ TEST(BasicTypes, parenthesis) {
     m = open3d::Mat3d::Random(-10.0, 15);
     for (uint r = 0; r < open3d::Mat3d::Rows; r++)
         for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
-            EXPECT_EQ(m[r][c], m(r, c));
+            EXPECT_NEAR(m[r][c], m(r, c), THRESHOLD);
             m(r, c);
-            EXPECT_EQ(m[r][c], m(r, c));
+            EXPECT_NEAR(m[r][c], m(r, c), THRESHOLD);
         }
 
     open3d::Vec3d v{};
     v = open3d::Vec3d::Random(-10.0, 15.0);
     for (uint c = 0; c < open3d::Mat3d::Cols; c++) {
-        EXPECT_EQ(v[c], v(c));
+        EXPECT_NEAR(v[c], v(c), THRESHOLD);
         v(c) = c;
-        EXPECT_EQ(v[c], v(c));
+        EXPECT_NEAR(v[c], v(c), THRESHOLD);
     }
 }
 

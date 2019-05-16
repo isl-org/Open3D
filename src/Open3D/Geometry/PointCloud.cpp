@@ -201,15 +201,17 @@ Eigen::Vector3d PointCloud::GetMaxBoundGPU() const {
 
 #endif
 
-void PointCloud::Transform(const Eigen::Matrix4d &transformation) {
+PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
 #ifdef OPEN3D_USE_CUDA
     if (DeviceID::CPU == points_.device_id)
-        return TransformCPU(transformation);
+        TransformCPU(transformation);
     else
-        return TransformGPU(transformation);
+        TransformGPU(transformation);
 #else
-    return TransformCPU(transformation);
+    TransformCPU(transformation);
 #endif
+
+    return *this;
 }
 
 void PointCloud::TransformCPU(const Eigen::Matrix4d &transformation) {
@@ -225,6 +227,32 @@ void PointCloud::TransformCPU(const Eigen::Matrix4d &transformation) {
                 Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0);
         normal = new_normal.block<3, 1>(0, 0);
     }
+}
+
+PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
+    for (auto &point : points_) {
+        point += translation;
+    }
+    return *this;
+}
+
+PointCloud &PointCloud::Scale(const double scale) {
+    for (auto &point : points_) {
+        point *= scale;
+    }
+    return *this;
+}
+
+PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
+                               RotationType type) {
+    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
+    for (auto &point : points_) {
+        point = R * point;
+    }
+    for (auto &normal : normals_) {
+        normal = R * normal;
+    }
+    return *this;
 }
 
 #ifdef OPEN3D_USE_CUDA

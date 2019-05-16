@@ -66,11 +66,15 @@ public:
     Eigen::Vector3d GetMinBoundGPU() const;
     Eigen::Vector3d GetMaxBoundGPU() const;
 #endif
-    void Transform(const Eigen::Matrix4d &transformation) override;
+    PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     void TransformCPU(const Eigen::Matrix4d &transformation);
 #ifdef OPEN3D_USE_CUDA
     void TransformGPU(const Eigen::Matrix4d &transformation);
 #endif
+    PointCloud &Translate(const Eigen::Vector3d &translation) override;
+    PointCloud &Scale(const double scale) override;
+    PointCloud &Rotate(const Eigen::Vector3d &rotation,
+                       RotationType type = RotationType::XYZ) override;
 
 public:
     PointCloud &operator+=(const PointCloud &cloud);

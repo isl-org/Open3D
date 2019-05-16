@@ -118,6 +118,68 @@ protected:
                         std::vector<Eigen::Vector3f> &colors) final;
 };
 
+class SimpleShaderForVoxelGridLine : public SimpleShader {
+public:
+    SimpleShaderForVoxelGridLine()
+        : SimpleShader("SimpleShaderForVoxelGridLine") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class SimpleShaderForVoxelGridFace : public SimpleShader {
+public:
+    SimpleShaderForVoxelGridFace()
+        : SimpleShader("SimpleShaderForVoxelGridFace") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class SimpleShaderForOctreeLine : public SimpleShader {
+public:
+    SimpleShaderForOctreeLine() : SimpleShader("SimpleShaderForOctreeLine") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class SimpleShaderForOctreeFace : public SimpleShader {
+public:
+    SimpleShaderForOctreeFace() : SimpleShader("SimpleShaderForOctreeFace") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &colors) final;
+};
+
 }  // namespace glsl
 
 }  // namespace visualization

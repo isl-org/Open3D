@@ -38,6 +38,7 @@ namespace geometry {
 
 class PointCloud;
 class TriangleMesh;
+class Octree;
 
 class VoxelGrid : public Geometry3D {
 public:
@@ -50,7 +51,11 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
-    void Transform(const Eigen::Matrix4d &transformation) override;
+    VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
+    VoxelGrid &Translate(const Eigen::Vector3d &translation) override;
+    VoxelGrid &Scale(const double scale) override;
+    VoxelGrid &Rotate(const Eigen::Vector3d &rotation,
+                      RotationType type = RotationType::XYZ) override;
 
 public:
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
@@ -62,6 +67,8 @@ public:
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
+
+    void FromOctree(const Octree &octree);
 
 public:
     double voxel_size_;
