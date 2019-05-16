@@ -111,7 +111,8 @@ else ()
 endif ()
 
 if (BUILD_JPEG)
-    add_subdirectory(libjpeg)
+    option(WITH_SIMD "" OFF)
+    add_subdirectory(libjpeg-turbo)
 endif ()
 
 # JSONCPP

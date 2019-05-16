@@ -14,3 +14,7 @@
 	path = 3rdparty/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
 	branch = master
+[submodule "3rdparty/libjpeg-turbo"]
+	path = 3rdparty/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
+	branch = master
