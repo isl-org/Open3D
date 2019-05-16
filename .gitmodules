@@ -22,3 +22,7 @@
 	path = 3rdparty/libpng
 	url = https://github.com/glennrp/libpng.git
 	branch = master
+[submodule "3rdparty/zlib"]
+	path = 3rdparty/zlib
+	url = https://github.com/madler/zlib.git
+	branch = master
