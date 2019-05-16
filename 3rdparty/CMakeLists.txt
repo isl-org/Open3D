@@ -113,6 +113,7 @@ endif ()
 if (BUILD_JPEG)
     option(WITH_SIMD "" OFF)
     add_subdirectory(libjpeg-turbo)
+    set(JPEG_LIBRARIES jpeg-static)
 endif ()
 
 # JSONCPP
@@ -168,7 +169,7 @@ if (BUILD_PNG)
     option(PNG_TESTS  "Build libpng tests" OFF)
     add_subdirectory(zlib)
     add_subdirectory(libpng)
-    list(APPEND PNG_LIBRARIES zlib)
+    list(APPEND PNG_LIBRARIES zlibstatic)
 endif ()
 
 # PyBind
