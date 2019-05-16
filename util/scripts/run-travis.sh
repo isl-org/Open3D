@@ -34,7 +34,7 @@ echo
 
 echo "build & install Open3D..."
 date
-make install -j$NPROC
+make install -j$NPROC VERBOSE=1
 echo
 
 echo "running the Open3D unit tests..."
@@ -64,7 +64,7 @@ cd ../docs/_static/C++
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
-make
+make VERBOSE=1
 ./TestVisualizer
 echo
 

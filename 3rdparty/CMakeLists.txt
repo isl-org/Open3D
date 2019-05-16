@@ -111,9 +111,10 @@ else ()
 endif ()
 
 if (BUILD_JPEG)
-    option(WITH_SIMD "" OFF)
+    set(WITH_SIMD OFF CACHE BOOL "")
     add_subdirectory(libjpeg-turbo)
     set(JPEG_LIBRARIES jpeg-static)
+    set(JPEG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/include")
 endif ()
 
 # JSONCPP
@@ -164,10 +165,10 @@ else ()
 endif ()
 
 if (BUILD_PNG)
-    option(PNG_SHARED "Build shared lib" OFF)
-    option(PNG_STATIC "Build static lib" ON)
-    option(PNG_TESTS  "Build libpng tests" OFF)
-    option(PNG_BUILD_ZLIB "Custom zlib Location, else find_package is used" ON)
+    set(PNG_SHARED OFF CACHE BOOL "Build shared lib")
+    set(PNG_STATIC ON CACHE BOOL "Build static lib")
+    set(PNG_TESTS OFF CACHE BOOL "Build libpng tests")
+    set(PNG_BUILD_ZLIB ON CACHE BOOL "Custom zlib Location, else find_package is used")
     add_subdirectory(zlib)
     add_subdirectory(libpng)
     set(PNG_LIBRARIES png16_static zlibstatic)
@@ -217,7 +218,6 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${flann_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
-     ${JPEG_INCLUDE_DIR}
      ${JPEG_INCLUDE_DIRS}
      ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
