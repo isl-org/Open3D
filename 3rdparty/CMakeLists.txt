@@ -114,7 +114,7 @@ if (BUILD_JPEG)
     set(WITH_SIMD OFF CACHE BOOL "")
     add_subdirectory(libjpeg-turbo)
     set(JPEG_LIBRARIES jpeg)
-    set(JPEG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/include")
+    set(JPEG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/")
 endif ()
 
 # JSONCPP
