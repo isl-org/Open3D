@@ -111,15 +111,7 @@ else ()
 endif ()
 
 if (BUILD_JPEG)
-    set(WITH_SIMD OFF CACHE BOOL "")
-    set(WITH_TURBOJPEG OFF CACHE BOOL "Include the TurboJPEG API library and associated test programs")
-    add_subdirectory(libjpeg-turbo)
-    if(BUILD_SHARED_LIBS)
-      set(JPEG_LIBRARIES jpeg)
-    else()
-      set(JPEG_LIBRARIES jpeg-static)
-    endif()
-    set(JPEG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/")
+    add_subdirectory(libjpeg)
 endif ()
 
 # JSONCPP
@@ -130,6 +122,7 @@ if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # https://github.com/open-source-parsers/jsoncpp/issues/597
     # https://github.com/IntelVCL/Open3D/issues/9
     message(STATUS "Building JSONCPP from source, without installing headers")
+    add_subdirectory(jsoncpp)
     set(BUILD_JSONCPP ON)
 else ()
     if (BUILD_JSONCPP)
@@ -141,16 +134,10 @@ else ()
         message(STATUS "Building JSONCPP from source")
         set(BUILD_JSONCPP ON)
     endif ()
-endif ()
 
-if (BUILD_JSONCPP)
-    add_subdirectory(jsoncpp)
-    set(JSONCPP_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include")
-    if(BUILD_SHARED_LIBS)
-      set(JSONCPP_LIBRARIES jsoncpp_lib)
-    else()
-      set(JSONCPP_LIBRARIES jsoncpp_lib_static)
-    endif()
+    if (BUILD_JSONCPP)
+        add_subdirectory(jsoncpp)
+    endif ()
 endif ()
 
 # liblzf
@@ -171,26 +158,9 @@ else ()
 endif ()
 
 if (BUILD_PNG)
-    set(PNG_SHARED ON CACHE BOOL "Build shared lib")
-    set(PNG_STATIC ON CACHE BOOL "Build static lib")
-    set(PNG_TESTS OFF CACHE BOOL "Build libpng tests")
-    set(PNG_BUILD_ZLIB ON CACHE BOOL "Custom zlib Location, else find_package is used")
-    set(SKIP_INSTALL_EXPORT ON)
-
     add_subdirectory(zlib)
-    if(BUILD_SHARED_LIBS)
-      set(ZLIB_LIBRARY zlib)
-    else()
-      set(ZLIB_LIBRARY zlibstatic)
-    endif()
-    set(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/zlib")
-
     add_subdirectory(libpng)
-    if(BUILD_SHARED_LIBS)
-      set(PNG_LIBRARIES png16 zlib)
-    else()
-      set(PNG_LIBRARIES png16_static zlibstatic)
-    endif()
+    list(APPEND PNG_LIBRARIES zlib)
 endif ()
 
 # PyBind
@@ -237,6 +207,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${flann_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
+     ${JPEG_INCLUDE_DIR}
      ${JPEG_INCLUDE_DIRS}
      ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}

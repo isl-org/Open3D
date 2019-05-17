@@ -11,18 +11,14 @@
 	url = https://github.com/google/googletest.git
 	branch = master
 [submodule "3rdparty/jsoncpp"]
-	path = 3rdparty/jsoncpp
+	path = 3rdparty/jsoncpp/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
 	branch = master
-[submodule "3rdparty/libjpeg-turbo"]
-	path = 3rdparty/libjpeg-turbo
-	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
-	branch = master
 [submodule "3rdparty/libpng"]
-	path = 3rdparty/libpng
+	path = 3rdparty/libpng/libpng
 	url = https://github.com/glennrp/libpng.git
 	branch = master
 [submodule "3rdparty/zlib"]
-	path = 3rdparty/zlib
+	path = 3rdparty/zlib/zlib
 	url = https://github.com/madler/zlib.git
 	branch = master
