@@ -98,9 +98,9 @@ public:
     double length_;
     int resolution_;
     int voxel_num_;
-    std::vector<float> tsdf_;
-    std::vector<Eigen::Vector3d> color_;
-    std::vector<float> weight_;
+    // std::vector<float> tsdf_;
+    // std::vector<Eigen::Vector3d> color_;
+    // std::vector<float> weight_;
 
 private:
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
