@@ -50,8 +50,12 @@ UniformTSDFVolume::UniformTSDFVolume(
       voxel_num_(resolution * resolution * resolution),
       tsdf_(voxel_num_, 0.0f),
       color_(color_type != TSDFVolumeColorType::None ? voxel_num_ : 0,
-             Eigen::Vector3f::Zero()),
-      weight_(voxel_num_, 0.0f) {}
+             Eigen::Vector3d::Zero()),
+      weight_(voxel_num_, 0.0f) {
+    voxel_grid_.origin_ = origin;
+    voxel_grid_.voxel_size_ = voxel_length_;
+    voxel_grid_.voxels_.resize(voxel_num_);
+}
 
 UniformTSDFVolume::~UniformTSDFVolume() {}
 
@@ -106,42 +110,43 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
                 Eigen::Vector3i idx0(x, y, z);
                 float w0 = weight_[IndexOf(idx0)];
                 float f0 = tsdf_[IndexOf(idx0)];
-                if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
-                    Eigen::Vector3d p0(half_voxel_length + voxel_length_ * x,
-                                       half_voxel_length + voxel_length_ * y,
-                                       half_voxel_length + voxel_length_ * z);
-                    for (int i = 0; i < 3; i++) {
-                        Eigen::Vector3d p1 = p0;
-                        p1(i) += voxel_length_;
-                        Eigen::Vector3i idx1 = idx0;
-                        idx1(i) += 1;
-                        if (idx1(i) < resolution_ - 1) {
-                            float w1 = weight_[IndexOf(idx1)];
-                            float f1 = tsdf_[IndexOf(idx1)];
-                            if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
-                                f0 * f1 < 0) {
-                                float r0 = std::fabs(f0);
-                                float r1 = std::fabs(f1);
-                                Eigen::Vector3d p = p0;
-                                p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
-                                pointcloud->points_.push_back(p + origin_);
-                                if (color_type_ == TSDFVolumeColorType::RGB8) {
-                                    pointcloud->colors_.push_back(
-                                            ((color_[IndexOf(idx0)] * r1 +
-                                              color_[IndexOf(idx1)] * r0) /
-                                             (r0 + r1) / 255.0f)
-                                                    .cast<double>());
-                                } else if (color_type_ ==
-                                           TSDFVolumeColorType::Gray32) {
-                                    pointcloud->colors_.push_back(
-                                            ((color_[IndexOf(idx0)] * r1 +
-                                              color_[IndexOf(idx1)] * r0) /
-                                             (r0 + r1))
-                                                    .cast<double>());
-                                }
-                                // has_normal
-                                pointcloud->normals_.push_back(GetNormalAt(p));
+                if (!(w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f)) {
+                    continue;
+                }
+                Eigen::Vector3d p0(half_voxel_length + voxel_length_ * x,
+                                   half_voxel_length + voxel_length_ * y,
+                                   half_voxel_length + voxel_length_ * z);
+                for (int i = 0; i < 3; i++) {
+                    Eigen::Vector3d p1 = p0;
+                    p1(i) += voxel_length_;
+                    Eigen::Vector3i idx1 = idx0;
+                    idx1(i) += 1;
+                    if (idx1(i) < resolution_ - 1) {
+                        float w1 = weight_[IndexOf(idx1)];
+                        float f1 = tsdf_[IndexOf(idx1)];
+                        if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
+                            f0 * f1 < 0) {
+                            float r0 = std::fabs(f0);
+                            float r1 = std::fabs(f1);
+                            Eigen::Vector3d p = p0;
+                            p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
+                            pointcloud->points_.push_back(p + origin_);
+                            if (color_type_ == TSDFVolumeColorType::RGB8) {
+                                pointcloud->colors_.push_back(
+                                        ((color_[IndexOf(idx0)] * r1 +
+                                          color_[IndexOf(idx1)] * r0) /
+                                         (r0 + r1) / 255.0f)
+                                                .cast<double>());
+                            } else if (color_type_ ==
+                                       TSDFVolumeColorType::Gray32) {
+                                pointcloud->colors_.push_back(
+                                        ((color_[IndexOf(idx0)] * r1 +
+                                          color_[IndexOf(idx1)] * r0) /
+                                         (r0 + r1))
+                                                .cast<double>());
                             }
+                            // has_normal
+                            pointcloud->normals_.push_back(GetNormalAt(p));
                         }
                     }
                 }
@@ -275,8 +280,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                 if (w != 0.0f && f < 0.98f && f >= -0.98f) {
                     double c = (tsdf_[ind] + 1.0) * 0.5;
                     Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
-                    voxel_grid->cubes_.emplace_back(Eigen::Vector3i(x, y, z),
-                                                    color);
+                    voxel_grid->voxels_.emplace_back(Eigen::Vector3i(x, y, z),
+                                                     color);
                 }
             }
         }
@@ -298,7 +303,6 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float half_voxel_length_f = voxel_length_f * 0.5f;
     const float sdf_trunc_f = static_cast<float>(sdf_trunc_);
     const float sdf_trunc_inv_f = 1.0f / sdf_trunc_f;
-    const Eigen::Matrix4f extrinsic_scaled_f = extrinsic_f * voxel_length_f;
     const float safe_width_f = intrinsic.width_ - 0.0001f;
     const float safe_height_f = intrinsic.height_ - 0.0001f;
 
@@ -307,80 +311,58 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
-            int idx_shift = x * resolution_ * resolution_ + y * resolution_;
-            float *p_tsdf = (float *)tsdf_.data() + idx_shift;
-            float *p_weight = (float *)weight_.data() + idx_shift;
-            float *p_color = (float *)color_.data() + idx_shift * 3;
-            Eigen::Vector4f voxel_pt_camera =
-                    extrinsic_f *
-                    Eigen::Vector4f(half_voxel_length_f + voxel_length_f * x +
-                                            (float)origin_(0),
-                                    half_voxel_length_f + voxel_length_f * y +
-                                            (float)origin_(1),
-                                    half_voxel_length_f + (float)origin_(2),
-                                    1.0f);
-            for (int z = 0; z < resolution_; z++,
-                     voxel_pt_camera(0) += extrinsic_scaled_f(0, 2),
-                     voxel_pt_camera(1) += extrinsic_scaled_f(1, 2),
-                     voxel_pt_camera(2) += extrinsic_scaled_f(2, 2), p_tsdf++,
-                     p_weight++, p_color += 3) {
-                if (voxel_pt_camera(2) > 0) {
-                    float u_f = voxel_pt_camera(0) * fx / voxel_pt_camera(2) +
-                                cx + 0.5f;
-                    float v_f = voxel_pt_camera(1) * fy / voxel_pt_camera(2) +
-                                cy + 0.5f;
-                    if (u_f >= 0.0001f && u_f < safe_width_f &&
-                        v_f >= 0.0001f && v_f < safe_height_f) {
-                        int u = (int)u_f;
-                        int v = (int)v_f;
-                        float d =
-                                *geometry::PointerAt<float>(image.depth_, u, v);
-                        if (d > 0.0f) {
-                            float sdf =
-                                    (d - voxel_pt_camera(2)) *
-                                    (*geometry::PointerAt<float>(
-                                            depth_to_camera_distance_multiplier,
-                                            u, v));
-                            if (sdf > -sdf_trunc_f) {
-                                // integrate
-                                float tsdf =
-                                        std::min(1.0f, sdf * sdf_trunc_inv_f);
-                                *p_tsdf = ((*p_tsdf) * (*p_weight) + tsdf) /
-                                          (*p_weight + 1.0f);
-                                if (color_type_ == TSDFVolumeColorType::RGB8) {
-                                    const uint8_t *rgb =
-                                            geometry::PointerAt<uint8_t>(
-                                                    image.color_, u, v, 0);
-                                    p_color[0] = (p_color[0] * (*p_weight) +
-                                                  rgb[0]) /
-                                                 (*p_weight + 1.0f);
-                                    p_color[1] = (p_color[1] * (*p_weight) +
-                                                  rgb[1]) /
-                                                 (*p_weight + 1.0f);
-                                    p_color[2] = (p_color[2] * (*p_weight) +
-                                                  rgb[2]) /
-                                                 (*p_weight + 1.0f);
-                                } else if (color_type_ ==
-                                           TSDFVolumeColorType::Gray32) {
-                                    const float *intensity =
-                                            geometry::PointerAt<float>(
-                                                    image.color_, u, v, 0);
-                                    // PrintError("intensity : %f\n",
-                                    // *intensity);
-                                    p_color[0] = (p_color[0] * (*p_weight) +
-                                                  *intensity) /
-                                                 (*p_weight + 1.0f);
-                                    p_color[1] = (p_color[1] * (*p_weight) +
-                                                  *intensity) /
-                                                 (*p_weight + 1.0f);
-                                    p_color[2] = (p_color[2] * (*p_weight) +
-                                                  *intensity) /
-                                                 (*p_weight + 1.0f);
-                                }
-                                *p_weight += 1.0f;
-                            }
-                        }
+            for (int z = 0; z < resolution_; z++) {
+                Eigen::Vector4f pt_3d_homo(
+                        half_voxel_length_f + voxel_length_f * x + origin_(0),
+                        half_voxel_length_f + voxel_length_f * y + origin_(1),
+                        half_voxel_length_f + voxel_length_f * z + origin_(2),
+                        1);
+                Eigen::Vector4f pt_camera = extrinsic_f * pt_3d_homo;
+
+                // Skip if negative depth after projection
+                if (pt_camera(2) <= 0) {
+                    continue;
+                }
+                // Skip if x-y coordinate not in range
+                float u_f = pt_camera(0) * fx / pt_camera(2) + cx + 0.5f;
+                float v_f = pt_camera(1) * fy / pt_camera(2) + cy + 0.5f;
+                if (!(u_f >= 0.0001f && u_f < safe_width_f && v_f >= 0.0001f &&
+                      v_f < safe_height_f)) {
+                    continue;
+                }
+                // Skip if negative depth in depth image
+                int u = (int)u_f;
+                int v = (int)v_f;
+                float d = *geometry::PointerAt<float>(image.depth_, u, v);
+                if (d <= 0.0f) {
+                    continue;
+                }
+
+                int v_ind = IndexOf(x, y, z);
+                float sdf = (d - pt_camera(2)) *
+                            (*geometry::PointerAt<float>(
+                                    depth_to_camera_distance_multiplier, u, v));
+                if (sdf > -sdf_trunc_f) {
+                    // integrate
+                    float tsdf = std::min(1.0f, sdf * sdf_trunc_inv_f);
+                    tsdf_[v_ind] = (tsdf_[v_ind] * weight_[v_ind] + tsdf) /
+                                   (weight_[v_ind] + 1.0f);
+                    if (color_type_ == TSDFVolumeColorType::RGB8) {
+                        const uint8_t *rgb = geometry::PointerAt<uint8_t>(
+                                image.color_, u, v, 0);
+                        Eigen::Vector3d rgb_f(rgb[0], rgb[1], rgb[2]);
+                        color_[v_ind] =
+                                (color_[v_ind] * weight_[v_ind] + rgb_f) /
+                                (weight_[v_ind] + 1.0f);
+                    } else if (color_type_ == TSDFVolumeColorType::Gray32) {
+                        const float *intensity = geometry::PointerAt<float>(
+                                image.color_, u, v, 0);
+                        color_[v_ind] =
+                                (color_[v_ind].array() * weight_[v_ind] +
+                                 (*intensity)) /
+                                (weight_[v_ind] + 1.0f);
                     }
+                    weight_[v_ind] += 1.0f;
                 }
             }
         }
@@ -407,23 +389,24 @@ double UniformTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
         idx(i) = (int)std::floor(p_grid(i));
     }
     Eigen::Vector3d r = p_grid - idx.cast<double>();
-    // clang-format off
-    return (1 - r(0)) * (
-            (1 - r(1)) * (
-            (1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 0, 0))] +
-            r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 0, 1))]
-            ) + r(1) * (
-            (1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 1, 0))] +
-            r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 1, 1))]
-            )) + r(0) * (
-            (1 - r(1)) * (
-            (1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 0, 0))] +
-            r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 0, 1))]
-            ) + r(1) * (
-            (1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 1, 0))] +
-            r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 1, 1))]
-            ));
-    // clang-format on
+
+    double tsdf = 0;
+    tsdf += (1 - r(0)) * (1 - r(1)) * (1 - r(2)) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(0, 0, 0))];
+    tsdf += (1 - r(0)) * (1 - r(1)) * r(2) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(0, 0, 1))];
+    tsdf += (1 - r(0)) * r(1) * (1 - r(2)) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(0, 1, 0))];
+    tsdf += (1 - r(0)) * r(1) * r(2) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(0, 1, 1))];
+    tsdf += r(0) * (1 - r(1)) * (1 - r(2)) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(1, 0, 0))];
+    tsdf += r(0) * (1 - r(1)) * r(2) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(1, 0, 1))];
+    tsdf += r(0) * r(1) * (1 - r(2)) *
+            tsdf_[IndexOf(idx + Eigen::Vector3i(1, 1, 0))];
+    tsdf += r(0) * r(1) * r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 1, 1))];
+    return tsdf;
 }
 
 }  // namespace integration

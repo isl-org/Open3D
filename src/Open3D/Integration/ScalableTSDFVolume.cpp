@@ -122,7 +122,8 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                         w0 = volume0.weight_[volume0.IndexOf(idx0)];
                         f0 = volume0.tsdf_[volume0.IndexOf(idx0)];
                         if (color_type_ != TSDFVolumeColorType::None)
-                            c0 = volume0.color_[volume0.IndexOf(idx0)];
+                            c0 = volume0.color_[volume0.IndexOf(idx0)]
+                                         .cast<float>();
                         if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
                             Eigen::Vector3d p0 =
                                     Eigen::Vector3d(half_voxel_length +
@@ -144,7 +145,8 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                     if (color_type_ !=
                                         TSDFVolumeColorType::None)
                                         c1 = volume0.color_[volume0.IndexOf(
-                                                idx1)];
+                                                                    idx1)]
+                                                     .cast<float>();
                                 } else {
                                     idx1(i) -= volume0.resolution_;
                                     index1(i) += 1;
@@ -162,7 +164,8 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                         if (color_type_ !=
                                             TSDFVolumeColorType::None)
                                             c1 = volume1.color_[volume1.IndexOf(
-                                                    idx1)];
+                                                                        idx1)]
+                                                         .cast<float>();
                                     }
                                 }
                                 if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&

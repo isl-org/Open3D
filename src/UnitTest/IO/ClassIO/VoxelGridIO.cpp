@@ -37,7 +37,7 @@ TEST(VoxelGridIO, PLYWriteRead) {
     auto src_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     src_voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     src_voxel_grid->voxel_size_ = 5;
-    src_voxel_grid->cubes_ = {
+    src_voxel_grid->voxels_ = {
             geometry::Voxel(Eigen::Vector3i(1, 2, 3),
                             Eigen::Vector3d(0.1, 0.2, 0.3)),
             geometry::Voxel(Eigen::Vector3i(4, 5, 6),
@@ -54,13 +54,13 @@ TEST(VoxelGridIO, PLYWriteRead) {
     EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Check values, account for unit8 conversion lost
-    for (size_t i = 0; i < src_voxel_grid->cubes_.size(); ++i) {
-        ExpectEQ(src_voxel_grid->cubes_[i].grid_index_,
-                 dst_voxel_grid->cubes_[i].grid_index_);
-        ExpectEQ(Eigen::Vector3d(src_voxel_grid->cubes_[i]
+    for (size_t i = 0; i < src_voxel_grid->voxels_.size(); ++i) {
+        ExpectEQ(src_voxel_grid->voxels_[i].grid_index_,
+                 dst_voxel_grid->voxels_[i].grid_index_);
+        ExpectEQ(Eigen::Vector3d(src_voxel_grid->voxels_[i]
                                          .color_.cast<uint8_t>()
                                          .cast<double>()),
-                 Eigen::Vector3d(dst_voxel_grid->cubes_[i]
+                 Eigen::Vector3d(dst_voxel_grid->voxels_[i]
                                          .color_.cast<uint8_t>()
                                          .cast<double>()));
     }

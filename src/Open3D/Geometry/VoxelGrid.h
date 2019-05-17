@@ -46,6 +46,8 @@ public:
     Voxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3d &color)
         : grid_index_(grid_index), color_(color) {}
     ~Voxel() {}
+
+public:
     Eigen::Vector3i grid_index_ = Eigen::Vector3i(0, 0, 0);
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
@@ -72,7 +74,7 @@ public:
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
 public:
-    bool HasVoxels() const { return cubes_.size() > 0; }
+    bool HasVoxels() const { return voxels_.size() > 0; }
     bool HasColors() const {
         return true;  // By default, the colors are (0, 0, 0)
     }
@@ -83,7 +85,7 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::vector<Voxel> cubes_;
+    std::vector<Voxel> voxels_;
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(

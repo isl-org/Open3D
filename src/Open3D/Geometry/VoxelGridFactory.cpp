@@ -105,11 +105,11 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const Eigen::Vector3d &color =
                 has_colors ? accpoint.second.GetAverageColor()
                            : Eigen::Vector3d(0, 0, 0);
-        output->cubes_.emplace_back(grid_index, color);
+        output->voxels_.emplace_back(grid_index, color);
     }
     utility::PrintDebug(
             "Pointcloud is voxelized from %d points to %d voxels.\n",
-            (int)input.points_.size(), (int)output->cubes_.size());
+            (int)input.points_.size(), (int)output->voxels_.size());
     return output;
 }
 

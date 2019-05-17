@@ -26,13 +26,32 @@
 
 #pragma once
 
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Integration/TSDFVolume.h"
 
 namespace open3d {
 
 namespace geometry {
-class VoxelGrid;
-}
+
+class TSDFVoxel : public Voxel {
+public:
+    TSDFVoxel() : Voxel() {}
+    TSDFVoxel(const Eigen::Vector3i &grid_index) : Voxel(grid_index) {}
+    TSDFVoxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3d &color)
+        : Voxel(grid_index, color) {}
+    ~TSDFVoxel() {}
+
+public:
+    float tsdf_ = 0;
+    float weight_ = 0;
+};
+
+class TSDFVoxelGrid : public VoxelGrid {
+public:
+    std::vector<TSDFVoxel> voxels_;
+};
+
+}  // namespace geometry
 
 namespace integration {
 
@@ -74,12 +93,13 @@ public:
     }
 
 public:
+    geometry::TSDFVoxelGrid voxel_grid_;
     Eigen::Vector3d origin_;
     double length_;
     int resolution_;
     int voxel_num_;
     std::vector<float> tsdf_;
-    std::vector<Eigen::Vector3f> color_;
+    std::vector<Eigen::Vector3d> color_;
     std::vector<float> weight_;
 
 private:

@@ -76,7 +76,7 @@ bool ReadPoses(const std::string& trajectory_path,
 
 TEST(UniformTSDFVolume, Constructor) {
     double length = 4.0;
-    int resolution = 512;
+    int resolution = 128;
     double sdf_trunc = 0.04;
     auto color_type = integration::TSDFVolumeColorType::RGB8;
     integration::UniformTSDFVolume tsdf_volume(
@@ -149,7 +149,8 @@ TEST(UniformTSDFVolume, RealData) {
     // These hard-coded values are for unit test only. They are used to make
     // sure that after code refactoring, the numerical values still stay the
     // same. However, using different parameters or algorithmtic improvements
-    // could invalidate these reference values.
+    // could invalidate these reference values. We use a custom threshold 0.1
+    // to account for acccumulative floating point errors.
 
     // Extract mesh
     std::shared_ptr<geometry::TriangleMesh> mesh =
@@ -160,7 +161,8 @@ TEST(UniformTSDFVolume, RealData) {
     for (const Eigen::Vector3d& color : mesh->vertex_colors_) {
         color_sum += color;
     }
-    ExpectEQ(color_sum, Eigen::Vector3d(2703.841944, 2561.480949, 2481.503805));
+    ExpectEQ(color_sum, Eigen::Vector3d(2703.841944, 2561.480949, 2481.503805),
+             /*threshold*/ 0.1);
     // Uncomment to visualize
     // visualization::DrawGeometries({mesh});
 
@@ -172,13 +174,14 @@ TEST(UniformTSDFVolume, RealData) {
     for (const Eigen::Vector3d& color : pcd->colors_) {
         color_sum += color;
     }
-    ExpectEQ(color_sum, Eigen::Vector3d(1877.673116, 1862.126057, 1862.190616));
+    ExpectEQ(color_sum, Eigen::Vector3d(1877.673116, 1862.126057, 1862.190616),
+             /*threshold*/ 0.1);
     Eigen::Vector3d normal_sum(0, 0, 0);
     for (const Eigen::Vector3d& normal : pcd->normals_) {
         normal_sum += normal;
     }
-    ExpectEQ(normal_sum,
-             Eigen::Vector3d(-161.569098, -95.969433, -1783.167177));
+    ExpectEQ(normal_sum, Eigen::Vector3d(-161.569098, -95.969433, -1783.167177),
+             /*threshold*/ 0.1);
 
     // Extract voxel cloud
     std::shared_ptr<geometry::PointCloud> voxel_pcd =
@@ -189,7 +192,8 @@ TEST(UniformTSDFVolume, RealData) {
     for (const Eigen::Vector3d& color : voxel_pcd->colors_) {
         color_sum += color;
     }
-    ExpectEQ(color_sum, Eigen::Vector3d(2096.428416, 2096.428416, 2096.428416));
+    ExpectEQ(color_sum, Eigen::Vector3d(2096.428416, 2096.428416, 2096.428416),
+             /*threshold*/ 0.1);
 }
 
 TEST(UniformTSDFVolume, DISABLED_Destructor) {}

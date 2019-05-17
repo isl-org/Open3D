@@ -76,12 +76,12 @@ void pybind_voxelgrid(py::module &m) {
             .def("__repr__",
                  [](const geometry::VoxelGrid &voxelgrid) {
                      return std::string("geometry::VoxelGrid with ") +
-                            std::to_string(voxelgrid.cubes_.size()) +
+                            std::to_string(voxelgrid.voxels_.size()) +
                             " voxels.";
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def_readwrite("voxels", &geometry::VoxelGrid::cubes_,
+            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
                            "List of ``Voxel``: Voxels contained in voxel grid")
             .def("has_colors", &geometry::VoxelGrid::HasColors,
                  "Returns ``True`` if the voxel grid contains voxel colors.")
