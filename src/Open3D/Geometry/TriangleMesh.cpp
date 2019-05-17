@@ -1176,7 +1176,7 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
     if (!IsBoundingBoxIntersecting(other)) {
         return false;
     }
-    for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
+    for (size_t tidx0 = 0; tidx0 < triangles_.size(); ++tidx0) {
         const Eigen::Vector3i &tria_p = triangles_[tidx0];
         const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
         const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
