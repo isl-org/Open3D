@@ -26,9 +26,11 @@
 
 #include "Open3D/Integration/UniformTSDFVolume.h"
 
+#include <iostream>
 #include <thread>
 #include <unordered_map>
 
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Integration/MarchingCubesConst.h"
 #include "Open3D/Utility/Helper.h"
 
@@ -155,6 +157,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     // http://paulbourke.net/geometry/polygonise/
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     double half_voxel_length = voxel_length_ * 0.5;
+    // Map of "edge_index = (x, y, z, 0) + edge_shift" to "global vertex index"
     std::unordered_map<
             Eigen::Vector4i, int, utility::hash_eigen::hash<Eigen::Vector4i>,
             std::equal_to<Eigen::Vector4i>,
@@ -233,12 +236,12 @@ UniformTSDFVolume::ExtractTriangleMesh() {
 }
 
 std::shared_ptr<geometry::PointCloud>
-UniformTSDFVolume::ExtractVoxelPointCloud() {
+UniformTSDFVolume::ExtractVoxelPointCloud() const {
     auto voxel = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
-    float *p_tsdf = (float *)tsdf_.data();
-    float *p_weight = (float *)weight_.data();
-    float *p_color = (float *)color_.data();
+    const float *p_tsdf = (const float *)tsdf_.data();
+    const float *p_weight = (const float *)weight_.data();
+    const float *p_color = (const float *)color_.data();
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             Eigen::Vector3d pt(half_voxel_length + voxel_length_ * x,
@@ -255,6 +258,30 @@ UniformTSDFVolume::ExtractVoxelPointCloud() {
         }
     }
     return voxel;
+}
+
+std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
+        const {
+    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
+    voxel_grid->voxel_size_ = voxel_length_;
+    voxel_grid->origin_ = origin_;
+
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                const float w = weight_[ind];
+                const float f = tsdf_[ind];
+                if (w != 0.0f && f < 0.98f && f >= -0.98f) {
+                    double c = (tsdf_[ind] + 1.0) * 0.5;
+                    Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
+                    voxel_grid->voxels_.push_back(Eigen::Vector3i(x, y, z));
+                    voxel_grid->colors_.push_back(color);
+                }
+            }
+        }
+    }
+    return voxel_grid;
 }
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(

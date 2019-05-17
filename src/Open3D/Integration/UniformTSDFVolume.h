@@ -29,6 +29,11 @@
 #include "Open3D/Integration/TSDFVolume.h"
 
 namespace open3d {
+
+namespace geometry {
+class VoxelGrid;
+}
+
 namespace integration {
 
 class UniformTSDFVolume : public TSDFVolume {
@@ -48,8 +53,9 @@ public:
     std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override;
     std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override;
 
-    /// Debug function to extract the voxel data into a point cloud
-    std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud();
+    /// Debug function to extract the voxel data into a VoxelGrid
+    std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud() const;
+    std::shared_ptr<geometry::VoxelGrid> ExtractVoxelGrid() const;
 
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
     /// precomputed from camera intrinsic
