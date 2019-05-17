@@ -37,14 +37,12 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
     : Geometry3D(Geometry::GeometryType::VoxelGrid),
       voxel_size_(src_voxel_grid.voxel_size_),
       origin_(src_voxel_grid.origin_),
-      voxels_(src_voxel_grid.voxels_),
-      colors_(src_voxel_grid.colors_) {}
+      cubes_(src_voxel_grid.cubes_) {}
 
 void VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3d::Zero();
-    voxels_.clear();
-    colors_.clear();
+    cubes_.clear();
 }
 
 bool VoxelGrid::IsEmpty() const { return !HasVoxels(); }
@@ -53,11 +51,11 @@ Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Eigen::Array3i min_voxel = voxels_[0];
-        for (const Eigen::Vector3i &voxel : voxels_) {
-            min_voxel = min_voxel.min(voxel.array());
+        Eigen::Array3i min_grid_index = cubes_[0].grid_index_;
+        for (const Voxel &voxel : cubes_) {
+            min_grid_index = min_grid_index.min(voxel.grid_index_.array());
         }
-        return min_voxel.cast<double>() * voxel_size_ + origin_.array();
+        return min_grid_index.cast<double>() * voxel_size_ + origin_.array();
     }
 }
 
@@ -65,11 +63,12 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Eigen::Array3i max_voxel = voxels_[0];
-        for (const Eigen::Vector3i &voxel : voxels_) {
-            max_voxel = max_voxel.max(voxel.array());
+        Eigen::Array3i max_grid_index = cubes_[0].grid_index_;
+        for (const Voxel &voxel : cubes_) {
+            max_grid_index = max_grid_index.max(voxel.grid_index_.array());
         }
-        return (max_voxel.cast<double>() + 1) * voxel_size_ + origin_.array();
+        return (max_grid_index.cast<double>() + 1) * voxel_size_ +
+               origin_.array();
     }
 }
 
@@ -127,8 +126,7 @@ void VoxelGrid::FromOctree(const Octree &octree) {
     // Prepare dimensions for voxel
     origin_ = octree.origin_;
     voxel_size_ = octree.size_;  // Maximum possible voxel size
-    voxels_.clear();
-    colors_.clear();
+    cubes_.clear();
     for (const auto &it : map_node_to_node_info) {
         voxel_size_ = std::min(voxel_size_, it.second->size_);
     }
@@ -139,12 +137,11 @@ void VoxelGrid::FromOctree(const Octree &octree) {
         const std::shared_ptr<OctreeNodeInfo> &node_info = it.second;
         Eigen::Array3d node_center =
                 Eigen::Array3d(node_info->origin_) + node_info->size_ / 2.0;
-        Eigen::Vector3i voxel =
+        Eigen::Vector3i grid_index =
                 Eigen::floor((node_center - Eigen::Array3d(origin_)) /
                              voxel_size_)
                         .cast<int>();
-        voxels_.push_back(voxel);
-        colors_.push_back(node->color_);
+        cubes_.emplace_back(grid_index, node->color_);
     }
 }
 

@@ -386,7 +386,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    auto num_voxels = voxel_grid.voxels_.size();
+    auto num_voxels = voxel_grid.cubes_.size();
     points.clear();  // Final size: num_voxels * 12 * 2
     colors.clear();  // Final size: num_voxels * 12 * 2
 
@@ -394,7 +394,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
         // 8 vertices in a voxel
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
-                voxel_grid.voxels_[voxel_idx].cast<float>() *
+                voxel_grid.cubes_[voxel_idx].grid_index_.cast<float>() *
                         voxel_grid.voxel_size_;
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
@@ -419,7 +419,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (voxel_grid.HasColors()) {
-                    voxel_color = voxel_grid.colors_[voxel_idx];
+                    voxel_color = voxel_grid.cubes_[voxel_idx].color_;
                     break;
                 }
             case RenderOption::MeshColorOption::Default:
@@ -477,7 +477,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
         return false;
     }
     const ColorMap &global_color_map = *GetGlobalColorMap();
-    auto num_voxels = voxel_grid.voxels_.size();
+    auto num_voxels = voxel_grid.cubes_.size();
     points.clear();  // Final size: num_voxels * 36
     colors.clear();  // Final size: num_voxels * 36
 
@@ -485,7 +485,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
         // 8 vertices in a voxel
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
-                voxel_grid.voxels_[voxel_idx].cast<float>() *
+                voxel_grid.cubes_[voxel_idx].grid_index_.cast<float>() *
                         voxel_grid.voxel_size_;
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
@@ -510,7 +510,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (voxel_grid.HasColors()) {
-                    voxel_color = voxel_grid.colors_[voxel_idx];
+                    voxel_color = voxel_grid.cubes_[voxel_idx].color_;
                     break;
                 }
             case RenderOption::MeshColorOption::Default:

@@ -39,6 +39,17 @@ class PointCloud;
 class TriangleMesh;
 class Octree;
 
+class Voxel {
+public:
+    Voxel() {}
+    Voxel(const Eigen::Vector3i &grid_index) : grid_index_(grid_index) {}
+    Voxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3d &color)
+        : grid_index_(grid_index), color_(color) {}
+    ~Voxel() {}
+    Eigen::Vector3i grid_index_ = Eigen::Vector3i(0, 0, 0);
+    Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
+};
+
 class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
@@ -61,9 +72,9 @@ public:
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
 public:
-    bool HasVoxels() const { return voxels_.size() > 0; }
+    bool HasVoxels() const { return cubes_.size() > 0; }
     bool HasColors() const {
-        return voxels_.size() > 0 && colors_.size() == voxels_.size();
+        return true;  // By default, the colors are (0, 0, 0)
     }
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
@@ -72,8 +83,7 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::vector<Eigen::Vector3i> voxels_;
-    std::vector<Eigen::Vector3d> colors_;
+    std::vector<Voxel> cubes_;
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(

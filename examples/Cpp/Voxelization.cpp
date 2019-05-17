@@ -30,7 +30,7 @@ using namespace open3d;
 
 void PrintVoxelGridInformation(const geometry::VoxelGrid& voxel_grid) {
     utility::PrintDebug("geometry::VoxelGrid with %d voxels\n",
-                        voxel_grid.voxels_.size());
+                        voxel_grid.cubes_.size());
     utility::PrintDebug("               origin: [%f %f %f]\n",
                         voxel_grid.origin_(0), voxel_grid.origin_(1),
                         voxel_grid.origin_(2));

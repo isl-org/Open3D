@@ -85,7 +85,7 @@ bool ReadVoxelGrid(const std::string &filename,
     }
     bool success = map_itr->second(filename, voxelgrid);
     utility::PrintDebug("Read geometry::VoxelGrid: %d voxels.\n",
-                        (int)voxelgrid.voxels_.size());
+                        (int)voxelgrid.cubes_.size());
     return success;
 }
 
@@ -110,7 +110,7 @@ bool WriteVoxelGrid(const std::string &filename,
     bool success =
             map_itr->second(filename, voxelgrid, write_ascii, compressed);
     utility::PrintDebug("Write geometry::VoxelGrid: %d voxels.\n",
-                        (int)voxelgrid.voxels_.size());
+                        (int)voxelgrid.cubes_.size());
     return success;
 }
 
