@@ -366,5 +366,99 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
     return mesh_frame;
 }
 
+std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split /* = 70 */,
+                                                int width_split /* = 15 */,
+                                                int twists /* = 1 */,
+                                                double radius /* = 1 */,
+                                                double flatness /* = 1 */,
+                                                double width /* = 1 */,
+                                                double scale /* = 1 */) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    mesh->vertices_.resize(length_split * width_split);
+
+    double u_step = 2 * M_PI / length_split;
+    double v_step = width / (width_split - 1);
+    for (int uidx = 0; uidx < length_split; ++uidx) {
+        double u = uidx * u_step;
+        double cos_u = std::cos(u);
+        double sin_u = std::sin(u);
+        for (int vidx = 0; vidx < width_split; ++vidx) {
+            int idx = uidx * width_split + vidx;
+            double v = -width / 2.0 + vidx * v_step;
+            double alpha = twists * 0.5 * u;
+            double cos_alpha = std::cos(alpha);
+            double sin_alpha = std::sin(alpha);
+            mesh->vertices_[idx](0) =
+                    scale * ((cos_alpha * cos_u * v) + radius * cos_u);
+            mesh->vertices_[idx](1) =
+                    scale * ((cos_alpha * sin_u * v) + radius * sin_u);
+            mesh->vertices_[idx](2) = scale * sin_alpha * v * flatness;
+        }
+    }
+
+    for (int uidx = 0; uidx < length_split - 1; ++uidx) {
+        for (int vidx = 0; vidx < width_split - 1; ++vidx) {
+            if ((uidx + vidx) % 2 == 0) {
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx,
+                                        (uidx + 1) * width_split + vidx + 1,
+                                        uidx * width_split + vidx + 1));
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx,
+                                        (uidx + 1) * width_split + vidx,
+                                        (uidx + 1) * width_split + vidx + 1));
+            } else {
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx + 1,
+                                        uidx * width_split + vidx,
+                                        (uidx + 1) * width_split + vidx));
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx + 1,
+                                        (uidx + 1) * width_split + vidx,
+                                        (uidx + 1) * width_split + vidx + 1));
+            }
+        }
+    }
+
+    int uidx = length_split - 1;
+    for (int vidx = 0; vidx < width_split - 1; ++vidx) {
+        if (twists % 2 == 1) {
+            if ((uidx + vidx) % 2 == 0) {
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i((width_split - 1) - (vidx + 1),
+                                        uidx * width_split + vidx,
+                                        uidx * width_split + vidx + 1));
+                mesh->triangles_.push_back(Eigen::Vector3i(
+                        (width_split - 1) - vidx, uidx * width_split + vidx,
+                        (width_split - 1) - (vidx + 1)));
+            } else {
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx,
+                                        uidx * width_split + vidx + 1,
+                                        (width_split - 1) - vidx));
+                mesh->triangles_.push_back(Eigen::Vector3i(
+                        (width_split - 1) - vidx, uidx * width_split + vidx + 1,
+                        (width_split - 1) - (vidx + 1)));
+            }
+        } else {
+            if ((uidx + vidx) % 2 == 0) {
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx, vidx + 1,
+                                        uidx * width_split + vidx + 1));
+                mesh->triangles_.push_back(Eigen::Vector3i(
+                        uidx * width_split + vidx, vidx, vidx + 1));
+            } else {
+                mesh->triangles_.push_back(
+                        Eigen::Vector3i(uidx * width_split + vidx, vidx,
+                                        uidx * width_split + vidx + 1));
+                mesh->triangles_.push_back(Eigen::Vector3i(
+                        uidx * width_split + vidx + 1, vidx, vidx + 1));
+            }
+        }
+    }
+
+    return mesh;
+}
+
 }  // namespace geometry
 }  // namespace open3d

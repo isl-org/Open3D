@@ -1,5 +1,6 @@
 Implementation of triangle triangle intersection test.
 
-"Fast and Robust Triangle-Triangle Overlap Test Using Orientation Predicates"  P. Guigue - O. Devillers
+"A Fast Triangle-Triangle Intersection Test", Tomas Moller
 
-Code from: https://github.com/erich666/jgt-code
+Code from: http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/
+Public domain.
