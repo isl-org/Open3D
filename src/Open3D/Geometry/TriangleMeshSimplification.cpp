@@ -306,7 +306,7 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
                                    double area) {
         int min = std::min(vidx0, vidx1);
         int max = std::max(vidx0, vidx1);
-        Edge edge(min, max);
+        Eigen::Vector2i edge(min, max);
         if (edge_triangle_count[edge] != 1) {
             return;
         }
@@ -329,9 +329,12 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
 
     // Get valid edges and compute cost
     // Note: We could also select all vertex pairs as edges with dist < eps
-    std::unordered_map<Edge, Eigen::Vector3d, utility::hash_tuple::hash<Edge>>
+    std::unordered_map<Eigen::Vector2i, Eigen::Vector3d,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
             vbars;
-    std::unordered_map<Edge, double, utility::hash_tuple::hash<Edge>> costs;
+    std::unordered_map<Eigen::Vector2i, double,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            costs;
     auto CostEdgeComp = [](const CostEdge& a, const CostEdge& b) {
         return std::get<0>(a) > std::get<0>(b);
     };
@@ -341,7 +344,7 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
     auto AddEdge = [&](int vidx0, int vidx1, bool update) {
         int min = std::min(vidx0, vidx1);
         int max = std::max(vidx0, vidx1);
-        Edge edge(min, max);
+        Eigen::Vector2i edge(min, max);
         if (update || vbars.count(edge) == 0) {
             const Quadric& Q0 = Qs[min];
             const Quadric& Q1 = Qs[max];
@@ -392,7 +395,7 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
         queue.pop();
 
         // test if the edge has been updated (reinserted into queue)
-        Edge edge(vidx0, vidx1);
+        Eigen::Vector2i edge(vidx0, vidx1);
         bool valid = !vertices_deleted[vidx0] && !vertices_deleted[vidx1] &&
                      cost == costs[edge];
         if (!valid) {
