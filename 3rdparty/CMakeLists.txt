@@ -200,6 +200,17 @@ endif ()
 # rply
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
+# qhull
+if (BUILD_QHULL)
+    message(STATUS "Building QHULL from source")
+    include_directories("qhull/src")
+    add_subdirectory(qhull)
+    set(qhull_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/qhull/src")
+    set(qhull_LIBRARIES qhullcpp qhullstatic_r) 
+else ()
+    message(SEND_ERROR "qhull dependency not met.")
+endif ()
+
 # set 3RDPARTY_INCLUDE_DIRS
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
@@ -214,7 +225,8 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${librealsense_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
-     ${tinyfiledialogs_INCLUDE_DIRS})
+     ${tinyfiledialogs_INCLUDE_DIRS}
+     ${qhull_INCLUDE_DIRS})
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -240,7 +252,8 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${JPEG_LIBRARIES}
      ${JSONCPP_LIBRARIES}
      ${PNG_LIBRARIES}
-     ${tinyfiledialogs_LIBRARIES})
+     ${tinyfiledialogs_LIBRARIES}
+     ${qhull_LIBRARIES})
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
