@@ -44,6 +44,7 @@ namespace geometry {
 
 class Image;
 class RGBDImage;
+class TriangleMesh;
 
 class PointCloud : public Geometry3D {
 public:
@@ -214,6 +215,10 @@ std::vector<double> ComputePointCloudMahalanobisDistance(
 /// Function to compute the distance from a point to its nearest neighbor in the
 /// \param input point cloud
 std::vector<double> ComputePointCloudNearestNeighborDistance(
+        const PointCloud &input);
+
+/// Function that computes the convex hull of the point cloud using qhull
+std::shared_ptr<TriangleMesh> ComputePointCloudConvexHull(
         const PointCloud &input);
 
 }  // namespace geometry
