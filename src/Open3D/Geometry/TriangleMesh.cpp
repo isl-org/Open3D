@@ -488,7 +488,7 @@ void TriangleMesh::FilterSmoothTaubin(int number_of_iterations,
                                       FilterScope scope) {
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacian(1, lambda, scope);
-        FilterSmoothLaplacian(1, -mu, scope);
+        FilterSmoothLaplacian(1, mu, scope);
     }
 }
 

@@ -61,7 +61,7 @@ void pybind_pointcloud(py::module &m) {
                  "Normalize point normals to length 1.")
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
-                 "Assign uniform color to all points.")
+                 "Assigns each point in the PointCloud the same color.")
             .def_readwrite("points", &geometry::PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -79,8 +79,9 @@ void pybind_pointcloud(py::module &m) {
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
     docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
-    docstring::ClassMethodDocInject(m, "PointCloud", "paint_uniform_color",
-                                    {{"color", "RGB color."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "paint_uniform_color",
+            {{"color", "RGB color for the PointCloud."}});
 }
 
 void pybind_pointcloud_methods(py::module &m) {

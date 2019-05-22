@@ -45,15 +45,23 @@ void pybind_trianglemesh(py::module &m) {
     py::enum_<geometry::TriangleMesh::SimplificationContraction>(
             m, "SimplificationContraction")
             .value("Average",
-                   geometry::TriangleMesh::SimplificationContraction::Average)
+                   geometry::TriangleMesh::SimplificationContraction::Average,
+                   "The vertex positions are computed by the averaging.")
             .value("Quadric",
-                   geometry::TriangleMesh::SimplificationContraction::Quadric)
+                   geometry::TriangleMesh::SimplificationContraction::Quadric,
+                   "The vertex positions are computed by minimizing the "
+                   "distance to the adjacent triangle planes.")
             .export_values();
     py::enum_<geometry::TriangleMesh::FilterScope>(m, "FilterScope")
-            .value("All", geometry::TriangleMesh::FilterScope::All)
-            .value("Color", geometry::TriangleMesh::FilterScope::Color)
-            .value("Normal", geometry::TriangleMesh::FilterScope::Normal)
-            .value("Vertex", geometry::TriangleMesh::FilterScope::Vertex)
+            .value("All", geometry::TriangleMesh::FilterScope::All,
+                   "All properties (color, normal, vertex position) are "
+                   "filtered.")
+            .value("Color", geometry::TriangleMesh::FilterScope::Color,
+                   "Only the color values are filtered.")
+            .value("Normal", geometry::TriangleMesh::FilterScope::Normal,
+                   "Only the normal values are filtered.")
+            .value("Vertex", geometry::TriangleMesh::FilterScope::Vertex,
+                   "Only the vertex positions are filtered.")
             .export_values();
     trianglemesh
             .def("__repr__",
@@ -84,22 +92,42 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
             .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
-                 "Function to sharpen mesh", "number_of_iterations"_a = 1,
-                 "strength"_a = 1,
+                 "Function to sharpen triangle mesh. The output value "
+                 "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
+                 "times the input value minus he sum of he adjacent values. "
+                 ":math:`v_o = v_i x strength (v_i * |N| - \\sum_{n \\in N} "
+                 "v_n)`",
+                 "number_of_iterations"_a = 1, "strength"_a = 1,
                  "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
             .def("filter_smooth_simple",
                  &geometry::TriangleMesh::FilterSmoothSimple,
-                 "Function to smooth mesh", "number_of_iterations"_a = 1,
+                 "Function to smooth triangle mesh with simple neighbour "
+                 "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
+                 "v_n)}{|N| + 1}`, with :math:`v_i` being the input value, "
+                 ":math:`v_o` the output value, and :math:`N` is the set of "
+                 "adjacent neighbours.",
+                 "number_of_iterations"_a = 1,
                  "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
             .def("filter_smooth_laplacian",
                  &geometry::TriangleMesh::FilterSmoothLaplacian,
-                 "Function to smooth mesh", "number_of_iterations"_a = 1,
-                 "lambda"_a = 0.5,
+                 "Function to smooth triangle mesh using Laplacian. :math:`v_o "
+                 "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
+                 ":math:`v_i` being the input value, :math:`v_o` the output "
+                 "value, :math:`N` is the  set of adjacent neighbours, "
+                 ":math:`w_n` is the weighting of the neighbour based on the "
+                 "inverse distance (closer neighbours have higher weight), and "
+                 "lambda is the smoothing parameter.",
+                 "number_of_iterations"_a = 1, "lambda"_a = 0.5,
                  "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
             .def("filter_smooth_taubin",
                  &geometry::TriangleMesh::FilterSmoothTaubin,
-                 "Function to smooth mesh", "number_of_iterations"_a = 1,
-                 "lambda"_a = 0.5, "mu"_a = 0.53,
+                 "Function to smooth triangle mesh using method of Taubin, "
+                 "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
+                 "Applies in each iteration two times filter_smooth_laplacian, "
+                 "first with filter parameter lambda and second with filter "
+                 "parameter mu as smoothing parameter. This method avoids "
+                 "shrinkage of the triangle mesh.",
+                 "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
                  "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
@@ -121,23 +149,25 @@ void pybind_trianglemesh(py::module &m) {
                  "1.")
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
-                 "Assign uniform color to all vertices.")
+                 "Assigns each vertex in the TriangleMesh the same color.")
             .def("euler_poincare_characteristic",
                  &geometry::TriangleMesh::EulerPoincareCharacteristic,
-                 "Computes Euler-Poincare charasterisitc V + F - E")
-            .def("is_edge_manifold", &geometry::TriangleMesh::IsEdgeManifold,
-                 "Tests if the triangle mesh is edge manifold",
-                 "allow_boundary_edges"_a = true)
+                 "Function that computes the Euler-Poincaré characteristic, "
+                 "i.e., V + F - E, where V is the number of vertices, F is the "
+                 "number of triangles, and E is the number of edges.")
             .def("get_non_manifold_edges",
                  &geometry::TriangleMesh::GetNonManifoldEdges,
                  "Get list of non-manifold edges.",
                  "allow_boundary_edges"_a = true)
-            .def("is_vertex_manifold",
-                 &geometry::TriangleMesh::IsVertexManifold,
-                 "Tests if all vertices of the triangle mesh are manifold.")
+            .def("is_edge_manifold", &geometry::TriangleMesh::IsEdgeManifold,
+                 "Tests if the triangle mesh is edge manifold.",
+                 "allow_boundary_edges"_a = true)
             .def("get_non_manifold_vertices",
                  &geometry::TriangleMesh::GetNonManifoldVertices,
                  "Returns a list of indices to non-manifold vertices.")
+            .def("is_vertex_manifold",
+                 &geometry::TriangleMesh::IsVertexManifold,
+                 "Tests if all vertices of the triangle mesh are manifold.")
             .def("is_self_intersecting",
                  &geometry::TriangleMesh::IsSelfIntersecting,
                  "Tests the triangle mesh is self-intersecting")
@@ -147,13 +177,13 @@ void pybind_trianglemesh(py::module &m) {
                  "mesh.")
             .def("is_intersecting", &geometry::TriangleMesh::IsIntersecting,
                  "Tests the triangle mesh is intersecting the other triangle "
-                 "mesh")
+                 "mesh.")
             .def("is_orientable", &geometry::TriangleMesh::IsOrientable,
                  "Tests the triangle mesh is orientable")
             .def("orient_triangles", &geometry::TriangleMesh::OrientTriangles,
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
-                 "direction")
+                 "direction.")
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -201,27 +231,59 @@ void pybind_trianglemesh(py::module &m) {
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertices");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "paint_uniform_color");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "paint_uniform_color",
+            {{"color", "RGB color for the PointCloud."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "euler_poincare_characteristic");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_edge_manifold");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "get_non_manifold_edges");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "get_non_manifold_edges",
+            {{"allow_boundary_edges",
+              "If true, than non-manifold edges are defined as edges with more "
+              "than two adjacent triangles, otherwise each edge that is not "
+              "adjacent to two triangles is defined as non-manifold."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "is_edge_manifold",
+            {{"allow_boundary_edges",
+              "If true, than non-manifold edges are defined as edges with more "
+              "than two adjacent triangles, otherwise each edge that is not "
+              "adjacent to two triangles is defined as non-manifold."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_vertex_manifold");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "get_non_manifold_vertices");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_self_intersecting");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "get_self_intersecting_triangles");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_intersecting");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "is_intersecting",
+            {{"other", "Other triangle mesh to test intersection with."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_orientable");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "orient_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_sharpen");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_simple");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "filter_smooth_laplacian");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "filter_smooth_taubin");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_sharpen",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"strengh", "Filter parameter."},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_smooth_simple",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_smooth_laplacian",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"lambda", "Filter parameter."},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_smooth_taubin",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"lambda", "Filter parameter."},
+             {"mu", "Filter parameter."},
+             {"scope", "Mesh property that should be filtered."}});
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
@@ -250,7 +312,7 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"max_bound", "Maximum bound for vertex coordinate."}});
 
     m.def("sample_points_uniformly", &geometry::SamplePointsUniformly,
-          "Function to uniformly points from the mesh", "input"_a,
+          "Function to uniformly sample points from the mesh.", "input"_a,
           "number_of_points"_a = 100);
     docstring::FunctionDocInject(
             m, "sample_points_uniformly",
@@ -259,15 +321,22 @@ void pybind_trianglemesh_methods(py::module &m) {
               "Number of points that should be uniformly sampled."}});
 
     m.def("sample_points_poisson_disk", &geometry::SamplePointsPoissonDisk,
-          "Function to points from the mesh (blue noise)", "input"_a,
-          "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr);
+          "Function to sample points from the mesh, where each point has "
+          "approximately the same distance to the neighbouring points (blue "
+          "noise). Method is based on Yuksel, \"Sample Elimination for "
+          "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
+          "input"_a, "number_of_points"_a, "init_factor"_a = 5,
+          "pcl"_a = nullptr);
     docstring::FunctionDocInject(
             m, "sample_points_poisson_disk",
             {{"input", "The input triangle mesh."},
              {"number_of_points", "Number of points that should be sampled."},
              {"init_factor",
-              "Factor for the initial uniformly sampled PointCloud."},
-             {"pcl", "PointCloud that is used for sample elimination."}});
+              "Factor for the initial uniformly sampled PointCloud. This init "
+              "PointCloud is used for sample elimination."},
+             {"pcl",
+              "Initial PointCloud that is used for sample elimination. If this "
+              "parameter is provided the init_factor is ignored."}});
 
     m.def("subdivide_midpoint", &geometry::SubdivideMidpoint,
           "Function subdivide mesh using midpoint algorithm.", "input"_a,
@@ -280,8 +349,9 @@ void pybind_trianglemesh_methods(py::module &m) {
               "into four triangles that cover the same surface."}});
 
     m.def("subdivide_loop", &geometry::SubdivideLoop,
-          "Function subdivide mesh using Loop's algorithm.", "input"_a,
-          "number_of_iterations"_a = 1);
+          "Function subdivide mesh using Loop's algorithm. Loop, \"Smooth "
+          "subdivision surfaces based on triangles\", 1987.",
+          "input"_a, "number_of_iterations"_a = 1);
     docstring::FunctionDocInject(
             m, "subdivide_loop",
             {{"input", "The input triangle mesh."},
@@ -290,7 +360,7 @@ void pybind_trianglemesh_methods(py::module &m) {
               "into four triangles."}});
 
     m.def("simplify_vertex_clustering", &geometry::SimplifyVertexClustering,
-          "Function to simplify mesh vertex clustering", "input"_a,
+          "Function to simplify mesh using vertex clustering.", "input"_a,
           "voxel_size"_a,
           "contraction"_a =
                   geometry::TriangleMesh::SimplificationContraction::Average);
@@ -304,8 +374,9 @@ void pybind_trianglemesh_methods(py::module &m) {
               "simple average, Quadric minimizes the distance to the adjacent "
               "planes."}});
     m.def("simplify_quadric_decimation", &geometry::SimplifyQuadricDecimation,
-          "Function to simplify mesh using quadric error decimation", "input"_a,
-          "target_number_of_triangles"_a);
+          "Function to simplify mesh using Quadric Error Metric Decimation by "
+          "Garland and Heckbert",
+          "input"_a, "target_number_of_triangles"_a);
     docstring::FunctionDocInject(
             m, "simplify_quadric_decimation",
             {{"input", "The input triangle mesh."},
@@ -368,7 +439,7 @@ void pybind_trianglemesh_methods(py::module &m) {
               "there are ``2 * resolution`` longitude lines.)"}});
 
     m.def("create_mesh_cylinder", &geometry::CreateMeshCylinder,
-          "Factory function to create a cylinder mesh", "radius"_a = 1.0,
+          "Factory function to create a cylinder mesh.", "radius"_a = 1.0,
           "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4);
     docstring::FunctionDocInject(
             m, "create_mesh_cylinder",
@@ -382,7 +453,7 @@ void pybind_trianglemesh_methods(py::module &m) {
               "The ``height`` will be split into ``split`` segments."}});
 
     m.def("create_mesh_cone", &geometry::CreateMeshCone,
-          "Factory function to create a cone mesh", "radius"_a = 1.0,
+          "Factory function to create a cone mesh.", "radius"_a = 1.0,
           "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1);
     docstring::FunctionDocInject(
             m, "create_mesh_cone",
@@ -396,7 +467,7 @@ void pybind_trianglemesh_methods(py::module &m) {
               "The ``height`` will be split into ``split`` segments."}});
 
     m.def("create_mesh_torus", &geometry::CreateMeshTorus,
-          "Factory function to create a torus mesh", "torus_radius"_a = 1.0,
+          "Factory function to create a torus mesh.", "torus_radius"_a = 1.0,
           "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
           "tubular_resolution"_a = 20);
     docstring::FunctionDocInject(

@@ -73,6 +73,7 @@ public:
                               points_[lines_[line_index][1]]);
     }
 
+    /// Assigns each line in the LineSet the same color \param color.
     void PaintUniformColor(const Eigen::Vector3d &color) {
         colors_.resize(lines_.size());
         for (size_t i = 0; i < lines_.size(); i++) {
@@ -86,14 +87,16 @@ public:
     std::vector<Eigen::Vector3d> colors_;
 };
 
-/// Factory function to create a lineset from two pointclouds and a
-/// correspondence set (LineSetFactory.cpp)
+/// Factory function to create a LineSet from two PointClouds
+/// (\param cloud0, \param cloud1) and a correspondence set
+/// \param correspondences.
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences);
 
-/// Factory function to create a lineset from edges of a triangle mesh
+/// Factory function to create a LineSet from edges of a triangle mesh
+/// \param mesh.
 std::shared_ptr<LineSet> CreateLineSetFromTriangleMesh(
         const TriangleMesh &mesh);
 
