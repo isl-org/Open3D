@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace geometry {
@@ -42,6 +43,7 @@ class VoxelGrid;
 /// OctreeNodeInfo is computed on the fly
 class OctreeNodeInfo {
 public:
+    OctreeNodeInfo() {}
     OctreeNodeInfo(const Eigen::Vector3d& origin,
                    const double& size,
                    const size_t& depth,
@@ -51,6 +53,8 @@ public:
           depth_(depth),
           child_index_(child_index) {}
     ~OctreeNodeInfo() {}
+
+public:
     Eigen::Vector3d origin_ = Eigen::Vector3d(0, 0, 0);
     double size_ = 0;
     size_t depth_ = 0;
@@ -95,10 +99,12 @@ public:
     std::vector<std::shared_ptr<OctreeNode>> children_;
 };
 
-class OctreeLeafNode : public OctreeNode {
+class OctreeLeafNode : public OctreeNode, public utility::IJsonConvertible {
 public:
     virtual bool operator==(const OctreeLeafNode& other) const = 0;
     virtual std::shared_ptr<OctreeLeafNode> Clone() const = 0;
+    virtual bool ConvertToJsonValue(Json::Value& value) const = 0;
+    virtual bool ConvertFromJsonValue(const Json::Value& value) = 0;
 };
 
 class OctreeColorLeafNode : public OctreeLeafNode {
@@ -109,11 +115,13 @@ public:
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(const Eigen::Vector3d& color);
 
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
     // TODO: flexible data, with lambda function for handling node
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
 
-class Octree : public Geometry3D {
+class Octree : public Geometry3D, public utility::IJsonConvertible {
 public:
     Octree() : Geometry3D(Geometry::GeometryType::Octree) {}
     Octree(const size_t& max_depth)
@@ -138,6 +146,8 @@ public:
     Octree& Scale(const double scale) override;
     Octree& Rotate(const Eigen::Vector3d& rotation,
                    RotationType type = RotationType::XYZ) override;
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
