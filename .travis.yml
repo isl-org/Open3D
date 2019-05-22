@@ -128,14 +128,11 @@ matrix:
       osx_image: xcode10.1
       before_install:
         - ./util/scripts/install-deps-osx.sh
-        - ./util/scripts/install-gtest.sh
       script: travis_wait 30 ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install:
-        - ./util/scripts/install-gtest.sh
       script: travis_wait 30 ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
