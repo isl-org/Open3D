@@ -38,6 +38,31 @@
 namespace open3d {
 namespace geometry {
 
+std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
+        const Json::Value& value) {
+    // Construct node from class name
+    std::string class_name = value.get("class_name", "").asString();
+    std::shared_ptr<OctreeNode> node = nullptr;
+    if (value != Json::nullValue && class_name != "") {
+        if (class_name == "OctreeInternalNode") {
+            node = std::make_shared<OctreeInternalNode>();
+        } else if (class_name == "OctreeColorLeafNode") {
+            node = std::make_shared<OctreeColorLeafNode>();
+        } else {
+            utility::PrintWarning("Unhandled class name %s\n",
+                                  class_name.c_str());
+        }
+    }
+    // Convert from json
+    if (node != nullptr) {
+        bool convert_success = node->ConvertFromJsonValue(value);
+        if (!convert_success) {
+            node = nullptr;
+        }
+    }
+    return node;
+}
+
 std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
         const std::shared_ptr<OctreeNodeInfo>& node_info,
         const Eigen::Vector3d& point) {
@@ -59,6 +84,43 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
     auto child_node_info = std::make_shared<OctreeNodeInfo>(
             child_origin, child_size, node_info->depth_ + 1, child_index);
     return child_node_info;
+}
+
+bool OctreeInternalNode::ConvertToJsonValue(Json::Value& value) const {
+    bool rc = true;
+    value["class_name"] = "OctreeInternalNode";
+    value["children"] = Json::arrayValue;
+    value["children"].resize(8);
+    for (int cid = 0; cid < 8; ++cid) {
+        if (children_[cid] == nullptr) {
+            value["children"][Json::ArrayIndex(cid)] = Json::objectValue;
+        } else {
+            rc = rc && children_[cid]->ConvertToJsonValue(
+                               value["children"][Json::ArrayIndex(cid)]);
+        }
+    }
+    return rc;
+}
+
+bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
+    if (value.isObject() == false) {
+        utility::PrintWarning(
+                "ConvertFromJsonValue read JSON failed: unsupported json "
+                "format.\n");
+        return false;
+    }
+    std::string class_name = value.get("class_name", "").asString();
+    if (class_name != "OctreeInternalNode") {
+        utility::PrintWarning("class_name %s != OctreeInternalNode\n",
+                              class_name.c_str());
+        return false;
+    }
+    bool rc = true;
+    for (int cid = 0; cid < 8; ++cid) {
+        const auto& child_value = value["children"][Json::ArrayIndex(cid)];
+        children_[cid] = OctreeNode::ConstructFromJsonValue(child_value);
+    }
+    return rc;
 }
 
 std::function<std::shared_ptr<OctreeLeafNode>()>
@@ -493,70 +555,16 @@ std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {
 }
 
 bool Octree::ConvertToJsonValue(Json::Value& value) const {
-    // Return code for conversion
     bool rc = true;
-
-    // Assign id to each node
-    std::unordered_map<std::shared_ptr<OctreeNode>, size_t> map_node_to_id;
-    size_t next_id = 0;
-    auto f_assign_node_id =
-            [&map_node_to_id, &next_id](
-                    const std::shared_ptr<OctreeNode>& node,
-                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> void {
-        map_node_to_id[node] = next_id++;
-    };
-    Traverse(f_assign_node_id);
-
-    // Write nodes to value
     value["class_name"] = "Octree";
-    value["nodes"] = Json::arrayValue;
-    value["nodes"].resize(next_id);
-    auto f_convert_nodes =
-            [&map_node_to_id, &value, &rc](
-                    const std::shared_ptr<OctreeNode>& node,
-                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> void {
-        Json::Value json_node;
-        if (auto internal_node =
-                    std::dynamic_pointer_cast<OctreeInternalNode>(node)) {
-            // Internal node has 8 children
-            json_node["class_name"] = "OctreeInternalNode";
-            json_node["children"] = Json::arrayValue;
-            json_node["children"].resize(8);
-            for (size_t child_index = 0; child_index < 8; ++child_index) {
-                const std::shared_ptr<OctreeNode>& child_node =
-                        internal_node->children_[child_index];
-                if (child_node == nullptr) {
-                    json_node["children"][Json::ArrayIndex(child_index)] =
-                            Json::Int64(-1);
-                } else {
-                    const size_t& child_id = map_node_to_id.at(child_node);
-                    json_node["children"][Json::ArrayIndex(child_index)] =
-                            Json::Int64(child_id);
-                }
-            }
-        } else if (auto leaf_node =
-                           std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
-            rc = rc && leaf_node->ConvertToJsonValue(json_node);
-        } else {
-            utility::PrintError("Internal error: unknown node type");
-            rc = false;
-        }
-        size_t id = map_node_to_id.at(node);
-        json_node["id"] = Json::Int64(id);
-        value["nodes"][Json::ArrayIndex(id)] = json_node;
-    };
-    Traverse(f_convert_nodes);
-
-    // Write other info
-    if (root_node_ == nullptr) {
-        value["root_node"] = -1;
-    } else {
-        value["root_node"] = Json::Int64(map_node_to_id.at(root_node_));
-    }
-    rc = rc && EigenVector3dToJsonArray(origin_, value["origin"]);
     value["size"] = size_;
     value["max_depth"] = Json::Int64(max_depth_);
-
+    rc = rc && EigenVector3dToJsonArray(origin_, value["origin"]);
+    if (root_node_ == nullptr) {
+        value["tree"] = Json::objectValue;
+    } else {
+        rc = rc && root_node_->ConvertToJsonValue(value["tree"]);
+    }
     return rc;
 }
 
@@ -570,67 +578,14 @@ bool Octree::ConvertFromJsonValue(const Json::Value& value) {
         return false;
     }
 
-    bool rc = true;
-
     // Get octree attributes
+    bool rc = true;
     rc = EigenVector3dFromJsonArray(origin_, value["origin"]);
     size_ = value.get("size", 0.0).asDouble();
     max_depth_ = value.get("max_depth", 0).asInt64();
 
     // Create nodes
-    std::unordered_map<std::shared_ptr<OctreeNode>, size_t> map_node_to_id;
-    std::unordered_map<size_t, std::shared_ptr<OctreeNode>> map_id_to_node;
-    for (size_t i = 0; i < value["nodes"].size(); ++i) {
-        Json::Value json_node = value["nodes"].get(Json::ArrayIndex(i), 0);
-        size_t id = json_node.get("id", 0).asInt64();
-        std::shared_ptr<OctreeNode> node;
-        if (json_node.get("class_name", "") == "OctreeInternalNode") {
-            node = std::make_shared<OctreeInternalNode>();
-        } else if (json_node.get("class_name", "") == "OctreeColorLeafNode") {
-            node = std::make_shared<OctreeColorLeafNode>();
-            auto leaf_node =
-                    std::dynamic_pointer_cast<OctreeColorLeafNode>(node);
-            rc = rc && leaf_node->ConvertFromJsonValue(json_node);
-        } else {
-            rc = false;
-        }
-        if (map_id_to_node.find(id) != map_id_to_node.end()) {
-            utility::PrintError("Duplicated node id in json");
-            rc = false;
-        } else {
-            map_id_to_node[id] = node;
-        }
-    }
-
-    // Assign root node
-    int root_node_id =
-            value.get("root_node", -1).asInt64();  // Use int since -1
-    if (root_node_id != -1) {
-        root_node_ = map_id_to_node.at(root_node_id);
-    }
-
-    // Create edges
-    for (size_t i = 0; i < value["nodes"].size(); ++i) {
-        Json::Value json_node = value["nodes"].get(Json::ArrayIndex(i), 0);
-        size_t id = json_node.get("id", 0).asInt64();
-        if (json_node.get("class_name", "") == "OctreeInternalNode") {
-            auto internal_node = std::dynamic_pointer_cast<OctreeInternalNode>(
-                    map_id_to_node.at(id));
-            const std::shared_ptr<OctreeNode>& node = map_id_to_node.at(id);
-            for (size_t child_index = 0; child_index < 8; child_index++) {
-                int child_id = json_node["children"]
-                                       .get(Json::ArrayIndex(child_index), -1)
-                                       .asInt64();
-                if (child_id == -1) {
-                    internal_node->children_[child_index] = nullptr;
-                } else {
-                    internal_node->children_[child_index] =
-                            map_id_to_node.at(child_id);
-                }
-            }
-        }
-    }
-
+    root_node_ = OctreeNode::ConstructFromJsonValue(value["tree"]);
     return rc;
 }
 

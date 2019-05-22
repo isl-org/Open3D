@@ -65,10 +65,14 @@ public:
 /// Design decision: do not store origin and size of a node
 ///     - Good: better space efficiency
 ///     - Bad: need to recompute origin and size when traversing
-class OctreeNode {
+class OctreeNode : public utility::IJsonConvertible {
 public:
     OctreeNode() {}
     virtual ~OctreeNode() {}
+
+    /// Factory function to construct an OctreeNode by parsing the json value.
+    static std::shared_ptr<OctreeNode> ConstructFromJsonValue(
+            const Json::Value& value);
 };
 
 /// Children node ordering conventions are as follows.
@@ -92,6 +96,9 @@ public:
             const std::shared_ptr<OctreeNodeInfo>& node_info,
             const Eigen::Vector3d& point);
 
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
+
 public:
     // Use vector instead of C-array for Pybind11, otherwise, need to define
     // more helper functions
@@ -99,12 +106,10 @@ public:
     std::vector<std::shared_ptr<OctreeNode>> children_;
 };
 
-class OctreeLeafNode : public OctreeNode, public utility::IJsonConvertible {
+class OctreeLeafNode : public OctreeNode {
 public:
     virtual bool operator==(const OctreeLeafNode& other) const = 0;
     virtual std::shared_ptr<OctreeLeafNode> Clone() const = 0;
-    virtual bool ConvertToJsonValue(Json::Value& value) const = 0;
-    virtual bool ConvertFromJsonValue(const Json::Value& value) = 0;
 };
 
 class OctreeColorLeafNode : public OctreeLeafNode {

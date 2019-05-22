@@ -37,55 +37,68 @@
 using namespace open3d;
 using namespace unit_test;
 
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
+                             bool delete_temp = true) {
+    // Write to file
+    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_octree.json";
+    EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
+
+    // Read from file
+    geometry::Octree dst_octree;
+    EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
+    EXPECT_TRUE(src_octree == dst_octree);
+    if (delete_temp) {
+        EXPECT_EQ(std::remove(file_name.c_str()), 0);
+    }
+}
+
+TEST(OctreeIO, EmptyTree) {
+    geometry::Octree octree(10);
+    ExpectEQ(octree.origin_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(octree.size_, 0);
+
+    WriteReadAndAssertEqual(octree);
+}
+
+TEST(OctreeIO, ZeroDepth) {
+    geometry::Octree octree(0, Eigen::Vector3d(-1, -1, -1), 2);
+    Eigen::Vector3d point(0, 0, 0);
+    Eigen::Vector3d color(0, 0.1, 0.2);
+    octree.InsertPoint(point, geometry::OctreeColorLeafNode::GetInitFunction(),
+                       geometry::OctreeColorLeafNode::GetUpdateFunction(color));
+
+    WriteReadAndAssertEqual(octree);
+}
+
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
     io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
     size_t max_depth = 6;
-    geometry::Octree src_octree(max_depth);
-    src_octree.ConvertFromPointCloud(pcd, 0.01);
+    geometry::Octree octree(max_depth);
+    octree.ConvertFromPointCloud(pcd, 0.01);
 
-    // Write to file
-    std::string file_name =
-            std::string(TEST_DATA_DIR) + "/fragment_octree.json";
-    EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
-
-    // Read from file
-    geometry::Octree dst_octree;
-    EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
-    EXPECT_TRUE(src_octree == dst_octree);
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
+    WriteReadAndAssertEqual(octree);
 }
 
-TEST(Octree, JsonFileIOEightCubes) {
+TEST(OctreeIO, JsonFileIOSevenCubes) {
     // Build octree
     std::vector<Eigen::Vector3d> points{
             Eigen::Vector3d(0.5, 0.5, 0.5), Eigen::Vector3d(1.5, 0.5, 0.5),
             Eigen::Vector3d(0.5, 1.5, 0.5), Eigen::Vector3d(1.5, 1.5, 0.5),
             Eigen::Vector3d(0.5, 0.5, 1.5), Eigen::Vector3d(1.5, 0.5, 1.5),
-            Eigen::Vector3d(0.5, 1.5, 1.5), Eigen::Vector3d(1.5, 1.5, 1.5),
-    };
+            Eigen::Vector3d(0.5, 1.5, 1.5)};
     std::vector<Eigen::Vector3d> colors{
-            Eigen::Vector3d(0.0, 0.0, 0.0),   Eigen::Vector3d(0.25, 0.0, 0.0),
-            Eigen::Vector3d(0.0, 0.25, 0.0),  Eigen::Vector3d(0.25, 0.25, 0.0),
-            Eigen::Vector3d(0.0, 0.0, 0.25),  Eigen::Vector3d(0.25, 0.0, 0.25),
-            Eigen::Vector3d(0.0, 0.25, 0.25), Eigen::Vector3d(0.25, 0.25, 0.25),
-    };
-    geometry::Octree src_octree(1, Eigen::Vector3d(0, 0, 0), 2);
+            Eigen::Vector3d(0.0, 0.0, 0.0),  Eigen::Vector3d(0.25, 0.0, 0.0),
+            Eigen::Vector3d(0.0, 0.25, 0.0), Eigen::Vector3d(0.25, 0.25, 0.0),
+            Eigen::Vector3d(0.0, 0.0, 0.25), Eigen::Vector3d(0.25, 0.0, 0.25),
+            Eigen::Vector3d(0.0, 0.25, 0.25)};
+    geometry::Octree octree(1, Eigen::Vector3d(0, 0, 0), 2);
     for (size_t i = 0; i < points.size(); ++i) {
-        src_octree.InsertPoint(
+        octree.InsertPoint(
                 points[i], geometry::OctreeColorLeafNode::GetInitFunction(),
                 geometry::OctreeColorLeafNode::GetUpdateFunction(colors[i]));
     }
 
-    // Write to file
-    std::string file_name =
-            std::string(TEST_DATA_DIR) + "/eight_cubes_octree.json";
-    EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
-
-    // Read from file
-    geometry::Octree dst_octree;
-    EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
-    EXPECT_TRUE(src_octree == dst_octree);
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
+    WriteReadAndAssertEqual(octree);
 }
