@@ -262,6 +262,31 @@ else ()
     message(SEND_ERROR "qhull dependency not met.")
 endif ()
 
+# googletest
+if (BUILD_UNIT_TESTS)
+    message(STATUS "Building googletest from source")
+    include_directories("googletest/googletest/include")
+    include_directories("googletest/googletest/")
+    set(googletest_INCLUDE_DIRS
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googlemock/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googlemock/)
+    set(googletest_SOURCE 
+        googletest/googletest/src/gtest-all.cc
+        googletest/googlemock/src/gmock-all.cc)
+    include_directories(${googletest_INCLUDE_DIRS})
+    add_library(googletest STATIC ${googletest_SOURCE})
+    if (NOT BUILD_SHARED_LIBS)
+      install(TARGETS googletest
+            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    endif()
+    set(googletest_LIBRARIES googletest) 
+endif()
+
+
 # set 3RDPARTY_INCLUDE_DIRS
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
@@ -277,7 +302,8 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${tinyfiledialogs_INCLUDE_DIRS}
-     ${qhull_INCLUDE_DIRS})
+     ${qhull_INCLUDE_DIRS}
+     ${googletest_INCLUDE_DIRS})
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -304,7 +330,8 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${JSONCPP_LIBRARIES}
      ${PNG_LIBRARIES}
      ${tinyfiledialogs_LIBRARIES}
-     ${qhull_LIBRARIES})
+     ${qhull_LIBRARIES}
+     ${googletest_LIBRARIES})
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
