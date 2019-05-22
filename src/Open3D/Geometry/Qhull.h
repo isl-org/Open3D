@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,21 +26,17 @@
 
 #pragma once
 
-#include "Python/open3d_pybind.h"
+#include <Eigen/Core>
+#include <memory>
+#include <vector>
 
-void pybind_geometry(py::module &m);
+namespace open3d {
+namespace geometry {
 
-void pybind_pointcloud(py::module &m);
-void pybind_voxelgrid(py::module &m);
-void pybind_lineset(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_halfedgetrianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_pointcloud_methods(py::module &m);
-void pybind_voxelgrid_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_lineset_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_octree_methods(py::module &m);
-void pybind_octree(py::module &m);
+class TriangleMesh;
+
+std::shared_ptr<TriangleMesh> ComputeConvexHull(
+        const std::vector<Eigen::Vector3d>& points);
+
+}  // namespace geometry
+}  // namespace open3d

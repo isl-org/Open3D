@@ -36,6 +36,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class TriangleMesh;
 
 class LineSet : public Geometry3D {
 public:
@@ -72,6 +73,13 @@ public:
                               points_[lines_[line_index][1]]);
     }
 
+    void PaintUniformColor(const Eigen::Vector3d &color) {
+        colors_.resize(lines_.size());
+        for (size_t i = 0; i < lines_.size(); i++) {
+            colors_[i] = color;
+        }
+    }
+
 public:
     std::vector<Eigen::Vector3d> points_;
     std::vector<Eigen::Vector2i> lines_;
@@ -84,6 +92,10 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences);
+
+/// Factory function to create a lineset from edges of a triangle mesh
+std::shared_ptr<LineSet> CreateLineSetFromTriangleMesh(
+        const TriangleMesh &mesh);
 
 }  // namespace geometry
 }  // namespace open3d

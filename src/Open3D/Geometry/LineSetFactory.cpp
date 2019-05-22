@@ -28,6 +28,7 @@
 
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace geometry {
@@ -52,6 +53,30 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
                 Eigen::Vector2i(correspondences[i].first,
                                 point0_size + correspondences[i].second);
     return lineset_ptr;
+}
+
+std::shared_ptr<LineSet> CreateLineSetFromTriangleMesh(
+        const TriangleMesh &mesh) {
+    auto line_set = std::make_shared<LineSet>();
+    line_set->points_ = mesh.vertices_;
+
+    std::unordered_set<Eigen::Vector2i,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            inserted_edges;
+    auto InsertEdge = [&](int vidx0, int vidx1) {
+        Eigen::Vector2i edge(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+        if (inserted_edges.count(edge) == 0) {
+            inserted_edges.insert(edge);
+            line_set->lines_.push_back(Eigen::Vector2i(vidx0, vidx1));
+        }
+    };
+    for (const auto &triangle : mesh.triangles_) {
+        InsertEdge(triangle(0), triangle(1));
+        InsertEdge(triangle(1), triangle(2));
+        InsertEdge(triangle(2), triangle(0));
+    }
+
+    return line_set;
 }
 
 }  // namespace geometry

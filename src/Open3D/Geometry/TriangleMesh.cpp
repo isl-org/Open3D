@@ -28,6 +28,7 @@
 #include "Open3D/Geometry/IntersectionTest.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Qhull.h"
 
 #include <Eigen/Dense>
 #include <queue>
@@ -1192,6 +1193,10 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
         }
     }
     return false;
+}
+
+std::shared_ptr<TriangleMesh> ComputeMeshConvexHull(const TriangleMesh &mesh) {
+    return ComputeConvexHull(mesh.vertices_);
 }
 
 }  // namespace geometry

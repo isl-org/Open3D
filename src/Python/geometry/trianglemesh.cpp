@@ -313,6 +313,11 @@ void pybind_trianglemesh_methods(py::module &m) {
               "The number of triangles that the simplified mesh should have. "
               "It is not guranteed that this number will be reached."}});
 
+    m.def("compute_mesh_convex_hull", &geometry::ComputeMeshConvexHull,
+          "Computes the convex hull of the triangle mesh.", "input"_a);
+    docstring::FunctionDocInject(m, "compute_mesh_convex_hull",
+                                 {{"input", "The input triangle mesh."}});
+
     m.def("create_mesh_box", &geometry::CreateMeshBox,
           "Factory function to create a box. The left bottom corner on the "
           "front will be placed at (0, 0, 0).",

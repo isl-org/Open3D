@@ -245,6 +245,9 @@ Eigen::Vector4d ComputeTrianglePlane(const Eigen::Vector3d &p0,
                                      const Eigen::Vector3d &p1,
                                      const Eigen::Vector3d &p2);
 
+/// Function that computes the convex hull of the triangle mesh using qhull
+std::shared_ptr<TriangleMesh> ComputeMeshConvexHull(const TriangleMesh &mesh);
+
 /// Function to sample \param number_of_points points uniformly from the mesh
 std::shared_ptr<PointCloud> SamplePointsUniformly(const TriangleMesh &input,
                                                   size_t number_of_points);
