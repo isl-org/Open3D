@@ -268,10 +268,10 @@ if (BUILD_UNIT_TESTS)
     include_directories("googletest/googletest/include")
     include_directories("googletest/googletest/")
     set(googletest_INCLUDE_DIRS
-      googletest/googletest/include
-      googletest/googletest/
-      googletest/googlemock/include
-      googletest/googlemock/)
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googlemock/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googlemock/)
     set(googletest_SOURCE 
         googletest/googletest/src/gtest-all.cc
         googletest/googlemock/src/gmock-all.cc)
