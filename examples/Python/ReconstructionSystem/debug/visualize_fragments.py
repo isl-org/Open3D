@@ -4,7 +4,6 @@
 
 import argparse
 import json
-import os
 import sys
 import open3d as o3d
 sys.path.append("../Utility")

@@ -2,7 +2,6 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import numpy as np
 import argparse
 import json
 import sys

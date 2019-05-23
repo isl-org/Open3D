@@ -2,12 +2,9 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import numpy as np
 import argparse
-import os
 import json
 import sys
-import open3d as o3d
 sys.path.append("../Utility")
 from file import *
 sys.path.append(".")
