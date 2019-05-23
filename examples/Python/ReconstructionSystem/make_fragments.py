@@ -9,9 +9,10 @@ import math
 import open3d as o3d
 import sys
 sys.path.append("../Utility")
-from file import *
-from opencv import *
-from optimize_posegraph import *
+from file import join, make_clean_folder, get_rgbd_file_lists
+from opencv import initialize_opencv
+sys.path.append(".")
+from optimize_posegraph import optimize_posegraph_for_fragment
 
 # check opencv python package
 with_opencv = initialize_opencv()

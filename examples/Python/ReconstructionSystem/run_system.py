@@ -4,15 +4,14 @@
 
 # examples/Python/ReconstructionSystem/run_system.py
 
-import os
-import sys
 import json
 import argparse
 import time, datetime
+import sys
 sys.path.append("../Utility")
-from file import *
+from file import check_folder_structure
 sys.path.append(".")
-from initialize_config import *
+from initialize_config import initialize_config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")

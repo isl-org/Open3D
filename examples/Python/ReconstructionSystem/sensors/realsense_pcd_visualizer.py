@@ -1,7 +1,6 @@
 # pyrealsense2 is required.
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python
 import pyrealsense2 as rs
-import open3d as o3d
 import numpy as np
 from enum import IntEnum
 

@@ -8,10 +8,11 @@ import numpy as np
 import open3d as o3d
 import sys
 sys.path.append("../Utility")
-from file import *
-from visualization import *
-from optimize_posegraph import *
-from refine_registration import *
+from file import join, get_file_list, make_clean_folder
+from visualization import draw_registration_result
+sys.path.append(".")
+from optimize_posegraph import optimize_posegraph_for_scene
+from refine_registration import multiscale_icp
 
 
 def preprocess_point_cloud(pcd, config):

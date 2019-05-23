@@ -8,9 +8,10 @@ import numpy as np
 import open3d as o3d
 import sys
 sys.path.append("../Utility")
-from file import *
-from visualization import *
-from optimize_posegraph import *
+from file import join, get_file_list
+from visualization import draw_registration_result_original_color
+sys.path.append(".")
+from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
 def update_posegrph_for_scene(s, t, transformation, information, odometry,

@@ -9,9 +9,9 @@ import math
 import sys
 import open3d as o3d
 sys.path.append("../Utility")
-from file import *
+from file import join, get_rgbd_file_lists
 sys.path.append(".")
-from make_fragments import *
+from make_fragments import read_rgbd_image
 
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
