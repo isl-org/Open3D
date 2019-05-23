@@ -4,7 +4,7 @@
 
 # examples/Python/Basic/icp_registration.py
 
-from open3d import *
+import open3d as o3d
 import numpy as np
 import copy
 

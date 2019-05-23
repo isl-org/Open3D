@@ -6,7 +6,7 @@
 
 import numpy as np
 import copy
-from open3d import *
+import open3d as o3d
 
 def demo_crop_geometry():
     print("Demo for manual geometry cropping")

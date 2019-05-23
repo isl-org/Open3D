@@ -5,7 +5,7 @@
 # examples/Python/Basic/mesh_filtering.py
 
 import numpy as np
-from open3d import *
+import open3d as o3d
 
 def test_mesh(noise=0):
     mesh = read_triangle_mesh('../../TestData/knot.ply')

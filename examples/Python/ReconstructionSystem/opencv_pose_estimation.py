@@ -12,7 +12,7 @@
 # conda install -c conda-forge openblas (if openblas conflicts)
 import numpy as np
 import cv2
-from open3d import *
+import open3d as o3d
 from matplotlib import pyplot as plt # for visualizing feature matching
 import copy
 

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from open3d import *
+import open3d as o3d
 import os, sys
 sys.path.append("../Utility")
 from common import *

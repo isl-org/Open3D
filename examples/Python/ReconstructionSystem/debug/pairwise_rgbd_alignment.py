@@ -6,7 +6,7 @@ import numpy as np
 import argparse
 import json
 import sys
-from open3d import *
+import open3d as o3d
 sys.path.append("../Utility")
 from file import *
 from visualization import *

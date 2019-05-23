@@ -4,7 +4,7 @@
 
 # examples/Python/Advanced/remove_geometry.py
 
-from open3d import *
+import open3d as o3d
 import numpy as np
 import time
 import copy
@@ -48,6 +48,6 @@ while True:
                 vis.remove_geometry(pcds[i])
                 added[i] = False
                 print("Removing %d" % i)
-    
+
     visualize_non_blocking(vis)
 

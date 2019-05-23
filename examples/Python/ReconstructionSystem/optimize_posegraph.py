@@ -5,7 +5,7 @@
 # examples/Python/ReconstructionSystem/optimize_posegraph.py
 
 import sys
-from open3d import *
+import open3d as o3d
 sys.path.append("../Utility")
 from file import *
 

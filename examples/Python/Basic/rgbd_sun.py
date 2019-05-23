@@ -4,7 +4,7 @@
 
 # examples/Python/Basic/rgbd_sun.py
 
-from open3d import *
+import open3d as o3d
 import matplotlib.pyplot as plt
 
 

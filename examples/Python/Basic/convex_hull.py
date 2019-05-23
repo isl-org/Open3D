@@ -11,7 +11,7 @@ import gzip
 import tarfile
 import shutil
 import time
-from open3d import *
+import open3d as o3d
 
 def create_mesh_plane():
     mesh = TriangleMesh()

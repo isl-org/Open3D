@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from open3d import *
+import open3d as o3d
 #conda install pillow matplotlib
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 
 # examples/Python/Advanced/fast_global_registration.py
 
-from open3d import *
+import open3d as o3d
 from global_registration import *
 import numpy as np
 import copy

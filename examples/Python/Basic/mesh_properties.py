@@ -7,7 +7,7 @@
 import numpy as np
 import time
 
-from open3d import *
+import open3d as o3d
 
 def cat_meshes(mesh0, mesh1):
     mesh = TriangleMesh()

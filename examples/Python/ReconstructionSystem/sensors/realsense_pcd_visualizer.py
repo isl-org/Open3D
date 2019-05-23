@@ -1,12 +1,12 @@
 # pyrealsense2 is required.
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python
 import pyrealsense2 as rs
-from open3d import *
+import open3d as o3d
 import numpy as np
 from enum import IntEnum
 
 from datetime import datetime
-from open3d import *
+import open3d as o3d
 
 class Preset(IntEnum):
     Custom = 0

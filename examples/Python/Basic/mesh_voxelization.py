@@ -1,4 +1,4 @@
-from open3d import *
+import open3d as o3d
 import math
 import numpy as np
 import numpy.matlib

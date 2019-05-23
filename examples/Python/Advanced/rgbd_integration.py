@@ -4,7 +4,7 @@
 
 # examples/Python/Advanced/rgbd_integration.py
 
-from open3d import *
+import open3d as o3d
 from trajectory_io import *
 import numpy as np
 

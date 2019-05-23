@@ -4,7 +4,7 @@
 
 # examples/Python/Advanced/outlier_removal.py
 
-from open3d import *
+import open3d as o3d
 
 def display_inlier_outlier(cloud, ind):
     inlier_cloud = select_down_sample(cloud, ind)

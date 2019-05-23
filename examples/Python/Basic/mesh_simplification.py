@@ -5,7 +5,7 @@
 # examples/Python/Basic/mesh_sampling.py
 
 import numpy as np
-from open3d import *
+import open3d as o3d
 
 def create_mesh_plane():
     mesh = TriangleMesh()

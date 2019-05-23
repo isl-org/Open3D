@@ -4,7 +4,7 @@
 
 # examples/Python/Advanced/non_blocking_visualization.py
 
-from open3d import *
+import open3d as o3d
 import numpy as np
 import copy
 

@@ -5,7 +5,7 @@
 # examples/Python/Utility/visualization.py
 
 import copy
-from open3d import *
+import open3d as o3d
 
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
