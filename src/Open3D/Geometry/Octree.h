@@ -194,6 +194,9 @@ public:
     /// Convert to voxel grid
     std::shared_ptr<geometry::VoxelGrid> ToVoxelGrid() const;
 
+    /// Convert from voxel grid
+    void FromVoxelGrid(const geometry::VoxelGrid& voxel_grid);
+
 private:
     static void TraverseRecurse(
             const std::shared_ptr<OctreeNode>& node,

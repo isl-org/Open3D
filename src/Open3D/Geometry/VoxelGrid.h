@@ -69,6 +69,8 @@ public:
 
     void FromOctree(const Octree &octree);
 
+    std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
+
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
