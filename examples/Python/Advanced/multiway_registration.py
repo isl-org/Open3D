@@ -79,7 +79,7 @@ if __name__ == "__main__":
                                    max_correspondence_distance_coarse,
                                    max_correspondence_distance_fine)
 
-    print("Optimizing o3d.registration.PoseGraph ...")
+    print("Optimizing PoseGraph ...")
     option = o3d.registration.GlobalOptimizationOption(
         max_correspondence_distance=max_correspondence_distance_fine,
         edge_prune_threshold=0.25,

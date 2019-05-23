@@ -13,10 +13,9 @@ def example_import_function():
 
 
 def example_help_function():
-    import open3d
-    help(open3d)
-    help(open3d.geometry.PointCloud)
-    help(open3d.io.read_point_cloud)
+    help(o3d)
+    help(o3d.geometry.PointCloud)
+    help(o3d.io.read_point_cloud)
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ Input
 .. literalinclude:: ../../../examples/Python/Advanced/color_map_optimization.py
    :language: python
    :lineno-start: 19
-   :lines: 19-35
+   :lines: 19-38
    :linenos:
 
 This script reads color and depth image pairs and makes ``rgbd_image``. Note that ``convert_rgb_to_intensity`` flag is ``False``. This is to preserve 8-bit color channels instead of using single channel float type image.
@@ -27,16 +27,16 @@ It is always good practice to visualize RGBD image before applying it to color m
 
 .. literalinclude:: ../../../examples/Python/Advanced/color_map_optimization.py
    :language: python
-   :lineno-start: 37
-   :lines: 37-39
+   :lineno-start: 40
+   :lines: 40-44
    :linenos:
 
 The script reads camera trajectory and mesh.
 
 .. literalinclude:: ../../../examples/Python/Advanced/color_map_optimization.py
    :language: python
-   :lineno-start: 43
-   :lines: 43-48
+   :lineno-start: 46
+   :lines: 46-53
    :linenos:
 
 To visualize how the camera poses are not good for color mapping, this script intentionally set the iteration number as 0, which means no optimization. ``color_map_optimization`` paints a mesh using corresponding RGBD images and camera poses. Without optimization, the texture map is blurred.
@@ -55,7 +55,7 @@ The next step is to optimize camera poses to get a sharp color map.
 .. literalinclude:: ../../../examples/Python/Advanced/color_map_optimization.py
    :language: python
    :lineno-start: 55
-   :lines: 55-60
+   :lines: 55-65
    :linenos:
 
 The script sets ``maximum_iteration = 300`` for actual iterations. The optimization displays the following energy profile.

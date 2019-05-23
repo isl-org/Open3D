@@ -18,8 +18,8 @@ Helper visualization function
 
 .. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
    :language: python
-   :lineno-start: 11
-   :lines: 11-17
+   :lineno-start: 12
+   :lines: 12-18
    :linenos:
 
 This function visualizes a target point cloud, and a source point cloud transformed with an alignment transformation. The target point cloud and the source point cloud are painted with cyan and yellow colors respectively. The more and tighter the two point clouds overlap with each other, the better the alignment result is.
@@ -31,8 +31,8 @@ Input
 
 .. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
    :language: python
-   :lineno-start: 20
-   :lines: 20-28
+   :lineno-start: 22
+   :lines: 22-28
    :linenos:
 
 This script reads a source point cloud and a target point cloud from two files. A rough transformation is given.
@@ -77,7 +77,7 @@ We first show a point-to-point ICP algorithm [BeslAndMcKay1992]_ using an object
 .. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
    :language: python
    :lineno-start: 34
-   :lines: 34-41
+   :lines: 34-42
    :linenos:
 
 Class ``TransformationEstimationPointToPoint`` provides functions to compute the residuals and Jacobian matrices of the point-to-point ICP objective. Function ``registration_icp`` takes it as a parameter and runs point-to-point ICP to obtain results.
@@ -137,8 +137,8 @@ where :math:`\mathbf{n}_{\mathbf{p}}` is the normal of point :math:`\mathbf{p}`.
 
 .. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
    :language: python
-   :lineno-start: 43
-   :lines: 43-50
+   :lineno-start: 44
+   :lines: 44-52
    :linenos:
 
 ``registration_icp`` is called with a different parameter ``TransformationEstimationPointToPlane``. Internally, this class implements functions to compute the residuals and Jacobian matrices of the point-to-plane ICP objective.

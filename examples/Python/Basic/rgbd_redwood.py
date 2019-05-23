@@ -14,6 +14,7 @@ if __name__ == "__main__":
     rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
         color_raw, depth_raw)
     print(rgbd_image)
+
     plt.subplot(1, 2, 1)
     plt.title('Redwood grayscale image')
     plt.imshow(rgbd_image.color)
@@ -21,6 +22,7 @@ if __name__ == "__main__":
     plt.title('Redwood depth image')
     plt.imshow(rgbd_image.depth)
     plt.show()
+
     pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
         rgbd_image,
         o3d.camera.PinholeCameraIntrinsic(
