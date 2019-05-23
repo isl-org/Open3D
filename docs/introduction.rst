@@ -3,6 +3,11 @@
 About Open3D
 #######################
 
+.. image:: _static/open3d_logo_horizontal.png
+    :alt: Open3D logo
+    :width: 240px
+    :align: right
+
 Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
 
 If you use Open3D in an academic project, please cite our paper:
@@ -36,6 +41,6 @@ Resources
 ======================
 
 * Website: `www.open3d.org <http://www.open3d.org>`_
-* Code: `github.com/IntelVCL/Open3D <https://github.com/IntelVCL/Open3D>`_
+* Code: `github.com/intel-isl/Open3D <https://github.com/intel-isl/Open3D>`_
 * Document: `www.open3d.org/docs <http://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_

@@ -24,36 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Utility/UnitTest.h"
+#include "TestUtility/UnitTest.h"
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileBIN, DISABLED_ReadFeatureFromBIN)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileBIN, DISABLED_ReadFeatureFromBIN) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileBIN, DISABLED_WriteFeatureToBIN)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileBIN, DISABLED_WriteFeatureToBIN) { unit_test::NotImplemented(); }

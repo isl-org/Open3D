@@ -24,39 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include "Open3D/Open3D.h"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc < 2) {
         PrintOpen3DVersion();
-        PrintInfo("Usage:\n");
-        PrintInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
-        PrintInfo("    The program will :\n");
-        PrintInfo("    1. load the pointcloud in [filename].\n");
-        PrintInfo("    2. visualize the point cloud.\n");
-        PrintInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
+        // clang-format off
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
+        utility::PrintInfo("    The program will :\n");
+        utility::PrintInfo("    1. load the pointcloud in [filename].\n");
+        utility::PrintInfo("    2. visualize the point cloud.\n");
+        utility::PrintInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
+        // clang-format on
         return 0;
     }
 
-    auto cloud_ptr = CreatePointCloudFromFile(argv[1]);
-    DrawGeometries({cloud_ptr}, "TestPCDFileFormat", 1920, 1080);
+    auto cloud_ptr = io::CreatePointCloudFromFile(argv[1]);
+    visualization::DrawGeometries({cloud_ptr}, "TestPCDFileFormat", 1920, 1080);
 
     if (argc >= 3) {
         std::string method(argv[2]);
         if (method == "ascii") {
-            WritePointCloud("data.pcd", *cloud_ptr, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, true);
         } else if (method == "binary") {
-            WritePointCloud("data.pcd", *cloud_ptr, false, false);
+            io::WritePointCloud("data.pcd", *cloud_ptr, false, false);
         } else if (method == "compressed") {
-            WritePointCloud("data.pcd", *cloud_ptr, false, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, false, true);
         }
     }
 

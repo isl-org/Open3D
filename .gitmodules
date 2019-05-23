@@ -1,3 +1,14 @@
-[submodule "3rdparty"]
-	path = 3rdparty
-	url = https://github.com/IntelVCL/Open3D-3rdparty.git
+[submodule "3rdparty/pybind11"]
+	path = 3rdparty/pybind11
+	url = https://github.com/pybind/pybind11.git
+[submodule "3rdparty/eigen-git-mirror"]
+	path = 3rdparty/Eigen
+	url = https://github.com/eigenteam/eigen-git-mirror.git
+[submodule "3rdparty/qhull"]
+	path = 3rdparty/qhull
+	url = https://github.com/qhull/qhull.git
+	branch = master
+[submodule "3rdparty/googletest"]
+	path = 3rdparty/googletest
+	url = https://github.com/google/googletest.git
+	branch = master

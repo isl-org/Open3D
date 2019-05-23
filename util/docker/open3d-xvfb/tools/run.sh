@@ -13,7 +13,7 @@ mkdir -p $Open3D_HOST
 # clone Open3D from the host side, build later inside the container
 cd $Open3D_HOST
 git init -q
-git remote add origin https://github.com/IntelVCL/Open3D.git
+git remote add origin https://github.com/intel-isl/Open3D.git
 git fetch
 git checkout master
 

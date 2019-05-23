@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 echo
 echo cleaning open3d_install...
 

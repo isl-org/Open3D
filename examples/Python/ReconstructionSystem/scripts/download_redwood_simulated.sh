@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 download_redwood_scene()
 {
     DATA_NAME=$1

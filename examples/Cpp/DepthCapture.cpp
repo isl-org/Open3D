@@ -28,92 +28,92 @@
 #include <memory>
 #include <thread>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include "Open3D/Open3D.h"
 
 using namespace open3d;
 
-class VisualizerWithDepthCapture : public VisualizerWithCustomAnimation
-{
+class VisualizerWithDepthCapture
+    : public visualization::VisualizerWithCustomAnimation {
 protected:
     void KeyPressCallback(GLFWwindow *window,
-            int key, int scancode, int action, int mods) override {
+                          int key,
+                          int scancode,
+                          int action,
+                          int mods) override {
         if (action == GLFW_RELEASE) {
             return;
         }
         if (key == GLFW_KEY_S) {
             CaptureDepthImage("depth.png");
             CaptureDepthPointCloud("depth.ply");
-            PinholeCameraTrajectory camera;
+            camera::PinholeCameraTrajectory camera;
             camera.parameters_.resize(1);
             view_control_ptr_->ConvertToPinholeCameraParameters(
                     camera.parameters_[0]);
-            WriteIJsonConvertible("camera.json", camera);
+            io::WriteIJsonConvertible("camera.json", camera);
         } else if (key == GLFW_KEY_L) {
-            if (filesystem::FileExists("depth.png") &&
-                    filesystem::FileExists("camera.json")) {
-                PinholeCameraTrajectory camera;
-                ReadIJsonConvertible("camera.json", camera);
-                auto image_ptr = CreateImageFromFile("depth.png");
-                auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
-                        camera.parameters_[0].intrinsic_,
+            if (utility::filesystem::FileExists("depth.png") &&
+                utility::filesystem::FileExists("camera.json")) {
+                camera::PinholeCameraTrajectory camera;
+                io::ReadIJsonConvertible("camera.json", camera);
+                auto image_ptr = io::CreateImageFromFile("depth.png");
+                auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
+                        *image_ptr, camera.parameters_[0].intrinsic_,
                         camera.parameters_[0].extrinsic_);
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_K) {
-            if (filesystem::FileExists("depth.ply")) {
-                auto pointcloud_ptr = CreatePointCloudFromFile("depth.ply");
+            if (utility::filesystem::FileExists("depth.ply")) {
+                auto pointcloud_ptr = io::CreatePointCloudFromFile("depth.ply");
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_P) {
-            if (filesystem::FileExists("depth.png") &&
-                    filesystem::FileExists("camera.json")) {
-                PinholeCameraTrajectory camera;
-                ReadIJsonConvertible("camera.json", camera);
+            if (utility::filesystem::FileExists("depth.png") &&
+                utility::filesystem::FileExists("camera.json")) {
+                camera::PinholeCameraTrajectory camera;
+                io::ReadIJsonConvertible("camera.json", camera);
                 view_control_ptr_->ConvertFromPinholeCameraParameters(
                         camera.parameters_[0]);
             }
         } else {
-            VisualizerWithCustomAnimation::KeyPressCallback(
+            visualization::VisualizerWithCustomAnimation::KeyPressCallback(
                     window, key, scancode, action, mods);
         }
         UpdateRender();
     }
 };
 
-int main(int argc, char *argv[])
-{
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+int main(int argc, char *argv[]) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
     if (argc < 2) {
         PrintOpen3DVersion();
-        PrintInfo("Usage:\n");
-        PrintInfo("    > DepthCapture  [filename]\n");
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > DepthCapture  [filename]\n");
         return 1;
     }
 
-    auto mesh_ptr = CreateMeshFromFile(argv[1]);
+    auto mesh_ptr = io::CreateMeshFromFile(argv[1]);
     mesh_ptr->ComputeVertexNormals();
-    PrintWarning("Press S to capture a depth image.\n");
+    utility::PrintWarning("Press S to capture a depth image.\n");
     VisualizerWithDepthCapture visualizer;
     visualizer.CreateVisualizerWindow("Depth Capture", 640, 480, 200, 200);
     visualizer.AddGeometry(mesh_ptr);
     visualizer.Run();
     visualizer.DestroyVisualizerWindow();
 
-    if (!filesystem::FileExists("depth.png") ||
-            !filesystem::FileExists("camera.json")) {
-        PrintWarning("Depth has not been captured.\n");
+    if (!utility::filesystem::FileExists("depth.png") ||
+        !utility::filesystem::FileExists("camera.json")) {
+        utility::PrintWarning("Depth has not been captured.\n");
         return 1;
     }
 
-    auto image_ptr = CreateImageFromFile("depth.png");
-    DrawGeometries({image_ptr});
+    auto image_ptr = io::CreateImageFromFile("depth.png");
+    visualization::DrawGeometries({image_ptr});
 
-    PinholeCameraTrajectory camera;
-    ReadIJsonConvertible("camera.json", camera);
-    auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
-            camera.parameters_[0].intrinsic_,
+    camera::PinholeCameraTrajectory camera;
+    io::ReadIJsonConvertible("camera.json", camera);
+    auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
+            *image_ptr, camera.parameters_[0].intrinsic_,
             camera.parameters_[0].extrinsic_);
     VisualizerWithDepthCapture visualizer1;
     visualizer1.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
@@ -121,15 +121,15 @@ int main(int argc, char *argv[])
     visualizer1.Run();
     visualizer1.DestroyVisualizerWindow();
 
-    PrintWarning("Press L to validate the depth image.\n");
-    PrintWarning("Press P to load the capturing camera pose.\n");
+    utility::PrintWarning("Press L to validate the depth image.\n");
+    utility::PrintWarning("Press P to load the capturing camera pose.\n");
     VisualizerWithDepthCapture visualizer2;
     visualizer2.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
     visualizer2.AddGeometry(mesh_ptr);
     visualizer2.Run();
     visualizer2.DestroyVisualizerWindow();
 
-    PrintInfo("End of the test.\n");
+    utility::PrintInfo("End of the test.\n");
 
     return 0;
 }

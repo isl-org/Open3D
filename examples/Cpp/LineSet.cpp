@@ -24,41 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
 #include <cstdio>
 #include <vector>
-#include <Eigen/Dense>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include "Open3D/Open3D.h"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc < 2) {
         PrintOpen3DVersion();
-        PrintInfo("Usage:\n");
-        PrintInfo("    > LineSet [filename]\n");
-        PrintInfo("    The program will :\n");
-        PrintInfo("    1. load the pointcloud in [filename].\n");
-        PrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
-        PrintInfo("    3. convert the correspondences to LineSet and render it.\n");
-        PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
-        PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
-        PrintInfo("    6. convert to LineSet and render it.\n");
-        PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
+        // clang-format off
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > LineSet [filename]\n");
+        utility::PrintInfo("    The program will :\n");
+        utility::PrintInfo("    1. load the pointcloud in [filename].\n");
+        utility::PrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
+        utility::PrintInfo("    3. convert the correspondences to LineSet and render it.\n");
+        utility::PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
+        utility::PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
+        utility::PrintInfo("    6. convert to LineSet and render it.\n");
+        utility::PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
+        // clang-format on
         return 1;
     }
 
-    auto cloud_ptr = CreatePointCloudFromFile(argv[1]);
+    auto cloud_ptr = io::CreatePointCloudFromFile(argv[1]);
     std::vector<std::pair<int, int>> correspondences;
 
     const int nn = 50;
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*cloud_ptr);
     std::vector<int> indices_vec(nn);
     std::vector<double> dists_vec(nn);
@@ -68,19 +67,19 @@ int main(int argc, char **argv)
     }
     auto lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
             *cloud_ptr, *cloud_ptr, correspondences);
-    DrawGeometries({cloud_ptr, lineset_ptr});
+    visualization::DrawGeometries({cloud_ptr, lineset_ptr});
 
-    auto new_cloud_ptr = std::make_shared<PointCloud>();
+    auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     *new_cloud_ptr = *cloud_ptr;
-    BoundingBox bounding_box;
+    visualization::BoundingBox bounding_box;
     bounding_box.FitInGeometry(*new_cloud_ptr);
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
             Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitX()));
-    new_cloud_ptr->Transform(
-            trans_to_origin.inverse() * transformation * trans_to_origin);
+    new_cloud_ptr->Transform(trans_to_origin.inverse() * transformation *
+                             trans_to_origin);
     correspondences.clear();
     for (size_t i = 0; i < new_cloud_ptr->points_.size(); i++) {
         kdtree.SearchKNN(new_cloud_ptr->points_[i], 1, indices_vec, dists_vec);
@@ -91,14 +90,14 @@ int main(int argc, char **argv)
     new_lineset_ptr->colors_.resize(new_lineset_ptr->lines_.size());
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
-        if ((point_pair.first - point_pair.second).norm() < 0.05 *
-                bounding_box.GetSize()) {
+        if ((point_pair.first - point_pair.second).norm() <
+            0.05 * bounding_box.GetSize()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);
         }
     }
-    DrawGeometries({cloud_ptr, new_cloud_ptr, new_lineset_ptr});
+    visualization::DrawGeometries({cloud_ptr, new_cloud_ptr, new_lineset_ptr});
 
     return 0;
 }

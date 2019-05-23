@@ -24,21 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Utility/UnitTest.h"
+#include "TestUtility/UnitTest.h"
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJPG, DISABLED_ReadImageFromJPG)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileJPG, DISABLED_ReadImageFromJPG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJPG, DISABLED_WriteImageToJPG)
-{
-    unit_test::NotImplemented();
-}
-
+TEST(FileJPG, DISABLED_WriteImageToJPG) { unit_test::NotImplemented(); }

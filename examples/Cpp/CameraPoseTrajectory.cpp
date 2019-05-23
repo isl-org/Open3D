@@ -24,55 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
 #include <iostream>
 #include <memory>
-#include <Eigen/Dense>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include "Open3D/Open3D.h"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc != 3) {
-        PrintInfo("Usage :\n");
-        PrintInfo(">    CameraPoseTrajectory trajectory_file pcds_dir\n");
+        utility::PrintInfo("Usage :\n");
+        utility::PrintInfo(
+                ">    CameraPoseTrajectory trajectory_file pcds_dir\n");
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
-        Eigen::Vector3d(255, 180, 0) / 255.0,
-        Eigen::Vector3d(0, 166, 237) / 255.0,
-        Eigen::Vector3d(246, 81, 29) / 255.0,
-        Eigen::Vector3d(127, 184, 0) / 255.0,
-        Eigen::Vector3d(13, 44, 84) / 255.0,
+            Eigen::Vector3d(255, 180, 0) / 255.0,
+            Eigen::Vector3d(0, 166, 237) / 255.0,
+            Eigen::Vector3d(246, 81, 29) / 255.0,
+            Eigen::Vector3d(127, 184, 0) / 255.0,
+            Eigen::Vector3d(13, 44, 84) / 255.0,
     };
 
-    PinholeCameraTrajectory trajectory;
-    ReadPinholeCameraTrajectory(argv[1], trajectory);
-    std::vector<std::shared_ptr<const Geometry>> pcds;
+    camera::PinholeCameraTrajectory trajectory;
+    io::ReadPinholeCameraTrajectory(argv[1], trajectory);
+    std::vector<std::shared_ptr<const geometry::Geometry>> pcds;
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         char buff[DEFAULT_IO_BUFFER_SIZE];
         sprintf(buff, "%scloud_bin_%d.pcd", argv[2], (int)i);
-        if (filesystem::FileExists(buff)) {
-            auto pcd = CreatePointCloudFromFile(buff);
+        if (utility::filesystem::FileExists(buff)) {
+            auto pcd = io::CreatePointCloudFromFile(buff);
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
             pcd->colors_.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {
-                pcd->colors_.resize(pcd->points_.size(),
-                        color_palette[i]);
+                pcd->colors_.resize(pcd->points_.size(), color_palette[i]);
             } else {
                 pcd->colors_.resize(pcd->points_.size(),
-                        (Eigen::Vector3d::Random() +
-                        Eigen::Vector3d::Constant(1.0)) * 0.5);
+                                    (Eigen::Vector3d::Random() +
+                                     Eigen::Vector3d::Constant(1.0)) *
+                                            0.5);
             }
             pcds.push_back(pcd);
         }
     }
-    DrawGeometriesWithCustomAnimation(pcds);
+    visualization::DrawGeometriesWithCustomAnimation(pcds);
 
     return 0;
 }

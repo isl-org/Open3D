@@ -1,0 +1,16 @@
+ply
+format ascii 1.0
+comment this is our first comment
+element vertex 3
+property float x
+property float y
+property float z
+element face 1
+property list uchar int vertex_indices
+comment this is our last comment
+end_header
+-1 0 0 
+000 1 0 
+1 0000 0
+3 1 00000 2
+3 1 0 2

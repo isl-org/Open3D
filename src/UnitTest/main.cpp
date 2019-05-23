@@ -25,16 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include <gtest/gtest.h>
-
-#include "Utility/Print.h"
-#include "Utility/Rand.h"
-#include "Utility/Raw.h"
-
 #include <string>
+
+#include "TestUtility/Print.h"
+#include "TestUtility/Rand.h"
+#include "TestUtility/Raw.h"
 using namespace std;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();

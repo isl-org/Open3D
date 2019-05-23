@@ -24,36 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Utility/UnitTest.h"
+#include "TestUtility/UnitTest.h"
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, DISABLED_ReadFeature)
-{
-    unit_test::NotImplemented();
-}
+TEST(FeatureIO, DISABLED_ReadFeature) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, DISABLED_WriteFeature)
-{
-    unit_test::NotImplemented();
-}
+TEST(FeatureIO, DISABLED_WriteFeature) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, DISABLED_ReadFeatureFromBIN)
-{
-    unit_test::NotImplemented();
-}
+TEST(FeatureIO, DISABLED_ReadFeatureFromBIN) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, DISABLED_WriteFeatureToBIN)
-{
-    unit_test::NotImplemented();
-}
+TEST(FeatureIO, DISABLED_WriteFeatureToBIN) { unit_test::NotImplemented(); }

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Tutorial/Basic/rgbd_sun.py
+# examples/Python/Basic/rgbd_sun.py
 
 from open3d import *
 import matplotlib.pyplot as plt

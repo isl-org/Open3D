@@ -32,6 +32,13 @@ execute_process(
 )
 message(STATUS "Using Python version: ${PYTHON_VERSION}")
 
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d' % (sys.version_info.major,))"
+    OUTPUT_VARIABLE PYTHON_VERSION_MAJOR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
+
 set(PACKAGE_NAME open3d)
 
 file(GLOB_RECURSE PY_ALL_HEADER_FILES "*.h")
@@ -43,12 +50,12 @@ ADD_SOURCE_GROUP(Tutorial)
 ADD_SOURCE_GROUP(Visualization)
 pybind11_add_module(${PACKAGE_NAME}
     ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
-    ${PY_CORE_SOURCE_FILES} ${PY_CORE_HEADER_FILES}
-    ${PY_IO_SOURCE_FILES} ${PY_IO_HEADER_FILES}
-    ${PY_VISUALIZATION_SOURCE_FILES} ${PY_VISUALIZATION_HEADER_FILES}
 )
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
+if (${PYTHON_VERSION_MAJOR} EQUAL 2)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
+endif ()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/Python`
@@ -60,14 +67,15 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DIR. It contains:
-# 1) Pure-python code and misc files, copied from src/Python/Package
+# 1) Pure-python code and misc files, copied from src/Python/package
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 # 3) Configured files and supporting files
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
+message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
-            -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
+            -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
@@ -79,7 +87,7 @@ add_custom_target(python-package
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${PROJECT_VERSION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
-            -DPYPI_PACKAGE_NAME=open3d  # `open3d` is used in building from source
+            -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 
@@ -116,24 +124,4 @@ add_custom_target(conda-package
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
-)
-
-################################################################################
-# Warning: Internal use only, consider droping this in the future
-# Use `make all-pip-packages` to create the pip package in the build directory
-# This creates: open3d-python, py3d, open3d-original, open3d-official, open-3d
-#               pip wheels
-add_custom_target(all-pip-packages
-    COMMAND ${CMAKE_COMMAND}
-        -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
-        -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-        -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
-        -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-        -DPROJECT_EMAIL=${PROJECT_EMAIL}
-        -DPROJECT_HOME=${PROJECT_HOME}
-        -DPROJECT_DOCS=${PROJECT_DOCS}
-        -DPROJECT_CODE=${PROJECT_CODE}
-        -DPROJECT_ISSUES=${PROJECT_ISSUES}
-        -DPROJECT_VERSION=${PROJECT_VERSION}
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/make_all_pip_packages.cmake
 )

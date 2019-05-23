@@ -26,55 +26,60 @@
 
 #include <cstdio>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Core/Registration/PoseGraph.h>
-#include <Core/Registration/GlobalOptimization.h>
+#include "Open3D/Open3D.h"
+#include "Open3D/Registration/GlobalOptimization.h"
+#include "Open3D/Registration/PoseGraph.h"
 
 using namespace open3d;
 
-int main(int argc, char **argv)
-{
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+int main(int argc, char **argv) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc != 2) {
         PrintOpen3DVersion();
-        PrintInfo("Usage:\n");
-        PrintInfo("    > PoseGraph [posegraph_for_optimization].json\n");
-        PrintInfo("    The program will :\n");
-        PrintInfo("    1) Generate random PoseGraph\n");
-        PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
-        PrintInfo("    3) Reads PoseGraph from test_pose_graph.json\n");
-        PrintInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json\n");
-        PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
-        PrintInfo("    6) Optimize PoseGraph\n");
-        PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
+        // clang-format off
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > PoseGraph [posegraph_for_optimization].json\n");
+        utility::PrintInfo("    The program will :\n");
+        utility::PrintInfo("    1) Generate random PoseGraph\n");
+        utility::PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
+        utility::PrintInfo("    3) Reads PoseGraph from test_pose_graph.json\n");
+        utility::PrintInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json\n");
+        utility::PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
+        utility::PrintInfo("    6) Optimize PoseGraph\n");
+        utility::PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
+        // clang-format on
         return 1;
     }
 
     // test posegraph read and write
-    PoseGraph pose_graph_test;
-    pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-    pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-    pose_graph_test.edges_.push_back(PoseGraphEdge(0, 1,
-            Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false, 1.0));
-    pose_graph_test.edges_.push_back(PoseGraphEdge(0, 2,
-            Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), true, 0.2));
-    WritePoseGraph("test_pose_graph.json", pose_graph_test);
-    PoseGraph pose_graph;
-    ReadPoseGraph("test_pose_graph.json", pose_graph);
-    WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+    registration::PoseGraph pose_graph_test;
+    pose_graph_test.nodes_.push_back(
+            registration::PoseGraphNode(Eigen::Matrix4d::Random()));
+    pose_graph_test.nodes_.push_back(
+            registration::PoseGraphNode(Eigen::Matrix4d::Random()));
+    pose_graph_test.edges_.push_back(
+            registration::PoseGraphEdge(0, 1, Eigen::Matrix4d::Random(),
+                                        Eigen::Matrix6d::Random(), false, 1.0));
+    pose_graph_test.edges_.push_back(
+            registration::PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
+                                        Eigen::Matrix6d::Random(), true, 0.2));
+    io::WritePoseGraph("test_pose_graph.json", pose_graph_test);
+    registration::PoseGraph pose_graph;
+    io::ReadPoseGraph("test_pose_graph.json", pose_graph);
+    io::WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
     // testing posegraph optimization
-    auto pose_graph_input = CreatePoseGraphFromFile(argv[1]);
-    GlobalOptimizationConvergenceCriteria criteria;
-    GlobalOptimizationOption option;
-    GlobalOptimizationLevenbergMarquardt optimization_method;
-    GlobalOptimization(*pose_graph_input, optimization_method,
-            criteria, option);
-    auto pose_graph_input_prunned = CreatePoseGraphWithoutInvalidEdges(
-            *pose_graph_input, option);
-    WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
+    auto pose_graph_input = io::CreatePoseGraphFromFile(argv[1]);
+    registration::GlobalOptimizationConvergenceCriteria criteria;
+    registration::GlobalOptimizationOption option;
+    registration::GlobalOptimizationLevenbergMarquardt optimization_method;
+    registration::GlobalOptimization(*pose_graph_input, optimization_method,
+                                     criteria, option);
+    auto pose_graph_input_prunned =
+            registration::CreatePoseGraphWithoutInvalidEdges(*pose_graph_input,
+                                                             option);
+    io::WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
 
     return 0;
 }

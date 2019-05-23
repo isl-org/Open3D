@@ -3,6 +3,9 @@
 Python interface
 ----------------
 
+For the C++ interface see :ref:`cplusplus_interface_tutorial`.
+
+
 Install open3d python package
 =============================
 

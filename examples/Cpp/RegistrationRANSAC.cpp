@@ -24,88 +24,83 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Dense>
 #include <iostream>
 #include <memory>
-#include <Eigen/Dense>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
-
-#include <Core/Utility/Timer.h>
+#include "Open3D/Open3D.h"
 
 using namespace open3d;
 
-std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
-        PreprocessPointCloud(const char* file_name)
-{
-    auto pcd = open3d::CreatePointCloudFromFile(file_name);
-    auto pcd_down = VoxelDownSample(*pcd, 0.05);
-    EstimateNormals(*pcd_down, open3d::KDTreeSearchParamHybrid(0.1, 30));
-    auto pcd_fpfh = ComputeFPFHFeature(
-            *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
+std::tuple<std::shared_ptr<geometry::PointCloud>,
+           std::shared_ptr<registration::Feature>>
+PreprocessPointCloud(const char *file_name) {
+    auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
+    auto pcd_down = geometry::VoxelDownSample(*pcd, 0.05);
+    geometry::EstimateNormals(
+            *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
+    auto pcd_fpfh = registration::ComputeFPFHFeature(
+            *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
-void VisualizeRegistration(const open3d::PointCloud &source,
-        const open3d::PointCloud &target, const Eigen::Matrix4d &Transformation)
-{
-    std::shared_ptr<PointCloud> source_transformed_ptr(new PointCloud);
-    std::shared_ptr<PointCloud> target_ptr(new PointCloud);
+void VisualizeRegistration(const open3d::geometry::PointCloud &source,
+                           const open3d::geometry::PointCloud &target,
+                           const Eigen::Matrix4d &Transformation) {
+    std::shared_ptr<geometry::PointCloud> source_transformed_ptr(
+            new geometry::PointCloud);
+    std::shared_ptr<geometry::PointCloud> target_ptr(new geometry::PointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
     source_transformed_ptr->Transform(Transformation);
-    DrawGeometries({ source_transformed_ptr, target_ptr }, "Registration result");
+    visualization::DrawGeometries({source_transformed_ptr, target_ptr},
+                                  "Registration result");
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
-    if (argc != 3) {
-        PrintDebug("Usage : RegistrationRANSAC [path_to_first_point_cloud] [path_to_second_point_cloud]\n");
+    if (argc != 3 && argc != 4) {
+        utility::PrintDebug(
+                "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
+                "[path_to_second_point_cloud] --visualize\n");
         return 1;
     }
 
-    bool visualization = false;
+    bool visualize = false;
+    if (utility::ProgramOptionExists(argc, argv, "--visualize"))
+        visualize = true;
 
-#ifdef _OPENMP
-    PrintDebug("OpenMP is supported. Using %d threads.", omp_get_num_threads());
-#endif
+    std::shared_ptr<geometry::PointCloud> source, target;
+    std::shared_ptr<registration::Feature> source_fpfh, target_fpfh;
+    std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
+    std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
-    for (int i = 0; i < 50000; i++) {
-        ScopeTimer t("one iteration");
-
-        std::shared_ptr<PointCloud> source, target;
-        std::shared_ptr<Feature> source_fpfh, target_fpfh;
-        std::tie(source, source_fpfh) =
-            PreprocessPointCloud(argv[1]);
-        std::tie(target, target_fpfh) =
-            PreprocessPointCloud(argv[2]);
-
-        std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+    std::vector<
+            std::reference_wrapper<const registration::CorrespondenceChecker>>
             correspondence_checker;
-        auto correspondence_checker_edge_length =
-            CorrespondenceCheckerBasedOnEdgeLength(0.9);
-        auto correspondence_checker_distance =
-            CorrespondenceCheckerBasedOnDistance(0.075);
-        auto correspondence_checker_normal =
-            CorrespondenceCheckerBasedOnNormal(0.52359878);
+    auto correspondence_checker_edge_length =
+            registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
+    auto correspondence_checker_distance =
+            registration::CorrespondenceCheckerBasedOnDistance(0.075);
+    auto correspondence_checker_normal =
+            registration::CorrespondenceCheckerBasedOnNormal(0.52359878);
 
-        correspondence_checker.push_back(correspondence_checker_edge_length);
-        correspondence_checker.push_back(correspondence_checker_distance);
-        correspondence_checker.push_back(correspondence_checker_normal);
-        auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
-            *source, *target, *source_fpfh, *target_fpfh, 0.075,
-            TransformationEstimationPointToPoint(false), 4,
-            correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
+    correspondence_checker.push_back(correspondence_checker_edge_length);
+    correspondence_checker.push_back(correspondence_checker_distance);
+    correspondence_checker.push_back(correspondence_checker_normal);
+    auto registration_result =
+            registration::RegistrationRANSACBasedOnFeatureMatching(
+                    *source, *target, *source_fpfh, *target_fpfh, 0.075,
+                    registration::TransformationEstimationPointToPoint(false),
+                    4, correspondence_checker,
+                    registration::RANSACConvergenceCriteria(4000000, 1000));
 
-        if (visualization)
-            VisualizeRegistration(*source, *target,
-                registration_result.transformation_);
-    }
+    if (visualize)
+        VisualizeRegistration(*source, *target,
+                              registration_result.transformation_);
 
     return 0;
 }

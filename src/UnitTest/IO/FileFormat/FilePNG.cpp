@@ -24,28 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Utility/UnitTest.h"
+#include "TestUtility/UnitTest.h"
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePNG, DISABLED_SetPNGImageFromImage)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePNG, DISABLED_SetPNGImageFromImage) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePNG, DISABLED_ReadImageFromPNG)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePNG, DISABLED_ReadImageFromPNG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePNG, DISABLED_WriteImageToPNG)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePNG, DISABLED_WriteImageToPNG) { unit_test::NotImplemented(); }

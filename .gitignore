@@ -1,11 +1,11 @@
 build*/
 _build/
 src/Sandbox/
-src/Visualization/Shader/Shader.h
+src/Open3D/Visualization/Shader/Shader.h
 doxygen/
 .vs/
 .vscode/
-src/Open3DConfig.h
+src/Open3D/Open3DConfig.h
 util/pip_package/setup.py
 open3d*.so
 open3d*.pyd
@@ -25,3 +25,5 @@ node_modules/
 static/
 **/package-lock.json
 *.old*
+docs/python_api/
+_vimrc_local.vim

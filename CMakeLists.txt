@@ -9,7 +9,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.1")
 endif()
 
 # central location for specifying the Open3D version
-file(STRINGS "src/version.txt" OPEN3D_VERSION_READ)
+file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
   if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
     set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
@@ -27,17 +27,28 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
                                            ".${OPEN3D_VERSION_MINOR}"
                                            ".${OPEN3D_VERSION_PATCH}")
 
+# pypi package name controls specifies the repository name on pypi
+# possbie names include:
+# - open3d: default name when building from source and for conda
+# - open3d-python: for PyPI
+# - py3d
+# - open3d-original
+# - open3d-official
+# - open-3d
+if(NOT DEFINED PYPI_PACKAGE_NAME)
+    set(PYPI_PACKAGE_NAME "open3d")
+endif()
 
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
-set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
+set(PROJECT_CODE    "https://github.com/intel-isl/Open3D")
+set(PROJECT_ISSUES  "https://github.com/intel-isl/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/src/Open3DConfig.h.in"
-               "${PROJECT_SOURCE_DIR}/src/Open3DConfig.h")
+configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
+               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h")
 
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
@@ -57,7 +68,7 @@ option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
-option(BUILD_EIGEN3              "Build eigen3 from source"                 OFF)
+option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
 option(BUILD_JPEG                "Build jpeg from source"                   OFF)
@@ -67,6 +78,7 @@ option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
+option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 
@@ -76,13 +88,6 @@ if (NOT CMAKE_BUILD_TYPE)
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
 endif ()
-
-# set include directories
-include_directories(
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/3rdparty
-    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
-    )
 
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -196,9 +201,15 @@ endmacro(ADD_SOURCE_GROUP)
 
 # Handling dependencies
 add_subdirectory(3rdparty)
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${3RDPARTY_INCLUDE_DIRS})
 link_directories(${3RDPARTY_LIBRARY_DIRS})
+
+# set include directories
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/3rdparty
+    ${3RDPARTY_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+)
 
 # Open3D library
 add_subdirectory(src)
@@ -206,12 +217,16 @@ add_subdirectory(src)
 # Examples
 add_subdirectory(examples)
 
-# `make check-style` returns non-zero exit code if styling is not compliant
+# `make check-style` errors if styling is not compliant
 add_custom_target(check-style
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.sh
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.cmake
 )
 
 # `make apply-style` runs clang-format to format all source code
 add_custom_target(apply-style
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.sh
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.cmake
 )

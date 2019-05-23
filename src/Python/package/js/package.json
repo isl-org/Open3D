@@ -1,0 +1,50 @@
+{
+    "name": "open3d",
+    "version": "@PROJECT_VERSION_THREE_NUMBER@",
+    "description": "Open3D Jupyter Widgets",
+    "author": "Open3D Team",
+    "license": "MIT",
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/intel-isl/Open3D.git"
+    },
+    "keywords": [
+        "jupyter",
+        "widgets",
+        "ipython",
+        "ipywidgets",
+        "Open3D",
+        "3d-vision",
+        "robotics",
+        "point-cloud",
+        "triangle-mesh"
+    ],
+    "files": [
+        "dist/*.js"
+    ],
+    "scripts": {
+        "clean": "rimraf dist/ && rimraf ../open3d/static/",
+        "cleanall": "npm run clean && rimraf node_modules/",
+        "prepare": "webpack",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "watch": "watch 'npm run prepare' /"
+    },
+    "devDependencies": {
+        "css-loader": "^1.0.0",
+        "less": "^3.8.1",
+        "less-loader": "^4.1.0",
+        "rimraf": "^2.6.2",
+        "style-loader": "^0.23.1",
+        "file-loader": "^2.0.0",
+        "watch": "^1.0.2",
+        "webpack": "^4.21.0",
+        "webpack-cli": "^3.1.2"
+    },
+    "dependencies": {
+        "@jupyter-widgets/base": "^1.2.2",
+        "lodash": "^4.17.11",
+        "three": "^0.97.0",
+        "three-orbit-controls": "^82.1.0"
+    }
+}

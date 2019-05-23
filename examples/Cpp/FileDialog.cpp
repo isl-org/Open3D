@@ -25,17 +25,16 @@
 // ----------------------------------------------------------------------------
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
-#include <Core/Core.h>
 
-void PrintHelp()
-{
+#include "Open3D/Open3D.h"
+
+void PrintHelp() {
     using namespace open3d;
-    PrintInfo("Usage :\n");
-    PrintInfo("    > FileDialog [save|load]\n");
+    utility::PrintInfo("Usage :\n");
+    utility::PrintInfo("    > FileDialog [save|load]\n");
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
     if (argc == 1) {
         PrintHelp();
@@ -44,13 +43,13 @@ int main(int argc, char *argv[])
     std::string option(argv[1]);
     char const *pattern = "*.*";
     if (option == "load") {
-        char const *str = tinyfd_openFileDialog(
-                "Find a file to load", "", 0, NULL, NULL, 1);
-        PrintInfo("%s\n", str);
+        char const *str = tinyfd_openFileDialog("Find a file to load", "", 0,
+                                                NULL, NULL, 1);
+        utility::PrintInfo("%s\n", str);
     } else if (option == "save") {
         char const *str = tinyfd_saveFileDialog("Find a file to save", "", 1,
-                &pattern, NULL);
-        PrintInfo("%s\n", str);
+                                                &pattern, NULL);
+        utility::PrintInfo("%s\n", str);
     }
     return 0;
 }

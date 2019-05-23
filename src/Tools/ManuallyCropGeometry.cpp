@@ -24,60 +24,60 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include "Open3D/Open3D.h"
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
-    PrintInfo("Usage:\n");
-    PrintInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
-    PrintInfo("      Manually crop geometry in speficied file.\n");
-    PrintInfo("\n");
-    PrintInfo("Options:\n");
-    PrintInfo("    --pointcloud,             : Read geometry as point cloud.\n");
-    PrintInfo("    --mesh,                   : Read geometry as mesh.\n");
-    PrintInfo("    --help, -h                : Print help information.\n");
-    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
-    PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    // clang-format off
+    utility::PrintInfo("Usage:\n");
+    utility::PrintInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
+    utility::PrintInfo("      Manually crop geometry in speficied file.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("Options:\n");
+    utility::PrintInfo("    --pointcloud,             : Read geometry as point cloud.\n");
+    utility::PrintInfo("    --mesh,                   : Read geometry as mesh.\n");
+    utility::PrintInfo("    --help, -h                : Print help information.\n");
+    utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
+    utility::PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    // clang-format on
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
 
-    if (argc < 2 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+    if (argc < 2 || utility::ProgramOptionExists(argc, argv, "--help") ||
+        utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 0;
     }
 
-    int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    SetVerbosityLevel((VerbosityLevel)verbose);
-    double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
-            -1.0);
-    bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    double voxel_size =
+            utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
+    bool with_dialog =
+            !utility::ProgramOptionExists(argc, argv, "--without_dialog");
 
-    VisualizerWithEditing vis(voxel_size, with_dialog,
-            filesystem::GetFileParentDirectory(argv[1]));
+    visualization::VisualizerWithEditing vis(
+            voxel_size, with_dialog,
+            utility::filesystem::GetFileParentDirectory(argv[1]));
     vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);
-    if (ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd_ptr = CreatePointCloudFromFile(argv[2]);
+    if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
+        auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
         if (pcd_ptr->IsEmpty()) {
-            PrintWarning("Failed to read the point cloud.\n");
+            utility::PrintWarning("Failed to read the point cloud.\n");
             return 0;
         }
         vis.AddGeometry(pcd_ptr);
         if (pcd_ptr->points_.size() > 5000000) {
             vis.GetRenderOption().point_size_ = 1.0;
         }
-    } else if (ProgramOptionExists(argc, argv, "--mesh")) {
-        auto mesh_ptr = CreateMeshFromFile(argv[2]);
+    } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+        auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
         if (mesh_ptr->IsEmpty()) {
-            PrintWarning("Failed to read the mesh.\n");
+            utility::PrintWarning("Failed to read the mesh.\n");
             return 0;
         }
         vis.AddGeometry(mesh_ptr);

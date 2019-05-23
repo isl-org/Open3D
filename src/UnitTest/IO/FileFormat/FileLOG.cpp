@@ -24,28 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Utility/UnitTest.h"
+#include "TestUtility/UnitTest.h"
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileLOG, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
-{
+TEST(FileLOG, DISABLED_ReadPinholeCameraTrajectoryFromLOG) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileLOG, DISABLED_PinholeCameraIntrinsic)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileLOG, DISABLED_PinholeCameraIntrinsic) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileLOG, DISABLED_WritePinholeCameraTrajectoryToLOG)
-{
+TEST(FileLOG, DISABLED_WritePinholeCameraTrajectoryToLOG) {
     unit_test::NotImplemented();
 }

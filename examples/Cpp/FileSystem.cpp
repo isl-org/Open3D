@@ -26,23 +26,20 @@
 
 #include <iostream>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
+#include "Open3D/Open3D.h"
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
-    PrintInfo("Usage :\n");
-    PrintInfo("    > FileSystem ls [dir]\n");
-    PrintInfo("    > FileSystem mkdir [dir]\n");
-    PrintInfo("    > FileSystem rmdir [dir]\n");
-    PrintInfo("    > FileSystem rmfile [file]\n");
-    PrintInfo("    > FileSystem fileexists [file]\n");
+    utility::PrintInfo("Usage :\n");
+    utility::PrintInfo("    > FileSystem ls [dir]\n");
+    utility::PrintInfo("    > FileSystem mkdir [dir]\n");
+    utility::PrintInfo("    > FileSystem rmdir [dir]\n");
+    utility::PrintInfo("    > FileSystem rmfile [file]\n");
+    utility::PrintInfo("    > FileSystem fileexists [file]\n");
 }
 
-int main(int argc, char **args)
-{
-    using namespace open3d::filesystem;
+int main(int argc, char **args) {
+    using namespace open3d::utility::filesystem;
 
     std::string directory, function;
     if (argc <= 1) {
@@ -63,28 +60,28 @@ int main(int argc, char **args)
 
         for (const auto &filename : filenames) {
             std::cout << filename << std::endl;
-            std::cout << "parent dir name is : " <<
-                    GetFileParentDirectory(filename) << std::endl;
-            std::cout << "file name only is : " <<
-                    GetFileNameWithoutDirectory(filename) << std::endl;
-            std::cout << "extension name is : " <<
-                    GetFileExtensionInLowerCase(filename) << std::endl;
-            std::cout << "file name without extension is : " <<
-                    GetFileNameWithoutExtension(filename) << std::endl;
+            std::cout << "parent dir name is : "
+                      << GetFileParentDirectory(filename) << std::endl;
+            std::cout << "file name only is : "
+                      << GetFileNameWithoutDirectory(filename) << std::endl;
+            std::cout << "extension name is : "
+                      << GetFileExtensionInLowerCase(filename) << std::endl;
+            std::cout << "file name without extension is : "
+                      << GetFileNameWithoutExtension(filename) << std::endl;
             std::cout << std::endl;
         }
     } else if (function == "mkdir") {
         bool success = MakeDirectoryHierarchy(directory);
         std::cout << "mkdir " << (success ? "succeeded" : "failed")
-                << std::endl;
+                  << std::endl;
     } else if (function == "rmdir") {
         bool success = DeleteDirectory(directory);
         std::cout << "rmdir " << (success ? "succeeded" : "failed")
-                << std::endl;
+                  << std::endl;
     } else if (function == "rmfile") {
         bool success = RemoveFile(directory);
         std::cout << "rmfile " << (success ? "succeeded" : "failed")
-                << std::endl;
+                  << std::endl;
     } else if (function == "fileexists") {
         bool success = FileExists(directory);
         std::cout << "fileexists " << (success ? "yes" : "no") << std::endl;

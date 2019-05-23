@@ -44,7 +44,7 @@ def depth_to_pcd(depth, intrinsic, extrinsic, w, h):
     uu_vector = uu.ravel()
     vv_vector = vv.ravel()
     depth_vector = np.asarray(depth, dtype=np.float32).ravel()
-    
+
     uvd = np.asarray([uu_vector * depth_vector,
                       vv_vector * depth_vector,
                       depth_vector])
