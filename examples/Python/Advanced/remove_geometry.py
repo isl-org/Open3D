@@ -4,10 +4,11 @@
 
 # examples/Python/Advanced/remove_geometry.py
 
-from open3d import *
+import open3d as o3d
 import numpy as np
 import time
 import copy
+
 
 def visualize_non_blocking(vis):
     vis.update_geometry()
@@ -15,7 +16,7 @@ def visualize_non_blocking(vis):
     vis.update_renderer()
 
 
-pcd_orig = read_point_cloud("../../TestData/fragment.pcd")
+pcd_orig = o3d.io.read_point_cloud("../../TestData/fragment.pcd")
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5
@@ -23,10 +24,10 @@ pcds = []
 for i in range(n_pcd):
     pcds.append(copy.deepcopy(pcd_orig))
     trans = np.identity(4)
-    trans[:3,3] = [3*i,0,0]
+    trans[:3, 3] = [3 * i, 0, 0]
     pcds[i].transform(trans)
 
-vis = Visualizer()
+vis = o3d.visualization.Visualizer()
 vis.create_window()
 start_time = time.time()
 added = [False] * n_pcd
@@ -48,6 +49,5 @@ while True:
                 vis.remove_geometry(pcds[i])
                 added[i] = False
                 print("Removing %d" % i)
-    
-    visualize_non_blocking(vis)
 
+    visualize_non_blocking(vis)

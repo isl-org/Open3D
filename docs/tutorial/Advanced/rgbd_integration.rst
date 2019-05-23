@@ -47,7 +47,7 @@ TSDF volume integration
 .. literalinclude:: ../../../examples/Python/Advanced/rgbd_integration.py
    :language: python
    :lineno-start: 13
-   :lines: 13-24
+   :lines: 13-30
    :linenos:
 
 Open3D provides two types of TSDF volumes: ``UniformTSDFVolume`` and ``ScalableTSDFVolume``. The latter is recommended since it uses a hierarchical structure and thus supports larger scenes.
@@ -63,8 +63,8 @@ Mesh extraction uses the marching cubes algorithm [LorensenAndCline1987]_.
 
 .. literalinclude:: ../../../examples/Python/Advanced/rgbd_integration.py
    :language: python
-   :lineno-start: 26
-   :lines: 26-29
+   :lineno-start: 32
+   :lines: 32-35
    :linenos:
 
 Outputs:

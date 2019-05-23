@@ -29,26 +29,32 @@ import numpy as np
 import time
 import pytest
 
-@pytest.mark.parametrize("input_array, expect_exception", [
-    # Empty case
-    (np.ones((0, 3), dtype=np.float64), False),
-    # Wrong shape
-    (np.ones((2, 4), dtype=np.float64), True),
-    # Non-numpy array
-    ([[1, 2, 3], [4, 5, 6]], False),
-    ([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], False),
-    # Datatypes
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64), False),
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
-    # Slice non-contiguous memory
-    (np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]], dtype=np.float64)[:, 0:6:2], False),
-    # Transpose view
-    (np.array([[1, 4], [2, 5], [3, 6]], dtype=np.float64).T, False),
-    # Fortran layout
-    (np.asfortranarray(np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64)), False),
-])
+
+@pytest.mark.parametrize(
+    "input_array, expect_exception",
+    [
+        # Empty case
+        (np.ones((0, 3), dtype=np.float64), False),
+        # Wrong shape
+        (np.ones((2, 4), dtype=np.float64), True),
+        # Non-numpy array
+        ([[1, 2, 3], [4, 5, 6]], False),
+        ([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], False),
+        # Datatypes
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64), False),
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
+        # Slice non-contiguous memory
+        (np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]],
+                  dtype=np.float64)[:, 0:6:2], False),
+        # Transpose view
+        (np.array([[1, 4], [2, 5], [3, 6]], dtype=np.float64).T, False),
+        # Fortran layout
+        (np.asfortranarray(np.array([[1, 2, 3], [4, 5, 6]],
+                                    dtype=np.float64)), False),
+    ])
 def test_Vector3dVector(input_array, expect_exception):
+
     def run_test(input_array):
         open3d_array = open3d.Vector3dVector(input_array)
         output_array = np.asarray(open3d_array)
@@ -60,26 +66,32 @@ def test_Vector3dVector(input_array, expect_exception):
     else:
         run_test(input_array)
 
-@pytest.mark.parametrize("input_array, expect_exception", [
-    # Empty case
-    (np.ones((0, 3), dtype=np.int32), False),
-    # Wrong shape
-    (np.ones((2, 4), dtype=np.int32), True),
-    # Non-numpy array
-    ([[1, 2, 3], [4, 5, 6]], False),
-    ([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], False),
-    # Datatypes
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64), False),
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
-    # Slice non-contiguous memory
-    (np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]], dtype=np.int32)[:, 0:6:2], False),
-    # Transpose view
-    (np.array([[1, 4], [2, 5], [3, 6]], dtype=np.int32).T, False),
-    # Fortran layout
-    (np.asfortranarray(np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)), False),
-])
+
+@pytest.mark.parametrize(
+    "input_array, expect_exception",
+    [
+        # Empty case
+        (np.ones((0, 3), dtype=np.int32), False),
+        # Wrong shape
+        (np.ones((2, 4), dtype=np.int32), True),
+        # Non-numpy array
+        ([[1, 2, 3], [4, 5, 6]], False),
+        ([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], False),
+        # Datatypes
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64), False),
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32), False),
+        # Slice non-contiguous memory
+        (np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]],
+                  dtype=np.int32)[:, 0:6:2], False),
+        # Transpose view
+        (np.array([[1, 4], [2, 5], [3, 6]], dtype=np.int32).T, False),
+        # Fortran layout
+        (np.asfortranarray(np.array([[1, 2, 3], [4, 5, 6]],
+                                    dtype=np.int32)), False),
+    ])
 def test_Vector3iVector(input_array, expect_exception):
+
     def run_test(input_array):
         open3d_array = open3d.Vector3iVector(input_array)
         output_array = np.asarray(open3d_array)
@@ -92,26 +104,30 @@ def test_Vector3iVector(input_array, expect_exception):
         run_test(input_array)
 
 
-@pytest.mark.parametrize("input_array, expect_exception", [
-    # Empty case
-    (np.ones((0, 2), dtype=np.int32), False),
-    # Wrong shape
-    (np.ones((10, 3), dtype=np.int32), True),
-    # Non-numpy array
-    ([[1, 2], [4, 5]], False),
-    ([[1.0, 2.0], [4.0, 5.0]], False),
-    # Datatypes
-    (np.array([[1, 2], [4, 5]], dtype=np.float64), False),
-    (np.array([[1, 2], [4, 5]], dtype=np.int32), False),
-    (np.array([[1, 2], [4, 5]], dtype=np.int32), False),
-    # Slice non-contiguous memory
-    (np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]], dtype=np.int32)[:, 0:6:3], False),
-    # Transpose view
-    (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32).T, False),
-    # Fortran layout
-    (np.asfortranarray(np.array([[1, 2], [4, 5]], dtype=np.int32)), False),
-])
+@pytest.mark.parametrize(
+    "input_array, expect_exception",
+    [
+        # Empty case
+        (np.ones((0, 2), dtype=np.int32), False),
+        # Wrong shape
+        (np.ones((10, 3), dtype=np.int32), True),
+        # Non-numpy array
+        ([[1, 2], [4, 5]], False),
+        ([[1.0, 2.0], [4.0, 5.0]], False),
+        # Datatypes
+        (np.array([[1, 2], [4, 5]], dtype=np.float64), False),
+        (np.array([[1, 2], [4, 5]], dtype=np.int32), False),
+        (np.array([[1, 2], [4, 5]], dtype=np.int32), False),
+        # Slice non-contiguous memory
+        (np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]],
+                  dtype=np.int32)[:, 0:6:3], False),
+        # Transpose view
+        (np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32).T, False),
+        # Fortran layout
+        (np.asfortranarray(np.array([[1, 2], [4, 5]], dtype=np.int32)), False),
+    ])
 def test_Vector2iVector(input_array, expect_exception):
+
     def run_test(input_array):
         open3d_array = open3d.Vector2iVector(input_array)
         output_array = np.asarray(open3d_array)
@@ -124,26 +140,29 @@ def test_Vector2iVector(input_array, expect_exception):
         run_test(input_array)
 
 
-@pytest.mark.parametrize("input_array, expect_exception", [
-    # Empty case
-    (np.ones((0, 4, 4), dtype=np.float64), False),
-    # Wrong shape
-    (np.ones((10, 3), dtype=np.float64), True),
-    (np.ones((10, 3, 3), dtype=np.float64), True),
-    # Non-numpy array
-    ([[[ 0,  1,  2,  3],
-        [ 4,  5,  6,  7],
-        [ 8,  9, 10, 11],
-        [12, 13, 14, 15]]], False),
-    # Datatypes
-    (np.random.randint(10, size=(10, 4, 4)).astype(np.float64), False),
-    (np.random.randint(10, size=(10, 4, 4)).astype(np.int32), False),
-    # Slice non-contiguous memory
-    (np.random.random((10, 8, 8)).astype(np.float64)[:, 0:8:2, 0:8:2], False),
-    # Fortran layout
-    (np.asfortranarray(np.array(np.random.random((10, 4, 4)), dtype=np.float64)), False),
-])
+@pytest.mark.parametrize(
+    "input_array, expect_exception",
+    [
+        # Empty case
+        (np.ones((0, 4, 4), dtype=np.float64), False),
+        # Wrong shape
+        (np.ones((10, 3), dtype=np.float64), True),
+        (np.ones((10, 3, 3), dtype=np.float64), True),
+        # Non-numpy array
+        ([[[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]]], False
+        ),
+        # Datatypes
+        (np.random.randint(10, size=(10, 4, 4)).astype(np.float64), False),
+        (np.random.randint(10, size=(10, 4, 4)).astype(np.int32), False),
+        # Slice non-contiguous memory
+        (np.random.random(
+            (10, 8, 8)).astype(np.float64)[:, 0:8:2, 0:8:2], False),
+        # Fortran layout
+        (np.asfortranarray(
+            np.array(np.random.random((10, 4, 4)), dtype=np.float64)), False),
+    ])
 def test_Matrix4dVector(input_array, expect_exception):
+
     def run_test(input_array):
         open3d_array = open3d.Matrix4dVector(input_array)
         output_array = np.asarray(open3d_array)
@@ -154,6 +173,7 @@ def test_Matrix4dVector(input_array, expect_exception):
             run_test(input_array)
     else:
         run_test(input_array)
+
 
 # Run with pytest -s to show output
 def test_benchmark():

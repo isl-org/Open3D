@@ -7,71 +7,78 @@
 import numpy as np
 import time
 
-from open3d import *
+import open3d as o3d
+
 
 def cat_meshes(mesh0, mesh1):
-    mesh = TriangleMesh()
+    mesh = o3d.geometry.TriangleMesh()
     vertices0 = np.asarray(mesh0.vertices)
-    vertices = np.vstack((vertices0,
-                          np.asarray(mesh1.vertices)))
-    mesh.vertices = Vector3dVector(vertices)
+    vertices = np.vstack((vertices0, np.asarray(mesh1.vertices)))
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
     triangles = np.vstack((np.asarray(mesh0.triangles),
                            np.asarray(mesh1.triangles) + vertices0.shape[0]))
-    mesh.triangles = Vector3iVector(triangles)
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
     return mesh
 
+
 def mesh_generator():
-    yield 'box', create_mesh_box()
-    yield 'sphere', create_mesh_sphere()
-    yield 'cone', create_mesh_cone()
-    yield 'torus', create_mesh_torus(radial_resolution=30, tubular_resolution=20)
-    yield 'moebius (twists=1)', create_mesh_moebius(twists=1)
-    yield 'moebius (twists=2)', create_mesh_moebius(twists=2)
-    yield 'moebius (twists=3)', create_mesh_moebius(twists=3)
+    yield 'box', o3d.geometry.create_mesh_box()
+    yield 'sphere', o3d.geometry.create_mesh_sphere()
+    yield 'cone', o3d.geometry.create_mesh_cone()
+    yield 'torus', o3d.geometry.create_mesh_torus(radial_resolution=30,
+                                                  tubular_resolution=20)
+    yield 'moebius (twists=1)', o3d.geometry.create_mesh_moebius(twists=1)
+    yield 'moebius (twists=2)', o3d.geometry.create_mesh_moebius(twists=2)
+    yield 'moebius (twists=3)', o3d.geometry.create_mesh_moebius(twists=3)
 
-    yield 'knot', read_triangle_mesh('../../TestData/knot.ply')
+    yield 'knot', o3d.io.read_triangle_mesh('../../TestData/knot.ply')
 
-    verts = np.array([[-1,0,0], [0,1,0], [1,0,0], [0,-1,0], [0,0,1]], dtype=np.float64)
-    triangles = np.array([[0,1,3], [1,2,3], [1,3,4]])
-    mesh = TriangleMesh()
-    mesh.vertices = Vector3dVector(verts)
-    mesh.triangles = Vector3iVector(triangles)
+    verts = np.array([[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
+                     dtype=np.float64)
+    triangles = np.array([[0, 1, 3], [1, 2, 3], [1, 3, 4]])
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(verts)
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
     yield 'non-manifold edge', mesh
 
-    verts = np.array([[-1,0,-1], [1,0,-1], [0,1,-1], [0,0,0],
-                      [-1,0,1], [1,0,1], [0,1,1]], dtype=np.float64)
-    triangles = np.array([[0,1,2], [0,1,3], [1,2,3], [2,0,3],
-                          [4,5,6], [4,5,3], [5,6,3], [4,6,3]])
-    mesh = TriangleMesh()
-    mesh.vertices = Vector3dVector(verts)
-    mesh.triangles = Vector3iVector(triangles)
+    verts = np.array([[-1, 0, -1], [1, 0, -1], [0, 1, -1], [0, 0, 0],
+                      [-1, 0, 1], [1, 0, 1], [0, 1, 1]],
+                     dtype=np.float64)
+    triangles = np.array([[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3], [4, 5, 6],
+                          [4, 5, 3], [5, 6, 3], [4, 6, 3]])
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(verts)
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
     yield 'non-manifold vertex', mesh
 
-    mesh = create_mesh_box()
-    mesh.triangles = Vector3iVector(np.asarray(mesh.triangles)[:-2])
+    mesh = o3d.geometry.create_mesh_box()
+    mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:-2])
     yield 'open box', mesh
 
-    mesh0 = create_mesh_box()
+    mesh0 = o3d.geometry.create_mesh_box()
     T = np.eye(4)
     T[:, 3] += (0.5, 0.5, 0.5, 0)
-    mesh1 = create_mesh_box()
+    mesh1 = o3d.geometry.create_mesh_box()
     mesh1.transform(T)
     mesh = cat_meshes(mesh0, mesh1)
     yield 'boxes', mesh
 
+
 def edges_to_lineset(mesh, edges, color):
-    ls = LineSet()
+    ls = o3d.geometry.LineSet()
     ls.points = mesh.vertices
     ls.lines = edges
     colors = np.empty((np.asarray(edges).shape[0], 3))
     colors[:] = color
-    ls.colors = Vector3dVector(colors)
+    ls.colors = o3d.utility.Vector3dVector(colors)
     return ls
 
 
 def check_properties(name, mesh):
+
     def fmt_bool(b):
         return 'yes' if b else 'no'
+
     edge_manifold = mesh.is_edge_manifold(allow_boundary_edges=True)
     edge_manifold_boundary = mesh.is_edge_manifold(allow_boundary_edges=False)
     vertex_manifold = mesh.is_vertex_manifold()
@@ -87,74 +94,83 @@ def check_properties(name, mesh):
     print('  orientable:             %s' % fmt_bool(orientable))
 
     mesh.compute_vertex_normals()
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
 
     if not edge_manifold:
         edges = mesh.get_non_manifold_edges(allow_boundary_edges=True)
         print('  # visualize non-manifold edges (allow_boundary_edges=True)')
-        draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,0,0))])
+        o3d.visualization.draw_geometries(
+            [mesh, edges_to_lineset(mesh, edges, (1, 0, 0))])
     if not edge_manifold_boundary:
         edges = mesh.get_non_manifold_edges(allow_boundary_edges=False)
         print('  # visualize non-manifold edges (allow_boundary_edges=False)')
-        draw_geometries([mesh, edges_to_lineset(mesh, edges, (0,1,0))])
+        o3d.visualization.draw_geometries(
+            [mesh, edges_to_lineset(mesh, edges, (0, 1, 0))])
     if not vertex_manifold:
         verts = np.asarray(mesh.get_non_manifold_vertices())
         print('  # visualize non-manifold vertices')
-        pcl = PointCloud()
-        pcl.points = Vector3dVector(np.asarray(mesh.vertices)[verts])
-        pcl.paint_uniform_color((0,0,1))
-        draw_geometries([mesh, pcl])
+        pcl = o3d.geometry.PointCloud()
+        pcl.points = o3d.utility.Vector3dVector(
+            np.asarray(mesh.vertices)[verts])
+        pcl.paint_uniform_color((0, 0, 1))
+        o3d.visualization.draw_geometries([mesh, pcl])
     if self_intersecting:
-        intersecting_triangles = np.asarray(mesh.get_self_intersecting_triangles())
+        intersecting_triangles = np.asarray(
+            mesh.get_self_intersecting_triangles())
         intersecting_triangles = intersecting_triangles[0:1]
         intersecting_triangles = np.unique(intersecting_triangles)
         print('  # visualize self-intersecting triangles')
         triangles = np.asarray(mesh.triangles)[intersecting_triangles]
-        edges = [np.vstack((triangles[:,i], triangles[:,j])) for i,j in [(0,1), (1,2), (2,0)]]
+        edges = [
+            np.vstack((triangles[:, i], triangles[:, j]))
+            for i, j in [(0, 1), (1, 2), (2, 0)]
+        ]
         edges = np.hstack(edges).T
-        edges = Vector2iVector(edges)
-        draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,1,0))])
+        edges = o3d.utility.Vector2iVector(edges)
+        o3d.visualization.draw_geometries(
+            [mesh, edges_to_lineset(mesh, edges, (1, 1, 0))])
+
 
 if __name__ == "__main__":
     # test mesh properties
-    print('#'*80)
+    print('#' * 80)
     print('Test mesh properties')
-    print('#'*80)
+    print('#' * 80)
     for name, mesh in mesh_generator():
         check_properties(name, mesh)
 
     # fix triangle orientation
-    print('#'*80)
+    print('#' * 80)
     print('Fix triangle orientation')
-    print('#'*80)
+    print('#' * 80)
     for name, mesh in mesh_generator():
         mesh.compute_vertex_normals()
         triangles = np.asarray(mesh.triangles)
         rnd_idx = np.random.rand(*triangles.shape).argsort(axis=1)
         rnd_idx[0] = (0, 1, 2)
         triangles = np.take_along_axis(triangles, rnd_idx, axis=1)
-        mesh.triangles = Vector3iVector(triangles)
-        draw_geometries([mesh])
+        mesh.triangles = o3d.utility.Vector3iVector(triangles)
+        o3d.visualization.draw_geometries([mesh])
         sucess = mesh.orient_triangles()
         print('%s orientated: %s' % (name, 'yes' if sucess else 'no'))
-        draw_geometries([mesh])
+        o3d.visualization.draw_geometries([mesh])
 
     # intersection tests
-    print('#'*80)
+    print('#' * 80)
     print('Intersection tests')
-    print('#'*80)
+    print('#' * 80)
     np.random.seed(30)
-    bbox = create_mesh_box(20,20,20).translate((-10,-10,-10))
-    meshes = [create_mesh_box() for _ in range(20)]
-    meshes.append(create_mesh_sphere())
-    meshes.append(create_mesh_cone())
-    meshes.append(create_mesh_torus())
+    bbox = o3d.geometry.create_mesh_box(20, 20, 20).translate((-10, -10, -10))
+    meshes = [o3d.geometry.create_mesh_box() for _ in range(20)]
+    meshes.append(o3d.geometry.create_mesh_sphere())
+    meshes.append(o3d.geometry.create_mesh_cone())
+    meshes.append(o3d.geometry.create_mesh_torus())
     dirs = [np.random.uniform(-0.1, 0.1, size=(3,)) for _ in meshes]
     for mesh in meshes:
         mesh.compute_vertex_normals()
         mesh.paint_uniform_color((0.5, 0.5, 0.5))
         mesh.translate(np.random.uniform(-7.5, 7.5, size=(3,)))
-    vis = Visualizer()
+    vis = o3d.visualization.Visualizer()
     vis.create_window()
     for mesh in meshes:
         vis.add_geometry(mesh)

@@ -16,7 +16,7 @@ Integrate RGBD frames
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/integrate_scene.py
    :language: python
    :lineno-start: 13
-   :lines: 5,14-51
+   :lines: 5,17-54
    :linenos:
 
 This function first reads the alignment results from both :ref:`reconstruction_system_make_fragments` and :ref:`reconstruction_system_register_fragments`, then computes the pose of each RGBD image in the global space. After that, RGBD images are integrated using :ref:`rgbd_integration`.

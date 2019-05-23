@@ -5,68 +5,90 @@
 # examples/Python/ReconstructionSystem/register_fragments.py
 
 import numpy as np
-from open3d import *
+import open3d as o3d
 import sys
 sys.path.append("../Utility")
-from file import *
-from visualization import *
-from optimize_posegraph import *
+from file import join, get_file_list
+from visualization import draw_registration_result_original_color
+sys.path.append(".")
+from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
-def update_posegrph_for_scene(s, t, transformation, information,
-        odometry, pose_graph):
-    if t == s + 1: # odometry case
+def update_posegrph_for_scene(s, t, transformation, information, odometry,
+                              pose_graph):
+    if t == s + 1:  # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
-        pose_graph.nodes.append(PoseGraphNode(odometry_inv))
+        pose_graph.nodes.append(o3d.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
-                PoseGraphEdge(s, t, transformation,
-                information, uncertain = False))
-    else: # loop closure case
+            o3d.registration.PoseGraphEdge(s,
+                                           t,
+                                           transformation,
+                                           information,
+                                           uncertain=False))
+    else:  # loop closure case
         pose_graph.edges.append(
-                PoseGraphEdge(s, t, transformation,
-                information, uncertain = True))
+            o3d.registration.PoseGraphEdge(s,
+                                           t,
+                                           transformation,
+                                           information,
+                                           uncertain=True))
     return (odometry, pose_graph)
 
 
-def multiscale_icp(source, target, voxel_size, max_iter,
-        config, init_transformation = np.identity(4)):
+def multiscale_icp(source,
+                   target,
+                   voxel_size,
+                   max_iter,
+                   config,
+                   init_transformation=np.identity(4)):
     current_transformation = init_transformation
-    for i, scale in enumerate(range(len(max_iter))): # multi-scale approach
+    for i, scale in enumerate(range(len(max_iter))):  # multi-scale approach
         iter = max_iter[scale]
         distance_threshold = config["voxel_size"] * 1.4
         print("voxel_size %f" % voxel_size[scale])
-        source_down = voxel_down_sample(source, voxel_size[scale])
-        target_down = voxel_down_sample(target, voxel_size[scale])
+        source_down = o3d.geometry.voxel_down_sample(source, voxel_size[scale])
+        target_down = o3d.geometry.voxel_down_sample(target, voxel_size[scale])
         if config["icp_method"] == "point_to_point":
-            result_icp = registration_icp(source_down, target_down,
-                    distance_threshold, current_transformation,
-                    TransformationEstimationPointToPoint(),
-                    ICPConvergenceCriteria(max_iteration = iter))
+            result_icp = o3d.registration.registration_icp(
+                source_down, target_down, distance_threshold,
+                current_transformation,
+                o3d.registration.TransformationEstimationPointToPoint(),
+                o3d.registration.ICPConvergenceCriteria(max_iteration=iter))
         else:
-            estimate_normals(source_down, KDTreeSearchParamHybrid(
-                    radius = voxel_size[scale] * 2.0, max_nn = 30))
-            estimate_normals(target_down, KDTreeSearchParamHybrid(
-                    radius = voxel_size[scale] * 2.0, max_nn = 30))
+            o3d.geometry.estimate_normals(
+                source_down,
+                o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
+                                                     2.0,
+                                                     max_nn=30))
+            o3d.geometry.estimate_normals(
+                target_down,
+                o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
+                                                     2.0,
+                                                     max_nn=30))
             if config["icp_method"] == "point_to_plane":
-                result_icp = registration_icp(source_down, target_down,
-                        distance_threshold, current_transformation,
-                        TransformationEstimationPointToPlane(),
-                        ICPConvergenceCriteria(max_iteration = iter))
+                result_icp = o3d.registration.registration_icp(
+                    source_down, target_down, distance_threshold,
+                    current_transformation,
+                    o3d.registration.TransformationEstimationPointToPlane(),
+                    o3d.registration.ICPConvergenceCriteria(max_iteration=iter))
             if config["icp_method"] == "color":
-                result_icp = registration_colored_icp(source_down, target_down,
-                        voxel_size[scale], current_transformation,
-                        ICPConvergenceCriteria(relative_fitness = 1e-6,
-                        relative_rmse = 1e-6, max_iteration = iter))
+                result_icp = o3d.registration.registration_colored_icp(
+                    source_down, target_down, voxel_size[scale],
+                    current_transformation,
+                    o3d.registration.ICPConvergenceCriteria(
+                        relative_fitness=1e-6,
+                        relative_rmse=1e-6,
+                        max_iteration=iter))
         current_transformation = result_icp.transformation
-        if i == len(max_iter)-1:
-            information_matrix = get_information_matrix_from_point_clouds(
-                    source_down, target_down, voxel_size[scale] * 1.4,
-                    result_icp.transformation)
+        if i == len(max_iter) - 1:
+            information_matrix = o3d.registration.get_information_matrix_from_point_clouds(
+                source_down, target_down, voxel_size[scale] * 1.4,
+                result_icp.transformation)
 
     if config["debug_mode"]:
         draw_registration_result_original_color(source, target,
-                result_icp.transformation)
+                                                result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
@@ -78,16 +100,16 @@ def local_refinement(source, target, transformation_init, config):
             [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
             config, transformation_init)
     if config["debug_mode"]:
-        draw_registration_result_original_color(
-                source, target, transformation)
+        draw_registration_result_original_color(source, target, transformation)
     return (transformation, information)
 
 
-def register_point_cloud_pair(ply_file_names, s, t, transformation_init, config):
+def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
+                              config):
     print("reading %s ..." % ply_file_names[s])
-    source = read_point_cloud(ply_file_names[s])
+    source = o3d.io.read_point_cloud(ply_file_names[s])
     print("reading %s ..." % ply_file_names[t])
-    target = read_point_cloud(ply_file_names[t])
+    target = o3d.io.read_point_cloud(ply_file_names[t])
     (transformation, information) = \
             local_refinement(source, target, transformation_init, config)
     if config["debug_mode"]:
@@ -98,6 +120,7 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init, config)
 
 # other types instead of class?
 class matching_result:
+
     def __init__(self, s, t, trans):
         self.s = s
         self.t = t
@@ -107,8 +130,9 @@ class matching_result:
 
 
 def make_posegraph_for_refined_scene(ply_file_names, config):
-    pose_graph = read_pose_graph(join(config["path_dataset"],
-            config["template_global_posegraph_optimized"]))
+    pose_graph = o3d.io.read_pose_graph(
+        join(config["path_dataset"],
+             config["template_global_posegraph_optimized"]))
 
     n_files = len(ply_file_names)
     matching_results = {}
@@ -123,12 +147,12 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         import multiprocessing
         import subprocess
         MAX_THREAD = min(multiprocessing.cpu_count(),
-                max(len(pose_graph.edges), 1))
+                         max(len(pose_graph.edges), 1))
         results = Parallel(n_jobs=MAX_THREAD)(
-                delayed(register_point_cloud_pair)(ply_file_names,
-                matching_results[r].s, matching_results[r].t,
+            delayed(register_point_cloud_pair)(
+                ply_file_names, matching_results[r].s, matching_results[r].t,
                 matching_results[r].transformation, config)
-                for r in matching_results)
+            for r in matching_results)
         for i, r in enumerate(matching_results):
             matching_results[r].transformation = results[i][0]
             matching_results[r].information = results[i][1]
@@ -140,24 +164,24 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
                     matching_results[r].s, matching_results[r].t,
                     matching_results[r].transformation, config)
 
-    pose_graph_new = PoseGraph()
+    pose_graph_new = o3d.registration.PoseGraph()
     odometry = np.identity(4)
-    pose_graph_new.nodes.append(PoseGraphNode(odometry))
+    pose_graph_new.nodes.append(o3d.registration.PoseGraphNode(odometry))
     for r in matching_results:
         (odometry, pose_graph_new) = update_posegrph_for_scene(
-                matching_results[r].s, matching_results[r].t,
-                matching_results[r].transformation,
-                matching_results[r].information,
-                odometry, pose_graph_new)
+            matching_results[r].s, matching_results[r].t,
+            matching_results[r].transformation, matching_results[r].information,
+            odometry, pose_graph_new)
     print(pose_graph_new)
-    write_pose_graph(join(config["path_dataset"],
-            config["template_refined_posegraph"]), pose_graph_new)
+    o3d.io.write_pose_graph(
+        join(config["path_dataset"], config["template_refined_posegraph"]),
+        pose_graph_new)
 
 
 def run(config):
     print("refine rough registration of fragments.")
-    set_verbosity_level(VerbosityLevel.Debug)
-    ply_file_names = get_file_list(join(
-            config["path_dataset"], config["folder_fragment"]), ".ply")
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    ply_file_names = get_file_list(
+        join(config["path_dataset"], config["folder_fragment"]), ".ply")
     make_posegraph_for_refined_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)
