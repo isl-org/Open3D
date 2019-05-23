@@ -58,7 +58,7 @@ void pybind_lineset(py::module &m) {
             .def("get_line_coordinate", &geometry::LineSet::GetLineCoordinate,
                  "line_index"_a)
             .def("paint_uniform_color", &geometry::LineSet::PaintUniformColor,
-                 "Assign uniform color to all lines.")
+                 "Assigns each line in the line set the same color.")
             .def_readwrite("points", &geometry::LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -77,12 +77,14 @@ void pybind_lineset(py::module &m) {
     docstring::ClassMethodDocInject(m, "LineSet", "has_points");
     docstring::ClassMethodDocInject(m, "LineSet", "get_line_coordinate",
                                     {{"line_index", "Index of the line."}});
+    docstring::ClassMethodDocInject(m, "LineSet", "paint_uniform_color",
+                                    {{"color", "Color for the LineSet."}});
 }
 
 void pybind_lineset_methods(py::module &m) {
     m.def("create_line_set_from_point_cloud_correspondences",
           &geometry::CreateLineSetFromPointCloudCorrespondences,
-          "Factory function to create a lineset from two pointclouds and a "
+          "Factory function to create a LineSet from two pointclouds and a "
           "correspondence set.",
           "cloud0"_a, "cloud1"_a, "correspondences"_a);
     docstring::FunctionDocInject(
@@ -93,7 +95,7 @@ void pybind_lineset_methods(py::module &m) {
 
     m.def("create_line_set_from_triangle_mesh",
           &geometry::CreateLineSetFromTriangleMesh,
-          "Factory function to create a lineset from edges of a triangle mesh.",
+          "Factory function to create a LineSet from edges of a triangle mesh.",
           "mesh"_a);
     docstring::FunctionDocInject(m, "create_line_set_from_triangle_mesh",
                                  {{"mesh", "The input triangle mesh."}});

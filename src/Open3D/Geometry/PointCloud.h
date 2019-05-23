@@ -83,6 +83,7 @@ public:
         }
     }
 
+    /// Assigns each point in the PointCloud the same color \param color.
     void PaintUniformColor(const Eigen::Vector3d &color) {
         colors_.resize(points_.size());
         for (size_t i = 0; i < points_.size(); i++) {

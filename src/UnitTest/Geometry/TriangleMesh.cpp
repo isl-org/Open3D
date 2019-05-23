@@ -788,7 +788,7 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
     mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
-    mesh.FilterSmoothTaubin(1, 0.5, 0.53);
+    mesh.FilterSmoothTaubin(1, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
                                          {0.765, 0, 0},
                                          {0, 0.765, 0},
@@ -796,7 +796,7 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, -0.765, 0}};
     ExpectEQ(mesh.vertices_, ref1);
 
-    mesh.FilterSmoothTaubin(10, 0.5, 0.53);
+    mesh.FilterSmoothTaubin(10, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
                                          {0.052514, 0, 0},
                                          {0, 0.052514, 0},

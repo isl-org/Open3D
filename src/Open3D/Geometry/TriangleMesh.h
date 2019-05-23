@@ -42,7 +42,21 @@ class PointCloud;
 
 class TriangleMesh : public Geometry3D {
 public:
+    /// Indicates the method that is used for mesh simplification if multiple
+    /// vertices are combined to a single one.
+    /// \param Average indicates that the average position is computed as
+    /// output.
+    /// \param Quadric indicates that the distance to the adjacent triangle
+    /// planes is minimized. Cf. "Simplifying Surfaces with Color and Texture
+    /// using Quadric Error Metrics" by Garland and Heckbert.
     enum class SimplificationContraction { Average, Quadric };
+
+    /// Indicates the scope of filter operations.
+    /// \param All indicates that all properties (color, normal,
+    /// vertex position) are filtered.
+    /// \param Color indicates that only the colors are filtered.
+    /// \param Normal indicates that only the normals are filtered.
+    /// \param Vertex indicates that only the vertex positions are filtered.
     enum class FilterScope { All, Color, Normal, Vertex };
 
     TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {}
@@ -75,24 +89,47 @@ public:
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
 
-    /// Function to sharpen triangle mesh
+    /// Function to sharpen triangle mesh. The output value ($v_o$) is the
+    /// input value ($v_i$) plus \param strength times the input value minus
+    /// the sum of he adjacent values.
+    /// $v_o = v_i x strength (v_i * |N| - \sum_{n \in N} v_n)$.
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
     void FilterSharpen(int number_of_iterations,
                        double strength,
                        FilterScope scope = FilterScope::All);
 
-    /// Function to smooth triangle mesh with simple neighbour average
+    /// Function to smooth triangle mesh with simple neighbour average.
+    /// $v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}$, with $v_i$
+    /// being the input value, $v_o$ the output value, and $N$ is the
+    /// set of adjacent neighbours.
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
     void FilterSmoothSimple(int number_of_iterations,
                             FilterScope scope = FilterScope::All);
 
-    /// Function to smooth triangle mesh using Laplacian
+    /// Function to smooth triangle mesh using Laplacian.
+    /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
+    /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
+    /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
+    /// based on the inverse distance (closer neighbours have higher weight),
+    /// and \param lambda is the smoothing parameter.
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
     void FilterSmoothLaplacian(int number_of_iterations,
                                double lambda,
                                FilterScope scope = FilterScope::All);
 
-    /// Function to smooth triangle mesh using method of Taubin
+    /// Function to smooth triangle mesh using method of Taubin,
+    /// "Curve and Surface Smoothing Without Shrinkage", 1995.
+    /// Applies in each iteration two times FilterSmoothLaplacian, first
+    /// with \param lambda and second with \param mu as smoothing parameter.
+    /// This method avoids shrinkage of the triangle mesh.
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
     void FilterSmoothTaubin(int number_of_iterations,
-                            double lambda,
-                            double mu,
+                            double lambda = 0.5,
+                            double mu = -0.53,
                             FilterScope scope = FilterScope::All);
 
 protected:
@@ -144,6 +181,7 @@ public:
         }
     }
 
+    /// Assigns each vertex in the TriangleMesh the same color \param color.
     void PaintUniformColor(const Eigen::Vector3d &color) {
         vertex_colors_.resize(vertices_.size());
         for (size_t i = 0; i < vertices_.size(); i++) {
@@ -151,7 +189,9 @@ public:
         }
     }
 
-    /// Function that computes the Euler-Poincaré characteristic V + F - E
+    /// Function that computes the Euler-Poincaré characteristic, i.e.,
+    /// V + F - E, where V is the number of vertices, F is the number
+    /// of triangles, and E is the number of edges.
     int EulerPoincareCharacteristic() const;
 
     /// Function that returns the non-manifold edges of the triangle mesh.
@@ -162,8 +202,8 @@ public:
 
     /// Function that checks if the given triangle mesh is edge-manifold.
     /// A mesh is edge­manifold if each edge is bounding either one or two
-    /// triangles. If allow_boundary_edges is set to false, than retuns false if
-    /// there exists boundary edges.
+    /// triangles. If allow_boundary_edges is set to false, than returns false
+    /// if there exists boundary edges.
     bool IsEdgeManifold(bool allow_boundary_edges = true) const;
 
     /// Function that returns a list of non-manifold vertex indices.
@@ -388,7 +428,14 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
         double size = 1.0,
         const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
-/// Factory function to create a Moebius strip.
+/// Factory function to create a Moebius strip. \param length_split
+/// defines the number of segments along the Moebius strip, \param
+/// width_split defines the number of segments along the width of
+/// the Moebius strip, \param twists defines the number of twists of the
+/// strip, \param radius defines the radius of the Moebius strip,
+/// \param flatness controls the height of the strip, \param width
+/// controls the width of the Moebius strip and \param scale is used
+/// to scale the entire Moebius strip.
 std::shared_ptr<TriangleMesh> CreateMeshMoebius(int length_split = 70,
                                                 int width_split = 15,
                                                 int twists = 1,
