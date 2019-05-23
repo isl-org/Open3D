@@ -223,7 +223,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 /// \param input voxel grid
 /// \param output point cloud
 std::shared_ptr<PointCloud> CreatePointCloudFromVoxelGrid(
-    const VoxelGrid &voxel_grid);
+        const VoxelGrid &voxel_grid);
 
 /// Function that computes the convex hull of the point cloud using qhull
 std::shared_ptr<TriangleMesh> ComputePointCloudConvexHull(

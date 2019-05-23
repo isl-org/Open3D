@@ -72,15 +72,16 @@ public:
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
     Eigen::Vector3d GetOriginalCoordinate(int id) const {
-        return ((voxels_[id].cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5))
-                * voxel_size_) + origin_;
+        return ((voxels_[id].cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) *
+                voxel_size_) +
+               origin_;
     }
     std::vector<Eigen::Vector3d> GetBoundingPointsOfVoxel(int index);
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
     void FromOctree(const Octree &octree);
 
-public: 
+public:
     double voxel_size_;
     Eigen::Vector3d origin_;
     std::vector<Eigen::Vector3i> voxels_;
@@ -88,20 +89,25 @@ public:
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input, double voxel_size,
-        const Eigen::Vector3d voxel_min_bound, 
+        const PointCloud &input,
+        double voxel_size,
+        const Eigen::Vector3d voxel_min_bound,
         const Eigen::Vector3d voxel_max_bound);
 
-std::shared_ptr<VoxelGrid> CreateVoxelGrid(
-        double w, double h, double d, double voxel_size,
-        const Eigen::Vector3d origin);
+std::shared_ptr<VoxelGrid> CreateVoxelGrid(double w,
+                                           double h,
+                                           double d,
+                                           double voxel_size,
+                                           const Eigen::Vector3d origin);
 
-std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap (
-        VoxelGrid &input, const Image &silhouette_mask,
+std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
+        VoxelGrid &input,
+        const Image &silhouette_mask,
         const camera::PinholeCameraParameters &camera_parameter);
 
-void CarveVoxelGridUsingSilhouette (
-        VoxelGrid &input, const Image &silhouette_mask,
+void CarveVoxelGridUsingSilhouette(
+        VoxelGrid &input,
+        const Image &silhouette_mask,
         const camera::PinholeCameraParameters &camera_parameter);
 
 }  // namespace geometry

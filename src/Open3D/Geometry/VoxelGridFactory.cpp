@@ -58,7 +58,7 @@ public:
         return color_ / double(num_of_points_);
     }
 
-   public:
+public:
     int num_of_points_;
     Eigen::Vector3i coordinate_;
     Eigen::Vector3d color_;
@@ -69,9 +69,10 @@ public:
 namespace geometry {
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-    const PointCloud &input, double voxel_size,
-    const Eigen::Vector3d voxel_min_bound,
-    const Eigen::Vector3d voxel_max_bound) {
+        const PointCloud &input,
+        double voxel_size,
+        const Eigen::Vector3d voxel_min_bound,
+        const Eigen::Vector3d voxel_max_bound) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         utility::PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
@@ -79,7 +80,8 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     }
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::PrintDebug("[VoxelGridFromPointCloud] voxel_size is too small.\n");
+        utility::PrintDebug(
+                "[VoxelGridFromPointCloud] voxel_size is too small.\n");
         return output;
     }
     output->voxel_size_ = voxel_size;
@@ -102,12 +104,15 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
             output->colors_.push_back(accpoint.second.GetAverageColor());
         }
     }
-    utility::PrintDebug("Pointcloud is voxelized from %d points to %d voxels.\n",
-               (int)input.points_.size(), (int)output->voxels_.size());
+    utility::PrintDebug(
+            "Pointcloud is voxelized from %d points to %d voxels.\n",
+            (int)input.points_.size(), (int)output->voxels_.size());
     return output;
 }
 
-std::shared_ptr<VoxelGrid> CreateVoxelGrid(double w, double h, double d,
+std::shared_ptr<VoxelGrid> CreateVoxelGrid(double w,
+                                           double h,
+                                           double d,
                                            double voxel_size,
                                            const Eigen::Vector3d origin) {
     auto output = std::make_shared<VoxelGrid>();
