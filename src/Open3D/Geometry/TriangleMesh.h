@@ -103,6 +103,9 @@ public:
     /// They are usually the product of removing duplicated vertices.
     virtual void RemoveDegenerateTriangles();
 
+    /// TODO doc
+    virtual void RemoveNonManifoldTriangles();
+
     /// Function to sharpen triangle mesh. The output value ($v_o$) is the
     /// input value ($v_i$) plus \param strength times the input value minus
     /// the sum of he adjacent values.
@@ -251,12 +254,12 @@ public:
     /// such that all normals point towards the outside/inside.
     bool OrientTriangles();
 
-    /// Function that counts the number of faces an edge belongs to.
-    /// Returns a map of Edge (vertex0, vertex1) to number of faces.
+    /// Function that returns a map from edges (vertex0, vertex1) to the
+    /// triangle indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
-                       int,
+                       std::vector<int>,
                        utility::hash_eigen::hash<Eigen::Vector2i>>
-    GetEdgeTriangleCount() const;
+    GetEdgeToTrianglesMap() const;
 
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index

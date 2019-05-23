@@ -301,13 +301,13 @@ std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
     }
 
     // For boundary edges add perpendicular plane quadric
-    auto edge_triangle_count = input.GetEdgeTriangleCount();
+    auto edge_triangle_count = input.GetEdgeToTrianglesMap();
     auto AddPerpPlaneQuadric = [&](int vidx0, int vidx1, int vidx2,
                                    double area) {
         int min = std::min(vidx0, vidx1);
         int max = std::max(vidx0, vidx1);
         Eigen::Vector2i edge(min, max);
-        if (edge_triangle_count[edge] != 1) {
+        if (edge_triangle_count[edge].size() != 1) {
             return;
         }
         const auto& vert0 = mesh->vertices_[vidx0];

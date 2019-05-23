@@ -807,6 +807,29 @@ void TriangleMesh::RemoveDegenerateTriangles() {
             (int)(old_triangle_num - k));
 }
 
+void TriangleMesh::RemoveNonManifoldTriangles() {
+  bool mesh_is_edge_manifold = false;
+  while(!mesh_is_edge_manifold) {
+      mesh_is_edge_manifold = true;
+      auto edges_to_triangles = GetEdgeToTrianglesMap();
+
+      std::vector<double> triangle_areas;
+      GetSurfaceArea(triangle_areas);
+
+      for (auto &kv : edges) {
+          int n_edge_triangle_refs = kv.second.size();
+          if (n_edge_triangle_refs == 1 || n_edge_triangle_refs == 2) {
+            continue;
+          }
+          // if the idge is non-manifold, then check if a referenced
+          // triangle has already been removed, otherwise remove triangle
+          // with smallest surface area.
+      }
+  }
+
+  // TODO deleted move triangles
+}
+
 template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                           F &swap) {
@@ -925,26 +948,23 @@ bool TriangleMesh::OrientTriangles() {
 }
 
 std::unordered_map<Eigen::Vector2i,
-                   int,
+                   std::vector<int>,
                    utility::hash_eigen::hash<Eigen::Vector2i>>
-TriangleMesh::GetEdgeTriangleCount() const {
-    std::unordered_map<Eigen::Vector2i, int,
+TriangleMesh::GetEdgeToTrianglesMap() const {
+    std::unordered_map<Eigen::Vector2i, std::vector<int>,
                        utility::hash_eigen::hash<Eigen::Vector2i>>
             trias_per_edge;
-    auto AddEdge = [&](int vidx0, int vidx1) {
+    auto AddEdge = [&](int vidx0, int vidx1, int tidx) {
         int min0 = std::min(vidx0, vidx1);
         int max0 = std::max(vidx0, vidx1);
         Eigen::Vector2i edge(min0, max0);
-        if (trias_per_edge.count(edge) == 0) {
-            trias_per_edge[edge] = 1;
-        } else {
-            trias_per_edge[edge] += 1;
-        }
+        trias_per_edge[edge].push_back(tidx);
     };
-    for (auto triangle : triangles_) {
-        AddEdge(triangle(0), triangle(1));
-        AddEdge(triangle(1), triangle(2));
-        AddEdge(triangle(2), triangle(0));
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto &triangle = triangles_[tidx];
+        AddEdge(triangle(0), triangle(1), tidx);
+        AddEdge(triangle(1), triangle(2), tidx);
+        AddEdge(triangle(2), triangle(0), tidx);
     }
     return trias_per_edge;
 }
@@ -1036,11 +1056,11 @@ int TriangleMesh::EulerPoincareCharacteristic() const {
 
 std::vector<Eigen::Vector2i> TriangleMesh::GetNonManifoldEdges(
         bool allow_boundary_edges /* = true */) const {
-    auto edges = GetEdgeTriangleCount();
+    auto edges = GetEdgeToTrianglesMap();
     std::vector<Eigen::Vector2i> non_manifold_edges;
     for (auto &kv : edges) {
-        if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
-            (!allow_boundary_edges && kv.second != 2)) {
+        if ((allow_boundary_edges && (kv.second.size() < 1 || kv.second.size() > 2)) ||
+            (!allow_boundary_edges && kv.second.size() != 2)) {
             non_manifold_edges.push_back(kv.first);
         }
     }
@@ -1049,10 +1069,10 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetNonManifoldEdges(
 
 bool TriangleMesh::IsEdgeManifold(
         bool allow_boundary_edges /* = true */) const {
-    auto edges = GetEdgeTriangleCount();
+    auto edges = GetEdgeToTrianglesMap();
     for (auto &kv : edges) {
-        if ((allow_boundary_edges && (kv.second < 1 || kv.second > 2)) ||
-            (!allow_boundary_edges && kv.second != 2)) {
+        if ((allow_boundary_edges && (kv.second.size() < 1 || kv.second.size() > 2)) ||
+            (!allow_boundary_edges && kv.second.size() != 2)) {
             return false;
         }
     }
