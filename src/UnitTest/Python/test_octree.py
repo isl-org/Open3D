@@ -131,6 +131,25 @@ def test_octree_visualize():
     # o3d.visualization.draw_geometries([octree])
 
 
+def test_octree_voxel_grid_convert():
+    pwd = os.path.dirname(os.path.realpath(__file__))
+    data_dir = os.path.join(
+        pwd, os.pardir, os.pardir, os.pardir, "examples", "TestData"
+    )
+    pcd_path = os.path.join(data_dir, "fragment.ply")
+    pcd = o3d.io.read_point_cloud(pcd_path)
+    octree = o3d.geometry.Octree(8)
+    octree.convert_from_point_cloud(pcd)
+
+    voxel_grid = octree.to_voxel_grid()
+    octree_copy = voxel_grid.to_octree(max_depth=8)
+
+    # Enable the following line to test visualization
+    # o3d.visualization.draw_geometries([octree])
+    # o3d.visualization.draw_geometries([voxel_grid])
+    # o3d.visualization.draw_geometries([octree_copy])
+
+
 def test_locate_leaf_node():
     pwd = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",

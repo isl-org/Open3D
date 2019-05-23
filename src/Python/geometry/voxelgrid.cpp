@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/VoxelGrid.h"
+#include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
@@ -55,6 +56,11 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxel colors.")
             .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
+            .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
+                 "Convert to Octree.")
+            .def("from_octree", &geometry::VoxelGrid::FromOctree,
+                 "octree"_a
+                 "Convert from Octree.")
             .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
                            "``int`` array of shape ``(num_voxels, 3)``: "
                            "Voxel coordinates. use ``numpy.asarray()`` to "
@@ -72,6 +78,12 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "to_octree",
+            {{"max_depth", "int: Maximum depth of the octree."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "from_octree",
+            {{"octree", "geometry.Octree: The source octree."}});
 }
 
 void pybind_voxelgrid_methods(py::module &m) {
