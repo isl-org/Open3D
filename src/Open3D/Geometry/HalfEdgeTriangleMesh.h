@@ -82,16 +82,17 @@ public:
     /// Clear all data in HalfEdgeTriangleMesh
     void Clear() override;
 
+    void RemoveDuplicatedVertices() override;
+    void RemoveDuplicatedTriangles() override;
+    void RemoveUnreferencedVertices() override;
+    void RemoveDegenerateTriangles() override;
+
     HalfEdgeTriangleMesh &operator+=(const HalfEdgeTriangleMesh &mesh);
 
     HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
 
 protected:
     HalfEdgeTriangleMesh(Geometry::GeometryType type) : TriangleMesh(type) {}
-    void RemoveDuplicatedVertices() override;
-    void RemoveDuplicatedTriangles() override;
-    void RemoveNonManifoldVertices() override;
-    void RemoveNonManifoldTriangles() override;
 
 public:
     std::vector<HalfEdge> half_edges_;

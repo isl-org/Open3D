@@ -88,9 +88,25 @@ void pybind_trianglemesh(py::module &m) {
                  &geometry::TriangleMesh::ComputeAdjacencyList,
                  "Function to compute adjacency list, call before adjacency "
                  "list is needed")
-            .def("purge", &geometry::TriangleMesh::Purge,
-                 "Function to remove duplicated and non-manifold "
-                 "vertices/triangles")
+            .def("remove_duplicated_vertices",
+                 &geometry::TriangleMesh::RemoveDuplicatedVertices,
+                 "Function that removes duplicated verties, i.e., vertices "
+                 "that have identical coordinates.")
+            .def("remove_duplicated_triangles",
+                 &geometry::TriangleMesh::RemoveDuplicatedTriangles,
+                 "Function that removes duplicated triangles, i.e., removes "
+                 "triangles that reference the same three vertices, "
+                 "independent of their order.")
+            .def("remove_unreferenced_vertices",
+                 &geometry::TriangleMesh::RemoveUnreferencedVertices,
+                 "This function removes vertices from the triangle mesh that "
+                 "are not referenced in any triangle of the mesh.")
+            .def("remove_degenerate_triangles",
+                 &geometry::TriangleMesh::RemoveDegenerateTriangles,
+                 "Function that removes degenerate triangles, i.e., triangles "
+                 "that references a single vertex multiple times in a single "
+                 "triangle. They are usually the product of removing "
+                 "duplicated vertices.")
             .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
@@ -259,7 +275,14 @@ void pybind_trianglemesh(py::module &m) {
             {{"other", "Other triangle mesh to test intersection with."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_orientable");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "orient_triangles");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "purge");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_duplicated_vertices");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_duplicated_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_unreferenced_vertices");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_degenerate_triangles");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "filter_sharpen",
             {{"number_of_iterations",

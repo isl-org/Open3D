@@ -37,7 +37,7 @@ void PrintHelp() {
     utility::PrintInfo("Options (listed in the order of execution priority):\n");
     utility::PrintInfo("    --help, -h                : Print help information.\n");
     utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::PrintInfo("    --purge                   : Clear duplicated and non-manifold vertices and\n");
+    utility::PrintInfo("    --purge                   : Clear duplicated and unreferenced vertices and\n");
     utility::PrintInfo("                                triangles.\n");
     // clang-format on
 }
@@ -67,7 +67,10 @@ int main(int argc, char **argv) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--purge")) {
-        merged_mesh_ptr->Purge();
+        merged_mesh_ptr->RemoveDuplicatedVertices();
+        merged_mesh_ptr->RemoveDuplicatedTriangles();
+        merged_mesh_ptr->RemoveUnreferencedVertices();
+        merged_mesh_ptr->RemoveDegenerateTriangles();
     }
     io::WriteTriangleMesh(argv[2], *merged_mesh_ptr);
 

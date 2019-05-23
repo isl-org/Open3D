@@ -275,7 +275,10 @@ std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
     half_edge_mesh->adjacency_list_ = mesh.adjacency_list_;
 
     // Purge to remove duplications
-    half_edge_mesh->Purge();
+    half_edge_mesh->RemoveDuplicatedVertices();
+    half_edge_mesh->RemoveDuplicatedTriangles();
+    half_edge_mesh->RemoveUnreferencedVertices();
+    half_edge_mesh->RemoveDegenerateTriangles();
 
     // If the original mesh is not a manifold, we set HalfEdgeTriangleMesh to
     // be empty. Caller to this constructor is responsible to checking
@@ -303,17 +306,17 @@ void HalfEdgeTriangleMesh::RemoveDuplicatedTriangles() {
     }
 }
 
-void HalfEdgeTriangleMesh::RemoveNonManifoldVertices() {
+void HalfEdgeTriangleMesh::RemoveUnreferencedVertices() {
     size_t before_num = vertices_.size();
-    TriangleMesh::RemoveNonManifoldVertices();
+    TriangleMesh::RemoveUnreferencedVertices();
     if (HasHalfEdges() && vertices_.size() != before_num) {
         ComputeHalfEdges();
     }
 }
 
-void HalfEdgeTriangleMesh::RemoveNonManifoldTriangles() {
+void HalfEdgeTriangleMesh::RemoveDegenerateTriangles() {
     size_t before_num = triangles_.size();
-    TriangleMesh::RemoveNonManifoldTriangles();
+    TriangleMesh::RemoveDegenerateTriangles();
     if (HasHalfEdges() && triangles_.size() != before_num) {
         ComputeHalfEdges();
     }

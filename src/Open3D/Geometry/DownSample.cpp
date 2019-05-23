@@ -232,7 +232,10 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
                 output->vertex_colors_.push_back(input.vertex_colors_[i]);
         }
     }
-    output->Purge();
+    output->RemoveDuplicatedVertices();
+    output->RemoveDuplicatedTriangles();
+    output->RemoveUnreferencedVertices();
+    output->RemoveDegenerateTriangles();
     utility::PrintDebug(
             "Triangle mesh sampled from %d vertices and %d triangles to %d "
             "vertices and %d triangles.\n",

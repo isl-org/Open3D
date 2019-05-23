@@ -664,7 +664,10 @@ TEST(TriangleMesh, Purge) {
 
     geometry::TriangleMesh tm = tm0 + tm1;
 
-    tm.Purge();
+    tm.RemoveDuplicatedVertices();
+    tm.RemoveDuplicatedTriangles();
+    tm.RemoveUnreferencedVertices();
+    tm.RemoveDegenerateTriangles();
 
     ExpectEQ(ref_vertices, tm.vertices_);
     ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
