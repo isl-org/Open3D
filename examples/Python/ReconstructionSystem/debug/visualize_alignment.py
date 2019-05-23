@@ -18,10 +18,10 @@ from initialize_config import *
 def list_posegraph_files(folder_posegraph):
     pose_graph_paths = get_file_list(folder_posegraph, ".json")
     for pose_graph_path in pose_graph_paths:
-        pose_graph = read_pose_graph(pose_graph_path)
+        pose_graph = o3d.io.read_pose_graph(pose_graph_path)
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
-        print("Fragment PoseGraph %s has %d nodes and %d edges" %
+        print("Fragment o3d.registration.PoseGraph %s has %d nodes and %d edges" %
                 (pose_graph_path, n_nodes, n_edges))
 
 
@@ -62,15 +62,15 @@ if __name__ == "__main__":
                     config["template_refined_posegraph_optimized"])
         print("Reading posegraph")
         print(global_pose_graph_name)
-        pose_graph = read_pose_graph(global_pose_graph_name)
+        pose_graph = o3d.io.read_pose_graph(global_pose_graph_name)
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
-        print("Global PoseGraph having %d nodes and %d edges" % \
+        print("Global o3d.registration.PoseGraph having %d nodes and %d edges" % \
                 (n_nodes, n_edges))
 
         # visualize alignment of posegraph edges
         for edge in pose_graph.edges:
-            print("PoseGraphEdge %d-%d" % \
+            print("o3d.registration.PoseGraphEdge %d-%d" % \
                     (edge.source_node_id, edge.target_node_id))
             if ((args.adjacent and \
                     edge.target_node_id - edge.source_node_id == 1)) or \
@@ -79,10 +79,10 @@ if __name__ == "__main__":
                     args.target_id == edge.target_node_id)) or \
                     args.all:
                 print("    confidence : %.3f" % edge.confidence)
-                source = read_point_cloud(ply_file_names[edge.source_node_id])
-                target = read_point_cloud(ply_file_names[edge.target_node_id])
-                source_down = voxel_down_sample(source, config["voxel_size"])
-                target_down = voxel_down_sample(target, config["voxel_size"])
+                source = o3d.io.read_point_cloud(ply_file_names[edge.source_node_id])
+                target = o3d.io.read_point_cloud(ply_file_names[edge.target_node_id])
+                source_down = o3d.geometry.voxel_down_sample(source, config["voxel_size"])
+                target_down = o3d.geometry.voxel_down_sample(target, config["voxel_size"])
                 print("original registration")
                 draw_registration_result(
                         source_down, target_down, edge.transformation)

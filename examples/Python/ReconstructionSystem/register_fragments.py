@@ -16,11 +16,11 @@ from refine_registration import *
 
 def preprocess_point_cloud(pcd, config):
     voxel_size = config["voxel_size"]
-    pcd_down = voxel_down_sample(pcd, voxel_size)
-    estimate_normals(pcd_down,
-            KDTreeSearchParamHybrid(radius = voxel_size * 2.0, max_nn = 30))
-    pcd_fpfh = compute_fpfh_feature(pcd_down,
-            KDTreeSearchParamHybrid(radius = voxel_size * 5.0, max_nn = 100))
+    pcd_down = o3d.geometry.voxel_down_sample(pcd, voxel_size)
+    o3d.geometry.estimate_normals(pcd_down,
+            o3d.geometry.KDTreeSearchParamHybrid(radius = voxel_size * 2.0, max_nn = 30))
+    pcd_fpfh = o3d.registration.compute_fpfh_feature(pcd_down,
+            o3d.geometry.KDTreeSearchParamHybrid(radius = voxel_size * 5.0, max_nn = 100))
     return (pcd_down, pcd_fpfh)
 
 
@@ -28,21 +28,21 @@ def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh, config):
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
-        result = registration_fast_based_on_feature_matching(
+        result = o3d.registration.registration_fast_based_on_feature_matching(
                 source, target, source_fpfh, target_fpfh,
-                FastGlobalRegistrationOption(
+                o3d.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance = distance_threshold))
     if config["global_registration"] == "ransac":
-        result = registration_ransac_based_on_feature_matching(
+        result = o3d.registration.registration_ransac_based_on_feature_matching(
                 source, target, source_fpfh, target_fpfh,
                 distance_threshold,
-                TransformationEstimationPointToPoint(False), 4,
-                [CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                CorrespondenceCheckerBasedOnDistance(distance_threshold)],
-                RANSACConvergenceCriteria(4000000, 500))
+                o3d.registration.TransformationEstimationPointToPoint(False), 4,
+                [o3d.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                o3d.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)],
+                o3d.registration.RANSACConvergenceCriteria(4000000, 500))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6,6)))
-    information = get_information_matrix_from_point_clouds(
+    information = o3d.registration.get_information_matrix_from_point_clouds(
             source, target, distance_threshold, result.transformation)
     if information[5,5] / min(len(source.points),len(target.points)) < 0.3:
         return (False, np.identity(4), np.zeros((6,6)))
@@ -54,7 +54,7 @@ def compute_initial_registration(s, t, source_down, target_down,
 
     if t == s + 1: # odometry case
         print("Using RGBD odometry")
-        pose_graph_frag = read_pose_graph(join(path_dataset,
+        pose_graph_frag = o3d.io.read_pose_graph(join(path_dataset,
                 config["template_fragment_posegraph_optimized"] % s))
         n_nodes = len(pose_graph_frag.nodes)
         transformation_init = np.linalg.inv(
@@ -82,22 +82,22 @@ def update_posegrph_for_scene(s, t, transformation, information,
     if t == s + 1: # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
-        pose_graph.nodes.append(PoseGraphNode(odometry_inv))
+        pose_graph.nodes.append(o3d.registration.PoseGraphNode(odometry_inv))
         pose_graph.edges.append(
-                PoseGraphEdge(s, t, transformation,
+                o3d.registration.PoseGraphEdge(s, t, transformation,
                 information, uncertain = False))
     else: # loop closure case
         pose_graph.edges.append(
-                PoseGraphEdge(s, t, transformation,
+                o3d.registration.PoseGraphEdge(s, t, transformation,
                 information, uncertain = True))
     return (odometry, pose_graph)
 
 
 def register_point_cloud_pair(ply_file_names, s, t, config):
     print("reading %s ..." % ply_file_names[s])
-    source = read_point_cloud(ply_file_names[s])
+    source = o3d.io.read_point_cloud(ply_file_names[s])
     print("reading %s ..." % ply_file_names[t])
-    target = read_point_cloud(ply_file_names[t])
+    target = o3d.io.read_point_cloud(ply_file_names[t])
     (source_down, source_fpfh) = preprocess_point_cloud(source, config)
     (target_down, target_fpfh) = preprocess_point_cloud(target, config)
     (success, transformation, information) = \
@@ -123,9 +123,9 @@ class matching_result:
 
 
 def make_posegraph_for_scene(ply_file_names, config):
-    pose_graph = PoseGraph()
+    pose_graph = o3d.registration.PoseGraph()
     odometry = np.identity(4)
-    pose_graph.nodes.append(PoseGraphNode(odometry))
+    pose_graph.nodes.append(o3d.registration.PoseGraphNode(odometry))
 
     n_files = len(ply_file_names)
     matching_results = {}
@@ -161,13 +161,13 @@ def make_posegraph_for_scene(ply_file_names, config):
                     matching_results[r].transformation,
                     matching_results[r].information,
                     odometry, pose_graph)
-    write_pose_graph(join(config["path_dataset"],
+    o3d.io.write_pose_graph(join(config["path_dataset"],
             config["template_global_posegraph"]), pose_graph)
 
 
 def run(config):
     print("register fragments.")
-    set_verbosity_level(VerbosityLevel.Debug)
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     ply_file_names = get_file_list(join(
             config["path_dataset"], config["folder_fragment"]), ".ply")
     make_clean_folder(join(config["path_dataset"], config["folder_scene"]))

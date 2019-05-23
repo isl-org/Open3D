@@ -15,7 +15,7 @@ def visualize_non_blocking(vis):
     vis.update_renderer()
 
 
-pcd_orig = read_point_cloud("../../TestData/fragment.pcd")
+pcd_orig = o3d.io.read_point_cloud("../../TestData/fragment.pcd")
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5
@@ -26,7 +26,7 @@ for i in range(n_pcd):
     trans[:3,3] = [3*i,0,0]
     pcds[i].transform(trans)
 
-vis = Visualizer()
+vis = o3d.visualization.Visualizer()
 vis.create_window()
 start_time = time.time()
 added = [False] * n_pcd

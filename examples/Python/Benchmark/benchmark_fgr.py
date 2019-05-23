@@ -43,8 +43,8 @@ if __name__ == "__main__":
             for t in range(s + 1, n_ply_files):
 
                 print("%s:: matching %d-%d" % (dataset_name, s, t))
-                source = read_point_cloud(get_ply_path(dataset_name, s))
-                target = read_point_cloud(get_ply_path(dataset_name, t))
+                source = o3d.io.read_point_cloud(get_ply_path(dataset_name, s))
+                target = o3d.io.read_point_cloud(get_ply_path(dataset_name, t))
                 source_down, source_fpfh = preprocess_point_cloud(
                         source, voxel_size)
                 target_down, target_fpfh = preprocess_point_cloud(

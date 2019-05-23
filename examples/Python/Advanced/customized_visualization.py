@@ -11,15 +11,15 @@ import matplotlib.pyplot as plt
 
 def custom_draw_geometry(pcd):
     # The following code achieves the same effect as:
-    # draw_geometries([pcd])
-    vis = Visualizer()
+    # o3d.visualization.draw_geometries([pcd])
+    vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
     vis.run()
     vis.destroy_window()
 
 def custom_draw_geometry_with_custom_fov(pcd, fov_step):
-    vis = Visualizer()
+    vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
     ctr = vis.get_view_control()
@@ -34,10 +34,10 @@ def custom_draw_geometry_with_rotation(pcd):
         ctr = vis.get_view_control()
         ctr.rotate(10.0, 0.0)
         return False
-    draw_geometries_with_animation_callback([pcd], rotate_view)
+    o3d.visualization.draw_geometries_with_animation_callback([pcd], rotate_view)
 
 def custom_draw_geometry_load_option(pcd):
-    vis = Visualizer()
+    vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
     vis.get_render_option().load_from_json(
@@ -69,20 +69,20 @@ def custom_draw_geometry_with_key_callback(pcd):
     key_to_callback[ord("R")] = load_render_option
     key_to_callback[ord(",")] = capture_depth
     key_to_callback[ord(".")] = capture_image
-    draw_geometries_with_key_callbacks([pcd], key_to_callback)
+    o3d.visualization.draw_geometries_with_key_callbacks([pcd], key_to_callback)
 
 def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.index = -1
     custom_draw_geometry_with_camera_trajectory.trajectory =\
-            read_pinhole_camera_trajectory(
+            o3d.io.read_pinhole_camera_trajectory(
                     "../../TestData/camera_trajectory.json")
-    custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
+    custom_draw_geometry_with_camera_trajectory.vis = o3d.visualization.Visualizer()
     if not os.path.exists("../../TestData/image/"):
         os.makedirs("../../TestData/image/")
     if not os.path.exists("../../TestData/depth/"):
         os.makedirs("../../TestData/depth/")
     def move_forward(vis):
-        # This function is called within the Visualizer::run() loop
+        # This function is called within the o3d.visualization.Visualizer::run() loop
         # The run loop calls the function, then re-render
         # So the sequence in this function is to:
         # 1. Capture frame
@@ -117,7 +117,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     vis.destroy_window()
 
 if __name__ == "__main__":
-    pcd = read_point_cloud("../../TestData/fragment.ply")
+    pcd = o3d.io.read_point_cloud("../../TestData/fragment.ply")
 
     print("1. Customized visualization to mimic DrawGeometry")
     custom_draw_geometry(pcd)

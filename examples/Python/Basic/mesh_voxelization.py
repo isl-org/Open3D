@@ -46,8 +46,8 @@ def depth_to_pcd(depth, intrinsic, extrinsic, w, h):
                       depth_vector])
     uvd_roi = uvd[:, depth_vector != 0]
     xyz_3d = np.linalg.inv(intrinsic).dot(uvd_roi)
-    pcd = PointCloud()
-    pcd.points = Vector3dVector(xyz_3d.transpose())
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz_3d.transpose())
     pcd.transform(np.linalg.inv(extrinsic))
     return pcd
 
@@ -58,13 +58,13 @@ def preprocess(model):
     scale = np.linalg.norm(max_bound - min_bound) / 2.0
     vertices = np.asarray(model.vertices)
     vertices -= np.matlib.repmat(center, len(model.vertices), 1)
-    model.vertices = Vector3dVector(vertices / scale)
+    model.vertices = o3d.utility.Vector3dVector(vertices / scale)
     return model
 
-sphere = read_triangle_mesh("../../TestData/sphere.ply")
-model = read_triangle_mesh("../../TestData/bathtub_0154.ply")
+sphere = o3d.io.read_triangle_mesh("../../TestData/sphere.ply")
+model = o3d.io.read_triangle_mesh("../../TestData/bathtub_0154.ply")
 print("visualize model")
-draw_geometries([model])
+o3d.visualization.draw_geometries([model])
 
 # rescale geometry
 sphere = preprocess(sphere)
@@ -72,7 +72,7 @@ model = preprocess(model)
 
 w = 320
 h = 320
-vis = Visualizer()
+vis = o3d.visualization.Visualizer()
 vis.create_window(width = w, height = h)
 vis.add_geometry(model)
 vis.get_render_option().mesh_show_back_face = True
@@ -80,7 +80,7 @@ vis.get_render_option().mesh_show_back_face = True
 ctr = vis.get_view_control()
 param = ctr.convert_to_pinhole_camera_parameters()
 
-pcd_agg = PointCloud()
+pcd_agg = o3d.geometry.PointCloud()
 n_pts = len(sphere.vertices)
 centers_pts = np.zeros((n_pts,3))
 i = 0
@@ -103,19 +103,19 @@ for xyz in sphere.vertices:
 vis.destroy_window()
 
 print("visualize camera center")
-centers = PointCloud()
-centers.points = Vector3dVector(centers_pts)
-draw_geometries([centers, model])
+centers = o3d.geometry.PointCloud()
+centers.points = o3d.utility.Vector3dVector(centers_pts)
+o3d.visualization.draw_geometries([centers, model])
 
 print("voxelize dense point cloud")
-voxel = create_surface_voxel_grid_from_point_cloud(pcd_agg, voxel_size=0.05)
+voxel = o3d.geometry.create_surface_voxel_grid_from_point_cloud(pcd_agg, voxel_size=0.05)
 print(voxel)
-draw_geometries([voxel])
+o3d.visualization.draw_geometries([voxel])
 
-print("save and load VoxelGrid")
-write_voxel_grid("voxel_grid_test.ply", voxel)
-voxel_read = read_voxel_grid("voxel_grid_test.ply")
+print("save and load o3d.geometry.VoxelGrid")
+o3d.io.write_voxel_grid("voxel_grid_test.ply", voxel)
+voxel_read = o3d.io.read_voxel_grid("voxel_grid_test.ply")
 print(voxel_read)
 
 print("visualize original model and voxels together")
-draw_geometries([voxel_read, model])
+o3d.visualization.draw_geometries([voxel_read, model])

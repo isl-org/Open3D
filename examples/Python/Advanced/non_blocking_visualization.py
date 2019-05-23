@@ -9,11 +9,11 @@ import numpy as np
 import copy
 
 if __name__ == "__main__":
-    set_verbosity_level(VerbosityLevel.Debug)
-    source_raw = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target_raw = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-    source = voxel_down_sample(source_raw, voxel_size = 0.02)
-    target = voxel_down_sample(target_raw, voxel_size = 0.02)
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    source_raw = o3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+    target_raw = o3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    source = o3d.geometry.voxel_down_sample(source_raw, voxel_size = 0.02)
+    target = o3d.geometry.voxel_down_sample(target_raw, voxel_size = 0.02)
     trans = [[0.862, 0.011, -0.507,  0.0],
             [-0.139, 0.967, -0.215,  0.7],
             [0.487, 0.255,  0.835, -1.4],
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     source.transform(flip_transform)
     target.transform(flip_transform)
 
-    vis = Visualizer()
+    vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(source)
     vis.add_geometry(target)
@@ -36,9 +36,9 @@ if __name__ == "__main__":
     save_image = False
 
     for i in range(icp_iteration):
-        reg_p2l = registration_icp(source, target, threshold,
-                np.identity(4), TransformationEstimationPointToPlane(),
-                ICPConvergenceCriteria(max_iteration = 1))
+        reg_p2l = o3d.registration.registration_icp(source, target, threshold,
+                np.identity(4), o3d.registration.TransformationEstimationPointToPlane(),
+                o3d.registration.ICPConvergenceCriteria(max_iteration = 1))
         source.transform(reg_p2l.transformation)
         vis.update_geometry()
         vis.poll_events()

@@ -19,14 +19,14 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / \
             config['n_frames_per_fragment']))
-    volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
-            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
+    volume = o3d.integration.ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
+            sdf_trunc = 0.04, color_type = o3d.integration.TSDFVolumeColorType.RGB8)
 
-    pose_graph_fragment = read_pose_graph(join(
+    pose_graph_fragment = o3d.io.read_pose_graph(join(
             path_dataset, config["template_refined_posegraph_optimized"]))
 
     for fragment_id in range(len(pose_graph_fragment.nodes)):
-        pose_graph_rgbd = read_pose_graph(join(path_dataset,
+        pose_graph_rgbd = o3d.io.read_pose_graph(join(path_dataset,
                 config["template_fragment_posegraph_optimized"] % fragment_id))
 
         for frame_id in range(len(pose_graph_rgbd.nodes)):
@@ -44,17 +44,17 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
     if config["debug_mode"]:
-        draw_geometries([mesh])
+        o3d.visualization.draw_geometries([mesh])
 
     mesh_name = join(path_dataset, config["template_global_mesh"])
-    write_triangle_mesh(mesh_name, mesh, False, True)
+    o3d.io.write_triangle_mesh(mesh_name, mesh, False, True)
 
 
 def run(config):
     print("integrate the whole RGBD sequence using estimated camera pose.")
     if config["path_intrinsic"]:
-        intrinsic = read_pinhole_camera_intrinsic(config["path_intrinsic"])
+        intrinsic = o3d.io.read_pinhole_camera_intrinsic(config["path_intrinsic"])
     else:
-        intrinsic = PinholeCameraIntrinsic(
-                PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+        intrinsic = o3d.camera.PinholeCameraIntrinsic(
+                o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     scalable_integrate_rgb_frames(config["path_dataset"], intrinsic, config)

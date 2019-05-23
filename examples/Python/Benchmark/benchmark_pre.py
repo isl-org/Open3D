@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
         alignment = []
         for s in range(n_ply_files):
-            source = read_point_cloud(get_ply_path(dataset_name, s))
+            source = o3d.io.read_point_cloud(get_ply_path(dataset_name, s))
             source_down, source_fpfh = preprocess_point_cloud(
                     source, voxel_size)
             f = open('store.pckl', 'wb')

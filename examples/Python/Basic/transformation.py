@@ -9,28 +9,28 @@ import open3d as o3d
 import time
 
 def geometry_generator():
-    mesh = create_mesh_sphere()
+    mesh = o3d.geometry.create_mesh_sphere()
     verts = np.asarray(mesh.vertices)
     colors = np.random.uniform(0,1, size=verts.shape)
-    mesh.vertex_colors = Vector3dVector(colors)
+    mesh.vertex_colors = o3d.utility.Vector3dVector(colors)
     mesh.compute_vertex_normals()
     yield mesh
 
-    pcl = PointCloud()
+    pcl = o3d.geometry.PointCloud()
     pcl.points = mesh.vertices
     pcl.colors = mesh.vertex_colors
     pcl.normals = mesh.vertex_normals
     yield pcl
 
-    ls = LineSet()
-    ls.points = Vector3dVector(np.array([(0,0,0), (1,0,0), (1,0,1), (0,0,1),
+    ls = o3d.geometry.LineSet()
+    ls.points = o3d.utility.Vector3dVector(np.array([(0,0,0), (1,0,0), (1,0,1), (0,0,1),
         (0,1,0), (1,1,0), (1,1,1), (0,1,1)], dtype=np.float64))
-    ls.lines = Vector2iVector(np.array([(0,1), (0,4), (0,3), (2,3), (2,1),
+    ls.lines = o3d.utility.Vector2iVector(np.array([(0,1), (0,4), (0,3), (2,3), (2,1),
         (2,6), (5,1), (5,4), (5,6), (7,3), (7,6), (7,4)]))
     yield ls
 
 def animate(geom):
-    vis = Visualizer()
+    vis = o3d.visualization.Visualizer()
     vis.create_window()
 
     geom.rotate(np.array((0.75, 0.5, 0)))
@@ -41,7 +41,7 @@ def animate(geom):
     ts = [(0.1, 0.1, -0.1) for _ in range(30)] + [(-0.1, -0.1, 0.1)  for _ in range(30)]
 
     for scale, aa, t in zip(scales, axisangles, ts):
-        geom.scale(scale).rotate(aa, type=RotationType.AxisAngle)
+        geom.scale(scale).rotate(aa, type=o3d.geometry.RotationType.AxisAngle)
         vis.update_geometry()
         vis.poll_events()
         vis.update_renderer()

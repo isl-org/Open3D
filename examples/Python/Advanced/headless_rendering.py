@@ -12,15 +12,15 @@ import matplotlib.pyplot as plt
 def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.index = -1
     custom_draw_geometry_with_camera_trajectory.trajectory =\
-            read_pinhole_camera_trajectory(
+            o3d.io.read_pinhole_camera_trajectory(
                     "../../TestData/camera_trajectory.json")
-    custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
+    custom_draw_geometry_with_camera_trajectory.vis = o3d.visualization.Visualizer()
     if not os.path.exists("../../TestData/image/"):
         os.makedirs("../../TestData/image/")
     if not os.path.exists("../../TestData/depth/"):
         os.makedirs("../../TestData/depth/")
     def move_forward(vis):
-        # This function is called within the Visualizer::run() loop
+        # This function is called within the o3d.visualization.Visualizer::run() loop
         # The run loop calls the function, then re-render
         # So the sequence in this function is to:
         # 1. Capture frame
@@ -55,7 +55,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     vis.destroy_window()
 
 if __name__ == "__main__":
-    pcd = read_point_cloud("../../TestData/fragment.ply")
+    pcd = o3d.io.read_point_cloud("../../TestData/fragment.ply")
 
     print("Customized visualization playing a camera trajectory. Ctrl+z to terminate")
     custom_draw_geometry_with_camera_trajectory(pcd)

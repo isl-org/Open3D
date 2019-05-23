@@ -17,7 +17,7 @@ from make_fragments import *
 
 def test_single_pair(s, t, color_files, depth_files,
         intrinsic, with_opencv, config):
-    set_verbosity_level(VerbosityLevel.Debug)
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     [success, trans, info] = register_one_rgbd_pair(s, t,
             color_files, depth_files, intrinsic, with_opencv, config)
     print(trans)
@@ -27,8 +27,8 @@ def test_single_pair(s, t, color_files, depth_files,
             color_files[s], depth_files[s], False, config)
     target_rgbd_image = read_rgbd_image(
             color_files[t], depth_files[t], False, config)
-    source = create_point_cloud_from_rgbd_image(source_rgbd_image, intrinsic)
-    target = create_point_cloud_from_rgbd_image(target_rgbd_image, intrinsic)
+    source = o3d.geometry.create_point_cloud_from_rgbd_image(source_rgbd_image, intrinsic)
+    target = o3d.geometry.create_point_cloud_from_rgbd_image(target_rgbd_image, intrinsic)
     draw_geometries_flip([source, target])
 
 
@@ -51,9 +51,9 @@ if __name__ == "__main__":
 
         [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
         if args.path_intrinsic:
-            intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
+            intrinsic = o3d.io.read_pinhole_camera_intrinsic(args.path_intrinsic)
         else:
-            intrinsic = PinholeCameraIntrinsic(
-                    PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+            intrinsic = o3d.camera.PinholeCameraIntrinsic(
+                    o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
         test_single_pair(args.source_id, args.target_id,
                 color_files, depth_files, intrinsic, with_opencv, config)

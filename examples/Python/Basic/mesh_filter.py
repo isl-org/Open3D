@@ -8,33 +8,33 @@ import numpy as np
 import open3d as o3d
 
 def test_mesh(noise=0):
-    mesh = read_triangle_mesh('../../TestData/knot.ply')
+    mesh = o3d.io.read_triangle_mesh('../../TestData/knot.ply')
     if noise > 0:
         vertices = np.asarray(mesh.vertices)
         vertices += np.random.uniform(0, noise, size=vertices.shape)
-        mesh.vertices = Vector3dVector(vertices)
+        mesh.vertices = o3d.utility.Vector3dVector(vertices)
     mesh.compute_vertex_normals()
     return mesh
 
 if __name__ == '__main__':
     mesh = test_mesh()
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
 
     mesh = test_mesh()
     mesh.filter_sharpen(number_of_iterations=1, strength=1)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
 
     mesh = test_mesh(noise=5)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
     mesh.filter_smooth_simple(number_of_iterations=1)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
 
     mesh = test_mesh(noise=5)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
     mesh.filter_smooth_laplacian(number_of_iterations=100)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
 
     mesh = test_mesh(noise=5)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])
     mesh.filter_smooth_taubin(number_of_iterations=100)
-    draw_geometries([mesh])
+    o3d.visualization.draw_geometries([mesh])

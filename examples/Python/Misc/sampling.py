@@ -11,7 +11,7 @@ from trajectory_io import *
 from shutil import copyfile
 
 if __name__ == "__main__":
-    set_verbosity_level(VerbosityLevel.Debug)
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 
     path = "[path_to_reconstruction_system_output]"
     out_path = "[path_to_sampled_frames_are_located]"
@@ -25,12 +25,12 @@ if __name__ == "__main__":
             os.path.join(path, "depth/"), extension = ".png")
     color_image_path = get_file_list(
             os.path.join(path, "image/"), extension = ".jpg")
-    pose_graph_global = read_pose_graph(os.path.join(path,
+    pose_graph_global = o3d.io.read_pose_graph(os.path.join(path,
             template_global_posegraph_optimized))
     n_fragments = len(depth_image_path) // n_frames_per_fragment + 1
     pose_graph_fragments = []
     for i in range(n_fragments):
-        pose_graph_fragment = read_pose_graph(os.path.join(path,
+        pose_graph_fragment = o3d.io.read_pose_graph(os.path.join(path,
                 template_fragment_posegraph_optimized % i))
         pose_graph_fragments.append(pose_graph_fragment)
 

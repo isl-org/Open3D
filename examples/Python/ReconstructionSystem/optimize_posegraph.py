@@ -12,19 +12,19 @@ from file import *
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
         max_correspondence_distance, preference_loop_closure):
-    # to display messages from global_optimization
-    set_verbosity_level(VerbosityLevel.Debug)
-    method = GlobalOptimizationLevenbergMarquardt()
-    criteria = GlobalOptimizationConvergenceCriteria()
-    option = GlobalOptimizationOption(
+    # to display messages from o3d.registration.global_optimization
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    method = o3d.registration.GlobalOptimizationLevenbergMarquardt()
+    criteria = o3d.registration.GlobalOptimizationConvergenceCriteria()
+    option = o3d.registration.GlobalOptimizationOption(
             max_correspondence_distance = max_correspondence_distance,
             edge_prune_threshold = 0.25,
             preference_loop_closure = preference_loop_closure,
             reference_node = 0)
-    pose_graph = read_pose_graph(pose_graph_name)
-    global_optimization(pose_graph, method, criteria, option)
-    write_pose_graph(pose_graph_optimized_name, pose_graph)
-    set_verbosity_level(VerbosityLevel.Error)
+    pose_graph = o3d.io.read_pose_graph(pose_graph_name)
+    o3d.registration.global_optimization(pose_graph, method, criteria, option)
+    o3d.io.write_pose_graph(pose_graph_optimized_name, pose_graph)
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
 
 
 def optimize_posegraph_for_fragment(path_dataset, fragment_id, config):
