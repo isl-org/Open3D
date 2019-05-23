@@ -17,7 +17,39 @@
 # limitations under the License.
 # ******************************************************************************
 
-# Tries to locate "clang-format-5.0" and then "clang-format"
+# Try to locate "yapf"
+find_program(YAPF yapf PATHS ENV PATH)
+if (YAPF)
+    message(STATUS "yapf found at: ${YAPF}")
+    execute_process(COMMAND ${YAPF} --version)
+else()
+    message(STATUS "Please Install YAPF (https://github.com/google/yapf)")
+    message(STATUS "With PyPI:  `pip install yapf`")
+    message(STATUS "With Conda: `conda install yapf`")
+    message(FATAL_ERROR "yapf not found, python not available")
+endif()
+
+function(style_apply_file_python FILE)
+    execute_process(COMMAND ${YAPF} -i ${FILE})
+endfunction()
+
+set(DIRECTORIES_OF_INTEREST_PYTHON
+    examples/Python
+    src/UnitTest/Python
+)
+
+message(STATUS "Python apply-style...")
+foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_PYTHON})
+    set(PY_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.py")
+    file(GLOB_RECURSE FILES ${PY_GLOB})
+    foreach(FILE ${FILES})
+        style_apply_file_python(${FILE})
+    endforeach(FILE)
+endforeach(DIRECTORY)
+message(STATUS "Python apply-style done")
+
+
+# Try to locate "clang-format-5.0" and then "clang-format"
 find_program(CLANG_FORMAT clang-format-5.0 PATHS ENV PATH)
 if (NOT CLANG_FORMAT)
     find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
@@ -30,30 +62,30 @@ else()
     message(FATAL_ERROR "clang-format not found, style not available")
 endif()
 
-function(style_apply_file PATH)
+function(style_apply_file_cpp FILE)
     execute_process(
         COMMAND ${CLANG_FORMAT} -style=file -output-replacements-xml ${FILE}
         OUTPUT_VARIABLE STYLE_CHECK_RESULT
     )
     if("${STYLE_CHECK_RESULT}" MATCHES ".*<replacement .*")
         message(STATUS "Style applied for: ${FILE}")
-        execute_process(COMMAND ${CLANG_FORMAT} -style=file -i ${PATH})
+        execute_process(COMMAND ${CLANG_FORMAT} -style=file -i ${FILE})
     endif()
-
 endfunction()
 
-set(DIRECTORIES_OF_INTEREST
+set(DIRECTORIES_OF_INTEREST_CPP
     src
     examples
     docs/_static
 )
 
-foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST})
+message(STATUS "C++ apply-style...")
+foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_CPP})
     set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
     set(H_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h")
     file(GLOB_RECURSE FILES ${CPP_GLOB} ${H_GLOB})
     foreach(FILE ${FILES})
-        style_apply_file(${FILE})
+        style_apply_file_cpp(${FILE})
     endforeach(FILE)
 endforeach(DIRECTORY)
-message(STATUS "apply-style done")
+message(STATUS "C++ apply-style done")
