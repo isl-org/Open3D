@@ -26,6 +26,8 @@
 
 #include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/camera/PinholeCameraParameters.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
@@ -83,4 +85,11 @@ void pybind_voxelgrid_methods(py::module &m) {
             m, "create_surface_voxel_grid_from_point_cloud",
             {{"point_cloud", "The input point cloud."},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+    m.def("create_voxel_grid", &geometry::CreateVoxelGrid,
+          "Function to create regular voxel grid",
+          "w"_a, "h"_a, "d"_a, "voxel_size"_a, "origin"_a);
+    m.def("carve_voxel_grid_using_depth_map", &geometry::CarveVoxelGridUsingDepthMap,
+          "voxel_grid"_a, "depth_map"_a, "camera_parameter"_a);
+    m.def("carve_voxel_grid_using_silhouette", &geometry::CarveVoxelGridUsingSilhouette,
+          "voxel_grid"_a, "silhouette_mask"_a, "camera_parameter"_a);
 }

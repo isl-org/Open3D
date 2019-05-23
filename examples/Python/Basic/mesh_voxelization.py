@@ -3,7 +3,6 @@ from os.path import abspath
 import math
 import numpy as np
 import numpy.matlib
-import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
 import multiprocessing

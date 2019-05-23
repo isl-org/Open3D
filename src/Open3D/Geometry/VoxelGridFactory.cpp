@@ -107,16 +107,6 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     return output;
 }
 
-// std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-//         const PointCloud &input, double voxel_size) {
-//     Eigen::Vector3d voxel_size3 =
-//             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-//     Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 *
-//     0.5; Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3
-//     * 0.5; return CreateSurfaceVoxelGridFromPointCloud(input, voxel_size,
-//             voxel_min_bound, voxel_max_bound);
-// }
-
 std::shared_ptr<VoxelGrid> CreateVoxelGrid(double w, double h, double d,
                                            double voxel_size,
                                            const Eigen::Vector3d origin) {

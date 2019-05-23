@@ -33,13 +33,17 @@
 #include "Open3D/Geometry/Geometry3D.h"
 
 namespace open3d {
+
+namespace camera {
+class PinholeCameraParameters;
+}
+
 namespace geometry {
 
 class Image;
 class PointCloud;
 class TriangleMesh;
 class Octree;
-class PinholeCameraParameters;
 
 class VoxelGrid : public Geometry3D {
 public:
@@ -94,11 +98,11 @@ std::shared_ptr<VoxelGrid> CreateVoxelGrid(
 
 std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap (
         VoxelGrid &input, const Image &silhouette_mask,
-        const PinholeCameraParameters &camera_parameter);
+        const camera::PinholeCameraParameters &camera_parameter);
 
 void CarveVoxelGridUsingSilhouette (
         VoxelGrid &input, const Image &silhouette_mask,
-        const PinholeCameraParameters &camera_parameter);
+        const camera::PinholeCameraParameters &camera_parameter);
 
 }  // namespace geometry
 }  // namespace open3d
