@@ -4,18 +4,20 @@
 
 # examples/Python/Basic/python_binding.py
 
-import numpy as np
+import open3d as o3d
+
 
 def example_import_function():
-    from open3d import o3d.io.read_point_cloud
     pcd = o3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
     print(pcd)
+
 
 def example_help_function():
     import open3d
     help(open3d)
-    help(open3d.o3d.geometry.PointCloud)
-    help(open3d.o3d.io.read_point_cloud)
+    help(open3d.geometry.PointCloud)
+    help(open3d.io.read_point_cloud)
+
 
 if __name__ == "__main__":
     example_import_function()

@@ -21,17 +21,17 @@ if __name__ == "__main__":
     make_clean_folder(os.path.join(out_path, "scene/"))
     sampling_rate = 30
 
-    depth_image_path = get_file_list(
-            os.path.join(path, "depth/"), extension = ".png")
-    color_image_path = get_file_list(
-            os.path.join(path, "image/"), extension = ".jpg")
-    pose_graph_global = o3d.io.read_pose_graph(os.path.join(path,
-            template_global_posegraph_optimized))
+    depth_image_path = get_file_list(os.path.join(path, "depth/"),
+                                     extension=".png")
+    color_image_path = get_file_list(os.path.join(path, "image/"),
+                                     extension=".jpg")
+    pose_graph_global = o3d.io.read_pose_graph(
+        os.path.join(path, template_global_posegraph_optimized))
     n_fragments = len(depth_image_path) // n_frames_per_fragment + 1
     pose_graph_fragments = []
     for i in range(n_fragments):
-        pose_graph_fragment = o3d.io.read_pose_graph(os.path.join(path,
-                template_fragment_posegraph_optimized % i))
+        pose_graph_fragment = o3d.io.read_pose_graph(
+            os.path.join(path, template_fragment_posegraph_optimized % i))
         pose_graph_fragments.append(pose_graph_fragment)
 
     depth_image_path_new = []
@@ -44,14 +44,18 @@ if __name__ == "__main__":
             print(metadata)
             fragment_id = i // n_frames_per_fragment
             local_frame_id = i - fragment_id * n_frames_per_fragment
-            traj.append(CameraPose(metadata, np.dot(
-                    pose_graph_global.nodes[fragment_id].pose,
-                    pose_graph_fragments[fragment_id].nodes[local_frame_id].pose)))
+            traj.append(
+                CameraPose(
+                    metadata,
+                    np.dot(
+                        pose_graph_global.nodes[fragment_id].pose,
+                        pose_graph_fragments[fragment_id].nodes[local_frame_id].
+                        pose)))
             copyfile(depth_image_path[i], os.path.join(out_path, "depth/", \
                     os.path.basename(depth_image_path[i])))
             copyfile(color_image_path[i], os.path.join(out_path, "image/", \
                     os.path.basename(color_image_path[i])))
             cnt += 1
     copyfile(os.path.join(path, "/scene/cropped.ply"),
-            os.path.join(out_path, "/scene/integrated.ply"))
+             os.path.join(out_path, "/scene/integrated.ply"))
     write_trajectory(traj, os.path.join(out_path, "scene/key.log"))

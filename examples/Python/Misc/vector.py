@@ -12,11 +12,12 @@ if __name__ == "__main__":
 
     print("")
     print("Testing o3d.utility.IntVector ...")
-    vi = o3d.utility.IntVector([1, 2, 3, 4, 5]) # made from python list
-    vi1 = o3d.utility.IntVector(np.asarray([1, 2, 3, 4, 5])) # made from numpy array
-    vi2 = copy.copy(vi) # valid copy
-    vi3 = copy.deepcopy(vi) # valid copy
-    vi4 = vi[:] # valid copy
+    vi = o3d.utility.IntVector([1, 2, 3, 4, 5])  # made from python list
+    vi1 = o3d.utility.IntVector(np.asarray([1, 2, 3, 4,
+                                            5]))  # made from numpy array
+    vi2 = copy.copy(vi)  # valid copy
+    vi3 = copy.deepcopy(vi)  # valid copy
+    vi4 = vi[:]  # valid copy
     print(vi)
     print(np.asarray(vi))
     vi[0] = 10

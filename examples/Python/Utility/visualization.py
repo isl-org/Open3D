@@ -9,6 +9,7 @@ import open3d as o3d
 
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
+
 def draw_geometries_flip(pcds):
     pcds_transform = []
     for pcd in pcds:

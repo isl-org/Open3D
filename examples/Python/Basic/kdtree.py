@@ -11,7 +11,8 @@ if __name__ == "__main__":
 
     print("Testing kdtree in open3d ...")
     print("Load a point cloud and paint it gray.")
-    pcd = o3d.io.read_point_cloud("../../TestData/o3d.registration.Feature/cloud_bin_0.pcd")
+    pcd = o3d.io.read_point_cloud(
+        "../../TestData/o3d.registration.Feature/cloud_bin_0.pcd")
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 

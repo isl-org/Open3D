@@ -18,25 +18,30 @@ if __name__ == "__main__":
 
     # Read RGBD images
     rgbd_images = []
-    depth_image_path = get_file_list(
-            os.path.join(path, "depth/"), extension = ".png")
-    color_image_path = get_file_list(
-            os.path.join(path, "image/"), extension = ".jpg")
-    assert(len(depth_image_path) == len(color_image_path))
+    depth_image_path = get_file_list(os.path.join(path, "depth/"),
+                                     extension=".png")
+    color_image_path = get_file_list(os.path.join(path, "image/"),
+                                     extension=".jpg")
+    assert (len(depth_image_path) == len(color_image_path))
     for i in range(len(depth_image_path)):
         depth = o3d.io.read_image(os.path.join(depth_image_path[i]))
         color = o3d.io.read_image(os.path.join(color_image_path[i]))
-        rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(color, depth,
-                convert_rgb_to_intensity = False)
+        rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+            color, depth, convert_rgb_to_intensity=False)
         if debug_mode:
-            pcd = o3d.geometry.create_point_cloud_from_rgbd_image(rgbd_image,
-                    o3d.camera.PinholeCameraIntrinsic(o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
+            pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+                rgbd_image,
+                o3d.camera.PinholeCameraIntrinsic(
+                    o3d.camera.PinholeCameraIntrinsicParameters.
+                    PrimeSenseDefault))
             o3d.visualization.draw_geometries([pcd])
         rgbd_images.append(rgbd_image)
 
     # Read camera pose and mesh
-    camera = o3d.io.read_pinhole_camera_trajectory(os.path.join(path, "scene/key.log"))
-    mesh = o3d.io.read_triangle_mesh(os.path.join(path, "scene", "integrated.ply"))
+    camera = o3d.io.read_pinhole_camera_trajectory(
+        os.path.join(path, "scene/key.log"))
+    mesh = o3d.io.read_triangle_mesh(
+        os.path.join(path, "scene", "integrated.ply"))
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
@@ -44,8 +49,8 @@ if __name__ == "__main__":
     option.maximum_iteration = 0
     o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
     o3d.visualization.draw_geometries([mesh])
-    o3d.io.write_triangle_mesh(os.path.join(path, "scene",
-        "color_map_before_optimization.ply"), mesh)
+    o3d.io.write_triangle_mesh(
+        os.path.join(path, "scene", "color_map_before_optimization.ply"), mesh)
 
     # Optimize texture and save the mesh as texture_mapped.ply
     # This is implementation of following paper
@@ -56,5 +61,5 @@ if __name__ == "__main__":
     option.non_rigid_camera_coordinate = True
     o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
     o3d.visualization.draw_geometries([mesh])
-    o3d.io.write_triangle_mesh(os.path.join(path, "scene",
-        "color_map_after_optimization.ply"), mesh)
+    o3d.io.write_triangle_mesh(
+        os.path.join(path, "scene", "color_map_after_optimization.ply"), mesh)

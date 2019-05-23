@@ -9,6 +9,7 @@ import numpy as np
 import time
 import copy
 
+
 def visualize_non_blocking(vis):
     vis.update_geometry()
     vis.poll_events()
@@ -23,7 +24,7 @@ pcds = []
 for i in range(n_pcd):
     pcds.append(copy.deepcopy(pcd_orig))
     trans = np.identity(4)
-    trans[:3,3] = [3*i,0,0]
+    trans[:3, 3] = [3 * i, 0, 0]
     pcds[i].transform(trans)
 
 vis = o3d.visualization.Visualizer()
@@ -50,4 +51,3 @@ while True:
                 print("Removing %d" % i)
 
     visualize_non_blocking(vis)
-

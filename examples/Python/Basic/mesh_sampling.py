@@ -13,12 +13,16 @@ import shutil
 import time
 import open3d as o3d
 
+
 def create_mesh_plane():
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(
-            np.array([[0,0,0], [0,0.2,0], [1,0.2,0], [1,0,0]], dtype=np.float32))
-    mesh.triangles = o3d.utility.Vector3iVector(np.array([[0,2,1], [2,0,3]]))
+        np.array([[0, 0, 0], [0, 0.2, 0], [1, 0.2, 0], [1, 0, 0]],
+                 dtype=np.float32))
+    mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0,
+                                                                      3]]))
     return mesh
+
 
 def armadillo_mesh():
     armadillo_path = '../../TestData/Armadillo.ply'
@@ -33,6 +37,7 @@ def armadillo_mesh():
         os.remove(armadillo_path + '.gz')
     return o3d.io.read_triangle_mesh(armadillo_path)
 
+
 def bunny_mesh():
     bunny_path = '../../TestData/Bunny.ply'
     if not os.path.exists(bunny_path):
@@ -43,12 +48,12 @@ def bunny_mesh():
         with tarfile.open(bunny_path + '.tar.gz') as tar:
             tar.extractall(path=os.path.dirname(bunny_path))
         shutil.move(
-                os.path.join(os.path.dirname(bunny_path),
-                    'bunny', 'reconstruction', 'bun_zipper.ply'),
-                bunny_path)
+            os.path.join(os.path.dirname(bunny_path), 'bunny', 'reconstruction',
+                         'bun_zipper.ply'), bunny_path)
         os.remove(bunny_path + '.tar.gz')
         shutil.rmtree(os.path.join(os.path.dirname(bunny_path), 'bunny'))
     return o3d.io.read_triangle_mesh(bunny_path)
+
 
 def time_fcn(fcn, *fcn_args, runs=5):
     times = []
@@ -58,11 +63,13 @@ def time_fcn(fcn, *fcn_args, runs=5):
         times.append(time.time() - tic)
     return res, times
 
+
 def mesh_generator():
     yield create_mesh_plane()
     yield o3d.geometry.create_mesh_sphere()
     yield bunny_mesh()
     yield armadillo_mesh()
+
 
 if __name__ == "__main__":
     plane = create_mesh_plane()
@@ -72,7 +79,9 @@ if __name__ == "__main__":
     pcd = o3d.geometry.sample_points_uniformly(plane, number_of_points=500)
     o3d.visualization.draw_geometries([pcd])
 
-    print('Poisson disk sampling can evenly distributes the points on the surface.')
+    print(
+        'Poisson disk sampling can evenly distributes the points on the surface.'
+    )
     print('The method implements sample elimination.')
     print('Therefore, the method starts with a sampled point cloud and removes '
           'point to satisfy the sampling criterion.')
@@ -80,16 +89,21 @@ if __name__ == "__main__":
     print('1) Default via the parameter init_factor: The method first samples '
           'uniformly a point cloud from the mesh with '
           'init_factor x number_of_points and uses this for the elimination')
-    pcd = o3d.geometry.sample_points_poisson_disk(plane, number_of_points=500, init_factor=5)
+    pcd = o3d.geometry.sample_points_poisson_disk(plane,
+                                                  number_of_points=500,
+                                                  init_factor=5)
     o3d.visualization.draw_geometries([pcd])
 
-    print('2) one can provide an own point cloud and pass it to the '
-          'o3d.geometry.sample_points_poisson_disk method. Then this point cloud is used '
-          'for elimination.')
+    print(
+        '2) one can provide an own point cloud and pass it to the '
+        'o3d.geometry.sample_points_poisson_disk method. Then this point cloud is used '
+        'for elimination.')
     print('Initial point cloud')
     pcd = o3d.geometry.sample_points_uniformly(plane, number_of_points=2500)
     o3d.visualization.draw_geometries([pcd])
-    pcd = o3d.geometry.sample_points_poisson_disk(plane, number_of_points=500, pcl=pcd)
+    pcd = o3d.geometry.sample_points_poisson_disk(plane,
+                                                  number_of_points=500,
+                                                  pcl=pcd)
     o3d.visualization.draw_geometries([pcd])
 
     print('Timings')
@@ -101,6 +115,7 @@ if __name__ == "__main__":
         print('sample uniform took on average: %f[s]' % np.mean(times))
         o3d.visualization.draw_geometries([pcd])
 
-        pcd, times = time_fcn(o3d.geometry.sample_points_poisson_disk, mesh, 500, 5)
+        pcd, times = time_fcn(o3d.geometry.sample_points_poisson_disk, mesh,
+                              500, 5)
         print('sample poisson disk took on average: %f[s]' % np.mean(times))
         o3d.visualization.draw_geometries([pcd])

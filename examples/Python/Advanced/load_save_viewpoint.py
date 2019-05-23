@@ -12,7 +12,7 @@ def save_view_point(pcd, filename):
     vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
-    vis.run() # user changes the view and press "q" to terminate
+    vis.run()  # user changes the view and press "q" to terminate
     param = vis.get_view_control().convert_to_pinhole_camera_parameters()
     o3d.io.write_pinhole_camera_parameters(filename, param)
     vis.destroy_window()

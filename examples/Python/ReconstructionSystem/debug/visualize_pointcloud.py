@@ -15,21 +15,21 @@ sys.path.append(".")
 from initialize_config import *
 from make_fragments import *
 
-
 # test wide baseline matching
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-            description="visualize fragment or scene as a point cloud form")
+        description="visualize fragment or scene as a point cloud form")
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("--path_intrinsic",
-            help="path to the RGBD camera intrinsic")
+                        help="path to the RGBD camera intrinsic")
     parser.add_argument("--fragment",
-            help="visualize nodes in form of point clouds")
+                        help="visualize nodes in form of point clouds")
     parser.add_argument("--scene",
-            help="visualize nodes in form of point clouds", action="store_true")
+                        help="visualize nodes in form of point clouds",
+                        action="store_true")
     parser.add_argument("--before_optimized",
-            help="visualize posegraph edges that is not optimized",
-            action="store_true")
+                        help="visualize posegraph edges that is not optimized",
+                        action="store_true")
     args = parser.parse_args()
     if not args.fragment and not args.scene:
         parser.print_help(sys.stderr)
@@ -40,19 +40,21 @@ if __name__ == "__main__":
         initialize_config(config)
         if (args.scene):
             if (args.before_optimized):
-                global_pose_graph_name = join(config["path_dataset"],
-                        config["template_refined_posegraph"])
+                global_pose_graph_name = join(
+                    config["path_dataset"],
+                    config["template_refined_posegraph"])
             else:
-                global_pose_graph_name = join(config["path_dataset"],
-                        config["template_refined_posegraph_optimized"])
+                global_pose_graph_name = join(
+                    config["path_dataset"],
+                    config["template_refined_posegraph_optimized"])
             pose_graph = o3d.io.read_pose_graph(global_pose_graph_name)
             ply_file_names = get_file_list(
-                    join(config["path_dataset"],
-                     config["folder_fragment"]), ".ply")
+                join(config["path_dataset"], config["folder_fragment"]), ".ply")
             pcds = []
             for i in range(len(pose_graph.nodes)):
                 pcd = o3d.io.read_point_cloud(ply_file_names[i])
-                pcd_down = o3d.geometry.voxel_down_sample(pcd, config["voxel_size"]/2.0)
+                pcd_down = o3d.geometry.voxel_down_sample(
+                    pcd, config["voxel_size"] / 2.0)
                 pcd_down.transform(pose_graph.nodes[i].pose)
                 print(np.linalg.inv(pose_graph.nodes[i].pose))
                 pcds.append(pcd_down)
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         if (args.fragment):
             if (args.path_intrinsic):
                 pinhole_camera_intrinsic = o3d.io.read_pinhole_camera_intrinsic(
-                        args.path_intrinsic)
+                    args.path_intrinsic)
             else:
                 pinhole_camera_intrinsic = \
                         o3d.camera.PinholeCameraIntrinsic(
@@ -81,10 +83,11 @@ if __name__ == "__main__":
             for i in range(sid, eid):
                 print("appending rgbd image %d" % i)
                 rgbd_image = read_rgbd_image(color_files[i], depth_files[i],
-                        False, config)
-                pcd_i = o3d.geometry.create_point_cloud_from_rgbd_image(rgbd_image,
-                        pinhole_camera_intrinsic,
-                        np.linalg.inv(pose_graph.nodes[i-sid].pose))
-                pcd_i_down = o3d.geometry.voxel_down_sample(pcd_i, config["voxel_size"])
+                                             False, config)
+                pcd_i = o3d.geometry.create_point_cloud_from_rgbd_image(
+                    rgbd_image, pinhole_camera_intrinsic,
+                    np.linalg.inv(pose_graph.nodes[i - sid].pose))
+                pcd_i_down = o3d.geometry.voxel_down_sample(
+                    pcd_i, config["voxel_size"])
                 pcds.append(pcd_i_down)
             draw_geometries_flip(pcds)

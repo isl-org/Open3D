@@ -7,6 +7,7 @@
 import numpy as np
 import open3d as o3d
 
+
 def test_mesh(noise=0):
     mesh = o3d.io.read_triangle_mesh('../../TestData/knot.ply')
     if noise > 0:
@@ -15,6 +16,7 @@ def test_mesh(noise=0):
         mesh.vertices = o3d.utility.Vector3dVector(vertices)
     mesh.compute_vertex_normals()
     return mesh
+
 
 if __name__ == '__main__':
     mesh = test_mesh()

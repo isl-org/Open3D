@@ -10,6 +10,7 @@ import re
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
+
 # This is special function used for reading NYU pgm format
 # as it is written in big endian byte order.
 def read_nyu_pgm(filename, byteorder='>'):
@@ -24,11 +25,12 @@ def read_nyu_pgm(filename, byteorder='>'):
     except AttributeError:
         raise ValueError("Not a raw PGM file: '%s'" % filename)
     img = np.frombuffer(buffer,
-        dtype=byteorder+'u2',
-        count=int(width)*int(height),
-        offset=len(header)).reshape((int(height), int(width)))
+                        dtype=byteorder + 'u2',
+                        count=int(width) * int(height),
+                        offset=len(header)).reshape((int(height), int(width)))
     img_out = img.astype('u2')
     return img_out
+
 
 if __name__ == "__main__":
     print("Read NYU dataset")
@@ -47,7 +49,9 @@ if __name__ == "__main__":
     plt.title('NYU depth image')
     plt.imshow(rgbd_image.depth)
     plt.show()
-    pcd = o3d.geometry.create_point_cloud_from_rgbd_image(rgbd_image, o3d.camera.PinholeCameraIntrinsic(
+    pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+        rgbd_image,
+        o3d.camera.PinholeCameraIntrinsic(
             o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
     # Flip it, otherwise the pointcloud will be upside down
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])

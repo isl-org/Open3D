@@ -22,19 +22,23 @@ if __name__ == "__main__":
 
     print("Optimizing Fragment o3d.registration.PoseGraph using open3d ...")
     data_path = "../../TestData/GraphOptimization/"
-    pose_graph_fragment = o3d.io.read_pose_graph(data_path +
-            "pose_graph_example_fragment.json")
+    pose_graph_fragment = o3d.io.read_pose_graph(
+        data_path + "pose_graph_example_fragment.json")
     print(pose_graph_fragment)
-    o3d.registration.global_optimization(pose_graph_fragment, method, criteria, option)
-    o3d.io.write_pose_graph(data_path +
-            "pose_graph_example_fragment_optimized.json", pose_graph_fragment)
+    o3d.registration.global_optimization(pose_graph_fragment, method, criteria,
+                                         option)
+    o3d.io.write_pose_graph(
+        data_path + "pose_graph_example_fragment_optimized.json",
+        pose_graph_fragment)
     print("")
 
     print("Optimizing Global o3d.registration.PoseGraph using open3d ...")
     pose_graph_global = o3d.io.read_pose_graph(data_path +
-            "pose_graph_example_global.json")
+                                               "pose_graph_example_global.json")
     print(pose_graph_global)
-    o3d.registration.global_optimization(pose_graph_global, method, criteria, option)
-    o3d.io.write_pose_graph(data_path +
-            "pose_graph_example_global_optimized.json", pose_graph_global)
+    o3d.registration.global_optimization(pose_graph_global, method, criteria,
+                                         option)
+    o3d.io.write_pose_graph(
+        data_path + "pose_graph_example_global_optimized.json",
+        pose_graph_global)
     print("")
