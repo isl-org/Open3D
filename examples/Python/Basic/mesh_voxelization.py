@@ -149,7 +149,9 @@ if __name__ == '__main__':
 
     n_parallel = 10
     input_filename = [abspath("../../TestData/bathtub_0154.ply")] * n_parallel
-    output_filename = [abspath("../../TestData/bathtub_0154_voxel.ply")] * n_parallel
+    output_filename = []
+    for i in range(n_parallel):
+        output_filename.append(abspath("../../TestData/bathtub_0154_voxel_%02d.ply" % i))
     camera_path = abspath("../../TestData/sphere.ply")
     
     visualization = True
