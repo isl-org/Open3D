@@ -9,7 +9,7 @@ import open3d as o3d
 
 
 def draw_geometries_with_back_face(geometries):
-    visualizer = o3d.Visualizer()
+    visualizer = o3d.visualization.Visualizer()
     visualizer.create_window()
     render_option = visualizer.get_render_option()
     render_option.mesh_show_back_face = True
@@ -20,10 +20,10 @@ def draw_geometries_with_back_face(geometries):
 
 
 if __name__ == "__main__":
-    mesh = o3d.read_triangle_mesh("../../TestData/sphere.ply")
-    mesh = o3d.crop_triangle_mesh(mesh, [-1, -1, -1], [1, 0.6, 1])
+    mesh = o3d.io.read_triangle_mesh("../../TestData/sphere.ply")
+    mesh = o3d.geometry.crop_triangle_mesh(mesh, [-1, -1, -1], [1, 0.6, 1])
     mesh.purge()
-    mesh = o3d.create_half_edge_mesh_from_mesh(mesh)
+    mesh = o3d.geometry.create_half_edge_mesh_from_mesh(mesh)
     mesh.compute_vertex_normals()
     num_vertices = len(mesh.vertices)
     draw_geometries_with_back_face([mesh])
@@ -36,5 +36,5 @@ if __name__ == "__main__":
     # Colorize boundary vertices
     vertex_colors = 0.75 * np.ones((num_vertices, 3))
     vertex_colors[boundary_vertices, :] = np.array([1, 0, 0])
-    mesh.vertex_colors = o3d.Vector3dVector(vertex_colors)
+    mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
     draw_geometries_with_back_face([mesh])

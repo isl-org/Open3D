@@ -96,7 +96,6 @@ void pybind_octree(py::module &m) {
     octree_node.def("__repr__", [](const geometry::OctreeNode &octree_node) {
         return "geometry::OctreeNode instance.";
     });
-    py::detail::bind_default_constructor<geometry::OctreeNode>(octree_node);
     docstring::ClassMethodDocInject(m, "OctreeNode", "__init__");
 
     // geometry::OctreeInternalNode

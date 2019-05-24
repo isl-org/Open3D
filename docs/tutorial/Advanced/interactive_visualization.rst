@@ -20,8 +20,8 @@ Crop geometry
 
 .. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
    :language: python
-   :lineno-start: 11
-   :lines: 11-20
+   :lineno-start: 12
+   :lines: 12-23
    :linenos:
 
 This function simply reads a point cloud and calls ``draw_geometries_with_editing``. This function provides vertex selection and cropping.
@@ -65,8 +65,8 @@ The following script register two point clouds using point-to-point ICP. It gets
 
 .. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
    :language: python
-   :lineno-start: 43
-   :lines: 43-52
+   :lineno-start: 51
+   :lines: 51-60
    :linenos:
 
 The script reads two point clouds, and visualize the point clouds before alignment.
@@ -76,8 +76,8 @@ The script reads two point clouds, and visualize the point clouds before alignme
 
 .. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
    :language: python
-   :lineno-start: 30
-   :lines: 30-41
+   :lineno-start: 35
+   :lines: 35-48
    :linenos:
 
 Function ``pick_points(pcd)`` makes an instance of ``VisualizerWithEditing``. To mimic ``draw_geometries``, it creates windows, adds geometry, visualize geometry, and terminates. A novel interface function from ``VisualizerWithEditing`` is ``get_picked_points()`` that returns the indices of user-picked vertices.
@@ -115,8 +115,8 @@ Registration using user correspondences
 
 .. literalinclude:: ../../../examples/Python/Advanced/interactive_visualization.py
    :language: python
-   :lineno-start: 53
-   :lines: 53-71
+   :lineno-start: 61
+   :lines: 61-80
    :linenos:
 
 The later part of the demo computes an initial transformation based on the user-provided correspondences. This script builds pairs of correspondences using ``Vector2iVector(corr)``. It utilizes ``TransformationEstimationPointToPoint.compute_transformation`` to compute the initial transformation from the correspondences. The initial transformation is refined using ``registration_icp``.

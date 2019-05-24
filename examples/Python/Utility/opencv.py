@@ -4,6 +4,7 @@
 
 # examples/Python/Utility/opencv.py
 
+
 def initialize_opencv():
     opencv_installed = True
     try:

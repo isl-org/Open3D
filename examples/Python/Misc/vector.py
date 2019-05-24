@@ -4,26 +4,27 @@
 
 import copy
 import numpy as np
-from open3d import *
+import open3d as o3d
 
 if __name__ == "__main__":
 
     print("Testing vector in open3d ...")
 
     print("")
-    print("Testing IntVector ...")
-    vi = IntVector([1, 2, 3, 4, 5]) # made from python list
-    vi1 = IntVector(np.asarray([1, 2, 3, 4, 5])) # made from numpy array
-    vi2 = copy.copy(vi) # valid copy
-    vi3 = copy.deepcopy(vi) # valid copy
-    vi4 = vi[:] # valid copy
+    print("Testing o3d.utility.IntVector ...")
+    vi = o3d.utility.IntVector([1, 2, 3, 4, 5])  # made from python list
+    vi1 = o3d.utility.IntVector(np.asarray([1, 2, 3, 4,
+                                            5]))  # made from numpy array
+    vi2 = copy.copy(vi)  # valid copy
+    vi3 = copy.deepcopy(vi)  # valid copy
+    vi4 = vi[:]  # valid copy
     print(vi)
     print(np.asarray(vi))
     vi[0] = 10
     np.asarray(vi)[1] = 22
     vi1[0] *= 5
     vi2[0] += 1
-    vi3[0:2] = IntVector([40, 50])
+    vi3[0:2] = o3d.utility.IntVector([40, 50])
     print(vi)
     print(vi1)
     print(vi2)
@@ -31,10 +32,10 @@ if __name__ == "__main__":
     print(vi4)
 
     print("")
-    print("Testing DoubleVector ...")
-    vd = DoubleVector([1, 2, 3])
-    vd1 = DoubleVector([1.1, 1.2])
-    vd2 = DoubleVector(np.asarray([0.1, 0.2]))
+    print("Testing o3d.utility.DoubleVector ...")
+    vd = o3d.utility.DoubleVector([1, 2, 3])
+    vd1 = o3d.utility.DoubleVector([1.1, 1.2])
+    vd2 = o3d.utility.DoubleVector(np.asarray([0.1, 0.2]))
     print(vd)
     print(vd1)
     print(vd2)
@@ -43,10 +44,10 @@ if __name__ == "__main__":
     print(vd1)
 
     print("")
-    print("Testing Vector3dVector ...")
-    vv3d = Vector3dVector([[1, 2, 3], [0.1, 0.2, 0.3]])
-    vv3d1 = Vector3dVector(vv3d)
-    vv3d2 = Vector3dVector(np.asarray(vv3d))
+    print("Testing o3d.utility.Vector3dVector ...")
+    vv3d = o3d.utility.Vector3dVector([[1, 2, 3], [0.1, 0.2, 0.3]])
+    vv3d1 = o3d.utility.Vector3dVector(vv3d)
+    vv3d2 = o3d.utility.Vector3dVector(np.asarray(vv3d))
     vv3d3 = copy.deepcopy(vv3d)
     print(vv3d)
     print(np.asarray(vv3d))
@@ -66,8 +67,8 @@ if __name__ == "__main__":
     print(np.asarray(vv3d3))
 
     print("")
-    print("Testing Vector3iVector ...")
-    vv3i = Vector3iVector([[1, 2, 3], [4, 5, 6]])
+    print("Testing o3d.utility.Vector3iVector ...")
+    vv3i = o3d.utility.Vector3iVector([[1, 2, 3], [4, 5, 6]])
     print(vv3i)
     print(np.asarray(vv3i))
 

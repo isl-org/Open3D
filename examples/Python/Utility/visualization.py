@@ -5,9 +5,10 @@
 # examples/Python/Utility/visualization.py
 
 import copy
-from open3d import *
+import open3d as o3d
 
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
+
 
 def draw_geometries_flip(pcds):
     pcds_transform = []
@@ -15,7 +16,7 @@ def draw_geometries_flip(pcds):
         pcd_temp = copy.deepcopy(pcd)
         pcd_temp.transform(flip_transform)
         pcds_transform.append(pcd_temp)
-    draw_geometries(pcds_transform)
+    o3d.visualization.draw_geometries(pcds_transform)
 
 
 def draw_registration_result(source, target, transformation):
@@ -26,7 +27,7 @@ def draw_registration_result(source, target, transformation):
     source_temp.transform(transformation)
     source_temp.transform(flip_transform)
     target_temp.transform(flip_transform)
-    draw_geometries([source_temp, target_temp])
+    o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
 def draw_registration_result_original_color(source, target, transformation):
@@ -35,4 +36,4 @@ def draw_registration_result_original_color(source, target, transformation):
     source_temp.transform(transformation)
     source_temp.transform(flip_transform)
     target_temp.transform(flip_transform)
-    draw_geometries([source_temp, target_temp])
+    o3d.visualization.draw_geometries([source_temp, target_temp])

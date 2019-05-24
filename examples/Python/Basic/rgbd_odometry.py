@@ -4,49 +4,49 @@
 
 # examples/Python/Basic/rgbd_odometry.py
 
-from open3d import *
+import open3d as o3d
 import numpy as np
 
 if __name__ == "__main__":
-    pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-            "../../TestData/camera_primesense.json")
+    pinhole_camera_intrinsic = o3d.io.read_pinhole_camera_intrinsic(
+        "../../TestData/camera_primesense.json")
     print(pinhole_camera_intrinsic.intrinsic_matrix)
 
-    source_color = read_image("../../TestData/RGBD/color/00000.jpg")
-    source_depth = read_image("../../TestData/RGBD/depth/00000.png")
-    target_color = read_image("../../TestData/RGBD/color/00001.jpg")
-    target_depth = read_image("../../TestData/RGBD/depth/00001.png")
-    source_rgbd_image = create_rgbd_image_from_color_and_depth(
-            source_color, source_depth)
-    target_rgbd_image = create_rgbd_image_from_color_and_depth(
-            target_color, target_depth)
-    target_pcd = create_point_cloud_from_rgbd_image(
-            target_rgbd_image, pinhole_camera_intrinsic)
+    source_color = o3d.io.read_image("../../TestData/RGBD/color/00000.jpg")
+    source_depth = o3d.io.read_image("../../TestData/RGBD/depth/00000.png")
+    target_color = o3d.io.read_image("../../TestData/RGBD/color/00001.jpg")
+    target_depth = o3d.io.read_image("../../TestData/RGBD/depth/00001.png")
+    source_rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+        source_color, source_depth)
+    target_rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+        target_color, target_depth)
+    target_pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+        target_rgbd_image, pinhole_camera_intrinsic)
 
-    option = OdometryOption()
+    option = o3d.odometry.OdometryOption()
     odo_init = np.identity(4)
     print(option)
 
-    [success_color_term, trans_color_term, info] = compute_rgbd_odometry(
-            source_rgbd_image, target_rgbd_image,
-            pinhole_camera_intrinsic, odo_init,
-            RGBDOdometryJacobianFromColorTerm(), option)
-    [success_hybrid_term, trans_hybrid_term, info] = compute_rgbd_odometry(
-            source_rgbd_image, target_rgbd_image,
-            pinhole_camera_intrinsic, odo_init,
-            RGBDOdometryJacobianFromHybridTerm(), option)
+    [success_color_term, trans_color_term,
+     info] = o3d.odometry.compute_rgbd_odometry(
+         source_rgbd_image, target_rgbd_image, pinhole_camera_intrinsic,
+         odo_init, o3d.odometry.RGBDOdometryJacobianFromColorTerm(), option)
+    [success_hybrid_term, trans_hybrid_term,
+     info] = o3d.odometry.compute_rgbd_odometry(
+         source_rgbd_image, target_rgbd_image, pinhole_camera_intrinsic,
+         odo_init, o3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
 
     if success_color_term:
         print("Using RGB-D Odometry")
         print(trans_color_term)
-        source_pcd_color_term = create_point_cloud_from_rgbd_image(
-                source_rgbd_image, pinhole_camera_intrinsic)
+        source_pcd_color_term = o3d.geometry.create_point_cloud_from_rgbd_image(
+            source_rgbd_image, pinhole_camera_intrinsic)
         source_pcd_color_term.transform(trans_color_term)
-        draw_geometries([target_pcd, source_pcd_color_term])
+        o3d.visualization.draw_geometries([target_pcd, source_pcd_color_term])
     if success_hybrid_term:
         print("Using Hybrid RGB-D Odometry")
         print(trans_hybrid_term)
-        source_pcd_hybrid_term = create_point_cloud_from_rgbd_image(
-                source_rgbd_image, pinhole_camera_intrinsic)
+        source_pcd_hybrid_term = o3d.geometry.create_point_cloud_from_rgbd_image(
+            source_rgbd_image, pinhole_camera_intrinsic)
         source_pcd_hybrid_term.transform(trans_hybrid_term)
-        draw_geometries([target_pcd, source_pcd_hybrid_term])
+        o3d.visualization.draw_geometries([target_pcd, source_pcd_hybrid_term])

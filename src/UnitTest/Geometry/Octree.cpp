@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <json/json.h>
+#include <iostream>
 #include <memory>
 
 #include "Open3D/Geometry/Octree.h"
@@ -232,7 +234,7 @@ TEST(Octree, FragmentPLYCheckClone) {
     geometry::Octree src_octree(5);
     src_octree.ConvertFromPointCloud(pcd, 0.01);
 
-    // Build dst_octree
+    // Build dst_octree clone
     geometry::Octree dst_octree(src_octree);
 
     // Also checks the equal operator
@@ -288,17 +290,6 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
     EXPECT_EQ(octree.size_, 4.04);  // 4.04 = 4 * (1 + 0.01)
 }
 
-TEST(Octree, ToVoxelGrid) {
-    geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
-    size_t max_depth = 7;
-    geometry::Octree octree(max_depth);
-    octree.ConvertFromPointCloud(pcd);
-    std::shared_ptr<geometry::VoxelGrid> voxel_grid = octree.ToVoxelGrid();
-    // Uncomment the line below for visualization test
-    // visualization::DrawGeometries({voxel_grid});
-}
-
 TEST(Octree, Visualization) {
     geometry::PointCloud pcd;
     io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
@@ -306,4 +297,20 @@ TEST(Octree, Visualization) {
     octree->ConvertFromPointCloud(pcd, 0.01);
     // Uncomment the line below for visualization test
     // visualization::DrawGeometries({octree});
+}
+
+TEST(Octree, ConvertToJsonValue) {
+    geometry::PointCloud pcd;
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    size_t max_depth = 5;
+    geometry::Octree src_octree(max_depth);
+    src_octree.ConvertFromPointCloud(pcd, 0.01);
+
+    Json::Value json_value;
+    src_octree.ConvertToJsonValue(json_value);
+
+    geometry::Octree dst_octree;
+    dst_octree.ConvertFromJsonValue(json_value);
+
+    EXPECT_TRUE(src_octree == dst_octree);
 }

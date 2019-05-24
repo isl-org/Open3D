@@ -97,7 +97,7 @@ Geometry primitives
 .. literalinclude:: ../../../examples/Python/Basic/visualization.py
    :language: python
    :lineno-start: 16
-   :lines: 16-26
+   :lines: 16-27
    :linenos:
 
 This script generates a cubic, a sphere, and a cylinder using ``create_mesh_cubic``, ``create_mesh_sphere`` and
@@ -110,8 +110,8 @@ Draw multiple geometries
 
 .. literalinclude:: ../../../examples/Python/Basic/visualization.py
    :language: python
-   :lineno-start: 28
-   :lines: 28-32
+   :lineno-start: 29
+   :lines: 29-35
    :linenos:
 
 ``draw_geometries`` takes a list of geometries and renders them all together. Alternatively, ``TriangleMesh`` supports a ``+`` operator to combine multiple meshes into one. We recommend the first approach since it supports a combination of different geometries (e.g., a mesh can be rendered in tandem with a point cloud).
@@ -126,8 +126,8 @@ Draw line set
 
 .. literalinclude:: ../../../examples/Python/Basic/visualization.py
    :language: python
-   :lineno-start: 34
-   :lines: 34-45
+   :lineno-start: 37
+   :lines: 37-47
    :linenos:
 
 To draw lines, it is necessary to define ``LineSet`` and create a set of points and a set of edges. An edge is a pair of point indices. The above example creates custom ``points`` and edges (denoted as ``lines``) to make a cubic. Color is optional - red color ``[1,0,0]`` is assigned to each edge in this example. This script visualizes the following cubic.

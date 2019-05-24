@@ -30,32 +30,27 @@ import time
 import pytest
 import os
 
+_eight_cubes_colors = np.array([
+    [0.0, 0.0, 0.0],
+    [0.1, 0.0, 0.0],
+    [0.0, 0.1, 0.0],
+    [0.1, 0.1, 0.0],
+    [0.0, 0.0, 0.1],
+    [0.1, 0.0, 0.1],
+    [0.0, 0.1, 0.1],
+    [0.1, 0.1, 0.1],
+])
 
-_eight_cubes_colors = np.array(
-    [
-        [0.0, 0.0, 0.0],
-        [0.1, 0.0, 0.0],
-        [0.0, 0.1, 0.0],
-        [0.1, 0.1, 0.0],
-        [0.0, 0.0, 0.1],
-        [0.1, 0.0, 0.1],
-        [0.0, 0.1, 0.1],
-        [0.1, 0.1, 0.1],
-    ]
-)
-
-_eight_cubes_points = np.array(
-    [
-        [0.5, 0.5, 0.5],
-        [1.5, 0.5, 0.5],
-        [0.5, 1.5, 0.5],
-        [1.5, 1.5, 0.5],
-        [0.5, 0.5, 1.5],
-        [1.5, 0.5, 1.5],
-        [0.5, 1.5, 1.5],
-        [1.5, 1.5, 1.5],
-    ]
-)
+_eight_cubes_points = np.array([
+    [0.5, 0.5, 0.5],
+    [1.5, 0.5, 0.5],
+    [0.5, 1.5, 0.5],
+    [1.5, 1.5, 0.5],
+    [0.5, 0.5, 1.5],
+    [1.5, 0.5, 1.5],
+    [0.5, 1.5, 1.5],
+    [1.5, 1.5, 1.5],
+])
 
 
 def test_octree_OctreeNodeInfo():
@@ -91,8 +86,10 @@ def test_octree_OctreeColorLeafNode():
     assert color_leaf_node == color_leaf_node_clone
     assert color_leaf_node_clone == color_leaf_node
 
+
 def test_octree_init():
     octree = o3d.geometry.Octree(1, [0, 0, 0], 2)
+
 
 def test_octree_convert_from_point_cloud():
     octree = o3d.geometry.Octree(1, [0, 0, 0], 2)
@@ -118,16 +115,14 @@ def test_octree_node_access():
         f_update = o3d.geometry.OctreeColorLeafNode.get_update_function(color)
         octree.insert_point(point, f_init, f_update)
     for i in range(8):
-        np.testing.assert_equal(
-            octree.root_node.children[i].color, _eight_cubes_colors[i]
-        )
+        np.testing.assert_equal(octree.root_node.children[i].color,
+                                _eight_cubes_colors[i])
 
 
 def test_octree_visualize():
     pwd = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.join(
-        pwd, os.pardir, os.pardir, os.pardir, "examples", "TestData"
-    )
+    data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",
+                            "TestData")
     pcd_path = os.path.join(data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
     octree = o3d.geometry.Octree(8)
@@ -138,9 +133,8 @@ def test_octree_visualize():
 
 def test_locate_leaf_node():
     pwd = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.join(
-        pwd, os.pardir, os.pardir, os.pardir, "examples", "TestData"
-    )
+    data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",
+                            "TestData")
     pcd_path = os.path.join(data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
 

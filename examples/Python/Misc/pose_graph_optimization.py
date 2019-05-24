@@ -2,39 +2,43 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from open3d import *
+import open3d as o3d
 import numpy as np
 
 if __name__ == "__main__":
 
-    set_verbosity_level(VerbosityLevel.Debug)
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 
     print("")
-    print("Parameters for PoseGraph optimization ...")
-    method = GlobalOptimizationLevenbergMarquardt()
-    criteria = GlobalOptimizationConvergenceCriteria()
-    option = GlobalOptimizationOption()
+    print("Parameters for o3d.registration.PoseGraph optimization ...")
+    method = o3d.registration.GlobalOptimizationLevenbergMarquardt()
+    criteria = o3d.registration.GlobalOptimizationConvergenceCriteria()
+    option = o3d.registration.GlobalOptimizationOption()
     print("")
     print(method)
     print(criteria)
     print(option)
     print("")
 
-    print("Optimizing Fragment PoseGraph using open3d ...")
+    print("Optimizing Fragment o3d.registration.PoseGraph using open3d ...")
     data_path = "../../TestData/GraphOptimization/"
-    pose_graph_fragment = read_pose_graph(data_path +
-            "pose_graph_example_fragment.json")
+    pose_graph_fragment = o3d.io.read_pose_graph(
+        data_path + "pose_graph_example_fragment.json")
     print(pose_graph_fragment)
-    global_optimization(pose_graph_fragment, method, criteria, option)
-    write_pose_graph(data_path +
-            "pose_graph_example_fragment_optimized.json", pose_graph_fragment)
+    o3d.registration.global_optimization(pose_graph_fragment, method, criteria,
+                                         option)
+    o3d.io.write_pose_graph(
+        data_path + "pose_graph_example_fragment_optimized.json",
+        pose_graph_fragment)
     print("")
 
-    print("Optimizing Global PoseGraph using open3d ...")
-    pose_graph_global = read_pose_graph(data_path +
-            "pose_graph_example_global.json")
+    print("Optimizing Global o3d.registration.PoseGraph using open3d ...")
+    pose_graph_global = o3d.io.read_pose_graph(data_path +
+                                               "pose_graph_example_global.json")
     print(pose_graph_global)
-    global_optimization(pose_graph_global, method, criteria, option)
-    write_pose_graph(data_path +
-            "pose_graph_example_global_optimized.json", pose_graph_global)
+    o3d.registration.global_optimization(pose_graph_global, method, criteria,
+                                         option)
+    o3d.io.write_pose_graph(
+        data_path + "pose_graph_example_global_optimized.json",
+        pose_graph_global)
     print("")

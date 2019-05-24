@@ -20,7 +20,7 @@ Print vertices and triangles
 .. literalinclude:: ../../../examples/Python/Basic/mesh.py
    :language: python
    :lineno-start: 13
-   :lines: 13-17
+   :lines: 13-18
    :linenos:
 
 Outputs:
