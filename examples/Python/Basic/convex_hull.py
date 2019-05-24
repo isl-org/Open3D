@@ -13,54 +13,15 @@ import shutil
 import time
 import open3d as o3d
 
-
-def create_mesh_plane():
-    mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(
-        np.array([[0, 0, 0], [0, 0.2, 0], [1, 0.2, 0], [1, 0, 0]],
-                 dtype=np.float32))
-    mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0,
-                                                                      3]]))
-    return mesh
-
-
-def armadillo_mesh():
-    armadillo_path = '../../TestData/Armadillo.ply'
-    if not os.path.exists(armadillo_path):
-        print('downloading armadillo mesh')
-        url = 'http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz'
-        urllib.request.urlretrieve(url, armadillo_path + '.gz')
-        print('extract armadillo mesh')
-        with gzip.open(armadillo_path + '.gz', 'rb') as fin:
-            with open(armadillo_path, 'wb') as fout:
-                shutil.copyfileobj(fin, fout)
-        os.remove(armadillo_path + '.gz')
-    return o3d.io.read_triangle_mesh(armadillo_path)
-
-
-def bunny_mesh():
-    bunny_path = '../../TestData/Bunny.ply'
-    if not os.path.exists(bunny_path):
-        print('downloading bunny mesh')
-        url = 'http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz'
-        urllib.request.urlretrieve(url, bunny_path + '.tar.gz')
-        print('extract bunny mesh')
-        with tarfile.open(bunny_path + '.tar.gz') as tar:
-            tar.extractall(path=os.path.dirname(bunny_path))
-        shutil.move(
-            os.path.join(os.path.dirname(bunny_path), 'bunny', 'reconstruction',
-                         'bun_zipper.ply'), bunny_path)
-        os.remove(bunny_path + '.tar.gz')
-        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), 'bunny'))
-    return o3d.io.read_triangle_mesh(bunny_path)
+import meshes
 
 
 def mesh_generator():
     yield o3d.geometry.create_mesh_box()
     yield o3d.geometry.create_mesh_sphere()
-    yield o3d.io.read_triangle_mesh('../../TestData/knot.ply')
-    yield bunny_mesh()
-    yield armadillo_mesh()
+    yield meshes.knot()
+    yield meshes.bunny()
+    yield meshes.armadillo()
 
 
 if __name__ == "__main__":

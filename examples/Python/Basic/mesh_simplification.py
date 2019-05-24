@@ -7,6 +7,8 @@
 import numpy as np
 import open3d as o3d
 
+import meshes
+
 
 def create_mesh_plane():
     mesh = o3d.geometry.TriangleMesh()
@@ -19,7 +21,7 @@ def create_mesh_plane():
 
 
 def mesh_generator():
-    mesh = create_mesh_plane()
+    mesh = meshes.plane()
     yield o3d.geometry.subdivide_midpoint(mesh, 2)
 
     mesh = o3d.geometry.create_mesh_box()
@@ -34,8 +36,7 @@ def mesh_generator():
     mesh = o3d.geometry.create_mesh_cylinder()
     yield o3d.geometry.subdivide_midpoint(mesh, 2)
 
-    mesh = o3d.io.read_triangle_mesh("../../TestData/bathtub_0154.ply")
-    yield mesh
+    yield meshes.bathtub()
 
 
 if __name__ == "__main__":
