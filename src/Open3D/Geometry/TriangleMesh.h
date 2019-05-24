@@ -103,8 +103,10 @@ public:
     /// They are usually the product of removing duplicated vertices.
     virtual void RemoveDegenerateTriangles();
 
-    /// TODO doc
-    virtual void RemoveNonManifoldTriangles();
+    /// Function that removes all non-manifold edges, by successively deleting
+    /// triangles with the smallest surface area adjacent to the non-manifold
+    /// edge until the number of adjacent triangles to the edge is `<= 2`.
+    virtual void RemoveNonManifoldEdges();
 
     /// Function to sharpen triangle mesh. The output value ($v_o$) is the
     /// input value ($v_i$) plus \param strength times the input value minus

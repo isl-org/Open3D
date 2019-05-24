@@ -807,27 +807,69 @@ void TriangleMesh::RemoveDegenerateTriangles() {
             (int)(old_triangle_num - k));
 }
 
-void TriangleMesh::RemoveNonManifoldTriangles() {
-  bool mesh_is_edge_manifold = false;
-  while(!mesh_is_edge_manifold) {
-      mesh_is_edge_manifold = true;
-      auto edges_to_triangles = GetEdgeToTrianglesMap();
+void TriangleMesh::RemoveNonManifoldEdges() {
+    std::vector<double> triangle_areas;
+    GetSurfaceArea(triangle_areas);
 
-      std::vector<double> triangle_areas;
-      GetSurfaceArea(triangle_areas);
+    bool mesh_is_edge_manifold = false;
+    while (!mesh_is_edge_manifold) {
+        mesh_is_edge_manifold = true;
+        auto edges_to_triangles = GetEdgeToTrianglesMap();
 
-      for (auto &kv : edges) {
-          int n_edge_triangle_refs = kv.second.size();
-          if (n_edge_triangle_refs == 1 || n_edge_triangle_refs == 2) {
-            continue;
-          }
-          // if the idge is non-manifold, then check if a referenced
-          // triangle has already been removed, otherwise remove triangle
-          // with smallest surface area.
-      }
-  }
+        for (auto &kv : edges_to_triangles) {
+            int n_edge_triangle_refs = kv.second.size();
+            if (n_edge_triangle_refs == 1 || n_edge_triangle_refs == 2) {
+                continue;
+            }
 
-  // TODO deleted move triangles
+            // if the edge is non-manifold, then check if a referenced
+            // triangle has already been removed, otherwise remove triangle
+            // with smallest surface area until number of adjacent triangles
+            // is <= 2.
+            int n_triangles = 0;
+            for (int tidx : kv.second) {
+                if (triangle_areas[tidx] > 0) {
+                    n_triangles++;
+                }
+            }
+            int n_triangles_to_delete = n_triangles - 2;
+            while (n_triangles_to_delete > 0) {
+                // find triangle with smallest area
+                int min_tidx = -1;
+                double min_area = std::numeric_limits<double>::max();
+                for (int tidx : kv.second) {
+                    double area = triangle_areas[tidx];
+                    if (area > 0 && area < min_area) {
+                        min_tidx = tidx;
+                        min_area = area;
+                    }
+                }
+
+                // mark triangle as deleted by setting area to -1
+                triangle_areas[min_tidx] = -1;
+                n_triangles_to_delete--;
+            }
+        }
+
+        // delete marked triangles
+        bool has_tri_normal = HasTriangleNormals();
+        int to_tidx = 0;
+        for (int from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
+            if (triangle_areas[from_tidx] > 0) {
+                triangles_[to_tidx] = triangles_[from_tidx];
+                triangle_areas[to_tidx] = triangle_areas[from_tidx];
+                if (has_tri_normal) {
+                    triangle_normals_[to_tidx] = triangle_normals_[from_tidx];
+                }
+                to_tidx++;
+            }
+        }
+        triangles_.resize(to_tidx);
+        triangle_areas.resize(to_tidx);
+        if (has_tri_normal) {
+            triangle_normals_.resize(to_tidx);
+        }
+    }
 }
 
 template <typename F>
@@ -1059,7 +1101,8 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetNonManifoldEdges(
     auto edges = GetEdgeToTrianglesMap();
     std::vector<Eigen::Vector2i> non_manifold_edges;
     for (auto &kv : edges) {
-        if ((allow_boundary_edges && (kv.second.size() < 1 || kv.second.size() > 2)) ||
+        if ((allow_boundary_edges &&
+             (kv.second.size() < 1 || kv.second.size() > 2)) ||
             (!allow_boundary_edges && kv.second.size() != 2)) {
             non_manifold_edges.push_back(kv.first);
         }
@@ -1071,7 +1114,8 @@ bool TriangleMesh::IsEdgeManifold(
         bool allow_boundary_edges /* = true */) const {
     auto edges = GetEdgeToTrianglesMap();
     for (auto &kv : edges) {
-        if ((allow_boundary_edges && (kv.second.size() < 1 || kv.second.size() > 2)) ||
+        if ((allow_boundary_edges &&
+             (kv.second.size() < 1 || kv.second.size() > 2)) ||
             (!allow_boundary_edges && kv.second.size() != 2)) {
             return false;
         }

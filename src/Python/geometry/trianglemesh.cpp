@@ -107,6 +107,12 @@ void pybind_trianglemesh(py::module &m) {
                  "that references a single vertex multiple times in a single "
                  "triangle. They are usually the product of removing "
                  "duplicated vertices.")
+            .def("remove_non_manifold_edges",
+                 &geometry::TriangleMesh::RemoveNonManifoldEdges,
+                 "Function that removes all non-manifold edges, by "
+                 "successively deleting  triangles with the smallest surface "
+                 "area adjacent to the non-manifold edge until the number of "
+                 "adjacent triangles to the edge is `<= 2`.")
             .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
@@ -283,6 +289,8 @@ void pybind_trianglemesh(py::module &m) {
                                     "remove_unreferenced_vertices");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "remove_degenerate_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_non_manifold_edges");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "filter_sharpen",
             {{"number_of_iterations",
