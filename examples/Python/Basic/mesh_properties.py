@@ -25,33 +25,16 @@ def cat_meshes(mesh0, mesh1):
     mesh.triangles = Vector3iVector(triangles)
     return mesh
 
-def bunny_mesh():
-    bunny_path = '../../TestData/Bunny.ply'
-    if not os.path.exists(bunny_path):
-        print('downloading bunny mesh')
-        url = 'http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz'
-        urllib.request.urlretrieve(url, bunny_path + '.tar.gz')
-        print('extract bunny mesh')
-        with tarfile.open(bunny_path + '.tar.gz') as tar:
-            tar.extractall(path=os.path.dirname(bunny_path))
-        shutil.move(
-                os.path.join(os.path.dirname(bunny_path),
-                    'bunny', 'reconstruction', 'bun_zipper.ply'),
-                bunny_path)
-        os.remove(bunny_path + '.tar.gz')
-        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), 'bunny'))
-    return read_triangle_mesh(bunny_path)
-
 def mesh_generator():
-    # yield 'box', create_mesh_box()
-    # yield 'sphere', create_mesh_sphere()
-    # yield 'cone', create_mesh_cone()
-    # yield 'torus', create_mesh_torus(radial_resolution=30, tubular_resolution=20)
-    # yield 'moebius (twists=1)', create_mesh_moebius(twists=1)
-    # yield 'moebius (twists=2)', create_mesh_moebius(twists=2)
-    # yield 'moebius (twists=3)', create_mesh_moebius(twists=3)
+    yield 'box', create_mesh_box()
+    yield 'sphere', create_mesh_sphere()
+    yield 'cone', create_mesh_cone()
+    yield 'torus', create_mesh_torus(radial_resolution=30, tubular_resolution=20)
+    yield 'moebius (twists=1)', create_mesh_moebius(twists=1)
+    yield 'moebius (twists=2)', create_mesh_moebius(twists=2)
+    yield 'moebius (twists=3)', create_mesh_moebius(twists=3)
 
-    # yield 'knot', read_triangle_mesh('../../TestData/knot.ply')
+    yield 'knot', read_triangle_mesh('../../TestData/knot.ply')
 
     verts = np.array([[-1,0,0], [0,1,0], [1,0,0], [0,-1,0], [0,0,1]], dtype=np.float64)
     triangles = np.array([[0,1,3], [1,2,3], [1,3,4]])
@@ -60,28 +43,26 @@ def mesh_generator():
     mesh.triangles = Vector3iVector(triangles)
     yield 'non-manifold edge', mesh
 
-    # verts = np.array([[-1,0,-1], [1,0,-1], [0,1,-1], [0,0,0],
-    #                   [-1,0,1], [1,0,1], [0,1,1]], dtype=np.float64)
-    # triangles = np.array([[0,1,2], [0,1,3], [1,2,3], [2,0,3],
-    #                       [4,5,6], [4,5,3], [5,6,3], [4,6,3]])
-    # mesh = TriangleMesh()
-    # mesh.vertices = Vector3dVector(verts)
-    # mesh.triangles = Vector3iVector(triangles)
-    # yield 'non-manifold vertex', mesh
+    verts = np.array([[-1,0,-1], [1,0,-1], [0,1,-1], [0,0,0],
+                      [-1,0,1], [1,0,1], [0,1,1]], dtype=np.float64)
+    triangles = np.array([[0,1,2], [0,1,3], [1,2,3], [2,0,3],
+                          [4,5,6], [4,5,3], [5,6,3], [4,6,3]])
+    mesh = TriangleMesh()
+    mesh.vertices = Vector3dVector(verts)
+    mesh.triangles = Vector3iVector(triangles)
+    yield 'non-manifold vertex', mesh
 
-    # mesh = create_mesh_box()
-    # mesh.triangles = Vector3iVector(np.asarray(mesh.triangles)[:-2])
-    # yield 'open box', mesh
+    mesh = create_mesh_box()
+    mesh.triangles = Vector3iVector(np.asarray(mesh.triangles)[:-2])
+    yield 'open box', mesh
 
-    # mesh0 = create_mesh_box()
-    # T = np.eye(4)
-    # T[:, 3] += (0.5, 0.5, 0.5, 0)
-    # mesh1 = create_mesh_box()
-    # mesh1.transform(T)
-    # mesh = cat_meshes(mesh0, mesh1)
-    # yield 'boxes', mesh
-
-    yield 'bunny', bunny_mesh()
+    mesh0 = create_mesh_box()
+    T = np.eye(4)
+    T[:, 3] += (0.5, 0.5, 0.5, 0)
+    mesh1 = create_mesh_box()
+    mesh1.transform(T)
+    mesh = cat_meshes(mesh0, mesh1)
+    yield 'boxes', mesh
 
 def edges_to_lineset(mesh, edges, color):
     ls = LineSet()
@@ -103,10 +84,10 @@ def check_properties(name, mesh):
     print('  edge_manifold_boundary: %s' % fmt_bool(edge_manifold_boundary))
     vertex_manifold = mesh.is_vertex_manifold()
     print('  vertex_manifold:        %s' % fmt_bool(vertex_manifold))
-    # self_intersecting = mesh.is_self_intersecting()
-    # print('  self_intersecting:      %s' % fmt_bool(self_intersecting))
-    # watertight = edge_manifold_boundary and vertex_manifold and not self_intersecting
-    # print('  watertight:             %s' % fmt_bool(watertight))
+    self_intersecting = mesh.is_self_intersecting()
+    print('  self_intersecting:      %s' % fmt_bool(self_intersecting))
+    watertight = edge_manifold_boundary and vertex_manifold and not self_intersecting
+    print('  watertight:             %s' % fmt_bool(watertight))
     orientable = mesh.is_orientable()
     print('  orientable:             %s' % fmt_bool(orientable))
 
@@ -127,25 +108,25 @@ def check_properties(name, mesh):
         pcl.points = Vector3dVector(np.asarray(mesh.vertices)[verts])
         pcl.paint_uniform_color((0,0,1))
         draw_geometries([mesh, pcl])
-    # if self_intersecting:
-    #     intersecting_triangles = np.asarray(mesh.get_self_intersecting_triangles())
-    #     intersecting_triangles = intersecting_triangles[0:1]
-    #     intersecting_triangles = np.unique(intersecting_triangles)
-    #     print('  # visualize self-intersecting triangles')
-    #     triangles = np.asarray(mesh.triangles)[intersecting_triangles]
-    #     edges = [np.vstack((triangles[:,i], triangles[:,j])) for i,j in [(0,1), (1,2), (2,0)]]
-    #     edges = np.hstack(edges).T
-    #     edges = Vector2iVector(edges)
-    #     draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,1,0))])
-    # if watertight:
-    #     print('  # visualize watertight mesh')
-    #     draw_geometries([mesh])
+    if self_intersecting:
+        intersecting_triangles = np.asarray(mesh.get_self_intersecting_triangles())
+        intersecting_triangles = intersecting_triangles[0:1]
+        intersecting_triangles = np.unique(intersecting_triangles)
+        print('  # visualize self-intersecting triangles')
+        triangles = np.asarray(mesh.triangles)[intersecting_triangles]
+        edges = [np.vstack((triangles[:,i], triangles[:,j])) for i,j in [(0,1), (1,2), (2,0)]]
+        edges = np.hstack(edges).T
+        edges = Vector2iVector(edges)
+        draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,1,0))])
+    if watertight:
+        print('  # visualize watertight mesh')
+        draw_geometries([mesh])
 
     if not edge_manifold:
         print('  # Remove non-manifold edges')
         mesh.remove_non_manifold_edges()
-        edges = mesh.get_non_manifold_edges(allow_boundary_edges=True)
-        draw_geometries([mesh, edges_to_lineset(mesh, edges, (1,0,0))])
+        print(f'  # Is mesh now edge-manifold: {fmt_bool(mesh.is_edge_manifold())}')
+        draw_geometries([mesh])
 
 if __name__ == "__main__":
     # test mesh properties
