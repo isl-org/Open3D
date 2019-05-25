@@ -35,7 +35,7 @@ if __name__ == "__main__":
     print("Load a polygon volume and use it to crop the original point cloud")
     vol = o3d.visualization.read_selection_polygon_volume(
         "../../TestData/Crop/cropped.json")
-    chair = vol.o3d.geometry.crop_point_cloud(pcd)
+    chair = vol.crop_point_cloud(pcd)
     o3d.visualization.draw_geometries([chair])
     print("")
 
