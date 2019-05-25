@@ -133,9 +133,8 @@ def test_octree_visualize():
 
 def test_octree_voxel_grid_convert():
     pwd = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.join(
-        pwd, os.pardir, os.pardir, os.pardir, "examples", "TestData"
-    )
+    data_dir = os.path.join(pwd, os.pardir, os.pardir, os.pardir, "examples",
+                            "TestData")
     pcd_path = os.path.join(data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
     octree = o3d.geometry.Octree(8)
