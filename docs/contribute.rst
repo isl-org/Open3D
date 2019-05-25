@@ -146,7 +146,7 @@ installation, select the option which allows adding clang toolchains to
 Checking clang-format version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Lastly, check your ``clang-format`` version with
+After installation, check ``clang-format``'s version with
 
 .. code:: bash
 
