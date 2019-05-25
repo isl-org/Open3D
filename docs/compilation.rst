@@ -410,38 +410,21 @@ directory, run
     GLFW included in ``3rdparty``.
     Make sure Open3D is linked against GLFW installed on the OS.
 
-Unit testing
-````````````
+Unit test
+`````````
 
-.. warning:: Work in progress!
+To build unit test, set `BUILD_UNIT_TESTS=ON` at CMake config stage. The unit
+test executable will be located at `bin/unitTests` in the `build` directory.
 
-    - Unit test coverage: low.
-    - Tested on: MacOS and Ubuntu.
-
-Unit testing is based on `Google Test <https://github.com/google/googletest>`_.
-By default, unit tests are turned off. In order to enable them, follow the next
-steps:
-
-    1. Download/Build/Install Google Test.
-    2. Set the BUILD_UNIT_TESTS flag to ON.
+Please also refer to `googletest <https://github.com/google/googletest.git>`_ for
+reference.
 
 .. code-block:: bash
 
-    cd util/scripts
-    ./install-gtest.sh
-
-    cd <path_to_Open3D>
-    mkdir build
-    cd build
+    # In the build directory
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
-
-In order to perform the unit tests:
-
-.. code-block:: bash
-
-    cd util/scripts
-    ./runUnitTests.sh
+    ./bin/unitTests
 
 Documentation
 `````````````
