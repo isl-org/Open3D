@@ -589,5 +589,20 @@ bool Octree::ConvertFromJsonValue(const Json::Value& value) {
     return rc;
 }
 
+void Octree::FromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
+    origin_ = voxel_grid.origin_;
+    size_ = (voxel_grid.GetMaxBound() - origin_).maxCoeff();
+    double half_voxel_size = voxel_grid.voxel_size_ / 2.;
+    for (size_t vid = 0; vid < voxel_grid.voxels_.size(); ++vid) {
+        Eigen::Vector3d mid_point =
+                half_voxel_size + origin_.array() +
+                voxel_grid.voxels_[vid].array().cast<double>() *
+                        voxel_grid.voxel_size_;
+        InsertPoint(mid_point, geometry::OctreeColorLeafNode::GetInitFunction(),
+                    geometry::OctreeColorLeafNode::GetUpdateFunction(
+                            voxel_grid.colors_[vid]));
+    }
+}
+
 }  // namespace geometry
 }  // namespace open3d

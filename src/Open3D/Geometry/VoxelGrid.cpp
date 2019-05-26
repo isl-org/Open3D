@@ -126,9 +126,9 @@ void VoxelGrid::FromOctree(const Octree &octree) {
 
     // Prepare dimensions for voxel
     origin_ = octree.origin_;
-    voxel_size_ = octree.size_;  // Maximum possible voxel size
     voxels_.clear();
     colors_.clear();
+    voxel_size_ = octree.size_;  // Maximum possible voxel size
     for (const auto &it : map_node_to_node_info) {
         voxel_size_ = std::min(voxel_size_, it.second->size_);
     }
@@ -146,6 +146,13 @@ void VoxelGrid::FromOctree(const Octree &octree) {
         voxels_.push_back(voxel);
         colors_.push_back(node->color_);
     }
+}
+
+std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
+        const size_t &max_depth) const {
+    auto octree = std::make_shared<geometry::Octree>(max_depth);
+    octree->FromVoxelGrid(*this);
+    return octree;
 }
 
 }  // namespace geometry
