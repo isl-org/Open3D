@@ -413,7 +413,7 @@ directory, run
 Unit test
 `````````
 
-To build unit test, set `BUILD_UNIT_TESTS=ON` at CMake config stage. The unit
+To build unit tests, set `BUILD_UNIT_TESTS=ON` at CMake config stage. The unit
 test executable will be located at `bin/unitTests` in the `build` directory.
 
 Please also refer to `googletest <https://github.com/google/googletest.git>`_ for

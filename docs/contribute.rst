@@ -175,7 +175,8 @@ Install YAPF with
    # For conda
    conda install yapf
 
-You can also download `YAPF <https://github.com/google/yapf.git>`_ and install.
+You can also download `YAPF <https://github.com/google/yapf.git>`_ and install
+it from source.
 
 
 .. _3-checking-and-applying-format:
