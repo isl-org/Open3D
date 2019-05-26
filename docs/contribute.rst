@@ -62,7 +62,7 @@ Automated style Checker
 ========================
 
 Open3D's CI checks for code formatting based on the style specified in
-``.clang-format`` for C++ files and ``.style.yapf`` for python files.
+``.clang-format`` for C++ files and ``.style.yapf`` for Python files.
 Please build the ``check-style`` and ``apply-style``
 CMake target before submitting a pull request, or use your editor's
 ``clang-format`` and ``yapf`` integration to format the source code automatically.
@@ -164,7 +164,7 @@ and make sure that version ``5.0`` is installed.
 Install YAPF
 -------------------------------
 
-We use `YAPF <https://github.com/google/yapf.git>`_ for python formatting.
+We use `YAPF <https://github.com/google/yapf.git>`_ for Python formatting.
 Install YAPF with
 
 .. code:: bash
