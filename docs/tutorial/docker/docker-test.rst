@@ -71,7 +71,7 @@ The scripts are designed to display help on the arguments if an error is detecte
 
 **build.sh**
 
-This script will build a single Open3D docker image based on the Ubuntu version, bundle type and python version.
+This script will build a single Open3D docker image based on the Ubuntu version, bundle type and Python version.
 
 **build-all.sh**
 

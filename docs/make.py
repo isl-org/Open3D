@@ -26,7 +26,7 @@
 
 # Sphinx makefile with api docs generation
 # (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
-# (2) make.py generate python api docs, one ".rst" file per class / function
+# (2) make.py generate Python api docs, one ".rst" file per class / function
 # (3) make.py calls the actual `sphinx-build`
 
 from __future__ import print_function
@@ -183,11 +183,11 @@ class PyDocsBuilder:
 
 class SphinxDocsBuilder:
     """
-    # SphinxDocsBuilder calls python api docs generation and then calls
+    # SphinxDocsBuilder calls Python api docs generation and then calls
     # sphinx-build:
     #
     # (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
-    # (2) Calls PyDocsBuilder to generate python api docs rst files
+    # (2) Calls PyDocsBuilder to generate Python api docs rst files
     # (3) Calls `sphinx-build` with the user argument
     """
 
@@ -227,11 +227,11 @@ class SphinxDocsBuilder:
             self.is_valid_arg = True
             self.makefile_arg = makefile_arg
 
-        # Hard-coded parameters for python API docs generation for now
-        # Directory structure for the Open3D python package:
+        # Hard-coded parameters for Python API docs generation for now
+        # Directory structure for the Open3D Python package:
         # open3d
         # - __init__.py
-        # - open3d.so  # Actual name depends on OS and python version
+        # - open3d.so  # Actual name depends on OS and Python version
         self.c_module = "open3d.open3d"  # Points to the open3d.so
         self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
@@ -250,7 +250,7 @@ class SphinxDocsBuilder:
 
     def _gen_python_api_docs(self):
         """
-        Generate python docs.
+        Generate Python docs.
         Each module, class and function gets one .rst file.
         """
         pd = PyDocsBuilder(
