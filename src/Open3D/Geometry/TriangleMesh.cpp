@@ -818,20 +818,29 @@ void TriangleMesh::RemoveNonManifoldEdges() {
 
         for (auto &kv : edges_to_triangles) {
             int n_edge_triangle_refs = kv.second.size();
+            // check if the given edge is manifold
+            // (has exactly 1, or 2 adjacent triangles)
             if (n_edge_triangle_refs == 1 || n_edge_triangle_refs == 2) {
                 continue;
             }
 
+            // There is at least one edge that is non-manifold
+            mesh_is_edge_manifold = false;
+
             // if the edge is non-manifold, then check if a referenced
-            // triangle has already been removed, otherwise remove triangle
+            // triangle has already been removed
+            // (triangle area has been set to < 0), otherwise remove triangle
             // with smallest surface area until number of adjacent triangles
             // is <= 2.
+            // 1) count triangles that are not marked deleted
             int n_triangles = 0;
             for (int tidx : kv.second) {
                 if (triangle_areas[tidx] > 0) {
                     n_triangles++;
                 }
             }
+            // 2) mark smallest triangles as deleted by setting
+            // surface area to -1
             int n_triangles_to_delete = n_triangles - 2;
             while (n_triangles_to_delete > 0) {
                 // find triangle with smallest area
