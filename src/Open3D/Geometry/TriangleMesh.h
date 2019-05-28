@@ -86,8 +86,27 @@ public:
     /// Function to compute adjacency list, call before adjacency list is needed
     void ComputeAdjacencyList();
 
-    /// Function to remove duplicated and non-manifold vertices/triangles
-    void Purge();
+    /// Function that removes duplicated verties, i.e., vertices that have
+    /// identical coordinates.
+    virtual void RemoveDuplicatedVertices();
+
+    /// Function that removes duplicated triangles, i.e., removes triangles
+    /// that reference the same three vertices, independent of their order.
+    virtual void RemoveDuplicatedTriangles();
+
+    /// This function removes vertices from the triangle mesh that are not
+    /// referenced in any triangle of the mesh.
+    virtual void RemoveUnreferencedVertices();
+
+    /// Function that removes degenerate triangles, i.e., triangles that
+    /// references a single vertex multiple times in a single triangle.
+    /// They are usually the product of removing duplicated vertices.
+    virtual void RemoveDegenerateTriangles();
+
+    /// Function that removes all non-manifold edges, by successively deleting
+    /// triangles with the smallest surface area adjacent to the non-manifold
+    /// edge until the number of adjacent triangles to the edge is `<= 2`.
+    virtual void RemoveNonManifoldEdges();
 
     /// Function to sharpen triangle mesh. The output value ($v_o$) is the
     /// input value ($v_i$) plus \param strength times the input value minus
@@ -135,10 +154,6 @@ public:
 protected:
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
-    virtual void RemoveDuplicatedVertices();
-    virtual void RemoveDuplicatedTriangles();
-    virtual void RemoveNonManifoldVertices();
-    virtual void RemoveNonManifoldTriangles();
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }
@@ -241,12 +256,12 @@ public:
     /// such that all normals point towards the outside/inside.
     bool OrientTriangles();
 
-    /// Function that counts the number of faces an edge belongs to.
-    /// Returns a map of Edge (vertex0, vertex1) to number of faces.
+    /// Function that returns a map from edges (vertex0, vertex1) to the
+    /// triangle indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
-                       int,
+                       std::vector<int>,
                        utility::hash_eigen::hash<Eigen::Vector2i>>
-    GetEdgeTriangleCount() const;
+    GetEdgeToTrianglesMap() const;
 
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index

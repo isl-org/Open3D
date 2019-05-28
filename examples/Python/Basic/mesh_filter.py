@@ -7,9 +7,11 @@
 import numpy as np
 import open3d as o3d
 
+import meshes
+
 
 def test_mesh(noise=0):
-    mesh = o3d.io.read_triangle_mesh('../../TestData/knot.ply')
+    mesh = meshes.knot()
     if noise > 0:
         vertices = np.asarray(mesh.vertices)
         vertices += np.random.uniform(0, noise, size=vertices.shape)

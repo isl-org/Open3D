@@ -83,10 +83,10 @@ public:
     void RemoveDuplicatedTriangles() override {
         PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveDuplicatedTriangles, );
     };
-    void RemoveNonManifoldVertices() override {
-        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveNonManifoldVertices, );
+    void RemoveUnreferencedVertices() override {
+        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveUnreferencedVertices, );
     };
-    void RemoveNonManifoldTriangles() override {
-        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveNonManifoldTriangles, );
+    void RemoveDegenerateTriangles() override {
+        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveDegenerateTriangles, );
     };
 };

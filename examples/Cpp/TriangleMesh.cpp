@@ -99,7 +99,10 @@ int main(int argc, char *argv[]) {
         utility::PrintInfo(
                 "After merge, Mesh1 has %d vertices, %d triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
-        mesh1->Purge();
+        mesh1->RemoveDuplicatedVertices();
+        mesh1->RemoveDuplicatedTriangles();
+        mesh1->RemoveDegenerateTriangles();
+        mesh1->RemoveUnreferencedVertices();
         utility::PrintInfo(
                 "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
