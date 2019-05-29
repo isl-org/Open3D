@@ -130,21 +130,13 @@ PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
         point_center =
                 std::accumulate(points_.begin(), points_.end(), point_center);
         point_center /= points_.size();
-        std::for_each(points_.begin(), points_.end(),
-                      [&](Eigen::Vector3d &v) { v -= point_center; });
     }
-
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
-        point = R * point;
+        point = R * (point - point_center) + point_center;
     }
     for (auto &normal : normals_) {
         normal = R * normal;
-    }
-
-    if (center) {
-        std::for_each(points_.begin(), points_.end(),
-                      [&](Eigen::Vector3d &v) { v += point_center; });
     }
     return *this;
 }

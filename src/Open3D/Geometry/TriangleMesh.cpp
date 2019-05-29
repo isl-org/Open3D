@@ -146,24 +146,16 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
         vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
                                         vertex_center);
         vertex_center /= vertices_.size();
-        std::for_each(vertices_.begin(), vertices_.end(),
-                      [&](Eigen::Vector3d &v) { v -= vertex_center; });
     }
-
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {
-        vertex = R * vertex;
+        vertex = R * (vertex - vertex_center) + vertex_center;
     }
     for (auto &normal : vertex_normals_) {
         normal = R * normal;
     }
     for (auto &normal : triangle_normals_) {
         normal = R * normal;
-    }
-
-    if (center) {
-        std::for_each(vertices_.begin(), vertices_.end(),
-                      [&](Eigen::Vector3d &v) { v += vertex_center; });
     }
     return *this;
 }

@@ -195,12 +195,9 @@ if __name__ == '__main__':
 
     for scale, aa in zip(scales, axisangles):
         for geom in geoms:
-            vertices = np.asarray(geom.vertices)
-            tc = vertices.mean(axis=0)
-            geom.vertices = o3d.utility.Vector3dVector(vertices - tc)
             geom.scale(scale).rotate(aa,
+                                     center=True,
                                      type=o3d.geometry.RotationType.AxisAngle)
-            geom.vertices = o3d.utility.Vector3dVector(vertices + tc)
         vis.update_geometry()
         vis.poll_events()
         vis.update_renderer()
