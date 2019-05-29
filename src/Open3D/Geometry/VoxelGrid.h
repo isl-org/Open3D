@@ -54,6 +54,7 @@ public:
     VoxelGrid &Translate(const Eigen::Vector3d &translation) override;
     VoxelGrid &Scale(const double scale) override;
     VoxelGrid &Rotate(const Eigen::Vector3d &rotation,
+                      bool center = false,
                       RotationType type = RotationType::XYZ) override;
 
 public:

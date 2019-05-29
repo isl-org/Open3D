@@ -38,6 +38,8 @@ def mesh_generator():
 
     yield meshes.bathtub()
 
+    yield meshes.bunny()
+
 
 if __name__ == "__main__":
     np.random.seed(42)
@@ -54,6 +56,7 @@ if __name__ == "__main__":
 
         voxel_size = max(mesh.get_max_bound() - mesh.get_min_bound()) / 4
         target_number_of_triangles = np.asarray(mesh.triangles).shape[0] // 2
+        print('voxel_size = %f' % voxel_size)
 
         mesh_smp = o3d.geometry.simplify_vertex_clustering(
             mesh,

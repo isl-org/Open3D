@@ -53,6 +53,7 @@ public:
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation) = 0;
     virtual Geometry3D& Scale(const double scale) = 0;
     virtual Geometry3D& Rotate(const Eigen::Vector3d& rotation,
+                               bool center = false,
                                RotationType type = RotationType::XYZ) = 0;
 
 protected:

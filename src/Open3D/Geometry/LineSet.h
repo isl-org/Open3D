@@ -52,6 +52,7 @@ public:
     LineSet &Translate(const Eigen::Vector3d &translation) override;
     LineSet &Scale(const double scale) override;
     LineSet &Rotate(const Eigen::Vector3d &rotation,
+                    bool center = false,
                     RotationType type = RotationType::XYZ) override;
 
 public:

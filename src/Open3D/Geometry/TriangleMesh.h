@@ -71,6 +71,7 @@ public:
     TriangleMesh &Translate(const Eigen::Vector3d &translation) override;
     TriangleMesh &Scale(const double scale) override;
     TriangleMesh &Rotate(const Eigen::Vector3d &rotation,
+                         bool center = false,
                          RotationType type = RotationType::XYZ) override;
 
 public:

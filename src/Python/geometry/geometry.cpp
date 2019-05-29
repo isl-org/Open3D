@@ -100,7 +100,7 @@ void pybind_geometry_classes(py::module &m) {
                  "Apply scaling to the geometry coordinates.")
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
-                 "rotation"_a,
+                 "rotation"_a, "center"_a = false,
                  "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
@@ -113,6 +113,8 @@ void pybind_geometry_classes(py::module &m) {
               "Euler rotation, or in the axis-angle representation "
               "the normalized vector defines the axis of rotation and "
               "the norm the angle around this axis."},
+             {"center",
+              "If true, then the rotation is applied to the centered geometry"},
              {"type",
               "Type of rotation, i.e., an Euler format, or "
               "axis-angle."}});

@@ -60,6 +60,7 @@ public:
     PointCloud &Translate(const Eigen::Vector3d &translation) override;
     PointCloud &Scale(const double scale) override;
     PointCloud &Rotate(const Eigen::Vector3d &rotation,
+                       bool center = false,
                        RotationType type = RotationType::XYZ) override;
 
 public:
