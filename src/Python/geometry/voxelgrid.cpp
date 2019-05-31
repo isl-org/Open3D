@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/VoxelGrid.h"
+#include "Open3D/Camera/PinholeCameraParameters.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Camera/PinholeCameraParameters.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
@@ -84,14 +84,36 @@ void pybind_voxelgrid_methods(py::module &m) {
     docstring::FunctionDocInject(
             m, "create_surface_voxel_grid_from_point_cloud",
             {{"point_cloud", "The input point cloud."},
-             {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+             {"voxel_size", "Voxel size of the VoxelGrid construction."}});
     m.def("create_voxel_grid", &geometry::CreateVoxelGrid,
           "Function to create regular voxel grid", "w"_a, "h"_a, "d"_a,
           "voxel_size"_a, "origin"_a);
+    docstring::FunctionDocInject(
+            m, "create_voxel_grid",
+            {{"w", "number of voxels in x-axis"},
+             {"h", "number of voxels in y-axis"},
+             {"d", "number of voxels in z-axis"},
+             {"voxel_size", "size of a single voxel"},
+             {"origin",
+              "3D coordinate of reference voxel that has [0,0,0] voxel id"}});
     m.def("carve_voxel_grid_using_depth_map",
           &geometry::CarveVoxelGridUsingDepthMap, "voxel_grid"_a, "depth_map"_a,
           "camera_parameter"_a);
+    docstring::FunctionDocInject(
+            m, "carve_voxel_grid_using_depth_map",
+            {{"voxel_grid", "a dense voxel grid to be carved"},
+             {"depth_map", "a depth map that will be used for carving"},
+             {"camera_parameter",
+              "camera intrinsic + extrinsic parameters that correspond to the "
+              "depth map"}});
     m.def("carve_voxel_grid_using_silhouette",
           &geometry::CarveVoxelGridUsingSilhouette, "voxel_grid"_a,
           "silhouette_mask"_a, "camera_parameter"_a);
+    docstring::FunctionDocInject(
+            m, "carve_voxel_grid_using_silhouette",
+            {{"voxel_grid", "a dense voxel grid to be carved"},
+             {"silhouette_mask", "a binary mask that will be used for carving"},
+             {"camera_parameter",
+              "camera intrinsic + extrinsic parameters that correspond to the "
+              "silhouette map"}});
 }

@@ -220,6 +220,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 
 /// Function to create a point cloud from the voxel grid.
 /// It transforms discrete voxel domain to original point cloud coordinate.
+/// The point cloud coordinate is corresponds to the center of the voxel grid.
 /// \param input voxel grid
 /// \param output point cloud
 std::shared_ptr<PointCloud> CreatePointCloudFromVoxelGrid(

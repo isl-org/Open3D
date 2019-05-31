@@ -71,7 +71,9 @@ public:
     bool HasColors() const {
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
-    Eigen::Vector3d GetOriginalCoordinate(int id) const {
+
+    // Function to return a corresponding 3d coordinates of the queried voxel
+    Eigen::Vector3d GetVoxelCenterCoordinate(int id) const {
         return ((voxels_[id].cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) *
                 voxel_size_) +
                origin_;
@@ -79,6 +81,7 @@ public:
     std::vector<Eigen::Vector3d> GetBoundingPointsOfVoxel(int index);
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
+    // Function to create voxels from an octree
     void FromOctree(const Octree &octree);
 
 public:
@@ -88,23 +91,28 @@ public:
     std::vector<Eigen::Vector3d> colors_;
 };
 
+// Function to create voxels with a point cloud and 
+// specified lower and upper bound of 3D coordinate
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input,
         double voxel_size,
         const Eigen::Vector3d voxel_min_bound,
         const Eigen::Vector3d voxel_max_bound);
 
+// Function to create a dense voxel grid with a specified size wxhxd
 std::shared_ptr<VoxelGrid> CreateVoxelGrid(double w,
                                            double h,
                                            double d,
                                            double voxel_size,
                                            const Eigen::Vector3d origin);
 
+// Function to carve a voxel grid with a depth map
 std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
         VoxelGrid &input,
-        const Image &silhouette_mask,
+        const Image &depth_map,
         const camera::PinholeCameraParameters &camera_parameter);
 
+// Function to carve a voxel grid with a binary silhouette mask
 void CarveVoxelGridUsingSilhouette(
         VoxelGrid &input,
         const Image &silhouette_mask,

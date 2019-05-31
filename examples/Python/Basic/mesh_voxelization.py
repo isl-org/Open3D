@@ -4,8 +4,6 @@ import math
 import numpy as np
 import numpy.matlib
 
-from joblib import Parallel, delayed
-import multiprocessing
 
 def get_extrinsic(xyz):
     rvec = xyz_spherical(xyz)
@@ -16,6 +14,7 @@ def get_extrinsic(xyz):
     trans[:3,3] = t
     return trans
 
+
 def xyz_spherical(xyz):
     x = xyz[0]
     y = xyz[1]
@@ -24,6 +23,7 @@ def xyz_spherical(xyz):
     r_x = math.acos(y/r)
     r_y = math.atan2(z,x)
     return [r, r_x, r_y]
+
 
 def get_rotation_matrix(r_x, r_y):
     rot_x = np.asarray(
@@ -35,6 +35,7 @@ def get_rotation_matrix(r_x, r_y):
             [0, 1, 0],
             [-math.sin(r_y), 0, math.cos(r_y)]])
     return rot_y.dot(rot_x)
+
 
 def depth_to_pcd(depth, intrinsic, extrinsic, w, h):
     x = np.linspace(0, w-1, w)
@@ -54,6 +55,7 @@ def depth_to_pcd(depth, intrinsic, extrinsic, w, h):
     pcd.transform(np.linalg.inv(extrinsic))
     return pcd
 
+
 def preprocess(model):
     min_bound = model.get_min_bound()
     max_bound = model.get_max_bound()
@@ -64,10 +66,11 @@ def preprocess(model):
     model.vertices = Vector3dVector(vertices / scale)
     return model
 
-def mesh_voxelization(mid, input_filename, output_filename, camera_path, 
+
+def mesh_voxelization(input_filename, output_filename, camera_path, 
         cubic_size, voxel_resolution, w=300, h=300, visualization=False):
 
-    camera_sphere = read_triangle_mesh(camera_path)
+    camera_sphere = subdivide_midpoint(create_mesh_icosahedron()) # and smoothing?
     mesh = read_triangle_mesh(input_filename)
     mesh.compute_vertex_normals()
 
@@ -99,19 +102,19 @@ def mesh_voxelization(mid, input_filename, output_filename, camera_path,
         centers_pts[i,:] = c[:3]
         i += 1
         ctr.convert_from_pinhole_camera_parameters(param)
-        
+
         # capture depth image and make a point cloud
         vis.poll_events()
         vis.update_renderer()
         depth = vis.capture_depth_float_buffer(False)
         pcd_agg += depth_to_pcd(depth,
                 param.intrinsic.intrinsic_matrix, trans, w, h)
-        
+
         # depth map carving method
         voxel_grid_carving = carve_voxel_grid_using_depth_map(
                 voxel_grid_carving, Image(depth), param)
-        print("Depth carving %05d, view %03d/%03d" %
-              (mid, cid, len(camera_sphere.vertices)))
+        print("Voxel carving using depth maps... view %03d/%03d" %
+              (cid, len(camera_sphere.vertices)))
 
     vis.destroy_window()
 
@@ -142,22 +145,18 @@ def mesh_voxelization(mid, input_filename, output_filename, camera_path,
 
         print("visualize original model and voxels together")
         draw_geometries([voxel_combine, mesh])
-    
+
     write_voxel_grid(output_filename, voxel_combine)
 
 if __name__ == '__main__':
 
-    n_parallel = 10
-    input_filename = [abspath("../../TestData/bathtub_0154.ply")] * n_parallel
-    output_filename = []
-    for i in range(n_parallel):
-        output_filename.append(abspath("../../TestData/bathtub_0154_voxel_%02d.ply" % i))
+    input_filename = abspath("../../TestData/bathtub_0154.ply")
+    output_filename = abspath("../../TestData/bathtub_0154_voxel.ply")
     camera_path = abspath("../../TestData/sphere.ply")
-    
+
     visualization = True
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(delayed(mesh_voxelization)(i, input_filename[i], output_filename[i], camera_path,
-                                cubic_size, voxel_resolution, visualization=False) for i in range(n_parallel))
+    mesh_voxelization(input_filename, output_filename, camera_path, 
+            cubic_size, voxel_resolution, visualization=False)

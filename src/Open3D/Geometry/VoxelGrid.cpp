@@ -172,9 +172,22 @@ public:
 };
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
-    assert(voxel_size_ == voxelgrid.voxel_size_);
-    assert(origin_ == voxelgrid.origin_);
-    assert(*this.HasColors() == voxelgrid.HasColors());
+    if (voxel_size_ != voxelgrid.voxel_size_) {
+        utility::PrintError(
+                "[VoxelGrid] Two voxels should have voxels of the same "
+                "size.\n");
+        return *this;
+    }
+    if (origin_ != voxelgrid.origin_) {
+        utility::PrintError(
+                "[VoxelGrid] Two voxels should have the same origin.\n");
+        return *this;
+    }
+    if (this->HasColors() != voxelgrid.HasColors()) {
+        utility::PrintError(
+                "[VoxelGrid] Both voxel grid should have colors or not.\n");
+        return *this;
+    }
     std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
@@ -209,7 +222,7 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 
 std::vector<Eigen::Vector3d> VoxelGrid::GetBoundingPointsOfVoxel(int id) {
     double r = voxel_size_ / 2.0;
-    auto x = GetOriginalCoordinate(id);
+    auto x = GetVoxelCenterCoordinate(id);
     std::vector<Eigen::Vector3d> points;
     points.push_back(x + Eigen::Vector3d(-r, -r, -r));
     points.push_back(x + Eigen::Vector3d(-r, -r, r));
@@ -229,10 +242,20 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
     auto trans = camera_parameter.extrinsic_.block<3, 1>(0, 3);
     auto intrinsic = camera_parameter.intrinsic_.intrinsic_matrix_;
-
-    if (voxel_grid.HasColors())
-        assert(voxel_grid.voxels_.size() == voxel_grid.colors_.size());
-    assert(depth_map.height_ == camera_parameter.intrinsic_.height_);
+    auto voxel_grid_output = std::make_shared<VoxelGrid>();
+    voxel_grid_output->voxel_size_ = voxel_grid.voxel_size_;
+    voxel_grid_output->origin_ = voxel_grid.origin_;
+    if (voxel_grid.HasColors() &&
+        (voxel_grid.voxels_.size() != voxel_grid.colors_.size())) {
+        utility::PrintError("VoxelGrid has invalid number of voxels or colors");
+        return voxel_grid_output;
+    }
+    if ((depth_map.height_ != camera_parameter.intrinsic_.height_) ||
+        (depth_map.width_ != camera_parameter.intrinsic_.width_)) {
+        utility::PrintError(
+                "Invalid depth map size or camera parameter intrinsic");
+        return voxel_grid_output;
+    }
     assert(depth_map.width_ == camera_parameter.intrinsic_.width_);
     size_t n_voxels = voxel_grid.voxels_.size();
     std::vector<bool> valid(n_voxels, true);
@@ -249,10 +272,8 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
             double d;
             bool boundary;
             std::tie(boundary, d) = depth_map.FloatValueAt(u, v);
-            if (boundary) {
-                if ((d == 0.0) || (z > 0.0 && z < d)) {
-                    valid_i[cnt] = false;
-                }
+            if (boundary) && ((d == 0.0) || (z > 0.0 && z < d)) {
+                valid_i[cnt] = false;
             }
             cnt++;
         }
@@ -261,9 +282,6 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
             valid[i] = false;
         }
     }
-    auto voxel_grid_output = std::make_shared<VoxelGrid>();
-    voxel_grid_output->voxel_size_ = voxel_grid.voxel_size_;
-    voxel_grid_output->origin_ = voxel_grid.origin_;
     for (size_t i = 0; i < n_voxels; i++) {
         if (valid[i]) {
             voxel_grid_output->voxels_.push_back(voxel_grid.voxels_[i]);
@@ -278,12 +296,19 @@ void CarveVoxelGridUsingSilhouette(
         VoxelGrid &voxel_grid,
         const Image &silhouette_mask,
         const camera::PinholeCameraParameters &camera_parameter) {
+    if (voxel_grid.HasColors() &&
+        (voxel_grid.voxels_.size() != voxel_grid.colors_.size())) {
+        utility::PrintError("VoxelGrid has invalid number of voxels or colors");
+        return;
+    }
+    if ((silhouette_mask.height_ != camera_parameter.intrinsic_.height_) ||
+        (silhouette_mask.width_ != camera_parameter.intrinsic_.width_)) {
+        utility::PrintError(
+                "Invalid depth map size or camera parameter intrinsic");
+        return;
+    }
     auto voxel_pcd = CreatePointCloudFromVoxelGrid(voxel_grid);
     voxel_pcd->Transform(camera_parameter.extrinsic_);
-    if (voxel_grid.HasColors())
-        assert(voxel_grid.voxels_.size() == voxel_grid.colors_.size());
-    assert(silhouette_mask.height_ == camera_parameter.intrinsic_.height_);
-    assert(silhouette_mask.width_ == camera_parameter.intrinsic_.width_);
     for (size_t j = 0; j < voxel_pcd->points_.size(); j++) {
         Eigen::Vector3d &x = voxel_pcd->points_[j];
         auto uvz = camera_parameter.intrinsic_.intrinsic_matrix_ * x;
