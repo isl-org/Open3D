@@ -306,6 +306,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float half_voxel_length_f = voxel_length_f * 0.5f;
     const float sdf_trunc_f = static_cast<float>(sdf_trunc_);
     const float sdf_trunc_inv_f = 1.0f / sdf_trunc_f;
+    const Eigen::Matrix4f extrinsic_scaled_f = extrinsic_f * voxel_length_f;
     const float safe_width_f = intrinsic.width_ - 0.0001f;
     const float safe_height_f = intrinsic.height_ - 0.0001f;
 
@@ -314,14 +315,15 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
-            for (int z = 0; z < resolution_; z++) {
-                Eigen::Vector4f pt_3d_homo(
-                        half_voxel_length_f + voxel_length_f * x + origin_(0),
-                        half_voxel_length_f + voxel_length_f * y + origin_(1),
-                        half_voxel_length_f + voxel_length_f * z + origin_(2),
-                        1);
-                Eigen::Vector4f pt_camera = extrinsic_f * pt_3d_homo;
-
+            Eigen::Vector4f pt_3d_homo(
+                    half_voxel_length_f + voxel_length_f * x + origin_(0),
+                    half_voxel_length_f + voxel_length_f * y + origin_(1),
+                    half_voxel_length_f + origin_(2), 1.0);
+            Eigen::Vector4f pt_camera = extrinsic_f * pt_3d_homo;
+            for (int z = 0; z < resolution_; z++,
+                     pt_camera(0) += extrinsic_scaled_f(0, 2),
+                     pt_camera(1) += extrinsic_scaled_f(1, 2),
+                     pt_camera(2) += extrinsic_scaled_f(2, 2)) {
                 // Skip if negative depth after projection
                 if (pt_camera(2) <= 0) {
                     continue;
