@@ -100,11 +100,13 @@ LineSet &LineSet::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-LineSet &LineSet::Scale(const double scale) {
+LineSet &LineSet::Scale(const double scale, bool center) {
     Eigen::Vector3d point_center(0, 0, 0);
-    point_center =
-            std::accumulate(points_.begin(), points_.end(), point_center);
-    point_center /= points_.size();
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     for (auto &point : points_) {
         point = (point - point_center) * scale + point_center;
     }
@@ -115,7 +117,7 @@ LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation,
                          bool center,
                          RotationType type) {
     Eigen::Vector3d point_center(0, 0, 0);
-    if (center) {
+    if (center && !points_.empty()) {
         point_center =
                 std::accumulate(points_.begin(), points_.end(), point_center);
         point_center /= points_.size();

@@ -363,7 +363,7 @@ Octree& Octree::Translate(const Eigen::Vector3d& translation) {
     return *this;
 }
 
-Octree& Octree::Scale(const double scale) {
+Octree& Octree::Scale(const double scale, bool center) {
     throw std::runtime_error("Not implemented");
     return *this;
 }

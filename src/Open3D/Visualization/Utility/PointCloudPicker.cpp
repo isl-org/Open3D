@@ -66,7 +66,7 @@ PointCloudPicker& PointCloudPicker::Translate(
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::Scale(const double scale) {
+PointCloudPicker& PointCloudPicker::Scale(const double scale, bool center) {
     // Do nothing
     return *this;
 }

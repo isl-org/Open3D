@@ -52,9 +52,9 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation) override;
-    VoxelGrid &Scale(const double scale) override;
+    VoxelGrid &Scale(const double scale, bool center = true) override;
     VoxelGrid &Rotate(const Eigen::Vector3d &rotation,
-                      bool center = false,
+                      bool center = true,
                       RotationType type = RotationType::XYZ) override;
 
 public:

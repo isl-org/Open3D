@@ -53,9 +53,9 @@ public:
     Eigen::Vector3d GetMaxBound() const final;
     PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
     PointCloudPicker& Translate(const Eigen::Vector3d& translation) override;
-    PointCloudPicker& Scale(const double scale) override;
+    PointCloudPicker& Scale(const double scale, bool center = true) override;
     PointCloudPicker& Rotate(const Eigen::Vector3d& rotation,
-                             bool center = false,
+                             bool center = true,
                              RotationType type = RotationType::XYZ) override;
     bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
 

@@ -97,15 +97,23 @@ void pybind_geometry_classes(py::module &m) {
             .def("translate", &geometry::Geometry3D::Translate,
                  "Apply translation to the geometry coordinates.")
             .def("scale", &geometry::Geometry3D::Scale,
-                 "Apply scaling to the geometry coordinates.")
+                 "Apply scaling to the geometry coordinates.", "scale"_a,
+                 "center"_a = true)
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
-                 "rotation"_a, "center"_a = false,
+                 "rotation"_a, "center"_a = true,
                  "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "transform");
     docstring::ClassMethodDocInject(m, "Geometry3D", "translate");
+    docstring::ClassMethodDocInject(
+            m, "Geometry3D", "scale",
+            {{"scale",
+              "The scale parameter that is multiplied to the points/vertices "
+              "of the geometry"},
+             {"center",
+              "If true, then the scale is applied to the centered geometry"}});
     docstring::ClassMethodDocInject(
             m, "Geometry3D", "rotate",
             {{"rotation",

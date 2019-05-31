@@ -40,7 +40,9 @@ def animate(geom):
          ] + [(-0.1, -0.1, 0.1) for _ in range(30)]
 
     for scale, aa in zip(scales, axisangles):
-        geom.scale(scale).rotate(aa, type=o3d.geometry.RotationType.AxisAngle)
+        geom.scale(scale).rotate(aa,
+                                 center=False,
+                                 type=o3d.geometry.RotationType.AxisAngle)
         vis.update_geometry()
         vis.poll_events()
         vis.update_renderer()
