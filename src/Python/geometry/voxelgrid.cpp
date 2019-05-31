@@ -31,9 +31,41 @@
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
 
+#include <sstream>
+
 using namespace open3d;
 
 void pybind_voxelgrid(py::module &m) {
+    py::class_<geometry::Voxel, std::shared_ptr<geometry::Voxel>> voxel(
+            m, "Voxel", "Base Voxel class, containing grid id and color");
+    py::detail::bind_default_constructor<geometry::Voxel>(voxel);
+    py::detail::bind_copy_functions<geometry::Voxel>(voxel);
+    voxel.def("__repr__",
+              [](const geometry::Voxel &voxel) {
+                  std::ostringstream repr;
+                  repr << "geometry::Voxel with grid_index: ("
+                       << voxel.grid_index_(0) << ", " << voxel.grid_index_(1)
+                       << ", " << voxel.grid_index_(2) << "), color: ("
+                       << voxel.color_(0) << ", " << voxel.color_(1) << ", "
+                       << voxel.color_(2) << ")";
+                  return repr.str();
+              })
+            .def(py::init([](const Eigen::Vector3i &grid_index) {
+                     return new geometry::Voxel(grid_index);
+                 }),
+                 "grid_index"_a)
+            .def(py::init([](const Eigen::Vector3i &grid_index,
+                             const Eigen::Vector3d &color) {
+                     return new geometry::Voxel(grid_index, color);
+                 }),
+                 "grid_index"_a, "color"_a)
+            .def_readwrite("grid_index", &geometry::Voxel::grid_index_,
+                           "Int numpy array of shape (3,): Grid coordinate "
+                           "index of the voxel.")
+            .def_readwrite(
+                    "color", &geometry::Voxel::color_,
+                    "Float64 numpy array of shape (3,): Color of the voxel.");
+
     py::class_<geometry::VoxelGrid, PyGeometry3D<geometry::VoxelGrid>,
                std::shared_ptr<geometry::VoxelGrid>, geometry::Geometry3D>
             voxelgrid(m, "VoxelGrid",
@@ -50,10 +82,12 @@ void pybind_voxelgrid(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_voxels", &geometry::VoxelGrid::HasVoxels,
-                 "Returns ``True`` if the voxel grid contains voxels.")
+            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
+                           "List of ``Voxel``: Voxels contained in voxel grid")
             .def("has_colors", &geometry::VoxelGrid::HasColors,
                  "Returns ``True`` if the voxel grid contains voxel colors.")
+            .def("has_voxels", &geometry::VoxelGrid::HasVoxels,
+                 "Returns ``True`` if the voxel grid contains voxels.")
             .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
             .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
@@ -61,15 +95,6 @@ void pybind_voxelgrid(py::module &m) {
             .def("from_octree", &geometry::VoxelGrid::FromOctree,
                  "octree"_a
                  "Convert from Octree.")
-            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
-                           "``int`` array of shape ``(num_voxels, 3)``: "
-                           "Voxel coordinates. use ``numpy.asarray()`` to "
-                           "access data.")
-            .def_readwrite(
-                    "colors", &geometry::VoxelGrid::colors_,
-                    "``float64`` array of shape ``(num_voxels, 3)``, "
-                    "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
-                    "data: RGB colors of voxels.")
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
