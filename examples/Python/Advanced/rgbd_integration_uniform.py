@@ -9,8 +9,7 @@ import numpy as np
 if __name__ == "__main__":
     camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
-        o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault
-    )
+        o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = o3d.integration.UniformTSDFVolume(
         length=4.0,
         resolution=512,
@@ -25,8 +24,7 @@ if __name__ == "__main__":
         depth = o3d.io.read_image(
             "../../TestData/RGBD/depth/{:05d}.png".format(i))
         rgbd = o3d.geometry.create_rgbd_image_from_color_and_depth(
-            color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False
-        )
+            color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(
             rgbd,
             camera_intrinsics,
@@ -49,4 +47,3 @@ if __name__ == "__main__":
     print("Extract point cloud")
     pcd = volume.extract_point_cloud()
     o3d.visualization.draw_geometries([pcd])
-
