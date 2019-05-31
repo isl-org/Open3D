@@ -8,7 +8,7 @@ The first step of the scene reconstruction system is to create fragments from sh
 Input arguments
 ``````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
+The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``image`` and ``depth`` to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies the path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
 
 .. _make_fragments_register_rgbd_image_pairs:
 
@@ -21,7 +21,7 @@ Register RGBD image pairs
    :lines: 5,35-60
    :linenos:
 
-The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as initialization. For non-adjacent RGBD images, wide baseline matching is used as an initialization. In particular, function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment. It is used as the initialization of ``compute_rgbd_odometry``.
+The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as initialization. For non-adjacent RGBD images, wide baseline matching is used as an initialization. In particular, function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment, which is used as the initialization of ``compute_rgbd_odometry``.
 
 
 .. _make_fragments_make_a_posegraph:
