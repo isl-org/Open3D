@@ -66,12 +66,13 @@ PointCloudPicker& PointCloudPicker::Translate(
     return *this;
 }
 
-PointCloudPicker& PointCloudPicker::Scale(const double scale) {
+PointCloudPicker& PointCloudPicker::Scale(const double scale, bool center) {
     // Do nothing
     return *this;
 }
 
 PointCloudPicker& PointCloudPicker::Rotate(const Eigen::Vector3d& rotation,
+                                           bool center,
                                            RotationType type) {
     // Do nothing
     return *this;

@@ -11,6 +11,7 @@ import urllib.request
 import gzip
 import tarfile
 import shutil
+import time
 
 
 def cat_meshes(mesh0, mesh1):
@@ -34,6 +35,13 @@ def edges_to_lineset(mesh, edges, color):
     return ls
 
 
+def apply_noise(mesh, noise):
+    vertices = np.asarray(mesh.vertices)
+    vertices += np.random.uniform(-noise, noise, size=vertices.shape)
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    return mesh
+
+
 def triangle():
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(
@@ -42,6 +50,7 @@ def triangle():
                   (-np.sqrt(2 / 9), -np.sqrt(2 / 3), -1 / 3)],
                  dtype=np.float32))
     mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 1, 2]]))
+    mesh.compute_vertex_normals()
     return mesh
 
 
@@ -52,6 +61,7 @@ def plane():
                  dtype=np.float32))
     mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0,
                                                                       3]]))
+    mesh.compute_vertex_normals()
     return mesh
 
 
@@ -62,6 +72,7 @@ def non_manifold_edge():
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
+    mesh.compute_vertex_normals()
     return mesh
 
 
@@ -74,12 +85,14 @@ def non_manifold_vertex():
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
+    mesh.compute_vertex_normals()
     return mesh
 
 
 def open_box():
     mesh = o3d.geometry.create_mesh_box()
     mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:-2])
+    mesh.compute_vertex_normals()
     return mesh
 
 
@@ -90,16 +103,19 @@ def intersecting_boxes():
     mesh1 = o3d.geometry.create_mesh_box()
     mesh1.transform(T)
     mesh = cat_meshes(mesh0, mesh1)
+    mesh.compute_vertex_normals()
     return mesh
 
 
 def knot():
     mesh = o3d.io.read_triangle_mesh('../../TestData/knot.ply')
+    mesh.compute_vertex_normals()
     return mesh
 
 
 def bathtub():
     mesh = o3d.io.read_triangle_mesh("../../TestData/bathtub_0154.ply")
+    mesh.compute_vertex_normals()
     return mesh
 
 
@@ -114,7 +130,9 @@ def armadillo():
             with open(armadillo_path, 'wb') as fout:
                 shutil.copyfileobj(fin, fout)
         os.remove(armadillo_path + '.gz')
-    return o3d.io.read_triangle_mesh(armadillo_path)
+    mesh = o3d.io.read_triangle_mesh(armadillo_path)
+    mesh.compute_vertex_normals()
+    return mesh
 
 
 def bunny():
@@ -131,4 +149,56 @@ def bunny():
                          'bun_zipper.ply'), bunny_path)
         os.remove(bunny_path + '.tar.gz')
         shutil.rmtree(os.path.join(os.path.dirname(bunny_path), 'bunny'))
-    return o3d.io.read_triangle_mesh(bunny_path)
+    mesh = o3d.io.read_triangle_mesh(bunny_path)
+    mesh.compute_vertex_normals()
+    return mesh
+
+
+def center_and_scale(mesh):
+    vertices = np.asarray(mesh.vertices)
+    vertices = vertices / max(vertices.max(axis=0) - vertices.min(axis=0))
+    vertices -= vertices.mean(axis=0)
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    return mesh
+
+
+if __name__ == '__main__':
+
+    def process(mesh):
+        mesh.compute_vertex_normals()
+        mesh = center_and_scale(mesh)
+        return mesh
+
+    print('visualize')
+    print('  tetrahedron, octahedron, icosahedron')
+    print('  torus, moebius strip one twist, moebius strip two twists')
+    d = 1.5
+    geoms = [
+        process(o3d.geometry.create_mesh_tetrahedron()).translate((-d, 0, 0)),
+        process(o3d.geometry.create_mesh_octahedron()).translate((0, 0, 0)),
+        process(o3d.geometry.create_mesh_icosahedron()).translate((d, 0, 0)),
+        process(o3d.geometry.create_mesh_torus()).translate((-d, -d, 0)),
+        process(o3d.geometry.create_mesh_moebius(twists=1)).translate(
+            (0, -d, 0)),
+        process(o3d.geometry.create_mesh_moebius(twists=2)).translate(
+            (d, -d, 0)),
+    ]
+
+    vis = o3d.visualization.Visualizer()
+    vis.create_window()
+    vis.get_render_option().mesh_show_back_face = True
+    for geom in geoms:
+        vis.add_geometry(geom)
+
+    scales = [0.995 for _ in range(100)] + [1 / 0.995 for _ in range(100)]
+    axisangles = [(0.2 / np.sqrt(2), 0.2 / np.sqrt(2), 0) for _ in range(200)]
+
+    for scale, aa in zip(scales, axisangles):
+        for geom in geoms:
+            geom.scale(scale).rotate(aa,
+                                     center=True,
+                                     type=o3d.geometry.RotationType.AxisAngle)
+        vis.update_geometry()
+        vis.poll_events()
+        vis.update_renderer()
+        time.sleep(0.05)

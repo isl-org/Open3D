@@ -31,6 +31,7 @@
 #include "Open3D/Geometry/Qhull.h"
 
 #include <Eigen/Dense>
+#include <numeric>
 #include <queue>
 #include <random>
 #include <tuple>
@@ -126,18 +127,31 @@ TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-TriangleMesh &TriangleMesh::Scale(const double scale) {
+TriangleMesh &TriangleMesh::Scale(const double scale, bool center) {
+    Eigen::Vector3d vertex_center(0, 0, 0);
+    if (center && !vertices_.empty()) {
+        vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
+                                        vertex_center);
+        vertex_center /= vertices_.size();
+    }
     for (auto &vertex : vertices_) {
-        vertex *= scale;
+        vertex = (vertex - vertex_center) * scale + vertex_center;
     }
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
+                                   bool center,
                                    RotationType type) {
+    Eigen::Vector3d vertex_center(0, 0, 0);
+    if (center && !vertices_.empty()) {
+        vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
+                                        vertex_center);
+        vertex_center /= vertices_.size();
+    }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {
-        vertex = R * vertex;
+        vertex = R * (vertex - vertex_center) + vertex_center;
     }
     for (auto &normal : vertex_normals_) {
         normal = R * normal;

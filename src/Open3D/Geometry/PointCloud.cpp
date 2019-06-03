@@ -27,6 +27,7 @@
 #include "Open3D/Geometry/PointCloud.h"
 
 #include <Eigen/Dense>
+#include <numeric>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/Qhull.h"
@@ -110,18 +111,31 @@ PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-PointCloud &PointCloud::Scale(const double scale) {
+PointCloud &PointCloud::Scale(const double scale, bool center) {
+    Eigen::Vector3d point_center(0, 0, 0);
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     for (auto &point : points_) {
-        point *= scale;
+        point = (point - point_center) * scale + point_center;
     }
     return *this;
 }
 
 PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
+                               bool center,
                                RotationType type) {
+    Eigen::Vector3d point_center(0, 0, 0);
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
-        point = R * point;
+        point = R * (point - point_center) + point_center;
     }
     for (auto &normal : normals_) {
         normal = R * normal;

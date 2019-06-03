@@ -26,6 +26,8 @@
 
 #include "Open3D/Geometry/LineSet.h"
 
+#include <numeric>
+
 namespace open3d {
 namespace geometry {
 
@@ -98,17 +100,31 @@ LineSet &LineSet::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-LineSet &LineSet::Scale(const double scale) {
+LineSet &LineSet::Scale(const double scale, bool center) {
+    Eigen::Vector3d point_center(0, 0, 0);
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     for (auto &point : points_) {
-        point *= scale;
+        point = (point - point_center) * scale + point_center;
     }
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation, RotationType type) {
+LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation,
+                         bool center,
+                         RotationType type) {
+    Eigen::Vector3d point_center(0, 0, 0);
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
-        point = R * point;
+        point = R * (point - point_center) + point_center;
     }
     return *this;
 }

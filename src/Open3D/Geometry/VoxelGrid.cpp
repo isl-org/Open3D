@@ -83,12 +83,13 @@ VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Scale(const double scale) {
+VoxelGrid &VoxelGrid::Scale(const double scale, bool center) {
     throw std::runtime_error("Not implemented");
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
+                             bool center,
                              RotationType type) {
     throw std::runtime_error("Not implemented");
     return *this;

@@ -50,8 +50,9 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     LineSet &Transform(const Eigen::Matrix4d &transformation) override;
     LineSet &Translate(const Eigen::Vector3d &translation) override;
-    LineSet &Scale(const double scale) override;
+    LineSet &Scale(const double scale, bool center = true) override;
     LineSet &Rotate(const Eigen::Vector3d &rotation,
+                    bool center = true,
                     RotationType type = RotationType::XYZ) override;
 
 public:
