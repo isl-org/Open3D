@@ -307,7 +307,8 @@ int ReadVoxelCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index](index) = value;
+    state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
+            index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->voxel_index++;
         utility::AdvanceConsoleProgress();
@@ -325,7 +326,7 @@ int ReadColorCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->voxelgrid_ptr->colors_[state_ptr->color_index](index) =
+    state_ptr->voxelgrid_ptr->voxels_[state_ptr->color_index].color_(index) =
             value / 255.0;
     if (index == 2) {  // reading 'blue'
         state_ptr->color_index++;
@@ -803,7 +804,6 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
 
     voxelgrid.Clear();
     voxelgrid.voxels_.resize(state.voxel_num);
-    voxelgrid.colors_.resize(state.color_num);
 
     utility::ResetConsoleProgress(state.voxel_num + state.color_num,
                                   "Reading PLY: ");
@@ -873,19 +873,16 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_write(ply_file, voxelgrid.voxel_size_);
 
     for (size_t i = 0; i < voxelgrid.voxels_.size(); i++) {
-        const Eigen::Vector3i &voxel = voxelgrid.voxels_[i];
-        ply_write(ply_file, voxel(0));
-        ply_write(ply_file, voxel(1));
-        ply_write(ply_file, voxel(2));
-        if (voxelgrid.HasColors()) {
-            const Eigen::Vector3d &color = voxelgrid.colors_[i];
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
-            ply_write(ply_file,
-                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
-        }
+        const geometry::Voxel &voxel = voxelgrid.voxels_[i];
+        ply_write(ply_file, voxel.grid_index_(0));
+        ply_write(ply_file, voxel.grid_index_(1));
+        ply_write(ply_file, voxel.grid_index_(2));
+
+        const Eigen::Vector3d &color = voxel.color_;
+        ply_write(ply_file, std::min(255.0, std::max(0.0, color(0) * 255.0)));
+        ply_write(ply_file, std::min(255.0, std::max(0.0, color(1) * 255.0)));
+        ply_write(ply_file, std::min(255.0, std::max(0.0, color(2) * 255.0)));
+
         utility::AdvanceConsoleProgress();
     }
 

@@ -323,13 +323,21 @@ const Eigen::Vector3i shift[8] = {
         Eigen::Vector3i(1, 1, 1), Eigen::Vector3i(0, 1, 1),
 };
 
+// First 3 elements: edge start vertex coordinate (assume origin at (0, 0, 0))
+// The last element: edge direction {0: x, 1: y, 2: z}
 const Eigen::Vector4i edge_shift[12] = {
-        Eigen::Vector4i(0, 0, 0, 0), Eigen::Vector4i(1, 0, 0, 1),
-        Eigen::Vector4i(0, 1, 0, 0), Eigen::Vector4i(0, 0, 0, 1),
-        Eigen::Vector4i(0, 0, 1, 0), Eigen::Vector4i(1, 0, 1, 1),
-        Eigen::Vector4i(0, 1, 1, 0), Eigen::Vector4i(0, 0, 1, 1),
-        Eigen::Vector4i(0, 0, 0, 2), Eigen::Vector4i(1, 0, 0, 2),
-        Eigen::Vector4i(1, 1, 0, 2), Eigen::Vector4i(0, 1, 0, 2),
+        Eigen::Vector4i(0, 0, 0, 0),  // Edge  0: {0, 1}
+        Eigen::Vector4i(1, 0, 0, 1),  // Edge  1: {1, 2}
+        Eigen::Vector4i(0, 1, 0, 0),  // Edge  2: {3, 2}
+        Eigen::Vector4i(0, 0, 0, 1),  // Edge  3: {0, 3}
+        Eigen::Vector4i(0, 0, 1, 0),  // Edge  4: {4, 5}
+        Eigen::Vector4i(1, 0, 1, 1),  // Edge  5: {5, 6}
+        Eigen::Vector4i(0, 1, 1, 0),  // Edge  6: {7, 6}
+        Eigen::Vector4i(0, 0, 1, 1),  // Edge  7: {4, 7}
+        Eigen::Vector4i(0, 0, 0, 2),  // Edge  8: {0, 4}
+        Eigen::Vector4i(1, 0, 0, 2),  // Edge  9: {1, 5}
+        Eigen::Vector4i(1, 1, 0, 2),  // Edge 10: {2, 6}
+        Eigen::Vector4i(0, 1, 0, 2),  // Edge 11: {3, 7}
 };
 
 const int edge_to_vert[12][2] = {
