@@ -6,7 +6,7 @@ Refine registration
 Input arguments
 ``````````````````````````````````````
 
-This script runs with ``python run_system.py [config] --refine``. In ``[config]``, ``["path_dataset"]`` should have subfolders *fragments* which stores fragments in .ply files and a pose graph in a .json file.
+This script runs with ``python run_system.py [config] --refine``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``fragments`` which stores fragments in ``.ply`` files and a pose graph in a ``.json`` file.
 
 The main function runs ``local_refinement`` and ``optimize_posegraph_for_scene``. The first function performs pairwise registration on the pairs detected by :ref:`reconstruction_system_register_fragments`. The second function performs multiway registration.
 
@@ -20,7 +20,7 @@ Fine-grained registration
    :lines: 5,39-92
    :linenos:
 
-Two options are given for the fine-grained registration. The ``color`` is recommended since it uses color information to prevent drift. Details see [Park2017]_.
+Two options are given for the fine-grained registration. The ``color`` option is recommended since it uses color information to prevent drift. See [Park2017]_ for details.
 
 
 Multiway registration
@@ -32,7 +32,7 @@ Multiway registration
    :lines: 5,17-36
    :linenos:
 
-This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragments and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
 

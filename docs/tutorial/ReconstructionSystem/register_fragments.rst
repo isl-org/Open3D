@@ -8,7 +8,7 @@ Once the fragments of the scene are created, the next step is to align them in a
 Input arguments
 ``````````````````````````````````````
 
-This script runs with ``python run_system.py [config] --register``. In ``[config]``, ``["path_dataset"]`` should have subfolders *fragments* which stores fragments in .ply files and a pose graph in a .json file.
+This script runs with ``python run_system.py [config] --register``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``fragments`` which stores fragments in ``.ply`` files and a pose graph in a ``.json`` file.
 
 The main function runs ``make_posegraph_for_scene`` and ``optimize_posegraph_for_scene``. The first function performs pairwise registration. The second function performs multiway registration.
 
@@ -62,7 +62,7 @@ Multiway registration
    :lines: 5,85-104
    :linenos:
 
-This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragments and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
 
@@ -75,15 +75,13 @@ Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called 
 Main registration loop
 ``````````````````````````````````````
 
-The function ``make_posegraph_for_scene`` below calls all the functions introduced above.
+The function ``make_posegraph_for_scene`` below calls all the functions introduced above. The main workflow is: pairwise global registration -> multiway registration.
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/register_fragments.py
    :language: python
    :lineno-start: 136
    :lines: 5,137-177
    :linenos:
-
-The main workflow is: pairwise global registration -> multiway registration.
 
 Results
 ``````````````````````````````````````
@@ -112,4 +110,4 @@ The following is messages from pose graph optimization.
     CompensateReferencePoseGraphNode : reference : 0
 
 
-There are 14 fragments and 52 valid matching pairs between fragments. After 23 iteration, 11 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.
+There are 14 fragments and 52 valid matching pairs among the fragments. After 23 iteration, 11 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.
