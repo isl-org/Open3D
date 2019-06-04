@@ -216,7 +216,7 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
     size_t size = 10;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 20);
+            geometry::TriangleMesh::CreateSphere(10.0, 20);
     vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
     vector<geometry::Image> images_mask = GenerateImages(
@@ -508,7 +508,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
     int bytes_per_channel = 4;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 10);
+            geometry::TriangleMesh::CreateSphere(10.0, 10);
 
     vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
@@ -579,7 +579,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     int bytes_per_channel = 4;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 10);
+            geometry::TriangleMesh::CreateSphere(10.0, 10);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
@@ -635,7 +635,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     int bytes_per_channel = 4;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 5);
+            geometry::TriangleMesh::CreateSphere(10.0, 5);
 
     vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
@@ -715,7 +715,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     int bytes_per_channel = 4;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 5);
+            geometry::TriangleMesh::CreateSphere(10.0, 5);
 
     vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
@@ -792,7 +792,7 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     int height = 240;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 5);
+            geometry::TriangleMesh::CreateSphere(10.0, 5);
 
     vector<geometry::RGBDImage> images_rgbd =
             GenerateRGBDImages(width, height, size);
@@ -849,7 +849,7 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     int height = 240;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 5);
+            geometry::TriangleMesh::CreateSphere(10.0, 5);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
@@ -1125,7 +1125,7 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     int bytes_per_channel = 4;
 
     shared_ptr<geometry::TriangleMesh> mesh =
-            geometry::CreateMeshSphere(10.0, 5);
+            geometry::TriangleMesh::CreateSphere(10.0, 5);
 
     vector<geometry::RGBDImage> rgbdImages =
             GenerateRGBDImages(width, height, size);

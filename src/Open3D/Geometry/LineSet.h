@@ -44,7 +44,7 @@ public:
     ~LineSet() override {}
 
 public:
-    void Clear() override;
+    LineSet &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
@@ -55,11 +55,9 @@ public:
                     bool center = true,
                     RotationType type = RotationType::XYZ) override;
 
-public:
     LineSet &operator+=(const LineSet &lineset);
     LineSet operator+(const LineSet &lineset) const;
 
-public:
     bool HasPoints() const { return points_.size() > 0; }
 
     bool HasLines() const { return HasPoints() && lines_.size() > 0; }
@@ -75,31 +73,32 @@ public:
     }
 
     /// Assigns each line in the LineSet the same color \param color.
-    void PaintUniformColor(const Eigen::Vector3d &color) {
+    LineSet &PaintUniformColor(const Eigen::Vector3d &color) {
         colors_.resize(lines_.size());
         for (size_t i = 0; i < lines_.size(); i++) {
             colors_[i] = color;
         }
+        return *this;
     }
+
+    /// Factory function to create a LineSet from two PointClouds
+    /// (\param cloud0, \param cloud1) and a correspondence set
+    /// \param correspondences.
+    static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
+            const PointCloud &cloud0,
+            const PointCloud &cloud1,
+            const std::vector<std::pair<int, int>> &correspondences);
+
+    /// Factory function to create a LineSet from edges of a triangle mesh
+    /// \param mesh.
+    static std::shared_ptr<LineSet> CreateFromTriangleMesh(
+            const TriangleMesh &mesh);
 
 public:
     std::vector<Eigen::Vector3d> points_;
     std::vector<Eigen::Vector2i> lines_;
     std::vector<Eigen::Vector3d> colors_;
 };
-
-/// Factory function to create a LineSet from two PointClouds
-/// (\param cloud0, \param cloud1) and a correspondence set
-/// \param correspondences.
-std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-        const PointCloud &cloud0,
-        const PointCloud &cloud1,
-        const std::vector<std::pair<int, int>> &correspondences);
-
-/// Factory function to create a LineSet from edges of a triangle mesh
-/// \param mesh.
-std::shared_ptr<LineSet> CreateLineSetFromTriangleMesh(
-        const TriangleMesh &mesh);
 
 }  // namespace geometry
 }  // namespace open3d

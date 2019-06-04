@@ -33,7 +33,7 @@
 namespace open3d {
 namespace geometry {
 
-std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
+std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences) {
@@ -55,7 +55,7 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
     return lineset_ptr;
 }
 
-std::shared_ptr<LineSet> CreateLineSetFromTriangleMesh(
+std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
         const TriangleMesh &mesh) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = mesh.vertices_;

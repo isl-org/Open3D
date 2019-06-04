@@ -31,10 +31,10 @@
 namespace open3d {
 namespace geometry {
 
-bool IntersectingAABBAABB(const Eigen::Vector3d& min0,
-                          const Eigen::Vector3d& max0,
-                          const Eigen::Vector3d& min1,
-                          const Eigen::Vector3d& max1) {
+bool IntersectionTest::AABBAABB(const Eigen::Vector3d& min0,
+                                const Eigen::Vector3d& max0,
+                                const Eigen::Vector3d& min1,
+                                const Eigen::Vector3d& max1) {
     if (max0(0) < min1(0) || min0(0) > max1(0)) {
         return false;
     }
@@ -47,12 +47,12 @@ bool IntersectingAABBAABB(const Eigen::Vector3d& min0,
     return true;
 }
 
-bool IntersectingTriangleTriangle3d(const Eigen::Vector3d& p0,
-                                    const Eigen::Vector3d& p1,
-                                    const Eigen::Vector3d& p2,
-                                    const Eigen::Vector3d& q0,
-                                    const Eigen::Vector3d& q1,
-                                    const Eigen::Vector3d& q2) {
+bool IntersectionTest::TriangleTriangle3d(const Eigen::Vector3d& p0,
+                                          const Eigen::Vector3d& p1,
+                                          const Eigen::Vector3d& p2,
+                                          const Eigen::Vector3d& q0,
+                                          const Eigen::Vector3d& q1,
+                                          const Eigen::Vector3d& q2) {
     return NoDivTriTriIsect(
             const_cast<double*>(p0.data()), const_cast<double*>(p1.data()),
             const_cast<double*>(p2.data()), const_cast<double*>(q0.data()),

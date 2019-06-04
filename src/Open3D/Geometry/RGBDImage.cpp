@@ -29,7 +29,7 @@
 namespace open3d {
 namespace geometry {
 
-RGBDImagePyramid FilterRGBDImagePyramid(
+RGBDImagePyramid RGBDImage::FilterRGBDImagePyramid(
         const RGBDImagePyramid& rgbd_image_pyramid, Image::FilterType type) {
     RGBDImagePyramid rgbd_image_pyramid_filtered;
     rgbd_image_pyramid_filtered.clear();
@@ -37,8 +37,8 @@ RGBDImagePyramid FilterRGBDImagePyramid(
     for (int level = 0; level < num_of_levels; level++) {
         auto color_level = rgbd_image_pyramid[level]->color_;
         auto depth_level = rgbd_image_pyramid[level]->depth_;
-        auto color_level_filtered = FilterImage(color_level, type);
-        auto depth_level_filtered = FilterImage(depth_level, type);
+        auto color_level_filtered = color_level.FilterImage(type);
+        auto depth_level_filtered = depth_level.FilterImage(type);
         auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
                 RGBDImage(*color_level_filtered, *depth_level_filtered));
         rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
@@ -46,15 +46,14 @@ RGBDImagePyramid FilterRGBDImagePyramid(
     return rgbd_image_pyramid_filtered;
 }
 
-RGBDImagePyramid CreateRGBDImagePyramid(
-        const RGBDImage& rgbd_image,
+RGBDImagePyramid RGBDImage::CreateRGBDImagePyramid(
         size_t num_of_levels,
         bool with_gaussian_filter_for_color /* = true */,
-        bool with_gaussian_filter_for_depth /* = false */) {
-    ImagePyramid color_pyramid = CreateImagePyramid(
-            rgbd_image.color_, num_of_levels, with_gaussian_filter_for_color);
-    ImagePyramid depth_pyramid = CreateImagePyramid(
-            rgbd_image.depth_, num_of_levels, with_gaussian_filter_for_depth);
+        bool with_gaussian_filter_for_depth /* = false */) const {
+    ImagePyramid color_pyramid = color_.CreateImagePyramid(
+            num_of_levels, with_gaussian_filter_for_color);
+    ImagePyramid depth_pyramid = depth_.CreateImagePyramid(
+            num_of_levels, with_gaussian_filter_for_depth);
     RGBDImagePyramid rgbd_image_pyramid;
     rgbd_image_pyramid.clear();
     for (size_t level = 0; level < num_of_levels; level++) {

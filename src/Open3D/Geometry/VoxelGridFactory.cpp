@@ -68,7 +68,7 @@ public:
 
 namespace geometry {
 
-std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
         const PointCloud &input, double voxel_size) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {

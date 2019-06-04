@@ -138,7 +138,7 @@ TEST(UniformTSDFVolume, RealData) {
 
         // Ingegrate
         std::shared_ptr<geometry::RGBDImage> im_rgbd =
-                geometry::CreateRGBDImageFromColorAndDepth(
+                geometry::RGBDImage::CreateFromColorAndDepth(
                         im_color, im_depth, /*depth_scale*/ 1000.0,
                         /*depth_func*/ 4.0, /*convert_rgb_to_intensity*/ false);
         tsdf_volume.Integrate(*im_rgbd, intrinsic, extrinsics[i]);

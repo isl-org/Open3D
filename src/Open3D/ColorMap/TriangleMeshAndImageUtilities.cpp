@@ -76,11 +76,9 @@ CreateVertexAndImageVisibility(
             int u_d = int(round(u)), v_d = int(round(v));
             if (d < 0.0 || !images_depth[c]->TestImageBoundary(u_d, v_d))
                 continue;
-            float d_sensor =
-                    *geometry::PointerAt<float>(*images_depth[c], u_d, v_d);
+            float d_sensor = *images_depth[c]->PointerAt<float>(u_d, v_d);
             if (d_sensor > maximum_allowable_depth) continue;
-            if (*geometry::PointerAt<unsigned char>(*images_mask[c], u_d,
-                                                    v_d) == 255)
+            if (*images_mask[c]->PointerAt<unsigned char>(u_d, v_d) == 255)
                 continue;
             if (std::fabs(d - d_sensor) < depth_threshold_for_visiblity_check) {
 #ifdef _OPENMP
@@ -115,11 +113,10 @@ std::tuple<bool, T> QueryImageIntensity(
         int u_round = int(round(u));
         int v_round = int(round(v));
         if (ch == -1) {
-            return std::make_tuple(
-                    true, *geometry::PointerAt<T>(img, u_round, v_round));
+            return std::make_tuple(true, *img.PointerAt<T>(u_round, v_round));
         } else {
-            return std::make_tuple(
-                    true, *geometry::PointerAt<T>(img, u_round, v_round, ch));
+            return std::make_tuple(true,
+                                   *img.PointerAt<T>(u_round, v_round, ch));
         }
     } else {
         return std::make_tuple(false, 0);
@@ -144,12 +141,11 @@ std::tuple<bool, T> QueryImageIntensity(
             int u_shift = int(round(uv_shift(0)));
             int v_shift = int(round(uv_shift(1)));
             if (ch == -1) {
-                return std::make_tuple(
-                        true, *geometry::PointerAt<T>(img, u_shift, v_shift));
+                return std::make_tuple(true,
+                                       *img.PointerAt<T>(u_shift, v_shift));
             } else {
-                return std::make_tuple(
-                        true,
-                        *geometry::PointerAt<T>(img, u_shift, v_shift, ch));
+                return std::make_tuple(true,
+                                       *img.PointerAt<T>(u_shift, v_shift, ch));
             }
         }
     }

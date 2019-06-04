@@ -313,7 +313,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
         if (index < pointcloud.points_.size()) {
-            auto sphere = geometry::CreateMeshSphere(
+            auto sphere = geometry::TriangleMesh::CreateSphere(
                     view.GetBoundingBox().GetSize() *
                     _option.pointcloud_picker_sphere_size_);
             sphere->ComputeVertexNormals();

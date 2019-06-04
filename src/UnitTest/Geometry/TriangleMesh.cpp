@@ -681,7 +681,7 @@ TEST(TriangleMesh, Purge) {
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
-    auto pcd_empty = geometry::SamplePointsUniformly(mesh_empty, 100);
+    auto pcd_empty = mesh_empty.SamplePointsUniformly(100);
     EXPECT_TRUE(pcd_empty->points_.size() == 0);
     EXPECT_TRUE(pcd_empty->colors_.size() == 0);
     EXPECT_TRUE(pcd_empty->normals_.size() == 0);
@@ -694,7 +694,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     mesh_simple.triangles_ = triangles;
 
     size_t n_points = 100;
-    auto pcd_simple = geometry::SamplePointsUniformly(mesh_simple, n_points);
+    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
     EXPECT_TRUE(pcd_simple->points_.size() == n_points);
     EXPECT_TRUE(pcd_simple->colors_.size() == 0);
     EXPECT_TRUE(pcd_simple->normals_.size() == 0);
@@ -703,7 +703,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     vector<Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
     mesh_simple.vertex_colors_ = colors;
     mesh_simple.vertex_normals_ = normals;
-    pcd_simple = geometry::SamplePointsUniformly(mesh_simple, n_points);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
     EXPECT_TRUE(pcd_simple->points_.size() == n_points);
     EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
@@ -718,94 +718,94 @@ TEST(TriangleMesh, SamplePointsUniformly) {
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, FilterSharpen) {
-    auto mesh = geometry::TriangleMesh();
-    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
-    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
-    mesh.FilterSharpen(1, 1);
+    mesh = mesh->FilterSharpen(1, 1);
     std::vector<Eigen::Vector3d> ref1 = {
             {0, 0, 0}, {4, 0, 0}, {0, 4, 0}, {-4, 0, 0}, {0, -4, 0}};
-    ExpectEQ(mesh.vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1);
 
-    mesh.FilterSharpen(9, 0.1);
+    mesh = mesh->FilterSharpen(9, 0.1);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
                                          {42.417997, 0, 0},
                                          {0, 42.417997, 0},
                                          {-42.417997, 0, 0},
                                          {0, -42.417997, 0}};
-    ExpectEQ(mesh.vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, FilterSmoothSimple) {
-    auto mesh = geometry::TriangleMesh();
-    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
-    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
-    mesh.FilterSmoothSimple(1);
+    mesh = mesh->FilterSmoothSimple(1);
     std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
                                          {0.25, 0, 0},
                                          {0, 0.25, 0},
                                          {-0.25, 0, 0},
                                          {0, -0.25, 0}};
-    ExpectEQ(mesh.vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1);
 
-    mesh.FilterSmoothSimple(3);
+    mesh = mesh->FilterSmoothSimple(3);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
                                          {0.003906, 0, 0},
                                          {0, 0.003906, 0},
                                          {-0.003906, 0, 0},
                                          {0, -0.003906, 0}};
-    ExpectEQ(mesh.vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, FilterSmoothLaplacian) {
-    auto mesh = geometry::TriangleMesh();
-    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
-    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
-    mesh.FilterSmoothLaplacian(1, 0.5);
+    mesh = mesh->FilterSmoothLaplacian(1, 0.5);
     std::vector<Eigen::Vector3d> ref1 = {
             {0, 0, 0}, {0.5, 0, 0}, {0, 0.5, 0}, {-0.5, 0, 0}, {0, -0.5, 0}};
-    ExpectEQ(mesh.vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1);
 
-    mesh.FilterSmoothLaplacian(10, 0.5);
+    mesh = mesh->FilterSmoothLaplacian(10, 0.5);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
                                          {0.000488, 0, 0},
                                          {0, 0.000488, 0},
                                          {-0.000488, 0, 0},
                                          {0, -0.000488, 0}};
-    ExpectEQ(mesh.vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, FilterSmoothTaubin) {
-    auto mesh = geometry::TriangleMesh();
-    mesh.vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
-    mesh.triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
+    mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
 
-    mesh.FilterSmoothTaubin(1, 0.5, -0.53);
+    mesh = mesh->FilterSmoothTaubin(1, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
                                          {0.765, 0, 0},
                                          {0, 0.765, 0},
                                          {-0.765, 0, 0},
                                          {0, -0.765, 0}};
-    ExpectEQ(mesh.vertices_, ref1);
+    ExpectEQ(mesh->vertices_, ref1);
 
-    mesh.FilterSmoothTaubin(10, 0.5, -0.53);
+    mesh = mesh->FilterSmoothTaubin(10, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref2 = {{0, 0, 0},
                                          {0.052514, 0, 0},
                                          {0, 0.052514, 0},
                                          {-0.052514, 0, 0},
                                          {0, -0.052514, 0}};
-    ExpectEQ(mesh.vertices_, ref2);
+    ExpectEQ(mesh->vertices_, ref2);
 }
 
 // ----------------------------------------------------------------------------
@@ -964,16 +964,20 @@ TEST(TriangleMesh, PaintUniformColor) {
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, EulerPoincareCharacteristic) {
-    EXPECT_EQ(geometry::CreateMeshBox()->EulerPoincareCharacteristic() == 2,
+    EXPECT_EQ(geometry::TriangleMesh::CreateBox()
+                              ->EulerPoincareCharacteristic() == 2,
               true);
-    EXPECT_EQ(geometry::CreateMeshSphere()->EulerPoincareCharacteristic() == 2,
+    EXPECT_EQ(geometry::TriangleMesh::CreateSphere()
+                              ->EulerPoincareCharacteristic() == 2,
               true);
-    EXPECT_EQ(
-            geometry::CreateMeshCylinder()->EulerPoincareCharacteristic() == 2,
-            true);
-    EXPECT_EQ(geometry::CreateMeshCone()->EulerPoincareCharacteristic() == 2,
+    EXPECT_EQ(geometry::TriangleMesh::CreateCylinder()
+                              ->EulerPoincareCharacteristic() == 2,
               true);
-    EXPECT_EQ(geometry::CreateMeshTorus()->EulerPoincareCharacteristic() == 0,
+    EXPECT_EQ(geometry::TriangleMesh::CreateCone()
+                              ->EulerPoincareCharacteristic() == 2,
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateTorus()
+                              ->EulerPoincareCharacteristic() == 0,
               true);
 
     geometry::TriangleMesh mesh0;
@@ -990,17 +994,24 @@ TEST(TriangleMesh, EulerPoincareCharacteristic) {
 }
 
 TEST(TriangleMesh, IsEdgeManifold) {
-    EXPECT_EQ(geometry::CreateMeshBox()->IsEdgeManifold(true), true);
-    EXPECT_EQ(geometry::CreateMeshSphere()->IsEdgeManifold(true), true);
-    EXPECT_EQ(geometry::CreateMeshCylinder()->IsEdgeManifold(true), true);
-    EXPECT_EQ(geometry::CreateMeshCone()->IsEdgeManifold(true), true);
-    EXPECT_EQ(geometry::CreateMeshTorus()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateBox()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateSphere()->IsEdgeManifold(true),
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCylinder()->IsEdgeManifold(true),
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCone()->IsEdgeManifold(true), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateTorus()->IsEdgeManifold(true),
+              true);
 
-    EXPECT_EQ(geometry::CreateMeshBox()->IsEdgeManifold(false), true);
-    EXPECT_EQ(geometry::CreateMeshSphere()->IsEdgeManifold(false), true);
-    EXPECT_EQ(geometry::CreateMeshCylinder()->IsEdgeManifold(false), true);
-    EXPECT_EQ(geometry::CreateMeshCone()->IsEdgeManifold(false), true);
-    EXPECT_EQ(geometry::CreateMeshTorus()->IsEdgeManifold(false), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateBox()->IsEdgeManifold(false), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateSphere()->IsEdgeManifold(false),
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCylinder()->IsEdgeManifold(false),
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCone()->IsEdgeManifold(false),
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateTorus()->IsEdgeManifold(false),
+              true);
 
     geometry::TriangleMesh mesh0;
     mesh0.vertices_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 1}, {0, 0, 2}, {1, 0.5, 1}};
@@ -1016,11 +1027,12 @@ TEST(TriangleMesh, IsEdgeManifold) {
 }
 
 TEST(TriangleMesh, IsVertexManifold) {
-    EXPECT_EQ(geometry::CreateMeshBox()->IsVertexManifold(), true);
-    EXPECT_EQ(geometry::CreateMeshSphere()->IsVertexManifold(), true);
-    EXPECT_EQ(geometry::CreateMeshCylinder()->IsVertexManifold(), true);
-    EXPECT_EQ(geometry::CreateMeshCone()->IsVertexManifold(), true);
-    EXPECT_EQ(geometry::CreateMeshTorus()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateBox()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateSphere()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCylinder()->IsVertexManifold(),
+              true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCone()->IsVertexManifold(), true);
+    EXPECT_EQ(geometry::TriangleMesh::CreateTorus()->IsVertexManifold(), true);
 
     geometry::TriangleMesh mesh0;
     mesh0.vertices_ = {{0, 0, 0}, {1, 1, 1},  {1, 0, 1},
@@ -1036,11 +1048,15 @@ TEST(TriangleMesh, IsVertexManifold) {
 }
 
 TEST(TriangleMesh, IsSelfIntersecting) {
-    EXPECT_EQ(geometry::CreateMeshBox()->IsSelfIntersecting(), false);
-    EXPECT_EQ(geometry::CreateMeshSphere()->IsSelfIntersecting(), false);
-    EXPECT_EQ(geometry::CreateMeshCylinder()->IsSelfIntersecting(), false);
-    EXPECT_EQ(geometry::CreateMeshCone()->IsSelfIntersecting(), false);
-    EXPECT_EQ(geometry::CreateMeshTorus()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::TriangleMesh::CreateBox()->IsSelfIntersecting(), false);
+    EXPECT_EQ(geometry::TriangleMesh::CreateSphere()->IsSelfIntersecting(),
+              false);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCylinder()->IsSelfIntersecting(),
+              false);
+    EXPECT_EQ(geometry::TriangleMesh::CreateCone()->IsSelfIntersecting(),
+              false);
+    EXPECT_EQ(geometry::TriangleMesh::CreateTorus()->IsSelfIntersecting(),
+              false);
 
     // simple intersection
     geometry::TriangleMesh mesh0;
@@ -1194,7 +1210,7 @@ TEST(TriangleMesh, SelectDownSample) {
     vector<size_t> indices(size / 40);
     Rand(indices, 0, size - 1, 0);
 
-    auto output_tm = geometry::SelectDownSample(tm, indices);
+    auto output_tm = tm.SelectDownSample(indices);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
@@ -1260,7 +1276,7 @@ TEST(TriangleMesh, CropTriangleMesh) {
     Vector3d cropBoundMin(300.0, 300.0, 300.0);
     Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
-    auto output_tm = geometry::CropTriangleMesh(tm, cropBoundMin, cropBoundMax);
+    auto output_tm = tm.Crop(cropBoundMin, cropBoundMax);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
@@ -1338,7 +1354,7 @@ TEST(TriangleMesh, CreateMeshSphere) {
             {38, 29, 28}, {38, 39, 29}, {39, 30, 29}, {39, 40, 30},
             {40, 31, 30}, {40, 41, 31}, {41, 22, 31}, {41, 32, 22}};
 
-    auto output_tm = geometry::CreateMeshSphere(1.0, 5);
+    auto output_tm = geometry::TriangleMesh::CreateSphere(1.0, 5);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_triangles, output_tm->triangles_);
@@ -1391,7 +1407,7 @@ TEST(TriangleMesh, CreateMeshCylinder) {
             {24, 20, 19}, {24, 25, 20}, {25, 21, 20}, {25, 26, 21},
             {26, 17, 21}, {26, 22, 17}};
 
-    auto output_tm = geometry::CreateMeshCylinder(1.0, 2.0, 5);
+    auto output_tm = geometry::TriangleMesh::CreateCylinder(1.0, 2.0, 5);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_triangles, output_tm->triangles_);
@@ -1411,7 +1427,7 @@ TEST(TriangleMesh, CreateMeshCone) {
             {0, 3, 2}, {1, 2, 3}, {0, 4, 3}, {1, 3, 4}, {0, 5, 4},
             {1, 4, 5}, {0, 6, 5}, {1, 5, 6}, {0, 2, 6}, {1, 6, 2}};
 
-    auto output_tm = geometry::CreateMeshCone(1.0, 2.0, 5);
+    auto output_tm = geometry::TriangleMesh::CreateCone(1.0, 2.0, 5);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_triangles, output_tm->triangles_);
@@ -1457,7 +1473,7 @@ TEST(TriangleMesh, CreateMeshArrow) {
             {27, 31, 30}, {28, 30, 31}, {27, 32, 31}, {28, 31, 32},
             {27, 33, 32}, {28, 32, 33}, {27, 29, 33}, {28, 33, 29}};
 
-    auto output_tm = geometry::CreateMeshArrow(1.0, 1.5, 2.0, 1.0, 5);
+    auto output_tm = geometry::TriangleMesh::CreateArrow(1.0, 1.5, 2.0, 1.0, 5);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_triangles, output_tm->triangles_);
@@ -1519,7 +1535,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
             {0.648601, 0.051046, -0.759415},  {0.018369, -0.233406, -0.972206},
             {0.156434, 0.000000, 0.987688},   {-0.987688, -0.156434, 0.000000}};
 
-    auto output_tm = geometry::CreateMeshCoordinateFrame(0.1);
+    auto output_tm = geometry::TriangleMesh::CreateCoordinateFrame(0.1);
 
     EXPECT_EQ(1134, output_tm->vertices_.size());
     EXPECT_EQ(1134, output_tm->vertex_normals_.size());
@@ -1538,7 +1554,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     }
     unique(indices.begin(), indices.end());
     sort(indices.begin(), indices.end());
-    auto output = geometry::SelectDownSample(*output_tm, indices);
+    auto output = output_tm->SelectDownSample(indices);
 
     ExpectEQ(ref_vertices, output->vertices_);
     ExpectEQ(ref_vertex_normals, output->vertex_normals_);

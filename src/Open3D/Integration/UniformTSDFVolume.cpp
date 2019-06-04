@@ -90,7 +90,7 @@ void UniformTSDFVolume::Integrate(
         return;
     }
     auto depth2cameradistance =
-            geometry::CreateDepthToCameraDistanceMultiplierFloatImage(
+            geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
                     intrinsic);
     IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic, extrinsic,
                                                  *depth2cameradistance);
@@ -338,15 +338,16 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                 // Skip if negative depth in depth image
                 int u = (int)u_f;
                 int v = (int)v_f;
-                float d = *geometry::PointerAt<float>(image.depth_, u, v);
+                float d = *image.depth_.PointerAt<float>(u, v);
                 if (d <= 0.0f) {
                     continue;
                 }
 
                 int v_ind = IndexOf(x, y, z);
-                float sdf = (d - pt_camera(2)) *
-                            (*geometry::PointerAt<float>(
-                                    depth_to_camera_distance_multiplier, u, v));
+                float sdf =
+                        (d - pt_camera(2)) *
+                        (*depth_to_camera_distance_multiplier.PointerAt<float>(
+                                u, v));
                 if (sdf > -sdf_trunc_f) {
                     // integrate
                     float tsdf = std::min(1.0f, sdf * sdf_trunc_inv_f);
@@ -356,8 +357,8 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                              tsdf) /
                             (voxel_grid_.voxels_[v_ind].weight_ + 1.0f);
                     if (color_type_ == TSDFVolumeColorType::RGB8) {
-                        const uint8_t *rgb = geometry::PointerAt<uint8_t>(
-                                image.color_, u, v, 0);
+                        const uint8_t *rgb =
+                                image.color_.PointerAt<uint8_t>(u, v, 0);
                         Eigen::Vector3d rgb_f(rgb[0], rgb[1], rgb[2]);
                         voxel_grid_.voxels_[v_ind].color_ =
                                 (voxel_grid_.voxels_[v_ind].color_ *
@@ -365,8 +366,8 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                  rgb_f) /
                                 (voxel_grid_.voxels_[v_ind].weight_ + 1.0f);
                     } else if (color_type_ == TSDFVolumeColorType::Gray32) {
-                        const float *intensity = geometry::PointerAt<float>(
-                                image.color_, u, v, 0);
+                        const float *intensity =
+                                image.color_.PointerAt<float>(u, v, 0);
                         voxel_grid_.voxels_[v_ind].color_ =
                                 (voxel_grid_.voxels_[v_ind].color_.array() *
                                          voxel_grid_.voxels_[v_ind].weight_ +

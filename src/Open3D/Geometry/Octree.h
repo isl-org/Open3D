@@ -142,7 +142,7 @@ public:
     ~Octree() override {}
 
 public:
-    void Clear() override;
+    Octree& Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
