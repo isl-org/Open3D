@@ -37,10 +37,10 @@ int main(int argc, char *argv[]) {
     if (argc < 3) {
         // clang-format off
         utility::PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-		utility::PrintInfo("\n");
-		utility::PrintInfo("Usage:\n");
-		utility::PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-		utility::PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
+        utility::PrintInfo("\n");
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
+        utility::PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
         // clang-format on
         // CI will call this file without input files, return 0 to pass
         return 0;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
         camera::PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
-                geometry::CreatePointCloudFromDepthImage(*image_ptr, camera);
+                geometry::PointCloud::CreateFromDepthImage(*image_ptr, camera);
         visualization::DrawGeometries(
                 {pointcloud_ptr},
                 "geometry::PointCloud from Depth geometry::Image", 1920, 1080);

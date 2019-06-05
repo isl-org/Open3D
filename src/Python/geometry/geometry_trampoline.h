@@ -41,7 +41,7 @@ class PyGeometry : public GeometryBase {
 public:
     using GeometryBase::GeometryBase;
     GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(void, GeometryBase, );
+        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
     }
     bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
