@@ -37,8 +37,7 @@ if __name__ == "__main__":
             print(fragment_files[i])
             pcd = o3d.io.read_point_cloud(fragment_files[i])
             if (args.estimate_normal):
-                o3d.geometry.estimate_normals(
-                    pcd,
+                pcd.estimate_normals(
                     o3d.geometry.KDTreeSearchParamHybrid(
                         radius=config["voxel_size"] * 2.0, max_nn=30))
             draw_geometries_flip([pcd])

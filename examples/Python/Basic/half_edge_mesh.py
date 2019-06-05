@@ -21,9 +21,9 @@ def draw_geometries_with_back_face(geometries):
 
 if __name__ == "__main__":
     mesh = o3d.io.read_triangle_mesh("../../TestData/sphere.ply")
-    mesh = o3d.geometry.crop_triangle_mesh(mesh, [-1, -1, -1], [1, 0.6, 1])
-    mesh.purge()
-    mesh = o3d.geometry.create_half_edge_mesh_from_mesh(mesh)
+    mesh = mesh.crop([-1, -1, -1], [1, 0.6, 1])
+    # mesh.purge()
+    mesh = o3d.geometry.HalfEdge.create_from_mesh(mesh)
     mesh.compute_vertex_normals()
     num_vertices = len(mesh.vertices)
     draw_geometries_with_back_face([mesh])

@@ -473,8 +473,7 @@ void pybind_trianglemesh(py::module &m) {
             {{"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "
               "It is not guranteed that this number will be reached."}});
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "compute_mesh_convex_hull");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},

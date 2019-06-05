@@ -13,13 +13,13 @@ import meshes
 def mesh_generator():
     yield meshes.triangle()
     yield meshes.plane()
-    yield o3d.geometry.create_mesh_tetrahedron()
-    yield o3d.geometry.create_mesh_box()
-    yield o3d.geometry.create_mesh_octahedron()
-    yield o3d.geometry.create_mesh_icosahedron()
-    yield o3d.geometry.create_mesh_sphere()
-    yield o3d.geometry.create_mesh_cone()
-    yield o3d.geometry.create_mesh_cylinder()
+    yield o3d.geometry.TriangleMesh.create_tetrahedron()
+    yield o3d.geometry.TriangleMesh.create_box()
+    yield o3d.geometry.TriangleMesh.create_octahedron()
+    yield o3d.geometry.TriangleMesh.create_icosahedron()
+    yield o3d.geometry.TriangleMesh.create_sphere()
+    yield o3d.geometry.TriangleMesh.create_cone()
+    yield o3d.geometry.TriangleMesh.create_cylinder()
     yield meshes.knot()
     yield meshes.bathtub()
 
@@ -39,15 +39,14 @@ if __name__ == "__main__":
             mesh.triangles).shape[0], np.asarray(mesh.vertices).shape[0]))
         o3d.visualization.draw_geometries([mesh])
 
-        mesh_up = o3d.geometry.subdivide_midpoint(
-            mesh, number_of_iterations=number_of_iterations)
+        mesh_up = mesh.subdivide_midpoint(
+            number_of_iterations=number_of_iterations)
         print("midpoint upsampled mesh has %d triangles and %d vertices" %
               (np.asarray(mesh_up.triangles).shape[0],
                np.asarray(mesh_up.vertices).shape[0]))
         o3d.visualization.draw_geometries([mesh_up])
 
-        mesh_up = o3d.geometry.subdivide_loop(
-            mesh, number_of_iterations=number_of_iterations)
+        mesh_up = mesh.subdivide_loop(number_of_iterations=number_of_iterations)
         print("loop upsampled mesh has %d triangles and %d vertices" %
               (np.asarray(mesh_up.triangles).shape[0],
                np.asarray(mesh_up.vertices).shape[0]))

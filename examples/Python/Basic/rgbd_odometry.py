@@ -20,7 +20,7 @@ if __name__ == "__main__":
         source_color, source_depth)
     target_rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
         target_color, target_depth)
-    target_pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+    target_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         target_rgbd_image, pinhole_camera_intrinsic)
 
     option = o3d.odometry.OdometryOption()
@@ -39,14 +39,14 @@ if __name__ == "__main__":
     if success_color_term:
         print("Using RGB-D Odometry")
         print(trans_color_term)
-        source_pcd_color_term = o3d.geometry.create_point_cloud_from_rgbd_image(
+        source_pcd_color_term = o3d.geometry.PointCloud.create_from_rgbd_image(
             source_rgbd_image, pinhole_camera_intrinsic)
         source_pcd_color_term.transform(trans_color_term)
         o3d.visualization.draw_geometries([target_pcd, source_pcd_color_term])
     if success_hybrid_term:
         print("Using Hybrid RGB-D Odometry")
         print(trans_hybrid_term)
-        source_pcd_hybrid_term = o3d.geometry.create_point_cloud_from_rgbd_image(
+        source_pcd_hybrid_term = o3d.geometry.PointCloud.create_from_rgbd_image(
             source_rgbd_image, pinhole_camera_intrinsic)
         source_pcd_hybrid_term.transform(trans_hybrid_term)
         o3d.visualization.draw_geometries([target_pcd, source_pcd_hybrid_term])

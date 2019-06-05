@@ -20,12 +20,11 @@ def draw_registration_result(source, target, transformation):
 
 def preprocess_point_cloud(pcd, voxel_size):
     print(":: Downsample with a voxel size %.3f." % voxel_size)
-    pcd_down = o3d.geometry.voxel_down_sample(pcd, voxel_size)
+    pcd_down = pcd.voxel_down_sample(voxel_size)
 
     radius_normal = voxel_size * 2
     print(":: Estimate normal with search radius %.3f." % radius_normal)
-    o3d.geometry.estimate_normals(
-        pcd_down,
+    pcd_down.estimate_normals(
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
 
     radius_feature = voxel_size * 5

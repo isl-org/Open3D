@@ -90,17 +90,17 @@ def non_manifold_vertex():
 
 
 def open_box():
-    mesh = o3d.geometry.create_mesh_box()
+    mesh = o3d.geometry.TriangleMesh.create_box()
     mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:-2])
     mesh.compute_vertex_normals()
     return mesh
 
 
 def intersecting_boxes():
-    mesh0 = o3d.geometry.create_mesh_box()
+    mesh0 = o3d.geometry.TriangleMesh.create_box()
     T = np.eye(4)
     T[:, 3] += (0.5, 0.5, 0.5, 0)
-    mesh1 = o3d.geometry.create_mesh_box()
+    mesh1 = o3d.geometry.TriangleMesh.create_box()
     mesh1.transform(T)
     mesh = cat_meshes(mesh0, mesh1)
     mesh.compute_vertex_normals()
@@ -174,13 +174,17 @@ if __name__ == '__main__':
     print('  torus, moebius strip one twist, moebius strip two twists')
     d = 1.5
     geoms = [
-        process(o3d.geometry.create_mesh_tetrahedron()).translate((-d, 0, 0)),
-        process(o3d.geometry.create_mesh_octahedron()).translate((0, 0, 0)),
-        process(o3d.geometry.create_mesh_icosahedron()).translate((d, 0, 0)),
-        process(o3d.geometry.create_mesh_torus()).translate((-d, -d, 0)),
-        process(o3d.geometry.create_mesh_moebius(twists=1)).translate(
+        process(o3d.geometry.TriangleMesh.create_tetrahedron()).translate(
+            (-d, 0, 0)),
+        process(o3d.geometry.TriangleMesh.create_octahedron()).translate(
+            (0, 0, 0)),
+        process(o3d.geometry.TriangleMesh.create_icosahedron()).translate(
+            (d, 0, 0)),
+        process(o3d.geometry.TriangleMesh.create_torus()).translate(
+            (-d, -d, 0)),
+        process(o3d.geometry.TriangleMesh.create_moebius(twists=1)).translate(
             (0, -d, 0)),
-        process(o3d.geometry.create_mesh_moebius(twists=2)).translate(
+        process(o3d.geometry.TriangleMesh.create_moebius(twists=2)).translate(
             (d, -d, 0)),
     ]
 

@@ -104,9 +104,8 @@ void pybind_pointcloud(py::module &m) {
                  "nb_neighbors"_a, "std_ratio"_a)
             .def("estimate_normals", &geometry::PointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
-                 "are "
-                 "oriented with respect to the input point cloud if normals "
-                 "exist",
+                 "are oriented with respect to the input point cloud if "
+                 "normals exist",
                  "search_param"_a = geometry::KDTreeSearchParamKNN())
             .def("orient_normals_to_align_with_direction",
                  &geometry::PointCloud::OrientNormalsToAlignWithDirection,
@@ -237,8 +236,8 @@ void pybind_pointcloud(py::module &m) {
                                     "compute_mean_and_covariance");
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_mahalanobis_distance");
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "compute_point_cloud_nearest_neighbor_distance");
+    docstring::ClassMethodDocInject(m, "PointCloud",
+                                    "compute_nearest_neighbor_distance");
     docstring::ClassMethodDocInject(m, "PointCloud", "compute_convex_hull",
                                     {{"input", "The input point cloud."}});
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");

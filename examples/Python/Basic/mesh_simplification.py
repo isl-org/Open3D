@@ -10,31 +10,21 @@ import open3d as o3d
 import meshes
 
 
-def create_mesh_plane():
-    mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(
-        np.array([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]],
-                 dtype=np.float32))
-    mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0,
-                                                                      3]]))
-    return mesh
-
-
 def mesh_generator():
     mesh = meshes.plane()
-    yield o3d.geometry.subdivide_midpoint(mesh, 2)
+    yield mesh.subdivide_midpoint(2)
 
-    mesh = o3d.geometry.create_mesh_box()
-    yield o3d.geometry.subdivide_midpoint(mesh, 2)
+    mesh = o3d.geometry.TriangleMesh.create_box()
+    yield mesh.subdivide_midpoint(2)
 
-    mesh = o3d.geometry.create_mesh_sphere()
-    yield o3d.geometry.subdivide_midpoint(mesh, 2)
+    mesh = o3d.geometry.TriangleMesh.create_sphere()
+    yield mesh.subdivide_midpoint(2)
 
-    mesh = o3d.geometry.create_mesh_cone()
-    yield o3d.geometry.subdivide_midpoint(mesh, 2)
+    mesh = o3d.geometry.TriangleMesh.create_cone()
+    yield mesh.subdivide_midpoint(2)
 
-    mesh = o3d.geometry.create_mesh_cylinder()
-    yield o3d.geometry.subdivide_midpoint(mesh, 2)
+    mesh = o3d.geometry.TriangleMesh.create_cylinder()
+    yield mesh.subdivide_midpoint(2)
 
     yield meshes.bathtub()
 
@@ -58,8 +48,7 @@ if __name__ == "__main__":
         target_number_of_triangles = np.asarray(mesh.triangles).shape[0] // 2
         print('voxel_size = %f' % voxel_size)
 
-        mesh_smp = o3d.geometry.simplify_vertex_clustering(
-            mesh,
+        mesh_smp = mesh.simplify_vertex_clustering(
             voxel_size=voxel_size,
             contraction=o3d.geometry.SimplificationContraction.Average)
         print(
@@ -68,8 +57,7 @@ if __name__ == "__main__":
              np.asarray(mesh_smp.vertices).shape[0]))
         o3d.visualization.draw_geometries([mesh_smp])
 
-        mesh_smp = o3d.geometry.simplify_vertex_clustering(
-            mesh,
+        mesh_smp = mesh.simplify_vertex_clustering(
             voxel_size=voxel_size,
             contraction=o3d.geometry.SimplificationContraction.Quadric)
         print(
@@ -78,8 +66,8 @@ if __name__ == "__main__":
              np.asarray(mesh_smp.vertices).shape[0]))
         o3d.visualization.draw_geometries([mesh_smp])
 
-        mesh_smp = o3d.geometry.simplify_quadric_decimation(
-            mesh, target_number_of_triangles=target_number_of_triangles)
+        mesh_smp = mesh.simplify_quadric_decimation(
+            target_number_of_triangles=target_number_of_triangles)
         print("quadric decimated mesh has %d triangles and %d vertices" %
               (np.asarray(mesh_smp.triangles).shape[0],
                np.asarray(mesh_smp.vertices).shape[0]))

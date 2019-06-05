@@ -29,7 +29,7 @@ if __name__ == "__main__":
         rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
             color, depth, convert_rgb_to_intensity=False)
         if debug_mode:
-            pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+            pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
                 rgbd_image,
                 o3d.camera.PinholeCameraIntrinsic(
                     o3d.camera.PinholeCameraIntrinsicParameters.

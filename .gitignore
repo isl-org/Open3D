@@ -29,3 +29,12 @@ docs/python_api/
 _vimrc_local.vim
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
+examples/Python/Basic/voxel_grid_test.ply
+examples/Python/Benchmark/testdata/
+examples/Python/Misc/test.jpg
+examples/TestData/GraphOptimization/pose_graph_example_fragment_optimized.json
+examples/TestData/GraphOptimization/pose_graph_example_global_optimized.json
+examples/TestData/depth/
+examples/TestData/image/
+examples/TestData/sync.ply
+examples/TestData/sync.png

@@ -10,7 +10,7 @@ if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud("../../TestData/fragment.ply")
     min_cube_size = 0.05
     print("\nOriginal, # of points %d" % (np.asarray(pcd.points).shape[0]))
-    pcd_down = o3d.geometry.voxel_down_sample(pcd, min_cube_size)
+    pcd_down = pcd.voxel_down_sample(min_cube_size)
     print("\nScale %f, # of points %d" % \
             (min_cube_size, np.asarray(pcd_down.points).shape[0]))
     min_bound = pcd_down.get_min_bound() - min_cube_size * 0.5
@@ -20,8 +20,8 @@ if __name__ == "__main__":
     num_scales = 3
     for i in range(1, num_scales):
         multiplier = pow(2, i)
-        pcd_curr_down, cubic_id = o3d.geometry.voxel_down_sample_and_trace(
-            pcd_curr, multiplier * min_cube_size, min_bound, max_bound, False)
+        pcd_curr_down, cubic_id = pcd_curr.voxel_down_sample_and_trace(
+            multiplier * min_cube_size, min_bound, max_bound, False)
         print("\nScale %f, # of points %d" %
               (multiplier * min_cube_size, np.asarray(
                   pcd_curr_down.points).shape[0]))

@@ -93,13 +93,13 @@ if __name__ == "__main__":
             color_temp = np.asarray(color_frame.get_data())
             color_image = o3d.geometry.Image(color_temp)
 
-            rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+            rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
                 color_image,
                 depth_image,
                 depth_scale=1.0 / depth_scale,
                 depth_trunc=clipping_distance_in_meters,
                 convert_rgb_to_intensity=False)
-            temp = o3d.geometry.create_point_cloud_from_rgbd_image(
+            temp = o3d.geometry.PointCloud.create_from_rgbd_image(
                 rgbd_image, intrinsic)
             temp.transform(flip_transform)
             pcd.points = temp.points

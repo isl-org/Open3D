@@ -49,7 +49,7 @@ if __name__ == "__main__":
     plt.title('NYU depth image')
     plt.imshow(rgbd_image.depth)
     plt.show()
-    pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         rgbd_image,
         o3d.camera.PinholeCameraIntrinsic(
             o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))

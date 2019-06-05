@@ -12,8 +12,8 @@ if __name__ == "__main__":
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     source_raw = o3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
     target_raw = o3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-    source = o3d.geometry.voxel_down_sample(source_raw, voxel_size=0.02)
-    target = o3d.geometry.voxel_down_sample(target_raw, voxel_size=0.02)
+    source = source_raw.voxel_down_sample(voxel_size=0.02)
+    target = target_raw.voxel_down_sample(voxel_size=0.02)
     trans = [[0.862, 0.011, -0.507, 0.0], [-0.139, 0.967, -0.215, 0.7],
              [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]]
     source.transform(trans)
