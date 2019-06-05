@@ -87,15 +87,15 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<geometry::RGBDImage> (*CreateRGBDImage)(
             const geometry::Image&, const geometry::Image&, bool);
     if (rgbd_type == 0)
-        CreateRGBDImage = &geometry::CreateRGBDImageFromRedwoodFormat;
+        CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
     else if (rgbd_type == 1)
-        CreateRGBDImage = &geometry::CreateRGBDImageFromTUMFormat;
+        CreateRGBDImage = &geometry::RGBDImage::CreateFromTUMFormat;
     else if (rgbd_type == 2)
-        CreateRGBDImage = &geometry::CreateRGBDImageFromSUNFormat;
+        CreateRGBDImage = &geometry::RGBDImage::CreateFromSUNFormat;
     else if (rgbd_type == 3)
-        CreateRGBDImage = &geometry::CreateRGBDImageFromNYUFormat;
+        CreateRGBDImage = &geometry::RGBDImage::CreateFromNYUFormat;
     else
-        CreateRGBDImage = &geometry::CreateRGBDImageFromRedwoodFormat;
+        CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
     auto source = CreateRGBDImage(*color_source, *depth_source, true);
     auto target = CreateRGBDImage(*color_target, *depth_target, true);
 

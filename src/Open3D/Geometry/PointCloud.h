@@ -92,29 +92,6 @@ public:
         return *this;
     }
 
-    /// Factory function to create a pointcloud from a depth image and a camera
-    /// model (PointCloudFactory.cpp)
-    /// The input depth image can be either a float image, or a uint16_t image.
-    /// In the latter case, the depth is scaled by 1 / depth_scale, and
-    /// truncated at depth_trunc distance. The depth image is also sampled with
-    /// stride, in order to support (fast) coarse point cloud extraction. Return
-    /// an empty pointcloud if the conversion fails.
-    static std::shared_ptr<PointCloud> CreateFromDepthImage(
-            const Image &depth,
-            const camera::PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
-            double depth_scale = 1000.0,
-            double depth_trunc = 1000.0,
-            int stride = 1);
-
-    /// Factory function to create a pointcloud from an RGB-D image and a camera
-    /// model (PointCloudFactory.cpp)
-    /// Return an empty pointcloud if the conversion fails.
-    static std::shared_ptr<PointCloud> CreateFromRGBDImage(
-            const RGBDImage &image,
-            const camera::PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
-
     /// Function to select points from \param input pointcloud into
     /// \return output pointcloud
     /// Points with indices in \param indices are selected.
@@ -199,6 +176,29 @@ public:
 
     /// Function that computes the convex hull of the point cloud using qhull
     std::shared_ptr<TriangleMesh> ComputeConvexHull() const;
+
+    /// Factory function to create a pointcloud from a depth image and a camera
+    /// model (PointCloudFactory.cpp)
+    /// The input depth image can be either a float image, or a uint16_t image.
+    /// In the latter case, the depth is scaled by 1 / depth_scale, and
+    /// truncated at depth_trunc distance. The depth image is also sampled with
+    /// stride, in order to support (fast) coarse point cloud extraction. Return
+    /// an empty pointcloud if the conversion fails.
+    static std::shared_ptr<PointCloud> CreateFromDepthImage(
+            const Image &depth,
+            const camera::PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
+            double depth_scale = 1000.0,
+            double depth_trunc = 1000.0,
+            int stride = 1);
+
+    /// Factory function to create a pointcloud from an RGB-D image and a camera
+    /// model (PointCloudFactory.cpp)
+    /// Return an empty pointcloud if the conversion fails.
+    static std::shared_ptr<PointCloud> CreateFromRGBDImage(
+            const RGBDImage &image,
+            const camera::PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
 
 public:
     std::vector<Eigen::Vector3d> points_;

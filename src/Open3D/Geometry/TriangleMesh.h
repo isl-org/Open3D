@@ -298,7 +298,7 @@ public:
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh
-    std::shared_ptr<PointCloud> SamplePointsUniformly(
+    std::shared_ptr<PointCloud> SamplePointsUniformlyImpl(
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area) const;

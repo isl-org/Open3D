@@ -95,6 +95,10 @@ void pybind_voxelgrid(py::module &m) {
             .def("from_octree", &geometry::VoxelGrid::FromOctree,
                  "octree"_a
                  "Convert from Octree.")
+            .def_static("create_from_point_cloud",
+                        &geometry::VoxelGrid::CreateFromPointCloud,
+                        "Function to make voxels from scanned point cloud",
+                        "input"_a, "voxel_size"_a)
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
@@ -109,15 +113,10 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "from_octree",
             {{"octree", "geometry.Octree: The source octree."}});
-}
-
-void pybind_voxelgrid_methods(py::module &m) {
-    m.def("create_surface_voxel_grid_from_point_cloud",
-          &geometry::CreateSurfaceVoxelGridFromPointCloud,
-          "Function to make voxels from scanned point cloud", "point_cloud"_a,
-          "voxel_size"_a);
-    docstring::FunctionDocInject(
-            m, "create_surface_voxel_grid_from_point_cloud",
-            {{"point_cloud", "The input point cloud."},
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_from_point_cloud",
+            {{"input", "The input PointCloud"},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
 }
+
+void pybind_voxelgrid_methods(py::module &m) {}

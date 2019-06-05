@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
             utility::filesystem::GetFileNameWithoutExtension(argv[1]) + ".bin";
     std::vector<double> distances(pcd->points_.size());
     if (utility::ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
-        distances = geometry::ComputePointCloudMahalanobisDistance(*pcd);
+        distances = pcd->ComputeMahalanobisDistance();
         FILE *f = fopen(binname.c_str(), "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);
     } else if (utility::ProgramOptionExists(argc, argv, "--nn_distance")) {
-        distances = geometry::ComputePointCloudNearestNeighborDistance(*pcd);
+        distances = pcd->ComputeNearestNeighborDistance();
         FILE *f = fopen(binname.c_str(), "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);

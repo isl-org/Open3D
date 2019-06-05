@@ -57,9 +57,10 @@ protected:
                 camera::PinholeCameraTrajectory camera;
                 io::ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = io::CreateImageFromFile("depth.png");
-                auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
-                        *image_ptr, camera.parameters_[0].intrinsic_,
-                        camera.parameters_[0].extrinsic_);
+                auto pointcloud_ptr =
+                        geometry::PointCloud::CreateFromDepthImage(
+                                *image_ptr, camera.parameters_[0].intrinsic_,
+                                camera.parameters_[0].extrinsic_);
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_K) {
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]) {
 
     camera::PinholeCameraTrajectory camera;
     io::ReadIJsonConvertible("camera.json", camera);
-    auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
+    auto pointcloud_ptr = geometry::PointCloud::CreateFromDepthImage(
             *image_ptr, camera.parameters_[0].intrinsic_,
             camera.parameters_[0].extrinsic_);
     VisualizerWithDepthCapture visualizer1;

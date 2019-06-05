@@ -62,6 +62,112 @@ void pybind_pointcloud(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
                  "Assigns each point in the PointCloud the same color.")
+            .def("select_down_sample", &geometry::PointCloud::SelectDownSample,
+                 "Function to select points from input pointcloud into output "
+                 "pointcloud. ``indices``: "
+                 "Indices of points to be selected. ``invert``: Set to "
+                 "``True`` to "
+                 "invert the selection of indices.",
+                 "indices"_a, "invert"_a = false)
+            .def("voxel_down_sample", &geometry::PointCloud::VoxelDownSample,
+                 "Function to downsample input pointcloud into output "
+                 "pointcloud with "
+                 "a voxel",
+                 "voxel_size"_a)
+            .def("voxel_down_sample_and_trace",
+                 &geometry::PointCloud::VoxelDownSampleAndTrace,
+                 "Function to downsample using "
+                 "geometry::PointCloud::VoxelDownSample also records point "
+                 "cloud index before downsampling",
+                 "voxel_size"_a, "min_bound"_a, "max_bound"_a,
+                 "approximate_class"_a = false)
+            .def("uniform_down_sample",
+                 &geometry::PointCloud::UniformDownSample,
+                 "Function to downsample input pointcloud into output "
+                 "pointcloud "
+                 "uniformly. The sample is performed in the order of the "
+                 "points with "
+                 "the 0-th point always chosen, not at random.",
+                 "every_k_points"_a)
+            .def("crop", &geometry::PointCloud::Crop,
+                 "Function to crop input pointcloud into output pointcloud",
+                 "min_bound"_a, "max_bound"_a)
+            .def("remove_radius_outlier",
+                 &geometry::PointCloud::RemoveRadiusOutliers,
+                 "Function to remove points that have less than nb_points"
+                 " in a given sphere of a given radius",
+                 "nb_points"_a, "radius"_a)
+            .def("remove_statistical_outlier",
+                 &geometry::PointCloud::RemoveStatisticalOutliers,
+                 "Function to remove points that are further away from their "
+                 "neighbors in average",
+                 "nb_neighbors"_a, "std_ratio"_a)
+            .def("estimate_normals", &geometry::PointCloud::EstimateNormals,
+                 "Function to compute the normals of a point cloud. Normals "
+                 "are "
+                 "oriented with respect to the input point cloud if normals "
+                 "exist",
+                 "search_param"_a = geometry::KDTreeSearchParamKNN())
+            .def("orient_normals_to_align_with_direction",
+                 &geometry::PointCloud::OrientNormalsToAlignWithDirection,
+                 "Function to orient the normals of a point cloud",
+                 "orientation_reference"_a = Eigen::Vector3d(0.0, 0.0, 1.0))
+            .def("orient_normals_towards_camera_location",
+                 &geometry::PointCloud::OrientNormalsTowardsCameraLocation,
+                 "Function to orient the normals of a point cloud",
+                 "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            .def("compute_point_cloud_distance",
+                 &geometry::PointCloud::ComputePointCloudDistance,
+                 "For each point in the source point cloud, compute the "
+                 "distance to "
+                 "the target point cloud.",
+                 "target"_a)
+            .def("compute_mean_and_covariance",
+                 &geometry::PointCloud::ComputeMeanAndCovariance,
+                 "Function to compute the mean and covariance matrix of a "
+                 "point "
+                 "cloud.")
+            .def("compute_mahalanobis_distance",
+                 &geometry::PointCloud::ComputeMahalanobisDistance,
+                 "Function to compute the Mahalanobis distance for points in a "
+                 "point "
+                 "cloud. See: "
+                 "https://en.wikipedia.org/wiki/Mahalanobis_distance.")
+            .def("compute_nearest_neighbor_distance",
+                 &geometry::PointCloud::ComputeNearestNeighborDistance,
+                 "Function to compute the distance from a point to its nearest "
+                 "neighbor in the point cloud")
+            .def("compute_convex_hull",
+                 &geometry::PointCloud::ComputeConvexHull,
+                 "Computes the convex hull of the point cloud.")
+            .def_static(
+                    "create_from_depth_image",
+                    &geometry::PointCloud::CreateFromDepthImage,
+                    R"(Factory function to create a pointcloud from a depth image and a
+        camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
+        point is:
+
+              - z = d / depth_scale
+              - x = (u - cx) * z / fx
+              - y = (v - cy) * z / fy
+        )",
+                    "depth"_a, "intrinsic"_a,
+                    "extrinsic"_a = Eigen::Matrix4d::Identity(),
+                    "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
+                    "stride"_a = 1)
+            .def_static(
+                    "create_from_rgbd_image",
+                    &geometry::PointCloud::CreateFromRGBDImage,
+                    R"(Factory function to create a pointcloud from an RGB-D image and a
+        camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
+        point is:
+
+              - z = d / depth_scale
+              - x = (u - cx) * z / fx
+              - y = (v - cy) * z / fy
+        )",
+                    "image"_a, "intrinsic"_a,
+                    "extrinsic"_a = Eigen::Matrix4d::Identity())
             .def_readwrite("points", &geometry::PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -82,190 +188,61 @@ void pybind_pointcloud(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "PointCloud", "paint_uniform_color",
             {{"color", "RGB color for the PointCloud."}});
-}
-
-void pybind_pointcloud_methods(py::module &m) {
-    m.def("create_point_cloud_from_depth_image",
-          &geometry::CreatePointCloudFromDepthImage,
-          R"(Factory function to create a pointcloud from a depth image and a
-camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
-point is:
-
-      - z = d / depth_scale
-      - x = (u - cx) * z / fx
-      - y = (v - cy) * z / fy
-)",
-          "depth"_a, "intrinsic"_a, "extrinsic"_a = Eigen::Matrix4d::Identity(),
-          "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0, "stride"_a = 1);
-    docstring::FunctionDocInject(m, "create_point_cloud_from_depth_image");
-
-    m.def("create_point_cloud_from_rgbd_image",
-          &geometry::CreatePointCloudFromRGBDImage,
-          R"(Factory function to create a pointcloud from an RGB-D image and a
-camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
-point is:
-
-      - z = d / depth_scale
-      - x = (u - cx) * z / fx
-      - y = (v - cy) * z / fy
-)",
-          "image"_a, "intrinsic"_a,
-          "extrinsic"_a = Eigen::Matrix4d::Identity());
-    docstring::FunctionDocInject(m, "create_point_cloud_from_rgbd_image");
-
-    // Overloaded function, do not inject docs. Keep commented out for future.
-    m.def("select_down_sample",
-          (std::shared_ptr<geometry::PointCloud>(*)(
-                  const geometry::PointCloud &, const std::vector<size_t> &,
-                  bool)) &
-                  geometry::SelectDownSample,
-          "Function to select points from input pointcloud into output "
-          "pointcloud. ``input``: The input triangle point cloud. ``indices``: "
-          "Indices of points to be selected. ``invert``: Set to ``True`` to "
-          "invert the selection of indices.",
-          "input"_a, "indices"_a, "invert"_a = false);
-    // docstring::FunctionDocInject(
-    //         m, "select_down_sample",
-    //         {{"input", "The input point cloud."},
-    //          {"indices", "Indices of points to be selected."},
-    //          {"invert",
-    //           "Set to ``True`` to invert the selection of indices."}});
-
-    m.def("voxel_down_sample", &geometry::VoxelDownSample,
-          "Function to downsample input pointcloud into output pointcloud with "
-          "a voxel",
-          "input"_a, "voxel_size"_a);
-    docstring::FunctionDocInject(
-            m, "voxel_down_sample",
-            {{"input", "The input point cloud."},
-             {"voxel_size", "Voxel size to downsample into."},
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_down_sample",
+            {{"indices", "Indices of points to be selected."},
+             {"invert",
+              "Set to ``True`` to invert the selection of indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample",
+            {{"voxel_size", "Voxel size to downsample into."},
              {"invert", "set to ``True`` to invert the selection of indices"}});
-
-    m.def("voxel_down_sample_and_trace", &geometry::VoxelDownSampleAndTrace,
-          "Function to downsample using geometry::VoxelDownSample also records "
-          "point "
-          "cloud index before downsampling",
-          "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
-          "approximate_class"_a = false);
-    docstring::FunctionDocInject(
-            m, "voxel_down_sample_and_trace",
-            {{"input", "The input point cloud."},
-             {"voxel_size", "Voxel size to downsample into."},
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample_and_trace",
+            {{"voxel_size", "Voxel size to downsample into."},
              {"min_bound", "Minimum coordinate of voxel boundaries"},
              {"max_bound", "Maximum coordinate of voxel boundaries"}});
-
-    m.def("uniform_down_sample", &geometry::UniformDownSample,
-          "Function to downsample input pointcloud into output pointcloud "
-          "uniformly. The sample is performed in the order of the points with "
-          "the 0-th point always chosen, not at random.",
-          "input"_a, "every_k_points"_a);
-    docstring::FunctionDocInject(
-            m, "uniform_down_sample",
-            {{"input", "The input point cloud."},
-             {"every_k_points",
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "uniform_down_sample",
+            {{"every_k_points",
               "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
-
-    m.def("crop_point_cloud", &geometry::CropPointCloud,
-          "Function to crop input pointcloud into output pointcloud", "input"_a,
-          "min_bound"_a, "max_bound"_a);
-    docstring::FunctionDocInject(
-            m, "crop_point_cloud",
-            {{"input", "The input point cloud."},
-             {"min_bound", "Minimum bound for point coordinate"},
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"min_bound", "Minimum bound for point coordinate"},
              {"max_bound", "Maximum bound for point coordinate"}});
-
-    m.def("radius_outlier_removal", &geometry::RemoveRadiusOutliers,
-          "Function to remove points that have less than nb_points"
-          " in a given sphere of a given radius",
-          "input"_a, "nb_points"_a, "radius"_a);
-    docstring::FunctionDocInject(
-            m, "radius_outlier_removal",
-            {{"input", "The input point cloud."},
-             {"nb_points", "Number of points within the radius."},
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_radius_outlier",
+            {{"nb_points", "Number of points within the radius."},
              {"radius", "Radius of the sphere."}});
-
-    m.def("statistical_outlier_removal", &geometry::RemoveStatisticalOutliers,
-          "Function to remove points that are further away from their "
-          "neighbors in average",
-          "input"_a, "nb_neighbors"_a, "std_ratio"_a);
-    docstring::FunctionDocInject(
-            m, "statistical_outlier_removal",
-            {{"input", "The input point cloud."},
-             {"nb_neighbors", "Number of neighbors around the target point."},
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_statistical_outlier",
+            {{"nb_neighbors", "Number of neighbors around the target point."},
              {"std_ratio", "Standard deviation ratio."}});
-
-    m.def("estimate_normals", &geometry::EstimateNormals,
-          "Function to compute the normals of a point cloud. Normals are "
-          "oriented with respect to the input point cloud if normals exist",
-          "cloud"_a, "search_param"_a = geometry::KDTreeSearchParamKNN());
-    docstring::FunctionDocInject(
-            m, "estimate_normals",
-            {{"cloud",
-              "The input point cloud. It also stores the output normals."},
-             {"search_param",
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "estimate_normals",
+            {{"search_param",
               "The KDTree search parameters for neighborhood search."}});
-
-    m.def("orient_normals_to_align_with_direction",
-          &geometry::OrientNormalsToAlignWithDirection,
-          "Function to orient the normals of a point cloud", "cloud"_a,
-          "orientation_reference"_a = Eigen::Vector3d(0.0, 0.0, 1.0));
-    docstring::FunctionDocInject(
-            m, "orient_normals_to_align_with_direction",
-            {{"cloud", "The input point cloud. It must have normals."},
-             {"orientation_reference",
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_to_align_with_direction",
+            {{"orientation_reference",
               "Normals are oriented with respect to orientation_reference."}});
-
-    m.def("orient_normals_towards_camera_location",
-          &geometry::OrientNormalsTowardsCameraLocation,
-          "Function to orient the normals of a point cloud", "cloud"_a,
-          "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-    docstring::FunctionDocInject(
-            m, "orient_normals_towards_camera_location",
-            {{"cloud",
-              "The input point cloud. It also stores the output normals."},
-             {"camera_location",
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_towards_camera_location",
+            {{"camera_location",
               "Normals are oriented with towards the camera_location."}});
-
-    m.def("compute_point_cloud_to_point_cloud_distance",
-          &geometry::ComputePointCloudToPointCloudDistance,
-          "For each point in the source point cloud, compute the distance to "
-          "the target point cloud.",
-          "source"_a, "target"_a);
-    docstring::FunctionDocInject(
-            m, "compute_point_cloud_to_point_cloud_distance",
-            {{"source",
-              "The source point cloud. The results has the same number of "
-              "elements as the size of the source point cloud."},
-             {"target", "The target point cloud."}});
-
-    m.def("compute_point_cloud_mean_and_covariance",
-          &geometry::ComputePointCloudMeanAndCovariance,
-          "Function to compute the mean and covariance matrix of a point "
-          "cloud.",
-          "input"_a);
-    docstring::FunctionDocInject(m, "compute_point_cloud_mean_and_covariance",
-                                 {{"input", "The input point cloud."}});
-
-    m.def("compute_point_cloud_mahalanobis_distance",
-          &geometry::ComputePointCloudMahalanobisDistance,
-          "Function to compute the Mahalanobis distance for points in a point "
-          "cloud. See: https://en.wikipedia.org/wiki/Mahalanobis_distance.",
-          "input"_a);
-    docstring::FunctionDocInject(m, "compute_point_cloud_mahalanobis_distance",
-                                 {{"input", "The input point cloud."}});
-
-    m.def("compute_point_cloud_nearest_neighbor_distance",
-          &geometry::ComputePointCloudNearestNeighborDistance,
-          "Function to compute the distance from a point to its nearest "
-          "neighbor in the point cloud",
-          "input"_a);
-    docstring::FunctionDocInject(
-            m, "compute_point_cloud_nearest_neighbor_distance",
-            {{"input", "The input point cloud."}});
-
-    m.def("compute_point_cloud_convex_hull",
-          &geometry::ComputePointCloudConvexHull,
-          "Computes the convex hull of the point cloud.", "input"_a);
-    docstring::FunctionDocInject(m, "compute_point_cloud_convex_hull",
-                                 {{"input", "The input point cloud."}});
+    docstring::ClassMethodDocInject(m, "PointCloud",
+                                    "compute_point_cloud_distance",
+                                    {{"target", "The target point cloud."}});
+    docstring::ClassMethodDocInject(m, "PointCloud",
+                                    "compute_mean_and_covariance");
+    docstring::ClassMethodDocInject(m, "PointCloud",
+                                    "compute_mahalanobis_distance");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "compute_point_cloud_nearest_neighbor_distance");
+    docstring::ClassMethodDocInject(m, "PointCloud", "compute_convex_hull",
+                                    {{"input", "The input point cloud."}});
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
 }
+
+void pybind_pointcloud_methods(py::module &m) {}

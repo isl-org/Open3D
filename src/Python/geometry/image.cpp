@@ -218,10 +218,12 @@ void pybind_image_methods(py::module &m) {
               if (input.num_of_channels_ != 1 ||
                   input.bytes_per_channel_ != 4) {
                   auto input_f = input.CreateFloatImageFromImage();
-                  auto output = input_f->CreateImagePyramid(num_of_levels, with_gaussian_filter);
+                  auto output = input_f->CreateImagePyramid(
+                          num_of_levels, with_gaussian_filter);
                   return output;
               } else {
-                  auto output = input.CreateImagePyramid(num_of_levels, with_gaussian_filter);
+                  auto output = input.CreateImagePyramid(num_of_levels,
+                                                         with_gaussian_filter);
                   return output;
               }
           },
@@ -233,7 +235,8 @@ void pybind_image_methods(py::module &m) {
     m.def("filter_image_pyramid",
           [](const geometry::ImagePyramid &input,
              geometry::Image::FilterType filter_type) {
-              auto output = geometry::Image::FilterImagePyramid(input, filter_type);
+              auto output =
+                      geometry::Image::FilterImagePyramid(input, filter_type);
               return output;
           },
           "Function to filter ImagePyramid", "image_pyramid"_a,

@@ -78,8 +78,10 @@ void pybind_halfedgetrianglemesh(py::module &m) {
     pybind_half_edge(m);
 
     // open3d.geometry.HalfEdgeTriangleMesh
-    py::class_<geometry::HalfEdgeTriangleMesh, PyGeometry3D<geometry::HalfEdgeTriangleMesh>,
-               std::shared_ptr<geometry::HalfEdgeTriangleMesh>, geometry::Geometry3D>
+    py::class_<geometry::HalfEdgeTriangleMesh,
+               PyGeometry3D<geometry::HalfEdgeTriangleMesh>,
+               std::shared_ptr<geometry::HalfEdgeTriangleMesh>,
+               geometry::Geometry3D>
             half_edge_triangle_mesh(
                     m, "HalfEdgeTriangleMesh",
                     "HalfEdgeTriangleMesh inherits TriangleMesh class with the "

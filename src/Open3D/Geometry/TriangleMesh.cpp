@@ -477,7 +477,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     return mesh;
 }
 
-std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
+std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area) const {
@@ -550,8 +550,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     std::vector<double> triangle_areas;
     double surface_area = GetSurfaceArea(triangle_areas);
 
-    return SamplePointsUniformly(number_of_points, triangle_areas,
-                                 surface_area);
+    return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
+                                     surface_area);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
@@ -559,24 +559,25 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) const {
     if (number_of_points <= 0) {
-        utility::PrintWarning("[SamplePointsUniformly] number_of_points <= 0");
+        utility::PrintWarning(
+                "[SamplePointsPoissonDisk] number_of_points <= 0");
         return std::make_shared<PointCloud>();
     }
     if (triangles_.size() == 0) {
         utility::PrintWarning(
-                "[SamplePointsUniformly] input mesh has no triangles");
+                "[SamplePointsPoissonDisk] input mesh has no triangles");
         return std::make_shared<PointCloud>();
     }
     if (pcl_init == nullptr && init_factor < 1) {
         utility::PrintWarning(
-                "[SamplePointsUniformly] either pass pcl_init with #points "
+                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
                 "> "
                 "number_of_points or init_factor > 1");
         return std::make_shared<PointCloud>();
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
         utility::PrintWarning(
-                "[SamplePointsUniformly] either pass pcl_init with #points "
+                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
                 "> "
                 "number_of_points, or init_factor > 1");
         return std::make_shared<PointCloud>();
@@ -589,8 +590,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     // Compute init points using uniform sampling
     std::shared_ptr<PointCloud> pcl;
     if (pcl_init == nullptr) {
-        pcl = SamplePointsUniformly(init_factor * number_of_points,
-                                    triangle_areas, surface_area);
+        pcl = SamplePointsUniformlyImpl(init_factor * number_of_points,
+                                        triangle_areas, surface_area);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;

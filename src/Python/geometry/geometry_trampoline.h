@@ -40,7 +40,9 @@ template <class GeometryBase = geometry::Geometry>
 class PyGeometry : public GeometryBase {
 public:
     using GeometryBase::GeometryBase;
-    GeometryBase& Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
+    GeometryBase& Clear() override {
+        PYBIND11_OVERLOAD_PURE(void, GeometryBase, );
+    }
     bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
     }
@@ -72,4 +74,3 @@ public:
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
     }
 };
-
