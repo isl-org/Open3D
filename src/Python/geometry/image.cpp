@@ -200,11 +200,11 @@ void pybind_image_methods(py::module &m) {
              geometry::Image::FilterType filter_type) {
               if (input.num_of_channels_ != 1 ||
                   input.bytes_per_channel_ != 4) {
-                  auto input_f = CreateFloatImageFromImage(input);
-                  auto output = geometry::FilterImage(*input_f, filter_type);
+                  auto input_f = input.CreateFloatImageFromImage();
+                  auto output = input_f->FilterImage(filter_type);
                   return *output;
               } else {
-                  auto output = geometry::FilterImage(input, filter_type);
+                  auto output = input.FilterImage(filter_type);
                   return *output;
               }
           },
@@ -217,13 +217,11 @@ void pybind_image_methods(py::module &m) {
              bool with_gaussian_filter) {
               if (input.num_of_channels_ != 1 ||
                   input.bytes_per_channel_ != 4) {
-                  auto input_f = CreateFloatImageFromImage(input);
-                  auto output = geometry::CreateImagePyramid(
-                          *input_f, num_of_levels, with_gaussian_filter);
+                  auto input_f = input.CreateFloatImageFromImage();
+                  auto output = input_f->CreateImagePyramid(num_of_levels, with_gaussian_filter);
                   return output;
               } else {
-                  auto output = geometry::CreateImagePyramid(
-                          input, num_of_levels, with_gaussian_filter);
+                  auto output = input.CreateImagePyramid(num_of_levels, with_gaussian_filter);
                   return output;
               }
           },
@@ -235,7 +233,7 @@ void pybind_image_methods(py::module &m) {
     m.def("filter_image_pyramid",
           [](const geometry::ImagePyramid &input,
              geometry::Image::FilterType filter_type) {
-              auto output = geometry::FilterImagePyramid(input, filter_type);
+              auto output = geometry::Image::FilterImagePyramid(input, filter_type);
               return output;
           },
           "Function to filter ImagePyramid", "image_pyramid"_a,
@@ -244,7 +242,7 @@ void pybind_image_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("create_rgbd_image_from_color_and_depth",
-          &geometry::CreateRGBDImageFromColorAndDepth,
+          &geometry::RGBDImage::CreateFromColorAndDepth,
           "Function to make RGBDImage from color and depth image", "color"_a,
           "depth"_a, "depth_scale"_a = 1000.0, "depth_trunc"_a = 3.0,
           "convert_rgb_to_intensity"_a = true);
@@ -252,28 +250,28 @@ void pybind_image_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("create_rgbd_image_from_redwood_format",
-          &geometry::CreateRGBDImageFromRedwoodFormat,
+          &geometry::RGBDImage::CreateFromRedwoodFormat,
           "Function to make RGBDImage (for Redwood format)", "color"_a,
           "depth"_a, "convert_rgb_to_intensity"_a = true);
     docstring::FunctionDocInject(m, "create_rgbd_image_from_redwood_format",
                                  map_shared_argument_docstrings);
 
     m.def("create_rgbd_image_from_tum_format",
-          &geometry::CreateRGBDImageFromTUMFormat,
+          &geometry::RGBDImage::CreateFromTUMFormat,
           "Function to make RGBDImage (for TUM format)", "color"_a, "depth"_a,
           "convert_rgb_to_intensity"_a = true);
     docstring::FunctionDocInject(m, "create_rgbd_image_from_tum_format",
                                  map_shared_argument_docstrings);
 
     m.def("create_rgbd_image_from_sun_format",
-          &geometry::CreateRGBDImageFromSUNFormat,
+          &geometry::RGBDImage::CreateFromSUNFormat,
           "Function to make RGBDImage (for SUN format)", "color"_a, "depth"_a,
           "convert_rgb_to_intensity"_a = true);
     docstring::FunctionDocInject(m, "create_rgbd_image_from_sun_format",
                                  map_shared_argument_docstrings);
 
     m.def("create_rgbd_image_from_nyu_format",
-          &geometry::CreateRGBDImageFromNYUFormat,
+          &geometry::RGBDImage::CreateFromNYUFormat,
           "Function to make RGBDImage (for NYU format)", "color"_a, "depth"_a,
           "convert_rgb_to_intensity"_a = true);
     docstring::FunctionDocInject(m, "create_rgbd_image_from_nyu_format",
