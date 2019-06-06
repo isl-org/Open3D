@@ -43,6 +43,7 @@ endmacro()
 set(DIRECTORIES_OF_INTEREST_PYTHON
     examples/Python
     src/UnitTest/Python
+    docs
 )
 
 message(STATUS "Python check-style...")

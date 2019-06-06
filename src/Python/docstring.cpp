@@ -64,25 +64,27 @@ void ClassMethodDocInject(py::module& pybind_module,
         return;
     }
 
+    // Extract PyCFunctionObject
+    PyCFunctionObject* f = nullptr;
 #ifdef PYTHON_2_FALLBACK
-    if (Py_TYPE(class_method_obj) != &PyMethod_Type) {
-        return;
+    if (Py_TYPE(class_method_obj) == &PyMethod_Type) {
+        PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
+        f = (PyCFunctionObject*)class_method->im_func;
     }
-    PyMethodObject* class_method = (PyMethodObject*)class_method_obj;
-    PyObject* f_obj = class_method->im_func;
 #else
-    if (Py_TYPE(class_method_obj) != &PyInstanceMethod_Type) {
-        return;
+    if (Py_TYPE(class_method_obj) == &PyInstanceMethod_Type) {
+        PyInstanceMethodObject* class_method =
+                (PyInstanceMethodObject*)class_method_obj;
+        f = (PyCFunctionObject*)class_method->func;
     }
-    PyInstanceMethodObject* class_method =
-            (PyInstanceMethodObject*)class_method_obj;
-    PyObject* f_obj = class_method->func;
 #endif
-
-    if (Py_TYPE(f_obj) != &PyCFunction_Type) {
+    if (Py_TYPE(class_method_obj) == &PyCFunction_Type) {
+        // def_static in Pybind is PyCFunction_Type, no need to convert
+        f = (PyCFunctionObject*)class_method_obj;
+    }
+    if (f == nullptr || Py_TYPE(f) != &PyCFunction_Type) {
         return;
     }
-    PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
 
     // TODO: parse __init__ separately, currently __init__ can be overloaded
     // which might cause parsing error. So they are skipped.

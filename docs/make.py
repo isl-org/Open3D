@@ -45,6 +45,14 @@ SOURCE_DIR = "."
 BUILD_DIR = "_build"
 
 
+def create_or_clear(dir_path):
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+        print("Removed directory %s" % dir_path)
+    os.makedirs(dir_path)
+    print("Created directory %s" % dir_path)
+
+
 class PyDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
@@ -60,24 +68,22 @@ class PyDocsBuilder:
         self.output_dir = output_dir
         self.c_module = c_module
         self.c_module_relative = c_module_relative
-        print("Generating *.rst Python API docs in directory: %s" % self.output_dir)
+        print("Generating *.rst Python API docs in directory: %s" %
+              self.output_dir)
 
     def generate_rst(self):
-        if not os.path.exists(self.output_dir):
-            print("Creating directory %s" % self.output_dir)
-            os.makedirs(self.output_dir)
+        create_or_clear(self.output_dir)
 
         main_c_module = importlib.import_module(self.c_module)
         sub_module_names = sorted(
-            [obj[0] for obj in getmembers(main_c_module) if ismodule(obj[1])]
-        )
+            [obj[0] for obj in getmembers(main_c_module) if ismodule(obj[1])])
         for sub_module_name in sub_module_names:
             PyDocsBuilder._generate_sub_module_class_function_docs(
-                sub_module_name, self.output_dir
-            )
+                sub_module_name, self.output_dir)
 
     @staticmethod
-    def _generate_function_doc(sub_module_full_name, function_name, output_path):
+    def _generate_function_doc(sub_module_full_name, function_name,
+                               output_path):
         # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (sub_module_full_name, function_name)
@@ -106,9 +112,8 @@ class PyDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _generate_sub_module_doc(
-        sub_module_name, class_names, function_names, sub_module_doc_path
-    ):
+    def _generate_sub_module_doc(sub_module_name, class_names, function_names,
+                                 sub_module_doc_path):
         # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
@@ -152,33 +157,37 @@ class PyDocsBuilder:
 
     @staticmethod
     def _generate_sub_module_class_function_docs(sub_module_name, output_dir):
-        sub_module = importlib.import_module("open3d.open3d.%s" % (sub_module_name,))
+        sub_module = importlib.import_module("open3d.open3d.%s" %
+                                             (sub_module_name,))
         sub_module_full_name = "open3d.%s" % (sub_module_name,)
         print("Generating docs for submodule: %s" % sub_module_full_name)
 
         # Class docs
-        class_names = [obj[0] for obj in getmembers(sub_module) if isclass(obj[1])]
+        class_names = [
+            obj[0] for obj in getmembers(sub_module) if isclass(obj[1])
+        ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (sub_module_full_name, class_name)
             output_path = os.path.join(output_dir, file_name)
-            PyDocsBuilder._generate_class_doc(
-                sub_module_full_name, class_name, output_path
-            )
+            PyDocsBuilder._generate_class_doc(sub_module_full_name, class_name,
+                                              output_path)
 
         # Function docs
-        function_names = [obj[0] for obj in getmembers(sub_module) if isbuiltin(obj[1])]
+        function_names = [
+            obj[0] for obj in getmembers(sub_module) if isbuiltin(obj[1])
+        ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (sub_module_full_name, function_name)
             output_path = os.path.join(output_dir, file_name)
-            PyDocsBuilder._generate_function_doc(
-                sub_module_full_name, function_name, output_path
-            )
+            PyDocsBuilder._generate_function_doc(sub_module_full_name,
+                                                 function_name, output_path)
 
         # Submodule docs
-        sub_module_doc_path = os.path.join(output_dir, sub_module_full_name + ".rst")
-        PyDocsBuilder._generate_sub_module_doc(
-            sub_module_name, class_names, function_names, sub_module_doc_path
-        )
+        sub_module_doc_path = os.path.join(output_dir,
+                                           sub_module_full_name + ".rst")
+        PyDocsBuilder._generate_sub_module_doc(sub_module_name, class_names,
+                                               function_names,
+                                               sub_module_doc_path)
 
 
 class SphinxDocsBuilder:
@@ -221,7 +230,8 @@ class SphinxDocsBuilder:
 
     def __init__(self, makefile_arg):
         if makefile_arg not in self.valid_makefile_args:
-            print('Invalid make argument: "%s", displaying help.' % makefile_arg)
+            print('Invalid make argument: "%s", displaying help.' %
+                  makefile_arg)
             self.is_valid_arg = False
         else:
             self.is_valid_arg = True
@@ -253,15 +263,15 @@ class SphinxDocsBuilder:
         Generate Python docs.
         Each module, class and function gets one .rst file.
         """
-        pd = PyDocsBuilder(
-            self.python_api_output_dir, self.c_module, self.c_module_relative
-        )
+        pd = PyDocsBuilder(self.python_api_output_dir, self.c_module,
+                           self.c_module_relative)
         pd.generate_rst()
 
     def _run_sphinx(self):
         """
         Call Sphinx command with self.makefile_arg
         """
+        create_or_clear(BUILD_DIR)
         cmd = [
             SPHINX_BUILD,
             "-M",
