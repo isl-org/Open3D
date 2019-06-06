@@ -106,8 +106,8 @@ template uint16_t *Image::PointerAt<uint16_t>(int u, int v, int ch) const;
 std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
         double depth_scale /* = 1000.0*/, double depth_trunc /* = 3.0*/) const {
     // don't need warning message about image type
-    // as we call CreateFloatImageFromImage
-    auto output = CreateFloatImageFromImage();
+    // as we call CreateFloatImage
+    auto output = CreateFloatImage();
     for (int y = 0; y < output->height_; y++) {
         for (int x = 0; x < output->width_; x++) {
             float *p = output->PointerAt<float>(x, y);
@@ -175,13 +175,13 @@ std::shared_ptr<Image> Image::DownsampleImage() const {
     return output;
 }
 
-std::shared_ptr<Image> Image::FilterHorizontalImage(
+std::shared_ptr<Image> Image::FilterHorizontal(
         const std::vector<double> &kernel) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
         utility::PrintWarning(
-                "[FilterHorizontalImage] Unsupported image format or kernel "
+                "[FilterHorizontal] Unsupported image format or kernel "
                 "size.\n");
         return output;
     }
@@ -208,57 +208,57 @@ std::shared_ptr<Image> Image::FilterHorizontalImage(
     return output;
 }
 
-std::shared_ptr<Image> Image::FilterImage(Image::FilterType type) const {
+std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[FilterImage] Unsupported image format.\n");
+        utility::PrintWarning("[Filter] Unsupported image format.\n");
         return output;
     }
 
     switch (type) {
         case Image::FilterType::Gaussian3:
-            output = FilterImage(Gaussian3, Gaussian3);
+            output = Filter(Gaussian3, Gaussian3);
             break;
         case Image::FilterType::Gaussian5:
-            output = FilterImage(Gaussian5, Gaussian5);
+            output = Filter(Gaussian5, Gaussian5);
             break;
         case Image::FilterType::Gaussian7:
-            output = FilterImage(Gaussian7, Gaussian7);
+            output = Filter(Gaussian7, Gaussian7);
             break;
         case Image::FilterType::Sobel3Dx:
-            output = FilterImage(Sobel31, Sobel32);
+            output = Filter(Sobel31, Sobel32);
             break;
         case Image::FilterType::Sobel3Dy:
-            output = FilterImage(Sobel32, Sobel31);
+            output = Filter(Sobel32, Sobel31);
             break;
         default:
-            utility::PrintWarning("[FilterImage] Unsupported filter type.\n");
+            utility::PrintWarning("[Filter] Unsupported filter type.\n");
             break;
     }
     return output;
 }
 
-ImagePyramid Image::FilterImagePyramid(const ImagePyramid &input,
-                                       Image::FilterType type) {
+ImagePyramid Image::FilterPyramid(const ImagePyramid &input,
+                                  Image::FilterType type) {
     std::vector<std::shared_ptr<Image>> output;
     for (size_t i = 0; i < input.size(); i++) {
-        auto layer_filtered = input[i]->FilterImage(type);
+        auto layer_filtered = input[i]->Filter(type);
         output.push_back(layer_filtered);
     }
     return output;
 }
 
-std::shared_ptr<Image> Image::FilterImage(const std::vector<double> &dx,
-                                          const std::vector<double> &dy) const {
+std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
+                                     const std::vector<double> &dy) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[FilterImage] Unsupported image format.\n");
+        utility::PrintWarning("[Filter] Unsupported image format.\n");
         return output;
     }
 
-    auto temp1 = FilterHorizontalImage(dx);
+    auto temp1 = FilterHorizontal(dx);
     auto temp2 = temp1->FlipImage();
-    auto temp3 = temp2->FilterHorizontalImage(dy);
+    auto temp3 = temp2->FilterHorizontal(dy);
     auto temp4 = temp3->FlipImage();
     return temp4;
 }
@@ -319,13 +319,13 @@ std::shared_ptr<Image> Image::DilateImage(
 std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
         double depth_threshold_for_discontinuity_check,
         int half_dilation_kernel_size_for_discontinuity_map) const {
-    auto depth_image = CreateFloatImageFromImage();  // necessary?
+    auto depth_image = CreateFloatImage();  // necessary?
     int width = depth_image->width_;
     int height = depth_image->height_;
     auto depth_image_gradient_dx =
-            depth_image->FilterImage(Image::FilterType::Sobel3Dx);
+            depth_image->Filter(Image::FilterType::Sobel3Dx);
     auto depth_image_gradient_dy =
-            depth_image->FilterImage(Image::FilterType::Sobel3Dy);
+            depth_image->Filter(Image::FilterType::Sobel3Dy);
     auto mask = std::make_shared<Image>();
     mask->PrepareImage(width, height, 1, 1);
 

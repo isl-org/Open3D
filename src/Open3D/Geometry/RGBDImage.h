@@ -82,10 +82,10 @@ public:
             const Image &depth,
             bool convert_rgb_to_intensity = true);
 
-    static RGBDImagePyramid FilterRGBDImagePyramid(
+    static RGBDImagePyramid FilterPyramid(
             const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type);
 
-    RGBDImagePyramid CreateRGBDImagePyramid(
+    RGBDImagePyramid CreatePyramid(
             size_t num_of_levels,
             bool with_gaussian_filter_for_color = true,
             bool with_gaussian_filter_for_depth = false) const;

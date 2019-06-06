@@ -233,7 +233,7 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
 // 1: 1/2/4
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
-void TEST_CreateFloatImageFromImage(
+void TEST_CreateFloatImage(
         const int& num_of_channels,
         const int& bytes_per_channel,
         const vector<uint8_t>& ref,
@@ -249,7 +249,7 @@ void TEST_CreateFloatImageFromImage(
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
     EXPECT_FALSE(float_image->IsEmpty());
     EXPECT_EQ(width, float_image->width_);
@@ -264,7 +264,7 @@ void TEST_CreateFloatImageFromImage(
 // channels: 1
 // bytes per channel: 1
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_1_1) {
+TEST(Image, CreateFloatImage_1_1) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             215, 214, 86,  63,  201, 200, 200, 62,  200, 199, 71,  63,  204,
@@ -276,7 +276,7 @@ TEST(Image, CreateFloatImageFromImage_1_1) {
             26,  63,  129, 128, 128, 60,  245, 244, 116, 62,  137, 136, 8,
             62,  206, 205, 77,  63,  157, 156, 28,  62};
 
-    TEST_CreateFloatImageFromImage(1, 1, ref, ConversionType::Weighted);
+    TEST_CreateFloatImage(1, 1, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -284,7 +284,7 @@ TEST(Image, CreateFloatImageFromImage_1_1) {
 // channels: 1
 // bytes per channel: 2
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_1_2) {
+TEST(Image, CreateFloatImage_1_2) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             0, 172, 201, 70, 0, 199, 75,  71, 0, 160, 75,  70, 0, 85,  67,  71,
@@ -295,7 +295,7 @@ TEST(Image, CreateFloatImageFromImage_1_2) {
             0, 134, 68,  71, 0, 102, 99,  71, 0, 144, 178, 70, 0, 205, 106, 71,
             0, 17,  114, 71};
 
-    TEST_CreateFloatImageFromImage(1, 2, ref, ConversionType::Weighted);
+    TEST_CreateFloatImage(1, 2, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -303,7 +303,7 @@ TEST(Image, CreateFloatImageFromImage_1_2) {
 // channels: 1
 // bytes per channel: 4
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_1_4) {
+TEST(Image, CreateFloatImage_1_4) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             214, 100, 199, 203, 232, 50,  85,  195, 70,  141, 121, 160, 93,
@@ -315,7 +315,7 @@ TEST(Image, CreateFloatImageFromImage_1_4) {
             163, 90,  175, 42,  112, 224, 211, 84,  58,  227, 89,  175, 243,
             150, 167, 218, 112, 235, 101, 207, 174, 232};
 
-    TEST_CreateFloatImageFromImage(1, 4, ref, ConversionType::Weighted);
+    TEST_CreateFloatImage(1, 4, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -324,7 +324,7 @@ TEST(Image, CreateFloatImageFromImage_1_4) {
 // bytes per channel: 1
 // ColorToIntensityConversionType: Weighted
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_3_1_Weighted) {
+TEST(Image, CreateFloatImage_3_1_Weighted) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             45,  241, 17,  63,  29,  96,  75,  63,  154, 112, 20,  63,  0,
@@ -336,7 +336,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Weighted) {
             143, 62,  9,   228, 61,  63,  224, 255, 239, 62,  57,  33,  29,
             63,  197, 186, 3,   63,  145, 27,  72,  63};
 
-    TEST_CreateFloatImageFromImage(3, 1, ref, ConversionType::Weighted);
+    TEST_CreateFloatImage(3, 1, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -345,7 +345,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Weighted) {
 // bytes per channel: 1
 // ColorToIntensityConversionType: Equal
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_3_1_Equal) {
+TEST(Image, CreateFloatImage_3_1_Equal) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             45,  241, 17,  63,  29,  96,  75,  63,  154, 112, 20,  63,  0,
@@ -357,7 +357,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Equal) {
             143, 62,  9,   228, 61,  63,  224, 255, 239, 62,  57,  33,  29,
             63,  197, 186, 3,   63,  145, 27,  72,  63};
 
-    TEST_CreateFloatImageFromImage(3, 1, ref, ConversionType::Equal);
+    TEST_CreateFloatImage(3, 1, ref, ConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -366,7 +366,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Equal) {
 // bytes per channel: 2
 // ColorToIntensityConversionType: Weighted
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_3_2_Weighted) {
+TEST(Image, CreateFloatImage_3_2_Weighted) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             16,  146, 27,  71,  44,  160, 31,  71,  234, 31,  69,  71,  39,
@@ -378,7 +378,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Weighted) {
             219, 70,  12,  108, 22,  71,  198, 41,  183, 70,  225, 5,   23,
             71,  210, 181, 85,  71,  101, 14,  28,  71};
 
-    TEST_CreateFloatImageFromImage(3, 2, ref, ConversionType::Weighted);
+    TEST_CreateFloatImage(3, 2, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -387,7 +387,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Weighted) {
 // bytes per channel: 2
 // ColorToIntensityConversionType: Equal
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_3_2_Equal) {
+TEST(Image, CreateFloatImage_3_2_Equal) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             16,  146, 27,  71,  44,  160, 31,  71,  234, 31,  69,  71,  39,
@@ -399,7 +399,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Equal) {
             219, 70,  12,  108, 22,  71,  198, 41,  183, 70,  225, 5,   23,
             71,  210, 181, 85,  71,  101, 14,  28,  71};
 
-    TEST_CreateFloatImageFromImage(3, 2, ref, ConversionType::Equal);
+    TEST_CreateFloatImage(3, 2, ref, ConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -408,7 +408,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Equal) {
 // bytes per channel: 4
 // ColorToIntensityConversionType: Weighted
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_3_4_Weighted) {
+TEST(Image, CreateFloatImage_3_4_Weighted) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             153, 122, 238, 202, 65,  5,   17,  233, 117, 224, 24,  213, 166,
@@ -420,7 +420,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Weighted) {
             15,  114, 245, 201, 149, 76,  224, 3,   24,  64,  17,  103, 98,
             222, 145, 236, 94,  233, 36,  85,  141, 233};
 
-    TEST_CreateFloatImageFromImage(3, 4, ref, ConversionType::Weighted);
+    TEST_CreateFloatImage(3, 4, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -429,7 +429,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Weighted) {
 // bytes per channel: 4
 // ColorToIntensityConversionType: Equal
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage_3_4_Equal) {
+TEST(Image, CreateFloatImage_3_4_Equal) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             153, 122, 238, 202, 65,  5,   17,  233, 117, 224, 24,  213, 166,
@@ -441,7 +441,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal) {
             15,  114, 245, 201, 149, 76,  224, 3,   24,  64,  17,  103, 98,
             222, 145, 236, 94,  233, 36,  85,  141, 233};
 
-    TEST_CreateFloatImageFromImage(3, 4, ref, ConversionType::Equal);
+    TEST_CreateFloatImage(3, 4, ref, ConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -552,8 +552,8 @@ TEST(Image, FlipImage) {
 // 1: 1/2/4
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
-void TEST_FilterImage(const vector<uint8_t>& ref,
-                      const geometry::Image::FilterType& filter) {
+void TEST_Filter(const vector<uint8_t>& ref,
+                 const geometry::Image::FilterType& filter) {
     geometry::Image image;
 
     // test image dimensions
@@ -566,9 +566,9 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
-    auto output = float_image->FilterImage(filter);
+    auto output = float_image->Filter(filter);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -581,7 +581,7 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImage_Gaussian3) {
+TEST(Image, Filter_Gaussian3) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             41,  194, 49,  204, 116, 56,  130, 211, 198, 225, 181, 232, 198,
@@ -593,13 +593,13 @@ TEST(Image, FilterImage_Gaussian3) {
             128, 233, 36,  49,  20,  226, 223, 39,  141, 226, 137, 164, 52,
             234, 108, 176, 182, 234, 146, 238, 64,  234};
 
-    TEST_FilterImage(ref, FilterType::Gaussian3);
+    TEST_Filter(ref, FilterType::Gaussian3);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImage_Gaussian5) {
+TEST(Image, Filter_Gaussian5) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             61,  94,  205, 231, 230, 96,  109, 232, 15,  16,  218, 232, 2,
@@ -611,13 +611,13 @@ TEST(Image, FilterImage_Gaussian5) {
             159, 233, 35,  111, 205, 231, 102, 26,  76,  233, 255, 241, 44,
             234, 32,  174, 126, 234, 84,  234, 47,  234};
 
-    TEST_FilterImage(ref, FilterType::Gaussian5);
+    TEST_Filter(ref, FilterType::Gaussian5);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImage_Gaussian7) {
+TEST(Image, Filter_Gaussian7) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             71,  19,  68,  232, 29,  11,  169, 232, 178, 140, 214, 232, 35,
@@ -629,13 +629,13 @@ TEST(Image, FilterImage_Gaussian7) {
             168, 233, 187, 237, 232, 232, 99,  40,  161, 233, 128, 206, 18,
             234, 108, 135, 55,  234, 187, 97,  17,  234};
 
-    TEST_FilterImage(ref, FilterType::Gaussian7);
+    TEST_Filter(ref, FilterType::Gaussian7);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImage_Sobel3Dx) {
+TEST(Image, Filter_Sobel3Dx) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             172, 2,   109, 77,  136, 55,  130, 213, 198, 225, 181, 234, 254,
@@ -647,13 +647,13 @@ TEST(Image, FilterImage_Sobel3Dx) {
             107, 107, 28,  239, 8,   228, 119, 32,  52,  97,  114, 163, 52,
             236, 140, 27,  131, 233, 33,  139, 48,  108};
 
-    TEST_FilterImage(ref, FilterType::Sobel3Dx);
+    TEST_Filter(ref, FilterType::Sobel3Dx);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImage_Sobel3Dy) {
+TEST(Image, Filter_Sobel3Dy) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             151, 248, 205, 205, 67,  56,  130, 213, 93,  130, 242, 105, 93,
@@ -665,13 +665,13 @@ TEST(Image, FilterImage_Sobel3Dy) {
             128, 235, 189, 150, 69,  227, 36,  53,  188, 227, 97,  219, 112,
             235, 229, 149, 243, 235, 12,  159, 128, 235};
 
-    TEST_FilterImage(ref, FilterType::Sobel3Dy);
+    TEST_Filter(ref, FilterType::Sobel3Dy);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterHorizontalImage) {
+TEST(Image, FilterHorizontal) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             187, 139, 149, 203, 171, 101, 199, 202, 93,  130, 242, 232, 93,
@@ -695,11 +695,11 @@ TEST(Image, FilterHorizontalImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
     const std::vector<double> Gaussian3 = {0.25, 0.5, 0.25};
 
-    auto output = float_image->FilterHorizontalImage(Gaussian3);
+    auto output = float_image->FilterHorizontal(Gaussian3);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -729,7 +729,7 @@ TEST(Image, DownsampleImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
     auto output = float_image->DownsampleImage();
 
@@ -807,7 +807,7 @@ TEST(Image, LinearTransformImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto output = image.CreateFloatImageFromImage();
+    auto output = image.CreateFloatImage();
 
     output->LinearTransformImage(2.3, 0.15);
 
@@ -846,7 +846,7 @@ TEST(Image, ClipIntensityImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto output = image.CreateFloatImageFromImage();
+    auto output = image.CreateFloatImage();
 
     output->ClipIntensityImage(0.33, 0.71);
 
@@ -875,7 +875,7 @@ void TEST_CreateImageFromFloatImage() {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
     auto output = float_image->CreateImageFromFloatImage<T>();
 
@@ -907,7 +907,7 @@ TEST(Image, CreateImageFromFloatImage_16bit) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImagePyramid) {
+TEST(Image, FilterPyramid) {
     // reference data used to validate the filtering of an image
     vector<vector<uint8_t>> ref = {
             {110, 56,  130, 211, 17,  56,  2,   212, 198, 225, 181, 232,
@@ -939,12 +939,12 @@ TEST(Image, FilterImagePyramid) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
-    auto pyramid = float_image->CreateImagePyramid(num_of_levels);
+    auto pyramid = float_image->CreatePyramid(num_of_levels);
 
     auto output_pyramid =
-            geometry::Image::FilterImagePyramid(pyramid, FilterType::Gaussian3);
+            geometry::Image::FilterPyramid(pyramid, FilterType::Gaussian3);
 
     EXPECT_EQ(pyramid.size(), output_pyramid.size());
 
@@ -964,7 +964,7 @@ TEST(Image, FilterImagePyramid) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, CreateImagePyramid) {
+TEST(Image, CreatePyramid) {
     // reference data used to validate the filtering of an image
     vector<vector<uint8_t>> ref = {
             {214, 100, 199, 203, 232, 50,  85,  195, 70,  141, 121, 160,
@@ -996,9 +996,9 @@ TEST(Image, CreateImagePyramid) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = image.CreateFloatImageFromImage();
+    auto float_image = image.CreateFloatImage();
 
-    auto pyramid = float_image->CreateImagePyramid(num_of_levels);
+    auto pyramid = float_image->CreatePyramid(num_of_levels);
 
     int expected_width = width;
     int expected_height = width;

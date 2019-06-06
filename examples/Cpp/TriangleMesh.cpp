@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
             char buffer[1024];
             sprintf(buffer, "image/image_%06d.png", (int)i + 1);
             auto image = io::CreateImageFromFile(buffer);
-            auto fimage = image->CreateFloatImageFromImage();
+            auto fimage = image->CreateFloatImage();
             Eigen::Vector4d pt_in_camera =
                     trajectory.parameters_[i].extrinsic_ *
                     Eigen::Vector4d(mesh->vertices_[idx](0),

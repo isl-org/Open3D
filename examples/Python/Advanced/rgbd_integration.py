@@ -21,7 +21,7 @@ if __name__ == "__main__":
             "../../TestData/RGBD/color/{:05d}.jpg".format(i))
         depth = o3d.io.read_image(
             "../../TestData/RGBD/depth/{:05d}.png".format(i))
-        rgbd = o3d.geometry.create_rgbd_image_from_color_and_depth(
+        rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(
             rgbd,

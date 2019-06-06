@@ -107,6 +107,9 @@ public:
 
     HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
 
+    static std::shared_ptr<HalfEdgeTriangleMesh> CreateFromMesh(
+            const TriangleMesh &mesh);
+
 protected:
     HalfEdgeTriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
 
@@ -130,9 +133,6 @@ public:
     /// If the vertex is on boundary, the starting edge must be on boundary too
     std::vector<std::vector<int>> ordered_half_edge_from_vertex_;
 };
-
-std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
-        const TriangleMesh &mesh);
 
 }  // namespace geometry
 }  // namespace open3d

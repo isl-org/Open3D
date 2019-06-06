@@ -60,7 +60,7 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
     return fimage;
 }
 
-std::shared_ptr<Image> Image::CreateFloatImageFromImage(
+std::shared_ptr<Image> Image::CreateFloatImage(
         Image::ColorToIntensityConversionType type /* = WEIGHTED*/) const {
     auto fimage = std::make_shared<Image>();
     if (IsEmpty()) {
@@ -143,8 +143,8 @@ template std::shared_ptr<Image> Image::CreateImageFromFloatImage<uint8_t>()
 template std::shared_ptr<Image> Image::CreateImageFromFloatImage<uint16_t>()
         const;
 
-ImagePyramid Image::CreateImagePyramid(
-        size_t num_of_levels, bool with_gaussian_filter /*= true*/) const {
+ImagePyramid Image::CreatePyramid(size_t num_of_levels,
+                                  bool with_gaussian_filter /*= true*/) const {
     std::vector<std::shared_ptr<Image>> pyramid_image;
     pyramid_image.clear();
     if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4)) {
@@ -161,7 +161,7 @@ ImagePyramid Image::CreateImagePyramid(
         } else {
             if (with_gaussian_filter) {
                 // https://en.wikipedia.org/wiki/Pyramid_(image_processing)
-                auto level_b = pyramid_image[i - 1]->FilterImage(
+                auto level_b = pyramid_image[i - 1]->Filter(
                         Image::FilterType::Gaussian3);
                 auto level_bd = level_b->DownsampleImage();
                 pyramid_image.push_back(level_bd);

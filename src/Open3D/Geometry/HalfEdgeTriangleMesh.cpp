@@ -379,7 +379,7 @@ int HalfEdgeTriangleMesh::NextHalfEdgeOnBoundary(
     return next_half_edge_index;
 }
 
-std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
+std::shared_ptr<HalfEdgeTriangleMesh> HalfEdgeTriangleMesh::CreateFromMesh(
         const TriangleMesh &mesh) {
     auto half_edge_mesh = std::make_shared<HalfEdgeTriangleMesh>();
 

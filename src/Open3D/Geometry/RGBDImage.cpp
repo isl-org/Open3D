@@ -29,7 +29,7 @@
 namespace open3d {
 namespace geometry {
 
-RGBDImagePyramid RGBDImage::FilterRGBDImagePyramid(
+RGBDImagePyramid RGBDImage::FilterPyramid(
         const RGBDImagePyramid& rgbd_image_pyramid, Image::FilterType type) {
     RGBDImagePyramid rgbd_image_pyramid_filtered;
     rgbd_image_pyramid_filtered.clear();
@@ -37,8 +37,8 @@ RGBDImagePyramid RGBDImage::FilterRGBDImagePyramid(
     for (int level = 0; level < num_of_levels; level++) {
         auto color_level = rgbd_image_pyramid[level]->color_;
         auto depth_level = rgbd_image_pyramid[level]->depth_;
-        auto color_level_filtered = color_level.FilterImage(type);
-        auto depth_level_filtered = depth_level.FilterImage(type);
+        auto color_level_filtered = color_level.Filter(type);
+        auto depth_level_filtered = depth_level.Filter(type);
         auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
                 RGBDImage(*color_level_filtered, *depth_level_filtered));
         rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
@@ -46,14 +46,14 @@ RGBDImagePyramid RGBDImage::FilterRGBDImagePyramid(
     return rgbd_image_pyramid_filtered;
 }
 
-RGBDImagePyramid RGBDImage::CreateRGBDImagePyramid(
+RGBDImagePyramid RGBDImage::CreatePyramid(
         size_t num_of_levels,
         bool with_gaussian_filter_for_color /* = true */,
         bool with_gaussian_filter_for_depth /* = false */) const {
-    ImagePyramid color_pyramid = color_.CreateImagePyramid(
-            num_of_levels, with_gaussian_filter_for_color);
-    ImagePyramid depth_pyramid = depth_.CreateImagePyramid(
-            num_of_levels, with_gaussian_filter_for_depth);
+    ImagePyramid color_pyramid =
+            color_.CreatePyramid(num_of_levels, with_gaussian_filter_for_color);
+    ImagePyramid depth_pyramid =
+            depth_.CreatePyramid(num_of_levels, with_gaussian_filter_for_depth);
     RGBDImagePyramid rgbd_image_pyramid;
     rgbd_image_pyramid.clear();
     for (size_t level = 0; level < num_of_levels; level++) {

@@ -13,7 +13,7 @@ if __name__ == "__main__":
         "../../TestData/RGBD/other_formats/SUN_color.jpg")
     depth_raw = o3d.io.read_image(
         "../../TestData/RGBD/other_formats/SUN_depth.png")
-    rgbd_image = o3d.geometry.create_rgbd_image_from_sun_format(
+    rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
         color_raw, depth_raw)
     print(rgbd_image)
     plt.subplot(1, 2, 1)

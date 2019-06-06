@@ -226,13 +226,13 @@ CreateGradientImages(
     std::vector<std::shared_ptr<geometry::Image>> images_color;
     std::vector<std::shared_ptr<geometry::Image>> images_depth;
     for (auto i = 0; i < images_rgbd.size(); i++) {
-        auto gray_image = images_rgbd[i]->color_.CreateFloatImageFromImage();
+        auto gray_image = images_rgbd[i]->color_.CreateFloatImage();
         auto gray_image_filtered =
-                gray_image->FilterImage(geometry::Image::FilterType::Gaussian3);
+                gray_image->Filter(geometry::Image::FilterType::Gaussian3);
         images_gray.push_back(gray_image_filtered);
-        images_dx.push_back(gray_image_filtered->FilterImage(
+        images_dx.push_back(gray_image_filtered->Filter(
                 geometry::Image::FilterType::Sobel3Dx));
-        images_dy.push_back(gray_image_filtered->FilterImage(
+        images_dy.push_back(gray_image_filtered->Filter(
                 geometry::Image::FilterType::Sobel3Dy));
         auto color = std::make_shared<geometry::Image>(images_rgbd[i]->color_);
         auto depth = std::make_shared<geometry::Image>(images_rgbd[i]->depth_);

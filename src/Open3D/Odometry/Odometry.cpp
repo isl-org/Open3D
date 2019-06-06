@@ -378,14 +378,14 @@ InitializeRGBDOdometry(
         const Eigen::Matrix4d &odo_init,
         const OdometryOption &option) {
     auto source_gray =
-            source.color_.FilterImage(geometry::Image::FilterType::Gaussian3);
+            source.color_.Filter(geometry::Image::FilterType::Gaussian3);
     auto target_gray =
-            target.color_.FilterImage(geometry::Image::FilterType::Gaussian3);
+            target.color_.Filter(geometry::Image::FilterType::Gaussian3);
     auto source_depth_preprocessed = PreprocessDepth(source.depth_, option);
     auto target_depth_preprocessed = PreprocessDepth(target.depth_, option);
-    auto source_depth = source_depth_preprocessed->FilterImage(
+    auto source_depth = source_depth_preprocessed->Filter(
             geometry::Image::FilterType::Gaussian3);
-    auto target_depth = target_depth_preprocessed->FilterImage(
+    auto target_depth = target_depth_preprocessed->Filter(
             geometry::Image::FilterType::Gaussian3);
 
     auto correspondence = ComputeCorrespondence(
@@ -453,11 +453,11 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
     std::vector<int> iter_counts = option.iteration_number_per_pyramid_level_;
     int num_levels = (int)iter_counts.size();
 
-    auto source_pyramid = source.CreateRGBDImagePyramid(num_levels);
-    auto target_pyramid = target.CreateRGBDImagePyramid(num_levels);
-    auto target_pyramid_dx = geometry::RGBDImage::FilterRGBDImagePyramid(
+    auto source_pyramid = source.CreatePyramid(num_levels);
+    auto target_pyramid = target.CreatePyramid(num_levels);
+    auto target_pyramid_dx = geometry::RGBDImage::FilterPyramid(
             target_pyramid, geometry::Image::FilterType::Sobel3Dx);
-    auto target_pyramid_dy = geometry::RGBDImage::FilterRGBDImagePyramid(
+    auto target_pyramid_dy = geometry::RGBDImage::FilterPyramid(
             target_pyramid, geometry::Image::FilterType::Sobel3Dy);
 
     Eigen::Matrix4d result_odo = extrinsic_initial.isZero()

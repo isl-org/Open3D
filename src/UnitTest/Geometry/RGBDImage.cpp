@@ -80,7 +80,7 @@ TEST(RGBDImage, DISABLED_MemberData) { unit_test::NotImplemented(); }
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
+TEST(RGBDImage, CreateFromColorAndDepth) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -137,7 +137,7 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
+TEST(RGBDImage, CreateFromRedwoodFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -194,7 +194,7 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
+TEST(RGBDImage, CreateFromTUMFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -250,7 +250,7 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
+TEST(RGBDImage, CreateFromSUNFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -306,7 +306,7 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
+TEST(RGBDImage, CreateFromNYUFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -362,7 +362,7 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, FilterRGBDImagePyramid) {
+TEST(RGBDImage, FilterPyramid) {
     vector<vector<uint8_t>> ref_color = {
             {49,  63,  46,  63,  234, 198, 45,  63,  152, 189, 39,  63,  151,
              141, 36,  63,  165, 233, 38,  63,  44,  66,  47,  63,  54,  137,
@@ -415,8 +415,8 @@ TEST(RGBDImage, FilterRGBDImagePyramid) {
     size_t num_of_levels = 2;
     auto rgbd_image =
             geometry::RGBDImage::CreateFromColorAndDepth(color, depth);
-    auto pyramid = rgbd_image->CreateRGBDImagePyramid(num_of_levels);
-    auto filtered = geometry::RGBDImage::FilterRGBDImagePyramid(
+    auto pyramid = rgbd_image->CreatePyramid(num_of_levels);
+    auto filtered = geometry::RGBDImage::FilterPyramid(
             pyramid, geometry::Image::FilterType::Gaussian3);
 
     for (size_t j = 0; j < num_of_levels; j++) {
@@ -428,7 +428,7 @@ TEST(RGBDImage, FilterRGBDImagePyramid) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImagePyramid) {
+TEST(RGBDImage, CreatePyramid) {
     vector<vector<uint8_t>> ref_color = {
             {216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
              72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -482,7 +482,7 @@ TEST(RGBDImage, CreateRGBDImagePyramid) {
     size_t num_of_levels = 2;
     auto rgbd_image =
             geometry::RGBDImage::CreateFromColorAndDepth(color, depth);
-    auto pyramid = rgbd_image->CreateRGBDImagePyramid(num_of_levels);
+    auto pyramid = rgbd_image->CreatePyramid(num_of_levels);
 
     for (size_t j = 0; j < num_of_levels; j++) {
         EXPECT_EQ(ref_color[j], pyramid[j]->color_.data_);

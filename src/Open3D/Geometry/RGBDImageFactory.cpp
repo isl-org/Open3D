@@ -44,9 +44,8 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
     }
     rgbd_image->depth_ =
             *depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
-    rgbd_image->color_ = convert_rgb_to_intensity
-                                 ? *color.CreateFloatImageFromImage()
-                                 : color;
+    rgbd_image->color_ =
+            convert_rgb_to_intensity ? *color.CreateFloatImage() : color;
     return rgbd_image;
 }
 

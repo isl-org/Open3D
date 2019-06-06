@@ -16,9 +16,9 @@ if __name__ == "__main__":
     source_depth = o3d.io.read_image("../../TestData/RGBD/depth/00000.png")
     target_color = o3d.io.read_image("../../TestData/RGBD/color/00001.jpg")
     target_depth = o3d.io.read_image("../../TestData/RGBD/depth/00001.png")
-    source_rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+    source_rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         source_color, source_depth)
-    target_rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+    target_rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         target_color, target_depth)
     target_pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
         target_rgbd_image, pinhole_camera_intrinsic)

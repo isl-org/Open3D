@@ -40,7 +40,7 @@ if __name__ == "__main__":
     depth_raw = read_nyu_pgm("../../TestData/RGBD/other_formats/NYU_depth.pgm")
     color = o3d.geometry.Image(color_raw)
     depth = o3d.geometry.Image(depth_raw)
-    rgbd_image = o3d.geometry.create_rgbd_image_from_nyu_format(color, depth)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(color, depth)
     print(rgbd_image)
     plt.subplot(1, 2, 1)
     plt.title('NYU grayscale image')

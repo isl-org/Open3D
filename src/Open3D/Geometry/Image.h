@@ -110,7 +110,7 @@ public:
             const camera::PinholeCameraIntrinsic &intrinsic);
 
     /// Return a gray scaled float type image.
-    std::shared_ptr<Image> CreateFloatImageFromImage(
+    std::shared_ptr<Image> CreateFloatImage(
             Image::ColorToIntensityConversionType type =
                     Image::ColorToIntensityConversionType::Weighted) const;
 
@@ -128,13 +128,13 @@ public:
     std::shared_ptr<Image> FlipImage() const;
 
     /// Function to filter image with pre-defined filtering type
-    std::shared_ptr<Image> FilterImage(Image::FilterType type) const;
+    std::shared_ptr<Image> Filter(Image::FilterType type) const;
 
     /// Function to filter image with arbitrary dx, dy separable filters
-    std::shared_ptr<Image> FilterImage(const std::vector<double> &dx,
-                                       const std::vector<double> &dy) const;
+    std::shared_ptr<Image> Filter(const std::vector<double> &dx,
+                                  const std::vector<double> &dy) const;
 
-    std::shared_ptr<Image> FilterHorizontalImage(
+    std::shared_ptr<Image> FilterHorizontal(
             const std::vector<double> &kernel) const;
 
     /// Function to 2x image downsample using simple 2x2 averaging
@@ -159,12 +159,12 @@ public:
     std::shared_ptr<Image> CreateImageFromFloatImage() const;
 
     /// Function to filter image pyramid
-    static ImagePyramid FilterImagePyramid(const ImagePyramid &input,
-                                           Image::FilterType type);
+    static ImagePyramid FilterPyramid(const ImagePyramid &input,
+                                      Image::FilterType type);
 
     /// Function to create image pyramid
-    ImagePyramid CreateImagePyramid(size_t num_of_levels,
-                                    bool with_gaussian_filter = true) const;
+    ImagePyramid CreatePyramid(size_t num_of_levels,
+                               bool with_gaussian_filter = true) const;
 
     /// Function to create a depthmap boundary mask from depth image
     std::shared_ptr<Image> CreateDepthBoundaryMask(
