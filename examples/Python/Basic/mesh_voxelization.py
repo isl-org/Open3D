@@ -109,8 +109,7 @@ centers.points = o3d.utility.Vector3dVector(centers_pts)
 o3d.visualization.draw_geometries([centers, model])
 
 print("voxelize dense point cloud")
-voxel = o3d.geometry.create_surface_voxel_grid_from_point_cloud(pcd_agg,
-                                                                voxel_size=0.05)
+voxel = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd_agg, voxel_size=0.05)
 print(voxel)
 o3d.visualization.draw_geometries([voxel])
 

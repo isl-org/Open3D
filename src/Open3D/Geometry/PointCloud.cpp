@@ -36,10 +36,11 @@
 namespace open3d {
 namespace geometry {
 
-void PointCloud::Clear() {
+PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
+    return *this;
 }
 
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
@@ -174,18 +175,18 @@ PointCloud PointCloud::operator+(const PointCloud &cloud) const {
     return (PointCloud(*this) += cloud);
 }
 
-std::vector<double> ComputePointCloudToPointCloudDistance(
-        const PointCloud &source, const PointCloud &target) {
-    std::vector<double> distances(source.points_.size());
+std::vector<double> PointCloud::ComputePointCloudDistance(
+        const PointCloud &target) {
+    std::vector<double> distances(points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)source.points_.size(); i++) {
+    for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
-        if (kdtree.SearchKNN(source.points_[i], 1, indices, dists) == 0) {
+        if (kdtree.SearchKNN(points_[i], 1, indices, dists) == 0) {
             utility::PrintDebug(
                     "[ComputePointCloudToPointCloudDistance] Found a point "
                     "without neighbors.\n");
@@ -197,15 +198,15 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
     return distances;
 }
 
-std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
-        const PointCloud &input) {
-    if (input.IsEmpty()) {
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
+PointCloud::ComputeMeanAndCovariance() const {
+    if (IsEmpty()) {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
     }
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
-    for (const auto &point : input.points_) {
+    for (const auto &point : points_) {
         cumulants(0) += point(0);
         cumulants(1) += point(1);
         cumulants(2) += point(2);
@@ -216,7 +217,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
     }
-    cumulants /= (double)input.points_.size();
+    cumulants /= (double)points_.size();
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
     mean(0) = cumulants(0);
@@ -234,34 +235,32 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
     return std::make_tuple(mean, covariance);
 }
 
-std::vector<double> ComputePointCloudMahalanobisDistance(
-        const PointCloud &input) {
-    std::vector<double> mahalanobis(input.points_.size());
+std::vector<double> PointCloud::ComputeMahalanobisDistance() const {
+    std::vector<double> mahalanobis(points_.size());
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;
-    std::tie(mean, covariance) = ComputePointCloudMeanAndCovariance(input);
+    std::tie(mean, covariance) = ComputeMeanAndCovariance();
     Eigen::Matrix3d cov_inv = covariance.inverse();
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)input.points_.size(); i++) {
-        Eigen::Vector3d p = input.points_[i] - mean;
+    for (int i = 0; i < (int)points_.size(); i++) {
+        Eigen::Vector3d p = points_[i] - mean;
         mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
     }
     return mahalanobis;
 }
 
-std::vector<double> ComputePointCloudNearestNeighborDistance(
-        const PointCloud &input) {
-    std::vector<double> nn_dis(input.points_.size());
-    KDTreeFlann kdtree(input);
+std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
+    std::vector<double> nn_dis(points_.size());
+    KDTreeFlann kdtree(*this);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)input.points_.size(); i++) {
+    for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(2);
         std::vector<double> dists(2);
-        if (kdtree.SearchKNN(input.points_[i], 2, indices, dists) <= 1) {
+        if (kdtree.SearchKNN(points_[i], 2, indices, dists) <= 1) {
             utility::PrintDebug(
                     "[ComputePointCloudNearestNeighborDistance] Found a point "
                     "without neighbors.\n");
@@ -273,9 +272,8 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     return nn_dis;
 }
 
-std::shared_ptr<TriangleMesh> ComputePointCloudConvexHull(
-        const PointCloud &input) {
-    return ComputeConvexHull(input.points_);
+std::shared_ptr<TriangleMesh> PointCloud::ComputeConvexHull() const {
+    return Qhull::ComputeConvexHull(points_);
 }
 
 }  // namespace geometry

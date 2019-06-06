@@ -206,6 +206,121 @@ void pybind_trianglemesh(py::module &m) {
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
+            .def("select_down_sample",
+                 &geometry::TriangleMesh::SelectDownSample,
+                 "Function to select mesh from input triangle mesh into output "
+                 "triangle mesh. ``input``: The input triangle mesh. "
+                 "``indices``: "
+                 "Indices of vertices to be selected.",
+                 "indices"_a)
+            .def("crop", &geometry::TriangleMesh::Crop,
+                 "Function to crop input triangle mesh into output triangle "
+                 "mesh",
+                 "min_bound"_a, "max_bound"_a)
+            .def("sample_points_uniformly",
+                 &geometry::TriangleMesh::SamplePointsUniformly,
+                 "Function to uniformly sample points from the mesh.",
+                 "number_of_points"_a = 100)
+            .def("sample_points_poisson_disk",
+                 &geometry::TriangleMesh::SamplePointsPoissonDisk,
+                 "Function to sample points from the mesh, where each point "
+                 "has "
+                 "approximately the same distance to the neighbouring points "
+                 "(blue "
+                 "noise). Method is based on Yuksel, \"Sample Elimination for "
+                 "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
+                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr)
+            .def("subdivide_midpoint",
+                 &geometry::TriangleMesh::SubdivideMidpoint,
+                 "Function subdivide mesh using midpoint algorithm.",
+                 "number_of_iterations"_a = 1)
+            .def("subdivide_loop", &geometry::TriangleMesh::SubdivideLoop,
+                 "Function subdivide mesh using Loop's algorithm. Loop, "
+                 "\"Smooth "
+                 "subdivision surfaces based on triangles\", 1987.",
+                 "number_of_iterations"_a = 1)
+            .def("simplify_vertex_clustering",
+                 &geometry::TriangleMesh::SimplifyVertexClustering,
+                 "Function to simplify mesh using vertex clustering.",
+                 "voxel_size"_a,
+                 "contraction"_a = geometry::TriangleMesh::
+                         SimplificationContraction::Average)
+            .def("simplify_quadric_decimation",
+                 &geometry::TriangleMesh::SimplifyQuadricDecimation,
+                 "Function to simplify mesh using Quadric Error Metric "
+                 "Decimation by "
+                 "Garland and Heckbert",
+                 "target_number_of_triangles"_a)
+            .def("compute_convex_hull",
+                 &geometry::TriangleMesh::ComputeConvexHull,
+                 "Computes the convex hull of the triangle mesh.")
+            .def_static("create_box", &geometry::TriangleMesh::CreateBox,
+                        "Factory function to create a box. The left bottom "
+                        "corner on the "
+                        "front will be placed at (0, 0, 0).",
+                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0)
+            .def_static("create_tetrahedron",
+                        &geometry::TriangleMesh::CreateTetrahedron,
+                        "Factory function to create a tetrahedron. The "
+                        "centroid of the mesh "
+                        "will be placed at (0, 0, 0) and the vertices have a "
+                        "distance of "
+                        "radius to the center.",
+                        "radius"_a = 1.0)
+            .def_static("create_octahedron",
+                        &geometry::TriangleMesh::CreateOctahedron,
+                        "Factory function to create a octahedron. The centroid "
+                        "of the mesh "
+                        "will be placed at (0, 0, 0) and the vertices have a "
+                        "distance of "
+                        "radius to the center.",
+                        "radius"_a = 1.0)
+            .def_static("create_icosahedron",
+                        &geometry::TriangleMesh::CreateIcosahedron,
+                        "Factory function to create a icosahedron. The "
+                        "centroid of the mesh "
+                        "will be placed at (0, 0, 0) and the vertices have a "
+                        "distance of "
+                        "radius to the center.",
+                        "radius"_a = 1.0)
+            .def_static("create_sphere", &geometry::TriangleMesh::CreateSphere,
+                        "Factory function to create a sphere mesh centered at "
+                        "(0, 0, 0).",
+                        "radius"_a = 1.0, "resolution"_a = 20)
+            .def_static("create_cylinder",
+                        &geometry::TriangleMesh::CreateCylinder,
+                        "Factory function to create a cylinder mesh.",
+                        "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
+                        "split"_a = 4)
+            .def_static("create_cone", &geometry::TriangleMesh::CreateCone,
+                        "Factory function to create a cone mesh.",
+                        "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
+                        "split"_a = 1)
+            .def_static("create_torus", &geometry::TriangleMesh::CreateTorus,
+                        "Factory function to create a torus mesh.",
+                        "torus_radius"_a = 1.0, "tube_radius"_a = 0.5,
+                        "radial_resolution"_a = 30, "tubular_resolution"_a = 20)
+            .def_static("create_arrow", &geometry::TriangleMesh::CreateArrow,
+                        "Factory function to create an arrow mesh",
+                        "cylinder_radius"_a = 1.0, "cone_radius"_a = 1.5,
+                        "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
+                        "resolution"_a = 20, "cylinder_split"_a = 4,
+                        "cone_split"_a = 1)
+            .def_static("create_coordinate_frame",
+                        &geometry::TriangleMesh::CreateCoordinateFrame,
+                        "Factory function to create a coordinate frame mesh. "
+                        "The coordinate "
+                        "frame will be centered at ``origin``. The x, y, z "
+                        "axis will be "
+                        "rendered as red, green, and blue arrows respectively.",
+                        "size"_a = 1.0,
+                        "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
+            .def_static("create_moebius",
+                        &geometry::TriangleMesh::CreateMoebius,
+                        "Factory function to create a Moebius strip.",
+                        "length_split"_a = 70, "width_split"_a = 15,
+                        "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,
+                        "width"_a = 1, "scale"_a = 1)
             .def_readwrite("vertices", &geometry::TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "
@@ -315,152 +430,65 @@ void pybind_trianglemesh(py::module &m) {
              {"lambda", "Filter parameter."},
              {"mu", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
-}
-
-void pybind_trianglemesh_methods(py::module &m) {
-    // Overloaded function, do not inject docs. Keep commented out for future.
-    m.def("select_down_sample",
-          (std::shared_ptr<geometry::TriangleMesh>(*)(
-                  const geometry::TriangleMesh &,
-                  const std::vector<size_t> &)) &
-                  geometry::SelectDownSample,
-          "Function to select mesh from input triangle mesh into output "
-          "triangle mesh. ``input``: The input triangle mesh. ``indices``: "
-          "Indices of vertices to be selected.",
-          "input"_a, "indices"_a);
-    // docstring::FunctionDocInject(
-    //         m, "select_down_sample",
-    //         {{"input", "The input triangle mesh."},
-    //          {"indices", "Indices of vertices to be selected."}});
-
-    m.def("crop_triangle_mesh", &geometry::CropTriangleMesh,
-          "Function to crop input triangle mesh into output triangle mesh",
-          "input"_a, "min_bound"_a, "max_bound"_a);
-    docstring::FunctionDocInject(
-            m, "crop_triangle_mesh",
-            {{"input", "The input triangle mesh."},
-             {"min_bound", "Minimum bound for vertex coordinate."},
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "select_down_sample",
+            {{"indices", "Indices of vertices to be selected."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "crop",
+            {{"min_bound", "Minimum bound for vertex coordinate."},
              {"max_bound", "Maximum bound for vertex coordinate."}});
-
-    m.def("sample_points_uniformly", &geometry::SamplePointsUniformly,
-          "Function to uniformly sample points from the mesh.", "input"_a,
-          "number_of_points"_a = 100);
-    docstring::FunctionDocInject(
-            m, "sample_points_uniformly",
-            {{"input", "The input triangle mesh."},
-             {"number_of_points",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "sample_points_uniformly",
+            {{"number_of_points",
               "Number of points that should be uniformly sampled."}});
-
-    m.def("sample_points_poisson_disk", &geometry::SamplePointsPoissonDisk,
-          "Function to sample points from the mesh, where each point has "
-          "approximately the same distance to the neighbouring points (blue "
-          "noise). Method is based on Yuksel, \"Sample Elimination for "
-          "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
-          "input"_a, "number_of_points"_a, "init_factor"_a = 5,
-          "pcl"_a = nullptr);
-    docstring::FunctionDocInject(
-            m, "sample_points_poisson_disk",
-            {{"input", "The input triangle mesh."},
-             {"number_of_points", "Number of points that should be sampled."},
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "sample_points_poisson_disk",
+            {{"number_of_points", "Number of points that should be sampled."},
              {"init_factor",
               "Factor for the initial uniformly sampled PointCloud. This init "
               "PointCloud is used for sample elimination."},
              {"pcl",
               "Initial PointCloud that is used for sample elimination. If this "
               "parameter is provided the init_factor is ignored."}});
-
-    m.def("subdivide_midpoint", &geometry::SubdivideMidpoint,
-          "Function subdivide mesh using midpoint algorithm.", "input"_a,
-          "number_of_iterations"_a = 1);
-    docstring::FunctionDocInject(
-            m, "subdivide_midpoint",
-            {{"input", "The input triangle mesh."},
-             {"number_of_iterations",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "subdivide_midpoint",
+            {{"number_of_iterations",
               "Number of iterations. A single iteration splits each triangle "
               "into four triangles that cover the same surface."}});
-
-    m.def("subdivide_loop", &geometry::SubdivideLoop,
-          "Function subdivide mesh using Loop's algorithm. Loop, \"Smooth "
-          "subdivision surfaces based on triangles\", 1987.",
-          "input"_a, "number_of_iterations"_a = 1);
-    docstring::FunctionDocInject(
-            m, "subdivide_loop",
-            {{"input", "The input triangle mesh."},
-             {"number_of_iterations",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "subdivide_loop",
+            {{"number_of_iterations",
               "Number of iterations. A single iteration splits each triangle "
               "into four triangles."}});
-
-    m.def("simplify_vertex_clustering", &geometry::SimplifyVertexClustering,
-          "Function to simplify mesh using vertex clustering.", "input"_a,
-          "voxel_size"_a,
-          "contraction"_a =
-                  geometry::TriangleMesh::SimplificationContraction::Average);
-    docstring::FunctionDocInject(
-            m, "simplify_vertex_clustering",
-            {{"input", "The input triangle mesh."},
-             {"voxel_size",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "simplify_vertex_clustering",
+            {{"voxel_size",
               "The size of the voxel within vertices are pooled."},
              {"contraction",
               "Method to aggregate vertex information. Average computes a "
               "simple average, Quadric minimizes the distance to the adjacent "
               "planes."}});
-    m.def("simplify_quadric_decimation", &geometry::SimplifyQuadricDecimation,
-          "Function to simplify mesh using Quadric Error Metric Decimation by "
-          "Garland and Heckbert",
-          "input"_a, "target_number_of_triangles"_a);
-    docstring::FunctionDocInject(
-            m, "simplify_quadric_decimation",
-            {{"input", "The input triangle mesh."},
-             {"target_number_of_triangles",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "simplify_quadric_decimation",
+            {{"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "
               "It is not guranteed that this number will be reached."}});
-
-    m.def("compute_mesh_convex_hull", &geometry::ComputeMeshConvexHull,
-          "Computes the convex hull of the triangle mesh.", "input"_a);
-    docstring::FunctionDocInject(m, "compute_mesh_convex_hull",
-                                 {{"input", "The input triangle mesh."}});
-
-    m.def("create_mesh_box", &geometry::CreateMeshBox,
-          "Factory function to create a box. The left bottom corner on the "
-          "front will be placed at (0, 0, 0).",
-          "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0);
-    docstring::FunctionDocInject(m, "create_mesh_box",
-                                 {{"width", "x-directional length."},
-                                  {"height", "y-directional length."},
-                                  {"depth", "z-directional length."}});
-
-    m.def("create_mesh_tetrahedron", &geometry::CreateMeshTetrahedron,
-          "Factory function to create a tetrahedron. The centroid of the mesh "
-          "will be placed at (0, 0, 0) and the vertices have a distance of "
-          "radius to the center.",
-          "radius"_a = 1.0);
-    docstring::FunctionDocInject(
-            m, "create_mesh_tetrahedron",
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
+                                    {{"width", "x-directional length."},
+                                     {"height", "y-directional length."},
+                                     {"depth", "z-directional length."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_tetrahedron",
             {{"radius", "Distance from centroid to mesh vetices."}});
-
-    m.def("create_mesh_octahedron", &geometry::CreateMeshOctahedron,
-          "Factory function to create a octahedron. The centroid of the mesh "
-          "will be placed at (0, 0, 0) and the vertices have a distance of "
-          "radius to the center.",
-          "radius"_a = 1.0);
-    docstring::FunctionDocInject(
-            m, "create_mesh_octahedron",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_octahedron",
             {{"radius", "Distance from centroid to mesh vetices."}});
-
-    m.def("create_mesh_icosahedron", &geometry::CreateMeshIcosahedron,
-          "Factory function to create a icosahedron. The centroid of the mesh "
-          "will be placed at (0, 0, 0) and the vertices have a distance of "
-          "radius to the center.",
-          "radius"_a = 1.0);
-    docstring::FunctionDocInject(
-            m, "create_mesh_icosahedron",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_icosahedron",
             {{"radius", "Distance from centroid to mesh vetices."}});
-
-    m.def("create_mesh_sphere", &geometry::CreateMeshSphere,
-          "Factory function to create a sphere mesh centered at (0, 0, 0).",
-          "radius"_a = 1.0, "resolution"_a = 20);
-    docstring::FunctionDocInject(
-            m, "create_mesh_sphere",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_sphere",
             {{"radius", "The radius of the sphere."},
              {"resolution",
               "The resolution of the sphere. The longitues will be split into "
@@ -468,12 +496,8 @@ void pybind_trianglemesh_methods(py::module &m) {
               "latitude lines including the north and south pole). The "
               "latitudes will be split into ```2 * resolution`` segments (i.e. "
               "there are ``2 * resolution`` longitude lines.)"}});
-
-    m.def("create_mesh_cylinder", &geometry::CreateMeshCylinder,
-          "Factory function to create a cylinder mesh.", "radius"_a = 1.0,
-          "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4);
-    docstring::FunctionDocInject(
-            m, "create_mesh_cylinder",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cylinder",
             {{"radius", "The radius of the cylinder."},
              {"height",
               "The height of the cylinder. The axis of the cylinder will be "
@@ -482,12 +506,8 @@ void pybind_trianglemesh_methods(py::module &m) {
               " The circle will be split into ``resolution`` segments"},
              {"split",
               "The ``height`` will be split into ``split`` segments."}});
-
-    m.def("create_mesh_cone", &geometry::CreateMeshCone,
-          "Factory function to create a cone mesh.", "radius"_a = 1.0,
-          "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1);
-    docstring::FunctionDocInject(
-            m, "create_mesh_cone",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cone",
             {{"radius", "The radius of the cone."},
              {"height",
               "The height of the cone. The axis of the cone will be from (0, "
@@ -496,13 +516,8 @@ void pybind_trianglemesh_methods(py::module &m) {
               "The circle will be split into ``resolution`` segments"},
              {"split",
               "The ``height`` will be split into ``split`` segments."}});
-
-    m.def("create_mesh_torus", &geometry::CreateMeshTorus,
-          "Factory function to create a torus mesh.", "torus_radius"_a = 1.0,
-          "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
-          "tubular_resolution"_a = 20);
-    docstring::FunctionDocInject(
-            m, "create_mesh_torus",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_torus",
             {{"torus_radius",
               "The radius from the center of the torus to the center of the "
               "tube."},
@@ -511,14 +526,8 @@ void pybind_trianglemesh_methods(py::module &m) {
               "The number of segments along the radial direction."},
              {"tubular_resolution",
               "The number of segments along the tubular direction."}});
-
-    m.def("create_mesh_arrow", &geometry::CreateMeshArrow,
-          "Factory function to create an arrow mesh", "cylinder_radius"_a = 1.0,
-          "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,
-          "cone_height"_a = 4.0, "resolution"_a = 20, "cylinder_split"_a = 4,
-          "cone_split"_a = 1);
-    docstring::FunctionDocInject(
-            m, "create_mesh_arrow",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_arrow",
             {{"cylinder_radius", "The radius of the cylinder."},
              {"cone_radius", "The radius of the cone."},
              {"cylinder_height",
@@ -535,23 +544,12 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"cone_split",
               "The ``cone_height`` will be split into ``cone_split`` "
               "segments."}});
-
-    m.def("create_mesh_coordinate_frame", &geometry::CreateMeshCoordinateFrame,
-          "Factory function to create a coordinate frame mesh. The coordinate "
-          "frame will be centered at ``origin``. The x, y, z axis will be "
-          "rendered as red, green, and blue arrows respectively.",
-          "size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-    docstring::FunctionDocInject(
-            m, "create_mesh_coordinate_frame",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_coordinate_frame",
             {{"size", "The size of the coordinate frame."},
              {"origin", "The origin of the cooridnate frame."}});
-
-    m.def("create_mesh_moebius", &geometry::CreateMeshMoebius,
-          "Factory function to create a Moebius strip.", "length_split"_a = 70,
-          "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
-          "flatness"_a = 1, "width"_a = 1, "scale"_a = 1);
-    docstring::FunctionDocInject(
-            m, "create_mesh_moebius",
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_moebius",
             {{"length_split",
               "The number of segments along the Moebius strip."},
              {"width_split",
@@ -562,3 +560,5 @@ void pybind_trianglemesh_methods(py::module &m) {
              {"width", "Width of the Moebius strip."},
              {"scale", "Scale the complete Moebius strip."}});
 }
+
+void pybind_trianglemesh_methods(py::module &m) {}

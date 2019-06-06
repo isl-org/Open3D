@@ -46,7 +46,7 @@ RANSAC
 .. literalinclude:: ../../../examples/Python/Advanced/global_registration.py
    :language: python
    :lineno-start: 53
-   :lines: 53-66
+   :lines: 52-65
    :linenos:
 
 We use RANSAC for global registration. In each RANSAC iteration, ``ransac_n`` random points are picked from the source point cloud. Their corresponding points in the target point cloud are detected by querying the nearest neighbor in the 33-dimensional FPFH feature space. A pruning step takes fast pruning algorithms  to quickly reject false matches early.
@@ -76,7 +76,7 @@ For performance reason, the global registration is only performed on a heavily d
 .. literalinclude:: ../../../examples/Python/Advanced/global_registration.py
    :language: python
    :lineno-start: 69
-   :lines: 69-77
+   :lines: 68-76
    :linenos:
 
 Outputs a tight alignment. This summarizes a complete pairwise registration workflow.

@@ -36,7 +36,7 @@
 namespace open3d {
 namespace geometry {
 
-std::shared_ptr<TriangleMesh> ComputeConvexHull(
+std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
         const std::vector<Eigen::Vector3d>& points) {
     auto convex_hull = std::make_shared<TriangleMesh>();
 

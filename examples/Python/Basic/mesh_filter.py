@@ -21,24 +21,22 @@ def test_mesh(noise=0):
 
 
 if __name__ == '__main__':
-    mesh = test_mesh()
+    in_mesh = test_mesh()
+    o3d.visualization.draw_geometries([in_mesh])
+
+    mesh = in_mesh.filter_sharpen(number_of_iterations=1, strength=1)
     o3d.visualization.draw_geometries([mesh])
 
-    mesh = test_mesh()
-    mesh.filter_sharpen(number_of_iterations=1, strength=1)
+    in_mesh = test_mesh(noise=5)
+    o3d.visualization.draw_geometries([in_mesh])
+
+    mesh = in_mesh.filter_smooth_simple(number_of_iterations=1)
     o3d.visualization.draw_geometries([mesh])
 
-    mesh = test_mesh(noise=5)
     o3d.visualization.draw_geometries([mesh])
-    mesh.filter_smooth_simple(number_of_iterations=1)
-    o3d.visualization.draw_geometries([mesh])
-
-    mesh = test_mesh(noise=5)
-    o3d.visualization.draw_geometries([mesh])
-    mesh.filter_smooth_laplacian(number_of_iterations=100)
+    mesh = in_mesh.filter_smooth_laplacian(number_of_iterations=100)
     o3d.visualization.draw_geometries([mesh])
 
-    mesh = test_mesh(noise=5)
     o3d.visualization.draw_geometries([mesh])
-    mesh.filter_smooth_taubin(number_of_iterations=100)
+    mesh = in_mesh.filter_smooth_taubin(number_of_iterations=100)
     o3d.visualization.draw_geometries([mesh])

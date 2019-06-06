@@ -10,7 +10,7 @@ import time
 
 
 def geometry_generator():
-    mesh = o3d.geometry.create_mesh_sphere()
+    mesh = o3d.geometry.TriangleMesh.create_sphere()
     verts = np.asarray(mesh.vertices)
     colors = np.random.uniform(0, 1, size=verts.shape)
     mesh.vertex_colors = o3d.utility.Vector3dVector(colors)
@@ -22,7 +22,7 @@ def geometry_generator():
     pcl.normals = mesh.vertex_normals
     yield pcl
 
-    yield o3d.geometry.create_line_set_from_triangle_mesh(mesh)
+    yield o3d.geometry.LineSet.create_from_triangle_mesh(mesh)
 
     yield mesh
 

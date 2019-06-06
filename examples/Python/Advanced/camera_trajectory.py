@@ -35,9 +35,9 @@ if __name__ == "__main__":
             "../../TestData/RGBD/depth/{:05d}.png".format(i))
         im2 = o3d.io.read_image(
             "../../TestData/RGBD/color/{:05d}.jpg".format(i))
-        im = o3d.geometry.create_rgbd_image_from_color_and_depth(
+        im = o3d.geometry.RGBDImage.create_from_color_and_depth(
             im2, im1, 1000.0, 5.0, False)
-        pcd = o3d.geometry.create_point_cloud_from_rgbd_image(
+        pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
             im, trajectory.parameters[i].intrinsic,
             trajectory.parameters[i].extrinsic)
         pcds.append(pcd)

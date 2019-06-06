@@ -16,7 +16,7 @@ def load_point_clouds(voxel_size=0.0):
     pcds = []
     for i in range(3):
         pcd = o3d.io.read_point_cloud("../../TestData/ICP/cloud_bin_%d.pcd" % i)
-        pcd_down = o3d.geometry.voxel_down_sample(pcd, voxel_size=voxel_size)
+        pcd_down = pcd.voxel_down_sample(voxel_size=voxel_size)
         pcds.append(pcd_down)
     return pcds
 
@@ -100,7 +100,6 @@ if __name__ == "__main__":
     for point_id in range(len(pcds)):
         pcds[point_id].transform(pose_graph.nodes[point_id].pose)
         pcd_combined += pcds[point_id]
-    pcd_combined_down = o3d.geometry.voxel_down_sample(pcd_combined,
-                                                       voxel_size=voxel_size)
+    pcd_combined_down = pcd_combined.voxel_down_sample(voxel_size=voxel_size)
     o3d.io.write_point_cloud("multiway_registration.pcd", pcd_combined_down)
     o3d.visualization.draw_geometries([pcd_combined_down])

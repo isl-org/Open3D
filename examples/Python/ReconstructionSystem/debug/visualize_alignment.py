@@ -86,10 +86,8 @@ if __name__ == "__main__":
                     ply_file_names[edge.source_node_id])
                 target = o3d.io.read_point_cloud(
                     ply_file_names[edge.target_node_id])
-                source_down = o3d.geometry.voxel_down_sample(
-                    source, config["voxel_size"])
-                target_down = o3d.geometry.voxel_down_sample(
-                    target, config["voxel_size"])
+                source_down = source.voxel_down_sample(config["voxel_size"])
+                target_down = target.voxel_down_sample(config["voxel_size"])
                 print("original registration")
                 draw_registration_result(source_down, target_down,
                                          edge.transformation)

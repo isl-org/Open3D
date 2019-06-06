@@ -24,7 +24,7 @@ def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
     color = o3d.io.read_image(color_file)
     depth = o3d.io.read_image(depth_file)
     if config["depth_map_type"] == "redwood":
-        rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(
+        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color,
             depth,
             depth_trunc=config["max_depth"],

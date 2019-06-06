@@ -44,22 +44,18 @@ if __name__ == "__main__":
     print("Testing basic image processing module.")
     im_raw = mpimg.imread("../../TestData/lena_color.jpg")
     im = o3d.geometry.Image(im_raw)
-    im_g3 = o3d.geometry.filter_image(im,
-                                      o3d.geometry.ImageFilterType.Gaussian3)
-    im_g5 = o3d.geometry.filter_image(im,
-                                      o3d.geometry.ImageFilterType.Gaussian5)
-    im_g7 = o3d.geometry.filter_image(im,
-                                      o3d.geometry.ImageFilterType.Gaussian7)
+    im_g3 = im.filter(o3d.geometry.ImageFilterType.Gaussian3)
+    im_g5 = im.filter(o3d.geometry.ImageFilterType.Gaussian5)
+    im_g7 = im.filter(o3d.geometry.ImageFilterType.Gaussian7)
     im_gaussian = [im, im_g3, im_g5, im_g7]
     pyramid_levels = 4
     pyramid_with_gaussian_filter = True
-    im_pyramid = o3d.geometry.create_image_pyramid(
-        im, pyramid_levels, pyramid_with_gaussian_filter)
-    im_dx = o3d.geometry.filter_image(im, o3d.geometry.ImageFilterType.Sobel3dx)
-    im_dx_pyramid = o3d.geometry.filter_image_pyramid(
+    im_pyramid = im.create_pyramid(pyramid_levels, pyramid_with_gaussian_filter)
+    im_dx = im.filter(o3d.geometry.ImageFilterType.Sobel3dx)
+    im_dx_pyramid = o3d.geometry.Image.filter_pyramid(
         im_pyramid, o3d.geometry.ImageFilterType.Sobel3dx)
-    im_dy = o3d.geometry.filter_image(im, o3d.geometry.ImageFilterType.Sobel3dy)
-    im_dy_pyramid = o3d.geometry.filter_image_pyramid(
+    im_dy = im.filter(o3d.geometry.ImageFilterType.Sobel3dy)
+    im_dy_pyramid = o3d.geometry.Image.filter_pyramid(
         im_pyramid, o3d.geometry.ImageFilterType.Sobel3dy)
     switcher = {
         0: im_gaussian,

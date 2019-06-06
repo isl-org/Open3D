@@ -328,11 +328,12 @@ bool Octree::operator==(const Octree& that) const {
     return rc;
 }
 
-void Octree::Clear() {
+Octree& Octree::Clear() {
     // Inherited Clear function
     root_node_ = nullptr;
     origin_.setZero();
     size_ = 0;
+    return *this;
 }
 
 bool Octree::IsEmpty() const { return root_node_ == nullptr; }

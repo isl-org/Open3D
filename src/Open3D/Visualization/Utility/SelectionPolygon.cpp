@@ -37,11 +37,12 @@
 namespace open3d {
 namespace visualization {
 
-void SelectionPolygon::Clear() {
+SelectionPolygon &SelectionPolygon::Clear() {
     polygon_.clear();
     is_closed_ = false;
     polygon_interior_mask_.Clear();
     polygon_type_ = SectionPolygonType::Unfilled;
+    return *this;
 }
 
 bool SelectionPolygon::IsEmpty() const {
@@ -88,7 +89,7 @@ void SelectionPolygon::FillPolygon(int width, int height) {
     // http://alienryderflex.com/polygon_fill/
     if (IsEmpty()) return;
     is_closed_ = true;
-    polygon_interior_mask_.PrepareImage(width, height, 1, 1);
+    polygon_interior_mask_.Prepare(width, height, 1, 1);
     std::fill(polygon_interior_mask_.data_.begin(),
               polygon_interior_mask_.data_.end(), 0);
     std::vector<int> nodes;
@@ -206,28 +207,24 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
 std::shared_ptr<geometry::PointCloud>
 SelectionPolygon::CropPointCloudInRectangle(const geometry::PointCloud &input,
                                             const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInRectangle(input.points_, view));
+    return input.SelectDownSample(CropInRectangle(input.points_, view));
 }
 
 std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const geometry::PointCloud &input, const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInPolygon(input.points_, view));
+    return input.SelectDownSample(CropInPolygon(input.points_, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygon::CropTriangleMeshInRectangle(
         const geometry::TriangleMesh &input, const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInRectangle(input.vertices_, view));
+    return input.SelectDownSample(CropInRectangle(input.vertices_, view));
 }
 
 std::shared_ptr<geometry::TriangleMesh>
 SelectionPolygon::CropTriangleMeshInPolygon(const geometry::TriangleMesh &input,
                                             const ViewControl &view) {
-    return geometry::SelectDownSample(input,
-                                      CropInPolygon(input.vertices_, view));
+    return input.SelectDownSample(CropInPolygon(input.vertices_, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(

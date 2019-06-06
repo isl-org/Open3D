@@ -144,13 +144,13 @@ void pybind_geometry_classes(py::module &m) {
 void pybind_geometry(py::module &m) {
     py::module m_submodule = m.def_submodule("geometry");
     pybind_geometry_classes(m_submodule);
+    pybind_kdtreeflann(m_submodule);
     pybind_pointcloud(m_submodule);
     pybind_voxelgrid(m_submodule);
     pybind_lineset(m_submodule);
     pybind_trianglemesh(m_submodule);
     pybind_halfedgetrianglemesh(m_submodule);
     pybind_image(m_submodule);
-    pybind_kdtreeflann(m_submodule);
     pybind_pointcloud_methods(m_submodule);
     pybind_voxelgrid_methods(m_submodule);
     pybind_trianglemesh_methods(m_submodule);

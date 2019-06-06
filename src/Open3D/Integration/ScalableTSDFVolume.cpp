@@ -75,9 +75,9 @@ void ScalableTSDFVolume::Integrate(
         return;
     }
     auto depth2cameradistance =
-            geometry::CreateDepthToCameraDistanceMultiplierFloatImage(
+            geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
                     intrinsic);
-    auto pointcloud = geometry::CreatePointCloudFromDepthImage(
+    auto pointcloud = geometry::PointCloud::CreateFromDepthImage(
             image.depth_, intrinsic, extrinsic, 1000.0, 1000.0,
             depth_sampling_stride_);
     std::unordered_set<Eigen::Vector3i,

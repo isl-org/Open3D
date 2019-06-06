@@ -56,51 +56,44 @@ int main(int argc, char **argv) {
     if (io::ReadImage(filename_rgb, color_image_8bit)) {
         utility::PrintDebug("RGB image size : %d x %d\n",
                             color_image_8bit.width_, color_image_8bit.height_);
-        auto gray_image = CreateFloatImageFromImage(color_image_8bit);
-        io::WriteImage(
-                "gray.png",
-                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image));
+        auto gray_image = color_image_8bit.CreateFloatImage();
+        io::WriteImage("gray.png",
+                       *gray_image->CreateImageFromFloatImage<uint8_t>());
 
         utility::PrintDebug("Gaussian Filtering\n");
-        auto gray_image_b3 = geometry::FilterImage(
-                *gray_image, geometry::Image::FilterType::Gaussian3);
-        io::WriteImage(
-                "gray_blur3.png",
-                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_b3));
-        auto gray_image_b5 = geometry::FilterImage(
-                *gray_image, geometry::Image::FilterType::Gaussian5);
-        io::WriteImage(
-                "gray_blur5.png",
-                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_b5));
-        auto gray_image_b7 = geometry::FilterImage(
-                *gray_image, geometry::Image::FilterType::Gaussian7);
-        io::WriteImage(
-                "gray_blur7.png",
-                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_b7));
+        auto gray_image_b3 =
+                gray_image->Filter(geometry::Image::FilterType::Gaussian3);
+        io::WriteImage("gray_blur3.png",
+                       *gray_image_b3->CreateImageFromFloatImage<uint8_t>());
+        auto gray_image_b5 =
+                gray_image->Filter(geometry::Image::FilterType::Gaussian5);
+        io::WriteImage("gray_blur5.png",
+                       *gray_image_b5->CreateImageFromFloatImage<uint8_t>());
+        auto gray_image_b7 =
+                gray_image->Filter(geometry::Image::FilterType::Gaussian7);
+        io::WriteImage("gray_blur7.png",
+                       *gray_image_b7->CreateImageFromFloatImage<uint8_t>());
 
         utility::PrintDebug("Sobel Filtering\n");
-        auto gray_image_dx = geometry::FilterImage(
-                *gray_image, geometry::Image::FilterType::Sobel3Dx);
+        auto gray_image_dx =
+                gray_image->Filter(geometry::Image::FilterType::Sobel3Dx);
         // make [-1,1] to [0,1].
-        geometry::LinearTransformImage(*gray_image_dx, 0.5, 0.5);
-        geometry::ClipIntensityImage(*gray_image_dx);
-        io::WriteImage(
-                "gray_sobel_dx.png",
-                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_dx));
-        auto gray_image_dy = geometry::FilterImage(
-                *gray_image, geometry::Image::FilterType::Sobel3Dy);
-        geometry::LinearTransformImage(*gray_image_dy, 0.5, 0.5);
-        geometry::ClipIntensityImage(*gray_image_dy);
-        io::WriteImage(
-                "gray_sobel_dy.png",
-                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_dy));
+        gray_image_dx->LinearTransform(0.5, 0.5);
+        gray_image_dx->ClipIntensity();
+        io::WriteImage("gray_sobel_dx.png",
+                       *gray_image_dx->CreateImageFromFloatImage<uint8_t>());
+        auto gray_image_dy =
+                gray_image->Filter(geometry::Image::FilterType::Sobel3Dy);
+        gray_image_dy->LinearTransform(0.5, 0.5);
+        gray_image_dy->ClipIntensity();
+        io::WriteImage("gray_sobel_dy.png",
+                       *gray_image_dy->CreateImageFromFloatImage<uint8_t>());
 
         utility::PrintDebug("Build Pyramid\n");
-        auto pyramid = geometry::CreateImagePyramid(*gray_image, 4);
+        auto pyramid = gray_image->CreatePyramid(4);
         for (int i = 0; i < 4; i++) {
             auto level = pyramid[i];
-            auto level_8bit =
-                    geometry::CreateImageFromFloatImage<uint8_t>(*level);
+            auto level_8bit = level->CreateImageFromFloatImage<uint8_t>();
             std::string outputname =
                     "gray_pyramid_level" + std::to_string(i) + ".png";
             io::WriteImage(outputname, *level_8bit);
@@ -114,51 +107,44 @@ int main(int argc, char **argv) {
         utility::PrintDebug("Depth image size : %d x %d\n",
                             depth_image_16bit.width_,
                             depth_image_16bit.height_);
-        auto depth_image = CreateFloatImageFromImage(depth_image_16bit);
-        io::WriteImage(
-                "depth.png",
-                *geometry::CreateImageFromFloatImage<uint16_t>(*depth_image));
+        auto depth_image = depth_image_16bit.CreateFloatImage();
+        io::WriteImage("depth.png",
+                       *depth_image->CreateImageFromFloatImage<uint16_t>());
 
         utility::PrintDebug("Gaussian Filtering\n");
-        auto depth_image_b3 = geometry::FilterImage(
-                *depth_image, geometry::Image::FilterType::Gaussian3);
+        auto depth_image_b3 =
+                depth_image->Filter(geometry::Image::FilterType::Gaussian3);
         io::WriteImage("depth_blur3.png",
-                       *geometry::CreateImageFromFloatImage<uint16_t>(
-                               *depth_image_b3));
-        auto depth_image_b5 = geometry::FilterImage(
-                *depth_image, geometry::Image::FilterType::Gaussian5);
+                       *depth_image_b3->CreateImageFromFloatImage<uint16_t>());
+        auto depth_image_b5 =
+                depth_image->Filter(geometry::Image::FilterType::Gaussian5);
         io::WriteImage("depth_blur5.png",
-                       *geometry::CreateImageFromFloatImage<uint16_t>(
-                               *depth_image_b5));
-        auto depth_image_b7 = geometry::FilterImage(
-                *depth_image, geometry::Image::FilterType::Gaussian7);
+                       *depth_image_b5->CreateImageFromFloatImage<uint16_t>());
+        auto depth_image_b7 =
+                depth_image->Filter(geometry::Image::FilterType::Gaussian7);
         io::WriteImage("depth_blur7.png",
-                       *geometry::CreateImageFromFloatImage<uint16_t>(
-                               *depth_image_b7));
+                       *depth_image_b7->CreateImageFromFloatImage<uint16_t>());
 
         utility::PrintDebug("Sobel Filtering\n");
-        auto depth_image_dx = geometry::FilterImage(
-                *depth_image, geometry::Image::FilterType::Sobel3Dx);
+        auto depth_image_dx =
+                depth_image->Filter(geometry::Image::FilterType::Sobel3Dx);
         // make [-65536,65536] to [0,13107.2]. // todo: need to test this
-        geometry::LinearTransformImage(*depth_image_dx, 0.1, 6553.6);
-        geometry::ClipIntensityImage(*depth_image_dx, 0.0, 13107.2);
+        depth_image_dx->LinearTransform(0.1, 6553.6);
+        depth_image_dx->ClipIntensity(0.0, 13107.2);
         io::WriteImage("depth_sobel_dx.png",
-                       *geometry::CreateImageFromFloatImage<uint16_t>(
-                               *depth_image_dx));
-        auto depth_image_dy = geometry::FilterImage(
-                *depth_image, geometry::Image::FilterType::Sobel3Dy);
-        geometry::LinearTransformImage(*depth_image_dy, 0.1, 6553.6);
-        geometry::ClipIntensityImage(*depth_image_dx, 0.0, 13107.2);
+                       *depth_image_dx->CreateImageFromFloatImage<uint16_t>());
+        auto depth_image_dy =
+                depth_image->Filter(geometry::Image::FilterType::Sobel3Dy);
+        depth_image_dy->LinearTransform(0.1, 6553.6);
+        depth_image_dx->ClipIntensity(0.0, 13107.2);
         io::WriteImage("depth_sobel_dy.png",
-                       *geometry::CreateImageFromFloatImage<uint16_t>(
-                               *depth_image_dy));
+                       *depth_image_dy->CreateImageFromFloatImage<uint16_t>());
 
         utility::PrintDebug("Build Pyramid\n");
-        auto pyramid = geometry::CreateImagePyramid(*depth_image, 4);
+        auto pyramid = depth_image->CreatePyramid(4);
         for (int i = 0; i < 4; i++) {
             auto level = pyramid[i];
-            auto level_16bit =
-                    geometry::CreateImageFromFloatImage<uint16_t>(*level);
+            auto level_16bit = level->CreateImageFromFloatImage<uint16_t>();
             std::string outputname =
                     "depth_pyramid_level" + std::to_string(i) + ".png";
             io::WriteImage(outputname, *level_16bit);

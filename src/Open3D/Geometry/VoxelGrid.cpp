@@ -39,10 +39,11 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
       origin_(src_voxel_grid.origin_),
       voxels_(src_voxel_grid.voxels_) {}
 
-void VoxelGrid::Clear() {
+VoxelGrid &VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3d::Zero();
     voxels_.clear();
+    return *this;
 }
 
 bool VoxelGrid::IsEmpty() const { return !HasVoxels(); }

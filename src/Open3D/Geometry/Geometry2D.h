@@ -41,7 +41,7 @@ protected:
     Geometry2D(GeometryType type) : Geometry(type, 2) {}
 
 public:
-    void Clear() override = 0;
+    Geometry& Clear() override = 0;
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector2d GetMinBound() const = 0;
     virtual Eigen::Vector2d GetMaxBound() const = 0;

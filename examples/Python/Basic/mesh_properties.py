@@ -12,14 +12,17 @@ import meshes
 
 
 def mesh_generator(edge_cases=True):
-    yield 'box', o3d.geometry.create_mesh_box()
-    yield 'sphere', o3d.geometry.create_mesh_sphere()
-    yield 'cone', o3d.geometry.create_mesh_cone()
-    yield 'torus', o3d.geometry.create_mesh_torus(radial_resolution=30,
-                                                  tubular_resolution=20)
-    yield 'moebius (twists=1)', o3d.geometry.create_mesh_moebius(twists=1)
-    yield 'moebius (twists=2)', o3d.geometry.create_mesh_moebius(twists=2)
-    yield 'moebius (twists=3)', o3d.geometry.create_mesh_moebius(twists=3)
+    yield 'box', o3d.geometry.TriangleMesh.create_box()
+    yield 'sphere', o3d.geometry.TriangleMesh.create_sphere()
+    yield 'cone', o3d.geometry.TriangleMesh.create_cone()
+    yield 'torus', o3d.geometry.TriangleMesh.create_torus(radial_resolution=30,
+                                                          tubular_resolution=20)
+    yield 'moebius (twists=1)', o3d.geometry.TriangleMesh.create_moebius(
+        twists=1)
+    yield 'moebius (twists=2)', o3d.geometry.TriangleMesh.create_moebius(
+        twists=2)
+    yield 'moebius (twists=3)', o3d.geometry.TriangleMesh.create_moebius(
+        twists=3)
 
     yield 'knot', meshes.knot()
 
@@ -126,11 +129,12 @@ if __name__ == "__main__":
     print('Intersection tests')
     print('#' * 80)
     np.random.seed(30)
-    bbox = o3d.geometry.create_mesh_box(20, 20, 20).translate((-10, -10, -10))
-    meshes = [o3d.geometry.create_mesh_box() for _ in range(20)]
-    meshes.append(o3d.geometry.create_mesh_sphere())
-    meshes.append(o3d.geometry.create_mesh_cone())
-    meshes.append(o3d.geometry.create_mesh_torus())
+    bbox = o3d.geometry.TriangleMesh.create_box(20, 20, 20).translate(
+        (-10, -10, -10))
+    meshes = [o3d.geometry.TriangleMesh.create_box() for _ in range(20)]
+    meshes.append(o3d.geometry.TriangleMesh.create_sphere())
+    meshes.append(o3d.geometry.TriangleMesh.create_cone())
+    meshes.append(o3d.geometry.TriangleMesh.create_torus())
     dirs = [np.random.uniform(-0.1, 0.1, size=(3,)) for _ in meshes]
     for mesh in meshes:
         mesh.compute_vertex_normals()

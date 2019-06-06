@@ -118,48 +118,46 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 
 namespace geometry {
 
-bool EstimateNormals(
-        PointCloud &cloud,
+bool PointCloud::EstimateNormals(
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
-    bool has_normal = cloud.HasNormals();
-    if (cloud.HasNormals() == false) {
-        cloud.normals_.resize(cloud.points_.size());
+    bool has_normal = HasNormals();
+    if (HasNormals() == false) {
+        normals_.resize(points_.size());
     }
     KDTreeFlann kdtree;
-    kdtree.SetGeometry(cloud);
+    kdtree.SetGeometry(*this);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)cloud.points_.size(); i++) {
+    for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
         Eigen::Vector3d normal;
-        if (kdtree.Search(cloud.points_[i], search_param, indices, distance2) >=
-            3) {
-            normal = ComputeNormal(cloud, indices);
+        if (kdtree.Search(points_[i], search_param, indices, distance2) >= 3) {
+            normal = ComputeNormal(*this, indices);
             if (normal.norm() == 0.0) {
                 if (has_normal) {
-                    normal = cloud.normals_[i];
+                    normal = normals_[i];
                 } else {
                     normal = Eigen::Vector3d(0.0, 0.0, 1.0);
                 }
             }
-            if (has_normal && normal.dot(cloud.normals_[i]) < 0.0) {
+            if (has_normal && normal.dot(normals_[i]) < 0.0) {
                 normal *= -1.0;
             }
-            cloud.normals_[i] = normal;
+            normals_[i] = normal;
         } else {
-            cloud.normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
+            normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
         }
     }
 
     return true;
 }
 
-bool OrientNormalsToAlignWithDirection(
-        PointCloud &cloud, const Eigen::Vector3d &orientation_reference
+bool PointCloud::OrientNormalsToAlignWithDirection(
+        const Eigen::Vector3d &orientation_reference
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
-    if (cloud.HasNormals() == false) {
+    if (HasNormals() == false) {
         utility::PrintDebug(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.\n");
@@ -167,8 +165,8 @@ bool OrientNormalsToAlignWithDirection(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)cloud.points_.size(); i++) {
-        auto &normal = cloud.normals_[i];
+    for (int i = 0; i < (int)points_.size(); i++) {
+        auto &normal = normals_[i];
         if (normal.norm() == 0.0) {
             normal = orientation_reference;
         } else if (normal.dot(orientation_reference) < 0.0) {
@@ -178,10 +176,9 @@ bool OrientNormalsToAlignWithDirection(
     return true;
 }
 
-bool OrientNormalsTowardsCameraLocation(
-        PointCloud &cloud,
+bool PointCloud::OrientNormalsTowardsCameraLocation(
         const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
-    if (cloud.HasNormals() == false) {
+    if (HasNormals() == false) {
         utility::PrintDebug(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.\n");
@@ -189,10 +186,9 @@ bool OrientNormalsTowardsCameraLocation(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < (int)cloud.points_.size(); i++) {
-        Eigen::Vector3d orientation_reference =
-                camera_location - cloud.points_[i];
-        auto &normal = cloud.normals_[i];
+    for (int i = 0; i < (int)points_.size(); i++) {
+        Eigen::Vector3d orientation_reference = camera_location - points_[i];
+        auto &normal = normals_[i];
         if (normal.norm() == 0.0) {
             normal = orientation_reference;
             if (normal.norm() == 0.0) {

@@ -17,9 +17,8 @@ from refine_registration import multiscale_icp
 
 def preprocess_point_cloud(pcd, config):
     voxel_size = config["voxel_size"]
-    pcd_down = o3d.geometry.voxel_down_sample(pcd, voxel_size)
-    o3d.geometry.estimate_normals(
-        pcd_down,
+    pcd_down = pcd.voxel_down_sample(voxel_size)
+    pcd_down.estimate_normals(
         o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
                                              max_nn=30))
     pcd_fpfh = o3d.registration.compute_fpfh_feature(

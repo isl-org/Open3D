@@ -96,8 +96,7 @@ void convert(int argc,
                 argc, argv, "--clip_y_max", std::numeric_limits<double>::max());
         max_bound(2) = utility::GetProgramOptionAsDouble(
                 argc, argv, "--clip_z_max", std::numeric_limits<double>::max());
-        pointcloud_ptr =
-                geometry::CropPointCloud(*pointcloud_ptr, min_bound, max_bound);
+        pointcloud_ptr = pointcloud_ptr->Crop(min_bound, max_bound);
         processed = true;
     }
 
@@ -105,15 +104,14 @@ void convert(int argc,
     double mahalanobis_threshold = utility::GetProgramOptionAsDouble(
             argc, argv, "--filter_mahalanobis", 0.0);
     if (mahalanobis_threshold > 0.0) {
-        auto mahalanobis =
-                geometry::ComputePointCloudMahalanobisDistance(*pointcloud_ptr);
+        auto mahalanobis = pointcloud_ptr->ComputeMahalanobisDistance();
         std::vector<size_t> indices;
         for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
             if (mahalanobis[i] < mahalanobis_threshold) {
                 indices.push_back(i);
             }
         }
-        auto pcd = geometry::SelectDownSample(*pointcloud_ptr, indices);
+        auto pcd = pointcloud_ptr->SelectDownSample(indices);
         utility::PrintDebug(
                 "Based on Mahalanobis distance, %d points were filtered.\n",
                 (int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
@@ -126,7 +124,7 @@ void convert(int argc,
     if (every_k > 1) {
         utility::PrintDebug(
                 "Downsample point cloud uniformly every %d points.\n", every_k);
-        pointcloud_ptr = geometry::UniformDownSample(*pointcloud_ptr, every_k);
+        pointcloud_ptr = pointcloud_ptr->UniformDownSample(every_k);
         processed = true;
     }
 
@@ -136,7 +134,7 @@ void convert(int argc,
     if (voxel_size > 0.0) {
         utility::PrintDebug("Downsample point cloud with voxel size %.4f.\n",
                             voxel_size);
-        pointcloud_ptr = geometry::VoxelDownSample(*pointcloud_ptr, voxel_size);
+        pointcloud_ptr = pointcloud_ptr->VoxelDownSample(voxel_size);
         processed = true;
     }
 
@@ -146,8 +144,8 @@ void convert(int argc,
     if (radius > 0.0) {
         utility::PrintDebug("Estimate normals with search radius %.4f.\n",
                             radius);
-        geometry::EstimateNormals(*pointcloud_ptr,
-                                  geometry::KDTreeSearchParamRadius(radius));
+        pointcloud_ptr->EstimateNormals(
+                geometry::KDTreeSearchParamRadius(radius));
         processed = true;
     }
 
@@ -155,8 +153,7 @@ void convert(int argc,
                                            0);
     if (k > 0) {
         utility::PrintDebug("Estimate normals with search knn %d.\n", k);
-        geometry::EstimateNormals(*pointcloud_ptr,
-                                  geometry::KDTreeSearchParamKNN(k));
+        pointcloud_ptr->EstimateNormals(geometry::KDTreeSearchParamKNN(k));
         processed = true;
     }
 
@@ -167,7 +164,7 @@ void convert(int argc,
         utility::PrintDebug("Orient normals to [%.2f, %.2f, %.2f].\n",
                             direction(0), direction(1), direction(2));
         Eigen::Vector3d dir(direction);
-        geometry::OrientNormalsToAlignWithDirection(*pointcloud_ptr, dir);
+        pointcloud_ptr->OrientNormalsToAlignWithDirection(dir);
         processed = true;
     }
     Eigen::VectorXd camera_loc = utility::GetProgramOptionAsEigenVectorXd(
@@ -176,7 +173,7 @@ void convert(int argc,
         utility::PrintDebug("Orient normals towards [%.2f, %.2f, %.2f].\n",
                             camera_loc(0), camera_loc(1), camera_loc(2));
         Eigen::Vector3d loc(camera_loc);
-        geometry::OrientNormalsTowardsCameraLocation(*pointcloud_ptr, loc);
+        pointcloud_ptr->OrientNormalsTowardsCameraLocation(loc);
         processed = true;
     }
 

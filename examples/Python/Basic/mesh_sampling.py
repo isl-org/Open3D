@@ -22,7 +22,7 @@ def time_fcn(fcn, *fcn_args, runs=5):
 
 def mesh_generator():
     yield meshes.plane()
-    yield o3d.geometry.create_mesh_sphere()
+    yield o3d.geometry.TriangleMesh.create_sphere()
     yield meshes.bunny()
     yield meshes.armadillo()
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     o3d.visualization.draw_geometries([plane])
 
     print('Uniform sampling can yield clusters of points on the surface')
-    pcd = o3d.geometry.sample_points_uniformly(plane, number_of_points=500)
+    pcd = plane.sample_points_uniformly(number_of_points=500)
     o3d.visualization.draw_geometries([pcd])
 
     print(
@@ -45,9 +45,7 @@ if __name__ == "__main__":
     print('1) Default via the parameter init_factor: The method first samples '
           'uniformly a point cloud from the mesh with '
           'init_factor x number_of_points and uses this for the elimination')
-    pcd = o3d.geometry.sample_points_poisson_disk(plane,
-                                                  number_of_points=500,
-                                                  init_factor=5)
+    pcd = plane.sample_points_poisson_disk(number_of_points=500, init_factor=5)
     o3d.visualization.draw_geometries([pcd])
 
     print(
@@ -55,11 +53,9 @@ if __name__ == "__main__":
         'o3d.geometry.sample_points_poisson_disk method. Then this point cloud is used '
         'for elimination.')
     print('Initial point cloud')
-    pcd = o3d.geometry.sample_points_uniformly(plane, number_of_points=2500)
+    pcd = plane.sample_points_uniformly(number_of_points=2500)
     o3d.visualization.draw_geometries([pcd])
-    pcd = o3d.geometry.sample_points_poisson_disk(plane,
-                                                  number_of_points=500,
-                                                  pcl=pcd)
+    pcd = plane.sample_points_poisson_disk(number_of_points=500, pcl=pcd)
     o3d.visualization.draw_geometries([pcd])
 
     print('Timings')
@@ -67,11 +63,10 @@ if __name__ == "__main__":
         mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([mesh])
 
-        pcd, times = time_fcn(o3d.geometry.sample_points_uniformly, mesh, 500)
+        pcd, times = time_fcn(mesh.sample_points_uniformly, 500)
         print('sample uniform took on average: %f[s]' % np.mean(times))
         o3d.visualization.draw_geometries([pcd])
 
-        pcd, times = time_fcn(o3d.geometry.sample_points_poisson_disk, mesh,
-                              500, 5)
+        pcd, times = time_fcn(mesh.sample_points_poisson_disk, 500, 5)
         print('sample poisson disk took on average: %f[s]' % np.mean(times))
         o3d.visualization.draw_geometries([pcd])

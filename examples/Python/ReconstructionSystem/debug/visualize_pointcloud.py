@@ -52,8 +52,7 @@ if __name__ == "__main__":
             pcds = []
             for i in range(len(pose_graph.nodes)):
                 pcd = o3d.io.read_point_cloud(ply_file_names[i])
-                pcd_down = o3d.geometry.voxel_down_sample(
-                    pcd, config["voxel_size"] / 2.0)
+                pcd_down = pcd.voxel_down_sample(config["voxel_size"] / 2.0)
                 pcd_down.transform(pose_graph.nodes[i].pose)
                 print(np.linalg.inv(pose_graph.nodes[i].pose))
                 pcds.append(pcd_down)
@@ -83,10 +82,9 @@ if __name__ == "__main__":
                 print("appending rgbd image %d" % i)
                 rgbd_image = read_rgbd_image(color_files[i], depth_files[i],
                                              False, config)
-                pcd_i = o3d.geometry.create_point_cloud_from_rgbd_image(
+                pcd_i = o3d.geometry.PointCloud.create_from_rgbd_image(
                     rgbd_image, pinhole_camera_intrinsic,
                     np.linalg.inv(pose_graph.nodes[i - sid].pose))
-                pcd_i_down = o3d.geometry.voxel_down_sample(
-                    pcd_i, config["voxel_size"])
+                pcd_i_down = pcd_i.voxel_down_sample(config["voxel_size"])
                 pcds.append(pcd_i_down)
             draw_geometries_flip(pcds)

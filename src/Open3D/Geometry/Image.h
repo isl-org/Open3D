@@ -41,6 +41,11 @@ class PinholeCameraIntrinsic;
 
 namespace geometry {
 
+class Image;
+
+/// Typedef and functions for ImagePyramid
+typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
+
 class Image : public Geometry2D {
 public:
     enum class ColorToIntensityConversionType {
@@ -61,7 +66,7 @@ public:
     ~Image() override {}
 
 public:
-    void Clear() override;
+    Image &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector2d GetMinBound() const override;
     Eigen::Vector2d GetMaxBound() const override;
@@ -73,15 +78,16 @@ public:
                data_.size() == height_ * BytesPerLine();
     }
 
-    void PrepareImage(int width,
-                      int height,
-                      int num_of_channels,
-                      int bytes_per_channel) {
+    Image &Prepare(int width,
+                   int height,
+                   int num_of_channels,
+                   int bytes_per_channel) {
         width_ = width;
         height_ = height;
         num_of_channels_ = num_of_channels;
         bytes_per_channel_ = bytes_per_channel;
         AllocateDataBuffer();
+        return *this;
     }
 
     int BytesPerLine() const {
@@ -91,6 +97,79 @@ public:
     /// Function to access the bilinear interpolated float value of a
     /// (single-channel) float image
     std::pair<bool, double> FloatValueAt(double u, double v) const;
+
+    /// Factory function to create a float image composed of multipliers that
+    /// convert depth values into camera distances (ImageFactory.cpp)
+    /// The multiplier function M(u,v) is defined as:
+    /// M(u, v) = sqrt(1 + ((u - cx) / fx) ^ 2 + ((v - cy) / fy) ^ 2)
+    /// This function is used as a convenient function for performance
+    /// optimization in volumetric integration (see
+    /// Core/Integration/TSDFVolume.h).
+    static std::shared_ptr<Image>
+    CreateDepthToCameraDistanceMultiplierFloatImage(
+            const camera::PinholeCameraIntrinsic &intrinsic);
+
+    /// Return a gray scaled float type image.
+    std::shared_ptr<Image> CreateFloatImage(
+            Image::ColorToIntensityConversionType type =
+                    Image::ColorToIntensityConversionType::Weighted) const;
+
+    /// Function to access the raw data of a single-channel Image
+    template <typename T>
+    T *PointerAt(int u, int v) const;
+
+    /// Function to access the raw data of a multi-channel Image
+    template <typename T>
+    T *PointerAt(int u, int v, int ch) const;
+
+    std::shared_ptr<Image> ConvertDepthToFloatImage(
+            double depth_scale = 1000.0, double depth_trunc = 3.0) const;
+
+    std::shared_ptr<Image> Flip() const;
+
+    /// Function to filter image with pre-defined filtering type
+    std::shared_ptr<Image> Filter(Image::FilterType type) const;
+
+    /// Function to filter image with arbitrary dx, dy separable filters
+    std::shared_ptr<Image> Filter(const std::vector<double> &dx,
+                                  const std::vector<double> &dy) const;
+
+    std::shared_ptr<Image> FilterHorizontal(
+            const std::vector<double> &kernel) const;
+
+    /// Function to 2x image downsample using simple 2x2 averaging
+    std::shared_ptr<Image> Downsample() const;
+
+    /// Function to dilate 8bit mask map
+    std::shared_ptr<Image> Dilate(int half_kernel_size = 1) const;
+
+    /// Function to linearly transform pixel intensities
+    /// image_new = scale * image + offset
+    Image &LinearTransform(double scale = 1.0, double offset = 0.0);
+
+    /// Function to clipping pixel intensities
+    /// min is lower bound
+    /// max is upper bound
+    Image &ClipIntensity(double min = 0.0, double max = 1.0);
+
+    /// Function to change data types of image
+    /// crafted for specific usage such as
+    /// single channel float image -> 8-bit RGB or 16-bit depth image
+    template <typename T>
+    std::shared_ptr<Image> CreateImageFromFloatImage() const;
+
+    /// Function to filter image pyramid
+    static ImagePyramid FilterPyramid(const ImagePyramid &input,
+                                      Image::FilterType type);
+
+    /// Function to create image pyramid
+    ImagePyramid CreatePyramid(size_t num_of_levels,
+                               bool with_gaussian_filter = true) const;
+
+    /// Function to create a depthmap boundary mask from depth image
+    std::shared_ptr<Image> CreateDepthBoundaryMask(
+            double depth_threshold_for_discontinuity_check = 0.1,
+            int half_dilation_kernel_size_for_discontinuity_map = 3) const;
 
 protected:
     void AllocateDataBuffer() {
@@ -104,88 +183,6 @@ public:
     int bytes_per_channel_ = 0;
     std::vector<uint8_t> data_;
 };
-
-/// Factory function to create a float image composed of multipliers that
-/// convert depth values into camera distances (ImageFactory.cpp)
-/// The multiplier function M(u,v) is defined as:
-/// M(u, v) = sqrt(1 + ((u - cx) / fx) ^ 2 + ((v - cy) / fy) ^ 2)
-/// This function is used as a convenient function for performance optimization
-/// in volumetric integration (see Core/Integration/TSDFVolume.h).
-std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
-        const camera::PinholeCameraIntrinsic &intrinsic);
-
-/// Return a gray scaled float type image.
-std::shared_ptr<Image> CreateFloatImageFromImage(
-        const Image &image,
-        Image::ColorToIntensityConversionType type =
-                Image::ColorToIntensityConversionType::Weighted);
-
-/// Function to access the raw data of a single-channel Image
-template <typename T>
-T *PointerAt(const Image &image, int u, int v);
-
-/// Function to access the raw data of a multi-channel Image
-template <typename T>
-T *PointerAt(const Image &image, int u, int v, int ch);
-
-std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
-                                                double depth_scale = 1000.0,
-                                                double depth_trunc = 3.0);
-
-std::shared_ptr<Image> FlipImage(const Image &input);
-
-/// Function to filter image with pre-defined filtering type
-std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type);
-
-/// Function to filter image with arbitrary dx, dy separable filters
-std::shared_ptr<Image> FilterImage(const Image &input,
-                                   const std::vector<double> &dx,
-                                   const std::vector<double> &dy);
-
-std::shared_ptr<Image> FilterHorizontalImage(const Image &input,
-                                             const std::vector<double> &kernel);
-
-/// Function to 2x image downsample using simple 2x2 averaging
-std::shared_ptr<Image> DownsampleImage(const Image &input);
-
-/// Function to dilate 8bit mask map
-std::shared_ptr<Image> DilateImage(const Image &input,
-                                   int half_kernel_size = 1);
-
-/// Function to linearly transform pixel intensities
-/// image_new = scale * image + offset
-void LinearTransformImage(Image &input,
-                          double scale = 1.0,
-                          double offset = 0.0);
-
-/// Function to clipping pixel intensities
-/// min is lower bound
-/// max is upper bound
-void ClipIntensityImage(Image &input, double min = 0.0, double max = 1.0);
-
-/// Function to change data types of image
-/// crafted for specific usage such as
-/// single channel float image -> 8-bit RGB or 16-bit depth image
-template <typename T>
-std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input);
-
-/// Typedef and functions for ImagePyramid
-typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
-
-/// Function to filter image pyramid
-ImagePyramid FilterImagePyramid(const ImagePyramid &input,
-                                Image::FilterType type);
-
-/// Function to create image pyramid
-ImagePyramid CreateImagePyramid(const Image &image,
-                                size_t num_of_levels,
-                                bool with_gaussian_filter = true);
-
-/// Function to create a depthmap boundary mask from depth image
-std::shared_ptr<Image> CreateDepthBoundaryMask(
-        const Image &depth_image_input,
-        double depth_threshold_for_discontinuity_check = 0.1,
-        int half_dilation_kernel_size_for_discontinuity_map = 3);
 
 }  // namespace geometry
 }  // namespace open3d

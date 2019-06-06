@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < nn; i++) {
         correspondences.push_back(std::make_pair(0, indices_vec[i]));
     }
-    auto lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
+    auto lineset_ptr = geometry::LineSet::CreateFromPointCloudCorrespondences(
             *cloud_ptr, *cloud_ptr, correspondences);
     visualization::DrawGeometries({cloud_ptr, lineset_ptr});
 
@@ -85,8 +85,9 @@ int main(int argc, char **argv) {
         kdtree.SearchKNN(new_cloud_ptr->points_[i], 1, indices_vec, dists_vec);
         correspondences.push_back(std::make_pair(indices_vec[0], (int)i));
     }
-    auto new_lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
-            *cloud_ptr, *new_cloud_ptr, correspondences);
+    auto new_lineset_ptr =
+            geometry::LineSet::CreateFromPointCloudCorrespondences(
+                    *cloud_ptr, *new_cloud_ptr, correspondences);
     new_lineset_ptr->colors_.resize(new_lineset_ptr->lines_.size());
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);

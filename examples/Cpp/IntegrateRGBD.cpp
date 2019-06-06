@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
             utility::PrintDebug("Processing frame %d ...\n", index);
             io::ReadImage(dir_name + st[0], depth);
             io::ReadImage(dir_name + st[1], color);
-            auto rgbd = geometry::CreateRGBDImageFromColorAndDepth(
+            auto rgbd = geometry::RGBDImage::CreateFromColorAndDepth(
                     color, depth, 1000.0, 4.0, false);
             if (index == 0 ||
                 (every_k_frames > 0 && index % every_k_frames == 0)) {

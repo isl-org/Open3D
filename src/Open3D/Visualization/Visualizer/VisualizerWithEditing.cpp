@@ -364,7 +364,7 @@ void VisualizerWithEditing::KeyPressCallback(
                             voxel_size_);
                     geometry::PointCloud &pcd =
                             (geometry::PointCloud &)*editing_geometry_ptr_;
-                    pcd = *geometry::VoxelDownSample(pcd, voxel_size_);
+                    pcd = *pcd.VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
                     utility::PrintInfo(

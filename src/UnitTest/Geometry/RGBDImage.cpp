@@ -55,16 +55,16 @@ TEST(RGBDImage, Constructor) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    image.PrepareImage(image_width, image_height, image_num_of_channels,
-                       image_bytes_per_channel);
+    image.Prepare(image_width, image_height, image_num_of_channels,
+                  image_bytes_per_channel);
 
     Rand(image.data_, 100, 150, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto depth = geometry::ConvertDepthToFloatImage(image);
+    auto depth = image.ConvertDepthToFloatImage();
 
     geometry::RGBDImage rgbd_image(color, *depth);
 
@@ -80,7 +80,7 @@ TEST(RGBDImage, DISABLED_MemberData) { unit_test::NotImplemented(); }
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
+TEST(RGBDImage, CreateFromColorAndDepth) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -117,17 +117,18 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(color, depth);
+    auto rgbd_image =
+            geometry::RGBDImage::CreateFromColorAndDepth(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -136,7 +137,7 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
+TEST(RGBDImage, CreateFromRedwoodFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -173,17 +174,18 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = geometry::CreateRGBDImageFromRedwoodFormat(color, depth);
+    auto rgbd_image =
+            geometry::RGBDImage::CreateFromRedwoodFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -192,7 +194,7 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
+TEST(RGBDImage, CreateFromTUMFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -229,17 +231,17 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = geometry::CreateRGBDImageFromTUMFormat(color, depth);
+    auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -248,7 +250,7 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
+TEST(RGBDImage, CreateFromSUNFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -285,17 +287,17 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = geometry::CreateRGBDImageFromSUNFormat(color, depth);
+    auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -304,7 +306,7 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
+TEST(RGBDImage, CreateFromNYUFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -341,17 +343,17 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = geometry::CreateRGBDImageFromNYUFormat(color, depth);
+    auto rgbd_image = geometry::RGBDImage::CreateFromNYUFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -360,7 +362,7 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, FilterRGBDImagePyramid) {
+TEST(RGBDImage, FilterPyramid) {
     vector<vector<uint8_t>> ref_color = {
             {49,  63,  46,  63,  234, 198, 45,  63,  152, 189, 39,  63,  151,
              141, 36,  63,  165, 233, 38,  63,  44,  66,  47,  63,  54,  137,
@@ -400,20 +402,21 @@ TEST(RGBDImage, FilterRGBDImagePyramid) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
-    auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(color, depth);
-    auto pyramid = geometry::CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
-    auto filtered = geometry::FilterRGBDImagePyramid(
+    auto rgbd_image =
+            geometry::RGBDImage::CreateFromColorAndDepth(color, depth);
+    auto pyramid = rgbd_image->CreatePyramid(num_of_levels);
+    auto filtered = geometry::RGBDImage::FilterPyramid(
             pyramid, geometry::Image::FilterType::Gaussian3);
 
     for (size_t j = 0; j < num_of_levels; j++) {
@@ -425,7 +428,7 @@ TEST(RGBDImage, FilterRGBDImagePyramid) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImagePyramid) {
+TEST(RGBDImage, CreatePyramid) {
     vector<vector<uint8_t>> ref_color = {
             {216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
              72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
@@ -466,19 +469,20 @@ TEST(RGBDImage, CreateRGBDImagePyramid) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
-    auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(color, depth);
-    auto pyramid = geometry::CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
+    auto rgbd_image =
+            geometry::RGBDImage::CreateFromColorAndDepth(color, depth);
+    auto pyramid = rgbd_image->CreatePyramid(num_of_levels);
 
     for (size_t j = 0; j < num_of_levels; j++) {
         EXPECT_EQ(ref_color[j], pyramid[j]->color_.data_);

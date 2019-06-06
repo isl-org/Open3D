@@ -47,7 +47,7 @@ public:
     ~PointCloudPicker() override {}
 
 public:
-    void Clear() override;
+    PointCloudPicker& Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const final;
     Eigen::Vector3d GetMaxBound() const final;

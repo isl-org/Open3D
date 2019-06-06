@@ -47,8 +47,8 @@ def multiscale_icp(source,
         iter = max_iter[scale]
         distance_threshold = config["voxel_size"] * 1.4
         print("voxel_size %f" % voxel_size[scale])
-        source_down = o3d.geometry.voxel_down_sample(source, voxel_size[scale])
-        target_down = o3d.geometry.voxel_down_sample(target, voxel_size[scale])
+        source_down = source.voxel_down_sample(voxel_size[scale])
+        target_down = target.voxel_down_sample(voxel_size[scale])
         if config["icp_method"] == "point_to_point":
             result_icp = o3d.registration.registration_icp(
                 source_down, target_down, distance_threshold,
@@ -56,13 +56,11 @@ def multiscale_icp(source,
                 o3d.registration.TransformationEstimationPointToPoint(),
                 o3d.registration.ICPConvergenceCriteria(max_iteration=iter))
         else:
-            o3d.geometry.estimate_normals(
-                source_down,
+            source_down.estimate_normals(
                 o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
                                                      2.0,
                                                      max_nn=30))
-            o3d.geometry.estimate_normals(
-                target_down,
+            target_down.estimate_normals(
                 o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
                                                      2.0,
                                                      max_nn=30))

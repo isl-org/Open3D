@@ -35,17 +35,17 @@
 namespace open3d {
 namespace geometry {
 
-std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
-                                                int number_of_iterations) {
+std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
+        int number_of_iterations) const {
     auto mesh = std::make_shared<TriangleMesh>();
-    mesh->vertices_ = input.vertices_;
-    mesh->vertex_colors_ = input.vertex_colors_;
-    mesh->vertex_normals_ = input.vertex_normals_;
-    mesh->triangles_ = input.triangles_;
+    mesh->vertices_ = vertices_;
+    mesh->vertex_colors_ = vertex_colors_;
+    mesh->vertex_normals_ = vertex_normals_;
+    mesh->triangles_ = triangles_;
 
-    bool has_vert_normal = input.HasVertexNormals();
-    bool has_vert_color = input.HasVertexColors();
-    bool has_tria_normal = input.HasTriangleNormals();
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+    bool has_tria_normal = HasTriangleNormals();
 
     // Compute and return midpoint.
     // Also adds edge - new vertex refrence to new_verts map.
@@ -102,15 +102,15 @@ std::shared_ptr<TriangleMesh> SubdivideMidpoint(const TriangleMesh& input,
         mesh->triangles_ = new_triangles;
     }
 
-    if (input.HasTriangleNormals()) {
+    if (HasTriangleNormals()) {
         mesh->ComputeTriangleNormals();
     }
 
     return mesh;
 }
 
-std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
-                                            int number_of_iterations) {
+std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
+        int number_of_iterations) const {
     typedef std::unordered_map<Eigen::Vector2i, int,
                                utility::hash_eigen::hash<Eigen::Vector2i>>
             EdgeNewVertMap;
@@ -123,9 +123,9 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
         return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
     };
 
-    bool has_vert_normal = input.HasVertexNormals();
-    bool has_vert_color = input.HasVertexColors();
-    bool has_tria_normal = input.HasTriangleNormals();
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+    bool has_tria_normal = HasTriangleNormals();
 
     auto UpdateVertex = [&](int vidx,
                             const std::shared_ptr<TriangleMesh>& old_mesh,
@@ -284,9 +284,9 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
     };
 
     EdgeTrianglesMap edge_to_triangles;
-    VertexNeighbours vertex_neighbours(input.vertices_.size());
-    for (size_t tidx = 0; tidx < input.triangles_.size(); ++tidx) {
-        const auto& tria = input.triangles_[tidx];
+    VertexNeighbours vertex_neighbours(vertices_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto& tria = triangles_[tidx];
         Eigen::Vector2i e0 = CreateEdge(tria(0), tria(1));
         edge_to_triangles[e0].insert(tidx);
         Eigen::Vector2i e1 = CreateEdge(tria(1), tria(2));
@@ -309,10 +309,10 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
     }
 
     auto old_mesh = std::make_shared<TriangleMesh>();
-    old_mesh->vertices_ = input.vertices_;
-    old_mesh->vertex_colors_ = input.vertex_colors_;
-    old_mesh->vertex_normals_ = input.vertex_normals_;
-    old_mesh->triangles_ = input.triangles_;
+    old_mesh->vertices_ = vertices_;
+    old_mesh->vertex_colors_ = vertex_colors_;
+    old_mesh->vertex_normals_ = vertex_normals_;
+    old_mesh->triangles_ = triangles_;
 
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         int n_new_vertices =
@@ -365,7 +365,7 @@ std::shared_ptr<TriangleMesh> SubdivideLoop(const TriangleMesh& input,
         vertex_neighbours = std::move(new_vertex_neighbours);
     }
 
-    if (input.HasTriangleNormals()) {
+    if (HasTriangleNormals()) {
         old_mesh->ComputeTriangleNormals();
     }
 

@@ -45,7 +45,7 @@ protected:
     Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
 public:
-    void Clear() override = 0;
+    Geometry3D& Clear() override = 0;
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;
     virtual Eigen::Vector3d GetMaxBound() const = 0;

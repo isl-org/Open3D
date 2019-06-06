@@ -31,10 +31,11 @@
 namespace open3d {
 namespace geometry {
 
-void LineSet::Clear() {
+LineSet &LineSet::Clear() {
     points_.clear();
     lines_.clear();
     colors_.clear();
+    return *this;
 }
 
 bool LineSet::IsEmpty() const { return !HasPoints(); }

@@ -51,15 +51,13 @@ if __name__ == "__main__":
         print([iter, radius, scale])
 
         print("3-1. Downsample with a voxel size %.2f" % radius)
-        source_down = o3d.geometry.voxel_down_sample(source, radius)
-        target_down = o3d.geometry.voxel_down_sample(target, radius)
+        source_down = source.voxel_down_sample(radius)
+        target_down = target.voxel_down_sample(radius)
 
         print("3-2. Estimate normal.")
-        o3d.geometry.estimate_normals(
-            source_down,
+        source_down.estimate_normals(
             o3d.geometry.KDTreeSearchParamHybrid(radius=radius * 2, max_nn=30))
-        o3d.geometry.estimate_normals(
-            target_down,
+        target_down.estimate_normals(
             o3d.geometry.KDTreeSearchParamHybrid(radius=radius * 2, max_nn=30))
 
         print("3-3. Applying colored point cloud registration")

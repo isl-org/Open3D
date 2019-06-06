@@ -53,12 +53,12 @@ std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
     double depth_scale = 1000.0, depth_trunc = 3.0;
     bool convert_rgb_to_intensity = true;
     std::shared_ptr<geometry::RGBDImage> rgbd_image =
-            geometry::CreateRGBDImageFromColorAndDepth(
+            geometry::RGBDImage::CreateFromColorAndDepth(
                     color, depth, depth_scale, depth_trunc,
                     convert_rgb_to_intensity);
     if (visualize) {
-        auto pcd =
-                geometry::CreatePointCloudFromRGBDImage(*rgbd_image, intrinsic);
+        auto pcd = geometry::PointCloud::CreateFromRGBDImage(*rgbd_image,
+                                                             intrinsic);
         visualization::DrawGeometries({pcd});
     }
     return rgbd_image;

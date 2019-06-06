@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         auto depth = io::CreateImageFromFile(depth_filenames[i]);
         utility::PrintDebug("reading %s...\n", color_filenames[i].c_str());
         auto color = io::CreateImageFromFile(color_filenames[i]);
-        auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(
+        auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
                 *color, *depth, 1000.0, 3.0, false);
         rgbd_images.push_back(rgbd_image);
     }

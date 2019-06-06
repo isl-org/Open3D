@@ -58,8 +58,7 @@ public:
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
 
-public:
-    void Clear() override;
+    VoxelGrid &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
@@ -70,11 +69,9 @@ public:
                       bool center = true,
                       RotationType type = RotationType::XYZ) override;
 
-public:
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
-public:
     bool HasVoxels() const { return voxels_.size() > 0; }
     bool HasColors() const {
         return true;  // By default, the colors are (0, 0, 0)
@@ -85,14 +82,14 @@ public:
 
     std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
 
+    static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
+            const PointCloud &input, double voxel_size);
+
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
     std::vector<Voxel> voxels_;
 };
-
-std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input, double voxel_size);
 
 }  // namespace geometry
 }  // namespace open3d
