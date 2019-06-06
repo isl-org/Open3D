@@ -106,7 +106,7 @@ Make a combined point cloud
 .. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
    :language: python
    :lineno-start: 97
-   :lines: 97-106
+   :lines: 97-105
    :linenos:
 
 .. image:: ../../_static/Advanced/multiway_registration/combined.png

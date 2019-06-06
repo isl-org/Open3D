@@ -90,7 +90,7 @@ To further improve efficiency, [Park2017]_ proposes a multi-scale registration s
 .. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
    :language: python
    :lineno-start: 40
-   :lines: 40-74
+   :lines: 40-72
    :linenos:
 
 In total, 3 layers of multi-resolution point clouds are created with :ref:`voxel_downsampling`. Normals are computed with :ref:`vertex_normal_estimation`. The core registration function ``registration_colored_icp`` is called for each layer, from coarse to fine.  ``lambda_geometric`` is an optional argument for ``registration_colored_icp`` that determines :math:`\lambda \in [0,1]` in the overall energy :math:`\lambda E_{G} + (1-\lambda) E_{C}`.

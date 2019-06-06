@@ -17,7 +17,7 @@ Fine-grained registration
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
    :language: python
    :lineno-start: 38
-   :lines: 5,39-92
+   :lines: 5,39-90
    :linenos:
 
 Two options are given for the fine-grained registration. The ``color`` option is recommended since it uses color information to prevent drift. See [Park2017]_ for details.
@@ -49,8 +49,8 @@ The function ``make_posegraph_for_refined_scene`` below calls all the functions 
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
    :language: python
-   :lineno-start: 131
-   :lines: 5,132-178
+   :lineno-start: 129
+   :lines: 5,130-176
    :linenos:
 
 The main workflow is: pairwise local refinement -> multiway registration.

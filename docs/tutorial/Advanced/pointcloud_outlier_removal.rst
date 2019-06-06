@@ -57,7 +57,7 @@ Statistical outlier removal
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
    :lineno-start: 34
-   :lines: 34-38
+   :lines: 34-37
    :linenos:
 
 ``statistical_outlier_removal`` removes points that are further away from their neighbors compared to the average for the point cloud. It takes two input parameters:
@@ -74,7 +74,7 @@ Radius outlier removal
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
    :lineno-start: 40
-   :lines: 40-44
+   :lines: 39-41
    :linenos:
 
 ``radius_outlier_removal`` removes points that have few neighbors in a given sphere around them. Two parameters can be used to tune the filter to your data:

@@ -72,7 +72,7 @@ Another basic operation for point cloud is point normal estimation.
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
    :lineno-start: 22
-   :lines: 22-27
+   :lines: 22-25
    :linenos:
 
 ``estimate_normals`` computes normal for every point. The function finds adjacent points and calculate the principal axis of the adjacent points using covariance analysis.
@@ -95,7 +95,7 @@ Estimated normal vectors can be retrieved by ``normals`` variable of ``downpcd``
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
    :lineno-start: 29
-   :lines: 29-30
+   :lines: 27-28
    :linenos:
 
 .. code-block:: sh
@@ -109,7 +109,7 @@ Normal vectors can be transformed as a numpy array using ``np.asarray``.
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
    :lineno-start: 31
-   :lines: 31-32
+   :lines: 29-30
    :linenos:
 
 .. code-block:: sh
@@ -136,7 +136,7 @@ Crop point cloud
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
    :lineno-start: 35
-   :lines: 35-40
+   :lines: 33-38
    :linenos:
 
 ``read_selection_polygon_volume`` reads a json file that specifies polygon selection area.
@@ -153,7 +153,7 @@ Paint point cloud
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
    :lineno-start: 42
-   :lines: 42-45
+   :lines: 40-43
    :linenos:
 
 ``paint_uniform_color`` paints all the points to a uniform color. The color is in RGB space, [0, 1] range.
