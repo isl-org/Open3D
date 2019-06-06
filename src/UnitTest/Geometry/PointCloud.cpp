@@ -971,8 +971,8 @@ TEST(PointCloud, CreatePointCloudFromDepthImage) {
     int local_num_of_channels = 1;
     int local_bytes_per_channel = 2;
 
-    image.PrepareImage(local_width, local_height, local_num_of_channels,
-                       local_bytes_per_channel);
+    image.Prepare(local_width, local_height, local_num_of_channels,
+                  local_bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -1006,10 +1006,10 @@ void TEST_CreatePointCloudFromRGBDImage(const int& color_num_of_channels,
     int num_of_channels = 1;
     int bytes_per_channel = 1;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    color.PrepareImage(width, height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(width, height, color_num_of_channels,
+                  color_bytes_per_channel);
 
     Rand(image.data_, 100, 150, 0);
     Rand(color.data_, 130, 200, 0);

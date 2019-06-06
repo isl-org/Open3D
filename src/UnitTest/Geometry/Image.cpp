@@ -65,7 +65,7 @@ TEST(Image, DefaultConstructor) {
 }
 
 // ----------------------------------------------------------------------------
-// test PrepareImage aka image creation
+// test Prepare aka image creation
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImage) {
     int width = 1920;
@@ -75,7 +75,7 @@ TEST(Image, CreateImage) {
 
     geometry::Image image;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     // public member variables
     EXPECT_EQ(width, image.width_);
@@ -108,7 +108,7 @@ TEST(Image, Clear) {
 
     geometry::Image image;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     image.Clear();
 
@@ -141,7 +141,7 @@ TEST(Image, FloatValueAt) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     float* const im = Cast<float>(&image.data_[0]);
 
@@ -171,7 +171,7 @@ TEST(Image, DISABLED_MemberData) {
 
     geometry::Image image;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     int temp_width = 320;
     int temp_height = 240;
@@ -245,7 +245,7 @@ void TEST_CreateFloatImage(
     int height = 5;
     int float_num_of_channels = 1;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -455,7 +455,7 @@ TEST(Image, PointerAt) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     float* const im = Cast<float>(&image.data_[0]);
 
@@ -494,7 +494,7 @@ TEST(Image, ConvertDepthToFloatImage) {
     int bytes_per_channel = 1;
     int float_num_of_channels = 1;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -532,7 +532,7 @@ TEST(Image, FlipImage) {
     int bytes_per_channel = 4;
     int flip_bytes_per_channel = 1;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -562,7 +562,7 @@ void TEST_Filter(const vector<uint8_t>& ref,
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -691,7 +691,7 @@ TEST(Image, FilterHorizontal) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -712,7 +712,7 @@ TEST(Image, FilterHorizontal) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DownsampleImage) {
+TEST(Image, Downsample) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {172, 41, 59,  204, 93, 130, 242, 232,
                            22,  91, 205, 233, 49, 169, 227, 87};
@@ -725,13 +725,13 @@ TEST(Image, DownsampleImage) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto float_image = image.CreateFloatImage();
 
-    auto output = float_image->DownsampleImage();
+    auto output = float_image->Downsample();
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ((int)(width / 2), output->width_);
@@ -744,7 +744,7 @@ TEST(Image, DownsampleImage) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DilateImage) {
+TEST(Image, Dilate) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             255, 255, 0,   0,   0,   0,   0,   255, 255, 255, 255, 255, 0,
@@ -764,13 +764,13 @@ TEST(Image, DilateImage) {
     int num_of_channels = 1;
     int bytes_per_channel = 1;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
     for (size_t i = 0; i < image.data_.size(); i++)
         if (i % 9 == 0) image.data_[i] = 255;
 
-    auto output = image.DilateImage();
+    auto output = image.Dilate();
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -783,7 +783,7 @@ TEST(Image, DilateImage) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, LinearTransformImage) {
+TEST(Image, LinearTransform) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             144, 77,  101, 204, 139, 26,  245, 195, 154, 153, 25,  62,  92,
@@ -803,13 +803,13 @@ TEST(Image, LinearTransformImage) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto output = image.CreateFloatImage();
 
-    output->LinearTransformImage(2.3, 0.15);
+    output->LinearTransform(2.3, 0.15);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -822,7 +822,7 @@ TEST(Image, LinearTransformImage) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, ClipIntensityImage) {
+TEST(Image, ClipIntensity) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
             195, 245, 168, 62,  195, 245, 168, 62,  195, 245, 168, 62,  195,
@@ -842,13 +842,13 @@ TEST(Image, ClipIntensityImage) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto output = image.CreateFloatImage();
 
-    output->ClipIntensityImage(0.33, 0.71);
+    output->ClipIntensity(0.33, 0.71);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -871,7 +871,7 @@ void TEST_CreateImageFromFloatImage() {
     int num_of_channels = 1;
     int bytes_per_channel = sizeof(T);
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -935,7 +935,7 @@ TEST(Image, FilterPyramid) {
     int bytes_per_channel = 4;
     int num_of_levels = 2;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -992,7 +992,7 @@ TEST(Image, CreatePyramid) {
     int bytes_per_channel = 4;
     int num_of_levels = 2;
 
-    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 

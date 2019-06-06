@@ -106,8 +106,7 @@ void pybind_image(py::module &m) {
              height = (int)info.shape[0];
              width = (int)info.shape[1];
              auto img = new geometry::Image();
-             img->PrepareImage(width, height, num_of_channels,
-                               bytes_per_channel);
+             img->Prepare(width, height, num_of_channels, bytes_per_channel);
              memcpy(img->data_.data(), info.ptr, img->data_.size());
              return img;
          }))

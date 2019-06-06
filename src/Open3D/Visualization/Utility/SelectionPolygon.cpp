@@ -89,7 +89,7 @@ void SelectionPolygon::FillPolygon(int width, int height) {
     // http://alienryderflex.com/polygon_fill/
     if (IsEmpty()) return;
     is_closed_ = true;
-    polygon_interior_mask_.PrepareImage(width, height, 1, 1);
+    polygon_interior_mask_.Prepare(width, height, 1, 1);
     std::fill(polygon_interior_mask_.data_.begin(),
               polygon_interior_mask_.data_.end(), 0);
     std::vector<int> nodes;

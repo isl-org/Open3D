@@ -53,7 +53,7 @@ vector<geometry::Image> GenerateImages(const int& width,
     for (size_t i = 0; i < size; i++) {
         geometry::Image image;
 
-        image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+        image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
         if (bytes_per_channel == 4) {
             float* const depthData = reinterpret_cast<float*>(&image.data_[0]);
@@ -327,7 +327,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
     int bytes_per_channel = 4;
 
     geometry::Image img;
-    img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    img.Prepare(width, height, num_of_channels, bytes_per_channel);
     float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
     Rand(depthData, width * height, 10.0, 100.0, 0);
 
@@ -412,7 +412,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     int bytes_per_channel = 4;
 
     geometry::Image img;
-    img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    img.Prepare(width, height, num_of_channels, bytes_per_channel);
     float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
     Rand(depthData, width * height, 10.0, 100.0, 0);
 

@@ -55,11 +55,11 @@ TEST(RGBDImage, Constructor) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    image.PrepareImage(image_width, image_height, image_num_of_channels,
-                       image_bytes_per_channel);
+    image.Prepare(image_width, image_height, image_num_of_channels,
+                  image_bytes_per_channel);
 
     Rand(image.data_, 100, 150, 0);
     Rand(color.data_, 130, 200, 0);
@@ -117,11 +117,11 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
@@ -174,11 +174,11 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
@@ -231,11 +231,11 @@ TEST(RGBDImage, CreateFromTUMFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
@@ -287,11 +287,11 @@ TEST(RGBDImage, CreateFromSUNFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
@@ -343,11 +343,11 @@ TEST(RGBDImage, CreateFromNYUFormat) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
@@ -402,11 +402,11 @@ TEST(RGBDImage, FilterPyramid) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
@@ -469,11 +469,11 @@ TEST(RGBDImage, CreatePyramid) {
     const int color_num_of_channels = 3;
     const int color_bytes_per_channel = 1;
 
-    color.PrepareImage(color_width, color_height, color_num_of_channels,
-                       color_bytes_per_channel);
+    color.Prepare(color_width, color_height, color_num_of_channels,
+                  color_bytes_per_channel);
 
-    depth.PrepareImage(depth_width, depth_height, depth_num_of_channels,
-                       depth_bytes_per_channel);
+    depth.Prepare(depth_width, depth_height, depth_num_of_channels,
+                  depth_bytes_per_channel);
 
     float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);

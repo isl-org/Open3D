@@ -44,8 +44,8 @@ InitializeCorrespondenceMap(int width, int height) {
     // initialization: filling with any (u,v) to (-1,-1)
     auto correspondence_map = std::make_shared<geometry::Image>();
     auto depth_buffer = std::make_shared<geometry::Image>();
-    correspondence_map->PrepareImage(width, height, 2, 4);
-    depth_buffer->PrepareImage(width, height, 1, 4);
+    correspondence_map->Prepare(width, height, 2, 4);
+    depth_buffer->Prepare(width, height, 1, 4);
     for (int v = 0; v < correspondence_map->height_; v++) {
         for (int u = 0; u < correspondence_map->width_; u++) {
             *correspondence_map->PointerAt<int>(u, v, 0) = -1;
@@ -209,7 +209,7 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
     const double inv_fy = 1.0 / intrinsic_matrix(1, 1);
     const double ox = intrinsic_matrix(0, 2);
     const double oy = intrinsic_matrix(1, 2);
-    image_xyz->PrepareImage(depth.width_, depth.height_, 3, 4);
+    image_xyz->Prepare(depth.width_, depth.height_, 3, 4);
 
     for (int y = 0; y < image_xyz->height_; y++) {
         for (int x = 0; x < image_xyz->width_; x++) {
@@ -321,8 +321,8 @@ void NormalizeIntensity(geometry::Image &image_s,
     }
     mean_s /= (double)correspondence.size();
     mean_t /= (double)correspondence.size();
-    image_s.LinearTransformImage(0.5 / mean_s, 0.0);
-    image_t.LinearTransformImage(0.5 / mean_t, 0.0);
+    image_s.LinearTransform(0.5 / mean_s, 0.0);
+    image_t.LinearTransform(0.5 / mean_t, 0.0);
 }
 
 inline std::shared_ptr<geometry::RGBDImage> PackRGBDImage(

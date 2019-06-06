@@ -118,10 +118,9 @@ std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
     return output;
 }
 
-Image &Image::ClipIntensityImage(double min /* = 0.0*/, double max /* = 1.0*/) {
+Image &Image::ClipIntensity(double min /* = 0.0*/, double max /* = 1.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning(
-                "[ClipIntensityImage] Unsupported image format.\n");
+        utility::PrintWarning("[ClipIntensity] Unsupported image format.\n");
         return *this;
     }
     for (int y = 0; y < height_; y++) {
@@ -134,10 +133,9 @@ Image &Image::ClipIntensityImage(double min /* = 0.0*/, double max /* = 1.0*/) {
     return *this;
 }
 
-Image &Image::LinearTransformImage(double scale, double offset /* = 0.0*/) {
+Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning(
-                "[LinearTransformImage] Unsupported image format.\n");
+        utility::PrintWarning("[LinearTransform] Unsupported image format.\n");
         return *this;
     }
     for (int y = 0; y < height_; y++) {
@@ -149,15 +147,15 @@ Image &Image::LinearTransformImage(double scale, double offset /* = 0.0*/) {
     return *this;
 }
 
-std::shared_ptr<Image> Image::DownsampleImage() const {
+std::shared_ptr<Image> Image::Downsample() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[DownsampleImage] Unsupported image format.\n");
+        utility::PrintWarning("[Downsample] Unsupported image format.\n");
         return output;
     }
     int half_width = (int)floor((double)width_ / 2.0);
     int half_height = (int)floor((double)height_ / 2.0);
-    output->PrepareImage(half_width, half_height, 1, 4);
+    output->Prepare(half_width, half_height, 1, 4);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -185,7 +183,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
                 "size.\n");
         return output;
     }
-    output->PrepareImage(width_, height_, 1, 4);
+    output->Prepare(width_, height_, 1, 4);
 
     const int half_kernel_size = (int)(floor((double)kernel.size() / 2.0));
 #ifdef _OPENMP
@@ -257,19 +255,19 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
     }
 
     auto temp1 = FilterHorizontal(dx);
-    auto temp2 = temp1->FlipImage();
+    auto temp2 = temp1->Flip();
     auto temp3 = temp2->FilterHorizontal(dy);
-    auto temp4 = temp3->FlipImage();
+    auto temp4 = temp3->Flip();
     return temp4;
 }
 
-std::shared_ptr<Image> Image::FlipImage() const {
+std::shared_ptr<Image> Image::Flip() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::PrintWarning("[FilpImage] Unsupported image format.\n");
         return output;
     }
-    output->PrepareImage(height_, width_, 1, 4);
+    output->Prepare(height_, width_, 1, 4);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -284,14 +282,13 @@ std::shared_ptr<Image> Image::FlipImage() const {
     return output;
 }
 
-std::shared_ptr<Image> Image::DilateImage(
-        int half_kernel_size /* = 1 */) const {
+std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 1) {
-        utility::PrintWarning("[DilateImage] Unsupported image format.\n");
+        utility::PrintWarning("[Dilate] Unsupported image format.\n");
         return output;
     }
-    output->PrepareImage(width_, height_, 1, 1);
+    output->Prepare(width_, height_, 1, 1);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -327,7 +324,7 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
     auto depth_image_gradient_dy =
             depth_image->Filter(Image::FilterType::Sobel3Dy);
     auto mask = std::make_shared<Image>();
-    mask->PrepareImage(width, height, 1, 1);
+    mask->Prepare(width, height, 1, 1);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -345,8 +342,8 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
         }
     }
     if (half_dilation_kernel_size_for_discontinuity_map >= 1) {
-        auto mask_dilated = mask->DilateImage(
-                half_dilation_kernel_size_for_discontinuity_map);
+        auto mask_dilated =
+                mask->Dilate(half_dilation_kernel_size_for_discontinuity_map);
         return mask_dilated;
     } else {
         return mask;

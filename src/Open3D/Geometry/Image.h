@@ -78,10 +78,10 @@ public:
                data_.size() == height_ * BytesPerLine();
     }
 
-    Image &PrepareImage(int width,
-                        int height,
-                        int num_of_channels,
-                        int bytes_per_channel) {
+    Image &Prepare(int width,
+                   int height,
+                   int num_of_channels,
+                   int bytes_per_channel) {
         width_ = width;
         height_ = height;
         num_of_channels_ = num_of_channels;
@@ -125,7 +125,7 @@ public:
     std::shared_ptr<Image> ConvertDepthToFloatImage(
             double depth_scale = 1000.0, double depth_trunc = 3.0) const;
 
-    std::shared_ptr<Image> FlipImage() const;
+    std::shared_ptr<Image> Flip() const;
 
     /// Function to filter image with pre-defined filtering type
     std::shared_ptr<Image> Filter(Image::FilterType type) const;
@@ -138,19 +138,19 @@ public:
             const std::vector<double> &kernel) const;
 
     /// Function to 2x image downsample using simple 2x2 averaging
-    std::shared_ptr<Image> DownsampleImage() const;
+    std::shared_ptr<Image> Downsample() const;
 
     /// Function to dilate 8bit mask map
-    std::shared_ptr<Image> DilateImage(int half_kernel_size = 1) const;
+    std::shared_ptr<Image> Dilate(int half_kernel_size = 1) const;
 
     /// Function to linearly transform pixel intensities
     /// image_new = scale * image + offset
-    Image &LinearTransformImage(double scale = 1.0, double offset = 0.0);
+    Image &LinearTransform(double scale = 1.0, double offset = 0.0);
 
     /// Function to clipping pixel intensities
     /// min is lower bound
     /// max is upper bound
-    Image &ClipIntensityImage(double min = 0.0, double max = 1.0);
+    Image &ClipIntensity(double min = 0.0, double max = 1.0);
 
     /// Function to change data types of image
     /// crafted for specific usage such as

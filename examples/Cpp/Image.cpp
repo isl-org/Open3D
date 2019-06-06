@@ -78,14 +78,14 @@ int main(int argc, char **argv) {
         auto gray_image_dx =
                 gray_image->Filter(geometry::Image::FilterType::Sobel3Dx);
         // make [-1,1] to [0,1].
-        gray_image_dx->LinearTransformImage(0.5, 0.5);
-        gray_image_dx->ClipIntensityImage();
+        gray_image_dx->LinearTransform(0.5, 0.5);
+        gray_image_dx->ClipIntensity();
         io::WriteImage("gray_sobel_dx.png",
                        *gray_image_dx->CreateImageFromFloatImage<uint8_t>());
         auto gray_image_dy =
                 gray_image->Filter(geometry::Image::FilterType::Sobel3Dy);
-        gray_image_dy->LinearTransformImage(0.5, 0.5);
-        gray_image_dy->ClipIntensityImage();
+        gray_image_dy->LinearTransform(0.5, 0.5);
+        gray_image_dy->ClipIntensity();
         io::WriteImage("gray_sobel_dy.png",
                        *gray_image_dy->CreateImageFromFloatImage<uint8_t>());
 
@@ -129,14 +129,14 @@ int main(int argc, char **argv) {
         auto depth_image_dx =
                 depth_image->Filter(geometry::Image::FilterType::Sobel3Dx);
         // make [-65536,65536] to [0,13107.2]. // todo: need to test this
-        depth_image_dx->LinearTransformImage(0.1, 6553.6);
-        depth_image_dx->ClipIntensityImage(0.0, 13107.2);
+        depth_image_dx->LinearTransform(0.1, 6553.6);
+        depth_image_dx->ClipIntensity(0.0, 13107.2);
         io::WriteImage("depth_sobel_dx.png",
                        *depth_image_dx->CreateImageFromFloatImage<uint16_t>());
         auto depth_image_dy =
                 depth_image->Filter(geometry::Image::FilterType::Sobel3Dy);
-        depth_image_dy->LinearTransformImage(0.1, 6553.6);
-        depth_image_dx->ClipIntensityImage(0.0, 13107.2);
+        depth_image_dy->LinearTransform(0.1, 6553.6);
+        depth_image_dx->ClipIntensity(0.0, 13107.2);
         io::WriteImage("depth_sobel_dy.png",
                        *depth_image_dy->CreateImageFromFloatImage<uint16_t>());
 

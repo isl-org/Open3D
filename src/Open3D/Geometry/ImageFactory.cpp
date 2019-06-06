@@ -33,7 +33,7 @@ namespace geometry {
 std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
         const camera::PinholeCameraIntrinsic &intrinsic) {
     auto fimage = std::make_shared<Image>();
-    fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
+    fimage->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
     float ffl_inv[2] = {
             1.0f / (float)intrinsic.GetFocalLength().first,
             1.0f / (float)intrinsic.GetFocalLength().second,
@@ -66,7 +66,7 @@ std::shared_ptr<Image> Image::CreateFloatImage(
     if (IsEmpty()) {
         return fimage;
     }
-    fimage->PrepareImage(width_, height_, 1, 4);
+    fimage->Prepare(width_, height_, 1, 4);
     for (int i = 0; i < height_ * width_; i++) {
         float *p = (float *)(fimage->data_.data() + i * 4);
         const uint8_t *pi =
@@ -128,7 +128,7 @@ std::shared_ptr<Image> Image::CreateImageFromFloatImage() const {
         return output;
     }
 
-    output->PrepareImage(width_, height_, num_of_channels_, sizeof(T));
+    output->Prepare(width_, height_, num_of_channels_, sizeof(T));
     const float *pi = (const float *)data_.data();
     T *p = (T *)output->data_.data();
     for (int i = 0; i < height_ * width_; i++, p++, pi++) {
@@ -163,10 +163,10 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
                 // https://en.wikipedia.org/wiki/Pyramid_(image_processing)
                 auto level_b = pyramid_image[i - 1]->Filter(
                         Image::FilterType::Gaussian3);
-                auto level_bd = level_b->DownsampleImage();
+                auto level_bd = level_b->Downsample();
                 pyramid_image.push_back(level_bd);
             } else {
-                auto level_d = pyramid_image[i - 1]->DownsampleImage();
+                auto level_d = pyramid_image[i - 1]->Downsample();
                 pyramid_image.push_back(level_d);
             }
         }
