@@ -45,12 +45,12 @@ SOURCE_DIR = "."
 BUILD_DIR = "_build"
 
 
-def clear_or_create_dir(dir_path):
+def create_or_clear(dir_path):
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path)
-        print("Removing directory %s" % dir_path)
-    print("Creating directory %s" % dir_path)
+        print("Removed directory %s" % dir_path)
     os.makedirs(dir_path)
+    print("Created directory %s" % dir_path)
 
 
 class PyDocsBuilder:
@@ -72,7 +72,7 @@ class PyDocsBuilder:
               self.output_dir)
 
     def generate_rst(self):
-        clear_or_create_dir(self.output_dir)
+        create_or_clear(self.output_dir)
 
         main_c_module = importlib.import_module(self.c_module)
         sub_module_names = sorted(
@@ -271,7 +271,7 @@ class SphinxDocsBuilder:
         """
         Call Sphinx command with self.makefile_arg
         """
-        clear_or_create_dir(BUILD_DIR)
+        create_or_clear(BUILD_DIR)
         cmd = [
             SPHINX_BUILD,
             "-M",
