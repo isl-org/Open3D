@@ -147,6 +147,7 @@ TEST(PointCloud, GetMinBound) {
     Vector3d minBound = pc.GetMinBound();
 
     ExpectEQ(Vector3d(19.607843, 0.0, 0.0), pc.GetMinBound());
+    ExpectEQ(Vector3d(19.607843, 0.0, 0.0), pc.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -166,6 +167,7 @@ TEST(PointCloud, GetMaxBound) {
 
     Vector3d maxBound = pc.GetMaxBound();
 
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
     ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
 }
 
