@@ -23,7 +23,7 @@ Open3D is an open-source library that supports rapid development of software tha
 * 3D data processing algorithms
 * Scene reconstruction
 * Surface alignment
-* 3D visualization
+* 3D visualizationt
 * Python binding
 
 ## Supported OSes and compilers
