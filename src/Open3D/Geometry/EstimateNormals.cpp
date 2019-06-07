@@ -42,7 +42,7 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A) {
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     double p1 = sqr(A(0, 1)) + sqr(A(0, 2)) + sqr(A(1, 2));
     Eigen::Vector3d eigenvalues;
-    if (p1 == 0.0) {
+    if (p == 0) {
         eigenvalues(2) = std::min(A(0, 0), std::min(A(1, 1), A(2, 2)));
         eigenvalues(0) = std::max(A(0, 0), std::max(A(1, 1), A(2, 2)));
         eigenvalues(1) = A.trace() - eigenvalues(0) - eigenvalues(2);
@@ -108,10 +108,10 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
     covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
     covariance(2, 1) = covariance(1, 2);
 
-    return FastEigen3x3(covariance);
-    // Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-    // solver.compute(covariance, Eigen::ComputeEigenvectors);
-    // return solver.eigenvectors().col(0);
+    // return FastEigen3x3(covariance);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+    solver.compute(covariance, Eigen::ComputeEigenvectors);
+    return solver.eigenvectors().col(0);
 }
 
 }  // unnamed namespace
