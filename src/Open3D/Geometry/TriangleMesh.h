@@ -462,6 +462,17 @@ protected:
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
 
+    void FilterSmoothLaplacianHelper(
+            std::shared_ptr<TriangleMesh> &mesh,
+            const std::vector<Eigen::Vector3d> &prev_vertices,
+            const std::vector<Eigen::Vector3d> &prev_vertex_normals,
+            const std::vector<Eigen::Vector3d> &prev_vertex_colors,
+            const std::vector<std::unordered_set<int>> &adjacency_list,
+            double lambda,
+            bool filter_vertex,
+            bool filter_normal,
+            bool filter_color) const;
+
 public:
     std::vector<Eigen::Vector3d> vertices_;
     std::vector<Eigen::Vector3d> vertex_normals_;
