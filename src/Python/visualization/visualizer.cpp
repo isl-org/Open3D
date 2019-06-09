@@ -49,9 +49,8 @@ static const std::unordered_map<std::string, std::string>
                 {"visible", "Whether the window is visible."},
                 {"width", "Width of the window."},
                 {"window_name", "Window title name."},
-                {"convert_to_world_coordinate", 
-                 "Set to ``True`` to convert to world coordinates"}
-};
+                {"convert_to_world_coordinate",
+                 "Set to ``True`` to convert to world coordinates"}};
 
 void pybind_visualizer(py::module &m) {
     py::class_<visualization::Visualizer, PyVisualizer<>,
@@ -169,7 +168,8 @@ void pybind_visualizer(py::module &m) {
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer", "capture_depth_image",
                                     map_visualizer_docstrings);
-    docstring::ClassMethodDocInject(m, "Visualizer", "capture_depth_point_cloud",
+    docstring::ClassMethodDocInject(m, "Visualizer",
+                                    "capture_depth_point_cloud",
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer",
                                     "capture_screen_float_buffer",
