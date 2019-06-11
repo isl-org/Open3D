@@ -78,7 +78,8 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A) {
 }
 
 Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
-                              const std::vector<int> &indices) {
+                              const std::vector<int> &indices,
+                              bool fast_normal_computation) {
     if (indices.size() == 0) {
         return Eigen::Vector3d::Zero();
     }
@@ -108,10 +109,13 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
     covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
     covariance(2, 1) = covariance(1, 2);
 
-    // return FastEigen3x3(covariance);
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-    solver.compute(covariance, Eigen::ComputeEigenvectors);
-    return solver.eigenvectors().col(0);
+    if (fast_normal_computation) {
+        return FastEigen3x3(covariance);
+    } else {
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+        solver.compute(covariance, Eigen::ComputeEigenvectors);
+        return solver.eigenvectors().col(0);
+    }
 }
 
 }  // unnamed namespace
@@ -119,7 +123,8 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 namespace geometry {
 
 bool PointCloud::EstimateNormals(
-        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/,
+        bool fast_normal_computation /* = true */) {
     bool has_normal = HasNormals();
     if (HasNormals() == false) {
         normals_.resize(points_.size());
@@ -134,7 +139,7 @@ bool PointCloud::EstimateNormals(
         std::vector<double> distance2;
         Eigen::Vector3d normal;
         if (kdtree.Search(points_[i], search_param, indices, distance2) >= 3) {
-            normal = ComputeNormal(*this, indices);
+            normal = ComputeNormal(*this, indices, fast_normal_computation);
             if (normal.norm() == 0.0) {
                 if (has_normal) {
                     normal = normals_[i];

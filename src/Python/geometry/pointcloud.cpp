@@ -106,7 +106,8 @@ void pybind_pointcloud(py::module &m) {
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
                  "normals exist",
-                 "search_param"_a = geometry::KDTreeSearchParamKNN())
+                 "search_param"_a = geometry::KDTreeSearchParamKNN(),
+                 "fast_normal_computation"_a = true)
             .def("orient_normals_to_align_with_direction",
                  &geometry::PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
@@ -220,7 +221,11 @@ void pybind_pointcloud(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "PointCloud", "estimate_normals",
             {{"search_param",
-              "The KDTree search parameters for neighborhood search."}});
+              "The KDTree search parameters for neighborhood search."},
+             {"fast_normal_computation",
+              "If true, the normal estiamtion uses a non-iterative method to "
+              "extract the eigenvector from the covariance matrix. This is "
+              "faster, but is not as numerical stable."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "orient_normals_to_align_with_direction",
             {{"orientation_reference",
