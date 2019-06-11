@@ -13,20 +13,45 @@ def knn_generator():
 
 
 def pointcloud_generator():
-    pts = np.random.uniform(-30, 30, size=(int(1e6), 3))
+    pts = np.random.uniform(-30, 30, size=(int(1e5), 3))
     pcl = o3d.geometry.PointCloud()
     pcl.points = o3d.utility.Vector3dVector(pts)
     yield 'uniform', pcl
 
     yield 'moebius', o3d.geometry.TriangleMesh.create_moebius(
-    ).sample_points_uniformly(int(1e6))
+    ).sample_points_uniformly(int(1e5))
 
-    yield 'bunny', meshes.bunny().sample_points_uniformly(int(1e6))
+    yield 'bunny', meshes.bunny().scale(10).sample_points_uniformly(int(1e5))
 
     yield 'fragment', o3d.io.read_point_cloud('../../TestData/fragment.ply')
 
 
 if __name__ == "__main__":
+    # Benchmark
+    for pcl_name, pcl in pointcloud_generator():
+        for knn_name, knn in knn_generator():
+            print('-' * 80)
+            for fast_normal_computation in [True, False]:
+                times = []
+                for _ in range(50):
+                    tic = time.time()
+                    pcl.estimate_normals(
+                        knn, fast_normal_computation=fast_normal_computation)
+                    times.append(time.time() - tic)
+                print('fast={}: {}, {} -- avg time={}[s]'.format(
+                    fast_normal_computation, pcl_name, knn_name,
+                    np.mean(times)))
+
+    # Test
+    for pcl_name, pcl in pointcloud_generator():
+        for knn_name, knn in knn_generator():
+            pcl.estimate_normals(knn, True)
+            normals_fast = np.asarray(pcl.normals)
+            pcl.estimate_normals(knn, False)
+            normals_eigen = np.asarray(pcl.normals)
+            test = (normals_eigen * normals_fast).sum(axis=1)
+            print('normals agree: {}'.format(np.all(test - 1 < 1e-9)))
+
     # Test normals of flat surface
     X, Y = np.mgrid[0:1:0.1, 0:1:0.1]
     X = X.flatten()
@@ -49,20 +74,3 @@ if __name__ == "__main__":
                                                                 max_nn=30),
                            fast_normal_computation=False)
     o3d.visualization.draw_geometries([shape])
-
-    # Benchmark
-    for pcl_name, pcl in pointcloud_generator():
-        for knn_name, knn in knn_generator():
-            print('-' * 80)
-            for fast_normal_computation in [True, False]:
-                times = []
-                for _ in range(10):
-                    tic = time.time()
-                    pcl.estimate_normals(
-                        o3d.geometry.KDTreeSearchParamHybrid(radius=0.5,
-                                                             max_nn=30),
-                        fast_normal_computation=fast_normal_computation)
-                    times.append(time.time() - tic)
-                print('fast={}: {}, {} -- avg time={}[s]'.format(
-                    fast_normal_computation, pcl_name, knn_name,
-                    np.mean(times)))

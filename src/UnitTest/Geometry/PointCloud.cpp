@@ -687,18 +687,18 @@ TEST(PointCloud, EstimateNormals) {
 
     result = pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), true);
     for (int idx = 0; idx < ref.size(); ++idx) {
-        if ((ref[idx](0) < 0 && pc.points_[idx](0) > 0) ||
-            (ref[idx](0) > 0 && pc.points_[idx](0) < 0)) {
-            pc.points_[idx] *= -1;
+        if ((ref[idx](0) < 0 && pc.normals_[idx](0) > 0) ||
+            (ref[idx](0) > 0 && pc.normals_[idx](0) < 0)) {
+            pc.normals_[idx] *= -1;
         }
     }
     ExpectEQ(ref, pc.normals_);
 
     result = pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), false);
     for (int idx = 0; idx < ref.size(); ++idx) {
-        if ((ref[idx](0) < 0 && pc.points_[idx](0) > 0) ||
-            (ref[idx](0) > 0 && pc.points_[idx](0) < 0)) {
-            pc.points_[idx] *= -1;
+        if ((ref[idx](0) < 0 && pc.normals_[idx](0) > 0) ||
+            (ref[idx](0) > 0 && pc.normals_[idx](0) < 0)) {
+            pc.normals_[idx] *= -1;
         }
     }
     ExpectEQ(ref, pc.normals_);
