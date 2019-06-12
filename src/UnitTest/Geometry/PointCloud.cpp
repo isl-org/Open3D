@@ -685,8 +685,24 @@ TEST(PointCloud, EstimateNormals) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    bool result = pc.EstimateNormals();
+    bool result;
 
+    result = pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), true);
+    for (int idx = 0; idx < ref.size(); ++idx) {
+        if ((ref[idx](0) < 0 && pc.normals_[idx](0) > 0) ||
+            (ref[idx](0) > 0 && pc.normals_[idx](0) < 0)) {
+            pc.normals_[idx] *= -1;
+        }
+    }
+    ExpectEQ(ref, pc.normals_);
+
+    result = pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), false);
+    for (int idx = 0; idx < ref.size(); ++idx) {
+        if ((ref[idx](0) < 0 && pc.normals_[idx](0) > 0) ||
+            (ref[idx](0) > 0 && pc.normals_[idx](0) < 0)) {
+            pc.normals_[idx] *= -1;
+        }
+    }
     ExpectEQ(ref, pc.normals_);
 }
 

@@ -138,7 +138,8 @@ public:
     /// normals exist in the input. \param search_param The KDTree search
     /// parameters
     bool EstimateNormals(
-            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
+            bool fast_normal_computation = true);
 
     /// Function to orient the normals of a point cloud
     /// \param cloud is the input point cloud. It must have normals.
