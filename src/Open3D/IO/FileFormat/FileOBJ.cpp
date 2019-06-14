@@ -48,11 +48,11 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                                 filename.c_str());
 
     if (!warn.empty()) {
-        utility::PrintWarning("Read OBJ failed: %s\n", warn);
+        utility::PrintWarning("Read OBJ failed: %s\n", warn.c_str());
     }
 
     if (!err.empty()) {
-        utility::PrintError("Read OBJ failed: %s\n", err);
+        utility::PrintError("Read OBJ failed: %s\n", err.c_str());
     }
 
     if (!ret) {
