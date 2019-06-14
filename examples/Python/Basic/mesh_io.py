@@ -53,7 +53,7 @@ if __name__ == "__main__":
     compare_mesh(mesh_test)
     os.remove('tmp.ply')
 
-    print('Write ply file')
+    print('Write obj file')
     o3d.io.write_triangle_mesh('tmp.obj', mesh)
     print('Read obj file')
     mesh_test = o3d.io.read_triangle_mesh('tmp.obj')
