@@ -55,7 +55,7 @@ static const std::unordered_map<std::string, std::string>
                  "The format of the input file. When not specified or set as "
                  "``auto``, the format is inferred from file extension name."},
                 {"remove_nan_points",
-                 "If true, the all points that include a NaN are removed from "
+                 "If true, all points that include a NaN are removed from "
                  "the PointCloud."},
                 {"quality", "Quality of the output file."},
                 {"write_ascii",
