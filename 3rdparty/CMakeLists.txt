@@ -197,6 +197,19 @@ else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
 endif ()
 
+# tinyobjloader
+message(STATUS "Building tinyobjloader from source")
+include_directories("tinyobjloader/")
+add_library(tinyobjloader STATIC tinyobjloader/tiny_obj_loader.cc)
+if (NOT BUILD_SHARED_LIBS)
+  install(TARGETS tinyobjloader 
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif()
+set(tinyobjloader_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader")
+set(tinyobjloader_LIBRARIES tinyobjloader) 
+
 # rply
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
@@ -302,6 +315,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${tinyfiledialogs_INCLUDE_DIRS}
+     ${tinyfobjloader_INCLUDE_DIRS}
      ${qhull_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS})
 
@@ -330,6 +344,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${JSONCPP_LIBRARIES}
      ${PNG_LIBRARIES}
      ${tinyfiledialogs_LIBRARIES}
+     ${tinyobjloader_LIBRARIES}
      ${qhull_LIBRARIES}
      ${googletest_LIBRARIES})
 

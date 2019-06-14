@@ -42,6 +42,7 @@ static const std::unordered_map<
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
                 {"stl", ReadTriangleMeshFromSTL},
+                {"obj", ReadTriangleMeshFromOBJ},
         };
 
 static const std::unordered_map<
@@ -53,6 +54,7 @@ static const std::unordered_map<
         file_extension_to_trianglemesh_write_function{
                 {"ply", WriteTriangleMeshToPLY},
                 {"stl", WriteTriangleMeshToSTL},
+                {"obj", WriteTriangleMeshToOBJ},
         };
 
 }  // unnamed namespace
