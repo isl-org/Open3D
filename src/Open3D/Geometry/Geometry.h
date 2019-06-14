@@ -50,7 +50,7 @@ protected:
         : geometry_type_(type), dimension_(dimension) {}
 
 public:
-    virtual void Clear() = 0;
+    virtual Geometry& Clear() = 0;
     virtual bool IsEmpty() const = 0;
     GeometryType GetGeometryType() const { return geometry_type_; }
     int Dimension() const { return dimension_; }

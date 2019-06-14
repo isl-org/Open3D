@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
 namespace geometry {
@@ -42,6 +43,7 @@ class VoxelGrid;
 /// OctreeNodeInfo is computed on the fly
 class OctreeNodeInfo {
 public:
+    OctreeNodeInfo() {}
     OctreeNodeInfo(const Eigen::Vector3d& origin,
                    const double& size,
                    const size_t& depth,
@@ -51,6 +53,8 @@ public:
           depth_(depth),
           child_index_(child_index) {}
     ~OctreeNodeInfo() {}
+
+public:
     Eigen::Vector3d origin_ = Eigen::Vector3d(0, 0, 0);
     double size_ = 0;
     size_t depth_ = 0;
@@ -61,10 +65,14 @@ public:
 /// Design decision: do not store origin and size of a node
 ///     - Good: better space efficiency
 ///     - Bad: need to recompute origin and size when traversing
-class OctreeNode {
+class OctreeNode : public utility::IJsonConvertible {
 public:
     OctreeNode() {}
     virtual ~OctreeNode() {}
+
+    /// Factory function to construct an OctreeNode by parsing the json value.
+    static std::shared_ptr<OctreeNode> ConstructFromJsonValue(
+            const Json::Value& value);
 };
 
 /// Children node ordering conventions are as follows.
@@ -88,6 +96,9 @@ public:
             const std::shared_ptr<OctreeNodeInfo>& node_info,
             const Eigen::Vector3d& point);
 
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
+
 public:
     // Use vector instead of C-array for Pybind11, otherwise, need to define
     // more helper functions
@@ -109,11 +120,13 @@ public:
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(const Eigen::Vector3d& color);
 
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
     // TODO: flexible data, with lambda function for handling node
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
 
-class Octree : public Geometry3D {
+class Octree : public Geometry3D, public utility::IJsonConvertible {
 public:
     Octree() : Geometry3D(Geometry::GeometryType::Octree) {}
     Octree(const size_t& max_depth)
@@ -129,15 +142,18 @@ public:
     ~Octree() override {}
 
 public:
-    void Clear() override;
+    Octree& Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     Octree& Transform(const Eigen::Matrix4d& transformation) override;
     Octree& Translate(const Eigen::Vector3d& translation) override;
-    Octree& Scale(const double scale) override;
+    Octree& Scale(const double scale, bool center = true) override;
     Octree& Rotate(const Eigen::Vector3d& rotation,
+                   bool center = true,
                    RotationType type = RotationType::XYZ) override;
+    bool ConvertToJsonValue(Json::Value& value) const override;
+    bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
@@ -193,6 +209,9 @@ public:
 
     /// Convert to voxel grid
     std::shared_ptr<geometry::VoxelGrid> ToVoxelGrid() const;
+
+    /// Convert from voxel grid
+    void FromVoxelGrid(const geometry::VoxelGrid& voxel_grid);
 
 private:
     static void TraverseRecurse(

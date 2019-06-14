@@ -94,7 +94,7 @@ Estimated normal vectors can be retrieved by ``normals`` variable of ``downpcd``
 
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
-   :lineno-start: 27
+   :lineno-start: 29
    :lines: 27-28
    :linenos:
 
@@ -108,7 +108,7 @@ Normal vectors can be transformed as a numpy array using ``np.asarray``.
 
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
-   :lineno-start: 29
+   :lineno-start: 31
    :lines: 29-30
    :linenos:
 
@@ -135,8 +135,8 @@ Crop point cloud
 
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
-   :lineno-start: 33
-   :lines: 33-37
+   :lineno-start: 35
+   :lines: 33-38
    :linenos:
 
 ``read_selection_polygon_volume`` reads a json file that specifies polygon selection area.
@@ -152,8 +152,8 @@ Paint point cloud
 
 .. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
    :language: python
-   :lineno-start: 39
-   :lines: 39-42
+   :lineno-start: 42
+   :lines: 40-43
    :linenos:
 
 ``paint_uniform_color`` paints all the points to a uniform color. The color is in RGB space, [0, 1] range.

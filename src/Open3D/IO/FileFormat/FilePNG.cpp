@@ -62,9 +62,9 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     // We only support two channel types: gray, and RGB.
     // There is no alpha channel.
     // bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
-    image.PrepareImage(pngimage.width, pngimage.height,
-                       (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
-                       (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
+    image.Prepare(pngimage.width, pngimage.height,
+                  (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
+                  (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
     SetPNGImageFromImage(image, pngimage);
     if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
         0) {

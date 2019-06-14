@@ -42,7 +42,7 @@ int CountValidDepthPixels(const Image &depth, int stride) {
     int num_valid_pixels = 0;
     for (int i = 0; i < depth.height_; i += stride) {
         for (int j = 0; j < depth.width_; j += stride) {
-            const float *p = PointerAt<float>(depth, j, i);
+            const float *p = depth.PointerAt<float>(j, i);
             if (*p > 0) num_valid_pixels += 1;
         }
     }
@@ -63,7 +63,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     int cnt = 0;
     for (int i = 0; i < depth.height_; i += stride) {
         for (int j = 0; j < depth.width_; j += stride) {
-            const float *p = PointerAt<float>(depth, j, i);
+            const float *p = depth.PointerAt<float>(j, i);
             if (*p > 0) {
                 double z = (double)(*p);
                 double x = (j - principal_point.first) * z / focal_length.first;
@@ -118,7 +118,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
 }  // unnamed namespace
 
 namespace geometry {
-std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
+std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
         const Image &depth,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
@@ -128,7 +128,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
     if (depth.num_of_channels_ == 1) {
         if (depth.bytes_per_channel_ == 2) {
             auto float_depth =
-                    ConvertDepthToFloatImage(depth, depth_scale, depth_trunc);
+                    depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
             return CreatePointCloudFromFloatDepthImage(*float_depth, intrinsic,
                                                        extrinsic, stride);
         } else if (depth.bytes_per_channel_ == 4) {
@@ -141,7 +141,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
     return std::make_shared<PointCloud>();
 }
 
-std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
+std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/) {
@@ -162,15 +162,13 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
     return std::make_shared<PointCloud>();
 }
 
-std::shared_ptr<PointCloud> CreatePointCloudFromVoxelGrid(
+std::shared_ptr<PointCloud> PointCloud::CreateFromVoxelGrid(
         const VoxelGrid &voxel_grid) {
     auto output = std::make_shared<PointCloud>();
     output->points_.resize(voxel_grid.voxels_.size());
-    if (voxel_grid.HasColors())
-        output->colors_.resize(voxel_grid.colors_.size());
     for (auto i = 0; i < voxel_grid.voxels_.size(); i++) {
         output->points_[i] = voxel_grid.GetVoxelCenterCoordinate(i);
-        if (voxel_grid.HasColors()) output->colors_[i] = voxel_grid.colors_[i];
+        if (voxel_grid.HasColors()) output->colors_[i] = voxel_grid.voxels_[i].color_;
     }
     return output;
 }

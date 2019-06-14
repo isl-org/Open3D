@@ -77,8 +77,8 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
             return false;
     }
     jpeg_start_decompress(&cinfo);
-    image.PrepareImage(cinfo.output_width, cinfo.output_height, num_of_channels,
-                       bytes_per_channel);
+    image.Prepare(cinfo.output_width, cinfo.output_height, num_of_channels,
+                  bytes_per_channel);
     int row_stride = cinfo.output_width * cinfo.output_components;
     buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
                                         row_stride, 1);

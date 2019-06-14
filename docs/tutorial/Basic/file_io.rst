@@ -55,7 +55,7 @@ extension will be ignored.
 
 .. code-block:: python
 
-    pcd = read_point_cloud("my_points.txt", format='xyz')
+    pcd = o3d.io.read_point_cloud("my_points.txt", format='xyz')
 
 
 .. _io_mesh:

@@ -36,9 +36,9 @@ std::tuple<std::shared_ptr<geometry::PointCloud>,
            std::shared_ptr<registration::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
-    auto pcd_down = geometry::VoxelDownSample(*pcd, 0.05);
-    geometry::EstimateNormals(
-            *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
+    auto pcd_down = pcd->VoxelDownSample(0.05);
+    pcd_down->EstimateNormals(
+            open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = registration::ComputeFPFHFeature(
             *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);

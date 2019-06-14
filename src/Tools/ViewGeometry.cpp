@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
                                                 239.5);
         }
         auto image_ptr = io::CreateImageFromFile(depth_filename);
-        auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
+        auto pointcloud_ptr = geometry::PointCloud::CreateFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             utility::PrintWarning("Failed adding depth image.\n");

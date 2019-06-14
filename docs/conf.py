@@ -29,8 +29,10 @@ import re
 # This is a trick to show open3d.open3d as open3d in the docs
 # Only tested to work on Unix
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.join(current_file_dir, "..", "build", "lib",
-                                "python_package", "open3d"))
+sys.path.insert(
+    0,
+    os.path.join(current_file_dir, "..", "build", "lib", "python_package",
+                 "open3d"))
 
 html_theme = "sphinx_rtd_theme"
 
@@ -47,10 +49,10 @@ html_favicon = "_static/open3d_logo.ico"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.mathjax',
-              'sphinx.ext.autodoc',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.napoleon']
+extensions = [
+    'sphinx.ext.mathjax', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon'
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -74,7 +76,10 @@ author = u'www.open3d.org'
 # built documents.
 #
 # The short X.Y version.
-version_list = [line.rstrip('\n').split(' ')[1] for line in open('../src/Open3D/version.txt')]
+version_list = [
+    line.rstrip('\n').split(' ')[1]
+    for line in open('../src/Open3D/version.txt')
+]
 open3d_version = '.'.join(version_list)
 version = open3d_version
 # The full version, including alpha/beta/rc tags.
@@ -98,7 +103,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -121,18 +125,16 @@ html_static_path = ['_static']
 html_context = {
     'css_files': [
         '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
+    ],
+}
 
 # added by Jaesik to hide "View page source"
 html_show_sourcelink = False
-
 
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Open3Ddoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -158,20 +160,15 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Open3D.tex', u'Open3D Documentation',
-     u'Qianyi Zhou', 'manual'),
+    (master_doc, 'Open3D.tex', u'Open3D Documentation', u'Qianyi Zhou',
+     'manual'),
 ]
-
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'open3d', u'Open3D Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'open3d', u'Open3D Documentation', [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -179,9 +176,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Open3D', u'Open3D Documentation',
-     author, 'Open3D', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'Open3D', u'Open3D Documentation', author, 'Open3D',
+     'One line description of project.', 'Miscellaneous'),
 ]
 
 # Version 0: Added by Jaesik to list Python members using the source order
@@ -191,6 +187,7 @@ autodoc_member_order = 'groupwise'
 
 
 def is_enum_class(func, func_name):
+
     def import_from_str(class_name):
         components = class_name.split('.')
         mod = __import__(components[0])
@@ -223,6 +220,7 @@ def skip(app, what, name, obj, would_skip, options):
         else:
             return False
     return would_skip
+
 
 def setup(app):
     app.connect("autodoc-skip-member", skip)

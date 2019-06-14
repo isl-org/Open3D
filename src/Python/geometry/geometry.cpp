@@ -97,15 +97,23 @@ void pybind_geometry_classes(py::module &m) {
             .def("translate", &geometry::Geometry3D::Translate,
                  "Apply translation to the geometry coordinates.")
             .def("scale", &geometry::Geometry3D::Scale,
-                 "Apply scaling to the geometry coordinates.")
+                 "Apply scaling to the geometry coordinates.", "scale"_a,
+                 "center"_a = true)
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
-                 "rotation"_a,
+                 "rotation"_a, "center"_a = true,
                  "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "transform");
     docstring::ClassMethodDocInject(m, "Geometry3D", "translate");
+    docstring::ClassMethodDocInject(
+            m, "Geometry3D", "scale",
+            {{"scale",
+              "The scale parameter that is multiplied to the points/vertices "
+              "of the geometry"},
+             {"center",
+              "If true, then the scale is applied to the centered geometry"}});
     docstring::ClassMethodDocInject(
             m, "Geometry3D", "rotate",
             {{"rotation",
@@ -113,6 +121,8 @@ void pybind_geometry_classes(py::module &m) {
               "Euler rotation, or in the axis-angle representation "
               "the normalized vector defines the axis of rotation and "
               "the norm the angle around this axis."},
+             {"center",
+              "If true, then the rotation is applied to the centered geometry"},
              {"type",
               "Type of rotation, i.e., an Euler format, or "
               "axis-angle."}});
@@ -134,13 +144,13 @@ void pybind_geometry_classes(py::module &m) {
 void pybind_geometry(py::module &m) {
     py::module m_submodule = m.def_submodule("geometry");
     pybind_geometry_classes(m_submodule);
+    pybind_kdtreeflann(m_submodule);
     pybind_pointcloud(m_submodule);
     pybind_voxelgrid(m_submodule);
     pybind_lineset(m_submodule);
     pybind_trianglemesh(m_submodule);
     pybind_halfedgetrianglemesh(m_submodule);
     pybind_image(m_submodule);
-    pybind_kdtreeflann(m_submodule);
     pybind_pointcloud_methods(m_submodule);
     pybind_voxelgrid_methods(m_submodule);
     pybind_trianglemesh_methods(m_submodule);

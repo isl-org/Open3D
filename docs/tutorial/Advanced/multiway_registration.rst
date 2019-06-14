@@ -32,7 +32,7 @@ The first part of the tutorial script reads three point clouds from files. The p
 .. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
    :language: python
    :lineno-start: 24
-   :lines: 24-58
+   :lines: 24-68
    :linenos:
 
 A pose graph has two key elements: nodes and edges. A node is a piece of geometry :math:`\mathbf{P}_{i}` associated with a pose matrix :math:`\mathbf{T}_{i}` which transforms :math:`\mathbf{P}_{i}` into the global space. The set :math:`\{\mathbf{T}_{i}\}` are the unknown variables to be optimized. ``PoseGraph.nodes`` is a list of ``PoseGraphNode``. We set the global space to be the space of :math:`\mathbf{P}_{0}`. Thus :math:`\mathbf{T}_{0}` is identity matrix. The other pose matrices are initialized by accumulating transformation between neighboring nodes. The neighboring nodes usually have large overlap and can be registered with :ref:`point_to_plane_icp`.
@@ -50,8 +50,8 @@ The script creates a pose graph with three nodes and three edges. Among the edge
 
 .. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
    :language: python
-   :lineno-start: 72
-   :lines: 72-79
+   :lineno-start: 82
+   :lines: 82-89
    :linenos:
 
 Open3D uses function ``global_optimization`` to perform pose graph optimization. Two types of optimization methods can be chosen: ``GlobalOptimizationGaussNewton`` or ``GlobalOptimizationLevenbergMarquardt``. The latter is recommended since it has better convergence property. Class ``GlobalOptimizationConvergenceCriteria`` can be used to set the maximum number of iterations and various optimization parameters.
@@ -87,8 +87,8 @@ Visualize optimization
 
 .. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
    :language: python
-   :lineno-start: 81
-   :lines: 81-85
+   :lineno-start: 91
+   :lines: 91-95
    :linenos:
 
 Ouputs:
@@ -105,8 +105,8 @@ Make a combined point cloud
 
 .. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
    :language: python
-   :lineno-start: 87
-   :lines: 87-95
+   :lineno-start: 97
+   :lines: 97-105
    :linenos:
 
 .. image:: ../../_static/Advanced/multiway_registration/combined.png

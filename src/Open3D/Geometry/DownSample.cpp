@@ -141,54 +141,52 @@ private:
 }  // unnamed namespace
 
 namespace geometry {
-std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
-                                             const std::vector<size_t> &indices,
-                                             bool invert /* = false */) {
+std::shared_ptr<PointCloud> PointCloud::SelectDownSample(
+        const std::vector<size_t> &indices, bool invert /* = false */) const {
     auto output = std::make_shared<PointCloud>();
-    bool has_normals = input.HasNormals();
-    bool has_colors = input.HasColors();
+    bool has_normals = HasNormals();
+    bool has_colors = HasColors();
 
-    std::vector<bool> mask = std::vector<bool>(input.points_.size(), invert);
+    std::vector<bool> mask = std::vector<bool>(points_.size(), invert);
     for (size_t i : indices) {
         mask[i] = !invert;
     }
 
-    for (size_t i = 0; i < input.points_.size(); i++) {
+    for (size_t i = 0; i < points_.size(); i++) {
         if (mask[i]) {
-            output->points_.push_back(input.points_[i]);
-            if (has_normals) output->normals_.push_back(input.normals_[i]);
-            if (has_colors) output->colors_.push_back(input.colors_[i]);
+            output->points_.push_back(points_[i]);
+            if (has_normals) output->normals_.push_back(normals_[i]);
+            if (has_colors) output->colors_.push_back(colors_[i]);
         }
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.size(), (int)output->points_.size());
+            (int)points_.size(), (int)output->points_.size());
     return output;
 }
 
-std::shared_ptr<TriangleMesh> SelectDownSample(
-        const TriangleMesh &input, const std::vector<size_t> &indices) {
+std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
+        const std::vector<size_t> &indices) const {
     auto output = std::make_shared<TriangleMesh>();
-    bool has_triangle_normals = input.HasTriangleNormals();
-    bool has_vertex_normals = input.HasVertexNormals();
-    bool has_vertex_colors = input.HasVertexColors();
+    bool has_triangle_normals = HasTriangleNormals();
+    bool has_vertex_normals = HasVertexNormals();
+    bool has_vertex_colors = HasVertexColors();
     // For each vertex, list face indices.
-    std::vector<std::vector<int>> vertex_to_triangle_temp(
-            input.vertices_.size());
+    std::vector<std::vector<int>> vertex_to_triangle_temp(vertices_.size());
     int triangle_id = 0;
-    for (auto trangle : input.triangles_) {
+    for (auto trangle : triangles_) {
         for (int i = 0; i < 3; i++)
             vertex_to_triangle_temp[trangle(i)].push_back(triangle_id);
         triangle_id++;
     }
     // Remove face indices of vertex_to_triangle_temp
     // if it does not correspond to selected vertices
-    std::vector<std::vector<int>> vertex_to_triangle(input.vertices_.size());
+    std::vector<std::vector<int>> vertex_to_triangle(vertices_.size());
     for (auto vertex_id : indices) {
         vertex_to_triangle[vertex_id] = vertex_to_triangle_temp[vertex_id];
     }
     // Make a triangle_to_vertex using vertex_to_triangle
-    std::vector<std::vector<int>> triangle_to_vertex(input.triangles_.size());
+    std::vector<std::vector<int>> triangle_to_vertex(triangles_.size());
     int vertex_id = 0;
     for (auto face_ids : vertex_to_triangle) {
         for (auto face_id : face_ids)
@@ -197,14 +195,14 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
     }
     // Only a face with three selected points contributes to mark
     // mask_observed_vertex.
-    std::vector<bool> mask_observed_vertex(input.vertices_.size());
+    std::vector<bool> mask_observed_vertex(vertices_.size());
     for (auto vertex_ids : triangle_to_vertex) {
         if ((int)vertex_ids.size() == 3)
             for (int i = 0; i < 3; i++)
                 mask_observed_vertex[vertex_ids[i]] = true;
     }
     // Rename vertex id based on selected points
-    std::vector<int> new_vertex_id(input.vertices_.size());
+    std::vector<int> new_vertex_id(vertices_.size());
     for (auto i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i]) new_vertex_id[i] = cnt++;
     }
@@ -214,35 +212,38 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
         if ((int)vertex_ids.size() == 3) {
             Eigen::Vector3i new_face;
             for (int i = 0; i < 3; i++)
-                new_face(i) = new_vertex_id[input.triangles_[triangle_id][i]];
+                new_face(i) = new_vertex_id[triangles_[triangle_id][i]];
             output->triangles_.push_back(new_face);
             if (has_triangle_normals)
                 output->triangle_normals_.push_back(
-                        input.triangle_normals_[triangle_id]);
+                        triangle_normals_[triangle_id]);
         }
         triangle_id++;
     }
     // Push marked vertex.
     for (auto i = 0; i < mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i]) {
-            output->vertices_.push_back(input.vertices_[i]);
+            output->vertices_.push_back(vertices_[i]);
             if (has_vertex_normals)
-                output->vertex_normals_.push_back(input.vertex_normals_[i]);
+                output->vertex_normals_.push_back(vertex_normals_[i]);
             if (has_vertex_colors)
-                output->vertex_colors_.push_back(input.vertex_colors_[i]);
+                output->vertex_colors_.push_back(vertex_colors_[i]);
         }
     }
-    output->Purge();
+    output->RemoveDuplicatedVertices();
+    output->RemoveDuplicatedTriangles();
+    output->RemoveUnreferencedVertices();
+    output->RemoveDegenerateTriangles();
     utility::PrintDebug(
             "Triangle mesh sampled from %d vertices and %d triangles to %d "
             "vertices and %d triangles.\n",
-            (int)input.vertices_.size(), (int)input.triangles_.size(),
+            (int)vertices_.size(), (int)triangles_.size(),
             (int)output->vertices_.size(), (int)output->triangles_.size());
     return output;
 }
 
-std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
-                                            double voxel_size) {
+std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
+        double voxel_size) const {
     auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
         utility::PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
@@ -250,8 +251,8 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     }
     Eigen::Vector3d voxel_size3 =
             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
-    Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
+    Eigen::Vector3d voxel_min_bound = GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
         utility::PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
@@ -263,14 +264,14 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
 
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
-    for (int i = 0; i < (int)input.points_.size(); i++) {
-        ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
+    for (int i = 0; i < (int)points_.size(); i++) {
+        ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
                 int(floor(ref_coord(2)));
-        voxelindex_to_accpoint[voxel_index].AddPoint(input, i);
+        voxelindex_to_accpoint[voxel_index].AddPoint(*this, i);
     }
-    bool has_normals = input.HasNormals();
-    bool has_colors = input.HasColors();
+    bool has_normals = HasNormals();
+    bool has_colors = HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
@@ -282,16 +283,15 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.size(), (int)output->points_.size());
+            (int)points_.size(), (int)output->points_.size());
     return output;
 }
 
 std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
-VoxelDownSampleAndTrace(const PointCloud &input,
-                        double voxel_size,
-                        const Eigen::Vector3d &min_bound,
-                        const Eigen::Vector3d &max_bound,
-                        bool approximate_class) {
+PointCloud::VoxelDownSampleAndTrace(double voxel_size,
+                                    const Eigen::Vector3d &min_bound,
+                                    const Eigen::Vector3d &max_bound,
+                                    bool approximate_class) const {
     auto output = std::make_shared<PointCloud>();
     Eigen::MatrixXi cubic_id;
     if (voxel_size <= 0.0) {
@@ -311,8 +311,8 @@ VoxelDownSampleAndTrace(const PointCloud &input,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     int cid_temp[3] = {1, 2, 4};
-    for (size_t i = 0; i < input.points_.size(); i++) {
-        auto ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
+    for (size_t i = 0; i < points_.size(); i++) {
+        auto ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
         auto voxel_index = Eigen::Vector3i(int(floor(ref_coord(0))),
                                            int(floor(ref_coord(1))),
                                            int(floor(ref_coord(2))));
@@ -322,11 +322,11 @@ VoxelDownSampleAndTrace(const PointCloud &input,
                 cid += cid_temp[c];
             }
         }
-        voxelindex_to_accpoint[voxel_index].AddPoint(input, i, cid,
+        voxelindex_to_accpoint[voxel_index].AddPoint(*this, i, cid,
                                                      approximate_class);
     }
-    bool has_normals = input.HasNormals();
-    bool has_colors = input.HasColors();
+    bool has_normals = HasNormals();
+    bool has_colors = HasColors();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -352,26 +352,26 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     }
     utility::PrintDebug(
             "Pointcloud down sampled from %d points to %d points.\n",
-            (int)input.points_.size(), (int)output->points_.size());
+            (int)points_.size(), (int)output->points_.size());
     return std::make_tuple(output, cubic_id);
 }
 
-std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
-                                              size_t every_k_points) {
+std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
+        size_t every_k_points) const {
     if (every_k_points == 0) {
         utility::PrintDebug("[UniformDownSample] Illegal sample rate.\n");
         return std::make_shared<PointCloud>();
     }
     std::vector<size_t> indices;
-    for (size_t i = 0; i < input.points_.size(); i += every_k_points) {
+    for (size_t i = 0; i < points_.size(); i += every_k_points) {
         indices.push_back(i);
     }
-    return SelectDownSample(input, indices);
+    return SelectDownSample(indices);
 }
 
-std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
-                                           const Eigen::Vector3d &min_bound,
-                                           const Eigen::Vector3d &max_bound) {
+std::shared_ptr<PointCloud> PointCloud::Crop(
+        const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound) const {
     if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
         min_bound(2) > max_bound(2)) {
         utility::PrintDebug(
@@ -379,21 +379,19 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
         return std::make_shared<PointCloud>();
     }
     std::vector<size_t> indices;
-    for (size_t i = 0; i < input.points_.size(); i++) {
-        const auto &point = input.points_[i];
+    for (size_t i = 0; i < points_.size(); i++) {
+        const auto &point = points_[i];
         if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
             point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
             point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
             indices.push_back(i);
         }
     }
-    return SelectDownSample(input, indices);
+    return SelectDownSample(indices);
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-RemoveRadiusOutliers(const PointCloud &input,
-                     size_t nb_points,
-                     double search_radius) {
+PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::PrintDebug(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
@@ -402,15 +400,15 @@ RemoveRadiusOutliers(const PointCloud &input,
                                std::vector<size_t>());
     }
     KDTreeFlann kdtree;
-    kdtree.SetGeometry(input);
-    std::vector<bool> mask = std::vector<bool>(input.points_.size());
+    kdtree.SetGeometry(*this);
+    std::vector<bool> mask = std::vector<bool>(points_.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < input.points_.size(); i++) {
+    for (auto i = 0; i < points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        int nb_neighbors = kdtree.SearchRadius(input.points_[i], search_radius,
+        int nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
                                                tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
     }
@@ -420,13 +418,12 @@ RemoveRadiusOutliers(const PointCloud &input,
             indices.push_back(i);
         }
     }
-    return std::make_tuple(SelectDownSample(input, indices), indices);
+    return std::make_tuple(SelectDownSample(indices), indices);
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-RemoveStatisticalOutliers(const PointCloud &input,
-                          size_t nb_neighbors,
-                          double std_ratio) {
+PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
+                                      double std_ratio) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::PrintDebug(
                 "[RemoveStatisticalOutliers] Illegal input parameters, number "
@@ -435,23 +432,22 @@ RemoveStatisticalOutliers(const PointCloud &input,
         return std::make_tuple(std::make_shared<PointCloud>(),
                                std::vector<size_t>());
     }
-    if (input.points_.size() == 0) {
+    if (points_.size() == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
                                std::vector<size_t>());
     }
     KDTreeFlann kdtree;
-    kdtree.SetGeometry(input);
-    std::vector<double> avg_distances =
-            std::vector<double>(input.points_.size());
+    kdtree.SetGeometry(*this);
+    std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < input.points_.size(); i++) {
+    for (auto i = 0; i < points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        kdtree.SearchKNN(input.points_[i], nb_neighbors, tmp_indices, dist);
+        kdtree.SearchKNN(points_[i], nb_neighbors, tmp_indices, dist);
         double mean = -1;
         if (dist.size() > 0) {
             valid_distances++;
@@ -481,13 +477,12 @@ RemoveStatisticalOutliers(const PointCloud &input,
             indices.push_back(i);
         }
     }
-    return std::make_tuple(SelectDownSample(input, indices), indices);
+    return std::make_tuple(SelectDownSample(indices), indices);
 }
 
-std::shared_ptr<TriangleMesh> CropTriangleMesh(
-        const TriangleMesh &input,
+std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const Eigen::Vector3d &min_bound,
-        const Eigen::Vector3d &max_bound) {
+        const Eigen::Vector3d &max_bound) const {
     if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
         min_bound(2) > max_bound(2)) {
         utility::PrintDebug(
@@ -495,15 +490,15 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
         return std::make_shared<TriangleMesh>();
     }
     std::vector<size_t> indices;
-    for (size_t i = 0; i < input.vertices_.size(); i++) {
-        const auto &point = input.vertices_[i];
+    for (size_t i = 0; i < vertices_.size(); i++) {
+        const auto &point = vertices_[i];
         if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
             point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
             point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
             indices.push_back(i);
         }
     }
-    return SelectDownSample(input, indices);
+    return SelectDownSample(indices);
 }
 }  // namespace geometry
 }  // namespace open3d

@@ -40,7 +40,9 @@ template <class GeometryBase = geometry::Geometry>
 class PyGeometry : public GeometryBase {
 public:
     using GeometryBase::GeometryBase;
-    void Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
+    GeometryBase& Clear() override {
+        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
+    }
     bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
     }
@@ -71,22 +73,4 @@ public:
     Eigen::Vector2d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
     }
-};
-
-template <class TriangleMeshBase = geometry::TriangleMesh>
-class PyTriangleMesh : public PyGeometry3D<TriangleMeshBase> {
-public:
-    using PyGeometry3D<TriangleMeshBase>::PyGeometry3D;
-    void RemoveDuplicatedVertices() override {
-        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveDuplicatedVertices, );
-    };
-    void RemoveDuplicatedTriangles() override {
-        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveDuplicatedTriangles, );
-    };
-    void RemoveNonManifoldVertices() override {
-        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveNonManifoldVertices, );
-    };
-    void RemoveNonManifoldTriangles() override {
-        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveNonManifoldTriangles, );
-    };
 };

@@ -15,8 +15,8 @@ The Redwood format stored depth in a 16-bit single channel image. The integer va
 
 .. literalinclude:: ../../../../examples/Python/Basic/rgbd_redwood.py
    :language: python
-   :lineno-start: 12
-   :lines: 12-17
+   :lineno-start: 11
+   :lines: 11-16
    :linenos:
 
 The default conversion function ``create_rgbd_image_from_color_and_depth`` creates an ``RGBDImage`` from a pair of color and depth image. The color image is converted into a grayscale image, stored in ``float`` ranged in [0, 1]. The depth image is stored in ``float``, representing the depth value in meters. ``print(rgbd_image)`` yields:
@@ -45,8 +45,8 @@ The RGBD image can be converted into a point cloud, given a set of camera parame
 
 .. literalinclude:: ../../../../examples/Python/Basic/rgbd_redwood.py
    :language: python
-   :lineno-start: 25
-   :lines: 25-29
+   :lineno-start: 26
+   :lines: 26-32
    :linenos:
 
 Here we use ``PinholeCameraIntrinsicParameters.PrimeSenseDefault`` as default camera parameter. It has image resolution 640x480, focal length (fx, fy) = (525.0, 525.0), and optical center (cx, cy) = (319.5, 239.5). An identity matrix is used as the default extrinsic parameter. ``pcd.transform`` applies an up-down flip transformation on the point cloud for better visualization purpose. This outputs:

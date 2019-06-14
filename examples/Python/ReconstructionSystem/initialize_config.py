@@ -29,18 +29,18 @@ def initialize_config(config):
 
     set_default_value(config, "folder_fragment", "fragments/")
     set_default_value(config, "template_fragment_posegraph",
-            "fragments/fragment_%03d.json")
+                      "fragments/fragment_%03d.json")
     set_default_value(config, "template_fragment_posegraph_optimized",
-            "fragments/fragment_optimized_%03d.json")
+                      "fragments/fragment_optimized_%03d.json")
     set_default_value(config, "template_fragment_pointcloud",
-            "fragments/fragment_%03d.ply")
+                      "fragments/fragment_%03d.ply")
     set_default_value(config, "folder_scene", "scene/")
     set_default_value(config, "template_global_posegraph",
-            "scene/global_registration.json")
+                      "scene/global_registration.json")
     set_default_value(config, "template_global_posegraph_optimized",
-            "scene/global_registration_optimized.json")
+                      "scene/global_registration_optimized.json")
     set_default_value(config, "template_refined_posegraph",
-            "scene/refined_registration.json")
+                      "scene/refined_registration.json")
     set_default_value(config, "template_refined_posegraph_optimized",
-            "scene/refined_registration_optimized.json")
+                      "scene/refined_registration_optimized.json")
     set_default_value(config, "template_global_mesh", "scene/integrated.ply")

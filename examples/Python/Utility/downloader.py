@@ -14,7 +14,6 @@ else:
     pyver = 2
     from urllib2 import Request, urlopen
 
-
 # dataset from redwood-data.org
 dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]
 dataset_path = "testdata/"
@@ -29,7 +28,7 @@ def get_redwood_dataset():
             file_downloader("http://redwood-data.org/indoor/data/%s-fragments-ply.zip" % \
                     name)
             unzip_data("%s-fragments-ply.zip" % name,
-                    "%s/%s" % (dataset_path, name))
+                       "%s/%s" % (dataset_path, name))
             os.remove("%s-fragments-ply.zip" % name)
             print("")
 

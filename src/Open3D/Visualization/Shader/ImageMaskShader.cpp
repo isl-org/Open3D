@@ -190,7 +190,7 @@ bool ImageMaskShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
         PrintShaderWarning("Mask image does not match framebuffer size.");
         return false;
     }
-    render_image.PrepareImage(image.width_, image.height_, 1, 1);
+    render_image.Prepare(image.width_, image.height_, 1, 1);
     for (int i = 0; i < image.height_ * image.width_; i++) {
         render_image.data_[i] = (image.data_[i] != 0) * 255;
     }

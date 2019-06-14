@@ -26,6 +26,7 @@
 
 #include "Open3D/Geometry/Octree.h"
 
+#include <json/json.h>
 #include <Eigen/Dense>
 #include <algorithm>
 #include <unordered_map>
@@ -36,6 +37,31 @@
 
 namespace open3d {
 namespace geometry {
+
+std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
+        const Json::Value& value) {
+    // Construct node from class name
+    std::string class_name = value.get("class_name", "").asString();
+    std::shared_ptr<OctreeNode> node = nullptr;
+    if (value != Json::nullValue && class_name != "") {
+        if (class_name == "OctreeInternalNode") {
+            node = std::make_shared<OctreeInternalNode>();
+        } else if (class_name == "OctreeColorLeafNode") {
+            node = std::make_shared<OctreeColorLeafNode>();
+        } else {
+            utility::PrintWarning("Unhandled class name %s\n",
+                                  class_name.c_str());
+        }
+    }
+    // Convert from json
+    if (node != nullptr) {
+        bool convert_success = node->ConvertFromJsonValue(value);
+        if (!convert_success) {
+            node = nullptr;
+        }
+    }
+    return node;
+}
 
 std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
         const std::shared_ptr<OctreeNodeInfo>& node_info,
@@ -58,6 +84,43 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
     auto child_node_info = std::make_shared<OctreeNodeInfo>(
             child_origin, child_size, node_info->depth_ + 1, child_index);
     return child_node_info;
+}
+
+bool OctreeInternalNode::ConvertToJsonValue(Json::Value& value) const {
+    bool rc = true;
+    value["class_name"] = "OctreeInternalNode";
+    value["children"] = Json::arrayValue;
+    value["children"].resize(8);
+    for (int cid = 0; cid < 8; ++cid) {
+        if (children_[cid] == nullptr) {
+            value["children"][Json::ArrayIndex(cid)] = Json::objectValue;
+        } else {
+            rc = rc && children_[cid]->ConvertToJsonValue(
+                               value["children"][Json::ArrayIndex(cid)]);
+        }
+    }
+    return rc;
+}
+
+bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
+    if (value.isObject() == false) {
+        utility::PrintWarning(
+                "ConvertFromJsonValue read JSON failed: unsupported json "
+                "format.\n");
+        return false;
+    }
+    std::string class_name = value.get("class_name", "").asString();
+    if (class_name != "OctreeInternalNode") {
+        utility::PrintWarning("class_name %s != OctreeInternalNode\n",
+                              class_name.c_str());
+        return false;
+    }
+    bool rc = true;
+    for (int cid = 0; cid < 8; ++cid) {
+        const auto& child_value = value["children"][Json::ArrayIndex(cid)];
+        children_[cid] = OctreeNode::ConstructFromJsonValue(child_value);
+    }
+    return rc;
 }
 
 std::function<std::shared_ptr<OctreeLeafNode>()>
@@ -97,6 +160,24 @@ bool OctreeColorLeafNode::operator==(const OctreeLeafNode& that) const {
     } catch (const std::exception& ex) {
         return false;
     }
+}
+
+bool OctreeColorLeafNode::ConvertToJsonValue(Json::Value& value) const {
+    value["class_name"] = "OctreeColorLeafNode";
+    return EigenVector3dToJsonArray(color_, value["color"]);
+}
+
+bool OctreeColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
+    if (value.isObject() == false) {
+        utility::PrintWarning(
+                "OctreeColorLeafNode read JSON failed: unsupported json "
+                "format.\n");
+        return false;
+    }
+    if (value.get("class_name", "") != "OctreeColorLeafNode") {
+        return false;
+    }
+    return EigenVector3dFromJsonArray(color_, value["color"]);
 }
 
 Octree::Octree(const Octree& src_octree)
@@ -247,11 +328,12 @@ bool Octree::operator==(const Octree& that) const {
     return rc;
 }
 
-void Octree::Clear() {
+Octree& Octree::Clear() {
     // Inherited Clear function
     root_node_ = nullptr;
     origin_.setZero();
     size_ = 0;
+    return *this;
 }
 
 bool Octree::IsEmpty() const { return root_node_ == nullptr; }
@@ -282,12 +364,14 @@ Octree& Octree::Translate(const Eigen::Vector3d& translation) {
     return *this;
 }
 
-Octree& Octree::Scale(const double scale) {
+Octree& Octree::Scale(const double scale, bool center) {
     throw std::runtime_error("Not implemented");
     return *this;
 }
 
-Octree& Octree::Rotate(const Eigen::Vector3d& rotation, RotationType type) {
+Octree& Octree::Rotate(const Eigen::Vector3d& rotation,
+                       bool center,
+                       RotationType type) {
     throw std::runtime_error("Not implemented");
     return *this;
 }
@@ -471,6 +555,56 @@ std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {
     auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
     voxel_grid->FromOctree(*this);
     return voxel_grid;
+}
+
+bool Octree::ConvertToJsonValue(Json::Value& value) const {
+    bool rc = true;
+    value["class_name"] = "Octree";
+    value["size"] = size_;
+    value["max_depth"] = Json::Int64(max_depth_);
+    rc = rc && EigenVector3dToJsonArray(origin_, value["origin"]);
+    if (root_node_ == nullptr) {
+        value["tree"] = Json::objectValue;
+    } else {
+        rc = rc && root_node_->ConvertToJsonValue(value["tree"]);
+    }
+    return rc;
+}
+
+bool Octree::ConvertFromJsonValue(const Json::Value& value) {
+    if (value.isObject() == false) {
+        utility::PrintWarning(
+                "Octree read JSON failed: unsupported json format.\n");
+        return false;
+    }
+    if (value.get("class_name", "") != "Octree") {
+        return false;
+    }
+
+    // Get octree attributes
+    bool rc = true;
+    rc = EigenVector3dFromJsonArray(origin_, value["origin"]);
+    size_ = value.get("size", 0.0).asDouble();
+    max_depth_ = value.get("max_depth", 0).asInt64();
+
+    // Create nodes
+    root_node_ = OctreeNode::ConstructFromJsonValue(value["tree"]);
+    return rc;
+}
+
+void Octree::FromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
+    origin_ = voxel_grid.origin_;
+    size_ = (voxel_grid.GetMaxBound() - origin_).maxCoeff();
+    double half_voxel_size = voxel_grid.voxel_size_ / 2.;
+    for (size_t vid = 0; vid < voxel_grid.voxels_.size(); ++vid) {
+        Eigen::Vector3d mid_point =
+                half_voxel_size + origin_.array() +
+                voxel_grid.voxels_[vid].grid_index_.array().cast<double>() *
+                        voxel_grid.voxel_size_;
+        InsertPoint(mid_point, geometry::OctreeColorLeafNode::GetInitFunction(),
+                    geometry::OctreeColorLeafNode::GetUpdateFunction(
+                            voxel_grid.voxels_[vid].color_));
+    }
 }
 
 }  // namespace geometry

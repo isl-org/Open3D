@@ -47,14 +47,15 @@ public:
     ~PointCloudPicker() override {}
 
 public:
-    void Clear() override;
+    PointCloudPicker& Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const final;
     Eigen::Vector3d GetMaxBound() const final;
     PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
     PointCloudPicker& Translate(const Eigen::Vector3d& translation) override;
-    PointCloudPicker& Scale(const double scale) override;
+    PointCloudPicker& Scale(const double scale, bool center = true) override;
     PointCloudPicker& Rotate(const Eigen::Vector3d& rotation,
+                             bool center = true,
                              RotationType type = RotationType::XYZ) override;
     bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
 

@@ -50,7 +50,7 @@ Point-to-plane ICP
 .. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
    :language: python
    :lineno-start: 29
-   :lines: 29-37
+   :lines: 29-38
    :linenos:
 
 We first run :ref:`point_to_plane_icp` as a baseline approach. The visualization below shows misaligned green triangle textures. This is because geometric constraint does not prevent two planar surfaces from slipping.
@@ -89,8 +89,8 @@ To further improve efficiency, [Park2017]_ proposes a multi-scale registration s
 
 .. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
    :language: python
-   :lineno-start: 39
-   :lines: 39-70
+   :lineno-start: 40
+   :lines: 40-72
    :linenos:
 
 In total, 3 layers of multi-resolution point clouds are created with :ref:`voxel_downsampling`. Normals are computed with :ref:`vertex_normal_estimation`. The core registration function ``registration_colored_icp`` is called for each layer, from coarse to fine.  ``lambda_geometric`` is an optional argument for ``registration_colored_icp`` that determines :math:`\lambda \in [0,1]` in the overall energy :math:`\lambda E_{G} + (1-\lambda) E_{C}`.

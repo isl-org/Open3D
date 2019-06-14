@@ -26,6 +26,7 @@
 
 #include "Python/integration/integration.h"
 
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
@@ -140,6 +141,9 @@ In SIGGRAPH, 1996)");
             .def("extract_voxel_point_cloud",
                  &integration::UniformTSDFVolume::ExtractVoxelPointCloud,
                  "Debug function to extract the voxel data into a point cloud.")
+            .def("extract_voxel_grid",
+                 &integration::UniformTSDFVolume::ExtractVoxelGrid,
+                 "Debug function to extract the voxel data VoxelGrid.")
             .def_readwrite("length", &integration::UniformTSDFVolume::length_,
                            "Total length, where ``voxel_length = length / "
                            "resolution``.")

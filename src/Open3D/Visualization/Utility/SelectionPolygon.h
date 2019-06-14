@@ -62,7 +62,7 @@ public:
     ~SelectionPolygon() override {}
 
 public:
-    void Clear() override;
+    SelectionPolygon &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector2d GetMinBound() const final;
     Eigen::Vector2d GetMaxBound() const final;

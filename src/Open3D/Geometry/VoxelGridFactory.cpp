@@ -68,16 +68,17 @@ public:
 
 namespace geometry {
 
-std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input,
-        double voxel_size,
-        const Eigen::Vector3d voxel_min_bound,
-        const Eigen::Vector3d voxel_max_bound) {
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
+        const PointCloud &input, double voxel_size) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         utility::PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
         return output;
     }
+    Eigen::Vector3d voxel_size3 =
+            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+    Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
         utility::PrintDebug(
@@ -99,10 +100,12 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     }
     bool has_colors = input.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
-        output->voxels_.push_back(accpoint.second.GetVoxelCoordinate());
-        if (has_colors) {
-            output->colors_.push_back(accpoint.second.GetAverageColor());
-        }
+        const Eigen::Vector3i &grid_index =
+                accpoint.second.GetVoxelCoordinate();
+        const Eigen::Vector3d &color =
+                has_colors ? accpoint.second.GetAverageColor()
+                           : Eigen::Vector3d(0, 0, 0);
+        output->voxels_.emplace_back(grid_index, color);
     }
     utility::PrintDebug(
             "Pointcloud is voxelized from %d points to %d voxels.\n",
@@ -130,9 +133,9 @@ std::shared_ptr<VoxelGrid> CreateVoxelGrid(double w,
     for (int i = 0; i < num_w; i++) {
         for (int j = 0; j < num_h; j++) {
             for (int k = 0; k < num_d; k++) {
-                output->voxels_[cnt](0) = i;
-                output->voxels_[cnt](1) = j;
-                output->voxels_[cnt](2) = k;
+                output->voxels_[cnt].grid_index_(0) = i;
+                output->voxels_[cnt].grid_index_(1) = j;
+                output->voxels_[cnt].grid_index_(2) = k;
                 cnt++;
             }
         }

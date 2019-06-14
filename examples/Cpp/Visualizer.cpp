@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
         camera::PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
-                geometry::CreatePointCloudFromDepthImage(*image_ptr, camera);
+                geometry::PointCloud::CreateFromDepthImage(*image_ptr, camera);
         visualization::DrawGeometries(
                 {pointcloud_ptr},
                 "geometry::PointCloud from Depth geometry::Image", 1920, 1080);

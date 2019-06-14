@@ -26,13 +26,16 @@
 
 #include "Open3D/Geometry/LineSet.h"
 
+#include <numeric>
+
 namespace open3d {
 namespace geometry {
 
-void LineSet::Clear() {
+LineSet &LineSet::Clear() {
     points_.clear();
     lines_.clear();
     colors_.clear();
+    return *this;
 }
 
 bool LineSet::IsEmpty() const { return !HasPoints(); }
@@ -41,44 +44,22 @@ Eigen::Vector3d LineSet::GetMinBound() const {
     if (!HasPoints()) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
-    auto itr_x = std::min_element(
-            points_.begin(), points_.end(),
+    return std::accumulate(
+            points_.begin(), points_.end(), points_[0],
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a(0) < b(0);
+                return a.array().min(b.array()).matrix();
             });
-    auto itr_y = std::min_element(
-            points_.begin(), points_.end(),
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a(1) < b(1);
-            });
-    auto itr_z = std::min_element(
-            points_.begin(), points_.end(),
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a(2) < b(2);
-            });
-    return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
 Eigen::Vector3d LineSet::GetMaxBound() const {
     if (!HasPoints()) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
-    auto itr_x = std::max_element(
-            points_.begin(), points_.end(),
+    return std::accumulate(
+            points_.begin(), points_.end(), points_[0],
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a(0) < b(0);
+                return a.array().max(b.array()).matrix();
             });
-    auto itr_y = std::max_element(
-            points_.begin(), points_.end(),
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a(1) < b(1);
-            });
-    auto itr_z = std::max_element(
-            points_.begin(), points_.end(),
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a(2) < b(2);
-            });
-    return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
 LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {
@@ -98,17 +79,31 @@ LineSet &LineSet::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-LineSet &LineSet::Scale(const double scale) {
+LineSet &LineSet::Scale(const double scale, bool center) {
+    Eigen::Vector3d point_center(0, 0, 0);
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     for (auto &point : points_) {
-        point *= scale;
+        point = (point - point_center) * scale + point_center;
     }
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation, RotationType type) {
+LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation,
+                         bool center,
+                         RotationType type) {
+    Eigen::Vector3d point_center(0, 0, 0);
+    if (center && !points_.empty()) {
+        point_center =
+                std::accumulate(points_.begin(), points_.end(), point_center);
+        point_center /= points_.size();
+    }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {
-        point = R * point;
+        point = R * (point - point_center) + point_center;
     }
     return *this;
 }

@@ -226,14 +226,14 @@ CreateGradientImages(
     std::vector<std::shared_ptr<geometry::Image>> images_color;
     std::vector<std::shared_ptr<geometry::Image>> images_depth;
     for (auto i = 0; i < images_rgbd.size(); i++) {
-        auto gray_image = CreateFloatImageFromImage(images_rgbd[i]->color_);
-        auto gray_image_filtered = geometry::FilterImage(
-                *gray_image, geometry::Image::FilterType::Gaussian3);
+        auto gray_image = images_rgbd[i]->color_.CreateFloatImage();
+        auto gray_image_filtered =
+                gray_image->Filter(geometry::Image::FilterType::Gaussian3);
         images_gray.push_back(gray_image_filtered);
-        images_dx.push_back(geometry::FilterImage(
-                *gray_image_filtered, geometry::Image::FilterType::Sobel3Dx));
-        images_dy.push_back(geometry::FilterImage(
-                *gray_image_filtered, geometry::Image::FilterType::Sobel3Dy));
+        images_dx.push_back(gray_image_filtered->Filter(
+                geometry::Image::FilterType::Sobel3Dx));
+        images_dy.push_back(gray_image_filtered->Filter(
+                geometry::Image::FilterType::Sobel3Dy));
         auto color = std::make_shared<geometry::Image>(images_rgbd[i]->color_);
         auto depth = std::make_shared<geometry::Image>(images_rgbd[i]->depth_);
         images_color.push_back(color);
@@ -251,8 +251,7 @@ std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
     for (auto i = 0; i < n_images; i++) {
         utility::PrintDebug("[MakeDepthMasks] geometry::Image %d/%d\n", i,
                             n_images);
-        masks.push_back(geometry::CreateDepthBoundaryMask(
-                *images_depth[i],
+        masks.push_back(images_depth[i]->CreateDepthBoundaryMask(
                 option.depth_threshold_for_discontinuity_check_,
                 option.half_dilation_kernel_size_for_discontinuity_map_));
     }

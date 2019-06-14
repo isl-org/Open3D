@@ -56,35 +56,35 @@ int main(int argc, char *argv[]) {
 
     std::string option(argv[1]);
     if (option == "sphere") {
-        auto mesh = geometry::CreateMeshSphere(0.05);
+        auto mesh = geometry::TriangleMesh::CreateSphere(0.05);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("sphere.ply", *mesh, true, true);
     } else if (option == "cylinder") {
-        auto mesh = geometry::CreateMeshCylinder(0.5, 2.0);
+        auto mesh = geometry::TriangleMesh::CreateCylinder(0.5, 2.0);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cylinder.ply", *mesh, true, true);
     } else if (option == "cone") {
-        auto mesh = geometry::CreateMeshCone(0.5, 2.0, 20, 3);
+        auto mesh = geometry::TriangleMesh::CreateCone(0.5, 2.0, 20, 3);
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cone.ply", *mesh, true, true);
     } else if (option == "arrow") {
-        auto mesh = geometry::CreateMeshArrow();
+        auto mesh = geometry::TriangleMesh::CreateArrow();
         mesh->ComputeVertexNormals();
         visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("arrow.ply", *mesh, true, true);
     } else if (option == "frame") {
         if (argc < 3) {
-            auto mesh = geometry::CreateMeshCoordinateFrame();
+            auto mesh = geometry::TriangleMesh::CreateCoordinateFrame();
             visualization::DrawGeometries({mesh});
             io::WriteTriangleMesh("frame.ply", *mesh, true, true);
         } else {
             auto mesh = io::CreateMeshFromFile(argv[2]);
             mesh->ComputeVertexNormals();
             visualization::BoundingBox boundingbox(*mesh);
-            auto mesh_frame = geometry::CreateMeshCoordinateFrame(
+            auto mesh_frame = geometry::TriangleMesh::CreateCoordinateFrame(
                     boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
             visualization::DrawGeometries({mesh, mesh_frame});
         }
@@ -99,7 +99,10 @@ int main(int argc, char *argv[]) {
         utility::PrintInfo(
                 "After merge, Mesh1 has %d vertices, %d triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
-        mesh1->Purge();
+        mesh1->RemoveDuplicatedVertices();
+        mesh1->RemoveDuplicatedTriangles();
+        mesh1->RemoveDegenerateTriangles();
+        mesh1->RemoveUnreferencedVertices();
         utility::PrintInfo(
                 "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
@@ -175,7 +178,7 @@ int main(int argc, char *argv[]) {
         int idx = 3000;
         std::vector<std::shared_ptr<const geometry::Geometry>> ptrs;
         ptrs.push_back(mesh);
-        auto mesh_sphere = geometry::CreateMeshSphere(0.05);
+        auto mesh_sphere = geometry::TriangleMesh::CreateSphere(0.05);
         Eigen::Matrix4d trans;
         trans.setIdentity();
         trans.block<3, 1>(0, 3) = mesh->vertices_[idx];
@@ -188,7 +191,7 @@ int main(int argc, char *argv[]) {
             char buffer[1024];
             sprintf(buffer, "image/image_%06d.png", (int)i + 1);
             auto image = io::CreateImageFromFile(buffer);
-            auto fimage = CreateFloatImageFromImage(*image);
+            auto fimage = image->CreateFloatImage();
             Eigen::Vector4d pt_in_camera =
                     trajectory.parameters_[i].extrinsic_ *
                     Eigen::Vector4d(mesh->vertices_[idx](0),

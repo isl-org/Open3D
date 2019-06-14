@@ -95,8 +95,10 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
         }
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
-            *coordinate_frame_mesh_ptr_ = *geometry::CreateMeshCoordinateFrame(
-                    boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+            *coordinate_frame_mesh_ptr_ =
+                    *geometry::TriangleMesh::CreateCoordinateFrame(
+                            boundingbox.GetSize() * 0.2,
+                            boundingbox.min_bound_);
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
         }
     }
@@ -143,8 +145,8 @@ void Visualizer::CopyViewStatusFromClipboard() {
 std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
         bool do_render /* = true*/) {
     geometry::Image screen_image;
-    screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                              view_control_ptr_->GetWindowHeight(), 3, 4);
+    screen_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                         view_control_ptr_->GetWindowHeight(), 3, 4);
     if (do_render) {
         Render();
         is_redraw_required_ = false;
@@ -157,8 +159,8 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
     auto image_ptr = std::make_shared<geometry::Image>();
-    image_ptr->PrepareImage(view_control_ptr_->GetWindowWidth(),
-                            view_control_ptr_->GetWindowHeight(), 3, 4);
+    image_ptr->Prepare(view_control_ptr_->GetWindowWidth(),
+                       view_control_ptr_->GetWindowHeight(), 3, 4);
     int bytes_per_line = screen_image.BytesPerLine();
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(image_ptr->data_.data() + bytes_per_line * i,
@@ -179,8 +181,8 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
         camera_filename = "ScreenCamera_" + timestamp + ".json";
     }
     geometry::Image screen_image;
-    screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                              view_control_ptr_->GetWindowHeight(), 3, 1);
+    screen_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                         view_control_ptr_->GetWindowHeight(), 3, 1);
     if (do_render) {
         Render();
         is_redraw_required_ = false;
@@ -193,8 +195,8 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
     geometry::Image png_image;
-    png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                           view_control_ptr_->GetWindowHeight(), 3, 1);
+    png_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                      view_control_ptr_->GetWindowHeight(), 3, 1);
     int bytes_per_line = screen_image.BytesPerLine();
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(png_image.data_.data() + bytes_per_line * i,
@@ -218,8 +220,8 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
 std::shared_ptr<geometry::Image> Visualizer::CaptureDepthFloatBuffer(
         bool do_render /* = true*/) {
     geometry::Image depth_image;
-    depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                             view_control_ptr_->GetWindowHeight(), 1, 4);
+    depth_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                        view_control_ptr_->GetWindowHeight(), 1, 4);
     if (do_render) {
         Render();
         is_redraw_required_ = false;
@@ -257,8 +259,8 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureDepthFloatBuffer(
     double z_near = view_control_ptr_->GetZNear();
     double z_far = view_control_ptr_->GetZFar();
 
-    image_ptr->PrepareImage(view_control_ptr_->GetWindowWidth(),
-                            view_control_ptr_->GetWindowHeight(), 1, 4);
+    image_ptr->Prepare(view_control_ptr_->GetWindowWidth(),
+                       view_control_ptr_->GetWindowHeight(), 1, 4);
     for (int i = 0; i < depth_image.height_; i++) {
         float *p_depth = (float *)(depth_image.data_.data() +
                                    depth_image.BytesPerLine() *
@@ -290,8 +292,8 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
         camera_filename = "DepthCamera_" + timestamp + ".json";
     }
     geometry::Image depth_image;
-    depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                             view_control_ptr_->GetWindowHeight(), 1, 4);
+    depth_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                        view_control_ptr_->GetWindowHeight(), 1, 4);
 
     if (do_render) {
         Render();
@@ -330,8 +332,8 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
     double z_near = view_control_ptr_->GetZNear();
     double z_far = view_control_ptr_->GetZFar();
 
-    png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                           view_control_ptr_->GetWindowHeight(), 1, 2);
+    png_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                      view_control_ptr_->GetWindowHeight(), 1, 2);
     for (int i = 0; i < depth_image.height_; i++) {
         float *p_depth = (float *)(depth_image.data_.data() +
                                    depth_image.BytesPerLine() *
@@ -375,8 +377,8 @@ void Visualizer::CaptureDepthPointCloud(
         camera_filename = "DepthCamera_" + timestamp + ".json";
     }
     geometry::Image depth_image;
-    depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-                             view_control_ptr_->GetWindowHeight(), 1, 4);
+    depth_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                        view_control_ptr_->GetWindowHeight(), 1, 4);
 
     if (do_render) {
         Render();

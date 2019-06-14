@@ -214,7 +214,7 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
     if (image.num_of_channels_ == 3 && image.bytes_per_channel_ == 1) {
         render_image = image;
     } else {
-        render_image.PrepareImage(image.width_, image.height_, 3, 1);
+        render_image.Prepare(image.width_, image.height_, 3, 1);
         if (image.num_of_channels_ == 1 && image.bytes_per_channel_ == 1) {
             // grayscale image
             for (int i = 0; i < image.height_ * image.width_; i++) {

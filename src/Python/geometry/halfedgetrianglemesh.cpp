@@ -79,9 +79,9 @@ void pybind_halfedgetrianglemesh(py::module &m) {
 
     // open3d.geometry.HalfEdgeTriangleMesh
     py::class_<geometry::HalfEdgeTriangleMesh,
-               PyTriangleMesh<geometry::HalfEdgeTriangleMesh>,
+               PyGeometry3D<geometry::HalfEdgeTriangleMesh>,
                std::shared_ptr<geometry::HalfEdgeTriangleMesh>,
-               geometry::TriangleMesh>
+               geometry::Geometry3D>
             half_edge_triangle_mesh(
                     m, "HalfEdgeTriangleMesh",
                     "HalfEdgeTriangleMesh inherits TriangleMesh class with the "
@@ -125,6 +125,12 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                  &geometry::HalfEdgeTriangleMesh::GetBoundaries,
                  "Returns a vector of boundaries. A boundary is a vector of "
                  "vertices.")
+            .def_static("create_from_mesh",
+                        &geometry::HalfEdgeTriangleMesh::CreateFromMesh,
+                        "mesh"_a,
+                        "Convert HalfEdgeTriangleMesh from TriangleMesh. "
+                        "Throws exception if "
+                        "the input mesh is not manifolds")
             .def_readwrite("half_edges",
                            &geometry::HalfEdgeTriangleMesh::half_edges_,
                            "List of HalfEdge in the mesh")
@@ -143,11 +149,7 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                                     "get_boundaries");
     docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "has_half_edges");
-
-    m.def("create_half_edge_mesh_from_mesh",
-          &geometry::CreateHalfEdgeMeshFromMesh, "mesh"_a,
-          "Convert HalfEdgeTriangleMesh from TriangleMesh. Throws exception if "
-          "the input mesh is not manifolds");
-    docstring::FunctionDocInject(m, "create_half_edge_mesh_from_mesh",
-                                 {{"mesh", "The input TriangleMesh"}});
+    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
+                                    "create_from_mesh",
+                                    {{"mesh", "The input TriangleMesh"}});
 }

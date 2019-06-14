@@ -16,8 +16,8 @@ Input
 
 .. literalinclude:: ../../../examples/Python/Advanced/global_registration.py
    :language: python
-   :lineno-start: 34
-   :lines: 34-43
+   :lineno-start: 39
+   :lines: 39-50
    :linenos:
 
 This script reads a source point cloud and a target point cloud from two files. They are misaligned with an identity matrix as transformation.
@@ -32,8 +32,8 @@ Extract geometric feature
 
 .. literalinclude:: ../../../examples/Python/Advanced/global_registration.py
    :language: python
-   :lineno-start: 19
-   :lines: 19-31
+   :lineno-start: 21
+   :lines: 21-36
    :linenos:
 
 We down sample the point cloud, estimate normals, then compute a FPFH feature for each point. The FPFH feature is a 33-dimensional vector that describes the local geometric property of a point. A nearest neighbor query in the 33-dimensinal space can return points with similar local geometric structures. See [Rasu2009]_ for details.
@@ -45,8 +45,8 @@ RANSAC
 
 .. literalinclude:: ../../../examples/Python/Advanced/global_registration.py
    :language: python
-   :lineno-start: 49
-   :lines: 49-61
+   :lineno-start: 53
+   :lines: 52-65
    :linenos:
 
 We use RANSAC for global registration. In each RANSAC iteration, ``ransac_n`` random points are picked from the source point cloud. Their corresponding points in the target point cloud are detected by querying the nearest neighbor in the 33-dimensional FPFH feature space. A pruning step takes fast pruning algorithms  to quickly reject false matches early.
@@ -75,8 +75,8 @@ For performance reason, the global registration is only performed on a heavily d
 
 .. literalinclude:: ../../../examples/Python/Advanced/global_registration.py
    :language: python
-   :lineno-start: 64
-   :lines: 64-71
+   :lineno-start: 69
+   :lines: 68-76
    :linenos:
 
 Outputs a tight alignment. This summarizes a complete pairwise registration workflow.

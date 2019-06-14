@@ -9,7 +9,7 @@ and artifact that one would like to remove. This tutorial address outlier remova
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
    :lineno-start: 5
-   :lines: 5-41
+   :lines: 5-
    :linenos:
 
 
@@ -20,8 +20,8 @@ A point cloud is loaded and downsampled using ``voxel_downsample``.
 
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
-   :lineno-start: 21
-   :lines: 21-27
+   :lineno-start: 22
+   :lines: 22-28
    :linenos:
 
 .. image:: ../../_static/Advanced/pointcloud_outlier_removal/voxel_down_sample.png
@@ -31,8 +31,8 @@ For comparison, ``uniform_down_sample`` can downsample point cloud by collecting
 
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
-   :lineno-start: 29
-   :lines: 29-31
+   :lineno-start: 30
+   :lines: 30-32
    :linenos:
 
 .. image:: ../../_static/Advanced/pointcloud_outlier_removal/uniform_down_sample.png
@@ -46,8 +46,8 @@ The selected points and the non-selected points are visualized.
 
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
-   :lineno-start: 9
-   :lines: 9-16
+   :lineno-start: 10
+   :lines: 10-17
    :linenos:
 
 
@@ -56,8 +56,8 @@ Statistical outlier removal
 
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
-   :lineno-start: 33
-   :lines: 33-36
+   :lineno-start: 34
+   :lines: 34-37
    :linenos:
 
 ``statistical_outlier_removal`` removes points that are further away from their neighbors compared to the average for the point cloud. It takes two input parameters:
@@ -73,8 +73,8 @@ Radius outlier removal
 
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
    :language: python
-   :lineno-start: 38
-   :lines: 38-41
+   :lineno-start: 40
+   :lines: 39-41
    :linenos:
 
 ``radius_outlier_removal`` removes points that have few neighbors in a given sphere around them. Two parameters can be used to tune the filter to your data:

@@ -6,10 +6,10 @@ Python interface
 For the C++ interface see :ref:`cplusplus_interface_tutorial`.
 
 
-Install open3d python package
+Install open3d Python package
 =============================
 
-For installing Open3D python package, see :ref:`install_open3d_python`.
+For installing Open3D Python package, see :ref:`install_open3d_python`.
 
 
 Install open3d from source
@@ -38,8 +38,8 @@ that show very basic usage of Open3D Python module.
 
 .. literalinclude:: ../../../examples/Python/Basic/python_binding.py
    :language: python
-   :lineno-start: 9
-   :lines: 9-12
+   :lineno-start: 10
+   :lines: 10-12
    :linenos:
 
 This imports ``read_point_cloud`` function from ``open3d`` module. It reads a point cloud file and returns an instance of ``PointCloud`` class. ``print(pcd)`` prints brief information of the point cloud:
@@ -58,8 +58,8 @@ It is recommended to use Python built-in ``help`` function to get definitions an
 
 .. literalinclude:: ../../../examples/Python/Basic/python_binding.py
    :language: python
-   :lineno-start: 14
-   :lines: 14-18
+   :lineno-start: 15
+   :lines: 15-18
    :linenos:
 
 

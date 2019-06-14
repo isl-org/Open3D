@@ -20,8 +20,8 @@ Input
 
 .. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
    :language: python
-   :lineno-start: 27
-   :lines: 27-29
+   :lineno-start: 29
+   :lines: 29-31
    :linenos:
 
 For the pair comparison, the script reuses the ``prepare_dataset`` function defined in :ref:`global_registration`.
@@ -32,8 +32,8 @@ Baseline
 
 .. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
    :language: python
-   :lineno-start: 31
-   :lines: 31-37
+   :lineno-start: 33
+   :lines: 33-40
    :linenos:
 
 This script calls RANSAC based :ref:`global_registration` as a baseline. After registration it displays the following result.
@@ -52,8 +52,8 @@ With the same input used for a baseline, the next script calls the implementatio
 
 .. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
    :language: python
-   :lineno-start: 14
-   :lines: 14-22
+   :lineno-start: 15
+   :lines: 15-24
    :linenos:
 
 This script displays the following result.

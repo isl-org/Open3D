@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
         if (voxel_size > 0.0) {
             utility::PrintInfo("Downsample point cloud with voxel size %.4f.\n",
                                voxel_size);
-            source_ptr = geometry::VoxelDownSample(*source_ptr, voxel_size);
+            source_ptr = source_ptr->VoxelDownSample(voxel_size);
         }
         if (max_corres_distance > 0.0) {
             utility::PrintInfo("ICP with max correspondence distance %.4f.\n",
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
         if (voxel_size > 0.0) {
             utility::PrintInfo("Downsample point cloud with voxel size %.4f.\n",
                                voxel_size);
-            source_ptr = geometry::VoxelDownSample(*source_ptr, voxel_size);
+            source_ptr = source_ptr->VoxelDownSample(voxel_size);
         }
         std::string source_filename =
                 utility::filesystem::GetFileNameWithoutExtension(
@@ -186,14 +186,12 @@ int main(int argc, char **argv) {
         FILE *f;
 
         io::WritePointCloud(source_filename, *source_ptr);
-        auto source_dis = geometry::ComputePointCloudToPointCloudDistance(
-                *source_ptr, *target_ptr);
+        auto source_dis = source_ptr->ComputePointCloudDistance(*target_ptr);
         f = fopen(source_binname.c_str(), "wb");
         fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
         fclose(f);
         io::WritePointCloud(target_filename, *target_ptr);
-        auto target_dis = geometry::ComputePointCloudToPointCloudDistance(
-                *target_ptr, *source_ptr);
+        auto target_dis = target_ptr->ComputePointCloudDistance(*source_ptr);
         f = fopen(target_binname.c_str(), "wb");
         fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
         fclose(f);

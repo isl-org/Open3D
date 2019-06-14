@@ -45,36 +45,47 @@ class PointCloud;
 class TriangleMesh;
 class Octree;
 
+class Voxel {
+public:
+    Voxel() {}
+    Voxel(const Eigen::Vector3i &grid_index) : grid_index_(grid_index) {}
+    Voxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3d &color)
+        : grid_index_(grid_index), color_(color) {}
+    ~Voxel() {}
+
+public:
+    Eigen::Vector3i grid_index_ = Eigen::Vector3i(0, 0, 0);
+    Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
+};
+
 class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
 
-public:
-    void Clear() override;
+    VoxelGrid &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation) override;
-    VoxelGrid &Scale(const double scale) override;
+    VoxelGrid &Scale(const double scale, bool center = true) override;
     VoxelGrid &Rotate(const Eigen::Vector3d &rotation,
+                      bool center = true,
                       RotationType type = RotationType::XYZ) override;
 
-public:
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
-public:
     bool HasVoxels() const { return voxels_.size() > 0; }
     bool HasColors() const {
-        return voxels_.size() > 0 && colors_.size() == voxels_.size();
+        return true;  // By default, the colors are (0, 0, 0)
     }
 
     // Function to return a corresponding 3d coordinates of the queried voxel
     Eigen::Vector3d GetVoxelCenterCoordinate(int id) const {
-        return ((voxels_[id].cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) *
+        return ((voxels_[id].grid_index_.cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) *
                 voxel_size_) +
                origin_;
     }
@@ -84,11 +95,15 @@ public:
     // Function to create voxels from an octree
     void FromOctree(const Octree &octree);
 
+    std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
+
+    static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
+            const PointCloud &input, double voxel_size);
+
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::vector<Eigen::Vector3i> voxels_;
-    std::vector<Eigen::Vector3d> colors_;
+    std::vector<Voxel> voxels_;
 };
 
 // Function to create voxels with a point cloud and 

@@ -5,15 +5,15 @@
 # examples/Python/Basic/kdtree.py
 
 import numpy as np
-from open3d import *
+import open3d as o3d
 
 if __name__ == "__main__":
 
     print("Testing kdtree in open3d ...")
     print("Load a point cloud and paint it gray.")
-    pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
+    pcd = o3d.io.read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
-    pcd_tree = KDTreeFlann(pcd)
+    pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
     print("Paint the 1500th point red.")
     pcd.colors[1500] = [1, 0, 0]
@@ -27,5 +27,5 @@ if __name__ == "__main__":
     np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
 
     print("Visualize the point cloud.")
-    draw_geometries([pcd])
+    o3d.visualization.draw_geometries([pcd])
     print("")

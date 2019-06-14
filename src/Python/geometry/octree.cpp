@@ -29,6 +29,7 @@
 
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/VoxelGrid.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
@@ -96,7 +97,6 @@ void pybind_octree(py::module &m) {
     octree_node.def("__repr__", [](const geometry::OctreeNode &octree_node) {
         return "geometry::OctreeNode instance.";
     });
-    py::detail::bind_default_constructor<geometry::OctreeNode>(octree_node);
     docstring::ClassMethodDocInject(m, "OctreeNode", "__init__");
 
     // geometry::OctreeInternalNode
@@ -225,6 +225,11 @@ void pybind_octree(py::module &m) {
             .def("convert_from_point_cloud",
                  &geometry::Octree::ConvertFromPointCloud, "point_cloud"_a,
                  "size_expand"_a = 0.01, "Convert octree from point cloud.")
+            .def("to_voxel_grid", &geometry::Octree::ToVoxelGrid,
+                 "Convert to VoxelGrid.")
+            .def("from_voxel_grid", &geometry::Octree::FromVoxelGrid,
+                 "voxel_grid"_a
+                 "Convert from VoxelGrid.")
             .def_readwrite("root_node", &geometry::Octree::root_node_,
                            "OctreeNode: The root octree node.")
             .def_readwrite("origin", &geometry::Octree::origin_,
@@ -245,6 +250,11 @@ void pybind_octree(py::module &m) {
                                     map_octree_argument_docstrings);
     docstring::ClassMethodDocInject(m, "Octree", "convert_from_point_cloud",
                                     map_octree_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "Octree", "to_voxel_grid",
+                                    map_octree_argument_docstrings);
+    docstring::ClassMethodDocInject(
+            m, "Octree", "from_voxel_grid",
+            {{"voxel_grid", "geometry.VoxelGrid: The source voxel grid."}});
 }
 
 void pybind_octree_methods(py::module &m) {}

@@ -41,14 +41,13 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
     : Geometry3D(Geometry::GeometryType::VoxelGrid),
       voxel_size_(src_voxel_grid.voxel_size_),
       origin_(src_voxel_grid.origin_),
-      voxels_(src_voxel_grid.voxels_),
-      colors_(src_voxel_grid.colors_) {}
+      voxels_(src_voxel_grid.voxels_) {}
 
-void VoxelGrid::Clear() {
+VoxelGrid &VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3d::Zero();
     voxels_.clear();
-    colors_.clear();
+    return *this;
 }
 
 bool VoxelGrid::IsEmpty() const { return !HasVoxels(); }
@@ -57,11 +56,11 @@ Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Eigen::Array3i min_voxel = voxels_[0];
-        for (const Eigen::Vector3i &voxel : voxels_) {
-            min_voxel = min_voxel.min(voxel.array());
+        Eigen::Array3i min_grid_index = voxels_[0].grid_index_;
+        for (const Voxel &voxel : voxels_) {
+            min_grid_index = min_grid_index.min(voxel.grid_index_.array());
         }
-        return min_voxel.cast<double>() * voxel_size_ + origin_.array();
+        return min_grid_index.cast<double>() * voxel_size_ + origin_.array();
     }
 }
 
@@ -69,11 +68,12 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Eigen::Array3i max_voxel = voxels_[0];
-        for (const Eigen::Vector3i &voxel : voxels_) {
-            max_voxel = max_voxel.max(voxel.array());
+        Eigen::Array3i max_grid_index = voxels_[0].grid_index_;
+        for (const Voxel &voxel : voxels_) {
+            max_grid_index = max_grid_index.max(voxel.grid_index_.array());
         }
-        return (max_voxel.cast<double>() + 1) * voxel_size_ + origin_.array();
+        return (max_grid_index.cast<double>() + 1) * voxel_size_ +
+               origin_.array();
     }
 }
 
@@ -87,12 +87,13 @@ VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation) {
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Scale(const double scale) {
+VoxelGrid &VoxelGrid::Scale(const double scale, bool center) {
     throw std::runtime_error("Not implemented");
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
+                             bool center,
                              RotationType type) {
     throw std::runtime_error("Not implemented");
     return *this;
@@ -122,9 +123,7 @@ void VoxelGrid::FromOctree(const Octree &octree) {
 
     // Prepare dimensions for voxel
     origin_ = octree.origin_;
-    voxel_size_ = octree.size_;  // Maximum possible voxel size
     voxels_.clear();
-    colors_.clear();
     for (const auto &it : map_node_to_node_info) {
         voxel_size_ = std::min(voxel_size_, it.second->size_);
     }
@@ -135,13 +134,19 @@ void VoxelGrid::FromOctree(const Octree &octree) {
         const std::shared_ptr<OctreeNodeInfo> &node_info = it.second;
         Eigen::Array3d node_center =
                 Eigen::Array3d(node_info->origin_) + node_info->size_ / 2.0;
-        Eigen::Vector3i voxel =
+        Eigen::Vector3i grid_index =
                 Eigen::floor((node_center - Eigen::Array3d(origin_)) /
                              voxel_size_)
                         .cast<int>();
-        voxels_.push_back(voxel);
-        colors_.push_back(node->color_);
+        voxels_.emplace_back(grid_index, node->color_);
     }
+}
+
+std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
+        const size_t &max_depth) const {
+    auto octree = std::make_shared<geometry::Octree>(max_depth);
+    octree->FromVoxelGrid(*this);
+    return octree;
 }
 
 class PointCloudVoxel {
@@ -154,7 +159,7 @@ public:
                   int index) {
         coordinate_ = voxel_index;
         if (voxelgrid.HasColors()) {
-            color_ += voxelgrid.colors_[index];
+            color_ += voxelgrid.voxels_[index].color_;
         }
         num_of_points_++;
     }
@@ -195,23 +200,18 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     Eigen::Vector3i voxel_index;
     int i = 0;
     for (auto &voxel : voxelgrid.voxels_) {
-        voxel_index << voxel(0), voxel(1), voxel(2);
+        voxel_index << voxel.grid_index_(0), voxel.grid_index_(1), voxel.grid_index_(2);
         voxelindex_to_accpoint[voxel_index].AddVoxel(voxel_index, voxelgrid,
                                                      i++);
     }
     i = 0;
     for (auto &voxel : voxels_) {
-        voxel_index << voxel(0), voxel(1), voxel(2);
+        voxel_index << voxel.grid_index_(0), voxel.grid_index_(1), voxel.grid_index_(2);
         voxelindex_to_accpoint[voxel_index].AddVoxel(voxel_index, *this, i++);
     }
     this->voxels_.clear();
-    this->colors_.clear();
-    bool has_colors = voxelgrid.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
         this->voxels_.push_back(accpoint.second.GetVoxelCoordinate());
-        if (has_colors) {
-            this->colors_.push_back(accpoint.second.GetAverageColor());
-        }
     }
     return *this;
 }
@@ -245,11 +245,6 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
     auto voxel_grid_output = std::make_shared<VoxelGrid>();
     voxel_grid_output->voxel_size_ = voxel_grid.voxel_size_;
     voxel_grid_output->origin_ = voxel_grid.origin_;
-    if (voxel_grid.HasColors() &&
-        (voxel_grid.voxels_.size() != voxel_grid.colors_.size())) {
-        utility::PrintError("VoxelGrid has invalid number of voxels or colors");
-        return voxel_grid_output;
-    }
     if ((depth_map.height_ != camera_parameter.intrinsic_.height_) ||
         (depth_map.width_ != camera_parameter.intrinsic_.width_)) {
         utility::PrintError(
@@ -272,7 +267,7 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
             double d;
             bool boundary;
             std::tie(boundary, d) = depth_map.FloatValueAt(u, v);
-            if (boundary) && ((d == 0.0) || (z > 0.0 && z < d)) {
+            if ((boundary) && ((d == 0.0) || (z > 0.0 && z < d))) {
                 valid_i[cnt] = false;
             }
             cnt++;
@@ -285,8 +280,6 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
     for (size_t i = 0; i < n_voxels; i++) {
         if (valid[i]) {
             voxel_grid_output->voxels_.push_back(voxel_grid.voxels_[i]);
-            if (voxel_grid.HasColors())
-                voxel_grid_output->colors_.push_back(voxel_grid.colors_[i]);
         }
     }
     return voxel_grid_output;
@@ -296,33 +289,26 @@ void CarveVoxelGridUsingSilhouette(
         VoxelGrid &voxel_grid,
         const Image &silhouette_mask,
         const camera::PinholeCameraParameters &camera_parameter) {
-    if (voxel_grid.HasColors() &&
-        (voxel_grid.voxels_.size() != voxel_grid.colors_.size())) {
-        utility::PrintError("VoxelGrid has invalid number of voxels or colors");
-        return;
-    }
     if ((silhouette_mask.height_ != camera_parameter.intrinsic_.height_) ||
         (silhouette_mask.width_ != camera_parameter.intrinsic_.width_)) {
         utility::PrintError(
                 "Invalid depth map size or camera parameter intrinsic");
         return;
     }
-    auto voxel_pcd = CreatePointCloudFromVoxelGrid(voxel_grid);
-    voxel_pcd->Transform(camera_parameter.extrinsic_);
-    for (size_t j = 0; j < voxel_pcd->points_.size(); j++) {
-        Eigen::Vector3d &x = voxel_pcd->points_[j];
+    PointCloud voxel_pcd;
+    voxel_pcd.CreateFromVoxelGrid(voxel_grid);
+    voxel_pcd.Transform(camera_parameter.extrinsic_);
+    for (size_t j = 0; j < voxel_pcd.points_.size(); j++) {
+        Eigen::Vector3d &x = voxel_pcd.points_[j];
         auto uvz = camera_parameter.intrinsic_.intrinsic_matrix_ * x;
         if (silhouette_mask.TestImageBoundary(uvz(0), uvz(1), 0)) {
             int u = std::round(uvz(0));
             int v = std::round(uvz(1));
             double z = uvz(2);
             unsigned char mask =
-                    *PointerAt<unsigned char>(silhouette_mask, u, v);
+                    *silhouette_mask.PointerAt<unsigned char>(u, v);
             if (mask == 0) {
                 voxel_grid.voxels_.erase(voxel_grid.voxels_.begin() + j);
-                if (voxel_grid.HasColors()) {
-                    voxel_grid.colors_.erase(voxel_grid.colors_.begin() + j);
-                }
             }
         }
     }

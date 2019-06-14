@@ -1,17 +1,17 @@
-from open3d import *
-from os.path import abspath
+import open3d as o3d
 import math
 import numpy as np
 import numpy.matlib
 
 
+
 def get_extrinsic(xyz):
     rvec = xyz_spherical(xyz)
     r = get_rotation_matrix(rvec[1], rvec[2])
-    t = np.asarray([0,0,2]).transpose()
+    t = np.asarray([0, 0, 2]).transpose()
     trans = np.eye(4)
-    trans[:3,:3] = r
-    trans[:3,3] = t
+    trans[:3, :3] = r
+    trans[:3, 3] = t
     return trans
 
 
@@ -19,39 +19,34 @@ def xyz_spherical(xyz):
     x = xyz[0]
     y = xyz[1]
     z = xyz[2]
-    r = math.sqrt(x*x+y*y+z*z)
-    r_x = math.acos(y/r)
-    r_y = math.atan2(z,x)
+    r = math.sqrt(x * x + y * y + z * z)
+    r_x = math.acos(y / r)
+    r_y = math.atan2(z, x)
     return [r, r_x, r_y]
 
 
 def get_rotation_matrix(r_x, r_y):
-    rot_x = np.asarray(
-           [[1, 0, 0],
-            [0, math.cos(r_x), -math.sin(r_x)],
-            [0, math.sin(r_x), math.cos(r_x)]])
-    rot_y = np.asarray(
-           [[math.cos(r_y), 0, math.sin(r_y)],
-            [0, 1, 0],
-            [-math.sin(r_y), 0, math.cos(r_y)]])
+    rot_x = np.asarray([[1, 0, 0], [0, math.cos(r_x), -math.sin(r_x)],
+                        [0, math.sin(r_x), math.cos(r_x)]])
+    rot_y = np.asarray([[math.cos(r_y), 0, math.sin(r_y)], [0, 1, 0],
+                        [-math.sin(r_y), 0, math.cos(r_y)]])
     return rot_y.dot(rot_x)
 
 
 def depth_to_pcd(depth, intrinsic, extrinsic, w, h):
-    x = np.linspace(0, w-1, w)
-    y = np.linspace(0, h-1, h)
+    x = np.linspace(0, w - 1, w)
+    y = np.linspace(0, h - 1, h)
     uu, vv = np.meshgrid(x, y)
     uu_vector = uu.ravel()
     vv_vector = vv.ravel()
     depth_vector = np.asarray(depth, dtype=np.float32).ravel()
 
-    uvd = np.asarray([uu_vector * depth_vector,
-                      vv_vector * depth_vector,
-                      depth_vector])
+    uvd = np.asarray(
+        [uu_vector * depth_vector, vv_vector * depth_vector, depth_vector])
     uvd_roi = uvd[:, depth_vector != 0]
     xyz_3d = np.linalg.inv(intrinsic).dot(uvd_roi)
-    pcd = PointCloud()
-    pcd.points = Vector3dVector(xyz_3d.transpose())
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz_3d.transpose())
     pcd.transform(np.linalg.inv(extrinsic))
     return pcd
 
@@ -63,7 +58,7 @@ def preprocess(model):
     scale = np.linalg.norm(max_bound - min_bound) / 2.0
     vertices = np.asarray(model.vertices)
     vertices -= np.matlib.repmat(center, len(model.vertices), 1)
-    model.vertices = Vector3dVector(vertices / scale)
+    model.vertices = o3d.utility.Vector3dVector(vertices / scale)
     return model
 
 

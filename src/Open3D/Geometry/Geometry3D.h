@@ -45,14 +45,15 @@ protected:
     Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
 public:
-    void Clear() override = 0;
+    Geometry3D& Clear() override = 0;
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;
     virtual Eigen::Vector3d GetMaxBound() const = 0;
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation) = 0;
-    virtual Geometry3D& Scale(const double scale) = 0;
+    virtual Geometry3D& Scale(const double scale, bool center = true) = 0;
     virtual Geometry3D& Rotate(const Eigen::Vector3d& rotation,
+                               bool center = true,
                                RotationType type = RotationType::XYZ) = 0;
 
 protected:

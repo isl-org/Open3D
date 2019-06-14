@@ -491,8 +491,8 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
         correspondence[i] = pair<int, int>(first, second);
     }
 
-    auto ls = CreateLineSetFromPointCloudCorrespondences(pc0, pc1,
-                                                         correspondence);
+    auto ls = geometry::LineSet::CreateFromPointCloudCorrespondences(
+            pc0, pc1, correspondence);
 
     ExpectEQ(ref_points, ls->points_);
     ExpectEQ(ref_lines, ls->lines_);

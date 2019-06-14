@@ -93,7 +93,7 @@ If cmake successfully generates makefiles, build Open3D.
 Test headless rendering
 ````````````````````````
 
-As a final step, test a python script that saves depth and surface normal sequences.
+As a final step, test a Python script that saves depth and surface normal sequences.
 
 .. code-block:: shell
 

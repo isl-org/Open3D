@@ -31,7 +31,7 @@ Find neighboring points
 
 .. literalinclude:: ../../../examples/Python/Basic/kdtree.py
    :language: python
-   :lineno-start: 18
+   :lineno-start: 19
    :lines: 18-19
    :linenos:
 
@@ -42,7 +42,7 @@ Using search_knn_vector_3d
 
 .. literalinclude:: ../../../examples/Python/Basic/kdtree.py
    :language: python
-   :lineno-start: 21
+   :lineno-start: 22
    :lines: 21-23
    :linenos:
 
@@ -54,7 +54,7 @@ Using search_radius_vector_3d
 
 .. literalinclude:: ../../../examples/Python/Basic/kdtree.py
    :language: python
-   :lineno-start: 25
+   :lineno-start: 26
    :lines: 25-27
    :linenos:
 
@@ -62,7 +62,7 @@ Similarly, we can use ``search_radius_vector_3d`` to query all points with dista
 
 .. literalinclude:: ../../../examples/Python/Basic/kdtree.py
    :language: python
-   :lineno-start: 29
+   :lineno-start: 30
    :lines: 29-31
    :linenos:
 
