@@ -184,7 +184,7 @@ PointCloud &PointCloud::RemoveNanPoints() {
     for (size_t i = 0; i < old_point_num; i++) {  // old index
         if (std::isnan(points_[i](0)) == false &&
             std::isnan(points_[i](1)) == false &&
-            std::isnan(points_[i](0)) == false) {
+            std::isnan(points_[i](2)) == false) {
             points_[k] = points_[i];
             if (has_normal) normals_[k] = normals_[i];
             if (has_color) colors_[k] = colors_[i];
