@@ -74,7 +74,8 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
 
 bool ReadPointCloud(const std::string &filename,
                     geometry::PointCloud &pointcloud,
-                    const std::string &format) {
+                    const std::string &format,
+                    bool remove_nan_points) {
     std::string filename_ext;
     if (format == "auto") {
         filename_ext =
@@ -97,6 +98,9 @@ bool ReadPointCloud(const std::string &filename,
     bool success = map_itr->second(filename, pointcloud);
     utility::PrintDebug("Read geometry::PointCloud: %d vertices.\n",
                         (int)pointcloud.points_.size());
+    if (remove_nan_points) {
+        pointcloud.RemoveNanPoints();
+    }
     return success;
 }
 

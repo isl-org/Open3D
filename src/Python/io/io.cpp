@@ -54,6 +54,9 @@ static const std::unordered_map<std::string, std::string>
                 {"format",
                  "The format of the input file. When not specified or set as "
                  "``auto``, the format is inferred from file extension name."},
+                {"remove_nan_points",
+                 "If true, the all points that include a NaN are removed from "
+                 "the PointCloud."},
                 {"quality", "Quality of the output file."},
                 {"write_ascii",
                  "Set to ``True`` to output in ascii format, otherwise binary "
@@ -123,13 +126,14 @@ void pybind_io(py::module &m) {
 
     // open3d::geometry::PointCloud
     m_io.def("read_point_cloud",
-             [](const std::string &filename, const std::string &format) {
+             [](const std::string &filename, const std::string &format,
+                bool remove_nan_points) {
                  geometry::PointCloud pcd;
-                 io::ReadPointCloud(filename, pcd, format);
+                 io::ReadPointCloud(filename, pcd, format, remove_nan_points);
                  return pcd;
              },
              "Function to read PointCloud from file", "filename"_a,
-             "format"_a = "auto");
+             "format"_a = "auto", "remove_nan_points"_a = true);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
                                  map_shared_argument_docstrings);
 

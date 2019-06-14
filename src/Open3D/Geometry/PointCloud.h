@@ -92,6 +92,10 @@ public:
         return *this;
     }
 
+    /// Remove all points fromt he point cloud that have a nan entry
+    /// also removes the corresponding normals and color entries
+    PointCloud &RemoveNanPoints();
+
     /// Function to select points from \param input pointcloud into
     /// \return output pointcloud
     /// Points with indices in \param indices are selected.
