@@ -196,6 +196,7 @@ PointCloud &PointCloud::RemoveNanPoints() {
     if (has_color) colors_.resize(k);
     utility::PrintDebug("[Purge] %d nan points have been removed.\n",
                         (int)(old_point_num - k));
+    return *this;
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
