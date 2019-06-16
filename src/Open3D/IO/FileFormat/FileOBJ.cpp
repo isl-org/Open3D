@@ -123,6 +123,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     if (!all_normals_set) {
         mesh.vertex_normals_.clear();
     }
+    return true;
 }
 
 bool WriteTriangleMeshToOBJ(const std::string& filename,
