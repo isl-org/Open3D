@@ -89,7 +89,7 @@ function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
 endfunction()
 
 # build a list of include folders
-SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS_AT_INSTALL}" INSTALL_3RDPARTY_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/..)
+SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS_AT_INSTALL}" INSTALL_3RDPARTY_INCLUDE_DIRS ${PROJECT_SOURCE_DIR})
 
 # set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
