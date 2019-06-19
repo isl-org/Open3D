@@ -57,6 +57,9 @@ static const std::unordered_map<std::string, std::string>
                 {"remove_nan_points",
                  "If true, all points that include a NaN are removed from "
                  "the PointCloud."},
+                {"remove_infinite_points",
+                 "If true, all points that include an infinite value are "
+                 "removed from the PointCloud."},
                 {"quality", "Quality of the output file."},
                 {"write_ascii",
                  "Set to ``True`` to output in ascii format, otherwise binary "
@@ -127,13 +130,15 @@ void pybind_io(py::module &m) {
     // open3d::geometry::PointCloud
     m_io.def("read_point_cloud",
              [](const std::string &filename, const std::string &format,
-                bool remove_nan_points) {
+                bool remove_nan_points, bool remove_infinite_points) {
                  geometry::PointCloud pcd;
-                 io::ReadPointCloud(filename, pcd, format, remove_nan_points);
+                 io::ReadPointCloud(filename, pcd, format, remove_nan_points,
+                                    remove_infinite_points);
                  return pcd;
              },
              "Function to read PointCloud from file", "filename"_a,
-             "format"_a = "auto", "remove_nan_points"_a = true);
+             "format"_a = "auto", "remove_nan_points"_a = true,
+             "remove_infinite_points"_a = true);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
                                  map_shared_argument_docstrings);
 

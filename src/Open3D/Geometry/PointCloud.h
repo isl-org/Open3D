@@ -92,9 +92,11 @@ public:
         return *this;
     }
 
-    /// Remove all points fromt he point cloud that have a nan entry
-    /// also removes the corresponding normals and color entries
-    PointCloud &RemoveNanPoints();
+    /// Remove all points fromt he point cloud that have a nan entry, or
+    /// infinite entries.
+    /// Also removes the corresponding normals and color entries.
+    PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
+                                       bool remove_infinite = true);
 
     /// Function to select points from \param input pointcloud into
     /// \return output pointcloud
