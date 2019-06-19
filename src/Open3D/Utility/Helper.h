@@ -87,7 +87,7 @@ struct hash<std::tuple<TT...>> {
 namespace hash_eigen {
 
 template <typename T>
-struct hash : std::unary_function<T, size_t> {
+struct hash {
     std::size_t operator()(T const& matrix) const {
         size_t seed = 0;
         for (int i = 0; i < (int)matrix.size(); i++) {
