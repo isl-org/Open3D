@@ -92,6 +92,24 @@ public:
         return *this;
     }
 
+    /// Assigns each point in the PointCloud a color in the \param color
+    PointCloud &PaintPointCloud(const Eigen::MatrixXd &colors) {
+
+        // getting Matrix dimension
+        int rows = colors.rows();
+        int columns = colors.cols();
+
+        if (columns == 3 && rows == points_.size()) { // check if the matrix has the good dimension
+            colors_.resize(points_.size());
+            for (size_t i = 0; i < points_.size(); i++){
+                colors_[i] = colors.row(i);
+
+            }
+        }
+
+        return *this;
+    }
+
     /// Function to select points from \param input pointcloud into
     /// \return output pointcloud
     /// Points with indices in \param indices are selected.

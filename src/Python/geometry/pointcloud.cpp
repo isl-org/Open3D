@@ -62,6 +62,9 @@ void pybind_pointcloud(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
                  "Assigns each point in the PointCloud the same color.")
+            .def("paint_point_cloud",
+                 &geometry::PointCloud::PaintPointCloud, "color"_a,
+                 "Assigns each point in the PointCloud a color")
             .def("select_down_sample", &geometry::PointCloud::SelectDownSample,
                  "Function to select points from input pointcloud into output "
                  "pointcloud. ``indices``: "
