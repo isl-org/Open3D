@@ -70,5 +70,13 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
                             bool write_ascii = false,
                             bool compressed = false);
 
+bool ReadTriangleMeshFromOBJ(const std::string &filename,
+                             geometry::TriangleMesh &mesh);
+
+bool WriteTriangleMeshToOBJ(const std::string &filename,
+                            const geometry::TriangleMesh &mesh,
+                            bool write_ascii = false,
+                            bool compressed = false);
+
 }  // namespace io
 }  // namespace open3d

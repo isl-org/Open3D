@@ -31,7 +31,7 @@ This script reads and writes a point cloud.
     Testing IO for point cloud ...
     PointCloud with 113662 points.
 
-By default, Open3D tries to infer point cloud file type by extension. Below is
+By default, Open3D tries to infer the file type by the filename extension. Below is
 a list of supported point cloud file types.
 
 ========== =======================================================================================
@@ -78,6 +78,17 @@ Compared to the data structure of point cloud, mesh has triangles that define su
     Testing IO for meshes ...
     TriangleMesh with 1440 points and 2880 triangles.
 
+By default, Open3D tries to infer the file type by the filename extension. Below is
+a list of supported triangle mesh file types.
+
+========== =======================================================================================
+Format     Description
+========== =======================================================================================
+``ply``    See `Polygon File Format <http://paulbourke.net/dataformats/ply>`_,
+           the ``ply`` file can contain both point cloud and mesh
+``stl``    See `StereoLithography <http://www.fabbers.com/tech/STL_Format>`_
+``obj``    See `Object Files <http://paulbourke.net/dataformats/obj/>`_
+========== =======================================================================================
 
 .. _io_image:
 

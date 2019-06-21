@@ -12,3 +12,7 @@
 	path = 3rdparty/googletest
 	url = https://github.com/google/googletest.git
 	branch = master
+[submodule "3rdparty/tinyobjloader"]
+	path = 3rdparty/tinyobjloader
+	url = https://github.com/syoyo/tinyobjloader.git
+	branch = master
