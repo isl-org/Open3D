@@ -425,23 +425,3 @@ reference.
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
     ./bin/unitTests
-
-Documentation
-`````````````
-
-Documentation is written in
-`reStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ and compiled
-with `sphinx <http://www.sphinx-doc.org/>`_. From ``docs`` folder, run
-
-.. code-block:: bash
-
-    pip install sphinx sphinx-autobuild sphinx-rtd-theme
-    make html
-
-Documentation for C++ API is made with `Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_.
-Follow the `Doxygen installation instruction <http://www.stack.nl/~dimitri/doxygen/manual/install.html>`_.
-From Open3D ``docs`` folder, run
-
-.. code-block:: bash
-
-    doxygen Doxyfile
