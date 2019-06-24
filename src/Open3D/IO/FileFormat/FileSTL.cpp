@@ -106,6 +106,11 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
         return false;
     }
 
+    if (!mesh.HasVertexNormals() && !mesh.HasTriangleNormals()) {
+        utility::PrintWarning("Write STL failed: compute normals first.\n");
+        return false;
+    }
+
     size_t num_of_triangles = mesh.triangles_.size();
     if (num_of_triangles == 0) {
         utility::PrintWarning("Write STL failed: empty file.\n");
