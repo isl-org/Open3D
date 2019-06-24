@@ -36,7 +36,7 @@ void pybind_camera_classes(py::module &m) {
     // open3d.camera.PinholeCameraIntrinsic
     py::class_<camera::PinholeCameraIntrinsic> pinhole_intr(
             m, "PinholeCameraIntrinsic",
-            "PinholeCameraIntrinsic class stores intrinsic camera matrix, and "
+            "PinholeCameraIntrinsic class stores **intrinsic** camera matrix, and "
             "image height and width.");
     py::detail::bind_default_constructor<camera::PinholeCameraIntrinsic>(
             pinhole_intr);
@@ -60,10 +60,10 @@ void pybind_camera_classes(py::module &m) {
                  "Set camera intrinsic parmeters.")
             .def("get_focal_length",
                  &camera::PinholeCameraIntrinsic::GetFocalLength,
-                 "Returns the focal length.")
+                 "Returns the focal length in a tuple of X-axis and Y-axis focal lengths.")
             .def("get_principal_point",
                  &camera::PinholeCameraIntrinsic::GetPrincipalPoint,
-                 "Returns the principle point.")
+                 "Returns the principle point in a  tuple of X-axis and Y-axis principle points.")
             .def("get_skew", &camera::PinholeCameraIntrinsic::GetSkew,
                  "Returns the skew.")
             .def("is_valid", &camera::PinholeCameraIntrinsic::IsValid,
@@ -110,16 +110,16 @@ void pybind_camera_classes(py::module &m) {
     pinhole_intr_params
             .value("PrimeSenseDefault",
                    camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault,
-                   "Default camera intrinsic parameter for PrimeSense.")
+                   "Parameters contain default intrinsic matrix for PrimeSense.")
             .value("Kinect2DepthCameraDefault",
                    camera::PinholeCameraIntrinsicParameters::
                            Kinect2DepthCameraDefault,
-                   "Default camera intrinsic parameter for Kinect2 depth "
+                   "Parameters contain default intrinsic matrix for Kinect2 depth "
                    "camera.")
             .value("Kinect2ColorCameraDefault",
                    camera::PinholeCameraIntrinsicParameters::
                            Kinect2ColorCameraDefault,
-                   "Default camera intrinsic parameter for Kinect2 color "
+                   "Parameters contain default intrinsic matrix for Kinect2 color "
                    "camera.")
             .export_values();
     pinhole_intr_params.attr("__doc__") = docstring::static_property(
@@ -130,7 +130,7 @@ void pybind_camera_classes(py::module &m) {
     // open3d.camera.PinholeCameraParameters
     py::class_<camera::PinholeCameraParameters> pinhole_param(
             m, "PinholeCameraParameters",
-            "Contains both intrinsic and extrinsic pinhole camera parameters.");
+            "Contains both **intrinsic** and **extrinsic** pinhole camera parameters.");
     py::detail::bind_default_constructor<camera::PinholeCameraParameters>(
             pinhole_param);
     py::detail::bind_copy_functions<camera::PinholeCameraParameters>(
