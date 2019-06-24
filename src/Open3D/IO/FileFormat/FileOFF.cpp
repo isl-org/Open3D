@@ -35,41 +35,83 @@ namespace io {
 
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh) {
-    FILE *file_in;
-
-    if ((file_in = fopen(filename.c_str(), "r")) == NULL) {
+    std::ifstream file(filename.c_str(), std::ios::in);
+    if (!file) {
         utility::PrintWarning("Read OFF failed: unable to open file: %s\n",
                               filename.c_str());
         return false;
     }
 
-    char header[3];
+    std::string header;
+    std::getline(file, header);
+    if (header != "OFF" && header != "COFF") {
+        utility::PrintWarning(
+                "Read OFF failed: header keyword not supported.\n",
+                header.c_str());
+        return false;
+    }
+
+    std::string info;
     int num_of_vertices, num_of_triangles, num_of_edges;
-    fscanf(file_in, "%s", header);
-    fscanf(file_in, "%d %d %d", &num_of_vertices, &num_of_triangles,
-           &num_of_edges);
+    std::getline(file, info);
+    std::istringstream iss(info);
+    if (!(iss >> num_of_vertices >> num_of_triangles >> num_of_edges)) {
+        utility::PrintWarning("Read OFF failed: could not read file info.\n",
+                              info.c_str());
+        return false;
+    }
+
     if (num_of_vertices == 0 || num_of_triangles == 0) {
-        utility::PrintWarning("Read OFF failed: unable to read header.\n");
+        utility::PrintWarning(
+                "Read OFF failed: mesh has no vertices or faces.\n");
         return false;
     }
 
     mesh.Clear();
     mesh.vertices_.resize(num_of_vertices);
     mesh.triangles_.resize(num_of_triangles);
+    if (header == "COFF") {
+        mesh.vertex_colors_.resize(num_of_vertices);
+    }
 
     utility::ResetConsoleProgress(num_of_vertices + num_of_triangles,
                                   "Reading OFF: ");
 
+    std::string line;
     float vx, vy, vz;
+    float r, g, b, alpha;
     for (int vidx = 0; vidx < num_of_vertices; vidx++) {
-        fscanf(file_in, "%f %f %f", &vx, &vy, &vz);
+        std::getline(file, line);
+        std::istringstream iss(line);
+        if (!(iss >> vx >> vy >> vz)) {
+            utility::PrintWarning(
+                    "Read OFF failed: could not read all vertex values.\n");
+            return false;
+        }
         mesh.vertices_[vidx] = Eigen::Vector3d(vx, vy, vz);
+
+        if (header == "COFF") {
+            if (!(iss >> r >> g >> b >> alpha)) {
+                utility::PrintWarning(
+                        "Read OFF failed: could not read all vertex color "
+                        "values.\n");
+                return false;
+            }
+            mesh.vertex_colors_[vidx] =
+                    Eigen::Vector3d(r / 255, g / 255, b / 255);
+        }
         utility::AdvanceConsoleProgress();
     }
 
     int n, vidx1, vidx2, vidx3;
     for (int tidx = 0; tidx < num_of_triangles; tidx++) {
-        fscanf(file_in, "%d %d %d %d", &n, &vidx1, &vidx2, &vidx3);
+        std::getline(file, line);
+        std::istringstream iss(line);
+        if (!(iss >> n >> vidx1 >> vidx2 >> vidx3)) {
+            utility::PrintWarning(
+                    "Read OFF failed: could not read all vertex indices.\n");
+            return false;
+        }
         if (n != 3) {
             utility::PrintWarning("Read OFF failed: not a triangle mesh.\n");
             return false;
@@ -78,7 +120,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         utility::AdvanceConsoleProgress();
     }
 
-    fclose(file_in);
+    file.close();
     return true;
 }
 
@@ -86,11 +128,14 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
                             bool compressed /* = false*/) {
-    std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
-
+    std::ofstream file(filename.c_str(), std::ios::out);
     if (!file) {
         utility::PrintWarning("Write OFF failed: unable to open file.\n");
         return false;
+    }
+
+    if (mesh.HasTriangleNormals()) {
+        utility::PrintWarning("Write OFF cannot include triangle normals.\n");
     }
 
     size_t num_of_vertices = mesh.vertices_.size();
@@ -100,6 +145,10 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
         return false;
     }
 
+    bool has_vertex_colors = mesh.HasVertexColors();
+    if (has_vertex_colors) {
+        file << "C";
+    }
     file << "OFF\n";
     file << num_of_vertices << " " << num_of_triangles << " 0\n";
 
@@ -107,7 +156,14 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                                   "Writing OFF: ");
     for (int vidx = 0; vidx < num_of_vertices; ++vidx) {
         const Eigen::Vector3d &vertex = mesh.vertices_[vidx];
-        file << vertex(0) << " " << vertex(1) << " " << vertex(2) << "\n";
+        file << vertex(0) << " " << vertex(1) << " " << vertex(2);
+        if (has_vertex_colors) {
+            const Eigen::Vector3d &color = mesh.vertex_colors_[vidx];
+            file << " " << std::round(color(0) * 255.0) << " "
+                 << std::round(color(0) * 255.0) << " "
+                 << std::round(color(0) * 255.0) << " 255";
+        }
+        file << "\n";
         utility::AdvanceConsoleProgress();
     }
 
