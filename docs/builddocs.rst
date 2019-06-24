@@ -13,7 +13,7 @@ Visit `compiling from source <http://www.open3d.org/docs/compilation.html>`_ on 
 Documentation:
 ``````````````
 
-The python documentation is written in
+The Python documentation is written in
 `reStructuredText <http://www.sphinx-doc.org/en/stable/rest.html>`_ and compiled
 with `sphinx <http://www.sphinx-doc.org/>`_.
 
@@ -46,18 +46,19 @@ You can download the latest binaries `here <https://sourceforge.net/projects/dox
 
 .. tip:: Make sure you have Python x86 installed as the current version of doxygen has issues with x64
 
-Make sure you have a version of GNU Windows installed to perform the 'make' command in windows
+Make sure you have a version of `GNU Windows <http://gnuwin32.sourceforge.net/>`_ installed to perform the 'make' command in windows.
+You can download make for windows `here <http://gnuwin32.sourceforge.net/packages/make.htm>`_
 
 Building the Documentation
 ``````````````````````````
 
-In your Open3D sourcedirectory goto ``docs`` and run: 
+In your Open3D source directory goto ``docs`` and run: 
 
 .. code-block:: bash
 
     make html
 
-Builds the python docs present at `Open3D <http://www.open3d.org/docs>`_
+Builds the Python docs present at `Open3D <http://www.open3d.org/docs>`_
 
 .. code-block:: bash
 
@@ -65,4 +66,4 @@ Builds the python docs present at `Open3D <http://www.open3d.org/docs>`_
 
 Builds the C++ docs present at `Open3D C++ API <http://open3d.org/cppapi/index.html>`_
 
-The documentation is built on CI with `make documentation <https://github.com/intel-isl/Open3D/blob/master/util/scripts/make-documentation.sh>`_
+The documentation is built on CI with `make documentation script <https://github.com/intel-isl/Open3D/blob/master/util/scripts/make-documentation.sh>`_
