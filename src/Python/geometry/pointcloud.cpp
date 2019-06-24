@@ -140,6 +140,12 @@ void pybind_pointcloud(py::module &m) {
             .def("compute_convex_hull",
                  &geometry::PointCloud::ComputeConvexHull,
                  "Computes the convex hull of the point cloud.")
+            .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCAN,
+                 "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
+                 "'A Density-Based Algorithm for Discovering Clusters in Large "
+                 "Spatial Databases with Noise', 1996. Returns a list of point "
+                 "labels, -1 indicates noise according to the algorithm.",
+                 "eps"_a, "min_points"_a)
             .def_static(
                     "create_from_depth_image",
                     &geometry::PointCloud::CreateFromDepthImage,
@@ -245,6 +251,11 @@ void pybind_pointcloud(py::module &m) {
                                     "compute_nearest_neighbor_distance");
     docstring::ClassMethodDocInject(m, "PointCloud", "compute_convex_hull",
                                     {{"input", "The input point cloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "cluster_dbscan",
+            {{"eps",
+              "Density parameter that is used to find neighbouring points."},
+             {"min_points", "Minimum number of points to form a cluster."}});
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
 }
