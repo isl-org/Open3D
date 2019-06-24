@@ -57,13 +57,15 @@ void pybind_camera_classes(py::module &m) {
             .def("set_intrinsics",
                  &camera::PinholeCameraIntrinsic::SetIntrinsics, "width"_a,
                  "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a,
-                 "Set camera intrinsic parmeters.")
+                 "Set camera intrinsic parameters.")
             .def("get_focal_length",
                  &camera::PinholeCameraIntrinsic::GetFocalLength,
-                 "Returns the focal length.")
+                 "Returns the focal length in a tuple of X-axis and Y-axis"
+                 "focal lengths.")
             .def("get_principal_point",
                  &camera::PinholeCameraIntrinsic::GetPrincipalPoint,
-                 "Returns the principle point.")
+                 "Returns the principle point in a tuple of X-axis and."
+                 "Y-axis principle points")
             .def("get_skew", &camera::PinholeCameraIntrinsic::GetSkew,
                  "Returns the skew.")
             .def("is_valid", &camera::PinholeCameraIntrinsic::IsValid,
