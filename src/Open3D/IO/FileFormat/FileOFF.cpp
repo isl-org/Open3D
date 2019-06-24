@@ -52,7 +52,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     }
 
     std::string info;
-    int num_of_vertices, num_of_triangles, num_of_edges;
+    unsigned int num_of_vertices, num_of_triangles, num_of_edges;
     std::getline(file, info);
     std::istringstream iss(info);
     if (!(iss >> num_of_vertices >> num_of_triangles >> num_of_edges)) {
@@ -69,7 +69,6 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     mesh.Clear();
     mesh.vertices_.resize(num_of_vertices);
-    mesh.triangles_.resize(num_of_triangles);
     if (header == "COFF") {
         mesh.vertex_colors_.resize(num_of_vertices);
     }
@@ -103,20 +102,26 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         utility::AdvanceConsoleProgress();
     }
 
-    int n, vidx1, vidx2, vidx3;
+    unsigned int n, vertex_index;
+    std::vector<unsigned int> indices;
     for (int tidx = 0; tidx < num_of_triangles; tidx++) {
         std::getline(file, line);
         std::istringstream iss(line);
-        if (!(iss >> n >> vidx1 >> vidx2 >> vidx3)) {
-            utility::PrintWarning(
-                    "Read OFF failed: could not read all vertex indices.\n");
-            return false;
+        iss >> n;
+        indices.clear();
+        for (int vidx = 0; vidx < n; vidx++) {
+            if (!(iss >> vertex_index)) {
+                utility::PrintWarning(
+                        "Read OFF failed: could not read all vertex "
+                        "indices.\n");
+                return false;
+            }
+            indices.push_back(vertex_index);
         }
-        if (n != 3) {
-            utility::PrintWarning("Read OFF failed: not a triangle mesh.\n");
-            return false;
+        for (int vidx = 0; vidx <= n - 3; vidx++) {
+            mesh.triangles_.push_back(Eigen::Vector3i(
+                    indices[0], indices[vidx + 1], indices[vidx + 2]));
         }
-        mesh.triangles_[tidx] = Eigen::Vector3i(vidx1, vidx2, vidx3);
         utility::AdvanceConsoleProgress();
     }
 
