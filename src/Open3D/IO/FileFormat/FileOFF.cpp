@@ -53,16 +53,16 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     }
 
     std::string info;
-    unsigned int num_of_vertices, num_of_triangles, num_of_edges;
+    unsigned int num_of_vertices, num_of_faces, num_of_edges;
     std::getline(file, info);
     std::istringstream iss(info);
-    if (!(iss >> num_of_vertices >> num_of_triangles >> num_of_edges)) {
+    if (!(iss >> num_of_vertices >> num_of_faces >> num_of_edges)) {
         utility::PrintWarning("Read OFF failed: could not read file info.\n",
                               info.c_str());
         return false;
     }
 
-    if (num_of_vertices == 0 || num_of_triangles == 0) {
+    if (num_of_vertices == 0 || num_of_faces == 0) {
         utility::PrintWarning(
                 "Read OFF failed: mesh has no vertices or faces.\n");
         return false;
@@ -77,7 +77,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         mesh.vertex_colors_.resize(num_of_vertices);
     }
 
-    utility::ResetConsoleProgress(num_of_vertices + num_of_triangles,
+    utility::ResetConsoleProgress(num_of_vertices + num_of_faces,
                                   "Reading OFF: ");
 
     std::string line;
@@ -121,7 +121,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     unsigned int n, vertex_index;
     std::vector<unsigned int> indices;
-    for (int tidx = 0; tidx < num_of_triangles; tidx++) {
+    for (int tidx = 0; tidx < num_of_faces; tidx++) {
         std::getline(file, line);
         std::istringstream iss(line);
         iss >> n;
