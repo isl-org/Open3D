@@ -82,6 +82,20 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
+
+# Build CUDA module by defalt if CUDA is available
+if (BUILD_CUDA_MODULE)
+    find_package(CUDA 8.0)
+    if (CUDA_FOUND)
+        message(STATUS "Building CUDA enabled")
+    else()
+        set(BUILD_CUDA_MODULE OFF)
+        message(STATUS "Building CUDA disabled")
+    endif()
+else ()
+    message(STATUS "Building CUDA disabled")
+endif ()
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
