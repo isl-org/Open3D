@@ -106,7 +106,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
         return false;
     }
 
-    if (!mesh.HasVertexNormals() && !mesh.HasTriangleNormals()) {
+    if (!mesh.HasTriangleNormals()) {
         utility::PrintWarning("Write STL failed: compute normals first.\n");
         return false;
     }
