@@ -165,8 +165,8 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
         if (has_vertex_colors) {
             const Eigen::Vector3d &color = mesh.vertex_colors_[vidx];
             file << " " << std::round(color(0) * 255.0) << " "
-                 << std::round(color(0) * 255.0) << " "
-                 << std::round(color(0) * 255.0) << " 255";
+                 << std::round(color(1) * 255.0) << " "
+                 << std::round(color(2) * 255.0) << " 255";
         }
         file << "\n";
         utility::AdvanceConsoleProgress();
@@ -179,6 +179,7 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
         utility::AdvanceConsoleProgress();
     }
 
+    file.close();
     return true;
 }
 
