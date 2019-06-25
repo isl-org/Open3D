@@ -88,6 +88,7 @@ Format     Description
            the ``ply`` file can contain both point cloud and mesh
 ``stl``    See `StereoLithography <http://www.fabbers.com/tech/STL_Format>`_
 ``obj``    See `Object Files <http://paulbourke.net/dataformats/obj/>`_
+``off``    See `Object File Format <http://www.geomview.org/docs/html/OFF.html>`_
 ========== =======================================================================================
 
 .. _io_image:
