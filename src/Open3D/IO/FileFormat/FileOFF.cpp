@@ -70,10 +70,14 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     mesh.Clear();
     mesh.vertices_.resize(num_of_vertices);
+    bool parse_vertex_normals = false;
+    bool parse_vertex_colors = false;
     if (header == "NOFF" || header == "CNOFF") {
+        parse_vertex_normals = true;
         mesh.vertex_normals_.resize(num_of_vertices);
     }
     if (header == "COFF" || header == "CNOFF") {
+        parse_vertex_colors = true;
         mesh.vertex_colors_.resize(num_of_vertices);
     }
 
@@ -94,7 +98,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         }
         mesh.vertices_[vidx] = Eigen::Vector3d(vx, vy, vz);
 
-        if (header == "NOFF" || header == "CNOFF") {
+        if (parse_vertex_normals) {
             if (!(iss >> nx >> ny >> nz)) {
                 utility::PrintWarning(
                         "Read OFF failed: could not read all vertex normal "
@@ -105,7 +109,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
             mesh.vertex_normals_[vidx](1) = ny;
             mesh.vertex_normals_[vidx](2) = nz;
         }
-        if (header == "COFF" || header == "CNOFF") {
+        if (parse_vertex_colors) {
             if (!(iss >> r >> g >> b >> alpha)) {
                 utility::PrintWarning(
                         "Read OFF failed: could not read all vertex color "
