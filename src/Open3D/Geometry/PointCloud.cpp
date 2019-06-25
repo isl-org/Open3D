@@ -176,6 +176,34 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     return distances;
 }
 
+PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
+                                               bool remove_infinite) {
+    bool has_normal = HasNormals();
+    bool has_color = HasColors();
+    size_t old_point_num = points_.size();
+    size_t k = 0;                                 // new index
+    for (size_t i = 0; i < old_point_num; i++) {  // old index
+        bool is_nan = remove_nan &&
+                      (std::isnan(points_[i](0)) || std::isnan(points_[i](1)) ||
+                       std::isnan(points_[i](2)));
+        bool is_infinite = remove_infinite && (std::isinf(points_[i](0)) ||
+                                               std::isinf(points_[i](1)) ||
+                                               std::isinf(points_[i](2)));
+        if (!is_nan && !is_infinite) {
+            points_[k] = points_[i];
+            if (has_normal) normals_[k] = normals_[i];
+            if (has_color) colors_[k] = colors_[i];
+            k++;
+        }
+    }
+    points_.resize(k);
+    if (has_normal) normals_.resize(k);
+    if (has_color) colors_.resize(k);
+    utility::PrintDebug("[Purge] %d nan points have been removed.\n",
+                        (int)(old_point_num - k));
+    return *this;
+}
+
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 PointCloud::ComputeMeanAndCovariance() const {
     if (IsEmpty()) {

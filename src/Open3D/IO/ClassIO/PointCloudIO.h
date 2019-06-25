@@ -43,7 +43,9 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadPointCloud(const std::string &filename,
                     geometry::PointCloud &pointcloud,
-                    const std::string &format = "auto");
+                    const std::string &format = "auto",
+                    bool remove_nan_points = true,
+                    bool remove_infinite_points = true);
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.

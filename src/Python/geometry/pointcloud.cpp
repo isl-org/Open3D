@@ -92,6 +92,10 @@ void pybind_pointcloud(py::module &m) {
             .def("crop", &geometry::PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "min_bound"_a, "max_bound"_a)
+            .def("remove_none_finite_points",
+                 &geometry::PointCloud::RemoveNoneFinitePoints,
+                 "Function to remove none-finite points from the PointCloud",
+                 "remove_nan"_a = true, "remove_infinite"_a = true)
             .def("remove_radius_outlier",
                  &geometry::PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
@@ -210,6 +214,11 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "crop",
             {{"min_bound", "Minimum bound for point coordinate"},
              {"max_bound", "Maximum bound for point coordinate"}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_none_finite_points",
+            {{"remove_nan", "Remove NaN values from the PointCloud"},
+             {"remove_infinite",
+              "Remove infinite values from the PointCloud"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outlier",
             {{"nb_points", "Number of points within the radius."},

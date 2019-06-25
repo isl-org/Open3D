@@ -517,28 +517,6 @@ bool ReadPCDData(FILE *file,
     return true;
 }
 
-void RemoveNanData(geometry::PointCloud &pointcloud) {
-    bool has_normal = pointcloud.HasNormals();
-    bool has_color = pointcloud.HasColors();
-    size_t old_point_num = pointcloud.points_.size();
-    size_t k = 0;                                 // new index
-    for (size_t i = 0; i < old_point_num; i++) {  // old index
-        if (std::isnan(pointcloud.points_[i](0)) == false &&
-            std::isnan(pointcloud.points_[i](1)) == false &&
-            std::isnan(pointcloud.points_[i](0)) == false) {
-            pointcloud.points_[k] = pointcloud.points_[i];
-            if (has_normal) pointcloud.normals_[k] = pointcloud.normals_[i];
-            if (has_color) pointcloud.colors_[k] = pointcloud.colors_[i];
-            k++;
-        }
-    }
-    pointcloud.points_.resize(k);
-    if (has_normal) pointcloud.normals_.resize(k);
-    if (has_color) pointcloud.colors_.resize(k);
-    utility::PrintDebug("[Purge] %d nan points have been removed.\n",
-                        (int)(old_point_num - k));
-}
-
 bool GenerateHeader(const geometry::PointCloud &pointcloud,
                     const bool write_ascii,
                     const bool compressed,
@@ -764,8 +742,6 @@ bool ReadPointCloudFromPCD(const std::string &filename,
         return false;
     }
     fclose(file);
-    // Some PCD files include nan floating numbers. They should be removed.
-    RemoveNanData(pointcloud);
     return true;
 }
 
