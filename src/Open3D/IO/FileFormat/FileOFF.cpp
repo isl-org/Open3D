@@ -44,7 +44,8 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     std::string header;
     std::getline(file, header);
-    if (header != "OFF" && header != "COFF") {
+    if (header != "OFF" && header != "COFF" && header != "NOFF" &&
+        header != "CNOFF") {
         utility::PrintWarning(
                 "Read OFF failed: header keyword not supported.\n",
                 header.c_str());
@@ -69,7 +70,10 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     mesh.Clear();
     mesh.vertices_.resize(num_of_vertices);
-    if (header == "COFF") {
+    if (header == "NOFF" || header == "CNOFF") {
+        mesh.vertex_normals_.resize(num_of_vertices);
+    }
+    if (header == "COFF" || header == "CNOFF") {
         mesh.vertex_colors_.resize(num_of_vertices);
     }
 
@@ -78,6 +82,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     std::string line;
     float vx, vy, vz;
+    float nx, ny, nz;
     float r, g, b, alpha;
     for (int vidx = 0; vidx < num_of_vertices; vidx++) {
         std::getline(file, line);
@@ -89,7 +94,18 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         }
         mesh.vertices_[vidx] = Eigen::Vector3d(vx, vy, vz);
 
-        if (header == "COFF") {
+        if (header == "NOFF" || header == "CNOFF") {
+            if (!(iss >> nx >> ny >> nz)) {
+                utility::PrintWarning(
+                        "Read OFF failed: could not read all vertex normal "
+                        "values.\n");
+                return false;
+            }
+            mesh.vertex_normals_[vidx](0) = nx;
+            mesh.vertex_normals_[vidx](1) = ny;
+            mesh.vertex_normals_[vidx](2) = nz;
+        }
+        if (header == "COFF" || header == "CNOFF") {
             if (!(iss >> r >> g >> b >> alpha)) {
                 utility::PrintWarning(
                         "Read OFF failed: could not read all vertex color "
@@ -99,6 +115,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
             mesh.vertex_colors_[vidx] =
                     Eigen::Vector3d(r / 255, g / 255, b / 255);
         }
+
         utility::AdvanceConsoleProgress();
     }
 
@@ -150,9 +167,13 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
         return false;
     }
 
+    bool has_vertex_normals = mesh.HasVertexNormals();
     bool has_vertex_colors = mesh.HasVertexColors();
     if (has_vertex_colors) {
         file << "C";
+    }
+    if (has_vertex_normals) {
+        file << "N";
     }
     file << "OFF\n";
     file << num_of_vertices << " " << num_of_triangles << " 0\n";
@@ -162,6 +183,10 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
     for (int vidx = 0; vidx < num_of_vertices; ++vidx) {
         const Eigen::Vector3d &vertex = mesh.vertices_[vidx];
         file << vertex(0) << " " << vertex(1) << " " << vertex(2);
+        if (has_vertex_normals) {
+            const Eigen::Vector3d &normal = mesh.vertex_normals_[vidx];
+            file << " " << normal(0) << " " << normal(1) << " " << normal(2);
+        }
         if (has_vertex_colors) {
             const Eigen::Vector3d &color = mesh.vertex_colors_[vidx];
             file << " " << std::round(color(0) * 255.0) << " "
