@@ -23,6 +23,7 @@ Open3D: A Modern Library for 3D Data Processing
     getting_started
     compilation
     contribute
+    builddocs
 
 .. _tutorial_index:
 
