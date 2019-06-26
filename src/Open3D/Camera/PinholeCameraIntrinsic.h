@@ -48,6 +48,7 @@ public:
     ~PinholeCameraIntrinsic() override;
 
 public:
+    /// Set camera intrinsic parameters.
     void SetIntrinsics(
             int width, int height, double fx, double fy, double cx, double cy) {
         width_ = width;
@@ -59,24 +60,36 @@ public:
         intrinsic_matrix_(1, 2) = cy;
     }
 
+    /// Returns the focal length in a tuple of X-axis and Y-axis focal lengths.
     std::pair<double, double> GetFocalLength() const {
         return std::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
     }
 
+    /// Returns the principle point in a tuple of X-axis and Y-axis principle
+    /// point.
     std::pair<double, double> GetPrincipalPoint() const {
         return std::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
     }
 
+    /// Returns the skew
     double GetSkew() const { return intrinsic_matrix_(0, 1); }
 
+    /// Returns True iff both the width and height are greater than 0.
     bool IsValid() const { return (width_ > 0 && height_ > 0); }
 
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
+    /// Width of the image
     int width_ = -1;
+    /// Height of the image
     int height_ = -1;
+    /// 3x3 matrix \n
+    /// Intrinsic camera matrix:\n
+    ///``[[fx, 0, cx],``\n
+    ///`` [0, fy, cy],``\n
+    ///`` [0, 0, 1]]``
     Eigen::Matrix3d intrinsic_matrix_;
 };
 }  // namespace camera
