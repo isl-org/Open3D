@@ -37,7 +37,6 @@ namespace geometry {
 
 std::vector<int> PointCloud::ClusterDBSCAN(double eps, int min_points) const {
     KDTreeFlann kdtree(*this);
-    float eps2 = eps * eps;
     // set all labels to undefined (-2)
     std::vector<int> labels(points_.size(), -2);
     int cluster_label = 0;
@@ -49,7 +48,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps, int min_points) const {
         // find neighbours
         std::vector<int> nbs;
         std::vector<double> dists2;
-        kdtree.SearchRadius(points_[idx], eps2, nbs, dists2);
+        kdtree.SearchRadius(points_[idx], eps, nbs, dists2);
 
         // check density
         if (nbs.size() < min_points) {
@@ -75,7 +74,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps, int min_points) const {
             }
             labels[nb] = cluster_label;
 
-            kdtree.SearchRadius(points_[nb], eps2, nbs, dists2);
+            kdtree.SearchRadius(points_[nb], eps, nbs, dists2);
             if (nbs.size() >= min_points) {
                 for (int qnb : nbs) {
                     if (nbs_visited.count(qnb) == 0) {
