@@ -14,17 +14,6 @@ import shutil
 import time
 
 
-def cat_meshes(mesh0, mesh1):
-    mesh = o3d.geometry.TriangleMesh()
-    vertices0 = np.asarray(mesh0.vertices)
-    vertices = np.vstack((vertices0, np.asarray(mesh1.vertices)))
-    mesh.vertices = o3d.utility.Vector3dVector(vertices)
-    triangles = np.vstack((np.asarray(mesh0.triangles),
-                           np.asarray(mesh1.triangles) + vertices0.shape[0]))
-    mesh.triangles = o3d.utility.Vector3iVector(triangles)
-    return mesh
-
-
 def edges_to_lineset(mesh, edges, color):
     ls = o3d.geometry.LineSet()
     ls.points = mesh.vertices
@@ -102,7 +91,7 @@ def intersecting_boxes():
     T[:, 3] += (0.5, 0.5, 0.5, 0)
     mesh1 = o3d.geometry.TriangleMesh.create_box()
     mesh1.transform(T)
-    mesh = cat_meshes(mesh0, mesh1)
+    mesh = mesh0 + mesh1
     mesh.compute_vertex_normals()
     return mesh
 

@@ -184,6 +184,13 @@ public:
     /// Function that computes the convex hull of the point cloud using qhull
     std::shared_ptr<TriangleMesh> ComputeConvexHull() const;
 
+    /// Cluster PointCloud using the DBSCAN algorithm
+    /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
+    /// in Large Spatial Databases with Noise", 1996
+    /// Returns a vector of point labels, -1 indicates noise according to
+    /// the algorithm.
+    std::vector<int> ClusterDBSCAN(double eps, int min_points) const;
+
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)
     /// The input depth image can be either a float image, or a uint16_t image.
