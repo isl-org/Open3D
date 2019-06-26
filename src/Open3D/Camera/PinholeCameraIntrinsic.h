@@ -85,7 +85,7 @@ public:
     int width_ = -1;
     /// Height of the image
     int height_ = -1;
-    /// 3x3 numpy array \n
+    /// 3x3 matrix \n
     /// Intrinsic camera matrix:\n
     ///``[[fx, 0, cx],``\n
     ///`` [0, fy, cy],``\n
