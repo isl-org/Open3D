@@ -211,7 +211,7 @@ public:
     std::shared_ptr<geometry::VoxelGrid> ToVoxelGrid() const;
 
     /// Convert from voxel grid
-    void FromVoxelGrid(const geometry::VoxelGrid& voxel_grid);
+    void CreateFromVoxelGrid(const geometry::VoxelGrid& voxel_grid);
 
 private:
     static void TraverseRecurse(

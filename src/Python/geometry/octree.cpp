@@ -227,7 +227,8 @@ void pybind_octree(py::module &m) {
                  "size_expand"_a = 0.01, "Convert octree from point cloud.")
             .def("to_voxel_grid", &geometry::Octree::ToVoxelGrid,
                  "Convert to VoxelGrid.")
-            .def("from_voxel_grid", &geometry::Octree::FromVoxelGrid,
+            .def("create_from_voxel_grid",
+                 &geometry::Octree::CreateFromVoxelGrid,
                  "voxel_grid"_a
                  "Convert from VoxelGrid.")
             .def_readwrite("root_node", &geometry::Octree::root_node_,
@@ -253,7 +254,7 @@ void pybind_octree(py::module &m) {
     docstring::ClassMethodDocInject(m, "Octree", "to_voxel_grid",
                                     map_octree_argument_docstrings);
     docstring::ClassMethodDocInject(
-            m, "Octree", "from_voxel_grid",
+            m, "Octree", "create_from_voxel_grid",
             {{"voxel_grid", "geometry.VoxelGrid: The source voxel grid."}});
 }
 

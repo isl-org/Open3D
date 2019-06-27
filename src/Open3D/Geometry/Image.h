@@ -95,7 +95,10 @@ public:
     }
 
     /// Function to access the bilinear interpolated float value of a
-    /// (single-channel) float image
+    /// (single-channel) float image.
+    /// Returns a tuple, where the first bool indicates if the u,v coordinates
+    /// are withing the image dimensions, and the second double value is the
+    /// interpolated pixel value.
     std::pair<bool, double> FloatValueAt(double u, double v) const;
 
     /// Factory function to create a float image composed of multipliers that

@@ -28,7 +28,11 @@
 
 #include <unordered_map>
 
+#include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/Octree.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace geometry {
@@ -96,11 +100,60 @@ VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
 }
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
-    throw std::runtime_error("VoxelGrid::operator+= is not supported");
+    if (voxel_size_ != voxelgrid.voxel_size_) {
+        utility::PrintError(
+                "[VoxelGrid] Could not combine VoxelGrid because voxel_size "
+                "differs.\n");
+        return *this;
+    }
+    if (origin_ != voxelgrid.origin_) {
+        utility::PrintError(
+                "[VoxelGrid] Could not combine VoxelGrid because origin "
+                "differs.\n");
+        return *this;
+    }
+    if (this->HasColors() != voxelgrid.HasColors()) {
+        utility::PrintError(
+                "[VoxelGrid] Could not combine VoxelGrid one has colors and "
+                "the other not.\n");
+        return *this;
+    }
+    std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
+            voxelindex_to_accpoint;
+    Eigen::Vector3d ref_coord;
+    Eigen::Vector3i voxel_index;
+    bool has_colors = voxelgrid.HasColors();
+    int idx = 0;
+    for (auto &voxel : voxelgrid.voxels_) {
+        if (has_colors) {
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_,
+                                                          voxel.color_);
+        } else {
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_);
+        }
+        idx++;
+    }
+    idx = 0;
+    for (auto &voxel : voxels_) {
+        if (has_colors) {
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_,
+                                                          voxel.color_);
+        } else {
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_);
+        }
+        idx++;
+    }
+    this->voxels_.clear();
+    for (auto accpoint : voxelindex_to_accpoint) {
+        this->voxels_.push_back(Voxel(accpoint.second.GetVoxelCoordinate(),
+                                      accpoint.second.GetAverageColor()));
+    }
+    return *this;
 }
 
 VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
-    throw std::runtime_error("VoxelGrid::operator+ is not supported");
+    return (VoxelGrid(*this) += voxelgrid);
 }
 
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
@@ -108,7 +161,23 @@ Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
     return (Eigen::floor(voxel_f.array())).cast<int>();
 }
 
-void VoxelGrid::FromOctree(const Octree &octree) {
+std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
+        int index) const {
+    double r = voxel_size_ / 2.0;
+    auto x = GetVoxelCenterCoordinate(index);
+    std::vector<Eigen::Vector3d> points;
+    points.push_back(x + Eigen::Vector3d(-r, -r, -r));
+    points.push_back(x + Eigen::Vector3d(-r, -r, r));
+    points.push_back(x + Eigen::Vector3d(r, -r, -r));
+    points.push_back(x + Eigen::Vector3d(r, -r, r));
+    points.push_back(x + Eigen::Vector3d(-r, r, -r));
+    points.push_back(x + Eigen::Vector3d(-r, r, r));
+    points.push_back(x + Eigen::Vector3d(r, r, -r));
+    points.push_back(x + Eigen::Vector3d(r, r, r));
+    return points;
+}
+
+void VoxelGrid::CreateFromOctree(const Octree &octree) {
     // TODO: currently only handles color leaf nodes
     // Get leaf nodes and their node_info
     std::unordered_map<std::shared_ptr<OctreeColorLeafNode>,
@@ -149,8 +218,110 @@ void VoxelGrid::FromOctree(const Octree &octree) {
 std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
         const size_t &max_depth) const {
     auto octree = std::make_shared<geometry::Octree>(max_depth);
-    octree->FromVoxelGrid(*this);
+    octree->CreateFromVoxelGrid(*this);
     return octree;
+}
+
+VoxelGrid &VoxelGrid::CarveDepthMap(
+        const Image &depth_map,
+        const camera::PinholeCameraParameters &camera_parameter) {
+    if (depth_map.height_ != camera_parameter.intrinsic_.height_ ||
+        depth_map.width_ != camera_parameter.intrinsic_.width_) {
+        utility::PrintError(
+                "[VoxelGrid] provided depth_map dimensions are not compatible "
+                "with the provided camera_parameters\n");
+        return *this;
+    }
+
+    auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
+    auto trans = camera_parameter.extrinsic_.block<3, 1>(0, 3);
+    auto intrinsic = camera_parameter.intrinsic_.intrinsic_matrix_;
+
+    // get for each voxel if it projects to a valid pixel and check if the voxel
+    // depth is behind the depth of the depth map at the projected pixel.
+    size_t n_voxels = voxels_.size();
+    std::vector<bool> invalid(n_voxels, false);
+    for (size_t vidx = 0; vidx < n_voxels; vidx++) {
+        auto pts = GetVoxelBoundingPoints(vidx);
+        bool valid_voxel = false;
+        for (auto &x : pts) {
+            auto x_trans = rot * x + trans;
+            auto uvz = intrinsic * x_trans;
+            double z = uvz(2);
+            double u = uvz(0) / z;
+            double v = uvz(1) / z;
+            double d;
+            bool within_boundary;
+            std::tie(within_boundary, d) = depth_map.FloatValueAt(u, v);
+            if (within_boundary && d > 0 && z < d) {
+                invalid[vidx] = true;
+                break;
+            }
+        }
+    }
+
+    // remove all voxels that have been marked as invalid
+    int next = 0;
+    for (size_t vidx = 0; vidx < n_voxels; vidx++) {
+        if (!invalid[vidx]) {
+            voxels_[next] = voxels_[vidx];
+            next++;
+        }
+    }
+    voxels_.resize(next);
+
+    return *this;
+}
+
+VoxelGrid &VoxelGrid::CarveSilhouette(
+        const Image &silhouette_mask,
+        const camera::PinholeCameraParameters &camera_parameter) {
+    if (silhouette_mask.height_ != camera_parameter.intrinsic_.height_ ||
+        silhouette_mask.width_ != camera_parameter.intrinsic_.width_) {
+        utility::PrintError(
+                "[VoxelGrid] provided silhouette_mask dimensions are not "
+                "compatible with the provided camera_parameters\n");
+        return *this;
+    }
+
+    auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
+    auto trans = camera_parameter.extrinsic_.block<3, 1>(0, 3);
+    auto intrinsic = camera_parameter.intrinsic_.intrinsic_matrix_;
+
+    // get for each voxel if it projects to a valid pixel and check if the pixel
+    // is set (>0).
+    size_t n_voxels = voxels_.size();
+    std::vector<bool> invalid(n_voxels, false);
+    for (size_t vidx = 0; vidx < n_voxels; vidx++) {
+        auto pts = GetVoxelBoundingPoints(vidx);
+        bool valid_voxel = false;
+        for (auto &x : pts) {
+            auto x_trans = rot * x + trans;
+            auto uvz = intrinsic * x_trans;
+            double z = uvz(2);
+            double u = uvz(0) / z;
+            double v = uvz(1) / z;
+            double d;
+            bool within_boundary;
+            std::tie(within_boundary, d) = silhouette_mask.FloatValueAt(u, v);
+            if (within_boundary && d <= 0) {
+                invalid[vidx] = true;
+                break;
+            }
+        }
+    }
+
+    // remove all voxels that have been marked as invalid
+    int next = 0;
+    for (size_t vidx = 0; vidx < n_voxels; vidx++) {
+        if (!invalid[vidx]) {
+            voxels_[next] = voxels_[vidx];
+            next++;
+        }
+    }
+    voxels_.resize(next);
+
+    return *this;
 }
 
 }  // namespace geometry

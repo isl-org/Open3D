@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/VoxelGrid.h"
+#include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Python/docstring.h"
@@ -90,15 +92,32 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxels.")
             .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
+            .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
+                 "depth_map"_a, "camera_params"_a,
+                 "Remove all voxels from the VoxelGrid where the boundary "
+                 "points of the voxel project into the depth map and the depth "
+                 "on the projected pixel is smaller than the depth in the "
+                 "depth map for any of the 8 boundary voxel points.")
+            .def("carve_silhouette", &geometry::VoxelGrid::CarveSilhouette,
+                 "silhouette_mask"_a, "camera_params"_a,
+                 "Remove all voxels from the VoxelGrid, where the voxel "
+                 "boundary points project into the mask and the mask is set to "
+                 "invalid for any of the 8 boundary points of the voxel.")
             .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
-            .def("from_octree", &geometry::VoxelGrid::FromOctree,
+            .def("create_from_octree", &geometry::VoxelGrid::CreateFromOctree,
                  "octree"_a
                  "Convert from Octree.")
             .def_static("create_from_point_cloud",
                         &geometry::VoxelGrid::CreateFromPointCloud,
                         "Function to make voxels from scanned point cloud",
                         "input"_a, "voxel_size"_a)
+            .def_static("create_dense", &geometry::VoxelGrid::CreateDense,
+                        "Creates a voxel grid where every voxel is set (hence "
+                        "dense). This is a useful starting point for voxel "
+                        "carving",
+                        "origin"_a, "voxel_size"_a, "width"_a, "height"_a,
+                        "depth"_a)
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
@@ -108,15 +127,33 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
     docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "carve_depth_map",
+            {{"depth_map", "Depth map (Image) used for VoxelGrid carving."},
+             {"camera_parameters",
+              "PinholeCameraParameters used to record the given depth_map."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "carve_silhouette",
+            {{"silhouette_mask",
+              "Silhouette mask (Image) used for VoxelGrid carving."},
+             {"camera_parameters",
+              "PinholeCameraParameters used to record the given depth_map."}});
+    docstring::ClassMethodDocInject(
             m, "VoxelGrid", "to_octree",
             {{"max_depth", "int: Maximum depth of the octree."}});
     docstring::ClassMethodDocInject(
-            m, "VoxelGrid", "from_octree",
+            m, "VoxelGrid", "create_from_octree",
             {{"octree", "geometry.Octree: The source octree."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_dense",
+            {{"origin", "Coordinate center of the VoxelGrid"},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"width", "Spatial width extend of the VoxelGrid."},
+             {"height", "Spatial height extend of the VoxelGrid."},
+             {"depth", "Spatial depth extend of the VoxelGrid."}});
 }
 
 void pybind_voxelgrid_methods(py::module &m) {}

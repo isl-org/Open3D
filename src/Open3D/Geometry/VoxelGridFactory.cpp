@@ -33,46 +33,13 @@
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {
-
-namespace {
-using namespace geometry;
-
-class PointCloudVoxel {
-public:
-    PointCloudVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
-
-public:
-    void AddPoint(const Eigen::Vector3i &voxel_index,
-                  const PointCloud &cloud,
-                  int index) {
-        coordinate_ = voxel_index;
-        if (cloud.HasColors()) {
-            color_ += cloud.colors_[index];
-        }
-        num_of_points_++;
-    }
-
-    Eigen::Vector3i GetVoxelCoordinate() const { return coordinate_; }
-
-    Eigen::Vector3d GetAverageColor() const {
-        return color_ / double(num_of_points_);
-    }
-
-public:
-    int num_of_points_;
-    Eigen::Vector3i coordinate_;
-    Eigen::Vector3d color_;
-};
-
-}  // namespace
-
 namespace geometry {
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
         const PointCloud &input, double voxel_size) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        utility::PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
+        utility::PrintError("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
         return output;
     }
     Eigen::Vector3d voxel_size3 =
@@ -81,24 +48,29 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::PrintDebug(
+        utility::PrintError(
                 "[VoxelGridFromPointCloud] voxel_size is too small.\n");
         return output;
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = voxel_min_bound;
-    std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
+    std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
+    bool has_colors = input.HasColors();
     for (int i = 0; i < (int)input.points_.size(); i++) {
         ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
                 int(floor(ref_coord(2)));
-        voxelindex_to_accpoint[voxel_index].AddPoint(voxel_index, input, i);
+        if (has_colors) {
+            voxelindex_to_accpoint[voxel_index].Add(voxel_index,
+                                                    input.colors_[i]);
+        } else {
+            voxelindex_to_accpoint[voxel_index].Add(voxel_index);
+        }
     }
-    bool has_colors = input.HasColors();
     for (auto accpoint : voxelindex_to_accpoint) {
         const Eigen::Vector3i &grid_index =
                 accpoint.second.GetVoxelCoordinate();
@@ -110,6 +82,30 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
     utility::PrintDebug(
             "Pointcloud is voxelized from %d points to %d voxels.\n",
             (int)input.points_.size(), (int)output->voxels_.size());
+    return output;
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
+                                                  double voxel_size,
+                                                  double width,
+                                                  double height,
+                                                  double depth) {
+    auto output = std::make_shared<VoxelGrid>();
+    int num_w = std::round(width / voxel_size);
+    int num_h = std::round(height / voxel_size);
+    int num_d = std::round(depth / voxel_size);
+    output->origin_ = origin;
+    output->voxel_size_ = voxel_size;
+    output->voxels_.resize(num_w * num_h * num_d);
+    int cnt = 0;
+    for (int widx = 0; widx < num_w; widx++) {
+        for (int hidx = 0; hidx < num_h; hidx++) {
+            for (int didx = 0; didx < num_d; didx++) {
+                output->voxels_[cnt].grid_index_ << widx, hidx, didx;
+                cnt++;
+            }
+        }
+    }
     return output;
 }
 
