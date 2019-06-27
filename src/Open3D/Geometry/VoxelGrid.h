@@ -104,8 +104,8 @@ public:
             const camera::PinholeCameraParameters &camera_parameter);
 
     //// Remove all voxels from the VoxelGrid, where the voxel boundary points
-    ///project into the mask and the mask is set to invalid for any of the 8
-    ///boundary points of the voxel
+    /// project into the mask and the mask is set to invalid for any of the 8
+    /// boundary points of the voxel
     VoxelGrid &CarveSilhouette(
             const Image &silhouette_mask,
             const camera::PinholeCameraParameters &camera_parameter);
