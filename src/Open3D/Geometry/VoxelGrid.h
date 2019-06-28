@@ -95,17 +95,18 @@ public:
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(int index) const;
 
-    /// Remove all voxels from the VoxelGrid where the boundary points of the
-    /// voxel project into the depth map and the depth on the projected pixel is
-    /// smaller than the depth in the depth map for any of the 8 boundary voxel
-    /// points.
+    /// Remove all voxels from the VoxelGrid where none of the boundary points
+    /// of the voxel projects to depth value that is smaller, or equal than the
+    /// projected depth of the boundary point. The point is not carved if none
+    /// of the boundary points of the voxel projects to a valid image location.
     VoxelGrid &CarveDepthMap(
             const Image &depth_map,
             const camera::PinholeCameraParameters &camera_parameter);
 
-    //// Remove all voxels from the VoxelGrid, where the voxel boundary points
-    /// project into the mask and the mask is set to invalid for any of the 8
-    /// boundary points of the voxel
+    /// Remove all voxels from the VoxelGrid where none of the boundary points
+    /// of the voxel projects to a valid mask pixel (pixel value > 0). The point
+    /// is not carved if none of the boundary points of the voxel projects to a
+    /// valid image location.
     VoxelGrid &CarveSilhouette(
             const Image &silhouette_mask,
             const camera::PinholeCameraParameters &camera_parameter);
@@ -125,8 +126,19 @@ public:
     // Creates a VoxelGrid from a given PointCloud. The color value of a given
     // voxel is the average color value of the points that fall into it (if the
     // PointCloud has colors).
+    // The bounds of the created VoxelGrid is computed from the PointCloud.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
             const PointCloud &input, double voxel_size);
+
+    // Creates a VoxelGrid from a given PointCloud. The color value of a given
+    // voxel is the average color value of the points that fall into it (if the
+    // PointCloud has colors).
+    // The bounds of the created VoxelGrid is defined by the given parameters.
+    static std::shared_ptr<VoxelGrid> CreateFromPointCloudWithinBounds(
+            const PointCloud &input,
+            double voxel_size,
+            const Eigen::Vector3d &min_bound,
+            const Eigen::Vector3d &max_bound);
 
 public:
     double voxel_size_;

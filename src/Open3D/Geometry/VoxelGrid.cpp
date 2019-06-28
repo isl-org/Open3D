@@ -103,13 +103,16 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     if (voxel_size_ != voxelgrid.voxel_size_) {
         utility::PrintError(
                 "[VoxelGrid] Could not combine VoxelGrid because voxel_size "
-                "differs.\n");
+                "differs (this=%f, other=%f.\n",
+                voxel_size_, voxelgrid.voxel_size_);
         return *this;
     }
     if (origin_ != voxelgrid.origin_) {
         utility::PrintError(
                 "[VoxelGrid] Could not combine VoxelGrid because origin "
-                "differs.\n");
+                "differs (this=%f,%f,%f, other=%f,%f,%f.\n",
+                origin_(0), origin_(1), origin_(2), voxelgrid.origin_(0),
+                voxelgrid.origin_(1), voxelgrid.origin_(2));
         return *this;
     }
     if (this->HasColors() != voxelgrid.HasColors()) {
@@ -240,10 +243,9 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
     // get for each voxel if it projects to a valid pixel and check if the voxel
     // depth is behind the depth of the depth map at the projected pixel.
     size_t n_voxels = voxels_.size();
-    std::vector<bool> invalid(n_voxels, false);
+    std::vector<bool> carve(n_voxels, true);
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
         auto pts = GetVoxelBoundingPoints(vidx);
-        bool valid_voxel = false;
         for (auto &x : pts) {
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;
@@ -253,17 +255,17 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             double d;
             bool within_boundary;
             std::tie(within_boundary, d) = depth_map.FloatValueAt(u, v);
-            if (within_boundary && d > 0 && z < d) {
-                invalid[vidx] = true;
+            if (within_boundary && d > 0 && z >= d) {
+                carve[vidx] = false;
                 break;
             }
         }
     }
 
-    // remove all voxels that have been marked as invalid
+    // remove all voxels that have been marked as carve
     int next = 0;
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
-        if (!invalid[vidx]) {
+        if (!carve[vidx]) {
             voxels_[next] = voxels_[vidx];
             next++;
         }
@@ -291,7 +293,7 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
     // get for each voxel if it projects to a valid pixel and check if the pixel
     // is set (>0).
     size_t n_voxels = voxels_.size();
-    std::vector<bool> invalid(n_voxels, false);
+    std::vector<bool> carve(n_voxels, true);
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
         auto pts = GetVoxelBoundingPoints(vidx);
         bool valid_voxel = false;
@@ -304,17 +306,17 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             double d;
             bool within_boundary;
             std::tie(within_boundary, d) = silhouette_mask.FloatValueAt(u, v);
-            if (within_boundary && d <= 0) {
-                invalid[vidx] = true;
+            if (within_boundary && d > 0) {
+                carve[vidx] = false;
                 break;
             }
         }
     }
 
-    // remove all voxels that have been marked as invalid
+    // remove all voxels that have been marked as carve
     int next = 0;
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
-        if (!invalid[vidx]) {
+        if (!carve[vidx]) {
             voxels_[next] = voxels_[vidx];
             next++;
         }

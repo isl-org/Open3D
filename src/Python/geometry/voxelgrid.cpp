@@ -94,15 +94,18 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns voxel index given query point.")
             .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
                  "depth_map"_a, "camera_params"_a,
-                 "Remove all voxels from the VoxelGrid where the boundary "
-                 "points of the voxel project into the depth map and the depth "
-                 "on the projected pixel is smaller than the depth in the "
-                 "depth map for any of the 8 boundary voxel points.")
+                 "Remove all voxels from the VoxelGrid where none of the "
+                 "boundary points of the voxel projects to depth value that is "
+                 "smaller, or equal than the projected depth of the boundary "
+                 "point. The point is not carved if none of the boundary "
+                 "points of the voxel projects to a valid image location.")
             .def("carve_silhouette", &geometry::VoxelGrid::CarveSilhouette,
                  "silhouette_mask"_a, "camera_params"_a,
-                 "Remove all voxels from the VoxelGrid, where the voxel "
-                 "boundary points project into the mask and the mask is set to "
-                 "invalid for any of the 8 boundary points of the voxel.")
+                 "Remove all voxels from the VoxelGrid where none of the "
+                 "boundary points of the voxel projects to a valid mask pixel "
+                 "(pixel value > 0). The point is not carved if none of the "
+                 "boundary points of the voxel projects to a valid image "
+                 "location.")
             .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
             .def("create_from_octree", &geometry::VoxelGrid::CreateFromOctree,
@@ -110,8 +113,12 @@ void pybind_voxelgrid(py::module &m) {
                  "Convert from Octree.")
             .def_static("create_from_point_cloud",
                         &geometry::VoxelGrid::CreateFromPointCloud,
-                        "Function to make voxels from scanned point cloud",
-                        "input"_a, "voxel_size"_a)
+                        "Function to make voxels from a PointCloud", "input"_a,
+                        "voxel_size"_a)
+            .def_static("create_from_point_cloud_within_bounds",
+                        &geometry::VoxelGrid::CreateFromPointCloudWithinBounds,
+                        "Function to make voxels from a PointCloud", "input"_a,
+                        "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_static("create_dense", &geometry::VoxelGrid::CreateDense,
                         "Creates a voxel grid where every voxel is set (hence "
                         "dense). This is a useful starting point for voxel "
@@ -147,6 +154,14 @@ void pybind_voxelgrid(py::module &m) {
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_from_point_cloud",
+            {{"input", "The input PointCloud"},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"min_bound",
+              "Minimum boundary point for the VoxelGrid to create."},
+             {"max_bound",
+              "Maximum boundary point for the VoxelGrid to create."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_dense",
             {{"origin", "Coordinate center of the VoxelGrid"},
