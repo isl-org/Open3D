@@ -44,6 +44,12 @@ public:
                                    const Eigen::Vector3d& q0,
                                    const Eigen::Vector3d& q1,
                                    const Eigen::Vector3d& q2);
+
+    static bool TriangleAABB(const Eigen::Vector3d& box_center,
+                             const Eigen::Vector3d& box_half_size,
+                             const Eigen::Vector3d& vert0,
+                             const Eigen::Vector3d& vert1,
+                             const Eigen::Vector3d& vert2);
 };
 
 }  // namespace geometry

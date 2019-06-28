@@ -27,13 +27,39 @@
 #include <numeric>
 #include <unordered_map>
 
+#include "Open3D/Geometry/IntersectionTest.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace geometry {
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
+                                                  double voxel_size,
+                                                  double width,
+                                                  double height,
+                                                  double depth) {
+    auto output = std::make_shared<VoxelGrid>();
+    int num_w = std::round(width / voxel_size);
+    int num_h = std::round(height / voxel_size);
+    int num_d = std::round(depth / voxel_size);
+    output->origin_ = origin;
+    output->voxel_size_ = voxel_size;
+    output->voxels_.resize(num_w * num_h * num_d);
+    int cnt = 0;
+    for (int widx = 0; widx < num_w; widx++) {
+        for (int hidx = 0; hidx < num_h; hidx++) {
+            for (int didx = 0; didx < num_d; didx++) {
+                output->voxels_[cnt].grid_index_ << widx, hidx, didx;
+                cnt++;
+            }
+        }
+    }
+    return output;
+}
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         const PointCloud &input,
@@ -95,28 +121,65 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
                                             max_bound);
 }
 
-std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
-                                                  double voxel_size,
-                                                  double width,
-                                                  double height,
-                                                  double depth) {
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
+        const TriangleMesh &input,
+        double voxel_size,
+        const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound) {
     auto output = std::make_shared<VoxelGrid>();
-    int num_w = std::round(width / voxel_size);
-    int num_h = std::round(height / voxel_size);
-    int num_d = std::round(depth / voxel_size);
-    output->origin_ = origin;
+    if (voxel_size <= 0.0) {
+        utility::PrintError("[CreateFromTriangleMesh] voxel_size <= 0.\n");
+        return output;
+    }
+
+    if (voxel_size * std::numeric_limits<int>::max() <
+        (max_bound - min_bound).maxCoeff()) {
+        utility::PrintError(
+                "[CreateFromTriangleMesh] voxel_size is too small.\n");
+        return output;
+    }
     output->voxel_size_ = voxel_size;
-    output->voxels_.resize(num_w * num_h * num_d);
+    output->origin_ = min_bound;
+
+    Eigen::Vector3d grid_size = max_bound - min_bound;
+    int num_w = std::round(grid_size(0) / voxel_size);
+    int num_h = std::round(grid_size(1) / voxel_size);
+    int num_d = std::round(grid_size(2) / voxel_size);
     int cnt = 0;
+    const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
+                                        voxel_size / 2);
     for (int widx = 0; widx < num_w; widx++) {
         for (int hidx = 0; hidx < num_h; hidx++) {
             for (int didx = 0; didx < num_d; didx++) {
-                output->voxels_[cnt].grid_index_ << widx, hidx, didx;
-                cnt++;
+                const Eigen::Vector3d box_center =
+                        min_bound +
+                        Eigen::Vector3d(widx, hidx, didx) * voxel_size;
+                for (const Eigen::Vector3i &tria : input.triangles_) {
+                    const Eigen::Vector3d &v0 = input.vertices_[tria(0)];
+                    const Eigen::Vector3d &v1 = input.vertices_[tria(1)];
+                    const Eigen::Vector3d &v2 = input.vertices_[tria(2)];
+                    if (IntersectionTest::TriangleAABB(
+                                box_center, box_half_size, v0, v1, v2)) {
+                        Eigen::Vector3i grid_index(widx, hidx, didx);
+                        output->voxels_.emplace_back(grid_index);
+                        break;
+                    }
+                }
             }
         }
     }
+
     return output;
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMesh(
+        const TriangleMesh &input, double voxel_size) {
+    Eigen::Vector3d voxel_size3 =
+            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+    Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+    Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
+    return CreateFromTriangleMeshWithinBounds(input, voxel_size, min_bound,
+                                              max_bound);
 }
 
 }  // namespace geometry

@@ -111,6 +111,10 @@ public:
             const Image &silhouette_mask,
             const camera::PinholeCameraParameters &camera_parameter);
 
+    void CreateFromOctree(const Octree &octree);
+
+    std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
+
     // Creates a voxel grid where every voxel is set (hence dense). This is a
     // useful starting point for voxel carving.
     static std::shared_ptr<VoxelGrid> CreateDense(const Eigen::Vector3d &origin,
@@ -119,23 +123,34 @@ public:
                                                   double height,
                                                   double depth);
 
-    void CreateFromOctree(const Octree &octree);
-
-    std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
-
     // Creates a VoxelGrid from a given PointCloud. The color value of a given
     // voxel is the average color value of the points that fall into it (if the
     // PointCloud has colors).
-    // The bounds of the created VoxelGrid is computed from the PointCloud.
+    // The bounds of the created VoxelGrid are computed from the PointCloud.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
             const PointCloud &input, double voxel_size);
 
     // Creates a VoxelGrid from a given PointCloud. The color value of a given
     // voxel is the average color value of the points that fall into it (if the
     // PointCloud has colors).
-    // The bounds of the created VoxelGrid is defined by the given parameters.
+    // The bounds of the created VoxelGrid are defined by the given parameters.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloudWithinBounds(
             const PointCloud &input,
+            double voxel_size,
+            const Eigen::Vector3d &min_bound,
+            const Eigen::Vector3d &max_bound);
+
+    // Creates a VoxelGrid from a given TriangleMesh. No color information is
+    // converted. The bounds of the created VoxelGrid are computed from the
+    // TriangleMesh..
+    static std::shared_ptr<VoxelGrid> CreateFromTriangleMesh(
+            const TriangleMesh &input, double voxel_size);
+
+    // Creates a VoxelGrid from a given TriangleMesh. No color information is
+    // converted. The bounds of the created VoxelGrid are defined by the given
+    // parameters..
+    static std::shared_ptr<VoxelGrid> CreateFromTriangleMeshWithinBounds(
+            const TriangleMesh &input,
             double voxel_size,
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound);
