@@ -546,7 +546,9 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
 bool WriteTriangleMeshToPLY(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
-                            bool compressed /* = false*/) {
+                            bool compressed /* = false*/,
+                            bool write_vertex_normals /* = true*/,
+                            bool write_vertex_colors /* = true*/) {
     if (mesh.IsEmpty()) {
         utility::PrintWarning("Write PLY failed: mesh has 0 vertices.\n");
         return false;
@@ -560,18 +562,22 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                               filename.c_str());
         return false;
     }
+
+    write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
+    write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
+
     ply_add_comment(ply_file, "Created by Open3D");
     ply_add_element(ply_file, "vertex",
                     static_cast<long>(mesh.vertices_.size()));
     ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
-    if (mesh.HasVertexNormals()) {
+    if (write_vertex_normals) {
         ply_add_property(ply_file, "nx", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
         ply_add_property(ply_file, "ny", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
         ply_add_property(ply_file, "nz", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     }
-    if (mesh.HasVertexColors()) {
+    if (write_vertex_colors) {
         ply_add_property(ply_file, "red", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
         ply_add_property(ply_file, "green", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
         ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
@@ -593,13 +599,13 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
         ply_write(ply_file, vertex(0));
         ply_write(ply_file, vertex(1));
         ply_write(ply_file, vertex(2));
-        if (mesh.HasVertexNormals()) {
+        if (write_vertex_normals) {
             const auto &normal = mesh.vertex_normals_[i];
             ply_write(ply_file, normal(0));
             ply_write(ply_file, normal(1));
             ply_write(ply_file, normal(2));
         }
-        if (mesh.HasVertexColors()) {
+        if (write_vertex_colors) {
             const auto &color = mesh.vertex_colors_[i];
             ply_write(ply_file, color(0) * 255.0);
             ply_write(ply_file, color(1) * 255.0);

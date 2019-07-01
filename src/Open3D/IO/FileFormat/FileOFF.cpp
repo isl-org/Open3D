@@ -153,7 +153,9 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 bool WriteTriangleMeshToOFF(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
-                            bool compressed /* = false*/) {
+                            bool compressed /* = false*/,
+                            bool write_vertex_normals /* = true*/,
+                            bool write_vertex_colors /* = true*/) {
     std::ofstream file(filename.c_str(), std::ios::out);
     if (!file) {
         utility::PrintWarning("Write OFF failed: unable to open file.\n");
@@ -171,12 +173,12 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
         return false;
     }
 
-    bool has_vertex_normals = mesh.HasVertexNormals();
-    bool has_vertex_colors = mesh.HasVertexColors();
-    if (has_vertex_colors) {
+    write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
+    write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
+    if (write_vertex_colors) {
         file << "C";
     }
-    if (has_vertex_normals) {
+    if (write_vertex_normals) {
         file << "N";
     }
     file << "OFF\n";
@@ -187,11 +189,11 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
     for (int vidx = 0; vidx < num_of_vertices; ++vidx) {
         const Eigen::Vector3d &vertex = mesh.vertices_[vidx];
         file << vertex(0) << " " << vertex(1) << " " << vertex(2);
-        if (has_vertex_normals) {
+        if (write_vertex_normals) {
             const Eigen::Vector3d &normal = mesh.vertex_normals_[vidx];
             file << " " << normal(0) << " " << normal(1) << " " << normal(2);
         }
-        if (has_vertex_colors) {
+        if (write_vertex_colors) {
             const Eigen::Vector3d &color = mesh.vertex_colors_[vidx];
             file << " " << std::round(color(0) * 255.0) << " "
                  << std::round(color(1) * 255.0) << " "

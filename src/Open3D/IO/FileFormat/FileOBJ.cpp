@@ -129,7 +129,9 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 bool WriteTriangleMeshToOBJ(const std::string& filename,
                             const geometry::TriangleMesh& mesh,
                             bool write_ascii /* = false*/,
-                            bool compressed /* = false*/) {
+                            bool compressed /* = false*/,
+                            bool write_vertex_normals /* = true*/,
+                            bool write_vertex_colors /* = true*/) {
     std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!file) {
@@ -146,18 +148,18 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     file << "# number of triangles: " << mesh.triangles_.size() << "\n";
     utility::ResetConsoleProgress(
             mesh.vertices_.size() + mesh.triangles_.size(), "Writing OBJ: ");
-    bool has_vertex_normals = mesh.HasVertexNormals();
-    bool has_vertex_colors = mesh.HasVertexColors();
+    write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
+    write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
     for (int vidx = 0; vidx < mesh.vertices_.size(); ++vidx) {
         const Eigen::Vector3d& vertex = mesh.vertices_[vidx];
         file << "v " << vertex(0) << " " << vertex(1) << " " << vertex(2);
-        if (has_vertex_colors) {
+        if (write_vertex_colors) {
             const Eigen::Vector3d& color = mesh.vertex_colors_[vidx];
             file << " " << color(0) << " " << color(1) << " " << color(2);
         }
         file << "\n";
 
-        if (has_vertex_normals) {
+        if (write_vertex_normals) {
             const Eigen::Vector3d& normal = mesh.vertex_normals_[vidx];
             file << "vn " << normal(0) << " " << normal(1) << " " << normal(2)
                  << "\n";
@@ -168,7 +170,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
 
     for (int tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
         const Eigen::Vector3i& triangle = mesh.triangles_[tidx];
-        if (has_vertex_normals) {
+        if (write_vertex_normals) {
             file << "f " << triangle(0) + 1 << "//" << triangle(0) + 1 << " "
                  << triangle(1) + 1 << "//" << triangle(1) + 1 << " "
                  << triangle(2) + 1 << "//" << triangle(2) + 1 << "\n";

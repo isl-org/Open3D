@@ -98,7 +98,9 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 bool WriteTriangleMeshToSTL(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
-                            bool compressed /* = false*/) {
+                            bool compressed /* = false*/,
+                            bool write_vertex_normals /* = true*/,
+                            bool write_vertex_colors /* = true*/) {
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {
