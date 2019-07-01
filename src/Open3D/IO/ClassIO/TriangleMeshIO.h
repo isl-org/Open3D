@@ -52,7 +52,9 @@ bool ReadTriangleMesh(const std::string &filename,
 bool WriteTriangleMesh(const std::string &filename,
                        const geometry::TriangleMesh &mesh,
                        bool write_ascii = false,
-                       bool compressed = false);
+                       bool compressed = false,
+                       bool write_vertex_normals = true,
+                       bool write_vertex_colors = true);
 
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              geometry::TriangleMesh &mesh);
@@ -60,7 +62,9 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
 bool WriteTriangleMeshToPLY(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii = false,
-                            bool compressed = false);
+                            bool compressed = false,
+                            bool write_vertex_normals = true,
+                            bool write_vertex_colors = true);
 
 bool ReadTriangleMeshFromSTL(const std::string &filename,
                              geometry::TriangleMesh &mesh);
@@ -68,7 +72,9 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 bool WriteTriangleMeshToSTL(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii = false,
-                            bool compressed = false);
+                            bool compressed = false,
+                            bool write_vertex_normals = true,
+                            bool write_vertex_colors = true);
 
 bool ReadTriangleMeshFromOBJ(const std::string &filename,
                              geometry::TriangleMesh &mesh);
@@ -76,7 +82,9 @@ bool ReadTriangleMeshFromOBJ(const std::string &filename,
 bool WriteTriangleMeshToOBJ(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii = false,
-                            bool compressed = false);
+                            bool compressed = false,
+                            bool write_vertex_normals = true,
+                            bool write_vertex_colors = true);
 
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh);
@@ -84,7 +92,9 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 bool WriteTriangleMeshToOFF(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             bool write_ascii = false,
-                            bool compressed = false);
+                            bool compressed = false,
+                            bool write_vertex_normals = true,
+                            bool write_vertex_colors = true);
 
 }  // namespace io
 }  // namespace open3d

@@ -64,6 +64,12 @@ static const std::unordered_map<std::string, std::string>
                 {"write_ascii",
                  "Set to ``True`` to output in ascii format, otherwise binary "
                  "format will be used."},
+                {"write_vertex_normals",
+                 "Set to ``False`` to not write any vertex normals, even if "
+                 "present on the mesh"},
+                {"write_vertex_colors",
+                 "Set to ``False`` to not write any vertex colors, even if "
+                 "present on the mesh"},
                 // Entities
                 {"pointcloud", "The ``PointCloud`` object for I/O"},
                 {"mesh", "The ``TriangleMesh`` object for I/O"},
@@ -167,12 +173,15 @@ void pybind_io(py::module &m) {
 
     m_io.def("write_triangle_mesh",
              [](const std::string &filename, const geometry::TriangleMesh &mesh,
-                bool write_ascii, bool compressed) {
+                bool write_ascii, bool compressed, bool write_vertex_normals,
+                bool write_vertex_colors) {
                  return io::WriteTriangleMesh(filename, mesh, write_ascii,
-                                              compressed);
+                                              compressed, write_vertex_normals,
+                                              write_vertex_colors);
              },
              "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
-             "write_ascii"_a = false, "compressed"_a = false);
+             "write_ascii"_a = false, "compressed"_a = false,
+             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 

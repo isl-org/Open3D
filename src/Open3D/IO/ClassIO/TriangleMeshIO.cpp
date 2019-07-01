@@ -51,6 +51,8 @@ static const std::unordered_map<
         std::function<bool(const std::string &,
                            const geometry::TriangleMesh &,
                            const bool,
+                           const bool,
+                           const bool,
                            const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"ply", WriteTriangleMeshToPLY},
@@ -104,7 +106,9 @@ bool ReadTriangleMesh(const std::string &filename,
 bool WriteTriangleMesh(const std::string &filename,
                        const geometry::TriangleMesh &mesh,
                        bool write_ascii /* = false*/,
-                       bool compressed /* = false*/) {
+                       bool compressed /* = false*/,
+                       bool write_vertex_normals /* = true*/,
+                       bool write_vertex_colors /* = true*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -121,7 +125,8 @@ bool WriteTriangleMesh(const std::string &filename,
                 "extension.\n");
         return false;
     }
-    bool success = map_itr->second(filename, mesh, write_ascii, compressed);
+    bool success = map_itr->second(filename, mesh, write_ascii, compressed,
+                                   write_vertex_normals, write_vertex_colors);
     utility::PrintDebug(
             "Write geometry::TriangleMesh: %d triangles and %d vertices.\n",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
