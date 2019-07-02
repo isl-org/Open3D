@@ -47,7 +47,7 @@ def check_properties(name, mesh):
     print('  vertex_manifold:        %s' % fmt_bool(vertex_manifold))
     self_intersecting = mesh.is_self_intersecting()
     print('  self_intersecting:      %s' % fmt_bool(self_intersecting))
-    watertight = edge_manifold_boundary and vertex_manifold and not self_intersecting
+    watertight = mesh.is_watertight()
     print('  watertight:             %s' % fmt_bool(watertight))
     orientable = mesh.is_orientable()
     print('  orientable:             %s' % fmt_bool(orientable))
