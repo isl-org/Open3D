@@ -100,7 +100,7 @@ public:
     TriangleMesh &RemoveUnreferencedVertices();
 
     /// Function that removes degenerate triangles, i.e., triangles that
-    /// references a single vertex multiple times in a single triangle.
+    /// reference a single vertex multiple times in a single triangle.
     /// They are usually the product of removing duplicated vertices.
     TriangleMesh &RemoveDegenerateTriangles();
 
@@ -218,9 +218,9 @@ public:
             bool allow_boundary_edges = true) const;
 
     /// Function that checks if the given triangle mesh is edge-manifold.
-    /// A mesh is edge­manifold if each edge is bounding either one or two
-    /// triangles. If allow_boundary_edges is set to false, than returns false
-    /// if there exists boundary edges.
+    /// A mesh is edge­-manifold if each edge is bounding either one or two
+    /// triangles. If allow_boundary_edges is set to false, then this function
+    /// returns false if there exists boundary edges.
     bool IsEdgeManifold(bool allow_boundary_edges = true) const;
 
     /// Function that returns a list of non-manifold vertex indices.
@@ -254,8 +254,14 @@ public:
     /// towards the outside.
     bool IsOrientable() const;
 
-    /// If the mesh is orientable then this functions re-arranges the triangles
-    /// such that all normals point towards the outside/inside.
+    /// Function that tests if the given triangle mesh is watertight by
+    /// checking if it is vertex manifold and edge-manifold with no boundary
+    /// edges, but not self-intersecting.
+    bool IsWatertight() const;
+
+    /// If the mesh is orientable then this function rearranges the
+    /// triangles such that all normals point towards the
+    /// outside/inside.
     bool OrientTriangles();
 
     /// Function that returns a map from edges (vertex0, vertex1) to the
@@ -359,14 +365,14 @@ public:
     /// distance from the center to the mesh vertices.
     static std::shared_ptr<TriangleMesh> CreateTetrahedron(double radius = 1.0);
 
-    /// Factory function to create a octahedron mesh (trianglemeshfactory.cpp).
+    /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.
     static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
 
-    /// Factory function to create a icosahedron mesh (trianglemeshfactory.cpp).
-    /// the mesh centroid will be at (0,0,0) and \param radius defines the
-    /// distance from the center to the mesh vertices.
+    /// Factory function to create an icosahedron mesh
+    /// (trianglemeshfactory.cpp). the mesh centroid will be at (0,0,0) and
+    /// \param radius defines the distance from the center to the mesh vertices.
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)

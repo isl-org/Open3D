@@ -1082,6 +1082,10 @@ bool TriangleMesh::IsOrientable() const {
     return OrientTriangleHelper(triangles_, NoOp);
 }
 
+bool TriangleMesh::IsWatertight() const {
+    return IsEdgeManifold(false) && IsVertexManifold() && !IsSelfIntersecting();
+}
+
 bool TriangleMesh::OrientTriangles() {
     auto SwapTriangleOrder = [&](int tidx, int idx0, int idx1) {
         std::swap(triangles_[tidx](idx0), triangles_[tidx](idx1));

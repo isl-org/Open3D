@@ -192,16 +192,18 @@ void pybind_trianglemesh(py::module &m) {
                  "Tests if all vertices of the triangle mesh are manifold.")
             .def("is_self_intersecting",
                  &geometry::TriangleMesh::IsSelfIntersecting,
-                 "Tests the triangle mesh is self-intersecting")
+                 "Tests if the triangle mesh is self-intersecting.")
             .def("get_self_intersecting_triangles",
                  &geometry::TriangleMesh::GetSelfIntersectingTriangles,
                  "Returns a list of indices to triangles that intersect the "
                  "mesh.")
             .def("is_intersecting", &geometry::TriangleMesh::IsIntersecting,
-                 "Tests the triangle mesh is intersecting the other triangle "
-                 "mesh.")
+                 "Tests if the triangle mesh is intersecting the other "
+                 "triangle mesh.")
             .def("is_orientable", &geometry::TriangleMesh::IsOrientable,
-                 "Tests the triangle mesh is orientable")
+                 "Tests if the triangle mesh is orientable.")
+            .def("is_watertight", &geometry::TriangleMesh::IsWatertight,
+                 "Tests if the triangle mesh is watertight.")
             .def("orient_triangles", &geometry::TriangleMesh::OrientTriangles,
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
@@ -395,6 +397,7 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "is_intersecting",
             {{"other", "Other triangle mesh to test intersection with."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "is_orientable");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "is_watertight");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "orient_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "remove_duplicated_vertices");
