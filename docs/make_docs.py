@@ -38,14 +38,12 @@ import importlib
 import os
 from inspect import getmembers, isbuiltin, isclass, ismodule
 import shutil
-
-# Global sphinx options
-SPHINX_BUILD = "sphinx-build"
-SOURCE_DIR = "."
-BUILD_DIR = "_build"
+import warnings
+import weakref
+from tempfile import mkdtemp
 
 
-def create_or_clear(dir_path):
+def _create_or_clear_dir(dir_path):
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path)
         print("Removed directory %s" % dir_path)
@@ -53,7 +51,72 @@ def create_or_clear(dir_path):
     print("Created directory %s" % dir_path)
 
 
-class PyDocsBuilder:
+class TemporaryDirectory(object):
+    """
+    Porting Python 3's TemporaryDirectory context manager to Python 2
+    https://github.com/python/cpython/blob/master/Lib/tempfile.py
+    """
+
+    def __init__(self, suffix=None, prefix=None, dir=None):
+        self.name = mkdtemp(suffix, prefix, dir)
+        self._finalizer = weakref.finalize(
+            self,
+            self._cleanup,
+            self.name,
+            warn_message="Implicitly cleaning up {!r}".format(self))
+
+    @classmethod
+    def _rmtree(cls, name):
+
+        def onerror(func, path, exc_info):
+            if issubclass(exc_info[0], PermissionError):
+
+                def resetperms(path):
+                    try:
+                        os.chflags(path, 0)
+                    except AttributeError:
+                        pass
+                    os.chmod(path, 0o700)
+
+                try:
+                    if path != name:
+                        resetperms(os.path.dirname(path))
+                    resetperms(path)
+
+                    try:
+                        os.unlink(path)
+                    # PermissionError is raised on FreeBSD for directories
+                    except (IsADirectoryError, PermissionError):
+                        cls._rmtree(path)
+                except FileNotFoundError:
+                    pass
+            elif issubclass(exc_info[0], FileNotFoundError):
+                pass
+            else:
+                raise ()
+
+        shutil.rmtree(name, onerror=onerror)
+
+    @classmethod
+    def _cleanup(cls, name, warn_message):
+        cls._rmtree(name)
+        warnings.warn(warn_message, ResourceWarning)
+
+    def __repr__(self):
+        return "<{} {!r}>".format(self.__class__.__name__, self.name)
+
+    def __enter__(self):
+        return self.name
+
+    def __exit__(self, exc, value, tb):
+        self.cleanup()
+
+    def cleanup(self):
+        if self._finalizer.detach():
+            self._rmtree(self.name)
+
+
+class PyAPIDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
     The file name is the full module name.
@@ -72,13 +135,13 @@ class PyDocsBuilder:
               self.output_dir)
 
     def generate_rst(self):
-        create_or_clear(self.output_dir)
+        _create_or_clear_dir(self.output_dir)
 
         main_c_module = importlib.import_module(self.c_module)
         sub_module_names = sorted(
             [obj[0] for obj in getmembers(main_c_module) if ismodule(obj[1])])
         for sub_module_name in sub_module_names:
-            PyDocsBuilder._generate_sub_module_class_function_docs(
+            PyAPIDocsBuilder._generate_sub_module_class_function_docs(
                 sub_module_name, self.output_dir)
 
     @staticmethod
@@ -169,8 +232,8 @@ class PyDocsBuilder:
         for class_name in class_names:
             file_name = "%s.%s.rst" % (sub_module_full_name, class_name)
             output_path = os.path.join(output_dir, file_name)
-            PyDocsBuilder._generate_class_doc(sub_module_full_name, class_name,
-                                              output_path)
+            PyAPIDocsBuilder._generate_class_doc(sub_module_full_name,
+                                                 class_name, output_path)
 
         # Function docs
         function_names = [
@@ -179,64 +242,28 @@ class PyDocsBuilder:
         for function_name in function_names:
             file_name = "%s.%s.rst" % (sub_module_full_name, function_name)
             output_path = os.path.join(output_dir, file_name)
-            PyDocsBuilder._generate_function_doc(sub_module_full_name,
-                                                 function_name, output_path)
+            PyAPIDocsBuilder._generate_function_doc(sub_module_full_name,
+                                                    function_name, output_path)
 
         # Submodule docs
         sub_module_doc_path = os.path.join(output_dir,
                                            sub_module_full_name + ".rst")
-        PyDocsBuilder._generate_sub_module_doc(sub_module_name, class_names,
-                                               function_names,
-                                               sub_module_doc_path)
+        PyAPIDocsBuilder._generate_sub_module_doc(sub_module_name, class_names,
+                                                  function_names,
+                                                  sub_module_doc_path)
 
 
 class SphinxDocsBuilder:
     """
-    # SphinxDocsBuilder calls Python api docs generation and then calls
-    # sphinx-build:
-    #
-    # (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
-    # (2) Calls PyDocsBuilder to generate Python api docs rst files
-    # (3) Calls `sphinx-build` with the user argument
+    SphinxDocsBuilder calls Python api docs generation and then calls
+    sphinx-build:
+
+    (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
+    (2) Calls PyAPIDocsBuilder to generate Python api docs rst files
+    (3) Calls `sphinx-build` with the user argument
     """
 
-    valid_makefile_args = {
-        "changes",
-        "clean",
-        "coverage",
-        "devhelp",
-        "dirhtml",
-        "doctest",
-        "epub",
-        "gettext",
-        "help",
-        "html",
-        "htmlhelp",
-        "info",
-        "json",
-        "latex",
-        "latexpdf",
-        "latexpdfja",
-        "linkcheck",
-        "man",
-        "pickle",
-        "pseudoxml",
-        "qthelp",
-        "singlehtml",
-        "texinfo",
-        "text",
-        "xml",
-    }
-
-    def __init__(self, makefile_arg):
-        if makefile_arg not in self.valid_makefile_args:
-            print('Invalid make argument: "%s", displaying help.' %
-                  makefile_arg)
-            self.is_valid_arg = False
-        else:
-            self.is_valid_arg = True
-            self.makefile_arg = makefile_arg
-
+    def __init__(self, html_output_dir):
         # Hard-coded parameters for Python API docs generation for now
         # Directory structure for the Open3D Python package:
         # open3d
@@ -245,17 +272,10 @@ class SphinxDocsBuilder:
         self.c_module = "open3d.open3d"  # Points to the open3d.so
         self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
+        self.html_output_dir = html_output_dir
 
     def run(self):
-        if not self.is_valid_arg:
-            self.makefile_arg = "help"
-        elif self.makefile_arg == "clean":
-            print("Removing directory %s" % self.python_api_output_dir)
-            shutil.rmtree(self.python_api_output_dir, ignore_errors=True)
-        elif self.makefile_arg == "help":
-            pass  # Do not call self._gen_python_api_docs()
-        else:
-            self._gen_python_api_docs()
+        self._gen_python_api_docs()
         self._run_sphinx()
 
     def _gen_python_api_docs(self):
@@ -263,32 +283,83 @@ class SphinxDocsBuilder:
         Generate Python docs.
         Each module, class and function gets one .rst file.
         """
-        pd = PyDocsBuilder(self.python_api_output_dir, self.c_module,
-                           self.c_module_relative)
+        # self.python_api_output_dir cannot be a temp dir, since other
+        # "*.rst" files reference it
+        pd = PyAPIDocsBuilder(self.python_api_output_dir, self.c_module,
+                              self.c_module_relative)
         pd.generate_rst()
 
     def _run_sphinx(self):
         """
-        Call Sphinx command with self.makefile_arg
+        Call Sphinx command with hard-coded "html" target
         """
-        create_or_clear(BUILD_DIR)
-        cmd = [
-            SPHINX_BUILD,
-            "-M",
-            self.makefile_arg,
-            SOURCE_DIR,
-            BUILD_DIR,
-            "-j",
-            str(multiprocessing.cpu_count()),
-        ]
+        with TemporaryDirectory() as build_dir:
+            cmd = [
+                "sphinx-build",
+                "-M",
+                "html",
+                ".",
+                build_dir,
+                "-j",
+                str(multiprocessing.cpu_count()),
+            ]
+            print('Calling: "%s"' % " ".join(cmd))
+            subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+            shutil.copytree(os.path.join(build_dir, "html"),
+                            os.path.join(self.html_output_dir, "html"))
+
+
+class DoxygenDocsBuilder:
+
+    def __init__(self, html_output_dir):
+        self.html_output_dir = html_output_dir
+
+    def run(self):
+        doxygen_temp_dir = "doxygen"
+        _create_or_clear_dir(doxygen_temp_dir)
+
+        cmd = ["doxygen", "Doxyfile"]
         print('Calling: "%s"' % " ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        shutil.copytree(os.path.join("doxygen", "html"),
+                        os.path.join(self.html_output_dir, "html", "cpp_api"))
+
+        if os.path.exists(doxygen_temp_dir):
+            shutil.rmtree(doxygen_temp_dir)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("makefile_arg", nargs="?")
+    parser.add_argument("--sphinx",
+                        dest="build_sphinx",
+                        action="store_true",
+                        default=False,
+                        help="Build Sphinx for main docs and Python API docs.")
+    parser.add_argument("--doxygen",
+                        dest="build_doxygen",
+                        action="store_true",
+                        default=False,
+                        help="Build Doxygen for C++ API docs.")
     args = parser.parse_args()
 
-    sdb = SphinxDocsBuilder(args.makefile_arg)
-    sdb.run()
+    # Clear output dir if new docs are to be built
+    html_output_dir = "_out"
+    _create_or_clear_dir(html_output_dir)
+
+    # Sphinx is hard-coded to build with the "html" option
+    # To customize build, run sphinx-build manually
+    if args.build_sphinx:
+        print("Sphinx build enabled")
+        sdb = SphinxDocsBuilder(html_output_dir)
+        sdb.run()
+    else:
+        print("Sphinx build disabled, use --sphinx to enable")
+
+    # Doxygen is hard-coded to build with default option
+    # To customize build, customize Doxyfile or run doxygen manually
+    if args.build_doxygen:
+        print("Doxygen build enabled")
+        ddb = DoxygenDocsBuilder(html_output_dir)
+        ddb.run()
+    else:
+        print("Doxygen build disabled, use --doxygen to enable")

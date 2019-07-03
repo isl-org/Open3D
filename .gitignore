@@ -1,5 +1,5 @@
 build*/
-_build/
+docs/_out/
 src/Sandbox/
 src/Open3D/Visualization/Shader/Shader.h
 doxygen/
