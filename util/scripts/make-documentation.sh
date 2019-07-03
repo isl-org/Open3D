@@ -2,7 +2,7 @@
 # Documentation build scripts for CI
 #
 # Prerequisites:
-# pip install sphinx sphinx-autobuild sphinx-rtd-theme
+# pip install sphinx sphinx-autobuild
 # sudo apt-get -y install doxygen
 
 set -e
