@@ -131,7 +131,7 @@ todo_include_todos = False
 # html_theme = 'alabaster'
 theme_path = os.path.join(current_file_dir, "..", "3rdparty",
                           "open3d_sphinx_theme")
-html_theme = "open3d_sphinx_theme"
+html_theme = "sphinx_rtd_theme"
 html_theme_path = [theme_path]
 html_favicon = "_static/open3d_logo.ico"
 
@@ -148,7 +148,7 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 
 # '_static' contains the theme overwrite
-static_path = os.path.join(theme_path, "open3d_sphinx_theme", "static")
+static_path = os.path.join(theme_path, "sphinx_rtd_theme", "static")
 html_static_path = [static_path, '_static']
 
 # Force table wrap: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
