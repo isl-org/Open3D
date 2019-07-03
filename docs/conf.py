@@ -25,16 +25,19 @@ import os
 import re
 import subprocess
 
+
 def get_git_short_hash():
     rc = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
     rc = rc.decode("utf-8").strip()
     return rc
+
 
 def get_git_tag_short_hash(tag):
     tags = subprocess.check_output(['git', 'show-ref', '--hash=8', tag])
     tags = tags.decode("utf-8").strip()
     tag = tags.split('\n')[0]
     return tag
+
 
 # Import open3d raw python package with the highest priority
 # This is a trick to show open3d.open3d as open3d in the docs
