@@ -5,7 +5,7 @@ C++ interface
 
 This page explains how to create a CMake based C++ project using the Open3D C++ interface.
 
-.. note:: For help on the C++ interfaces, refer to examples in [examples/Cpp/Test], [examples/Cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <http://open3d.org/cppapi>`_.
+.. note:: For help on the C++ interfaces, refer to examples in [examples/Cpp/Test], [examples/Cpp/Experimental] and [src/Tools] folder and check `Doxygen document for C++ API <../../cpp_api/index.html>`_.
 
 .. _install_open3d_from_source:
 

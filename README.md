@@ -7,12 +7,12 @@
 <h4>
     <a href="http://www.open3d.org">open3d.org</a> |
     <a href="http://www.open3d.org/docs">Documentation</a> |
-    <a href="http://open3d.org/docs/getting_started.html">Quick Start</a> |
-    <a href="http://www.open3d.org/docs/compilation.html">Build from Source</a> |
-    <a href="http://www.open3d.org/docs/index.html#python-api-index">Python API</a> |
-    <a href="http://open3d.org/cppapi/index.html">C++ API</a> |
-    <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a> |
-    <a href="http://www.open3d.org/docs/contribute.html">Contribute</a>
+    <a href="http://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
+    <a href="http://www.open3d.org/docs/release/compilation.html">Build from Source</a> |
+    <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python API</a> |
+    <a href="http://www.open3d.org/docs/release/cpp_api/index.html">C++ API</a> |
+    <a href="http://www.open3d.org/docs/release/contribute.html">Contribute</a> |
+    <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a>
 </h4>
 
 Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
