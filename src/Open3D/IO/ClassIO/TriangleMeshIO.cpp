@@ -133,20 +133,30 @@ bool WriteTriangleMesh(const std::string &filename,
     return success;
 }
 
-int PointInclusionInPolygonTest(unsigned int nvert,
-                                double *vertx,
-                                double *verty,
-                                double testx,
-                                double testy) {
-    int i, j, c = 0;
-    for (i = 0, j = nvert - 1; i < nvert; j = i++) {
-        if (((verty[i] > testy) != (verty[j] > testy)) &&
-            (testx < (vertx[j] - vertx[i]) * (testy - verty[i]) /
-                                     (verty[j] - verty[i]) +
-                             vertx[i]))
-            c = !c;
+bool IsPointInsidePolygon(const Eigen::MatrixX2d &polygon, double x, double y) {
+    bool inside = false;
+    for (int i = 0; i < polygon.rows(); ++i) {
+        // i and j are the indices of the first and second vertices.
+        int j = (i + 1) % polygon.rows();
+
+        // The vertices of the edge that will be checked.
+        double vx0 = polygon(i, 0);
+        double vy0 = polygon(i, 1);
+        double vx1 = polygon(j, 0);
+        double vy1 = polygon(j, 1);
+
+        // Check whether the edge intersects a line from (-inf,y) to (x,y).
+        // First, check if the line crosses the horizontal line at y in either
+        // direction.
+        if (((vy0 <= y) && (vy1 > y)) || ((vy1 <= y) && (vy0 > y))) {
+            // If so, get the point where it crosses that line.
+            double cross = (vx1 - vx0) * (y - vy0) / (vy1 - vy0) + vx0;
+
+            // Finally, check if it crosses to the left of the test point.
+            if (cross < x) inside = !inside;
+        }
     }
-    return c;
+    return inside;
 }
 
 bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
@@ -185,28 +195,19 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
             if (isConvex) {
                 // If convex, check if vertex is an ear
                 // (no vertices within triangle v[i-1], v[i], v[i+1])
-                double triangle_vertices_x[3];
-                double triangle_vertices_y[3];
+                Eigen::MatrixX2d polygon(3, 2);
                 for (int j = 0; j < 3; j++) {
-                    const Eigen::Vector3d &v1 =
-                            mesh.vertices_[indices[i + j - 1]];
-                    const Eigen::Vector3d &v2 =
-                            mesh.vertices_[indices[i + j - 1]];
-                    triangle_vertices_x[j] = v1(0);
-                    triangle_vertices_y[j] = v2(1);
+                    polygon(j, 0) = mesh.vertices_[indices[i + j - 1]](0);
+                    polygon(j, 1) = mesh.vertices_[indices[i + j - 1]](1);
                 }
 
                 for (int j = 0; j < n; j++) {
                     if (j == i - 1 || j == i || j == i + 1) {
                         continue;
                     }
-                    const Eigen::Vector3d &v1 = mesh.vertices_[indices[j]];
-                    const Eigen::Vector3d &v2 = mesh.vertices_[indices[j]];
-                    double test_vertex_x = v1(0);
-                    double test_vertex_y = v2(1);
-                    int vertexIsInside = PointInclusionInPolygonTest(
-                            3, triangle_vertices_x, triangle_vertices_y,
-                            test_vertex_x, test_vertex_y);
+                    const Eigen::Vector3d &v = mesh.vertices_[indices[j]];
+                    bool vertexIsInside =
+                            IsPointInsidePolygon(polygon, v(0), v(1));
                     if (vertexIsInside) {
                         isEar = false;
                         break;
@@ -215,7 +216,6 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
 
                 if (isEar) {
                     foundEar = true;
-
                     mesh.triangles_.push_back(Eigen::Vector3i(
                             indices[i - 1], indices[i], indices[i + 1]));
 
