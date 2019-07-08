@@ -133,6 +133,7 @@ bool WriteTriangleMesh(const std::string &filename,
     return success;
 }
 
+// Reference: https://stackoverflow.com/a/43896965
 bool IsPointInsidePolygon(const Eigen::MatrixX2d &polygon, double x, double y) {
     bool inside = false;
     for (int i = 0; i < polygon.rows(); ++i) {
@@ -162,37 +163,37 @@ bool IsPointInsidePolygon(const Eigen::MatrixX2d &polygon, double x, double y) {
 bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                                std::vector<unsigned int> &indices) {
     unsigned int n = indices.size();
-    Eigen::Vector3d faceNormal = Eigen::Vector3d::Zero();
+    Eigen::Vector3d face_normal = Eigen::Vector3d::Zero();
     if (n > 3) {
         for (int i = 0; i < n; i++) {
             const Eigen::Vector3d &v1 = mesh.vertices_[indices[(i + 1) % n]] -
                                         mesh.vertices_[indices[i % n]];
             const Eigen::Vector3d &v2 = mesh.vertices_[indices[(i + 2) % n]] -
                                         mesh.vertices_[indices[(i + 1) % n]];
-            faceNormal += v1.cross(v2);
+            face_normal += v1.cross(v2);
         }
-        double l = std::sqrt(faceNormal.dot(faceNormal));
-        faceNormal *= (1.0 / l);
+        double l = std::sqrt(face_normal.dot(face_normal));
+        face_normal *= (1.0 / l);
     }
 
-    bool foundEar = true;
+    bool found_ear = true;
     while (n > 3) {
-        if (!foundEar) {
+        if (!found_ear) {
             // If no ear is found after all indices are looped through, the
-            // polygon is not triangulable
+            // polygon is not triangulable.
             return false;
         }
 
-        foundEar = false;
+        found_ear = false;
         for (int i = 1; i < n - 2; i++) {
             const Eigen::Vector3d &v1 =
                     mesh.vertices_[indices[i]] - mesh.vertices_[indices[i - 1]];
             const Eigen::Vector3d &v2 =
                     mesh.vertices_[indices[i + 1]] - mesh.vertices_[indices[i]];
             Eigen::Vector3d v_cross = v1.cross(v2);
-            bool isConvex = (faceNormal.dot(v1.cross(v2)) > 0.0);
-            bool isEar = true;
-            if (isConvex) {
+            bool is_convex = (face_normal.dot(v1.cross(v2)) > 0.0);
+            bool is_ear = true;
+            if (is_convex) {
                 // If convex, check if vertex is an ear
                 // (no vertices within triangle v[i-1], v[i], v[i+1])
                 Eigen::MatrixX2d polygon(3, 2);
@@ -206,29 +207,18 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                         continue;
                     }
                     const Eigen::Vector3d &v = mesh.vertices_[indices[j]];
-                    bool vertexIsInside =
-                            IsPointInsidePolygon(polygon, v(0), v(1));
-                    if (vertexIsInside) {
-                        isEar = false;
+                    if (IsPointInsidePolygon(polygon, v(0), v(1))) {
+                        is_ear = false;
                         break;
                     }
                 }
 
-                if (isEar) {
-                    foundEar = true;
+                if (is_ear) {
+                    found_ear = true;
                     mesh.triangles_.push_back(Eigen::Vector3i(
                             indices[i - 1], indices[i], indices[i + 1]));
-
-                    // Remove ear vertex from indices
-                    std::vector<unsigned int> buffer;
-                    for (int j = 0; j < n; j++) {
-                        if (j != i) {
-                            buffer.push_back(indices[j]);
-                        }
-                    }
-                    indices = buffer;
+                    indices.erase(indices.begin() + i);
                     n = indices.size();
-
                     break;
                 }
             }
