@@ -114,8 +114,9 @@ struct PLYReaderState {
     long normal_num;
     long color_index;
     long color_num;
-    long triangle_index;
-    long triangle_num;
+    std::vector<unsigned int> face;
+    long face_index;
+    long face_num;
 };
 
 int ReadVertexCallback(p_ply_argument argument) {
@@ -178,17 +179,24 @@ int ReadFaceCallBack(p_ply_argument argument) {
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
                                &dummy);
     double value = ply_get_argument_value(argument);
-    if (state_ptr->triangle_index >= state_ptr->triangle_num) {
+    if (state_ptr->face_index >= state_ptr->face_num) {
         return 0;
     }
 
     ply_get_argument_property(argument, NULL, &length, &index);
-    if ((index >= 0) && (index <= 2)) {
-        state_ptr->mesh_ptr->triangles_[state_ptr->triangle_index](index) =
-                static_cast<int>(value);
+    if (index == -1) {
+        state_ptr->face.clear();
+    } else {
+        state_ptr->face.push_back(int(value));
     }
-    if (index == 2) {  // reading 'triangles_[n](2)'
-        state_ptr->triangle_index++;
+    if (state_ptr->face.size() == length) {
+        if (!AddTrianglesByEarClipping(*state_ptr->mesh_ptr, state_ptr->face)) {
+            utility::PrintWarning(
+                    "Read PLY failed: A polygon in the mesh could not be "
+                    "decomposed into triangles.\n");
+            return 0;
+        }
+        state_ptr->face_index++;
         utility::AdvanceConsoleProgress();
     }
     return 1;
@@ -511,25 +519,24 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
         return false;
     }
 
-    state.triangle_num = ply_set_read_cb(ply_file, "face", "vertex_indices",
+    state.face_num = ply_set_read_cb(ply_file, "face", "vertex_indices",
+                                     ReadFaceCallBack, &state, 0);
+    if (state.face_num == 0) {
+        state.face_num = ply_set_read_cb(ply_file, "face", "vertex_index",
                                          ReadFaceCallBack, &state, 0);
-    if (state.triangle_num == 0) {
-        state.triangle_num = ply_set_read_cb(ply_file, "face", "vertex_index",
-                                             ReadFaceCallBack, &state, 0);
     }
 
     state.vertex_index = 0;
     state.normal_index = 0;
     state.color_index = 0;
-    state.triangle_index = 0;
+    state.face_index = 0;
 
     mesh.Clear();
     mesh.vertices_.resize(state.vertex_num);
     mesh.vertex_normals_.resize(state.normal_num);
     mesh.vertex_colors_.resize(state.color_num);
-    mesh.triangles_.resize(state.triangle_num);
 
-    utility::ResetConsoleProgress(state.vertex_num + state.triangle_num,
+    utility::ResetConsoleProgress(state.vertex_num + state.face_num,
                                   "Reading PLY: ");
 
     if (!ply_read(ply_file)) {
