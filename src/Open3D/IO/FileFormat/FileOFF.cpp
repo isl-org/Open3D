@@ -47,7 +47,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     if (header != "OFF" && header != "COFF" && header != "NOFF" &&
         header != "CNOFF") {
         utility::PrintWarning(
-                "Read OFF failed: header keyword not supported.\n",
+                "Read OFF failed: header keyword '%s' not supported.\n",
                 header.c_str());
         return false;
     }
@@ -57,8 +57,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     std::getline(file, info);
     std::istringstream iss(info);
     if (!(iss >> num_of_vertices >> num_of_faces >> num_of_edges)) {
-        utility::PrintWarning("Read OFF failed: could not read file info.\n",
-                              info.c_str());
+        utility::PrintWarning("Read OFF failed: could not read file info.\n");
         return false;
     }
 
@@ -139,9 +138,11 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
             }
             indices.push_back(vertex_index);
         }
-        for (int vidx = 0; vidx <= n - 3; vidx++) {
-            mesh.triangles_.push_back(Eigen::Vector3i(
-                    indices[0], indices[vidx + 1], indices[vidx + 2]));
+        if (!AddTrianglesByEarClipping(mesh, indices)) {
+            utility::PrintWarning(
+                    "Read OFF failed: A polygon in the mesh could not be "
+                    "decomposed into triangles.\n");
+            return false;
         }
         utility::AdvanceConsoleProgress();
     }

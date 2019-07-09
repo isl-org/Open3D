@@ -96,5 +96,15 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool write_vertex_normals = true,
                             bool write_vertex_colors = true);
 
+/// Function to convert a polygon into a collection of
+/// triangles whose vertices are only those of the polygon.
+/// Assume that the vertices are connected by edges based on their order, and
+/// the final vertex connected to the first.
+/// The triangles are added to the mesh that is passed as reference. The mesh
+/// should contain all vertices prior to calling this function.
+/// \return return true if triangulation is successful, false otherwise.
+bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
+                               std::vector<unsigned int> &indices);
+
 }  // namespace io
 }  // namespace open3d
