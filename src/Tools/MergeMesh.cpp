@@ -30,15 +30,15 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > MergeMesh source_directory target_file [option]\n");
-    utility::PrintInfo("      Merge mesh files under <source_directory>.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Options (listed in the order of execution priority):\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::PrintInfo("    --purge                   : Clear duplicated and unreferenced vertices and\n");
-    utility::PrintInfo("                                triangles.\n");
+    utility::NewPrintInfo("Usage:\n");
+    utility::NewPrintInfo("    > MergeMesh source_directory target_file [option]\n");
+    utility::NewPrintInfo("      Merge mesh files under <source_directory>.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("Options (listed in the order of execution priority):\n");
+    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
+    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::NewPrintInfo("    --purge                   : Clear duplicated and unreferenced vertices and\n");
+    utility::NewPrintInfo("                                triangles.\n");
     // clang-format on
 }
 
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseDebug);
     if (argc <= 2 || utility::ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
         return 0;

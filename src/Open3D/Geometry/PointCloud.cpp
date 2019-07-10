@@ -165,7 +165,7 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
         std::vector<int> indices(1);
         std::vector<double> dists(1);
         if (kdtree.SearchKNN(points_[i], 1, indices, dists) == 0) {
-            utility::PrintDebug(
+            utility::NewPrintDebug(
                     "[ComputePointCloudToPointCloudDistance] Found a point "
                     "without neighbors.\n");
             distances[i] = 0.0;
@@ -199,7 +199,7 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
-    utility::PrintDebug("[Purge] %d nan points have been removed.\n",
+    utility::NewPrintDebug("[Purge] {:d} nan points have been removed.\n",
                         (int)(old_point_num - k));
     return *this;
 }
@@ -267,7 +267,7 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
         std::vector<int> indices(2);
         std::vector<double> dists(2);
         if (kdtree.SearchKNN(points_[i], 2, indices, dists) <= 1) {
-            utility::PrintDebug(
+            utility::NewPrintDebug(
                     "[ComputePointCloudNearestNeighborDistance] Found a point "
                     "without neighbors.\n");
             nn_dis[i] = 0.0;

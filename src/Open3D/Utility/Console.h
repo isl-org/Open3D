@@ -29,32 +29,143 @@
 #include <Eigen/Core>
 #include <string>
 #include <vector>
+
+#define FMT_STRING_ALIAS 1
+#include "fmt/format.h"
+
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
 namespace open3d {
 namespace utility {
 
 enum class VerbosityLevel {
-    VerboseError = 0,
-    VerboseWarning = 1,
-    VerboseInfo = 2,
-    VerboseDebug = 3,
-    VerboseAlways = 4
+    VerboseOff = 0,
+    VerboseFatal = 1,
+    VerboseError = 2,
+    VerboseWarning = 3,
+    VerboseInfo = 4,
+    VerboseDebug = 5,
 };
 
-void SetVerbosityLevel(VerbosityLevel verbosity_level);
+enum class TextColor {
+    Black = 0,
+    Red = 1,
+    Green = 2,
+    Yellow = 3,
+    Blue = 4,
+    Magenta = 5,
+    Cyan = 6,
+    White = 7
+};
 
+/// Internal function to change text color for the console
+/// Note there is no security check for parameters.
+/// \param text_color, from 0 to 7, they are black, red, green, yellow, blue,
+/// magenta, cyan, white
+/// \param emphasis_text is 0 or 1
+inline void ChangeConsoleColor(TextColor text_color, int highlight_text) {
+#ifdef _WIN32
+    const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
+    const WORD COLOR_MASK[8] = {
+            0,
+            FOREGROUND_RED,
+            FOREGROUND_GREEN,
+            FOREGROUND_GREEN | FOREGROUND_RED,
+            FOREGROUND_BLUE,
+            FOREGROUND_RED | FOREGROUND_BLUE,
+            FOREGROUND_GREEN | FOREGROUND_BLUE,
+            FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED};
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(
+            h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
+#else
+    printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
+#endif
+}
+
+inline void ResetConsoleColor() {
+#ifdef _WIN32
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(
+            h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+#else
+    printf("%c[0;m", 0x1B);
+#endif
+}
+
+static VerbosityLevel global_verbosity_level;
+
+void SetVerbosityLevel(VerbosityLevel verbosity_level);
 VerbosityLevel GetVerbosityLevel();
 
-void PrintError(const char *format, ...);
 
-void PrintWarning(const char *format, ...);
+inline void VPrintFatal(const char *format, fmt::format_args args) {
+  if (global_verbosity_level >= VerbosityLevel::VerboseFatal) {
+    ChangeConsoleColor(TextColor::Red, 1);
+    fmt::print("[Open3D FATAL] ");
+    fmt::vprint(format, args);
+    ResetConsoleColor();
+    throw std::runtime_error("");
+  }
+}
 
-void PrintInfo(const char *format, ...);
+template <typename... Args>
+inline void NewPrintFatal(const char *format, const Args & ... args) {
+  VPrintFatal(format, fmt::make_format_args(args...));
+}
 
-void PrintDebug(const char *format, ...);
+inline void VPrintError(const char *format, fmt::format_args args) {
+  if (global_verbosity_level >= VerbosityLevel::VerboseError) {
+    ChangeConsoleColor(TextColor::Red, 1);
+    fmt::print("[Open3D ERROR] ");
+    fmt::vprint(format, args);
+    ResetConsoleColor();
+  }
+}
 
-void PrintAlways(const char *format, ...);
+template <typename... Args>
+inline void NewPrintError(const char *format, const Args & ... args) {
+  VPrintError(format, fmt::make_format_args(args...));
+}
+
+inline void VPrintWarning(const char *format, fmt::format_args args) {
+  if (global_verbosity_level >= VerbosityLevel::VerboseWarning) {
+    ChangeConsoleColor(TextColor::Yellow, 1);
+    fmt::print("[Open3D WARNING] ");
+    fmt::vprint(format, args);
+    ResetConsoleColor();
+  }
+}
+
+template <typename... Args>
+inline void NewPrintWarning(const char *format, const Args & ... args) {
+  VPrintWarning(format, fmt::make_format_args(args...));
+}
+
+inline void VPrintInfo(const char *format, fmt::format_args args) {
+  if (global_verbosity_level >= VerbosityLevel::VerboseInfo) {
+    // fmt::print("[Open3D INFO] ");
+    fmt::vprint(format, args);
+  }
+}
+
+template <typename... Args>
+inline void NewPrintInfo(const char *format, const Args & ... args) {
+  VPrintInfo(format, fmt::make_format_args(args...));
+}
+
+inline void VPrintDebug(const char *format, fmt::format_args args) {
+  if (global_verbosity_level >= VerbosityLevel::VerboseDebug) {
+    fmt::print("[Open3D DEBUG] ");
+    fmt::vprint(format, args);
+  }
+}
+
+template <typename... Args>
+inline void NewPrintDebug(const char *format, const Args & ... args) {
+  VPrintDebug(format, fmt::make_format_args(args...));
+}
+
 
 void ResetConsoleProgress(const int64_t expected_count,
                           const std::string &progress_info = "");

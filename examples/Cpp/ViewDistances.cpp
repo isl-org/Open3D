@@ -30,18 +30,18 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > ViewDistances source_file [options]\n");
-    utility::PrintInfo("      View color coded distances of a point cloud.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    utility::PrintInfo("    --max_distance d          : Set max distance. Must be positive.\n");
-    utility::PrintInfo("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
-    utility::PrintInfo("    --nn_distance             : Compute the NN distance.\n");
-    utility::PrintInfo("    --write_color_back        : Write color back to source_file.\n");
-    utility::PrintInfo("    --without_gui             : Without GUI.\n");
+    utility::NewPrintInfo("Usage:\n");
+    utility::NewPrintInfo("    > ViewDistances source_file [options]\n");
+    utility::NewPrintInfo("      View color coded distances of a point cloud.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("Basic options:\n");
+    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
+    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::NewPrintInfo("    --max_distance d          : Set max distance. Must be positive.\n");
+    utility::NewPrintInfo("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
+    utility::NewPrintInfo("    --nn_distance             : Compute the NN distance.\n");
+    utility::NewPrintInfo("    --write_color_back        : Write color back to source_file.\n");
+    utility::NewPrintInfo("    --without_gui             : Without GUI.\n");
     // clang-format on
 }
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
             argc, argv, "--max_distance", 0.0);
     auto pcd = io::CreatePointCloudFromFile(argv[1]);
     if (pcd->IsEmpty()) {
-        utility::PrintInfo("Empty point cloud.\n");
+        utility::NewPrintWarning("Empty point cloud.\n");
         return 1;
     }
     std::string binname =
@@ -78,17 +78,17 @@ int main(int argc, char *argv[]) {
     } else {
         FILE *f = fopen(binname.c_str(), "rb");
         if (f == NULL) {
-            utility::PrintInfo("Cannot open bin file.\n");
+            utility::NewPrintWarning("Cannot open bin file.\n");
             return 1;
         }
         if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
             pcd->points_.size()) {
-            utility::PrintInfo("Cannot open bin file.\n");
+            utility::NewPrintWarning("Cannot open bin file.\n");
             return 1;
         }
     }
     if (max_distance <= 0.0) {
-        utility::PrintInfo("Max distance must be a positive value.\n");
+        utility::NewPrintWarning("Max distance must be a positive value.\n");
         return 1;
     }
     pcd->colors_.resize(pcd->points_.size());

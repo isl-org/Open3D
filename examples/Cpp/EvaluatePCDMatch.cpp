@@ -33,18 +33,18 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > EvaluatePCDMatch [options]\n");
-    utility::PrintInfo("      View pairwise matching result of point clouds.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    utility::PrintInfo("    --gt file                 : A log file of the ground truth pairwise matching results. Must have.\n");
-    utility::PrintInfo("    --threshold t             : Distance threshold. Must have.\n");
-    utility::PrintInfo("    --threshold_rmse t        : Distance threshold to decide if a match is good or not. Default: 2t.\n");
-    utility::PrintInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::NewPrintInfo("Usage:\n");
+    utility::NewPrintInfo("    > EvaluatePCDMatch [options]\n");
+    utility::NewPrintInfo("      View pairwise matching result of point clouds.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("Basic options:\n");
+    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
+    utility::NewPrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
+    utility::NewPrintInfo("    --gt file                 : A log file of the ground truth pairwise matching results. Must have.\n");
+    utility::NewPrintInfo("    --threshold t             : Distance threshold. Must have.\n");
+    utility::NewPrintInfo("    --threshold_rmse t        : Distance threshold to decide if a match is good or not. Default: 2t.\n");
+    utility::NewPrintInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
+    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
     // clang-format on
 }
 
@@ -56,7 +56,7 @@ bool ReadLogFile(const std::string &filename,
     transformations.clear();
     FILE *f = fopen(filename.c_str(), "r");
     if (f == NULL) {
-        utility::PrintWarning("Read LOG failed: unable to open file.\n");
+        utility::NewPrintWarning("Read LOG failed: unable to open file.\n");
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -65,12 +65,12 @@ bool ReadLogFile(const std::string &filename,
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -78,7 +78,7 @@ bool ReadLogFile(const std::string &filename,
                        &trans(0, 1), &trans(0, 2), &trans(0, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -86,7 +86,7 @@ bool ReadLogFile(const std::string &filename,
                        &trans(1, 1), &trans(1, 2), &trans(1, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -94,7 +94,7 @@ bool ReadLogFile(const std::string &filename,
                        &trans(2, 1), &trans(2, 2), &trans(2, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
             }
         }
         rmse = std::sqrt(rmse / (double)correspondence_num);
-        utility::PrintInfo("#%d < -- #%d : rmse %.4f\n", pair_ids[k].first,
+        utility::NewPrintInfo("#{:d} < -- #{:d} : rmse {:.4f}\n", pair_ids[k].first,
                            pair_ids[k].second, rmse);
         total_rmse += rmse;
         if (rmse < threshold_rmse) {
@@ -187,13 +187,13 @@ int main(int argc, char *argv[]) {
             positive_rmse += rmse;
         }
     }
-    utility::PrintInfo("Average rmse %.8f (%.8f / %d)\n",
+    utility::NewPrintInfo("Average rmse {:.8f} ({:.8f} / {:d})\n",
                        total_rmse / (double)pair_ids.size(), total_rmse,
                        (int)pair_ids.size());
-    utility::PrintInfo("Average rmse of positives %.8f (%.8f / %d)\n",
+    utility::NewPrintInfo("Average rmse of positives {:.8f} ({:.8f} / {:d})\n",
                        positive_rmse / (double)positive, positive_rmse,
                        positive);
-    utility::PrintInfo("Accuracy %.2f%% (%d / %d)\n",
+    utility::NewPrintInfo("Accuracy {:.2f}% ({:d} / {:d})\n",
                        (double)positive * 100.0 / (double)pair_ids.size(),
                        positive, (int)pair_ids.size());
     return 0;

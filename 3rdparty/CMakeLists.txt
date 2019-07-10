@@ -299,6 +299,10 @@ if (BUILD_UNIT_TESTS)
     set(googletest_LIBRARIES googletest) 
 endif()
 
+# fmt library
+add_subdirectory(fmt)
+set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
+set(fmt_LIBRARIES fmt)
 
 # set 3RDPARTY_INCLUDE_DIRS
 list(APPEND 3RDPARTY_INCLUDE_DIRS
@@ -317,7 +321,9 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${tinyfiledialogs_INCLUDE_DIRS}
      ${tinyfobjloader_INCLUDE_DIRS}
      ${qhull_INCLUDE_DIRS}
-     ${googletest_INCLUDE_DIRS})
+     ${googletest_INCLUDE_DIRS}
+     ${fmt_INCLUDE_DIRS}
+)
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -334,7 +340,8 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
     ${JPEG_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
-    ${PNG_LIBRARY_DIRS})
+    ${PNG_LIBRARY_DIRS}
+)
 
 # set 3RDPARTY_LIBRARIES
 list(APPEND 3RDPARTY_LIBRARIES
@@ -346,7 +353,9 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${tinyfiledialogs_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${qhull_LIBRARIES}
-     ${googletest_LIBRARIES})
+     ${googletest_LIBRARIES}
+     ${fmt_LIBRARIES}
+)
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,

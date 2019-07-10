@@ -73,18 +73,18 @@ bool ReadVoxelGrid(const std::string &filename,
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_voxelgrid_read_function.find(filename_ext);
     if (map_itr == file_extension_to_voxelgrid_read_function.end()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, voxelgrid);
-    utility::PrintDebug("Read geometry::VoxelGrid: %d voxels.\n",
+    utility::NewPrintDebug("Read geometry::VoxelGrid: {:d} voxels.\n",
                         (int)voxelgrid.voxels_.size());
     return success;
 }
@@ -96,20 +96,20 @@ bool WriteVoxelGrid(const std::string &filename,
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Write geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_voxelgrid_write_function.find(filename_ext);
     if (map_itr == file_extension_to_voxelgrid_write_function.end()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Write geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     bool success =
             map_itr->second(filename, voxelgrid, write_ascii, compressed);
-    utility::PrintDebug("Write geometry::VoxelGrid: %d voxels.\n",
+    utility::NewPrintDebug("Write geometry::VoxelGrid: {:d} voxels.\n",
                         (int)voxelgrid.voxels_.size());
     return success;
 }

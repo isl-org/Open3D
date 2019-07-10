@@ -40,7 +40,7 @@ namespace visualization {
 bool Visualizer::InitOpenGL() {
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
-        utility::PrintError("Failed to initialize GLEW.\n");
+        utility::NewPrintError("Failed to initialize GLEW.\n");
         return false;
     }
 
@@ -109,7 +109,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
     if (view_control_ptr_->ConvertToViewParameters(current_status) == false) {
-        utility::PrintInfo("Something is wrong copying view status.\n");
+        utility::NewPrintWarning("Something is wrong copying view status.\n");
         return;
     }
     ViewTrajectory trajectory;
@@ -117,7 +117,7 @@ void Visualizer::CopyViewStatusToClipboard() {
     std::string clipboard_string;
     if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {
-        utility::PrintInfo("Something is wrong copying view status.\n");
+        utility::NewPrintWarning("Something is wrong copying view status.\n");
         return;
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());
@@ -130,11 +130,11 @@ void Visualizer::CopyViewStatusFromClipboard() {
         ViewTrajectory trajectory;
         if (io::ReadIJsonConvertibleFromJSONString(clipboard_string,
                                                    trajectory) == false) {
-            utility::PrintInfo("Something is wrong copying view status.\n");
+            utility::NewPrintWarning("Something is wrong copying view status.\n");
             return;
         }
         if (trajectory.view_status_.size() != 1) {
-            utility::PrintInfo("Something is wrong copying view status.\n");
+            utility::NewPrintWarning("Something is wrong copying view status.\n");
             return;
         }
         view_control_ptr_->ConvertFromViewParameters(
@@ -205,11 +205,11 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
                bytes_per_line);
     }
 
-    utility::PrintDebug("[Visualizer] Screen capture to %s\n",
+    utility::NewPrintDebug("[Visualizer] Screen capture to {}\n",
                         png_filename.c_str());
     io::WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
-        utility::PrintDebug("[Visualizer] Screen camera capture to %s\n",
+        utility::NewPrintDebug("[Visualizer] Screen camera capture to {}\n",
                             camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
@@ -353,11 +353,11 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
         }
     }
 
-    utility::PrintDebug("[Visualizer] Depth capture to %s\n",
+    utility::NewPrintDebug("[Visualizer] Depth capture to {}\n",
                         png_filename.c_str());
     io::WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
-        utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
+        utility::NewPrintDebug("[Visualizer] Depth camera capture to {}\n",
                             camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
@@ -435,11 +435,11 @@ void Visualizer::CaptureDepthPointCloud(
         }
     }
 
-    utility::PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
+    utility::NewPrintDebug("[Visualizer] Depth point cloud capture to {}\n",
                         ply_filename.c_str());
     io::WritePointCloud(ply_filename, depth_pointcloud);
     if (!camera_filename.empty()) {
-        utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
+        utility::NewPrintDebug("[Visualizer] Depth camera capture to {}\n",
                             camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
@@ -453,7 +453,7 @@ void Visualizer::CaptureRenderOption(const std::string &filename /* = ""*/) {
         std::string timestamp = utility::GetCurrentTimeStamp();
         json_filename = "RenderOption_" + timestamp + ".json";
     }
-    utility::PrintDebug("[Visualizer] Render option capture to %s\n",
+    utility::NewPrintDebug("[Visualizer] Render option capture to {}\n",
                         json_filename.c_str());
     io::WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }

@@ -38,7 +38,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
     std::ifstream myFile(filename.c_str(), std::ios::in | std::ios::binary);
 
     if (!myFile) {
-        utility::PrintWarning("Read STL failed: unable to open file.\n");
+        utility::NewPrintWarning("Read STL failed: unable to open file.\n");
         return false;
     }
 
@@ -49,14 +49,13 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         myFile.read(header, 80);
         myFile.read(buffer, 4);
         num_of_triangles = (int)(*((unsigned long *)buffer));
-        // PrintInfo("header : %s\n", header);
     } else {
-        utility::PrintWarning("Read STL failed: unable to read header.\n");
+        utility::NewPrintWarning("Read STL failed: unable to read header.\n");
         return false;
     }
 
     if (num_of_triangles == 0) {
-        utility::PrintWarning("Read STL failed: empty file.\n");
+        utility::NewPrintWarning("Read STL failed: empty file.\n");
         return false;
     }
 
@@ -87,7 +86,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
             // ignore buffer[48] and buffer [49] because it is rarely used.
 
         } else {
-            utility::PrintWarning("Read STL failed: not enough triangles.\n");
+            utility::NewPrintWarning("Read STL failed: not enough triangles.\n");
             return false;
         }
         utility::AdvanceConsoleProgress();
@@ -104,18 +103,18 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {
-        utility::PrintWarning("Write STL failed: unable to open file.\n");
+        utility::NewPrintWarning("Write STL failed: unable to open file.\n");
         return false;
     }
 
     if (!mesh.HasTriangleNormals()) {
-        utility::PrintWarning("Write STL failed: compute normals first.\n");
+        utility::NewPrintWarning("Write STL failed: compute normals first.\n");
         return false;
     }
 
     size_t num_of_triangles = mesh.triangles_.size();
     if (num_of_triangles == 0) {
-        utility::PrintWarning("Write STL failed: empty file.\n");
+        utility::NewPrintWarning("Write STL failed: empty file.\n");
         return false;
     }
     char header[80] = "Created by Open3D";

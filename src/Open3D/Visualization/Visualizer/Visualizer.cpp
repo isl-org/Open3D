@@ -34,7 +34,7 @@ namespace {
 
 class GLFWEnvironmentSingleton {
 private:
-    GLFWEnvironmentSingleton() { utility::PrintDebug("GLFW init.\n"); }
+    GLFWEnvironmentSingleton() { utility::NewPrintDebug("GLFW init.\n"); }
     GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
     GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
             delete;
@@ -42,7 +42,7 @@ private:
 public:
     ~GLFWEnvironmentSingleton() {
         glfwTerminate();
-        utility::PrintDebug("GLFW destruct.\n");
+        utility::NewPrintDebug("GLFW destruct.\n");
     }
 
 public:
@@ -57,7 +57,7 @@ public:
     }
 
     static void GLFWErrorCallback(int error, const char *description) {
-        utility::PrintError("GLFW Error: %s\n", description);
+        utility::NewPrintError("GLFW Error: {}\n", description);
     }
 };
 
@@ -96,7 +96,7 @@ bool Visualizer::CreateVisualizerWindow(
 
     glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
     if (!GLFWEnvironmentSingleton::InitGLFW()) {
-        utility::PrintError("Failed to initialize GLFW\n");
+        utility::NewPrintError("Failed to initialize GLFW\n");
         return false;
     }
 
@@ -109,7 +109,7 @@ bool Visualizer::CreateVisualizerWindow(
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
     if (!window_) {
-        utility::PrintError("Failed to create window\n");
+        utility::NewPrintError("Failed to create window\n");
         return false;
     }
     glfwSetWindowPos(window_, left, top);
@@ -264,7 +264,7 @@ void Visualizer::Run() {
 
 void Visualizer::Close() {
     glfwSetWindowShouldClose(window_, GL_TRUE);
-    utility::PrintDebug("[Visualizer] Window closing.\n");
+    utility::NewPrintDebug("[Visualizer] Window closing.\n");
 }
 
 bool Visualizer::WaitEvents() {
@@ -348,8 +348,8 @@ bool Visualizer::AddGeometry(
     geometry_ptrs_.insert(geometry_ptr);
     view_control_ptr_->FitInGeometry(*geometry_ptr);
     ResetViewPoint();
-    utility::PrintDebug(
-            "Add geometry and update bounding box to %s\n",
+    utility::NewPrintDebug(
+            "Add geometry and update bounding box to {}\n",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
@@ -369,8 +369,8 @@ bool Visualizer::RemoveGeometry(
     geometry_renderer_ptrs_.erase(geometry_renderer_delete);
     geometry_ptrs_.erase(geometry_ptr);
     ResetViewPoint(true);
-    utility::PrintDebug(
-            "Remove geometry and update bounding box to %s\n",
+    utility::NewPrintDebug(
+            "Remove geometry and update bounding box to {}\n",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
@@ -391,60 +391,60 @@ bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::PrintVisualizerHelp() {
     // clang-format off
-    utility::PrintInfo("  -- Mouse view control --\n");
-    utility::PrintInfo("    Left button + drag         : Rotate.\n");
-    utility::PrintInfo("    Ctrl + left button + drag  : Translate.\n");
-    utility::PrintInfo("    Wheel button + drag        : Translate.\n");
-    utility::PrintInfo("    Shift + left button + drag : Roll.\n");
-    utility::PrintInfo("    Wheel                      : Zoom in/out.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("  -- Keyboard view control --\n");
-    utility::PrintInfo("    [/]          : Increase/decrease field of view.\n");
-    utility::PrintInfo("    R            : Reset view point.\n");
-    utility::PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
-    utility::PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("  -- General control --\n");
-    utility::PrintInfo("    Q, Esc       : Exit window.\n");
-    utility::PrintInfo("    H            : Print help message.\n");
-    utility::PrintInfo("    P, PrtScn    : Take a screen capture.\n");
-    utility::PrintInfo("    D            : Take a depth capture.\n");
-    utility::PrintInfo("    O            : Take a capture of current rendering settings.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("  -- Render mode control --\n");
-    utility::PrintInfo("    L            : Turn on/off lighting.\n");
-    utility::PrintInfo("    +/-          : Increase/decrease point size.\n");
-    utility::PrintInfo("    Ctrl + +/-   : Increase/decrease width of geometry::LineSet.\n");
-    utility::PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
-    utility::PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
-    utility::PrintInfo("    W            : Turn on/off mesh wireframe.\n");
-    utility::PrintInfo("    B            : Turn on/off back face rendering.\n");
-    utility::PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
-    utility::PrintInfo("    T            : Toggle among image render:\n");
-    utility::PrintInfo("                   no stretch / keep ratio / freely stretch.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("  -- Color control --\n");
-    utility::PrintInfo("    0..4,9       : Set point cloud color option.\n");
-    utility::PrintInfo("                   0 - Default behavior, render point color.\n");
-    utility::PrintInfo("                   1 - Render point color.\n");
-    utility::PrintInfo("                   2 - x coordinate as color.\n");
-    utility::PrintInfo("                   3 - y coordinate as color.\n");
-    utility::PrintInfo("                   4 - z coordinate as color.\n");
-    utility::PrintInfo("                   9 - normal as color.\n");
-    utility::PrintInfo("    Ctrl + 0..4,9: Set mesh color option.\n");
-    utility::PrintInfo("                   0 - Default behavior, render uniform gray color.\n");
-    utility::PrintInfo("                   1 - Render point color.\n");
-    utility::PrintInfo("                   2 - x coordinate as color.\n");
-    utility::PrintInfo("                   3 - y coordinate as color.\n");
-    utility::PrintInfo("                   4 - z coordinate as color.\n");
-    utility::PrintInfo("                   9 - normal as color.\n");
-    utility::PrintInfo("    Shift + 0..4 : Color map options.\n");
-    utility::PrintInfo("                   0 - Gray scale color.\n");
-    utility::PrintInfo("                   1 - JET color map.\n");
-    utility::PrintInfo("                   2 - SUMMER color map.\n");
-    utility::PrintInfo("                   3 - WINTER color map.\n");
-    utility::PrintInfo("                   4 - HOT color map.\n");
-    utility::PrintInfo("\n");
+    utility::NewPrintInfo("  -- Mouse view control --\n");
+    utility::NewPrintInfo("    Left button + drag         : Rotate.\n");
+    utility::NewPrintInfo("    Ctrl + left button + drag  : Translate.\n");
+    utility::NewPrintInfo("    Wheel button + drag        : Translate.\n");
+    utility::NewPrintInfo("    Shift + left button + drag : Roll.\n");
+    utility::NewPrintInfo("    Wheel                      : Zoom in/out.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("  -- Keyboard view control --\n");
+    utility::NewPrintInfo("    [/]          : Increase/decrease field of view.\n");
+    utility::NewPrintInfo("    R            : Reset view point.\n");
+    utility::NewPrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
+    utility::NewPrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("  -- General control --\n");
+    utility::NewPrintInfo("    Q, Esc       : Exit window.\n");
+    utility::NewPrintInfo("    H            : Print help message.\n");
+    utility::NewPrintInfo("    P, PrtScn    : Take a screen capture.\n");
+    utility::NewPrintInfo("    D            : Take a depth capture.\n");
+    utility::NewPrintInfo("    O            : Take a capture of current rendering settings.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("  -- Render mode control --\n");
+    utility::NewPrintInfo("    L            : Turn on/off lighting.\n");
+    utility::NewPrintInfo("    +/-          : Increase/decrease point size.\n");
+    utility::NewPrintInfo("    Ctrl + +/-   : Increase/decrease width of geometry::LineSet.\n");
+    utility::NewPrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
+    utility::NewPrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
+    utility::NewPrintInfo("    W            : Turn on/off mesh wireframe.\n");
+    utility::NewPrintInfo("    B            : Turn on/off back face rendering.\n");
+    utility::NewPrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
+    utility::NewPrintInfo("    T            : Toggle among image render:\n");
+    utility::NewPrintInfo("                   no stretch / keep ratio / freely stretch.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("  -- Color control --\n");
+    utility::NewPrintInfo("    0..4,9       : Set point cloud color option.\n");
+    utility::NewPrintInfo("                   0 - Default behavior, render point color.\n");
+    utility::NewPrintInfo("                   1 - Render point color.\n");
+    utility::NewPrintInfo("                   2 - x coordinate as color.\n");
+    utility::NewPrintInfo("                   3 - y coordinate as color.\n");
+    utility::NewPrintInfo("                   4 - z coordinate as color.\n");
+    utility::NewPrintInfo("                   9 - normal as color.\n");
+    utility::NewPrintInfo("    Ctrl + 0..4,9: Set mesh color option.\n");
+    utility::NewPrintInfo("                   0 - Default behavior, render uniform gray color.\n");
+    utility::NewPrintInfo("                   1 - Render point color.\n");
+    utility::NewPrintInfo("                   2 - x coordinate as color.\n");
+    utility::NewPrintInfo("                   3 - y coordinate as color.\n");
+    utility::NewPrintInfo("                   4 - z coordinate as color.\n");
+    utility::NewPrintInfo("                   9 - normal as color.\n");
+    utility::NewPrintInfo("    Shift + 0..4 : Color map options.\n");
+    utility::NewPrintInfo("                   0 - Gray scale color.\n");
+    utility::NewPrintInfo("                   1 - JET color map.\n");
+    utility::NewPrintInfo("                   2 - SUMMER color map.\n");
+    utility::NewPrintInfo("                   3 - WINTER color map.\n");
+    utility::NewPrintInfo("                   4 - HOT color map.\n");
+    utility::NewPrintInfo("\n");
     // clang-format on
 }
 }  // namespace visualization

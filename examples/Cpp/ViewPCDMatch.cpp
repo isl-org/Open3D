@@ -38,7 +38,7 @@ bool ReadLogFile(const std::string &filename,
     transformations.clear();
     FILE *f = fopen(filename.c_str(), "r");
     if (f == NULL) {
-        utility::PrintWarning("Read LOG failed: unable to open file.\n");
+        utility::NewPrintWarning("Read LOG failed: unable to open file.\n");
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -47,12 +47,12 @@ bool ReadLogFile(const std::string &filename,
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -60,7 +60,7 @@ bool ReadLogFile(const std::string &filename,
                        &trans(0, 1), &trans(0, 2), &trans(0, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -68,7 +68,7 @@ bool ReadLogFile(const std::string &filename,
                        &trans(1, 1), &trans(1, 2), &trans(1, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -76,7 +76,7 @@ bool ReadLogFile(const std::string &filename,
                        &trans(2, 1), &trans(2, 2), &trans(2, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
@@ -95,15 +95,15 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > ViewPCDMatch [options]\n");
-    utility::PrintInfo("      View pairwise matching result of point clouds.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    utility::PrintInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::NewPrintInfo("Usage:\n");
+    utility::NewPrintInfo("    > ViewPCDMatch [options]\n");
+    utility::NewPrintInfo("      View pairwise matching result of point clouds.\n");
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo("Basic options:\n");
+    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
+    utility::NewPrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
+    utility::NewPrintInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
+    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
     // clang-format on
 }
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 
     for (auto k = 0; k < metadata.size(); k++) {
         auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
-        utility::PrintInfo("Showing matched point cloud #%d and #%d.\n", i, j);
+        utility::NewPrintInfo("Showing matched point cloud #{:d} and #{:d}.\n", i, j);
         auto pcd_target = io::CreatePointCloudFromFile(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd");
         pcd_target->colors_.clear();

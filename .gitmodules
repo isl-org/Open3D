@@ -19,3 +19,6 @@
 [submodule "3rdparty/open3d_sphinx_theme"]
 	path = 3rdparty/open3d_sphinx_theme
 	url = https://github.com/intel-isl/open3d_sphinx_theme.git
+[submodule "3rdparty/fmt"]
+	path = 3rdparty/fmt
+	url = https://github.com/fmtlib/fmt.git

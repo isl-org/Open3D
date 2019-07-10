@@ -30,8 +30,8 @@ using namespace open3d;
 
 void PrintHelp() {
     PrintOpen3DVersion();
-    utility::PrintInfo("Usage :\n");
-    utility::PrintInfo(
+    utility::NewPrintInfo("Usage :\n");
+    utility::NewPrintInfo(
             "    > RGBDOdometry [color1] [depth1] [color2] [depth2]\n");
 }
 
@@ -43,11 +43,11 @@ std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
     geometry::Image color, depth;
     io::ReadImage(color_filename, color);
     io::ReadImage(depth_filename, depth);
-    utility::PrintDebug("Reading RGBD image : \n");
-    utility::PrintDebug("     Color : %d x %d x %d (%d bits per channel)\n",
+    utility::NewPrintInfo("Reading RGBD image : \n");
+    utility::NewPrintInfo("     Color : {:d} x {:d} x {:d} ({:d} bits per channel)\n",
                         color.width_, color.height_, color.num_of_channels_,
                         color.bytes_per_channel_ * 8);
-    utility::PrintDebug("     Depth : %d x %d x %d (%d bits per channel)\n",
+    utility::NewPrintInfo("     Depth : {:d} x {:d} x {:d} ({:d} bits per channel)\n",
                         depth.width_, depth.height_, depth.num_of_channels_,
                         depth.bytes_per_channel_ * 8);
     double depth_scale = 1000.0, depth_trunc = 3.0;

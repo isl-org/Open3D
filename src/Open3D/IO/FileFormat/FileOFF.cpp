@@ -37,8 +37,8 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh) {
     std::ifstream file(filename.c_str(), std::ios::in);
     if (!file) {
-        utility::PrintWarning("Read OFF failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::NewPrintWarning("Read OFF failed: unable to open file: {}\n",
+                              filename);
         return false;
     }
 
@@ -46,9 +46,9 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     std::getline(file, header);
     if (header != "OFF" && header != "COFF" && header != "NOFF" &&
         header != "CNOFF") {
-        utility::PrintWarning(
-                "Read OFF failed: header keyword '%s' not supported.\n",
-                header.c_str());
+        utility::NewPrintWarning(
+                "Read OFF failed: header keyword '{}' not supported.\n",
+                header);
         return false;
     }
 
@@ -57,12 +57,12 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     std::getline(file, info);
     std::istringstream iss(info);
     if (!(iss >> num_of_vertices >> num_of_faces >> num_of_edges)) {
-        utility::PrintWarning("Read OFF failed: could not read file info.\n");
+        utility::NewPrintWarning("Read OFF failed: could not read file info.\n");
         return false;
     }
 
     if (num_of_vertices == 0 || num_of_faces == 0) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read OFF failed: mesh has no vertices or faces.\n");
         return false;
     }
@@ -91,7 +91,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         std::getline(file, line);
         std::istringstream iss(line);
         if (!(iss >> vx >> vy >> vz)) {
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "Read OFF failed: could not read all vertex values.\n");
             return false;
         }
@@ -99,7 +99,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
         if (parse_vertex_normals) {
             if (!(iss >> nx >> ny >> nz)) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read OFF failed: could not read all vertex normal "
                         "values.\n");
                 return false;
@@ -110,7 +110,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         }
         if (parse_vertex_colors) {
             if (!(iss >> r >> g >> b >> alpha)) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read OFF failed: could not read all vertex color "
                         "values.\n");
                 return false;
@@ -131,7 +131,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         indices.clear();
         for (int vidx = 0; vidx < n; vidx++) {
             if (!(iss >> vertex_index)) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read OFF failed: could not read all vertex "
                         "indices.\n");
                 return false;
@@ -139,7 +139,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
             indices.push_back(vertex_index);
         }
         if (!AddTrianglesByEarClipping(mesh, indices)) {
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "Read OFF failed: A polygon in the mesh could not be "
                     "decomposed into triangles.\n");
             return false;
@@ -159,18 +159,18 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool write_vertex_colors /* = true*/) {
     std::ofstream file(filename.c_str(), std::ios::out);
     if (!file) {
-        utility::PrintWarning("Write OFF failed: unable to open file.\n");
+        utility::NewPrintWarning("Write OFF failed: unable to open file.\n");
         return false;
     }
 
     if (mesh.HasTriangleNormals()) {
-        utility::PrintWarning("Write OFF cannot include triangle normals.\n");
+        utility::NewPrintWarning("Write OFF cannot include triangle normals.\n");
     }
 
     size_t num_of_vertices = mesh.vertices_.size();
     size_t num_of_triangles = mesh.triangles_.size();
     if (num_of_vertices == 0 || num_of_triangles == 0) {
-        utility::PrintWarning("Write OFF failed: empty file.\n");
+        utility::NewPrintWarning("Write OFF failed: empty file.\n");
         return false;
     }
 

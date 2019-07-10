@@ -305,7 +305,7 @@ bool PointCloud::OrientNormalsToAlignWithDirection(
         const Eigen::Vector3d &orientation_reference
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (HasNormals() == false) {
-        utility::PrintDebug(
+        utility::NewPrintWarning(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.\n");
     }
@@ -326,7 +326,7 @@ bool PointCloud::OrientNormalsToAlignWithDirection(
 bool PointCloud::OrientNormalsTowardsCameraLocation(
         const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
     if (HasNormals() == false) {
-        utility::PrintDebug(
+        utility::NewPrintWarning(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.\n");
     }

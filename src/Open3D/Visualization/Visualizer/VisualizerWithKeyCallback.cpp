@@ -36,16 +36,16 @@ VisualizerWithKeyCallback::~VisualizerWithKeyCallback() {}
 
 void VisualizerWithKeyCallback::PrintVisualizerHelp() {
     Visualizer::PrintVisualizerHelp();
-    utility::PrintInfo("  -- Keys registered for callback functions --\n");
-    utility::PrintInfo("    ");
+    utility::NewPrintInfo("  -- Keys registered for callback functions --\n");
+    utility::NewPrintInfo("    ");
     for (auto &key_callback_pair : key_to_callback_) {
-        utility::PrintInfo("[%s] ",
-                           PrintKeyToString(key_callback_pair.first).c_str());
+        utility::NewPrintInfo("[{}] ",
+                           PrintKeyToString(key_callback_pair.first));
     }
-    utility::PrintInfo("\n");
-    utility::PrintInfo(
+    utility::NewPrintInfo("\n");
+    utility::NewPrintInfo(
             "    The default functions of these keys will be overridden.\n");
-    utility::PrintInfo("\n");
+    utility::NewPrintInfo("\n");
 }
 
 void VisualizerWithKeyCallback::RegisterKeyCallback(

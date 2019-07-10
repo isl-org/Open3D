@@ -95,7 +95,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
                 contraction /* = SimplificationContraction::Average */) const {
     auto mesh = std::make_shared<TriangleMesh>();
     if (voxel_size <= 0.0) {
-        utility::PrintWarning("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
+        utility::NewPrintWarning("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
         return mesh;
     }
 
@@ -105,7 +105,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "[VoxelGridFromPointCloud] voxel_size is too small.\n");
         return mesh;
     }

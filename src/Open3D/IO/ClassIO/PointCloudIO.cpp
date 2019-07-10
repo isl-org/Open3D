@@ -85,19 +85,19 @@ bool ReadPointCloud(const std::string &filename,
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_read_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, pointcloud);
-    utility::PrintDebug("Read geometry::PointCloud: %d vertices.\n",
+    utility::NewPrintDebug("Read geometry::PointCloud: {:d} vertices.\n",
                         (int)pointcloud.points_.size());
     if (remove_nan_points) {
         pointcloud.RemoveNoneFinitePoints(remove_nan_points,
@@ -113,20 +113,20 @@ bool WritePointCloud(const std::string &filename,
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     bool success =
             map_itr->second(filename, pointcloud, write_ascii, compressed);
-    utility::PrintDebug("Write geometry::PointCloud: %d vertices.\n",
+    utility::NewPrintDebug("Write geometry::PointCloud: {:d} vertices.\n",
                         (int)pointcloud.points_.size());
     return success;
 }

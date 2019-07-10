@@ -34,10 +34,12 @@ void pybind_console(py::module &m) {
     py::enum_<utility::VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
                                           "VerbosityLevel");
     vl.value("Error", utility::VerbosityLevel::VerboseError)
+            .value("Off", utility::VerbosityLevel::VerboseOff)
+            .value("Fatal", utility::VerbosityLevel::VerboseFatal)
+            .value("Error", utility::VerbosityLevel::VerboseError)
             .value("Warning", utility::VerbosityLevel::VerboseWarning)
             .value("Info", utility::VerbosityLevel::VerboseInfo)
             .value("Debug", utility::VerbosityLevel::VerboseDebug)
-            .value("Always", utility::VerbosityLevel::VerboseAlways)
             .export_values();
     // Trick to write docs without listing the members in the enum class again.
     vl.attr("__doc__") = docstring::static_property(

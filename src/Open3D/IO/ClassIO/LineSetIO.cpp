@@ -73,18 +73,18 @@ bool ReadLineSet(const std::string &filename,
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_lineset_read_function.find(filename_ext);
     if (map_itr == file_extension_to_lineset_read_function.end()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Read geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, lineset);
-    utility::PrintDebug("Read geometry::LineSet: %d vertices.\n",
+    utility::NewPrintDebug("Read geometry::LineSet: {:d} vertices.\n",
                         (int)lineset.points_.size());
     return success;
 }
@@ -96,18 +96,18 @@ bool WriteLineSet(const std::string &filename,
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Write geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_lineset_write_function.find(filename_ext);
     if (map_itr == file_extension_to_lineset_write_function.end()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "Write geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, lineset, write_ascii, compressed);
-    utility::PrintDebug("Write geometry::LineSet: %d vertices.\n",
+    utility::NewPrintDebug("Write geometry::LineSet: {:d} vertices.\n",
                         (int)lineset.points_.size());
     return success;
 }

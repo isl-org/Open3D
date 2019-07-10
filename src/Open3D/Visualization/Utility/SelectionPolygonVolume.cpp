@@ -56,7 +56,7 @@ bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const {
 
 bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "SelectionPolygonVolume read JSON failed: unsupported json "
                 "format.\n");
         return false;
@@ -64,7 +64,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     if (value.get("class_name", "").asString() != "SelectionPolygonVolume" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "SelectionPolygonVolume read JSON failed: unsupported json "
                 "format.\n");
         return false;
@@ -74,7 +74,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     axis_max_ = value.get("axis_max", 0.0).asDouble();
     const Json::Value &polygon_array = value["bounding_polygon"];
     if (polygon_array.size() == 0) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "SelectionPolygonVolume read JSON failed: empty trajectory.\n");
         return false;
     }
@@ -108,7 +108,7 @@ SelectionPolygonVolume::CropTriangleMesh(
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
         return std::make_shared<geometry::TriangleMesh>();
     if (input.HasVertices() && !input.HasTriangles()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "geometry::TriangleMesh contains vertices, but no triangles; "
                 "cropping will always yield an empty "
                 "geometry::TriangleMesh.\n");

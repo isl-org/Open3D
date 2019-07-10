@@ -46,14 +46,14 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::PrintWarning(
+        utility::NewPrintError(
                 "[DrawGeometries] Failed creating OpenGL window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            utility::PrintWarning("[DrawGeometries] Failed adding geometry.\n");
-            utility::PrintWarning(
+            utility::NewPrintWarning("[DrawGeometries] Failed adding geometry.\n");
+            utility::NewPrintWarning(
                     "[DrawGeometries] Possibly due to bad geometry or wrong "
                     "geometry type.\n");
             return false;
@@ -76,17 +76,17 @@ bool DrawGeometriesWithCustomAnimation(
     VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::PrintWarning(
+      utility::NewPrintError(
                 "[DrawGeometriesWithCustomAnimation] Failed creating OpenGL "
                 "window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            utility::PrintWarning(
+          utility::NewPrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed adding "
                     "geometry.\n");
-            utility::PrintWarning(
+          utility::NewPrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Possibly due to bad "
                     "geometry or wrong geometry type.\n");
             return false;
@@ -96,10 +96,10 @@ bool DrawGeometriesWithCustomAnimation(
             (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
     if (json_filename.empty() == false) {
         if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
-            utility::PrintWarning(
+          utility::NewPrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed loading json "
                     "file.\n");
-            utility::PrintWarning(
+          utility::NewPrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Possibly due to bad "
                     "file or file does not contain trajectory.\n");
             return false;
@@ -123,17 +123,17 @@ bool DrawGeometriesWithAnimationCallback(
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::PrintWarning(
+        utility::NewPrintError(
                 "[DrawGeometriesWithAnimationCallback] Failed creating OpenGL "
                 "window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "[DrawGeometriesWithAnimationCallback] Failed adding "
                     "geometry.\n");
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "[DrawGeometriesWithAnimationCallback] Possibly due to bad "
                     "geometry or wrong geometry type.\n");
             return false;
@@ -157,17 +157,17 @@ bool DrawGeometriesWithKeyCallbacks(
     VisualizerWithKeyCallback visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::PrintWarning(
+        utility::NewPrintError(
                 "[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL "
                 "window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "[DrawGeometriesWithKeyCallbacks] Failed adding "
                     "geometry.\n");
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "[DrawGeometriesWithKeyCallbacks] Possibly due to bad "
                     "geometry or wrong geometry type.\n");
             return false;
@@ -193,15 +193,15 @@ bool DrawGeometriesWithEditing(
     VisualizerWithEditing visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::PrintWarning(
+        utility::NewPrintError(
                 "[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "[DrawGeometriesWithEditing] Failed adding geometry.\n");
-            utility::PrintWarning(
+            utility::NewPrintWarning(
                     "[DrawGeometriesWithEditing] Possibly due to bad geometry "
                     "or wrong geometry type.\n");
             return false;

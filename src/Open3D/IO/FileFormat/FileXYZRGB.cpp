@@ -36,8 +36,8 @@ bool ReadPointCloudFromXYZRGB(const std::string &filename,
                               geometry::PointCloud &pointcloud) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
-        utility::PrintWarning("Read XYZRGB failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::NewPrintWarning("Read XYZRGB failed: unable to open file: {}\n",
+                              filename);
         return false;
     }
 
@@ -67,8 +67,8 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
 
     FILE *file = fopen(filename.c_str(), "w");
     if (file == NULL) {
-        utility::PrintWarning("Write XYZRGB failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::NewPrintWarning("Write XYZRGB failed: unable to open file: {}\n",
+                              filename);
         return false;
     }
 
@@ -77,9 +77,9 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
         const Eigen::Vector3d &color = pointcloud.colors_[i];
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
                     point(1), point(2), color(0), color(1), color(2)) < 0) {
-            utility::PrintWarning(
-                    "Write XYZRGB failed: unable to write file: %s\n",
-                    filename.c_str());
+            utility::NewPrintWarning(
+                    "Write XYZRGB failed: unable to write file: {}\n",
+                    filename);
             fclose(file);
             return false;  // error happens during writing.
         }

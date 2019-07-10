@@ -145,7 +145,7 @@ std::shared_ptr<geometry::TriangleMesh> SelectionPolygon::CropTriangleMesh(
         return std::make_shared<geometry::TriangleMesh>();
     }
     if (input.HasVertices() && !input.HasTriangles()) {
-        utility::PrintWarning(
+        utility::NewPrintWarning(
                 "geometry::TriangleMesh contains vertices, but no triangles; "
                 "cropping will always yield an empty "
                 "geometry::TriangleMesh.\n");

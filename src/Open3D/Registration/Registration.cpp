@@ -154,14 +154,14 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        utility::PrintError("Error: Invalid max_correspondence_distance.\n");
+        utility::NewPrintWarning("Invalid max_correspondence_distance.\n");
         return RegistrationResult(init);
     }
     if (estimation.GetTransformationEstimationType() ==
                 TransformationEstimationType::PointToPlane &&
         (!source.HasNormals() || !target.HasNormals())) {
-        utility::PrintError(
-                "Error: TransformationEstimationPointToPlane requires "
+        utility::NewPrintWarning(
+                "TransformationEstimationPointToPlane requires "
                 "pre-computed normal vectors.\n");
         return RegistrationResult(init);
     }
@@ -177,7 +177,7 @@ RegistrationResult RegistrationICP(
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
+        utility::NewPrintDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}\n", i,
                             result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
@@ -234,7 +234,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             result = this_result;
         }
     }
-    utility::PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
+    utility::NewPrintDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
                         result.inlier_rmse_);
     return result;
 }
@@ -365,8 +365,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #ifdef _OPENMP
     }
 #endif
-    utility::PrintDebug("total_validation : %d\n", total_validation);
-    utility::PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
+    utility::NewPrintDebug("total_validation : {:d}\n", total_validation);
+    utility::NewPrintDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
                         result.inlier_rmse_);
     return result;
 }

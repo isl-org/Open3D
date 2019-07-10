@@ -48,11 +48,10 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                                 filename.c_str());
 
     if (!warn.empty()) {
-        utility::PrintWarning("Read OBJ failed: %s\n", warn.c_str());
+        utility::NewPrintWarning("Read OBJ failed: {}\n", warn);
     }
-
     if (!err.empty()) {
-        utility::PrintError("Read OBJ failed: %s\n", err.c_str());
+        utility::NewPrintWarning("Read OBJ failed: {}\n", err);
     }
 
     if (!ret) {
@@ -85,7 +84,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
             int fv = shapes[s].mesh.num_face_vertices[f];
             if (fv != 3) {
-                utility::PrintWarning(
+                utility::NewPrintWarning(
                         "Read OBJ failed: facet with number of vertices not "
                         "equal to 3\n");
                 return false;
@@ -135,12 +134,12 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!file) {
-        utility::PrintWarning("Write OBJ failed: unable to open file.\n");
+        utility::NewPrintWarning("Write OBJ failed: unable to open file.\n");
         return false;
     }
 
     if (mesh.HasTriangleNormals()) {
-        utility::PrintWarning("Write OBJ can not include triangle normals.\n");
+        utility::NewPrintWarning("Write OBJ can not include triangle normals.\n");
     }
 
     file << "# Created by Open3D \n";
