@@ -98,8 +98,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         }
     }
     for (auto accpoint : voxelindex_to_accpoint) {
-        const Eigen::Vector3i &grid_index =
-                accpoint.second.GetVoxelCoordinate();
+        const Eigen::Vector3i &grid_index = accpoint.second.GetVoxelIndex();
         const Eigen::Vector3d &color =
                 has_colors ? accpoint.second.GetAverageColor()
                            : Eigen::Vector3d(0, 0, 0);
@@ -113,8 +112,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
         const PointCloud &input, double voxel_size) {
-    Eigen::Vector3d voxel_size3 =
-            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+    Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
     Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
     Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromPointCloudWithinBounds(input, voxel_size, min_bound,
@@ -174,8 +172,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMesh(
         const TriangleMesh &input, double voxel_size) {
-    Eigen::Vector3d voxel_size3 =
-            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+    Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
     Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
     Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromTriangleMeshWithinBounds(input, voxel_size, min_bound,

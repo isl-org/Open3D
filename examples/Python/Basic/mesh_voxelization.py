@@ -52,6 +52,7 @@ def mesh_voxelization(mesh,
                       w=300,
                       h=300,
                       use_depth=True,
+                      surface_method='pointcloud',
                       visualization=False):
 
     mesh.compute_vertex_normals()
@@ -97,8 +98,6 @@ def mesh_voxelization(mesh,
             param.intrinsic,
             param.extrinsic,
             depth_scale=1)
-        # pcd_agg += depth_to_pcd(depth,
-        #         param.intrinsic.intrinsic_matrix, trans, w, h)
 
         # depth map carving method
         if use_depth:
@@ -109,22 +108,23 @@ def mesh_voxelization(mesh,
 
     vis.destroy_window()
 
-    print('Surface voxel grid from aggregated point cloud')
-    voxel_pcl = o3d.geometry.VoxelGrid.create_from_point_cloud_within_bounds(
-        pcd_agg,
-        voxel_size=cubic_size / voxel_resolution,
-        min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
-        max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
+    print('Surface voxel grid from %s' % surface_method)
+    if surface_method == 'pointcloud':
+        voxel_surface = o3d.geometry.VoxelGrid.create_from_point_cloud_within_bounds(
+            pcd_agg,
+            voxel_size=cubic_size / voxel_resolution,
+            min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
+            max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
+    elif surface_method == 'mesh':
+        voxel_surface = o3d.geometry.VoxelGrid.create_from_triangle_mesh_within_bounds(
+            mesh,
+            voxel_size=cubic_size / voxel_resolution,
+            min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
+            max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
+    else:
+        raise Exception('invalid surface method')
 
-    # print('Surface voxel grid from triangle mesh')
-    # voxel_mesh = o3d.geometry.VoxelGrid.create_from_triangle_mesh_within_bounds(
-    #     mesh,
-    #     voxel_size=cubic_size / voxel_resolution,
-    #     min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
-    #     max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
-
-    voxel_carving_pcl = voxel_pcl + voxel_carving
-    # voxel_carving_mesh = voxel_mesh + voxel_carving
+    voxel_carving_surface = voxel_surface + voxel_carving
 
     if (visualization):
         print("visualize camera center")
@@ -132,27 +132,20 @@ def mesh_voxelization(mesh,
         centers.points = o3d.utility.Vector3dVector(centers_pts)
         o3d.visualization.draw_geometries([centers, mesh])
 
-        print("surface voxels from aggregated point clouds")
-        print(voxel_pcl)
-        o3d.visualization.draw_geometries([voxel_pcl])
-
-        # print("surface voxels from triangle mesh")
-        # print(voxel_mesh)
-        # o3d.visualization.draw_geometries([voxel_mesh])
+        print("surface voxels from %s" % surface_method)
+        print(voxel_surface)
+        o3d.visualization.draw_geometries([voxel_surface])
 
         print("carved voxels")
         print(voxel_carving)
         o3d.visualization.draw_geometries([voxel_carving])
 
-        print("combined voxels (carved + surface from pcl) together with mesh")
-        print(voxel_carving_pcl)
-        o3d.visualization.draw_geometries([voxel_carving_pcl, mesh])
+        print("combined voxels (carved + surface from %s) together with mesh" %
+              surface_method)
+        print(voxel_carving_surface)
+        o3d.visualization.draw_geometries([voxel_carving_surface, mesh])
 
-        # print("combined voxels (carved + surface from mesh) together with mesh")
-        # print(voxel_carving_mesh)
-        # o3d.visualization.draw_geometries([voxel_carving_mesh, mesh])
-
-    o3d.io.write_voxel_grid(output_filename, voxel_carving_pcl)
+    o3d.io.write_voxel_grid(output_filename, voxel_carving_surface)
 
 
 if __name__ == '__main__':

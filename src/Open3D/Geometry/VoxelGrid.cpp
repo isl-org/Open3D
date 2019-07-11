@@ -127,7 +127,6 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
     bool has_colors = voxelgrid.HasColors();
-    int idx = 0;
     for (auto &voxel : voxelgrid.voxels_) {
         if (has_colors) {
             voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_,
@@ -135,9 +134,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         } else {
             voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_);
         }
-        idx++;
     }
-    idx = 0;
     for (auto &voxel : voxels_) {
         if (has_colors) {
             voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_,
@@ -145,12 +142,11 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         } else {
             voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_);
         }
-        idx++;
     }
     this->voxels_.clear();
-    for (auto accpoint : voxelindex_to_accpoint) {
-        this->voxels_.push_back(Voxel(accpoint.second.GetVoxelCoordinate(),
-                                      accpoint.second.GetAverageColor()));
+    for (const auto &accpoint : voxelindex_to_accpoint) {
+        this->voxels_.emplace_back(Voxel(accpoint.second.GetVoxelIndex(),
+                                         accpoint.second.GetAverageColor()));
     }
     return *this;
 }

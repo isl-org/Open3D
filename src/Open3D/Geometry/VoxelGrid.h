@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
@@ -168,7 +169,14 @@ public:
     AvgColorVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 
 public:
-    void Add(const Eigen::Vector3i &voxel_index) { coordinate_ = voxel_index; }
+    void Add(const Eigen::Vector3i &voxel_index) {
+        if (num_of_points_ > 0 && voxel_index != voxel_index_) {
+            utility::PrintError(
+                    "Tried to aggregate ColorVoxel with different "
+                    "voxel_index\n");
+        }
+        voxel_index_ = voxel_index;
+    }
 
     void Add(const Eigen::Vector3i &voxel_index, const Eigen::Vector3d &color) {
         Add(voxel_index);
@@ -176,7 +184,7 @@ public:
         num_of_points_++;
     }
 
-    Eigen::Vector3i GetVoxelCoordinate() const { return coordinate_; }
+    Eigen::Vector3i GetVoxelIndex() const { return voxel_index_; }
 
     Eigen::Vector3d GetAverageColor() const {
         if (num_of_points_ > 0) {
@@ -188,7 +196,7 @@ public:
 
 public:
     int num_of_points_;
-    Eigen::Vector3i coordinate_;
+    Eigen::Vector3i voxel_index_;
     Eigen::Vector3d color_;
 };
 
