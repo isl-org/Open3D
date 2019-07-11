@@ -36,9 +36,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #include <fmt/time.h>
 
