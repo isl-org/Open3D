@@ -553,7 +553,7 @@ Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
 
 std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {
     auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
-    voxel_grid->FromOctree(*this);
+    voxel_grid->CreateFromOctree(*this);
     return voxel_grid;
 }
 
@@ -592,7 +592,7 @@ bool Octree::ConvertFromJsonValue(const Json::Value& value) {
     return rc;
 }
 
-void Octree::FromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
+void Octree::CreateFromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
     origin_ = voxel_grid.origin_;
     size_ = (voxel_grid.GetMaxBound() - origin_).maxCoeff();
     double half_voxel_size = voxel_grid.voxel_size_ / 2.;

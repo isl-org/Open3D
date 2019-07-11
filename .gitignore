@@ -29,6 +29,7 @@ docs/python_api/
 _vimrc_local.vim
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
+examples/TestData/voxelized.ply
 examples/Python/Basic/voxel_grid_test.ply
 examples/Python/Benchmark/testdata/
 examples/Python/Misc/test.jpg

@@ -144,7 +144,7 @@ endif ()
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
 
 # tritriintersect
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/tritriintersect" liblzf_INCLUDE_DIRS)
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/tomasakeninemoeller" tomasakeninemoeller_INCLUDE_DIRS)
 
 # PNG
 if (BUILD_PNG)
@@ -311,6 +311,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${JPEG_INCLUDE_DIRS}
      ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
+     ${tomasakeninemoeller_INCLUDE_DIRS}
      ${librealsense_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}

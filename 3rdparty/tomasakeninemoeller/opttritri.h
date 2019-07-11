@@ -1,4 +1,3 @@
-
 /* Triangle/triangle intersection test routine,
  * by Tomas Moller, 1997.
  * See article "A Fast Triangle-Triangle Intersection Test",
@@ -307,3 +306,16 @@ int NoDivTriTriIsect(double V0[3],double V1[3],double V2[3],
   if(isect1[1]<isect2[0] || isect2[1]<isect1[0]) return 0;
   return 1;
 }
+
+
+#undef FABS
+#undef USE_EPSILON_TEST
+#undef EPSILON
+#undef CROSS
+#undef DOT
+#undef SUB
+#undef SORT
+#undef EDGE_EDGE_TEST
+#undef EDGE_AGAINST_TRI_EDGES
+#undef POINT_IN_TRI
+#undef NEWCOMPUTE_INTERVALS
