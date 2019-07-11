@@ -29,6 +29,9 @@
 #include <Eigen/Core>
 #include <string>
 #include <vector>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #define FMT_STRING_ALIAS 1
 #include "fmt/format.h"
