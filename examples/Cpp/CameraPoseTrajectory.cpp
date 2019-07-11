@@ -32,11 +32,11 @@
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseDebug);
+    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
 
     if (argc != 3) {
-        utility::NewPrintInfo("Usage :\n");
-        utility::NewPrintInfo(
+        utility::LogInfo("Usage :\n");
+        utility::LogInfo(
                 ">    CameraPoseTrajectory trajectory_file pcds_dir\n");
         return 1;
     }
@@ -54,7 +54,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<const geometry::Geometry>> pcds;
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         char buff[DEFAULT_IO_BUFFER_SIZE];
-        std::string buffer = fmt::format("{}cloud_bin_{:d}.pcd", argv[2], (int)i);
+        std::string buffer =
+                fmt::format("{}cloud_bin_{:d}.pcd", argv[2], (int)i);
         if (utility::filesystem::FileExists(buffer.c_str())) {
             auto pcd = io::CreatePointCloudFromFile(buffer.c_str());
             pcd->Transform(trajectory.parameters_[i].extrinsic_);

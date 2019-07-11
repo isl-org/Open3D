@@ -154,13 +154,13 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        utility::NewPrintWarning("Invalid max_correspondence_distance.\n");
+        utility::LogWarning("Invalid max_correspondence_distance.\n");
         return RegistrationResult(init);
     }
     if (estimation.GetTransformationEstimationType() ==
                 TransformationEstimationType::PointToPlane &&
         (!source.HasNormals() || !target.HasNormals())) {
-        utility::NewPrintWarning(
+        utility::LogWarning(
                 "TransformationEstimationPointToPlane requires "
                 "pre-computed normal vectors.\n");
         return RegistrationResult(init);
@@ -177,8 +177,8 @@ RegistrationResult RegistrationICP(
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::NewPrintDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}\n", i,
-                            result.fitness_, result.inlier_rmse_);
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}\n",
+                          i, result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
@@ -234,8 +234,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             result = this_result;
         }
     }
-    utility::NewPrintDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
-                        result.inlier_rmse_);
+    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
+                      result.inlier_rmse_);
     return result;
 }
 
@@ -365,9 +365,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #ifdef _OPENMP
     }
 #endif
-    utility::NewPrintDebug("total_validation : {:d}\n", total_validation);
-    utility::NewPrintDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
-                        result.inlier_rmse_);
+    utility::LogDebug("total_validation : {:d}\n", total_validation);
+    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
+                      result.inlier_rmse_);
     return result;
 }
 

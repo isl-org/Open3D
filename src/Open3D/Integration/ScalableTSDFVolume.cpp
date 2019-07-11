@@ -70,7 +70,7 @@ void ScalableTSDFVolume::Integrate(
          image.color_.width_ != intrinsic.width_) ||
         (color_type_ != TSDFVolumeColorType::None &&
          image.color_.height_ != intrinsic.height_)) {
-        utility::NewPrintWarning(
+        utility::LogWarning(
                 "[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
         return;
     }

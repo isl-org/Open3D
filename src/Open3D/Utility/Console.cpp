@@ -46,86 +46,9 @@
 
 namespace open3d {
 
-namespace {
-
-using namespace utility;
-
-static VerbosityLevel global_verbosity_level = VerbosityLevel::VerboseWarning;
-
-static int64_t expected_console_count = 0;
-
-static int64_t current_console_progress = 0;
-
-static int current_console_progress_pixel = 0;
-
-static std::string console_progress_info = "";
-
-static const int CONSOLE_PROGRESS_RESOLUTION = 40;
-
-void PrintConsoleProgress() {
-    if (current_console_progress == expected_console_count) {
-        fmt::print("{}[{}] 100%\n", console_progress_info.c_str(),
-                  std::string(CONSOLE_PROGRESS_RESOLUTION, '=').c_str());
-    } else {
-        int new_console_progress_pixel =
-                int(current_console_progress * CONSOLE_PROGRESS_RESOLUTION /
-                    expected_console_count);
-        if (new_console_progress_pixel > current_console_progress_pixel) {
-            current_console_progress_pixel = new_console_progress_pixel;
-            int percent = int(current_console_progress * 100 /
-                              expected_console_count);
-            fmt::print("{}[{}>{}] {}%\r", console_progress_info.c_str(),
-                      std::string(current_console_progress_pixel, '=').c_str(),
-                      std::string(CONSOLE_PROGRESS_RESOLUTION - 1 -
-                                          current_console_progress_pixel,
-                                  ' ')
-                              .c_str(),
-                      percent);
-            fflush(stdout);
-        }
-    }
-}
-
-}  // unnamed namespace
-
 namespace utility {
 
-void SetVerbosityLevel(VerbosityLevel verbosity_level) {
-    global_verbosity_level = verbosity_level;
-}
-
-VerbosityLevel GetVerbosityLevel() { return global_verbosity_level; }
-
-
-
-
-void ResetConsoleProgress(const int64_t expected_count,
-                          const std::string &progress_info /* = ""*/) {
-    if (expected_count > 0) {
-        expected_console_count = expected_count;
-        current_console_progress = 0;
-    } else {
-        expected_console_count = 1;
-        current_console_progress = 1;
-    }
-    current_console_progress_pixel = -1;
-    console_progress_info = progress_info;
-    PrintConsoleProgress();
-}
-
-void AdvanceConsoleProgress() {
-    current_console_progress++;
-    PrintConsoleProgress();
-}
-
 std::string GetCurrentTimeStamp() {
-    // time_t rawtime;
-    // struct tm *timeinfo;
-    // char buffer[DEFAULT_IO_BUFFER_SIZE];
-    // time(&rawtime);
-    // timeinfo = localtime(&rawtime);
-    // strftime(buffer, DEFAULT_IO_BUFFER_SIZE, "%Y-%m-%d-%H-%M-%S", timeinfo);
-    // return std::string(buffer);
     std::time_t t = std::time(nullptr);
     return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }

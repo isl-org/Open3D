@@ -34,21 +34,21 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseDebug);
+    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintOpen3DVersion();
         // clang-format off
-        utility::NewPrintInfo("Usage:\n");
-        utility::NewPrintInfo("    > LineSet [filename]\n");
-        utility::NewPrintInfo("    The program will :\n");
-        utility::NewPrintInfo("    1. load the pointcloud in [filename].\n");
-        utility::NewPrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
-        utility::NewPrintInfo("    3. convert the correspondences to LineSet and render it.\n");
-        utility::NewPrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
-        utility::NewPrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
-        utility::NewPrintInfo("    6. convert to LineSet and render it.\n");
-        utility::NewPrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
+        utility::LogInfo("Usage:\n");
+        utility::LogInfo("    > LineSet [filename]\n");
+        utility::LogInfo("    The program will :\n");
+        utility::LogInfo("    1. load the pointcloud in [filename].\n");
+        utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
+        utility::LogInfo("    3. convert the correspondences to LineSet and render it.\n");
+        utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
+        utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
+        utility::LogInfo("    6. convert to LineSet and render it.\n");
+        utility::LogInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
         // clang-format on
         return 1;
     }

@@ -72,7 +72,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
         const PointCloud &input, double voxel_size) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        utility::NewPrintWarning("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
+        utility::LogWarning("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
         return output;
     }
     Eigen::Vector3d voxel_size3 =
@@ -81,7 +81,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::NewPrintWarning(
+        utility::LogWarning(
                 "[VoxelGridFromPointCloud] voxel_size is too small.\n");
         return output;
     }
@@ -107,7 +107,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
                            : Eigen::Vector3d(0, 0, 0);
         output->voxels_.emplace_back(grid_index, color);
     }
-    utility::NewPrintDebug(
+    utility::LogDebug(
             "Pointcloud is voxelized from {:d} points to {:d} voxels.\n",
             (int)input.points_.size(), (int)output->voxels_.size());
     return output;

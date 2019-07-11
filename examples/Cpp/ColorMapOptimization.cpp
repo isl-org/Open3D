@@ -31,11 +31,11 @@
 int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseDebug);
+    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
 
     if (argc != 2) {
-        utility::NewPrintInfo("Usage :\n");
-        utility::NewPrintInfo(">    ColorMapOptimization data_dir\n");
+        utility::LogInfo("Usage :\n");
+        utility::LogInfo(">    ColorMapOptimization data_dir\n");
         return 1;
     }
     // Read RGBD images
@@ -48,9 +48,9 @@ int main(int argc, char *argv[]) {
     assert(depth_filenames.size() == color_filenames.size());
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for (int i = 0; i < depth_filenames.size(); i++) {
-        utility::NewPrintDebug("reading {}...\n", depth_filenames[i]);
+        utility::LogDebug("reading {}...\n", depth_filenames[i]);
         auto depth = io::CreateImageFromFile(depth_filenames[i]);
-        utility::NewPrintDebug("reading {}...\n", color_filenames[i]);
+        utility::LogDebug("reading {}...\n", color_filenames[i]);
         auto color = io::CreateImageFromFile(color_filenames[i]);
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
                 *color, *depth, 1000.0, 3.0, false);

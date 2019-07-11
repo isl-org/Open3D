@@ -30,17 +30,17 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::NewPrintInfo("Usage:\n");
-    utility::NewPrintInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
-    utility::NewPrintInfo("      Manually crop geometry in speficied file.\n");
-    utility::NewPrintInfo("\n");
-    utility::NewPrintInfo("Options:\n");
-    utility::NewPrintInfo("    --pointcloud,             : Read geometry as point cloud.\n");
-    utility::NewPrintInfo("    --mesh,                   : Read geometry as mesh.\n");
-    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
-    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::NewPrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
-    utility::NewPrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
+    utility::LogInfo("      Manually crop geometry in speficied file.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Options:\n");
+    utility::LogInfo("    --pointcloud,             : Read geometry as point cloud.\n");
+    utility::LogInfo("    --mesh,                   : Read geometry as mesh.\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::LogInfo("    --voxel_size d            : Set downsample voxel size.\n");
+    utility::LogInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
     // clang-format on
 }
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     }
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
     double voxel_size =
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
     bool with_dialog =
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
         if (pcd_ptr->IsEmpty()) {
-            utility::NewPrintWarning("Failed to read the point cloud.\n");
+            utility::LogWarning("Failed to read the point cloud.\n");
             return 0;
         }
         vis.AddGeometry(pcd_ptr);
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
         if (mesh_ptr->IsEmpty()) {
-            utility::NewPrintWarning("Failed to read the mesh.\n");
+            utility::LogWarning("Failed to read the mesh.\n");
             return 0;
         }
         vis.AddGeometry(mesh_ptr);

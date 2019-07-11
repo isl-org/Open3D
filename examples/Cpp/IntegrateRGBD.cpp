@@ -33,22 +33,22 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::NewPrintInfo("Usage:\n");
-    utility::NewPrintInfo("    > IntegrateRGBD [options]\n");
-    utility::NewPrintInfo("      Integrate RGBD stream and extract geometry.\n");
-    utility::NewPrintInfo("\n");
-    utility::NewPrintInfo("Basic options:\n");
-    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
-    utility::NewPrintInfo("    --match file              : The match file of an RGBD stream. Must have.\n");
-    utility::NewPrintInfo("    --log file                : The log trajectory file. Must have.\n");
-    utility::NewPrintInfo("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
-    utility::NewPrintInfo("    --save_mesh               : Save a mesh created by marching cubes.\n");
-    utility::NewPrintInfo("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
-    utility::NewPrintInfo("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
-    utility::NewPrintInfo("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
-    utility::NewPrintInfo("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
-    utility::NewPrintInfo("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
-    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > IntegrateRGBD [options]\n");
+    utility::LogInfo("      Integrate RGBD stream and extract geometry.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Basic options:\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --match file              : The match file of an RGBD stream. Must have.\n");
+    utility::LogInfo("    --log file                : The log trajectory file. Must have.\n");
+    utility::LogInfo("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
+    utility::LogInfo("    --save_mesh               : Save a mesh created by marching cubes.\n");
+    utility::LogInfo("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
+    utility::LogInfo("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
+    utility::LogInfo("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
+    utility::LogInfo("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
+    utility::LogInfo("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
     // clang-format on
 }
 
@@ -77,8 +77,8 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsInt(argc, argv, "--resolution", 512);
     double sdf_trunc_percentage = utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc_percentage", 0.01);
-    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
+    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
 
     auto camera_trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(log_filename);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
             utility::filesystem::GetFileParentDirectory(match_filename).c_str();
     FILE *file = fopen(match_filename.c_str(), "r");
     if (file == NULL) {
-        utility::NewPrintError("Unable to open file {}\n", match_filename);
+        utility::LogError("Unable to open file {}\n", match_filename);
         fclose(file);
         return 0;
     }
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         std::vector<std::string> st;
         utility::SplitString(st, buffer, "\t\r\n ");
         if (st.size() >= 2) {
-            utility::NewPrintInfo("Processing frame {:d} ...\n", index);
+            utility::LogInfo("Processing frame {:d} ...\n", index);
             io::ReadImage(dir_name + st[0], depth);
             io::ReadImage(dir_name + st[1], color);
             auto rgbd = geometry::RGBDImage::CreateFromColorAndDepth(
@@ -118,23 +118,23 @@ int main(int argc, char *argv[]) {
             index++;
             if (index == (int)camera_trajectory->parameters_.size() ||
                 (every_k_frames > 0 && index % every_k_frames == 0)) {
-                utility::NewPrintInfo("Saving fragment {:d} ...\n", save_index);
+                utility::LogInfo("Saving fragment {:d} ...\n", save_index);
                 std::string save_index_str = std::to_string(save_index);
                 if (save_pointcloud) {
-                    utility::NewPrintInfo("Saving pointcloud {:d} ...\n",
-                                        save_index);
+                    utility::LogInfo("Saving pointcloud {:d} ...\n",
+                                     save_index);
                     auto pcd = volume.ExtractPointCloud();
                     io::WritePointCloud("pointcloud_" + save_index_str + ".ply",
                                         *pcd);
                 }
                 if (save_mesh) {
-                    utility::NewPrintInfo("Saving mesh {:d} ...\n", save_index);
+                    utility::LogInfo("Saving mesh {:d} ...\n", save_index);
                     auto mesh = volume.ExtractTriangleMesh();
                     io::WriteTriangleMesh("mesh_" + save_index_str + ".ply",
                                           *mesh);
                 }
                 if (save_voxel) {
-                    utility::NewPrintInfo("Saving voxel {:d} ...\n", save_index);
+                    utility::LogInfo("Saving voxel {:d} ...\n", save_index);
                     auto voxel = volume.ExtractVoxelPointCloud();
                     io::WritePointCloud("voxel_" + save_index_str + ".ply",
                                         *voxel);

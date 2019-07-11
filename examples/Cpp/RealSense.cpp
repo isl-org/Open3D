@@ -34,17 +34,17 @@ using namespace open3d;
 
 int main(int argc, char **args) {
     rs::context ctx;
-    utility::NewPrintInfo("There are {:d} connected RealSense devices.\n",
-                       ctx.get_device_count());
+    utility::LogInfo("There are {:d} connected RealSense devices.\n",
+                     ctx.get_device_count());
     if (ctx.get_device_count() == 0) {
         return 1;
     }
 
     rs::device *dev = ctx.get_device(0);
-    utility::NewPrintInfo("Using device 0, an {}\n", dev->get_name());
-    utility::NewPrintInfo("    Serial number: {}\n", dev->get_serial());
-    utility::NewPrintInfo("    Firmware version: {}\n\n",
-                       dev->get_firmware_version());
+    utility::LogInfo("Using device 0, an {}\n", dev->get_name());
+    utility::LogInfo("    Serial number: {}\n", dev->get_serial());
+    utility::LogInfo("    Firmware version: {}\n\n",
+                     dev->get_firmware_version());
 
     dev->set_option(rs::option::color_enable_auto_exposure, 0.0);
     dev->set_option(rs::option::color_exposure, 625);
@@ -66,41 +66,41 @@ int main(int argc, char **args) {
     rs::extrinsics extrinsics =
             dev->get_extrinsics(rs::stream::depth, rs::stream::rectified_color);
     for (int i = 0; i < 9; i++) {
-        utility::NewPrintInfo("{:.6f} ", extrinsics.rotation[i]);
+        utility::LogInfo("{:.6f} ", extrinsics.rotation[i]);
     }
-    utility::NewPrintInfo("\n");
+    utility::LogInfo("\n");
     for (int i = 0; i < 3; i++) {
-        utility::NewPrintInfo("{:.6f} ", extrinsics.translation[i]);
+        utility::LogInfo("{:.6f} ", extrinsics.translation[i]);
     }
-    utility::NewPrintInfo("\n");
+    utility::LogInfo("\n");
 
     rs::intrinsics depth_intr = dev->get_stream_intrinsics(rs::stream::depth);
-    utility::NewPrintInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n", depth_intr.width,
-                       depth_intr.height, depth_intr.fx, depth_intr.fy,
-                       depth_intr.ppx, depth_intr.ppy);
+    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n",
+                     depth_intr.width, depth_intr.height, depth_intr.fx,
+                     depth_intr.fy, depth_intr.ppx, depth_intr.ppy);
     for (int i = 0; i < 5; i++) {
-        utility::NewPrintInfo("{:.6f} ", depth_intr.coeffs[i]);
+        utility::LogInfo("{:.6f} ", depth_intr.coeffs[i]);
     }
-    utility::NewPrintInfo("\n\n");
+    utility::LogInfo("\n\n");
 
     rs::intrinsics color_intr = dev->get_stream_intrinsics(rs::stream::color);
-    utility::NewPrintInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n", color_intr.width,
-                       color_intr.height, color_intr.fx, color_intr.fy,
-                       color_intr.ppx, color_intr.ppy);
+    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n",
+                     color_intr.width, color_intr.height, color_intr.fx,
+                     color_intr.fy, color_intr.ppx, color_intr.ppy);
     for (int i = 0; i < 5; i++) {
-        utility::NewPrintInfo("{:.6f} ", color_intr.coeffs[i]);
+        utility::LogInfo("{:.6f} ", color_intr.coeffs[i]);
     }
-    utility::NewPrintInfo("\n\n");
+    utility::LogInfo("\n\n");
 
     rs::intrinsics rect_intr =
             dev->get_stream_intrinsics(rs::stream::rectified_color);
-    utility::NewPrintInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n", rect_intr.width,
-                       rect_intr.height, rect_intr.fx, rect_intr.fy,
-                       rect_intr.ppx, rect_intr.ppy);
+    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n", rect_intr.width,
+                     rect_intr.height, rect_intr.fx, rect_intr.fy,
+                     rect_intr.ppx, rect_intr.ppy);
     for (int i = 0; i < 5; i++) {
-        utility::NewPrintInfo("{:.6f} ", rect_intr.coeffs[i]);
+        utility::LogInfo("{:.6f} ", rect_intr.coeffs[i]);
     }
-    utility::NewPrintInfo("\n\n");
+    utility::LogInfo("\n\n");
 
     visualization::Visualizer depth_vis, color_vis;
     if (depth_vis.CreateVisualizerWindow("Depth", 640, 480, 15, 50) == false ||
@@ -122,8 +122,8 @@ int main(int argc, char **args) {
         depth_vis.UpdateGeometry();
         color_vis.UpdateGeometry();
 
-        utility::NewPrintInfo("{:.2f}\n",
-                           dev->get_option(rs::option::color_white_balance));
+        utility::LogInfo("{:.2f}\n",
+                         dev->get_option(rs::option::color_white_balance));
 
         /*
         rs::option opts[10] = {
@@ -140,7 +140,8 @@ int main(int argc, char **args) {
                 };
         double value[10];
         dev->get_options((const rs::option *)opts, 10, (double *)value);
-        utility::NewPrintInfo("{:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}
+        utility::LogInfo("{:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}
+        {:.2f} {:.2f}
         {:.2f}\n", value[0], value[1], value[2], value[3], value[4], value[5],
         value[6], value[7], value[8], value[9]);
         */

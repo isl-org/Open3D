@@ -30,15 +30,15 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::NewPrintInfo("Usage:\n");
-    utility::NewPrintInfo("    > MergeMesh source_directory target_file [option]\n");
-    utility::NewPrintInfo("      Merge mesh files under <source_directory>.\n");
-    utility::NewPrintInfo("\n");
-    utility::NewPrintInfo("Options (listed in the order of execution priority):\n");
-    utility::NewPrintInfo("    --help, -h                : Print help information.\n");
-    utility::NewPrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::NewPrintInfo("    --purge                   : Clear duplicated and unreferenced vertices and\n");
-    utility::NewPrintInfo("                                triangles.\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > MergeMesh source_directory target_file [option]\n");
+    utility::LogInfo("      Merge mesh files under <source_directory>.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Options (listed in the order of execution priority):\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::LogInfo("    --purge                   : Clear duplicated and unreferenced vertices and\n");
+    utility::LogInfo("                                triangles.\n");
     // clang-format on
 }
 
@@ -46,13 +46,13 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseDebug);
+    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
     if (argc <= 2 || utility::ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
         return 0;
     }
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
 
     std::string directory(argv[1]);
     std::vector<std::string> filenames;

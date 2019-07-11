@@ -80,9 +80,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
 #ifdef _OPENMP
-    utility::NewPrintInfo("OpenMP is supported.\n");
+    utility::LogInfo("OpenMP is supported.\n");
 #else
-    utility::NewPrintInfo("OpenMP is not supported.\n");
+    utility::LogInfo("OpenMP is not supported.\n");
 #endif
 
 #ifdef _OPENMP
@@ -105,34 +105,35 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     if (nThreads == NUM_THREADS) {
-        utility::NewPrintInfo("{:d} OpenMP threads were used.\n", NUM_THREADS);
+        utility::LogInfo("{:d} OpenMP threads were used.\n", NUM_THREADS);
         nRet = 0;
     } else {
-        utility::NewPrintInfo("Expected {:d} OpenMP threads, but {:d} were used.\n",
-                           NUM_THREADS, nThreads);
+        utility::LogInfo("Expected {:d} OpenMP threads, but {:d} were used.\n",
+                         NUM_THREADS, nThreads);
         nRet = 1;
     }
 
     if (nSum != nSumCalc) {
-        utility::NewPrintInfo(
+        utility::LogInfo(
                 "The sum of {:d} through {:d} should be {:d}, "
                 "but {:d} was reported!\n",
                 NUM_START, NUM_END, nSumCalc, nSum);
         nRet = 1;
     } else {
-        utility::NewPrintInfo("The sum of {:d} through {:d} is {:d}\n", NUM_START,
-                           NUM_END, nSum);
+        utility::LogInfo("The sum of {:d} through {:d} is {:d}\n", NUM_START,
+                         NUM_END, nSum);
     }
 
     int test_thread = 256;
     if (argc > 1) {
         test_thread = std::stoi(argv[1]);
     }
-    open3d::utility::NewPrintInfo("Benchmark multithreading up to {:d} threads.\n",
-                               test_thread);
+    open3d::utility::LogInfo("Benchmark multithreading up to {:d} threads.\n",
+                             test_thread);
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        std::string buff = fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
+        std::string buff =
+                fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
         open3d::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
@@ -142,7 +143,8 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        std::string buff = fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
+        std::string buff =
+                fmt::format("simple task, {:d} tasks, {:d} threads", i, i);
         open3d::utility::ScopeTimer t(buff.c_str());
         std::vector<std::thread> threads(i);
         for (int k = 0; k < i; k++) {
@@ -164,7 +166,8 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
-        std::string buff = fmt::format("svd task, {:d} tasks, {:d} threads", i, i);
+        std::string buff =
+                fmt::format("svd task, {:d} tasks, {:d} threads", i, i);
         open3d::utility::ScopeTimer t(buff.c_str());
         std::vector<std::thread> threads(i);
         for (int k = 0; k < i; k++) {

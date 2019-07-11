@@ -30,8 +30,8 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::NewPrintInfo("Usage :\n");
-    utility::NewPrintInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
+    utility::LogInfo("Usage :\n");
+    utility::LogInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
     // clang-format on
 }
 
@@ -42,34 +42,33 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    utility::NewPrintInfo("Switch is {}.\n",
-                       utility::ProgramOptionExists(argc, argv, "--switch")
-                               ? "ON"
-                               : "OFF");
-    utility::NewPrintInfo("Int is {:d}\n",
-                       utility::GetProgramOptionAsInt(argc, argv, "--int"));
-    utility::NewPrintInfo("Double is {:.10f}\n", utility::GetProgramOptionAsDouble(
-                                                    argc, argv, "--double"));
-    utility::NewPrintInfo(
-            "String is {}\n",
-            utility::GetProgramOptionAsString(argc, argv, "--string"));
+    utility::LogInfo("Switch is {}.\n",
+                     utility::ProgramOptionExists(argc, argv, "--switch")
+                             ? "ON"
+                             : "OFF");
+    utility::LogInfo("Int is {:d}\n",
+                     utility::GetProgramOptionAsInt(argc, argv, "--int"));
+    utility::LogInfo("Double is {:.10f}\n",
+                     utility::GetProgramOptionAsDouble(argc, argv, "--double"));
+    utility::LogInfo("String is {}\n",
+                     utility::GetProgramOptionAsString(argc, argv, "--string"));
     std::vector<std::string> strs;
     utility::SplitString(
             strs, utility::GetProgramOptionAsString(argc, argv, "--string"),
             ",.", true);
     for (auto &str : strs) {
-        utility::NewPrintInfo("\tSubstring : {}\n", str);
+        utility::LogInfo("\tSubstring : {}\n", str);
     }
     Eigen::VectorXd vec =
             utility::GetProgramOptionAsEigenVectorXd(argc, argv, "--vector");
-    utility::NewPrintInfo("Vector is (");
+    utility::LogInfo("Vector is (");
     for (auto i = 0; i < vec.size(); i++) {
         if (i == 0) {
-            utility::NewPrintInfo("{:.2f}", vec(i));
+            utility::LogInfo("{:.2f}", vec(i));
         } else {
-            utility::NewPrintInfo("{:.2f}", vec(i));
+            utility::LogInfo("{:.2f}", vec(i));
         }
     }
-    utility::NewPrintInfo(")\n");
+    utility::LogInfo(")\n");
     return 0;
 }

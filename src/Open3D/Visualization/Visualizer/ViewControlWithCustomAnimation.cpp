@@ -168,7 +168,8 @@ std::string ViewControlWithCustomAnimation::GetStatusString() const {
         if (view_trajectory_.view_status_.empty()) {
             buffer = "empty trajectory";
         } else {
-            buffer = fmt::format("#{} keyframe ({} in total{})",
+            buffer = fmt::format(
+                    "#{} keyframe ({} in total{})",
                     (unsigned int)CurrentKeyframe() + 1,
                     (unsigned int)view_trajectory_.view_status_.size(),
                     view_trajectory_.is_loop_ ? ", looped" : "");
@@ -178,9 +179,9 @@ std::string ViewControlWithCustomAnimation::GetStatusString() const {
             buffer = "empty trajectory";
         } else {
             buffer = fmt::format(buffer, "#{} frame ({} in total{})",
-                    (unsigned int)CurrentFrame() + 1,
-                    (unsigned int)view_trajectory_.NumOfFrames(),
-                    view_trajectory_.is_loop_ ? ", looped" : "");
+                                 (unsigned int)CurrentFrame() + 1,
+                                 (unsigned int)view_trajectory_.NumOfFrames(),
+                                 view_trajectory_.is_loop_ ? ", looped" : "");
         }
     }
     return prefix + std::string(buffer);
@@ -238,8 +239,8 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
         json_filename =
                 "ViewTrajectory_" + utility::GetCurrentTimeStamp() + ".json";
     }
-    utility::NewPrintDebug("[Visualizer] Trejactory capture to {}\n",
-                        json_filename.c_str());
+    utility::LogDebug("[Visualizer] Trejactory capture to {}\n",
+                      json_filename.c_str());
     return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 

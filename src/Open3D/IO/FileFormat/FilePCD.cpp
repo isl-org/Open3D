@@ -79,11 +79,11 @@ public:
 
 bool CheckHeader(PCDHeader &header) {
     if (header.points <= 0 || header.pointsize <= 0) {
-        utility::NewPrintWarning("[CheckHeader] PCD has no data.\n");
+        utility::LogWarning("[CheckHeader] PCD has no data.\n");
         return false;
     }
     if (header.fields.size() == 0 || header.pointsize <= 0) {
-        utility::NewPrintWarning("[CheckHeader] PCD has no fields.\n");
+        utility::LogWarning("[CheckHeader] PCD has no fields.\n");
         return false;
     }
     header.has_points = false;
@@ -120,7 +120,7 @@ bool CheckHeader(PCDHeader &header) {
     header.has_normals = (has_normal_x && has_normal_y && has_normal_z);
     header.has_colors = (has_rgb || has_rgba);
     if (header.has_points == false) {
-        utility::NewPrintWarning(
+        utility::LogWarning(
                 "[CheckHeader] Fields for point data are not complete.\n");
         return false;
     }
@@ -151,7 +151,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
                    line_type.substr(0, 7) == "COLUMNS") {
             specified_channel_count = st.size() - 1;
             if (specified_channel_count == 0) {
-                utility::NewPrintWarning("[ReadPCDHeader] Bad PCD file format.\n");
+                utility::LogWarning("[ReadPCDHeader] Bad PCD file format.\n");
                 return false;
             }
             header.fields.resize(specified_channel_count);
@@ -169,7 +169,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
             header.pointsize = offset;
         } else if (line_type.substr(0, 4) == "SIZE") {
             if (specified_channel_count != st.size() - 1) {
-                utility::NewPrintWarning("[ReadPCDHeader] Bad PCD file format.\n");
+                utility::LogWarning("[ReadPCDHeader] Bad PCD file format.\n");
                 return false;
             }
             int offset = 0, col_type = 0;
@@ -182,7 +182,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
             header.pointsize = offset;
         } else if (line_type.substr(0, 4) == "TYPE") {
             if (specified_channel_count != st.size() - 1) {
-                utility::NewPrintWarning("[ReadPCDHeader] Bad PCD file format.\n");
+                utility::LogWarning("[ReadPCDHeader] Bad PCD file format.\n");
                 return false;
             }
             for (size_t i = 0; i < specified_channel_count; i++) {
@@ -190,7 +190,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
             }
         } else if (line_type.substr(0, 5) == "COUNT") {
             if (specified_channel_count != st.size() - 1) {
-                utility::NewPrintWarning("[ReadPCDHeader] Bad PCD file format.\n");
+                utility::LogWarning("[ReadPCDHeader] Bad PCD file format.\n");
                 return false;
             }
             int count_offset = 0, offset = 0, col_count = 0;
@@ -338,7 +338,7 @@ bool ReadPCDData(FILE *file,
     if (header.has_points) {
         pointcloud.points_.resize(header.points);
     } else {
-        utility::NewPrintWarning(
+        utility::LogWarning(
                 "[ReadPCDData] Fields for point data are not complete.\n");
         return false;
     }
@@ -397,7 +397,7 @@ bool ReadPCDData(FILE *file,
         std::unique_ptr<char[]> buffer(new char[header.pointsize]);
         for (int i = 0; i < header.points; i++) {
             if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
-                utility::NewPrintWarning(
+                utility::LogWarning(
                         "[ReadPCDData] Failed to read data record.\n");
                 pointcloud.Clear();
                 return false;
@@ -438,23 +438,24 @@ bool ReadPCDData(FILE *file,
         std::uint32_t compressed_size;
         std::uint32_t uncompressed_size;
         if (fread(&compressed_size, sizeof(compressed_size), 1, file) != 1) {
-            utility::NewPrintWarning("[ReadPCDData] Failed to read data record.\n");
+            utility::LogWarning("[ReadPCDData] Failed to read data record.\n");
             pointcloud.Clear();
             return false;
         }
         if (fread(&uncompressed_size, sizeof(uncompressed_size), 1, file) !=
             1) {
-            utility::NewPrintWarning("[ReadPCDData] Failed to read data record.\n");
+            utility::LogWarning("[ReadPCDData] Failed to read data record.\n");
             pointcloud.Clear();
             return false;
         }
-        utility::NewPrintWarning(
-                "PCD data with {:d} compressed size, and {:d} uncompressed size.\n",
+        utility::LogWarning(
+                "PCD data with {:d} compressed size, and {:d} uncompressed "
+                "size.\n",
                 compressed_size, uncompressed_size);
         std::unique_ptr<char[]> buffer_compressed(new char[compressed_size]);
         if (fread(buffer_compressed.get(), 1, compressed_size, file) !=
             compressed_size) {
-            utility::NewPrintWarning("[ReadPCDData] Failed to read data record.\n");
+            utility::LogWarning("[ReadPCDData] Failed to read data record.\n");
             pointcloud.Clear();
             return false;
         }
@@ -463,7 +464,7 @@ bool ReadPCDData(FILE *file,
                            (unsigned int)compressed_size, buffer.get(),
                            (unsigned int)uncompressed_size) !=
             uncompressed_size) {
-            utility::NewPrintWarning("[ReadPCDData] Uncompression failed.\n");
+            utility::LogWarning("[ReadPCDData] Uncompression failed.\n");
             pointcloud.Clear();
             return false;
         }
@@ -693,10 +694,10 @@ bool WritePCDData(FILE *file,
                 lzf_compress(buffer.get(), buffer_size_in_bytes,
                              buffer_compressed.get(), buffer_size_in_bytes * 2);
         if (size_compressed == 0) {
-            utility::NewPrintWarning("[WritePCDData] Failed to compress data.\n");
+            utility::LogWarning("[WritePCDData] Failed to compress data.\n");
             return false;
         }
-        utility::NewPrintDebug(
+        utility::LogDebug(
                 "[WritePCDData] {:d} bytes data compressed into {:d} bytes.\n",
                 buffer_size_in_bytes, size_compressed);
         fwrite(&size_compressed, sizeof(size_compressed), 1, file);
@@ -710,34 +711,36 @@ bool WritePCDData(FILE *file,
 
 namespace io {
 bool ReadPointCloudFromPCD(const std::string &filename,
-                           geometry::PointCloud &pointcloud) {
+                           geometry::PointCloud &pointcloud,
+                           bool print_progress) {
     PCDHeader header;
     FILE *file = fopen(filename.c_str(), "rb");
     if (file == NULL) {
-        utility::NewPrintWarning("Read PCD failed: unable to open file: {}\n",
-                              filename);
+        utility::LogWarning("Read PCD failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
     if (ReadPCDHeader(file, header) == false) {
-        utility::NewPrintWarning("Read PCD failed: unable to parse header.\n");
+        utility::LogWarning("Read PCD failed: unable to parse header.\n");
         fclose(file);
         return false;
     }
-    utility::NewPrintDebug(
-            "PCD header indicates {:d} fields, {:d} bytes per point, and {:d} points "
+    utility::LogDebug(
+            "PCD header indicates {:d} fields, {:d} bytes per point, and {:d} "
+            "points "
             "in total.\n",
             (int)header.fields.size(), header.pointsize, header.points);
     for (const auto &field : header.fields) {
-        utility::NewPrintDebug("{}, {}, {:d}, {:d}, {:d}\n", field.name.c_str(),
-                            field.type, field.size, field.count, field.offset);
+        utility::LogDebug("{}, {}, {:d}, {:d}, {:d}\n", field.name.c_str(),
+                          field.type, field.size, field.count, field.offset);
     }
-    utility::NewPrintDebug("Compression method is {:d}.\n", (int)header.datatype);
-    utility::NewPrintDebug("Points: {};  normals: {};  colors: {}\n",
-                        header.has_points ? "yes" : "no",
-                        header.has_normals ? "yes" : "no",
-                        header.has_colors ? "yes" : "no");
+    utility::LogDebug("Compression method is {:d}.\n", (int)header.datatype);
+    utility::LogDebug("Points: {};  normals: {};  colors: {}\n",
+                      header.has_points ? "yes" : "no",
+                      header.has_normals ? "yes" : "no",
+                      header.has_colors ? "yes" : "no");
     if (ReadPCDData(file, header, pointcloud) == false) {
-        utility::NewPrintWarning("Read PCD failed: unable to read data.\n");
+        utility::LogWarning("Read PCD failed: unable to read data.\n");
         fclose(file);
         return false;
     }
@@ -748,24 +751,25 @@ bool ReadPointCloudFromPCD(const std::string &filename,
 bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           bool write_ascii /* = false*/,
-                          bool compressed /* = false*/) {
+                          bool compressed /* = false*/,
+                          bool print_progress) {
     PCDHeader header;
     if (GenerateHeader(pointcloud, write_ascii, compressed, header) == false) {
-        utility::NewPrintWarning("Write PCD failed: unable to generate header.\n");
+        utility::LogWarning("Write PCD failed: unable to generate header.\n");
         return false;
     }
     FILE *file = fopen(filename.c_str(), "wb");
     if (file == NULL) {
-        utility::NewPrintWarning("Write PCD failed: unable to open file.\n");
+        utility::LogWarning("Write PCD failed: unable to open file.\n");
         return false;
     }
     if (WritePCDHeader(file, header) == false) {
-        utility::NewPrintWarning("Write PCD failed: unable to write header.\n");
+        utility::LogWarning("Write PCD failed: unable to write header.\n");
         fclose(file);
         return false;
     }
     if (WritePCDData(file, header, pointcloud) == false) {
-        utility::NewPrintWarning("Write PCD failed: unable to write data.\n");
+        utility::LogWarning("Write PCD failed: unable to write data.\n");
         fclose(file);
         return false;
     }

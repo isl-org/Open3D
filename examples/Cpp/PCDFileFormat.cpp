@@ -30,17 +30,17 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseDebug);
+    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintOpen3DVersion();
         // clang-format off
-        utility::NewPrintInfo("Usage:\n");
-        utility::NewPrintInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
-        utility::NewPrintInfo("    The program will :\n");
-        utility::NewPrintInfo("    1. load the pointcloud in [filename].\n");
-        utility::NewPrintInfo("    2. visualize the point cloud.\n");
-        utility::NewPrintInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
+        utility::LogInfo("Usage:\n");
+        utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
+        utility::LogInfo("    The program will :\n");
+        utility::LogInfo("    1. load the pointcloud in [filename].\n");
+        utility::LogInfo("    2. visualize the point cloud.\n");
+        utility::LogInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
         // clang-format on
         return 0;
     }
