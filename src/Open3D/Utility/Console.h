@@ -35,6 +35,7 @@
 
 #define FMT_STRING_ALIAS 1
 #include "fmt/format.h"
+#include "fmt/printf.h"
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
@@ -148,6 +149,7 @@ public:
         }
     }
 
+
     template <typename... Args>
     void Fatal(const char *format, const Args &... args) {
         VFatal(format, fmt::make_format_args(args...));
@@ -171,6 +173,54 @@ public:
     template <typename... Args>
     void Debug(const char *format, const Args &... args) {
         VDebug(format, fmt::make_format_args(args...));
+    }
+
+
+    template <typename... Args>
+    void Fatalf(const char *format, const Args &... args) {
+        if (verbosity_level_ >= VerbosityLevel::Fatal) {
+            ChangeConsoleColor(TextColor::Red, 1);
+            fmt::print("[Open3D FATAL] ");
+            fmt::printf(format, args...);
+            ResetConsoleColor();
+            throw std::runtime_error("");
+        }
+    }
+
+    template <typename... Args>
+    void Errorf(const char *format, const Args &... args) {
+        if (verbosity_level_ >= VerbosityLevel::Error) {
+            ChangeConsoleColor(TextColor::Red, 1);
+            fmt::print("[Open3D ERROR] ");
+            fmt::printf(format, args...);
+            ResetConsoleColor();
+        }
+    }
+
+    template <typename... Args>
+    void Warningf(const char *format, const Args &... args) {
+        if (verbosity_level_ >= VerbosityLevel::Warning) {
+            ChangeConsoleColor(TextColor::Yellow, 1);
+            fmt::print("[Open3D WARNING] ");
+            fmt::printf(format, args...);
+            ResetConsoleColor();
+        }
+    }
+
+    template <typename... Args>
+    void Infof(const char *format, const Args &... args) {
+        if (verbosity_level_ >= VerbosityLevel::Info) {
+            fmt::print("[Open3D INFO] ");
+            fmt::printf(format, args...);
+        }
+    }
+
+    template <typename... Args>
+    void Debugf(const char *format, const Args &... args) {
+        if (verbosity_level_ >= VerbosityLevel::Debug) {
+            fmt::print("[Open3D DEBUG] ");
+            fmt::printf(format, args...);
+        }
     }
 
 public:
@@ -209,6 +259,33 @@ template <typename... Args>
 inline void LogDebug(const char *format, const Args &... args) {
     Logger::i().VDebug(format, fmt::make_format_args(args...));
 }
+
+template <typename... Args>
+inline void LogFatalf(const char *format, const Args &... args) {
+    Logger::i().Fatalf(format, args...);
+}
+
+template <typename... Args>
+inline void LogErrorf(const char *format, const Args &... args) {
+    Logger::i().Errorf(format, args...);
+}
+
+template <typename... Args>
+inline void LogWarningf(const char *format, const Args &... args) {
+    Logger::i().Warningf(format, args...);
+}
+
+template <typename... Args>
+inline void LogInfof(const char *format, const Args &... args) {
+    Logger::i().Infof(format, args...);
+}
+
+template <typename... Args>
+inline void LogDebugf(const char *format, const Args &... args) {
+    Logger::i().Debugf(format, args...);
+}
+
+
 
 class ConsoleProgressBar {
 public:
