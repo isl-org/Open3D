@@ -32,7 +32,7 @@ matrix:
         - mkdir build
         - cd build
         - cmake -DPYTHON_EXECUTABLE=`which python` ..
-        - pip install -U yapf
+        - pip install -U yapf==0.28.0
         - make check-style
 
     # Build docs only

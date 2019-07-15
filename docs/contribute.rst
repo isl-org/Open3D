@@ -165,15 +165,18 @@ Install YAPF
 -------------------------------
 
 We use `YAPF <https://github.com/google/yapf.git>`_ for Python formatting.
+Different YAPF versions may produce slightly different formatting results, thus
+we choose version ``0.28.0`` as the standard version to be used.
+
 Install YAPF with
 
 .. code:: bash
 
    # For Pip
-   pip install yapf
+   pip install yapf==0.28.0
 
    # For conda
-   conda install yapf
+   conda install yapf=0.28.0
 
 You can also download `YAPF <https://github.com/google/yapf.git>`_ and install
 it from source.
