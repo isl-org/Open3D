@@ -113,7 +113,7 @@ public:
             fmt::print("[Open3D FATAL] ");
             fmt::vprint(format, args);
             ResetConsoleColor();
-            throw std::runtime_error("");
+            exit(-1);
         }
     }
 
@@ -149,7 +149,6 @@ public:
         }
     }
 
-
     template <typename... Args>
     void Fatal(const char *format, const Args &... args) {
         VFatal(format, fmt::make_format_args(args...));
@@ -174,7 +173,6 @@ public:
     void Debug(const char *format, const Args &... args) {
         VDebug(format, fmt::make_format_args(args...));
     }
-
 
     template <typename... Args>
     void Fatalf(const char *format, const Args &... args) {
@@ -284,8 +282,6 @@ template <typename... Args>
 inline void LogDebugf(const char *format, const Args &... args) {
     Logger::i().Debugf(format, args...);
 }
-
-
 
 class ConsoleProgressBar {
 public:

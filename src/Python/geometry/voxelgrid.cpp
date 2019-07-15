@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/VoxelGrid.h"
+#include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Python/docstring.h"
@@ -90,15 +92,48 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxels.")
             .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
+            .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
+                 "depth_map"_a, "camera_params"_a,
+                 "Remove all voxels from the VoxelGrid where none of the "
+                 "boundary points of the voxel projects to depth value that is "
+                 "smaller, or equal than the projected depth of the boundary "
+                 "point. The point is not carved if none of the boundary "
+                 "points of the voxel projects to a valid image location.")
+            .def("carve_silhouette", &geometry::VoxelGrid::CarveSilhouette,
+                 "silhouette_mask"_a, "camera_params"_a,
+                 "Remove all voxels from the VoxelGrid where none of the "
+                 "boundary points of the voxel projects to a valid mask pixel "
+                 "(pixel value > 0). The point is not carved if none of the "
+                 "boundary points of the voxel projects to a valid image "
+                 "location.")
             .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
-            .def("from_octree", &geometry::VoxelGrid::FromOctree,
+            .def("create_from_octree", &geometry::VoxelGrid::CreateFromOctree,
                  "octree"_a
                  "Convert from Octree.")
+            .def_static("create_dense", &geometry::VoxelGrid::CreateDense,
+                        "Creates a voxel grid where every voxel is set (hence "
+                        "dense). This is a useful starting point for voxel "
+                        "carving",
+                        "origin"_a, "voxel_size"_a, "width"_a, "height"_a,
+                        "depth"_a)
             .def_static("create_from_point_cloud",
                         &geometry::VoxelGrid::CreateFromPointCloud,
-                        "Function to make voxels from scanned point cloud",
+                        "Function to make voxels from a PointCloud", "input"_a,
+                        "voxel_size"_a)
+            .def_static("create_from_point_cloud_within_bounds",
+                        &geometry::VoxelGrid::CreateFromPointCloudWithinBounds,
+                        "Function to make voxels from a PointCloud", "input"_a,
+                        "voxel_size"_a, "min_bound"_a, "max_bound"_a)
+            .def_static("create_from_triangle_mesh",
+                        &geometry::VoxelGrid::CreateFromTriangleMesh,
+                        "Function to make voxels from a TriangleMesh",
                         "input"_a, "voxel_size"_a)
+            .def_static(
+                    "create_from_triangle_mesh_within_bounds",
+                    &geometry::VoxelGrid::CreateFromTriangleMeshWithinBounds,
+                    "Function to make voxels from a PointCloud", "input"_a,
+                    "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
@@ -108,15 +143,53 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
     docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "carve_depth_map",
+            {{"depth_map", "Depth map (Image) used for VoxelGrid carving."},
+             {"camera_parameters",
+              "PinholeCameraParameters used to record the given depth_map."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "carve_silhouette",
+            {{"silhouette_mask",
+              "Silhouette mask (Image) used for VoxelGrid carving."},
+             {"camera_parameters",
+              "PinholeCameraParameters used to record the given depth_map."}});
+    docstring::ClassMethodDocInject(
             m, "VoxelGrid", "to_octree",
             {{"max_depth", "int: Maximum depth of the octree."}});
     docstring::ClassMethodDocInject(
-            m, "VoxelGrid", "from_octree",
+            m, "VoxelGrid", "create_from_octree",
             {{"octree", "geometry.Octree: The source octree."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_dense",
+            {{"origin", "Coordinate center of the VoxelGrid"},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"width", "Spatial width extend of the VoxelGrid."},
+             {"height", "Spatial height extend of the VoxelGrid."},
+             {"depth", "Spatial depth extend of the VoxelGrid."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_from_point_cloud_within_bounds",
+            {{"input", "The input PointCloud"},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"min_bound",
+              "Minimum boundary point for the VoxelGrid to create."},
+             {"max_bound",
+              "Maximum boundary point for the VoxelGrid to create."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_from_triangle_mesh",
+            {{"input", "The input TriangleMesh"},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_from_triangle_mesh_within_bounds",
+            {{"input", "The input TriangleMesh"},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"min_bound",
+              "Minimum boundary point for the VoxelGrid to create."},
+             {"max_bound",
+              "Maximum boundary point for the VoxelGrid to create."}});
 }
 
 void pybind_voxelgrid_methods(py::module &m) {}

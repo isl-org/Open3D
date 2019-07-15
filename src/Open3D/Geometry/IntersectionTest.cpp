@@ -26,7 +26,8 @@
 
 #include "Open3D/Geometry/IntersectionTest.h"
 
-#include <tritriintersect/tri_tri_intersect.h>
+#include <tomasakeninemoeller/opttritri.h>
+#include <tomasakeninemoeller/tribox3.h>
 
 namespace open3d {
 namespace geometry {
@@ -57,6 +58,18 @@ bool IntersectionTest::TriangleTriangle3d(const Eigen::Vector3d& p0,
             const_cast<double*>(p0.data()), const_cast<double*>(p1.data()),
             const_cast<double*>(p2.data()), const_cast<double*>(q0.data()),
             const_cast<double*>(q1.data()), const_cast<double*>(q2.data()));
+}
+
+bool IntersectionTest::TriangleAABB(const Eigen::Vector3d& box_center,
+                                    const Eigen::Vector3d& box_half_size,
+                                    const Eigen::Vector3d& vert0,
+                                    const Eigen::Vector3d& vert1,
+                                    const Eigen::Vector3d& vert2) {
+    double* tri_verts[3] = {const_cast<double*>(vert0.data()),
+                            const_cast<double*>(vert1.data()),
+                            const_cast<double*>(vert2.data())};
+    return triBoxOverlap(const_cast<double*>(box_center.data()),
+                         const_cast<double*>(box_half_size.data()), tri_verts);
 }
 
 }  // namespace geometry

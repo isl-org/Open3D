@@ -39,6 +39,7 @@ void PrintHelp() {
     utility::LogInfo("    --mesh file               : Add a triangle mesh from file.\n");
     utility::LogInfo("    --pointcloud file         : Add a point cloud from file.\n");
     utility::LogInfo("    --lineset file            : Add a line set from file.\n");
+    utility::LogInfo("    --voxelgrid file          : Add a voxel grid from file.\n");
     utility::LogInfo("    --image file              : Add an image from file.\n");
     utility::LogInfo("    --depth file              : Add a point cloud converted from a depth image.\n");
     utility::LogInfo("    --depth_camera file       : Use with --depth, read a json file that stores\n");
@@ -88,6 +89,8 @@ int main(int argc, char **argv) {
             utility::GetProgramOptionAsString(argc, argv, "--pointcloud");
     std::string lineset_filename =
             utility::GetProgramOptionAsString(argc, argv, "--lineset");
+    std::string voxelgrid_filename =
+            utility::GetProgramOptionAsString(argc, argv, "--voxelgrid");
     std::string image_filename =
             utility::GetProgramOptionAsString(argc, argv, "--image");
     std::string depth_filename =
@@ -130,6 +133,12 @@ int main(int argc, char **argv) {
         auto lineset_ptr = io::CreateLineSetFromFile(lineset_filename);
         if (visualizer.AddGeometry(lineset_ptr) == false) {
             utility::LogWarning("Failed adding line set.\n");
+        }
+    }
+    if (!voxelgrid_filename.empty()) {
+        auto voxelgrid_ptr = io::CreateVoxelGridFromFile(voxelgrid_filename);
+        if (visualizer.AddGeometry(voxelgrid_ptr) == false) {
+            utility::LogWarning("Failed adding voxel grid.\n");
         }
     }
     if (!image_filename.empty()) {

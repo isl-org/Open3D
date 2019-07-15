@@ -33,44 +33,37 @@ int main(int argc, char **argv) {
 
     utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
 
-    utility::Timer timer;
+    utility::LogDebug("This Debug message should be visible, {} {:.2f}\n",
+                      "format:", 0.42001);
+    utility::LogInfo("This Info message should be visible, {} {:.2f}\n",
+                     "format:", 0.42001);
+    utility::LogWarning("This Warning message should be visible, {} {:.2f}\n",
+                        "format:", 0.42001);
+    utility::LogError("This Error message should be visible, {} {:.2f}\n",
+                      "format:", 0.42001);
 
-    double printf_time = 0;
-    timer.Start();
-    for(int idx = 0; idx < 1000000; ++idx) {
-        float f = idx / 3.14;
-        int d = (idx * idx) % 97;
-        printf("this is a message %s, %.6f, %d\n", "this is some string", f, d);
-        fflush(stdout);
-    }
-    timer.Stop();
-    printf_time += timer.GetDuration();
+    utility::LogDebugf("This Debug message should be visible, %s %.2f\n",
+                       "formatf:", 0.42001);
+    utility::LogInfof("This Info message should be visible, %s %.2f\n",
+                      "formatf:", 0.42001);
+    utility::LogWarningf("This Warning message should be visible, %s %.2f\n",
+                         "formatf:", 0.42001);
+    utility::LogErrorf("This Error message should be visible, %s %.2f\n",
+                       "formatf:", 0.42001);
 
-    double fmt_time = 0;
-    timer.Start();
-    for(int idx = 0; idx < 1000000; ++idx) {
-        float f = idx / 3.14;
-        int d = (idx * idx) % 97;
-        utility::LogDebug("this is a message {}, {:.6}, {:d}\n", "this is some string", f, d);
-        fflush(stdout);
-    }
-    timer.Stop();
-    fmt_time += timer.GetDuration();
+    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Info);
 
-    double fmtf_time = 0;
-    timer.Start();
-    for(int idx = 0; idx < 1000000; ++idx) {
-        float f = idx / 3.14;
-        int d = (idx * idx) % 97;
-        utility::LogDebugf("this is a message %s, %.6f, %d\n", "this is some string", f, d);
-        fflush(stdout);
-    }
-    timer.Stop();
-    fmtf_time += timer.GetDuration();
+    utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}\n",
+                      "format:", 0.42001);
+    utility::LogInfo("This Info message should be visible, {} {:.2f}\n",
+                     "format:", 0.42001);
+    utility::LogWarning("This Warning message should be visible, {} {:.2f}\n",
+                        "format:", 0.42001);
+    utility::LogError("This Error message should be visible, {} {:.2f}\n",
+                      "format:", 0.42001);
 
-    utility::LogInfo("output using fmt took in total {}[ms]\n", fmt_time);
-    utility::LogInfo("output using fmtf took in total {}[ms]\n", fmtf_time);
-    utility::LogInfo("output using printf took in total {}[ms]\n", printf_time);
+    utility::LogFatal("This Fatal message terminates the program\n");
+    utility::LogFatal("This Fatal message should NOT be visible\n");
 
     return 0;
 }
