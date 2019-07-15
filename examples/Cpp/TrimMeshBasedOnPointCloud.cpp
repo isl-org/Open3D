@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
-    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     auto in_mesh_file =
             utility::GetProgramOptionAsString(argc, argv, "--in_mesh");
     auto out_mesh_file =

@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     };
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
-    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     std::string log_filename =
             utility::GetProgramOptionAsString(argc, argv, "--log");
     std::string pcd_dirname =

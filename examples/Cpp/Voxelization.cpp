@@ -42,7 +42,7 @@ void PrintVoxelGridInformation(const geometry::VoxelGrid& voxel_grid) {
 int main(int argc, char** args) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 3) {
         PrintOpen3DVersion();
         // clang-format off

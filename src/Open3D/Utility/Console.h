@@ -31,6 +31,7 @@
 #include <vector>
 #ifdef _WIN32
 #include <windows.h>
+#include "stdafx.h"
 #endif
 
 #define FMT_HEADER_ONLY 1
@@ -43,17 +44,17 @@
 namespace open3d {
 namespace utility {
 
+enum class VerbosityLevel {
+    Off = 0,
+    Fatal = 1,
+    Error = 2,
+    Warning = 3,
+    Info = 4,
+    Debug = 5,
+};
+
 class Logger {
 public:
-    enum class VerbosityLevel {
-        Off = 0,
-        Fatal = 1,
-        Error = 2,
-        Warning = 3,
-        Info = 4,
-        Debug = 5,
-    };
-
     enum class TextColor {
         Black = 0,
         Red = 1,
@@ -182,7 +183,7 @@ public:
             fmt::print("[Open3D FATAL] ");
             fmt::printf(format, args...);
             ResetConsoleColor();
-            throw std::runtime_error("");
+            exit(-1);
         }
     }
 
@@ -226,11 +227,11 @@ public:
     VerbosityLevel verbosity_level_;
 };
 
-inline void SetVerbosityLevel(Logger::VerbosityLevel level) {
+inline void SetVerbosityLevel(VerbosityLevel level) {
     Logger::i().verbosity_level_ = level;
 }
 
-inline Logger::VerbosityLevel GetVerbosityLevel() {
+inline VerbosityLevel GetVerbosityLevel() {
     return Logger::i().verbosity_level_;
 }
 

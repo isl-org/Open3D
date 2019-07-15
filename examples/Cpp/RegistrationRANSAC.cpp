@@ -60,7 +60,7 @@ void VisualizeRegistration(const open3d::geometry::PointCloud &source,
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 3 && argc != 4) {
         utility::LogInfo(

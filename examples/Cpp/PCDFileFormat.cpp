@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintOpen3DVersion();

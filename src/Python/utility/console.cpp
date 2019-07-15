@@ -31,14 +31,14 @@
 using namespace open3d;
 
 void pybind_console(py::module &m) {
-    py::enum_<utility::Logger::VerbosityLevel> vl(
-            m, "VerbosityLevel", py::arithmetic(), "VerbosityLevel");
-    vl.value("Off", utility::Logger::VerbosityLevel::Off)
-            .value("Fatal", utility::Logger::VerbosityLevel::Fatal)
-            .value("Error", utility::Logger::VerbosityLevel::Error)
-            .value("Warning", utility::Logger::VerbosityLevel::Warning)
-            .value("Info", utility::Logger::VerbosityLevel::Info)
-            .value("Debug", utility::Logger::VerbosityLevel::Debug)
+    py::enum_<utility::VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
+                                          "VerbosityLevel");
+    vl.value("Off", utility::VerbosityLevel::Off)
+            .value("Fatal", utility::VerbosityLevel::Fatal)
+            .value("Error", utility::VerbosityLevel::Error)
+            .value("Warning", utility::VerbosityLevel::Warning)
+            .value("Info", utility::VerbosityLevel::Info)
+            .value("Debug", utility::VerbosityLevel::Debug)
             .export_values();
     // Trick to write docs without listing the members in the enum class again.
     vl.attr("__doc__") = docstring::static_property(

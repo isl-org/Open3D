@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
     }
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
 
     if (FileExists(argv[1])) {
         convert(argc, argv, argv[1], argv[2]);

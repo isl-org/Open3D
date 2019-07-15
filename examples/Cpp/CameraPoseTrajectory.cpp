@@ -32,7 +32,7 @@
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 3) {
         utility::LogInfo("Usage :\n");
@@ -53,7 +53,6 @@ int main(int argc, char *argv[]) {
     io::ReadPinholeCameraTrajectory(argv[1], trajectory);
     std::vector<std::shared_ptr<const geometry::Geometry>> pcds;
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
-        char buff[DEFAULT_IO_BUFFER_SIZE];
         std::string buffer =
                 fmt::format("{}cloud_bin_{:d}.pcd", argv[2], (int)i);
         if (utility::filesystem::FileExists(buffer.c_str())) {

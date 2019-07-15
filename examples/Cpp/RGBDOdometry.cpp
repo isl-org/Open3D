@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
         PrintHelp();
         return 1;
     }
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     bool visualize = true;

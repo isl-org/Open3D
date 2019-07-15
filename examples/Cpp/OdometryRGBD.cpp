@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--verbose"))
-        utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     int rgbd_type =
             utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);

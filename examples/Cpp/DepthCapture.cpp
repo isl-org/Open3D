@@ -85,7 +85,7 @@ protected:
 };
 
 int main(int argc, char *argv[]) {
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 2) {
         PrintOpen3DVersion();
         utility::LogInfo("Usage:\n");

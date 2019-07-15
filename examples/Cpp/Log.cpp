@@ -31,7 +31,7 @@
 int main(int argc, char **argv) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     utility::LogDebug("This Debug message should be visible, {} {:.2f}\n",
                       "format:", 0.42001);
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     utility::LogErrorf("This Error message should be visible, %s %.2f\n",
                        "formatf:", 0.42001);
 
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Info);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
     utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}\n",
                       "format:", 0.42001);

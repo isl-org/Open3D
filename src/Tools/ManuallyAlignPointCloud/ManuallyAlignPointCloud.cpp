@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     }
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     double voxel_size =
             utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
     double max_corres_distance = utility::GetProgramOptionAsDouble(

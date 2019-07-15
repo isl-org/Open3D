@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     double sdf_trunc_percentage = utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc_percentage", 0.01);
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
-    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
 
     auto camera_trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(log_filename);

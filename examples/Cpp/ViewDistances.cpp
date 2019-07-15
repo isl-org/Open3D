@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
-    utility::SetVerbosityLevel((utility::Logger::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     double max_distance = utility::GetProgramOptionAsDouble(
             argc, argv, "--max_distance", 0.0);
     auto pcd = io::CreatePointCloudFromFile(argv[1]);

@@ -31,7 +31,7 @@
 int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
-    utility::SetVerbosityLevel(utility::Logger::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 2) {
         utility::LogInfo("Usage :\n");
