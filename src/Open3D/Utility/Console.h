@@ -29,9 +29,6 @@
 #include <Eigen/Core>
 #include <string>
 #include <vector>
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #define FMT_HEADER_ONLY 1
 #define FMT_STRING_ALIAS 1
@@ -78,35 +75,8 @@ public:
     /// Note there is no security check for parameters.
     /// \param text_color, from 0 to 7, they are black, red, green, yellow,
     /// blue, magenta, cyan, white \param emphasis_text is 0 or 1
-    void ChangeConsoleColor(TextColor text_color, int highlight_text) {
-#ifdef _WIN32
-        const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
-        const WORD COLOR_MASK[8] = {
-                0,
-                FOREGROUND_RED,
-                FOREGROUND_GREEN,
-                FOREGROUND_GREEN | FOREGROUND_RED,
-                FOREGROUND_BLUE,
-                FOREGROUND_RED | FOREGROUND_BLUE,
-                FOREGROUND_GREEN | FOREGROUND_BLUE,
-                FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED};
-        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(
-                h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
-#else
-        printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
-#endif
-    }
-
-    void ResetConsoleColor() {
-#ifdef _WIN32
-        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(
-                h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-#else
-        printf("%c[0;m", 0x1B);
-#endif
-    }
+    void ChangeConsoleColor(TextColor text_color, int highlight_text);
+    void ResetConsoleColor();
 
     void VFatal(const char *format, fmt::format_args args) {
         if (verbosity_level_ >= VerbosityLevel::Fatal) {
