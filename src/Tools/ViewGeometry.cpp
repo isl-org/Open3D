@@ -30,37 +30,37 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > ViewGeometry [options]\n");
-    utility::PrintInfo("      Open a window to view geometry.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --mesh file               : Add a triangle mesh from file.\n");
-    utility::PrintInfo("    --pointcloud file         : Add a point cloud from file.\n");
-    utility::PrintInfo("    --lineset file            : Add a line set from file.\n");
-    utility::PrintInfo("    --voxelgrid file          : Add a voxel grid from file.\n");
-    utility::PrintInfo("    --image file              : Add an image from file.\n");
-    utility::PrintInfo("    --depth file              : Add a point cloud converted from a depth image.\n");
-    utility::PrintInfo("    --depth_camera file       : Use with --depth, read a json file that stores\n");
-    utility::PrintInfo("                                the camera parameters.\n");
-    utility::PrintInfo("    --show_frame              : Add a coordinate frame.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Animation options:\n");
-    utility::PrintInfo("    --render_option file      : Read a json file of rendering settings.\n");
-    utility::PrintInfo("    --view_trajectory file    : Read a json file of view trajectory.\n");
-    utility::PrintInfo("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
-    utility::PrintInfo("    --auto_recording [i|d]    : Automatically plays the animation, record\n");
-    utility::PrintInfo("                                images (i) or depth images (d). Exits when\n");
-    utility::PrintInfo("                                animation ends.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Window options:\n");
-    utility::PrintInfo("    --window_name name        : Set window name.\n");
-    utility::PrintInfo("    --height n                : Set window height.\n");
-    utility::PrintInfo("    --width n                 : Set window width.\n");
-    utility::PrintInfo("    --top n                   : Set window top edge.\n");
-    utility::PrintInfo("    --left n                  : Set window left edge.\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > ViewGeometry [options]\n");
+    utility::LogInfo("      Open a window to view geometry.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Basic options:\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --mesh file               : Add a triangle mesh from file.\n");
+    utility::LogInfo("    --pointcloud file         : Add a point cloud from file.\n");
+    utility::LogInfo("    --lineset file            : Add a line set from file.\n");
+    utility::LogInfo("    --voxelgrid file          : Add a voxel grid from file.\n");
+    utility::LogInfo("    --image file              : Add an image from file.\n");
+    utility::LogInfo("    --depth file              : Add a point cloud converted from a depth image.\n");
+    utility::LogInfo("    --depth_camera file       : Use with --depth, read a json file that stores\n");
+    utility::LogInfo("                                the camera parameters.\n");
+    utility::LogInfo("    --show_frame              : Add a coordinate frame.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Animation options:\n");
+    utility::LogInfo("    --render_option file      : Read a json file of rendering settings.\n");
+    utility::LogInfo("    --view_trajectory file    : Read a json file of view trajectory.\n");
+    utility::LogInfo("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
+    utility::LogInfo("    --auto_recording [i|d]    : Automatically plays the animation, record\n");
+    utility::LogInfo("                                images (i) or depth images (d). Exits when\n");
+    utility::LogInfo("                                animation ends.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Window options:\n");
+    utility::LogInfo("    --window_name name        : Set window name.\n");
+    utility::LogInfo("    --height n                : Set window height.\n");
+    utility::LogInfo("    --width n                 : Set window width.\n");
+    utility::LogInfo("    --top n                   : Set window top edge.\n");
+    utility::LogInfo("    --left n                  : Set window left edge.\n");
     // clang-format on
 }
 
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     using namespace open3d::utility::filesystem;
 
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     visualization::VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::PrintWarning("Failed creating OpenGL window.\n");
+        utility::LogWarning("Failed creating OpenGL window.\n");
         return 0;
     }
 
@@ -117,13 +117,13 @@ int main(int argc, char **argv) {
         auto mesh_ptr = io::CreateMeshFromFile(mesh_filename);
         mesh_ptr->ComputeVertexNormals();
         if (visualizer.AddGeometry(mesh_ptr) == false) {
-            utility::PrintWarning("Failed adding triangle mesh.\n");
+            utility::LogWarning("Failed adding triangle mesh.\n");
         }
     }
     if (!pcd_filename.empty()) {
         auto pointcloud_ptr = io::CreatePointCloudFromFile(pcd_filename);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
-            utility::PrintWarning("Failed adding point cloud.\n");
+            utility::LogWarning("Failed adding point cloud.\n");
         }
         if (pointcloud_ptr->points_.size() > 5000000) {
             visualizer.GetRenderOption().point_size_ = 1.0;
@@ -132,28 +132,28 @@ int main(int argc, char **argv) {
     if (!lineset_filename.empty()) {
         auto lineset_ptr = io::CreateLineSetFromFile(lineset_filename);
         if (visualizer.AddGeometry(lineset_ptr) == false) {
-            utility::PrintWarning("Failed adding line set.\n");
+            utility::LogWarning("Failed adding line set.\n");
         }
     }
     if (!voxelgrid_filename.empty()) {
         auto voxelgrid_ptr = io::CreateVoxelGridFromFile(voxelgrid_filename);
         if (visualizer.AddGeometry(voxelgrid_ptr) == false) {
-            utility::PrintWarning("Failed adding voxel grid.\n");
+            utility::LogWarning("Failed adding voxel grid.\n");
         }
     }
     if (!image_filename.empty()) {
         auto image_ptr = io::CreateImageFromFile(image_filename);
         if (visualizer.AddGeometry(image_ptr) == false) {
-            utility::PrintWarning("Failed adding image.\n");
+            utility::LogWarning("Failed adding image.\n");
         }
     }
     if (!depth_filename.empty()) {
         camera::PinholeCameraParameters parameters;
         if (depth_parameter_filename.empty() ||
             !io::ReadIJsonConvertible(depth_parameter_filename, parameters)) {
-            utility::PrintWarning(
+            utility::LogWarning(
                     "Failed to read intrinsic parameters for depth image.\n");
-            utility::PrintWarning("Use default value for Primesense camera.\n");
+            utility::LogWarning("Use default value for Primesense camera.\n");
             parameters.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
                                                 239.5);
         }
@@ -161,12 +161,12 @@ int main(int argc, char **argv) {
         auto pointcloud_ptr = geometry::PointCloud::CreateFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
-            utility::PrintWarning("Failed adding depth image.\n");
+            utility::LogWarning("Failed adding depth image.\n");
         }
     }
 
     if (visualizer.HasGeometry() == false) {
-        utility::PrintWarning("No geometry to render!\n");
+        utility::LogWarning("No geometry to render!\n");
         visualizer.DestroyVisualizerWindow();
         return 0;
     }
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
     if (!render_filename.empty()) {
         if (io::ReadIJsonConvertible(render_filename,
                                      visualizer.GetRenderOption()) == false) {
-            utility::PrintWarning("Failed loading rendering settings.\n");
+            utility::LogWarning("Failed loading rendering settings.\n");
         }
     }
 
@@ -182,20 +182,20 @@ int main(int argc, char **argv) {
         auto &view_control = (visualization::ViewControlWithCustomAnimation &)
                                      visualizer.GetViewControl();
         if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
-            utility::PrintWarning("Failed loading view trajectory.\n");
+            utility::LogWarning("Failed loading view trajectory.\n");
         }
     } else if (!camera_filename.empty()) {
         camera::PinholeCameraTrajectory camera_trajectory;
         if (io::ReadIJsonConvertible(camera_filename, camera_trajectory) ==
             false) {
-            utility::PrintWarning("Failed loading camera trajectory.\n");
+            utility::LogWarning("Failed loading camera trajectory.\n");
         } else {
             auto &view_control =
                     (visualization::ViewControlWithCustomAnimation &)
                             visualizer.GetViewControl();
             if (view_control.LoadTrajectoryFromCameraTrajectory(
                         camera_trajectory) == false) {
-                utility::PrintWarning(
+                utility::LogWarning(
                         "Failed converting camera trajectory to view "
                         "trajectory.\n");
             }

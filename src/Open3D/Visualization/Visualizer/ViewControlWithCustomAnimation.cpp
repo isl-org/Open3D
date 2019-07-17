@@ -163,24 +163,25 @@ std::string ViewControlWithCustomAnimation::GetStatusString() const {
             prefix = "Playing ";
             break;
     }
-    char buffer[DEFAULT_IO_BUFFER_SIZE];
+    std::string buffer;
     if (animation_mode_ == AnimationMode::FreeMode) {
         if (view_trajectory_.view_status_.empty()) {
-            sprintf(buffer, "empty trajectory");
+            buffer = "empty trajectory";
         } else {
-            sprintf(buffer, "#%u keyframe (%u in total%s)",
+            buffer = fmt::format(
+                    "#{} keyframe ({} in total{})",
                     (unsigned int)CurrentKeyframe() + 1,
                     (unsigned int)view_trajectory_.view_status_.size(),
                     view_trajectory_.is_loop_ ? ", looped" : "");
         }
     } else {
         if (view_trajectory_.view_status_.empty()) {
-            sprintf(buffer, "empty trajectory");
+            buffer = "empty trajectory";
         } else {
-            sprintf(buffer, "#%u frame (%u in total%s)",
-                    (unsigned int)CurrentFrame() + 1,
-                    (unsigned int)view_trajectory_.NumOfFrames(),
-                    view_trajectory_.is_loop_ ? ", looped" : "");
+            buffer = fmt::format(buffer, "#{} frame ({} in total{})",
+                                 (unsigned int)CurrentFrame() + 1,
+                                 (unsigned int)view_trajectory_.NumOfFrames(),
+                                 view_trajectory_.is_loop_ ? ", looped" : "");
         }
     }
     return prefix + std::string(buffer);
@@ -238,8 +239,8 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
         json_filename =
                 "ViewTrajectory_" + utility::GetCurrentTimeStamp() + ".json";
     }
-    utility::PrintDebug("[Visualizer] Trejactory capture to %s\n",
-                        json_filename.c_str());
+    utility::LogDebug("[Visualizer] Trejactory capture to {}\n",
+                      json_filename.c_str());
     return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 

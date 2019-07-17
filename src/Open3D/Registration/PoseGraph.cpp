@@ -50,14 +50,14 @@ bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const {
 
 bool PoseGraphNode::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PoseGraphNode read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraphNode" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PoseGraphNode read JSON failed: unsupported json format.\n");
         return false;
     }
@@ -96,14 +96,14 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const {
 
 bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PoseGraphEdge read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraphEdge" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PoseGraphEdge read JSON failed: unsupported json format.\n");
         return false;
     }
@@ -157,21 +157,21 @@ bool PoseGraph::ConvertToJsonValue(Json::Value &value) const {
 
 bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PoseGraph read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraph" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "PoseGraph read JSON failed: unsupported json format.\n");
         return false;
     }
 
     const Json::Value &node_array = value["nodes"];
     if (node_array.size() == 0) {
-        utility::PrintWarning("PoseGraph read JSON failed: empty nodes.\n");
+        utility::LogWarning("PoseGraph read JSON failed: empty nodes.\n");
         return false;
     }
     nodes_.clear();
@@ -186,7 +186,7 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
 
     const Json::Value &edge_array = value["edges"];
     if (edge_array.size() == 0) {
-        utility::PrintWarning("PoseGraph read JSON failed: empty edges.\n");
+        utility::LogWarning("PoseGraph read JSON failed: empty edges.\n");
         return false;
     }
     edges_.clear();

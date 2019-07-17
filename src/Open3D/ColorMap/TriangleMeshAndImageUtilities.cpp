@@ -91,8 +91,8 @@ CreateVertexAndImageVisibility(
                 }
             }
         }
-        utility::PrintDebug("[cam %d] %.5f percents are visible\n", c,
-                            double(viscnt) / n_vertex * 100);
+        utility::LogDebug("[cam {:d}] {:.5f} percents are visible\n", c,
+                          double(viscnt) / n_vertex * 100);
         fflush(stdout);
     }
     return std::move(std::make_tuple(visiblity_vertex_to_image,

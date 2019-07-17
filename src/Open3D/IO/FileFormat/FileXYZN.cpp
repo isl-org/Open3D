@@ -33,11 +33,12 @@ namespace open3d {
 namespace io {
 
 bool ReadPointCloudFromXYZN(const std::string &filename,
-                            geometry::PointCloud &pointcloud) {
+                            geometry::PointCloud &pointcloud,
+                            bool print_progress) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
-        utility::PrintWarning("Read XYZN failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Read XYZN failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
 
@@ -60,15 +61,16 @@ bool ReadPointCloudFromXYZN(const std::string &filename,
 bool WritePointCloudToXYZN(const std::string &filename,
                            const geometry::PointCloud &pointcloud,
                            bool write_ascii /* = false*/,
-                           bool compressed /* = false*/) {
+                           bool compressed /* = false*/,
+                           bool print_progress) {
     if (pointcloud.HasNormals() == false) {
         return false;
     }
 
     FILE *file = fopen(filename.c_str(), "w");
     if (file == NULL) {
-        utility::PrintWarning("Write XYZN failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Write XYZN failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
 
@@ -77,9 +79,8 @@ bool WritePointCloudToXYZN(const std::string &filename,
         const Eigen::Vector3d &normal = pointcloud.normals_[i];
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
                     point(1), point(2), normal(0), normal(1), normal(2)) < 0) {
-            utility::PrintWarning(
-                    "Write XYZN failed: unable to write file: %s\n",
-                    filename.c_str());
+            utility::LogWarning("Write XYZN failed: unable to write file: {}\n",
+                                filename);
             fclose(file);
             return false;  // error happens during writing.
         }

@@ -34,13 +34,14 @@ void PrintPointCloud(const open3d::geometry::PointCloud &pointcloud) {
     using namespace open3d;
 
     bool pointcloud_has_normal = pointcloud.HasNormals();
-    utility::PrintInfo("Pointcloud has %d points.\n",
-                       (int)pointcloud.points_.size());
+    utility::LogInfo("Pointcloud has %d points.\n",
+                     (int)pointcloud.points_.size());
 
     Eigen::Vector3d min_bound = pointcloud.GetMinBound();
     Eigen::Vector3d max_bound = pointcloud.GetMaxBound();
-    utility::PrintInfo(
-            "Bounding box is: (%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)\n",
+    utility::LogInfo(
+            "Bounding box is: ({:.4f}, {:.4f}, {:.4f}) - ({:.4f}, {:.4f}, "
+            "{:.4f})\n",
             min_bound(0), min_bound(1), min_bound(2), max_bound(0),
             max_bound(1), max_bound(2));
 
@@ -48,22 +49,22 @@ void PrintPointCloud(const open3d::geometry::PointCloud &pointcloud) {
         if (pointcloud_has_normal) {
             const Eigen::Vector3d &point = pointcloud.points_[i];
             const Eigen::Vector3d &normal = pointcloud.normals_[i];
-            utility::PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n", point(0),
-                                point(1), point(2), normal(0), normal(1),
-                                normal(2));
+            utility::LogInfo("{:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f}\n",
+                             point(0), point(1), point(2), normal(0), normal(1),
+                             normal(2));
         } else {
             const Eigen::Vector3d &point = pointcloud.points_[i];
-            utility::PrintDebug("%.6f %.6f %.6f\n", point(0), point(1),
-                                point(2));
+            utility::LogInfo("{:.6f} {:.6f} {:.6f}\n", point(0), point(1),
+                             point(2));
         }
     }
-    utility::PrintDebug("End of the list.\n\n");
+    utility::LogInfo("End of the list.\n\n");
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto pcd = io::CreatePointCloudFromFile(argv[1]);
     {
@@ -122,26 +123,26 @@ int main(int argc, char *argv[]) {
     const std::string filename_ply("test.ply");
 
     if (io::ReadPointCloud(argv[1], pointcloud)) {
-        utility::PrintWarning("Successfully read %s\n", argv[1]);
+        utility::LogInfo("Successfully read {}\n", argv[1]);
 
         /*
         geometry::PointCloud pointcloud_copy;
         pointcloud_copy.CloneFrom(pointcloud);
 
         if (io::WritePointCloud(filename_xyz, pointcloud)) {
-            utility::PrintWarning("Successfully wrote %s\n\n",
-        filename_xyz.c_str()); } else { utility::PrintError("Failed to write
-        %s\n\n", filename_xyz.c_str());
+            utility::LogInfo("Successfully wrote {}\n\n",
+        filename_xyz.c_str()); } else { utility::LogError("Failed to write
+        {}\n\n", filename_xyz);
         }
 
         if (io::WritePointCloud(filename_ply, pointcloud_copy)) {
-            utility::PrintWarning("Successfully wrote %s\n\n",
-        filename_ply.c_str()); } else { utility::PrintError("Failed to write
-        %s\n\n", filename_ply.c_str());
+            utility::LogInfo("Successfully wrote {}\n\n",
+        filename_ply); } else { utility::LogError("Failed to write
+        {}\n\n", filename_ply);
         }
          */
     } else {
-        utility::PrintError("Failed to read %s\n\n", argv[1]);
+        utility::LogError("Failed to read {}\n\n", argv[1]);
     }
 
     // 3. test pointcloud visualization
@@ -189,13 +190,13 @@ int main(int argc, char *argv[]) {
                   //        open3d::KDTreeSearchParamKNN(20));
                   pointcloud_ptr->EstimateNormals(
                           open3d::geometry::KDTreeSearchParamRadius(0.05));
-                  utility::PrintInfo("Done.\n");
+                  utility::LogInfo("Done.\n");
                   return true;
               }}},
             "Press Space to Estimate Normal", 1600, 900);
 
     // n. test end
 
-    utility::PrintAlways("End of the test.\n");
+    utility::LogInfo("End of the test.\n");
     return 0;
 }

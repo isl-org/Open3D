@@ -120,7 +120,7 @@ std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
 
 Image &Image::ClipIntensity(double min /* = 0.0*/, double max /* = 1.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[ClipIntensity] Unsupported image format.\n");
+        utility::LogWarning("[ClipIntensity] Unsupported image format.\n");
         return *this;
     }
     for (int y = 0; y < height_; y++) {
@@ -135,7 +135,7 @@ Image &Image::ClipIntensity(double min /* = 0.0*/, double max /* = 1.0*/) {
 
 Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[LinearTransform] Unsupported image format.\n");
+        utility::LogWarning("[LinearTransform] Unsupported image format.\n");
         return *this;
     }
     for (int y = 0; y < height_; y++) {
@@ -150,7 +150,7 @@ Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
 std::shared_ptr<Image> Image::Downsample() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[Downsample] Unsupported image format.\n");
+        utility::LogWarning("[Downsample] Unsupported image format.\n");
         return output;
     }
     int half_width = (int)floor((double)width_ / 2.0);
@@ -178,7 +178,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "[FilterHorizontal] Unsupported image format or kernel "
                 "size.\n");
         return output;
@@ -209,7 +209,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[Filter] Unsupported image format.\n");
+        utility::LogWarning("[Filter] Unsupported image format.\n");
         return output;
     }
 
@@ -230,7 +230,7 @@ std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
             output = Filter(Sobel32, Sobel31);
             break;
         default:
-            utility::PrintWarning("[Filter] Unsupported filter type.\n");
+            utility::LogWarning("[Filter] Unsupported filter type.\n");
             break;
     }
     return output;
@@ -250,7 +250,7 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
                                      const std::vector<double> &dy) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[Filter] Unsupported image format.\n");
+        utility::LogWarning("[Filter] Unsupported image format.\n");
         return output;
     }
 
@@ -264,7 +264,7 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
 std::shared_ptr<Image> Image::Flip() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::PrintWarning("[FilpImage] Unsupported image format.\n");
+        utility::LogWarning("[FilpImage] Unsupported image format.\n");
         return output;
     }
     output->Prepare(height_, width_, 1, 4);
@@ -285,7 +285,7 @@ std::shared_ptr<Image> Image::Flip() const {
 std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 1) {
-        utility::PrintWarning("[Dilate] Unsupported image format.\n");
+        utility::LogWarning("[Dilate] Unsupported image format.\n");
         return output;
     }
     output->Prepare(width_, height_, 1, 1);

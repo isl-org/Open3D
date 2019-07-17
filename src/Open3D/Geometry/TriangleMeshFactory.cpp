@@ -34,7 +34,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
         double radius /* = 1.0*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
-        utility::PrintWarning("[CreateTetrahedron] radius <= 0");
+        utility::LogWarning("[CreateTetrahedron] radius <= 0");
         return mesh;
     }
     mesh->vertices_.push_back(radius *
@@ -57,7 +57,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateOctahedron(
         double radius /* = 1.0*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
-        utility::PrintWarning("[CreateOctahedron] radius <= 0");
+        utility::LogWarning("[CreateOctahedron] radius <= 0");
         return mesh;
     }
     mesh->vertices_.push_back(radius * Eigen::Vector3d(1, 0, 0));
@@ -81,7 +81,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
         double radius /* = 1.0*/) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
-        utility::PrintWarning("[CreateIcosahedron] radius <= 0");
+        utility::LogWarning("[CreateIcosahedron] radius <= 0");
         return mesh;
     }
     const double p = (1. + std::sqrt(5.)) / 2.;
@@ -125,15 +125,15 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(double width /* = 1.0*/,
                                                       double depth /* = 1.0*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (width <= 0) {
-        utility::PrintWarning("[CreateBox] width <= 0");
+        utility::LogWarning("[CreateBox] width <= 0");
         return mesh_ptr;
     }
     if (height <= 0) {
-        utility::PrintWarning("[CreateBox] height <= 0");
+        utility::LogWarning("[CreateBox] height <= 0");
         return mesh_ptr;
     }
     if (depth <= 0) {
-        utility::PrintWarning("[CreateBox] depth <= 0");
+        utility::LogWarning("[CreateBox] depth <= 0");
         return mesh_ptr;
     }
     mesh_ptr->vertices_.resize(8);
@@ -164,11 +164,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
         double radius /* = 1.0*/, int resolution /* = 20*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
-        utility::PrintWarning("[CreateSphere] radius <= 0");
+        utility::LogWarning("[CreateSphere] radius <= 0");
         return mesh_ptr;
     }
     if (resolution <= 0) {
-        utility::PrintWarning("[CreateSphere] resolution <= 0");
+        utility::LogWarning("[CreateSphere] resolution <= 0");
         return mesh_ptr;
     }
     mesh_ptr->vertices_.resize(2 * resolution * (resolution - 1) + 2);
@@ -214,19 +214,19 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
         int split /* = 4*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
-        utility::PrintWarning("[CreateCylinder] radius <= 0");
+        utility::LogWarning("[CreateCylinder] radius <= 0");
         return mesh_ptr;
     }
     if (height <= 0) {
-        utility::PrintWarning("[CreateCylinder] height <= 0");
+        utility::LogWarning("[CreateCylinder] height <= 0");
         return mesh_ptr;
     }
     if (resolution <= 0) {
-        utility::PrintWarning("[CreateCylinder] resolution <= 0");
+        utility::LogWarning("[CreateCylinder] resolution <= 0");
         return mesh_ptr;
     }
     if (split <= 0) {
-        utility::PrintWarning("[CreateCylinder] split <= 0");
+        utility::LogWarning("[CreateCylinder] split <= 0");
         return mesh_ptr;
     }
     mesh_ptr->vertices_.resize(resolution * (split + 1) + 2);
@@ -269,19 +269,19 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(double radius /* = 1.0*/,
                                                        int split /* = 4*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
-        utility::PrintWarning("[CreateCone] radius <= 0");
+        utility::LogWarning("[CreateCone] radius <= 0");
         return mesh_ptr;
     }
     if (height <= 0) {
-        utility::PrintWarning("[CreateCone] height <= 0");
+        utility::LogWarning("[CreateCone] height <= 0");
         return mesh_ptr;
     }
     if (resolution <= 0) {
-        utility::PrintWarning("[CreateCone] resolution <= 0");
+        utility::LogWarning("[CreateCone] resolution <= 0");
         return mesh_ptr;
     }
     if (split <= 0) {
-        utility::PrintWarning("[CreateCone] split <= 0");
+        utility::LogWarning("[CreateCone] split <= 0");
         return mesh_ptr;
     }
     mesh_ptr->vertices_.resize(resolution * split + 2);
@@ -327,19 +327,19 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTorus(
         int tubular_resolution /* = 20 */) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (torus_radius <= 0) {
-        utility::PrintWarning("[CreateTorus] torus_radius <= 0");
+        utility::LogWarning("[CreateTorus] torus_radius <= 0");
         return mesh;
     }
     if (tube_radius <= 0) {
-        utility::PrintWarning("[CreateTorus] tube_radius <= 0");
+        utility::LogWarning("[CreateTorus] tube_radius <= 0");
         return mesh;
     }
     if (radial_resolution <= 0) {
-        utility::PrintWarning("[CreateTorus] radial_resolution <= 0");
+        utility::LogWarning("[CreateTorus] radial_resolution <= 0");
         return mesh;
     }
     if (tubular_resolution <= 0) {
-        utility::PrintWarning("[CreateTorus] tubular_resolution <= 0");
+        utility::LogWarning("[CreateTorus] tubular_resolution <= 0");
         return mesh;
     }
 
@@ -385,31 +385,31 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateArrow(
         int cylinder_split /* = 4*/,
         int cone_split /* = 1*/) {
     if (cylinder_radius <= 0) {
-        utility::PrintWarning("[CreateArrow] cylinder_radius <= 0");
+        utility::LogWarning("[CreateArrow] cylinder_radius <= 0");
         return std::make_shared<TriangleMesh>();
     }
     if (cone_radius <= 0) {
-        utility::PrintWarning("[CreateArrow] cone_radius <= 0");
+        utility::LogWarning("[CreateArrow] cone_radius <= 0");
         return std::make_shared<TriangleMesh>();
     }
     if (cylinder_height <= 0) {
-        utility::PrintWarning("[CreateArrow] cylinder_height <= 0");
+        utility::LogWarning("[CreateArrow] cylinder_height <= 0");
         return std::make_shared<TriangleMesh>();
     }
     if (cone_height <= 0) {
-        utility::PrintWarning("[CreateArrow] cone_height <= 0");
+        utility::LogWarning("[CreateArrow] cone_height <= 0");
         return std::make_shared<TriangleMesh>();
     }
     if (resolution <= 0) {
-        utility::PrintWarning("[CreateArrow] resolution <= 0");
+        utility::LogWarning("[CreateArrow] resolution <= 0");
         return std::make_shared<TriangleMesh>();
     }
     if (cylinder_split <= 0) {
-        utility::PrintWarning("[CreateArrow] cylinder_split <= 0");
+        utility::LogWarning("[CreateArrow] cylinder_split <= 0");
         return std::make_shared<TriangleMesh>();
     }
     if (cone_split <= 0) {
-        utility::PrintWarning("[CreateArrow] cone_split <= 0");
+        utility::LogWarning("[CreateArrow] cone_split <= 0");
         return std::make_shared<TriangleMesh>();
     }
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
@@ -430,7 +430,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
         double size /* = 1.0*/,
         const Eigen::Vector3d &origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
     if (size <= 0) {
-        utility::PrintWarning("[CreateCoordinateFrame] size <= 0");
+        utility::LogWarning("[CreateCoordinateFrame] size <= 0");
         return std::make_shared<TriangleMesh>();
     }
     auto mesh_frame = CreateSphere(0.06 * size);
@@ -478,31 +478,31 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
         double scale /* = 1 */) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (length_split <= 0) {
-        utility::PrintWarning("[CreateMoebius] length_split <= 0");
+        utility::LogWarning("[CreateMoebius] length_split <= 0");
         return mesh;
     }
     if (width_split <= 0) {
-        utility::PrintWarning("[CreateMoebius] width_split <= 0");
+        utility::LogWarning("[CreateMoebius] width_split <= 0");
         return mesh;
     }
     if (twists < 0) {
-        utility::PrintWarning("[CreateMoebius] twists < 0");
+        utility::LogWarning("[CreateMoebius] twists < 0");
         return mesh;
     }
     if (radius <= 0) {
-        utility::PrintWarning("[CreateMoebius] radius <= 0");
+        utility::LogWarning("[CreateMoebius] radius <= 0");
         return mesh;
     }
     if (flatness == 0) {
-        utility::PrintWarning("[CreateMoebius] flatness == 0");
+        utility::LogWarning("[CreateMoebius] flatness == 0");
         return mesh;
     }
     if (width <= 0) {
-        utility::PrintWarning("[CreateMoebius] width <= 0");
+        utility::LogWarning("[CreateMoebius] width <= 0");
         return mesh;
     }
     if (scale <= 0) {
-        utility::PrintWarning("[CreateMoebius] scale <= 0");
+        utility::LogWarning("[CreateMoebius] scale <= 0");
         return mesh;
     }
 

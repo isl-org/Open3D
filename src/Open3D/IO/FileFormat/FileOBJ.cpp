@@ -38,7 +38,8 @@ namespace open3d {
 namespace io {
 
 bool ReadTriangleMeshFromOBJ(const std::string& filename,
-                             geometry::TriangleMesh& mesh) {
+                             geometry::TriangleMesh& mesh,
+                             bool print_progress) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -48,11 +49,10 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                                 filename.c_str());
 
     if (!warn.empty()) {
-        utility::PrintWarning("Read OBJ failed: %s\n", warn.c_str());
+        utility::LogWarning("Read OBJ failed: {}\n", warn);
     }
-
     if (!err.empty()) {
-        utility::PrintError("Read OBJ failed: %s\n", err.c_str());
+        utility::LogWarning("Read OBJ failed: {}\n", err);
     }
 
     if (!ret) {
@@ -85,7 +85,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
             int fv = shapes[s].mesh.num_face_vertices[f];
             if (fv != 3) {
-                utility::PrintWarning(
+                utility::LogWarning(
                         "Read OBJ failed: facet with number of vertices not "
                         "equal to 3\n");
                 return false;
@@ -131,23 +131,25 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
                             bool write_ascii /* = false*/,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
-                            bool write_vertex_colors /* = true*/) {
+                            bool write_vertex_colors /* = true*/,
+                            bool print_progress) {
     std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!file) {
-        utility::PrintWarning("Write OBJ failed: unable to open file.\n");
+        utility::LogWarning("Write OBJ failed: unable to open file.\n");
         return false;
     }
 
     if (mesh.HasTriangleNormals()) {
-        utility::PrintWarning("Write OBJ can not include triangle normals.\n");
+        utility::LogWarning("Write OBJ can not include triangle normals.\n");
     }
 
     file << "# Created by Open3D \n";
     file << "# number of vertices: " << mesh.vertices_.size() << "\n";
     file << "# number of triangles: " << mesh.triangles_.size() << "\n";
-    utility::ResetConsoleProgress(
-            mesh.vertices_.size() + mesh.triangles_.size(), "Writing OBJ: ");
+    utility::ConsoleProgressBar progress_bar(
+            mesh.vertices_.size() + mesh.triangles_.size(),
+            "Writing OBJ: ", print_progress);
     write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
     write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
     for (int vidx = 0; vidx < mesh.vertices_.size(); ++vidx) {
@@ -165,7 +167,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
                  << "\n";
         }
 
-        utility::AdvanceConsoleProgress();
+        ++progress_bar;
     }
 
     for (int tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
@@ -178,7 +180,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
             file << "f " << triangle(0) + 1 << " " << triangle(1) + 1 << " "
                  << triangle(2) + 1 << "\n";
         }
-        utility::AdvanceConsoleProgress();
+        ++progress_bar;
     }
 
     return true;

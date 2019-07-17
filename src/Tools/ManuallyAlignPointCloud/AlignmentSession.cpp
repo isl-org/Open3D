@@ -56,7 +56,7 @@ bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const {
 
 bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "AlignmentSession read JSON failed: unsupported json "
                 "format.\n");
         return false;
@@ -64,7 +64,7 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value) {
     if (value.get("class_name", "").asString() != "AlignmentSession" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "AlignmentSession read JSON failed: unsupported json "
                 "format.\n");
         return false;

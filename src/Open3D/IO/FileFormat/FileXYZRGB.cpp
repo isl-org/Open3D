@@ -33,11 +33,12 @@ namespace open3d {
 namespace io {
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
-                              geometry::PointCloud &pointcloud) {
+                              geometry::PointCloud &pointcloud,
+                              bool print_progress) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
-        utility::PrintWarning("Read XYZRGB failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Read XYZRGB failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
 
@@ -60,15 +61,16 @@ bool ReadPointCloudFromXYZRGB(const std::string &filename,
 bool WritePointCloudToXYZRGB(const std::string &filename,
                              const geometry::PointCloud &pointcloud,
                              bool write_ascii /* = false*/,
-                             bool compressed /* = false*/) {
+                             bool compressed /* = false*/,
+                             bool print_progress) {
     if (pointcloud.HasColors() == false) {
         return false;
     }
 
     FILE *file = fopen(filename.c_str(), "w");
     if (file == NULL) {
-        utility::PrintWarning("Write XYZRGB failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Write XYZRGB failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
 
@@ -77,9 +79,9 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
         const Eigen::Vector3d &color = pointcloud.colors_[i];
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
                     point(1), point(2), color(0), color(1), color(2)) < 0) {
-            utility::PrintWarning(
-                    "Write XYZRGB failed: unable to write file: %s\n",
-                    filename.c_str());
+            utility::LogWarning(
+                    "Write XYZRGB failed: unable to write file: {}\n",
+                    filename);
             fclose(file);
             return false;  // error happens during writing.
         }

@@ -55,8 +55,8 @@ bool ReadPinholeCameraTrajectoryFromTUM(
     trajectory.parameters_.clear();
     FILE *f = fopen(filename.c_str(), "r");
     if (f == NULL) {
-        utility::PrintWarning("Read TUM failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Read TUM failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -66,8 +66,7 @@ bool ReadPinholeCameraTrajectoryFromTUM(
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf %lf %lf", &ts, &x,
                        &y, &z, &qx, &qy, &qz, &qw) != 8) {
-                utility::PrintWarning(
-                        "Read TUM failed: unrecognized format.\n");
+                utility::LogWarning("Read TUM failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             }
@@ -91,8 +90,8 @@ bool WritePinholeCameraTrajectoryToTUM(
         const camera::PinholeCameraTrajectory &trajectory) {
     FILE *f = fopen(filename.c_str(), "w");
     if (f == NULL) {
-        utility::PrintWarning("Write TUM failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Write TUM failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
 

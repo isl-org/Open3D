@@ -85,7 +85,7 @@ void UniformTSDFVolume::Integrate(
          image.color_.width_ != intrinsic.width_) ||
         (color_type_ != TSDFVolumeColorType::None &&
          image.color_.height_ != intrinsic.height_)) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "[UniformTSDFVolume::Integrate] Unsupported image format.\n");
         return;
     }

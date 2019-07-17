@@ -30,10 +30,10 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::PrintInfo("Usage :\n");
-    utility::PrintInfo("    > TriangleMesh sphere\n");
-    utility::PrintInfo("    > TriangleMesh merge <file1> <file2>\n");
-    utility::PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
+    utility::LogInfo("Usage :\n");
+    utility::LogInfo("    > TriangleMesh sphere\n");
+    utility::LogInfo("    > TriangleMesh merge <file1> <file2>\n");
+    utility::LogInfo("    > TriangleMesh normal <file1> <file2>\n");
 }
 
 void PaintMesh(open3d::geometry::TriangleMesh &mesh,
@@ -47,7 +47,7 @@ void PaintMesh(open3d::geometry::TriangleMesh &mesh,
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc < 2) {
         PrintHelp();
@@ -91,20 +91,21 @@ int main(int argc, char *argv[]) {
     } else if (option == "merge") {
         auto mesh1 = io::CreateMeshFromFile(argv[2]);
         auto mesh2 = io::CreateMeshFromFile(argv[3]);
-        utility::PrintInfo("Mesh1 has %d vertices, %d triangles.\n",
-                           mesh1->vertices_.size(), mesh1->triangles_.size());
-        utility::PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
-                           mesh2->vertices_.size(), mesh2->triangles_.size());
+        utility::LogInfo("Mesh1 has {:d} vertices, {:d} triangles.\n",
+                         mesh1->vertices_.size(), mesh1->triangles_.size());
+        utility::LogInfo("Mesh2 has {:d} vertices, {:d} triangles.\n",
+                         mesh2->vertices_.size(), mesh2->triangles_.size());
         *mesh1 += *mesh2;
-        utility::PrintInfo(
-                "After merge, Mesh1 has %d vertices, %d triangles.\n",
+        utility::LogInfo(
+                "After merge, Mesh1 has {:d} vertices, {:d} triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         mesh1->RemoveDuplicatedVertices();
         mesh1->RemoveDuplicatedTriangles();
         mesh1->RemoveDegenerateTriangles();
         mesh1->RemoveUnreferencedVertices();
-        utility::PrintInfo(
-                "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
+        utility::LogInfo(
+                "After purge vertices, Mesh1 has {:d} vertices, {:d} "
+                "triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         visualization::DrawGeometries({mesh1});
         io::WriteTriangleMesh("temp.ply", *mesh1, true, true);
@@ -151,8 +152,8 @@ int main(int argc, char *argv[]) {
             mesh1->vertex_colors_[i] = Eigen::Vector3d(color, color, color);
             r += sqrt(dists[0]);
         }
-        utility::PrintInfo("Average distance is %.6f.\n",
-                           r / (double)mesh1->vertices_.size());
+        utility::LogInfo("Average distance is {:.6f}.\n",
+                         r / (double)mesh1->vertices_.size());
         if (argc > 5) {
             io::WriteTriangleMesh(argv[5], *mesh1);
         }
@@ -172,7 +173,7 @@ int main(int argc, char *argv[]) {
         camera::PinholeCameraTrajectory trajectory;
         io::ReadIJsonConvertible(argv[3], trajectory);
         if (utility::filesystem::DirectoryExists("image") == false) {
-            utility::PrintWarning("No image!\n");
+            utility::LogWarning("No image!\n");
             return 0;
         }
         int idx = 3000;
@@ -188,8 +189,8 @@ int main(int argc, char *argv[]) {
         visualization::DrawGeometries(ptrs);
 
         for (size_t i = 0; i < trajectory.parameters_.size(); i += 10) {
-            char buffer[1024];
-            sprintf(buffer, "image/image_%06d.png", (int)i + 1);
+            std::string buffer =
+                    fmt::format("image/image_{:06d}.png", (int)i + 1);
             auto image = io::CreateImageFromFile(buffer);
             auto fimage = image->CreateFloatImage();
             Eigen::Vector4d pt_in_camera =
@@ -206,7 +207,7 @@ int main(int argc, char *argv[]) {
             std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
             auto result = fimage->FloatValueAt(uv(0), uv(1));
             if (result.first) {
-                utility::PrintWarning("%.6f\n", result.second);
+                utility::LogInfo("{:.6f}\n", result.second);
             }
             visualization::DrawGeometries({fimage}, "Test", 1920, 1080);
         }

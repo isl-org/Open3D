@@ -164,14 +164,14 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
 
 bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "ViewTrajectory read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "ViewTrajectory" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "ViewTrajectory read JSON failed: unsupported json format.\n");
         return false;
     }
@@ -179,7 +179,7 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     interval_ = value.get("interval", 29).asInt();
     const Json::Value &trajectory_array = value["trajectory"];
     if (trajectory_array.size() == 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "ViewTrajectory read JSON failed: empty trajectory.\n");
         return false;
     }

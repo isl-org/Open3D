@@ -33,15 +33,15 @@ namespace open3d {
 void VisualizerForAlignment::PrintVisualizerHelp() {
     visualization::Visualizer::PrintVisualizerHelp();
     // clang-format off
-    utility::PrintInfo("  -- Alignment control --\n");
-    utility::PrintInfo("    Ctrl + R     : Reset source and target to initial state.\n");
-    utility::PrintInfo("    Ctrl + S     : Save current alignment session into a JSON file.\n");
-    utility::PrintInfo("    Ctrl + O     : Load current alignment session from a JSON file.\n");
-    utility::PrintInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
-    utility::PrintInfo("    Ctrl + I     : Run ICP refinement.\n");
-    utility::PrintInfo("    Ctrl + D     : Run voxel downsample for both source and target.\n");
-    utility::PrintInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.\n");
-    utility::PrintInfo("    Ctrl + E     : Evaluate error and save to files.\n");
+    utility::LogInfo("  -- Alignment control --\n");
+    utility::LogInfo("    Ctrl + R     : Reset source and target to initial state.\n");
+    utility::LogInfo("    Ctrl + S     : Save current alignment session into a JSON file.\n");
+    utility::LogInfo("    Ctrl + O     : Load current alignment session from a JSON file.\n");
+    utility::LogInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
+    utility::LogInfo("    Ctrl + I     : Run ICP refinement.\n");
+    utility::LogInfo("    Ctrl + D     : Run voxel downsample for both source and target.\n");
+    utility::LogInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.\n");
+    utility::LogInfo("    Ctrl + E     : Evaluate error and save to files.\n");
     // clang-format on
 }
 
@@ -110,15 +110,15 @@ void VisualizerForAlignment::KeyPressCallback(
             }
             case GLFW_KEY_I: {
                 if (use_dialog_) {
-                    char buff[DEFAULT_IO_BUFFER_SIZE];
-                    sprintf(buff, "%.4f", max_correspondence_distance_);
+                    std::string buffer =
+                            fmt::format("{:.4f}", max_correspondence_distance_);
                     const char *str = tinyfd_inputBox(
                             "Set voxel size",
                             "Set max correspondence distance for ICP (ignored "
                             "if it is non-positive)",
-                            buff);
+                            buffer.c_str());
                     if (str == NULL) {
-                        utility::PrintDebug("Dialog closed.\n");
+                        utility::LogWarning("Dialog closed.\n");
                         return;
                     } else {
                         char *end;
@@ -126,7 +126,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            utility::PrintDebug(
+                            utility::LogWarning(
                                     "Illegal input, use default max "
                                     "correspondence distance.\n");
                         } else {
@@ -135,8 +135,8 @@ void VisualizerForAlignment::KeyPressCallback(
                     }
                 }
                 if (max_correspondence_distance_ > 0.0) {
-                    utility::PrintInfo(
-                            "ICP with max correspondence distance %.4f.\n",
+                    utility::LogInfo(
+                            "ICP with max correspondence distance {:.4f}.\n",
                             max_correspondence_distance_);
                     auto result = registration::RegistrationICP(
                             *source_copy_ptr_, *target_copy_ptr_,
@@ -146,9 +146,10 @@ void VisualizerForAlignment::KeyPressCallback(
                                     true),
                             registration::ICPConvergenceCriteria(1e-6, 1e-6,
                                                                  30));
-                    utility::PrintInfo(
-                            "Registration finished with fitness %.4f and RMSE "
-                            "%.4f.\n",
+                    utility::LogInfo(
+                            "Registration finished with fitness {:.4f} and "
+                            "RMSE "
+                            "{:.4f}.\n",
                             result.fitness_, result.inlier_rmse_);
                     if (result.fitness_ > 0.0) {
                         transformation_ =
@@ -158,7 +159,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         UpdateGeometry();
                     }
                 } else {
-                    utility::PrintInfo(
+                    utility::LogWarning(
                             "No ICP performed due to illegal max "
                             "correspondence distance.\n");
                 }
@@ -166,14 +167,13 @@ void VisualizerForAlignment::KeyPressCallback(
             }
             case GLFW_KEY_D: {
                 if (use_dialog_) {
-                    char buff[DEFAULT_IO_BUFFER_SIZE];
-                    sprintf(buff, "%.4f", voxel_size_);
+                    std::string buffer = fmt::format("{:.4f}", voxel_size_);
                     const char *str = tinyfd_inputBox(
                             "Set voxel size",
                             "Set voxel size (ignored if it is non-positive)",
-                            buff);
+                            buffer.c_str());
                     if (str == NULL) {
-                        utility::PrintDebug("Dialog closed.\n");
+                        utility::LogWarning("Dialog closed.\n");
                         return;
                     } else {
                         char *end;
@@ -181,7 +181,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            utility::PrintDebug(
+                            utility::LogWarning(
                                     "Illegal input, use default voxel size.\n");
                         } else {
                             voxel_size_ = l;
@@ -189,14 +189,14 @@ void VisualizerForAlignment::KeyPressCallback(
                     }
                 }
                 if (voxel_size_ > 0.0) {
-                    utility::PrintInfo(
-                            "Voxel downsample with voxel size %.4f.\n",
+                    utility::LogInfo(
+                            "Voxel downsample with voxel size {:.4f}.\n",
                             voxel_size_);
                     *source_copy_ptr_ =
                             *source_copy_ptr_->VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
-                    utility::PrintInfo(
+                    utility::LogWarning(
                             "No voxel downsample performed due to illegal "
                             "voxel size.\n");
                 }
@@ -280,8 +280,9 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     const auto &target_idx = target_visualizer_.GetPickedPoints();
     if (source_idx.empty() || target_idx.empty() ||
         source_idx.size() != target_idx.size()) {
-        utility::PrintWarning(
-                "# of picked points mismatch: %d in source, %d in target.\n",
+        utility::LogWarning(
+                "# of picked points mismatch: {:d} in source, {:d} in "
+                "target.\n",
                 (int)source_idx.size(), (int)target_idx.size());
         return false;
     }
@@ -290,37 +291,35 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     for (size_t i = 0; i < source_idx.size(); i++) {
         corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
     }
-    utility::PrintInfo(
-            "Error is %.4f before alignment.\n",
-            p2p.ComputeRMSE(*alignment_session_.source_ptr_,
-                            *alignment_session_.target_ptr_, corres));
+    utility::LogInfo("Error is {:.4f} before alignment.\n",
+                     p2p.ComputeRMSE(*alignment_session_.source_ptr_,
+                                     *alignment_session_.target_ptr_, corres));
     transformation_ =
             p2p.ComputeTransformation(*alignment_session_.source_ptr_,
                                       *alignment_session_.target_ptr_, corres);
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
     source_copy_ptr_->Transform(transformation_);
-    utility::PrintInfo(
-            "Error is %.4f before alignment.\n",
-            p2p.ComputeRMSE(*source_copy_ptr_, *alignment_session_.target_ptr_,
-                            corres));
+    utility::LogInfo("Error is {:.4f} before alignment.\n",
+                     p2p.ComputeRMSE(*source_copy_ptr_,
+                                     *alignment_session_.target_ptr_, corres));
     return true;
 }
 
 void VisualizerForAlignment::PrintTransformation() {
-    utility::PrintInfo("Current transformation is:\n");
-    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(0, 0),
-                       transformation_(0, 1), transformation_(0, 2),
-                       transformation_(0, 3));
-    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(1, 0),
-                       transformation_(1, 1), transformation_(1, 2),
-                       transformation_(1, 3));
-    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(2, 0),
-                       transformation_(2, 1), transformation_(2, 2),
-                       transformation_(2, 3));
-    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(3, 0),
-                       transformation_(3, 1), transformation_(3, 2),
-                       transformation_(3, 3));
+    utility::LogInfo("Current transformation is:\n");
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(0, 0),
+                     transformation_(0, 1), transformation_(0, 2),
+                     transformation_(0, 3));
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(1, 0),
+                     transformation_(1, 1), transformation_(1, 2),
+                     transformation_(1, 3));
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(2, 0),
+                     transformation_(2, 1), transformation_(2, 2),
+                     transformation_(2, 3));
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(3, 0),
+                     transformation_(3, 1), transformation_(3, 2),
+                     transformation_(3, 3));
 }
 
 void VisualizerForAlignment::EvaluateAlignmentAndSave(

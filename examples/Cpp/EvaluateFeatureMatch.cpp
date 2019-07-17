@@ -84,16 +84,16 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > EvaluateFeatureMatch [options]\n");
-    utility::PrintInfo("      Evaluate feature matching quality of point clouds.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Basic options:\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    utility::PrintInfo("    --dir directory           : The directory storing all data files. By default it is the parent directory of the log file + pcd/.\n");
-    utility::PrintInfo("    --threshold t             : Threshold to determine if a match is good or not. Default: 0.075.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > EvaluateFeatureMatch [options]\n");
+    utility::LogInfo("      Evaluate feature matching quality of point clouds.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Basic options:\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
+    utility::LogInfo("    --dir directory           : The directory storing all data files. By default it is the parent directory of the log file + pcd/.\n");
+    utility::LogInfo("    --threshold t             : Threshold to determine if a match is good or not. Default: 0.075.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
     // clang-format on
 }
 
@@ -105,7 +105,7 @@ bool ReadLogFile(const std::string &filename,
     transformations.clear();
     FILE *f = fopen(filename.c_str(), "r");
     if (f == NULL) {
-        utility::PrintWarning("Read LOG failed: unable to open file.\n");
+        utility::LogWarning("Read LOG failed: unable to open file.\n");
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -114,37 +114,32 @@ bool ReadLogFile(const std::string &filename,
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 return false;
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0, 0),
                        &trans(0, 1), &trans(0, 2), &trans(0, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1, 0),
                        &trans(1, 1), &trans(1, 2), &trans(1, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2, 0),
                        &trans(2, 1), &trans(2, 2), &trans(2, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 return false;
             } else {
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3, 0),
@@ -173,7 +168,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     std::string log_filename =
             utility::GetProgramOptionAsString(argc, argv, "--log");
@@ -225,17 +220,17 @@ int main(int argc, char *argv[]) {
         }
         total_correspondence_num += correspondence_num;
         total_point_num += (int)source.points_.size();
-        utility::PrintInfo("#%d <-- #%d : %d out of %d (%.2f%%).\n",
-                           pair_ids[k].first, pair_ids[k].second,
-                           correspondence_num, (int)source.points_.size(),
-                           correspondence_num * 100.0 / source.points_.size());
+        utility::LogInfo("#{:d} <-- #{:d} : {:d} out of {:d} ({:.2f}%).\n",
+                         pair_ids[k].first, pair_ids[k].second,
+                         correspondence_num, (int)source.points_.size(),
+                         correspondence_num * 100.0 / source.points_.size());
     }
-    utility::PrintWarning("Total %d out of %d (%.2f%% coverage).\n\n",
-                          total_correspondence_num, total_point_num,
-                          total_correspondence_num * 100.0 / total_point_num);
+    utility::LogInfo("Total {:d} out of {:d} ({:.2f}% coverage).\n\n",
+                     total_correspondence_num, total_point_num,
+                     total_correspondence_num * 100.0 / total_point_num);
 
     for (const auto feature : features) {
-        utility::PrintWarning("Evaluate feature %s.\n", feature.c_str());
+        utility::LogInfo("Evaluate feature {}.\n", feature);
         std::vector<KDTreeFlannFeature> feature_trees(pcd_names.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) num_threads(16)
@@ -244,7 +239,7 @@ int main(int argc, char *argv[]) {
             feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" +
                                           std::to_string(i) + "." + feature);
         }
-        utility::PrintInfo("All KDTrees built.\n");
+        utility::LogInfo("All KDTrees built.\n");
         int total_point_num = 0;
         int total_correspondence_num = 0;
         int total_positive = 0;
@@ -302,15 +297,16 @@ int main(int argc, char *argv[]) {
             total_correspondence_num += correspondence_num;
             total_positive += positive;
             total_point_num += (int)source.points_.size();
-            utility::PrintInfo(
-                    "#%d <-- #%d : %d out of %d out of %d (%.2f%% w.r.t. "
+            utility::LogInfo(
+                    "#{:d} <-- #{:d} : {:d} out of {:d} out of {:d} ({:.2f}% "
+                    "w.r.t. "
                     "correspondences).\n",
                     pair_ids[k].first, pair_ids[k].second, positive,
                     correspondence_num, (int)source.points_.size(),
                     positive * 100.0 / correspondence_num);
         }
-        utility::PrintWarning(
-                "Total %d out of %d out of %d (%.2f%% w.r.t. "
+        utility::LogInfo(
+                "Total {:d} out of {:d} out of {:d} ({:.2f}% w.r.t. "
                 "correspondences).\n\n",
                 total_positive, total_correspondence_num, total_point_num,
                 total_positive * 100.0 / total_correspondence_num);

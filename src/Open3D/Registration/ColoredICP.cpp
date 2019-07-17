@@ -78,7 +78,7 @@ private:
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         const geometry::PointCloud &target,
         const geometry::KDTreeSearchParamHybrid &search_param) {
-    utility::PrintDebug("InitializePointCloudForColoredICP\n");
+    utility::LogDebug("InitializePointCloudForColoredICP\n");
 
     geometry::KDTreeFlann tree;
     tree.SetGeometry(target);

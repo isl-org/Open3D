@@ -32,36 +32,36 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > ConvertPointCloud source_file target_file [options]\n");
-    utility::PrintInfo("    > ConvertPointCloud source_directory target_directory [options]\n");
-    utility::PrintInfo("      Read point cloud from source file and convert it to target file.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Options (listed in the order of execution priority):\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::PrintInfo("    --clip_x_min x0           : Clip points with x coordinate < x0.\n");
-    utility::PrintInfo("    --clip_x_max x1           : Clip points with x coordinate > x1.\n");
-    utility::PrintInfo("    --clip_y_min y0           : Clip points with y coordinate < y0.\n");
-    utility::PrintInfo("    --clip_y_max y1           : Clip points with y coordinate > y1.\n");
-    utility::PrintInfo("    --clip_z_min z0           : Clip points with z coordinate < z0.\n");
-    utility::PrintInfo("    --clip_z_max z1           : Clip points with z coordinate > z1.\n");
-    utility::PrintInfo("    --filter_mahalanobis d    : Filter out points with Mahalanobis distance > d.\n");
-    utility::PrintInfo("    --uniform_sample_every K  : Downsample the point cloud uniformly. Keep only\n");
-    utility::PrintInfo("                              : one point for every K points.\n");
-    utility::PrintInfo("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
-    utility::PrintInfo("    --estimate_normals radius : Estimate normals using a search neighborhood of\n");
-    utility::PrintInfo("                                radius. The normals are oriented w.r.t. the\n");
-    utility::PrintInfo("                                original normals of the pointcloud if they\n");
-    utility::PrintInfo("                                exist. Otherwise, they are oriented towards -Z\n");
-    utility::PrintInfo("                                direction.\n");
-    utility::PrintInfo("    --estimate_normals_knn k  : Estimate normals using a search with k nearest\n");
-    utility::PrintInfo("                                neighbors. The normals are oriented w.r.t. the\n");
-    utility::PrintInfo("                                original normals of the pointcloud if they\n");
-    utility::PrintInfo("                                exist. Otherwise, they are oriented towards -Z\n");
-    utility::PrintInfo("                                direction.\n");
-    utility::PrintInfo("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
-    utility::PrintInfo("    --camera_location [x,y,z] : Orient the normals w.r.t camera location [x,y,z].\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > ConvertPointCloud source_file target_file [options]\n");
+    utility::LogInfo("    > ConvertPointCloud source_directory target_directory [options]\n");
+    utility::LogInfo("      Read point cloud from source file and convert it to target file.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Options (listed in the order of execution priority):\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::LogInfo("    --clip_x_min x0           : Clip points with x coordinate < x0.\n");
+    utility::LogInfo("    --clip_x_max x1           : Clip points with x coordinate > x1.\n");
+    utility::LogInfo("    --clip_y_min y0           : Clip points with y coordinate < y0.\n");
+    utility::LogInfo("    --clip_y_max y1           : Clip points with y coordinate > y1.\n");
+    utility::LogInfo("    --clip_z_min z0           : Clip points with z coordinate < z0.\n");
+    utility::LogInfo("    --clip_z_max z1           : Clip points with z coordinate > z1.\n");
+    utility::LogInfo("    --filter_mahalanobis d    : Filter out points with Mahalanobis distance > d.\n");
+    utility::LogInfo("    --uniform_sample_every K  : Downsample the point cloud uniformly. Keep only\n");
+    utility::LogInfo("                              : one point for every K points.\n");
+    utility::LogInfo("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
+    utility::LogInfo("    --estimate_normals radius : Estimate normals using a search neighborhood of\n");
+    utility::LogInfo("                                radius. The normals are oriented w.r.t. the\n");
+    utility::LogInfo("                                original normals of the pointcloud if they\n");
+    utility::LogInfo("                                exist. Otherwise, they are oriented towards -Z\n");
+    utility::LogInfo("                                direction.\n");
+    utility::LogInfo("    --estimate_normals_knn k  : Estimate normals using a search with k nearest\n");
+    utility::LogInfo("                                neighbors. The normals are oriented w.r.t. the\n");
+    utility::LogInfo("                                original normals of the pointcloud if they\n");
+    utility::LogInfo("                                exist. Otherwise, they are oriented towards -Z\n");
+    utility::LogInfo("                                direction.\n");
+    utility::LogInfo("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
+    utility::LogInfo("    --camera_location [x,y,z] : Orient the normals w.r.t camera location [x,y,z].\n");
     // clang-format on
 }
 
@@ -112,8 +112,8 @@ void convert(int argc,
             }
         }
         auto pcd = pointcloud_ptr->SelectDownSample(indices);
-        utility::PrintDebug(
-                "Based on Mahalanobis distance, %d points were filtered.\n",
+        utility::LogDebug(
+                "Based on Mahalanobis distance, {:d} points were filtered.\n",
                 (int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
         pointcloud_ptr = pcd;
     }
@@ -122,8 +122,9 @@ void convert(int argc,
     int every_k = utility::GetProgramOptionAsInt(argc, argv,
                                                  "--uniform_sample_every", 0);
     if (every_k > 1) {
-        utility::PrintDebug(
-                "Downsample point cloud uniformly every %d points.\n", every_k);
+        utility::LogDebug(
+                "Downsample point cloud uniformly every {:d} points.\n",
+                every_k);
         pointcloud_ptr = pointcloud_ptr->UniformDownSample(every_k);
         processed = true;
     }
@@ -132,8 +133,8 @@ void convert(int argc,
     double voxel_size = utility::GetProgramOptionAsDouble(
             argc, argv, "--voxel_sample", 0.0);
     if (voxel_size > 0.0) {
-        utility::PrintDebug("Downsample point cloud with voxel size %.4f.\n",
-                            voxel_size);
+        utility::LogDebug("Downsample point cloud with voxel size {:.4f}.\n",
+                          voxel_size);
         pointcloud_ptr = pointcloud_ptr->VoxelDownSample(voxel_size);
         processed = true;
     }
@@ -142,8 +143,8 @@ void convert(int argc,
     double radius = utility::GetProgramOptionAsDouble(
             argc, argv, "--estimate_normals", 0.0);
     if (radius > 0.0) {
-        utility::PrintDebug("Estimate normals with search radius %.4f.\n",
-                            radius);
+        utility::LogDebug("Estimate normals with search radius {:.4f}.\n",
+                          radius);
         pointcloud_ptr->EstimateNormals(
                 geometry::KDTreeSearchParamRadius(radius));
         processed = true;
@@ -152,7 +153,7 @@ void convert(int argc,
     int k = utility::GetProgramOptionAsInt(argc, argv, "--estimate_normals_knn",
                                            0);
     if (k > 0) {
-        utility::PrintDebug("Estimate normals with search knn %d.\n", k);
+        utility::LogDebug("Estimate normals with search knn {:d}.\n", k);
         pointcloud_ptr->EstimateNormals(geometry::KDTreeSearchParamKNN(k));
         processed = true;
     }
@@ -161,8 +162,8 @@ void convert(int argc,
     Eigen::VectorXd direction = utility::GetProgramOptionAsEigenVectorXd(
             argc, argv, "--orient_normals");
     if (direction.size() == 3 && pointcloud_ptr->HasNormals()) {
-        utility::PrintDebug("Orient normals to [%.2f, %.2f, %.2f].\n",
-                            direction(0), direction(1), direction(2));
+        utility::LogDebug("Orient normals to [%.2f, %.2f, %.2f].\n",
+                          direction(0), direction(1), direction(2));
         Eigen::Vector3d dir(direction);
         pointcloud_ptr->OrientNormalsToAlignWithDirection(dir);
         processed = true;
@@ -170,8 +171,8 @@ void convert(int argc,
     Eigen::VectorXd camera_loc = utility::GetProgramOptionAsEigenVectorXd(
             argc, argv, "--camera_location");
     if (camera_loc.size() == 3 && pointcloud_ptr->HasNormals()) {
-        utility::PrintDebug("Orient normals towards [%.2f, %.2f, %.2f].\n",
-                            camera_loc(0), camera_loc(1), camera_loc(2));
+        utility::LogDebug("Orient normals towards [%.2f, %.2f, %.2f].\n",
+                          camera_loc(0), camera_loc(1), camera_loc(2));
         Eigen::Vector3d loc(camera_loc);
         pointcloud_ptr->OrientNormalsTowardsCameraLocation(loc);
         processed = true;
@@ -179,8 +180,8 @@ void convert(int argc,
 
     size_t point_num_out = pointcloud_ptr->points_.size();
     if (processed) {
-        utility::PrintInfo(
-                "Processed point cloud from %d points to %d points.\n",
+        utility::LogInfo(
+                "Processed point cloud from {:d} points to {:d} points.\n",
                 (int)point_num_in, (int)point_num_out);
     }
     io::WritePointCloud(file_out.c_str(), *pointcloud_ptr, false, true);
@@ -211,7 +212,7 @@ int main(int argc, char **argv) {
                             GetFileNameWithoutDirectory(fn));
         }
     } else {
-        utility::PrintError("File or directory does not exist.\n");
+        utility::LogWarning("File or directory does not exist.\n");
     }
 
     return 1;

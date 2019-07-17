@@ -52,15 +52,14 @@ void ClassMethodDocInject(py::module& pybind_module,
     PyObject* module = pybind_module.ptr();
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
     if (class_obj == nullptr) {
-        utility::PrintWarning("%s docstring failed to inject.\n",
-                              class_name.c_str());
+        utility::LogWarning("{} docstring failed to inject.\n", class_name);
         return;
     }
     PyObject* class_method_obj =
             PyObject_GetAttrString(class_obj, function_name.c_str());
     if (class_method_obj == nullptr) {
-        utility::PrintWarning("%s::%s docstring failed to inject.\n",
-                              class_name.c_str(), function_name.c_str());
+        utility::LogWarning("{}::{} docstring failed to inject.\n", class_name,
+                            function_name);
         return;
     }
 
@@ -113,8 +112,7 @@ void FunctionDocInject(py::module& pybind_module,
     PyObject* module = pybind_module.ptr();
     PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
     if (f_obj == nullptr) {
-        utility::PrintWarning("%s docstring failed to inject.\n",
-                              function_name.c_str());
+        utility::LogWarning("{} docstring failed to inject.\n", function_name);
         return;
     }
     if (Py_TYPE(f_obj) != &PyCFunction_Type) {

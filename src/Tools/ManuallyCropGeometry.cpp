@@ -30,17 +30,17 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::PrintInfo("Usage:\n");
-    utility::PrintInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
-    utility::PrintInfo("      Manually crop geometry in speficied file.\n");
-    utility::PrintInfo("\n");
-    utility::PrintInfo("Options:\n");
-    utility::PrintInfo("    --pointcloud,             : Read geometry as point cloud.\n");
-    utility::PrintInfo("    --mesh,                   : Read geometry as mesh.\n");
-    utility::PrintInfo("    --help, -h                : Print help information.\n");
-    utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
-    utility::PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
+    utility::LogInfo("      Manually crop geometry in speficied file.\n");
+    utility::LogInfo("\n");
+    utility::LogInfo("Options:\n");
+    utility::LogInfo("    --pointcloud,             : Read geometry as point cloud.\n");
+    utility::LogInfo("    --mesh,                   : Read geometry as mesh.\n");
+    utility::LogInfo("    --help, -h                : Print help information.\n");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::LogInfo("    --voxel_size d            : Set downsample voxel size.\n");
+    utility::LogInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
     // clang-format on
 }
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
         if (pcd_ptr->IsEmpty()) {
-            utility::PrintWarning("Failed to read the point cloud.\n");
+            utility::LogWarning("Failed to read the point cloud.\n");
             return 0;
         }
         vis.AddGeometry(pcd_ptr);
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     } else if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
         if (mesh_ptr->IsEmpty()) {
-            utility::PrintWarning("Failed to read the mesh.\n");
+            utility::LogWarning("Failed to read the mesh.\n");
             return 0;
         }
         vis.AddGeometry(mesh_ptr);

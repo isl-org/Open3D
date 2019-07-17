@@ -101,14 +101,14 @@ VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     if (voxel_size_ != voxelgrid.voxel_size_) {
-        utility::PrintError(
+        utility::LogWarningf(
                 "[VoxelGrid] Could not combine VoxelGrid because voxel_size "
                 "differs (this=%f, other=%f.\n",
                 voxel_size_, voxelgrid.voxel_size_);
         return *this;
     }
     if (origin_ != voxelgrid.origin_) {
-        utility::PrintError(
+        utility::LogWarningf(
                 "[VoxelGrid] Could not combine VoxelGrid because origin "
                 "differs (this=%f,%f,%f, other=%f,%f,%f.\n",
                 origin_(0), origin_(1), origin_(2), voxelgrid.origin_(0),
@@ -116,7 +116,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         return *this;
     }
     if (this->HasColors() != voxelgrid.HasColors()) {
-        utility::PrintError(
+        utility::LogWarningf(
                 "[VoxelGrid] Could not combine VoxelGrid one has colors and "
                 "the other not.\n");
         return *this;
@@ -226,7 +226,7 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
         const camera::PinholeCameraParameters &camera_parameter) {
     if (depth_map.height_ != camera_parameter.intrinsic_.height_ ||
         depth_map.width_ != camera_parameter.intrinsic_.width_) {
-        utility::PrintError(
+        utility::LogWarning(
                 "[VoxelGrid] provided depth_map dimensions are not compatible "
                 "with the provided camera_parameters\n");
         return *this;
@@ -276,7 +276,7 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
         const camera::PinholeCameraParameters &camera_parameter) {
     if (silhouette_mask.height_ != camera_parameter.intrinsic_.height_ ||
         silhouette_mask.width_ != camera_parameter.intrinsic_.width_) {
-        utility::PrintError(
+        utility::LogWarning(
                 "[VoxelGrid] provided silhouette_mask dimensions are not "
                 "compatible with the provided camera_parameters\n");
         return *this;

@@ -202,13 +202,13 @@ message(STATUS "Building tinyobjloader from source")
 include_directories("tinyobjloader/")
 add_library(tinyobjloader STATIC tinyobjloader/tiny_obj_loader.cc)
 if (NOT BUILD_SHARED_LIBS)
-  install(TARGETS tinyobjloader 
+  install(TARGETS tinyobjloader
         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 set(tinyobjloader_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader")
-set(tinyobjloader_LIBRARIES tinyobjloader) 
+set(tinyobjloader_LIBRARIES tinyobjloader)
 
 # rply
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
@@ -270,7 +270,7 @@ if (BUILD_QHULL)
             ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
     endif()
     set(qhull_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/qhull/src")
-    set(qhull_LIBRARIES qhullcpp qhullstatic_r) 
+    set(qhull_LIBRARIES qhullcpp qhullstatic_r)
 else ()
     message(SEND_ERROR "qhull dependency not met.")
 endif ()
@@ -285,7 +285,7 @@ if (BUILD_UNIT_TESTS)
       ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/
       ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googlemock/include
       ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googlemock/)
-    set(googletest_SOURCE 
+    set(googletest_SOURCE
         googletest/googletest/src/gtest-all.cc
         googletest/googlemock/src/gmock-all.cc)
     include_directories(${googletest_INCLUDE_DIRS})
@@ -296,9 +296,12 @@ if (BUILD_UNIT_TESTS)
             LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
             ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
     endif()
-    set(googletest_LIBRARIES googletest) 
+    set(googletest_LIBRARIES googletest)
 endif()
 
+# fmt library
+set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
+INSTALL_HEADERS(fmt)
 
 # set 3RDPARTY_INCLUDE_DIRS
 list(APPEND 3RDPARTY_INCLUDE_DIRS
@@ -318,7 +321,9 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${tinyfiledialogs_INCLUDE_DIRS}
      ${tinyfobjloader_INCLUDE_DIRS}
      ${qhull_INCLUDE_DIRS}
-     ${googletest_INCLUDE_DIRS})
+     ${googletest_INCLUDE_DIRS}
+     ${fmt_INCLUDE_DIRS}
+)
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -327,6 +332,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
      ${EIGEN3_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
+     ${fmt_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_LIBRARY_DIRS
@@ -335,7 +341,8 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
     ${JPEG_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
-    ${PNG_LIBRARY_DIRS})
+    ${PNG_LIBRARY_DIRS}
+)
 
 # set 3RDPARTY_LIBRARIES
 list(APPEND 3RDPARTY_LIBRARIES
@@ -347,7 +354,9 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${tinyfiledialogs_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${qhull_LIBRARIES}
-     ${googletest_LIBRARIES})
+     ${googletest_LIBRARIES}
+     ${fmt_LIBRARIES}
+)
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,

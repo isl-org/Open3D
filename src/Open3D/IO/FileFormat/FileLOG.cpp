@@ -51,8 +51,8 @@ bool ReadPinholeCameraTrajectoryFromLOG(
     trajectory.parameters_.clear();
     FILE *f = fopen(filename.c_str(), "r");
     if (f == NULL) {
-        utility::PrintWarning("Read LOG failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Read LOG failed: unable to open file: {}\n",
+                            filename.c_str());
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -61,14 +61,12 @@ bool ReadPinholeCameraTrajectoryFromLOG(
     while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
         if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
             if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
@@ -76,8 +74,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(
                        &trans(0, 1), &trans(0, 2), &trans(0, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
@@ -85,8 +82,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(
                        &trans(1, 1), &trans(1, 2), &trans(1, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
@@ -94,8 +90,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(
                        &trans(2, 1), &trans(2, 2), &trans(2, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-                utility::PrintWarning(
-                        "Read LOG failed: unrecognized format.\n");
+                utility::LogWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
@@ -117,8 +112,8 @@ bool WritePinholeCameraTrajectoryToLOG(
         const camera::PinholeCameraTrajectory &trajectory) {
     FILE *f = fopen(filename.c_str(), "w");
     if (f == NULL) {
-        utility::PrintWarning("Write LOG failed: unable to open file: %s\n",
-                              filename.c_str());
+        utility::LogWarning("Write LOG failed: unable to open file: {}\n",
+                            filename);
         return false;
     }
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {

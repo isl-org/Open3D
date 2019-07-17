@@ -40,8 +40,8 @@ bool ReadPoses(const std::string& trajectory_path,
                std::vector<Eigen::Matrix4d>& poses) {
     FILE* f = fopen(trajectory_path.c_str(), "r");
     if (f == NULL) {
-        utility::PrintWarning("Read poses failed: unable to open file: %s\n",
-                              trajectory_path.c_str());
+        utility::LogWarning("Read poses failed: unable to open file: {}\n",
+                            trajectory_path);
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];

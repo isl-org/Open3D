@@ -83,6 +83,8 @@ static const std::unordered_map<std::string, std::string>
                  "The ``PinholeCameraParameters`` object for I/O"},
                 {"pose_graph", "The ``PoseGraph`` object for I/O"},
                 {"feature", "The ``Feature`` object for I/O"},
+                {"print_progress",
+                 "If set to true a progress bar is visualized in the console"},
 };
 
 void pybind_io(py::module &m) {
@@ -112,100 +114,109 @@ void pybind_io(py::module &m) {
 
     // open3d::geometry::LineSet
     m_io.def("read_line_set",
-             [](const std::string &filename, const std::string &format) {
+             [](const std::string &filename, const std::string &format,
+                bool print_progress) {
                  geometry::LineSet line_set;
-                 io::ReadLineSet(filename, line_set, format);
+                 io::ReadLineSet(filename, line_set, format, print_progress);
                  return line_set;
              },
              "Function to read LineSet from file", "filename"_a,
-             "format"_a = "auto");
+             "format"_a = "auto", "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_line_set",
                                  map_shared_argument_docstrings);
 
     m_io.def("write_line_set",
              [](const std::string &filename, const geometry::LineSet &line_set,
-                bool write_ascii, bool compressed) {
+                bool write_ascii, bool compressed, bool print_progress) {
                  return io::WriteLineSet(filename, line_set, write_ascii,
-                                         compressed);
+                                         compressed, print_progress);
              },
              "Function to write LineSet to file", "filename"_a, "line_set"_a,
-             "write_ascii"_a = false, "compressed"_a = false);
+             "write_ascii"_a = false, "compressed"_a = false,
+             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_line_set",
                                  map_shared_argument_docstrings);
 
     // open3d::geometry::PointCloud
     m_io.def("read_point_cloud",
              [](const std::string &filename, const std::string &format,
-                bool remove_nan_points, bool remove_infinite_points) {
+                bool remove_nan_points, bool remove_infinite_points,
+                bool print_progress) {
                  geometry::PointCloud pcd;
                  io::ReadPointCloud(filename, pcd, format, remove_nan_points,
-                                    remove_infinite_points);
+                                    remove_infinite_points, print_progress);
                  return pcd;
              },
              "Function to read PointCloud from file", "filename"_a,
              "format"_a = "auto", "remove_nan_points"_a = true,
-             "remove_infinite_points"_a = true);
+             "remove_infinite_points"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
                                  map_shared_argument_docstrings);
 
     m_io.def("write_point_cloud",
              [](const std::string &filename,
                 const geometry::PointCloud &pointcloud, bool write_ascii,
-                bool compressed) {
+                bool compressed, bool print_progress) {
                  return io::WritePointCloud(filename, pointcloud, write_ascii,
-                                            compressed);
+                                            compressed, print_progress);
              },
              "Function to write PointCloud to file", "filename"_a,
-             "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false);
+             "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
+             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
     // open3d::geometry::TriangleMesh
     m_io.def("read_triangle_mesh",
-             [](const std::string &filename) {
+             [](const std::string &filename, bool print_progress) {
                  geometry::TriangleMesh mesh;
-                 io::ReadTriangleMesh(filename, mesh);
+                 io::ReadTriangleMesh(filename, mesh, print_progress);
                  return mesh;
              },
-             "Function to read TriangleMesh from file", "filename"_a);
+             "Function to read TriangleMesh from file", "filename"_a,
+             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_mesh",
                                  map_shared_argument_docstrings);
 
     m_io.def("write_triangle_mesh",
              [](const std::string &filename, const geometry::TriangleMesh &mesh,
                 bool write_ascii, bool compressed, bool write_vertex_normals,
-                bool write_vertex_colors) {
+                bool write_vertex_colors, bool print_progress) {
                  return io::WriteTriangleMesh(filename, mesh, write_ascii,
                                               compressed, write_vertex_normals,
-                                              write_vertex_colors);
+                                              write_vertex_colors,
+                                              print_progress);
              },
              "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
              "write_ascii"_a = false, "compressed"_a = false,
-             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true);
+             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
+             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 
     // open3d::geometry::VoxelGrid
     m_io.def("read_voxel_grid",
-             [](const std::string &filename, const std::string &format) {
+             [](const std::string &filename, const std::string &format,
+                bool print_progress) {
                  geometry::VoxelGrid voxel_grid;
                  io::ReadVoxelGrid(filename, voxel_grid, format);
                  return voxel_grid;
              },
              "Function to read VoxelGrid from file", "filename"_a,
-             "format"_a = "auto");
+             "format"_a = "auto", "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_voxel_grid",
                                  map_shared_argument_docstrings);
 
     m_io.def("write_voxel_grid",
              [](const std::string &filename,
                 const geometry::VoxelGrid &voxel_grid, bool write_ascii,
-                bool compressed) {
+                bool compressed, bool print_progress) {
                  return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
-                                           compressed);
+                                           compressed, print_progress);
              },
              "Function to write VoxelGrid to file", "filename"_a,
-             "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false);
+             "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false,
+             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_voxel_grid",
                                  map_shared_argument_docstrings);
 

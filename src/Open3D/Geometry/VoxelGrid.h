@@ -171,7 +171,7 @@ public:
 public:
     void Add(const Eigen::Vector3i &voxel_index) {
         if (num_of_points_ > 0 && voxel_index != voxel_index_) {
-            utility::PrintError(
+            utility::LogWarning(
                     "Tried to aggregate ColorVoxel with different "
                     "voxel_index\n");
         }

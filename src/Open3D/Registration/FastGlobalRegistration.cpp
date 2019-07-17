@@ -46,7 +46,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         const FastGlobalRegistrationOption& option) {
     // STEP 0) Swap source and target if necessary
     int fi = 0, fj = 1;
-    utility::PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
+    utility::LogDebug("Advanced matching : [{:d} - {:d}]\n", fi, fj);
     bool swapped = false;
     if (point_cloud_vec[fj].points_.size() >
         point_cloud_vec[fi].points_.size()) {
@@ -92,10 +92,10 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     for (int j = 0; j < ncorres_ji; ++j)
         corres.push_back(
                 std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
-    utility::PrintDebug("points are remained : %d\n", (int)corres.size());
+    utility::LogDebug("points are remained : {:d}\n", (int)corres.size());
 
     // STEP 2) CROSS CHECK
-    utility::PrintDebug("\t[cross check] ");
+    utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
     std::vector<std::vector<int>> Mi(nPti), Mj(nPtj);
     int ci, cj;
@@ -118,10 +118,10 @@ std::vector<std::pair<int, int>> AdvancedMatching(
             }
         }
     }
-    utility::PrintDebug("points are remained : %d\n", (int)corres_cross.size());
+    utility::LogDebug("points are remained : %d\n", (int)corres_cross.size());
 
     // STEP 3) TUPLE CONSTRAINT
-    utility::PrintDebug("\t[tuple constraint] ");
+    utility::LogDebug("\t[tuple constraint] ");
     std::srand((unsigned int)std::time(0));
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
@@ -166,8 +166,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         }
         if (cnt >= option.maximum_tuple_count_) break;
     }
-    utility::PrintDebug("%d tuples (%d trial, %d actual).\n", cnt,
-                        number_of_trial, i);
+    utility::LogDebug("{:d} tuples ({:d} trial, {:d} actual).\n", cnt,
+                      number_of_trial, i);
 
     if (swapped) {
         std::vector<std::pair<int, int>> temp;
@@ -177,7 +177,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         corres_tuple.clear();
         corres_tuple = temp;
     }
-    utility::PrintDebug("\t[final] matches %d.\n", (int)corres_tuple.size());
+    utility::LogDebug("\t[final] matches {:d}.\n", (int)corres_tuple.size());
     return corres_tuple;
 }
 
@@ -201,8 +201,8 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         mean = mean / npti;
         pcd_mean_vec.push_back(mean);
 
-        utility::PrintDebug("normalize points :: mean = [%f %f %f]\n", mean(0),
-                            mean(1), mean(2));
+        utility::LogDebug("normalize points :: mean = [{:f} {:f} {:f}]\n",
+                          mean(0), mean(1), mean(2));
         for (int ii = 0; ii < npti; ++ii)
             point_cloud_vec[i].points_[ii] -= mean;
 
@@ -221,8 +221,8 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         scale_global = scale;
         scale_start = 1.0;
     }
-    utility::PrintDebug("normalize points :: global scale : %f\n",
-                        scale_global);
+    utility::LogDebug("normalize points :: global scale : {:f}\n",
+                      scale_global);
 
     for (int i = 0; i < num; ++i) {
         int npti = static_cast<int>(point_cloud_vec[i].points_.size());
@@ -238,7 +238,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         const std::vector<std::pair<int, int>>& corres,
         double scale_start,
         const FastGlobalRegistrationOption& option) {
-    utility::PrintDebug("Pairwise rigid pose optimization\n");
+    utility::LogDebug("Pairwise rigid pose optimization\n");
     double par = scale_start;
     int numIter = option.iteration_number_;
 

@@ -571,11 +571,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
         size_t number_of_points) const {
     if (number_of_points <= 0) {
-        utility::PrintWarning("[SamplePointsUniformly] number_of_points <= 0");
+        utility::LogWarning("[SamplePointsUniformly] number_of_points <= 0");
         return std::make_shared<PointCloud>();
     }
     if (triangles_.size() == 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "[SamplePointsUniformly] input mesh has no triangles");
         return std::make_shared<PointCloud>();
     }
@@ -593,24 +593,23 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) const {
     if (number_of_points <= 0) {
-        utility::PrintWarning(
-                "[SamplePointsPoissonDisk] number_of_points <= 0");
+        utility::LogWarning("[SamplePointsPoissonDisk] number_of_points <= 0");
         return std::make_shared<PointCloud>();
     }
     if (triangles_.size() == 0) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "[SamplePointsPoissonDisk] input mesh has no triangles");
         return std::make_shared<PointCloud>();
     }
     if (pcl_init == nullptr && init_factor < 1) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "[SamplePointsPoissonDisk] either pass pcl_init with #points "
                 "> "
                 "number_of_points or init_factor > 1");
         return std::make_shared<PointCloud>();
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
-        utility::PrintWarning(
+        utility::LogWarning(
                 "[SamplePointsPoissonDisk] either pass pcl_init with #points "
                 "> "
                 "number_of_points, or init_factor > 1");
@@ -775,8 +774,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
             ComputeAdjacencyList();
         }
     }
-    utility::PrintDebug(
-            "[RemoveDuplicatedVertices] %d vertices have been removed.\n",
+    utility::LogDebug(
+            "[RemoveDuplicatedVertices] {:d} vertices have been removed.\n",
             (int)(old_vertex_num - k));
 
     return *this;
@@ -822,8 +821,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     if (k < old_triangle_num && HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    utility::PrintDebug(
-            "[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
+    utility::LogDebug(
+            "[RemoveDuplicatedTriangles] {:d} triangles have been removed.\n",
             (int)(old_triangle_num - k));
 
     return *this;
@@ -865,8 +864,8 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
             ComputeAdjacencyList();
         }
     }
-    utility::PrintDebug(
-            "[RemoveUnreferencedVertices] %d vertices have been removed.\n",
+    utility::LogDebug(
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.\n",
             (int)(old_vertex_num - k));
 
     return *this;
@@ -890,8 +889,8 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     if (k < old_triangle_num && HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    utility::PrintDebug(
-            "[RemoveDegenerateTriangles] %d triangles have been "
+    utility::LogDebug(
+            "[RemoveDegenerateTriangles] {:d} triangles have been "
             "removed.\n",
             (int)(old_triangle_num - k));
     return *this;
