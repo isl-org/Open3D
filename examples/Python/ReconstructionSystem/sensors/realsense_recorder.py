@@ -44,9 +44,9 @@ def save_intrinsic_as_json(filename, frame):
         obj = json.dump(
             {
                 'width':
-                intrinsics.width,
+                    intrinsics.width,
                 'height':
-                intrinsics.height,
+                    intrinsics.height,
                 'intrinsic_matrix': [
                     intrinsics.fx, 0, 0, 0, intrinsics.fy, 0, intrinsics.ppx,
                     intrinsics.ppy, 1
