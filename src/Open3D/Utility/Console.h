@@ -31,7 +31,6 @@
 #include <vector>
 #ifdef _WIN32
 #include <windows.h>
-#include "stdafx.h"
 #endif
 
 #define FMT_HEADER_ONLY 1
