@@ -452,7 +452,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         kdtree.SearchKNN(points_[i], nb_neighbors, tmp_indices, dist);
-        double mean = -1;
+        double mean = -1.0;
         if (dist.size() > 0u) {
             valid_distances++;
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();

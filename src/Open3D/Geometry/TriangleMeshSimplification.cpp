@@ -186,9 +186,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         // Map triangles
         std::unordered_map<int, std::unordered_set<int>> vert_to_triangles;
         for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-            vert_to_triangles[triangles_[tidx](0)].emplace(tidx);
-            vert_to_triangles[triangles_[tidx](1)].emplace(tidx);
-            vert_to_triangles[triangles_[tidx](2)].emplace(tidx);
+            vert_to_triangles[triangles_[tidx](0)].emplace(int(tidx));
+            vert_to_triangles[triangles_[tidx](1)].emplace(int(tidx));
+            vert_to_triangles[triangles_[tidx](2)].emplace(int(tidx));
         }
 
         for (const auto& voxel : voxel_vertices) {

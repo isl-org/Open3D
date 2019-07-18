@@ -69,12 +69,12 @@ bool HalfEdgeTriangleMesh::ComputeHalfEdges() {
         size_t he_0_index = num_half_edges;
         size_t he_1_index = num_half_edges + 1;
         size_t he_2_index = num_half_edges + 2;
-        HalfEdge he_0(Eigen::Vector2i(triangle(0), triangle(1)), triangle_index,
-                      int(he_1_index), -1);
-        HalfEdge he_1(Eigen::Vector2i(triangle(1), triangle(2)), triangle_index,
-                      int(he_2_index), -1);
-        HalfEdge he_2(Eigen::Vector2i(triangle(2), triangle(0)), triangle_index,
-                      int(he_0_index), -1);
+        HalfEdge he_0(Eigen::Vector2i(triangle(0), triangle(1)),
+                      int(triangle_index), int(he_1_index), -1);
+        HalfEdge he_1(Eigen::Vector2i(triangle(1), triangle(2)),
+                      int(triangle_index), int(he_2_index), -1);
+        HalfEdge he_2(Eigen::Vector2i(triangle(2), triangle(0)),
+                      int(triangle_index), int(he_0_index), -1);
 
         if (vertex_indices_to_half_edge_index.find(he_0.vertex_indices_) !=
                     vertex_indices_to_half_edge_index.end() ||

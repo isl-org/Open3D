@@ -680,7 +680,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
             queue(WeightCmp);
     for (size_t pidx0 = 0; pidx0 < pcl->points_.size(); ++pidx0) {
         ComputePointWeight(int(pidx0));
-        queue.push(QueueEntry(pidx0, weights[pidx0]));
+        queue.push(QueueEntry(int(pidx0), weights[pidx0]));
     };
 
     // sample elimination
@@ -1230,9 +1230,9 @@ std::vector<int> TriangleMesh::GetNonManifoldVertices() const {
     std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto &tria = triangles_[tidx];
-        vert_to_triangles[tria(0)].emplace(tidx);
-        vert_to_triangles[tria(1)].emplace(tidx);
-        vert_to_triangles[tria(2)].emplace(tidx);
+        vert_to_triangles[tria(0)].emplace(int(tidx));
+        vert_to_triangles[tria(1)].emplace(int(tidx));
+        vert_to_triangles[tria(2)].emplace(int(tidx));
     }
 
     std::vector<int> non_manifold_verts;
