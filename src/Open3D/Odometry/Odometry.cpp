@@ -268,7 +268,7 @@ Eigen::Matrix6d CreateInformationMatrix(
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (size_t row = 0; row < correspondence->size(); row++) {
+        for (int row = 0; row < int(correspondence->size()); row++) {
             int u_t = (*correspondence)[row](2);
             int v_t = (*correspondence)[row](3);
             double x = *xyz_t->PointerAt<float>(u_t, v_t, 0);

@@ -56,7 +56,7 @@ void OptimizeImageCoorNonrigid(
         std::vector<double>& proxy_intensity,
         const ColorMapOptimizationOption& option) {
     auto n_vertex = mesh.vertices_.size();
-    auto n_camera = camera.parameters_.size();
+    int n_camera = int(camera.parameters_.size());
     SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
                                visiblity_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
@@ -67,7 +67,7 @@ void OptimizeImageCoorNonrigid(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (size_t c = 0; c < n_camera; c++) {
+        for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
             double rr_reg = 0.0;
@@ -153,7 +153,7 @@ void OptimizeImageCoorRigid(
         std::vector<double>& proxy_intensity,
         const ColorMapOptimizationOption& option) {
     int total_num_ = 0;
-    auto n_camera = camera.parameters_.size();
+    int n_camera = int(camera.parameters_.size());
     SetProxyIntensityForVertex(mesh, images_gray, camera,
                                visiblity_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
@@ -164,7 +164,7 @@ void OptimizeImageCoorRigid(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (size_t c = 0; c < n_camera; c++) {
+        for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = camera.parameters_[c].extrinsic_;
 
@@ -239,8 +239,8 @@ CreateGradientImages(
         images_color.push_back(color);
         images_depth.push_back(depth);
     }
-    return std::move(std::make_tuple(images_gray, images_dx, images_dy,
-                                     images_color, images_depth));
+    return std::make_tuple(images_gray, images_dx, images_dy, images_color,
+                           images_depth);
 }
 
 std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
@@ -268,7 +268,7 @@ std::vector<ImageWarpingField> CreateWarpingFields(
         fields.push_back(ImageWarpingField(width, height,
                                            option.number_of_vertical_anchors_));
     }
-    return std::move(fields);
+    return fields;
 }
 
 }  // unnamed namespace

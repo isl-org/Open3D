@@ -102,11 +102,11 @@ public:
         }
         if (cloud.HasColors()) {
             if (approximate_class) {
-                auto got = classes.find(cloud.colors_[index][0]);
+                auto got = classes.find(int(cloud.colors_[index][0]));
                 if (got == classes.end())
-                    classes[cloud.colors_[index][0]] = 1;
+                    classes[int(cloud.colors_[index][0])] = 1;
                 else
-                    classes[cloud.colors_[index][0]] += 1;
+                    classes[int(cloud.colors_[index][0])] += 1;
             } else {
                 color_ += cloud.colors_[index];
             }
@@ -406,7 +406,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t i = 0; i < points_.size(); i++) {
+    for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
@@ -445,7 +445,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t i = 0; i < points_.size(); i++) {
+    for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         kdtree.SearchKNN(points_[i], nb_neighbors, tmp_indices, dist);

@@ -399,7 +399,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (size_t c = 0; c < result.correspondence_set_.size(); c++) {
+        for (int c = 0; c < int(result.correspondence_set_.size()); c++) {
             int t = result.correspondence_set_[c](1);
             double x = target.points_[t](0);
             double y = target.points_[t](1);
