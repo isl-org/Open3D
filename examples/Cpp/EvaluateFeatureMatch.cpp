@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) num_threads(16)
 #endif
-        for (size_t i = 0; i < pcd_names.size(); i++) {
+        for (int i = 0; i < int(pcd_names.size()); i++) {
             feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" +
                                           std::to_string(i) + "." + feature);
         }
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 #pragma omp parallel for schedule(static) \
         num_threads(16) private(indices, fdistance2)
 #endif
-            for (size_t i = 0; i < source.points_.size(); i++) {
+            for (int i = 0; i < int(source.points_.size()); i++) {
                 if (has_correspondence[i]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
                                 feature_trees[pair_ids[k].second].data_, i, 1,
