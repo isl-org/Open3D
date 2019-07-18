@@ -110,7 +110,7 @@ vector<geometry::RGBDImage> GenerateRGBDImages(const int& width,
         rgbdImages.push_back(rgbdImage);
     }
 
-    return move(rgbdImages);
+    return rgbdImages;
 }
 
 // ----------------------------------------------------------------------------

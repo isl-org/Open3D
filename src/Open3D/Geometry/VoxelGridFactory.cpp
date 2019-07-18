@@ -43,9 +43,9 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
                                                   double height,
                                                   double depth) {
     auto output = std::make_shared<VoxelGrid>();
-    int num_w = std::round(width / voxel_size);
-    int num_h = std::round(height / voxel_size);
-    int num_d = std::round(depth / voxel_size);
+    int num_w = int(std::round(width / voxel_size));
+    int num_h = int(std::round(height / voxel_size));
+    int num_d = int(std::round(depth / voxel_size));
     output->origin_ = origin;
     output->voxel_size_ = voxel_size;
     output->voxels_.resize(num_w * num_h * num_d);
@@ -140,9 +140,9 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
     output->origin_ = min_bound;
 
     Eigen::Vector3d grid_size = max_bound - min_bound;
-    int num_w = std::round(grid_size(0) / voxel_size);
-    int num_h = std::round(grid_size(1) / voxel_size);
-    int num_d = std::round(grid_size(2) / voxel_size);
+    int num_w = int(std::round(grid_size(0) / voxel_size));
+    int num_h = int(std::round(grid_size(1) / voxel_size));
+    int num_d = int(std::round(grid_size(2) / voxel_size));
     const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
                                         voxel_size / 2);
     for (int widx = 0; widx < num_w; widx++) {

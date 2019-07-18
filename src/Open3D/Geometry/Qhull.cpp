@@ -78,7 +78,7 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
 
             if (inserted_vertices.count(vidx) == 0) {
                 inserted_vertices.insert(vidx);
-                vert_map[vidx] = convex_hull->vertices_.size();
+                vert_map[vidx] = int(convex_hull->vertices_.size());
                 double* coords = p.coordinates();
                 convex_hull->vertices_.push_back(
                         Eigen::Vector3d(coords[0], coords[1], coords[2]));

@@ -297,7 +297,7 @@ Eigen::Matrix6d CreateInformationMatrix(
 #ifdef _OPENMP
     }
 #endif
-    return std::move(GTG);
+    return GTG;
 }
 
 void NormalizeIntensity(geometry::Image &image_s,

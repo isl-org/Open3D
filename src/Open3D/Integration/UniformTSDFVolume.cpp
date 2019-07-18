@@ -315,10 +315,12 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
-            Eigen::Vector4f pt_3d_homo(
-                    half_voxel_length_f + voxel_length_f * x + origin_(0),
-                    half_voxel_length_f + voxel_length_f * y + origin_(1),
-                    half_voxel_length_f + origin_(2), 1.0);
+            Eigen::Vector4f pt_3d_homo(float(half_voxel_length_f +
+                                             voxel_length_f * x + origin_(0)),
+                                       float(half_voxel_length_f +
+                                             voxel_length_f * y + origin_(1)),
+                                       float(half_voxel_length_f + origin_(2)),
+                                       1.f);
             Eigen::Vector4f pt_camera = extrinsic_f * pt_3d_homo;
             for (int z = 0; z < resolution_; z++,
                      pt_camera(0) += extrinsic_scaled_f(0, 2),

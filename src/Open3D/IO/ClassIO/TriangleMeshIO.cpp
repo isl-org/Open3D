@@ -222,7 +222,7 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                     mesh.triangles_.push_back(Eigen::Vector3i(
                             indices[i - 1], indices[i], indices[i + 1]));
                     indices.erase(indices.begin() + i);
-                    n = indices.size();
+                    n = int(indices.size());
                     break;
                 }
             }

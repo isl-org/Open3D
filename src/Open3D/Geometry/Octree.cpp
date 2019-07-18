@@ -156,7 +156,7 @@ bool OctreeColorLeafNode::operator==(const OctreeLeafNode& that) const {
         const OctreeColorLeafNode& that_color_node =
                 dynamic_cast<const OctreeColorLeafNode&>(that);
         return this->color_.isApprox(that_color_node.color_);
-    } catch (const std::exception& ex) {
+    } catch (const std::exception&) {
         return false;
     }
 }
@@ -511,8 +511,10 @@ void Octree::TraverseRecurse(
 
             auto child_node = internal_node->children_[child_index];
             Eigen::Vector3d child_node_origin =
-                    node_info->origin_ +
-                    Eigen::Vector3d(x_index, y_index, z_index) * child_size;
+                    node_info->origin_ + Eigen::Vector3d(double(x_index),
+                                                         double(y_index),
+                                                         double(z_index)) *
+                                                 child_size;
             auto child_node_info = std::make_shared<OctreeNodeInfo>(
                     child_node_origin, child_size, node_info->depth_ + 1,
                     child_index);

@@ -204,7 +204,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
     // Rename vertex id based on selected points
     std::vector<int> new_vertex_id(vertices_.size());
     for (size_t i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
-        if (mask_observed_vertex[i]) new_vertex_id[i] = cnt++;
+        if (mask_observed_vertex[i]) {
+            new_vertex_id[i] = int(cnt);
+            cnt++;
+        }
     }
     // Push a triangle that has 3 selected vertices.
     triangle_id = 0;
@@ -347,7 +350,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
         for (int i = 0; i < (int)original_id.size(); i++) {
             size_t pid = original_id[i].point_id;
             int cid = original_id[i].cubic_id;
-            cubic_id(cnt, cid) = pid;
+            cubic_id(cnt, cid) = int(pid);
         }
         cnt++;
     }
@@ -450,7 +453,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         std::vector<double> dist;
         kdtree.SearchKNN(points_[i], nb_neighbors, tmp_indices, dist);
         double mean = -1;
-        if (dist.size() > 0) {
+        if (dist.size() > 0u) {
             valid_distances++;
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }

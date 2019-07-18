@@ -70,11 +70,11 @@ bool HalfEdgeTriangleMesh::ComputeHalfEdges() {
         size_t he_1_index = num_half_edges + 1;
         size_t he_2_index = num_half_edges + 2;
         HalfEdge he_0(Eigen::Vector2i(triangle(0), triangle(1)), triangle_index,
-                      he_1_index, -1);
+                      int(he_1_index), -1);
         HalfEdge he_1(Eigen::Vector2i(triangle(1), triangle(2)), triangle_index,
-                      he_2_index, -1);
+                      int(he_2_index), -1);
         HalfEdge he_2(Eigen::Vector2i(triangle(2), triangle(0)), triangle_index,
-                      he_0_index, -1);
+                      int(he_0_index), -1);
 
         if (vertex_indices_to_half_edge_index.find(he_0.vertex_indices_) !=
                     vertex_indices_to_half_edge_index.end() ||
@@ -320,7 +320,7 @@ HalfEdgeTriangleMesh &HalfEdgeTriangleMesh::Scale(const double scale,
     if (center && !vertices_.empty()) {
         vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
                                         vertex_center);
-        vertex_center /= vertices_.size();
+        vertex_center /= double(vertices_.size());
     }
     for (auto &vertex : vertices_) {
         vertex = (vertex - vertex_center) * scale + vertex_center;
@@ -334,7 +334,7 @@ HalfEdgeTriangleMesh &HalfEdgeTriangleMesh::Rotate(
     if (center && !vertices_.empty()) {
         vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
                                         vertex_center);
-        vertex_center /= vertices_.size();
+        vertex_center /= double(vertices_.size());
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {

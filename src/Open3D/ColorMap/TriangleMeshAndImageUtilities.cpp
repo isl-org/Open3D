@@ -67,7 +67,7 @@ CreateVertexAndImageVisibility(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t c = 0; c < n_camera; c++) {
+    for (int c = 0; c < int(n_camera); c++) {
         int viscnt = 0;
         for (size_t vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
@@ -95,8 +95,8 @@ CreateVertexAndImageVisibility(
                           double(viscnt) / n_vertex * 100);
         fflush(stdout);
     }
-    return std::move(std::make_tuple(visiblity_vertex_to_image,
-                                     visiblity_image_to_vertex));
+    return std::make_tuple(visiblity_vertex_to_image,
+                           visiblity_image_to_vertex);
 }
 
 template <typename T>

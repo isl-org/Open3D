@@ -241,7 +241,7 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
     size_t n_voxels = voxels_.size();
     std::vector<bool> carve(n_voxels, true);
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
-        auto pts = GetVoxelBoundingPoints(vidx);
+        auto pts = GetVoxelBoundingPoints(int(vidx));
         for (auto &x : pts) {
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;
@@ -291,7 +291,7 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
     size_t n_voxels = voxels_.size();
     std::vector<bool> carve(n_voxels, true);
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
-        auto pts = GetVoxelBoundingPoints(vidx);
+        auto pts = GetVoxelBoundingPoints(int(vidx));
         for (auto &x : pts) {
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;

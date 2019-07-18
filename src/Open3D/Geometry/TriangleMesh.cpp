@@ -111,7 +111,7 @@ TriangleMesh &TriangleMesh::Scale(const double scale, bool center) {
     if (center && !vertices_.empty()) {
         vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
                                         vertex_center);
-        vertex_center /= vertices_.size();
+        vertex_center /= double(vertices_.size());
     }
     for (auto &vertex : vertices_) {
         vertex = (vertex - vertex_center) * scale + vertex_center;
@@ -126,7 +126,7 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
     if (center && !vertices_.empty()) {
         vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
                                         vertex_center);
-        vertex_center /= vertices_.size();
+        vertex_center /= double(vertices_.size());
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {
@@ -538,7 +538,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     }
     size_t point_idx = 0;
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        size_t n = std::round(triangle_areas[tidx] * number_of_points);
+        size_t n = size_t(std::round(triangle_areas[tidx] * number_of_points));
         while (point_idx < n) {
             double r1 = dist(mt);
             double r2 = dist(mt);
@@ -623,7 +623,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     // Compute init points using uniform sampling
     std::shared_ptr<PointCloud> pcl;
     if (pcl_init == nullptr) {
-        pcl = SamplePointsUniformlyImpl(init_factor * number_of_points,
+        pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area);
     } else {
         pcl = std::make_shared<PointCloud>();
@@ -679,7 +679,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
                         decltype(WeightCmp)>
             queue(WeightCmp);
     for (size_t pidx0 = 0; pidx0 < pcl->points_.size(); ++pidx0) {
-        ComputePointWeight(pidx0);
+        ComputePointWeight(int(pidx0));
         queue.push(QueueEntry(pidx0, weights[pidx0]));
     };
 
@@ -906,10 +906,10 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
         auto edges_to_triangles = GetEdgeToTrianglesMap();
 
         for (auto &kv : edges_to_triangles) {
-            int n_edge_triangle_refs = kv.second.size();
+            size_t n_edge_triangle_refs = kv.second.size();
             // check if the given edge is manifold
             // (has exactly 1, or 2 adjacent triangles)
-            if (n_edge_triangle_refs == 1 || n_edge_triangle_refs == 2) {
+            if (n_edge_triangle_refs == 1u || n_edge_triangle_refs == 2u) {
                 continue;
             }
 
@@ -1004,14 +1004,14 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
     };
 
     for (size_t tidx = 0; tidx < triangles.size(); ++tidx) {
-        unvisited_triangles.insert(tidx);
+        unvisited_triangles.insert(int(tidx));
         const auto &triangle = triangles[tidx];
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        adjacent_triangles[CreateOrderedEdge(vidx0, vidx1)].insert(tidx);
-        adjacent_triangles[CreateOrderedEdge(vidx1, vidx2)].insert(tidx);
-        adjacent_triangles[CreateOrderedEdge(vidx2, vidx0)].insert(tidx);
+        adjacent_triangles[CreateOrderedEdge(vidx0, vidx1)].insert(int(tidx));
+        adjacent_triangles[CreateOrderedEdge(vidx1, vidx2)].insert(int(tidx));
+        adjacent_triangles[CreateOrderedEdge(vidx2, vidx0)].insert(int(tidx));
     }
 
     while (!unvisited_triangles.empty()) {
@@ -1107,9 +1107,9 @@ TriangleMesh::GetEdgeToTrianglesMap() const {
     };
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto &triangle = triangles_[tidx];
-        AddEdge(triangle(0), triangle(1), tidx);
-        AddEdge(triangle(1), triangle(2), tidx);
-        AddEdge(triangle(2), triangle(0), tidx);
+        AddEdge(triangle(0), triangle(1), int(tidx));
+        AddEdge(triangle(1), triangle(2), int(tidx));
+        AddEdge(triangle(2), triangle(0), int(tidx));
     }
     return trias_per_edge;
 }
@@ -1193,9 +1193,9 @@ int TriangleMesh::EulerPoincareCharacteristic() const {
         edges.emplace(Eigen::Vector2i(min2, max2));
     }
 
-    int E = edges.size();
-    int V = vertices_.size();
-    int F = triangles_.size();
+    int E = int(edges.size());
+    int V = int(vertices_.size());
+    int F = int(triangles_.size());
     return V + F - E;
 }
 

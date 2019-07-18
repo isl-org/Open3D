@@ -62,9 +62,7 @@ private:
 public:
     // Get the next value.
     template <class T>
-    T Next() {
-        return T(0);
-    }
+    T Next();
 };
 
 // Get the next uint8_t value.

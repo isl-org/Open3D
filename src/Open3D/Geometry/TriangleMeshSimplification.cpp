@@ -126,7 +126,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     int new_vidx = 0;
     for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
         const Eigen::Vector3i vox_idx = GetVoxelIdx(vertices_[vidx]);
-        voxel_vertices[vox_idx].insert(vidx);
+        voxel_vertices[vox_idx].insert(int(vidx));
 
         if (voxel_vert_ind.count(vox_idx) == 0) {
             voxel_vert_ind[vox_idx] = new_vidx;
@@ -150,7 +150,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         for (int vidx : ind) {
             aggr += vertices_[vidx];
         }
-        aggr /= ind.size();
+        aggr /= double(ind.size());
         return aggr;
     };
     auto AvgNormal = [&](const std::unordered_set<int> ind) {
@@ -158,7 +158,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         for (int vidx : ind) {
             aggr += vertex_normals_[vidx];
         }
-        aggr /= ind.size();
+        aggr /= double(ind.size());
         return aggr;
     };
     auto AvgColor = [&](const std::unordered_set<int> ind) {
@@ -166,7 +166,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         for (int vidx : ind) {
             aggr += vertex_colors_[vidx];
         }
-        aggr /= ind.size();
+        aggr /= double(ind.size());
         return aggr;
     };
 
@@ -383,7 +383,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     // perform incremental edge collapse
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    int n_triangles = triangles_.size();
+    int n_triangles = int(triangles_.size());
     while (n_triangles > target_number_of_triangles && !queue.empty()) {
         // retrieve edge from queue
         double cost;
@@ -504,7 +504,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     std::unordered_map<int, int> vert_remapping;
     for (size_t idx = 0; idx < mesh->vertices_.size(); ++idx) {
         if (!vertices_deleted[idx]) {
-            vert_remapping[idx] = next_free;
+            vert_remapping[int(idx)] = next_free;
             mesh->vertices_[next_free] = mesh->vertices_[idx];
             if (has_vert_normal) {
                 mesh->vertex_normals_[next_free] = mesh->vertex_normals_[idx];

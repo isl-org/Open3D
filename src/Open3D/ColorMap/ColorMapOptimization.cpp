@@ -97,7 +97,7 @@ void OptimizeImageCoorNonrigid(
             std::tie(JTJ, JTr, r2) =
                     ComputeJTJandJTrNonRigid<Eigen::Vector14d, Eigen::Vector14i,
                                              Eigen::MatrixXd, Eigen::VectorXd>(
-                            f_lambda, visiblity_image_to_vertex[c].size(),
+                            f_lambda, int(visiblity_image_to_vertex[c].size()),
                             nonrigidval, false);
 
             double weight = option.non_rigid_anchor_point_weight_ *
@@ -187,7 +187,7 @@ void OptimizeImageCoorRigid(
             double r2;
             std::tie(JTJ, JTr, r2) =
                     utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-                            f_lambda, visiblity_image_to_vertex[c].size(),
+                            f_lambda, int(visiblity_image_to_vertex[c].size()),
                             false);
 
             bool is_success;
@@ -202,7 +202,7 @@ void OptimizeImageCoorRigid(
 #endif
             {
                 residual += r2;
-                total_num_ += visiblity_image_to_vertex[c].size();
+                total_num_ += int(visiblity_image_to_vertex[c].size());
             }
         }
         utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})\n", residual,

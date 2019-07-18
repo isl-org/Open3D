@@ -268,7 +268,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
             q = point_cloud_copy_j.points_[jj];
             Eigen::Vector3d rpq = p - q;
 
-            int c2 = c;
+            size_t c2 = c;
             double temp = par / (rpq.dot(rpq) + par);
             s[c2] = temp * temp;
 

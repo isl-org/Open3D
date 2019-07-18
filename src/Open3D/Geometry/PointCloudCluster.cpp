@@ -59,7 +59,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 
         std::unordered_set<int> nbs_next(nbs.begin(), nbs.end());
         std::unordered_set<int> nbs_visited;
-        nbs_visited.insert(idx);
+        nbs_visited.insert(int(idx));
 
         labels[idx] = cluster_label;
         while (!nbs_next.empty()) {
