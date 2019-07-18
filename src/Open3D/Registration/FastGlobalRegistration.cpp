@@ -110,9 +110,9 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         Mj[cj].push_back(ci);
     }
     for (int i = 0; i < nPti; ++i) {
-        for (int ii = 0; ii < Mi[i].size(); ++ii) {
+        for (size_t ii = 0; ii < Mi[i].size(); ++ii) {
             int j = Mi[i][ii];
-            for (int jj = 0; jj < Mj[j].size(); ++jj) {
+            for (size_t jj = 0; jj < Mj[j].size(); ++jj) {
                 if (Mj[j][jj] == i)
                     corres_cross.push_back(std::pair<int, int>(i, j));
             }
@@ -171,7 +171,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 
     if (swapped) {
         std::vector<std::pair<int, int>> temp;
-        for (int i = 0; i < corres_tuple.size(); i++)
+        for (size_t i = 0; i < corres_tuple.size(); i++)
             temp.push_back(std::pair<int, int>(corres_tuple[i].second,
                                                corres_tuple[i].first));
         corres_tuple.clear();
@@ -260,7 +260,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         JTr.setZero();
         double r = 0.0, r2 = 0.0;
 
-        for (int c = 0; c < corres.size(); c++) {
+        for (size_t c = 0; c < corres.size(); c++) {
             int ii = corres[c].first;
             int jj = corres[c].second;
             Eigen::Vector3d p, q;

@@ -116,8 +116,8 @@ int KDTreeFlann::SearchKNN(const T &query,
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
     // memory allocation/deallocation.
-    if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_ ||
-        knn < 0) {
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
     flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
@@ -141,7 +141,8 @@ int KDTreeFlann::SearchRadius(const T &query,
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory management and CPU caching.
-    if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_) {
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_) {
         return -1;
     }
     flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
@@ -166,8 +167,8 @@ int KDTreeFlann::SearchHybrid(const T &query,
     // It is also the recommended setting for search.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory allocation/deallocation.
-    if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_ ||
-        max_nn < 0) {
+    if (data_.empty() || dataset_size_ <= 0 ||
+        size_t(query.rows()) != dimension_ || max_nn < 0) {
         return -1;
     }
     flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);

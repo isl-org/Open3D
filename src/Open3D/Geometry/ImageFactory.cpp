@@ -152,7 +152,7 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
         return pyramid_image;
     }
 
-    for (int i = 0; i < num_of_levels; i++) {
+    for (size_t i = 0; i < num_of_levels; i++) {
         if (i == 0) {
             std::shared_ptr<Image> input_copy_ptr = std::make_shared<Image>();
             *input_copy_ptr = *this;

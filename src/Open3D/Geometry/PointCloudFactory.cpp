@@ -170,7 +170,7 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromVoxelGrid(
     if (has_colors) {
         output->colors_.resize(voxel_grid.voxels_.size());
     }
-    for (auto vidx = 0; vidx < voxel_grid.voxels_.size(); vidx++) {
+    for (size_t vidx = 0; vidx < voxel_grid.voxels_.size(); vidx++) {
         output->points_[vidx] = voxel_grid.GetVoxelCenterCoordinate(vidx);
         if (has_colors) {
             output->colors_[vidx] = voxel_grid.voxels_[vidx].color_;

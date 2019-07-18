@@ -151,7 +151,7 @@ Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
     std::vector<std::string> tokens;
     SplitString(tokens, str.substr(1, str.length() - 2), ",");
     Eigen::VectorXd vec(tokens.size());
-    for (auto i = 0; i < tokens.size(); i++) {
+    for (size_t i = 0; i < tokens.size(); i++) {
         char *end;
         errno = 0;
         double l = std::strtod(tokens[i].c_str(), &end);

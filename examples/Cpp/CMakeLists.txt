@@ -1,5 +1,6 @@
 macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
+    ShowAndAbortOnWarning(${EXAMPLE_CPP_NAME})
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)

@@ -684,7 +684,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     };
 
     // sample elimination
-    int current_number_of_points = pcl->points_.size();
+    size_t current_number_of_points = pcl->points_.size();
     while (current_number_of_points > number_of_points) {
         int pidx;
         double weight;
@@ -952,7 +952,7 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
         // delete marked triangles
         bool has_tri_normal = HasTriangleNormals();
         int to_tidx = 0;
-        for (int from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
+        for (size_t from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
             if (triangle_areas[from_tidx] > 0) {
                 triangles_[to_tidx] = triangles_[from_tidx];
                 triangle_areas[to_tidx] = triangle_areas[from_tidx];
@@ -1236,7 +1236,7 @@ std::vector<int> TriangleMesh::GetNonManifoldVertices() const {
     }
 
     std::vector<int> non_manifold_verts;
-    for (size_t vidx = 0; vidx < vertices_.size(); ++vidx) {
+    for (int vidx = 0; vidx < int(vertices_.size()); ++vidx) {
         const auto &triangles = vert_to_triangles[vidx];
         if (triangles.size() == 0) {
             continue;
@@ -1294,7 +1294,6 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
         const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
         const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
-        bool added_tidx0 = false;
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria_q = triangles_[tidx1];
             // check if neighbour triangle

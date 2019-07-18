@@ -45,11 +45,11 @@ TEST(TriangleMesh, Constructor) {
     EXPECT_EQ(3, tm.Dimension());
 
     // public member variables
-    EXPECT_EQ(0, tm.vertices_.size());
-    EXPECT_EQ(0, tm.vertex_normals_.size());
-    EXPECT_EQ(0, tm.vertex_colors_.size());
-    EXPECT_EQ(0, tm.triangles_.size());
-    EXPECT_EQ(0, tm.triangle_normals_.size());
+    EXPECT_EQ(0u, tm.vertices_.size());
+    EXPECT_EQ(0u, tm.vertex_normals_.size());
+    EXPECT_EQ(0u, tm.vertex_colors_.size());
+    EXPECT_EQ(0u, tm.triangles_.size());
+    EXPECT_EQ(0u, tm.triangle_normals_.size());
 
     // public members
     EXPECT_TRUE(tm.IsEmpty());
@@ -150,8 +150,6 @@ TEST(TriangleMesh, GetMinBound) {
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    Vector3d minBound = tm.GetMinBound();
-
     ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
 }
 
@@ -168,8 +166,6 @@ TEST(TriangleMesh, GetMaxBound) {
 
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
-
-    Vector3d maxBound = tm.GetMaxBound();
 
     ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
 }
@@ -243,7 +239,7 @@ TEST(TriangleMesh, Transform) {
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, OperatorAppend) {
-    int size = 100;
+    size_t size = 100;
 
     Vector3d dmin(0.0, 0.0, 0.0);
     Vector3d dmax(1000.0, 1000.0, 1000.0);
@@ -320,7 +316,7 @@ TEST(TriangleMesh, OperatorAppend) {
 //
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, OperatorADD) {
-    int size = 100;
+    size_t size = 100;
 
     Vector3d dmin(0.0, 0.0, 0.0);
     Vector3d dmax(1000.0, 1000.0, 1000.0);
@@ -422,7 +418,7 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
                             {0.787892, 0.611808, -0.070127},
                             {0.788022, 0.488544, 0.374628}};
 
-    int size = 25;
+    size_t size = 25;
 
     Vector3d dmin(0.0, 0.0, 0.0);
     Vector3d dmax(10.0, 10.0, 10.0);
@@ -435,7 +431,7 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
         tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeTriangleNormals();
@@ -462,7 +458,7 @@ TEST(TriangleMesh, ComputeVertexNormals) {
             {-0.264834, -0.963970, -0.025005}, {0.940214, -0.336158, -0.054732},
             {0.862650, 0.449603, 0.231714}};
 
-    int size = 25;
+    size_t size = 25;
 
     Vector3d dmin(0.0, 0.0, 0.0);
     Vector3d dmax(10.0, 10.0, 10.0);
@@ -475,7 +471,7 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
         tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeVertexNormals();
@@ -1537,11 +1533,11 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
 
     auto output_tm = geometry::TriangleMesh::CreateCoordinateFrame(0.1);
 
-    EXPECT_EQ(1134, output_tm->vertices_.size());
-    EXPECT_EQ(1134, output_tm->vertex_normals_.size());
-    EXPECT_EQ(1134, output_tm->vertex_colors_.size());
-    EXPECT_EQ(2240, output_tm->triangles_.size());
-    EXPECT_EQ(2240, output_tm->triangle_normals_.size());
+    EXPECT_EQ(1134u, output_tm->vertices_.size());
+    EXPECT_EQ(1134u, output_tm->vertex_normals_.size());
+    EXPECT_EQ(1134u, output_tm->vertex_colors_.size());
+    EXPECT_EQ(2240u, output_tm->triangles_.size());
+    EXPECT_EQ(2240u, output_tm->triangle_normals_.size());
 
     // CreateMeshCoordinateFrame generates too many values
     // down sample to a more manageable size before comparing

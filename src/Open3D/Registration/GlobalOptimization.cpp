@@ -457,8 +457,8 @@ void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
 
 bool ValidatePoseGraphConnectivity(const PoseGraph &pose_graph,
                                    bool ignore_uncertain_edges = false) {
-    int n_nodes = (int)pose_graph.nodes_.size();
-    int n_edges = (int)pose_graph.edges_.size();
+    size_t n_nodes = pose_graph.nodes_.size();
+    size_t n_edges = pose_graph.edges_.size();
 
     // Test if the connected component containing the first node is the entire
     // graph
@@ -471,7 +471,7 @@ bool ValidatePoseGraphConnectivity(const PoseGraph &pose_graph,
     while (!nodes_to_explore.empty()) {
         int i = nodes_to_explore.back();
         nodes_to_explore.pop_back();
-        for (int j = 0; j < n_edges; j++) {
+        for (size_t j = 0; j < n_edges; j++) {
             const PoseGraphEdge &t = pose_graph.edges_[j];
             if (ignore_uncertain_edges && t.uncertain_) {
                 continue;

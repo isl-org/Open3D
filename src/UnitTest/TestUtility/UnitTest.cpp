@@ -52,7 +52,7 @@ void unit_test::NotImplemented() {
 void unit_test::ExpectEQ(const uint8_t* const v0,
                          const uint8_t* const v1,
                          const size_t& size) {
-    for (int i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
+    for (size_t i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ void unit_test::ExpectEQ(const vector<uint8_t>& v0, const vector<uint8_t>& v1) {
 void unit_test::ExpectEQ(const int* const v0,
                          const int* const v1,
                          const size_t& size) {
-    for (int i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
+    for (size_t i = 0; i < size; i++) EXPECT_EQ(v0[i], v1[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1) {
 void unit_test::ExpectEQ(const float* const v0,
                          const float* const v1,
                          const size_t& size) {
-    for (int i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
+    for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ void unit_test::ExpectEQ(const vector<float>& v0, const vector<float>& v1) {
 void unit_test::ExpectEQ(const double* const v0,
                          const double* const v1,
                          const size_t& size) {
-    for (int i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
+    for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------

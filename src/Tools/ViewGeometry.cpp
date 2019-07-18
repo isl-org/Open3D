@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
 
-    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();

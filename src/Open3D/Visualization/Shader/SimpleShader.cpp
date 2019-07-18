@@ -668,7 +668,6 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
         PrintShaderWarning("Binding failed with empty octree.");
         return false;
     }
-    const ColorMap &global_color_map = *GetGlobalColorMap();
     points.clear();  // Final size: num_voxels * 36
     colors.clear();  // Final size: num_voxels * 36
 

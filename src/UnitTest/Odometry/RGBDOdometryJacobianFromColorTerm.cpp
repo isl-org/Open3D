@@ -57,8 +57,8 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
 
     int width = 10;
     int height = 10;
-    int num_of_channels = 1;
-    int bytes_per_channel = 4;
+    // int num_of_channels = 1;
+    // int bytes_per_channel = 4;
 
     auto srcColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
     auto srcDepth = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 0);

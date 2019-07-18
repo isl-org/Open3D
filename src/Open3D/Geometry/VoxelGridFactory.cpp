@@ -143,7 +143,6 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
     int num_w = std::round(grid_size(0) / voxel_size);
     int num_h = std::round(grid_size(1) / voxel_size);
     int num_d = std::round(grid_size(2) / voxel_size);
-    int cnt = 0;
     const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
                                         voxel_size / 2);
     for (int widx = 0; widx < num_w; widx++) {

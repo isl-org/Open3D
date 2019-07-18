@@ -292,7 +292,6 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
     std::vector<bool> carve(n_voxels, true);
     for (size_t vidx = 0; vidx < n_voxels; vidx++) {
         auto pts = GetVoxelBoundingPoints(vidx);
-        bool valid_voxel = false;
         for (auto &x : pts) {
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;

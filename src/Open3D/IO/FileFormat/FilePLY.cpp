@@ -191,7 +191,7 @@ int ReadFaceCallBack(p_ply_argument argument) {
     } else {
         state_ptr->face.push_back(int(value));
     }
-    if (state_ptr->face.size() == length) {
+    if (long(state_ptr->face.size()) == length) {
         if (!AddTrianglesByEarClipping(*state_ptr->mesh_ptr, state_ptr->face)) {
             utility::LogWarning(
                     "Read PLY failed: A polygon in the mesh could not be "

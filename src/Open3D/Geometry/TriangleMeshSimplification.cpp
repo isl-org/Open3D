@@ -185,7 +185,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
                TriangleMesh::SimplificationContraction::Quadric) {
         // Map triangles
         std::unordered_map<int, std::unordered_set<int>> vert_to_triangles;
-        int next_tidx = 0;
         for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
             vert_to_triangles[triangles_[tidx](0)].emplace(tidx);
             vert_to_triangles[triangles_[tidx](1)].emplace(tidx);

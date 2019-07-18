@@ -181,9 +181,9 @@ bool OctreeColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
 
 Octree::Octree(const Octree& src_octree)
     : Geometry3D(Geometry::GeometryType::Octree),
-      max_depth_(src_octree.max_depth_),
       origin_(src_octree.origin_),
-      size_(src_octree.size_) {
+      size_(src_octree.size_),
+      max_depth_(src_octree.max_depth_) {
     // First traversal: clone nodes without edges
     std::unordered_map<std::shared_ptr<OctreeNode>, std::shared_ptr<OctreeNode>>
             map_src_to_dst_node;

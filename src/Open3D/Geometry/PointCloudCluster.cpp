@@ -35,12 +35,13 @@
 namespace open3d {
 namespace geometry {
 
-std::vector<int> PointCloud::ClusterDBSCAN(double eps, int min_points) const {
+std::vector<int> PointCloud::ClusterDBSCAN(double eps,
+                                           size_t min_points) const {
     KDTreeFlann kdtree(*this);
     // set all labels to undefined (-2)
     std::vector<int> labels(points_.size(), -2);
     int cluster_label = 0;
-    for (int idx = 0; idx < points_.size(); ++idx) {
+    for (size_t idx = 0; idx < points_.size(); ++idx) {
         if (labels[idx] != -2) {  // label is not undefined
             continue;
         }

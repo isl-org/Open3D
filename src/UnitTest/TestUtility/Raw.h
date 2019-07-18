@@ -34,9 +34,9 @@ namespace unit_test {
 // Class for "generating" data.
 class Raw {
 public:
-    Raw() : index(0), step(1) {}
+    Raw() : step(1), index(0) {}
     Raw(const int &seed)
-        : index(abs(seed) % SIZE), step((seed <= 0) ? 1 : seed) {}
+        : step((seed <= 0) ? 1 : seed), index(abs(seed) % SIZE) {}
 
 private:
     // size of the raw data

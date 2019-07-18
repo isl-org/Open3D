@@ -70,7 +70,7 @@ void svd_task() {
 }
 
 void TestMatrixMultiplication(int argc, char **argv) {
-    int i = 0, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
+    int i = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
     int nThreads = 1, nTmp = nStart + nEnd;
     unsigned uTmp = (unsigned(nEnd - nStart + 1) * unsigned(nTmp)) / 2;
     int nSumCalc = uTmp;
@@ -106,11 +106,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
 
     if (nThreads == NUM_THREADS) {
         utility::LogInfo("{:d} OpenMP threads were used.\n", NUM_THREADS);
-        nRet = 0;
     } else {
         utility::LogInfo("Expected {:d} OpenMP threads, but {:d} were used.\n",
                          NUM_THREADS, nThreads);
-        nRet = 1;
     }
 
     if (nSum != nSumCalc) {
@@ -118,7 +116,6 @@ void TestMatrixMultiplication(int argc, char **argv) {
                 "The sum of {:d} through {:d} should be {:d}, "
                 "but {:d} was reported!\n",
                 NUM_START, NUM_END, nSumCalc, nSum);
-        nRet = 1;
     } else {
         utility::LogInfo("The sum of {:d} through {:d} is {:d}\n", NUM_START,
                          NUM_END, nSum);

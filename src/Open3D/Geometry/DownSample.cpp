@@ -203,7 +203,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
     }
     // Rename vertex id based on selected points
     std::vector<int> new_vertex_id(vertices_.size());
-    for (auto i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
+    for (size_t i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i]) new_vertex_id[i] = cnt++;
     }
     // Push a triangle that has 3 selected vertices.
@@ -221,7 +221,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
         triangle_id++;
     }
     // Push marked vertex.
-    for (auto i = 0; i < mask_observed_vertex.size(); i++) {
+    for (size_t i = 0; i < mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i]) {
             output->vertices_.push_back(vertices_[i]);
             if (has_vertex_normals)
@@ -406,11 +406,11 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < points_.size(); i++) {
+    for (size_t i = 0; i < points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        int nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
-                                               tmp_indices, dist);
+        size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
+                                                  tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
     }
     std::vector<size_t> indices;
@@ -445,7 +445,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < points_.size(); i++) {
+    for (size_t i = 0; i < points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         kdtree.SearchKNN(points_[i], nb_neighbors, tmp_indices, dist);

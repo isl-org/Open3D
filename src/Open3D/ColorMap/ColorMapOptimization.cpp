@@ -67,7 +67,7 @@ void OptimizeImageCoorNonrigid(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int c = 0; c < n_camera; c++) {
+        for (size_t c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
             double rr_reg = 0.0;
@@ -164,7 +164,7 @@ void OptimizeImageCoorRigid(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int c = 0; c < n_camera; c++) {
+        for (size_t c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = camera.parameters_[c].extrinsic_;
 
@@ -225,7 +225,7 @@ CreateGradientImages(
     std::vector<std::shared_ptr<geometry::Image>> images_dy;
     std::vector<std::shared_ptr<geometry::Image>> images_color;
     std::vector<std::shared_ptr<geometry::Image>> images_depth;
-    for (auto i = 0; i < images_rgbd.size(); i++) {
+    for (size_t i = 0; i < images_rgbd.size(); i++) {
         auto gray_image = images_rgbd[i]->color_.CreateFloatImage();
         auto gray_image_filtered =
                 gray_image->Filter(geometry::Image::FilterType::Gaussian3);
@@ -248,7 +248,7 @@ std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
         const ColorMapOptimizationOption& option) {
     auto n_images = images_depth.size();
     std::vector<std::shared_ptr<geometry::Image>> masks;
-    for (auto i = 0; i < n_images; i++) {
+    for (size_t i = 0; i < n_images; i++) {
         utility::LogDebug("[MakeDepthMasks] geometry::Image {:d}/{:d}\n", i,
                           n_images);
         masks.push_back(images_depth[i]->CreateDepthBoundaryMask(
@@ -262,7 +262,7 @@ std::vector<ImageWarpingField> CreateWarpingFields(
         const std::vector<std::shared_ptr<geometry::Image>>& images,
         const ColorMapOptimizationOption& option) {
     std::vector<ImageWarpingField> fields;
-    for (auto i = 0; i < images.size(); i++) {
+    for (size_t i = 0; i < images.size(); i++) {
         int width = images[i]->width_;
         int height = images[i]->height_;
         fields.push_back(ImageWarpingField(width, height,

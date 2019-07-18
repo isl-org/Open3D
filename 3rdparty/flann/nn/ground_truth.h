@@ -42,7 +42,7 @@ template <typename Distance>
 void find_nearest(const Matrix<typename Distance::ElementType>& dataset, typename Distance::ElementType* query, size_t* matches, size_t nn,
                   size_t skip = 0, Distance distance = Distance())
 {
-    typedef typename Distance::ElementType ElementType;
+    // typedef typename Distance::ElementType ElementType;
     typedef typename Distance::ResultType DistanceType;
     int n = nn + skip;
 

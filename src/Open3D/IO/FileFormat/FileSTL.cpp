@@ -126,7 +126,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
 
     utility::ConsoleProgressBar progress_bar(num_of_triangles,
                                              "Writing STL: ", print_progress);
-    for (int i = 0; i < num_of_triangles; i++) {
+    for (size_t i = 0; i < num_of_triangles; i++) {
         Eigen::Vector3f float_vector3f =
                 mesh.triangle_normals_[i].cast<float>();
         myFile.write(reinterpret_cast<const char *>(float_vector3f.data()), 12);

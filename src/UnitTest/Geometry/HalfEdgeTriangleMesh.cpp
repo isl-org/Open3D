@@ -36,11 +36,11 @@ using namespace open3d;
 using namespace unit_test;
 
 // [0: (-1, 2)]__________[1: (1, 2)]
-//             \        /\
-//              \  (0) /  \
-//               \    / (1)\
-//                \  /      \
-//      [2: (0, 0)]\/________\[3: (2, 0)]
+//             |        /|
+//              |  (0) /  |
+//               |    / (1)|
+//                |  /      |
+//      [2: (0, 0)]|/________|[3: (2, 0)]
 geometry::TriangleMesh get_mesh_two_triangles() {
     std::vector<Eigen::Vector3d> vertices{
             Eigen::Vector3d(-1, 2, 0), Eigen::Vector3d(1, 2, 0),
@@ -54,11 +54,11 @@ geometry::TriangleMesh get_mesh_two_triangles() {
 }
 
 // [0: (-1, 2)]__________[1: (1, 2)]     [4: (9, 2)]__________[5: (11, 2)]
-//             \        /\                           \        /\
-//              \  (0) /  \                           \  (0) /  \
-//               \    / (1)\                           \    / (1)\
-//                \  /      \                           \  /      \
-//      [2: (0, 0)]\/________\[3: (2, 0)]    [6: (10, 0)]\/________\[7: (12, 0)]
+//             |        /|                           |        /|
+//              |  (0) /  |                           |  (0) /  |
+//               |    / (1)|                           |    / (1)|
+//                |  /      |                           |  /      |
+//      [2: (0, 0)]|/________|[3: (2, 0)]    [6: (10, 0)]|/________|[7: (12, 0)]
 geometry::TriangleMesh get_mesh_four_triangles_disconnect() {
     std::vector<Eigen::Vector3d> vertices{
             Eigen::Vector3d(-1, 2, 0), Eigen::Vector3d(1, 2, 0),
@@ -75,11 +75,11 @@ geometry::TriangleMesh get_mesh_four_triangles_disconnect() {
 }
 
 // [0: (-1, 2)]__________[1: (1, 2)]
-//             \        /\
-//              \  (0) /  \
-//               \    / (1)\
-//                \  /      \
-//      [2: (0, 0)]\/________\[3: (2, 0)]
+//             |        /|
+//              |  (0) /  |
+//               |    / (1)|
+//                |  /      |
+//      [2: (0, 0)]|/________|[3: (2, 0)]
 //
 // Non-manifold: triangle (1) is flipped
 geometry::TriangleMesh get_mesh_two_triangles_flipped() {
@@ -95,16 +95,16 @@ geometry::TriangleMesh get_mesh_two_triangles_flipped() {
 }
 
 //  [0: (-1, 2)]__________[1: (1, 2)]
-//              \        /
-//               \  (0) /
-//                \    /
-//                 \  /
-//                  \/ [2: (0, 0)]
-//                  /\
-//                 /  \
-//                /    \
-//               /  (1) \
-//              /________\
+//              |        /
+//               |  (0) /
+//                |    /
+//                 |  /
+//                  |/ [2: (0, 0)]
+//                  /|
+//                 /  |
+//                /    |
+//               /  (1) |
+//              /________|
 // [3: (-1, -2)]          [4: (1, -2)]
 //
 // Non-manifold
@@ -122,16 +122,16 @@ geometry::TriangleMesh get_mesh_two_triangles_invalid_vertex() {
 }
 
 //          [0: (-1, 2)]__________[1: (1, 2)]
-//                     /\        /\
-//                    /  \  (1) /  \
-//                   / (0)\    / (2)\
-//                  /      \  /      \
-//     [2: (-2, 0)]/____[3: (O, 0)]___\[4: (2, 0)]
-//                 \        /\        /
-//                  \  (3) /  \  (5) /
-//                   \    /    \    /
-//                    \  /  (4) \  /
-//                     \/________\/
+//                     /|        /|
+//                    /  |  (1) /  |
+//                   / (0)|    / (2)|
+//                  /      |  /      |
+//     [2: (-2, 0)]/____[3: (O, 0)]___|[4: (2, 0)]
+//                 |        /|        /
+//                  |  (3) /  |  (5) /
+//                   |    /    |    /
+//                    |  /  (4) |  /
+//                     |/________|/
 //         [5: (-1, -2)]          [6: (1, -2)]
 geometry::TriangleMesh get_mesh_hexagon() {
     std::vector<Eigen::Vector3d> vertices{
@@ -150,16 +150,16 @@ geometry::TriangleMesh get_mesh_hexagon() {
 }
 
 //          [0: (-1, 2)]__________[1: (1, 2)]
-//                     /\        /\
-//                    /  \  (1) /  \
-//                   / (0)\    / (2)\
-//                  /      \  /      \
-//     [2: (-2, 0)]/____[3: (O, 0)]___\[4: (2, 0)]
-//                 \        /\
-//                  \  (3) /  \
-//                   \    /    \
-//                    \  /  (4) \
-//                     \/________\
+//                     /|        /|
+//                    /  |  (1) /  |
+//                   / (0)|    / (2)|
+//                  /      |  /      |
+//     [2: (-2, 0)]/____[3: (O, 0)]___|[4: (2, 0)]
+//                 |        /|
+//                  |  (3) /  |
+//                   |    /    |
+//                    |  /  (4) |
+//                     |/________|
 //         [5: (-1, -2)]          [6: (1, -2)]
 geometry::TriangleMesh get_mesh_partial_hexagon() {
     std::vector<Eigen::Vector3d> vertices{
@@ -190,7 +190,7 @@ void assert_ordreded_neighbor(
     }
 
     if (expected_ordered_neighbors.size() == 0) {
-        EXPECT_EQ(actual_ordered_neighbors.size(), 0);
+        EXPECT_EQ(actual_ordered_neighbors.size(), 0u);
         return;
     }
 
@@ -431,7 +431,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_TwoTriangles) {
     auto mesh = geometry::HalfEdgeTriangleMesh::CreateFromMesh(
             get_mesh_two_triangles());
     EXPECT_FALSE(mesh->IsEmpty());
-    EXPECT_EQ(mesh->GetBoundaries().size(), 1);
+    EXPECT_EQ(mesh->GetBoundaries().size(), 1u);
     assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 3, 1}, true);
     assert_vector_eq(mesh->GetBoundaries()[0], {2, 3, 1, 0}, true);  // rotate
 }
@@ -440,7 +440,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_Hexagon) {
     auto mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromMesh(get_mesh_hexagon());
     EXPECT_FALSE(mesh->IsEmpty());
-    EXPECT_EQ(mesh->GetBoundaries().size(), 1);
+    EXPECT_EQ(mesh->GetBoundaries().size(), 1u);
     assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 5, 6, 4, 1}, true);
     assert_vector_eq(mesh->GetBoundaries()[0], {2, 5, 6, 4, 1, 0}, true);
 }
@@ -449,7 +449,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_PartialHexagon) {
     auto mesh = geometry::HalfEdgeTriangleMesh::CreateFromMesh(
             get_mesh_partial_hexagon());
     EXPECT_FALSE(mesh->IsEmpty());
-    EXPECT_EQ(mesh->GetBoundaries().size(), 1);
+    EXPECT_EQ(mesh->GetBoundaries().size(), 1u);
     assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 5, 6, 3, 4, 1}, true);
     assert_vector_eq(mesh->GetBoundaries()[0], {2, 5, 6, 3, 4, 1, 0}, true);
 }
@@ -458,7 +458,7 @@ TEST(HalfEdgeTriangleMesh, GetBoundaries_FourTrianglesDisconnect) {
     auto mesh = geometry::HalfEdgeTriangleMesh::CreateFromMesh(
             get_mesh_four_triangles_disconnect());
     EXPECT_FALSE(mesh->IsEmpty());
-    EXPECT_EQ(mesh->GetBoundaries().size(), 2);
+    EXPECT_EQ(mesh->GetBoundaries().size(), 2u);
     assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 3, 1}, true);
     assert_vector_eq(mesh->GetBoundaries()[1], {4, 6, 7, 5}, true);
 }

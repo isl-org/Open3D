@@ -93,7 +93,8 @@ TEST(UniformTSDFVolume, Constructor) {
     EXPECT_EQ(tsdf_volume.length_, length);
     EXPECT_EQ(tsdf_volume.resolution_, resolution);
     EXPECT_EQ(tsdf_volume.voxel_num_, resolution * resolution * resolution);
-    EXPECT_EQ(tsdf_volume.voxel_grid_.voxels_.size(), tsdf_volume.voxel_num_);
+    EXPECT_EQ(int(tsdf_volume.voxel_grid_.voxels_.size()),
+              tsdf_volume.voxel_num_);
 }
 
 TEST(UniformTSDFVolume, RealData) {
@@ -153,8 +154,8 @@ TEST(UniformTSDFVolume, RealData) {
     // Extract mesh
     std::shared_ptr<geometry::TriangleMesh> mesh =
             tsdf_volume.ExtractTriangleMesh();
-    EXPECT_EQ(mesh->vertices_.size(), 3198);
-    EXPECT_EQ(mesh->triangles_.size(), 4402);
+    EXPECT_EQ(mesh->vertices_.size(), 3198u);
+    EXPECT_EQ(mesh->triangles_.size(), 4402u);
     Eigen::Vector3d color_sum(0, 0, 0);
     for (const Eigen::Vector3d& color : mesh->vertex_colors_) {
         color_sum += color;
@@ -166,8 +167,8 @@ TEST(UniformTSDFVolume, RealData) {
 
     // Extract point cloud
     std::shared_ptr<geometry::PointCloud> pcd = tsdf_volume.ExtractPointCloud();
-    EXPECT_EQ(pcd->points_.size(), 2227);
-    EXPECT_EQ(pcd->colors_.size(), 2227);
+    EXPECT_EQ(pcd->points_.size(), 2227u);
+    EXPECT_EQ(pcd->colors_.size(), 2227u);
     color_sum << 0, 0, 0;
     for (const Eigen::Vector3d& color : pcd->colors_) {
         color_sum += color;
@@ -184,8 +185,8 @@ TEST(UniformTSDFVolume, RealData) {
     // Extract voxel cloud
     std::shared_ptr<geometry::PointCloud> voxel_pcd =
             tsdf_volume.ExtractVoxelPointCloud();
-    EXPECT_EQ(voxel_pcd->points_.size(), 4488);
-    EXPECT_EQ(voxel_pcd->colors_.size(), 4488);
+    EXPECT_EQ(voxel_pcd->points_.size(), 4488u);
+    EXPECT_EQ(voxel_pcd->colors_.size(), 4488u);
     color_sum << 0, 0, 0;
     for (const Eigen::Vector3d& color : voxel_pcd->colors_) {
         color_sum += color;

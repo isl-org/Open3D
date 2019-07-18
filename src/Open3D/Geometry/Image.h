@@ -75,7 +75,7 @@ public:
 public:
     virtual bool HasData() const {
         return width_ > 0 && height_ > 0 &&
-               data_.size() == height_ * BytesPerLine();
+               data_.size() == size_t(height_ * BytesPerLine());
     }
 
     Image &Prepare(int width,

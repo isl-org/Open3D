@@ -62,13 +62,13 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     mesh.Clear();
 
     // copy vertex and vertex_color data
-    for (int vidx = 0; vidx < attrib.vertices.size(); vidx += 3) {
+    for (size_t vidx = 0; vidx < attrib.vertices.size(); vidx += 3) {
         tinyobj::real_t vx = attrib.vertices[vidx + 0];
         tinyobj::real_t vy = attrib.vertices[vidx + 1];
         tinyobj::real_t vz = attrib.vertices[vidx + 2];
         mesh.vertices_.push_back(Eigen::Vector3d(vx, vy, vz));
     }
-    for (int vidx = 0; vidx < attrib.colors.size(); vidx += 3) {
+    for (size_t vidx = 0; vidx < attrib.colors.size(); vidx += 3) {
         tinyobj::real_t r = attrib.colors[vidx + 0];
         tinyobj::real_t g = attrib.colors[vidx + 1];
         tinyobj::real_t b = attrib.colors[vidx + 2];
@@ -92,13 +92,13 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             }
 
             Eigen::Vector3i facet;
-            for (size_t v = 0; v < fv; v++) {
+            for (int v = 0; v < fv; v++) {
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
                 int vidx = idx.vertex_index;
                 facet(v) = vidx;
 
                 if (!normals_indicator[vidx] &&
-                    (3 * idx.normal_index + 2) < attrib.normals.size()) {
+                    (3 * idx.normal_index + 2) < int(attrib.normals.size())) {
                     tinyobj::real_t nx =
                             attrib.normals[3 * idx.normal_index + 0];
                     tinyobj::real_t ny =
@@ -152,7 +152,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
             "Writing OBJ: ", print_progress);
     write_vertex_normals = write_vertex_normals && mesh.HasVertexNormals();
     write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
-    for (int vidx = 0; vidx < mesh.vertices_.size(); ++vidx) {
+    for (size_t vidx = 0; vidx < mesh.vertices_.size(); ++vidx) {
         const Eigen::Vector3d& vertex = mesh.vertices_[vidx];
         file << "v " << vertex(0) << " " << vertex(1) << " " << vertex(2);
         if (write_vertex_colors) {
@@ -170,7 +170,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
         ++progress_bar;
     }
 
-    for (int tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
+    for (size_t tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
         const Eigen::Vector3i& triangle = mesh.triangles_[tidx];
         if (write_vertex_normals) {
             file << "f " << triangle(0) + 1 << "//" << triangle(0) + 1 << " "

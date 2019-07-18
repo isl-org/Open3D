@@ -51,7 +51,7 @@ TEST(Image, DefaultConstructor) {
     EXPECT_EQ(0, image.height_);
     EXPECT_EQ(0, image.num_of_channels_);
     EXPECT_EQ(0, image.bytes_per_channel_);
-    EXPECT_EQ(0, image.data_.size());
+    EXPECT_EQ(0u, image.data_.size());
 
     // public members
     EXPECT_TRUE(image.IsEmpty());
@@ -82,7 +82,7 @@ TEST(Image, CreateImage) {
     EXPECT_EQ(height, image.height_);
     EXPECT_EQ(num_of_channels, image.num_of_channels_);
     EXPECT_EQ(bytes_per_channel, image.bytes_per_channel_);
-    EXPECT_EQ(width * height * num_of_channels * bytes_per_channel,
+    EXPECT_EQ(size_t(width * height * num_of_channels * bytes_per_channel),
               image.data_.size());
 
     // public members
@@ -117,7 +117,7 @@ TEST(Image, Clear) {
     EXPECT_EQ(0, image.height_);
     EXPECT_EQ(0, image.num_of_channels_);
     EXPECT_EQ(0, image.bytes_per_channel_);
-    EXPECT_EQ(0, image.data_.size());
+    EXPECT_EQ(0u, image.data_.size());
 
     // public members
     EXPECT_TRUE(image.IsEmpty());
@@ -180,27 +180,27 @@ TEST(Image, DISABLED_MemberData) {
 
     image.width_ = temp_width;
     EXPECT_EQ(temp_width * height * num_of_channels * bytes_per_channel,
-              image.data_.size());
+              int(image.data_.size()));
 
     image.width_ = width;
     image.height_ = temp_height;
     EXPECT_EQ(width * temp_height * num_of_channels * bytes_per_channel,
-              image.data_.size());
+              int(image.data_.size()));
 
     image.height_ = height;
     image.num_of_channels_ = temp_num_of_channels;
     EXPECT_EQ(width * height * temp_num_of_channels * bytes_per_channel,
-              image.data_.size());
+              int(image.data_.size()));
 
     image.num_of_channels_ = num_of_channels;
     image.bytes_per_channel_ = temp_bytes_per_channel;
     EXPECT_EQ(width * height * num_of_channels * temp_bytes_per_channel,
-              image.data_.size());
+              int(image.data_.size()));
 
     image.bytes_per_channel_ = bytes_per_channel;
     image.data_ = vector<uint8_t>();
     EXPECT_EQ(width * height * num_of_channels * bytes_per_channel,
-              image.data_.size());
+              int(image.data_.size()));
 }
 
 // ----------------------------------------------------------------------------
@@ -255,7 +255,7 @@ void TEST_CreateFloatImage(
     EXPECT_EQ(width, float_image->width_);
     EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
-    EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
+    EXPECT_EQ(int(sizeof(float)), float_image->bytes_per_channel_);
     ExpectEQ(ref, float_image->data_);
 }
 
@@ -504,7 +504,7 @@ TEST(Image, ConvertDepthToFloatImage) {
     EXPECT_EQ(width, float_image->width_);
     EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
-    EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
+    EXPECT_EQ(int(sizeof(float)), float_image->bytes_per_channel_);
     ExpectEQ(ref, float_image->data_);
 }
 
@@ -542,7 +542,7 @@ TEST(Image, FlipImage) {
     EXPECT_EQ(width, flip_image->width_);
     EXPECT_EQ(height, flip_image->height_);
     EXPECT_EQ(flip_bytes_per_channel, flip_image->num_of_channels_);
-    EXPECT_EQ(sizeof(float), flip_image->bytes_per_channel_);
+    EXPECT_EQ(int(sizeof(float)), flip_image->bytes_per_channel_);
     ExpectEQ(ref, flip_image->data_);
 }
 

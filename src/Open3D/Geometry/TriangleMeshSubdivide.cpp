@@ -45,7 +45,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
 
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    bool has_tria_normal = HasTriangleNormals();
 
     // Compute and return midpoint.
     // Also adds edge - new vertex refrence to new_verts map.
@@ -125,7 +124,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
 
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    bool has_tria_normal = HasTriangleNormals();
 
     auto UpdateVertex = [&](int vidx,
                             const std::shared_ptr<TriangleMesh>& old_mesh,

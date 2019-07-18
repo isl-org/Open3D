@@ -43,7 +43,7 @@ class VoxelGrid;
 /// OctreeNodeInfo is computed on the fly
 class OctreeNodeInfo {
 public:
-    OctreeNodeInfo() {}
+    OctreeNodeInfo() : origin_(0, 0, 0), size_(0), depth_(0), child_index_(0) {}
     OctreeNodeInfo(const Eigen::Vector3d& origin,
                    const double& size,
                    const size_t& depth,
@@ -55,10 +55,10 @@ public:
     ~OctreeNodeInfo() {}
 
 public:
-    Eigen::Vector3d origin_ = Eigen::Vector3d(0, 0, 0);
-    double size_ = 0;
-    size_t depth_ = 0;
-    size_t child_index_ = 0;
+    Eigen::Vector3d origin_;
+    double size_;
+    size_t depth_;
+    size_t child_index_;
 };
 
 /// OctreeNode class
@@ -128,16 +128,23 @@ public:
 
 class Octree : public Geometry3D, public utility::IJsonConvertible {
 public:
-    Octree() : Geometry3D(Geometry::GeometryType::Octree) {}
+    Octree()
+        : Geometry3D(Geometry::GeometryType::Octree),
+          origin_(0, 0, 0),
+          size_(0),
+          max_depth_(0) {}
     Octree(const size_t& max_depth)
-        : Geometry3D(Geometry::GeometryType::Octree), max_depth_(max_depth) {}
+        : Geometry3D(Geometry::GeometryType::Octree),
+          origin_(0, 0, 0),
+          size_(0),
+          max_depth_(max_depth) {}
     Octree(const size_t& max_depth,
            const Eigen::Vector3d& origin,
            const double& size)
         : Geometry3D(Geometry::GeometryType::Octree),
-          max_depth_(max_depth),
           origin_(origin),
-          size_(size) {}
+          size_(size),
+          max_depth_(max_depth) {}
     Octree(const Octree& src_octree);
     ~Octree() override {}
 
@@ -164,15 +171,15 @@ public:
 
     /// Global min bound (include). A point is within bound iff
     /// origin_ <= point < origin_ + size_
-    Eigen::Vector3d origin_ = Eigen::Vector3d(0, 0, 0);
+    Eigen::Vector3d origin_;
 
     /// Outer bounding box edge size for the whole octree. A point is within
     /// bound iff origin_ <= point < origin_ + size_
-    double size_ = 0;
+    double size_;
 
     /// Max depth of octree. The depth is defined as the distance from the
     /// deepest leaf node to root. A tree with only the root node has depth 0.
-    size_t max_depth_ = 0;
+    size_t max_depth_;
 
     /// Insert point
     void InsertPoint(

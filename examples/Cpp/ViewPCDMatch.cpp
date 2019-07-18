@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     std::vector<Eigen::Matrix4d> transformations;
     ReadLogFile(log_filename, metadata, transformations);
 
-    for (auto k = 0; k < metadata.size(); k++) {
+    for (size_t k = 0; k < metadata.size(); k++) {
         auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
         utility::LogInfo("Showing matched point cloud #{:d} and #{:d}.\n", i,
                          j);

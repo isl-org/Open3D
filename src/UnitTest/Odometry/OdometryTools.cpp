@@ -58,8 +58,8 @@ void odometry_tools::ShiftLeft(shared_ptr<geometry::Image> image,
                                const int& step) {
     int width = image->width_;
     int height = image->height_;
-    int num_of_channels = image->num_of_channels_;
-    int bytes_per_channel = image->bytes_per_channel_;
+    // int num_of_channels = image->num_of_channels_;
+    // int bytes_per_channel = image->bytes_per_channel_;
 
     float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
@@ -75,8 +75,8 @@ void odometry_tools::ShiftUp(shared_ptr<geometry::Image> image,
                              const int& step) {
     int width = image->width_;
     int height = image->height_;
-    int num_of_channels = image->num_of_channels_;
-    int bytes_per_channel = image->bytes_per_channel_;
+    // int num_of_channels = image->num_of_channels_;
+    // int bytes_per_channel = image->bytes_per_channel_;
 
     float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)

@@ -111,7 +111,7 @@ bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
 
     const Json::Value flow_array = value["flow"];
     if (flow_array.size() == 0 ||
-        flow_array.size() != (anchor_w_ * anchor_h_ * 2)) {
+        int(flow_array.size()) != (anchor_w_ * anchor_h_ * 2)) {
         utility::LogWarning(
                 "ImageWarpingField read JSON failed: invalid flow.\n");
         return false;

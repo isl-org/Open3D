@@ -67,9 +67,9 @@ CreateVertexAndImageVisibility(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int c = 0; c < n_camera; c++) {
+    for (size_t c = 0; c < n_camera; c++) {
         int viscnt = 0;
-        for (int vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
+        for (size_t vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
             float u, v, d;
             std::tie(u, v, d) = Project3DPointAndGetUVDepth(X, camera, c);
@@ -166,10 +166,10 @@ void SetProxyIntensityForVertex(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < n_vertex; i++) {
+    for (size_t i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
-        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
              iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
@@ -201,10 +201,10 @@ void SetProxyIntensityForVertex(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < n_vertex; i++) {
+    for (size_t i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
-        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
              iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
@@ -235,10 +235,10 @@ void SetGeometryColorAverage(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < n_vertex; i++) {
+    for (size_t i = 0; i < n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
-        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
              iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
@@ -279,10 +279,10 @@ void SetGeometryColorAverage(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < n_vertex; i++) {
+    for (size_t i = 0; i < n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
-        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
              iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
