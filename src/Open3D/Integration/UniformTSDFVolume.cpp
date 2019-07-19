@@ -48,19 +48,12 @@ UniformTSDFVolume::UniformTSDFVolume(
       length_(length),
       resolution_(resolution),
       voxel_num_(resolution * resolution * resolution) {
-    voxel_grid_.origin_ = origin;
-    voxel_grid_.voxel_size_ = voxel_length_;
-    voxel_grid_.voxels_.resize(voxel_num_);
+    voxels_.resize(voxel_num_);
 }
 
 UniformTSDFVolume::~UniformTSDFVolume() {}
 
-void UniformTSDFVolume::Reset() {
-    voxel_grid_.Clear();
-    voxel_grid_.origin_ = origin_;
-    voxel_grid_.voxel_size_ = voxel_length_;
-    voxel_grid_.voxels_.resize(voxel_num_);
-}
+void UniformTSDFVolume::Reset() { voxels_.clear(); }
 
 void UniformTSDFVolume::Integrate(
         const geometry::RGBDImage &image,
@@ -103,10 +96,9 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
         for (int y = 1; y < resolution_ - 1; y++) {
             for (int z = 1; z < resolution_ - 1; z++) {
                 Eigen::Vector3i idx0(x, y, z);
-                float w0 = voxel_grid_.voxels_[IndexOf(idx0)].weight_;
-                float f0 = voxel_grid_.voxels_[IndexOf(idx0)].tsdf_;
-                const Eigen::Vector3d &c0 =
-                        voxel_grid_.voxels_[IndexOf(idx0)].color_;
+                float w0 = voxels_[IndexOf(idx0)].weight_;
+                float f0 = voxels_[IndexOf(idx0)].tsdf_;
+                const Eigen::Vector3d &c0 = voxels_[IndexOf(idx0)].color_;
 
                 if (!(w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f)) {
                     continue;
@@ -120,10 +112,10 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
                     Eigen::Vector3i idx1 = idx0;
                     idx1(i) += 1;
                     if (idx1(i) < resolution_ - 1) {
-                        float w1 = voxel_grid_.voxels_[IndexOf(idx1)].weight_;
-                        float f1 = voxel_grid_.voxels_[IndexOf(idx1)].tsdf_;
+                        float w1 = voxels_[IndexOf(idx1)].weight_;
+                        float f1 = voxels_[IndexOf(idx1)].tsdf_;
                         const Eigen::Vector3d &c1 =
-                                voxel_grid_.voxels_[IndexOf(idx1)].color_;
+                                voxels_[IndexOf(idx1)].color_;
                         if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
                             f0 * f1 < 0) {
                             float r0 = std::fabs(f0);
@@ -175,21 +167,19 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                 for (int i = 0; i < 8; i++) {
                     Eigen::Vector3i idx = Eigen::Vector3i(x, y, z) + shift[i];
 
-                    if (voxel_grid_.voxels_[IndexOf(idx)].weight_ == 0.0f) {
+                    if (voxels_[IndexOf(idx)].weight_ == 0.0f) {
                         cube_index = 0;
                         break;
                     } else {
-                        f[i] = voxel_grid_.voxels_[IndexOf(idx)].tsdf_;
+                        f[i] = voxels_[IndexOf(idx)].tsdf_;
                         if (f[i] < 0.0f) {
                             cube_index |= (1 << i);
                         }
                         if (color_type_ == TSDFVolumeColorType::RGB8) {
-                            c[i] = voxel_grid_.voxels_[IndexOf(idx)]
-                                           .color_.cast<double>() /
+                            c[i] = voxels_[IndexOf(idx)].color_.cast<double>() /
                                    255.0;
                         } else if (color_type_ == TSDFVolumeColorType::Gray32) {
-                            c[i] = voxel_grid_.voxels_[IndexOf(idx)]
-                                           .color_.cast<double>();
+                            c[i] = voxels_[IndexOf(idx)].color_.cast<double>();
                         }
                     }
                 }
@@ -255,11 +245,11 @@ UniformTSDFVolume::ExtractVoxelPointCloud() const {
                                    half_voxel_length + voxel_length_ * y,
                                    half_voxel_length + voxel_length_ * z);
                 int ind = IndexOf(x, y, z);
-                if (voxel_grid_.voxels_[ind].weight_ != 0.0f &&
-                    voxel_grid_.voxels_[ind].tsdf_ < 0.98f &&
-                    voxel_grid_.voxels_[ind].tsdf_ >= -0.98f) {
+                if (voxels_[ind].weight_ != 0.0f &&
+                    voxels_[ind].tsdf_ < 0.98f &&
+                    voxels_[ind].tsdf_ >= -0.98f) {
                     voxel->points_.push_back(pt + origin_);
-                    double c = (voxel_grid_.voxels_[ind].tsdf_ + 1.0) * 0.5;
+                    double c = (voxels_[ind].tsdf_ + 1.0) * 0.5;
                     voxel->colors_.push_back(Eigen::Vector3d(c, c, c));
                 }
             }
@@ -278,8 +268,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
                 const int ind = IndexOf(x, y, z);
-                const float w = voxel_grid_.voxels_[ind].weight_;
-                const float f = voxel_grid_.voxels_[ind].tsdf_;
+                const float w = voxels_[ind].weight_;
+                const float f = voxels_[ind].tsdf_;
                 if (w != 0.0f && f < 0.98f && f >= -0.98f) {
                     double c = (f + 1.0) * 0.5;
                     Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
@@ -353,30 +343,29 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                 if (sdf > -sdf_trunc_f) {
                     // integrate
                     float tsdf = std::min(1.0f, sdf * sdf_trunc_inv_f);
-                    voxel_grid_.voxels_[v_ind].tsdf_ =
-                            (voxel_grid_.voxels_[v_ind].tsdf_ *
-                                     voxel_grid_.voxels_[v_ind].weight_ +
+                    voxels_[v_ind].tsdf_ =
+                            (voxels_[v_ind].tsdf_ * voxels_[v_ind].weight_ +
                              tsdf) /
-                            (voxel_grid_.voxels_[v_ind].weight_ + 1.0f);
+                            (voxels_[v_ind].weight_ + 1.0f);
                     if (color_type_ == TSDFVolumeColorType::RGB8) {
                         const uint8_t *rgb =
                                 image.color_.PointerAt<uint8_t>(u, v, 0);
                         Eigen::Vector3d rgb_f(rgb[0], rgb[1], rgb[2]);
-                        voxel_grid_.voxels_[v_ind].color_ =
-                                (voxel_grid_.voxels_[v_ind].color_ *
-                                         voxel_grid_.voxels_[v_ind].weight_ +
+                        voxels_[v_ind].color_ =
+                                (voxels_[v_ind].color_ *
+                                         voxels_[v_ind].weight_ +
                                  rgb_f) /
-                                (voxel_grid_.voxels_[v_ind].weight_ + 1.0f);
+                                (voxels_[v_ind].weight_ + 1.0f);
                     } else if (color_type_ == TSDFVolumeColorType::Gray32) {
                         const float *intensity =
                                 image.color_.PointerAt<float>(u, v, 0);
-                        voxel_grid_.voxels_[v_ind].color_ =
-                                (voxel_grid_.voxels_[v_ind].color_.array() *
-                                         voxel_grid_.voxels_[v_ind].weight_ +
+                        voxels_[v_ind].color_ =
+                                (voxels_[v_ind].color_.array() *
+                                         voxels_[v_ind].weight_ +
                                  (*intensity)) /
-                                (voxel_grid_.voxels_[v_ind].weight_ + 1.0f);
+                                (voxels_[v_ind].weight_ + 1.0f);
                     }
-                    voxel_grid_.voxels_[v_ind].weight_ += 1.0f;
+                    voxels_[v_ind].weight_ += 1.0f;
                 }
             }
         }
@@ -406,21 +395,21 @@ double UniformTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
 
     double tsdf = 0;
     tsdf += (1 - r(0)) * (1 - r(1)) * (1 - r(2)) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(0, 0, 0))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(0, 0, 0))].tsdf_;
     tsdf += (1 - r(0)) * (1 - r(1)) * r(2) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(0, 0, 1))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(0, 0, 1))].tsdf_;
     tsdf += (1 - r(0)) * r(1) * (1 - r(2)) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(0, 1, 0))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(0, 1, 0))].tsdf_;
     tsdf += (1 - r(0)) * r(1) * r(2) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(0, 1, 1))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(0, 1, 1))].tsdf_;
     tsdf += r(0) * (1 - r(1)) * (1 - r(2)) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(1, 0, 0))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(1, 0, 0))].tsdf_;
     tsdf += r(0) * (1 - r(1)) * r(2) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(1, 0, 1))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(1, 0, 1))].tsdf_;
     tsdf += r(0) * r(1) * (1 - r(2)) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(1, 1, 0))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(1, 1, 0))].tsdf_;
     tsdf += r(0) * r(1) * r(2) *
-            voxel_grid_.voxels_[IndexOf(idx + Eigen::Vector3i(1, 1, 1))].tsdf_;
+            voxels_[IndexOf(idx + Eigen::Vector3i(1, 1, 1))].tsdf_;
     return tsdf;
 }
 

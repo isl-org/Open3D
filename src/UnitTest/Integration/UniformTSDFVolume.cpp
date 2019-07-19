@@ -93,8 +93,7 @@ TEST(UniformTSDFVolume, Constructor) {
     EXPECT_EQ(tsdf_volume.length_, length);
     EXPECT_EQ(tsdf_volume.resolution_, resolution);
     EXPECT_EQ(tsdf_volume.voxel_num_, resolution * resolution * resolution);
-    EXPECT_EQ(int(tsdf_volume.voxel_grid_.voxels_.size()),
-              tsdf_volume.voxel_num_);
+    EXPECT_EQ(int(tsdf_volume.voxels_.size()), tsdf_volume.voxel_num_);
 }
 
 TEST(UniformTSDFVolume, RealData) {
