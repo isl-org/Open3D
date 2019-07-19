@@ -35,3 +35,5 @@ add_library(Visualization OBJECT
 source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
+
+ShowAndAbortOnWarning(Visualization)

@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
                                                            pcd_names);
     std::vector<geometry::PointCloud> pcds(pcd_names.size());
     std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
-    for (auto i = 0; i < pcd_names.size(); i++) {
+    for (size_t i = 0; i < pcd_names.size(); i++) {
         io::ReadPointCloud(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
                 pcds[i]);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     ReadLogFile(log_filename, pair_ids, transformations);
     int total_point_num = 0;
     int total_correspondence_num = 0;
-    for (auto k = 0; k < pair_ids.size(); k++) {
+    for (size_t k = 0; k < pair_ids.size(); k++) {
         geometry::PointCloud source = pcds[pair_ids[k].second];
         source.Transform(transformations[k]);
         std::vector<int> indices(1);
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) num_threads(16)
 #endif
-        for (auto i = 0; i < pcd_names.size(); i++) {
+        for (int i = 0; i < int(pcd_names.size()); i++) {
             feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" +
                                           std::to_string(i) + "." + feature);
         }
@@ -244,14 +244,14 @@ int main(int argc, char *argv[]) {
         int total_correspondence_num = 0;
         int total_positive = 0;
 
-        for (auto k = 0; k < pair_ids.size(); k++) {
+        for (size_t k = 0; k < pair_ids.size(); k++) {
             geometry::PointCloud source = pcds[pair_ids[k].second];
             total_point_num += (int)source.points_.size();
         }
         std::vector<double> true_dis(total_point_num, -1.0);
         total_point_num = 0;
 
-        for (auto k = 0; k < pair_ids.size(); k++) {
+        for (size_t k = 0; k < pair_ids.size(); k++) {
             geometry::PointCloud source = pcds[pair_ids[k].second];
             source.Transform(transformations[k]);
             std::vector<int> indices(1);
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
             int correspondence_num = 0;
             std::vector<bool> has_correspondence(
                     pcds[pair_ids[k].second].points_.size(), false);
-            for (auto i = 0; i < source.points_.size(); i++) {
+            for (size_t i = 0; i < source.points_.size(); i++) {
                 const auto &pt = source.points_[i];
                 if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
                                                          distance2) > 0) {
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 #pragma omp parallel for schedule(static) \
         num_threads(16) private(indices, fdistance2)
 #endif
-            for (auto i = 0; i < source.points_.size(); i++) {
+            for (int i = 0; i < int(source.points_.size()); i++) {
                 if (has_correspondence[i]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
                                 feature_trees[pair_ids[k].second].data_, i, 1,

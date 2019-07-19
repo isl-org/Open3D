@@ -175,7 +175,7 @@ inline Eigen::Vector6d GetLinearized6DVector(const Eigen::Matrix4d &input) {
     output(1) = (-input(2, 0) + input(0, 2)) / 2.0;
     output(2) = (-input(0, 1) + input(1, 0)) / 2.0;
     output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
-    return std::move(output);
+    return output;
 }
 
 inline Eigen::Vector6d GetMisalignmentVector(const Eigen::Matrix4d &X_inv,
@@ -264,7 +264,7 @@ Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph) {
         Eigen::Vector6d e = GetMisalignmentVector(X_inv, Ts, Tt_inv);
         output.block<6, 1>(iter_edge * 6, 0) = e;
     }
-    return std::move(output);
+    return output;
 }
 
 /// The information matrix used here is consistent with [Choi et al 2015].
@@ -329,7 +329,7 @@ Eigen::VectorXd UpdatePoseVector(const PoseGraph &pose_graph) {
                 pose_graph.nodes_[iter_node].pose_);
         output.block<6, 1>(iter_node * 6, 0) = output_iter;
     }
-    return std::move(output);
+    return output;
 }
 
 std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
@@ -457,8 +457,8 @@ void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
 
 bool ValidatePoseGraphConnectivity(const PoseGraph &pose_graph,
                                    bool ignore_uncertain_edges = false) {
-    int n_nodes = (int)pose_graph.nodes_.size();
-    int n_edges = (int)pose_graph.edges_.size();
+    size_t n_nodes = pose_graph.nodes_.size();
+    size_t n_edges = pose_graph.edges_.size();
 
     // Test if the connected component containing the first node is the entire
     // graph
@@ -471,7 +471,7 @@ bool ValidatePoseGraphConnectivity(const PoseGraph &pose_graph,
     while (!nodes_to_explore.empty()) {
         int i = nodes_to_explore.back();
         nodes_to_explore.pop_back();
-        for (int j = 0; j < n_edges; j++) {
+        for (size_t j = 0; j < n_edges; j++) {
             const PoseGraphEdge &t = pose_graph.edges_[j];
             if (ignore_uncertain_edges && t.uncertain_) {
                 continue;

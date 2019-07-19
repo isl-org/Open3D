@@ -167,7 +167,7 @@ bool IsPointInsidePolygon(const Eigen::MatrixX2d &polygon, double x, double y) {
 
 bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                                std::vector<unsigned int> &indices) {
-    unsigned int n = indices.size();
+    int n = int(indices.size());
     Eigen::Vector3d face_normal = Eigen::Vector3d::Zero();
     if (n > 3) {
         for (int i = 0; i < n; i++) {
@@ -195,7 +195,6 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                     mesh.vertices_[indices[i]] - mesh.vertices_[indices[i - 1]];
             const Eigen::Vector3d &v2 =
                     mesh.vertices_[indices[i + 1]] - mesh.vertices_[indices[i]];
-            Eigen::Vector3d v_cross = v1.cross(v2);
             bool is_convex = (face_normal.dot(v1.cross(v2)) > 0.0);
             bool is_ear = true;
             if (is_convex) {
@@ -223,7 +222,7 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                     mesh.triangles_.push_back(Eigen::Vector3i(
                             indices[i - 1], indices[i], indices[i + 1]));
                     indices.erase(indices.begin() + i);
-                    n = indices.size();
+                    n = int(indices.size());
                     break;
                 }
             }

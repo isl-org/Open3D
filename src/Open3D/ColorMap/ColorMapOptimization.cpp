@@ -56,7 +56,7 @@ void OptimizeImageCoorNonrigid(
         std::vector<double>& proxy_intensity,
         const ColorMapOptimizationOption& option) {
     auto n_vertex = mesh.vertices_.size();
-    auto n_camera = camera.parameters_.size();
+    int n_camera = int(camera.parameters_.size());
     SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
                                visiblity_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
@@ -97,7 +97,7 @@ void OptimizeImageCoorNonrigid(
             std::tie(JTJ, JTr, r2) =
                     ComputeJTJandJTrNonRigid<Eigen::Vector14d, Eigen::Vector14i,
                                              Eigen::MatrixXd, Eigen::VectorXd>(
-                            f_lambda, visiblity_image_to_vertex[c].size(),
+                            f_lambda, int(visiblity_image_to_vertex[c].size()),
                             nonrigidval, false);
 
             double weight = option.non_rigid_anchor_point_weight_ *
@@ -153,7 +153,7 @@ void OptimizeImageCoorRigid(
         std::vector<double>& proxy_intensity,
         const ColorMapOptimizationOption& option) {
     int total_num_ = 0;
-    auto n_camera = camera.parameters_.size();
+    int n_camera = int(camera.parameters_.size());
     SetProxyIntensityForVertex(mesh, images_gray, camera,
                                visiblity_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
@@ -187,7 +187,7 @@ void OptimizeImageCoorRigid(
             double r2;
             std::tie(JTJ, JTr, r2) =
                     utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-                            f_lambda, visiblity_image_to_vertex[c].size(),
+                            f_lambda, int(visiblity_image_to_vertex[c].size()),
                             false);
 
             bool is_success;
@@ -202,7 +202,7 @@ void OptimizeImageCoorRigid(
 #endif
             {
                 residual += r2;
-                total_num_ += visiblity_image_to_vertex[c].size();
+                total_num_ += int(visiblity_image_to_vertex[c].size());
             }
         }
         utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})\n", residual,
@@ -225,7 +225,7 @@ CreateGradientImages(
     std::vector<std::shared_ptr<geometry::Image>> images_dy;
     std::vector<std::shared_ptr<geometry::Image>> images_color;
     std::vector<std::shared_ptr<geometry::Image>> images_depth;
-    for (auto i = 0; i < images_rgbd.size(); i++) {
+    for (size_t i = 0; i < images_rgbd.size(); i++) {
         auto gray_image = images_rgbd[i]->color_.CreateFloatImage();
         auto gray_image_filtered =
                 gray_image->Filter(geometry::Image::FilterType::Gaussian3);
@@ -239,8 +239,8 @@ CreateGradientImages(
         images_color.push_back(color);
         images_depth.push_back(depth);
     }
-    return std::move(std::make_tuple(images_gray, images_dx, images_dy,
-                                     images_color, images_depth));
+    return std::make_tuple(images_gray, images_dx, images_dy, images_color,
+                           images_depth);
 }
 
 std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
@@ -248,7 +248,7 @@ std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
         const ColorMapOptimizationOption& option) {
     auto n_images = images_depth.size();
     std::vector<std::shared_ptr<geometry::Image>> masks;
-    for (auto i = 0; i < n_images; i++) {
+    for (size_t i = 0; i < n_images; i++) {
         utility::LogDebug("[MakeDepthMasks] geometry::Image {:d}/{:d}\n", i,
                           n_images);
         masks.push_back(images_depth[i]->CreateDepthBoundaryMask(
@@ -262,13 +262,13 @@ std::vector<ImageWarpingField> CreateWarpingFields(
         const std::vector<std::shared_ptr<geometry::Image>>& images,
         const ColorMapOptimizationOption& option) {
     std::vector<ImageWarpingField> fields;
-    for (auto i = 0; i < images.size(); i++) {
+    for (size_t i = 0; i < images.size(); i++) {
         int width = images[i]->width_;
         int height = images[i]->height_;
         fields.push_back(ImageWarpingField(width, height,
                                            option.number_of_vertical_anchors_));
     }
-    return std::move(fields);
+    return fields;
 }
 
 }  // unnamed namespace

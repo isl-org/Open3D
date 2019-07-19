@@ -47,7 +47,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         const Eigen::Matrix4d &transformation) {
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
-        return std::move(result);
+        return result;
     }
 
     double error2 = 0.0;
@@ -94,7 +94,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         result.fitness_ = (double)corres_number / (double)source.points_.size();
         result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
     }
-    return std::move(result);
+    return result;
 }
 
 RegistrationResult EvaluateRANSACBasedOnCorrespondence(
@@ -399,7 +399,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (auto c = 0; c < result.correspondence_set_.size(); c++) {
+        for (int c = 0; c < int(result.correspondence_set_.size()); c++) {
             int t = result.correspondence_set_[c](1);
             double x = target.points_[t](0);
             double y = target.points_[t](1);
@@ -427,7 +427,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 #ifdef _OPENMP
     }
 #endif
-    return std::move(GTG);
+    return GTG;
 }
 
 }  // namespace registration

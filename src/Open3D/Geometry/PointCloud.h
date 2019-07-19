@@ -190,7 +190,7 @@ public:
     /// in Large Spatial Databases with Noise", 1996
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
-    std::vector<int> ClusterDBSCAN(double eps, int min_points) const;
+    std::vector<int> ClusterDBSCAN(double eps, size_t min_points) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)

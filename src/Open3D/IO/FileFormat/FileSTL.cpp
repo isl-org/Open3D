@@ -36,27 +36,28 @@ namespace io {
 bool ReadTriangleMeshFromSTL(const std::string &filename,
                              geometry::TriangleMesh &mesh,
                              bool print_progress) {
-    std::ifstream myFile(filename.c_str(), std::ios::in | std::ios::binary);
+    FILE *myFile = fopen(filename.c_str(), "rb");
 
     if (!myFile) {
         utility::LogWarning("Read STL failed: unable to open file.\n");
+        fclose(myFile);
         return false;
     }
 
     int num_of_triangles;
     if (myFile) {
         char header[80] = "";
-        char buffer[4];
-        myFile.read(header, 80);
-        myFile.read(buffer, 4);
-        num_of_triangles = (int)(*((unsigned long *)buffer));
+        fread(header, sizeof(char), 80, myFile);
+        fread(&num_of_triangles, sizeof(unsigned int), 1, myFile);
     } else {
         utility::LogWarning("Read STL failed: unable to read header.\n");
+        fclose(myFile);
         return false;
     }
 
     if (num_of_triangles == 0) {
         utility::LogWarning("Read STL failed: empty file.\n");
+        fclose(myFile);
         return false;
     }
 
@@ -73,7 +74,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         char buffer[50];
         float *float_buffer;
         if (myFile) {
-            myFile.read(buffer, 50);
+            fread(buffer, sizeof(char), 50, myFile);
             float_buffer = reinterpret_cast<float *>(buffer);
             mesh.triangle_normals_[i] =
                     Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
@@ -89,10 +90,13 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 
         } else {
             utility::LogWarning("Read STL failed: not enough triangles.\n");
+            fclose(myFile);
             return false;
         }
         ++progress_bar;
     }
+
+    fclose(myFile);
     return true;
 }
 
@@ -126,7 +130,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
 
     utility::ConsoleProgressBar progress_bar(num_of_triangles,
                                              "Writing STL: ", print_progress);
-    for (int i = 0; i < num_of_triangles; i++) {
+    for (size_t i = 0; i < num_of_triangles; i++) {
         Eigen::Vector3f float_vector3f =
                 mesh.triangle_normals_[i].cast<float>();
         myFile.write(reinterpret_cast<const char *>(float_vector3f.data()), 12);

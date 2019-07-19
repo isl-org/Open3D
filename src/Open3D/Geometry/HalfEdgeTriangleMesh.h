@@ -40,7 +40,11 @@ class HalfEdgeTriangleMesh : public Geometry3D {
 public:
     class HalfEdge {
     public:
-        HalfEdge() {}
+        HalfEdge()
+            : next_(-1),
+              twin_(-1),
+              vertex_indices_(-1, -1),
+              triangle_index_(-1) {}
         HalfEdge(const Eigen::Vector2i &vertex_indices,
                  int triangle_index,
                  int next,
@@ -49,13 +53,13 @@ public:
 
     public:
         // Index of the next HalfEdge
-        int next_ = -1;
+        int next_;
         // Index of the twin HalfEdge
-        int twin_ = -1;
+        int twin_;
         // Index of the ordered vertices forming this half edge
-        Eigen::Vector2i vertex_indices_ = Eigen::Vector2i(-1, -1);
+        Eigen::Vector2i vertex_indices_;
         // Index of the triangle containing this half edge
-        int triangle_index_ = -1;
+        int triangle_index_;
     };
 
 public:

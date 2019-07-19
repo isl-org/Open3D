@@ -55,6 +55,8 @@ public:
     };
 
 public:
+    virtual ~ViewControl() {}
+
     /// Function to set view points
     /// This function obtains OpenGL context and calls OpenGL functions to set
     /// the view point.

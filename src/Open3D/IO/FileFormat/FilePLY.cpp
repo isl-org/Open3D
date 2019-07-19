@@ -191,7 +191,7 @@ int ReadFaceCallBack(p_ply_argument argument) {
     } else {
         state_ptr->face.push_back(int(value));
     }
-    if (state_ptr->face.size() == length) {
+    if (long(state_ptr->face.size()) == length) {
         if (!AddTrianglesByEarClipping(*state_ptr->mesh_ptr, state_ptr->face)) {
             utility::LogWarning(
                     "Read PLY failed: A polygon in the mesh could not be "
@@ -247,7 +247,7 @@ int ReadLineCallback(p_ply_argument argument) {
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->lineset_ptr->lines_[state_ptr->line_index](index) = value;
+    state_ptr->lineset_ptr->lines_[state_ptr->line_index](index) = int(value);
     if (index == 1) {  // reading 'vertex2'
         state_ptr->line_index++;
         ++(*state_ptr->progress_bar);
@@ -320,7 +320,7 @@ int ReadVoxelCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
-            index) = value;
+            index) = int(value);
     if (index == 2) {  // reading 'z'
         state_ptr->voxel_index++;
         ++(*state_ptr->progress_bar);

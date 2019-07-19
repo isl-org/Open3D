@@ -276,7 +276,7 @@ public:
             fmt::print("{}[{}] 100%\n", progress_info_,
                        std::string(resolution_, '='));
         } else {
-            int new_progress_pixel =
+            size_t new_progress_pixel =
                     int(current_count_ * resolution_ / expected_count_);
             if (new_progress_pixel > progress_pixel_) {
                 progress_pixel_ = new_progress_pixel;

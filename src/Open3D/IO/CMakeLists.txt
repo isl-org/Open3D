@@ -10,3 +10,4 @@ add_library(IO OBJECT
             ${IO_ALL_SOURCE_FILES}
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
+ShowAndAbortOnWarning(IO)

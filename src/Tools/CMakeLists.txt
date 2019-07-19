@@ -9,6 +9,7 @@ macro(TOOL TOOL_NAME)
     endforeach()
 
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
+    ShowAndAbortOnWarning(${TOOL_NAME})
 endmacro(TOOL)
 
 TOOL(ConvertPointCloud      ${CMAKE_PROJECT_NAME})

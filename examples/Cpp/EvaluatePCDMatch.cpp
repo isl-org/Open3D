@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
                                                            pcd_names);
     std::vector<geometry::PointCloud> pcds(pcd_names.size());
     std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
-    for (auto i = 0; i < pcd_names.size(); i++) {
+    for (size_t i = 0; i < pcd_names.size(); i++) {
         io::ReadPointCloud(
                 pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
                 pcds[i]);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     double total_rmse = 0.0;
     int positive = 0;
     double positive_rmse = 0;
-    for (auto k = 0; k < pair_ids.size(); k++) {
+    for (size_t k = 0; k < pair_ids.size(); k++) {
         geometry::PointCloud source = pcds[pair_ids[k].second];
         source.Transform(transformations[k]);
         geometry::PointCloud gtsource = pcds[pair_ids[k].second];
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
         std::vector<double> distance2(1);
         int correspondence_num = 0;
         double rmse = 0.0;
-        for (auto i = 0; i < source.points_.size(); i++) {
+        for (size_t i = 0; i < source.points_.size(); i++) {
             if (kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_[i], 1,
                                                      indices, distance2) > 0) {
                 if (distance2[0] < threshold2) {

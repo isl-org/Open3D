@@ -45,9 +45,9 @@ TEST(LineSet, Constructor) {
     EXPECT_EQ(3, ls.Dimension());
 
     // public member variables
-    EXPECT_EQ(0, ls.points_.size());
-    EXPECT_EQ(0, ls.lines_.size());
-    EXPECT_EQ(0, ls.colors_.size());
+    EXPECT_EQ(0u, ls.points_.size());
+    EXPECT_EQ(0u, ls.lines_.size());
+    EXPECT_EQ(0u, ls.colors_.size());
 
     // public members
     EXPECT_TRUE(ls.IsEmpty());
@@ -143,8 +143,6 @@ TEST(LineSet, GetMinBound) {
 
     Rand(ls.points_, vmin, vmax, 0);
 
-    Vector3d minBound = ls.GetMinBound();
-
     ExpectEQ(Vector3d(19.607843, 0.0, 0.0), ls.GetMinBound());
 }
 
@@ -162,8 +160,6 @@ TEST(LineSet, GetMaxBound) {
     ls.points_.resize(size);
 
     Rand(ls.points_, vmin, vmax, 0);
-
-    Vector3d maxBound = ls.GetMaxBound();
 
     ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), ls.GetMaxBound());
 }
@@ -216,7 +212,7 @@ TEST(LineSet, Transform) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, OperatorAppend) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::LineSet ls0;
     geometry::LineSet ls1;
@@ -278,7 +274,7 @@ TEST(LineSet, OperatorAppend) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, OperatorADD) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::LineSet ls0;
     geometry::LineSet ls1;
@@ -339,7 +335,7 @@ TEST(LineSet, OperatorADD) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, HasPoints) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::LineSet ls;
 
@@ -354,7 +350,7 @@ TEST(LineSet, HasPoints) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, HasLines) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::LineSet ls;
 
@@ -370,7 +366,7 @@ TEST(LineSet, HasLines) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, HasColors) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::LineSet ls;
 
@@ -409,7 +405,7 @@ TEST(LineSet, GetLineCoordinate) {
             {{796.078431, 909.803922, 196.078431},
              {913.725490, 635.294118, 713.725490}}};
 
-    int size = 10;
+    size_t size = 10;
     geometry::LineSet ls;
 
     Vector3d dmin(0.0, 0.0, 0.0);
@@ -437,7 +433,7 @@ TEST(LineSet, GetLineCoordinate) {
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
-    int size = 10;
+    size_t size = 10;
 
     vector<Vector3d> ref_points = {{839.215686, 392.156863, 780.392157},
                                    {796.078431, 909.803922, 196.078431},
@@ -484,7 +480,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     Rand(pc1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
     Raw raw;
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         int first = size * raw.Next<int>() / Raw::VMAX;
         int second = size * raw.Next<int>() / Raw::VMAX;
 

@@ -84,7 +84,7 @@ LineSet &LineSet::Scale(const double scale, bool center) {
     if (center && !points_.empty()) {
         point_center =
                 std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= points_.size();
+        point_center /= double(points_.size());
     }
     for (auto &point : points_) {
         point = (point - point_center) * scale + point_center;
@@ -99,7 +99,7 @@ LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation,
     if (center && !points_.empty()) {
         point_center =
                 std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= points_.size();
+        point_center /= double(points_.size());
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {

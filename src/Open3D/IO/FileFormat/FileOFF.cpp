@@ -88,7 +88,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     float vx, vy, vz;
     float nx, ny, nz;
     float r, g, b, alpha;
-    for (int vidx = 0; vidx < num_of_vertices; vidx++) {
+    for (size_t vidx = 0; vidx < num_of_vertices; vidx++) {
         std::getline(file, line);
         std::istringstream iss(line);
         if (!(iss >> vx >> vy >> vz)) {
@@ -125,12 +125,12 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     unsigned int n, vertex_index;
     std::vector<unsigned int> indices;
-    for (int tidx = 0; tidx < num_of_faces; tidx++) {
+    for (size_t tidx = 0; tidx < num_of_faces; tidx++) {
         std::getline(file, line);
         std::istringstream iss(line);
         iss >> n;
         indices.clear();
-        for (int vidx = 0; vidx < n; vidx++) {
+        for (size_t vidx = 0; vidx < n; vidx++) {
             if (!(iss >> vertex_index)) {
                 utility::LogWarning(
                         "Read OFF failed: could not read all vertex "
@@ -189,7 +189,7 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
 
     utility::ConsoleProgressBar progress_bar(num_of_vertices + num_of_triangles,
                                              "Writing OFF: ", print_progress);
-    for (int vidx = 0; vidx < num_of_vertices; ++vidx) {
+    for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
         const Eigen::Vector3d &vertex = mesh.vertices_[vidx];
         file << vertex(0) << " " << vertex(1) << " " << vertex(2);
         if (write_vertex_normals) {
@@ -206,7 +206,7 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
         ++progress_bar;
     }
 
-    for (int tidx = 0; tidx < num_of_triangles; ++tidx) {
+    for (size_t tidx = 0; tidx < num_of_triangles; ++tidx) {
         const Eigen::Vector3i &triangle = mesh.triangles_[tidx];
         file << "3 " << triangle(0) << " " << triangle(1) << " " << triangle(2)
              << "\n";

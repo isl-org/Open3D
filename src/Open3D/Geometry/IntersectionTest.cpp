@@ -54,10 +54,12 @@ bool IntersectionTest::TriangleTriangle3d(const Eigen::Vector3d& p0,
                                           const Eigen::Vector3d& q0,
                                           const Eigen::Vector3d& q1,
                                           const Eigen::Vector3d& q2) {
-    return NoDivTriTriIsect(
-            const_cast<double*>(p0.data()), const_cast<double*>(p1.data()),
-            const_cast<double*>(p2.data()), const_cast<double*>(q0.data()),
-            const_cast<double*>(q1.data()), const_cast<double*>(q2.data()));
+    return NoDivTriTriIsect(const_cast<double*>(p0.data()),
+                            const_cast<double*>(p1.data()),
+                            const_cast<double*>(p2.data()),
+                            const_cast<double*>(q0.data()),
+                            const_cast<double*>(q1.data()),
+                            const_cast<double*>(q2.data())) != 0;
 }
 
 bool IntersectionTest::TriangleAABB(const Eigen::Vector3d& box_center,
@@ -69,7 +71,8 @@ bool IntersectionTest::TriangleAABB(const Eigen::Vector3d& box_center,
                             const_cast<double*>(vert1.data()),
                             const_cast<double*>(vert2.data())};
     return triBoxOverlap(const_cast<double*>(box_center.data()),
-                         const_cast<double*>(box_half_size.data()), tri_verts);
+                         const_cast<double*>(box_half_size.data()),
+                         tri_verts) != 0;
 }
 
 }  // namespace geometry

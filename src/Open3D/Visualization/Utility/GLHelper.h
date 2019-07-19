@@ -26,6 +26,12 @@
 
 #pragma once
 
+// Avoid warning caused by redefinition of APIENTRY macro
+// defined also in glfw3.h
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <GL/glew.h>  // Make sure glew.h is included before gl.h
 #include <GLFW/glfw3.h>
 #include <Eigen/Core>

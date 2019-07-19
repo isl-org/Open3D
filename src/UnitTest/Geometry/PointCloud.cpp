@@ -49,9 +49,9 @@ TEST(PointCloud, Constructor) {
     EXPECT_EQ(3, pc.Dimension());
 
     // public member variables
-    EXPECT_EQ(0, pc.points_.size());
-    EXPECT_EQ(0, pc.normals_.size());
-    EXPECT_EQ(0, pc.colors_.size());
+    EXPECT_EQ(0u, pc.points_.size());
+    EXPECT_EQ(0u, pc.normals_.size());
+    EXPECT_EQ(0u, pc.colors_.size());
 
     // public members
     EXPECT_TRUE(pc.IsEmpty());
@@ -144,8 +144,6 @@ TEST(PointCloud, GetMinBound) {
 
     Rand(pc.points_, vmin, vmax, 0);
 
-    Vector3d minBound = pc.GetMinBound();
-
     ExpectEQ(Vector3d(19.607843, 0.0, 0.0), pc.GetMinBound());
     ExpectEQ(Vector3d(19.607843, 0.0, 0.0), pc.GetMinBound());
 }
@@ -164,8 +162,6 @@ TEST(PointCloud, GetMaxBound) {
     pc.points_.resize(size);
 
     Rand(pc.points_, vmin, vmax, 0);
-
-    Vector3d maxBound = pc.GetMaxBound();
 
     ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
     ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
@@ -302,7 +298,7 @@ TEST(PointCloud, NormalizeNormals) {
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, PaintUniformColor) {
-    int size = 100;
+    size_t size = 100;
 
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(1000.0, 1000.0, 1000.0);
@@ -329,7 +325,7 @@ TEST(PointCloud, PaintUniformColor) {
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, OperatorAppend) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::PointCloud pc0;
     geometry::PointCloud pc1;
@@ -388,7 +384,7 @@ TEST(PointCloud, OperatorAppend) {
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, OperatorADD) {
-    int size = 100;
+    size_t size = 100;
 
     geometry::PointCloud pc0;
     geometry::PointCloud pc1;
@@ -479,7 +475,7 @@ TEST(PointCloud, SelectDownSample) {
                             {592.156863, 662.745098, 286.274510},
                             {823.529412, 329.411765, 184.313725}};
 
-    int size = 100;
+    size_t size = 100;
     geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
@@ -559,7 +555,7 @@ TEST(PointCloud, VoxelDownSample) {
                                    {227.000000, 88.000000, 16.000000},
                                    {233.000000, 162.000000, 182.000000}};
 
-    int size = 20;
+    size_t size = 20;
     geometry::PointCloud pc;
 
     pc.points_.resize(size);
@@ -614,7 +610,7 @@ TEST(PointCloud, UniformDownSample) {
                             {772.549020, 286.274510, 329.411765},
                             {764.705882, 698.039216, 117.647059}};
 
-    int size = 100;
+    size_t size = 100;
     geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
@@ -633,7 +629,7 @@ TEST(PointCloud, UniformDownSample) {
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, CropPointCloud) {
-    int size = 100;
+    size_t size = 100;
     geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
@@ -676,7 +672,7 @@ TEST(PointCloud, EstimateNormals) {
             {0.178678, 0.974506, 0.135693},   {0.268803, 0.796616, 0.541431},
             {0.604933, 0.787776, -0.116044},  {0.111998, 0.869999, -0.480165}};
 
-    int size = 40;
+    size_t size = 40;
     geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
@@ -685,10 +681,8 @@ TEST(PointCloud, EstimateNormals) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    bool result;
-
-    result = pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), true);
-    for (int idx = 0; idx < ref.size(); ++idx) {
+    pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), true);
+    for (size_t idx = 0; idx < ref.size(); ++idx) {
         if ((ref[idx](0) < 0 && pc.normals_[idx](0) > 0) ||
             (ref[idx](0) > 0 && pc.normals_[idx](0) < 0)) {
             pc.normals_[idx] *= -1;
@@ -696,8 +690,8 @@ TEST(PointCloud, EstimateNormals) {
     }
     ExpectEQ(ref, pc.normals_);
 
-    result = pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), false);
-    for (int idx = 0; idx < ref.size(); ++idx) {
+    pc.EstimateNormals(geometry::KDTreeSearchParamKNN(), false);
+    for (size_t idx = 0; idx < ref.size(); ++idx) {
         if ((ref[idx](0) < 0 && pc.normals_[idx](0) > 0) ||
             (ref[idx](0) > 0 && pc.normals_[idx](0) < 0)) {
             pc.normals_[idx] *= -1;
@@ -741,8 +735,8 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    bool result = pc.EstimateNormals();
-    result = pc.OrientNormalsToAlignWithDirection(Vector3d(1.5, 0.5, 3.3));
+    pc.EstimateNormals();
+    pc.OrientNormalsToAlignWithDirection(Vector3d(1.5, 0.5, 3.3));
 
     ExpectEQ(ref, pc.normals_);
 }
@@ -801,8 +795,8 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    bool result = pc.EstimateNormals();
-    result = pc.OrientNormalsTowardsCameraLocation(Vector3d(1.5, 0.5, 3.3));
+    pc.EstimateNormals();
+    pc.OrientNormalsTowardsCameraLocation(Vector3d(1.5, 0.5, 3.3));
 
     ExpectEQ(ref, pc.normals_);
 }

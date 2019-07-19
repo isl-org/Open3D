@@ -41,7 +41,14 @@ public:
     typedef Eigen::aligned_allocator<Matrix17x4d> Matrix17x4d_allocator;
 
 public:
-    ViewParameters() {}
+    ViewParameters()
+        : field_of_view_(0),
+          zoom_(0),
+          lookat_(0, 0, 0),
+          up_(0, 0, 0),
+          front_(0, 0, 0),
+          boundingbox_min_(0, 0, 0),
+          boundingbox_max_(0, 0, 0) {}
     ~ViewParameters() override {}
 
 public:

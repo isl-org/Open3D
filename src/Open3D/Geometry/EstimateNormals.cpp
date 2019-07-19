@@ -35,8 +35,6 @@ namespace open3d {
 namespace {
 using namespace geometry;
 
-double sqr(double x) { return x * x; }
-
 Eigen::Vector3d ComputeEigenvector0(const Eigen::Matrix3d &A, double eval0) {
     Eigen::Vector3d row0(A(0, 0) - eval0, A(0, 1), A(0, 2));
     Eigen::Vector3d row1(A(0, 1), A(1, 1) - eval0, A(1, 2));

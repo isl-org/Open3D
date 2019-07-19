@@ -268,7 +268,7 @@ Eigen::Matrix6d CreateInformationMatrix(
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-        for (auto row = 0; row < correspondence->size(); row++) {
+        for (int row = 0; row < int(correspondence->size()); row++) {
             int u_t = (*correspondence)[row](2);
             int v_t = (*correspondence)[row](3);
             double x = *xyz_t->PointerAt<float>(u_t, v_t, 0);
@@ -297,7 +297,7 @@ Eigen::Matrix6d CreateInformationMatrix(
 #ifdef _OPENMP
     }
 #endif
-    return std::move(GTG);
+    return GTG;
 }
 
 void NormalizeIntensity(geometry::Image &image_s,
@@ -311,7 +311,7 @@ void NormalizeIntensity(geometry::Image &image_s,
         return;
     }
     double mean_s = 0.0, mean_t = 0.0;
-    for (int row = 0; row < correspondence.size(); row++) {
+    for (size_t row = 0; row < correspondence.size(); row++) {
         int u_s = correspondence[row](0);
         int v_s = correspondence[row](1);
         int u_t = correspondence[row](2);

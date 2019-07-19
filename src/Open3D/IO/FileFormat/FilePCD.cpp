@@ -312,7 +312,7 @@ Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr,
                                     const char type,
                                     const int size) {
     if (size == 4) {
-        std::uint8_t data[4];
+        std::uint8_t data[4] = {0, 0, 0, 0};
         char *end;
         if (type == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);

@@ -102,11 +102,11 @@ public:
         }
         if (cloud.HasColors()) {
             if (approximate_class) {
-                auto got = classes.find(cloud.colors_[index][0]);
+                auto got = classes.find(int(cloud.colors_[index][0]));
                 if (got == classes.end())
-                    classes[cloud.colors_[index][0]] = 1;
+                    classes[int(cloud.colors_[index][0])] = 1;
                 else
-                    classes[cloud.colors_[index][0]] += 1;
+                    classes[int(cloud.colors_[index][0])] += 1;
             } else {
                 color_ += cloud.colors_[index];
             }
@@ -203,8 +203,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
     }
     // Rename vertex id based on selected points
     std::vector<int> new_vertex_id(vertices_.size());
-    for (auto i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
-        if (mask_observed_vertex[i]) new_vertex_id[i] = cnt++;
+    for (size_t i = 0, cnt = 0; i < mask_observed_vertex.size(); i++) {
+        if (mask_observed_vertex[i]) {
+            new_vertex_id[i] = int(cnt);
+            cnt++;
+        }
     }
     // Push a triangle that has 3 selected vertices.
     triangle_id = 0;
@@ -221,7 +224,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
         triangle_id++;
     }
     // Push marked vertex.
-    for (auto i = 0; i < mask_observed_vertex.size(); i++) {
+    for (size_t i = 0; i < mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i]) {
             output->vertices_.push_back(vertices_[i]);
             if (has_vertex_normals)
@@ -347,7 +350,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
         for (int i = 0; i < (int)original_id.size(); i++) {
             size_t pid = original_id[i].point_id;
             int cid = original_id[i].cubic_id;
-            cubic_id(cnt, cid) = pid;
+            cubic_id(cnt, cid) = int(pid);
         }
         cnt++;
     }
@@ -406,11 +409,11 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < points_.size(); i++) {
+    for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        int nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
-                                               tmp_indices, dist);
+        size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
+                                                  tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
     }
     std::vector<size_t> indices;
@@ -445,12 +448,12 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (auto i = 0; i < points_.size(); i++) {
+    for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        kdtree.SearchKNN(points_[i], nb_neighbors, tmp_indices, dist);
-        double mean = -1;
-        if (dist.size() > 0) {
+        kdtree.SearchKNN(points_[i], int(nb_neighbors), tmp_indices, dist);
+        double mean = -1.0;
+        if (dist.size() > 0u) {
             valid_distances++;
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }

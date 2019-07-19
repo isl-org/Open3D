@@ -24,69 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+#include "TestUtility/UnitTest.h"
 
-#include <iostream>
-#include <string>
-#include <vector>
+using namespace open3d;
+using namespace unit_test;
 
-namespace unit_test {
-// Class for "generating" data.
-class Raw {
-public:
-    Raw() : step(1), index(0) {}
-    Raw(const int &seed)
-        : step((seed <= 0) ? 1 : seed), index(abs(seed) % SIZE) {}
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(FileSTL, WriteReadPointCloudFromSTL) {
+    geometry::TriangleMesh tm_gt;
+    tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    tm_gt.triangles_ = {{0, 1, 2}};
+    tm_gt.ComputeVertexNormals();
 
-private:
-    // size of the raw data
-    static const int SIZE = 1021;
+    io::WriteTriangleMeshToSTL("tmp.stl", tm_gt);
 
-    // raw data
-    static std::vector<uint8_t> data_;
+    geometry::TriangleMesh tm_test;
+    io::ReadTriangleMeshFromSTL("tmp.stl", tm_test, false);
 
-public:
-    // low end of the range
-    static const uint8_t VMIN = 0;
-
-    // high end of the range
-    static const uint8_t VMAX = 255;
-
-private:
-    // step through the raw data
-    int step;
-
-    // index into the raw data
-    int index;
-
-public:
-    // Get the next value.
-    template <class T>
-    T Next();
-};
-
-// Get the next uint8_t value.
-// Output range: [0, 255].
-template <>
-uint8_t Raw::Next();
-
-// Get the next int value.
-// Output range: [0, 255].
-template <>
-int Raw::Next();
-
-// Get the next size_t value.
-// Output range: [0, 255].
-template <>
-size_t Raw::Next();
-
-// Get the next float value.
-// Output range: [0, 1].
-template <>
-float Raw::Next();
-
-// Get the next double value.
-// Output range: [0, 1].
-template <>
-double Raw::Next();
-}  // namespace unit_test
+    ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
+    ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
+}

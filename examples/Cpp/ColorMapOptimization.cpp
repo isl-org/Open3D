@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
                                       color_filenames);
     assert(depth_filenames.size() == color_filenames.size());
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
-    for (int i = 0; i < depth_filenames.size(); i++) {
+    for (size_t i = 0; i < depth_filenames.size(); i++) {
         utility::LogDebug("reading {}...\n", depth_filenames[i]);
         auto depth = io::CreateImageFromFile(depth_filenames[i]);
         utility::LogDebug("reading {}...\n", color_filenames[i]);

@@ -44,6 +44,8 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:Visualization>
 )
 
+ShowAndAbortOnWarning(${CMAKE_PROJECT_NAME})
+
 # headless rendering
 if (ENABLE_HEADLESS_RENDERING)
     find_package(OSMesa REQUIRED)
