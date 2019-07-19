@@ -46,11 +46,6 @@ public:
     float weight_ = 0;
 };
 
-class TSDFVoxelGrid : public VoxelGrid {
-public:
-    std::vector<TSDFVoxel> voxels_;
-};
-
 }  // namespace geometry
 
 namespace integration {
@@ -93,7 +88,7 @@ public:
     }
 
 public:
-    geometry::TSDFVoxelGrid voxel_grid_;
+    std::vector<geometry::TSDFVoxel> voxels_;
     Eigen::Vector3d origin_;
     double length_;
     int resolution_;
