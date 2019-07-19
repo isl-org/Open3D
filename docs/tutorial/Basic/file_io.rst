@@ -89,6 +89,7 @@ Format     Description
 ``stl``    See `StereoLithography <http://www.fabbers.com/tech/STL_Format>`_
 ``obj``    See `Object Files <http://paulbourke.net/dataformats/obj/>`_
 ``off``    See `Object File Format <http://www.geomview.org/docs/html/OFF.html>`_
+``gltf``   See `GL Transmission Format <https://github.com/KhronosGroup/glTF/tree/master/specification/2.0>`_
 ========== =======================================================================================
 
 .. _io_image:

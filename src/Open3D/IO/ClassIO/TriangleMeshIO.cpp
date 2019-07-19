@@ -45,6 +45,7 @@ static const std::unordered_map<
                 {"stl", ReadTriangleMeshFromSTL},
                 {"obj", ReadTriangleMeshFromOBJ},
                 {"off", ReadTriangleMeshFromOFF},
+                {"gltf", ReadTriangleMeshFromGLTF},
         };
 
 static const std::unordered_map<
@@ -61,6 +62,7 @@ static const std::unordered_map<
                 {"stl", WriteTriangleMeshToSTL},
                 {"obj", WriteTriangleMeshToOBJ},
                 {"off", WriteTriangleMeshToOFF},
+                {"gltf", WriteTriangleMeshToGLTF},
         };
 
 }  // unnamed namespace

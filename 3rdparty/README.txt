@@ -61,6 +61,10 @@ tinyfiledialogs             2.7.2                                   zlib license
 A lightweight cross-platform file dialog library
 https://sourceforge.net/projects/tinyfiledialogs/
 --------------------------------------------------------------------------------
+tinygltf                    v2.2.0                                   MIT license
+Header only C++11 tiny glTF 2.0 library
+https://github.com/syoyo/tinygltf
+--------------------------------------------------------------------------------
 tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
