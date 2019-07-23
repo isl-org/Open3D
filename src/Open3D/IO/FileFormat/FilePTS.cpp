@@ -105,7 +105,7 @@ bool WritePointCloudToPTS(const std::string &filename,
     fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
     utility::ConsoleProgressBar progress_bar(
             static_cast<size_t>(pointcloud.points_.size()),
-            "Writinging PTS: ", print_progress);
+            "Writing PTS: ", print_progress);
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_[i];
         if (pointcloud.HasColors() == false) {
