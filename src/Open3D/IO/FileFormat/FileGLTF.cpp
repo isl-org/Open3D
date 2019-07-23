@@ -104,7 +104,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
         utility::LogWarning("Read GLTF failed: {}\n", err);
     }
     if (!ret) {
-        utility::LogWarning("Read GLTF failed: {}\n", filename);
         return false;
     }
 
@@ -269,7 +268,6 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     size_t num_of_vertices = mesh.vertices_.size();
     size_t num_of_triangles = mesh.triangles_.size();
 
-    float float_temp;
     unsigned char* temp = NULL;
 
     tinygltf::BufferView indices_buffer_view_array;
@@ -333,9 +331,9 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     tinygltf::Accessor positions_accessor;
     positions_accessor.name = "buffer-0-accessor-position-buffer-0-mesh-0";
     positions_accessor.type = TINYGLTF_TYPE_VEC3;
-    positions_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    positions_accessor.componentType = TINYGLTF_COMPONENT_TYPE_DOUBLE;
     positions_accessor.count = num_of_vertices;
-    byte_length = 3 * num_of_vertices * sizeof(float);
+    byte_length = 3 * num_of_vertices * sizeof(double);
     positions_accessor.bufferView = positions_and_normals_bufferview_index;
     positions_accessor.byteOffset =
             model.bufferViews[positions_and_normals_bufferview_index]
@@ -347,12 +345,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
         const Eigen::Vector3d& vertex = mesh.vertices_[vidx];
         for (size_t i = 0; i < 3; ++i) {
-            float_temp = (float)vertex(i);
-            temp = (unsigned char*)&(float_temp);
-            mesh_attribute_buffer.push_back(temp[0]);
-            mesh_attribute_buffer.push_back(temp[1]);
-            mesh_attribute_buffer.push_back(temp[2]);
-            mesh_attribute_buffer.push_back(temp[3]);
+            temp = (unsigned char*)&(vertex(i));
+            for (size_t j = 0; j < 8; ++j) {
+                mesh_attribute_buffer.push_back(temp[j]);
+            }
         }
     }
 
@@ -373,9 +369,9 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         tinygltf::Accessor normals_accessor;
         normals_accessor.name = "buffer-0-accessor-normal-buffer-0-mesh-0";
         normals_accessor.type = TINYGLTF_TYPE_VEC3;
-        normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_DOUBLE;
         normals_accessor.count = mesh.vertices_.size();
-        size_t byte_length = 3 * mesh.vertices_.size() * sizeof(float);
+        size_t byte_length = 3 * mesh.vertices_.size() * sizeof(double);
         normals_accessor.bufferView = positions_and_normals_bufferview_index;
         normals_accessor.byteOffset =
                 model.bufferViews[positions_and_normals_bufferview_index]
@@ -386,12 +382,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
             const Eigen::Vector3d& normal = mesh.vertex_normals_[vidx];
             for (size_t i = 0; i < 3; ++i) {
-                float_temp = (float)normal(i);
-                temp = (unsigned char*)&(float_temp);
-                mesh_attribute_buffer.push_back(temp[0]);
-                mesh_attribute_buffer.push_back(temp[1]);
-                mesh_attribute_buffer.push_back(temp[2]);
-                mesh_attribute_buffer.push_back(temp[3]);
+                temp = (unsigned char*)&(normal(i));
+                for (size_t j = 0; j < 8; ++j) {
+                    mesh_attribute_buffer.push_back(temp[j]);
+                }
             }
         }
 
