@@ -136,6 +136,7 @@ else ()
     endif ()
 
     if (BUILD_JSONCPP)
+        set(JSONCPP_WITH_PKGCONFIG_SUPPORT OFF)
         add_subdirectory(jsoncpp)
     endif ()
 endif ()
