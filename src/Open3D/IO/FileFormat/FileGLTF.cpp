@@ -41,11 +41,11 @@ namespace io {
 // Adapts an array of bytes to an array of T. Will advance of byte_stride each
 // elements.
 template <typename T>
-struct arrayAdapter {
+struct ArrayAdapter {
     // Pointer to the bytes
-    const unsigned char* dataPtr;
+    const unsigned char* data_ptr;
     // Number of elements in the array
-    const size_t elemCount;
+    const size_t elem_count;
     // Stride in bytes between two elements
     const size_t stride;
 
@@ -53,39 +53,39 @@ struct arrayAdapter {
     // \param ptr Pointer to the start of the data, with offset applied
     // \param count Number of elements in the array
     // \param byte_stride Stride betweens elements in the array
-    arrayAdapter(const unsigned char* ptr, size_t count, size_t byte_stride)
-        : dataPtr(ptr), elemCount(count), stride(byte_stride) {}
+    ArrayAdapter(const unsigned char* ptr, size_t count, size_t byte_stride)
+        : data_ptr(ptr), elem_count(count), stride(byte_stride) {}
 
     // Returns a *copy* of a single element. Can't be used to modify it.
     T operator[](size_t pos) const {
-        if (pos >= elemCount)
+        if (pos >= elem_count)
             throw std::out_of_range(
                     "Tried to access beyond the last element of an array "
                     "adapter with count " +
-                    std::to_string(elemCount) +
+                    std::to_string(elem_count) +
                     " while getting element number " + std::to_string(pos));
-        return *(reinterpret_cast<const T*>(dataPtr + pos * stride));
+        return *(reinterpret_cast<const T*>(data_ptr + pos * stride));
     }
 };
 
 // Interface of any adapted array that returns integer data
-struct intArrayBase {
-    virtual ~intArrayBase() = default;
+struct IntArrayBase {
+    virtual ~IntArrayBase() = default;
     virtual unsigned int operator[](size_t) const = 0;
     virtual size_t size() const = 0;
 };
 
 // An array that loads integer types, and returns them as int
 template <class T>
-struct intArray : public intArrayBase {
-    arrayAdapter<T> adapter;
+struct IntArray : public IntArrayBase {
+    ArrayAdapter<T> adapter;
 
-    intArray(const arrayAdapter<T>& a) : adapter(a) {}
+    IntArray(const ArrayAdapter<T>& a) : adapter(a) {}
     unsigned int operator[](size_t position) const override {
         return static_cast<unsigned int>(adapter[position]);
     }
 
-    size_t size() const override { return adapter.elemCount; }
+    size_t size() const override { return adapter.elem_count; }
 };
 
 bool ReadTriangleMeshFromGLTF(const std::string& filename,
@@ -161,7 +161,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
             }
 
             // Load triangles
-            std::unique_ptr<intArrayBase> indices_array_pointer = nullptr;
+            std::unique_ptr<IntArrayBase> indices_array_pointer = nullptr;
             {
                 const tinygltf::Accessor& indices_accessor =
                         model.accessors[primitive.indices];
@@ -180,48 +180,48 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                 // the parent scope
                 switch (indices_accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_BYTE:
-                        indices_array_pointer = std::unique_ptr<intArray<char>>(
-                                new intArray<char>(arrayAdapter<char>(
+                        indices_array_pointer = std::unique_ptr<IntArray<char>>(
+                                new IntArray<char>(ArrayAdapter<char>(
                                         data_address, count, byte_stride)));
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                         indices_array_pointer =
-                                std::unique_ptr<intArray<unsigned char>>(
-                                        new intArray<unsigned char>(
-                                                arrayAdapter<unsigned char>(
+                                std::unique_ptr<IntArray<unsigned char>>(
+                                        new IntArray<unsigned char>(
+                                                ArrayAdapter<unsigned char>(
                                                         data_address, count,
                                                         byte_stride)));
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_SHORT:
                         indices_array_pointer =
-                                std::unique_ptr<intArray<short>>(
-                                        new intArray<short>(arrayAdapter<short>(
+                                std::unique_ptr<IntArray<short>>(
+                                        new IntArray<short>(ArrayAdapter<short>(
                                                 data_address, count,
                                                 byte_stride)));
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                         indices_array_pointer =
-                                std::unique_ptr<intArray<unsigned short>>(
-                                        new intArray<unsigned short>(
-                                                arrayAdapter<unsigned short>(
+                                std::unique_ptr<IntArray<unsigned short>>(
+                                        new IntArray<unsigned short>(
+                                                ArrayAdapter<unsigned short>(
                                                         data_address, count,
                                                         byte_stride)));
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_INT:
-                        indices_array_pointer = std::unique_ptr<intArray<int>>(
-                                new intArray<int>(arrayAdapter<int>(
+                        indices_array_pointer = std::unique_ptr<IntArray<int>>(
+                                new IntArray<int>(ArrayAdapter<int>(
                                         data_address, count, byte_stride)));
                         break;
 
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                         indices_array_pointer =
-                                std::unique_ptr<intArray<unsigned int>>(
-                                        new intArray<unsigned int>(
-                                                arrayAdapter<unsigned int>(
+                                std::unique_ptr<IntArray<unsigned int>>(
+                                        new IntArray<unsigned int>(
+                                                ArrayAdapter<unsigned int>(
                                                         data_address, count,
                                                         byte_stride)));
                         break;
@@ -286,7 +286,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     indices_buffer_view_array.buffer = 0;
     indices_buffer_view_array.byteLength = 0;
     model.bufferViews.push_back(indices_buffer_view_array);
-    size_t indices_bufferview_index = model.bufferViews.size() - 1;
+    size_t indices_buffer_view_index = model.bufferViews.size() - 1;
 
     tinygltf::BufferView buffer_view_array;
     buffer_view_array.name = "buffer-0-bufferview-vec3",
@@ -296,7 +296,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     buffer_view_array.byteOffset = 0;
     buffer_view_array.byteStride = 12;
     model.bufferViews.push_back(buffer_view_array);
-    size_t positions_and_normals_bufferview_index =
+    size_t positions_and_normals_buffer_view_index =
             model.bufferViews.size() - 1;
 
     tinygltf::Scene gltf_scene;
@@ -316,10 +316,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     indices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
     indices_accessor.count = 3 * num_of_triangles;
     byte_length = 3 * num_of_triangles * sizeof(uint32_t);
-    indices_accessor.bufferView = indices_bufferview_index;
+    indices_accessor.bufferView = int(indices_buffer_view_index);
     indices_accessor.byteOffset =
-            model.bufferViews[indices_bufferview_index].byteLength;
-    model.bufferViews[indices_bufferview_index].byteLength += byte_length;
+            model.bufferViews[indices_buffer_view_index].byteLength;
+    model.bufferViews[indices_buffer_view_index].byteLength += byte_length;
 
     std::vector<unsigned char> index_buffer;
     for (size_t tidx = 0; tidx < num_of_triangles; ++tidx) {
@@ -333,9 +333,9 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     }
 
     indices_accessor.minValues.push_back(0);
-    indices_accessor.maxValues.push_back(3 * num_of_triangles - 1);
+    indices_accessor.maxValues.push_back(3 * int(num_of_triangles) - 1);
     model.accessors.push_back(indices_accessor);
-    gltf_primitive.indices = model.accessors.size() - 1;
+    gltf_primitive.indices = int(model.accessors.size()) - 1;
 
     tinygltf::Accessor positions_accessor;
     positions_accessor.name = "buffer-0-accessor-position-buffer-0-mesh-0";
@@ -343,11 +343,12 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     positions_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
     positions_accessor.count = num_of_vertices;
     byte_length = 3 * num_of_vertices * sizeof(float);
-    positions_accessor.bufferView = positions_and_normals_bufferview_index;
+    positions_accessor.bufferView =
+            int(positions_and_normals_buffer_view_index);
     positions_accessor.byteOffset =
-            model.bufferViews[positions_and_normals_bufferview_index]
+            model.bufferViews[positions_and_normals_buffer_view_index]
                     .byteLength;
-    model.bufferViews[positions_and_normals_bufferview_index].byteLength +=
+    model.bufferViews[positions_and_normals_buffer_view_index].byteLength +=
             byte_length;
 
     std::vector<unsigned char> mesh_attribute_buffer;
@@ -382,11 +383,12 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
         normals_accessor.count = mesh.vertices_.size();
         size_t byte_length = 3 * mesh.vertices_.size() * sizeof(float);
-        normals_accessor.bufferView = positions_and_normals_bufferview_index;
+        normals_accessor.bufferView =
+                int(positions_and_normals_buffer_view_index);
         normals_accessor.byteOffset =
-                model.bufferViews[positions_and_normals_bufferview_index]
+                model.bufferViews[positions_and_normals_buffer_view_index]
                         .byteLength;
-        model.bufferViews[positions_and_normals_bufferview_index].byteLength +=
+        model.bufferViews[positions_and_normals_buffer_view_index].byteLength +=
                 byte_length;
 
         for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
