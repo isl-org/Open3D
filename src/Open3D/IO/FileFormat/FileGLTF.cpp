@@ -95,7 +95,16 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
     tinygltf::TinyGLTF loader;
     std::string warn;
     std::string err;
-    bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename.c_str());
+
+    bool load_as_binary =
+            filename.substr(filename.find_last_of(".") + 1) == "glb" ? true
+                                                                     : false;
+    bool ret;
+    if (load_as_binary) {
+        ret = loader.LoadBinaryFromFile(&model, &err, &warn, filename.c_str());
+    } else {
+        ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename.c_str());
+    }
 
     if (!warn.empty()) {
         utility::LogWarning("Read GLTF failed: {}\n", warn);
@@ -412,9 +421,21 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     model.buffers.push_back(buffer);
 
     tinygltf::TinyGLTF loader;
-    if (!loader.WriteGltfSceneToFile(&model, filename, false, true)) {
-        utility::LogWarning("Write GLTF failed.\n");
-        return false;
+    bool save_as_binary =
+            filename.substr(filename.find_last_of(".") + 1) == "glb" ? true
+                                                                     : false;
+    if (save_as_binary) {
+        if (!loader.WriteGltfSceneToFile(&model, filename, false, true, true,
+                                         true)) {
+            utility::LogWarning("Write GLTF failed.\n");
+            return false;
+        }
+    } else {
+        if (!loader.WriteGltfSceneToFile(&model, filename, false, true, true,
+                                         false)) {
+            utility::LogWarning("Write GLTF failed.\n");
+            return false;
+        }
     }
 
     return true;
