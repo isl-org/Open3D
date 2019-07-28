@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,17 +34,34 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
+TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
     geometry::TriangleMesh tm_gt;
     tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
     tm_gt.triangles_ = {{0, 1, 2}};
     tm_gt.ComputeVertexNormals();
 
-    io::WriteTriangleMeshToSTL("tmp.stl", tm_gt);
+    io::WriteTriangleMeshToGLTF("tmp.gltf", tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMeshFromSTL("tmp.stl", tm_test, false);
+    io::ReadTriangleMeshFromGLTF("tmp.gltf", tm_test, false);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
+    ExpectEQ(tm_gt.vertex_normals_, tm_test.vertex_normals_);
+}
+
+TEST(FileGLTF, WriteReadTriangleMeshFromGLB) {
+    geometry::TriangleMesh tm_gt;
+    tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    tm_gt.triangles_ = {{0, 1, 2}};
+    tm_gt.ComputeVertexNormals();
+
+    io::WriteTriangleMeshToGLTF("tmp.glb", tm_gt);
+
+    geometry::TriangleMesh tm_test;
+    io::ReadTriangleMeshFromGLTF("tmp.glb", tm_test, false);
+
+    ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
+    ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
+    ExpectEQ(tm_gt.vertex_normals_, tm_test.vertex_normals_);
 }
