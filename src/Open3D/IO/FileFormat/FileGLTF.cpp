@@ -326,8 +326,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     buffer_view_array.byteOffset = 0;
     buffer_view_array.byteStride = 12;
     model.bufferViews.push_back(buffer_view_array);
-    size_t positions_and_normals_buffer_view_index =
-            model.bufferViews.size() - 1;
+    size_t mesh_attributes_buffer_view_index = model.bufferViews.size() - 1;
 
     tinygltf::Scene gltf_scene;
     gltf_scene.nodes.push_back(0);
@@ -373,12 +372,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     positions_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
     positions_accessor.count = num_of_vertices;
     byte_length = 3 * num_of_vertices * sizeof(float);
-    positions_accessor.bufferView =
-            int(positions_and_normals_buffer_view_index);
+    positions_accessor.bufferView = int(mesh_attributes_buffer_view_index);
     positions_accessor.byteOffset =
-            model.bufferViews[positions_and_normals_buffer_view_index]
-                    .byteLength;
-    model.bufferViews[positions_and_normals_buffer_view_index].byteLength +=
+            model.bufferViews[mesh_attributes_buffer_view_index].byteLength;
+    model.bufferViews[mesh_attributes_buffer_view_index].byteLength +=
             byte_length;
 
     std::vector<unsigned char> mesh_attribute_buffer;
@@ -413,12 +410,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
         normals_accessor.count = mesh.vertices_.size();
         size_t byte_length = 3 * mesh.vertices_.size() * sizeof(float);
-        normals_accessor.bufferView =
-                int(positions_and_normals_buffer_view_index);
+        normals_accessor.bufferView = int(mesh_attributes_buffer_view_index);
         normals_accessor.byteOffset =
-                model.bufferViews[positions_and_normals_buffer_view_index]
-                        .byteLength;
-        model.bufferViews[positions_and_normals_buffer_view_index].byteLength +=
+                model.bufferViews[mesh_attributes_buffer_view_index].byteLength;
+        model.bufferViews[mesh_attributes_buffer_view_index].byteLength +=
                 byte_length;
 
         for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
@@ -445,12 +440,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         colors_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
         colors_accessor.count = mesh.vertices_.size();
         size_t byte_length = 3 * mesh.vertices_.size() * sizeof(float);
-        colors_accessor.bufferView =
-                int(positions_and_normals_buffer_view_index);
+        colors_accessor.bufferView = int(mesh_attributes_buffer_view_index);
         colors_accessor.byteOffset =
-                model.bufferViews[positions_and_normals_buffer_view_index]
-                        .byteLength;
-        model.bufferViews[positions_and_normals_buffer_view_index].byteLength +=
+                model.bufferViews[mesh_attributes_buffer_view_index].byteLength;
+        model.bufferViews[mesh_attributes_buffer_view_index].byteLength +=
                 byte_length;
 
         for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
