@@ -156,6 +156,32 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                 normals[i * 3 + 2]));
                     }
                 }
+
+                if (attribute.first == "COLOR_0") {
+                    tinygltf::Accessor& colors_accessor =
+                            model.accessors[attribute.second];
+                    if (colors_accessor.componentType ==
+                        TINYGLTF_COMPONENT_TYPE_FLOAT) {
+                        tinygltf::BufferView& colors_view =
+                                model.bufferViews[colors_accessor.bufferView];
+                        const tinygltf::Buffer& colors_buffer =
+                                model.buffers[colors_view.buffer];
+                        const float* colors = reinterpret_cast<const float*>(
+                                &colors_buffer
+                                         .data[colors_view.byteOffset +
+                                               colors_accessor.byteOffset]);
+
+                        for (size_t i = 0; i < colors_accessor.count; ++i) {
+                            mesh.vertex_colors_.push_back(Eigen::Vector3d(
+                                    colors[i * 3 + 0], colors[i * 3 + 1],
+                                    colors[i * 3 + 2]));
+                        }
+                    } else {
+                        utility::LogWarning(
+                                "Read vertex colors failed: Unsupported "
+                                "component type.\n");
+                    }
+                }
             }
 
             // Load triangles
@@ -409,6 +435,38 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         model.accessors.push_back(normals_accessor);
         gltf_primitive.attributes.insert(
                 std::make_pair("NORMAL", model.accessors.size() - 1));
+    }
+
+    write_vertex_colors = write_vertex_colors && mesh.HasVertexColors();
+    if (write_vertex_colors) {
+        tinygltf::Accessor colors_accessor;
+        colors_accessor.name = "buffer-0-accessor-color-buffer-0-mesh-0";
+        colors_accessor.type = TINYGLTF_TYPE_VEC3;
+        colors_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        colors_accessor.count = mesh.vertices_.size();
+        size_t byte_length = 3 * mesh.vertices_.size() * sizeof(float);
+        colors_accessor.bufferView =
+                int(positions_and_normals_buffer_view_index);
+        colors_accessor.byteOffset =
+                model.bufferViews[positions_and_normals_buffer_view_index]
+                        .byteLength;
+        model.bufferViews[positions_and_normals_buffer_view_index].byteLength +=
+                byte_length;
+
+        for (size_t vidx = 0; vidx < num_of_vertices; ++vidx) {
+            const Eigen::Vector3d& color = mesh.vertex_colors_[vidx];
+            for (size_t i = 0; i < 3; ++i) {
+                float_temp = (float)color(i);
+                temp = (unsigned char*)&(float_temp);
+                for (size_t j = 0; j < sizeof(float); ++j) {
+                    mesh_attribute_buffer.push_back(temp[j]);
+                }
+            }
+        }
+
+        model.accessors.push_back(colors_accessor);
+        gltf_primitive.attributes.insert(
+                std::make_pair("COLOR_0", model.accessors.size() - 1));
     }
 
     gltf_primitive.mode = TINYGLTF_MODE_TRIANGLES;
