@@ -117,8 +117,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
     }
 
     mesh.Clear();
-    // Iterate through all the meshes in the glTF file, but only load the first
-    // one given
     for (const tinygltf::Mesh& gltf_mesh : model.meshes) {
         for (const tinygltf::Primitive& primitive : gltf_mesh.primitives) {
             for (const auto& attribute : primitive.attributes) {
@@ -255,7 +253,13 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
             }
         }
 
-        break;  // Only load the first mesh given in the file
+        // Only load the first mesh given in the file
+        if (model.meshes.size() > 1) {
+            utility::LogWarning(
+                    "The file contains more than one mesh. Only the first is "
+                    "loaded.\n");
+        }
+        break;
     }
 
     return true;
