@@ -106,11 +106,9 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
         ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename.c_str());
     }
 
-    if (!warn.empty()) {
-        utility::LogWarning("Read GLTF failed: {}\n", warn);
-    }
-    if (!err.empty()) {
-        utility::LogWarning("Read GLTF failed: {}\n", err);
+    if (!warn.empty() || !err.empty()) {
+        utility::LogWarning("Read GLTF failed: unable to open file {}\n",
+                            filename);
     }
     if (!ret) {
         return false;
