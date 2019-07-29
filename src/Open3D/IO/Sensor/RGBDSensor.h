@@ -26,4 +26,5 @@
 
 #pragma once
 
+// Currently this is the Azure Kinect recorder
 class RGBDSensor {};
