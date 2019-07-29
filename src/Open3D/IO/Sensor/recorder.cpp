@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include "recorder.h"
+#include <assert.h>
 #include <algorithm>
 #include <atomic>
 #include <ctime>
@@ -9,6 +10,93 @@
 
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
+
+#include "Open3D/Geometry/RGBDImage.h"
+
+namespace open3d {
+geometry::RGBDImage DecompressCapture(k4a_capture_t capture,
+                                      k4a_transformation_t transformation,
+                                      bool display = true) {
+    geometry::RGBDImage rgbd_image;
+
+    k4a_image_t k4a_color = k4a_capture_get_color_image(capture);
+    k4a_image_t k4a_depth = k4a_capture_get_depth_image(capture);
+
+    if (k4a_color == NULL || k4a_depth == NULL) {
+        printf("skipping empty captures\n");
+        return rgbd_image;
+    }
+    k4a_image_format_t format = k4a_image_get_format(k4a_color);
+    assert(format == K4A_IMAGE_FORMAT_COLOR_MJPG && "Image format is not MJPG");
+
+    int color_width = k4a_image_get_width_pixels(k4a_color);
+    int color_height = k4a_image_get_height_pixels(k4a_color);
+
+    k4a_image_t k4a_uncompressed_color = NULL;
+    if (K4A_RESULT_SUCCEEDED !=
+        k4a_image_create(K4A_IMAGE_FORMAT_COLOR_BGRA32, color_width,
+                         color_height, color_width * 4 * (int)sizeof(uint8_t),
+                         &k4a_uncompressed_color)) {
+        printf("Failed to create uncompressed color image buffer\n");
+        return rgbd_image;
+    }
+
+    // tjhandle tjHandle;
+    // tjHandle = tjInitDecompress();
+    // if (0 !=
+    //     tjDecompress2(tjHandle, k4a_image_get_buffer(k4a_color),
+    //                   static_cast<unsigned
+    //                   long>(k4a_image_get_size(k4a_color)),
+    //                   k4a_image_get_buffer(k4a_uncompressed_color),
+    //                   color_width, 0,  // pitch color_height, TJPF_BGRA,
+    //                   TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)) {
+    //     printf("Failed to decompress color image\n");
+    //     return std::make_pair(color, depth);
+    // }
+    // tjDestroy(tjHandle);
+
+    // // transform color image into depth camera geometry
+    // k4a_image_t k4a_transformed_depth = NULL;
+    // if (K4A_RESULT_SUCCEEDED !=
+    //     k4a_image_create(K4A_IMAGE_FORMAT_DEPTH16, color_width, color_height,
+    //                      color_width * (int)sizeof(uint16_t),
+    //                      &k4a_transformed_depth)) {
+    //     printf("Failed to create transformed depth image buffer\n");
+    //     return std::make_pair(color, depth);
+    // }
+
+    // if (K4A_RESULT_SUCCEEDED !=
+    //     k4a_transformation_depth_image_to_color_camera(
+    //             transformation, k4a_depth, k4a_transformed_depth)) {
+    //     printf("Failed to transform depth image\n");
+    //     return std::make_pair(color, depth);
+    // }
+
+    // cv::Mat(color_height, color_width, CV_8UC4,
+    //         k4a_image_get_buffer(k4a_uncompressed_color))
+    //         .copyTo(color);
+    // cv::Mat(color_height, color_width, CV_16UC1,
+    //         k4a_image_get_buffer(k4a_transformed_depth))
+    //         .copyTo(depth);
+
+    // if (display) {
+    //     cv::Mat cv_depth_intensity;
+    //     depth.convertTo(cv_depth_intensity, CV_8UC1, 0.1);
+    //     cv::imwrite("depth.png", depth);
+    //     cv::imshow("color", color);
+    //     cv::imshow("depth", cv_depth_intensity);
+    //     cv::waitKey(30);
+    // }
+
+    // k4a_image_release(k4a_color);
+    // k4a_image_release(k4a_depth);
+    // k4a_image_release(k4a_uncompressed_color);
+    // k4a_image_release(k4a_transformed_depth);
+
+    return rgbd_image;
+}
+
+}  // namespace open3d
 
 inline static uint32_t k4a_convert_fps_to_uint(k4a_fps_t fps) {
     uint32_t fps_int;
