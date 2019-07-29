@@ -29,6 +29,7 @@
 
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -96,11 +97,10 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
     std::string warn;
     std::string err;
 
-    bool load_as_binary =
-            filename.substr(filename.find_last_of(".") + 1) == "glb" ? true
-                                                                     : false;
+    std::string filename_ext =
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     bool ret;
-    if (load_as_binary) {
+    if (filename_ext == "glb") {
         ret = loader.LoadBinaryFromFile(&model, &err, &warn, filename.c_str());
     } else {
         ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename.c_str());
@@ -478,10 +478,9 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     model.buffers.push_back(buffer);
 
     tinygltf::TinyGLTF loader;
-    bool save_as_binary =
-            filename.substr(filename.find_last_of(".") + 1) == "glb" ? true
-                                                                     : false;
-    if (save_as_binary) {
+    std::string filename_ext =
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext == "glb") {
         if (!loader.WriteGltfSceneToFile(&model, filename, false, true, true,
                                          true)) {
             utility::LogWarning("Write GLTF failed.\n");
