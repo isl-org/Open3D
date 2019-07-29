@@ -16,4 +16,16 @@ On Ubuntu:
     sudo apt install libopencv-dev
 
 
+On Ubuntu, to use ``libusb`` without root, we need to add a ``udev`` rule.
+Create a new file ``/etc/udev/rules.d/51-usb-device.rules`` and add the
+following contents.
 
+.. code-block::
+
+SUBSYSTEM=="usb", TAG+="uaccess", GROUP="plugdev"
+
+Now, run ``k4aviewer`` and see if it can detect the camera.
+
+.. code-block:: bash
+
+k4aviewer
