@@ -16,7 +16,6 @@ ShowAndAbortOnWarning(IO)
 if (BUILD_AZURE_KINECT)
     find_package(k4a REQUIRED)
     find_package(k4arecord REQUIRED)
-    find_package(OpenCV REQUIRED)
-    # libk4a* and libopencv-dev must be installed separately
-    target_link_libraries(IO k4a::k4a k4a::k4arecord ${OpenCV_LIBS})
+    # libk4a* must be installed separately
+    target_link_libraries(IO k4a::k4a k4a::k4arecord)
 endif ()
