@@ -114,6 +114,11 @@ if (BUILD_JPEG)
     add_subdirectory(libjpeg)
 endif ()
 
+if (BUILD_JPEG_TURBO)
+    message(STATUS "Building LIBJPEG_TURBO from source (BUILD_JPEG_TURBO=ON)")
+    add_subdirectory(libjpeg-turbo)
+endif()
+
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # It is a known bug that g++ on OSX only supports libstdc++
