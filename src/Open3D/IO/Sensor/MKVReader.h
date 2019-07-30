@@ -25,3 +25,38 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Utility/IJsonConvertible.h>
+
+#include <k4a/k4a.h>
+#include <k4arecord/playback.h>
+
+#include <json/json.h>
+#include "MKVMetadata.h"
+
+namespace open3d {
+
+class MKVReader {
+public:
+    /* Also shared by other RGBDSensor */
+    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
+            k4a_capture_t capture, k4a_transformation_t transformation);
+
+    bool IsOpened() { return handle_ != nullptr; }
+
+    int Open(const std::string &filename);
+    void Close();
+
+    Json::Value GetMetaData();
+    int SeekTimestamp(size_t timestamp);
+    std::shared_ptr<geometry::RGBDImage> NextFrame();
+
+private:
+    k4a_playback_t handle_ = nullptr;
+    k4a_transformation_t transformation_ = nullptr;
+    MKVMetadata metadata_;
+
+    std::string GetTagInMetadata(const std::string &tag_name);
+};
+}  // namespace open3d

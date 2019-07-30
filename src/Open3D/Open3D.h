@@ -51,6 +51,8 @@
 #include "Open3D/IO/ClassIO/PoseGraphIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
+#include "Open3D/IO/Sensor/MKVReader.h"
+#include "Open3D/IO/Sensor/RGBDRecorder.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"

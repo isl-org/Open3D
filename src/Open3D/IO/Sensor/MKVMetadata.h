@@ -25,3 +25,43 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <Open3D/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/Utility/IJsonConvertible.h>
+
+enum class SensorType {
+    AZURE_KINECT = 0,
+    REAL_SENSE = 1
+};
+
+namespace open3d {
+class MKVMetadata : public utility::IJsonConvertible {
+public:
+    bool ConvertToJsonValue(Json::Value &value) const override {
+        intrinsics_.ConvertToJsonValue(value);
+        value["serial_number_"] = serial_number_;
+        value["stream_length_usec"] = stream_length_usec_;
+        value["enable_imu"] = enable_imu_;
+
+        return true;
+    }
+    bool ConvertFromJsonValue(const Json::Value &value) override {
+        intrinsics_.ConvertFromJsonValue(value);
+        serial_number_ = value["serial_number"].asString();
+        stream_length_usec_ = value["stream_length_usec"].asUInt64();
+        enable_imu_ = value["enable_imu"].asBool();
+
+        return true;
+    }
+
+public:
+    // shared intrinsics betwee RGB & depth.
+    // We assume depth image is always warped to the color image system
+    camera::PinholeCameraIntrinsic intrinsics_;
+
+    std::string serial_number_ = "";
+    uint64_t stream_length_usec_ = 0;
+
+    bool enable_imu_ = false;
+};
+}

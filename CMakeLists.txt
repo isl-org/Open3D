@@ -72,6 +72,7 @@ option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
 option(BUILD_JPEG                "Build jpeg from source"                   OFF)
+option(BUILD_JPEG_TURBO          "Build libjpeg-turbo from source"          ON)
 option(BUILD_JSONCPP             "Build json from source"                   OFF)
 option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
@@ -176,7 +177,7 @@ if (WITH_OPENMP)
     else ()
         message(STATUS "OpenMP NOT found")
     endif ()
-endif ()
+  endif ()
 
 # recursively parse and return the entire directory tree.
 # the result is placed in output

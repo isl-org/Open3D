@@ -25,3 +25,18 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include "MKVMetadata.h"
+namespace open3d {
+// Currently this is the Azure Kinect recorder
+class RGBDRecorder {
+public:
+    /* setup device and config here */
+    int Setup(const MKVMetadata& metadata);
+    int Start();
+
+private:
+    k4a_device_t device_;
+    k4a_device_configuration_t config_;
+};
+}
