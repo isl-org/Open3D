@@ -27,7 +27,6 @@
 #include "MKVReader.h"
 #include <libjpeg-turbo/turbojpeg.h>
 
-// TODO: helper macro to simplify code
 namespace open3d {
 
 std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
@@ -58,10 +57,10 @@ std::string MKVReader::GetTagInMetadata(const std::string &tag_name) {
     if (K4A_BUFFER_RESULT_SUCCEEDED == result) {
         return res_buffer;
     } else if (K4A_BUFFER_RESULT_TOO_SMALL == result) {
-        utility::LogError("{} tag's content is too long.\n", tag_name.c_str());
+        utility::LogError("{} tag's content is too long.\n", tag_name);
         return "";
     } else {
-        utility::LogError("{} tag does not exist.\n", tag_name.c_str());
+        utility::LogError("{} tag does not exist.\n", tag_name);
         return "";
     }
 }
@@ -72,7 +71,7 @@ int MKVReader::Open(const std::string &filename) {
     }
 
     if (K4A_RESULT_SUCCEEDED != k4a_playback_open(filename.c_str(), &handle_)) {
-        utility::LogError("Unable to open file {}\n", filename.c_str());
+        utility::LogError("Unable to open file {}\n", filename);
         return -1;
     }
 

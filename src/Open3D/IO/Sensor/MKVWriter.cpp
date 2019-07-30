@@ -37,7 +37,7 @@ int MKVWriter::Open(const std::string &filename,
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_record_create(filename.c_str(), device, config, &handle_)) {
-        utility::LogError("Unable to open file {}\n", filename.c_str());
+        utility::LogError("Unable to open file {}\n", filename);
         return -1;
     }
 
