@@ -27,6 +27,7 @@
 #include "MKVReader.h"
 #include <libjpeg-turbo/turbojpeg.h>
 
+// TODO: helper macro to simplify code
 namespace open3d {
 
 std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
@@ -92,8 +93,8 @@ Json::Value MKVReader::GetMetaData() {
     value["serial_number"] = GetTagInMetadata("K4A_DEVICE_SERIAL_NUMBER");
     value["depth_mode"] = GetTagInMetadata("K4A_DEPTH_MODE");
     value["color_mode"] = GetTagInMetadata("K4A_COLOR_MODE");
-    value["ir_mode"] = GetTagInMetadata("K4A_IR_MODE");
-    value["imu_mode"] = GetTagInMetadata("K4A_IMU_MODE");
+
+    value["enable_imu"] = GetTagInMetadata("K4A_IMU_MODE") == "ON";
 
     k4a_calibration_t calibration;
     if (K4A_RESULT_SUCCEEDED !=
@@ -200,7 +201,7 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
     return geometry::RGBDImage::CreateFromColorAndDepth(*color, *depth);
 }
 
-std::shared_ptr<geometry::RGBDImage> MKVReader::Next() {
+std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
         return nullptr;

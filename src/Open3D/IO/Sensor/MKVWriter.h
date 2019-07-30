@@ -25,3 +25,33 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Utility/IJsonConvertible.h>
+
+#include <k4a/k4a.h>
+#include <k4arecord/record.h>
+
+#include <json/json.h>
+#include "MKVMetadata.h"
+
+namespace open3d {
+
+class MKVWriter {
+public:
+    bool IsOpened() { return handle_ != nullptr; }
+
+    /* We assume device is already set properly according to config */
+    int Open(const std::string &filename,
+             const k4a_device_configuration_t &config,
+             k4a_device_t device);
+    void Close();
+
+    int SetMetadata(const MKVMetadata& metadata);
+    int NextFrame(k4a_capture_t);
+
+private:
+    k4a_record_t handle_ = nullptr;
+    MKVMetadata metadata_;
+};
+}  // namespace open3d

@@ -50,12 +50,12 @@ public:
 
     Json::Value GetMetaData();
     int SeekTimestamp(size_t timestamp);
-    std::shared_ptr<geometry::RGBDImage> Next();
+    std::shared_ptr<geometry::RGBDImage> NextFrame();
 
 private:
     k4a_playback_t handle_ = nullptr;
     k4a_transformation_t transformation_ = nullptr;
-    RGBDStreamMetadata metadata_;
+    MKVMetadata metadata_;
 
     std::string GetTagInMetadata(const std::string &tag_name);
 };

@@ -24,44 +24,59 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <Open3D/Camera/PinholeCameraIntrinsic.h>
-#include <Open3D/Utility/IJsonConvertible.h>
-
-enum class SensorType {
-    AZURE_KINECT = 0,
-    REAL_SENSE = 1
-};
+#include "MKVWriter.h"
 
 namespace open3d {
-class MKVMetadata : public utility::IJsonConvertible {
-public:
-    bool ConvertToJsonValue(Json::Value &value) const override {
-        intrinsics_.ConvertToJsonValue(value);
-        value["serial_number_"] = serial_number_;
-        value["stream_length_usec"] = stream_length_usec_;
-        value["enable_imu"] = enable_imu_;
 
-        return true;
-    }
-    bool ConvertFromJsonValue(const Json::Value &value) override {
-        intrinsics_.ConvertFromJsonValue(value);
-        serial_number_ = value["serial_number"].asString();
-        stream_length_usec_ = value["stream_length_usec"].asUInt64();
-        enable_imu_ = value["enable_imu"].asBool();
-
-        return true;
+int MKVWriter::Open(const std::string &filename,
+                    const k4a_device_configuration_t &config,
+                    k4a_device_t device) {
+    if (IsOpened()) {
+        Close();
     }
 
-public:
-    // shared intrinsics betwee RGB & depth.
-    // We assume depth image is always warped to the color image system
-    camera::PinholeCameraIntrinsic intrinsics_;
+    if (K4A_RESULT_SUCCEEDED !=
+        k4a_record_create(filename.c_str(), device, config, &handle_)) {
+        utility::LogError("Unable to open file {}\n", filename.c_str());
+        return -1;
+    }
 
-    std::string serial_number_ = "";
-    uint64_t stream_length_usec_ = 0;
-
-    bool enable_imu_ = false;
-};
+    return 0;
 }
+
+int MKVWriter::SetMetadata(const open3d::MKVMetadata &metadata) {
+    metadata_ = metadata;
+    if (metadata_.enable_imu_) {
+        if (K4A_RESULT_SUCCEEDED != k4a_record_add_imu_track(handle_)) {
+            utility::LogError("Unable to write IMU track\n");
+        }
+    }
+
+    if (K4A_RESULT_SUCCEEDED != k4a_record_write_header(handle_)) {
+        utility::LogError("Unable to write header\n");
+        return -1;
+    }
+    return 0;
+}
+
+void MKVWriter::Close() {
+    if (K4A_RESULT_SUCCEEDED != k4a_record_flush(handle_)) {
+        utility::LogError("Unable to flush before writing\n");
+    }
+    k4a_record_close(handle_);
+}
+
+int MKVWriter::NextFrame(k4a_capture_t capture) {
+    if (!IsOpened()) {
+        utility::LogError("Null file handler. Please call Open().\n");
+        return -1;
+    }
+
+    if (K4A_RESULT_SUCCEEDED != k4a_record_write_capture(handle_, capture)) {
+        utility::LogError("Unable to write frame to mkv.\n");
+        return -1;
+    }
+
+    return 0;
+}
+}  // namespace open3d
