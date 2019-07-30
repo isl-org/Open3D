@@ -72,6 +72,7 @@ option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
 option(BUILD_JPEG                "Build jpeg from source"                   OFF)
+option(BUILD_JPEG_TURBO          "Build libjpeg-turbo from source"          ON)
 option(BUILD_JSONCPP             "Build json from source"                   OFF)
 option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
@@ -81,6 +82,7 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+option(ENABLE_AZURE_KINECT       "Enable Azure Kinect support for Open3D"   ON)
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -175,7 +177,19 @@ if (WITH_OPENMP)
     else ()
         message(STATUS "OpenMP NOT found")
     endif ()
-endif ()
+  endif ()
+
+# Set Azure Kinect
+if (ENABLE_AZURE_KINECT)
+    find_package(k4a QUIET)
+    find_package(k4arecord QUIET)
+    if (k4a_FOUND)
+      message(STATUS "Enabling Azure Kinect Support")
+    else ()
+      message(STATUS "Kinect SDK NOT found. Please install according to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
+      set (ENABLE_AZURE_KINECT OFF)
+    endif ()
+endif()
 
 # recursively parse and return the entire directory tree.
 # the result is placed in output
