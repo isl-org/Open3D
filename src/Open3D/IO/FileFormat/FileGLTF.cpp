@@ -114,176 +114,233 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
         return false;
     }
 
+    if (model.meshes.size() > 1) {
+        utility::LogWarning(
+                "The file contains more than one mesh. All meshes will be "
+                "loaded as a single mesh.\n");
+    }
+
     mesh.Clear();
-    for (const tinygltf::Mesh& gltf_mesh : model.meshes) {
-        for (const tinygltf::Primitive& primitive : gltf_mesh.primitives) {
-            for (const auto& attribute : primitive.attributes) {
-                if (attribute.first == "POSITION") {
-                    tinygltf::Accessor& positions_accessor =
-                            model.accessors[attribute.second];
-                    tinygltf::BufferView& positions_view =
-                            model.bufferViews[positions_accessor.bufferView];
-                    const tinygltf::Buffer& positions_buffer =
-                            model.buffers[positions_view.buffer];
-                    const float* positions = reinterpret_cast<const float*>(
-                            &positions_buffer
-                                     .data[positions_view.byteOffset +
-                                           positions_accessor.byteOffset]);
+    geometry::TriangleMesh mesh_temp;
+    for (const tinygltf::Node& gltf_node : model.nodes) {
+        if (gltf_node.mesh != -1) {
+            mesh_temp.Clear();
+            const tinygltf::Mesh& gltf_mesh = model.meshes[gltf_node.mesh];
 
-                    for (size_t i = 0; i < positions_accessor.count; ++i) {
-                        mesh.vertices_.push_back(Eigen::Vector3d(
-                                positions[i * 3 + 0], positions[i * 3 + 1],
-                                positions[i * 3 + 2]));
-                    }
-                }
+            for (const tinygltf::Primitive& primitive : gltf_mesh.primitives) {
+                for (const auto& attribute : primitive.attributes) {
+                    if (attribute.first == "POSITION") {
+                        tinygltf::Accessor& positions_accessor =
+                                model.accessors[attribute.second];
+                        tinygltf::BufferView& positions_view =
+                                model.bufferViews[positions_accessor
+                                                          .bufferView];
+                        const tinygltf::Buffer& positions_buffer =
+                                model.buffers[positions_view.buffer];
+                        const float* positions = reinterpret_cast<const float*>(
+                                &positions_buffer
+                                         .data[positions_view.byteOffset +
+                                               positions_accessor.byteOffset]);
 
-                if (attribute.first == "NORMAL") {
-                    tinygltf::Accessor& normals_accessor =
-                            model.accessors[attribute.second];
-                    tinygltf::BufferView& normals_view =
-                            model.bufferViews[normals_accessor.bufferView];
-                    const tinygltf::Buffer& normals_buffer =
-                            model.buffers[normals_view.buffer];
-                    const float* normals = reinterpret_cast<const float*>(
-                            &normals_buffer.data[normals_view.byteOffset +
-                                                 normals_accessor.byteOffset]);
-
-                    for (size_t i = 0; i < normals_accessor.count; ++i) {
-                        mesh.vertex_normals_.push_back(Eigen::Vector3d(
-                                normals[i * 3 + 0], normals[i * 3 + 1],
-                                normals[i * 3 + 2]));
-                    }
-                }
-
-                if (attribute.first == "COLOR_0") {
-                    tinygltf::Accessor& colors_accessor =
-                            model.accessors[attribute.second];
-                    if (colors_accessor.componentType ==
-                        TINYGLTF_COMPONENT_TYPE_FLOAT) {
-                        tinygltf::BufferView& colors_view =
-                                model.bufferViews[colors_accessor.bufferView];
-                        const tinygltf::Buffer& colors_buffer =
-                                model.buffers[colors_view.buffer];
-                        const float* colors = reinterpret_cast<const float*>(
-                                &colors_buffer
-                                         .data[colors_view.byteOffset +
-                                               colors_accessor.byteOffset]);
-
-                        for (size_t i = 0; i < colors_accessor.count; ++i) {
-                            mesh.vertex_colors_.push_back(Eigen::Vector3d(
-                                    colors[i * 3 + 0], colors[i * 3 + 1],
-                                    colors[i * 3 + 2]));
+                        for (size_t i = 0; i < positions_accessor.count; ++i) {
+                            mesh_temp.vertices_.push_back(Eigen::Vector3d(
+                                    positions[i * 3 + 0], positions[i * 3 + 1],
+                                    positions[i * 3 + 2]));
                         }
-                    } else {
-                        utility::LogWarning(
-                                "Read vertex colors failed: Unsupported "
-                                "component type.\n");
+                    }
+
+                    if (attribute.first == "NORMAL") {
+                        tinygltf::Accessor& normals_accessor =
+                                model.accessors[attribute.second];
+                        tinygltf::BufferView& normals_view =
+                                model.bufferViews[normals_accessor.bufferView];
+                        const tinygltf::Buffer& normals_buffer =
+                                model.buffers[normals_view.buffer];
+                        const float* normals = reinterpret_cast<const float*>(
+                                &normals_buffer
+                                         .data[normals_view.byteOffset +
+                                               normals_accessor.byteOffset]);
+
+                        for (size_t i = 0; i < normals_accessor.count; ++i) {
+                            mesh_temp.vertex_normals_.push_back(Eigen::Vector3d(
+                                    normals[i * 3 + 0], normals[i * 3 + 1],
+                                    normals[i * 3 + 2]));
+                        }
+                    }
+
+                    if (attribute.first == "COLOR_0") {
+                        tinygltf::Accessor& colors_accessor =
+                                model.accessors[attribute.second];
+                        if (colors_accessor.componentType ==
+                            TINYGLTF_COMPONENT_TYPE_FLOAT) {
+                            tinygltf::BufferView& colors_view =
+                                    model.bufferViews[colors_accessor
+                                                              .bufferView];
+                            const tinygltf::Buffer& colors_buffer =
+                                    model.buffers[colors_view.buffer];
+                            const float* colors = reinterpret_cast<
+                                    const float*>(
+                                    &colors_buffer
+                                             .data[colors_view.byteOffset +
+                                                   colors_accessor.byteOffset]);
+
+                            for (size_t i = 0; i < colors_accessor.count; ++i) {
+                                mesh_temp.vertex_colors_.push_back(
+                                        Eigen::Vector3d(colors[i * 3 + 0],
+                                                        colors[i * 3 + 1],
+                                                        colors[i * 3 + 2]));
+                            }
+                        } else {
+                            utility::LogWarning(
+                                    "Read vertex colors failed: "
+                                    "Unsupported "
+                                    "component type.\n");
+                        }
+                    }
+                }
+
+                // Load triangles
+                std::unique_ptr<IntArrayBase> indices_array_pointer = nullptr;
+                {
+                    const tinygltf::Accessor& indices_accessor =
+                            model.accessors[primitive.indices];
+                    const tinygltf::BufferView& indices_view =
+                            model.bufferViews[indices_accessor.bufferView];
+                    const tinygltf::Buffer& indices_buffer =
+                            model.buffers[indices_view.buffer];
+                    const auto data_address = indices_buffer.data.data() +
+                                              indices_view.byteOffset +
+                                              indices_accessor.byteOffset;
+                    const auto byte_stride =
+                            indices_accessor.ByteStride(indices_view);
+                    const auto count = indices_accessor.count;
+
+                    // Allocate the index array in the pointer-to-base
+                    // declared in the parent scope
+                    switch (indices_accessor.componentType) {
+                        case TINYGLTF_COMPONENT_TYPE_BYTE:
+                            indices_array_pointer =
+                                    std::unique_ptr<IntArray<char>>(
+                                            new IntArray<char>(
+                                                    ArrayAdapter<char>(
+                                                            data_address, count,
+                                                            byte_stride)));
+                            break;
+
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                            indices_array_pointer =
+                                    std::unique_ptr<IntArray<unsigned char>>(
+                                            new IntArray<unsigned char>(
+                                                    ArrayAdapter<unsigned char>(
+                                                            data_address, count,
+                                                            byte_stride)));
+                            break;
+
+                        case TINYGLTF_COMPONENT_TYPE_SHORT:
+                            indices_array_pointer =
+                                    std::unique_ptr<IntArray<short>>(
+                                            new IntArray<short>(
+                                                    ArrayAdapter<short>(
+                                                            data_address, count,
+                                                            byte_stride)));
+                            break;
+
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                            indices_array_pointer = std::unique_ptr<
+                                    IntArray<unsigned short>>(
+                                    new IntArray<unsigned short>(
+                                            ArrayAdapter<unsigned short>(
+                                                    data_address, count,
+                                                    byte_stride)));
+                            break;
+
+                        case TINYGLTF_COMPONENT_TYPE_INT:
+                            indices_array_pointer =
+                                    std::unique_ptr<IntArray<int>>(
+                                            new IntArray<int>(ArrayAdapter<int>(
+                                                    data_address, count,
+                                                    byte_stride)));
+                            break;
+
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                            indices_array_pointer =
+                                    std::unique_ptr<IntArray<unsigned int>>(
+                                            new IntArray<unsigned int>(
+                                                    ArrayAdapter<unsigned int>(
+                                                            data_address, count,
+                                                            byte_stride)));
+                            break;
+                        default:
+                            break;
+                    }
+                    const auto& indices = *indices_array_pointer;
+
+                    switch (primitive.mode) {
+                        case TINYGLTF_MODE_TRIANGLES:
+                            for (size_t i = 0; i < indices_accessor.count;
+                                 i += 3) {
+                                mesh_temp.triangles_.push_back(Eigen::Vector3i(
+                                        indices[i], indices[i + 1],
+                                        indices[i + 2]));
+                            }
+                            break;
+                        case TINYGLTF_MODE_TRIANGLE_STRIP:
+                            for (size_t i = 2; i < indices_accessor.count;
+                                 ++i) {
+                                mesh_temp.triangles_.push_back(Eigen::Vector3i(
+                                        indices[i - 2], indices[i - 1],
+                                        indices[i]));
+                            }
+                            break;
+                        case TINYGLTF_MODE_TRIANGLE_FAN:
+                            for (size_t i = 2; i < indices_accessor.count;
+                                 ++i) {
+                                mesh_temp.triangles_.push_back(Eigen::Vector3i(
+                                        indices[0], indices[i - 1],
+                                        indices[i]));
+                            }
+                            break;
                     }
                 }
             }
 
-            // Load triangles
-            std::unique_ptr<IntArrayBase> indices_array_pointer = nullptr;
-            {
-                const tinygltf::Accessor& indices_accessor =
-                        model.accessors[primitive.indices];
-                const tinygltf::BufferView& indices_view =
-                        model.bufferViews[indices_accessor.bufferView];
-                const tinygltf::Buffer& indices_buffer =
-                        model.buffers[indices_view.buffer];
-                const auto data_address = indices_buffer.data.data() +
-                                          indices_view.byteOffset +
-                                          indices_accessor.byteOffset;
-                const auto byte_stride =
-                        indices_accessor.ByteStride(indices_view);
-                const auto count = indices_accessor.count;
-
-                // Allocate the index array in the pointer-to-base declared in
-                // the parent scope
-                switch (indices_accessor.componentType) {
-                    case TINYGLTF_COMPONENT_TYPE_BYTE:
-                        indices_array_pointer = std::unique_ptr<IntArray<char>>(
-                                new IntArray<char>(ArrayAdapter<char>(
-                                        data_address, count, byte_stride)));
-                        break;
-
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        indices_array_pointer =
-                                std::unique_ptr<IntArray<unsigned char>>(
-                                        new IntArray<unsigned char>(
-                                                ArrayAdapter<unsigned char>(
-                                                        data_address, count,
-                                                        byte_stride)));
-                        break;
-
-                    case TINYGLTF_COMPONENT_TYPE_SHORT:
-                        indices_array_pointer =
-                                std::unique_ptr<IntArray<short>>(
-                                        new IntArray<short>(ArrayAdapter<short>(
-                                                data_address, count,
-                                                byte_stride)));
-                        break;
-
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        indices_array_pointer =
-                                std::unique_ptr<IntArray<unsigned short>>(
-                                        new IntArray<unsigned short>(
-                                                ArrayAdapter<unsigned short>(
-                                                        data_address, count,
-                                                        byte_stride)));
-                        break;
-
-                    case TINYGLTF_COMPONENT_TYPE_INT:
-                        indices_array_pointer = std::unique_ptr<IntArray<int>>(
-                                new IntArray<int>(ArrayAdapter<int>(
-                                        data_address, count, byte_stride)));
-                        break;
-
-                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                        indices_array_pointer =
-                                std::unique_ptr<IntArray<unsigned int>>(
-                                        new IntArray<unsigned int>(
-                                                ArrayAdapter<unsigned int>(
-                                                        data_address, count,
-                                                        byte_stride)));
-                        break;
-                    default:
-                        break;
+            if (gltf_node.matrix.size() > 0) {
+                std::vector<double> matrix = gltf_node.matrix;
+                Eigen::Matrix4d transform =
+                        Eigen::Map<Eigen::Matrix4d>(&matrix[0], 4, 4);
+                mesh_temp.Transform(transform);
+            } else {
+                // The specification states that first the scale is
+                // applied to the vertices, then the rotation, and then the
+                // translation.
+                if (gltf_node.scale.size() > 0) {
+                    Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
+                    transform(0, 0) = gltf_node.scale[0];
+                    transform(1, 1) = gltf_node.scale[1];
+                    transform(2, 2) = gltf_node.scale[2];
+                    mesh_temp.Transform(transform);
                 }
-                const auto& indices = *indices_array_pointer;
-
-                switch (primitive.mode) {
-                    case TINYGLTF_MODE_TRIANGLES:
-                        for (size_t i = 0; i < indices_accessor.count; i += 3) {
-                            mesh.triangles_.push_back(
-                                    Eigen::Vector3i(indices[i], indices[i + 1],
-                                                    indices[i + 2]));
-                        }
-                        break;
-                    case TINYGLTF_MODE_TRIANGLE_STRIP:
-                        for (size_t i = 2; i < indices_accessor.count; ++i) {
-                            mesh.triangles_.push_back(Eigen::Vector3i(
-                                    indices[i - 2], indices[i - 1],
-                                    indices[i]));
-                        }
-                        break;
-                    case TINYGLTF_MODE_TRIANGLE_FAN:
-                        for (size_t i = 2; i < indices_accessor.count; ++i) {
-                            mesh.triangles_.push_back(Eigen::Vector3i(
-                                    indices[0], indices[i - 1], indices[i]));
-                        }
-                        break;
+                if (gltf_node.rotation.size() > 0) {
+                    Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
+                    // glTF represents a quaternion as qx, qy, qz, qw, while
+                    // Eigen::Quaterniond orders the parameters as qw, qx, qy,
+                    // qz.
+                    transform.topLeftCorner<3, 3>() =
+                            Eigen::Quaterniond(gltf_node.rotation[3],
+                                               gltf_node.rotation[0],
+                                               gltf_node.rotation[1],
+                                               gltf_node.rotation[2])
+                                    .toRotationMatrix();
+                    mesh_temp.Transform(transform);
+                }
+                if (gltf_node.translation.size() > 0) {
+                    mesh_temp.Translate(Eigen::Vector3d(
+                            gltf_node.translation[0], gltf_node.translation[1],
+                            gltf_node.translation[2]));
                 }
             }
+            mesh += mesh_temp;
         }
-
-        // Only load the first mesh given in the file
-        if (model.meshes.size() > 1) {
-            utility::LogWarning(
-                    "The file contains more than one mesh. Only the first is "
-                    "loaded.\n");
-        }
-        break;
     }
 
     return true;
