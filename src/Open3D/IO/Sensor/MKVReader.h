@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
 
-#include "Open3D/Open3D.h"
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Utility/IJsonConvertible.h>
 
-int main(int argc, char **argv) {
-    using namespace open3d;
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+#include <k4a/k4a.h>
+#include <k4arecord/playback.h>
 
-    MKVReader mkv_reader;
-    mkv_reader.Open("/home/dongw1/Workspace/kinect/data/test.mkv");
+#include <json/json.h>
+#include "MKVMetadata.h"
 
-    auto json = mkv_reader.GetMetaData();
-    for (auto iter = json.begin(); iter != json.end(); ++iter) {
-        std::cout << iter.key() << " " << json[iter.name()] << "\n";
-    }
+namespace open3d {
 
+class MKVReader {
+public:
+    /* Also shared by other RGBDSensor */
+    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
+            k4a_capture_t capture, k4a_transformation_t transformation);
 
-    std::vector<unsigned long long > timestamps = {15462462346L, 412423, 124200, 0, 12400000};
-    for (auto &ts : timestamps) {
-        std::cout << "timestamp = " << ts << "ms\n";
-        mkv_reader.SeekTimestamp(ts);
-        auto rgbd = mkv_reader.Next();
-        if (rgbd) {
-            auto color = std::make_shared<geometry::Image>(rgbd->color_);
-            visualization::DrawGeometries({color});
-        } else {
-            utility::LogDebug("Null RGBD frame for timestamp {} (us)\n", ts);
-        }
-    }
+    bool IsOpened() { return handle_ != nullptr; }
 
-    mkv_reader.Close();
-}
+    int Open(const std::string &filename);
+    void Close();
+
+    Json::Value GetMetaData();
+    int SeekTimestamp(size_t timestamp);
+    std::shared_ptr<geometry::RGBDImage> Next();
+
+private:
+    k4a_playback_t handle_ = nullptr;
+    k4a_transformation_t transformation_ = nullptr;
+    RGBDStreamMetadata metadata_;
+
+    std::string GetTagInMetadata(const std::string &tag_name);
+};
+}  // namespace open3d

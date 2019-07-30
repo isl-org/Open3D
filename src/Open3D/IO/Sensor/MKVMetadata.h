@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
 
-#include "Open3D/Open3D.h"
+#include <Open3D/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/Utility/IJsonConvertible.h>
 
-int main(int argc, char **argv) {
-    using namespace open3d;
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-
-    MKVReader mkv_reader;
-    mkv_reader.Open("/home/dongw1/Workspace/kinect/data/test.mkv");
-
-    auto json = mkv_reader.GetMetaData();
-    for (auto iter = json.begin(); iter != json.end(); ++iter) {
-        std::cout << iter.key() << " " << json[iter.name()] << "\n";
+namespace open3d {
+class RGBDStreamMetadata : public utility::IJsonConvertible {
+public:
+    bool ConvertToJsonValue(Json::Value &value) const override {
+        intrinsics_.ConvertToJsonValue(value);
+        value["serial_number_"] = serial_number_;
+        value["stream_length_usec"] = stream_length_usec_;
+        return true;
+    }
+    bool ConvertFromJsonValue(const Json::Value &value) override {
+        intrinsics_.ConvertFromJsonValue(value);
+        serial_number_ = value["serial_number"].asString();
+        stream_length_usec_ = value["stream_length_usec"].asUInt64();
+        return true;
     }
 
+public:
+    // shared intrinsics betwee RGB & depth.
+    // We assume depth image is always warped to the color image system
+    camera::PinholeCameraIntrinsic intrinsics_;
 
-    std::vector<unsigned long long > timestamps = {15462462346L, 412423, 124200, 0, 12400000};
-    for (auto &ts : timestamps) {
-        std::cout << "timestamp = " << ts << "ms\n";
-        mkv_reader.SeekTimestamp(ts);
-        auto rgbd = mkv_reader.Next();
-        if (rgbd) {
-            auto color = std::make_shared<geometry::Image>(rgbd->color_);
-            visualization::DrawGeometries({color});
-        } else {
-            utility::LogDebug("Null RGBD frame for timestamp {} (us)\n", ts);
-        }
-    }
-
-    mkv_reader.Close();
+    std::string serial_number_ = "";
+    uint64_t stream_length_usec_ = 0;
+};
 }
