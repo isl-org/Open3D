@@ -197,6 +197,9 @@ else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
 endif ()
 
+# tinygltf
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/tinygltf" tinygltf_INCLUDE_DIRS)
+
 # tinyobjloader
 message(STATUS "Building tinyobjloader from source")
 include_directories("tinyobjloader/")
@@ -319,6 +322,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${tinyfiledialogs_INCLUDE_DIRS}
+     ${tinygltf_INCLUDE_DIRS}
      ${tinyfobjloader_INCLUDE_DIRS}
      ${qhull_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}

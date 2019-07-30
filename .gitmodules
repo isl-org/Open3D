@@ -22,3 +22,6 @@
 [submodule "3rdparty/fmt"]
 	path = 3rdparty/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "3rdparty/tinygltf"]
+	path = 3rdparty/tinygltf
+	url = https://github.com/syoyo/tinygltf.git

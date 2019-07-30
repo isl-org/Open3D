@@ -106,6 +106,18 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool write_vertex_colors = true,
                             bool print_progress = false);
 
+bool ReadTriangleMeshFromGLTF(const std::string &filename,
+                              geometry::TriangleMesh &mesh,
+                              bool print_progress = false);
+
+bool WriteTriangleMeshToGLTF(const std::string &filename,
+                             const geometry::TriangleMesh &mesh,
+                             bool write_ascii = false,
+                             bool compressed = false,
+                             bool write_vertex_normals = true,
+                             bool write_vertex_colors = true,
+                             bool print_progress = false);
+
 /// Function to convert a polygon into a collection of
 /// triangles whose vertices are only those of the polygon.
 /// Assume that the vertices are connected by edges based on their order, and
