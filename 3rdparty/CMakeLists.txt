@@ -348,9 +348,6 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${fmt_LIBRARIES}
 )
 
-message(STATUS "JPEG_TURBO_INCLUDE_DIRS ${JPEG_TURBO_INCLUDE_DIRS}")
-message(STATUS "JPEG_TURBO_LIBRARIES ${JPEG_TURBO_LIBRARIES}")
-
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
 # all other 3rd party libraries are embedded in the Open3D, so the user app
