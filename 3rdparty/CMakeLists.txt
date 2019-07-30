@@ -4,7 +4,6 @@ find_package(pybind11  QUIET)
 
 if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3    eigen3>=3.2.7   QUIET)
-    pkg_search_module(JPEG      libjpeg         QUIET)
     pkg_search_module(GLFW      glfw3           QUIET)
     pkg_search_module(GLEW      glew            QUIET)
     pkg_search_module(JSONCPP   jsoncpp>=1.7.0  QUIET)
@@ -100,19 +99,8 @@ if (BUILD_GLFW)
 endif ()
 
 # JPEG
-if (BUILD_JPEG)
-    message(STATUS "Building LIBJPEG from source (BUILD_JPEG=ON)")
-elseif (JPEG_FOUND)
-    message(STATUS "Using installed LIBJPEG ${JPEG_VERSION}")
-else ()
-    message(STATUS "Unable to find LIBJPEG installed in the system")
-    message(STATUS "Building LIBJPEG from source")
-    set(BUILD_JPEG ON)
-endif ()
-
-if (BUILD_JPEG)
-    add_subdirectory(libjpeg)
-endif ()
+message(STATUS "Building libjpeg-turbo from source")
+add_subdirectory(libjpeg-turbo)
 
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
@@ -313,8 +301,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${flann_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
-     ${JPEG_INCLUDE_DIR}
-     ${JPEG_INCLUDE_DIRS}
+     ${JPEG_TURBO_INCLUDE_DIRS}
      ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
      ${tomasakeninemoeller_INCLUDE_DIRS}
@@ -343,7 +330,6 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLEW_LIBRARY_DIRS}
     ${GLFW_LIBRARY_DIRS}
-    ${JPEG_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
     ${PNG_LIBRARY_DIRS}
 )
@@ -352,7 +338,7 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
 list(APPEND 3RDPARTY_LIBRARIES
      ${GLEW_LIBRARIES}
      ${GLFW_LIBRARIES}
-     ${JPEG_LIBRARIES}
+     ${JPEG_TURBO_LIBRARIES}
      ${JSONCPP_LIBRARIES}
      ${PNG_LIBRARIES}
      ${tinyfiledialogs_LIBRARIES}
@@ -361,6 +347,9 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
 )
+
+message(STATUS "JPEG_TURBO_INCLUDE_DIRS ${JPEG_TURBO_INCLUDE_DIRS}")
+message(STATUS "JPEG_TURBO_LIBRARIES ${JPEG_TURBO_LIBRARIES}")
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
@@ -371,9 +360,6 @@ if (NOT BUILD_GLEW)
 endif ()
 if (NOT BUILD_GLFW)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${GLFW_LIBRARIES})
-endif ()
-if (NOT BUILD_JPEG)
-    list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${JPEG_LIBRARIES})
 endif ()
 if (NOT BUILD_JSONCPP)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${JSONCPP_LIBRARIES})

@@ -25,3 +25,6 @@
 [submodule "3rdparty/tinygltf"]
 	path = 3rdparty/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "3rdparty/libjpeg-turbo/libjpeg-turbo"]
+	path = 3rdparty/libjpeg-turbo/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
