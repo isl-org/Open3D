@@ -2,20 +2,10 @@
 # https://cmake.org/cmake/help/v3.0/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-set(CMAKE_MIN_VERSION "3.13.0")
-if (${CMAKE_VERSION} VERSION_LESS ${CMAKE_MIN_VERSION})
-    message(FATAL_ERROR
-        "CMake ${CMAKE_MIN_VERSION} or higher required. To install the latest version:\n"
-        "[Ubuntu] Install via official PPA: https://apt.kitware.com/\n"
-        "[Windows] Download the latest installer: https://cmake.org/download/\n"
-        "[macOS] With Homebrew, run: `brew upgrade cmake`")
-endif()
-
-cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION})
+cmake_minimum_required(VERSION 3.0.0)
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
-    set(OpenGL_GL_PREFERENCE LEGACY)
 endif()
 
 # central location for specifying the Open3D version

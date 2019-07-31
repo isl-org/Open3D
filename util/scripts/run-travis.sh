@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-# CMake has a different CMake installation, we need to reset path priority
-# https://travis-ci.community/t/install-cmake-using-apt-again/4062
-PATH=/usr/local/bin:$PATH
-
 python --version
 cmake --version
 echo

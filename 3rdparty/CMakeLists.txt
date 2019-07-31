@@ -100,7 +100,8 @@ endif ()
 
 # JPEG
 message(STATUS "Building libjpeg-turbo from source")
-add_subdirectory(libjpeg-turbo)
+# add_subdirectory(libjpeg-turbo)
+include(libjpeg-turbo/libjpeg-turbo.cmake)
 
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
@@ -294,7 +295,6 @@ endif()
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
-# set 3RDPARTY_INCLUDE_DIRS
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
      ${EIGEN3_INCLUDE_DIRS}

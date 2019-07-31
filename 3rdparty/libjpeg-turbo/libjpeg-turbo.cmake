@@ -1,9 +1,10 @@
+include(ExternalProject)
+
+# Set compiler flags
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
 endif()
-
-set(ENABLE_STATIC ON CACHE BOOL "Force libjpeg to enable static lib" FORCE)
 
 # Set WITH_SIMD
 include(CheckLanguage)
@@ -34,27 +35,43 @@ else()
     message(WARNING "NASM assembler not found - libjpeg-turbo performance may suffer")
 endif()
 
-# This generates turbojpeg-static target
-add_subdirectory(libjpeg-turbo EXCLUDE_FROM_ALL)
-add_library(turbojpeg ALIAS turbojpeg-static)
-
-if (WIN32)
-    set(JPEG_TURBO_LIBRARIES turbojpeg-static)  # libturbojpeg.lib
-else()
-    set(JPEG_TURBO_LIBRARIES turbojpeg)  # libturbojpeg.a
-endif()
-set(JPEG_TURBO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo
-                            ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
-set(JPEG_TURBO_LIBRARIES ${JPEG_TURBO_LIBRARIES} PARENT_SCOPE)
-set(JPEG_TURBO_INCLUDE_DIRS ${JPEG_TURBO_INCLUDE_DIRS} PARENT_SCOPE)
-
-target_include_directories(turbojpeg-static PUBLIC
-    ${JPEG_TURBO_INCLUDE_DIRS}
+ExternalProject_Add(
+    ext_turbojpeg
+    PREFIX turbojpeg
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/libjpeg-turbo
+    UPDATE_COMMAND ""
+    CMAKE_GENERATOR ${CMAKE_GENERATOR}
+    CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
+    CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
+    CMAKE_ARGS
+        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+        -DCMAKE_C_FLAGS=${DCMAKE_C_FLAGS}
+        -DENABLE_STATIC=ON
+        -DWITH_SIMD=${WITH_SIMD}
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 )
 
+# This generates turbojpeg-static target
+add_library(turbojpeg INTERFACE)
+add_dependencies(turbojpeg ext_turbojpeg)
+
+ExternalProject_Get_Property(ext_turbojpeg SOURCE_DIR BINARY_DIR)
+
+set(turbojpeg_LIB_FILES
+    ${CMAKE_BINARY_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}turbojpeg${CMAKE_STATIC_LIBRARY_SUFFIX}
+)
+target_include_directories(turbojpeg SYSTEM INTERFACE
+    ${CMAKE_BINARY_DIR}/include
+)
+target_link_libraries(turbojpeg INTERFACE
+    ${turbojpeg_LIB_FILES}
+)
+set(JPEG_TURBO_LIBRARIES turbojpeg)
+
 if (NOT BUILD_SHARED_LIBS)
-    install(TARGETS turbojpeg-static  # libturbojpeg.a will be installed
-            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    install(FILES ${turbojpeg_LIB_FILES}
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
+
+
