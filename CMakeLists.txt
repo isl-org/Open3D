@@ -2,7 +2,6 @@
 # https://cmake.org/cmake/help/v3.0/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-
 set(CMAKE_MIN_VERSION "3.13.0")
 if (${CMAKE_VERSION} VERSION_LESS ${CMAKE_MIN_VERSION})
     message(FATAL_ERROR
@@ -13,7 +12,11 @@ if (${CMAKE_VERSION} VERSION_LESS ${CMAKE_MIN_VERSION})
 endif()
 
 cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION})
-cmake_policy(SET CMP0054 NEW)
+
+if (NOT CMAKE_VERSION VERSION_LESS "3.1")
+    cmake_policy(SET CMP0054 NEW)
+    set(OpenGL_GL_PREFERENCE LEGACY)
+endif()
 
 # central location for specifying the Open3D version
 file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
