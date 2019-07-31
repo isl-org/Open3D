@@ -366,7 +366,10 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     unsigned char* temp = NULL;
 
     tinygltf::BufferView indices_buffer_view_array;
-    indices_buffer_view_array.name = "buffer-0-bufferview-uint";
+    bool save_indices_as_uint32 = num_of_vertices > 65536;
+    indices_buffer_view_array.name = save_indices_as_uint32
+                                             ? "buffer-0-bufferview-uint"
+                                             : "buffer-0-bufferview-ushort";
     indices_buffer_view_array.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
     indices_buffer_view_array.buffer = 0;
     indices_buffer_view_array.byteLength = 0;
@@ -397,9 +400,14 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     tinygltf::Accessor indices_accessor;
     indices_accessor.name = "buffer-0-accessor-indices-buffer-0-mesh-0";
     indices_accessor.type = TINYGLTF_TYPE_SCALAR;
-    indices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    indices_accessor.componentType =
+            save_indices_as_uint32 ? TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT
+                                   : TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT;
     indices_accessor.count = 3 * num_of_triangles;
-    byte_length = 3 * num_of_triangles * sizeof(uint32_t);
+    byte_length =
+            3 * num_of_triangles *
+            (save_indices_as_uint32 ? sizeof(uint32_t) : sizeof(uint16_t));
+
     indices_accessor.bufferView = int(indices_buffer_view_index);
     indices_accessor.byteOffset =
             model.bufferViews[indices_buffer_view_index].byteLength;
@@ -408,9 +416,11 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     std::vector<unsigned char> index_buffer;
     for (size_t tidx = 0; tidx < num_of_triangles; ++tidx) {
         const Eigen::Vector3i& triangle = mesh.triangles_[tidx];
+        size_t uint_size =
+                save_indices_as_uint32 ? sizeof(uint32_t) : sizeof(uint16_t);
         for (size_t i = 0; i < 3; ++i) {
             temp = (unsigned char*)&(triangle(i));
-            for (size_t j = 0; j < sizeof(uint32_t); ++j) {
+            for (size_t j = 0; j < uint_size; ++j) {
                 index_buffer.push_back(temp[j]);
             }
         }
