@@ -55,17 +55,6 @@ else ()
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
-# Enforce dependencies for ExternalProject_Add
-target_link_libraries(Camera ${3RDPARTY_LIBRARIES})
-target_link_libraries(ColorMap ${3RDPARTY_LIBRARIES})
-target_link_libraries(Geometry ${3RDPARTY_LIBRARIES})
-target_link_libraries(Integration ${3RDPARTY_LIBRARIES})
-target_link_libraries(Odometry ${3RDPARTY_LIBRARIES})
-target_link_libraries(Registration ${3RDPARTY_LIBRARIES})
-target_link_libraries(Utility ${3RDPARTY_LIBRARIES})
-target_link_libraries(IO ${3RDPARTY_LIBRARIES})
-target_link_libraries(Visualization ${3RDPARTY_LIBRARIES})
-
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
