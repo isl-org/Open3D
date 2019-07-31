@@ -13,6 +13,7 @@ if (${CMAKE_VERSION} VERSION_LESS ${CMAKE_MIN_VERSION})
 endif()
 
 cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION})
+cmake_policy(SET CMP0054 NEW)
 
 # central location for specifying the Open3D version
 file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
