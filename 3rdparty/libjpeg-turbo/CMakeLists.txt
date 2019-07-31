@@ -15,10 +15,15 @@ else()
     option(WITH_SIMD "" OFF)
 endif()
 
+# This generates turbojpeg-static target
 add_subdirectory(libjpeg-turbo EXCLUDE_FROM_ALL)
 add_library(turbojpeg ALIAS turbojpeg-static)
 
-set(JPEG_TURBO_LIBRARIES turbojpeg)  # libturbojpeg.a
+if (WIN32)
+    set(JPEG_TURBO_LIBRARIES turbojpeg-static)  # libturbojpeg.lib
+else()
+    set(JPEG_TURBO_LIBRARIES turbojpeg)  # libturbojpeg.a
+endif()
 set(JPEG_TURBO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo
                             ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo)
 set(JPEG_TURBO_LIBRARIES ${JPEG_TURBO_LIBRARIES} PARENT_SCOPE)
