@@ -5,14 +5,33 @@ endif()
 
 set(ENABLE_STATIC ON CACHE BOOL "Force libjpeg to enable static lib" FORCE)
 
+# Set WITH_SIMD
 include(CheckLanguage)
 check_language(ASM_NASM)
 if (CMAKE_ASM_NASM_COMPILER)
-    enable_language(ASM_NASM)
-    option(WITH_SIMD "" ON)
+    if (APPLE)
+        # macOS might have /usr/bin/nasm but it cannot be used
+        # https://stackoverflow.com/q/53974320
+        # To fix this, run `brew install nasm`
+        execute_process(COMMAND nasm --version RESULT_VARIABLE return_code)
+        if("${return_code}" STREQUAL "0")
+            enable_language(ASM_NASM)
+            option(WITH_SIMD "" ON)
+        else()
+            message(STATUS "nasm found but can't be used, run `brew install nasm`")
+            option(WITH_SIMD "" OFF)
+        endif()
+    else()
+        enable_language(ASM_NASM)
+        option(WITH_SIMD "" ON)
+    endif()
+else()
+    option(WITH_SIMD "" OFF)
+endif()
+if (WITH_SIMD)
+    message(STATUS "NASM assembler enabled")
 else()
     message(WARNING "NASM assembler not found - libjpeg-turbo performance may suffer")
-    option(WITH_SIMD "" OFF)
 endif()
 
 # This generates turbojpeg-static target
