@@ -18,8 +18,4 @@ fi
 sudo apt-get update
 sudo apt-get --yes install cmake
 
-# CMake has a different CMake installation, we need to reset path priority
-# https://travis-ci.community/t/install-cmake-using-apt-again/4062
-export PATH=/usr/local/bin:$PATH
-
 ./util/scripts/install-deps-ubuntu.sh

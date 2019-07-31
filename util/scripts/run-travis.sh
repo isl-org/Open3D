@@ -5,6 +5,11 @@ python --version
 cmake --version
 echo
 
+# CMake has a different CMake installation, we need to reset path priority
+# https://travis-ci.community/t/install-cmake-using-apt-again/4062
+export PATH=/usr/local/bin:$PATH
+
+
 OPEN3D_INSTALL_DIR=~/open3d_install
 
 echo "cmake configure the Open3D project..."
