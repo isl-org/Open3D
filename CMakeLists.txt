@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.0.0)
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
+    set(OpenGL_GL_PREFERENCE LEGACY)
 endif()
 
 # central location for specifying the Open3D version
@@ -71,7 +72,6 @@ option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
-option(BUILD_JPEG                "Build jpeg from source"                   OFF)
 option(BUILD_JSONCPP             "Build json from source"                   OFF)
 option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
