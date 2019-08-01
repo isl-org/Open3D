@@ -171,13 +171,12 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                     if (attribute.first == "COLOR_0") {
                         tinygltf::Accessor& colors_accessor =
                                 model.accessors[attribute.second];
+                        tinygltf::BufferView& colors_view =
+                                model.bufferViews[colors_accessor.bufferView];
+                        const tinygltf::Buffer& colors_buffer =
+                                model.buffers[colors_view.buffer];
                         if (colors_accessor.componentType ==
                             TINYGLTF_COMPONENT_TYPE_FLOAT) {
-                            tinygltf::BufferView& colors_view =
-                                    model.bufferViews[colors_accessor
-                                                              .bufferView];
-                            const tinygltf::Buffer& colors_buffer =
-                                    model.buffers[colors_view.buffer];
                             const float* colors = reinterpret_cast<
                                     const float*>(
                                     &colors_buffer
@@ -186,15 +185,67 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
 
                             for (size_t i = 0; i < colors_accessor.count; ++i) {
                                 mesh_temp.vertex_colors_.push_back(
-                                        Eigen::Vector3d(colors[i * 3 + 0],
-                                                        colors[i * 3 + 1],
-                                                        colors[i * 3 + 2]));
+                                        Eigen::Vector3d(
+                                                colors[i * colors_accessor
+                                                                       .type +
+                                                       0],
+                                                colors[i * colors_accessor
+                                                                       .type +
+                                                       1],
+                                                colors[i * colors_accessor
+                                                                       .type +
+                                                       2]));
                             }
                         } else {
-                            utility::LogWarning(
-                                    "Read vertex colors failed: "
-                                    "Unsupported "
-                                    "component type.\n");
+                            std::unique_ptr<IntArrayBase> colors_array_pointer =
+                                    nullptr;
+                            const auto data_address =
+                                    colors_buffer.data.data() +
+                                    colors_view.byteOffset +
+                                    colors_accessor.byteOffset;
+                            const auto byte_stride =
+                                    tinygltf::GetComponentSizeInBytes(
+                                            colors_accessor.componentType);
+                            // The byte length is required to be a multiple of 4
+                            // bytes, and thus UNSIGNED_BYTE and UNSIGNED_SHORT
+                            // can only be used with VEC4.
+                            // However, VEC3 type can be specified in the file
+                            // to signify that the per-vertex colors do not
+                            // contain alpha.
+                            const auto count = 4 * colors_accessor.count;
+                            double max_type_value;
+                            switch (colors_accessor.componentType) {
+                                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                                    colors_array_pointer = std::unique_ptr<
+                                            IntArray<unsigned char>>(
+                                            new IntArray<unsigned char>(
+                                                    ArrayAdapter<unsigned char>(
+                                                            data_address, count,
+                                                            byte_stride)));
+                                    max_type_value = 255;
+                                    break;
+                                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                                    colors_array_pointer = std::unique_ptr<
+                                            IntArray<unsigned short>>(
+                                            new IntArray<unsigned short>(
+                                                    ArrayAdapter<
+                                                            unsigned short>(
+                                                            data_address, count,
+                                                            byte_stride)));
+                                    max_type_value = 65535;
+                                    break;
+                            }
+                            const auto& colors = *colors_array_pointer;
+                            for (size_t i = 0; i < colors_accessor.count; ++i) {
+                                mesh_temp.vertex_colors_.push_back(
+                                        Eigen::Vector3d(
+                                                (double)colors[i * 4 + 0] /
+                                                        max_type_value,
+                                                (double)colors[i * 4 + 1] /
+                                                        max_type_value,
+                                                (double)colors[i * 4 + 2] /
+                                                        max_type_value));
+                            }
                         }
                     }
                 }
@@ -226,7 +277,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                             data_address, count,
                                                             byte_stride)));
                             break;
-
                         case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                             indices_array_pointer =
                                     std::unique_ptr<IntArray<unsigned char>>(
@@ -235,7 +285,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                             data_address, count,
                                                             byte_stride)));
                             break;
-
                         case TINYGLTF_COMPONENT_TYPE_SHORT:
                             indices_array_pointer =
                                     std::unique_ptr<IntArray<short>>(
@@ -244,7 +293,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                             data_address, count,
                                                             byte_stride)));
                             break;
-
                         case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                             indices_array_pointer = std::unique_ptr<
                                     IntArray<unsigned short>>(
@@ -253,7 +301,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                     data_address, count,
                                                     byte_stride)));
                             break;
-
                         case TINYGLTF_COMPONENT_TYPE_INT:
                             indices_array_pointer =
                                     std::unique_ptr<IntArray<int>>(
@@ -261,7 +308,6 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                                     data_address, count,
                                                     byte_stride)));
                             break;
-
                         case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                             indices_array_pointer =
                                     std::unique_ptr<IntArray<unsigned int>>(
@@ -323,8 +369,8 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                 if (gltf_node.rotation.size() > 0) {
                     Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
                     // glTF represents a quaternion as qx, qy, qz, qw, while
-                    // Eigen::Quaterniond orders the parameters as qw, qx, qy,
-                    // qz.
+                    // Eigen::Quaterniond orders the parameters as qw, qx,
+                    // qy, qz.
                     transform.topLeftCorner<3, 3>() =
                             Eigen::Quaterniond(gltf_node.rotation[3],
                                                gltf_node.rotation[0],
