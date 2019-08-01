@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <json/json.h>
 #include "Open3D/Open3D.h"
 
 int main(int argc, char **argv) {

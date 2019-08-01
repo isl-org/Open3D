@@ -25,7 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "MKVReader.h"
-#include <libjpeg-turbo/turbojpeg.h>
+
+#include <json/json.h>
+#include <turbojpeg.h>
 
 namespace open3d {
 
