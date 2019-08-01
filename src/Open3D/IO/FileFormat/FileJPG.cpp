@@ -27,10 +27,10 @@
 #include <cstddef>
 #include <cstdio>
 
+#include <jpeglib.h>  // Include after cstddef to define size_t
+
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/Utility/Console.h"
-
-#include <jpeglib.h>
 
 namespace open3d {
 namespace io {
