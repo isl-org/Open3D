@@ -66,9 +66,8 @@ inline static uint32_t k4a_convert_fps_to_uint(k4a_fps_t fps) {
     return fps_int;
 }
 
-inline static void HstackRGBDepth(
-        const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
-        geometry::Image& im_rgb_depth_hstack) {
+void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
+                    geometry::Image& im_rgb_depth_hstack) {
     int width = im_rgbd->color_.width_;
     int height = im_rgbd->color_.height_;
     if (width != im_rgbd->depth_.width_ || height != im_rgbd->depth_.height_) {

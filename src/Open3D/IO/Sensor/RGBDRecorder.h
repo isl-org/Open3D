@@ -32,16 +32,26 @@
 
 #include <k4a/k4a.h>
 #include <atomic>
+#include <memory>
 
 namespace open3d {
+
+namespace geometry {
+class RGBDImage;
+class Image;
+}  // namespace geometry
+
 namespace io {
 
 extern std::atomic_bool exiting;
 
+void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
+                    geometry::Image& im_rgb_depth_hstack);
+
 int do_recording(uint8_t device_index,
-                 char *recording_filename,
+                 char* recording_filename,
                  int recording_length,
-                 k4a_device_configuration_t *device_config,
+                 k4a_device_configuration_t* device_config,
                  bool record_imu,
                  int32_t absoluteExposureValue);
 }  // namespace io

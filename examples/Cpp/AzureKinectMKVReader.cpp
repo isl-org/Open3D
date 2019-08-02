@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include <json/json.h>
+#include <chrono>
+#include <thread>
 #include "Open3D/Open3D.h"
 
 using namespace open3d;
@@ -46,17 +48,24 @@ int main(int argc, char **argv) {
         utility::LogInfo("{}: {}\n", iter.key(), json[iter.name()]);
     }
 
-    std::vector<uint64_t> timestamps = {15462462346L, 412423, 124200, 0,
-                                        12400000};
-    for (auto &ts : timestamps) {
-        mkv_reader.SeekTimestamp(ts);
-        auto rgbd = mkv_reader.NextFrame();
-        if (rgbd) {
-            auto color = std::make_shared<geometry::Image>(rgbd->color_);
-            visualization::DrawGeometries({color});
+    visualization::Visualizer vis;
+    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 640);
+
+    std::shared_ptr<geometry::Image> im_rgb_depth_hstack = nullptr;
+    while (std::shared_ptr<geometry::RGBDImage> rgbd = mkv_reader.NextFrame()) {
+        if (im_rgb_depth_hstack == nullptr) {
+            im_rgb_depth_hstack = std::make_shared<geometry::Image>();
+            io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
+            vis.AddGeometry(im_rgb_depth_hstack);
         } else {
-            utility::LogDebug("Null RGBD frame for timestamp {} (us)\n", ts);
+            io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
         }
+
+        vis.UpdateGeometry();
+        vis.PollEvents();
+        vis.UpdateRender();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     mkv_reader.Close();
