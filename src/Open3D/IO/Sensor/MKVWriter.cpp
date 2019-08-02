@@ -24,9 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "MKVWriter.h"
+#include "Open3D/IO/Sensor/MKVWriter.h"
 
 namespace open3d {
+namespace io {
 
 int MKVWriter::Open(const std::string &filename,
                     const k4a_device_configuration_t &config,
@@ -44,7 +45,7 @@ int MKVWriter::Open(const std::string &filename,
     return 0;
 }
 
-int MKVWriter::SetMetadata(const open3d::MKVMetadata &metadata) {
+int MKVWriter::SetMetadata(const MKVMetadata &metadata) {
     metadata_ = metadata;
     if (metadata_.enable_imu_) {
         if (K4A_RESULT_SUCCEEDED != k4a_record_add_imu_track(handle_)) {
@@ -79,4 +80,5 @@ int MKVWriter::NextFrame(k4a_capture_t capture) {
 
     return 0;
 }
+}  // namespace io
 }  // namespace open3d

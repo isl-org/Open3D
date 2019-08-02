@@ -26,16 +26,15 @@
 
 #pragma once
 
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Utility/IJsonConvertible.h>
-
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 
-#include <json/json.h>
-#include "MKVMetadata.h"
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/IO/Sensor/MKVMetadata.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
+namespace io {
 
 class MKVWriter {
 public:
@@ -47,11 +46,12 @@ public:
              k4a_device_t device);
     void Close();
 
-    int SetMetadata(const MKVMetadata& metadata);
+    int SetMetadata(const MKVMetadata &metadata);
     int NextFrame(k4a_capture_t);
 
 private:
     k4a_record_t handle_ = nullptr;
     MKVMetadata metadata_;
 };
+}  // namespace io
 }  // namespace open3d

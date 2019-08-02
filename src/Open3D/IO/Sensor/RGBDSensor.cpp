@@ -24,4 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RGBDSensor.h"
+#include "Open3D/IO/Sensor/RGBDSensor.h"
+
+namespace open3d {
+namespace io {}
+}  // namespace open3d

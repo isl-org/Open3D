@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "MKVReader.h"
+#include "Open3D/IO/Sensor/MKVReader.h"
 
 #include <json/json.h>
 #include <turbojpeg.h>
+#include <iostream>
 
 namespace open3d {
+namespace io {
 
 std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
         std::shared_ptr<geometry::Image> &rgba) {
@@ -42,7 +44,7 @@ std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
         for (int v = 0; v < rgba->height_; ++v) {
             for (int c = 0; c < 3; ++c) {
                 *rgb->PointerAt<uint8_t>(u, v, c) =
-                        *rgba->PointerAt<uint8_t>(u, v, c);
+                        *rgba->PointerAt<uint8_t>(u, v, 2 - c);
             }
         }
     }
@@ -199,7 +201,9 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
     k4a_image_release(k4a_depth);
     k4a_image_release(k4a_transformed_depth);
 
-    return geometry::RGBDImage::CreateFromColorAndDepth(*color, *depth);
+    return geometry::RGBDImage::CreateFromColorAndDepth(
+            *color, *depth, /*depth_scale*/ 1000, /*depth_trunc*/ 3,
+            /*convert_rgb_to_intensity */ false);
 }
 
 std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
@@ -220,4 +224,5 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
 
     return rgbd;
 }
+}  // namespace io
 }  // namespace open3d

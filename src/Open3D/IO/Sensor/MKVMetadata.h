@@ -26,12 +26,13 @@
 
 #pragma once
 
-#include <Open3D/Camera/PinholeCameraIntrinsic.h>
-#include <Open3D/Utility/IJsonConvertible.h>
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
 
 namespace open3d {
+namespace io {
 
 class MKVMetadata : public utility::IJsonConvertible {
 public:
@@ -48,5 +49,6 @@ public:
 
     bool enable_imu_ = false;
 };
+}  // namespace io
 
 }  // namespace open3d

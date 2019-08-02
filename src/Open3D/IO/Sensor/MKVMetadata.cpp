@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "MKVMetadata.h"
+#include "Open3D/IO/Sensor/MKVMetadata.h"
 
 #include <json/json.h>
 
 namespace open3d {
+namespace io {
 
 bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
     intrinsics_.ConvertToJsonValue(value);
@@ -46,4 +47,5 @@ bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
 
     return true;
 }
+}  // namespace io
 }  // namespace open3d

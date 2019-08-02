@@ -27,6 +27,8 @@
 #include <json/json.h>
 #include "Open3D/Open3D.h"
 
+using namespace open3d;
+
 int main(int argc, char **argv) {
     using namespace open3d;
 
@@ -37,7 +39,7 @@ int main(int argc, char **argv) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    MKVReader mkv_reader;
+    io::MKVReader mkv_reader;
     mkv_reader.Open(argv[1]);
     auto json = mkv_reader.GetMetaData();
     for (auto iter = json.begin(); iter != json.end(); ++iter) {

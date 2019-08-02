@@ -5,8 +5,8 @@
 
 #include "assert.h"
 
-#include "Open3D/IO/Sensor/cmdparser.h"
-#include "Open3D/IO/Sensor/recorder.h"
+#include "Open3D/IO/Sensor/CmdParser.h"
+#include "Open3D/IO/Sensor/RGBDRecorder.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -18,15 +18,17 @@
 #include <ctime>
 #include <iostream>
 
+using namespace open3d;
+
 static time_t exiting_timestamp;
 
 static void signal_handler(int s) {
     (void)s;  // Unused
 
-    if (!exiting) {
+    if (!io::exiting) {
         std::cout << "Stopping recording..." << std::endl;
         exiting_timestamp = clock();
-        exiting = true;
+        io::exiting = true;
     }
     // If Ctrl-C is received again after 1 second, force-stop the application
     // since it's not responding.
@@ -348,7 +350,7 @@ int main(int argc, char **argv) {
     device_config.subordinate_delay_off_master_usec =
             subordinate_delay_off_master_usec;
 
-    return do_recording((uint8_t)device_index, recording_filename,
-                        recording_length, &device_config, recording_imu_enabled,
-                        absoluteExposureValue);
+    return io::do_recording((uint8_t)device_index, recording_filename,
+                            recording_length, &device_config,
+                            recording_imu_enabled, absoluteExposureValue);
 }
