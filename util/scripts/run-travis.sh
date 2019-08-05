@@ -13,22 +13,21 @@ mkdir build
 cd build
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
-          -DBUILD_UNIT_TESTS=ON \
-          -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
-          -DPYTHON_EXECUTABLE=`which python` \
-          ..
+        -DBUILD_UNIT_TESTS=ON \
+        -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
+        -DPYTHON_EXECUTABLE=$(which python) \
+        ..
 else
     cmake -DBUILD_SHARED_LIBS=$SHARED \
-          -DBUILD_UNIT_TESTS=ON \
-          -DBUILD_EIGEN3=ON \
-          -DBUILD_GLEW=ON \
-          -DBUILD_GLFW=ON \
-          -DBUILD_JPEG=ON \
-          -DBUILD_JSONCPP=ON \
-          -DBUILD_PNG=ON \
-          -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
-          -DPYTHON_EXECUTABLE=`which python` \
-          ..
+        -DBUILD_UNIT_TESTS=ON \
+        -DBUILD_EIGEN3=ON \
+        -DBUILD_GLEW=ON \
+        -DBUILD_GLFW=ON \
+        -DBUILD_JSONCPP=ON \
+        -DBUILD_PNG=ON \
+        -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
+        -DPYTHON_EXECUTABLE=$(which python) \
+        ..
 fi
 echo
 
@@ -44,17 +43,17 @@ echo
 
 echo "test find_package(Open3D)..."
 date
-test=`cmake --find-package \
-            -DNAME=Open3D \
-            -DCOMPILER_ID=GNU \
-            -DLANGUAGE=C \
-            -DMODE=EXIST \
-            -DCMAKE_PREFIX_PATH="${OPEN3D_INSTALL_DIR}/lib/cmake"`
+test=$(cmake --find-package \
+    -DNAME=Open3D \
+    -DCOMPILER_ID=GNU \
+    -DLANGUAGE=C \
+    -DMODE=EXIST \
+    -DCMAKE_PREFIX_PATH="${OPEN3D_INSTALL_DIR}/lib/cmake")
 if [ "$test" == "Open3D found." ]; then
-    echo "PASSED find_package(Open3D) in specified install path.";
+    echo "PASSED find_package(Open3D) in specified install path."
 else
-    echo "FAILED find_package(Open3D) in specified install path.";
-    exit 1;
+    echo "FAILED find_package(Open3D) in specified install path."
+    exit 1
 fi
 echo
 

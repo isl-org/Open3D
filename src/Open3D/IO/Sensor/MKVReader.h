@@ -26,16 +26,15 @@
 
 #pragma once
 
-#include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/Utility/IJsonConvertible.h>
-
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
 
-#include <json/json.h>
-#include "MKVMetadata.h"
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/IO/Sensor/MKVMetadata.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
 namespace open3d {
+namespace io {
 
 class MKVReader {
 public:
@@ -59,4 +58,5 @@ private:
 
     std::string GetTagInMetadata(const std::string &tag_name);
 };
+}  // namespace io
 }  // namespace open3d

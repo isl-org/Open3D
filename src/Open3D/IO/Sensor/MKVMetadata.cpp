@@ -24,8 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/Sensor/RGBDSensor.h"
+#include "Open3D/IO/Sensor/MKVMetadata.h"
+
+#include <json/json.h>
 
 namespace open3d {
-namespace io {}
+namespace io {
+
+bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
+    intrinsics_.ConvertToJsonValue(value);
+    value["serial_number_"] = serial_number_;
+    value["stream_length_usec"] = stream_length_usec_;
+    value["enable_imu"] = enable_imu_;
+
+    return true;
+}
+bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
+    intrinsics_.ConvertFromJsonValue(value);
+    serial_number_ = value["serial_number"].asString();
+    stream_length_usec_ = value["stream_length_usec"].asUInt64();
+    enable_imu_ = value["enable_imu"].asBool();
+
+    return true;
+}
+}  // namespace io
 }  // namespace open3d

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +24,44 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+#include "TestUtility/UnitTest.h"
 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
-#include "Open3D/Utility/IJsonConvertible.h"
+using namespace open3d;
+using namespace unit_test;
 
-enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
+    geometry::TriangleMesh tm_gt;
+    tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    tm_gt.triangles_ = {{0, 1, 2}};
+    tm_gt.ComputeVertexNormals();
 
-namespace open3d {
-namespace io {
+    io::WriteTriangleMeshToGLTF("tmp.gltf", tm_gt);
 
-class MKVMetadata : public utility::IJsonConvertible {
-public:
-    bool ConvertToJsonValue(Json::Value &value) const override;
-    bool ConvertFromJsonValue(const Json::Value &value) override;
+    geometry::TriangleMesh tm_test;
+    io::ReadTriangleMeshFromGLTF("tmp.gltf", tm_test, false);
 
-public:
-    // Shared intrinsics betwee RGB & depth.
-    // We assume depth image is always warped to the color image system
-    camera::PinholeCameraIntrinsic intrinsics_;
+    ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
+    ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
+    ExpectEQ(tm_gt.vertex_normals_, tm_test.vertex_normals_);
+}
 
-    std::string serial_number_ = "";
-    uint64_t stream_length_usec_ = 0;
+TEST(FileGLTF, WriteReadTriangleMeshFromGLB) {
+    geometry::TriangleMesh tm_gt;
+    tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    tm_gt.triangles_ = {{0, 1, 2}};
+    tm_gt.ComputeVertexNormals();
 
-    bool enable_imu_ = false;
-};
-}  // namespace io
+    io::WriteTriangleMeshToGLTF("tmp.glb", tm_gt);
 
-}  // namespace open3d
+    geometry::TriangleMesh tm_test;
+    io::ReadTriangleMeshFromGLTF("tmp.glb", tm_test, false);
+
+    ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
+    ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
+    ExpectEQ(tm_gt.vertex_normals_, tm_test.vertex_normals_);
+}

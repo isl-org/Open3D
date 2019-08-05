@@ -34,7 +34,7 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSTL, WriteReadPointCloudFromSTL) {
+TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     geometry::TriangleMesh tm_gt;
     tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
     tm_gt.triangles_ = {{0, 1, 2}};

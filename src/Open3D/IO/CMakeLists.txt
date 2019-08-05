@@ -17,3 +17,6 @@ add_library(IO OBJECT
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
 ShowAndAbortOnWarning(IO)
+
+# Enforce dependencies for ExternalProject_Add
+target_link_libraries(IO ${3RDPARTY_LIBRARIES})

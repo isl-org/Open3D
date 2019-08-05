@@ -25,3 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+namespace open3d {
+namespace io {}
+}  // namespace open3d
