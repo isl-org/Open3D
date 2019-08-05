@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Open3D/Visualization/Visualizer/Visualizer.h>
 #include <json/json.h>
 #include <chrono>
 #include <thread>
@@ -43,29 +44,53 @@ int main(int argc, char **argv) {
 
     io::MKVReader mkv_reader;
     mkv_reader.Open(argv[1]);
+    if (!mkv_reader.IsOpened()) {
+        return -1;
+    }
+
     auto json = mkv_reader.GetMetaData();
     for (auto iter = json.begin(); iter != json.end(); ++iter) {
         utility::LogInfo("{}: {}\n", iter.key(), json[iter.name()]);
     }
 
-    visualization::Visualizer vis;
+    bool stop = false;
+    bool toggle_pause = false;
+    visualization::VisualizerWithKeyCallback vis;
     vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 640);
 
+    vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
+                            [&](visualization::Visualizer *vis) {
+                                stop = true;
+                                return true;
+                            });
+    vis.RegisterKeyCallback(GLFW_KEY_SPACE,
+                            [&](visualization::Visualizer *vis) {
+                                toggle_pause = !toggle_pause;
+                                return true;
+                            });
+
     std::shared_ptr<geometry::Image> im_rgb_depth_hstack = nullptr;
-    while (std::shared_ptr<geometry::RGBDImage> rgbd = mkv_reader.NextFrame()) {
-        if (im_rgb_depth_hstack == nullptr) {
-            im_rgb_depth_hstack = std::make_shared<geometry::Image>();
-            io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
-            vis.AddGeometry(im_rgb_depth_hstack);
-        } else {
-            io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
+    while (!mkv_reader.IsEOF()) {
+        if (stop) break;
+
+        if (!toggle_pause) {
+            std::shared_ptr<geometry::RGBDImage> rgbd = mkv_reader.NextFrame();
+            if (rgbd == nullptr) continue;
+
+            if (im_rgb_depth_hstack == nullptr) {
+                im_rgb_depth_hstack = std::make_shared<geometry::Image>();
+                io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
+                vis.AddGeometry(im_rgb_depth_hstack);
+            } else {
+                io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
+            }
         }
 
         vis.UpdateGeometry();
         vis.PollEvents();
         vis.UpdateRender();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     mkv_reader.Close();

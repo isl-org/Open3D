@@ -40,12 +40,16 @@ std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
     auto rgb = std::make_shared<geometry::Image>();
     rgb->Prepare(rgba->width_, rgba->height_, 3, rgba->bytes_per_channel_);
 
-    for (int u = 0; u < rgba->width_; ++u) {
-        for (int v = 0; v < rgba->height_; ++v) {
-            for (int c = 0; c < 3; ++c) {
-                *rgb->PointerAt<uint8_t>(u, v, c) =
-                        *rgba->PointerAt<uint8_t>(u, v, 2 - c);
-            }
+    int N = rgba->width_ * rgba->height_;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int uv = 0; uv < N; ++uv) {
+        int v = uv / rgba->width_;
+        int u = uv % rgba->width_;
+        for (int c = 0; c < 3; ++c) {
+            *rgb->PointerAt<uint8_t>(u, v, c) =
+                    *rgba->PointerAt<uint8_t>(u, v, 2 - c);
         }
     }
 
@@ -80,6 +84,8 @@ int MKVReader::Open(const std::string &filename) {
     }
 
     metadata_.ConvertFromJsonValue(GetMetaData());
+    is_eof_ = false;
+
     return 0;
 }
 
@@ -178,13 +184,12 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
     color = ConvertBGRAToRGB(color);
 
     /* transform depth to color */
+    depth->Prepare(width, height, 1, sizeof(uint16_t));
     k4a_image_t k4a_transformed_depth = nullptr;
-    if (K4A_RESULT_SUCCEEDED !=
-        k4a_image_create(K4A_IMAGE_FORMAT_DEPTH16, width, height,
-                         width * sizeof(uint16_t), &k4a_transformed_depth)) {
-        utility::LogError("Failed to create transformed depth image buffer.\n");
-        return nullptr;
-    }
+    k4a_image_create_from_buffer(K4A_IMAGE_FORMAT_DEPTH16, width, height,
+                                 width * sizeof(uint16_t), depth->data_.data(),
+                                 width * height * sizeof(uint16_t), NULL, NULL,
+                                 &k4a_transformed_depth);
     if (K4A_RESULT_SUCCEEDED !=
         k4a_transformation_depth_image_to_color_camera(
                 transformation, k4a_depth, k4a_transformed_depth)) {
@@ -193,10 +198,6 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
     }
 
     /* process depth */
-    depth->Prepare(width, height, 1, sizeof(uint16_t));
-    memcpy(depth->data_.data(), k4a_image_get_buffer(k4a_transformed_depth),
-           width * height * 1 * sizeof(uint16_t));
-
     k4a_image_release(k4a_color);
     k4a_image_release(k4a_depth);
     k4a_image_release(k4a_transformed_depth);
@@ -213,9 +214,14 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
     }
 
     k4a_capture_t k4a_capture;
-    if (K4A_STREAM_RESULT_SUCCEEDED !=
-        k4a_playback_get_next_capture(handle_, &k4a_capture)) {
-        utility::LogDebug("Final frame reached\n");
+    k4a_stream_result_t res =
+            k4a_playback_get_next_capture(handle_, &k4a_capture);
+    if (K4A_STREAM_RESULT_EOF == res) {
+        utility::LogInfo("EOF reached\n");
+        is_eof_ = true;
+        return nullptr;
+    } else if (K4A_STREAM_RESULT_FAILED == res) {
+        utility::LogInfo("Empty frame encountered, skip\n");
         return nullptr;
     }
 

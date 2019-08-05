@@ -43,6 +43,7 @@ public:
             k4a_capture_t capture, k4a_transformation_t transformation);
 
     bool IsOpened() { return handle_ != nullptr; }
+    bool IsEOF() { return is_eof_; }
 
     int Open(const std::string &filename);
     void Close();
@@ -55,6 +56,7 @@ private:
     k4a_playback_t handle_ = nullptr;
     k4a_transformation_t transformation_ = nullptr;
     MKVMetadata metadata_;
+    bool is_eof_ = false;
 
     std::string GetTagInMetadata(const std::string &tag_name);
 };
