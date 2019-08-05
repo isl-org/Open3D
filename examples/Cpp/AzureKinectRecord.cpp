@@ -12,6 +12,7 @@
 #include <windows.h>
 #endif
 
+#include <Open3D/Utility/Console.h>
 #include <math.h>
 #include <atomic>
 #include <csignal>
@@ -288,14 +289,13 @@ int main(int argc, char **argv) {
     try {
         args_left = cmd_parser.ParseCmd(argc, argv);
     } catch (CmdParser::ArgumentError &e) {
-        std::cerr << e.option() << ": " << e.what() << std::endl;
+        open3d::utility::LogError("{}: {}\n", e.option(), e.what());
         return 1;
     }
     if (args_left == 1) {
         recording_filename = argv[argc - 1];
     } else {
-        std::cout << "k4arecorder [options] output.mkv" << std::endl
-                  << std::endl;
+        open3d::utility::LogInfo("k4arecorder [options] output.mkv\n");
         cmd_parser.PrintOptions();
         return 0;
     }
@@ -307,17 +307,17 @@ int main(int argc, char **argv) {
             // Default to max supported frame rate
             recording_rate = K4A_FRAMES_PER_SECOND_15;
         } else {
-            std::cerr << "Error: 30 Frames per second is not supported by this "
-                         "camera mode."
-                      << std::endl;
+            utility::LogError(
+                    "Error: 30 Frames per second is not supported by this "
+                    "camera mode.\n");
             return 1;
         }
     }
     if (subordinate_delay_off_master_usec > 0 &&
         wired_sync_mode != K4A_WIRED_SYNC_MODE_SUBORDINATE) {
-        std::cerr << "--sync-delay is only valid if --external-sync is set to "
-                     "Subordinate."
-                  << std::endl;
+        utility::LogError(
+                "--sync-delay is only valid if --external-sync is set to "
+                "Subordinate.\n");
         return 1;
     }
 
@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
     device_config.subordinate_delay_off_master_usec =
             subordinate_delay_off_master_usec;
 
-    return io::do_recording((uint8_t)device_index, recording_filename,
-                            recording_length, &device_config,
-                            recording_imu_enabled, absoluteExposureValue);
+    return io::Record((uint8_t)device_index, recording_filename,
+                      recording_length, &device_config, recording_imu_enabled,
+                      absoluteExposureValue);
 }

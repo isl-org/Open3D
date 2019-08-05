@@ -48,7 +48,7 @@ extern std::atomic_bool exiting;
 void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
                     geometry::Image& im_rgb_depth_hstack);
 
-int do_recording(uint8_t device_index,
+int Record(uint8_t device_index,
                  char* recording_filename,
                  int recording_length,
                  k4a_device_configuration_t* device_config,

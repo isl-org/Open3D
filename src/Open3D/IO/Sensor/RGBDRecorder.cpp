@@ -172,7 +172,7 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
 
 std::atomic_bool exiting(false);
 
-int do_recording(uint8_t device_index,
+int Record(uint8_t device_index,
                  char* recording_filename,
                  int recording_length,
                  k4a_device_configuration_t* device_config,
@@ -347,6 +347,10 @@ int do_recording(uint8_t device_index,
 
         std::shared_ptr<geometry::RGBDImage> im_rgbd =
                 io::MKVReader::DecompressCapture(capture, transformation);
+        if (im_rgbd == nullptr) {
+            utility::LogInfo("invalid capture, skipping this frame\n");
+            continue;
+        }
 
         if (im_rgb_depth_hstack == nullptr) {
             im_rgb_depth_hstack = std::make_shared<geometry::Image>();
@@ -356,7 +360,6 @@ int do_recording(uint8_t device_index,
             HstackRGBDepth(im_rgbd, *im_rgb_depth_hstack);
         }
 
-        // im_depth = std::make_shared<geometry::Image>(im_rgbd->depth_);
         vis.UpdateGeometry();
         vis.PollEvents();
         vis.UpdateRender();
