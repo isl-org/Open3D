@@ -27,7 +27,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
 
 #include <assert.h>
 #include <Eigen/Core>
@@ -41,6 +40,7 @@
 
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/MKVReader.h"
+#include "Open3D/IO/Sensor/RGBDRecorder.h"
 #include "Open3D/Visualization/Utility/ColorMap.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 
@@ -173,11 +173,11 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
 std::atomic_bool exiting(false);
 
 int Record(uint8_t device_index,
-                 char* recording_filename,
-                 int recording_length,
-                 k4a_device_configuration_t* device_config,
-                 bool record_imu,
-                 int32_t absoluteExposureValue) {
+           char* recording_filename,
+           int recording_length,
+           k4a_device_configuration_t* device_config,
+           bool record_imu,
+           int32_t absoluteExposureValue) {
     const uint32_t installed_devices = k4a_device_get_installed_count();
     if (device_index >= installed_devices) {
         utility::LogError("Device not found.\n");

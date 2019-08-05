@@ -61,6 +61,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 # workaround for Azures's import-fashion cmake
 if (BUILD_AZURE_KINECT)
+    add_definitions(-DBUILD_KINECT_AZURE=1)
     find_package(k4a QUIET)
     find_package(k4arecord QUIET)
     if (k4a_FOUND)
