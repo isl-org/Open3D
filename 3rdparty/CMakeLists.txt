@@ -136,9 +136,13 @@ else ()
     endif ()
 
     if (BUILD_JSONCPP)
+        # jsoncpp's pkgconfig support needs to be disabled due to a bug in
+        # jsoncpp's CMakeLists.txt on the line that installs jsoncpp's pc file
         set(JSONCPP_WITH_PKGCONFIG_SUPPORT OFF CACHE BOOL "")
-        set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include CACHE PATH "")
         add_subdirectory(jsoncpp)
+        set(JSONCPP_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include")
+        set(JSONCPP_LIBRARY_DIRS "${CMAKE_BINARY_DIR}/lib")
+        set(JSONCPP_LIBRARIES jsoncpp)
     endif ()
 endif ()
 
