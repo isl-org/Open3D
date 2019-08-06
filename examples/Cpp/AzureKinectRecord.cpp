@@ -5,19 +5,16 @@
 
 #include "assert.h"
 
-#include "Open3D/IO/Sensor/CmdParser.h"
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
-
 #if defined(_WIN32)
 #include <windows.h>
 #endif
 
-#include <Open3D/Utility/Console.h>
 #include <math.h>
 #include <atomic>
 #include <csignal>
 #include <ctime>
 #include <iostream>
+#include <Open3D/Open3D.h>
 
 using namespace open3d;
 

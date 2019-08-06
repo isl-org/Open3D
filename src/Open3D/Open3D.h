@@ -51,7 +51,7 @@
 #include "Open3D/IO/ClassIO/PoseGraphIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
-#ifdef BUILD_KINECT_AZURE
+#ifdef BUILD_SENSOR
 #include "Open3D/IO/Sensor/MKVReader.h"
 #include "Open3D/IO/Sensor/RGBDRecorder.h"
 #endif

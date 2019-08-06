@@ -33,6 +33,7 @@
 #include <k4a/k4a.h>
 #include <atomic>
 #include <memory>
+#include "CmdParser.h"
 
 namespace open3d {
 

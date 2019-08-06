@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Open3D/Visualization/Visualizer/Visualizer.h>
 #include <json/json.h>
 #include <chrono>
 #include <thread>
