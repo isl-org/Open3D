@@ -5,5 +5,5 @@ file(GLOB_RECURSE ALL_SOURCE_FILES "*.cpp")
 add_library(Geometry OBJECT ${ALL_SOURCE_FILES})
 ShowAndAbortOnWarning(Geometry)
 
-# Enforce dependencies for ExternalProject_Add
-target_link_libraries(Geometry ${3RDPARTY_LIBRARIES})
+# Enforce 3rd party dependencies
+add_dependencies(Geometry build_all_3rd_party_libs)

@@ -50,11 +50,11 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
                     geometry::Image& im_rgb_depth_hstack);
 
 int Record(uint8_t device_index,
-                 char* recording_filename,
-                 int recording_length,
-                 k4a_device_configuration_t* device_config,
-                 bool record_imu,
-                 int32_t absoluteExposureValue);
+           char* recording_filename,
+           int recording_length,
+           k4a_device_configuration_t* device_config,
+           bool record_imu,
+           int32_t absoluteExposureValue);
 }  // namespace io
 }  // namespace open3d
 

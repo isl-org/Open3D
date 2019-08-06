@@ -4,6 +4,10 @@
 
 cmake_minimum_required(VERSION 3.0.0)
 
+add_custom_target(build_all_3rd_party_libs
+    COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
+)
+
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
     set(OpenGL_GL_PREFERENCE LEGACY)
@@ -199,6 +203,12 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
     file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
     source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
 endmacro(ADD_SOURCE_GROUP)
+
+# 3rdparty libraries using the ExternalProject_Add approach will install
+# headers in Open3D/build/include. We prioritize this include directory by
+# putting it in front, to avoid mistakenly including other header files of the
+# same name.
+include_directories(${CMAKE_BINARY_DIR}/include)
 
 # Handling dependencies
 add_subdirectory(3rdparty)

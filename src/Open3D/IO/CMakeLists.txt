@@ -18,5 +18,5 @@ add_library(IO OBJECT
             ${LIBLZF_SOURCE_FILES})
 ShowAndAbortOnWarning(IO)
 
-# Enforce dependencies for ExternalProject_Add
-target_link_libraries(IO ${3RDPARTY_LIBRARIES})
+# Enforce 3rd party dependencies
+add_dependencies(IO build_all_3rd_party_libs)
