@@ -27,7 +27,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
 
 #include <assert.h>
 #include <Eigen/Core>
@@ -41,6 +40,7 @@
 
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/MKVReader.h"
+#include "Open3D/IO/Sensor/RGBDRecorder.h"
 #include "Open3D/Visualization/Utility/ColorMap.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 
@@ -172,21 +172,22 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
 
 std::atomic_bool exiting(false);
 
-int do_recording(uint8_t device_index,
-                 char* recording_filename,
-                 int recording_length,
-                 k4a_device_configuration_t* device_config,
-                 bool record_imu,
-                 int32_t absoluteExposureValue) {
+int Record(uint8_t device_index,
+           char* recording_filename,
+           int recording_length,
+           k4a_device_configuration_t* device_config,
+           bool record_imu,
+           int32_t absoluteExposureValue) {
     const uint32_t installed_devices = k4a_device_get_installed_count();
     if (device_index >= installed_devices) {
-        std::cerr << "Device not found." << std::endl;
+        utility::LogError("Device not found.\n");
         return 1;
     }
 
     k4a_device_t device;
     if (K4A_FAILED(k4a_device_open(device_index, &device))) {
-        std::cerr << "Runtime error: k4a_device_open() failed " << std::endl;
+        utility::LogError("Runtime error: k4a_device_open() failed\n");
+        return 1;
     }
 
     char serial_number_buffer[256];
@@ -194,34 +195,30 @@ int do_recording(uint8_t device_index,
     CHECK(k4a_device_get_serialnum(device, serial_number_buffer,
                                    &serial_number_buffer_size),
           device);
-
-    std::cout << "Device serial number: " << serial_number_buffer << std::endl;
-
     k4a_hardware_version_t version_info;
     CHECK(k4a_device_get_version(device, &version_info), device);
 
-    std::cout << "Device version: "
-              << (version_info.firmware_build == K4A_FIRMWARE_BUILD_RELEASE
-                          ? "Rel"
-                          : "Dbg")
-              << "; C: " << version_info.rgb.major << "."
-              << version_info.rgb.minor << "." << version_info.rgb.iteration
-              << "; D: " << version_info.depth.major << "."
-              << version_info.depth.minor << "." << version_info.depth.iteration
-              << "[" << version_info.depth_sensor.major << "."
-              << version_info.depth_sensor.minor << "]"
-              << "; A: " << version_info.audio.major << "."
-              << version_info.audio.minor << "." << version_info.audio.iteration
-              << std::endl;
+    utility::LogInfo("Device serial number: {}\n", serial_number_buffer);
+    utility::LogInfo("Device version: {};\n",
+                     (version_info.firmware_build == K4A_FIRMWARE_BUILD_RELEASE
+                              ? "Rel"
+                              : "Dbg"));
+    utility::LogInfo("C: {}.{}.{};\n", version_info.rgb.major,
+                     version_info.rgb.minor, version_info.rgb.iteration);
+    utility::LogInfo("D: {}.{}.{}[{}.{}]\n", version_info.depth.major,
+                     version_info.depth.minor, version_info.depth.iteration,
+                     version_info.depth_sensor.major,
+                     version_info.depth_sensor.minor);
+    utility::LogInfo("A: {}.{}.{};\n", version_info.audio.major,
+                     version_info.audio.minor, version_info.audio.iteration);
 
     uint32_t camera_fps = k4a_convert_fps_to_uint(device_config->camera_fps);
 
     if (camera_fps <= 0 ||
         (device_config->color_resolution == K4A_COLOR_RESOLUTION_OFF &&
          device_config->depth_mode == K4A_DEPTH_MODE_OFF)) {
-        std::cerr
-                << "Either the color or depth modes must be enabled to record."
-                << std::endl;
+        utility::LogError(
+                "Either the color or depth modes must be enabled to record.\n");
         return 1;
     }
 
@@ -229,15 +226,15 @@ int do_recording(uint8_t device_index,
         if (K4A_FAILED(k4a_device_set_color_control(
                     device, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
                     K4A_COLOR_CONTROL_MODE_MANUAL, absoluteExposureValue))) {
-            std::cerr << "Runtime error: k4a_device_set_color_control() failed "
-                      << std::endl;
+            utility::LogError(
+                    "Runtime error: k4a_device_set_color_control() failed\n");
         }
     } else {
         if (K4A_FAILED(k4a_device_set_color_control(
                     device, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
                     K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
-            std::cerr << "Runtime error: k4a_device_set_color_control() failed "
-                      << std::endl;
+            utility::LogError(
+                    "Runtime error: k4a_device_set_color_control() failed\n");
         }
     }
 
@@ -246,13 +243,13 @@ int do_recording(uint8_t device_index,
         CHECK(k4a_device_start_imu(device), device);
     }
 
-    std::cout << "Device started" << std::endl;
+    utility::LogInfo("Device started\n");
 
     k4a_record_t recording;
     if (K4A_FAILED(k4a_record_create(recording_filename, device, *device_config,
                                      &recording))) {
-        std::cerr << "Unable to create recording file: " << recording_filename
-                  << std::endl;
+        utility::LogError("Unable to create recording file: %s\n",
+                          recording_filename);
         return 1;
     }
 
@@ -268,34 +265,41 @@ int do_recording(uint8_t device_index,
     k4a_transformation_t transformation =
             k4a_transformation_create(&calibration);
 
-    // Init visualizer
     bool record_on = false;
+    bool record_finished = false;
     visualization::VisualizerWithKeyCallback vis;
     vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 640);
-    vis.RegisterKeyCallback(GLFW_KEY_SPACE, [&](visualization::Visualizer*
-                                                        vis) {
-        if (record_on) {
-            std::cout << "Recording paused, press space to start recording."
-                      << std::endl;
-        } else {
-            std::cout << "Recording started, press space to pause recording."
-                      << std::endl;
-        }
-        record_on = !record_on;
-        return false;
-    });
+    vis.RegisterKeyCallback(
+            GLFW_KEY_SPACE, [&](visualization::Visualizer* vis) {
+                if (record_on) {
+                    utility::LogInfo(
+                            "Recording paused, press [SPACE] to continue; "
+                            "press [ESC] to save and exit.\n");
+                } else {
+                    utility::LogInfo(
+                            "Recording, press [SPACE] to pause recording.\n");
+                }
+                record_on = !record_on;
+                return false;
+            });
+    vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
+                            [&](visualization::Visualizer* vis) {
+                                record_finished = true;
+                                utility::LogInfo("Recording finished\n");
+                                return false;
+                            });
 
     // Wait for the first capture before starting recording.
     k4a_capture_t capture;
     int32_t timeout_sec_for_first_capture = 60;
     if (device_config->wired_sync_mode == K4A_WIRED_SYNC_MODE_SUBORDINATE) {
         timeout_sec_for_first_capture = 360;
-        std::cout << "[subordinate mode] Waiting for signal from master"
-                  << std::endl;
+        utility::LogInfo("[subordinate mode] Waiting for signal from master\n");
     }
+
+    // Wait for the first capture in a loop so Ctrl-C will still exit.
     clock_t first_capture_start = clock();
     k4a_wait_result_t result = K4A_WAIT_RESULT_TIMEOUT;
-    // Wait for the first capture in a loop so Ctrl-C will still exit.
     while (!exiting &&
            (clock() - first_capture_start) <
                    (CLOCKS_PER_SEC * timeout_sec_for_first_capture)) {
@@ -304,9 +308,10 @@ int do_recording(uint8_t device_index,
             k4a_capture_release(capture);
             break;
         } else if (result == K4A_WAIT_RESULT_FAILED) {
-            std::cerr << "Runtime error: k4a_device_get_capture() returned "
-                         "error: "
-                      << result << std::endl;
+            utility::LogError(
+                    "Runtime error: k4a_device_get_capture() returned "
+                    "error: %d\n",
+                    result);
             return 1;
         }
     }
@@ -315,17 +320,14 @@ int do_recording(uint8_t device_index,
         k4a_device_close(device);
         return 0;
     } else if (result == K4A_WAIT_RESULT_TIMEOUT) {
-        std::cerr << "Timed out waiting for first capture." << std::endl;
+        utility::LogInfo("Timed out waiting for first capture.\n");
         return 1;
     }
 
-    // std::cout << "Started recording" << std::endl;
     if (recording_length <= 0) {
-        std::cout << "Press Ctrl-C to stop recording." << std::endl;
+        utility::LogInfo("Press [Ctrl-C] or [ESC] to stop recording.\n");
+        utility::LogInfo("Press [SPACE] to start recording.\n");
     }
-
-    std::cout << "Recording paused, press space to start recording."
-              << std::endl;
 
     clock_t recording_start = clock();
     int32_t timeout_ms = 1000 / camera_fps;
@@ -337,13 +339,18 @@ int do_recording(uint8_t device_index,
         if (result == K4A_WAIT_RESULT_TIMEOUT) {
             continue;
         } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
-            std::cerr << "Runtime error: k4a_device_get_capture() returned "
-                      << result << std::endl;
+            utility::LogError(
+                    "Runtime error: k4a_device_get_capture() returned %d\n",
+                    result);
             break;
         }
 
         std::shared_ptr<geometry::RGBDImage> im_rgbd =
                 io::MKVReader::DecompressCapture(capture, transformation);
+        if (im_rgbd == nullptr) {
+            utility::LogInfo("invalid capture, skipping this frame\n");
+            continue;
+        }
 
         if (im_rgb_depth_hstack == nullptr) {
             im_rgb_depth_hstack = std::make_shared<geometry::Image>();
@@ -353,7 +360,6 @@ int do_recording(uint8_t device_index,
             HstackRGBDepth(im_rgbd, *im_rgb_depth_hstack);
         }
 
-        // im_depth = std::make_shared<geometry::Image>(im_rgbd->depth_);
         vis.UpdateGeometry();
         vis.PollEvents();
         vis.UpdateRender();
@@ -368,18 +374,20 @@ int do_recording(uint8_t device_index,
                     if (result == K4A_WAIT_RESULT_TIMEOUT) {
                         break;
                     } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
-                        std::cerr << "Runtime error: k4a_imu_get_sample() "
-                                     "returned "
-                                  << result << std::endl;
+                        utility::LogError(
+                                "Runtime error: k4a_imu_get_sample() "
+                                "returned %d\n",
+                                result);
                         break;
                     }
                     k4a_result_t write_result =
                             k4a_record_write_imu_sample(recording, sample);
                     if (K4A_FAILED(write_result)) {
-                        std::cerr << "Runtime error: "
-                                     "k4a_record_write_imu_sample() "
-                                     "returned "
-                                  << write_result << std::endl;
+                        utility::LogError(
+                                "Runtime error: "
+                                "k4a_record_write_imu_sample() "
+                                "returned %d\n",
+                                write_result);
                         break;
                     }
                 } while (!exiting && result != K4A_WAIT_RESULT_FAILED &&
@@ -390,13 +398,13 @@ int do_recording(uint8_t device_index,
         }
         k4a_capture_release(capture);
 
-    } while (!exiting && result != K4A_WAIT_RESULT_FAILED &&
+    } while (!record_finished && !exiting && result != K4A_WAIT_RESULT_FAILED &&
              (recording_length < 0 ||
               (clock() - recording_start < recording_length * CLOCKS_PER_SEC)));
 
     if (!exiting) {
         exiting = true;
-        std::cout << "Stopping recording..." << std::endl;
+        utility::LogInfo("Stopping recording...\n");
     }
 
     if (record_imu) {
@@ -404,11 +412,10 @@ int do_recording(uint8_t device_index,
     }
     k4a_device_stop_cameras(device);
 
-    std::cout << "Saving recording..." << std::endl;
+    utility::LogInfo("Saving recording...\n");
     CHECK(k4a_record_flush(recording), device);
     k4a_record_close(recording);
-
-    std::cout << "Done" << std::endl;
+    utility::LogInfo("Done\n");
 
     k4a_device_close(device);
 

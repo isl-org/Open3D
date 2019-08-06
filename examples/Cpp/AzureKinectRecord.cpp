@@ -5,9 +5,6 @@
 
 #include "assert.h"
 
-#include "Open3D/IO/Sensor/CmdParser.h"
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
-
 #if defined(_WIN32)
 #include <windows.h>
 #endif
@@ -17,6 +14,7 @@
 #include <csignal>
 #include <ctime>
 #include <iostream>
+#include <Open3D/Open3D.h>
 
 using namespace open3d;
 
@@ -103,7 +101,7 @@ int main(int argc, char **argv) {
     k4a_image_format_t recording_color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
     k4a_color_resolution_t recording_color_resolution =
             K4A_COLOR_RESOLUTION_1080P;
-    k4a_depth_mode_t recording_depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
+    k4a_depth_mode_t recording_depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED;
     k4a_fps_t recording_rate = K4A_FRAMES_PER_SECOND_30;
     bool recording_rate_set = false;
     bool recording_imu_enabled = true;
@@ -174,7 +172,7 @@ int main(int argc, char **argv) {
             });
     cmd_parser.RegisterOption(
             "-d|--depth-mode",
-            "Set the depth sensor mode (default: NFOV_UNBINNED), Available "
+            "Set the depth sensor mode (default: WFOV_2X2BINNED), Available "
             "options:\n"
             "NFOV_2X2BINNED, NFOV_UNBINNED, WFOV_2X2BINNED, WFOV_UNBINNED, "
             "PASSIVE_IR, OFF",
@@ -288,14 +286,13 @@ int main(int argc, char **argv) {
     try {
         args_left = cmd_parser.ParseCmd(argc, argv);
     } catch (CmdParser::ArgumentError &e) {
-        std::cerr << e.option() << ": " << e.what() << std::endl;
+        open3d::utility::LogError("{}: {}\n", e.option(), e.what());
         return 1;
     }
     if (args_left == 1) {
         recording_filename = argv[argc - 1];
     } else {
-        std::cout << "k4arecorder [options] output.mkv" << std::endl
-                  << std::endl;
+        open3d::utility::LogInfo("k4arecorder [options] output.mkv\n");
         cmd_parser.PrintOptions();
         return 0;
     }
@@ -307,17 +304,17 @@ int main(int argc, char **argv) {
             // Default to max supported frame rate
             recording_rate = K4A_FRAMES_PER_SECOND_15;
         } else {
-            std::cerr << "Error: 30 Frames per second is not supported by this "
-                         "camera mode."
-                      << std::endl;
+            utility::LogError(
+                    "Error: 30 Frames per second is not supported by this "
+                    "camera mode.\n");
             return 1;
         }
     }
     if (subordinate_delay_off_master_usec > 0 &&
         wired_sync_mode != K4A_WIRED_SYNC_MODE_SUBORDINATE) {
-        std::cerr << "--sync-delay is only valid if --external-sync is set to "
-                     "Subordinate."
-                  << std::endl;
+        utility::LogError(
+                "--sync-delay is only valid if --external-sync is set to "
+                "Subordinate.\n");
         return 1;
     }
 
@@ -350,7 +347,7 @@ int main(int argc, char **argv) {
     device_config.subordinate_delay_off_master_usec =
             subordinate_delay_off_master_usec;
 
-    return io::do_recording((uint8_t)device_index, recording_filename,
-                            recording_length, &device_config,
-                            recording_imu_enabled, absoluteExposureValue);
+    return io::Record((uint8_t)device_index, recording_filename,
+                      recording_length, &device_config, recording_imu_enabled,
+                      absoluteExposureValue);
 }
