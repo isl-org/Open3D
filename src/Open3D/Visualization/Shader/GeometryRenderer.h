@@ -29,6 +29,7 @@
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Visualization/Shader/ImageMaskShader.h"
 #include "Open3D/Visualization/Shader/ImageShader.h"
+#include "Open3D/Visualization/Shader/RGBDImageShader.h"
 #include "Open3D/Visualization/Shader/NormalShader.h"
 #include "Open3D/Visualization/Shader/PhongShader.h"
 #include "Open3D/Visualization/Shader/PickingShader.h"
@@ -180,6 +181,21 @@ public:
 protected:
     ImageShaderForImage image_shader_;
 };
+
+class RGBDImageRenderer : public GeometryRenderer {
+public:
+    ~RGBDImageRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    RGBDImageShaderForImage rgbd_image_shader_;
+};
+
 
 class CoordinateFrameRenderer : public GeometryRenderer {
 public:
