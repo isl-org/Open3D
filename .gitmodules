@@ -25,3 +25,6 @@
 [submodule "3rdparty/jsoncpp"]
 	path = 3rdparty/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp
+[submodule "3rdparty/tinygltf"]
+	path = 3rdparty/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
