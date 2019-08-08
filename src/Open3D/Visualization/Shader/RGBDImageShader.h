@@ -34,6 +34,12 @@ namespace visualization {
 
 namespace glsl {
 
+enum ImageTextureMode {
+    Depth = 0,
+    RGB = 1,
+    Grayscale = 2
+};
+
 class RGBDImageShader : public ShaderWrapper {
 public:
     ~RGBDImageShader() override { Release(); }
@@ -66,9 +72,17 @@ protected:
     GLuint vertex_UV_;
     GLuint vertex_UV_buffer_;
     GLuint image_texture_;
-    GLuint image_texture_buffer_;
+    GLuint color_texture_buffer_;
+    GLuint depth_texture_;
+    GLuint depth_texture_buffer_;
     GLuint vertex_scale_;
+    GLuint texture_mode_;
+    GLuint depth_max_;
+    float depth_max_data_;
 
+    /* Switches corresponding to the glsl shader */
+    ImageTextureMode depth_texture_mode_;
+    ImageTextureMode color_texture_mode_;
     GLHelper::GLVector3f vertex_scale_data_;
 };
 

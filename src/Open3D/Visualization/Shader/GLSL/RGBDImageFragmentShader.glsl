@@ -1,8 +1,18 @@
 #version 330
 
 in vec2 UV;
-uniform sampler2D depth_texture;
+uniform sampler2D image_texture;
 
+
+/* built-in option to ensure RGB and D are handled in the same shader,
+   which can be used in 2 passes */
+#define DEPTH_TEXTURE_MODE 0
+#define RGB_TEXTURE_MODE 1
+#define GRAYSCALE_TEXTURE_MODE 2
+uniform int texture_mode;
+
+/* Decides the colormap of the depth image */
+uniform float depth_max;
 out vec4 FragColor;
 
 float Interpolate(float value, float y0, float x0, float y1, float x1) {
@@ -25,14 +35,17 @@ float Jet(float value /* already clamped in [0, 1] */) {
     }
 }
 
-void main()
-{
-    float depth_min = 0.0;
-    float depth_max = 3.0;
-    float depth = texture(depth_texture, UV).r;
-    depth = clamp(depth, depth_min, depth_max);
-    depth = (depth - depth_min) / (depth_max - depth_min);
-    FragColor = vec4(Jet(2 * depth - 1.5),
-                     Jet(2 * depth- 1),
-                     Jet(2 * depth - 0.5), 1);
+void main() {
+    if (texture_mode == DEPTH_TEXTURE_MODE) {
+        float depth = texture(image_texture, UV).r;
+        depth = clamp(depth, 0, depth_max);
+        depth = depth / depth_max;
+        depth = 2 * depth - 1;
+        FragColor = vec4(Jet(depth - 0.5), Jet(depth), Jet(depth + 0.5), 1);
+    } else if (texture_mode == RGB_TEXTURE_MODE) {
+        FragColor = texture(image_texture, UV);
+    } else if (texture_mode == GRAYSCALE_TEXTURE_MODE) {
+        float scalar = texture(image_texture, UV).r;
+        FragColor = vec4(vec3(scalar), 1);
+    }
 }
