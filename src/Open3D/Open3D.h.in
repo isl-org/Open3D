@@ -26,8 +26,7 @@
 
 #pragma once
 
-// Core
-
+// Note: do not modify Open3D.h, modify Open3D.h.in instead
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Camera/PinholeCameraParameters.h"
 #include "Open3D/Camera/PinholeCameraTrajectory.h"
@@ -51,10 +50,6 @@
 #include "Open3D/IO/ClassIO/PoseGraphIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
-#ifdef BUILD_SENSOR
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
-#include "Open3D/IO/Sensor/MKVReader.h"
-#endif
 #include "Open3D/Integration/ScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
@@ -79,3 +74,9 @@
 #include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
+
+// clang-format off
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/CmdParser.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/MKVReader.h"

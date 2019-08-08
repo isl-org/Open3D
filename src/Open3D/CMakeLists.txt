@@ -1,3 +1,17 @@
+# Conditionally include header files in Open3D.h
+if(BUILD_AZURE_KINECT)
+    set(BUILD_AZURE_KINECT_COMMENT "")
+else()
+    set(BUILD_AZURE_KINECT_COMMENT "//")
+endif()
+
+
+# Configure a header file to pass the version settings to the source code
+configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3D.h.in"
+               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3D.h")
+configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
+               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h")
+
 # Subdirectories
 add_subdirectory(Camera)
 add_subdirectory(ColorMap)
@@ -65,8 +79,6 @@ if (BUILD_AZURE_KINECT)
     find_package(k4arecord QUIET)
     if (k4a_FOUND)
         message(STATUS "Enabling Azure Kinect Support")
-        add_definitions(-DBUILD_SENSOR)
-        message(STATUS "ADD #define BUILD_SENSOR")
     else ()
         message(FATAL_ERROR "Kinect SDK NOT found. Please install according to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
     endif ()

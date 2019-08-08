@@ -1,32 +1,38 @@
+# CMake configured files
+src/Open3D/Open3D.h
+src/Open3D/Open3DConfig.h
+src/Open3D/Visualization/Shader/Shader.h
+util/pip_package/setup.py
+
+# Temp directories
 build*/
 docs/_out/
-src/Sandbox/
-src/Open3D/Visualization/Shader/Shader.h
+util/pip_package/dist/
+util/conda_package/dist/
 doxygen/
+docs/python_api/
+node_modules/
+
+# Local configs
+_vimrc_local.vim
 .vs/
 .vscode/
-src/Open3D/Open3DConfig.h
-util/pip_package/setup.py
-open3d*.so
-open3d*.pyd
+
+# Build artifacts
+**/package-lock.json
 *.pyc
 __pycache__
 ._*
 .DS_Store
 .vscode
 .idea
-util/pip_package/dist/
-util/conda_package/dist/
-examples/Python/ReconstructionSystem/dataset/
 *.egg-info/
 *.ipynb_checkpoints/
 *.py[cod]
-node_modules/
-static/
-**/package-lock.json
 *.old*
-docs/python_api/
-_vimrc_local.vim
+
+# Example resources
+examples/Python/ReconstructionSystem/dataset/
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
 examples/TestData/voxelized.ply
@@ -45,4 +51,3 @@ examples/Python/Advanced/viewpoint.json
 examples/Python/Basic/copy_of_fragment.pcd
 examples/Python/Basic/copy_of_knot.ply
 examples/Python/Basic/copy_of_lena_color.jpg
-

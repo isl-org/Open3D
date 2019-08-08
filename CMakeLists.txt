@@ -51,10 +51,6 @@ set(PROJECT_DOCS    "http://www.open3d.org/docs")
 set(PROJECT_CODE    "https://github.com/intel-isl/Open3D")
 set(PROJECT_ISSUES  "https://github.com/intel-isl/Open3D/issues")
 
-# configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
-               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h")
-
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
 else()
