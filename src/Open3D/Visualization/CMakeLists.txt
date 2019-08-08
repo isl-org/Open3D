@@ -38,5 +38,5 @@ add_dependencies(Visualization ShaderFileTarget)
 
 ShowAndAbortOnWarning(Visualization)
 
-# Enforce dependencies for ExternalProject_Add
-target_link_libraries(Visualization ${3RDPARTY_LIBRARIES})
+# Enforce 3rd party dependencies
+add_dependencies(Visualization build_all_3rd_party_libs)

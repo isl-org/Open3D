@@ -5,5 +5,5 @@ file(GLOB_RECURSE ALL_SOURCE_FILES "*.cpp")
 add_library(Camera OBJECT ${ALL_SOURCE_FILES})
 ShowAndAbortOnWarning(Camera)
 
-# Enforce dependencies for ExternalProject_Add
-target_link_libraries(Camera ${3RDPARTY_LIBRARIES})
+# Enforce 3rd party dependencies
+add_dependencies(Camera build_all_3rd_party_libs)
