@@ -26,8 +26,15 @@
 
 #include "Open3D/IO/Sensor/MKVWriter.h"
 
+#include <k4a/k4a.h>
+#include <k4a/k4atypes.h>
+#include <k4arecord/playback.h>
+#include <k4arecord/record.h>
+
 namespace open3d {
 namespace io {
+
+MKVWriter::MKVWriter() : handle_(nullptr) {}
 
 int MKVWriter::Open(const std::string &filename,
                     const k4a_device_configuration_t &config,
@@ -44,6 +51,8 @@ int MKVWriter::Open(const std::string &filename,
 
     return 0;
 }
+
+bool MKVWriter::IsOpened() { return handle_ != nullptr; }
 
 int MKVWriter::SetMetadata(const MKVMetadata &metadata) {
     metadata_ = metadata;

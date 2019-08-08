@@ -26,23 +26,28 @@
 
 #pragma once
 
-#include <k4a/k4a.h>
-#include <k4arecord/playback.h>
-
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/MKVMetadata.h"
 #include "Open3D/Utility/IJsonConvertible.h"
+
+struct _k4a_playback_t;        // typedef _k4a_playback_t* k4a_device_t;
+struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_transformation_t;  // typedef _k4a_transformation_t*
+                               // k4a_transformation_t;
 
 namespace open3d {
 namespace io {
 
 class MKVReader {
 public:
+    MKVReader();
+    virtual ~MKVReader() {}
+
     /* Also shared by other RGBDSensor */
     static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
-            k4a_capture_t capture, k4a_transformation_t transformation);
+            _k4a_capture_t *capture, _k4a_transformation_t *transformation);
 
-    bool IsOpened() { return handle_ != nullptr; }
+    bool IsOpened();
     bool IsEOF() { return is_eof_; }
 
     int Open(const std::string &filename);
@@ -53,8 +58,8 @@ public:
     std::shared_ptr<geometry::RGBDImage> NextFrame();
 
 private:
-    k4a_playback_t handle_ = nullptr;
-    k4a_transformation_t transformation_ = nullptr;
+    _k4a_playback_t *handle_;
+    _k4a_transformation_t *transformation_;
     MKVMetadata metadata_;
     bool is_eof_ = false;
 

@@ -27,6 +27,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
+
 #include <assert.h>
 #include <Eigen/Core>
 #include <algorithm>
@@ -39,7 +41,6 @@
 
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/MKVReader.h"
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
 #include "Open3D/Visualization/Utility/ColorMap.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 

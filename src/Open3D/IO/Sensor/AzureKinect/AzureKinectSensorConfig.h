@@ -26,33 +26,22 @@
 
 #pragma once
 
-#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
 #include "Open3D/Utility/IJsonConvertible.h"
 
-enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
+struct _k4a_device_configuration_t;
 
 namespace open3d {
-
-namespace camera {
-class PinholeCameraIntrinsic;
-}
-
 namespace io {
 
-class MKVMetadata : public utility::IJsonConvertible {
+class AzureKinectSensorConfig : public RGBDSensorConfig {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    // Shared intrinsics betwee RGB & depth.
-    // We assume depth image is always warped to the color image system
-    camera::PinholeCameraIntrinsic intrinsics_;
-
-    std::string serial_number_ = "";
-    uint64_t stream_length_usec_ = 0;
-
-    bool enable_imu_ = false;
+    void ConvertFromNativeConfig(const _k4a_device_configuration_t &config);
+    _k4a_device_configuration_t ConvertToNativeConfig();
 };
 
 }  // namespace io

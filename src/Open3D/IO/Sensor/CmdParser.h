@@ -27,8 +27,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#ifndef CMDPARSER_H
-#define CMDPARSER_H
+#pragma once
 
 #include <functional>
 #include <iostream>
@@ -156,5 +155,3 @@ private:
     std::vector<std::pair<std::string, std::string>> m_cmd_usage;
 };
 }  // namespace CmdParser
-
-#endif /* CMDPARSER_H */

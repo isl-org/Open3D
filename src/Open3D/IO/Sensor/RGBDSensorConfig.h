@@ -26,6 +26,12 @@
 
 #pragma once
 
+#include "Open3D/Utility/IJsonConvertible.h"
+
 namespace open3d {
-namespace io {}
+namespace io {
+
+class RGBDSensorConfig : public utility::IJsonConvertible {};
+
+}  // namespace io
 }  // namespace open3d

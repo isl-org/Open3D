@@ -26,31 +26,37 @@
 
 #pragma once
 
-#include <k4a/k4a.h>
-#include <k4arecord/record.h>
-
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/MKVMetadata.h"
 #include "Open3D/Utility/IJsonConvertible.h"
+
+struct _k4a_device_configuration_t;  // typedef _k4a_device_configuration_t*
+                                     // k4a_device_configuration_t;
+struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
+struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
 
 namespace open3d {
 namespace io {
 
 class MKVWriter {
 public:
-    bool IsOpened() { return handle_ != nullptr; }
+    MKVWriter();
+    virtual ~MKVWriter() {}
+
+    bool IsOpened();
 
     /* We assume device is already set properly according to config */
     int Open(const std::string &filename,
-             const k4a_device_configuration_t &config,
-             k4a_device_t device);
+             const _k4a_device_configuration_t &config,
+             _k4a_device_t *device);
     void Close();
 
     int SetMetadata(const MKVMetadata &metadata);
-    int NextFrame(k4a_capture_t);
+    int NextFrame(_k4a_capture_t *);
 
 private:
-    k4a_record_t handle_ = nullptr;
+    _k4a_record_t *handle_;
     MKVMetadata metadata_;
 };
 }  // namespace io

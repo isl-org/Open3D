@@ -52,8 +52,8 @@
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
 #ifdef BUILD_SENSOR
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
 #include "Open3D/IO/Sensor/MKVReader.h"
-#include "Open3D/IO/Sensor/RGBDRecorder.h"
 #endif
 #include "Open3D/Integration/ScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"

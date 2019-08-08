@@ -27,11 +27,17 @@
 #include "Open3D/IO/Sensor/MKVReader.h"
 
 #include <json/json.h>
+#include <k4a/k4a.h>
+#include <k4a/k4atypes.h>
+#include <k4arecord/playback.h>
+#include <k4arecord/record.h>
 #include <turbojpeg.h>
 #include <iostream>
 
 namespace open3d {
 namespace io {
+
+MKVReader::MKVReader() : handle_(nullptr), transformation_(nullptr) {}
 
 std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
         std::shared_ptr<geometry::Image> &rgba) {
@@ -55,6 +61,8 @@ std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
 
     return rgb;
 }
+
+bool MKVReader::IsOpened() { return handle_ != nullptr; }
 
 std::string MKVReader::GetTagInMetadata(const std::string &tag_name) {
     char res_buffer[256];

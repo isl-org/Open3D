@@ -27,13 +27,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#ifndef RECORDER_H
-#define RECORDER_H
+#pragma once
 
-#include <k4a/k4a.h>
 #include <atomic>
 #include <memory>
-#include "CmdParser.h"
+
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "Open3D/IO/Sensor/CmdParser.h"
+
+struct _k4a_device_configuration_t;
 
 namespace open3d {
 
@@ -44,6 +46,15 @@ class Image;
 
 namespace io {
 
+class RGBDRecorder {
+public:
+    RGBDRecorder(const RGBDSensorConfig& rgbd_sensor_config);
+    virtual ~RGBDRecorder() {}
+
+public:
+    virtual int Run() = 0;
+};
+
 extern std::atomic_bool exiting;
 
 void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
@@ -52,10 +63,8 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
 int Record(uint8_t device_index,
            char* recording_filename,
            int recording_length,
-           k4a_device_configuration_t* device_config,
+           _k4a_device_configuration_t* device_config,
            bool record_imu,
            int32_t absoluteExposureValue);
 }  // namespace io
 }  // namespace open3d
-
-#endif /* RECORDER_H */

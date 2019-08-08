@@ -24,8 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/Sensor/RGBDSensor.h"
+#pragma once
+
+#include <memory>
+
+#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
 
 namespace open3d {
-namespace io {}
+
+namespace geometry {
+class RGBDImage;
+};
+
+namespace io {
+
+class RGBDSensor {
+    RGBDSensor(const RGBDSensorConfig& rgbd_sensor_config);
+    virtual ~RGBDSensor(){};
+    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const = 0;
+};
+
+}  // namespace io
 }  // namespace open3d
