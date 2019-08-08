@@ -1,16 +1,17 @@
-# build
-file(GLOB_RECURSE IO_ALL_SOURCE_FILES "*.cpp")
-file(GLOB_RECURSE IO_ALL_HEADER_FILES "*.h")
+# Build
+file(GLOB_RECURSE CLASS_IO_SOURCE_FILES "ClassIO/*.cpp")
+file(GLOB_RECURSE FILE_FORMAT_SOURCE_FILES "FileFormat/*.cpp")
+set(IO_ALL_SOURCE_FILES ${CLASS_IO_SOURCE_FILES} ${FILE_FORMAT_SOURCE_FILES})
+
 file(GLOB         RPLY_SOURCE_FILES "../../../3rdparty/rply/*.c")
 file(GLOB         LIBLZF_SOURCE_FILES "../../../3rdparty/liblzf/*.c")
 
-# create object library
+# Create object library
 add_library(IO OBJECT
-            ${IO_ALL_HEADER_FILES}
             ${IO_ALL_SOURCE_FILES}
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
 ShowAndAbortOnWarning(IO)
 
-# Enforce dependencies for ExternalProject_Add
-target_link_libraries(IO ${3RDPARTY_LIBRARIES})
+# Enforce 3rd party dependencies
+add_dependencies(IO build_all_3rd_party_libs)

@@ -100,7 +100,6 @@ endif ()
 
 # JPEG
 message(STATUS "Building libjpeg-turbo from source")
-# add_subdirectory(libjpeg-turbo)
 include(libjpeg-turbo/libjpeg-turbo.cmake)
 
 # JSONCPP

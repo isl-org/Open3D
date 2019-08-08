@@ -74,4 +74,6 @@ if (NOT BUILD_SHARED_LIBS)
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
+add_dependencies(build_all_3rd_party_libs turbojpeg)
+
 
