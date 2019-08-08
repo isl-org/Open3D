@@ -48,7 +48,7 @@ ExternalProject_Add(
         -DCMAKE_C_FLAGS=${DCMAKE_C_FLAGS}
         -DENABLE_STATIC=ON
         -DWITH_SIMD=${WITH_SIMD}
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+        -DCMAKE_INSTALL_PREFIX=${3RDPARTY_INSTALL_PREFIX}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 )
 
@@ -58,11 +58,17 @@ add_dependencies(turbojpeg ext_turbojpeg)
 
 ExternalProject_Get_Property(ext_turbojpeg SOURCE_DIR BINARY_DIR)
 
-set(turbojpeg_LIB_FILES
-    ${CMAKE_BINARY_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}turbojpeg${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
+if (WIN32)
+    set(turbojpeg_LIB_FILES
+        ${3RDPARTY_INSTALL_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}turbojpeg-static${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
+else ()
+    set(turbojpeg_LIB_FILES
+        ${3RDPARTY_INSTALL_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}turbojpeg${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
+endif()
 target_include_directories(turbojpeg SYSTEM INTERFACE
-    ${CMAKE_BINARY_DIR}/include
+    ${3RDPARTY_INSTALL_PREFIX}/include
 )
 target_link_libraries(turbojpeg INTERFACE
     ${turbojpeg_LIB_FILES}
