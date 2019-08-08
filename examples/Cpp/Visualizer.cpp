@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
         }
 
         int rgbd_type =
-            utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
+                utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
         auto color_ptr = std::make_shared<geometry::Image>();
         auto depth_ptr = std::make_shared<geometry::Image>();
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
         }
 
         std::shared_ptr<geometry::RGBDImage> (*CreateRGBDImage)(
-            const geometry::Image&, const geometry::Image&, bool);
+                const geometry::Image &, const geometry::Image &, bool);
         if (rgbd_type == 0)
             CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
         else if (rgbd_type == 1)
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
             CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
         auto rgbd_ptr = CreateRGBDImage(*color_ptr, *depth_ptr, false);
         visualization::DrawGeometries({rgbd_ptr}, "RGBD", depth_ptr->width_ * 2,
-            depth_ptr->height_);
+                                      depth_ptr->height_);
 
     } else if (option == "depth") {
         auto image_ptr = io::CreateImageFromFile(argv[2]);

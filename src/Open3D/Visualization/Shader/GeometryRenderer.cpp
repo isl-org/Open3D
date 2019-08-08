@@ -250,7 +250,7 @@ bool RGBDImageRenderer::Render(const RenderOption &option,
 }
 
 bool RGBDImageRenderer::AddGeometry(
-    std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
         geometry::Geometry::GeometryType::RGBDImage) {
         return false;

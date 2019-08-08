@@ -34,18 +34,16 @@ namespace visualization {
 
 namespace glsl {
 
-enum ImageTextureMode {
-    Depth = 0,
-    RGB = 1,
-    Grayscale = 2
-};
+enum ImageTextureMode { Depth = 0, RGB = 1, Grayscale = 2 };
 
 class RGBDImageShader : public ShaderWrapper {
 public:
     ~RGBDImageShader() override { Release(); }
 
 protected:
-    RGBDImageShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    RGBDImageShader(const std::string &name) : ShaderWrapper(name) {
+        Compile();
+    }
 
 protected:
     bool Compile() final;

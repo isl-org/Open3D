@@ -45,7 +45,8 @@ public:
     RGBDImage() : Geometry2D(Geometry::GeometryType::RGBDImage) {}
     RGBDImage(const Image &color, const Image &depth)
         : Geometry2D(Geometry::GeometryType::RGBDImage),
-        color_(color), depth_(depth) {}
+          color_(color),
+          depth_(depth) {}
 
     ~RGBDImage() override {
         color_.Clear();
