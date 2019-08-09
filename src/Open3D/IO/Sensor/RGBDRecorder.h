@@ -33,7 +33,7 @@ namespace io {
 
 class RGBDRecorder {
 public:
-    RGBDRecorder(const RGBDSensorConfig& rgbd_sensor_config);
+    RGBDRecorder(const RGBDSensorConfig& sensor_config) {}
     virtual ~RGBDRecorder() {}
 
 public:

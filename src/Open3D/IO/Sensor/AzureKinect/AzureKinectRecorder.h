@@ -33,6 +33,7 @@
 #include <memory>
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "Open3D/IO/Sensor/RGBDRecorder.h"
 
 struct _k4a_device_configuration_t;
 
@@ -45,17 +46,11 @@ class Image;
 
 namespace io {
 
-class RGBDRecorder {
+class AzureKinectRecorder : public RGBDRecorder {
 public:
-    RGBDRecorder(const RGBDSensorConfig& rgbd_sensor_config);
-    virtual ~RGBDRecorder() {}
-
-public:
-    virtual int Run() = 0;
+    AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config);
+    virtual ~AzureKinectRecorder();
 };
-
-void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
-                    geometry::Image& im_rgb_depth_hstack);
 
 int Record(uint8_t device_index,
            char* recording_filename,
