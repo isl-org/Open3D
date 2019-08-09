@@ -49,3 +49,13 @@ TEST(AzureKinectSensorConfig, DefaultConstructor) {
     io::AzureKinectSensorConfig kinect_config;
     EXPECT_TRUE(kinect_config.config_ == ref_config);
 }
+
+TEST(AzureKinectSensorConfig, CustomConstructor) {
+    io::AzureKinectSensorConfig default_config;
+    EXPECT_EQ(default_config.config_["color_format"], "NFOV_2X2BINNED");
+
+    std::unordered_map<std::string, std::string> custom_config_map;
+    custom_config_map["color_format"] = "WFOV_2X2BINNED";
+    io::AzureKinectSensorConfig custom_config(custom_config_map);
+    EXPECT_EQ(custom_config.config_["color_format"], "WFOV_2X2BINNED");
+}

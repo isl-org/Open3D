@@ -32,6 +32,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "Open3D/Utility/Console.h"
+
 namespace open3d {
 namespace io {
 
@@ -45,8 +47,29 @@ AzureKinectSensorConfig::AzureKinectSensorConfig() {
     config_["subordinate_delay_off_master_usec"] = "0";
 }
 
+bool AzureKinectSensorConfig::IsValidConfig(
+        const std::unordered_map<std::string, std::string> &config,
+        bool verbose) {
+    // TODO: validate key value with enum
+    return true;
+}
+bool AzureKinectSensorConfig::IsValidConfig(const Json::Value &value,
+                                            bool verbose) {
+    // TODO: validate key value with enum
+    return true;
+}
+
 AzureKinectSensorConfig::AzureKinectSensorConfig(
-        const std::unordered_map<std::string, std::string> &config) {}
+        const std::unordered_map<std::string, std::string> &config)
+    : AzureKinectSensorConfig() {
+    if (!IsValidConfig(config)) {
+        utility::LogWarning("Invalid configs, default configs will be used.\n");
+        return;
+    }
+    for (const auto &it : config) {
+        config_[it.first] = it.second;
+    }
+}
 
 bool AzureKinectSensorConfig::ConvertToJsonValue(Json::Value &value) const {
     return true;

@@ -55,6 +55,12 @@ public:
 public:
     // To avoid including k4a or json header, configs is stored in a map
     std::unordered_map<std::string, std::string> config_;
+
+protected:
+    static bool IsValidConfig(
+            const std::unordered_map<std::string, std::string> &config,
+            bool verbose = true);
+    static bool IsValidConfig(const Json::Value &value, bool verbose = true);
 };
 
 }  // namespace io
