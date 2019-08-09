@@ -40,15 +40,23 @@ typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 /// RGBDImage is for a pair of registered color and depth images,
 /// viewed from the same view, of the same resolution.
 /// If you have other format, convert it first.
-class RGBDImage {
+class RGBDImage : public Geometry2D {
 public:
-    RGBDImage() {}
+    RGBDImage() : Geometry2D(Geometry::GeometryType::RGBDImage) {}
     RGBDImage(const Image &color, const Image &depth)
-        : color_(color), depth_(depth) {}
-    ~RGBDImage() {
+        : Geometry2D(Geometry::GeometryType::RGBDImage),
+          color_(color),
+          depth_(depth) {}
+
+    ~RGBDImage() override {
         color_.Clear();
         depth_.Clear();
     };
+
+    RGBDImage &Clear() override;
+    bool IsEmpty() const override;
+    Eigen::Vector2d GetMinBound() const override;
+    Eigen::Vector2d GetMaxBound() const override;
 
     /// Factory function to create an RGBD Image from color and depth Images
     static std::shared_ptr<RGBDImage> CreateFromColorAndDepth(

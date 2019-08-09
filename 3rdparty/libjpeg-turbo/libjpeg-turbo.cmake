@@ -32,7 +32,7 @@ endif()
 if (WITH_SIMD)
     message(STATUS "NASM assembler enabled")
 else()
-    message(WARNING "NASM assembler not found - libjpeg-turbo performance may suffer")
+    message(STATUS "NASM assembler not found - libjpeg-turbo performance may suffer")
 endif()
 
 ExternalProject_Add(
@@ -47,27 +47,35 @@ ExternalProject_Add(
         -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
         -DCMAKE_C_FLAGS=${DCMAKE_C_FLAGS}
         -DENABLE_STATIC=ON
+        -DENABLE_SHARED=OFF
         -DWITH_SIMD=${WITH_SIMD}
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+        -DCMAKE_INSTALL_PREFIX=${3RDPARTY_INSTALL_PREFIX}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 )
 
-# This generates turbojpeg-static target
 add_library(turbojpeg INTERFACE)
 add_dependencies(turbojpeg ext_turbojpeg)
 
-ExternalProject_Get_Property(ext_turbojpeg SOURCE_DIR BINARY_DIR)
+# If MSVC, the OUTPUT_NAME was set to turbojpeg-static
+if(MSVC)
+    set(lib_name "turbojpeg-static")
+else()
+    set(lib_name "turbojpeg")
+endif()
+
+# For linking with Open3D's after installation
+set(JPEG_TURBO_LIBRARIES ${lib_name})
 
 set(turbojpeg_LIB_FILES
-    ${CMAKE_BINARY_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}turbojpeg${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${3RDPARTY_INSTALL_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
+
 target_include_directories(turbojpeg SYSTEM INTERFACE
-    ${CMAKE_BINARY_DIR}/include
+    ${3RDPARTY_INSTALL_PREFIX}/include
 )
 target_link_libraries(turbojpeg INTERFACE
     ${turbojpeg_LIB_FILES}
 )
-set(JPEG_TURBO_LIBRARIES turbojpeg)
 
 if (NOT BUILD_SHARED_LIBS)
     install(FILES ${turbojpeg_LIB_FILES}

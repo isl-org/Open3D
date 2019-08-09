@@ -200,11 +200,24 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
     source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
 endmacro(ADD_SOURCE_GROUP)
 
-# 3rdparty libraries using the ExternalProject_Add approach will install
-# headers in Open3D/build/include. We prioritize this include directory by
-# putting it in front, to avoid mistakenly including other header files of the
-# same name.
-include_directories(${CMAKE_BINARY_DIR}/include)
+# 3rd-party projects that are added with external_project_add will be installed
+# with this prefix. E.g.
+# - 3RDPARTY_INSTALL_PREFIX: Open3D/build/3rdparty_install
+# - Headers: Open3D/build/3rdparty_install/include/extern_lib.h
+# - Libraries: Open3D/build/3rdparty_install/lib/extern_lib.a
+set(3RDPARTY_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/3rdparty_install")
+
+# 3rd-party libraries using the ExternalProject_Add approach will install
+# headers in Open3D/build/3rdparty_install/include. We prioritize this include
+# directory by putting it in front, to avoid mistakenly including other header
+# files of the same name.
+include_directories(${3RDPARTY_INSTALL_PREFIX}/include)
+
+# 3rd-party libraries using the ExternalProject_Add approach will install
+# libs in Open3D/build/3rdparty_install/lib.
+# This isn't required for Ubuntu/Mac since the link directory info is propagated
+# with the interface library. We still need this for Windows.
+link_directories(${CMAKE_PROJECT_NAME} ${3RDPARTY_INSTALL_PREFIX}/lib)
 
 # Handling dependencies
 add_subdirectory(3rdparty)

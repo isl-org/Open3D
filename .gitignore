@@ -6,6 +6,8 @@ util/pip_package/setup.py
 
 # Temp directories
 build*/
+cmake-build-debug/
+cmake-build-release/
 docs/_out/
 util/pip_package/dist/
 util/conda_package/dist/

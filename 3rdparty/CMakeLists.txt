@@ -1,3 +1,4 @@
+
 find_package(PkgConfig QUIET)
 find_package(OpenGL    QUIET)
 find_package(pybind11  QUIET)
@@ -100,13 +101,7 @@ endif ()
 
 # JPEG
 message(STATUS "Building libjpeg-turbo from source")
-# add_subdirectory(libjpeg-turbo)
 include(libjpeg-turbo/libjpeg-turbo.cmake)
-
-if (BUILD_JPEG_TURBO)
-    message(STATUS "Building LIBJPEG_TURBO from source (BUILD_JPEG_TURBO=ON)")
-    add_subdirectory(libjpeg-turbo)
-endif()
 
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
