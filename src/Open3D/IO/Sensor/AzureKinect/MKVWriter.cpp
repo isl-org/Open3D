@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/Sensor/MKVWriter.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVWriter.h"
 
 #include <k4a/k4a.h>
 #include <k4a/k4atypes.h>

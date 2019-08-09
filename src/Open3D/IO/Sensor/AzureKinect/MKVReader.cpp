@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/Sensor/MKVReader.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVReader.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>

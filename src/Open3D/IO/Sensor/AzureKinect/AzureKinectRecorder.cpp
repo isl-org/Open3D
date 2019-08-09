@@ -40,7 +40,7 @@
 #include <k4arecord/record.h>
 
 #include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/IO/Sensor/MKVReader.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVReader.h"
 #include "Open3D/Visualization/Utility/ColorMap.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 

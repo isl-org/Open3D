@@ -33,7 +33,6 @@
 #include <memory>
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "Open3D/IO/Sensor/CmdParser.h"
 
 struct _k4a_device_configuration_t;
 

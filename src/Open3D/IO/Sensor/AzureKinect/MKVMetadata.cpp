@@ -24,40 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
 
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/IO/Sensor/MKVMetadata.h"
-#include "Open3D/Utility/IJsonConvertible.h"
-
-struct _k4a_device_configuration_t;  // typedef _k4a_device_configuration_t*
-                                     // k4a_device_configuration_t;
-struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
-struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
-struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
+#include <json/json.h>
 
 namespace open3d {
 namespace io {
 
-class MKVWriter {
-public:
-    MKVWriter();
-    virtual ~MKVWriter() {}
+bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
+    intrinsics_.ConvertToJsonValue(value);
+    value["serial_number_"] = serial_number_;
+    value["stream_length_usec"] = stream_length_usec_;
+    value["enable_imu"] = enable_imu_;
 
-    bool IsOpened();
+    return true;
+}
+bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
+    intrinsics_.ConvertFromJsonValue(value);
+    serial_number_ = value["serial_number"].asString();
+    stream_length_usec_ = value["stream_length_usec"].asUInt64();
+    enable_imu_ = value["enable_imu"].asBool();
 
-    /* We assume device is already set properly according to config */
-    int Open(const std::string &filename,
-             const _k4a_device_configuration_t &config,
-             _k4a_device_t *device);
-    void Close();
-
-    int SetMetadata(const MKVMetadata &metadata);
-    int NextFrame(_k4a_capture_t *);
-
-private:
-    _k4a_record_t *handle_;
-    MKVMetadata metadata_;
-};
+    return true;
+}
 }  // namespace io
 }  // namespace open3d

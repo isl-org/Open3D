@@ -15,6 +15,7 @@
 #include <ctime>
 #include <iostream>
 
+#include "CmdParser.h"
 #include "Open3D/Open3D.h"
 
 using namespace open3d;
