@@ -158,6 +158,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
         const std::unordered_map<std::string, std::string> &config,
         bool verbose) {
     bool rc = true;
+
     // No extra keys
     for (const auto &it : config) {
         if (standard_config.find(it.first) == standard_config.end()) {
@@ -167,88 +168,78 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // // config["color_format"]
-    // if (string_to_k4a_image_format_t.count(config["color_format"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning("IsValidConfig: color_format invalid\n");
-    //     }
-    // }
+    // config["color_format"]
+    if (config.count("color_format") != 0 &&
+        string_to_k4a_image_format_t.count(config.at("color_format")) == 0) {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning("IsValidConfig: color_format invalid\n");
+        }
+    }
 
-    // // config["color_resolution"]
-    // if (string_to_k4a_color_resolution_t.count(config["color_resolution"]) ==
-    //     0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning("IsValidConfig: color_resolution invalid\n");
-    //     }
-    // }
+    // config["color_resolution"]
+    if (config.count("color_resolution") != 0 &&
+        string_to_k4a_color_resolution_t.count(config.at("color_resolution")) ==
+                0) {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning("IsValidConfig: color_resolution invalid\n");
+        }
+    }
 
-    // // config["depth_mode"]
-    // if (string_to_k4a_depth_mode_t.count(config["depth_mode"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning("IsValidConfig: depth_mode invalid\n");
-    //     }
-    // }
+    // config["depth_mode"]
+    if (config.count("depth_mode") != 0 &&
+        string_to_k4a_depth_mode_t.count(config.at("depth_mode")) == 0) {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning("IsValidConfig: depth_mode invalid\n");
+        }
+    }
 
-    // // config["camera_fps"]
-    // if (string_to_k4a_camera_fps_t.count(config["camera_fps"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning("IsValidConfig: camera_fps invalid\n");
-    //     }
-    // }
+    // config["camera_fps"]
+    if (config.count("camera_fps") != 0 &&
+        string_to_k4a_fps_t.count(config.at("camera_fps")) == 0) {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning("IsValidConfig: camera_fps invalid\n");
+        }
+    }
 
-    // // config["synchronized_images_only"]
-    // if (string_to_k4a_synchronized_images_only_t.count(
-    //             config["synchronized_images_only"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning(
-    //                 "IsValidConfig: synchronized_images_only invalid\n");
-    //     }
-    // }
+    // config["synchronized_images_only"]
+    if (config.count("synchronized_images_only") != 0 &&
+        config.at("synchronized_images_only") != "true" &&
+        config.at("synchronized_images_only") != "false") {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning(
+                    "IsValidConfig: synchronized_images_only invalid\n");
+        }
+    }
 
-    // // config["depth_delay_off_color_u]
-    // if (string_to_k4a_depth_delay_off_color__t.count(
-    //             config["depth_delay_off_color_"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning(
-    //                 "IsValidConfig: depth_delay_off_color_ invalid\n");
-    //     }
-    // }
+    // config["depth_delay_off_color_u]
 
-    // // config["wired_sync_mode"]
-    // if (string_to_k4a_wired_sync_mode_t.count(config["wired_sync_mode"]) ==
-    // 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning("IsValidConfig: wired_sync_mode invalid\n");
-    //     }
-    // }
+    // config["wired_sync_mode"]
+    if (config.count("wired_sync_mode") != 0 &&
+        string_to_k4a_wired_sync_mode_t.count(config.at("wired_sync_mode")) ==
+                0) {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning("IsValidConfig: wired_sync_mode invalid\n");
+        }
+    }
 
-    // // config["subordinate_delay_off_master_u]
-    // if (string_to_k4a_subordinate_delay_off_master__t.count(
-    //             config["subordinate_delay_off_master_"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning(
-    //                 "IsValidConfig: subordinate_delay_off_master_
-    //                 invalid\n");
-    //     }
-    // }
+    // config["subordinate_delay_off_master_u]
 
-    // // config["disable_streaming_indicator"]
-    // if (string_to_k4a_disable_streaming_indicator_t.count(
-    //             config["disable_streaming_indicator"]) == 0) {
-    //     rc = false;
-    //     if (verbose) {
-    //         utility::LogWarning(
-    //                 "IsValidConfig: disable_streaming_indicator invalid\n");
-    //     }
-    // }
+    // config["disable_streaming_indicator"]
+    if (config.count("disable_streaming_indicator") != 0 &&
+        config.at("disable_streaming_indicator") != "true" &&
+        config.at("disable_streaming_indicator") != "false") {
+        rc = false;
+        if (verbose) {
+            utility::LogWarning(
+                    "IsValidConfig: disable_streaming_indicator invalid\n");
+        }
+    }
 
     return rc;
 }
