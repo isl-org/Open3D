@@ -97,7 +97,6 @@ static std::string k4a_wired_sync_mode_t_to_string(
     return convert_map[k4a_wired_sync_mode];
 }
 
-///////////////////////////////////
 static k4a_image_format_t string_to_k4a_image_format_t(
         const std::string &value) {
     static std::unordered_map<std::string, k4a_image_format_t> convert_map({
