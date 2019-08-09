@@ -29,6 +29,7 @@
 #include <json/json.h>
 #include <k4a/k4a.h>
 #include <k4a/k4atypes.h>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -157,7 +158,7 @@ static k4a_wired_sync_mode_t string_to_k4a_wired_sync_mode_t(
     return convert_map[value];
 }
 
-static std::unordered_map<std::string, std::string> defult_config{
+static std::unordered_map<std::string, std::string> standard_config{
         {"color_format", "K4A_IMAGE_FORMAT_COLOR_MJPG"},
         {"color_resolution", "K4A_COLOR_RESOLUTION_1080P"},
         {"depth_mode", "K4A_DEPTH_MODE_WFOV_2X2BINNED"},
@@ -169,18 +170,107 @@ static std::unordered_map<std::string, std::string> defult_config{
         {"disable_streaming_indicator", "false"},
 };
 
-AzureKinectSensorConfig::AzureKinectSensorConfig() { config_ = defult_config; }
+AzureKinectSensorConfig::AzureKinectSensorConfig() {
+    config_ = standard_config;
+}
 
 bool AzureKinectSensorConfig::IsValidConfig(
         const std::unordered_map<std::string, std::string> &config,
         bool verbose) {
-    // TODO: validate key value with enum
-    return true;
-}
-bool AzureKinectSensorConfig::IsValidConfig(const Json::Value &value,
-                                            bool verbose) {
-    // TODO: validate key value with enum
-    return true;
+    bool rc = true;
+    // No extra keys
+    for (const auto &it : config) {
+        if (standard_config.find(it.first) == standard_config.end()) {
+            rc = false;
+            utility::LogWarning("IsValidConfig: Unrecognized key {}\n",
+                                it.first);
+        }
+    }
+
+    // // config["color_format"]
+    // if (string_to_k4a_image_format_t.count(config["color_format"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning("IsValidConfig: color_format invalid\n");
+    //     }
+    // }
+
+    // // config["color_resolution"]
+    // if (string_to_k4a_color_resolution_t.count(config["color_resolution"]) ==
+    //     0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning("IsValidConfig: color_resolution invalid\n");
+    //     }
+    // }
+
+    // // config["depth_mode"]
+    // if (string_to_k4a_depth_mode_t.count(config["depth_mode"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning("IsValidConfig: depth_mode invalid\n");
+    //     }
+    // }
+
+    // // config["camera_fps"]
+    // if (string_to_k4a_camera_fps_t.count(config["camera_fps"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning("IsValidConfig: camera_fps invalid\n");
+    //     }
+    // }
+
+    // // config["synchronized_images_only"]
+    // if (string_to_k4a_synchronized_images_only_t.count(
+    //             config["synchronized_images_only"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning(
+    //                 "IsValidConfig: synchronized_images_only invalid\n");
+    //     }
+    // }
+
+    // // config["depth_delay_off_color_u]
+    // if (string_to_k4a_depth_delay_off_color__t.count(
+    //             config["depth_delay_off_color_"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning(
+    //                 "IsValidConfig: depth_delay_off_color_ invalid\n");
+    //     }
+    // }
+
+    // // config["wired_sync_mode"]
+    // if (string_to_k4a_wired_sync_mode_t.count(config["wired_sync_mode"]) ==
+    // 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning("IsValidConfig: wired_sync_mode invalid\n");
+    //     }
+    // }
+
+    // // config["subordinate_delay_off_master_u]
+    // if (string_to_k4a_subordinate_delay_off_master__t.count(
+    //             config["subordinate_delay_off_master_"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning(
+    //                 "IsValidConfig: subordinate_delay_off_master_
+    //                 invalid\n");
+    //     }
+    // }
+
+    // // config["disable_streaming_indicator"]
+    // if (string_to_k4a_disable_streaming_indicator_t.count(
+    //             config["disable_streaming_indicator"]) == 0) {
+    //     rc = false;
+    //     if (verbose) {
+    //         utility::LogWarning(
+    //                 "IsValidConfig: disable_streaming_indicator invalid\n");
+    //     }
+    // }
+
+    return rc;
 }
 
 AzureKinectSensorConfig::AzureKinectSensorConfig(
@@ -216,6 +306,11 @@ void AzureKinectSensorConfig::ConvertFromNativeConfig(
     config_["subordinate_delay_off_master_usec"] = std::to_string(k4a_config.subordinate_delay_off_master_usec);
     config_["disable_streaming_indicator"]       = k4a_config.disable_streaming_indicator ? "true" : "false";
     // clang-format on
+    if (!IsValidConfig(config_)) {
+        utility::LogError(
+                "Internal error, invalid configs. Maybe SDK version is "
+                "mismatched.\n");
+    }
 }
 
 k4a_device_configuration_t AzureKinectSensorConfig::ConvertToNativeConfig() {

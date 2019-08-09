@@ -60,7 +60,6 @@ protected:
     static bool IsValidConfig(
             const std::unordered_map<std::string, std::string> &config,
             bool verbose = true);
-    static bool IsValidConfig(const Json::Value &value, bool verbose = true);
 };
 
 }  // namespace io
