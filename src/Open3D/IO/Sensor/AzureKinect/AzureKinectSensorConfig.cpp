@@ -24,39 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 
-#include "Open3D/Geometry/RGBDImage.h"
-#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
-#include "Open3D/Utility/IJsonConvertible.h"
-
-struct _k4a_device_configuration_t;  // _k4a_device_configuration_t
-struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
-struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
-struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
+#include <json/json.h>
+#include <k4a/k4a.h>
+#include <k4a/k4atypes.h>
 
 namespace open3d {
 namespace io {
 
-class MKVWriter {
-public:
-    MKVWriter();
-    virtual ~MKVWriter() {}
+bool AzureKinectSensorConfig::ConvertToJsonValue(Json::Value &value) const {
+    return true;
+}
 
-    bool IsOpened();
+bool AzureKinectSensorConfig::ConvertFromJsonValue(const Json::Value &value) {
+    return true;
+}
 
-    /* We assume device is already set properly according to config */
-    int Open(const std::string &filename,
-             const _k4a_device_configuration_t &config,
-             _k4a_device_t *device);
-    void Close();
+void AzureKinectSensorConfig::ConvertFromNativeConfig(
+        const _k4a_device_configuration_t &config) {}
 
-    int SetMetadata(const MKVMetadata &metadata);
-    int NextFrame(_k4a_capture_t *);
+_k4a_device_configuration_t AzureKinectSensorConfig::ConvertToK4AConfig() {
+    _k4a_device_configuration_t k4a_config;
+    return k4a_config;
+}
 
-private:
-    _k4a_record_t *handle_;
-    MKVMetadata metadata_;
-};
 }  // namespace io
 }  // namespace open3d

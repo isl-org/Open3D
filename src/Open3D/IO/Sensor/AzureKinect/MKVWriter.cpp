@@ -37,7 +37,7 @@ namespace io {
 MKVWriter::MKVWriter() : handle_(nullptr) {}
 
 int MKVWriter::Open(const std::string &filename,
-                    const k4a_device_configuration_t &config,
+                    const _k4a_device_configuration_t &config,
                     k4a_device_t device) {
     if (IsOpened()) {
         Close();

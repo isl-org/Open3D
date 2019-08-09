@@ -26,6 +26,9 @@
 
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
 #include "Open3D/IO/Sensor/RGBDSensorConfig.h"
 #include "Open3D/Utility/IJsonConvertible.h"
 
@@ -34,6 +37,7 @@ struct _k4a_device_configuration_t;
 namespace open3d {
 namespace io {
 
+// Alternative implementation of _k4a_device_configuration_t with string values
 class AzureKinectSensorConfig : public RGBDSensorConfig {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
@@ -41,7 +45,11 @@ public:
 
 public:
     void ConvertFromNativeConfig(const _k4a_device_configuration_t &config);
-    _k4a_device_configuration_t ConvertToNativeConfig();
+    _k4a_device_configuration_t ConvertToK4AConfig();
+
+protected:
+    // To avoid including k4a or json header, configs is stored in a map
+    std::unordered_map<std::string, std::string> config_;
 };
 
 }  // namespace io
