@@ -215,7 +215,7 @@ void AzureKinectSensorConfig::ConvertFromNativeConfig(
     // clang-format on
 }
 
-k4a_device_configuration_t AzureKinectSensorConfig::ConvertToK4AConfig() {
+k4a_device_configuration_t AzureKinectSensorConfig::ConvertToNativeConfig() {
     k4a_device_configuration_t k4a_config;
     // clang-format off
     k4a_config.color_format                      = string_to_k4a_image_format_t(config_["color_format"]);

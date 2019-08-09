@@ -36,19 +36,44 @@
 
 using namespace open3d;
 
-TEST(AzureKinectSensorConfig, DefaultConstructor) {
-    std::unordered_map<std::string, std::string> ref_config;
-    ref_config["color_format"] = "K4A_IMAGE_FORMAT_COLOR_MJPG";
-    ref_config["color_resolution"] = "K4A_COLOR_RESOLUTION_1080P";
-    ref_config["depth_mode"] = "K4A_DEPTH_MODE_WFOV_2X2BINNED";
-    ref_config["camera_fps"] = "K4A_FRAMES_PER_SECOND_30";
-    ref_config["wired_sync_mode"] = "K4A_WIRED_SYNC_MODE_STANDALONE";
-    ref_config["depth_delay_off_color_usec"] = "0";
-    ref_config["subordinate_delay_off_master_usec"] = "0";
-    ref_config["disable_streaming_indicator"] = "false";
+static std::unordered_map<std::string, std::string> defult_config{
+        {"color_format", "K4A_IMAGE_FORMAT_COLOR_MJPG"},
+        {"color_resolution", "K4A_COLOR_RESOLUTION_1080P"},
+        {"depth_mode", "K4A_DEPTH_MODE_WFOV_2X2BINNED"},
+        {"camera_fps", "K4A_FRAMES_PER_SECOND_30"},
+        {"synchronized_images_only", "false"},
+        {"depth_delay_off_color_usec", "0"},
+        {"wired_sync_mode", "K4A_WIRED_SYNC_MODE_STANDALONE"},
+        {"subordinate_delay_off_master_usec", "0"},
+        {"disable_streaming_indicator", "false"},
+};
 
+static std::unordered_map<std::string, std::string> special_config{
+        {"color_format", "K4A_IMAGE_FORMAT_COLOR_NV12"},
+        {"color_resolution", "K4A_COLOR_RESOLUTION_720P"},
+        {"depth_mode", "K4A_DEPTH_MODE_WFOV_UNBINNED"},
+        {"camera_fps", "K4A_FRAMES_PER_SECOND_5"},
+        {"synchronized_images_only", "true"},
+        {"depth_delay_off_color_usec", "12"},
+        {"wired_sync_mode", "K4A_WIRED_SYNC_MODE_MASTER"},
+        {"subordinate_delay_off_master_usec", "34"},
+        {"disable_streaming_indicator", "true"},
+};
+
+static k4a_device_configuration_t special_native_config = {
+        K4A_IMAGE_FORMAT_COLOR_NV12,
+        K4A_COLOR_RESOLUTION_720P,
+        K4A_DEPTH_MODE_WFOV_UNBINNED,
+        K4A_FRAMES_PER_SECOND_5,
+        true,
+        12,
+        K4A_WIRED_SYNC_MODE_MASTER,
+        34,
+        true};
+
+TEST(AzureKinectSensorConfig, DefaultConstructor) {
     io::AzureKinectSensorConfig kinect_config;
-    EXPECT_TRUE(kinect_config.config_ == ref_config);
+    EXPECT_TRUE(kinect_config.config_ == defult_config);
 }
 
 TEST(AzureKinectSensorConfig, CustomConstructor) {
@@ -64,30 +89,17 @@ TEST(AzureKinectSensorConfig, CustomConstructor) {
 }
 
 TEST(AzureKinectSensorConfig, ConvertFromNativeConfig) {
-    // Use non-default values to check
-    k4a_device_configuration_t k4a_config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-    k4a_config.color_format = K4A_IMAGE_FORMAT_COLOR_NV12;
-    k4a_config.color_resolution = K4A_COLOR_RESOLUTION_720P;
-    k4a_config.depth_mode = K4A_DEPTH_MODE_WFOV_UNBINNED;
-    k4a_config.camera_fps = K4A_FRAMES_PER_SECOND_5;
-    k4a_config.wired_sync_mode = K4A_WIRED_SYNC_MODE_MASTER;
-    k4a_config.depth_delay_off_color_usec = 12;
-    k4a_config.subordinate_delay_off_master_usec = 34;
-    k4a_config.disable_streaming_indicator = true;
-
-    std::unordered_map<std::string, std::string> ref_config;
-    ref_config["color_format"] = "K4A_IMAGE_FORMAT_COLOR_NV12";
-    ref_config["color_resolution"] = "K4A_COLOR_RESOLUTION_720P";
-    ref_config["depth_mode"] = "K4A_DEPTH_MODE_WFOV_UNBINNED";
-    ref_config["camera_fps"] = "K4A_FRAMES_PER_SECOND_5";
-    ref_config["wired_sync_mode"] = "K4A_WIRED_SYNC_MODE_MASTER";
-    ref_config["depth_delay_off_color_usec"] = "12";
-    ref_config["subordinate_delay_off_master_usec"] = "34";
-    ref_config["disable_streaming_indicator"] = "true";
-
+    // Use non-default configs to check
     io::AzureKinectSensorConfig kinect_config;
-    kinect_config.ConvertFromNativeConfig(k4a_config);
-    EXPECT_TRUE(kinect_config.config_ == ref_config);
+    kinect_config.ConvertFromNativeConfig(special_native_config);
+    EXPECT_TRUE(kinect_config.config_ == special_config);
 }
 
-TEST(AzureKinectSensorConfig, ConvertToNativeConfig) {}
+TEST(AzureKinectSensorConfig, ConvertToNativeConfig) {
+    io::AzureKinectSensorConfig kinect_config_a(special_config);
+    k4a_device_configuration_t native_config_a =
+            kinect_config_a.ConvertToNativeConfig();
+    io::AzureKinectSensorConfig kinect_config_b;
+    kinect_config_b.ConvertFromNativeConfig(native_config_a);
+    EXPECT_EQ(kinect_config_a.config_, kinect_config_b.config_);
+}
