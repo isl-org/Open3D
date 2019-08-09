@@ -329,6 +329,7 @@ int Record(uint8_t device_index,
 
     std::shared_ptr<geometry::Image> im_rgb_depth_hstack = nullptr;
 
+    std::shared_ptr<geometry::RGBDImage> vis_rgbd_ = nullptr;
     do {
         result = k4a_device_get_capture(device, &capture, timeout_ms);
         if (result == K4A_WAIT_RESULT_TIMEOUT) {
@@ -347,12 +348,11 @@ int Record(uint8_t device_index,
             continue;
         }
 
-        if (im_rgb_depth_hstack == nullptr) {
-            im_rgb_depth_hstack = std::make_shared<geometry::Image>();
-            HstackRGBDepth(im_rgbd, *im_rgb_depth_hstack);
-            vis.AddGeometry(im_rgb_depth_hstack);
+        if (vis_rgbd_ == nullptr) {
+            vis_rgbd_ = im_rgbd;
+            vis.AddGeometry(vis_rgbd_);
         } else {
-            HstackRGBDepth(im_rgbd, *im_rgb_depth_hstack);
+            *vis_rgbd_ = *im_rgbd;
         }
 
         vis.UpdateGeometry();

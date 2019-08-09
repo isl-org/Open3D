@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
                                 return true;
                             });
 
-    std::shared_ptr<geometry::Image> im_rgb_depth_hstack = nullptr;
+    std::shared_ptr<geometry::RGBDImage> rgbd_vis = nullptr;
     while (!mkv_reader.IsEOF()) {
         if (stop) break;
 
@@ -77,12 +77,11 @@ int main(int argc, char **argv) {
             std::shared_ptr<geometry::RGBDImage> rgbd = mkv_reader.NextFrame();
             if (rgbd == nullptr) continue;
 
-            if (im_rgb_depth_hstack == nullptr) {
-                im_rgb_depth_hstack = std::make_shared<geometry::Image>();
-                io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
-                vis.AddGeometry(im_rgb_depth_hstack);
+            if (rgbd_vis == nullptr) {
+                rgbd_vis = std::make_shared<geometry::RGBDImage>();
+                vis.AddGeometry(rgbd_vis);
             } else {
-                io::HstackRGBDepth(rgbd, *im_rgb_depth_hstack);
+                *rgbd_vis = *rgbd;
             }
         }
 

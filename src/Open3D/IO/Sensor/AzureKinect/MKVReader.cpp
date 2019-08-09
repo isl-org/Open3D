@@ -210,9 +210,10 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
     k4a_image_release(k4a_depth);
     k4a_image_release(k4a_transformed_depth);
 
-    return geometry::RGBDImage::CreateFromColorAndDepth(
-            *color, *depth, /*depth_scale*/ 1000, /*depth_trunc*/ 3,
-            /*convert_rgb_to_intensity */ false);
+    auto rgbd_ptr = std::make_shared<geometry::RGBDImage>();
+    rgbd_ptr->color_ = *color;
+    rgbd_ptr->depth_ = *depth;
+    return rgbd_ptr;
 }
 
 std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
