@@ -170,8 +170,6 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
         }                                                                  \
     }
 
-std::atomic_bool exiting(false);
-
 int Record(uint8_t device_index,
            char* recording_filename,
            int recording_length,
@@ -285,7 +283,7 @@ int Record(uint8_t device_index,
     vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
                             [&](visualization::Visualizer* vis) {
                                 record_finished = true;
-                                utility::LogInfo("Recording finished\n");
+                                utility::LogInfo("Recording finished.\n");
                                 return false;
                             });
 
@@ -300,7 +298,7 @@ int Record(uint8_t device_index,
     // Wait for the first capture in a loop so Ctrl-C will still exit.
     clock_t first_capture_start = clock();
     k4a_wait_result_t result = K4A_WAIT_RESULT_TIMEOUT;
-    while (!exiting &&
+    while (!record_finished &&
            (clock() - first_capture_start) <
                    (CLOCKS_PER_SEC * timeout_sec_for_first_capture)) {
         result = k4a_device_get_capture(device, &capture, 100);
@@ -316,7 +314,7 @@ int Record(uint8_t device_index,
         }
     }
 
-    if (exiting) {
+    if (record_finished) {
         k4a_device_close(device);
         return 0;
     } else if (result == K4A_WAIT_RESULT_TIMEOUT) {
@@ -325,8 +323,9 @@ int Record(uint8_t device_index,
     }
 
     if (recording_length <= 0) {
-        utility::LogInfo("Press [Ctrl-C] or [ESC] to stop recording.\n");
-        utility::LogInfo("Press [SPACE] to start recording.\n");
+        utility::LogInfo(
+                "In the visulizer window, press [SPACE] to start recording, "
+                "press [ESC] to exit\n");
     }
 
     clock_t recording_start = clock();
@@ -390,7 +389,7 @@ int Record(uint8_t device_index,
                                 write_result);
                         break;
                     }
-                } while (!exiting && result != K4A_WAIT_RESULT_FAILED &&
+                } while (!record_finished && result != K4A_WAIT_RESULT_FAILED &&
                          (recording_length < 0 ||
                           (clock() - recording_start <
                            recording_length * CLOCKS_PER_SEC)));
@@ -398,21 +397,18 @@ int Record(uint8_t device_index,
         }
         k4a_capture_release(capture);
 
-    } while (!record_finished && !exiting && result != K4A_WAIT_RESULT_FAILED &&
+    } while (!record_finished && result != K4A_WAIT_RESULT_FAILED &&
              (recording_length < 0 ||
               (clock() - recording_start < recording_length * CLOCKS_PER_SEC)));
-
-    if (!exiting) {
-        exiting = true;
-        utility::LogInfo("Stopping recording...\n");
-    }
 
     if (record_imu) {
         k4a_device_stop_imu(device);
     }
     k4a_device_stop_cameras(device);
 
-    utility::LogInfo("Saving recording...\n");
+    if (recording_length > 0) {
+        utility::LogInfo("Saving recording...\n");
+    }
     CHECK(k4a_record_flush(recording), device);
     k4a_record_close(recording);
     utility::LogInfo("Done\n");

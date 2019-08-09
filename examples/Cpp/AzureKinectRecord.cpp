@@ -5,10 +5,6 @@
 
 #include "assert.h"
 
-#if defined(_WIN32)
-#include <windows.h>
-#endif
-
 #include <math.h>
 #include <atomic>
 #include <csignal>
@@ -19,25 +15,6 @@
 #include "Open3D/Open3D.h"
 
 using namespace open3d;
-
-static time_t exiting_timestamp;
-
-static void signal_handler(int s) {
-    (void)s;  // Unused
-
-    if (!io::exiting) {
-        std::cout << "Stopping recording..." << std::endl;
-        exiting_timestamp = clock();
-        io::exiting = true;
-    }
-    // If Ctrl-C is received again after 1 second, force-stop the application
-    // since it's not responding.
-    else if (exiting_timestamp != 0 &&
-             clock() - exiting_timestamp > CLOCKS_PER_SEC) {
-        std::cout << "Forcing stop." << std::endl;
-        exit(1);
-    }
-}
 
 static int string_compare(const char *s1, const char *s2) {
     assert(s1 != NULL);
@@ -319,24 +296,6 @@ int main(int argc, char **argv) {
                 "Subordinate.\n");
         return 1;
     }
-
-#if defined(_WIN32)
-    SetConsoleCtrlHandler(
-            [](DWORD event) {
-                if (event == CTRL_C_EVENT || event == CTRL_BREAK_EVENT) {
-                    signal_handler(0);
-                    return TRUE;
-                }
-                return FALSE;
-            },
-            true);
-#else
-    struct sigaction act;
-    act.sa_handler = signal_handler;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    sigaction(SIGINT, &act, 0);
-#endif
 
     k4a_device_configuration_t device_config =
             K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;

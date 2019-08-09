@@ -54,8 +54,6 @@ public:
     virtual int Run() = 0;
 };
 
-extern std::atomic_bool exiting;
-
 void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
                     geometry::Image& im_rgb_depth_hstack);
 

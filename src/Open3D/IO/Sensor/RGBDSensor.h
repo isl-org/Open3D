@@ -26,7 +26,10 @@
 
 #pragma once
 
-#ifdef BUILD_SENSOR
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
-#include "Open3D/IO/Sensor/MKVReader.h"
-#endif
+namespace open3d {
+namespace io {
+
+class RGBDSensor {};
+
+}  // namespace io
+}  // namespace open3d
