@@ -28,7 +28,6 @@
 #include "Open3D/Geometry/RGBDImage.h"
 
 #include <k4a/k4a.h>
-#include <k4a/k4atypes.h>
 #include <memory>
 
 namespace open3d {

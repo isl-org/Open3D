@@ -28,7 +28,6 @@
 
 #include <json/json.h>
 #include <k4a/k4a.h>
-#include <k4a/k4atypes.h>
 #include <set>
 #include <string>
 #include <unordered_map>

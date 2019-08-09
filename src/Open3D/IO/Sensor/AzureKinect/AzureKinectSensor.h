@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <k4a/k4a.h>
 #include <memory>
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
@@ -42,6 +43,7 @@ public:
 
 protected:
     AzureKinectSensorConfig sensor_config_;
+    k4a_device_t k4a_device_;
 };
 
 }  // namespace io
