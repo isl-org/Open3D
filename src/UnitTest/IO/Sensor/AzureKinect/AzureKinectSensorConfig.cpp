@@ -24,30 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "TestUtility/UnitTest.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
 #include <k4a/k4atypes.h>
 
-namespace open3d {
-namespace io {
-
-bool AzureKinectSensorConfig::ConvertToJsonValue(Json::Value &value) const {
-    return true;
+TEST(AzureKinectSensorConfig, ConvertToJsonValue) {
+    unit_test::NotImplemented();
 }
-
-bool AzureKinectSensorConfig::ConvertFromJsonValue(const Json::Value &value) {
-    return true;
-}
-
-void AzureKinectSensorConfig::ConvertFromNativeConfig(
-        const k4a_device_configuration_t &config) {}
-
-k4a_device_configuration_t AzureKinectSensorConfig::ConvertToK4AConfig() {
-    k4a_device_configuration_t k4a_config;
-    return k4a_config;
-}
-
-}  // namespace io
-}  // namespace open3d
