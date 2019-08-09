@@ -77,7 +77,7 @@ static int string_compare(const char *s1, const char *s2) {
 int ParseArgs(int argc,
               char **argv,
               io::AzureKinectSensorConfig &sensor_config,
-              int &device_index,
+              int &sensor_index,
               std::string &recording_filename) {
     k4a_image_format_t recording_color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
     k4a_color_resolution_t recording_color_resolution =
@@ -101,8 +101,8 @@ int ParseArgs(int argc,
     cmd_parser.RegisterOption(
             "--device", "Specify the device index to use (default: 0)", 1,
             [&](const std::vector<char *> &args) {
-                device_index = std::stoi(args[0]);
-                if (device_index < 0 || device_index > 255)
+                sensor_index = std::stoi(args[0]);
+                if (sensor_index < 0 || sensor_index > 255)
                     throw std::runtime_error("Device index must 0-255");
             });
     cmd_parser.RegisterOption(
@@ -276,14 +276,14 @@ int ParseArgs(int argc,
 }
 
 int main(int argc, char **argv) {
-    io::AzureKinectSensorConfig sensor_config;
-    int device_index = 0;
+    int sensor_index = 0;
     std::string recording_filename;
-    if (ParseArgs(argc, argv, sensor_config, device_index,
+    io::AzureKinectSensorConfig sensor_config;
+    if (ParseArgs(argc, argv, sensor_config, sensor_index,
                   recording_filename) != 0) {
         utility::LogError("Parse args error\n");
     }
 
-    io::AzureKinectRecorder recorder(sensor_config, (size_t)device_index);
+    io::AzureKinectRecorder recorder(sensor_config, sensor_index);
     return recorder.Record(recording_filename);
 }

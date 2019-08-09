@@ -42,7 +42,7 @@ class AzureKinectSensor : public RGBDSensor {
 public:
     AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
     virtual ~AzureKinectSensor();
-    virtual int Connect(size_t device_index) override;
+    virtual int Connect(size_t sensor_index) override;
     virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
 
 protected:

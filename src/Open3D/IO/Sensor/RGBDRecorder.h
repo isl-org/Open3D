@@ -35,6 +35,7 @@ class RGBDRecorder {
 public:
     RGBDRecorder() {}
     virtual ~RGBDRecorder() {}
+    virtual int Record(const std::string& recording_filename) = 0;
 };
 
 }  // namespace io

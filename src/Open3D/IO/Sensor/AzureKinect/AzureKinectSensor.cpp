@@ -53,7 +53,7 @@ AzureKinectSensor::AzureKinectSensor(
 
 AzureKinectSensor::~AzureKinectSensor(){};
 
-int AzureKinectSensor::Connect(size_t device_index) {
+int AzureKinectSensor::Connect(size_t sensor_index) {
     // Convert to k4a native config
     k4a_device_configuration_t device_config =
             sensor_config_.ConvertToNativeConfig();
@@ -61,11 +61,11 @@ int AzureKinectSensor::Connect(size_t device_index) {
     // Check available devices
     const size_t installed_devices =
             static_cast<size_t>(k4a_device_get_installed_count());
-    if (device_index >= installed_devices) {
+    if (sensor_index >= installed_devices) {
         utility::LogError("Device not found.\n");
         return 1;
     }
-    if (K4A_FAILED(k4a_device_open(device_index, &device_))) {
+    if (K4A_FAILED(k4a_device_open(sensor_index, &device_))) {
         utility::LogError("Runtime error: k4a_device_open() failed\n");
         return 1;
     }
