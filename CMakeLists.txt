@@ -4,8 +4,13 @@
 
 cmake_minimum_required(VERSION 3.0.0)
 
+add_custom_target(build_all_3rd_party_libs
+    COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
+)
+
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
+    set(OpenGL_GL_PREFERENCE LEGACY)
 endif()
 
 # central location for specifying the Open3D version
@@ -71,7 +76,6 @@ option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
-option(BUILD_JPEG                "Build jpeg from source"                   OFF)
 option(BUILD_JSONCPP             "Build json from source"                   OFF)
 option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
@@ -198,6 +202,25 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
     file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
     source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
 endmacro(ADD_SOURCE_GROUP)
+
+# 3rd-party projects that are added with external_project_add will be installed
+# with this prefix. E.g.
+# - 3RDPARTY_INSTALL_PREFIX: Open3D/build/3rdparty_install
+# - Headers: Open3D/build/3rdparty_install/include/extern_lib.h
+# - Libraries: Open3D/build/3rdparty_install/lib/extern_lib.a
+set(3RDPARTY_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/3rdparty_install")
+
+# 3rd-party libraries using the ExternalProject_Add approach will install
+# headers in Open3D/build/3rdparty_install/include. We prioritize this include
+# directory by putting it in front, to avoid mistakenly including other header
+# files of the same name.
+include_directories(${3RDPARTY_INSTALL_PREFIX}/include)
+
+# 3rd-party libraries using the ExternalProject_Add approach will install
+# libs in Open3D/build/3rdparty_install/lib.
+# This isn't required for Ubuntu/Mac since the link directory info is propagated
+# with the interface library. We still need this for Windows.
+link_directories(${CMAKE_PROJECT_NAME} ${3RDPARTY_INSTALL_PREFIX}/lib)
 
 # Handling dependencies
 add_subdirectory(3rdparty)
