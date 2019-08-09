@@ -150,6 +150,12 @@ void AzureKinectSensorConfig::ConvertFromNativeConfig(
     config_["camera_fps"] = k4a_fps_t_to_string(k4a_config.camera_fps);
     config_["wired_sync_mode"] =
             k4a_wired_sync_mode_t_to_string(k4a_config.wired_sync_mode);
+    config_["depth_delay_off_color_usec"] =
+            std::to_string(k4a_config.depth_delay_off_color_usec);
+    config_["subordinate_delay_off_master_usec"] =
+            std::to_string(k4a_config.subordinate_delay_off_master_usec);
+    config_["disable_streaming_indicator"] =
+            k4a_config.disable_streaming_indicator ? "true" : "false";
 }
 
 k4a_device_configuration_t AzureKinectSensorConfig::ConvertToK4AConfig() {
