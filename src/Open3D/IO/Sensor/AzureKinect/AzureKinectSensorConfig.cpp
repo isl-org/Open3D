@@ -38,13 +38,14 @@ namespace open3d {
 namespace io {
 
 AzureKinectSensorConfig::AzureKinectSensorConfig() {
-    config_["color_format"] = "NFOV_2X2BINNED";
+    config_["color_format"] = "K4A_IMAGE_FORMAT_COLOR_MJPG";
     config_["color_resolution"] = "K4A_COLOR_RESOLUTION_1080P";
     config_["depth_mode"] = "K4A_DEPTH_MODE_WFOV_2X2BINNED";
     config_["camera_fps"] = "K4A_FRAMES_PER_SECOND_30";
     config_["wired_sync_mode"] = "K4A_WIRED_SYNC_MODE_STANDALONE";
     config_["depth_delay_off_color_usec"] = "0";
     config_["subordinate_delay_off_master_usec"] = "0";
+    config_["disable_streaming_indicator"] = "false";
 }
 
 bool AzureKinectSensorConfig::IsValidConfig(
