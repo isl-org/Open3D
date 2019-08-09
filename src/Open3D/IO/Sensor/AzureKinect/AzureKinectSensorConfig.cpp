@@ -284,18 +284,19 @@ void AzureKinectSensorConfig::ConvertFromNativeConfig(
     }
 }
 
-k4a_device_configuration_t AzureKinectSensorConfig::ConvertToNativeConfig() {
+k4a_device_configuration_t AzureKinectSensorConfig::ConvertToNativeConfig()
+        const {
     k4a_device_configuration_t k4a_config;
     // clang-format off
-    k4a_config.color_format                      = string_to_k4a_image_format_t.at(config_["color_format"]);
-    k4a_config.color_resolution                  = string_to_k4a_color_resolution_t.at(config_["color_resolution"]);
-    k4a_config.depth_mode                        = string_to_k4a_depth_mode_t.at(config_["depth_mode"]);
-    k4a_config.camera_fps                        = string_to_k4a_fps_t.at(config_["camera_fps"]);
-    k4a_config.synchronized_images_only          = config_["synchronized_images_only"] == "true";
-    k4a_config.depth_delay_off_color_usec        = static_cast<int32_t>(std::stoi(config_["depth_delay_off_color_usec"]));
-    k4a_config.wired_sync_mode                   = string_to_k4a_wired_sync_mode_t.at(config_["wired_sync_mode"]);
-    k4a_config.subordinate_delay_off_master_usec = static_cast<uint32_t>(std::stoi(config_["subordinate_delay_off_master_usec"]));
-    k4a_config.disable_streaming_indicator       = config_["disable_streaming_indicator"] == "true";
+    k4a_config.color_format                      = string_to_k4a_image_format_t.at(config_.at("color_format"));
+    k4a_config.color_resolution                  = string_to_k4a_color_resolution_t.at(config_.at("color_resolution"));
+    k4a_config.depth_mode                        = string_to_k4a_depth_mode_t.at(config_.at("depth_mode"));
+    k4a_config.camera_fps                        = string_to_k4a_fps_t.at(config_.at("camera_fps"));
+    k4a_config.synchronized_images_only          = config_.at("synchronized_images_only") == "true";
+    k4a_config.depth_delay_off_color_usec        = static_cast<int32_t>(std::stoi(config_.at("depth_delay_off_color_usec")));
+    k4a_config.wired_sync_mode                   = string_to_k4a_wired_sync_mode_t.at(config_.at("wired_sync_mode"));
+    k4a_config.subordinate_delay_off_master_usec = static_cast<uint32_t>(std::stoi(config_.at("subordinate_delay_off_master_usec")));
+    k4a_config.disable_streaming_indicator       = config_.at("disable_streaming_indicator") == "true";
     // clang-format on
     return k4a_config;
 }

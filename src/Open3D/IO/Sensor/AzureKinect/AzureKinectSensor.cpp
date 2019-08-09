@@ -24,24 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
+#include "Open3D/Geometry/RGBDImage.h"
 
+#include <k4a/k4a.h>
+#include <k4a/k4atypes.h>
 #include <memory>
-
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
-#include "Open3D/IO/Sensor/RGBDSensor.h"
 
 namespace open3d {
 namespace io {
 
-class AzureKinectSensor : public RGBDSensor {
-public:
-    AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
-    virtual ~AzureKinectSensor();
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
+AzureKinectSensor::AzureKinectSensor(
+        const AzureKinectSensorConfig& sensor_config)
+    : RGBDSensor(), sensor_config_(sensor_config) {
+    // Convert to k4a native config
+    // k4a_device_configuration_t k4a_config =
+    //         sensor_config_.ConvertToNativeConfig();
+}
 
-protected:
-    AzureKinectSensorConfig sensor_config_;
+AzureKinectSensor::~AzureKinectSensor(){};
+
+std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame() const {
+    auto im_rgbd = std::make_shared<geometry::RGBDImage>();
+    return im_rgbd;
 };
 
 }  // namespace io

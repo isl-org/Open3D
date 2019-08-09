@@ -39,9 +39,9 @@ class RGBDImage;
 namespace io {
 
 class RGBDSensor {
-    RGBDSensor(const RGBDSensorConfig& rgbd_sensor_config);
+public:
+    RGBDSensor() {}
     virtual ~RGBDSensor(){};
-
     virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const = 0;
 };
 

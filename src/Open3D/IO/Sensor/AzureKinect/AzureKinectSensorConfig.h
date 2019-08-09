@@ -50,7 +50,7 @@ public:
 
 public:
     void ConvertFromNativeConfig(const _k4a_device_configuration_t &k4a_config);
-    _k4a_device_configuration_t ConvertToNativeConfig();
+    _k4a_device_configuration_t ConvertToNativeConfig() const;
 
 public:
     // To avoid including k4a or json header, configs is stored in a map
