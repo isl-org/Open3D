@@ -77,5 +77,11 @@
 
 // clang-format off
 @BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/MKVReader.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/MKVWriter.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/RGBDRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/RGBDSensor.h"

@@ -35,15 +35,20 @@
 namespace open3d {
 namespace io {
 
+// Avoid including AzureKinectRecorder.h
+class AzureKinectRecorder;
+
 class AzureKinectSensor : public RGBDSensor {
 public:
     AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
     virtual ~AzureKinectSensor();
+    virtual int Connect(size_t device_index) override;
     virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
 
 protected:
     AzureKinectSensorConfig sensor_config_;
-    k4a_device_t k4a_device_;
+    k4a_device_t device_;
+    friend class AzureKinectRecorder;
 };
 
 }  // namespace io

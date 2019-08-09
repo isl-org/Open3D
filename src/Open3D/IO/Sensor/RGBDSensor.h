@@ -41,6 +41,7 @@ namespace io {
 class RGBDSensor {
 public:
     RGBDSensor() {}
+    virtual int Connect(size_t device_index) = 0;
     virtual ~RGBDSensor(){};
     virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const = 0;
 };

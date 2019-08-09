@@ -31,11 +31,11 @@
 
 #include <atomic>
 #include <memory>
+#include <string>
 
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 #include "Open3D/IO/Sensor/RGBDRecorder.h"
-
-struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 
 namespace open3d {
 
@@ -48,14 +48,16 @@ namespace io {
 
 class AzureKinectRecorder : public RGBDRecorder {
 public:
-    AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config);
+    AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
+                        size_t device_index);
     virtual ~AzureKinectRecorder();
+
+    int Record(const std::string& recording_filename);
+
+protected:
+    AzureKinectSensor sensor_;
+    size_t device_index_;
 };
 
-int Record(uint8_t device_index,
-           char* recording_filename,
-           _k4a_device_configuration_t* device_config,
-           bool record_imu,
-           int32_t absoluteExposureValue);
 }  // namespace io
 }  // namespace open3d

@@ -78,95 +78,61 @@ inline static uint32_t k4a_convert_fps_to_uint(k4a_fps_t fps) {
         }                                                                  \
     }
 
-int Record(uint8_t device_index,
-           char* recording_filename,
-           k4a_device_configuration_t* device_config,
-           bool record_imu,
-           int32_t absoluteExposureValue) {
+AzureKinectRecorder::AzureKinectRecorder(
+        const AzureKinectSensorConfig& sensor_config, size_t device_index)
+    : RGBDRecorder(),
+      sensor_(AzureKinectSensor(sensor_config)),
+      device_index_(device_index) {}
+
+AzureKinectRecorder::~AzureKinectRecorder() {}
+
+int AzureKinectRecorder::Record(const std::string& recording_filename) {
+    // Convert to k4a native config
+    k4a_device_configuration_t device_config =
+            sensor_.sensor_config_.ConvertToNativeConfig();
+
     const uint32_t installed_devices = k4a_device_get_installed_count();
-    if (device_index >= installed_devices) {
+    if (device_index_ >= installed_devices) {
         utility::LogError("Device not found.\n");
         return 1;
     }
+    sensor_.Connect(device_index_);
 
-    k4a_device_t device;
-    if (K4A_FAILED(k4a_device_open(device_index, &device))) {
-        utility::LogError("Runtime error: k4a_device_open() failed\n");
-        return 1;
-    }
-
-    char serial_number_buffer[256];
-    size_t serial_number_buffer_size = sizeof(serial_number_buffer);
-    CHECK(k4a_device_get_serialnum(device, serial_number_buffer,
-                                   &serial_number_buffer_size),
-          device);
-    k4a_hardware_version_t version_info;
-    CHECK(k4a_device_get_version(device, &version_info), device);
-
-    utility::LogInfo("Device serial number: {}\n", serial_number_buffer);
-    utility::LogInfo("Device version: {};\n",
-                     (version_info.firmware_build == K4A_FIRMWARE_BUILD_RELEASE
-                              ? "Rel"
-                              : "Dbg"));
-    utility::LogInfo("C: {}.{}.{};\n", version_info.rgb.major,
-                     version_info.rgb.minor, version_info.rgb.iteration);
-    utility::LogInfo("D: {}.{}.{}[{}.{}]\n", version_info.depth.major,
-                     version_info.depth.minor, version_info.depth.iteration,
-                     version_info.depth_sensor.major,
-                     version_info.depth_sensor.minor);
-    utility::LogInfo("A: {}.{}.{};\n", version_info.audio.major,
-                     version_info.audio.minor, version_info.audio.iteration);
-
-    uint32_t camera_fps = k4a_convert_fps_to_uint(device_config->camera_fps);
+    uint32_t camera_fps = k4a_convert_fps_to_uint(device_config.camera_fps);
 
     if (camera_fps <= 0 ||
-        (device_config->color_resolution == K4A_COLOR_RESOLUTION_OFF &&
-         device_config->depth_mode == K4A_DEPTH_MODE_OFF)) {
+        (device_config.color_resolution == K4A_COLOR_RESOLUTION_OFF &&
+         device_config.depth_mode == K4A_DEPTH_MODE_OFF)) {
         utility::LogError(
                 "Either the color or depth modes must be enabled to record.\n");
         return 1;
     }
 
-    if (absoluteExposureValue != 0) {
-        if (K4A_FAILED(k4a_device_set_color_control(
-                    device, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
-                    K4A_COLOR_CONTROL_MODE_MANUAL, absoluteExposureValue))) {
-            utility::LogError(
-                    "Runtime error: k4a_device_set_color_control() failed\n");
-        }
-    } else {
-        if (K4A_FAILED(k4a_device_set_color_control(
-                    device, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
-                    K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
-            utility::LogError(
-                    "Runtime error: k4a_device_set_color_control() failed\n");
-        }
-    }
-
-    CHECK(k4a_device_start_cameras(device, device_config), device);
-    if (record_imu) {
-        CHECK(k4a_device_start_imu(device), device);
+    // Assume absoluteExposureValue == 0
+    if (K4A_FAILED(k4a_device_set_color_control(
+                sensor_.device_, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
+                K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
+        utility::LogError(
+                "Runtime error: k4a_device_set_color_control() failed\n");
     }
 
     utility::LogInfo("Device started\n");
 
     k4a_record_t recording;
-    if (K4A_FAILED(k4a_record_create(recording_filename, device, *device_config,
+    if (K4A_FAILED(k4a_record_create(recording_filename.c_str(),
+                                     sensor_.device_, device_config,
                                      &recording))) {
-        utility::LogError("Unable to create recording file: %s\n",
+        utility::LogError("Unable to create recording file: {}\n",
                           recording_filename);
         return 1;
     }
 
-    if (record_imu) {
-        CHECK(k4a_record_add_imu_track(recording), device);
-    }
-    CHECK(k4a_record_write_header(recording), device);
+    CHECK(k4a_record_write_header(recording), sensor_.device_);
 
     // Get transformation
     k4a_calibration_t calibration;
-    k4a_device_get_calibration(device, device_config->depth_mode,
-                               device_config->color_resolution, &calibration);
+    k4a_device_get_calibration(sensor_.device_, device_config.depth_mode,
+                               device_config.color_resolution, &calibration);
     k4a_transformation_t transformation =
             k4a_transformation_create(&calibration);
 
@@ -197,7 +163,7 @@ int Record(uint8_t device_index,
     // Wait for the first capture before starting recording.
     k4a_capture_t capture;
     int32_t timeout_sec_for_first_capture = 60;
-    if (device_config->wired_sync_mode == K4A_WIRED_SYNC_MODE_SUBORDINATE) {
+    if (device_config.wired_sync_mode == K4A_WIRED_SYNC_MODE_SUBORDINATE) {
         timeout_sec_for_first_capture = 360;
         utility::LogInfo("[subordinate mode] Waiting for signal from master\n");
     }
@@ -208,7 +174,7 @@ int Record(uint8_t device_index,
     while (!record_finished &&
            (clock() - first_capture_start) <
                    (CLOCKS_PER_SEC * timeout_sec_for_first_capture)) {
-        result = k4a_device_get_capture(device, &capture, 100);
+        result = k4a_device_get_capture(sensor_.device_, &capture, 100);
         if (result == K4A_WAIT_RESULT_SUCCEEDED) {
             k4a_capture_release(capture);
             break;
@@ -222,7 +188,7 @@ int Record(uint8_t device_index,
     }
 
     if (record_finished) {
-        k4a_device_close(device);
+        k4a_device_close(sensor_.device_);
         return 0;
     } else if (result == K4A_WAIT_RESULT_TIMEOUT) {
         utility::LogInfo("Timed out waiting for first capture.\n");
@@ -239,7 +205,7 @@ int Record(uint8_t device_index,
 
     std::shared_ptr<geometry::RGBDImage> vis_rgbd_ = nullptr;
     do {
-        result = k4a_device_get_capture(device, &capture, timeout_ms);
+        result = k4a_device_get_capture(sensor_.device_, &capture, timeout_ms);
         if (result == K4A_WAIT_RESULT_TIMEOUT) {
             continue;
         } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
@@ -268,49 +234,21 @@ int Record(uint8_t device_index,
         vis.UpdateRender();
 
         if (record_on) {
-            CHECK(k4a_record_write_capture(recording, capture), device);
-
-            if (record_imu) {
-                do {
-                    k4a_imu_sample_t sample;
-                    result = k4a_device_get_imu_sample(device, &sample, 0);
-                    if (result == K4A_WAIT_RESULT_TIMEOUT) {
-                        break;
-                    } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
-                        utility::LogError(
-                                "Runtime error: k4a_imu_get_sample() "
-                                "returned %d\n",
-                                result);
-                        break;
-                    }
-                    k4a_result_t write_result =
-                            k4a_record_write_imu_sample(recording, sample);
-                    if (K4A_FAILED(write_result)) {
-                        utility::LogError(
-                                "Runtime error: "
-                                "k4a_record_write_imu_sample() "
-                                "returned %d\n",
-                                write_result);
-                        break;
-                    }
-                } while (!record_finished && result != K4A_WAIT_RESULT_FAILED);
-            }
+            CHECK(k4a_record_write_capture(recording, capture),
+                  sensor_.device_);
         }
         k4a_capture_release(capture);
 
     } while (!record_finished && result != K4A_WAIT_RESULT_FAILED);
 
-    if (record_imu) {
-        k4a_device_stop_imu(device);
-    }
-    k4a_device_stop_cameras(device);
+    k4a_device_stop_cameras(sensor_.device_);
 
     utility::LogInfo("Saving recording...\n");
-    CHECK(k4a_record_flush(recording), device);
+    CHECK(k4a_record_flush(recording), sensor_.device_);
     k4a_record_close(recording);
     utility::LogInfo("Done\n");
 
-    k4a_device_close(device);
+    k4a_device_close(sensor_.device_);
 
     return 0;
 }

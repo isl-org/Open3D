@@ -74,20 +74,20 @@ static int string_compare(const char *s1, const char *s2) {
     exit(0);
 }
 
-int main(int argc, char **argv) {
-    int device_index = 0;
+int ParseArgs(int argc,
+              char **argv,
+              io::AzureKinectSensorConfig &sensor_config,
+              int &device_index,
+              std::string &recording_filename) {
     k4a_image_format_t recording_color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
     k4a_color_resolution_t recording_color_resolution =
             K4A_COLOR_RESOLUTION_1080P;
     k4a_depth_mode_t recording_depth_mode = K4A_DEPTH_MODE_WFOV_2X2BINNED;
     k4a_fps_t recording_rate = K4A_FRAMES_PER_SECOND_30;
     bool recording_rate_set = false;
-    bool recording_imu_enabled = true;
     k4a_wired_sync_mode_t wired_sync_mode = K4A_WIRED_SYNC_MODE_STANDALONE;
     int32_t depth_delay_off_color_usec = 0;
     uint32_t subordinate_delay_off_master_usec = 0;
-    int absoluteExposureValue = 0;
-    char *recording_filename;
 
     CmdParser::OptionParser cmd_parser;
     cmd_parser.RegisterOption("-h|--help", "Prints this help", [&]() {
@@ -194,19 +194,6 @@ int main(int argc, char **argv) {
                 }
             });
     cmd_parser.RegisterOption(
-            "--imu", "Set the IMU recording mode (ON, OFF, default: ON)", 1,
-            [&](const std::vector<char *> &args) {
-                if (string_compare(args[0], "on") == 0) {
-                    recording_imu_enabled = true;
-                } else if (string_compare(args[0], "off") == 0) {
-                    recording_imu_enabled = false;
-                } else {
-                    std::ostringstream str;
-                    str << "Unknown imu mode specified: " << args[0];
-                    throw std::runtime_error(str.str());
-                }
-            });
-    cmd_parser.RegisterOption(
             "--external-sync",
             "Set the external sync mode (Master, Subordinate, Standalone "
             "default: Standalone)",
@@ -236,19 +223,6 @@ int main(int argc, char **argv) {
                             "External sync delay must be positive.");
                 }
                 subordinate_delay_off_master_usec = (uint32_t)delay;
-            });
-    cmd_parser.RegisterOption(
-            "-e|--exposure-control",
-            "Set manual exposure value (-11 to 1) for the RGB camera (default: "
-            "auto exposure)",
-            1, [&](const std::vector<char *> &args) {
-                int exposureValue = std::stoi(args[0]);
-                if (exposureValue < -11 || exposureValue > 1) {
-                    throw std::runtime_error(
-                            "Exposure value range is -11 to 1.");
-                }
-                absoluteExposureValue = static_cast<int32_t>(
-                        exp2f((float)exposureValue) * 1000000.0f);
             });
 
     int args_left = 0;
@@ -297,7 +271,19 @@ int main(int argc, char **argv) {
     device_config.depth_delay_off_color_usec = depth_delay_off_color_usec;
     device_config.subordinate_delay_off_master_usec =
             subordinate_delay_off_master_usec;
+    sensor_config.ConvertFromNativeConfig(device_config);
+    return 0;
+}
 
-    return io::Record((uint8_t)device_index, recording_filename, &device_config,
-                      recording_imu_enabled, absoluteExposureValue);
+int main(int argc, char **argv) {
+    io::AzureKinectSensorConfig sensor_config;
+    int device_index = 0;
+    std::string recording_filename;
+    if (ParseArgs(argc, argv, sensor_config, device_index,
+                  recording_filename) != 0) {
+        utility::LogError("Parse args error\n");
+    }
+
+    io::AzureKinectRecorder recorder(sensor_config, (size_t)device_index);
+    return recorder.Record(recording_filename);
 }
