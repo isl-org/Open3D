@@ -243,6 +243,27 @@ bool ImageRenderer::UpdateGeometry() {
     return true;
 }
 
+bool RGBDImageRenderer::Render(const RenderOption &option,
+                               const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
+    return rgbd_image_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool RGBDImageRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::RGBDImage) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool RGBDImageRenderer::UpdateGeometry() {
+    rgbd_image_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool CoordinateFrameRenderer::Render(const RenderOption &option,
                                      const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;

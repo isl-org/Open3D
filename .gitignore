@@ -1,4 +1,6 @@
 build*/
+cmake-build-debug/
+cmake-build-release/
 docs/_out/
 src/Sandbox/
 src/Open3D/Visualization/Shader/Shader.h

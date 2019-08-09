@@ -30,17 +30,22 @@
 
 #include "Open3D/Open3D.h"
 
+void PrintUsage() {
+    using namespace open3d;
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
+    utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
+    utility::LogInfo("    > Visualizer [rgbd] [color] [depth] [--rgbd_type]\n");
+    // clang-format on
+}
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 3) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::LogInfo("Usage:\n");
-        utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-        utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
-        // clang-format on
+        PrintUsage();
         return 1;
     }
 
@@ -142,6 +147,47 @@ int main(int argc, char *argv[]) {
         }
         visualization::DrawGeometries({image_ptr}, "Image", image_ptr->width_,
                                       image_ptr->height_);
+    } else if (option == "rgbd") {
+        if (argc < 4) {
+            PrintUsage();
+            return 1;
+        }
+
+        int rgbd_type =
+                utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
+        auto color_ptr = std::make_shared<geometry::Image>();
+        auto depth_ptr = std::make_shared<geometry::Image>();
+
+        if (io::ReadImage(argv[2], *color_ptr)) {
+            utility::LogInfo("Successfully read {}\n", argv[2]);
+        } else {
+            utility::LogError("Failed to read {}\n\n", argv[2]);
+            return 1;
+        }
+
+        if (io::ReadImage(argv[3], *depth_ptr)) {
+            utility::LogInfo("Successfully read {}\n", argv[3]);
+        } else {
+            utility::LogError("Failed to read {}\n\n", argv[3]);
+            return 1;
+        }
+
+        std::shared_ptr<geometry::RGBDImage> (*CreateRGBDImage)(
+                const geometry::Image &, const geometry::Image &, bool);
+        if (rgbd_type == 0)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
+        else if (rgbd_type == 1)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromTUMFormat;
+        else if (rgbd_type == 2)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromSUNFormat;
+        else if (rgbd_type == 3)
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromNYUFormat;
+        else
+            CreateRGBDImage = &geometry::RGBDImage::CreateFromRedwoodFormat;
+        auto rgbd_ptr = CreateRGBDImage(*color_ptr, *depth_ptr, false);
+        visualization::DrawGeometries({rgbd_ptr}, "RGBD", depth_ptr->width_ * 2,
+                                      depth_ptr->height_);
+
     } else if (option == "depth") {
         auto image_ptr = io::CreateImageFromFile(argv[2]);
         camera::PinholeCameraIntrinsic camera;

@@ -40,6 +40,7 @@ public:
         TriangleMesh = 5,
         HalfEdgeTriangleMesh = 6,
         Image = 7,
+        RGBDImage = 8,
     };
 
 public:
