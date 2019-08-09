@@ -37,6 +37,20 @@
 namespace open3d {
 namespace io {
 
+static std::string k4a_image_format_to_string(
+        k4a_image_format_t k4a_image_format) {
+    static std::unordered_map<k4a_image_format_t, std::string> convert_map({
+            {K4A_IMAGE_FORMAT_COLOR_MJPG, "K4A_IMAGE_FORMAT_COLOR_MJPG"},
+            {K4A_IMAGE_FORMAT_COLOR_NV12, "K4A_IMAGE_FORMAT_COLOR_NV12"},
+            {K4A_IMAGE_FORMAT_COLOR_YUY2, "K4A_IMAGE_FORMAT_COLOR_YUY2"},
+            {K4A_IMAGE_FORMAT_COLOR_BGRA32, "K4A_IMAGE_FORMAT_COLOR_BGRA32"},
+            {K4A_IMAGE_FORMAT_DEPTH16, "K4A_IMAGE_FORMAT_DEPTH16"},
+            {K4A_IMAGE_FORMAT_IR16, "K4A_IMAGE_FORMAT_IR16"},
+            {K4A_IMAGE_FORMAT_CUSTOM, "K4A_IMAGE_FORMAT_CUSTOM"},
+    });
+    return convert_map[k4a_image_format];
+}
+
 AzureKinectSensorConfig::AzureKinectSensorConfig() {
     config_["color_format"] = "K4A_IMAGE_FORMAT_COLOR_MJPG";
     config_["color_resolution"] = "K4A_COLOR_RESOLUTION_1080P";
@@ -81,7 +95,10 @@ bool AzureKinectSensorConfig::ConvertFromJsonValue(const Json::Value &value) {
 }
 
 void AzureKinectSensorConfig::ConvertFromNativeConfig(
-        const k4a_device_configuration_t &config) {}
+        const k4a_device_configuration_t &k4a_config) {
+    config_["color_format"] =
+            k4a_image_format_to_string(k4a_config.color_format);
+}
 
 k4a_device_configuration_t AzureKinectSensorConfig::ConvertToK4AConfig() {
     k4a_device_configuration_t k4a_config;

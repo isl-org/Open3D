@@ -49,7 +49,7 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    void ConvertFromNativeConfig(const _k4a_device_configuration_t &config);
+    void ConvertFromNativeConfig(const _k4a_device_configuration_t &k4a_config);
     _k4a_device_configuration_t ConvertToK4AConfig();
 
 public:
