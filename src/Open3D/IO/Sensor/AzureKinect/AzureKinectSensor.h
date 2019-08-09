@@ -28,20 +28,17 @@
 
 #include <memory>
 
-#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "Open3D/IO/Sensor/RGBDSensor.h"
 
 namespace open3d {
-
-namespace geometry {
-class RGBDImage;
-};
-
 namespace io {
 
-class RGBDSensor {
-    RGBDSensor(const RGBDSensorConfig& rgbd_sensor_config);
-    virtual ~RGBDSensor(){};
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const = 0;
+class AzureKinectSensor : public RGBDSensor {
+    AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
+    virtual ~AzureKinectSensor();
+
+    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
 };
 
 }  // namespace io
