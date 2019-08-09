@@ -59,7 +59,6 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
 
 int Record(uint8_t device_index,
            char* recording_filename,
-           int recording_length,
            _k4a_device_configuration_t* device_config,
            bool record_imu,
            int32_t absoluteExposureValue);

@@ -76,7 +76,6 @@ static int string_compare(const char *s1, const char *s2) {
 
 int main(int argc, char **argv) {
     int device_index = 0;
-    int recording_length = -1;
     k4a_image_format_t recording_color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
     k4a_color_resolution_t recording_color_resolution =
             K4A_COLOR_RESOLUTION_1080P;
@@ -105,15 +104,6 @@ int main(int argc, char **argv) {
                 device_index = std::stoi(args[0]);
                 if (device_index < 0 || device_index > 255)
                     throw std::runtime_error("Device index must 0-255");
-            });
-    cmd_parser.RegisterOption(
-            "-l|--record-length",
-            "Limit the recording to N seconds (default: infinite)", 1,
-            [&](const std::vector<char *> &args) {
-                recording_length = std::stoi(args[0]);
-                if (recording_length < 0)
-                    throw std::runtime_error(
-                            "Recording length must be positive");
             });
     cmd_parser.RegisterOption(
             "-c|--color-mode",
@@ -308,7 +298,6 @@ int main(int argc, char **argv) {
     device_config.subordinate_delay_off_master_usec =
             subordinate_delay_off_master_usec;
 
-    return io::Record((uint8_t)device_index, recording_filename,
-                      recording_length, &device_config, recording_imu_enabled,
-                      absoluteExposureValue);
+    return io::Record((uint8_t)device_index, recording_filename, &device_config,
+                      recording_imu_enabled, absoluteExposureValue);
 }

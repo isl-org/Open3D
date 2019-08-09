@@ -172,7 +172,6 @@ void HstackRGBDepth(const std::shared_ptr<geometry::RGBDImage>& im_rgbd,
 
 int Record(uint8_t device_index,
            char* recording_filename,
-           int recording_length,
            k4a_device_configuration_t* device_config,
            bool record_imu,
            int32_t absoluteExposureValue) {
@@ -322,13 +321,10 @@ int Record(uint8_t device_index,
         return 1;
     }
 
-    if (recording_length <= 0) {
-        utility::LogInfo(
-                "In the visulizer window, press [SPACE] to start recording, "
-                "press [ESC] to exit\n");
-    }
+    utility::LogInfo(
+            "In the visulizer window, press [SPACE] to start recording, press "
+            "[ESC] to exit\n");
 
-    clock_t recording_start = clock();
     int32_t timeout_ms = 1000 / camera_fps;
 
     std::shared_ptr<geometry::Image> im_rgb_depth_hstack = nullptr;
@@ -389,26 +385,19 @@ int Record(uint8_t device_index,
                                 write_result);
                         break;
                     }
-                } while (!record_finished && result != K4A_WAIT_RESULT_FAILED &&
-                         (recording_length < 0 ||
-                          (clock() - recording_start <
-                           recording_length * CLOCKS_PER_SEC)));
+                } while (!record_finished && result != K4A_WAIT_RESULT_FAILED);
             }
         }
         k4a_capture_release(capture);
 
-    } while (!record_finished && result != K4A_WAIT_RESULT_FAILED &&
-             (recording_length < 0 ||
-              (clock() - recording_start < recording_length * CLOCKS_PER_SEC)));
+    } while (!record_finished && result != K4A_WAIT_RESULT_FAILED);
 
     if (record_imu) {
         k4a_device_stop_imu(device);
     }
     k4a_device_stop_cameras(device);
 
-    if (recording_length > 0) {
-        utility::LogInfo("Saving recording...\n");
-    }
+    utility::LogInfo("Saving recording...\n");
     CHECK(k4a_record_flush(recording), device);
     k4a_record_close(recording);
     utility::LogInfo("Done\n");
