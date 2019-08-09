@@ -42,10 +42,10 @@ bool AzureKinectSensorConfig::ConvertFromJsonValue(const Json::Value &value) {
 }
 
 void AzureKinectSensorConfig::ConvertFromNativeConfig(
-        const _k4a_device_configuration_t &config) {}
+        const k4a_device_configuration_t &config) {}
 
 _k4a_device_configuration_t AzureKinectSensorConfig::ConvertToK4AConfig() {
-    _k4a_device_configuration_t k4a_config;
+    k4a_device_configuration_t k4a_config;
     return k4a_config;
 }
 

@@ -35,7 +35,7 @@
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 #include "Open3D/IO/Sensor/RGBDRecorder.h"
 
-struct _k4a_device_configuration_t;
+struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 
 namespace open3d {
 

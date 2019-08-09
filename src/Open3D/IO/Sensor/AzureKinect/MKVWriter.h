@@ -30,7 +30,7 @@
 #include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
 #include "Open3D/Utility/IJsonConvertible.h"
 
-struct _k4a_device_configuration_t;  // _k4a_device_configuration_t
+struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
 struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
 struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;

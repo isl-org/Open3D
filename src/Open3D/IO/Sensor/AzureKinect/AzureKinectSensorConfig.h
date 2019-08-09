@@ -32,7 +32,7 @@
 #include "Open3D/IO/Sensor/RGBDSensorConfig.h"
 #include "Open3D/Utility/IJsonConvertible.h"
 
-struct _k4a_device_configuration_t;
+struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
 
 namespace open3d {
 namespace io {
