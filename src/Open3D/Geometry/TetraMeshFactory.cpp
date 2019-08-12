@@ -24,43 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Qhull.h"
+#include "Open3D/Geometry/TetraMesh.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace geometry {
 
-class Geometry {
-public:
-    enum class GeometryType {
-        Unspecified = 0,
-        PointCloud = 1,
-        VoxelGrid = 2,
-        Octree = 3,
-        LineSet = 4,
-        TriangleMesh = 5,
-        HalfEdgeTriangleMesh = 6,
-        Image = 7,
-        RGBDImage = 8,
-        TetraMesh = 9,
-    };
-
-public:
-    virtual ~Geometry() {}
-
-protected:
-    Geometry(GeometryType type, int dimension)
-        : geometry_type_(type), dimension_(dimension) {}
-
-public:
-    virtual Geometry& Clear() = 0;
-    virtual bool IsEmpty() const = 0;
-    GeometryType GetGeometryType() const { return geometry_type_; }
-    int Dimension() const { return dimension_; }
-
-private:
-    GeometryType geometry_type_ = GeometryType::Unspecified;
-    int dimension_ = 3;
-};
+std::shared_ptr<TetraMesh> TetraMesh::CreateFromPointCloud(
+        const PointCloud& point_cloud) {
+    if (point_cloud.points_.size() < 4) {
+        utility::LogWarning(
+                "[CreateFromPointCloud] not enough points to create a "
+                "tetrahedral mesh.\n");
+        return std::make_shared<TetraMesh>();
+    }
+    return Qhull::ComputeDelaunayTriangulation3D(point_cloud.points_);
+}
 
 }  // namespace geometry
 }  // namespace open3d

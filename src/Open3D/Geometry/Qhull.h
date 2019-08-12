@@ -34,10 +34,14 @@ namespace open3d {
 namespace geometry {
 
 class TriangleMesh;
+class TetraMesh;
 
 class Qhull {
 public:
     static std::shared_ptr<TriangleMesh> ComputeConvexHull(
+            const std::vector<Eigen::Vector3d>& points);
+
+    static std::shared_ptr<TetraMesh> ComputeDelaunayTriangulation3D(
             const std::vector<Eigen::Vector3d>& points);
 };
 

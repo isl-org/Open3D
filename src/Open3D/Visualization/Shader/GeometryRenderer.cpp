@@ -181,6 +181,27 @@ bool LineSetRenderer::UpdateGeometry() {
     return true;
 }
 
+bool TetraMeshRenderer::Render(const RenderOption &option,
+                               const ViewControl &view) {
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    return simple_tetramesh_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool TetraMeshRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::TetraMesh) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool TetraMeshRenderer::UpdateGeometry() {
+    simple_tetramesh_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool TriangleMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
