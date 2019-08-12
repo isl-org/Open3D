@@ -56,7 +56,9 @@ int main(int argc, char **argv) {
     bool stop = false;
     bool toggle_pause = false;
     visualization::VisualizerWithKeyCallback vis;
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 640);
+    vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
+    vis.GetRenderOption().image_stretch_option_ =
+            visualization::RenderOption::ImageStretchOption::StretchKeepRatio;
 
     vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
                             [&](visualization::Visualizer *vis) {
@@ -88,8 +90,6 @@ int main(int argc, char **argv) {
         vis.UpdateGeometry();
         vis.PollEvents();
         vis.UpdateRender();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     mkv_reader.Close();
