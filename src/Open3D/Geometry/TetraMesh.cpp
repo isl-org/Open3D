@@ -29,6 +29,8 @@
 #include "Open3D/Geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
+#include <array>
+#include <numeric>
 #include <tuple>
 
 #include "Open3D/Utility/Console.h"
