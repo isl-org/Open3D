@@ -133,7 +133,7 @@ bool RGBDImageShader::BindGeometry(const geometry::Geometry &geometry,
                               : option.image_max_depth_ / 1000.0f;
     glGenTextures(1, &depth_texture_buffer_);
     glBindTexture(GL_TEXTURE_2D, depth_texture_buffer_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, depth_image.width_,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, depth_image.width_,
                  depth_image.height_, 0, depth_fmt, depth_type,
                  depth_image.data_.data());
     if (option.interpolation_option_ ==
