@@ -26,4 +26,20 @@
 
 #include "Python/io/io.h"
 
-void pybind_sensor(py::module &m) {}
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+
+using namespace open3d;
+
+void pybind_sensor(py::module &m) {
+    // TODO: use Trampoline for base class
+    py::class_<io::AzureKinectSensorConfig> azure_kinect_sensor_config(
+            m, "AzureKinectSensorConfig", "AzureKinect sensor configuration.");
+    py::detail::bind_default_constructor<io::AzureKinectSensorConfig>(
+            azure_kinect_sensor_config);
+    azure_kinect_sensor_config.def(
+            py::init([](const std::unordered_map<std::string, std::string>
+                                &config) {
+                return new io::AzureKinectSensorConfig(config);
+            }),
+            "config"_a);
+}
