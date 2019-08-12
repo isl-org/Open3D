@@ -381,7 +381,6 @@ The following is an example of forcing building dependencies from source code:
     cmake -DBUILD_EIGEN3=ON  \
           -DBUILD_GLEW=ON    \
           -DBUILD_GLFW=ON    \
-          -DBUILD_JPEG=ON    \
           -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
           ..

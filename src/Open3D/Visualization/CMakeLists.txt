@@ -37,3 +37,6 @@ source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 add_dependencies(Visualization ShaderFileTarget)
 
 ShowAndAbortOnWarning(Visualization)
+
+# Enforce 3rd party dependencies
+add_dependencies(Visualization build_all_3rd_party_libs)
