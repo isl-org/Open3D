@@ -32,15 +32,46 @@
 
 using namespace open3d;
 
+void PrintUsage() {
+    using namespace open3d;
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > AzureKinectMKVReader [filename] [--decompress_path] [path]\n");
+    // clang-format on
+}
+
 int main(int argc, char **argv) {
     using namespace open3d;
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 2) {
-        utility::LogInfo("Please provide input .mkv file\n");
+    if (argc != 2 && argc != 4) {
+        PrintUsage();
         return -1;
     }
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    bool decompress = false;
+    int idx = 0;
+    std::string decompress_path =
+            utility::GetProgramOptionAsString(argc, argv, "--decompress_path");
+    if (argc == 4) {
+        if (utility::filesystem::DirectoryExists(decompress_path)) {
+            utility::LogError(
+                    "Decompress path {} already existing, only play mkv.\n",
+                    decompress_path);
+        }
+        if (!utility::filesystem::MakeDirectory(decompress_path)) {
+            utility::LogError("Unable to create path {}, only play mkv.\n",
+                              decompress_path);
+        } else {
+            utility::LogInfo("Decompress images to {}\n", decompress_path);
+            utility::filesystem::MakeDirectoryHierarchy(decompress_path +
+                                                        "/color");
+            utility::filesystem::MakeDirectoryHierarchy(decompress_path +
+                                                        "/depth");
+            decompress = true;
+        }
+    }
 
     io::MKVReader mkv_reader;
     mkv_reader.Open(argv[1]);
@@ -56,7 +87,9 @@ int main(int argc, char **argv) {
     bool stop = false;
     bool toggle_pause = false;
     visualization::VisualizerWithKeyCallback vis;
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 640);
+    vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
+    vis.GetRenderOption().image_stretch_option_ =
+            visualization::RenderOption::ImageStretchOption::StretchKeepRatio;
 
     vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
                             [&](visualization::Visualizer *vis) {
@@ -69,27 +102,34 @@ int main(int argc, char **argv) {
                                 return true;
                             });
 
-    std::shared_ptr<geometry::RGBDImage> rgbd_vis = nullptr;
+    /* this is a static ptr and will be updated internally */
+    bool is_geometry_added = false;
     while (!mkv_reader.IsEOF()) {
         if (stop) break;
 
         if (!toggle_pause) {
-            std::shared_ptr<geometry::RGBDImage> rgbd = mkv_reader.NextFrame();
-            if (rgbd == nullptr) continue;
+            auto im_rgbd = mkv_reader.NextFrame();
+            if (im_rgbd == nullptr) continue;
 
-            if (rgbd_vis == nullptr) {
-                rgbd_vis = std::make_shared<geometry::RGBDImage>();
-                vis.AddGeometry(rgbd_vis);
-            } else {
-                *rgbd_vis = *rgbd;
+            if (!is_geometry_added) {
+                vis.AddGeometry(im_rgbd);
+                is_geometry_added = true;
+            }
+
+            if (decompress) {
+                io::WriteImage(fmt::format("{0}/color/{1:05d}.jpg",
+                                           decompress_path, idx),
+                               im_rgbd->color_);
+                io::WriteImage(fmt::format("{0}/depth/{1:05d}.png",
+                                           decompress_path, idx),
+                               im_rgbd->depth_);
+                ++idx;
             }
         }
 
         vis.UpdateGeometry();
         vis.PollEvents();
         vis.UpdateRender();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     mkv_reader.Close();

@@ -49,7 +49,8 @@ namespace io {
 class AzureKinectRecorder : public RGBDRecorder {
 public:
     AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
-                        size_t sensor_index);
+                        size_t sensor_index,
+                        bool transform_depth = false);
     virtual ~AzureKinectRecorder();
 
     int Record(const std::string& recording_filename) override;
@@ -57,6 +58,7 @@ public:
 protected:
     AzureKinectSensor sensor_;
     size_t device_index_;
+    bool transform_depth_ = false;
 };
 
 }  // namespace io
