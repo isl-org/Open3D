@@ -46,9 +46,6 @@ public:
     /* Also shared by other RGBDSensor */
     static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
             _k4a_capture_t *capture, _k4a_transformation_t *transformation);
-    static bool DecompressCapture(
-            _k4a_capture_t *capture, _k4a_transformation_t *transformation,
-            std::shared_ptr<geometry::RGBDImage> &rgbd);
 
     bool IsOpened();
     bool IsEOF() { return is_eof_; }

@@ -188,7 +188,7 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
             "press [ESC] to exit.\n");
 
     int32_t timeout_ms = 1000 / camera_fps;
-    std::shared_ptr<geometry::RGBDImage> im_rgbd = nullptr;
+
     bool is_geometry_added = false;
     do {
         // Get capture
@@ -202,7 +202,9 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
             break;
         }
 
-        if (!io::MKVReader::DecompressCapture(capture, transformation, im_rgbd)) {
+        /* this is a static ptr and will be updated internally */
+        auto im_rgbd = io::MKVReader::DecompressCapture(capture, transformation);
+        if (im_rgbd == nullptr) {
             utility::LogInfo("Invalid capture, skipping this frame\n");
             continue;
         }
