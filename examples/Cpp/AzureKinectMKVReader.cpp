@@ -32,12 +32,40 @@
 
 using namespace open3d;
 
+void PrintUsage() {
+    using namespace open3d;
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:\n");
+    utility::LogInfo("    > AzureKinectMKVReader [filename] [--decompress_path] [path]\n");
+    // clang-format on
+}
+
 int main(int argc, char **argv) {
     using namespace open3d;
 
-    if (argc < 2) {
-        utility::LogInfo("Please provide input .mkv file\n");
+    if (argc < 2 || argc != 4) {
+        PrintUsage();
         return -1;
+    }
+
+    bool decompress = false;
+    int idx = 0;
+    std::string decompress_path =
+            utility::GetProgramOptionAsString(argc, argv, "--decompress_path");
+    if (utility::filesystem::DirectoryExists(decompress_path)) {
+        utility::LogError(
+                "Decompress path {} already existing, only play mkv.\n",
+                decompress_path);
+    }
+    if (!utility::filesystem::MakeDirectory(decompress_path)) {
+        utility::LogError("Unable to create path {}, only play mkv.\n",
+                          decompress_path);
+    } else {
+        utility::LogInfo("Decompress images to {}\n", decompress_path);
+        utility::filesystem::MakeDirectoryHierarchy(decompress_path + "/color");
+        utility::filesystem::MakeDirectoryHierarchy(decompress_path + "/depth");
+        decompress = true;
     }
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
@@ -84,6 +112,16 @@ int main(int argc, char **argv) {
                 vis.AddGeometry(rgbd_vis);
             } else {
                 *rgbd_vis = *rgbd;
+            }
+
+            if (decompress) {
+                io::WriteImage(fmt::format("{0}/color/{1:05d}.jpg",
+                                           decompress_path, idx),
+                               rgbd->color_);
+                io::WriteImage(fmt::format("{0}/depth/{1:05d}.png",
+                                           decompress_path, idx),
+                               rgbd->depth_);
+                ++idx;
             }
         }
 
