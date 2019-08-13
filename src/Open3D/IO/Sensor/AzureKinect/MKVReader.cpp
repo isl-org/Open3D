@@ -190,24 +190,36 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
     tjDestroy(tjHandle);
     color = ConvertBGRAToRGB(color);
 
-    /* transform depth to color */
-    depth->Prepare(width, height, 1, sizeof(uint16_t));
+    /* transform depth to color plane */
     k4a_image_t k4a_transformed_depth = nullptr;
-    k4a_image_create_from_buffer(K4A_IMAGE_FORMAT_DEPTH16, width, height,
-                                 width * sizeof(uint16_t), depth->data_.data(),
-                                 width * height * sizeof(uint16_t), NULL, NULL,
-                                 &k4a_transformed_depth);
-    if (K4A_RESULT_SUCCEEDED !=
-        k4a_transformation_depth_image_to_color_camera(
-                transformation, k4a_depth, k4a_transformed_depth)) {
-        utility::LogError("Failed to transform depth frame to color frame.\n");
-        return nullptr;
+    if (transformation) {
+        depth->Prepare(width, height, 1, sizeof(uint16_t));
+        k4a_image_create_from_buffer(K4A_IMAGE_FORMAT_DEPTH16, width, height,
+                                     width * sizeof(uint16_t),
+                                     depth->data_.data(),
+                                     width * height * sizeof(uint16_t), NULL,
+                                     NULL, &k4a_transformed_depth);
+        if (K4A_RESULT_SUCCEEDED !=
+            k4a_transformation_depth_image_to_color_camera(
+                    transformation, k4a_depth, k4a_transformed_depth)) {
+            utility::LogError(
+                    "Failed to transform depth frame to color frame.\n");
+            return nullptr;
+        }
+    } else {
+        depth->Prepare(k4a_image_get_width_pixels(k4a_depth),
+                       k4a_image_get_height_pixels(k4a_depth), 1,
+                       sizeof(uint16_t));
+        memcpy(depth->data_.data(), k4a_image_get_buffer(k4a_depth),
+               k4a_image_get_size(k4a_depth));
     }
 
     /* process depth */
     k4a_image_release(k4a_color);
     k4a_image_release(k4a_depth);
-    k4a_image_release(k4a_transformed_depth);
+    if (transformation) {
+        k4a_image_release(k4a_transformed_depth);
+    }
 
     auto rgbd_ptr = std::make_shared<geometry::RGBDImage>();
     rgbd_ptr->color_ = *color;

@@ -78,6 +78,7 @@ int ParseArgs(int argc,
               char **argv,
               io::AzureKinectSensorConfig &sensor_config,
               int &sensor_index,
+              bool &enable_transform_depth_to_color,
               std::string &recording_filename) {
     k4a_image_format_t recording_color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
     k4a_color_resolution_t recording_color_resolution =
@@ -88,6 +89,7 @@ int ParseArgs(int argc,
     k4a_wired_sync_mode_t wired_sync_mode = K4A_WIRED_SYNC_MODE_STANDALONE;
     int32_t depth_delay_off_color_usec = 0;
     uint32_t subordinate_delay_off_master_usec = 0;
+    enable_transform_depth_to_color = false;
 
     CmdParser::OptionParser cmd_parser;
     cmd_parser.RegisterOption("-h|--help", "Prints this help", [&]() {
@@ -225,6 +227,11 @@ int ParseArgs(int argc,
                 subordinate_delay_off_master_usec = (uint32_t)delay;
             });
 
+    cmd_parser.RegisterOption(
+            "-t|--transform-depth-to-color",
+            "transform depth to color on-the-fly (default: false)\n",
+            [&]() { enable_transform_depth_to_color = true; });
+
     int args_left = 0;
     try {
         args_left = cmd_parser.ParseCmd(argc, argv);
@@ -279,11 +286,13 @@ int main(int argc, char **argv) {
     int sensor_index = 0;
     std::string recording_filename;
     io::AzureKinectSensorConfig sensor_config;
+    bool enable_transform_depth_to_color;
     if (ParseArgs(argc, argv, sensor_config, sensor_index,
-                  recording_filename) != 0) {
+                  enable_transform_depth_to_color, recording_filename) != 0) {
         utility::LogError("Parse args error\n");
     }
 
-    io::AzureKinectRecorder recorder(sensor_config, sensor_index);
+    io::AzureKinectRecorder recorder(sensor_config, sensor_index,
+                                     enable_transform_depth_to_color);
     return recorder.Record(recording_filename);
 }

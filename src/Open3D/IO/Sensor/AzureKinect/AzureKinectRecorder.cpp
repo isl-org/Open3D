@@ -67,10 +67,12 @@ inline static uint32_t k4a_convert_fps_to_uint(k4a_fps_t fps) {
 }
 
 AzureKinectRecorder::AzureKinectRecorder(
-        const AzureKinectSensorConfig& sensor_config, size_t sensor_index)
+        const AzureKinectSensorConfig& sensor_config, size_t sensor_index,
+        bool transform_depth /* = false */)
     : RGBDRecorder(),
       sensor_(AzureKinectSensor(sensor_config)),
-      device_index_(sensor_index) {}
+      device_index_(sensor_index),
+      transform_depth_(transform_depth) {}
 
 AzureKinectRecorder::~AzureKinectRecorder() {}
 
@@ -113,8 +115,8 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
     k4a_calibration_t calibration;
     k4a_device_get_calibration(sensor_.device_, device_config.depth_mode,
                                device_config.color_resolution, &calibration);
-    k4a_transformation_t transformation =
-            k4a_transformation_create(&calibration);
+    k4a_transformation_t transformation = transform_depth_ ?
+            k4a_transformation_create(&calibration) : nullptr;
 
     // Flags to control the logic
     bool record_file_created = false;
@@ -197,7 +199,7 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
             break;
         }
 
-        // Unwarp depth
+        // transform depth
         std::shared_ptr<geometry::RGBDImage> im_rgbd =
                 io::MKVReader::DecompressCapture(capture, transformation);
         if (im_rgbd == nullptr) {

@@ -173,12 +173,14 @@ bool RGBDImageShader::RenderGeometry(const geometry::Geometry &geometry,
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(image_texture_, 0);
 
-    glViewport(0, 0, view.GetWindowWidth() / 2, view.GetWindowHeight());
+    glViewport(0, 0, view.GetWindowWidth() * color_rel_ratio_,
+               view.GetWindowHeight());
     glUniform1i(texture_mode_, color_texture_mode_);
     glBindTexture(GL_TEXTURE_2D, color_texture_buffer_);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
 
-    glViewport(view.GetWindowWidth() / 2, 0, view.GetWindowWidth() / 2,
+    glViewport(view.GetWindowWidth() * color_rel_ratio_, 0,
+               view.GetWindowWidth() * (1 - color_rel_ratio_),
                view.GetWindowHeight());
     glUniform1i(texture_mode_, depth_texture_mode_);
     glBindTexture(GL_TEXTURE_2D, depth_texture_buffer_);
@@ -210,13 +212,21 @@ bool RGBDImageShaderForImage::PrepareRendering(
         return false;
     }
     const geometry::RGBDImage &rgbd = (const geometry::RGBDImage &)geometry;
-    const geometry::Image &image = rgbd.depth_;
+    const geometry::Image &image = rgbd.color_;
+
+    int color_width = rgbd.color_.width_;
+    int color_height = rgbd.color_.height_;
+    int depth_width = rgbd.depth_.width_;
+    int depth_height = rgbd.depth_.height_;
+
+    float depth_rel_width = color_height * ((float)depth_width / depth_height);
+    color_rel_ratio_ = (float)color_width / (color_width + depth_rel_width);
 
     GLfloat ratio_x, ratio_y;
     switch (option.image_stretch_option_) {
         case RenderOption::ImageStretchOption::StretchKeepRatio:
-            ratio_x =
-                    GLfloat(image.width_) / GLfloat(view.GetWindowWidth() / 2);
+            ratio_x = GLfloat(image.width_) /
+                      GLfloat(view.GetWindowWidth() * color_rel_ratio_);
             ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
             if (ratio_x < ratio_y) {
                 ratio_x /= ratio_y;
@@ -232,8 +242,8 @@ bool RGBDImageShaderForImage::PrepareRendering(
             break;
         case RenderOption::ImageStretchOption::OriginalSize:
         default:
-            ratio_x =
-                    GLfloat(image.width_) / GLfloat(view.GetWindowWidth() / 2);
+            ratio_x = GLfloat(image.width_) /
+                      GLfloat(view.GetWindowWidth() * color_rel_ratio_);
             ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
             break;
     }

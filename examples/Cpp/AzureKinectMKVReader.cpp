@@ -44,7 +44,7 @@ void PrintUsage() {
 int main(int argc, char **argv) {
     using namespace open3d;
 
-    if (argc < 2 || argc != 4) {
+    if (argc != 2 && argc != 4) {
         PrintUsage();
         return -1;
     }
