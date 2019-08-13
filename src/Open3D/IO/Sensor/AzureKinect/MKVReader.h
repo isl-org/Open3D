@@ -43,10 +43,6 @@ public:
     MKVReader();
     virtual ~MKVReader() {}
 
-    /* Also shared by other RGBDSensor */
-    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
-            _k4a_capture_t *capture, _k4a_transformation_t *transformation);
-
     bool IsOpened();
     bool IsEOF() { return is_eof_; }
 

@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
     int sensor_index = 0;
     std::string recording_filename;
     io::AzureKinectSensorConfig sensor_config;
-    bool enable_transform_depth_to_color;
+    bool enable_transform_depth_to_color = false;
     if (ParseArgs(argc, argv, sensor_config, sensor_index,
                   enable_transform_depth_to_color, recording_filename) != 0) {
         utility::LogError("Parse args error\n");
@@ -294,5 +294,72 @@ int main(int argc, char **argv) {
 
     io::AzureKinectRecorder recorder(sensor_config, sensor_index,
                                      enable_transform_depth_to_color);
-    return recorder.Record(recording_filename);
+    recorder.InitSensor();
+
+    bool record_on = false;
+    bool record_finished = false;
+    bool is_geometry_added = false;
+    visualization::VisualizerWithKeyCallback vis;
+    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
+    vis.GetRenderOption().image_stretch_option_ =
+            visualization::RenderOption::ImageStretchOption::StretchKeepRatio;
+
+    vis.RegisterKeyCallback(GLFW_KEY_SPACE, [&](visualization::Visualizer
+                                                        *vis) {
+        if (record_on) {
+            utility::LogInfo(
+                    "Recording paused. "
+                    "Press [SPACE] to continue. "
+                    "Press [ESC] to save and exit.\n");
+        } else if (!recorder.IsRecordCreated()) {
+            recorder.OpenRecord(recording_filename);
+            utility::LogInfo(
+                    "Recording started. "
+                    "Press [SPACE] to pause. "
+                    "Press [ESC] to save and exit.\n");
+        } else {
+            utility::LogInfo(
+                    "Recording resumed, video may be discontinuous. "
+                    "Press [SPACE] to pause. "
+                    "Press [ESC] to save and exit.\n");
+        }
+        record_on = !record_on;
+        return false;
+    });
+
+    vis.RegisterKeyCallback(
+            GLFW_KEY_ESCAPE, [&](visualization::Visualizer *vis) {
+                record_finished = true;
+                if (recorder.IsRecordCreated()) {
+                    utility::LogInfo("Recording finished.\n");
+                } else {
+                    utility::LogInfo("Nothing has been recorded.\n");
+                }
+                return false;
+            });
+
+    utility::LogInfo(
+            "In the visulizer window, "
+            "press [SPACE] to start recording, "
+            "press [ESC] to exit.\n");
+
+    do {
+        auto im_rgbd = recorder.RecordFrame(record_on);
+        if (im_rgbd == nullptr) {
+            utility::LogInfo("Invalid capture, skipping this frame\n");
+            continue;
+        }
+
+        if (!is_geometry_added) {
+            vis.AddGeometry(im_rgbd);
+            is_geometry_added = true;
+        }
+
+        // Update visualizer
+        vis.UpdateGeometry();
+        vis.PollEvents();
+        vis.UpdateRender();
+
+    } while (!record_finished);
+    return 0;
 }

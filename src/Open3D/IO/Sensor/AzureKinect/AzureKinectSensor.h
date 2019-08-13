@@ -48,18 +48,18 @@ class AzureKinectRecorder;
 class AzureKinectSensor : public RGBDSensor {
 public:
     AzureKinectSensor(const AzureKinectSensorConfig &sensor_config);
-    virtual ~AzureKinectSensor();
-    virtual int Connect(size_t sensor_index) override;
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
+    ~AzureKinectSensor();
 
-    static void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb);
+    int Connect(size_t sensor_index) override;
+    std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
+
     static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
             k4a_capture_t capture, k4a_transformation_t transformation);
 
 protected:
-    AzureKinectSensorConfig sensor_config_;
+    k4a_capture_t CaptureRawFrame() const;
 
-    k4a_device_configuration_t sensor_native_config_;
+    AzureKinectSensorConfig sensor_config_;
     k4a_transformation_t transform_depth_to_color_;
     k4a_device_t device_;
     int timeout_;

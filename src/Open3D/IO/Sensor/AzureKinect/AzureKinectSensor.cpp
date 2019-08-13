@@ -50,9 +50,7 @@ namespace io {
 
 AzureKinectSensor::AzureKinectSensor(
         const AzureKinectSensorConfig &sensor_config)
-    : RGBDSensor(), sensor_config_(sensor_config) {
-    sensor_native_config_ = sensor_config.ConvertToNativeConfig();
-}
+    : RGBDSensor(), sensor_config_(sensor_config) {}
 
 AzureKinectSensor::~AzureKinectSensor() {
     k4a_device_stop_cameras(device_);
@@ -60,9 +58,11 @@ AzureKinectSensor::~AzureKinectSensor() {
 }
 
 int AzureKinectSensor::Connect(size_t sensor_index) {
+    auto device_config = sensor_config_.ConvertToNativeConfig();
+
     // check mode
     int camera_fps;
-    switch (sensor_native_config_.camera_fps) {
+    switch (device_config.camera_fps) {
         case K4A_FRAMES_PER_SECOND_5:
             camera_fps = 5;
             break;
@@ -78,28 +78,28 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
     }
     timeout_ = int(1000.0f / camera_fps);
 
-    if ((sensor_native_config_.color_resolution == K4A_COLOR_RESOLUTION_OFF &&
-         sensor_native_config_.depth_mode == K4A_DEPTH_MODE_OFF)) {
+    if (device_config.color_resolution == K4A_COLOR_RESOLUTION_OFF &&
+        device_config.depth_mode == K4A_DEPTH_MODE_OFF) {
         utility::LogError(
                 "Config error: either the color or depth modes must be "
                 "enabled to record.\n");
         return 1;
     }
 
-    // Check available devices
+    // check available devices
     const uint32_t installed_devices = k4a_device_get_installed_count();
     if (sensor_index >= installed_devices) {
         utility::LogError("Device not found.\n");
         return 1;
     }
 
-    // Open device
+    // open device
     if (K4A_FAILED(k4a_device_open(sensor_index, &device_))) {
         utility::LogError("Runtime error: k4a_device_open() failed\n");
         return 1;
     }
 
-    // Get and print device info
+    // get and print device info
     char serial_number_buffer[256];
     size_t serial_number_buffer_size = sizeof(serial_number_buffer);
     CHECK(k4a_device_get_serialnum(device_, serial_number_buffer,
@@ -121,9 +121,9 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
     utility::LogInfo("A: {}.{}.{};\n", version_info.audio.major,
                      version_info.audio.minor, version_info.audio.iteration);
 
-    CHECK(k4a_device_start_cameras(device_, &sensor_native_config_), device_);
+    CHECK(k4a_device_start_cameras(device_, &device_config), device_);
 
-    // Set color control, assume absoluteExposureValue == 0
+    // set color control, assume absoluteExposureValue == 0
     if (K4A_FAILED(k4a_device_set_color_control(
                 device_, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
                 K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
@@ -131,17 +131,16 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
                 "Runtime error: k4a_device_set_color_control() failed\n");
     }
 
-    // Set calibration
+    // set calibration
     k4a_calibration_t calibration;
-    k4a_device_get_calibration(device_, sensor_native_config_.depth_mode,
-                               sensor_native_config_.color_resolution,
-                               &calibration);
+    k4a_device_get_calibration(device_, device_config.depth_mode,
+                               device_config.color_resolution, &calibration);
     transform_depth_to_color_ = k4a_transformation_create(&calibration);
 
     return 0;
 }
 
-std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame() const {
+k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
     k4a_capture_t capture;
     auto result = k4a_device_get_capture(device_, &capture, timeout_);
     if (result == K4A_WAIT_RESULT_TIMEOUT) {
@@ -153,14 +152,17 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame() const {
         return nullptr;
     }
 
-    /* this is a static ptr and will be updated internally */
+    return capture;
+}
+
+std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame() const {
+    k4a_capture_t capture = CaptureRawFrame();
     auto im_rgbd = DecompressCapture(capture, transform_depth_to_color_);
     k4a_capture_release(capture);
     return im_rgbd;
 }
 
-void AzureKinectSensor::ConvertBGRAToRGB(geometry::Image &rgba,
-                                         geometry::Image &rgb) {
+void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb) {
     assert(rgba.bytes_per_channel_ == 1 && rgba.num_of_channels_ == 4);
     assert(rgb.bytes_per_channel_ == 1 && rgb.num_of_channels_ == 3);
     assert(rgba.width_ == rgb.width_ && rgba.height_ == rgb.height_);
