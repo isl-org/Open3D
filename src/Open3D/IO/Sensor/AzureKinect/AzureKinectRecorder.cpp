@@ -67,7 +67,8 @@ inline static uint32_t k4a_convert_fps_to_uint(k4a_fps_t fps) {
 }
 
 AzureKinectRecorder::AzureKinectRecorder(
-        const AzureKinectSensorConfig& sensor_config, size_t sensor_index,
+        const AzureKinectSensorConfig& sensor_config,
+        size_t sensor_index,
         bool transform_depth /* = false */)
     : RGBDRecorder(),
       sensor_(AzureKinectSensor(sensor_config)),
@@ -115,8 +116,9 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
     k4a_calibration_t calibration;
     k4a_device_get_calibration(sensor_.device_, device_config.depth_mode,
                                device_config.color_resolution, &calibration);
-    k4a_transformation_t transformation = transform_depth_ ?
-            k4a_transformation_create(&calibration) : nullptr;
+    k4a_transformation_t transformation =
+            transform_depth_ ? k4a_transformation_create(&calibration)
+                             : nullptr;
 
     // Flags to control the logic
     bool record_file_created = false;
@@ -186,7 +188,8 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
             "press [ESC] to exit.\n");
 
     int32_t timeout_ms = 1000 / camera_fps;
-    std::shared_ptr<geometry::RGBDImage> vis_rgbd_ = nullptr;
+    std::shared_ptr<geometry::RGBDImage> im_rgbd = nullptr;
+    bool is_geometry_added = false;
     do {
         // Get capture
         result = k4a_device_get_capture(sensor_.device_, &capture, timeout_ms);
@@ -199,20 +202,13 @@ int AzureKinectRecorder::Record(const std::string& recording_filename) {
             break;
         }
 
-        // transform depth
-        std::shared_ptr<geometry::RGBDImage> im_rgbd =
-                io::MKVReader::DecompressCapture(capture, transformation);
-        if (im_rgbd == nullptr) {
+        if (!io::MKVReader::DecompressCapture(capture, transformation, im_rgbd)) {
             utility::LogInfo("Invalid capture, skipping this frame\n");
             continue;
         }
-
-        // Init visualizer
-        if (vis_rgbd_ == nullptr) {
-            vis_rgbd_ = im_rgbd;
-            vis.AddGeometry(vis_rgbd_);
-        } else {
-            *vis_rgbd_ = *im_rgbd;
+        if (!is_geometry_added) {
+            vis.AddGeometry(im_rgbd);
+            is_geometry_added = true;
         }
 
         // Update visualizer

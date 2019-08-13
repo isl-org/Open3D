@@ -47,7 +47,7 @@ std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
 
     int N = rgba->width_ * rgba->height_;
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) num_threads(8)
 #endif
     for (int uv = 0; uv < N; ++uv) {
         int v = uv / rgba->width_;
@@ -59,6 +59,25 @@ std::shared_ptr<geometry::Image> ConvertBGRAToRGB(
     }
 
     return rgb;
+}
+
+void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb) {
+    assert(rgba.bytes_per_channel_ == 1 && rgba.num_of_channels_ == 4);
+    assert(rgb.bytes_per_channel_ == 1 && rgb.num_of_channels_ == 3);
+    assert(rgba.width_ == rgb.width_ && rgba.height_ == rgb.height_);
+
+    int N = rgba.width_ * rgba.height_;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int uv = 0; uv < N; ++uv) {
+        int v = uv / rgba.width_;
+        int u = uv % rgba.width_;
+        for (int c = 0; c < 3; ++c) {
+            *rgb.PointerAt<uint8_t>(u, v, c) =
+                    *rgba.PointerAt<uint8_t>(u, v, 2 - c);
+        }
+    }
 }
 
 bool MKVReader::IsOpened() { return handle_ != nullptr; }
@@ -151,6 +170,99 @@ int MKVReader::SeekTimestamp(size_t timestamp) {
         return -1;
     }
     return 0;
+}
+
+bool MKVReader::DecompressCapture(k4a_capture_t capture,
+                                  k4a_transformation_t transformation,
+                                  std::shared_ptr<geometry::RGBDImage> &rgbd) {
+    static std::shared_ptr<geometry::Image> color_buffer = nullptr;
+    
+    k4a_image_t k4a_color = k4a_capture_get_color_image(capture);
+    k4a_image_t k4a_depth = k4a_capture_get_depth_image(capture);
+    if (k4a_color == nullptr || k4a_depth == nullptr) {
+        utility::LogDebug("Skipping empty captures.\n");
+        return false;
+    }
+
+    if (rgbd == nullptr) {
+        rgbd = std::make_shared<geometry::RGBDImage>();
+        rgbd->color_.Prepare(k4a_image_get_width_pixels(k4a_color),
+                             k4a_image_get_height_pixels(k4a_color), 3,
+                             sizeof(uint8_t));
+        rgbd->depth_.Prepare(k4a_image_get_width_pixels(k4a_depth),
+                             k4a_image_get_height_pixels(k4a_depth), 1,
+                             sizeof(uint16_t));
+    }
+
+    /* Process color */
+    if (K4A_IMAGE_FORMAT_COLOR_MJPG != k4a_image_get_format(k4a_color)) {
+        utility::LogError(
+                "Unexpected image format. The stream may have "
+                "corrupted.\n");
+        return false;
+    }
+
+    int width = k4a_image_get_width_pixels(k4a_color);
+    int height = k4a_image_get_height_pixels(k4a_color);
+    if (color_buffer == nullptr) {
+        color_buffer = std::make_shared<geometry::Image>();
+        color_buffer->Prepare(width, height, 4, sizeof(uint8_t));
+    }
+
+    tjhandle tjHandle;
+    tjHandle = tjInitDecompress();
+    if (0 !=
+        tjDecompress2(tjHandle, k4a_image_get_buffer(k4a_color),
+                      static_cast<unsigned long>(k4a_image_get_size(k4a_color)),
+                      color_buffer->data_.data(), width, 0 /* pitch */, height,
+                      TJPF_BGRA, TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)) {
+        utility::LogError("Failed to decompress color image.\n");
+        return false;
+    }
+    tjDestroy(tjHandle);
+    ConvertBGRAToRGB(*color_buffer, rgbd->color_);
+
+    /* transform depth to color plane */
+    k4a_image_t k4a_transformed_depth = nullptr;
+    if (transformation) {
+        if (rgbd->depth_.width_ != width || rgbd->depth_.height_ != height ||
+            rgbd->depth_.num_of_channels_ != 1 ||
+            rgbd->depth_.bytes_per_channel_ != 2) {
+            utility::LogError("Invalid depth image in RGBD buffer\n");
+            return false;
+        }
+        k4a_image_create_from_buffer(K4A_IMAGE_FORMAT_DEPTH16, width, height,
+                                     width * sizeof(uint16_t),
+                                     rgbd->depth_.data_.data(),
+                                     width * height * sizeof(uint16_t), NULL,
+                                     NULL, &k4a_transformed_depth);
+        if (K4A_RESULT_SUCCEEDED !=
+            k4a_transformation_depth_image_to_color_camera(
+                    transformation, k4a_depth, k4a_transformed_depth)) {
+            utility::LogError(
+                    "Failed to transform depth frame to color frame.\n");
+            return false;
+        }
+    } else {
+        if (rgbd->depth_.width_ != k4a_image_get_width_pixels(k4a_depth) ||
+            rgbd->depth_.height_ != k4a_image_get_height_pixels(k4a_depth) ||
+            rgbd->depth_.num_of_channels_ != 1 ||
+            rgbd->depth_.bytes_per_channel_ != 2) {
+            utility::LogError("Invalid depth image in RGBD buffer\n");
+            return false;
+        }
+        memcpy(rgbd->depth_.data_.data(), k4a_image_get_buffer(k4a_depth),
+               k4a_image_get_size(k4a_depth));
+    }
+
+    /* process depth */
+    k4a_image_release(k4a_color);
+    k4a_image_release(k4a_depth);
+    if (transformation) {
+        k4a_image_release(k4a_transformed_depth);
+    }
+
+    return true;
 }
 
 std::shared_ptr<geometry::RGBDImage> MKVReader::DecompressCapture(
