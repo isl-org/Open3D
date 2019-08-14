@@ -211,7 +211,8 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "filter_pyramid",
                                     map_shared_argument_docstrings);
 
-    py::class_<geometry::RGBDImage, std::shared_ptr<geometry::RGBDImage>>
+    py::class_<geometry::RGBDImage, PyGeometry2D<geometry::RGBDImage>,
+               std::shared_ptr<geometry::RGBDImage>, geometry::Geometry2D>
             rgbd_image(m, "RGBDImage",
                        "RGBDImage is for a pair of registered color and depth "
                        "images, viewed from the same view, of the same "

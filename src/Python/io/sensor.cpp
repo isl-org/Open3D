@@ -26,6 +26,7 @@
 
 #include "Python/io/io.h"
 
+#include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 
@@ -47,9 +48,15 @@ void pybind_sensor(py::module &m) {
     // TODO: use Trampoline base class
     py::class_<io::AzureKinectSensor> azure_kinect_sensor(
             m, "AzureKinectSensor", "AzureKinect sensor.");
+
     azure_kinect_sensor.def(
             py::init([](const io::AzureKinectSensorConfig &sensor_config) {
                 return new io::AzureKinectSensor(sensor_config);
             }),
             "sensor_config"_a);
+    azure_kinect_sensor
+            .def("connect", &io::AzureKinectSensor::Connect, "sensor_index"_a,
+                 "Connect to specified device.")
+            .def("capture_frame", &io::AzureKinectSensor::CaptureFrame,
+                 "enable_align_depth_to_color"_a, "Capture an RGBD frame.");
 }
