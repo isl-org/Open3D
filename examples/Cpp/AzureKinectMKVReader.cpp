@@ -117,12 +117,16 @@ int main(int argc, char **argv) {
             }
 
             if (decompress) {
-                io::WriteImage(fmt::format("{0}/color/{1:05d}.jpg",
-                                           decompress_path, idx),
-                               im_rgbd->color_);
-                io::WriteImage(fmt::format("{0}/depth/{1:05d}.png",
-                                           decompress_path, idx),
-                               im_rgbd->depth_);
+                auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
+                                              decompress_path, idx);
+                utility::LogInfo("Writing to {}\n", color_file);
+                io::WriteImage(color_file, im_rgbd->color_);
+
+                auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
+                                              decompress_path, idx);
+                utility::LogInfo("Writing to {}\n", depth_file);
+                io::WriteImage(depth_file, im_rgbd->depth_);
+
                 ++idx;
             }
         }

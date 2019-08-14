@@ -32,7 +32,14 @@
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 #include "Open3D/IO/Sensor/RGBDSensor.h"
 
+struct _k4a_device_configuration_t;
+
 namespace open3d {
+namespace geometry {
+class RGBDImage;
+class Image;
+}  // namespace geometry
+
 namespace io {
 
 // Avoid including AzureKinectRecorder.h
@@ -40,14 +47,26 @@ class AzureKinectRecorder;
 
 class AzureKinectSensor : public RGBDSensor {
 public:
-    AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
-    virtual ~AzureKinectSensor();
-    virtual int Connect(size_t sensor_index) override;
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
+    AzureKinectSensor(const AzureKinectSensorConfig &sensor_config);
+    ~AzureKinectSensor();
+
+    int Connect(size_t sensor_index) override;
+    std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const override;
+
+    static int PrintFirmware(k4a_device_t device);
+    static int ListDevices();
+    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
+            k4a_capture_t capture, k4a_transformation_t transformation);
 
 protected:
+    k4a_capture_t CaptureRawFrame() const;
+
     AzureKinectSensorConfig sensor_config_;
+    k4a_transformation_t transform_depth_to_color_;
     k4a_device_t device_;
+    int timeout_;
+
     friend class AzureKinectRecorder;
 };
 

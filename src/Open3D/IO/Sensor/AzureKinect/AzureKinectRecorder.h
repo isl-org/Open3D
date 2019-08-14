@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <k4arecord/types.h>
 #include <atomic>
 #include <memory>
 #include <string>
@@ -49,16 +50,23 @@ namespace io {
 class AzureKinectRecorder : public RGBDRecorder {
 public:
     AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
-                        size_t sensor_index,
-                        bool transform_depth = false);
-    virtual ~AzureKinectRecorder();
+                        size_t sensor_index);
+    ~AzureKinectRecorder() override;
 
-    int Record(const std::string& recording_filename) override;
+    bool InitSensor() override;
+    bool OpenRecord(const std::string& filename) override;
+    bool CloseRecord() override;
+    std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) override;
+
+    bool IsRecordCreated() { return is_record_created_; }
 
 protected:
     AzureKinectSensor sensor_;
+    k4a_record_t recording_;
     size_t device_index_;
-    bool transform_depth_ = false;
+
+    bool is_record_created_ = false;
 };
 
 }  // namespace io

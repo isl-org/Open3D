@@ -47,200 +47,72 @@
 namespace open3d {
 namespace io {
 
-inline static uint32_t k4a_convert_fps_to_uint(k4a_fps_t fps) {
-    uint32_t fps_int;
-    switch (fps) {
-        case K4A_FRAMES_PER_SECOND_5:
-            fps_int = 5;
-            break;
-        case K4A_FRAMES_PER_SECOND_15:
-            fps_int = 15;
-            break;
-        case K4A_FRAMES_PER_SECOND_30:
-            fps_int = 30;
-            break;
-        default:
-            fps_int = 0;
-            break;
-    }
-    return fps_int;
-}
-
 AzureKinectRecorder::AzureKinectRecorder(
-        const AzureKinectSensorConfig& sensor_config,
-        size_t sensor_index,
-        bool transform_depth /* = false */)
+        const AzureKinectSensorConfig& sensor_config, size_t sensor_index)
     : RGBDRecorder(),
       sensor_(AzureKinectSensor(sensor_config)),
-      device_index_(sensor_index),
-      transform_depth_(transform_depth) {}
+      device_index_(sensor_index) {}
 
-AzureKinectRecorder::~AzureKinectRecorder() {}
+AzureKinectRecorder::~AzureKinectRecorder() { CloseRecord(); }
 
-int AzureKinectRecorder::Record(const std::string& recording_filename) {
-    // Convert to k4a native config
-    k4a_device_configuration_t device_config =
-            sensor_.sensor_config_.ConvertToNativeConfig();
+bool AzureKinectRecorder::InitSensor() {
+    return sensor_.Connect(device_index_);
+}
 
-    const uint32_t installed_devices = k4a_device_get_installed_count();
-    if (device_index_ >= installed_devices) {
-        utility::LogError("Device not found.\n");
-        return 1;
+bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
+    if (!is_record_created_) {
+        if (K4A_FAILED(k4a_record_create(
+                    filename.c_str(), sensor_.device_,
+                    sensor_.sensor_config_.ConvertToNativeConfig(),
+                    &recording_))) {
+            utility::LogError("Unable to create recording file: {}\n",
+                              filename);
+            return false;
+        }
+        if (K4A_FAILED(k4a_record_write_header(recording_))) {
+            utility::LogError("Unable to write header\n");
+            return false;
+        }
+        utility::LogInfo("Writing to header\n");
+
+        is_record_created_ = true;
     }
-    sensor_.Connect(device_index_);
+    return true;
+}
 
-    uint32_t camera_fps = k4a_convert_fps_to_uint(device_config.camera_fps);
-
-    if (camera_fps <= 0 ||
-        (device_config.color_resolution == K4A_COLOR_RESOLUTION_OFF &&
-         device_config.depth_mode == K4A_DEPTH_MODE_OFF)) {
-        utility::LogError(
-                "Runtime error: either the color or depth modes must be "
-                "enabled to record.\n");
-        return 1;
-    }
-
-    // Assume absoluteExposureValue == 0
-    if (K4A_FAILED(k4a_device_set_color_control(
-                sensor_.device_, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
-                K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
-        utility::LogError(
-                "Runtime error: k4a_device_set_color_control() failed\n");
-    }
-
-    utility::LogInfo("Device started\n");
-
-    k4a_record_t recording;
-
-    // Get transformation
-    k4a_calibration_t calibration;
-    k4a_device_get_calibration(sensor_.device_, device_config.depth_mode,
-                               device_config.color_resolution, &calibration);
-    k4a_transformation_t transformation =
-            transform_depth_ ? k4a_transformation_create(&calibration)
-                             : nullptr;
-
-    // Flags to control the logic
-    bool record_file_created = false;
-    bool record_on = false;
-    bool record_finished = false;
-    visualization::VisualizerWithKeyCallback vis;
-    vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
-    vis.GetRenderOption().image_stretch_option_ =
-            visualization::RenderOption::ImageStretchOption::StretchKeepRatio;
-
-    // Toggle pause callback
-    vis.RegisterKeyCallback(
-            GLFW_KEY_SPACE, [&](visualization::Visualizer* vis) {
-                if (record_on) {
-                    utility::LogInfo(
-                            "Recording paused. "
-                            "Press [SPACE] to continue. "
-                            "Press [ESC] to save and exit.\n");
-                } else if (!record_file_created) {
-                    // Lazy mkv file creation
-                    if (K4A_FAILED(k4a_record_create(
-                                recording_filename.c_str(), sensor_.device_,
-                                device_config, &recording))) {
-                        utility::LogError(
-                                "Unable to create recording file: {}\n",
-                                recording_filename);
-                        return false;
-                    }
-                    if (K4A_FAILED(k4a_record_write_header(recording))) {
-                        utility::LogError("Unable to write header\n");
-                        return false;
-                    }
-
-                    record_file_created = true;
-                    utility::LogInfo(
-                            "Recording started. "
-                            "Press [SPACE] to pause. "
-                            "Press [ESC] to save and exit.\n");
-                } else {
-                    utility::LogInfo(
-                            "Recording resumed, video may be discontinuous. "
-                            "Press [SPACE] to pause. "
-                            "Press [ESC] to save and exit.\n");
-                }
-
-                record_on = !record_on;
-                return false;
-            });
-
-    // Finish callback
-    vis.RegisterKeyCallback(
-            GLFW_KEY_ESCAPE, [&](visualization::Visualizer* vis) {
-                record_finished = true;
-                if (record_file_created) {
-                    utility::LogInfo("Recording finished.\n");
-                } else {
-                    utility::LogInfo("Nothing has been recorded.\n");
-                }
-                return false;
-            });
-
-    k4a_capture_t capture;
-    k4a_wait_result_t result;
-    utility::LogInfo(
-            "In the visulizer window, "
-            "press [SPACE] to start recording, "
-            "press [ESC] to exit.\n");
-
-    int32_t timeout_ms = 1000 / camera_fps;
-
-    bool is_geometry_added = false;
-    do {
-        // Get capture
-        result = k4a_device_get_capture(sensor_.device_, &capture, timeout_ms);
-        if (result == K4A_WAIT_RESULT_TIMEOUT) {
-            continue;
-        } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
-            utility::LogError(
-                    "Runtime error: k4a_device_get_capture() returned %d\n",
-                    result);
-            break;
-        }
-
-        /* this is a static ptr and will be updated internally */
-        auto im_rgbd = io::MKVReader::DecompressCapture(capture, transformation);
-        if (im_rgbd == nullptr) {
-            utility::LogInfo("Invalid capture, skipping this frame\n");
-            continue;
-        }
-        if (!is_geometry_added) {
-            vis.AddGeometry(im_rgbd);
-            is_geometry_added = true;
-        }
-
-        // Update visualizer
-        vis.UpdateGeometry();
-        vis.PollEvents();
-        vis.UpdateRender();
-
-        // Write to file
-        if (record_on && record_file_created) {
-            if (K4A_FAILED(k4a_record_write_capture(recording, capture))) {
-                utility::LogError("Unable to write to capture\n");
-                break;
-            }
-        }
-        k4a_capture_release(capture);
-    } while (!record_finished);
-
-    if (record_file_created) {
+bool AzureKinectRecorder::CloseRecord() {
+    if (is_record_created_) {
         utility::LogInfo("Saving recording...\n");
-        if (K4A_FAILED(k4a_record_flush(recording))) {
+        if (K4A_FAILED(k4a_record_flush(recording_))) {
             utility::LogError("Unable to flush record file\n");
+            return false;
         }
-        k4a_record_close(recording);
+        k4a_record_close(recording_);
         utility::LogInfo("Done\n");
     }
+    return true;
+}
 
-    k4a_device_stop_cameras(sensor_.device_);
-    k4a_device_close(sensor_.device_);
+std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
+        bool write, bool enable_align_depth_to_color) {
+    k4a_capture_t capture = sensor_.CaptureRawFrame();
+    if (capture != nullptr && is_record_created_ && write) {
+        if (K4A_FAILED(k4a_record_write_capture(recording_, capture))) {
+            utility::LogError("Unable to write to capture\n");
+            return nullptr;
+        }
+    }
 
-    return 0;
-}  // namespace io
+    auto im_rgbd = AzureKinectSensor::DecompressCapture(
+            capture, enable_align_depth_to_color
+                             ? sensor_.transform_depth_to_color_
+                             : nullptr);
+    if (im_rgbd == nullptr) {
+        utility::LogInfo("Invalid capture, skipping this frame\n");
+        return nullptr;
+    }
+    k4a_capture_release(capture);
+    return im_rgbd;
+}
 }  // namespace io
 }  // namespace open3d

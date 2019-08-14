@@ -18,8 +18,6 @@ using namespace open3d;
 void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage: \n");
-    utility::LogInfo("AzureKinectRecord [options] output.mkv\n");
     utility::LogInfo("Options: \n");
     utility::LogInfo("-c        Set the color sensor mode (default: 720p)\n");
     utility::LogInfo("          Available options:\n");
@@ -29,7 +27,7 @@ void PrintUsage() {
     utility::LogInfo("          NFOV_2X2BINNED, NFOV_UNBINNED, WFOV_2X2BINNED, WFOV_UNBINNED, OFF\n");
     utility::LogInfo("-r        Set the camera frame rate in Frames per Second (default: 30)\n");
     utility::LogInfo("          Available options: 30, 15, 5\n"),
-            utility::LogInfo("-a        Align depth with color image (default: disabled)\n");
+    utility::LogInfo("-a        Align depth with color image (default: disabled)\n");
     utility::LogInfo("--list    List the currently connected K4A devices\n");
     utility::LogInfo("--device  Specify the device index to use (default: 0)\n");
     // clang-format on
@@ -39,7 +37,8 @@ int ParseArgs(int argc,
               char **argv,
               io::AzureKinectSensorConfig &sensor_config,
               int &sensor_index,
-              bool &enable_align_depth_to_color) {
+              bool &enable_align_depth_to_color,
+              std::string &recording_filename) {
     k4a_image_format_t recording_color_format = K4A_IMAGE_FORMAT_COLOR_MJPG;
     k4a_color_resolution_t recording_color_resolution =
             K4A_COLOR_RESOLUTION_720P;
@@ -81,6 +80,7 @@ int ParseArgs(int argc,
     } else if (color_mode == "720p") {
         recording_color_resolution = K4A_COLOR_RESOLUTION_720P;
     } else {
+        recording_color_resolution = K4A_COLOR_RESOLUTION_OFF;
         std::ostringstream str;
         str << "Unsupported color mode specified: " << color_mode;
         throw std::runtime_error(str.str());
@@ -97,6 +97,7 @@ int ParseArgs(int argc,
     } else if (depth_mode == "WFOV_UNBINNED") {
         recording_depth_mode = K4A_DEPTH_MODE_WFOV_UNBINNED;
     } else {
+        recording_depth_mode = K4A_DEPTH_MODE_OFF;
         std::ostringstream str;
         str << "Unsupported depth mode specified: " << depth_mode;
         throw std::runtime_error(str.str());
@@ -139,75 +140,31 @@ int main(int argc, char **argv) {
     int sensor_index = 0;
     std::string recording_filename;
     io::AzureKinectSensorConfig sensor_config;
-    bool enable_align_depth_to_color = false;
-
-    if (argc < 2) {
-        PrintUsage();
-        return 0;
-    }
-
-    recording_filename = argv[argc - 1];
+    bool enable_align_depth_to_color;
     if (ParseArgs(argc, argv, sensor_config, sensor_index,
-                  enable_align_depth_to_color) != 0) {
+                  enable_align_depth_to_color, recording_filename) != 0) {
         utility::LogError("Parse args error\n");
     }
 
-    io::AzureKinectRecorder recorder(sensor_config, sensor_index);
-    recorder.InitSensor();
+    io::AzureKinectSensor sensor(sensor_config);
+    sensor.Connect(sensor_index);
 
-    bool record_on = false;
-    bool record_finished = false;
+    bool loop_finished = false;
     bool is_geometry_added = false;
     visualization::VisualizerWithKeyCallback vis;
     vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
     vis.GetRenderOption().image_stretch_option_ =
             visualization::RenderOption::ImageStretchOption::StretchKeepRatio;
 
-    vis.RegisterKeyCallback(
-            GLFW_KEY_SPACE, [&](visualization::Visualizer *vis) {
-                if (record_on) {
-                    utility::LogInfo(
-                            "Recording paused. "
-                            "Press [SPACE] to continue. "
-                            "Press [ESC] to save and exit.\n");
-                    record_on = false;
-                } else if (!recorder.IsRecordCreated()) {
-                    if (recorder.OpenRecord(recording_filename)) {
-                        utility::LogInfo(
-                                "Recording started. "
-                                "Press [SPACE] to pause. "
-                                "Press [ESC] to save and exit.\n");
-                        record_on = true;
-                    } // else record_on keeps false
-                } else {
-                    utility::LogInfo(
-                            "Recording resumed, video may be discontinuous. "
-                            "Press [SPACE] to pause. "
-                            "Press [ESC] to save and exit.\n");
-                    record_on = true;
-                }
-                return false;
-            });
-
-    vis.RegisterKeyCallback(
-            GLFW_KEY_ESCAPE, [&](visualization::Visualizer *vis) {
-                record_finished = true;
-                if (recorder.IsRecordCreated()) {
-                    utility::LogInfo("Recording finished.\n");
-                } else {
-                    utility::LogInfo("Nothing has been recorded.\n");
-                }
-                return false;
-            });
-
-    utility::LogInfo(
-            "In the visulizer window, "
-            "press [SPACE] to start recording, "
-            "press [ESC] to exit.\n");
+    // Finish callback
+    vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
+                            [&](visualization::Visualizer *vis) {
+                                loop_finished = true;
+                                return false;
+                            });
 
     do {
-        auto im_rgbd =
-                recorder.RecordFrame(record_on, enable_align_depth_to_color);
+        auto im_rgbd = sensor.CaptureFrame(enable_align_depth_to_color);
         if (im_rgbd == nullptr) {
             utility::LogInfo("Invalid capture, skipping this frame\n");
             continue;
@@ -223,6 +180,5 @@ int main(int argc, char **argv) {
         vis.PollEvents();
         vis.UpdateRender();
 
-    } while (!record_finished);
-    return 0;
+    } while (!loop_finished);
 }
