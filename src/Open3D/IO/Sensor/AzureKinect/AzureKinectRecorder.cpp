@@ -89,6 +89,8 @@ bool AzureKinectRecorder::CloseRecord() {
         }
         k4a_record_close(recording_);
         utility::LogInfo("Done\n");
+
+        is_record_created_ = false;
     }
     return true;
 }
