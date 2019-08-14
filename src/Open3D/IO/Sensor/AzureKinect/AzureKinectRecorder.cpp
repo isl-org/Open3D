@@ -48,13 +48,10 @@ namespace open3d {
 namespace io {
 
 AzureKinectRecorder::AzureKinectRecorder(
-        const AzureKinectSensorConfig& sensor_config,
-        size_t sensor_index,
-        bool enable_transform_depth_to_color /* = false */)
+        const AzureKinectSensorConfig& sensor_config, size_t sensor_index)
     : RGBDRecorder(),
       sensor_(AzureKinectSensor(sensor_config)),
-      device_index_(sensor_index),
-      enable_transform_depth_to_color_(enable_transform_depth_to_color) {}
+      device_index_(sensor_index) {}
 
 AzureKinectRecorder::~AzureKinectRecorder() { CloseRecord(); }
 
@@ -97,7 +94,7 @@ bool AzureKinectRecorder::CloseRecord() {
 }
 
 std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
-        bool write) {
+        bool write, bool enable_align_depth_to_color) {
     k4a_capture_t capture = sensor_.CaptureRawFrame();
     if (capture != nullptr && is_record_created_ && write) {
         if (K4A_FAILED(k4a_record_write_capture(recording_, capture))) {
@@ -107,8 +104,9 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
     }
 
     auto im_rgbd = AzureKinectSensor::DecompressCapture(
-            capture,
-            enable_transform_depth_to_color_ ? sensor_.transform_depth_to_color_ : nullptr);
+            capture, enable_align_depth_to_color
+                             ? sensor_.transform_depth_to_color_
+                             : nullptr);
     if (im_rgbd == nullptr) {
         utility::LogInfo("Invalid capture, skipping this frame\n");
         return nullptr;

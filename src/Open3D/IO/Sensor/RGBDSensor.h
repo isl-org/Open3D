@@ -43,7 +43,8 @@ public:
     RGBDSensor() {}
     virtual int Connect(size_t sensor_index) = 0;
     virtual ~RGBDSensor(){};
-    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame() const = 0;
+    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const = 0;
 };
 
 }  // namespace io

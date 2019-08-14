@@ -39,8 +39,8 @@ public:
     virtual bool InitSensor() = 0;
     virtual bool OpenRecord(const std::string &filename) = 0;
     virtual bool CloseRecord() = 0;
-    virtual std::shared_ptr<geometry::RGBDImage> RecordFrame(bool write) = 0;
-
+    virtual std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) = 0;
 };
 
 }  // namespace io

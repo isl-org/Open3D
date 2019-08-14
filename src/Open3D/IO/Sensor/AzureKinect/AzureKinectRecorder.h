@@ -50,14 +50,14 @@ namespace io {
 class AzureKinectRecorder : public RGBDRecorder {
 public:
     AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
-                        size_t sensor_index,
-                        bool enable_transform_depth_to_color = false);
+                        size_t sensor_index);
     ~AzureKinectRecorder() override;
 
     bool InitSensor() override;
     bool OpenRecord(const std::string& filename) override;
     bool CloseRecord() override;
-    std::shared_ptr<geometry::RGBDImage> RecordFrame(bool write) override;
+    std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) override;
 
     bool IsRecordCreated() { return is_record_created_; }
 
@@ -67,7 +67,6 @@ protected:
     size_t device_index_;
 
     bool is_record_created_ = false;
-    bool enable_transform_depth_to_color_ = false;
 };
 
 }  // namespace io

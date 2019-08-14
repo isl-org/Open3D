@@ -51,8 +51,11 @@ public:
     ~AzureKinectSensor();
 
     int Connect(size_t sensor_index) override;
-    std::shared_ptr<geometry::RGBDImage> CaptureFrame() const override;
+    std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const override;
 
+    static int PrintFirmware(k4a_device_t device);
+    static int ListDevices();
     static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
             k4a_capture_t capture, k4a_transformation_t transformation);
 

@@ -100,26 +100,7 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
     }
 
     // get and print device info
-    char serial_number_buffer[256];
-    size_t serial_number_buffer_size = sizeof(serial_number_buffer);
-    CHECK(k4a_device_get_serialnum(device_, serial_number_buffer,
-                                   &serial_number_buffer_size),
-          device_);
-    k4a_hardware_version_t version_info;
-    CHECK(k4a_device_get_version(device_, &version_info), device_);
-    utility::LogInfo("Device serial number: {}\n", serial_number_buffer);
-    utility::LogInfo("Device version: {};\n",
-                     (version_info.firmware_build == K4A_FIRMWARE_BUILD_RELEASE
-                              ? "Rel"
-                              : "Dbg"));
-    utility::LogInfo("C: {}.{}.{};\n", version_info.rgb.major,
-                     version_info.rgb.minor, version_info.rgb.iteration);
-    utility::LogInfo("D: {}.{}.{}[{}.{}]\n", version_info.depth.major,
-                     version_info.depth.minor, version_info.depth.iteration,
-                     version_info.depth_sensor.major,
-                     version_info.depth_sensor.minor);
-    utility::LogInfo("A: {}.{}.{};\n", version_info.audio.major,
-                     version_info.audio.minor, version_info.audio.iteration);
+    PrintFirmware(device_);
 
     CHECK(k4a_device_start_cameras(device_, &device_config), device_);
 
@@ -155,9 +136,12 @@ k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
     return capture;
 }
 
-std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame() const {
+std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
+        bool enable_align_depth_to_color) const {
     k4a_capture_t capture = CaptureRawFrame();
-    auto im_rgbd = DecompressCapture(capture, transform_depth_to_color_);
+    auto im_rgbd = DecompressCapture(
+            capture,
+            enable_align_depth_to_color ? transform_depth_to_color_ : nullptr);
     k4a_capture_release(capture);
     return im_rgbd;
 }
@@ -179,6 +163,48 @@ void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb) {
                     *rgba.PointerAt<uint8_t>(u, v, 2 - c);
         }
     }
+}
+
+int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
+    char serial_number_buffer[256];
+    size_t serial_number_buffer_size = sizeof(serial_number_buffer);
+    CHECK(k4a_device_get_serialnum(device, serial_number_buffer,
+                                   &serial_number_buffer_size),
+          device);
+    k4a_hardware_version_t version_info;
+    CHECK(k4a_device_get_version(device, &version_info), device);
+    utility::LogInfo("Serial number: {}\n", serial_number_buffer);
+    utility::LogInfo("Firmware build: {}\n",
+                     (version_info.firmware_build == K4A_FIRMWARE_BUILD_RELEASE
+                              ? "Rel"
+                              : "Dbg"));
+    utility::LogInfo("> Color: {}.{}.{}\n", version_info.rgb.major,
+                     version_info.rgb.minor, version_info.rgb.iteration);
+    utility::LogInfo("> Depth: {}.{}.{}[{}.{}]\n", version_info.depth.major,
+                     version_info.depth.minor, version_info.depth.iteration,
+                     version_info.depth_sensor.major,
+                     version_info.depth_sensor.minor);
+    return 0;
+}
+
+int AzureKinectSensor::ListDevices() {
+    uint32_t device_count = k4a_device_get_installed_count();
+    if (device_count > 0) {
+        for (uint8_t i = 0; i < device_count; i++) {
+            utility::LogInfo("Device index {}\n", i);
+            k4a_device_t device;
+            if (K4A_SUCCEEDED(k4a_device_open(i, &device))) {
+                AzureKinectSensor::PrintFirmware(device);
+                k4a_device_close(device);
+            } else {
+                utility::LogError("Device Open Failed\n");
+            }
+        }
+    } else {
+        utility::LogError("No devices connected.\n");
+    }
+
+    return 0;
 }
 
 std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
