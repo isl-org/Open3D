@@ -44,6 +44,11 @@ set(PACKAGE_NAME open3d)
 file(GLOB_RECURSE PY_ALL_HEADER_FILES "*.h")
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+# TODO: consider explicitly listing the files
+if (NOT BUILD_AZURE_KINECT)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
+endif()
+
 ADD_SOURCE_GROUP(Core)
 ADD_SOURCE_GROUP(IO)
 ADD_SOURCE_GROUP(Tutorial)
@@ -51,6 +56,12 @@ ADD_SOURCE_GROUP(Visualization)
 pybind11_add_module(${PACKAGE_NAME}
     ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
 )
+
+# The Python headers won't be included outside the project, so it is okay to
+# use the target_compile_definitions approach. Otherwise, use configure_file.
+if (BUILD_AZURE_KINECT)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
+endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (${PYTHON_VERSION_MAJOR} EQUAL 2)
@@ -73,6 +84,12 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
+
+# set(DLL_LIBS "k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS: ${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
+# string(REPLACE ";" ";" DLL_LIBS "${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
+# message(FATAL_ERROR ${DLL_LIBS})
+# set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
+# message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/package
@@ -88,6 +105,8 @@ add_custom_target(python-package
             -DPROJECT_VERSION=${PROJECT_VERSION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
+            -DBUILD_AZURE_KINECT=${BUILD_AZURE_KINECT}
+            -Dk4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS="${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}"
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 

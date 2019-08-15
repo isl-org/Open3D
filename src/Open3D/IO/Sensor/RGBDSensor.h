@@ -24,15 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include <memory>
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
+
+namespace open3d {
+
+namespace geometry {
+class RGBDImage;
+};
+
+namespace io {
+
+class RGBDSensor {
+public:
+    RGBDSensor() {}
+    virtual int Connect(size_t sensor_index) = 0;
+    virtual ~RGBDSensor(){};
+    virtual std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const = 0;
+};
+
+}  // namespace io
+}  // namespace open3d

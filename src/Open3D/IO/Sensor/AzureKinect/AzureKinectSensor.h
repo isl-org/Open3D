@@ -24,15 +24,51 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include <k4a/k4a.h>
+#include <memory>
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "Open3D/IO/Sensor/RGBDSensor.h"
+
+struct _k4a_device_configuration_t;
+
+namespace open3d {
+namespace geometry {
+class RGBDImage;
+class Image;
+}  // namespace geometry
+
+namespace io {
+
+// Avoid including AzureKinectRecorder.h
+class AzureKinectRecorder;
+
+class AzureKinectSensor : public RGBDSensor {
+public:
+    AzureKinectSensor(const AzureKinectSensorConfig &sensor_config);
+    ~AzureKinectSensor();
+
+    int Connect(size_t sensor_index) override;
+    std::shared_ptr<geometry::RGBDImage> CaptureFrame(
+            bool enable_align_depth_to_color) const override;
+
+    static int PrintFirmware(k4a_device_t device);
+    static int ListDevices();
+    static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
+            k4a_capture_t capture, k4a_transformation_t transformation);
+
+protected:
+    k4a_capture_t CaptureRawFrame() const;
+
+    AzureKinectSensorConfig sensor_config_;
+    k4a_transformation_t transform_depth_to_color_;
+    k4a_device_t device_;
+    int timeout_;
+
+    friend class AzureKinectRecorder;
+};
+
+}  // namespace io
+}  // namespace open3d

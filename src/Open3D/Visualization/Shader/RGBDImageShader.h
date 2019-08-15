@@ -77,6 +77,7 @@ protected:
     GLuint texture_mode_;
     GLuint depth_max_;
     float depth_max_data_;
+    float color_rel_ratio_ = 0.5f;
 
     /* Switches corresponding to the glsl shader */
     ImageTextureMode depth_texture_mode_;

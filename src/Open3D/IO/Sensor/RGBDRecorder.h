@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,15 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+namespace open3d {
+namespace io {
+
+class RGBDRecorder {
+public:
+    RGBDRecorder() {}
+    virtual ~RGBDRecorder() {}
+
+    virtual bool InitSensor() = 0;
+    virtual bool OpenRecord(const std::string &filename) = 0;
+    virtual bool CloseRecord() = 0;
+    virtual std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) = 0;
+};
+
+}  // namespace io
+}  // namespace open3d

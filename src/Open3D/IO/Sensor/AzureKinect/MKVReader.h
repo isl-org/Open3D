@@ -24,15 +24,42 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+struct _k4a_playback_t;        // typedef _k4a_playback_t* k4a_device_t;
+struct _k4a_capture_t;         // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_transformation_t;  // typedef _k4a_transformation_t*
+                               // k4a_transformation_t;
+
+namespace open3d {
+namespace io {
+
+class MKVReader {
+public:
+    MKVReader();
+    virtual ~MKVReader() {}
+
+    bool IsOpened();
+    bool IsEOF() { return is_eof_; }
+
+    int Open(const std::string &filename);
+    void Close();
+
+    Json::Value GetMetaData();
+    int SeekTimestamp(size_t timestamp);
+    std::shared_ptr<geometry::RGBDImage> NextFrame();
+
+private:
+    _k4a_playback_t *handle_;
+    _k4a_transformation_t *transformation_;
+    MKVMetadata metadata_;
+    bool is_eof_ = false;
+
+    std::string GetTagInMetadata(const std::string &tag_name);
+};
+}  // namespace io
+}  // namespace open3d

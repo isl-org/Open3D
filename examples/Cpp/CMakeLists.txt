@@ -35,6 +35,13 @@ EXAMPLE_CPP(ProgramOptions            ${CMAKE_PROJECT_NAME})
 if (BUILD_LIBREALSENSE)
     EXAMPLE_CPP(RealSense             ${CMAKE_PROJECT_NAME} realsense)
 endif (BUILD_LIBREALSENSE)
+
+if (BUILD_AZURE_KINECT)
+    EXAMPLE_CPP(AzureKinectRecord     ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(AzureKinectMKVReader  ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(AzureKinectViewer     ${CMAKE_PROJECT_NAME})
+endif (BUILD_AZURE_KINECT)
+
 EXAMPLE_CPP(RegistrationRANSAC        ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(RGBDOdometry              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(TriangleMesh              ${CMAKE_PROJECT_NAME})

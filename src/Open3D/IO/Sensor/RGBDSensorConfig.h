@@ -24,15 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include "Open3D/Utility/IJsonConvertible.h"
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+namespace open3d {
+namespace io {
+
+class RGBDSensorConfig : public utility::IJsonConvertible {};
+
+}  // namespace io
+}  // namespace open3d

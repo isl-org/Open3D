@@ -29,3 +29,9 @@
 #include <Python/open3d_pybind.h>
 
 void pybind_io(py::module& m);
+
+void pybind_class_io(py::module& m);
+
+#ifdef BUILD_AZURE_KINECT
+void pybind_sensor(py::module& m);
+#endif

@@ -24,15 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
+enum class SensorType { AZURE_KINECT = 0, REAL_SENSE = 1 };
+
+namespace open3d {
+
+namespace camera {
+class PinholeCameraIntrinsic;
 }
+
+namespace io {
+
+class MKVMetadata : public utility::IJsonConvertible {
+public:
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
+
+public:
+    // Shared intrinsics betwee RGB & depth.
+    // We assume depth image is always warped to the color image system
+    camera::PinholeCameraIntrinsic intrinsics_;
+
+    std::string serial_number_ = "";
+    uint64_t stream_length_usec_ = 0;
+
+    bool enable_imu_ = false;
+};
+
+}  // namespace io
+}  // namespace open3d

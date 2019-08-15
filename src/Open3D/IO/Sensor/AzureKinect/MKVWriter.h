@@ -24,15 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+struct _k4a_device_configuration_t;  // Alias of k4a_device_configuration_t
+struct _k4a_device_t;                // typedef _k4a_device_t* k4a_device_t;
+struct _k4a_capture_t;               // typedef _k4a_capture_t* k4a_capture_t;
+struct _k4a_record_t;                // typedef _k4a_record_t* k4a_record_t;
+
+namespace open3d {
+namespace io {
+
+class MKVWriter {
+public:
+    MKVWriter();
+    virtual ~MKVWriter() {}
+
+    bool IsOpened();
+
+    /* We assume device is already set properly according to config */
+    int Open(const std::string &filename,
+             const _k4a_device_configuration_t &config,
+             _k4a_device_t *device);
+    void Close();
+
+    int SetMetadata(const MKVMetadata &metadata);
+    int NextFrame(_k4a_capture_t *);
+
+private:
+    _k4a_record_t *handle_;
+    MKVMetadata metadata_;
+};
+}  // namespace io
+}  // namespace open3d
