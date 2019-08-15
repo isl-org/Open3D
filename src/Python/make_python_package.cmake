@@ -17,7 +17,10 @@ get_filename_component(PYTHON_COMPILED_MODULE_NAME ${PYTHON_COMPILED_MODULE_PATH
 file(COPY ${PYTHON_COMPILED_MODULE_PATH}
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
 
-if (WIN32 AND BUILD_AZURE_KINECT)
+if (BUILD_AZURE_KINECT)
+    if (WIN32)
+    else()
+    endif()
 endif()
 
 # 3) Configured files and supporting files
