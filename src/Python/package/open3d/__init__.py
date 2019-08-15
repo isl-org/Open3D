@@ -24,13 +24,27 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# import os
-# pwd = os.path.dirname(os.path.realpath(__file__))
 
-# from ctypes import *
-# cdll.LoadLibrary(pwd + "/" + "libdepthengine.so.1.0")
-# cdll.LoadLibrary(pwd + "/" + "libk4a.so.1.1.1")
-# cdll.LoadLibrary(pwd + "/" + "libk4arecord.so.1.1.1")
+import sys
+import os
+import platform
+import ctypes
+import glob
+
+if sys.platform == "linux" or platform == "linux2":
+    distro, version, _ = platform.linux_distribution()
+    if distro == "Ubuntu" and version == "18.04":
+        pwd = os.path.dirname(os.path.realpath(__file__))
+        print(glob.glob(pwd + "libdepthengine.*"))
+        ctypes.cdll.LoadLibrary(pwd + "/" + "libdepthengine.so.1.0")
+        ctypes.cdll.LoadLibrary(pwd + "/" + "libk4a.so.1.1.1")
+        ctypes.cdll.LoadLibrary(pwd + "/" + "libk4arecord.so.1.1.1")
+    else:
+        raise RuntimeError("Unsupported OS type")
+elif platform == "darwin":
+    pass
+elif platform == "win32":
+    pass
 
 from .open3d import * # py2 py3 compatible
 
