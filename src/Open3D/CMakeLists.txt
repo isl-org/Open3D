@@ -1,11 +1,3 @@
-# Conditionally include header files in Open3D.h
-if(BUILD_AZURE_KINECT)
-    set(BUILD_AZURE_KINECT_COMMENT "")
-else()
-    set(BUILD_AZURE_KINECT_COMMENT "//")
-endif()
-
-
 # Configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3D.h.in"
                "${PROJECT_SOURCE_DIR}/src/Open3D/Open3D.h")
@@ -73,16 +65,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
 
-# workaround for Azures's import-fashion cmake
 if (BUILD_AZURE_KINECT)
-    find_package(k4a QUIET)
-    find_package(k4arecord QUIET)
-    if (k4a_FOUND)
-        message(STATUS "Enabling Azure Kinect Support")
-    else ()
-        message(FATAL_ERROR "Kinect SDK NOT found. Please install according to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
-    endif ()
-    target_link_libraries(${CMAKE_PROJECT_NAME} k4a::k4a k4a::k4arecord)
+    target_link_libraries(${CMAKE_PROJECT_NAME} k4a k4arecord)
 endif()
 
 # input_dirs: a list of absolute paths in the source dir
