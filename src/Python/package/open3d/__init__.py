@@ -24,6 +24,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# import os
+# pwd = os.path.dirname(os.path.realpath(__file__))
+
+# from ctypes import *
+# cdll.LoadLibrary(pwd + "/" + "libdepthengine.so.1.0")
+# cdll.LoadLibrary(pwd + "/" + "libk4a.so.1.1.1")
+# cdll.LoadLibrary(pwd + "/" + "libk4arecord.so.1.1.1")
+
 from .open3d import * # py2 py3 compatible
 
 __version__ = '@PROJECT_VERSION@'
