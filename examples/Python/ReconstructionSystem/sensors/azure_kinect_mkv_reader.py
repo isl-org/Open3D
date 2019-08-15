@@ -1,44 +1,99 @@
+import argparse
 import open3d as o3d
+import os
 
-filename = 'test_py.mkv'
 
-# global flag
-flag_exit = False
-def escape_callback(vis):
-    global flag_exit
-    flag_exit = True
+# GLFW callbacks
+kbd_escape = 256
+flag_stop = False
+def kbd_escape_callback(vis):
+    global flag_stop
+    flag_stop = True
     return False
 
-flag_pause = False
-def space_callback(vis):
-    global flag_pause
-    flag_pause = not flag_pause
+
+kbd_space = 32
+flag_play = True
+def kbd_space_callback(vis):
+    global flag_play
+    if flag_play:
+        print('Playback paused, press [SPACE] to continue')
+    else:
+        print('Playback resumed, press [SPACE] to pause')
+
+    flag_play = not flag_play
     return False
 
-vis = o3d.visualization.VisualizerWithKeyCallback()
-vis.register_key_callback(256, escape_callback)
-vis.register_key_callback(32, space_callback)
 
-azure_mkv_reader = o3d.io.AzureKinectMKVReader()
-azure_mkv_reader.open(filename)
-if not azure_mkv_reader.is_opened():
-    print('Unable to open file {}'.format(filename))
-    exit
+def main(reader, output_path):
+    vis = o3d.visualization.VisualizerWithKeyCallback()
+    vis.register_key_callback(kbd_escape, kbd_escape_callback)
+    vis.register_key_callback(kbd_space, kbd_space_callback)
 
-vis_geometry_added = False
-vis.create_window('reader', 1920, 540)
-while not azure_mkv_reader.is_eof() and not flag_exit:
-    if not flag_pause:
-        rgbd = azure_mkv_reader.next_frame()
-        if rgbd is None:
-            continue
+    vis_geometry_added = False
+    vis.create_window('reader', 1920, 540)
 
-        if not vis_geometry_added:
-            vis.add_geometry(rgbd)
-            vis_geometry_added = True
+    idx = 0
+    while not reader.is_eof() and not flag_stop:
+        if flag_play:
+            rgbd = reader.next_frame()
+            if rgbd is None:
+                continue
 
-    vis.update_geometry()
-    vis.poll_events()
-    vis.update_renderer()
+            if not vis_geometry_added:
+                vis.add_geometry(rgbd)
+                vis_geometry_added = True
 
-azure_mkv_reader.close()
+            if output_path is not None:
+                color_filename = '{0}/color/{1:05d}.jpg'.format(output_path, idx)
+                print('Writing to {}'.format(color_filename))
+                o3d.io.write_image(color_filename, rgbd.color)
+
+                depth_filename = '{0}/depth/{1:05d}.png'.format(output_path, idx)
+                print('Writing to {}'.format(depth_filename))
+                o3d.io.write_image(depth_filename, rgbd.depth)
+                idx += 1
+
+        vis.update_geometry()
+        vis.poll_events()
+        vis.update_renderer()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Azure kinect mkv reader.')
+    parser.add_argument('--input', type=str, required=True, help='input mkv file')
+    parser.add_argument('--output', type=str, help='output path to store color/ and depth/ images')
+    args = parser.parse_args()
+
+    if args.input is None:
+        parser.print_help()
+        exit()
+
+    if args.output is None:
+        print('No output path, only play mkv')
+    elif os.path.isdir(args.output):
+        print('Output path {} already existing, only play mkv'.format(args.output))
+        args.output = None
+    else:
+        try:
+            os.mkdir(args.output)
+            os.mkdir('{}/color'.format(args.output))
+            os.mkdir('{}/depth'.format(args.output))
+        except (PermissionError, FileExistsError):
+            print('Unable to mkdir {}, only play mkv'.format(args.output))
+            args.output = None
+
+    azure_mkv_reader = o3d.io.AzureKinectMKVReader()
+    azure_mkv_reader.open(args.input)
+    if not azure_mkv_reader.is_opened():
+        print('Unable to open file {}'.format(args.input))
+        exit()
+
+    main(azure_mkv_reader, args.output)
+
+    azure_mkv_reader.close()
+
+
+
+
+

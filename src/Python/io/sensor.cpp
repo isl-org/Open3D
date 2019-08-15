@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <Python/docstring.h>
 #include <json/json.h>
 #include "Python/io/io.h"
 
@@ -37,6 +38,7 @@ using namespace open3d;
 
 void pybind_sensor(py::module &m) {
     // TODO: use Trampoline base class
+    // Class config
     py::class_<io::AzureKinectSensorConfig> azure_kinect_sensor_config(
             m, "AzureKinectSensorConfig", "AzureKinect sensor configuration.");
     py::detail::bind_default_constructor<io::AzureKinectSensorConfig>(
@@ -49,6 +51,7 @@ void pybind_sensor(py::module &m) {
             "config"_a);
 
     // TODO: use Trampoline base class
+    // Class sensor
     py::class_<io::AzureKinectSensor> azure_kinect_sensor(
             m, "AzureKinectSensor", "AzureKinect sensor.");
 
@@ -61,8 +64,11 @@ void pybind_sensor(py::module &m) {
             .def("connect", &io::AzureKinectSensor::Connect, "sensor_index"_a,
                  "Connect to specified device.")
             .def("capture_frame", &io::AzureKinectSensor::CaptureFrame,
-                 "enable_align_depth_to_color"_a, "Capture an RGBD frame.");
+                 "enable_align_depth_to_color"_a, "Capture an RGBD frame.")
+            .def_static("list_devices", &io::AzureKinectSensor::ListDevices,
+                        "List available Azure Kinect devices");
 
+    // Class recorder
     py::class_<io::AzureKinectRecorder> azure_kinect_recorder(
             m, "AzureKinectRecorder", "AzureKinect recorder.");
 
@@ -86,6 +92,7 @@ void pybind_sensor(py::module &m) {
                  "Record a frame to mkv if flag is on and return an RGBD "
                  "object.");
 
+    // Class mkv reader
     py::class_<io::MKVReader> azure_kinect_mkv_reader(
             m, "AzureKinectMKVReader", "AzureKinect mkv file reader.");
     azure_kinect_mkv_reader.def(py::init([]() { return io::MKVReader(); }));

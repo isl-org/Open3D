@@ -88,7 +88,7 @@ Json::Value MKVReader::GetMetaData() {
     value["depth_mode"] = GetTagInMetadata("K4A_DEPTH_MODE");
     value["color_mode"] = GetTagInMetadata("K4A_COLOR_MODE");
 
-    value["enable_imu"] = GetTagInMetadata("K4A_IMU_MODE") == "ON";
+    // value["enable_imu"] = GetTagInMetadata("K4A_IMU_MODE") == "ON";
 
     k4a_calibration_t calibration;
     if (K4A_RESULT_SUCCEEDED !=
