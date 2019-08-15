@@ -4,7 +4,6 @@ import open3d as o3d
 import os
 
 
-kbd_escape = 256
 flag_stop = False
 def escape_callback(vis):
     global flag_stop, recorder
@@ -16,7 +15,6 @@ def escape_callback(vis):
     return False
 
 
-kbd_space = 32
 flag_record = False
 def space_callback(vis):
     global flag_record, recorder, filename
@@ -44,8 +42,8 @@ def space_callback(vis):
 
 def main(recorder, align_depth_to_color):
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(kbd_escape, escape_callback)
-    vis.register_key_callback(kbd_space, space_callback)
+    vis.register_key_callback(256, escape_callback)
+    vis.register_key_callback(32, space_callback)
 
     vis_geometry_added = False
     vis.create_window('recorder', 1920, 540)
@@ -100,12 +98,12 @@ if __name__ == '__main__':
         print('Unsupported device id, fall back to 0')
         device = 0
 
-    azure_kinect_recorder = o3d.io.AzureKinectRecorder(config, device)
-    rc = azure_kinect_recorder.init_sensor()
+    recorder = o3d.io.AzureKinectRecorder(config, device)
+    rc = recorder.init_sensor()
     if rc != 0:
         print('Failed to connect to sensor')
         exit()
 
-    main(azure_kinect_recorder, args.align_depth_to_color)
+    main(recorder, args.align_depth_to_color)
 
-    azure_kinect_recorder.close_record()
+    recorder.close_record()

@@ -2,18 +2,14 @@ import argparse
 import open3d as o3d
 import os
 
-
-# GLFW callbacks
-kbd_escape = 256
 flag_stop = False
+flag_play = True
+
 def kbd_escape_callback(vis):
     global flag_stop
     flag_stop = True
     return False
 
-
-kbd_space = 32
-flag_play = True
 def kbd_space_callback(vis):
     global flag_play
     if flag_play:
@@ -27,8 +23,8 @@ def kbd_space_callback(vis):
 
 def main(reader, output_path):
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(kbd_escape, kbd_escape_callback)
-    vis.register_key_callback(kbd_space, kbd_space_callback)
+    vis.register_key_callback(ord('\x1b'), kbd_escape_callback)
+    vis.register_key_callback(ord(' '), kbd_space_callback)
 
     vis_geometry_added = False
     vis.create_window('reader', 1920, 540)

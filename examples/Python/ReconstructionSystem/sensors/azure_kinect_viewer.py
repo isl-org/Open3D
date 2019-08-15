@@ -4,17 +4,16 @@ import open3d as o3d
 import os
 
 
-kbd_escape = 256
 flag_stop = False
 def escape_callback(vis):
-    global flag_stop, recorder
+    global flag_stop, sensor
     flag_stop = True
     return False
 
 
 def main(sensor, align_depth_to_color):
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(kbd_escape, escape_callback)
+    vis.register_key_callback(256, escape_callback)
 
     vis_geometry_added = False
     vis.create_window('viewer', 1920, 540)
@@ -60,10 +59,10 @@ if __name__ == '__main__':
         print('Unsupported device id, fall back to 0')
         device = 0
 
-    azure_kinect_sensor = o3d.io.AzureKinectSensor(config)
-    rc = azure_kinect_sensor.connect(device)
+    sensor = o3d.io.AzureKinectSensor(config)
+    rc = sensor.connect(device)
     if rc != 0:
         print('Failed to connect to sensor')
         exit()
 
-    main(azure_kinect_sensor, args.align_depth_to_color)
+    main(sensor, args.align_depth_to_color)
