@@ -84,6 +84,12 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
+
+# set(DLL_LIBS "k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS: ${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
+# string(REPLACE ";" ";" DLL_LIBS "${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
+# message(FATAL_ERROR ${DLL_LIBS})
+# set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
+# message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/package
@@ -99,6 +105,8 @@ add_custom_target(python-package
             -DPROJECT_VERSION=${PROJECT_VERSION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
+            -DBUILD_AZURE_KINECT=${BUILD_AZURE_KINECT}
+            -Dk4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS="${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}"
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 

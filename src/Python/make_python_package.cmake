@@ -18,9 +18,13 @@ file(COPY ${PYTHON_COMPILED_MODULE_PATH}
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
 
 if (BUILD_AZURE_KINECT)
-    if (WIN32)
-    else()
-    endif()
+    message("in k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS: ${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
+    string(REPLACE " " ";" DLL_LIST ${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS})
+    foreach(SRC_FILE ${DLL_LIST})
+        message("Copying ${SRC_FILE} to ${PYTHON_PACKAGE_DST_DIR}/open3d")
+        file(COPY ${SRC_FILE}
+             DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d)
+    endforeach()
 endif()
 
 # 3) Configured files and supporting files
