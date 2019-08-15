@@ -50,6 +50,11 @@ void pybind_sensor(py::module &m) {
             }),
             "config"_a);
 
+    py::class_<io::MKVMetadata> azure_kinect_mkv_metadata(
+            m, "AzureKinectMKVMetadata", "AzureKinect mkv metadata.");
+    py::detail::bind_default_constructor<io::MKVMetadata>(
+            azure_kinect_mkv_metadata);
+
     // TODO: use Trampoline base class
     // Class sensor
     py::class_<io::AzureKinectSensor> azure_kinect_sensor(
@@ -104,7 +109,7 @@ void pybind_sensor(py::module &m) {
                  "Close the opened mkv playback.")
             .def("is_eof", &io::MKVReader::IsEOF,
                  "Is the mkv file all consumed.")
-            .def("get_metadata", &io::MKVReader::GetMetaData,
+            .def("get_metadata", &io::MKVReader::GetMetadata,
                  "Get metadata of the mkv playback.")
             .def("seek_timestamp", &io::MKVReader::SeekTimestamp, "timestamp"_a,
                  "Seek to the timestamp (in us).")

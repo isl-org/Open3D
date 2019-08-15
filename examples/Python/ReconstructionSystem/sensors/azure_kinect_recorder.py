@@ -41,9 +41,11 @@ def space_callback(vis):
 
 
 def main(recorder, align_depth_to_color):
+    glfw_key_escape = 256
+    glfw_key_space = 32
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(256, escape_callback)
-    vis.register_key_callback(32, space_callback)
+    vis.register_key_callback(glfw_key_escape, escape_callback)
+    vis.register_key_callback(glfw_key_space, space_callback)
 
     vis_geometry_added = False
     vis.create_window('recorder', 1920, 540)

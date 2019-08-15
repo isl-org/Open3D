@@ -49,7 +49,9 @@ public:
     int Open(const std::string &filename);
     void Close();
 
-    Json::Value GetMetaData();
+    MKVMetadata &GetMetadata() {
+        return metadata_;
+    }
     int SeekTimestamp(size_t timestamp);
     std::shared_ptr<geometry::RGBDImage> NextFrame();
 
@@ -59,6 +61,7 @@ private:
     MKVMetadata metadata_;
     bool is_eof_ = false;
 
+    Json::Value GetMetadataJson();
     std::string GetTagInMetadata(const std::string &tag_name);
 };
 }  // namespace io

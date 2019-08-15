@@ -26,11 +26,57 @@
 
 #include <json/json.h>
 #include <chrono>
+#include <fstream>
 #include <thread>
 
 #include "Open3D/Open3D.h"
 
 using namespace open3d;
+
+void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
+    std::ofstream out(filename);
+    if (!out.is_open()) {
+        utility::LogError("Cannot write to {}\n", filename);
+        return;
+    }
+
+    Json::StreamWriterBuilder builder;
+    builder["commentStyle"] = "None";
+    builder["indentation"] = "\t";
+    std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+    writer->write(value, &out);
+}
+
+Json::Value GenerateDatasetConfig(const std::string &output_path) {
+    Json::Value value;
+
+    utility::LogInfo("Writing to config.json\n");
+    utility::LogWarning(
+            "Please change path_dataset and path_intrinsic when you move the "
+            "dataset.\n");
+
+    if (output_path[0] == '/') {  // global dir
+        value["path_dataset"] = output_path;
+        value["path_intrinsic"] = output_path + "/intrinsic.json";
+    } else {  // relative dir
+        auto pwd = utility::filesystem::GetWorkingDirectory();
+        value["path_dataset"] = pwd + "/" + output_path;
+        value["path_intrinsic"] = pwd + "/" + output_path + "/intrinsic.json";
+    }
+
+    value["name"] = "Azure Kinect Record";
+    value["max_depth"] = 3.0;
+    value["voxel_size"] = 0.05;
+    value["max_depth_diff"] = 0.07;
+    value["preference_loop_closure_odometry"] = 0.1;
+    value["preference_loop_closure_registration"] = 5.0;
+    value["tsdf_cubic_size"] = 3.0;
+    value["icp_method"] = "color";
+    value["global_registration"] = "ransac";
+    value["python_multi_threading"] = true;
+
+    return value;
+}
 
 void PrintUsage() {
     using namespace open3d;
@@ -58,6 +104,10 @@ int main(int argc, char **argv) {
         utility::LogInfo("No output image path, only play mkv.\n");
     } else {
         output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
+        if (output_path.empty()) {
+            utility::LogError("Output path {} is empty, only play mkv.\n",
+                              output_path);
+        }
         if (utility::filesystem::DirectoryExists(output_path)) {
             utility::LogError(
                     "Output path {} already existing, only play mkv.\n",
@@ -79,6 +129,12 @@ int main(int argc, char **argv) {
         utility::LogError("Unable to open {}\n", mkv_filename);
         return 1;
     }
+
+    io::WriteIJsonConvertibleToJSON(
+            fmt::format("{}/intrinsic.json", output_path),
+            mkv_reader.GetMetadata());
+    WriteJsonToFile(fmt::format("{}/config.json", output_path),
+                    GenerateDatasetConfig(output_path));
 
     bool flag_stop = false;
     bool flag_play = true;
@@ -103,7 +159,8 @@ int main(int argc, char **argv) {
 
     vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
     utility::LogInfo(
-            "Starting to play. Press [SPACE] to pause. Press [ESC] to exit.\n");
+            "Starting to play. Press [SPACE] to pause. Press [ESC] to "
+            "exit.\n");
     bool is_geometry_added = false;
     int idx = 0;
     while (!mkv_reader.IsEOF() && !flag_stop) {

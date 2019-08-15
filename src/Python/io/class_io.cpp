@@ -41,6 +41,7 @@
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
 #include "Python/docstring.h"
 
 using namespace open3d;
@@ -347,5 +348,33 @@ void pybind_class_io(py::module &m_io) {
              "Function to write Azure Kinect sensor config to file",
              "filename"_a, "config"_a);
     docstring::FunctionDocInject(m_io, "write_azure_kinect_sensor_config",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("read_azure_kinect_mkv_metadata",
+             [](const std::string &filename) {
+               io::MKVMetadata metadata;
+               bool success =
+                       io::ReadIJsonConvertibleFromJSON(filename, metadata);
+               if (!success) {
+                   utility::LogWarning(
+                           "Invalid mkv metadata {}, use default instead\n",
+                           filename);
+                   return io::MKVMetadata();
+               }
+               return metadata;
+             },
+             "Function to read Azure Kinect metadata from file",
+             "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_azure_kinect_mkv_metadata",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_azure_kinect_mkv_metadata",
+             [](const std::string &filename,
+                const io::MKVMetadata metadata) {
+               return io::WriteIJsonConvertibleToJSON(filename, metadata);
+             },
+             "Function to write Azure Kinect metadata to file",
+             "filename"_a, "config"_a);
+    docstring::FunctionDocInject(m_io, "write_azure_kinect_mkv_metadata",
                                  map_shared_argument_docstrings);
 }

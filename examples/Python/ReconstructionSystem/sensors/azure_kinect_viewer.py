@@ -12,8 +12,9 @@ def escape_callback(vis):
 
 
 def main(sensor, align_depth_to_color):
+    glfw_key_escape = 256
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(256, escape_callback)
+    vis.register_key_callback(glfw_key_escape, escape_callback)
 
     vis_geometry_added = False
     vis.create_window('viewer', 1920, 540)

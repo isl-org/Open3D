@@ -1,16 +1,24 @@
 import argparse
 import open3d as o3d
 import os
+import json
+import sys
+
+filepath, filename = os.path.split(os.path.abspath(__file__))
+sys.path.append(filepath + '/..')
+print(filepath)
+from initialize_config import initialize_config
+
 
 flag_stop = False
 flag_play = True
 
-def kbd_escape_callback(vis):
+def escape_callback(vis):
     global flag_stop
     flag_stop = True
     return False
 
-def kbd_space_callback(vis):
+def space_callback(vis):
     global flag_play
     if flag_play:
         print('Playback paused, press [SPACE] to continue')
@@ -22,12 +30,26 @@ def kbd_space_callback(vis):
 
 
 def main(reader, output_path):
+    glfw_key_escape = 256
+    glfw_key_space = 32
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(ord('\x1b'), kbd_escape_callback)
-    vis.register_key_callback(ord(' '), kbd_space_callback)
+    vis.register_key_callback(glfw_key_escape, escape_callback)
+    vis.register_key_callback(glfw_key_space, space_callback)
 
     vis_geometry_added = False
     vis.create_window('reader', 1920, 540)
+
+    if output_path is not None:
+        abspath = os.path.abspath(output_path)
+        metadata = reader.get_metadata()
+        o3d.io.write_azure_kinect_mkv_metadata(
+            '{}/intrinsic.json'.format(abspath), metadata)
+
+        config = {'path_dataset': abspath,
+                  'path_intrinsic': '{}/intrinsic.json'.format(abspath)}
+        initialize_config(config)
+        with open('{}/config.json'.format(abspath), 'w') as f:
+            json.dump(config, f, indent=4)
 
     idx = 0
     while not reader.is_eof() and not flag_stop:

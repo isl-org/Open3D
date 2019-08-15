@@ -1,0 +1,11 @@
+{
+	"camera_fps" : "K4A_FRAMES_PER_SECOND_30",
+	"color_format" : "K4A_IMAGE_FORMAT_COLOR_MJPG",
+	"color_resolution" : "K4A_COLOR_RESOLUTION_720P",
+	"depth_delay_off_color_usec" : "0",
+	"depth_mode" : "K4A_DEPTH_MODE_WFOV_2X2BINNED",
+	"disable_streaming_indicator" : "false",
+	"subordinate_delay_off_master_usec" : "0",
+	"synchronized_images_only" : "false",
+	"wired_sync_mode" : "K4A_WIRED_SYNC_MODE_STANDALONE"
+}

@@ -55,11 +55,6 @@ bool MKVWriter::IsOpened() { return handle_ != nullptr; }
 
 int MKVWriter::SetMetadata(const MKVMetadata &metadata) {
     metadata_ = metadata;
-    if (metadata_.enable_imu_) {
-        if (K4A_RESULT_SUCCEEDED != k4a_record_add_imu_track(handle_)) {
-            utility::LogError("Unable to write IMU track\n");
-        }
-    }
 
     if (K4A_RESULT_SUCCEEDED != k4a_record_write_header(handle_)) {
         utility::LogError("Unable to write header\n");

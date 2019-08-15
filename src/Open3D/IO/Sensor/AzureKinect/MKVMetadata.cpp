@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
+#include <unordered_map>
 
 #include <json/json.h>
 
@@ -33,17 +34,27 @@ namespace io {
 
 bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
     intrinsics_.ConvertToJsonValue(value);
+
     value["serial_number_"] = serial_number_;
+    value["color_mode"] = color_mode_;
+    value["depth_mode"] = depth_mode_;
+
     value["stream_length_usec"] = stream_length_usec_;
-    value["enable_imu"] = enable_imu_;
+    value["width"] = width_;
+    value["height"] = height_;
 
     return true;
 }
 bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
     intrinsics_.ConvertFromJsonValue(value);
+
     serial_number_ = value["serial_number"].asString();
+    color_mode_ = value["color_mode"].asString();
+    depth_mode_ = value["depth_mode"].asString();
+
     stream_length_usec_ = value["stream_length_usec"].asUInt64();
-    enable_imu_ = value["enable_imu"].asBool();
+    width_ = value["width"].asInt();
+    height_ = value["height"].asInt();
 
     return true;
 }
