@@ -32,19 +32,6 @@
 #include <turbojpeg.h>
 #include <memory>
 
-// call k4a_device_close on every failed CHECK
-#define CHECK(x, device)                                                     \
-    {                                                                        \
-        auto retval = (x);                                                   \
-        if (retval) {                                                        \
-            open3d::utility::LogError("Runtime error: {} returned {}\n", #x, \
-                                      retval);                               \
-                                                                             \
-            k4a_device_close(device);                                        \
-            return 1;                                                        \
-        }                                                                    \
-    }
-
 namespace open3d {
 namespace io {
 
@@ -102,7 +89,12 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
     // get and print device info
     PrintFirmware(device_);
 
-    CHECK(k4a_device_start_cameras(device_, &device_config), device_);
+    if (K4A_FAILED(k4a_device_start_cameras(device_, &device_config))) {
+        utility::LogError(
+                "Runtime error: k4a_device_set_color_control() failed\n");
+        k4a_device_close(device_);
+        return 1;
+    }
 
     // set color control, assume absoluteExposureValue == 0
     if (K4A_FAILED(k4a_device_set_color_control(
@@ -110,6 +102,8 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
                 K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
         utility::LogError(
                 "Runtime error: k4a_device_set_color_control() failed\n");
+        k4a_device_close(device_);
+        return 1;
     }
 
     // set calibration
@@ -128,7 +122,7 @@ k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
         return nullptr;
     } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
         utility::LogError(
-                "Runtime error: k4a_device_get_capture() returned %d\n",
+                "Runtime error: k4a_device_get_capture() returned {}\n",
                 result);
         return nullptr;
     }
@@ -168,11 +162,19 @@ void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb) {
 int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
     char serial_number_buffer[256];
     size_t serial_number_buffer_size = sizeof(serial_number_buffer);
-    CHECK(k4a_device_get_serialnum(device, serial_number_buffer,
-                                   &serial_number_buffer_size),
-          device);
+    if (K4A_BUFFER_RESULT_SUCCEEDED !=
+        k4a_device_get_serialnum(device, serial_number_buffer,
+                                 &serial_number_buffer_size)) {
+        utility::LogError("Runtime error: k4a_device_get_serialnum() failed\n");
+        return 1;
+    }
+
     k4a_hardware_version_t version_info;
-    CHECK(k4a_device_get_version(device, &version_info), device);
+    if (K4A_FAILED(k4a_device_get_version(device, &version_info))) {
+        utility::LogError("Runtime error: k4a_device_get_version() failed\n");
+        return 1;
+    }
+
     utility::LogInfo("Serial number: {}\n", serial_number_buffer);
     utility::LogInfo("Firmware build: {}\n",
                      (version_info.firmware_build == K4A_FIRMWARE_BUILD_RELEASE

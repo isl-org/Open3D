@@ -139,7 +139,7 @@ static std::unordered_map<std::string, k4a_wired_sync_mode_t>
 
 static std::unordered_map<std::string, std::string> standard_config{
         {"color_format", "K4A_IMAGE_FORMAT_COLOR_MJPG"},
-        {"color_resolution", "K4A_COLOR_RESOLUTION_1080P"},
+        {"color_resolution", "K4A_COLOR_RESOLUTION_720P"},
         {"depth_mode", "K4A_DEPTH_MODE_WFOV_2X2BINNED"},
         {"camera_fps", "K4A_FRAMES_PER_SECOND_30"},
         {"synchronized_images_only", "false"},
@@ -203,6 +203,16 @@ bool AzureKinectSensorConfig::IsValidConfig(
             utility::LogWarning("IsValidConfig: camera_fps invalid\n");
         }
     }
+    else {
+        if (config.at("camera_fps") == "K4A_FRAMES_PER_SECOND_30" &&
+            config.at("color_resolution") == "K4A_COLOR_RESOLUTION_3072P") {
+            rc = false;
+            if (verbose) {
+                utility::LogWarning(
+                        "K4A_COLOR_RESOLUTION_3072P does not support 30 FPS\n");
+            }
+        }
+    }
 
     // config["synchronized_images_only"]
     if (config.count("synchronized_images_only") != 0 &&
@@ -256,11 +266,34 @@ AzureKinectSensorConfig::AzureKinectSensorConfig(
 }
 
 bool AzureKinectSensorConfig::ConvertToJsonValue(Json::Value &value) const {
+    // clang-format off
+    value["color_format"]                      = config_.at("color_format");
+    value["color_resolution"]                  = config_.at("color_resolution");
+    value["depth_mode"]                        = config_.at("depth_mode");
+    value["camera_fps"]                        = config_.at("camera_fps");
+    value["synchronized_images_only"]          = config_.at("synchronized_images_only");
+    value["depth_delay_off_color_usec"]        = config_.at("depth_delay_off_color_usec");
+    value["wired_sync_mode"]                   = config_.at("wired_sync_mode");
+    value["subordinate_delay_off_master_usec"] = config_.at("subordinate_delay_off_master_usec");
+    value["disable_streaming_indicator"]       = config_.at("disable_streaming_indicator");
+    // clang-format on
     return true;
 }
 
 bool AzureKinectSensorConfig::ConvertFromJsonValue(const Json::Value &value) {
-    return true;
+    // clang-format off
+    config_["color_format"]                      = value["color_format"].asString();
+    config_["color_resolution"]                  = value["color_resolution"].asString();
+    config_["depth_mode"]                        = value["depth_mode"].asString();
+    config_["camera_fps"]                        = value["camera_fps"].asString();
+    config_["synchronized_images_only"]          = value["synchronized_images_only"].asString();
+    config_["depth_delay_off_color_usec"]        = value["depth_delay_off_color_usec"].asString();
+    config_["wired_sync_mode"]                   = value["wired_sync_mode"].asString();
+    config_["subordinate_delay_off_master_usec"] = value["subordinate_delay_off_master_usec"].asString();
+    config_["disable_streaming_indicator"]       = value["disable_streaming_indicator"].asString();
+    // clang-format on
+
+    return IsValidConfig(config_, true);
 }
 
 void AzureKinectSensorConfig::ConvertFromNativeConfig(

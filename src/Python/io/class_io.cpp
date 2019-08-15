@@ -40,6 +40,7 @@
 #include "Open3D/IO/ClassIO/PoseGraphIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 #include "Python/docstring.h"
 
 using namespace open3d;
@@ -318,5 +319,33 @@ void pybind_class_io(py::module &m_io) {
              "Function to write PoseGraph to file", "filename"_a,
              "pose_graph"_a);
     docstring::FunctionDocInject(m_io, "write_pose_graph",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("read_azure_kinect_sensor_config",
+             [](const std::string &filename) {
+                 io::AzureKinectSensorConfig config;
+                 bool success =
+                         io::ReadIJsonConvertibleFromJSON(filename, config);
+                 if (!success) {
+                     utility::LogWarning(
+                             "Invalid sensor config {}, use default instead\n",
+                             filename);
+                     return io::AzureKinectSensorConfig();
+                 }
+                 return config;
+             },
+             "Function to read Azure Kinect sensor config from file",
+             "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_azure_kinect_sensor_config",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_azure_kinect_sensor_config",
+             [](const std::string &filename,
+                const io::AzureKinectSensorConfig config) {
+                 return io::WriteIJsonConvertibleToJSON(filename, config);
+             },
+             "Function to write Azure Kinect sensor config to file",
+             "filename"_a, "config"_a);
+    docstring::FunctionDocInject(m_io, "write_azure_kinect_sensor_config",
                                  map_shared_argument_docstrings);
 }
