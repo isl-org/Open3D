@@ -37,7 +37,7 @@ using namespace open3d;
 
 static std::unordered_map<std::string, std::string> defult_config{
         {"color_format", "K4A_IMAGE_FORMAT_COLOR_MJPG"},
-        {"color_resolution", "K4A_COLOR_RESOLUTION_1080P"},
+        {"color_resolution", "K4A_COLOR_RESOLUTION_720P"},
         {"depth_mode", "K4A_DEPTH_MODE_WFOV_2X2BINNED"},
         {"camera_fps", "K4A_FRAMES_PER_SECOND_30"},
         {"synchronized_images_only", "false"},
@@ -49,7 +49,7 @@ static std::unordered_map<std::string, std::string> defult_config{
 
 static std::unordered_map<std::string, std::string> special_config{
         {"color_format", "K4A_IMAGE_FORMAT_COLOR_NV12"},
-        {"color_resolution", "K4A_COLOR_RESOLUTION_720P"},
+        {"color_resolution", "K4A_COLOR_RESOLUTION_1080P"},
         {"depth_mode", "K4A_DEPTH_MODE_WFOV_UNBINNED"},
         {"camera_fps", "K4A_FRAMES_PER_SECOND_5"},
         {"synchronized_images_only", "true"},
@@ -61,7 +61,7 @@ static std::unordered_map<std::string, std::string> special_config{
 
 static k4a_device_configuration_t special_native_config = {
         K4A_IMAGE_FORMAT_COLOR_NV12,
-        K4A_COLOR_RESOLUTION_720P,
+        K4A_COLOR_RESOLUTION_1080P,
         K4A_DEPTH_MODE_WFOV_UNBINNED,
         K4A_FRAMES_PER_SECOND_5,
         true,

@@ -202,9 +202,10 @@ bool AzureKinectSensorConfig::IsValidConfig(
         if (verbose) {
             utility::LogWarning("IsValidConfig: camera_fps invalid\n");
         }
-    }
-    else {
-        if (config.at("camera_fps") == "K4A_FRAMES_PER_SECOND_30" &&
+    } else {
+        if (config.count("camera_fps") != 0 &&
+            config.count("color_resolution") != 0 &&
+            config.at("camera_fps") == "K4A_FRAMES_PER_SECOND_30" &&
             config.at("color_resolution") == "K4A_COLOR_RESOLUTION_3072P") {
             rc = false;
             if (verbose) {
