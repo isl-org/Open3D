@@ -103,6 +103,9 @@ endif ()
 message(STATUS "Building libjpeg-turbo from source")
 include(libjpeg-turbo/libjpeg-turbo.cmake)
 
+# Azure Kinect
+include(azure_kinect/azure_kinect.cmake)
+
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # It is a known bug that g++ on OSX only supports libstdc++
@@ -314,6 +317,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${qhull_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
+     ${k4a_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
@@ -324,6 +328,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
+     ${k4a_INCLUDE_DIRS}  # TODO: remove the need to install k4a header
 )
 
 # set 3RDPARTY_LIBRARY_DIRS
@@ -332,6 +337,7 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
     ${PNG_LIBRARY_DIRS}
+    ${k4a_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
@@ -346,6 +352,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${qhull_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
+     ${k4a_LIBRARIES}
 )
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,

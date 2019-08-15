@@ -44,6 +44,11 @@ set(PACKAGE_NAME open3d)
 file(GLOB_RECURSE PY_ALL_HEADER_FILES "*.h")
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
 
+# TODO: consider explicitly listing the files
+if (NOT BUILD_AZURE_KINECT)
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
+endif()
+
 ADD_SOURCE_GROUP(Core)
 ADD_SOURCE_GROUP(IO)
 ADD_SOURCE_GROUP(Tutorial)
@@ -51,6 +56,12 @@ ADD_SOURCE_GROUP(Visualization)
 pybind11_add_module(${PACKAGE_NAME}
     ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
 )
+
+# The Python headers won't be included outside the project, so it is okay to
+# use the target_compile_definitions approach. Otherwise, use configure_file.
+if (BUILD_AZURE_KINECT)
+    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
+endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (${PYTHON_VERSION_MAJOR} EQUAL 2)

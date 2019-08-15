@@ -32,5 +32,7 @@ using namespace open3d;
 void pybind_io(py::module &m) {
     py::module m_io = m.def_submodule("io");
     pybind_class_io(m_io);
+#ifdef BUILD_AZURE_KINECT
     pybind_sensor(m_io);
+#endif
 }
