@@ -50,7 +50,6 @@ elif sys.platform == "win32":
         if len(full_paths) != 1:
             raise RuntimeError("Not found or more than one libs found for", dll_file)
         else:
-            print("loading full_paths[0]")
             ctypes.cdll.LoadLibrary(full_paths[0])
 else:
     raise RuntimeError("Unsupported system " + sys.platform)
