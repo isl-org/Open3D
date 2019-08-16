@@ -21,9 +21,9 @@ def escape_callback(vis):
 def space_callback(vis):
     global flag_play
     if flag_play:
-        print('Playback paused, press [SPACE] to continue')
+        print('Playback paused, press [SPACE] to continue.')
     else:
-        print('Playback resumed, press [SPACE] to pause')
+        print('Playback resumed, press [SPACE] to pause.')
 
     flag_play = not flag_play
     return False
@@ -38,6 +38,10 @@ def main(reader, output_path):
 
     vis_geometry_added = False
     vis.create_window('reader', 1920, 540)
+
+    print('MKV reader initialized. '
+          'Press [SPACE] to start. '
+          'Press [ESC] to exit.')
 
     if output_path is not None:
         abspath = os.path.abspath(output_path)

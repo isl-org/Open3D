@@ -19,6 +19,8 @@ def main(sensor, align_depth_to_color):
     vis_geometry_added = False
     vis.create_window('viewer', 1920, 540)
 
+    print('Sensor initialized. '
+          'Press [ESC] to exit.')
     while not flag_stop:
         rgbd = sensor.capture_frame(align_depth_to_color)
         if rgbd is None:

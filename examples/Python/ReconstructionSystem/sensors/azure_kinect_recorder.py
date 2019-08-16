@@ -9,9 +9,9 @@ def escape_callback(vis):
     global flag_stop, recorder
     flag_stop = True
     if recorder.is_record_created():
-        print('Recording finished')
+        print('Recording finished.')
     else:
-        print('Nothing has been recorded')
+        print('Nothing has been recorded.')
     return False
 
 
@@ -21,20 +21,20 @@ def space_callback(vis):
     if flag_record:
         print('Recording paused. '
               'Press [Space] to continue. '
-              'Press [ESC] to save and exit')
+              'Press [ESC] to save and exit.')
         flag_record = False
 
     elif not recorder.is_record_created():
         if recorder.open_record(filename):
             print('Recording started. '
                   'Press [SPACE] to pause. '
-                  'Press [ESC] to save and exit')
+                  'Press [ESC] to save and exit.')
             flag_record = True
 
     else:
         print('Recording resumed, video may be discontinuous. '
               'Press [SPACE] to pause. '
-              'Press [ESC] to save and exit')
+              'Press [ESC] to save and exit.')
         flag_record = True
 
     return False
@@ -49,6 +49,11 @@ def main(recorder, align_depth_to_color):
 
     vis_geometry_added = False
     vis.create_window('recorder', 1920, 540)
+
+    print('Recorder initialized. '
+          'Press [SPACE] to start. '
+          'Press [ESC] to save and exit.')
+    flag_record = True
 
     while not flag_stop:
         rgbd = recorder.record_frame(flag_record, align_depth_to_color)
