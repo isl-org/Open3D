@@ -7,8 +7,8 @@ if (BUILD_AZURE_KINECT)
     # - k4a_LIBRARY_DIRS
     # - k4a_LIBRARIES
     if (WIN32)
+        # We assume k4a 1.1.1 is installed in the default directory
         set(k4a_INCLUDE_DIRS "C:/Program\ Files/Azure\ Kinect\ SDK\ v1.1.1/sdk/include")
-
         # On Windows, we need to
         # 1) link with k4a.lib, k4arecord.lib
         set(k4a_STATIC_LIBRARY_DIR
@@ -52,12 +52,19 @@ if (BUILD_AZURE_KINECT)
             get_filename_component(k4a_LIBRARY_DIR ${k4a_LIBRARIES} DIRECTORY)
             set(k4a_LIBRARY_DIRS ${k4a_LIBRARY_DIR})
 
+            # K4a 1.1.1 comes with libdepthengine.so.1.0
+            # TODO: use more flexible path than hard-coded
             set(k4adepthengine_LIBRARIES ${k4a_LIBRARY_DIR}/libdepthengine.so.1.0)
+
+            # TODO: remove hardcoded libstdc++.so.6 path
+            set(stdcpp_LIBRARY ${k4a_LIBRARY_DIR}/libstdc++.so.6)
+            get_filename_component(stdcpp_LIBRARY ${stdcpp_LIBRARY} REALPATH)
 
             set(k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS
                 ${k4a_LIBRARIES}
                 ${k4arecord_LIBRARIES}
                 ${k4adepthengine_LIBRARIES}
+                ${stdcpp_LIBRARY}
             )
         else ()
             message(FATAL_ERROR "Kinect SDK NOT found. Please install according \
