@@ -37,6 +37,14 @@
 namespace open3d {
 namespace io {
 
+static std::unordered_map<std::string, std::pair<int, int>>
+        resolution_to_width_height({{"720P", std::make_pair(1280, 720)},
+                                    {"1080P", std::make_pair(1920, 1080)},
+                                    {"1440P", std::make_pair(2560, 1440)},
+                                    {"1536P", std::make_pair(2048, 1536)},
+                                    {"2160P", std::make_pair(3840, 2160)},
+                                    {"3072P", std::make_pair(4096, 3072)}});
+
 MKVReader::MKVReader() : handle_(nullptr), transformation_(nullptr) {}
 
 bool MKVReader::IsOpened() { return handle_ != nullptr; }
@@ -68,7 +76,7 @@ int MKVReader::Open(const std::string &filename) {
         return -1;
     }
 
-    metadata_.ConvertFromJsonValue(GetMetaData());
+    metadata_.ConvertFromJsonValue(GetMetadataJson());
     is_eof_ = false;
 
     return 0;
@@ -76,19 +84,13 @@ int MKVReader::Open(const std::string &filename) {
 
 void MKVReader::Close() { k4a_playback_close(handle_); }
 
-Json::Value MKVReader::GetMetaData() {
+Json::Value MKVReader::GetMetadataJson() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
         return Json::Value();
     }
 
     Json::Value value;
-    value["stream_length_usec"] = k4a_playback_get_last_timestamp_usec(handle_);
-    value["serial_number"] = GetTagInMetadata("K4A_DEVICE_SERIAL_NUMBER");
-    value["depth_mode"] = GetTagInMetadata("K4A_DEPTH_MODE");
-    value["color_mode"] = GetTagInMetadata("K4A_COLOR_MODE");
-
-    // value["enable_imu"] = GetTagInMetadata("K4A_IMU_MODE") == "ON";
 
     k4a_calibration_t calibration;
     if (K4A_RESULT_SUCCEEDED !=
@@ -103,6 +105,28 @@ Json::Value MKVReader::GetMetaData() {
                                  color_camera_calibration.resolution_height,
                                  param.fx, param.fy, param.cx, param.cy);
     pinhole_camera.ConvertToJsonValue(value);
+
+    value["serial_number"] = GetTagInMetadata("K4A_DEVICE_SERIAL_NUMBER");
+    value["depth_mode"] = GetTagInMetadata("K4A_DEPTH_MODE");
+    value["color_mode"] = GetTagInMetadata("K4A_COLOR_MODE");
+
+    value["stream_length_usec"] = k4a_playback_get_last_timestamp_usec(handle_);
+    auto color_mode = value["color_mode"].asString();
+    size_t pos = color_mode.find('_');
+    if (pos == std::string::npos) {
+        utility::LogError("Unknown color format {}\n", color_mode);
+        return value;
+    }
+    std::string resolution =
+            std::string(color_mode.begin() + pos + 1, color_mode.end());
+    if (resolution_to_width_height.count(resolution) == 0) {
+        utility::LogError("Unknown resolution format {}\n", resolution);
+        return value;
+    }
+
+    auto width_height = resolution_to_width_height.at(resolution);
+    value["width"] = width_height.first;
+    value["height"] = width_height.second;
 
     /** For internal usages */
     transformation_ = k4a_transformation_create(&calibration);
@@ -149,7 +173,8 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
         return nullptr;
     }
 
-    auto rgbd = AzureKinectSensor::DecompressCapture(k4a_capture, transformation_);
+    auto rgbd =
+            AzureKinectSensor::DecompressCapture(k4a_capture, transformation_);
     k4a_capture_release(k4a_capture);
 
     return rgbd;

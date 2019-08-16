@@ -51,8 +51,10 @@ public:
 
     std::string serial_number_ = "";
     uint64_t stream_length_usec_ = 0;
-
-    bool enable_imu_ = false;
+    int width_;
+    int height_;
+    std::string color_mode_;
+    std::string depth_mode_;
 };
 
 }  // namespace io

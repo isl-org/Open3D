@@ -67,7 +67,7 @@ Now, try importing Open3D.
 
     python -c "import open3d"
 
-If this works, configurations, now Open3D has been successfully installed!
+If this works, congratulations, now Open3D has been successfully installed!
 
 
 Running Open3D tutorials
