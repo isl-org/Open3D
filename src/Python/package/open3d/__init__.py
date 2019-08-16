@@ -35,10 +35,13 @@ if sys.platform == "linux" or platform == "linux2":
     distro, version, _ = platform.linux_distribution()
     if distro == "Ubuntu" and version == "18.04":
         pwd = os.path.dirname(os.path.realpath(__file__))
-        print(glob.glob(pwd + "libdepthengine.*"))
-        ctypes.cdll.LoadLibrary(pwd + "/" + "libdepthengine.so.1.0")
-        ctypes.cdll.LoadLibrary(pwd + "/" + "libk4a.so.1.1.1")
-        ctypes.cdll.LoadLibrary(pwd + "/" + "libk4arecord.so.1.1.1")
+        dll_files = ["libdepthengine.so", "libk4a.so", "libk4arecord.so"]
+        for dll_file in dll_files:
+            full_paths = glob.glob(pwd + "/" + dll_file + "*")
+            if len(full_paths) != 1:
+                raise RuntimeError("Not found or more than one libs found for", dll_file)
+            else:
+                ctypes.cdll.LoadLibrary(full_paths[0])
     else:
         raise RuntimeError("Unsupported OS type")
 elif platform == "darwin":
