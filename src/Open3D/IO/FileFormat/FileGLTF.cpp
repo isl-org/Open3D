@@ -175,77 +175,61 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                 model.bufferViews[colors_accessor.bufferView];
                         const tinygltf::Buffer& colors_buffer =
                                 model.buffers[colors_view.buffer];
-                        if (colors_accessor.componentType ==
-                            TINYGLTF_COMPONENT_TYPE_FLOAT) {
-                            const float* colors = reinterpret_cast<
-                                    const float*>(
-                                    &colors_buffer
-                                             .data[colors_view.byteOffset +
-                                                   colors_accessor.byteOffset]);
 
-                            for (size_t i = 0; i < colors_accessor.count; ++i) {
-                                mesh_temp.vertex_colors_.push_back(
-                                        Eigen::Vector3d(
-                                                colors[i * colors_accessor
-                                                                       .type +
-                                                       0],
-                                                colors[i * colors_accessor
-                                                                       .type +
-                                                       1],
-                                                colors[i * colors_accessor
-                                                                       .type +
-                                                       2]));
-                            }
-                        } else {
-                            std::unique_ptr<IntArrayBase> colors_array_pointer =
-                                    nullptr;
-                            const auto data_address =
-                                    colors_buffer.data.data() +
-                                    colors_view.byteOffset +
-                                    colors_accessor.byteOffset;
-                            const auto byte_stride =
+                        size_t byte_stride = colors_view.byteStride;
+                        if (byte_stride == 0) {
+                            // According to glTF 2.0 specs:
+                            // When byteStride==0, it means that accessor
+                            // elements are tightly packed.
+                            byte_stride =
+                                    colors_accessor.type *
                                     tinygltf::GetComponentSizeInBytes(
                                             colors_accessor.componentType);
-                            // The byte length is required to be a multiple of 4
-                            // bytes, and thus UNSIGNED_BYTE and UNSIGNED_SHORT
-                            // can only be used with VEC4.
-                            // However, VEC3 type can be specified in the file
-                            // to signify that the per-vertex colors do not
-                            // contain alpha.
-                            const auto count = 4 * colors_accessor.count;
-                            double max_type_value;
-                            switch (colors_accessor.componentType) {
-                                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                                    colors_array_pointer = std::unique_ptr<
-                                            IntArray<unsigned char>>(
-                                            new IntArray<unsigned char>(
-                                                    ArrayAdapter<unsigned char>(
-                                                            data_address, count,
-                                                            byte_stride)));
-                                    max_type_value = 255;
-                                    break;
-                                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                                    colors_array_pointer = std::unique_ptr<
-                                            IntArray<unsigned short>>(
-                                            new IntArray<unsigned short>(
-                                                    ArrayAdapter<
-                                                            unsigned short>(
-                                                            data_address, count,
-                                                            byte_stride)));
-                                    max_type_value = 65535;
-                                    break;
-                            }
-                            const auto& colors = *colors_array_pointer;
+                        }
+                        if (colors_accessor.componentType ==
+                            TINYGLTF_COMPONENT_TYPE_FLOAT) {
                             for (size_t i = 0; i < colors_accessor.count; ++i) {
-                                mesh_temp.vertex_colors_.push_back(
-                                        Eigen::Vector3d(
-                                                (double)colors[i * 4 + 0] /
-                                                        max_type_value,
-                                                (double)colors[i * 4 + 1] /
-                                                        max_type_value,
-                                                (double)colors[i * 4 + 2] /
-                                                        max_type_value));
+                                const float* colors =
+                                        reinterpret_cast<const float*>(
+                                                colors_buffer.data.data() +
+                                                colors_view.byteOffset +
+                                                i * byte_stride);
+                                mesh_temp.vertex_colors_.emplace_back(
+                                        colors[0], colors[1], colors[2]);
                             }
+                        } else if (colors_accessor.componentType ==
+                                   TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                            for (size_t i = 0; i < colors_accessor.count; ++i) {
+                                const uint8_t* colors =
+                                        reinterpret_cast<const uint8_t*>(
+                                                colors_buffer.data.data() +
+                                                colors_view.byteOffset +
+                                                i * byte_stride);
+                                double max_val = (double)
+                                        std::numeric_limits<uint8_t>::max();
+                                mesh_temp.vertex_colors_.emplace_back(
+                                        colors[0] / max_val,
+                                        colors[1] / max_val,
+                                        colors[2] / max_val);
+                            }
+                        } else if (colors_accessor.componentType ==
+                                   TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+                            for (size_t i = 0; i < colors_accessor.count; ++i) {
+                                const uint16_t* colors =
+                                        reinterpret_cast<const uint16_t*>(
+                                                colors_buffer.data.data() +
+                                                colors_view.byteOffset +
+                                                i * byte_stride);
+                                double max_val = (double)
+                                        std::numeric_limits<uint16_t>::max();
+                                mesh_temp.vertex_colors_.emplace_back(
+                                        colors[0] / max_val,
+                                        colors[1] / max_val,
+                                        colors[2] / max_val);
+                            }
+                        } else {
+                            throw std::runtime_error(
+                                    "Unrecognized componentType");
                         }
                     }
                 }
