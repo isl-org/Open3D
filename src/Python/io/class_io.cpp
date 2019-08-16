@@ -73,6 +73,7 @@ static const std::unordered_map<std::string, std::string>
                  "Set to ``False`` to not write any vertex colors, even if "
                  "present on the mesh"},
                 // Entities
+                {"config", "AzureKinectSensor's config file."},
                 {"pointcloud", "The ``PointCloud`` object for I/O"},
                 {"mesh", "The ``TriangleMesh`` object for I/O"},
                 {"line_set", "The ``LineSet`` object for I/O"},
@@ -352,29 +353,27 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def("read_azure_kinect_mkv_metadata",
              [](const std::string &filename) {
-               io::MKVMetadata metadata;
-               bool success =
-                       io::ReadIJsonConvertibleFromJSON(filename, metadata);
-               if (!success) {
-                   utility::LogWarning(
-                           "Invalid mkv metadata {}, use default instead\n",
-                           filename);
-                   return io::MKVMetadata();
-               }
-               return metadata;
+                 io::MKVMetadata metadata;
+                 bool success =
+                         io::ReadIJsonConvertibleFromJSON(filename, metadata);
+                 if (!success) {
+                     utility::LogWarning(
+                             "Invalid mkv metadata {}, use default instead\n",
+                             filename);
+                     return io::MKVMetadata();
+                 }
+                 return metadata;
              },
-             "Function to read Azure Kinect metadata from file",
-             "filename"_a);
+             "Function to read Azure Kinect metadata from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_azure_kinect_mkv_metadata",
                                  map_shared_argument_docstrings);
 
     m_io.def("write_azure_kinect_mkv_metadata",
-             [](const std::string &filename,
-                const io::MKVMetadata metadata) {
-               return io::WriteIJsonConvertibleToJSON(filename, metadata);
+             [](const std::string &filename, const io::MKVMetadata metadata) {
+                 return io::WriteIJsonConvertibleToJSON(filename, metadata);
              },
-             "Function to write Azure Kinect metadata to file",
-             "filename"_a, "config"_a);
+             "Function to write Azure Kinect metadata to file", "filename"_a,
+             "config"_a);
     docstring::FunctionDocInject(m_io, "write_azure_kinect_mkv_metadata",
                                  map_shared_argument_docstrings);
 }

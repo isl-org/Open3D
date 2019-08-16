@@ -37,8 +37,18 @@
 using namespace open3d;
 
 void pybind_sensor(py::module &m) {
-    // TODO: use Trampoline base class
-    // Class config
+    static const std::unordered_map<std::string, std::string>
+            map_shared_argument_docstrings = {
+                    {"sensor_index", "The selected device index."},
+                    {"config", "AzureKinectSensor's config file."},
+                    {"timestamp", "Timestamp in the video (usec)."},
+                    {"filename", "Path to the mkv file."},
+                    {"enable_record", "Enable recording to mkv file."},
+                    {"enable_align_depth_to_color",
+                     "Enable aligning WFOV depth image to the color image in "
+                     "visualizer."}};
+
+    // Class kinect config
     py::class_<io::AzureKinectSensorConfig> azure_kinect_sensor_config(
             m, "AzureKinectSensorConfig", "AzureKinect sensor configuration.");
     py::detail::bind_default_constructor<io::AzureKinectSensorConfig>(
@@ -54,8 +64,15 @@ void pybind_sensor(py::module &m) {
             m, "AzureKinectMKVMetadata", "AzureKinect mkv metadata.");
     py::detail::bind_default_constructor<io::MKVMetadata>(
             azure_kinect_mkv_metadata);
+    azure_kinect_mkv_metadata
+            .def_readwrite("width", &io::MKVMetadata::width_,
+                           "Width of the video")
+            .def_readwrite("height", &io::MKVMetadata::height_,
+                           "Height of the video")
+            .def_readwrite("stream_length_usec",
+                           &io::MKVMetadata::stream_length_usec_,
+                           "Length of the video (usec)");
 
-    // TODO: use Trampoline base class
     // Class sensor
     py::class_<io::AzureKinectSensor> azure_kinect_sensor(
             m, "AzureKinectSensor", "AzureKinect sensor.");
@@ -72,6 +89,12 @@ void pybind_sensor(py::module &m) {
                  "enable_align_depth_to_color"_a, "Capture an RGBD frame.")
             .def_static("list_devices", &io::AzureKinectSensor::ListDevices,
                         "List available Azure Kinect devices");
+    docstring::ClassMethodDocInject(m, "AzureKinectSensor", "connect",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectSensor", "capture_frame",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectSensor", "list_devices",
+                                    map_shared_argument_docstrings);
 
     // Class recorder
     py::class_<io::AzureKinectRecorder> azure_kinect_recorder(
@@ -93,9 +116,20 @@ void pybind_sensor(py::module &m) {
             .def("close_record", &io::AzureKinectRecorder::CloseRecord,
                  "Close the recorded mkv file.")
             .def("record_frame", &io::AzureKinectRecorder::RecordFrame,
-                 "record_on"_a, "enable_align_depth_to_color"_a,
+                 "enable_record"_a, "enable_align_depth_to_color"_a,
                  "Record a frame to mkv if flag is on and return an RGBD "
                  "object.");
+    docstring::ClassMethodDocInject(m, "AzureKinectRecorder", "init_sensor",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectRecorder",
+                                    "is_record_created",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectRecorder", "open_record",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectRecorder", "close_record",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectRecorder", "record_frame",
+                                    map_shared_argument_docstrings);
 
     // Class mkv reader
     py::class_<io::MKVReader> azure_kinect_mkv_reader(
@@ -108,7 +142,7 @@ void pybind_sensor(py::module &m) {
             .def("close", &io::MKVReader::Close,
                  "Close the opened mkv playback.")
             .def("is_eof", &io::MKVReader::IsEOF,
-                 "Is the mkv file all consumed.")
+                 "Check if the mkv file is all read.")
             .def("get_metadata", &io::MKVReader::GetMetadata,
                  "Get metadata of the mkv playback.")
             .def("seek_timestamp", &io::MKVReader::SeekTimestamp, "timestamp"_a,
@@ -116,4 +150,16 @@ void pybind_sensor(py::module &m) {
             .def("next_frame", &io::MKVReader::NextFrame,
                  "Get next frame from the mkv playback and returns the RGBD "
                  "object.");
+    docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "open",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "close",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "is_eof",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "get_metadata",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "seek_timestamp",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "next_frame",
+                                    map_shared_argument_docstrings);
 }
