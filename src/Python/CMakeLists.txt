@@ -85,11 +85,18 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
-# set(DLL_LIBS "k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS: ${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
-# string(REPLACE ";" ";" DLL_LIBS "${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}")
-# message(FATAL_ERROR ${DLL_LIBS})
-# set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
-# message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
+# https://stackoverflow.com/a/7216542/1255535
+function(JOIN VALUES GLUE OUTPUT)
+  string (REGEX REPLACE "([^\\]|^);" "\\1${GLUE}" _TMP_STR "${VALUES}")
+  string (REGEX REPLACE "[\\](.)" "\\1" _TMP_STR "${_TMP_STR}") # fixes escaping
+  set (${OUTPUT} "${_TMP_STR}" PARENT_SCOPE)
+endfunction()
+
+JOIN("${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}" "#" DLL_LIBS)
+message(STATUS ${DLL_LIBS})
+# list(LENGTH DLL_LIBS dll_length)
+# message(FATAL_ERROR "dll_length: ${dll_length}")
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/package
@@ -106,7 +113,7 @@ add_custom_target(python-package
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -DBUILD_AZURE_KINECT=${BUILD_AZURE_KINECT}
-            -Dk4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS="${k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS}"
+            -Dk4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS="${DLL_LIBS}"
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 
