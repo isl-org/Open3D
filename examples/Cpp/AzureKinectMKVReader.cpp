@@ -130,12 +130,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    io::WriteIJsonConvertibleToJSON(
-            fmt::format("{}/intrinsic.json", output_path),
-            mkv_reader.GetMetadata());
-    WriteJsonToFile(fmt::format("{}/config.json", output_path),
-                    GenerateDatasetConfig(output_path));
-
     bool flag_stop = false;
     bool flag_play = true;
     visualization::VisualizerWithKeyCallback vis;
@@ -161,8 +155,16 @@ int main(int argc, char **argv) {
     utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
             "exit.\n");
+
     bool is_geometry_added = false;
     int idx = 0;
+    if (write_image) {
+        io::WriteIJsonConvertibleToJSON(
+                fmt::format("{}/intrinsic.json", output_path),
+                mkv_reader.GetMetadata());
+        WriteJsonToFile(fmt::format("{}/config.json", output_path),
+                        GenerateDatasetConfig(output_path));
+    }
     while (!mkv_reader.IsEOF() && !flag_stop) {
         if (flag_play) {
             auto im_rgbd = mkv_reader.NextFrame();
