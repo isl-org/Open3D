@@ -33,14 +33,20 @@ import glob
 
 if sys.platform == "linux" or platform == "linux2":
     distro, version, _ = platform.linux_distribution()
-    if distro == "Ubuntu" and version == "18.04":
+    if distro == "Ubuntu":
+        if version == "18.04":
+            dll_files = ["libdepthengine.so", "libk4a.so", "libk4arecord.so"]
+        elif version == "16.04":
+            dll_files = ["libstdc++.so", "libdepthengine.so", "libk4a.so", "libk4arecord.so"]
+        else:
+            raise RuntimeError("Unsupported Ubuntu version")
         pwd = os.path.dirname(os.path.realpath(__file__))
-        dll_files = ["libdepthengine.so", "libk4a.so", "libk4arecord.so"]
         for dll_file in dll_files:
             full_paths = glob.glob(pwd + "/" + dll_file + "*")
             if len(full_paths) != 1:
                 raise RuntimeError("Not found or more than one libs found for", dll_file)
             else:
+                print("loading", full_paths[0])
                 ctypes.cdll.LoadLibrary(full_paths[0])
     else:
         raise RuntimeError("Unsupported OS type")
