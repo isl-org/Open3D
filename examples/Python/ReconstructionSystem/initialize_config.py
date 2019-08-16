@@ -44,3 +44,4 @@ def initialize_config(config):
     set_default_value(config, "template_refined_posegraph_optimized",
                       "scene/refined_registration_optimized.json")
     set_default_value(config, "template_global_mesh", "scene/integrated.ply")
+    set_default_value(config, "template_global_traj", "scene/trajectory.log")
