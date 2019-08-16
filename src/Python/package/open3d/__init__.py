@@ -40,9 +40,9 @@ if sys.platform == "linux" or platform == "linux2":
             raise RuntimeError("Not found or more than one libs found for", dll_file)
         else:
             ctypes.cdll.LoadLibrary(full_paths[0])
-elif platform == "darwin":
+elif sys.platform == "darwin":
     pass
-elif platform == "win32":
+elif sys.platform == "win32":
     dll_files = ["depthengine*.dll", "k4a.dll", "k4arecord.dll"]
     pwd = os.path.dirname(os.path.realpath(__file__))
     for dll_file in dll_files:
@@ -50,7 +50,10 @@ elif platform == "win32":
         if len(full_paths) != 1:
             raise RuntimeError("Not found or more than one libs found for", dll_file)
         else:
+            print("loading full_paths[0]")
             ctypes.cdll.LoadLibrary(full_paths[0])
+else:
+    raise RuntimeError("Unsupported system " + sys.platform)
 
 from .open3d import * # py2 py3 compatible
 
