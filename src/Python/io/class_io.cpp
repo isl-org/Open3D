@@ -321,6 +321,7 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "write_pose_graph",
                                  map_shared_argument_docstrings);
 
+#ifdef BUILD_AZURE_KINECT
     m_io.def("read_azure_kinect_sensor_config",
              [](const std::string &filename) {
                  io::AzureKinectSensorConfig config;
@@ -348,4 +349,5 @@ void pybind_class_io(py::module &m_io) {
              "filename"_a, "config"_a);
     docstring::FunctionDocInject(m_io, "write_azure_kinect_sensor_config",
                                  map_shared_argument_docstrings);
+#endif
 }
