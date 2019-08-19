@@ -87,11 +87,14 @@ public:
 
     /// Function to extract a triangle mesh of the specified iso-surface at
     /// \param level. \param values are values per-vertex.
+    /// This method applies primal contouring and generates triangles for each
+    /// tetrahedron.
     std::shared_ptr<TriangleMesh> ExtractTriangleMesh(
             const std::vector<double> &values, double level);
 
     /// Function that creates a tetrahedral mesh (TetraMeshFactory.cpp).
-    /// from a point cloud.
+    /// from a point cloud. The method creates the Delaunay triangulation
+    /// using the implementation from Qhull.
     static std::shared_ptr<TetraMesh> CreateFromPointCloud(
             const PointCloud &point_cloud);
 
