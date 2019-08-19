@@ -299,8 +299,8 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
     auto ComputeTriangleNormal = [](const Eigen::Vector3d &a,
                                     const Eigen::Vector3d &b,
                                     const Eigen::Vector3d &c) {
-        Eigen::Vector3d ab(b - a);
-        Eigen::Vector3d ac(c - a);
+        Eigen::Vector3d ab = b - a;
+        Eigen::Vector3d ac = c - a;
         return ab.cross(ac);
     };
 
