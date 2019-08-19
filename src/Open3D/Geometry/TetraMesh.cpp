@@ -187,7 +187,7 @@ TetraMesh &TetraMesh::RemoveDuplicatedTetras() {
         std::array<Index, 4> t{tetras_[i](0), tetras_[i](1), tetras_[i](2),
                                tetras_[i](3)};
 
-        // We sort the indices to find dubplicates, because tetra (0-1-2-3)
+        // We sort the indices to find duplicates, because tetra (0-1-2-3)
         // and tetra (2-0-3-1) are the same.
         std::sort(t.begin(), t.end());
         index = std::make_tuple(t[0], t[1], t[2], t[3]);
@@ -278,11 +278,11 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
         return triangle_mesh;
     }
 
-    auto surface_intersection_test = [](double v0, double v1, double level) {
+    auto SurfaceIntersectionTest = [](double v0, double v1, double level) {
         return (v0 < level && v1 >= level) || (v0 >= level && v1 < level);
     };
 
-    auto compute_edge_vertex = [&values, level, this](Index idx1, Index idx2) {
+    auto ComputeEdgeVertex = [&values, level, this](Index idx1, Index idx2) {
         double v1 = values[idx1];
         double v2 = values[idx2];
 
@@ -296,28 +296,26 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
         return intersection;
     };
 
-    auto compute_triangle_normal = [](const Eigen::Vector3d &a,
-                                      const Eigen::Vector3d &b,
-                                      const Eigen::Vector3d &c) {
+    auto ComputeTriangleNormal = [](const Eigen::Vector3d &a,
+                                    const Eigen::Vector3d &b,
+                                    const Eigen::Vector3d &c) {
         Eigen::Vector3d ab(b - a);
         Eigen::Vector3d ac(c - a);
         return ab.cross(ac);
     };
 
-    auto make_sorted_tuple2 = [](Index a, Index b) {
+    auto MakeSortedTuple2 = [](Index a, Index b) {
         if (a < b)
             return std::make_tuple(a, b);
         else
             return std::make_tuple(b, a);
     };
 
-    auto has_common_vertex_index = [](Index2 a, Index2 b) {
-        if (std::get<0>(b) == std::get<0>(a) ||
-            std::get<1>(b) == std::get<0>(a) ||
-            std::get<0>(b) == std::get<1>(a) ||
-            std::get<1>(b) == std::get<1>(a))
-            return true;
-        return false;
+    auto HasCommonVertexIndex = [](Index2 a, Index2 b) {
+        return std::get<0>(b) == std::get<0>(a) ||
+               std::get<1>(b) == std::get<0>(a) ||
+               std::get<0>(b) == std::get<1>(a) ||
+               std::get<1>(b) == std::get<1>(a);
     };
 
     std::unordered_map<Index2, size_t, utility::hash_tuple::hash<Index2>>
@@ -340,9 +338,9 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
             Index edge_vert2 = tetra[tetra_edges[tet_edge_i][1]];
             double vert_value1 = values[edge_vert1];
             double vert_value2 = values[edge_vert2];
-            if (surface_intersection_test(vert_value1, vert_value2, level)) {
-                Index2 index = make_sorted_tuple2(edge_vert1, edge_vert2);
-                verts[num_verts] = compute_edge_vertex(edge_vert1, edge_vert2);
+            if (SurfaceIntersectionTest(vert_value1, vert_value2, level)) {
+                Index2 index = MakeSortedTuple2(edge_vert1, edge_vert2);
+                verts[num_verts] = ComputeEdgeVertex(edge_vert1, edge_vert2);
                 keys[num_verts] = index;
 
                 // make edge_vert1 be the vertex that is smaller than level
@@ -373,7 +371,7 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
                                 verts_indices[2]);
 
             Eigen::Vector3d tri_normal =
-                    compute_triangle_normal(verts[0], verts[1], verts[2]);
+                    ComputeTriangleNormal(verts[0], verts[1], verts[2]);
 
             // accumulate to improve robustness of the triangle orientation test
             double dot = 0;
@@ -383,21 +381,21 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
             triangle_mesh->triangles_.push_back(tri);
         } else if (4 == num_verts) {
             std::array<int, 4> order;
-            if (has_common_vertex_index(keys[0], keys[1]) &&
-                has_common_vertex_index(keys[0], keys[2])) {
+            if (HasCommonVertexIndex(keys[0], keys[1]) &&
+                HasCommonVertexIndex(keys[0], keys[2])) {
                 order = {1, 0, 2, 3};
-            } else if (has_common_vertex_index(keys[0], keys[1]) &&
-                       has_common_vertex_index(keys[0], keys[3])) {
+            } else if (HasCommonVertexIndex(keys[0], keys[1]) &&
+                       HasCommonVertexIndex(keys[0], keys[3])) {
                 order = {1, 0, 3, 2};
-            } else if (has_common_vertex_index(keys[0], keys[2]) &&
-                       has_common_vertex_index(keys[0], keys[3])) {
+            } else if (HasCommonVertexIndex(keys[0], keys[2]) &&
+                       HasCommonVertexIndex(keys[0], keys[3])) {
                 order = {2, 0, 3, 1};
             }
 
             // accumulate to improve robustness of the triangle orientation test
             double dot = 0;
             for (int i = 0; i < 4; ++i) {
-                Eigen::Vector3d tri_normal = compute_triangle_normal(
+                Eigen::Vector3d tri_normal = ComputeTriangleNormal(
                         verts[order[(4 + i - 1) % 4]], verts[order[i]],
                         verts[order[(i + 1) % 4]]);
                 dot += tri_normal.dot(edge_dirs[order[i]]);
