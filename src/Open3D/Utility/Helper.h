@@ -120,5 +120,22 @@ size_t WordLength(const std::string& doc,
                   size_t start_pos,
                   const std::string& valid_chars = "_");
 
+inline std::string& ltrim(std::string& str,
+                          const std::string& chars = "\t\n\v\f\r ") {
+    str.erase(0, str.find_first_not_of(chars));
+    return str;
+}
+
+inline std::string& rtrim(std::string& str,
+                          const std::string& chars = "\t\n\v\f\r ") {
+    str.erase(str.find_last_not_of(chars) + 1);
+    return str;
+}
+
+inline std::string& trim(std::string& str,
+                         const std::string& chars = "\t\n\v\f\r ") {
+    return ltrim(rtrim(str, chars), chars);
+}
+
 }  // namespace utility
 }  // namespace open3d
