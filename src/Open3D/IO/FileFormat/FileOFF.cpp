@@ -149,7 +149,8 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         if (!AddTrianglesByEarClipping(mesh, indices)) {
             utility::LogWarning(
                     "Read OFF failed: A polygon in the mesh could not be "
-                    "decomposed into triangles.\n");
+                    "decomposed into triangles. Vertex indices: {}\n",
+                    indices);
             return false;
         }
         ++progress_bar;

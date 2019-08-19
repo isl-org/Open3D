@@ -32,8 +32,9 @@
 
 #define FMT_HEADER_ONLY 1
 #define FMT_STRING_ALIAS 1
-#include "fmt/format.h"
-#include "fmt/printf.h"
+#include <fmt/format.h>
+#include <fmt/printf.h>
+#include <fmt/ranges.h>
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
