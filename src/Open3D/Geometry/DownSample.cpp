@@ -455,6 +455,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         double mean = -1.0;
         if (dist.size() > 0u) {
             valid_distances++;
+            std::for_each(dist.begin(), dist.end(),
+                          [](double &d) { d = std::sqrt(d); });
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
