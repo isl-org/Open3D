@@ -115,7 +115,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
     }
 
     if (model.meshes.size() > 1) {
-        utility::LogWarning(
+        utility::LogInfo(
                 "The file contains more than one mesh. All meshes will be "
                 "loaded as a single mesh.\n");
     }
@@ -228,8 +228,9 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                                         colors[2] / max_val);
                             }
                         } else {
-                            throw std::runtime_error(
-                                    "Unrecognized componentType");
+                            utility::LogWarning(
+                                    "Unrecognized component type for vertex "
+                                    "colors\n");
                         }
                     }
                 }
