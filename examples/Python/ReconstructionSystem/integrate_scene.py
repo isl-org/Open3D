@@ -13,6 +13,7 @@ from file import *
 sys.path.append(".")
 from make_fragments import read_rgbd_image
 
+
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     poses = []
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)

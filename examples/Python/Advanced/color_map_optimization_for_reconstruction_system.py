@@ -58,8 +58,8 @@ def main(config, keys):
         os.path.join(path, config["template_global_traj"]))
     assert (len(color_files) == len(camera.parameters))
 
-    color_files, depth_files = collect_keyframe_rgbd(
-        color_files, depth_files, keys)
+    color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files,
+                                                     keys)
 
     # Read camera poses
     if config["path_intrinsic"]:
@@ -111,14 +111,20 @@ def main(config, keys):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Color map optimizer for a reconstruction dataset')
-    parser.add_argument('--config', type=str, required=True,
+    parser.add_argument('--config',
+                        type=str,
+                        required=True,
                         help='path to the config for the dataset '
-                             'preprocessed by the Reconstruction System')
-    parser.add_argument('--keys', type=str,
-                        help='txt file that contains the indices of the keyframes')
-    parser.add_argument('--sample_rate', type=int, default=10,
+                        'preprocessed by the Reconstruction System')
+    parser.add_argument(
+        '--keys',
+        type=str,
+        help='txt file that contains the indices of the keyframes')
+    parser.add_argument('--sample_rate',
+                        type=int,
+                        default=10,
                         help='sampling rate that evenly sample key frames '
-                             'if key.txt is not provided')
+                        'if key.txt is not provided')
     args = parser.parse_args()
 
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)

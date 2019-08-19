@@ -9,14 +9,15 @@ sys.path.append(filepath + '/..')
 print(filepath)
 from initialize_config import initialize_config
 
-
 flag_stop = False
 flag_play = True
+
 
 def escape_callback(vis):
     global flag_stop
     flag_stop = True
     return False
+
 
 def space_callback(vis):
     global flag_play
@@ -49,8 +50,10 @@ def main(reader, output_path):
         o3d.io.write_azure_kinect_mkv_metadata(
             '{}/intrinsic.json'.format(abspath), metadata)
 
-        config = {'path_dataset': abspath,
-                  'path_intrinsic': '{}/intrinsic.json'.format(abspath)}
+        config = {
+            'path_dataset': abspath,
+            'path_intrinsic': '{}/intrinsic.json'.format(abspath)
+        }
         initialize_config(config)
         with open('{}/config.json'.format(abspath), 'w') as f:
             json.dump(config, f, indent=4)
@@ -67,11 +70,13 @@ def main(reader, output_path):
                 vis_geometry_added = True
 
             if output_path is not None:
-                color_filename = '{0}/color/{1:05d}.jpg'.format(output_path, idx)
+                color_filename = '{0}/color/{1:05d}.jpg'.format(
+                    output_path, idx)
                 print('Writing to {}'.format(color_filename))
                 o3d.io.write_image(color_filename, rgbd.color)
 
-                depth_filename = '{0}/depth/{1:05d}.png'.format(output_path, idx)
+                depth_filename = '{0}/depth/{1:05d}.png'.format(
+                    output_path, idx)
                 print('Writing to {}'.format(depth_filename))
                 o3d.io.write_image(depth_filename, rgbd.depth)
                 idx += 1
@@ -83,8 +88,13 @@ def main(reader, output_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Azure kinect mkv reader.')
-    parser.add_argument('--input', type=str, required=True, help='input mkv file')
-    parser.add_argument('--output', type=str, help='output path to store color/ and depth/ images')
+    parser.add_argument('--input',
+                        type=str,
+                        required=True,
+                        help='input mkv file')
+    parser.add_argument('--output',
+                        type=str,
+                        help='output path to store color/ and depth/ images')
     args = parser.parse_args()
 
     if args.input is None:
@@ -94,7 +104,8 @@ if __name__ == '__main__':
     if args.output is None:
         print('No output path, only play mkv')
     elif os.path.isdir(args.output):
-        print('Output path {} already existing, only play mkv'.format(args.output))
+        print('Output path {} already existing, only play mkv'.format(
+            args.output))
         args.output = None
     else:
         try:
@@ -114,8 +125,3 @@ if __name__ == '__main__':
     main(azure_mkv_reader, args.output)
 
     azure_mkv_reader.close()
-
-
-
-
-

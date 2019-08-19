@@ -351,17 +351,18 @@ void pybind_global_optimization(py::module &m) {
 }
 
 void pybind_global_optimization_methods(py::module &m) {
-    m.def("global_optimization",
-          [](registration::PoseGraph &pose_graph,
-             const registration::GlobalOptimizationMethod &method,
-             const registration::GlobalOptimizationConvergenceCriteria
-                     &criteria,
-             const registration::GlobalOptimizationOption &option) {
-              registration::GlobalOptimization(pose_graph, method, criteria,
-                                               option);
-          },
-          "Function to optimize registration::PoseGraph", "pose_graph"_a,
-          "method"_a, "criteria"_a, "option"_a);
+    m.def(
+            "global_optimization",
+            [](registration::PoseGraph &pose_graph,
+               const registration::GlobalOptimizationMethod &method,
+               const registration::GlobalOptimizationConvergenceCriteria
+                       &criteria,
+               const registration::GlobalOptimizationOption &option) {
+                registration::GlobalOptimization(pose_graph, method, criteria,
+                                                 option);
+            },
+            "Function to optimize registration::PoseGraph", "pose_graph"_a,
+            "method"_a, "criteria"_a, "option"_a);
     docstring::FunctionDocInject(
             m, "global_optimization",
             {{"pose_graph", "The pose_graph to be optimized (in-place)."},
