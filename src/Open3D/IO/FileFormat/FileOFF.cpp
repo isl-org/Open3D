@@ -43,9 +43,17 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         return false;
     }
 
-    std::string header;
-    std::getline(file, header);
-    utility::RightStripString(header);
+    auto GetNextLine = [](std::ifstream &file) -> std::string {
+        for (std::string line; std::getline(file, line);) {
+            line = utility::StripString(line);
+            if (!line.empty() && line[0] != '#') {
+                return line;
+            }
+        }
+        return "";
+    };
+
+    std::string header = GetNextLine(file);
     if (header != "OFF" && header != "COFF" && header != "NOFF" &&
         header != "CNOFF") {
         utility::LogWarning(
@@ -54,9 +62,8 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
         return false;
     }
 
-    std::string info;
+    std::string info = GetNextLine(file);
     unsigned int num_of_vertices, num_of_faces, num_of_edges;
-    std::getline(file, info);
     std::istringstream iss(info);
     if (!(iss >> num_of_vertices >> num_of_faces >> num_of_edges)) {
         utility::LogWarning("Read OFF failed: could not read file info.\n");
@@ -85,12 +92,11 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     utility::ConsoleProgressBar progress_bar(num_of_vertices + num_of_faces,
                                              "Reading OFF: ", print_progress);
 
-    std::string line;
     float vx, vy, vz;
     float nx, ny, nz;
     float r, g, b, alpha;
     for (size_t vidx = 0; vidx < num_of_vertices; vidx++) {
-        std::getline(file, line);
+        std::string line = GetNextLine(file);
         std::istringstream iss(line);
         if (!(iss >> vx >> vy >> vz)) {
             utility::LogWarning(
@@ -127,7 +133,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
     unsigned int n, vertex_index;
     std::vector<unsigned int> indices;
     for (size_t tidx = 0; tidx < num_of_faces; tidx++) {
-        std::getline(file, line);
+        std::string line = GetNextLine(file);
         std::istringstream iss(line);
         iss >> n;
         indices.clear();
