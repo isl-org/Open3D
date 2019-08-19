@@ -99,7 +99,6 @@ def intersecting_boxes():
 def _relative_path(path):
     script_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_path)
-    print(script_dir)
     return os.path.join(script_dir, path)
 
 
