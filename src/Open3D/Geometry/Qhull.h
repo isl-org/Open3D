@@ -41,7 +41,7 @@ public:
     static std::shared_ptr<TriangleMesh> ComputeConvexHull(
             const std::vector<Eigen::Vector3d>& points);
 
-    static std::shared_ptr<TetraMesh> ComputeDelaunayTriangulation3D(
+    static std::shared_ptr<TetraMesh> ComputeDelaunayTetrahedralization(
             const std::vector<Eigen::Vector3d>& points);
 };
 

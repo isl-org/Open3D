@@ -40,7 +40,7 @@ std::shared_ptr<TetraMesh> TetraMesh::CreateFromPointCloud(
                 "tetrahedral mesh.\n");
         return std::make_shared<TetraMesh>();
     }
-    return Qhull::ComputeDelaunayTriangulation3D(point_cloud.points_);
+    return Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_);
 }
 
 }  // namespace geometry

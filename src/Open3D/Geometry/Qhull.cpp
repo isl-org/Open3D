@@ -99,7 +99,7 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
     return convex_hull;
 }
 
-std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTriangulation3D(
+std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
         const std::vector<Eigen::Vector3d>& points) {
     typedef decltype(TetraMesh::tetras_)::value_type Vector4i;
     auto delaunay_triangulation = std::make_shared<TetraMesh>();
