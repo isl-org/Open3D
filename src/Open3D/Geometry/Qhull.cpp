@@ -116,8 +116,6 @@ std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTriangulation3D(
         delaunay_triangulation->vertices_ = points;
         delaunay_triangulation->tetras_.push_back(Vector4i(0, 1, 2, 3));
         return delaunay_triangulation;
-    } else if (points.size() < 3) {
-        return delaunay_triangulation;
     }
 
     std::vector<double> qhull_points_data(points.size() * 3);
