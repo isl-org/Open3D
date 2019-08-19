@@ -45,7 +45,7 @@ bool ReadTriangleMeshFromOFF(const std::string &filename,
 
     std::string header;
     std::getline(file, header);
-    utility::rtrim(header);
+    utility::RightStripString(header);
     if (header != "OFF" && header != "COFF" && header != "NOFF" &&
         header != "CNOFF") {
         utility::LogWarning(
