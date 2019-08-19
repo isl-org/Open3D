@@ -63,15 +63,24 @@ void ViewControl::SetViewMatrices(
     glViewport(0, 0, window_width_, window_height_);
     if (GetProjectionType() == ProjectionType::Perspective) {
         // Perspective projection
-        z_near_ = std::max(1e-6, distance_ - 3.0 * bounding_box_.GetSize());
-        z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
+        z_near_ = constant_z_near_ > 0
+                          ? constant_z_near_
+                          : std::max(0.01 * bounding_box_.GetSize(),
+                                     distance_ - 3.0 * bounding_box_.GetSize());
+        z_far_ = constant_z_far_ > 0
+                         ? constant_z_far_
+                         : distance_ + 3.0 * bounding_box_.GetSize();
         projection_matrix_ =
                 GLHelper::Perspective(field_of_view_, aspect_, z_near_, z_far_);
     } else {
         // Orthogonal projection
         // We use some black magic to support distance_ in orthogonal view
-        z_near_ = distance_ - 3.0 * bounding_box_.GetSize();
-        z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
+        z_near_ = constant_z_near_ > 0
+                          ? constant_z_near_
+                          : distance_ - 3.0 * bounding_box_.GetSize();
+        z_far_ = constant_z_far_ > 0
+                         ? constant_z_far_
+                         : distance_ + 3.0 * bounding_box_.GetSize();
         projection_matrix_ =
                 GLHelper::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
                                 -view_ratio_, view_ratio_, z_near_, z_far_);

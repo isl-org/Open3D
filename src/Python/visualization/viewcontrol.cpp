@@ -41,6 +41,8 @@ static const std::unordered_map<std::string, std::string>
                 {"xo", "Original point coordinate of the mouse in x-axis."},
                 {"yo", "Original point coordinate of the mouse in y-axis."},
                 {"step", "The step to change field of view."},
+                {"z_near", "The depth of the near z-plane of the visualizer."},
+                {"z_far", "The depth of the far z-plane of the visualizer."},
 };
 
 void pybind_viewcontrol(py::module &m) {
@@ -79,7 +81,29 @@ void pybind_viewcontrol(py::module &m) {
                  "Function to get field of view")
             .def("change_field_of_view",
                  &visualization::ViewControl::ChangeFieldOfView,
-                 "Function to change field of view", "step"_a = 0.45);
+                 "Function to change field of view", "step"_a = 0.45)
+            .def("set_constant_z_near",
+                 &visualization::ViewControl::SetConstantZNear,
+                 "Function to change the near z-plane of the visualizer to a "
+                 "constant value, i.e., independent of zoom and bounding box "
+                 "size.",
+                 "z_near"_a)
+            .def("set_constant_z_far",
+                 &visualization::ViewControl::SetConstantZFar,
+                 "Function to change the far z-plane of the visualizer to a "
+                 "constant value, i.e., independent of zoom and bounding box "
+                 "size.",
+                 "z_far"_a)
+            .def("unset_constant_z_near",
+                 &visualization::ViewControl::UnsetConstantZNear,
+                 "Function to remove a previously set constant z near value, "
+                 "i.e., near z-plane of the visualizer is dynamically set "
+                 "dependent on zoom and bounding box size.")
+            .def("unset_constant_z_far",
+                 &visualization::ViewControl::UnsetConstantZFar,
+                 "Function to remove a previously set constant z far value, "
+                 "i.e., far z-plane of the visualizer is dynamically set "
+                 "dependent on zoom and bounding box size.");
     docstring::ClassMethodDocInject(m, "ViewControl", "change_field_of_view",
                                     map_view_control_docstrings);
     docstring::ClassMethodDocInject(m, "ViewControl",
@@ -95,6 +119,14 @@ void pybind_viewcontrol(py::module &m) {
     docstring::ClassMethodDocInject(m, "ViewControl", "scale",
                                     map_view_control_docstrings);
     docstring::ClassMethodDocInject(m, "ViewControl", "translate",
+                                    map_view_control_docstrings);
+    docstring::ClassMethodDocInject(m, "ViewControl", "set_constant_z_near",
+                                    map_view_control_docstrings);
+    docstring::ClassMethodDocInject(m, "ViewControl", "set_constant_z_far",
+                                    map_view_control_docstrings);
+    docstring::ClassMethodDocInject(m, "ViewControl", "unset_constant_z_near",
+                                    map_view_control_docstrings);
+    docstring::ClassMethodDocInject(m, "ViewControl", "unset_constant_z_far",
                                     map_view_control_docstrings);
 }
 

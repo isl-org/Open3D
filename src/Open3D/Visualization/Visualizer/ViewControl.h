@@ -137,6 +137,11 @@ public:
     double GetZNear() const { return z_near_; }
     double GetZFar() const { return z_far_; }
 
+    void SetConstantZNear(double z_near) { constant_z_near_ = z_near; }
+    void SetConstantZFar(double z_far) { constant_z_far_ = z_far; }
+    void UnsetConstantZNear() { constant_z_near_ = -1; }
+    void UnsetConstantZFar() { constant_z_far_ = -1; }
+
 protected:
     int window_width_ = 0;
     int window_height_ = 0;
@@ -153,6 +158,8 @@ protected:
     double aspect_;
     double z_near_;
     double z_far_;
+    double constant_z_near_ = -1;
+    double constant_z_far_ = -1;
     GLHelper::GLMatrix4f projection_matrix_;
     GLHelper::GLMatrix4f view_matrix_;
     GLHelper::GLMatrix4f model_matrix_;
