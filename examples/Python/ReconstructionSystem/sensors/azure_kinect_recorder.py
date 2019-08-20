@@ -3,8 +3,9 @@ import datetime
 import open3d as o3d
 import os
 
-
 flag_stop = False
+
+
 def escape_callback(vis):
     global flag_stop, recorder
     flag_stop = True
@@ -16,6 +17,8 @@ def escape_callback(vis):
 
 
 flag_record = False
+
+
 def space_callback(vis):
     global flag_record, recorder, filename
     if flag_record:
@@ -71,15 +74,18 @@ def main(recorder, align_depth_to_color):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Azure kinect mkv recorder.')
-    parser.add_argument('--config', type=str,
-                        help='input json kinect config')
-    parser.add_argument('--output', type=str,
-                        help='output mkv filename')
-    parser.add_argument('--list', action='store_true',
+    parser.add_argument('--config', type=str, help='input json kinect config')
+    parser.add_argument('--output', type=str, help='output mkv filename')
+    parser.add_argument('--list',
+                        action='store_true',
                         help='list available azure kinect sensors')
-    parser.add_argument('--device', type=int, default=0,
+    parser.add_argument('--device',
+                        type=int,
+                        default=0,
                         help='input kinect device id')
-    parser.add_argument('-a', '--align_depth_to_color', action='store_true',
+    parser.add_argument('-a',
+                        '--align_depth_to_color',
+                        action='store_true',
                         help='enable align depth image to color')
 
     args = parser.parse_args()

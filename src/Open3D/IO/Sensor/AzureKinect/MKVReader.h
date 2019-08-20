@@ -49,9 +49,7 @@ public:
     int Open(const std::string &filename);
     void Close();
 
-    MKVMetadata &GetMetadata() {
-        return metadata_;
-    }
+    MKVMetadata &GetMetadata() { return metadata_; }
     int SeekTimestamp(size_t timestamp);
     std::shared_ptr<geometry::RGBDImage> NextFrame();
 

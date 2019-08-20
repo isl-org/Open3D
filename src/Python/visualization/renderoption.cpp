@@ -57,7 +57,8 @@ void pybind_renderoption(py::module &m) {
                     const std::string &filename) {
                      io::WriteIJsonConvertible(filename, ro);
                  },
-                 "Function to save visualization::RenderOption to a JSON file.",
+                 "Function to save visualization::RenderOption to a JSON "
+                 "file.",
                  "filename"_a)
             .def_readwrite(
                     "background_color",
