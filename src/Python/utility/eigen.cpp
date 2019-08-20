@@ -87,6 +87,40 @@ std::vector<EigenVector> py_array_to_vectors_int(
     return eigen_vectors;
 }
 
+template <typename EigenVector,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
+std::vector<EigenVector, EigenAllocator>
+py_array_to_vectors_int_eigen_allocator(
+        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
+        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+    }
+    return eigen_vectors;
+}
+
+template <typename EigenVector,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
+std::vector<EigenVector, EigenAllocator>
+py_array_to_vectors_int64_eigen_allocator(
+        py::array_t<int64_t, py::array::c_style | py::array::forcecast> array) {
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
+        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+    }
+    return eigen_vectors;
+}
+
 }  // namespace pybind11
 
 namespace {
@@ -190,6 +224,53 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
     //    new (&v) std::vector<EigenVector>(info.shape[0]);
     //    memcpy(v.data(), info.ptr, sizeof(EigenVector) * v.size());
     //});
+}
+
+template <typename EigenVector,
+          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>,
+          typename Vector = std::vector<EigenVector, EigenAllocator>,
+          typename holder_type = std::unique_ptr<Vector>,
+          typename InitFunc>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_vector_eigen_allocator(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name,
+        InitFunc init_func) {
+    typedef typename EigenVector::Scalar Scalar;
+    auto vec = py::bind_vector_without_repr<
+            std::vector<EigenVector, EigenAllocator>>(m, bind_name,
+                                                      py::buffer_protocol());
+    vec.def(py::init(init_func));
+    vec.def_buffer(
+            [](std::vector<EigenVector, EigenAllocator> &v) -> py::buffer_info {
+                size_t rows = EigenVector::RowsAtCompileTime;
+                return py::buffer_info(v.data(), sizeof(Scalar),
+                                       py::format_descriptor<Scalar>::format(),
+                                       2, {v.size(), rows},
+                                       {sizeof(EigenVector), sizeof(Scalar)});
+            });
+    vec.def("__repr__",
+            [repr_name](const std::vector<EigenVector, EigenAllocator> &v) {
+                return repr_name + std::string(" with ") +
+                       std::to_string(v.size()) + std::string(" elements.\n") +
+                       std::string("Use numpy.asarray() to access data.");
+            });
+    vec.def("__copy__", [](std::vector<EigenVector, EigenAllocator> &v) {
+        return std::vector<EigenVector, EigenAllocator>(v);
+    });
+    vec.def("__deepcopy__",
+            [](std::vector<EigenVector, EigenAllocator> &v, py::dict &memo) {
+                return std::vector<EigenVector, EigenAllocator>(v);
+            });
+
+    // py::detail must be after custom constructor
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
 }
 
 template <typename EigenMatrix,
@@ -342,6 +423,17 @@ Example usage
     matrix4dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector4ivector = pybind_eigen_vector_of_vector_eigen_allocator<
+            Eigen::Vector4i>(
+            m, "Vector4iVector", "std::vector<Eigen::Vector4i>",
+            py::py_array_to_vectors_int_eigen_allocator<Eigen::Vector4i>);
+    vector4ivector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert int numpy array of shape ``(n, 4)`` to "
                        "Open3D format.";
             }),
             py::none(), py::none(), "");

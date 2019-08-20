@@ -37,6 +37,7 @@ namespace geometry {
 
 class PointCloud;
 class TriangleMesh;
+class TetraMesh;
 
 class LineSet : public Geometry3D {
 public:
@@ -93,6 +94,10 @@ public:
     /// \param mesh.
     static std::shared_ptr<LineSet> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
+
+    /// Factory function to create a LineSet from edges of a tetra mesh
+    /// \param mesh.
+    static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh &mesh);
 
 public:
     std::vector<Eigen::Vector3d> points_;

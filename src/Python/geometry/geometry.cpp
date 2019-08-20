@@ -69,6 +69,7 @@ void pybind_geometry_classes(py::module &m) {
             .value("HalfEdgeTriangleMesh",
                    geometry::Geometry::GeometryType::HalfEdgeTriangleMesh)
             .value("Image", geometry::Geometry::GeometryType::Image)
+            .value("TetraMesh", geometry::Geometry::GeometryType::TetraMesh)
             .export_values();
 
     // open3d.geometry.Geometry3D
@@ -151,6 +152,7 @@ void pybind_geometry(py::module &m) {
     pybind_trianglemesh(m_submodule);
     pybind_halfedgetrianglemesh(m_submodule);
     pybind_image(m_submodule);
+    pybind_tetramesh(m_submodule);
     pybind_pointcloud_methods(m_submodule);
     pybind_voxelgrid_methods(m_submodule);
     pybind_trianglemesh_methods(m_submodule);

@@ -69,6 +69,18 @@ void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
     EXPECT_EQ(v0.size(), v1.size());
     for (size_t i = 0; i < v0.size(); i++) ExpectEQ(v0[i], v1[i], threshold);
 }
+template <class T, int M, int N, int A>
+void ExpectEQ(
+        const std::vector<Eigen::Matrix<T, M, N, A>,
+                          Eigen::aligned_allocator<Eigen::Matrix<T, M, N, A>>>&
+                v0,
+        const std::vector<Eigen::Matrix<T, M, N, A>,
+                          Eigen::aligned_allocator<Eigen::Matrix<T, M, N, A>>>&
+                v1,
+        double threshold = THRESHOLD_1E_6) {
+    EXPECT_EQ(v0.size(), v1.size());
+    for (size_t i = 0; i < v0.size(); i++) ExpectEQ(v0[i], v1[i], threshold);
+}
 
 // Less than or Equal test.
 template <class T, int M, int N, int A>

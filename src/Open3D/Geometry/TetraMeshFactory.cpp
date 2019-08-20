@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,26 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <Eigen/Core>
-#include <memory>
-#include <vector>
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Qhull.h"
+#include "Open3D/Geometry/TetraMesh.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace geometry {
 
-class TriangleMesh;
-class TetraMesh;
-
-class Qhull {
-public:
-    static std::shared_ptr<TriangleMesh> ComputeConvexHull(
-            const std::vector<Eigen::Vector3d>& points);
-
-    static std::shared_ptr<TetraMesh> ComputeDelaunayTetrahedralization(
-            const std::vector<Eigen::Vector3d>& points);
-};
+std::shared_ptr<TetraMesh> TetraMesh::CreateFromPointCloud(
+        const PointCloud& point_cloud) {
+    if (point_cloud.points_.size() < 4) {
+        utility::LogWarning(
+                "[CreateFromPointCloud] not enough points to create a "
+                "tetrahedral mesh.\n");
+        return std::make_shared<TetraMesh>();
+    }
+    return Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_);
+}
 
 }  // namespace geometry
 }  // namespace open3d

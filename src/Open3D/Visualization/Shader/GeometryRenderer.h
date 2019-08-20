@@ -121,6 +121,20 @@ protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
+class TetraMeshRenderer : public GeometryRenderer {
+public:
+    ~TetraMeshRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForTetraMesh simple_tetramesh_shader_;
+};
+
 class TriangleMeshRenderer : public GeometryRenderer {
 public:
     ~TriangleMeshRenderer() override {}

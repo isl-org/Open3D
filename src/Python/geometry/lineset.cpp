@@ -69,6 +69,11 @@ void pybind_lineset(py::module &m) {
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
                         "mesh"_a)
+            .def_static("create_from_tetra_mesh",
+                        &geometry::LineSet::CreateFromTetraMesh,
+                        "Factory function to create a LineSet from edges of a "
+                        "tetra mesh.",
+                        "mesh"_a)
             .def_readwrite("points", &geometry::LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -96,6 +101,8 @@ void pybind_lineset(py::module &m) {
              {"correspondences", "Set of correspondences."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_triangle_mesh",
                                     {{"mesh", "The input triangle mesh."}});
+    docstring::ClassMethodDocInject(m, "LineSet", "create_from_tetra_mesh",
+                                    {{"mesh", "The input tetra mesh."}});
 }
 
 void pybind_lineset_methods(py::module &m) {}

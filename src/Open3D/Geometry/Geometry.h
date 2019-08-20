@@ -41,6 +41,7 @@ public:
         HalfEdgeTriangleMesh = 6,
         Image = 7,
         RGBDImage = 8,
+        TetraMesh = 9,
     };
 
 public:
