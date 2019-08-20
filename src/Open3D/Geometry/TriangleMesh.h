@@ -360,6 +360,18 @@ public:
     std::shared_ptr<TriangleMesh> Crop(const Eigen::Vector3d &min_bound,
                                        const Eigen::Vector3d &max_bound) const;
 
+    /// Function that computes a triangle mesh from a oriented PointCloud \param
+    /// pcd. This implements the Ball Pivoting algorithm proposed in F.
+    /// Bernardini et al., "The ball-pivoting algorithm for surface
+    /// reconstruction", 1999. The implementation is also based on the
+    /// algorithms outlined in Digne, "An Analysis and Implementation of a
+    /// Parallel Ball Pivoting Algorithm", 2014. The surface reconstruction is
+    /// done by rolling a ball with a given radius (cf. \param radii) over the
+    /// point cloud, whenever the ball touches three points a triangle is
+    /// created.
+    static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
+            const PointCloud &pcd, const std::vector<double> &radii);
+
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.
