@@ -32,8 +32,6 @@
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 #include "Open3D/IO/Sensor/RGBDSensor.h"
 
-struct _k4a_device_configuration_t;
-
 namespace open3d {
 namespace geometry {
 class RGBDImage;
