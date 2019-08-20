@@ -284,7 +284,7 @@ std::string FunctionDoc::NamespaceFix(const std::string& s) {
     return rc;
 }
 
-std::string FunctionDoc::StringCleanAll(const std::string& s,
+std::string FunctionDoc::StringCleanAll(std::string& s,
                                         const std::string& white_space) {
     std::string rc = utility::StripString(s, white_space);
     rc = NamespaceFix(rc);

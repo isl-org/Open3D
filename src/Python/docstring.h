@@ -108,7 +108,7 @@ protected:
     static ArgumentDoc ParseArgumentToken(const std::string& argument_token);
 
     /// Runs all string cleanup functions
-    static std::string StringCleanAll(const std::string& s,
+    static std::string StringCleanAll(std::string& s,
                                       const std::string& white_space = " \t\n");
 
     /// Apply fixes to namespace, e.g. "::" to "." for python
