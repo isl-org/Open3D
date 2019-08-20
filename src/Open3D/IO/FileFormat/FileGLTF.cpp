@@ -199,14 +199,14 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                             }
                         } else if (colors_accessor.componentType ==
                                    TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                            double max_val =
+                                    (double)std::numeric_limits<uint8_t>::max();
                             for (size_t i = 0; i < colors_accessor.count; ++i) {
                                 const uint8_t* colors =
                                         reinterpret_cast<const uint8_t*>(
                                                 colors_buffer.data.data() +
                                                 colors_view.byteOffset +
                                                 i * byte_stride);
-                                double max_val = (double)
-                                        std::numeric_limits<uint8_t>::max();
                                 mesh_temp.vertex_colors_.emplace_back(
                                         colors[0] / max_val,
                                         colors[1] / max_val,
@@ -214,14 +214,14 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                             }
                         } else if (colors_accessor.componentType ==
                                    TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+                            double max_val = (double)
+                                    std::numeric_limits<uint16_t>::max();
                             for (size_t i = 0; i < colors_accessor.count; ++i) {
                                 const uint16_t* colors =
                                         reinterpret_cast<const uint16_t*>(
                                                 colors_buffer.data.data() +
                                                 colors_view.byteOffset +
                                                 i * byte_stride);
-                                double max_val = (double)
-                                        std::numeric_limits<uint16_t>::max();
                                 mesh_temp.vertex_colors_.emplace_back(
                                         colors[0] / max_val,
                                         colors[1] / max_val,
