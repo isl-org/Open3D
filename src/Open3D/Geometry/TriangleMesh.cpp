@@ -29,6 +29,7 @@
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/Qhull.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <Eigen/Dense>
 #include <numeric>
@@ -73,6 +74,14 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const {
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a.array().max(b.array()).matrix();
             });
+}
+
+AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
+}
+
+OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(vertices_);
 }
 
 TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {

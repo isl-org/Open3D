@@ -28,6 +28,7 @@
 
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 namespace open3d {
 namespace visualization {
@@ -54,6 +55,24 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
         return ((const geometry::PointCloud&)(*pointcloud_ptr_)).GetMaxBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
+    }
+}
+
+geometry::AxisAlignedBoundingBox PointCloudPicker::GetAxisAlignedBoundingBox() const {
+    if (pointcloud_ptr_) {
+        return geometry::AxisAlignedBoundingBox::CreateFromPoints(((const geometry::PointCloud&)(*pointcloud_ptr_)).points_);
+    }
+    else {
+        return geometry::AxisAlignedBoundingBox();
+    }
+}
+
+geometry::OrientedBoundingBox PointCloudPicker::GetOrientedBoundingBox() const {
+    if (pointcloud_ptr_) {
+        return geometry::OrientedBoundingBox::CreateFromPoints(((const geometry::PointCloud&)(*pointcloud_ptr_)).points_);
+    }
+    else {
+        return geometry::OrientedBoundingBox();
     }
 }
 

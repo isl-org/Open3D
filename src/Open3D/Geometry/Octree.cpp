@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/Octree.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <json/json.h>
 #include <Eigen/Dense>
@@ -351,6 +352,17 @@ Eigen::Vector3d Octree::GetMaxBound() const {
     } else {
         return origin_ + Eigen::Vector3d(size_, size_, size_);
     }
+}
+
+AxisAlignedBoundingBox Octree::GetAxisAlignedBoundingBox() const {
+    AxisAlignedBoundingBox box;
+    box.min_bound_ = GetMinBound();
+    box.max_bound_ = GetMaxBound();
+    return box;
+}
+
+OrientedBoundingBox Octree::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(GetAxisAlignedBoundingBox());
 }
 
 Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {

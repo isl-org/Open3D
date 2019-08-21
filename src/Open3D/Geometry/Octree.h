@@ -153,6 +153,8 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox() const override;
     Octree& Transform(const Eigen::Matrix4d& transformation) override;
     Octree& Translate(const Eigen::Vector3d& translation) override;
     Octree& Scale(const double scale, bool center = true) override;

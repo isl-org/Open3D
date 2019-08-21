@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <numeric>
 
@@ -279,6 +280,14 @@ Eigen::Vector3d HalfEdgeTriangleMesh::GetMaxBound() const {
                 return a(2) < b(2);
             });
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+}
+
+AxisAlignedBoundingBox HalfEdgeTriangleMesh::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
+}
+
+OrientedBoundingBox HalfEdgeTriangleMesh::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(vertices_);
 }
 
 HalfEdgeTriangleMesh &HalfEdgeTriangleMesh::Transform(
