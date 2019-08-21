@@ -28,7 +28,7 @@
 
 #include "Open3D/Camera/PinholeCameraParameters.h"
 #include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Visualization/Utility/BoundingBox.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Visualization/Utility/GLHelper.h"
 #include "Open3D/Visualization/Visualizer/ViewParameters.h"
 
@@ -109,13 +109,13 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const BoundingBox &GetBoundingBox() const { return bounding_box_; }
+    const geometry::AxisAlignedBoundingBox &GetBoundingBox() const { return bounding_box_; }
 
-    void ResetBoundingBox() { bounding_box_.Reset(); }
+    void ResetBoundingBox() { bounding_box_.Clear(); }
 
     void FitInGeometry(const geometry::Geometry &geometry) {
         if (geometry.Dimension() == 3) {
-            bounding_box_.FitInGeometry((const geometry::Geometry3D &)geometry);
+            bounding_box_ += ((const geometry::Geometry3D &)geometry).GetAxisAlignedBoundingBox();
         }
         SetProjectionParameters();
     }
@@ -145,7 +145,7 @@ public:
 protected:
     int window_width_ = 0;
     int window_height_ = 0;
-    BoundingBox bounding_box_;
+    geometry::AxisAlignedBoundingBox bounding_box_;
     Eigen::Vector3d eye_;
     Eigen::Vector3d lookat_;
     Eigen::Vector3d up_;

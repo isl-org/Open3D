@@ -86,9 +86,10 @@ public:
                                bool center = true,
                                RotationType type = RotationType::XYZ);
 
-    AxisAlignedBoundingBox& operator+(const AxisAlignedBoundingBox& other) {
+    AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other) {
         min_bound_ = min_bound_.array().min(other.min_bound_.array()).matrix();
         max_bound_ = max_bound_.array().max(other.max_bound_.array()).matrix();
+        return *this;
     }
 
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
