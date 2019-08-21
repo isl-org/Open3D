@@ -34,11 +34,11 @@
 #include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
 
-using UnknownStruct = struct unknown_struct {
-    void* pointers[3];
-    struct unknown_struct* ptr;
-};
-using LinkMap = struct link_map;
+// using UnknownStruct = struct unknown_struct {
+//     void* pointers[3];
+//     struct unknown_struct* ptr;
+// };
+// using LinkMap = struct link_map;
 
 static void* GetLibHandle() {
     static void* handle = nullptr;
@@ -52,20 +52,16 @@ static void* GetLibHandle() {
             throw std::runtime_error("Cannot load " + std::string(msg));
         } else {
             std::cout << "Loaded " << lib_name << std::endl;
-
-            auto* p = reinterpret_cast<UnknownStruct*>(handle)->ptr;
-            auto* map = reinterpret_cast<LinkMap*>(p->ptr);
-            while (map) {
-                std::cout << map->l_name << std::endl;
-                map = map->l_next;
+            struct link_map* map = nullptr;
+            if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
+                if (map != nullptr) {
+                    std::cout << "Library path: " << map->l_name << std::endl;
+                } else {
+                    std::cout << "Cannot get link_map" << std::endl;
+                }
+            } else {
+                std::cout << "Cannot get dlinfo " << lib_name << std::endl;
             }
-
-            // struct link_map* map = nullptr;
-            // if (!dlinfo(handle, RTLD_DI_LINKMAP, map)) {
-            //     std::cout << "map.l_name " << map->l_name << std::endl;
-            // } else {
-            //     std::cout << "Cannot get dlinfo " << lib_name << std::endl;
-            // }
         }
     }
 
