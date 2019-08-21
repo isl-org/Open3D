@@ -337,7 +337,6 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
     ${PNG_LIBRARY_DIRS}
-    ${k4a_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
@@ -352,7 +351,6 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${qhull_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
-     ${k4a_LIBRARIES}
 )
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
