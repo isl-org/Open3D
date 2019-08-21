@@ -47,19 +47,18 @@ static void* GetLibHandle() {
         handle = dlopen(lib_name.c_str(), RTLD_LAZY);
 
         if (!handle) {
-            const char* msg = dlerror();
-            throw std::runtime_error("Cannot load " + std::string(msg));
+            utility::LogFatal("Cannot load {}\n", dlerror());
         } else {
-            std::cout << "Loaded " << lib_name << std::endl;
+            utility::LogInfo("Loaded {}\n", lib_name);
             struct link_map* map = nullptr;
             if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
                 if (map != nullptr) {
-                    std::cout << "Library path: " << map->l_name << std::endl;
+                    utility::LogInfo("Library path: {}\n", map->l_name);
                 } else {
-                    std::cout << "Cannot get link_map" << std::endl;
+                    utility::LogWarning("Cannot get link_map\n");
                 }
             } else {
-                std::cout << "Cannot get dlinfo " << lib_name << std::endl;
+                utility::LogWarning("Cannot get dlinfo\n");
             }
         }
     }
