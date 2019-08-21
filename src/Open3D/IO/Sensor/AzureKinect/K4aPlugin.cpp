@@ -38,7 +38,7 @@ namespace open3d {
 namespace io {
 namespace k4a_plugin {
 
-static void* GetLibHandle() {
+static void* GetDynamicLibHandle() {
     static void* handle = nullptr;
     static const std::string lib_name = "libk4arecord.so";
 
@@ -73,7 +73,7 @@ static void* GetLibHandle() {
         static f_type f = nullptr;                                             \
                                                                                \
         if (!f) {                                                              \
-            f = (f_type)dlsym(GetLibHandle(), #f_name);                        \
+            f = (f_type)dlsym(GetDynamicLibHandle(), #f_name);                 \
             if (!f) {                                                          \
                 utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
             }                                                                  \
