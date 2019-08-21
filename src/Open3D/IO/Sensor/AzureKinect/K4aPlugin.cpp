@@ -27,21 +27,45 @@
 #include <dlfcn.h>
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
+#include <link.h>
+#include <cstring>
 #include <iostream>
 
 #include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
 
+using UnknownStruct = struct unknown_struct {
+    void* pointers[3];
+    struct unknown_struct* ptr;
+};
+using LinkMap = struct link_map;
+
 static void* GetLibHandle() {
     static void* handle = nullptr;
-    static const std::string lib_name = "libk4arecord.so.1.1.1";
+    static const std::string lib_name = "libk4arecord.so";
 
     if (!handle) {
         handle = dlopen(lib_name.c_str(), RTLD_LAZY);
-        std::cout << "Loaded " << lib_name << std::endl;
+
         if (!handle) {
             const char* msg = dlerror();
             throw std::runtime_error("Cannot load " + std::string(msg));
+        } else {
+            std::cout << "Loaded " << lib_name << std::endl;
+
+            auto* p = reinterpret_cast<UnknownStruct*>(handle)->ptr;
+            auto* map = reinterpret_cast<LinkMap*>(p->ptr);
+            while (map) {
+                std::cout << map->l_name << std::endl;
+                map = map->l_next;
+            }
+
+            // struct link_map* map = nullptr;
+            // if (!dlinfo(handle, RTLD_DI_LINKMAP, map)) {
+            //     std::cout << "map.l_name " << map->l_name << std::endl;
+            // } else {
+            //     std::cout << "Cannot get dlinfo " << lib_name << std::endl;
+            // }
         }
     }
 
