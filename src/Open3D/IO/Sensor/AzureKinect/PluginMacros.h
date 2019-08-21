@@ -140,7 +140,7 @@
 // clang-format on
 
 // Convert to list of "arg_type arg_name" caller
-#define CALL_EXTRACT_TYPES_PARAMS(num_args, ...) \
+#define EXTRACT_TYPES_PARAMS(num_args, ...) \
     EXTRACT_TYPES_PARAMS_##num_args(__VA_ARGS__)
 
 // Convert to list of "arg_name"
@@ -204,5 +204,4 @@
 // clang-format on
 
 // Convert to list of "arg_name" caller
-#define CALL_EXTRACT_PARAMS(num_args, ...) \
-    EXTRACT_PARAMS_##num_args(__VA_ARGS__)
+#define EXTRACT_PARAMS(num_args, ...) EXTRACT_PARAMS_##num_args(__VA_ARGS__)

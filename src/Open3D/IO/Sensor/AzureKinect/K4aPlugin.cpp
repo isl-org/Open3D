@@ -74,9 +74,9 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
 
 #define DEFINE_BRIDGED_FUNC_WITH_COUNT(lib_name, return_type, f_name,          \
                                        num_args, ...)                          \
-    return_type f_name(CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) {     \
+    return_type f_name(EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) {          \
         typedef return_type (*f_type)(                                         \
-                CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));             \
+                EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));                  \
         static f_type f = nullptr;                                             \
                                                                                \
         if (!f) {                                                              \
@@ -85,7 +85,7 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
                 utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
             }                                                                  \
         }                                                                      \
-        return f(CALL_EXTRACT_PARAMS(num_args, __VA_ARGS__));                  \
+        return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));                       \
     }
 
 #define DEFINE_BRIDGED_FUNC(lib_name, return_type, f_name, ...)   \
