@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
-#include <unordered_map>
 
 #include <json/json.h>
+#include <unordered_map>
 
 namespace open3d {
 namespace io {

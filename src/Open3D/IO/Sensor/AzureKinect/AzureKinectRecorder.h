@@ -24,12 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
 #pragma once
 
-#include <k4arecord/types.h>
 #include <atomic>
 #include <memory>
 #include <string>
@@ -37,6 +33,8 @@
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
 #include "Open3D/IO/Sensor/RGBDRecorder.h"
+
+struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
 
 namespace open3d {
 
@@ -63,7 +61,7 @@ public:
 
 protected:
     AzureKinectSensor sensor_;
-    k4a_record_t recording_;
+    _k4a_record_t* recording_;
     size_t device_index_;
 
     bool is_record_created_ = false;

@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/Sensor/AzureKinect/MKVReader.h"
-#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
 
 #include <json/json.h>
 #include <k4a/k4a.h>
@@ -33,6 +32,9 @@
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
 #include <iostream>
+
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 namespace open3d {
 namespace io {
@@ -53,8 +55,8 @@ std::string MKVReader::GetTagInMetadata(const std::string &tag_name) {
     char res_buffer[256];
     size_t res_size = 256;
 
-    k4a_buffer_result_t result = k4a_playback_get_tag(handle_, tag_name.c_str(),
-                                                      res_buffer, &res_size);
+    k4a_buffer_result_t result = k4a_plugin::k4a_playback_get_tag(
+            handle_, tag_name.c_str(), res_buffer, &res_size);
     if (K4A_BUFFER_RESULT_SUCCEEDED == result) {
         return res_buffer;
     } else if (K4A_BUFFER_RESULT_TOO_SMALL == result) {
@@ -71,7 +73,8 @@ int MKVReader::Open(const std::string &filename) {
         Close();
     }
 
-    if (K4A_RESULT_SUCCEEDED != k4a_playback_open(filename.c_str(), &handle_)) {
+    if (K4A_RESULT_SUCCEEDED !=
+        k4a_plugin::k4a_playback_open(filename.c_str(), &handle_)) {
         utility::LogError("Unable to open file {}\n", filename);
         return -1;
     }
@@ -82,7 +85,7 @@ int MKVReader::Open(const std::string &filename) {
     return 0;
 }
 
-void MKVReader::Close() { k4a_playback_close(handle_); }
+void MKVReader::Close() { k4a_plugin::k4a_playback_close(handle_); }
 
 Json::Value MKVReader::GetMetadataJson() {
     if (!IsOpened()) {
@@ -94,7 +97,7 @@ Json::Value MKVReader::GetMetadataJson() {
 
     k4a_calibration_t calibration;
     if (K4A_RESULT_SUCCEEDED !=
-        k4a_playback_get_calibration(handle_, &calibration)) {
+        k4a_plugin::k4a_playback_get_calibration(handle_, &calibration)) {
         utility::LogError("Failed to get calibration\n");
     }
 
@@ -110,7 +113,8 @@ Json::Value MKVReader::GetMetadataJson() {
     value["depth_mode"] = GetTagInMetadata("K4A_DEPTH_MODE");
     value["color_mode"] = GetTagInMetadata("K4A_COLOR_MODE");
 
-    value["stream_length_usec"] = k4a_playback_get_last_timestamp_usec(handle_);
+    value["stream_length_usec"] =
+            k4a_plugin::k4a_playback_get_last_timestamp_usec(handle_);
     auto color_mode = value["color_mode"].asString();
     size_t pos = color_mode.find('_');
     if (pos == std::string::npos) {
@@ -129,7 +133,7 @@ Json::Value MKVReader::GetMetadataJson() {
     value["height"] = width_height.second;
 
     /** For internal usages */
-    transformation_ = k4a_transformation_create(&calibration);
+    transformation_ = k4a_plugin::k4a_transformation_create(&calibration);
 
     return value;
 }
@@ -147,8 +151,8 @@ int MKVReader::SeekTimestamp(size_t timestamp) {
     }
 
     if (K4A_RESULT_SUCCEEDED !=
-        k4a_playback_seek_timestamp(handle_, timestamp,
-                                    K4A_PLAYBACK_SEEK_BEGIN)) {
+        k4a_plugin::k4a_playback_seek_timestamp(handle_, timestamp,
+                                                K4A_PLAYBACK_SEEK_BEGIN)) {
         utility::LogError("Unable to go to timestamp {}\n", timestamp);
         return -1;
     }
@@ -163,7 +167,7 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
 
     k4a_capture_t k4a_capture;
     k4a_stream_result_t res =
-            k4a_playback_get_next_capture(handle_, &k4a_capture);
+            k4a_plugin::k4a_playback_get_next_capture(handle_, &k4a_capture);
     if (K4A_STREAM_RESULT_EOF == res) {
         utility::LogInfo("EOF reached\n");
         is_eof_ = true;
@@ -175,7 +179,7 @@ std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
 
     auto rgbd =
             AzureKinectSensor::DecompressCapture(k4a_capture, transformation_);
-    k4a_capture_release(k4a_capture);
+    k4a_plugin::k4a_capture_release(k4a_capture);
 
     return rgbd;
 }

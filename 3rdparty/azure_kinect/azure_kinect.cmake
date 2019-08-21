@@ -42,9 +42,9 @@ if (BUILD_AZURE_KINECT)
 
             # Alias target to be consistent with windows
             add_library(k4a INTERFACE)
-            target_link_libraries(k4a INTERFACE ${k4a_LIBRARIES})
+            # target_link_libraries(k4a INTERFACE ${k4a_LIBRARIES})
             add_library(k4arecord INTERFACE)
-            target_link_libraries(k4arecord INTERFACE ${k4arecord_LIBRARIES})
+            # target_link_libraries(k4arecord INTERFACE ${k4arecord_LIBRARIES})
 
             set(k4a_INCLUDE_DIRS k4a_INCLUDE_DIRS)
 
