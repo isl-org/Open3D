@@ -29,7 +29,6 @@
 #include <k4arecord/record.h>
 #include <link.h>
 #include <cstring>
-#include <iostream>
 
 #include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
