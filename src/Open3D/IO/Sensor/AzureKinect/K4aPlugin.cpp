@@ -33,12 +33,11 @@
 
 #include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
+#include "Open3D/Utility/Console.h"
 
-// using UnknownStruct = struct unknown_struct {
-//     void* pointers[3];
-//     struct unknown_struct* ptr;
-// };
-// using LinkMap = struct link_map;
+namespace open3d {
+namespace io {
+namespace k4a_plugin {
 
 static void* GetLibHandle() {
     static void* handle = nullptr;
@@ -89,10 +88,6 @@ static void* GetLibHandle() {
 #define DEFINE_BRIDGED_FUNC(f_name, return_type, ...)   \
     DEFINE_BRIDGED_FUNC_WITH_COUNT(f_name, return_type, \
                                    COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
-
-namespace open3d {
-namespace io {
-namespace k4a_plugin {
 
 DEFINE_BRIDGED_FUNC(k4a_record_create,
                     k4a_result_t,
