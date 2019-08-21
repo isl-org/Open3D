@@ -52,7 +52,7 @@ static void* GetLibHandle() {
             struct link_map* map = nullptr;
             if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
                 if (map != nullptr) {
-                    utility::LogInfo("Library path: {}\n", map->l_name);
+                    utility::LogInfo("Library path {}\n", map->l_name);
                 } else {
                     utility::LogWarning("Cannot get link_map\n");
                 }
@@ -66,21 +66,19 @@ static void* GetLibHandle() {
     return handle;
 }
 
-#define DEFINE_BRIDGED_FUNC_WITH_COUNT(f_name, return_type, num_args, ...) \
-    return_type f_name(CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) { \
-        typedef return_type (*f_type)(                                     \
-                CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));         \
-        static f_type f = nullptr;                                         \
-                                                                           \
-        if (!f) {                                                          \
-            f = (f_type)dlsym(GetLibHandle(), #f_name);                    \
-            if (!f) {                                                      \
-                const char* msg = dlerror();                               \
-                throw std::runtime_error(std::string("Cannot load ") +     \
-                                         #f_name + ": " + msg);            \
-            }                                                              \
-        }                                                                  \
-        return f(CALL_EXTRACT_PARAMS(num_args, __VA_ARGS__));              \
+#define DEFINE_BRIDGED_FUNC_WITH_COUNT(f_name, return_type, num_args, ...)     \
+    return_type f_name(CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) {     \
+        typedef return_type (*f_type)(                                         \
+                CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));             \
+        static f_type f = nullptr;                                             \
+                                                                               \
+        if (!f) {                                                              \
+            f = (f_type)dlsym(GetLibHandle(), #f_name);                        \
+            if (!f) {                                                          \
+                utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
+            }                                                                  \
+        }                                                                      \
+        return f(CALL_EXTRACT_PARAMS(num_args, __VA_ARGS__));                  \
     }
 
 #define DEFINE_BRIDGED_FUNC(f_name, return_type, ...)   \
