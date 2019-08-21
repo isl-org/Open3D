@@ -25,11 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/Sensor/AzureKinect/MKVWriter.h"
-#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
 #include <k4arecord/record.h>
+
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 namespace open3d {
 namespace io {
@@ -43,8 +44,9 @@ int MKVWriter::Open(const std::string &filename,
         Close();
     }
 
-    if (K4A_RESULT_SUCCEEDED !=
-        k4a_record_create(filename.c_str(), device, config, &handle_)) {
+    if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_create(filename.c_str(),
+                                                              device, config,
+                                                              &handle_)) {
         utility::LogError("Unable to open file {}\n", filename);
         return -1;
     }
@@ -57,7 +59,7 @@ bool MKVWriter::IsOpened() { return handle_ != nullptr; }
 int MKVWriter::SetMetadata(const MKVMetadata &metadata) {
     metadata_ = metadata;
 
-    if (K4A_RESULT_SUCCEEDED != k4a_record_write_header(handle_)) {
+    if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_write_header(handle_)) {
         utility::LogError("Unable to write header\n");
         return -1;
     }
@@ -65,10 +67,10 @@ int MKVWriter::SetMetadata(const MKVMetadata &metadata) {
 }
 
 void MKVWriter::Close() {
-    if (K4A_RESULT_SUCCEEDED != k4a_record_flush(handle_)) {
+    if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_flush(handle_)) {
         utility::LogError("Unable to flush before writing\n");
     }
-    k4a_record_close(handle_);
+    k4a_plugin::k4a_record_close(handle_);
 }
 
 int MKVWriter::NextFrame(k4a_capture_t capture) {
@@ -77,7 +79,8 @@ int MKVWriter::NextFrame(k4a_capture_t capture) {
         return -1;
     }
 
-    if (K4A_RESULT_SUCCEEDED != k4a_record_write_capture(handle_, capture)) {
+    if (K4A_RESULT_SUCCEEDED !=
+        k4a_plugin::k4a_record_write_capture(handle_, capture)) {
         utility::LogError("Unable to write frame to mkv.\n");
         return -1;
     }

@@ -26,6 +26,7 @@
 
 #include <dlfcn.h>
 #include <k4a/k4a.h>
+#include <k4arecord/playback.h>
 #include <k4arecord/record.h>
 #include <link.h>
 #include <cstring>
@@ -155,6 +156,106 @@ DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
                     k4a_record_close,
                     k4a_record_t,
                     recording_handle)
+
+////////////////////////////////////////////////////////////////////////////////
+
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_result_t,
+                    k4a_playback_open,
+                    const char*,
+                    path,
+                    k4a_playback_t*,
+                    playback_handle)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_buffer_result_t,
+                    k4a_playback_get_raw_calibration,
+                    k4a_playback_t,
+                    playback_handle,
+                    uint8_t*,
+                    data,
+                    size_t*,
+                    data_size)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_result_t,
+                    k4a_playback_get_calibration,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_calibration_t*,
+                    calibration)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_result_t,
+                    k4a_playback_get_record_configuration,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_record_configuration_t*,
+                    config)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_buffer_result_t,
+                    k4a_playback_get_tag,
+                    k4a_playback_t,
+                    playback_handle,
+                    const char*,
+                    name,
+                    char*,
+                    value,
+                    size_t*,
+                    value_size)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_result_t,
+                    k4a_playback_set_color_conversion,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_image_format_t,
+                    target_format)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_stream_result_t,
+                    k4a_playback_get_next_capture,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_capture_t*,
+                    capture_handle)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_stream_result_t,
+                    k4a_playback_get_previous_capture,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_capture_t*,
+                    capture_handle)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_stream_result_t,
+                    k4a_playback_get_next_imu_sample,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_imu_sample_t*,
+                    imu_sample)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_stream_result_t,
+                    k4a_playback_get_previous_imu_sample,
+                    k4a_playback_t,
+                    playback_handle,
+                    k4a_imu_sample_t*,
+                    imu_sample)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_result_t,
+                    k4a_playback_seek_timestamp,
+                    k4a_playback_t,
+                    playback_handle,
+                    int64_t,
+                    offset_usec,
+                    k4a_playback_seek_origin_t,
+                    origin)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    uint64_t,
+                    k4a_playback_get_last_timestamp_usec,
+                    k4a_playback_t,
+                    playback_handle)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    void,
+                    k4a_playback_close,
+                    k4a_playback_t,
+                    playback_handle)
+
+////////////////////////////////////////////////////////////////////////////////
 
 DEFINE_BRIDGED_FUNC(k4a_lib_name, uint32_t, k4a_device_get_installed_count)
 

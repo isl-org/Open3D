@@ -25,12 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
-#include "Open3D/Geometry/RGBDImage.h"
 
 #include <k4a/k4a.h>
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
 #include <memory>
+
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 namespace open3d {
 namespace io {
@@ -40,8 +42,8 @@ AzureKinectSensor::AzureKinectSensor(
     : RGBDSensor(), sensor_config_(sensor_config) {}
 
 AzureKinectSensor::~AzureKinectSensor() {
-    k4a_device_stop_cameras(device_);
-    k4a_device_close(device_);
+    k4a_plugin::k4a_device_stop_cameras(device_);
+    k4a_plugin::k4a_device_close(device_);
 }
 
 int AzureKinectSensor::Connect(size_t sensor_index) {
@@ -74,55 +76,64 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
     }
 
     // check available devices
-    const uint32_t installed_devices = k4a_device_get_installed_count();
+    const uint32_t installed_devices =
+            k4a_plugin::k4a_device_get_installed_count();
     if (sensor_index >= installed_devices) {
         utility::LogError("Device not found.\n");
         return 1;
     }
 
     // open device
-    if (K4A_FAILED(k4a_device_open(sensor_index, &device_))) {
-        utility::LogError("Runtime error: k4a_device_open() failed\n");
+    if (K4A_FAILED(k4a_plugin::k4a_device_open(sensor_index, &device_))) {
+        utility::LogError(
+                "Runtime error: k4a_plugin::k4a_device_open() failed\n");
         return 1;
     }
 
     // get and print device info
     PrintFirmware(device_);
 
-    if (K4A_FAILED(k4a_device_start_cameras(device_, &device_config))) {
+    if (K4A_FAILED(k4a_plugin::k4a_device_start_cameras(device_,
+                                                        &device_config))) {
         utility::LogError(
-                "Runtime error: k4a_device_set_color_control() failed\n");
-        k4a_device_close(device_);
+                "Runtime error: k4a_plugin::k4a_device_set_color_control() "
+                "failed\n");
+        k4a_plugin::k4a_device_close(device_);
         return 1;
     }
 
     // set color control, assume absoluteExposureValue == 0
-    if (K4A_FAILED(k4a_device_set_color_control(
+    if (K4A_FAILED(k4a_plugin::k4a_device_set_color_control(
                 device_, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
                 K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
         utility::LogError(
-                "Runtime error: k4a_device_set_color_control() failed\n");
-        k4a_device_close(device_);
+                "Runtime error: k4a_plugin::k4a_device_set_color_control() "
+                "failed\n");
+        k4a_plugin::k4a_device_close(device_);
         return 1;
     }
 
     // set calibration
     k4a_calibration_t calibration;
-    k4a_device_get_calibration(device_, device_config.depth_mode,
-                               device_config.color_resolution, &calibration);
-    transform_depth_to_color_ = k4a_transformation_create(&calibration);
+    k4a_plugin::k4a_device_get_calibration(device_, device_config.depth_mode,
+                                           device_config.color_resolution,
+                                           &calibration);
+    transform_depth_to_color_ =
+            k4a_plugin::k4a_transformation_create(&calibration);
 
     return 0;
 }
 
 k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
     k4a_capture_t capture;
-    auto result = k4a_device_get_capture(device_, &capture, timeout_);
+    auto result =
+            k4a_plugin::k4a_device_get_capture(device_, &capture, timeout_);
     if (result == K4A_WAIT_RESULT_TIMEOUT) {
         return nullptr;
     } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
         utility::LogError(
-                "Runtime error: k4a_device_get_capture() returned {}\n",
+                "Runtime error: k4a_plugin::k4a_device_get_capture() returned "
+                "{}\n",
                 result);
         return nullptr;
     }
@@ -136,7 +147,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
     auto im_rgbd = DecompressCapture(
             capture,
             enable_align_depth_to_color ? transform_depth_to_color_ : nullptr);
-    k4a_capture_release(capture);
+    k4a_plugin::k4a_capture_release(capture);
     return im_rgbd;
 }
 
@@ -163,15 +174,18 @@ int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
     char serial_number_buffer[256];
     size_t serial_number_buffer_size = sizeof(serial_number_buffer);
     if (K4A_BUFFER_RESULT_SUCCEEDED !=
-        k4a_device_get_serialnum(device, serial_number_buffer,
-                                 &serial_number_buffer_size)) {
-        utility::LogError("Runtime error: k4a_device_get_serialnum() failed\n");
+        k4a_plugin::k4a_device_get_serialnum(device, serial_number_buffer,
+                                             &serial_number_buffer_size)) {
+        utility::LogError(
+                "Runtime error: k4a_plugin::k4a_device_get_serialnum() "
+                "failed\n");
         return 1;
     }
 
     k4a_hardware_version_t version_info;
-    if (K4A_FAILED(k4a_device_get_version(device, &version_info))) {
-        utility::LogError("Runtime error: k4a_device_get_version() failed\n");
+    if (K4A_FAILED(k4a_plugin::k4a_device_get_version(device, &version_info))) {
+        utility::LogError(
+                "Runtime error: k4a_plugin::k4a_device_get_version() failed\n");
         return 1;
     }
 
@@ -190,14 +204,14 @@ int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
 }
 
 int AzureKinectSensor::ListDevices() {
-    uint32_t device_count = k4a_device_get_installed_count();
+    uint32_t device_count = k4a_plugin::k4a_device_get_installed_count();
     if (device_count > 0) {
         for (uint8_t i = 0; i < device_count; i++) {
             utility::LogInfo("Device index {}\n", i);
             k4a_device_t device;
-            if (K4A_SUCCEEDED(k4a_device_open(i, &device))) {
+            if (K4A_SUCCEEDED(k4a_plugin::k4a_device_open(i, &device))) {
                 AzureKinectSensor::PrintFirmware(device);
-                k4a_device_close(device);
+                k4a_plugin::k4a_device_close(device);
             } else {
                 utility::LogError("Device Open Failed\n");
             }
@@ -221,23 +235,24 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
         rgbd_buffer = std::make_shared<geometry::RGBDImage>();
     }
 
-    k4a_image_t k4a_color = k4a_capture_get_color_image(capture);
-    k4a_image_t k4a_depth = k4a_capture_get_depth_image(capture);
+    k4a_image_t k4a_color = k4a_plugin::k4a_capture_get_color_image(capture);
+    k4a_image_t k4a_depth = k4a_plugin::k4a_capture_get_depth_image(capture);
     if (k4a_color == nullptr || k4a_depth == nullptr) {
         utility::LogDebug("Skipping empty captures.\n");
         return nullptr;
     }
 
     /* Process color */
-    if (K4A_IMAGE_FORMAT_COLOR_MJPG != k4a_image_get_format(k4a_color)) {
+    if (K4A_IMAGE_FORMAT_COLOR_MJPG !=
+        k4a_plugin::k4a_image_get_format(k4a_color)) {
         utility::LogError(
                 "Unexpected image format. The stream may have "
                 "corrupted.\n");
         return nullptr;
     }
 
-    int width = k4a_image_get_width_pixels(k4a_color);
-    int height = k4a_image_get_height_pixels(k4a_color);
+    int width = k4a_plugin::k4a_image_get_width_pixels(k4a_color);
+    int height = k4a_plugin::k4a_image_get_height_pixels(k4a_color);
 
     /* resize */
     rgbd_buffer->color_.Prepare(width, height, 3, sizeof(uint8_t));
@@ -246,8 +261,9 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
     tjhandle tjHandle;
     tjHandle = tjInitDecompress();
     if (0 !=
-        tjDecompress2(tjHandle, k4a_image_get_buffer(k4a_color),
-                      static_cast<unsigned long>(k4a_image_get_size(k4a_color)),
+        tjDecompress2(tjHandle, k4a_plugin::k4a_image_get_buffer(k4a_color),
+                      static_cast<unsigned long>(
+                              k4a_plugin::k4a_image_get_size(k4a_color)),
                       color_buffer->data_.data(), width, 0 /* pitch */, height,
                       TJPF_BGRA, TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)) {
         utility::LogError("Failed to decompress color image.\n");
@@ -260,31 +276,33 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
     k4a_image_t k4a_transformed_depth = nullptr;
     if (transformation) {
         rgbd_buffer->depth_.Prepare(width, height, 1, sizeof(uint16_t));
-        k4a_image_create_from_buffer(K4A_IMAGE_FORMAT_DEPTH16, width, height,
-                                     width * sizeof(uint16_t),
-                                     rgbd_buffer->depth_.data_.data(),
-                                     width * height * sizeof(uint16_t), NULL,
-                                     NULL, &k4a_transformed_depth);
+        k4a_plugin::k4a_image_create_from_buffer(
+                K4A_IMAGE_FORMAT_DEPTH16, width, height,
+                width * sizeof(uint16_t), rgbd_buffer->depth_.data_.data(),
+                width * height * sizeof(uint16_t), NULL, NULL,
+                &k4a_transformed_depth);
         if (K4A_RESULT_SUCCEEDED !=
-            k4a_transformation_depth_image_to_color_camera(
+            k4a_plugin::k4a_transformation_depth_image_to_color_camera(
                     transformation, k4a_depth, k4a_transformed_depth)) {
             utility::LogError(
                     "Failed to transform depth frame to color frame.\n");
             return nullptr;
         }
     } else {
-        rgbd_buffer->depth_.Prepare(k4a_image_get_width_pixels(k4a_depth),
-                                    k4a_image_get_height_pixels(k4a_depth), 1,
-                                    sizeof(uint16_t));
+        rgbd_buffer->depth_.Prepare(
+                k4a_plugin::k4a_image_get_width_pixels(k4a_depth),
+                k4a_plugin::k4a_image_get_height_pixels(k4a_depth), 1,
+                sizeof(uint16_t));
         memcpy(rgbd_buffer->depth_.data_.data(),
-               k4a_image_get_buffer(k4a_depth), k4a_image_get_size(k4a_depth));
+               k4a_plugin::k4a_image_get_buffer(k4a_depth),
+               k4a_plugin::k4a_image_get_size(k4a_depth));
     }
 
     /* process depth */
-    k4a_image_release(k4a_color);
-    k4a_image_release(k4a_depth);
+    k4a_plugin::k4a_image_release(k4a_color);
+    k4a_plugin::k4a_image_release(k4a_depth);
     if (transformation) {
-        k4a_image_release(k4a_transformed_depth);
+        k4a_plugin::k4a_image_release(k4a_transformed_depth);
     }
 
     return rgbd_buffer;

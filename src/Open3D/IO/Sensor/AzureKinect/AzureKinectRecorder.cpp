@@ -28,7 +28,6 @@
 // Licensed under the MIT License.
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
-#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 #include <assert.h>
 #include <Eigen/Core>
@@ -41,6 +40,7 @@
 #include <k4arecord/record.h>
 
 #include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/MKVReader.h"
 #include "Open3D/Visualization/Utility/ColorMap.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
@@ -70,7 +70,7 @@ bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
                               filename);
             return false;
         }
-        if (K4A_FAILED(k4a_record_write_header(recording_))) {
+        if (K4A_FAILED(k4a_plugin::k4a_record_write_header(recording_))) {
             utility::LogError("Unable to write header\n");
             return false;
         }
@@ -84,11 +84,11 @@ bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
 bool AzureKinectRecorder::CloseRecord() {
     if (is_record_created_) {
         utility::LogInfo("Saving recording...\n");
-        if (K4A_FAILED(k4a_record_flush(recording_))) {
+        if (K4A_FAILED(k4a_plugin::k4a_record_flush(recording_))) {
             utility::LogError("Unable to flush record file\n");
             return false;
         }
-        k4a_record_close(recording_);
+        k4a_plugin::k4a_record_close(recording_);
         utility::LogInfo("Done\n");
 
         is_record_created_ = false;
@@ -100,7 +100,8 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
         bool write, bool enable_align_depth_to_color) {
     k4a_capture_t capture = sensor_.CaptureRawFrame();
     if (capture != nullptr && is_record_created_ && write) {
-        if (K4A_FAILED(k4a_record_write_capture(recording_, capture))) {
+        if (K4A_FAILED(k4a_plugin::k4a_record_write_capture(recording_,
+                                                            capture))) {
             utility::LogError("Unable to write to capture\n");
             return nullptr;
         }
@@ -114,7 +115,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
         utility::LogInfo("Invalid capture, skipping this frame\n");
         return nullptr;
     }
-    k4a_capture_release(capture);
+    k4a_plugin::k4a_capture_release(capture);
     return im_rgbd;
 }
 }  // namespace io

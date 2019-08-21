@@ -32,6 +32,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
