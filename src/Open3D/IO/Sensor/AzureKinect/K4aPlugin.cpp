@@ -66,7 +66,7 @@ static void* GetLibHandle() {
     return handle;
 }
 
-#define DEFINE_BRIDGED_FUNC_WITH_COUNT(f_name, return_type, num_args, ...)     \
+#define DEFINE_BRIDGED_FUNC_WITH_COUNT(return_type, f_name, num_args, ...)     \
     return_type f_name(CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) {     \
         typedef return_type (*f_type)(                                         \
                 CALL_EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));             \
@@ -81,12 +81,12 @@ static void* GetLibHandle() {
         return f(CALL_EXTRACT_PARAMS(num_args, __VA_ARGS__));                  \
     }
 
-#define DEFINE_BRIDGED_FUNC(f_name, return_type, ...)   \
-    DEFINE_BRIDGED_FUNC_WITH_COUNT(f_name, return_type, \
+#define DEFINE_BRIDGED_FUNC(return_type, f_name, ...)   \
+    DEFINE_BRIDGED_FUNC_WITH_COUNT(return_type, f_name, \
                                    COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
 
-DEFINE_BRIDGED_FUNC(k4a_record_create,
-                    k4a_result_t,
+DEFINE_BRIDGED_FUNC(k4a_result_t,
+                    k4a_record_create,
                     const char*,
                     path,
                     k4a_device_t,
@@ -96,24 +96,24 @@ DEFINE_BRIDGED_FUNC(k4a_record_create,
                     k4a_record_t*,
                     recording_handle)
 
-DEFINE_BRIDGED_FUNC(k4a_record_write_header,
-                    k4a_result_t,
+DEFINE_BRIDGED_FUNC(k4a_result_t,
+                    k4a_record_write_header,
                     k4a_record_t,
                     recording_handle)
 
-DEFINE_BRIDGED_FUNC(k4a_record_write_capture,
-                    k4a_result_t,
+DEFINE_BRIDGED_FUNC(k4a_result_t,
+                    k4a_record_write_capture,
                     k4a_record_t,
                     recording_handle,
                     k4a_capture_t,
                     capture_handle)
 
-DEFINE_BRIDGED_FUNC(k4a_record_flush,
-                    k4a_result_t,
+DEFINE_BRIDGED_FUNC(k4a_result_t,
+                    k4a_record_flush,
                     k4a_record_t,
                     recording_handle)
 
-DEFINE_BRIDGED_FUNC(k4a_record_close, void, k4a_record_t, recording_handle)
+DEFINE_BRIDGED_FUNC(void, k4a_record_close, k4a_record_t, recording_handle)
 
 }  // namespace k4a_plugin
 }  // namespace io
