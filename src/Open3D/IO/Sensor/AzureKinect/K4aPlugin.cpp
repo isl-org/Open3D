@@ -29,6 +29,7 @@
 #include <k4arecord/record.h>
 #include <link.h>
 #include <cstring>
+#include <unordered_map>
 
 #include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
@@ -38,13 +39,11 @@ namespace open3d {
 namespace io {
 namespace k4a_plugin {
 
-static void* GetDynamicLibHandle() {
-    static void* handle = nullptr;
-    static const std::string lib_name = "libk4arecord.so";
+static void* GetDynamicLibHandle(const std::string& lib_name) {
+    static std::unordered_map<std::string, void*> map_lib_name_to_handle;
 
-    if (!handle) {
-        handle = dlopen(lib_name.c_str(), RTLD_LAZY);
-
+    if (map_lib_name_to_handle.count(lib_name) == 0) {
+        void* handle = dlopen(lib_name.c_str(), RTLD_LAZY);
         if (!handle) {
             utility::LogFatal("Cannot load {}\n", dlerror());
         } else {
@@ -60,10 +59,9 @@ static void* GetDynamicLibHandle() {
                 utility::LogWarning("Cannot get dlinfo\n");
             }
         }
+        map_lib_name_to_handle[lib_name] = handle;
     }
-
-    // handle != nullptr guaranteed here
-    return handle;
+    return map_lib_name_to_handle.at(lib_name);
 }
 
 #define DEFINE_BRIDGED_FUNC_WITH_COUNT(return_type, f_name, num_args, ...)     \
@@ -73,7 +71,8 @@ static void* GetDynamicLibHandle() {
         static f_type f = nullptr;                                             \
                                                                                \
         if (!f) {                                                              \
-            f = (f_type)dlsym(GetDynamicLibHandle(), #f_name);                 \
+            f = (f_type)dlsym(GetDynamicLibHandle("libk4arecord.so"),          \
+                              #f_name);                                        \
             if (!f) {                                                          \
                 utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
             }                                                                  \
