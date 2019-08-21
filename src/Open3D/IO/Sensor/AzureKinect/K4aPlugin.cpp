@@ -85,6 +85,25 @@ DEFINE_BRIDGED_FUNC(k4a_record_create,
                     k4a_record_t*,
                     recording_handle)
 
+DEFINE_BRIDGED_FUNC(k4a_record_write_header,
+                    k4a_result_t,
+                    k4a_record_t,
+                    recording_handle)
+
+DEFINE_BRIDGED_FUNC(k4a_record_write_capture,
+                    k4a_result_t,
+                    k4a_record_t,
+                    recording_handle,
+                    k4a_capture_t,
+                    capture_handle)
+
+DEFINE_BRIDGED_FUNC(k4a_record_flush,
+                    k4a_result_t,
+                    k4a_record_t,
+                    recording_handle)
+
+DEFINE_BRIDGED_FUNC(k4a_record_close, void, k4a_record_t, recording_handle)
+
 }  // namespace k4a_plugin
 }  // namespace io
 }  // namespace open3d

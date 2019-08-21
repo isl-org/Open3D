@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/Sensor/AzureKinect/MKVWriter.h"
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>

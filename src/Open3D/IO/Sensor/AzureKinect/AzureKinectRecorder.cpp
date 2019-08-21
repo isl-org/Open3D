@@ -28,6 +28,7 @@
 // Licensed under the MIT License.
 
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
+#include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 
 #include <assert.h>
 #include <Eigen/Core>
@@ -61,7 +62,7 @@ bool AzureKinectRecorder::InitSensor() {
 
 bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
     if (!is_record_created_) {
-        if (K4A_FAILED(k4a_record_create(
+        if (K4A_FAILED(k4a_plugin::k4a_record_create(
                     filename.c_str(), sensor_.device_,
                     sensor_.sensor_config_.ConvertToNativeConfig(),
                     &recording_))) {
