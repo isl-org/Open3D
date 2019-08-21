@@ -25,9 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Qhull.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Utility/Console.h"
 
 #include <numeric>
+
+#include <Eigen/Eigenvalues>
 
 namespace open3d {
 namespace geometry {
@@ -40,15 +45,13 @@ OrientedBoundingBox& OrientedBoundingBox::Clear() {
     return *this;
 }
 
-bool OrientedBoundingBox::IsEmpty() const {
-   return x_axis_.squaredNorm() * y_axis_.squaredNorm() * z_axis_.squaredNorm() == 0;
-}
+bool OrientedBoundingBox::IsEmpty() const { return Volume() == 0; }
 
 Eigen::Vector3d OrientedBoundingBox::GetMinBound() const {
     auto points = GetBoxPoints();
     return std::accumulate(
             points.begin(), points.end(), points[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+            [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
                 return a.array().min(b.array()).matrix();
             });
 }
@@ -57,7 +60,7 @@ Eigen::Vector3d OrientedBoundingBox::GetMaxBound() const {
     auto points = GetBoxPoints();
     return std::accumulate(
             points.begin(), points.end(), points[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+            [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
                 return a.array().max(b.array()).matrix();
             });
 }
@@ -70,34 +73,40 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox() const {
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Transform(const Eigen::Matrix4d& transformation) {
-    Eigen::Vector4d c; c << center_, 1;
-    Eigen::Vector4d x; x << center_ + x_axis_, 1;
-    Eigen::Vector4d y; y << center_ + y_axis_, 1;
-    Eigen::Vector4d z; z << center_ + z_axis_, 1;
+OrientedBoundingBox& OrientedBoundingBox::Transform(
+        const Eigen::Matrix4d& transformation) {
+    Eigen::Vector4d c;
+    c << center_, 1;
+    Eigen::Vector4d x;
+    x << center_ + x_axis_, 1;
+    Eigen::Vector4d y;
+    y << center_ + y_axis_, 1;
+    Eigen::Vector4d z;
+    z << center_ + z_axis_, 1;
     c = transformation * c;
     x = transformation * x;
     y = transformation * y;
     z = transformation * z;
-    center_ = c.block<3,1>(0,0);
-    x_axis_ = x.block<3,1>(0,0) - center_;
-    y_axis_ = y.block<3,1>(0,0) - center_;
-    z_axis_ = z.block<3,1>(0,0) - center_;
+    center_ = c.block<3, 1>(0, 0);
+    x_axis_ = x.block<3, 1>(0, 0) - center_;
+    y_axis_ = y.block<3, 1>(0, 0) - center_;
+    z_axis_ = z.block<3, 1>(0, 0) - center_;
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Translate(const Eigen::Vector3d& translation) {
+OrientedBoundingBox& OrientedBoundingBox::Translate(
+        const Eigen::Vector3d& translation) {
     center_ += translation;
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Scale(const double scale, bool center) {
+OrientedBoundingBox& OrientedBoundingBox::Scale(const double scale,
+                                                bool center) {
     if (center) {
         x_axis_ *= scale;
         y_axis_ *= scale;
         z_axis_ *= scale;
-    }
-    else {
+    } else {
         Eigen::Vector3d x = scale * (center_ + x_axis_);
         Eigen::Vector3d y = scale * (center_ + y_axis_);
         Eigen::Vector3d z = scale * (center_ + z_axis_);
@@ -109,16 +118,14 @@ OrientedBoundingBox& OrientedBoundingBox::Scale(const double scale, bool center)
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Rotate(const Eigen::Vector3d& rotation,
-                           bool center,
-                           RotationType type) {
+OrientedBoundingBox& OrientedBoundingBox::Rotate(
+        const Eigen::Vector3d& rotation, bool center, RotationType type) {
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     if (center) {
         x_axis_ = R * x_axis_;
         y_axis_ = R * y_axis_;
         z_axis_ = R * z_axis_;
-    }
-    else {
+    } else {
         Eigen::Vector3d x = R * (center_ + x_axis_);
         Eigen::Vector3d y = R * (center_ + y_axis_);
         Eigen::Vector3d z = R * (center_ + z_axis_);
@@ -128,6 +135,10 @@ OrientedBoundingBox& OrientedBoundingBox::Rotate(const Eigen::Vector3d& rotation
         z_axis_ = z - center_;
     }
     return *this;
+}
+
+double OrientedBoundingBox::Volume() const {
+    return (2 * x_axis_.norm()) * (2 * y_axis_.norm()) * (2 * z_axis_.norm());
 }
 
 std::vector<Eigen::Vector3d> OrientedBoundingBox::GetBoxPoints() const {
@@ -143,7 +154,8 @@ std::vector<Eigen::Vector3d> OrientedBoundingBox::GetBoxPoints() const {
     return points;
 }
 
-OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(const AxisAlignedBoundingBox& aabox) {
+OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+        const AxisAlignedBoundingBox& aabox) {
     Eigen::Vector3d extend = aabox.GetHalfExtend();
     OrientedBoundingBox obox;
     obox.center_ = aabox.GetCenter();
@@ -153,15 +165,55 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(const 
     return obox;
 }
 
-OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(const std::vector<Eigen::Vector3d>& points) {
-    // TODO:
-    //  https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf
-    //  http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf
+OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
+        const std::vector<Eigen::Vector3d>& points) {
+    PointCloud hull_pcd;
+    hull_pcd.points_ = Qhull::ComputeConvexHull(points)->vertices_;
+
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d cov;
+    std::tie(mean, cov) = hull_pcd.ComputeMeanAndCovariance();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(cov);
+    Eigen::Vector3d evals = es.eigenvalues();
+    Eigen::Matrix3d R = es.eigenvectors();
+    R.col(0) /= R.col(0).norm();
+    R.col(1) /= R.col(1).norm();
+    R.col(2) /= R.col(2).norm();
+
+    if (evals(1) > evals(0)) {
+        std::swap(evals(1), evals(0));
+        Eigen::Vector3d tmp = R.col(1);
+        R.col(1) = R.col(0);
+        R.col(0) = tmp;
+    }
+    if (evals(2) > evals(0)) {
+        std::swap(evals(2), evals(0));
+        Eigen::Vector3d tmp = R.col(2);
+        R.col(2) = R.col(0);
+        R.col(0) = tmp;
+    }
+    if (evals(2) > evals(1)) {
+        std::swap(evals(2), evals(1));
+        Eigen::Vector3d tmp = R.col(2);
+        R.col(2) = R.col(1);
+        R.col(1) = tmp;
+    }
+
+    for (auto& pt : hull_pcd.points_) {
+        pt = R.transpose() * (pt - mean);
+    }
+    const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
+    const Eigen::Vector3d extend = aabox.GetHalfExtend();
+
     OrientedBoundingBox obox;
+    obox.center_ = R * aabox.GetCenter() + mean;
+    obox.x_axis_ = R * Eigen::Vector3d(extend(0), 0, 0);
+    obox.y_axis_ = R * Eigen::Vector3d(0, extend(1), 0);
+    obox.z_axis_ = R * Eigen::Vector3d(0, 0, extend(2));
+
     return obox;
 }
-
-
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
     min_bound_.setZero();
@@ -169,10 +221,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
     return *this;
 }
 
-bool AxisAlignedBoundingBox::IsEmpty() const {
-    Eigen::Vector3d extend = max_bound_ - min_bound_;
-    return extend.prod() == 0;
-}
+bool AxisAlignedBoundingBox::IsEmpty() const { return Volume() == 0; }
 Eigen::Vector3d AxisAlignedBoundingBox::GetMinBound() const {
     return min_bound_;
 }
@@ -181,7 +230,8 @@ Eigen::Vector3d AxisAlignedBoundingBox::GetMaxBound() const {
     return max_bound_;
 }
 
-AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox() const {
+AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
+        const {
     return *this;
 }
 
@@ -189,63 +239,70 @@ OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(const Eigen::Matrix4d& transformation) {
-    utility::LogWarning("A general transform of a AxisAlignedBoundingBox would not be axis aligned anymore, convert it to a OrientedBoundingBox first\n");
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
+        const Eigen::Matrix4d& transformation) {
+    utility::LogWarning(
+            "A general transform of a AxisAlignedBoundingBox would not be axis "
+            "aligned anymore, convert it to a OrientedBoundingBox first\n");
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(const Eigen::Vector3d& translation) {
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
+        const Eigen::Vector3d& translation) {
     min_bound_ += translation;
     max_bound_ += translation;
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(const double scale, bool center) {
-    if(center) {
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(const double scale,
+                                                      bool center) {
+    if (center) {
         Eigen::Vector3d center = GetCenter();
         min_bound_ = center + scale * (min_bound_ - center);
         max_bound_ = center + scale * (max_bound_ - center);
-    }
-    else {
+    } else {
         min_bound_ *= scale;
         max_bound_ *= scale;
     }
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(const Eigen::Vector3d& rotation,
-                           bool center,
-                           RotationType type) {
-    utility::LogWarning("A rotation of a AxisAlignedBoundingBox would not be axis aligned anymore, convert it to a OrientedBoundingBox first\n");
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
+        const Eigen::Vector3d& rotation, bool center, RotationType type) {
+    utility::LogWarning(
+            "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
+            "anymore, convert it to a OrientedBoundingBox first\n");
     return *this;
 }
 
 std::string AxisAlignedBoundingBox::GetPrintInfo() const {
     return fmt::format("[({:.4f}, {:.4f}, {:.4f}) - ({:.4f}, {:.4f}, {:.4f})]",
-            min_bound_(0), min_bound_(1), min_bound_(2),
-            max_bound_(0), max_bound_(1), max_bound_(2));
+                       min_bound_(0), min_bound_(1), min_bound_(2),
+                       max_bound_(0), max_bound_(1), max_bound_(2));
 }
 
-AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(const std::vector<Eigen::Vector3d>& points) {
+AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
+        const std::vector<Eigen::Vector3d>& points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {
         box.min_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
         box.max_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    else {
+    } else {
         box.min_bound_ = std::accumulate(
                 points.begin(), points.end(), points[0],
-                [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
                     return a.array().min(b.array()).matrix();
                 });
         box.max_bound_ = std::accumulate(
                 points.begin(), points.end(), points[0],
-                [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
                     return a.array().max(b.array()).matrix();
                 });
     }
     return box;
 }
+
+double AxisAlignedBoundingBox::Volume() const { return GetExtend().prod(); }
 
 std::vector<Eigen::Vector3d> AxisAlignedBoundingBox::GetBoxPoints() const {
     std::vector<Eigen::Vector3d> points(8);

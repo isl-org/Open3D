@@ -362,7 +362,8 @@ AxisAlignedBoundingBox Octree::GetAxisAlignedBoundingBox() const {
 }
 
 OrientedBoundingBox Octree::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(GetAxisAlignedBoundingBox());
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
 }
 
 Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {

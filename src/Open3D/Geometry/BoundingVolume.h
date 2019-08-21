@@ -37,7 +37,12 @@ class AxisAlignedBoundingBox;
 
 class OrientedBoundingBox : public Geometry3D {
 public:
-    OrientedBoundingBox() : Geometry3D(Geometry::GeometryType::OrientedBoundingBox), center_(0,0,0), x_axis_(0,0,0), y_axis_(0,0,0), z_axis_(0,0,0) {}
+    OrientedBoundingBox()
+        : Geometry3D(Geometry::GeometryType::OrientedBoundingBox),
+          center_(0, 0, 0),
+          x_axis_(0, 0, 0),
+          y_axis_(0, 0, 0),
+          z_axis_(0, 0, 0) {}
     ~OrientedBoundingBox() override {}
 
 public:
@@ -47,17 +52,27 @@ public:
     virtual Eigen::Vector3d GetMaxBound() const;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const;
-    virtual OrientedBoundingBox& Transform(const Eigen::Matrix4d& transformation);
+    virtual OrientedBoundingBox& Transform(
+            const Eigen::Matrix4d& transformation);
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation);
     virtual OrientedBoundingBox& Scale(const double scale, bool center = true);
     virtual OrientedBoundingBox& Rotate(const Eigen::Vector3d& rotation,
-                               bool center = true,
-                               RotationType type = RotationType::XYZ);
+                                        bool center = true,
+                                        RotationType type = RotationType::XYZ);
 
+    double Volume() const;
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
-    static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(const AxisAlignedBoundingBox& aabox);
-    static OrientedBoundingBox CreateFromPoints(const std::vector<Eigen::Vector3d>& points);
+    static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
+            const AxisAlignedBoundingBox& aabox);
+
+    /// Creates an oriented bounding box using a PCA.
+    /// Note, that this is only an approximation to the minimum oriented
+    /// bounding box that could be computed for example with O'Rourke's
+    /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
+    /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
+    static OrientedBoundingBox CreateFromPoints(
+            const std::vector<Eigen::Vector3d>& points);
 
 public:
     Eigen::Vector3d center_;
@@ -66,10 +81,12 @@ public:
     Eigen::Vector3d z_axis_;
 };
 
-
 class AxisAlignedBoundingBox : public Geometry3D {
 public:
-    AxisAlignedBoundingBox() : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox), min_bound_(0,0,0), max_bound_(0,0,0) {}
+    AxisAlignedBoundingBox()
+        : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
+          min_bound_(0, 0, 0),
+          max_bound_(0, 0, 0) {}
     ~AxisAlignedBoundingBox() override {}
 
 public:
@@ -79,12 +96,16 @@ public:
     virtual Eigen::Vector3d GetMaxBound() const;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const;
-    virtual AxisAlignedBoundingBox& Transform(const Eigen::Matrix4d& transformation);
-    virtual AxisAlignedBoundingBox& Translate(const Eigen::Vector3d& translation);
-    virtual AxisAlignedBoundingBox& Scale(const double scale, bool center = true);
-    virtual AxisAlignedBoundingBox& Rotate(const Eigen::Vector3d& rotation,
-                               bool center = true,
-                               RotationType type = RotationType::XYZ);
+    virtual AxisAlignedBoundingBox& Transform(
+            const Eigen::Matrix4d& transformation);
+    virtual AxisAlignedBoundingBox& Translate(
+            const Eigen::Vector3d& translation);
+    virtual AxisAlignedBoundingBox& Scale(const double scale,
+                                          bool center = true);
+    virtual AxisAlignedBoundingBox& Rotate(
+            const Eigen::Vector3d& rotation,
+            bool center = true,
+            RotationType type = RotationType::XYZ);
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other) {
         min_bound_ = min_bound_.array().min(other.min_bound_.array()).matrix();
@@ -92,19 +113,16 @@ public:
         return *this;
     }
 
+    double Volume() const;
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     Eigen::Vector3d GetCenter() const {
         return (min_bound_ + max_bound_) * 0.5;
     }
 
-    Eigen::Vector3d GetExtend() const {
-        return (max_bound_ - min_bound_);
-    }
+    Eigen::Vector3d GetExtend() const { return (max_bound_ - min_bound_); }
 
-    Eigen::Vector3d GetHalfExtend() const {
-        return GetExtend() * 0.5;
-    }
+    Eigen::Vector3d GetHalfExtend() const { return GetExtend() * 0.5; }
 
     double GetMaxExtend() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
@@ -122,7 +140,8 @@ public:
 
     std::string GetPrintInfo() const;
 
-    static AxisAlignedBoundingBox CreateFromPoints(const std::vector<Eigen::Vector3d>& points);
+    static AxisAlignedBoundingBox CreateFromPoints(
+            const std::vector<Eigen::Vector3d>& points);
 
 public:
     Eigen::Vector3d min_bound_;

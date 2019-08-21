@@ -92,6 +92,12 @@ void pybind_geometry_classes(py::module &m) {
                  "Returns min bounds for geometry coordinates.")
             .def("get_max_bound", &geometry::Geometry3D::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
+            .def("get_axis_aligned_bounding_box",
+                 &geometry::Geometry3D::GetAxisAlignedBoundingBox,
+                 "Returns an axis-aligned bounding box of the geometry.")
+            .def("get_oriented_bounding_box",
+                 &geometry::Geometry3D::GetOrientedBoundingBox,
+                 "Returns an oriented bounding box of the geometry.")
             .def("transform", &geometry::Geometry3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
@@ -106,6 +112,10 @@ void pybind_geometry_classes(py::module &m) {
                  "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
+    docstring::ClassMethodDocInject(m, "Geometry3D",
+                                    "get_axis_aligned_bounding_box");
+    docstring::ClassMethodDocInject(m, "Geometry3D",
+                                    "get_oriented_bounding_box");
     docstring::ClassMethodDocInject(m, "Geometry3D", "transform");
     docstring::ClassMethodDocInject(m, "Geometry3D", "translate");
     docstring::ClassMethodDocInject(
@@ -160,4 +170,5 @@ void pybind_geometry(py::module &m) {
     pybind_image_methods(m_submodule);
     pybind_octree_methods(m_submodule);
     pybind_octree(m_submodule);
+    pybind_boundingvolume(m_submodule);
 }

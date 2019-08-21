@@ -25,11 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/IntersectionTest.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/Qhull.h"
-#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <Eigen/Dense>
 #include <numeric>

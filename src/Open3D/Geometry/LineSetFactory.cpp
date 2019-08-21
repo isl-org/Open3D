@@ -26,9 +26,9 @@
 
 #include <Eigen/Dense>
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/TetraMesh.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 
@@ -81,7 +81,8 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
     return line_set;
 }
 
-std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(const OrientedBoundingBox& box) {
+std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
+        const OrientedBoundingBox &box) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
@@ -99,7 +100,8 @@ std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(const OrientedBo
     return line_set;
 }
 
-std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(const AxisAlignedBoundingBox& box) {
+std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
+        const AxisAlignedBoundingBox &box) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));

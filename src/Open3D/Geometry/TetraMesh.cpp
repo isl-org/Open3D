@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TetraMesh.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <Eigen/Dense>
 #include <array>

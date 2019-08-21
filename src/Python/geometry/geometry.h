@@ -45,3 +45,4 @@ void pybind_lineset_methods(py::module &m);
 void pybind_image_methods(py::module &m);
 void pybind_octree_methods(py::module &m);
 void pybind_octree(py::module &m);
+void pybind_boundingvolume(py::module &m);

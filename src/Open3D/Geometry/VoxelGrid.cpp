@@ -29,11 +29,11 @@
 #include <unordered_map>
 
 #include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/Helper.h"
-#include "Open3D/Geometry/BoundingVolume.h"
 
 namespace open3d {
 namespace geometry {
@@ -86,7 +86,8 @@ AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
 }
 
 OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(GetAxisAlignedBoundingBox());
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
 }
 
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {

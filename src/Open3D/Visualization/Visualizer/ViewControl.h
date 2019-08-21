@@ -27,8 +27,8 @@
 #pragma once
 
 #include "Open3D/Camera/PinholeCameraParameters.h"
-#include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Visualization/Utility/GLHelper.h"
 #include "Open3D/Visualization/Visualizer/ViewParameters.h"
 
@@ -109,13 +109,16 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const geometry::AxisAlignedBoundingBox &GetBoundingBox() const { return bounding_box_; }
+    const geometry::AxisAlignedBoundingBox &GetBoundingBox() const {
+        return bounding_box_;
+    }
 
     void ResetBoundingBox() { bounding_box_.Clear(); }
 
     void FitInGeometry(const geometry::Geometry &geometry) {
         if (geometry.Dimension() == 3) {
-            bounding_box_ += ((const geometry::Geometry3D &)geometry).GetAxisAlignedBoundingBox();
+            bounding_box_ += ((const geometry::Geometry3D &)geometry)
+                                     .GetAxisAlignedBoundingBox();
         }
         SetProjectionParameters();
     }

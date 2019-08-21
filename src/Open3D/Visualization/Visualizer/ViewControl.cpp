@@ -64,10 +64,12 @@ void ViewControl::SetViewMatrices(
     glViewport(0, 0, window_width_, window_height_);
     if (GetProjectionType() == ProjectionType::Perspective) {
         // Perspective projection
-        z_near_ = constant_z_near_ > 0
-                          ? constant_z_near_
-                          : std::max(0.01 * bounding_box_.GetMaxExtend(),
-                                     distance_ - 3.0 * bounding_box_.GetMaxExtend());
+        z_near_ =
+                constant_z_near_ > 0
+                        ? constant_z_near_
+                        : std::max(0.01 * bounding_box_.GetMaxExtend(),
+                                   distance_ -
+                                           3.0 * bounding_box_.GetMaxExtend());
         z_far_ = constant_z_far_ > 0
                          ? constant_z_far_
                          : distance_ + 3.0 * bounding_box_.GetMaxExtend();

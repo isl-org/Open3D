@@ -94,8 +94,10 @@ public:
             const PointCloud &cloud1,
             const std::vector<std::pair<int, int>> &correspondences);
 
-    static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(const OrientedBoundingBox& box);
-    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(const AxisAlignedBoundingBox& box);
+    static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
+            const OrientedBoundingBox &box);
+    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
+            const AxisAlignedBoundingBox &box);
 
     /// Factory function to create a LineSet from edges of a triangle mesh
     /// \param mesh.
