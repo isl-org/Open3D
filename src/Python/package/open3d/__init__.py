@@ -24,36 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-
-import sys
-import os
-import platform
-import ctypes
-import glob
-
-if sys.platform == "linux" or platform == "linux2":
-    dll_files = ["libstdc++.so*", "libdepthengine.so*", "libk4a.so*", "libk4arecord.so*"]
-    pwd = os.path.dirname(os.path.realpath(__file__))
-    for dll_file in dll_files:
-        full_paths = glob.glob(pwd + "/" + dll_file)
-        if len(full_paths) != 1:
-            raise RuntimeError("Not found or more than one libs found for", dll_file)
-        else:
-            ctypes.cdll.LoadLibrary(full_paths[0])
-elif sys.platform == "darwin":
-    pass
-elif sys.platform == "win32":
-    dll_files = ["depthengine*.dll", "k4a.dll", "k4arecord.dll"]
-    pwd = os.path.dirname(os.path.realpath(__file__))
-    for dll_file in dll_files:
-        full_paths = glob.glob(pwd + "/" + dll_file)
-        if len(full_paths) != 1:
-            raise RuntimeError("Not found or more than one libs found for", dll_file)
-        else:
-            ctypes.cdll.LoadLibrary(full_paths[0])
-else:
-    raise RuntimeError("Unsupported system " + sys.platform)
-
 from .open3d import * # py2 py3 compatible
 
 __version__ = '@PROJECT_VERSION@'
