@@ -48,17 +48,20 @@ public:
 public:
     OrientedBoundingBox& Clear() override;
     bool IsEmpty() const override;
-    virtual Eigen::Vector3d GetMinBound() const;
-    virtual Eigen::Vector3d GetMaxBound() const;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const;
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
     virtual OrientedBoundingBox& Transform(
-            const Eigen::Matrix4d& transformation);
-    virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation);
-    virtual OrientedBoundingBox& Scale(const double scale, bool center = true);
-    virtual OrientedBoundingBox& Rotate(const Eigen::Vector3d& rotation,
-                                        bool center = true,
-                                        RotationType type = RotationType::XYZ);
+            const Eigen::Matrix4d& transformation) override;
+    virtual OrientedBoundingBox& Translate(
+            const Eigen::Vector3d& translation) override;
+    virtual OrientedBoundingBox& Scale(const double scale,
+                                       bool center = true) override;
+    virtual OrientedBoundingBox& Rotate(
+            const Eigen::Vector3d& rotation,
+            bool center = true,
+            RotationType type = RotationType::XYZ) override;
 
     double Volume() const;
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
@@ -92,20 +95,20 @@ public:
 public:
     AxisAlignedBoundingBox& Clear() override;
     bool IsEmpty() const override;
-    virtual Eigen::Vector3d GetMinBound() const;
-    virtual Eigen::Vector3d GetMaxBound() const;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const;
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
     virtual AxisAlignedBoundingBox& Transform(
-            const Eigen::Matrix4d& transformation);
+            const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(
-            const Eigen::Vector3d& translation);
+            const Eigen::Vector3d& translation) override;
     virtual AxisAlignedBoundingBox& Scale(const double scale,
-                                          bool center = true);
+                                          bool center = true) override;
     virtual AxisAlignedBoundingBox& Rotate(
             const Eigen::Vector3d& rotation,
             bool center = true,
-            RotationType type = RotationType::XYZ);
+            RotationType type = RotationType::XYZ) override;
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other) {
         min_bound_ = min_bound_.array().min(other.min_bound_.array()).matrix();
