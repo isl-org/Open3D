@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <Eigen/Dense>
 #include <numeric>
@@ -65,6 +66,14 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a.array().max(b.array()).matrix();
             });
+}
+
+AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(points_);
+}
+
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(points_);
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {

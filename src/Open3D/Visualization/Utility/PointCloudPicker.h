@@ -51,6 +51,8 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const final;
     Eigen::Vector3d GetMaxBound() const final;
+    geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const final;
+    geometry::OrientedBoundingBox GetOrientedBoundingBox() const final;
     PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
     PointCloudPicker& Translate(const Eigen::Vector3d& translation) override;
     PointCloudPicker& Scale(const double scale, bool center = true) override;

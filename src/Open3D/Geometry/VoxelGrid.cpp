@@ -29,6 +29,7 @@
 #include <unordered_map>
 
 #include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Utility/Console.h"
@@ -75,6 +76,18 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
         return (max_grid_index.cast<double>() + 1) * voxel_size_ +
                origin_.array();
     }
+}
+
+AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
+    AxisAlignedBoundingBox box;
+    box.min_bound_ = GetMinBound();
+    box.max_bound_ = GetMaxBound();
+    return box;
+}
+
+OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
 }
 
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {

@@ -27,8 +27,8 @@
 #pragma once
 
 #include "Open3D/Camera/PinholeCameraParameters.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/Geometry.h"
-#include "Open3D/Visualization/Utility/BoundingBox.h"
 #include "Open3D/Visualization/Utility/GLHelper.h"
 #include "Open3D/Visualization/Visualizer/ViewParameters.h"
 
@@ -109,13 +109,16 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const BoundingBox &GetBoundingBox() const { return bounding_box_; }
+    const geometry::AxisAlignedBoundingBox &GetBoundingBox() const {
+        return bounding_box_;
+    }
 
-    void ResetBoundingBox() { bounding_box_.Reset(); }
+    void ResetBoundingBox() { bounding_box_.Clear(); }
 
     void FitInGeometry(const geometry::Geometry &geometry) {
         if (geometry.Dimension() == 3) {
-            bounding_box_.FitInGeometry((const geometry::Geometry3D &)geometry);
+            bounding_box_ += ((const geometry::Geometry3D &)geometry)
+                                     .GetAxisAlignedBoundingBox();
         }
         SetProjectionParameters();
     }
@@ -137,10 +140,15 @@ public:
     double GetZNear() const { return z_near_; }
     double GetZFar() const { return z_far_; }
 
+    void SetConstantZNear(double z_near) { constant_z_near_ = z_near; }
+    void SetConstantZFar(double z_far) { constant_z_far_ = z_far; }
+    void UnsetConstantZNear() { constant_z_near_ = -1; }
+    void UnsetConstantZFar() { constant_z_far_ = -1; }
+
 protected:
     int window_width_ = 0;
     int window_height_ = 0;
-    BoundingBox bounding_box_;
+    geometry::AxisAlignedBoundingBox bounding_box_;
     Eigen::Vector3d eye_;
     Eigen::Vector3d lookat_;
     Eigen::Vector3d up_;
@@ -153,6 +161,8 @@ protected:
     double aspect_;
     double z_near_;
     double z_far_;
+    double constant_z_near_ = -1;
+    double constant_z_far_ = -1;
     GLHelper::GLMatrix4f projection_matrix_;
     GLHelper::GLMatrix4f view_matrix_;
     GLHelper::GLMatrix4f model_matrix_;

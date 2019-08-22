@@ -177,6 +177,30 @@ void unit_test::Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
 }
 
 // ----------------------------------------------------------------------------
+// Initialize an Vector4i vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
+                     const Vector4i &vmin,
+                     const Vector4i &vmax,
+                     const int &seed) {
+    Raw raw(seed);
+
+    Vector4d factor;
+    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
+    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
+    factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / Raw::VMAX;
+    factor(3, 0) = (double)(vmax(3, 0) - vmin(3, 0)) / Raw::VMAX;
+
+    for (size_t i = 0; i < v.size(); i++) {
+        v[i](0, 0) = vmin(0, 0) + (int)(raw.Next<int>() * factor(0, 0));
+        v[i](1, 0) = vmin(1, 0) + (int)(raw.Next<int>() * factor(1, 0));
+        v[i](2, 0) = vmin(2, 0) + (int)(raw.Next<int>() * factor(2, 0));
+        v[i](3, 0) = vmin(3, 0) + (int)(raw.Next<int>() * factor(2, 0));
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------

@@ -41,6 +41,9 @@ public:
         HalfEdgeTriangleMesh = 6,
         Image = 7,
         RGBDImage = 8,
+        TetraMesh = 9,
+        OrientedBoundingBox = 10,
+        AxisAlignedBoundingBox = 11,
     };
 
 public:

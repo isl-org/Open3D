@@ -24,39 +24,24 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Utility/BoundingBox.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Qhull.h"
+#include "Open3D/Geometry/TetraMesh.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
-namespace visualization {
+namespace geometry {
 
-BoundingBox::BoundingBox() {}
-
-BoundingBox::BoundingBox(const geometry::Geometry3D &geometry) {
-    FitInGeometry(geometry);
-}
-
-BoundingBox::~BoundingBox() {}
-
-void BoundingBox::Reset() {
-    min_bound_.setZero();
-    max_bound_.setZero();
-}
-
-void BoundingBox::FitInGeometry(const geometry::Geometry3D &geometry) {
-    if (GetSize() == 0.0) {  // empty box
-        min_bound_ = geometry.GetMinBound();
-        max_bound_ = geometry.GetMaxBound();
-    } else {
-        auto geometry_min_bound = geometry.GetMinBound();
-        auto geometry_max_bound = geometry.GetMaxBound();
-        min_bound_(0) = std::min(min_bound_(0), geometry_min_bound(0));
-        min_bound_(1) = std::min(min_bound_(1), geometry_min_bound(1));
-        min_bound_(2) = std::min(min_bound_(2), geometry_min_bound(2));
-        max_bound_(0) = std::max(max_bound_(0), geometry_max_bound(0));
-        max_bound_(1) = std::max(max_bound_(1), geometry_max_bound(1));
-        max_bound_(2) = std::max(max_bound_(2), geometry_max_bound(2));
+std::shared_ptr<TetraMesh> TetraMesh::CreateFromPointCloud(
+        const PointCloud& point_cloud) {
+    if (point_cloud.points_.size() < 4) {
+        utility::LogWarning(
+                "[CreateFromPointCloud] not enough points to create a "
+                "tetrahedral mesh.\n");
+        return std::make_shared<TetraMesh>();
     }
+    return Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_);
 }
 
-}  // namespace visualization
+}  // namespace geometry
 }  // namespace open3d

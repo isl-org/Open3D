@@ -121,6 +121,49 @@ protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
+class TetraMeshRenderer : public GeometryRenderer {
+public:
+    ~TetraMeshRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForTetraMesh simple_tetramesh_shader_;
+};
+
+class OrientedBoundingBoxRenderer : public GeometryRenderer {
+public:
+    ~OrientedBoundingBoxRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForOrientedBoundingBox simple_oriented_bounding_box_shader_;
+};
+
+class AxisAlignedBoundingBoxRenderer : public GeometryRenderer {
+public:
+    ~AxisAlignedBoundingBoxRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForAxisAlignedBoundingBox
+            simple_axis_aligned_bounding_box_shader_;
+};
+
 class TriangleMeshRenderer : public GeometryRenderer {
 public:
     ~TriangleMeshRenderer() override {}

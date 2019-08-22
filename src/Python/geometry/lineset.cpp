@@ -38,7 +38,7 @@ void pybind_lineset(py::module &m) {
             lineset(m, "LineSet",
                     "LineSet define a sets of lines in 3D. A typical "
                     "application is to display the point cloud correspondence "
-                    "paris.");
+                    "pairs.");
     py::detail::bind_default_constructor<geometry::LineSet>(lineset);
     py::detail::bind_copy_functions<geometry::LineSet>(lineset);
     lineset.def("__repr__",
@@ -64,10 +64,25 @@ void pybind_lineset(py::module &m) {
                         "Factory function to create a LineSet from two "
                         "pointclouds and a correspondence set.",
                         "cloud0"_a, "cloud1"_a, "correspondences"_a)
+            .def_static("create_from_oriented_bounding_box",
+                        &geometry::LineSet::CreateFromOrientedBoundingBox,
+                        "Factory function to create a LineSet from an "
+                        "OrientedBoundingBox.",
+                        "box"_a)
+            .def_static("create_from_axis_aligned_bounding_box",
+                        &geometry::LineSet::CreateFromAxisAlignedBoundingBox,
+                        "Factory function to create a LineSet from an "
+                        "AxisAlignedBoundingBox.",
+                        "box"_a)
             .def_static("create_from_triangle_mesh",
                         &geometry::LineSet::CreateFromTriangleMesh,
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
+                        "mesh"_a)
+            .def_static("create_from_tetra_mesh",
+                        &geometry::LineSet::CreateFromTetraMesh,
+                        "Factory function to create a LineSet from edges of a "
+                        "tetra mesh.",
                         "mesh"_a)
             .def_readwrite("points", &geometry::LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
@@ -94,8 +109,16 @@ void pybind_lineset(py::module &m) {
             {{"cloud0", "First point cloud."},
              {"cloud1", "Second point cloud."},
              {"correspondences", "Set of correspondences."}});
+    docstring::ClassMethodDocInject(m, "LineSet",
+                                    "create_from_oriented_bounding_box",
+                                    {{"box", "The input bounding box."}});
+    docstring::ClassMethodDocInject(m, "LineSet",
+                                    "create_from_axis_aligned_bounding_box",
+                                    {{"box", "The input bounding box."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_triangle_mesh",
                                     {{"mesh", "The input triangle mesh."}});
+    docstring::ClassMethodDocInject(m, "LineSet", "create_from_tetra_mesh",
+                                    {{"mesh", "The input tetra mesh."}});
 }
 
 void pybind_lineset_methods(py::module &m) {}

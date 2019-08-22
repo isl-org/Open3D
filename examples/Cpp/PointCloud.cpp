@@ -152,8 +152,7 @@ int main(int argc, char *argv[]) {
             new geometry::PointCloud);
     *pointcloud_ptr = pointcloud;
     pointcloud_ptr->NormalizeNormals();
-    visualization::BoundingBox bounding_box;
-    bounding_box.FitInGeometry(*pointcloud_ptr);
+    auto bounding_box = pointcloud_ptr->GetAxisAlignedBoundingBox();
 
     std::shared_ptr<geometry::PointCloud> pointcloud_transformed_ptr(
             new geometry::PointCloud);
