@@ -97,7 +97,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
             *coordinate_frame_mesh_ptr_ =
                     *geometry::TriangleMesh::CreateCoordinateFrame(
-                            boundingbox.GetSize() * 0.2,
+                            boundingbox.GetMaxExtend() * 0.2,
                             boundingbox.min_bound_);
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
         }

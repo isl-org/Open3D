@@ -40,7 +40,6 @@
 
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Visualization/Shader/GeometryRenderer.h"
-#include "Open3D/Visualization/Utility/BoundingBox.h"
 #include "Open3D/Visualization/Utility/ColorMap.h"
 #include "Open3D/Visualization/Visualizer/RenderOption.h"
 #include "Open3D/Visualization/Visualizer/ViewControl.h"

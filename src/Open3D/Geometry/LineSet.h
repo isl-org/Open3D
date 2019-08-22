@@ -36,6 +36,8 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class OrientedBoundingBox;
+class AxisAlignedBoundingBox;
 class TriangleMesh;
 class TetraMesh;
 
@@ -49,6 +51,8 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox() const override;
     LineSet &Transform(const Eigen::Matrix4d &transformation) override;
     LineSet &Translate(const Eigen::Vector3d &translation) override;
     LineSet &Scale(const double scale, bool center = true) override;
@@ -89,6 +93,11 @@ public:
             const PointCloud &cloud0,
             const PointCloud &cloud1,
             const std::vector<std::pair<int, int>> &correspondences);
+
+    static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
+            const OrientedBoundingBox &box);
+    static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
+            const AxisAlignedBoundingBox &box);
 
     /// Factory function to create a LineSet from edges of a triangle mesh
     /// \param mesh.

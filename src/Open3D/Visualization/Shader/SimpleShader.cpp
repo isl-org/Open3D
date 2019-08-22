@@ -26,6 +26,7 @@
 
 #include "Open3D/Visualization/Shader/SimpleShader.h"
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
@@ -322,6 +323,104 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
         InsertEdge(tetra(3), tetra(0));
         InsertEdge(tetra(3), tetra(1));
         InsertEdge(tetra(3), tetra(2));
+    }
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+    return true;
+}
+
+bool SimpleShaderForOrientedBoundingBox::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::OrientedBoundingBox) {
+        PrintShaderWarning(
+                "Rendering type is not geometry::OrientedBoundingBox.");
+        return false;
+    }
+    glLineWidth(GLfloat(option.line_width_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    return true;
+}
+
+bool SimpleShaderForOrientedBoundingBox::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::OrientedBoundingBox) {
+        PrintShaderWarning(
+                "Rendering type is not geometry::OrientedBoundingBox.");
+        return false;
+    }
+    auto lineset = geometry::LineSet::CreateFromOrientedBoundingBox(
+            (const geometry::OrientedBoundingBox &)geometry);
+    points.resize(lineset->lines_.size() * 2);
+    colors.resize(lineset->lines_.size() * 2);
+    for (size_t i = 0; i < lineset->lines_.size(); i++) {
+        const auto point_pair = lineset->GetLineCoordinate(i);
+        points[i * 2] = point_pair.first.cast<float>();
+        points[i * 2 + 1] = point_pair.second.cast<float>();
+        Eigen::Vector3d color;
+        if (lineset->HasColors()) {
+            color = lineset->colors_[i];
+        } else {
+            color = Eigen::Vector3d::Zero();
+        }
+        colors[i * 2] = colors[i * 2 + 1] = color.cast<float>();
+    }
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+    return true;
+}
+
+bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
+        PrintShaderWarning(
+                "Rendering type is not geometry::AxisAlignedBoundingBox.");
+        return false;
+    }
+    glLineWidth(GLfloat(option.line_width_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    return true;
+}
+
+bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
+        PrintShaderWarning(
+                "Rendering type is not geometry::AxisAlignedBoundingBox.");
+        return false;
+    }
+    auto lineset = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
+            (const geometry::AxisAlignedBoundingBox &)geometry);
+    points.resize(lineset->lines_.size() * 2);
+    colors.resize(lineset->lines_.size() * 2);
+    for (size_t i = 0; i < lineset->lines_.size(); i++) {
+        const auto point_pair = lineset->GetLineCoordinate(i);
+        points[i * 2] = point_pair.first.cast<float>();
+        points[i * 2 + 1] = point_pair.second.cast<float>();
+        Eigen::Vector3d color;
+        if (lineset->HasColors()) {
+            color = lineset->colors_[i];
+        } else {
+            color = Eigen::Vector3d::Zero();
+        }
+        colors[i * 2] = colors[i * 2 + 1] = color.cast<float>();
     }
     draw_arrays_mode_ = GL_LINES;
     draw_arrays_size_ = GLsizei(points.size());

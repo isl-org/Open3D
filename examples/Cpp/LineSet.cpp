@@ -71,8 +71,7 @@ int main(int argc, char **argv) {
 
     auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     *new_cloud_ptr = *cloud_ptr;
-    visualization::BoundingBox bounding_box;
-    bounding_box.FitInGeometry(*new_cloud_ptr);
+    auto bounding_box = new_cloud_ptr->GetAxisAlignedBoundingBox();
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
@@ -92,7 +91,7 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
         if ((point_pair.first - point_pair.second).norm() <
-            0.05 * bounding_box.GetSize()) {
+            0.05 * bounding_box.GetMaxExtend()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);

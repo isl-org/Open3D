@@ -235,7 +235,7 @@ void Visualizer::BuildUtilities() {
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
     coordinate_frame_mesh_ptr_ = geometry::TriangleMesh::CreateCoordinateFrame(
-            boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+            boundingbox.GetMaxExtend() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
     if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
@@ -350,6 +350,18 @@ bool Visualizer::AddGeometry(
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::TetraMesh) {
         renderer_ptr = std::make_shared<glsl::TetraMeshRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::OrientedBoundingBox) {
+        renderer_ptr = std::make_shared<glsl::OrientedBoundingBoxRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
+        renderer_ptr = std::make_shared<glsl::AxisAlignedBoundingBoxRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }

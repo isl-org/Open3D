@@ -26,6 +26,7 @@
 
 #include <Eigen/Dense>
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TetraMesh.h"
@@ -77,6 +78,46 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
         InsertEdge(triangle(2), triangle(0));
     }
 
+    return line_set;
+}
+
+std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
+        const OrientedBoundingBox &box) {
+    auto line_set = std::make_shared<LineSet>();
+    line_set->points_ = box.GetBoxPoints();
+    line_set->lines_.push_back(Eigen::Vector2i(0, 1));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 7));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 2));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 0));
+    line_set->lines_.push_back(Eigen::Vector2i(3, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(6, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(4, 5));
+    line_set->lines_.push_back(Eigen::Vector2i(5, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(0, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 5));
+    line_set->PaintUniformColor(box.color_);
+    return line_set;
+}
+
+std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
+        const AxisAlignedBoundingBox &box) {
+    auto line_set = std::make_shared<LineSet>();
+    line_set->points_ = box.GetBoxPoints();
+    line_set->lines_.push_back(Eigen::Vector2i(0, 1));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 7));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 2));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 0));
+    line_set->lines_.push_back(Eigen::Vector2i(3, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(6, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(4, 5));
+    line_set->lines_.push_back(Eigen::Vector2i(5, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(0, 3));
+    line_set->lines_.push_back(Eigen::Vector2i(1, 6));
+    line_set->lines_.push_back(Eigen::Vector2i(7, 4));
+    line_set->lines_.push_back(Eigen::Vector2i(2, 5));
+    line_set->PaintUniformColor(box.color_);
     return line_set;
 }
 
