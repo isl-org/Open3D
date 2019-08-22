@@ -97,6 +97,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
+    line_set->PaintUniformColor(box.color_);
     return line_set;
 }
 
@@ -116,6 +117,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
     line_set->lines_.push_back(Eigen::Vector2i(1, 6));
     line_set->lines_.push_back(Eigen::Vector2i(7, 4));
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
+    line_set->PaintUniformColor(box.color_);
     return line_set;
 }
 

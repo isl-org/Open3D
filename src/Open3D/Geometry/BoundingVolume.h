@@ -42,7 +42,8 @@ public:
           center_(0, 0, 0),
           x_axis_(0, 0, 0),
           y_axis_(0, 0, 0),
-          z_axis_(0, 0, 0) {}
+          z_axis_(0, 0, 0),
+          color_(0, 0, 0) {}
     ~OrientedBoundingBox() override {}
 
 public:
@@ -79,6 +80,7 @@ public:
     Eigen::Vector3d x_axis_;
     Eigen::Vector3d y_axis_;
     Eigen::Vector3d z_axis_;
+    Eigen::Vector3d color_;
 };
 
 class AxisAlignedBoundingBox : public Geometry3D {
@@ -86,7 +88,8 @@ public:
     AxisAlignedBoundingBox()
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
-          max_bound_(0, 0, 0) {}
+          max_bound_(0, 0, 0),
+          color_(0, 0, 0) {}
     ~AxisAlignedBoundingBox() override {}
 
 public:
@@ -146,6 +149,7 @@ public:
 public:
     Eigen::Vector3d min_bound_;
     Eigen::Vector3d max_bound_;
+    Eigen::Vector3d color_;
 };
 
 }  // namespace geometry

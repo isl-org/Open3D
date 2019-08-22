@@ -59,6 +59,8 @@ void pybind_boundingvolume(py::module &m) {
             .def_readwrite("y_axis", &geometry::OrientedBoundingBox::y_axis_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("z_axis", &geometry::OrientedBoundingBox::z_axis_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("color", &geometry::OrientedBoundingBox::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_box_points");
@@ -90,6 +92,8 @@ void pybind_boundingvolume(py::module &m) {
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("max_bound",
                            &geometry::AxisAlignedBoundingBox::max_bound_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("color", &geometry::AxisAlignedBoundingBox::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",

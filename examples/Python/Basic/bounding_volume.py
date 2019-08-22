@@ -30,9 +30,6 @@ if __name__ == "__main__":
               (name, aabox.volume()))
         obox = geom.get_oriented_bounding_box()
         print("%s has an oriented box volume of %f" % (name, obox.volume()))
-        # aabox_ls = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
-        #     aabox)
-        # aabox_ls.paint_uniform_color((1, 0, 0))
-        # obox_ls = o3d.geometry.LineSet.create_from_oriented_bounding_box(obox)
-        # obox_ls.paint_uniform_color((0, 1, 0))
+        aabox.color = [1, 0, 0]
+        obox.color = [0, 1, 0]
         o3d.visualization.draw_geometries([geom, aabox, obox])
