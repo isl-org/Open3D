@@ -156,12 +156,12 @@ std::vector<Eigen::Vector3d> OrientedBoundingBox::GetBoxPoints() const {
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
         const AxisAlignedBoundingBox& aabox) {
-    Eigen::Vector3d extend = aabox.GetHalfExtend();
+    Eigen::Vector3d half_extend = aabox.GetHalfExtend();
     OrientedBoundingBox obox;
     obox.center_ = aabox.GetCenter();
-    obox.x_axis_ << extend(0), 0, 0;
-    obox.y_axis_ << 0, extend(1), 0;
-    obox.z_axis_ << 0, 0, extend(2);
+    obox.x_axis_ << half_extend(0), 0, 0;
+    obox.y_axis_ << 0, half_extend(1), 0;
+    obox.z_axis_ << 0, 0, half_extend(2);
     return obox;
 }
 
@@ -204,13 +204,13 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         pt = R.transpose() * (pt - mean);
     }
     const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
-    const Eigen::Vector3d extend = aabox.GetHalfExtend();
+    const Eigen::Vector3d half_extend = aabox.GetHalfExtend();
 
     OrientedBoundingBox obox;
     obox.center_ = R * aabox.GetCenter() + mean;
-    obox.x_axis_ = R * Eigen::Vector3d(extend(0), 0, 0);
-    obox.y_axis_ = R * Eigen::Vector3d(0, extend(1), 0);
-    obox.z_axis_ = R * Eigen::Vector3d(0, 0, extend(2));
+    obox.x_axis_ = R * Eigen::Vector3d(half_extend(0), 0, 0);
+    obox.y_axis_ = R * Eigen::Vector3d(0, half_extend(1), 0);
+    obox.z_axis_ = R * Eigen::Vector3d(0, 0, half_extend(2));
 
     return obox;
 }
