@@ -229,7 +229,8 @@ void SetGeometryColorAverage(
         const std::vector<std::shared_ptr<geometry::Image>>& images_color,
         const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        int image_boundary_margin /*= 10*/) {
+        int image_boundary_margin /*= 10*/,
+        int invisible_vertex_color_knn /*= 3*/) {
     size_t n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
@@ -278,11 +279,11 @@ void SetGeometryColorAverage(
     std::shared_ptr<geometry::TriangleMesh> valid_mesh =
             mesh.SelectDownSample(valid_vertices);
     geometry::KDTreeFlann kd_tree(*valid_mesh);
-    size_t k = 3;
     for (const size_t& i : invalid_vertices) {
         std::vector<int> indices;  // indices to valid_mesh
         std::vector<double> dists;
-        kd_tree.SearchKNN(mesh.vertices_[i], k, indices, dists);
+        kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
+                          indices, dists);
         Eigen::Vector3d new_color(0, 0, 0);
         for (const int& index : indices) {
             new_color += valid_mesh->vertex_colors_[index];
@@ -298,7 +299,8 @@ void SetGeometryColorAverage(
         const std::vector<ImageWarpingField>& warping_fields,
         const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        int image_boundary_margin /*= 10*/) {
+        int image_boundary_margin /*= 10*/,
+        int invisible_vertex_color_knn /*= 3*/) {
     size_t n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
@@ -347,11 +349,11 @@ void SetGeometryColorAverage(
     std::shared_ptr<geometry::TriangleMesh> valid_mesh =
             mesh.SelectDownSample(valid_vertices);
     geometry::KDTreeFlann kd_tree(*valid_mesh);
-    size_t k = 3;
     for (const size_t& i : invalid_vertices) {
         std::vector<int> indices;  // indices to valid_mesh
         std::vector<double> dists;
-        kd_tree.SearchKNN(mesh.vertices_[i], k, indices, dists);
+        kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
+                          indices, dists);
         Eigen::Vector3d new_color(0, 0, 0);
         for (const int& index : indices) {
             new_color += valid_mesh->vertex_colors_[index];

@@ -272,43 +272,6 @@ std::vector<ImageWarpingField> CreateWarpingFields(
     return fields;
 }
 
-void FillInvisibleVertexColors(
-        geometry::TriangleMesh& mesh,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        size_t k = 3) {
-    utility::LogDebug("Enter filling invisible vertex\n");
-    size_t num_vertices = mesh.vertices_.size();
-
-    // Build mesh and kdtree with just the visible vertices
-    std::vector<size_t> invisible_indices;
-    std::vector<size_t> visible_indices;
-    for (size_t vertex_index = 0; vertex_index < num_vertices; ++vertex_index) {
-        if (visiblity_vertex_to_image[vertex_index].size() == 0) {
-            invisible_indices.push_back(vertex_index);
-        } else {
-            visible_indices.push_back(vertex_index);
-        }
-    }
-    std::shared_ptr<geometry::TriangleMesh> visible_mesh =
-            mesh.SelectDownSample(visible_indices);
-    geometry::KDTreeFlann kd_tree(*visible_mesh);
-
-    // For each invisible vertex, find k visible vertex and get its average
-    for (const int& invisible_index : invisible_indices) {
-        std::vector<int> indices;  // indices in visible_mesh
-        std::vector<double> dists;
-        kd_tree.SearchKNN(mesh.vertices_[invisible_index], k, indices, dists);
-        Eigen::Vector3d new_color(0, 0, 0);
-        for (const int& index : indices) {
-            new_color += visible_mesh->vertex_colors_[index];
-        }
-        new_color /= indices.size();
-        mesh.vertex_colors_[invisible_index] = new_color;
-    }
-    utility::LogDebug("Filling invisible vertex: {} out of {} filled\n",
-                      invisible_indices.size(), num_vertices);
-}
-
 }  // unnamed namespace
 
 namespace color_map {
@@ -347,7 +310,8 @@ void ColorMapOptimization(
                 visiblity_image_to_vertex, proxy_intensity, option);
         SetGeometryColorAverage(mesh, images_color, warping_uv_, camera,
                                 visiblity_vertex_to_image,
-                                option.image_boundary_margin_);
+                                option.image_boundary_margin_,
+                                option.invisible_vertex_color_knn_);
     } else {
         utility::LogDebug("[ColorMapOptimization] :: Rigid Optimization\n");
         OptimizeImageCoorRigid(mesh, images_gray, images_dx, images_dy, camera,
@@ -356,11 +320,9 @@ void ColorMapOptimization(
                                option);
         SetGeometryColorAverage(mesh, images_color, camera,
                                 visiblity_vertex_to_image,
-                                option.image_boundary_margin_);
+                                option.image_boundary_margin_,
+                                option.invisible_vertex_color_knn_);
     }
-
-    // Fill invisible points
-    FillInvisibleVertexColors(mesh, visiblity_vertex_to_image, 3);
 }
 }  // namespace color_map
 }  // namespace open3d
