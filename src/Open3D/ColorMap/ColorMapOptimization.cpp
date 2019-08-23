@@ -31,6 +31,7 @@
 #include "Open3D/ColorMap/ImageWarpingField.h"
 #include "Open3D/ColorMap/TriangleMeshAndImageUtilities.h"
 #include "Open3D/Geometry/Image.h"
+#include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/IO/ClassIO/ImageWarpingFieldIO.h"
@@ -309,7 +310,8 @@ void ColorMapOptimization(
                 visiblity_image_to_vertex, proxy_intensity, option);
         SetGeometryColorAverage(mesh, images_color, warping_uv_, camera,
                                 visiblity_vertex_to_image,
-                                option.image_boundary_margin_);
+                                option.image_boundary_margin_,
+                                option.invisible_vertex_color_knn_);
     } else {
         utility::LogDebug("[ColorMapOptimization] :: Rigid Optimization\n");
         OptimizeImageCoorRigid(mesh, images_gray, images_dx, images_dy, camera,
@@ -318,7 +320,8 @@ void ColorMapOptimization(
                                option);
         SetGeometryColorAverage(mesh, images_color, camera,
                                 visiblity_vertex_to_image,
-                                option.image_boundary_margin_);
+                                option.image_boundary_margin_,
+                                option.invisible_vertex_color_knn_);
     }
 }
 }  // namespace color_map

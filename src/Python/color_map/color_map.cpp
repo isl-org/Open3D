@@ -30,6 +30,7 @@
 #include "Open3D/ColorMap/ColorMapOptimization.h"
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Utility/Console.h"
 #include "Python/docstring.h"
 
 using namespace open3d;
@@ -132,36 +133,42 @@ void pybind_color_map_classes(py::module &m) {
                     "image. This parmeter is not used for visibility "
                     "check, but used when computing the final color "
                     "assignment after color map optimization.")
+            .def_readwrite(
+                    "invisible_vertex_color_knn",
+                    &color_map::ColorMapOptimizationOption::
+                            invisible_vertex_color_knn_,
+                    "int: (Default ``3``) If a vertex is invisible from all "
+                    "images, we assign the averged color of the k nearest "
+                    "visible vertices to fill the invisible vertex. Set to "
+                    "``0`` to disable this feature and all invisible vertices "
+                    "will be black.")
             .def("__repr__", [](const color_map::ColorMapOptimizationOption
                                         &to) {
-                return std::string(
-                               "color_map::ColorMapOptimizationOption with") +
-                       std::string("\n- non_rigid_camera_coordinate : ") +
-                       std::to_string(to.non_rigid_camera_coordinate_) +
-                       std::string("\n- number_of_vertical_anchors : ") +
-                       std::to_string(to.number_of_vertical_anchors_) +
-                       std::string("\n- non_rigid_anchor_point_weight : ") +
-                       std::to_string(to.non_rigid_anchor_point_weight_) +
-                       std::string("\n- maximum_iteration : ") +
-                       std::to_string(to.maximum_iteration_) +
-                       std::string("\n- maximum_allowable_depth : ") +
-                       std::to_string(to.maximum_allowable_depth_) +
-                       std::string(
-                               "\n- depth_threshold_for_visiblity_check : ") +
-                       std::to_string(to.depth_threshold_for_visiblity_check_) +
-                       std::string(
-                               "\n- depth_threshold_for_discontinuity_check "
-                               ": ") +
-                       std::to_string(
-                               to.depth_threshold_for_discontinuity_check_) +
-                       std::string(
-                               "\n- "
-                               "half_dilation_kernel_size_for_discontinuity_"
-                               "map : ") +
-                       std::to_string(
-                               to.half_dilation_kernel_size_for_discontinuity_map_) +
-                       std::string("\n- image_boundary_margin : ") +
-                       std::to_string(to.image_boundary_margin_);
+                // clang-format off
+                return fmt::format(
+                    "color_map::ColorMapOptimizationOption with\n"
+                    "- non_rigid_camera_coordinate: {}\n"
+                    "- number_of_vertical_anchors: {}\n"
+                    "- non_rigid_anchor_point_weight: {}\n"
+                    "- maximum_iteration: {}\n"
+                    "- maximum_allowable_depth: {}\n"
+                    "- depth_threshold_for_visiblity_check: {}\n"
+                    "- depth_threshold_for_discontinuity_check: {}\n"
+                    "- half_dilation_kernel_size_for_discontinuity_map: {}\n"
+                    "- image_boundary_margin: {}\n"
+                    "- invisible_vertex_color_knn: {}\n",
+                    to.non_rigid_camera_coordinate_,
+                    to.number_of_vertical_anchors_,
+                    to.non_rigid_anchor_point_weight_,
+                    to.maximum_iteration_,
+                    to.maximum_allowable_depth_,
+                    to.depth_threshold_for_visiblity_check_,
+                    to.depth_threshold_for_discontinuity_check_,
+                    to.half_dilation_kernel_size_for_discontinuity_map_,
+                    to.image_boundary_margin_,
+                    to.invisible_vertex_color_knn_
+                );
+                // clang-format on
             });
 }
 
