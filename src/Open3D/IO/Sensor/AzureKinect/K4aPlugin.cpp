@@ -45,7 +45,7 @@
 static const std::string k4a_lib_name = "k4a.dll";
 static const std::string k4arecord_lib_name = "k4arecord.dll";
 #else
-static const std::string k4a_lib_name = "k4arecord.lib";
+static const std::string k4a_lib_name = "libk4a.so";
 static const std::string k4arecord_lib_name = "libk4arecord.so";
 #endif
 
