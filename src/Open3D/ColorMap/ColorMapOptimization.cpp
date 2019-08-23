@@ -305,7 +305,7 @@ void FillInvisibleVertexColors(
         new_color /= indices.size();
         mesh.vertex_colors_[invisible_index] = new_color;
     }
-    utility::LogDebug("Filling invisible vertex: %zu out of %zu filled\n",
+    utility::LogDebug("Filling invisible vertex: {} out of {} filled\n",
                       invisible_indices.size(), num_vertices);
 }
 
