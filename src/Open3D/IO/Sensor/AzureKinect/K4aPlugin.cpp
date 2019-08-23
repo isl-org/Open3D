@@ -143,43 +143,44 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
-//                     k4a_result_t,
-//                     k4a_record_create,
-//                     const char*,
-//                     path,
-//                     k4a_device_t,
-//                     device,
-//                     const k4a_device_configuration_t,
-//                     device_config,
-//                     k4a_record_t*,
-//                     recording_handle)
+DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
+                    k4a_result_t,
+                    k4a_record_create,
+                    const char*,
+                    path,
+                    k4a_device_t,
+                    device,
+                    const k4a_device_configuration_t,
+                    device_config,
+                    k4a_record_t*,
+                    recording_handle)
 
-k4a_result_t k4a_record_create(
-        EXTRACT_TYPES_PARAMS_1(const char*,
-                               path,
-                               k4a_device_t,
-                               device,
-                               const k4a_device_configuration_t,
-                               device_config,
-                               k4a_record_t*,
-                               recording_handle)) {
-    typedef k4a_result_t (*f_type)(EXTRACT_TYPES_PARAMS_1(
-            const char*, path, k4a_device_t, device,
-            const k4a_device_configuration_t, device_config, k4a_record_t*,
-            recording_handle));
-    static f_type f = nullptr;
-    if (!f) {
-        f = (f_type)GetProcAddress(GetDynamicLibHandle(k4arecord_lib_name),
-                                   "k4a_record_create");
-        if (!f) {
-            utility::LogFatal("Cannot load {}: {}\n", "k4a_record_create");
-        }
-    }
-    return f(EXTRACT_PARAMS_1(const char*, path, k4a_device_t, device,
-                              const k4a_device_configuration_t, device_config,
-                              k4a_record_t*, recording_handle));
-}
+// k4a_result_t k4a_record_create(
+//         EXTRACT_TYPES_PARAMS_1(const char*,
+//                                path,
+//                                k4a_device_t,
+//                                device,
+//                                const k4a_device_configuration_t,
+//                                device_config,
+//                                k4a_record_t*,
+//                                recording_handle)) {
+//     typedef k4a_result_t (*f_type)(EXTRACT_TYPES_PARAMS_1(
+//             const char*, path, k4a_device_t, device,
+//             const k4a_device_configuration_t, device_config, k4a_record_t*,
+//             recording_handle));
+//     static f_type f = nullptr;
+//     if (!f) {
+//         f = (f_type)GetProcAddress(GetDynamicLibHandle(k4arecord_lib_name),
+//                                    "k4a_record_create");
+//         if (!f) {
+//             utility::LogFatal("Cannot load {}: {}\n", "k4a_record_create");
+//         }
+//     }
+//     return f(EXTRACT_PARAMS_1(const char*, path, k4a_device_t, device,
+//                               const k4a_device_configuration_t,
+//                               device_config, k4a_record_t*,
+//                               recording_handle));
+// }
 
 DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
                     k4a_result_t,
