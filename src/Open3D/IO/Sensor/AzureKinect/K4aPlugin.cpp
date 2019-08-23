@@ -29,6 +29,7 @@
 #include <k4arecord/record.h>
 #include <cstring>
 #include <unordered_map>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -41,29 +42,36 @@
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
 #include "Open3D/Utility/Console.h"
 
-#ifdef _WIN32
-static const std::string k4a_lib_name = "k4a.dll";
-static const std::string k4arecord_lib_name = "k4arecord.dll";
-#else
-static const std::string k4a_lib_name = "libk4a.so";
-static const std::string k4arecord_lib_name = "libk4arecord.so";
-#endif
-
 namespace open3d {
 namespace io {
 namespace k4a_plugin {
 
 #ifdef _WIN32
 
+// clang-format off
+static const std::vector<std::string> k4a_lib_path_hints = {
+    "",
+    "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\bin\\"
+};
+// clang-format on
+static const std::string k4a_lib_name = "k4a.dll";
+static const std::string k4arecord_lib_name = "k4arecord.dll";
+
 static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
     static std::unordered_map<std::string, HINSTANCE> map_lib_name_to_handle;
 
     if (map_lib_name_to_handle.count(lib_name) == 0) {
-        HINSTANCE handle = LoadLibrary(TEXT(lib_name.c_str()));
+        HINSTANCE handle = NULL;
+        for (const std::string& k4a_lib_path_hint : k4a_lib_path_hints) {
+            std::string full_path = k4a_lib_path_hint + lib_name;
+            handle = LoadLibrary(TEXT(full_path.c_str()));
+            if (handle != NULL) {
+                utility::LogInfo("Loaded {}\n", full_path);
+                break;
+            }
+        }
         if (handle == NULL) {
             utility::LogFatal("Cannot load {}\n", lib_name);
-        } else {
-            utility::LogInfo("Loaded {}\n", lib_name);
         }
         map_lib_name_to_handle[lib_name] = handle;
     }
@@ -90,6 +98,9 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
     }
 
 #else
+
+static const std::string k4a_lib_name = "libk4a.so";
+static const std::string k4arecord_lib_name = "libk4arecord.so";
 
 static void* GetDynamicLibHandle(const std::string& lib_name) {
     static std::unordered_map<std::string, void*> map_lib_name_to_handle;

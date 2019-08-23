@@ -7,21 +7,21 @@ if (BUILD_AZURE_KINECT)
     # - k4a_LIBRARY_DIRS
     # - k4a_LIBRARIES
     if (WIN32)
-        # We assume k4a 1.1.1 is installed in the default directory
-        set(k4a_INCLUDE_DIRS "C:/Program\ Files/Azure\ Kinect\ SDK\ v1.1.1/sdk/include")
+        # We assume k4a 1.2.0 is installed in the default directory
+        set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
         # On Windows, we need to
         # 1) link with k4a.lib, k4arecord.lib
         set(k4a_STATIC_LIBRARY_DIR
-            "C:/Program\ Files/Azure\ Kinect\ SDK\ v1.1.1/sdk/windows-desktop/amd64/release/lib"
+            "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\lib"
         )
-        # 2) copy depthengine_1_0.dll, k4a.dll, k4a.record.dll to executable location
+        # 2) copy depthengine_2_0.dll, k4a.dll, k4a.record.dll to executable location
         set(k4a_DYNAMIC_LIBRARY_DIR
-            "C:/Program\ Files/Azure\ Kinect\ SDK\ v1.1.1/sdk/windows-desktop/amd64/release/bin"
+            "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\bin"
         )
         set(k4a_LIBRARY_DIRS ${k4a_STATIC_LIBRARY_DIR} ${k4a_DYNAMIC_LIBRARY_DIR})
 
         set(k4a_DYNAMIC_LIBRARY_ABSOLUTE_PATHS
-            ${k4a_DYNAMIC_LIBRARY_DIR}/depthengine_1_0.dll
+            ${k4a_DYNAMIC_LIBRARY_DIR}/depthengine_2_0.dll
             ${k4a_DYNAMIC_LIBRARY_DIR}/k4a.dll
             ${k4a_DYNAMIC_LIBRARY_DIR}/k4arecord.dll
         )
