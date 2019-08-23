@@ -276,20 +276,22 @@ void SetGeometryColorAverage(
             }
         }
     }
-    std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-            mesh.SelectDownSample(valid_vertices);
-    geometry::KDTreeFlann kd_tree(*valid_mesh);
-    for (const size_t& i : invalid_vertices) {
-        std::vector<int> indices;  // indices to valid_mesh
-        std::vector<double> dists;
-        kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
-                          indices, dists);
-        Eigen::Vector3d new_color(0, 0, 0);
-        for (const int& index : indices) {
-            new_color += valid_mesh->vertex_colors_[index];
+    if (invisible_vertex_color_knn > 0) {
+        std::shared_ptr<geometry::TriangleMesh> valid_mesh =
+                mesh.SelectDownSample(valid_vertices);
+        geometry::KDTreeFlann kd_tree(*valid_mesh);
+        for (const size_t& i : invalid_vertices) {
+            std::vector<int> indices;  // indices to valid_mesh
+            std::vector<double> dists;
+            kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
+                              indices, dists);
+            Eigen::Vector3d new_color(0, 0, 0);
+            for (const int& index : indices) {
+                new_color += valid_mesh->vertex_colors_[index];
+            }
+            new_color /= indices.size();
+            mesh.vertex_colors_[i] = new_color;
         }
-        new_color /= indices.size();
-        mesh.vertex_colors_[i] = new_color;
     }
 }
 
@@ -346,20 +348,22 @@ void SetGeometryColorAverage(
             }
         }
     }
-    std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-            mesh.SelectDownSample(valid_vertices);
-    geometry::KDTreeFlann kd_tree(*valid_mesh);
-    for (const size_t& i : invalid_vertices) {
-        std::vector<int> indices;  // indices to valid_mesh
-        std::vector<double> dists;
-        kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
-                          indices, dists);
-        Eigen::Vector3d new_color(0, 0, 0);
-        for (const int& index : indices) {
-            new_color += valid_mesh->vertex_colors_[index];
+    if (invisible_vertex_color_knn > 0) {
+        std::shared_ptr<geometry::TriangleMesh> valid_mesh =
+                mesh.SelectDownSample(valid_vertices);
+        geometry::KDTreeFlann kd_tree(*valid_mesh);
+        for (const size_t& i : invalid_vertices) {
+            std::vector<int> indices;  // indices to valid_mesh
+            std::vector<double> dists;
+            kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
+                              indices, dists);
+            Eigen::Vector3d new_color(0, 0, 0);
+            for (const int& index : indices) {
+                new_color += valid_mesh->vertex_colors_[index];
+            }
+            new_color /= indices.size();
+            mesh.vertex_colors_[i] = new_color;
         }
-        new_color /= indices.size();
-        mesh.vertex_colors_[i] = new_color;
     }
 }
 }  // namespace color_map
