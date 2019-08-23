@@ -256,6 +256,20 @@ void pybind_trianglemesh(py::module &m) {
             .def("compute_convex_hull",
                  &geometry::TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
+            .def_static(
+                    "create_from_point_cloud_ball_pivoting",
+                    &geometry::TriangleMesh::CreateFromPointCloudBallPivoting,
+                    "Function that computes a triangle mesh from a oriented "
+                    "PointCloud. This implements the Ball Pivoting algorithm "
+                    "proposed in F. Bernardini et al., \"The ball-pivoting "
+                    "algorithm for surface reconstruction\", 1999. The "
+                    "implementation is also based on the algorithms outlined "
+                    "in Digne, \"An Analysis and Implementation of a Parallel "
+                    "Ball Pivoting Algorithm\", 2014. The surface "
+                    "reconstruction is done by rolling a ball with a given "
+                    "radius over the point cloud, whenever the ball touches "
+                    "three points a triangle is created.",
+                    "pcd"_a, "radii"_a)
             .def_static("create_box", &geometry::TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
@@ -477,6 +491,14 @@ void pybind_trianglemesh(py::module &m) {
               "The number of triangles that the simplified mesh should have. "
               "It is not guranteed that this number will be reached."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
+            {{"pcd",
+              "PointCloud from whicht the TriangleMesh surface is "
+              "reconstructed. Has to contain normals."},
+             {"radii",
+              "The radii of the ball that are used for the surface "
+              "reconstruction."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},
