@@ -1,5 +1,12 @@
 include(ExternalProject)
 
+if (WIN32)
+    set(LIBDIR "lib")
+else()
+    include(GNUInstallDirs)
+    set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
+endif()
+
 # Set compiler flags
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
@@ -71,7 +78,7 @@ endif()
 set(JPEG_TURBO_LIBRARIES ${lib_name})
 
 set(turbojpeg_LIB_FILES
-    ${3RDPARTY_INSTALL_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 target_include_directories(turbojpeg SYSTEM INTERFACE
