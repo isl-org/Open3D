@@ -47,6 +47,8 @@ AzureKinectSensor::~AzureKinectSensor() {
 }
 
 int AzureKinectSensor::Connect(size_t sensor_index) {
+    utility::LogInfo("AzureKinectSensor::Connect\n");
+    utility::LogInfo("sensor_index {}\n", sensor_index);
     auto device_config = sensor_config_.ConvertToNativeConfig();
 
     // check mode

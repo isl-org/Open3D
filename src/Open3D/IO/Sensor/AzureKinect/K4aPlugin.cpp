@@ -42,10 +42,10 @@
 #include "Open3D/Utility/Console.h"
 
 #ifdef _WIN32
-static const std::string k4a_lib_name = "libk4a.so";
-static const std::string k4arecord_lib_name = "libk4arecord.so";
+static const std::string k4a_lib_name = "k4a.dll";
+static const std::string k4arecord_lib_name = "k4arecord.dll";
 #else
-static const std::string k4a_lib_name = "libk4a.so";
+static const std::string k4a_lib_name = "k4arecord.lib";
 static const std::string k4arecord_lib_name = "libk4arecord.so";
 #endif
 
@@ -60,8 +60,10 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
 
     if (map_lib_name_to_handle.count(lib_name) == 0) {
         HINSTANCE handle = LoadLibrary(TEXT(lib_name.c_str()));
-        if (!handle) {
-            utility::LogFatal("Cannot load {}\n");
+        if (handle == NULL) {
+            utility::LogFatal("Cannot load {}\n", lib_name);
+        } else {
+            utility::LogInfo("Loaded {}\n", lib_name);
         }
         map_lib_name_to_handle[lib_name] = handle;
     }
@@ -78,8 +80,10 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
         if (!f) {                                                     \
             f = (f_type)GetProcAddress(GetDynamicLibHandle(lib_name), \
                                        #f_name);                      \
-            if (!f) {                                                 \
-                utility::LogFatal("Cannot load {}: {}\n", #f_name);   \
+            if (f == nullptr) {                                       \
+                utility::LogFatal("Cannot load func {}\n", #f_name);  \
+            } else {                                                  \
+                utility::LogInfo("Loaded func {}\n", #f_name);        \
             }                                                         \
         }                                                             \
         return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));              \
@@ -147,33 +151,6 @@ DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
                     device_config,
                     k4a_record_t*,
                     recording_handle)
-
-// k4a_result_t k4a_record_create(
-//         EXTRACT_TYPES_PARAMS_1(const char*,
-//                                path,
-//                                k4a_device_t,
-//                                device,
-//                                const k4a_device_configuration_t,
-//                                device_config,
-//                                k4a_record_t*,
-//                                recording_handle)) {
-//     typedef k4a_result_t (*f_type)(EXTRACT_TYPES_PARAMS_1(
-//             const char*, path, k4a_device_t, device,
-//             const k4a_device_configuration_t, device_config, k4a_record_t*,
-//             recording_handle));
-//     static f_type f = nullptr;
-//     if (!f) {
-//         f = (f_type)GetProcAddress(GetDynamicLibHandle(k4arecord_lib_name),
-//                                    "k4a_record_create");
-//         if (!f) {
-//             utility::LogFatal("Cannot load {}: {}\n", "k4a_record_create");
-//         }
-//     }
-//     return f(EXTRACT_PARAMS_1(const char*, path, k4a_device_t, device,
-//                               const k4a_device_configuration_t,
-//                               device_config, k4a_record_t*,
-//                               recording_handle));
-// }
 
 DEFINE_BRIDGED_FUNC(k4arecord_lib_name,
                     k4a_result_t,
