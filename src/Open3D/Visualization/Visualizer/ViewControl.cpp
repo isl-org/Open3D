@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Visualization/Visualizer/ViewControl.h"
+#include "Open3D/Utility/Console.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro
 // defined also in glfw3.h
@@ -63,13 +64,15 @@ void ViewControl::SetViewMatrices(
     glViewport(0, 0, window_width_, window_height_);
     if (GetProjectionType() == ProjectionType::Perspective) {
         // Perspective projection
-        z_near_ = constant_z_near_ > 0
-                          ? constant_z_near_
-                          : std::max(0.01 * bounding_box_.GetSize(),
-                                     distance_ - 3.0 * bounding_box_.GetSize());
+        z_near_ =
+                constant_z_near_ > 0
+                        ? constant_z_near_
+                        : std::max(0.01 * bounding_box_.GetMaxExtend(),
+                                   distance_ -
+                                           3.0 * bounding_box_.GetMaxExtend());
         z_far_ = constant_z_far_ > 0
                          ? constant_z_far_
-                         : distance_ + 3.0 * bounding_box_.GetSize();
+                         : distance_ + 3.0 * bounding_box_.GetMaxExtend();
         projection_matrix_ =
                 GLHelper::Perspective(field_of_view_, aspect_, z_near_, z_far_);
     } else {
@@ -77,10 +80,10 @@ void ViewControl::SetViewMatrices(
         // We use some black magic to support distance_ in orthogonal view
         z_near_ = constant_z_near_ > 0
                           ? constant_z_near_
-                          : distance_ - 3.0 * bounding_box_.GetSize();
+                          : distance_ - 3.0 * bounding_box_.GetMaxExtend();
         z_far_ = constant_z_far_ > 0
                          ? constant_z_far_
-                         : distance_ + 3.0 * bounding_box_.GetSize();
+                         : distance_ + 3.0 * bounding_box_.GetMaxExtend();
         projection_matrix_ =
                 GLHelper::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
                                 -view_ratio_, view_ratio_, z_near_, z_far_);
@@ -201,9 +204,9 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     double ideal_distance = (eye_ - bounding_box_.GetCenter()).dot(front_);
     double ideal_zoom = ideal_distance *
                         std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
-                        bounding_box_.GetSize();
+                        bounding_box_.GetMaxExtend();
     zoom_ = std::max(std::min(ideal_zoom, ZOOM_MAX), ZOOM_MIN);
-    view_ratio_ = zoom_ * bounding_box_.GetSize();
+    view_ratio_ = zoom_ * bounding_box_.GetMaxExtend();
     distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
     lookat_ = eye_ - front_ * distance_;
     return true;
@@ -231,11 +234,11 @@ void ViewControl::SetProjectionParameters() {
     right_ = up_.cross(front_).normalized();
     up_ = front_.cross(right_).normalized();  // todo: required?
     if (GetProjectionType() == ProjectionType::Perspective) {
-        view_ratio_ = zoom_ * bounding_box_.GetSize();
+        view_ratio_ = zoom_ * bounding_box_.GetMaxExtend();
         distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
         eye_ = lookat_ + front_ * distance_;
     } else {
-        view_ratio_ = zoom_ * bounding_box_.GetSize();
+        view_ratio_ = zoom_ * bounding_box_.GetMaxExtend();
         distance_ =
                 view_ratio_ / std::tan(FIELD_OF_VIEW_STEP * 0.5 / 180.0 * M_PI);
         eye_ = lookat_ + front_ * distance_;

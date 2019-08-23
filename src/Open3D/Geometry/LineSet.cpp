@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 
 #include <numeric>
 
@@ -60,6 +61,14 @@ Eigen::Vector3d LineSet::GetMaxBound() const {
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a.array().max(b.array()).matrix();
             });
+}
+
+AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(points_);
+}
+
+OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(points_);
 }
 
 LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {

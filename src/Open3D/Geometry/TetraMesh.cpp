@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TetraMesh.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 
@@ -66,6 +67,14 @@ Eigen::Vector3d TetraMesh::GetMaxBound() const {
             [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
                 return a.array().max(b.array()).matrix();
             });
+}
+
+AxisAlignedBoundingBox TetraMesh::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
+}
+
+OrientedBoundingBox TetraMesh::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(vertices_);
 }
 
 TetraMesh &TetraMesh::Transform(const Eigen::Matrix4d &transformation) {

@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
         } else {
             auto mesh = io::CreateMeshFromFile(argv[2]);
             mesh->ComputeVertexNormals();
-            visualization::BoundingBox boundingbox(*mesh);
+            auto boundingbox = mesh->GetAxisAlignedBoundingBox();
             auto mesh_frame = geometry::TriangleMesh::CreateCoordinateFrame(
-                    boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+                    boundingbox.GetMaxExtend() * 0.2, boundingbox.min_bound_);
             visualization::DrawGeometries({mesh, mesh_frame});
         }
     } else if (option == "merge") {
@@ -123,17 +123,16 @@ int main(int argc, char *argv[]) {
     } else if (option == "unify") {
         // unify into (0, 0, 0) - (scale, scale, scale) box
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        visualization::BoundingBox bbox;
-        bbox.FitInGeometry(*mesh);
+        auto bbox = mesh->GetAxisAlignedBoundingBox();
         double scale1 = std::stod(argv[4]);
         double scale2 = std::stod(argv[5]);
         Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
-        trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetSize();
+        trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetMaxExtend();
         mesh->Transform(trans);
         trans.setIdentity();
         trans.block<3, 1>(0, 3) =
                 Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, scale2 / 2.0) -
-                bbox.GetCenter() * scale1 / bbox.GetSize();
+                bbox.GetCenter() * scale1 / bbox.GetMaxExtend();
         mesh->Transform(trans);
         io::WriteTriangleMesh(argv[3], *mesh);
     } else if (option == "distance") {

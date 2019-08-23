@@ -28,6 +28,7 @@
 
 #include <Python/open3d_pybind.h>
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Geometry/Geometry2D.h"
 #include "Open3D/Geometry/Geometry3D.h"
@@ -58,6 +59,14 @@ public:
     }
     Eigen::Vector3d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
+    }
+    geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox()
+            const override {
+        PYBIND11_OVERLOAD_PURE(geometry::AxisAlignedBoundingBox,
+                               Geometry3DBase, );
+    }
+    geometry::OrientedBoundingBox GetOrientedBoundingBox() const override {
+        PYBIND11_OVERLOAD_PURE(geometry::OrientedBoundingBox, Geometry3DBase, );
     }
     Geometry3DBase& Transform(const Eigen::Matrix4d& transformation) override {
         PYBIND11_OVERLOAD_PURE(Geometry3DBase&, Geometry3DBase, transformation);
