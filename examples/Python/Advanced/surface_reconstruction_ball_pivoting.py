@@ -8,7 +8,7 @@ import open3d as o3d
 import numpy as np
 import sys
 
-sys.path.append('../Basic')
+sys.path.append("../Basic")
 import meshes
 
 
@@ -17,10 +17,10 @@ def problem_generator():
 
     points = []
     normals = []
-    for x in range(4):
-        for y in range(4):
-            points.append((np.random.uniform(-2, 2), np.random.uniform(-2,
-                                                                       2), 0))
+    for _ in range(4):
+        for _ in range(4):
+            pt = (np.random.uniform(-2, 2), np.random.uniform(-2, 2), 0)
+            points.append(pt)
             normals.append((0, 0, 1))
     points = np.array(points, dtype=np.float64)
     normals = np.array(normals, dtype=np.float64)
@@ -55,5 +55,4 @@ if __name__ == "__main__":
     for pcd, radii in problem_generator():
         rec_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
             pcd, o3d.utility.DoubleVector(radii))
-        rec_mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([pcd, rec_mesh])

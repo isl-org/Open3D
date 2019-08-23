@@ -58,10 +58,10 @@ public:
                                const Eigen::Vector3d& p3);
 
     /// Computes the minimum distance between two lines. The first line is
-    /// defined by \param p0 and \param p1, the second line is defined by \param
-    /// q0 and \param q1. The returned distance is negative if no minimum
-    /// distance can be computed. This implementation is based on the
-    /// description of Paul Bourke
+    /// defined by 3D points \param p0 and \param p1, the second line is defined
+    /// by 3D points \param q0 and \param q1. The returned distance is negative
+    /// if no minimum distance can be computed. This implementation is based on
+    /// the description of Paul Bourke
     /// (http://paulbourke.net/geometry/pointlineplane/).
     static double LinesMinimumDistance(const Eigen::Vector3d& p0,
                                        const Eigen::Vector3d& p1,
@@ -69,9 +69,9 @@ public:
                                        const Eigen::Vector3d& q1);
 
     /// Computes the minimum distance between two line segments. The first line
-    /// segment is defined by \param p0 and \param p1, the second line segment
-    /// is defined by \param q0 and \param q1. This implementation is based on
-    /// the description of David Eberly
+    /// segment is defined by 3D points \param p0 and \param p1, the second line
+    /// segment is defined by 3D points \param q0 and \param q1. This
+    /// implementation is based on the description of David Eberly
     /// (https://www.geometrictools.com/Documentation/DistanceLine3Line3.pdf).
     static double LineSegmentsMinimumDistance(const Eigen::Vector3d& p0,
                                               const Eigen::Vector3d& p1,

@@ -160,11 +160,11 @@ BallPivotingVertexPtr BallPivotingEdge::GetOppositeVertex() {
 class BallPivoting {
 public:
     BallPivoting(const PointCloud& pcd)
-        : has_normals(pcd.HasNormals()), kdtree(pcd) {
-        mesh = std::make_shared<TriangleMesh>();
-        mesh->vertices_ = pcd.points_;
-        mesh->vertex_normals_ = pcd.normals_;
-        mesh->vertex_colors_ = pcd.colors_;
+        : has_normals_(pcd.HasNormals()), kdtree_(pcd) {
+        mesh_ = std::make_shared<TriangleMesh>();
+        mesh_->vertices_ = pcd.points_;
+        mesh_->vertex_normals_ = pcd.normals_;
+        mesh_->vertex_colors_ = pcd.colors_;
         for (size_t vidx = 0; vidx < pcd.points_.size(); ++vidx) {
             vertices.emplace_back(std::make_shared<BallPivotingVertex>(
                     vidx, pcd.points_[vidx], pcd.normals_[vidx]));
@@ -275,8 +275,27 @@ public:
         v1->UpdateType();
         v2->UpdateType();
 
-        mesh->triangles_.emplace_back(
-                Eigen::Vector3i(v0->idx_, v2->idx_, v1->idx_));
+        Eigen::Vector3d face_normal =
+                ComputeFaceNormal(v0->point_, v1->point_, v2->point_);
+        if (face_normal.dot(v0->normal_) > -1e-16) {
+            mesh_->triangles_.emplace_back(
+                    Eigen::Vector3i(v0->idx_, v1->idx_, v2->idx_));
+        } else {
+            mesh_->triangles_.emplace_back(
+                    Eigen::Vector3i(v0->idx_, v2->idx_, v1->idx_));
+        }
+        mesh_->triangle_normals_.push_back(face_normal);
+    }
+
+    Eigen::Vector3d ComputeFaceNormal(const Eigen::Vector3d& v0,
+                                      const Eigen::Vector3d& v1,
+                                      const Eigen::Vector3d& v2) {
+        Eigen::Vector3d normal = (v1 - v0).cross(v2 - v0);
+        double norm = normal.norm();
+        if (norm > 0) {
+            normal /= norm;
+        }
+        return normal;
     }
 
     bool IsCompatible(const BallPivotingVertexPtr& v0,
@@ -285,8 +304,7 @@ public:
         utility::LogDebug("[IsCompatible] v0.idx={}, v1.idx={}, v2.idx={}\n",
                           v0->idx_, v1->idx_, v2->idx_);
         Eigen::Vector3d normal =
-                (v0->point_ - v1->point_).cross(v2->point_ - v1->point_);
-        normal /= normal.norm();
+                ComputeFaceNormal(v0->point_, v1->point_, v2->point_);
         if (normal.dot(v0->normal_) < -1e-16) {
             normal *= -1;
         }
@@ -335,7 +353,7 @@ public:
 
         std::vector<int> indices;
         std::vector<double> dists2;
-        kdtree.SearchRadius(mp, 2 * radius, indices, dists2);
+        kdtree_.SearchRadius(mp, 2 * radius, indices, dists2);
         utility::LogDebug(
                 "[FindCandidateVertex] found {} potential candidates\n",
                 indices.size());
@@ -451,9 +469,9 @@ public:
 
     void ExpandTriangulation(double radius) {
         utility::LogDebug("[ExpandTriangulation] radius={}\n", radius);
-        while (!edge_front.empty()) {
-            BallPivotingEdgePtr edge = edge_front.front();
-            edge_front.pop_front();
+        while (!edge_front_.empty()) {
+            BallPivotingEdgePtr edge = edge_front_.front();
+            edge_front_.pop_front();
             if (edge->type_ != BallPivotingEdge::Front) {
                 continue;
             }
@@ -465,7 +483,7 @@ public:
                 candidate->type_ == BallPivotingVertex::Type::Inner ||
                 !IsCompatible(candidate, edge->source_, edge->target_)) {
                 edge->type_ = BallPivotingEdge::Type::Border;
-                border_edges.push_back(edge);
+                border_edges_.push_back(edge);
                 continue;
             }
 
@@ -474,7 +492,7 @@ public:
             if ((e0 != nullptr && e0->type_ != BallPivotingEdge::Type::Front) ||
                 (e1 != nullptr && e1->type_ != BallPivotingEdge::Type::Front)) {
                 edge->type_ = BallPivotingEdge::Type::Border;
-                border_edges.push_back(edge);
+                border_edges_.push_back(edge);
                 continue;
             }
 
@@ -483,10 +501,10 @@ public:
             e0 = GetLinkingEdge(candidate, edge->source_);
             e1 = GetLinkingEdge(candidate, edge->target_);
             if (e0->type_ == BallPivotingEdge::Type::Front) {
-                edge_front.push_front(e0);
+                edge_front_.push_front(e0);
             }
             if (e1->type_ == BallPivotingEdge::Type::Front) {
-                edge_front.push_front(e1);
+                edge_front_.push_front(e1);
             }
         }
     }
@@ -554,7 +572,7 @@ public:
                           radius);
         std::vector<int> indices;
         std::vector<double> dists2;
-        kdtree.SearchRadius(v->point_, 2 * radius, indices, dists2);
+        kdtree_.SearchRadius(v->point_, 2 * radius, indices, dists2);
         if (indices.size() < 3u) {
             return false;
         }
@@ -610,18 +628,19 @@ public:
                 e1 = GetLinkingEdge(nb0, nb1);
                 e2 = GetLinkingEdge(v, nb0);
                 if (e0->type_ == BallPivotingEdge::Type::Front) {
-                    edge_front.push_front(e0);
+                    edge_front_.push_front(e0);
                 }
                 if (e1->type_ == BallPivotingEdge::Type::Front) {
-                    edge_front.push_front(e1);
+                    edge_front_.push_front(e1);
                 }
                 if (e2->type_ == BallPivotingEdge::Type::Front) {
-                    edge_front.push_front(e2);
+                    edge_front_.push_front(e2);
                 }
 
-                if (edge_front.size() > 0) {
+                if (edge_front_.size() > 0) {
                     utility::LogDebug(
-                            "[TrySeed] edge_front.size() > 0 => return true\n");
+                            "[TrySeed] edge_front_.size() > 0 => return "
+                            "true\n");
                     return true;
                 }
             }
@@ -632,8 +651,9 @@ public:
     }
 
     void FindSeedTriangle(double radius) {
-        utility::LogDebug("[FindSeedTriangle] with radius={}\n", radius);
         for (size_t vidx = 0; vidx < vertices.size(); ++vidx) {
+            utility::LogDebug("[FindSeedTriangle] with radius={}, vidx={}\n",
+                              radius, vidx);
             if (vertices[vidx]->type_ == BallPivotingVertex::Type::Orphan) {
                 if (TrySeed(vertices[vidx], radius)) {
                     ExpandTriangulation(radius);
@@ -643,12 +663,12 @@ public:
     }
 
     std::shared_ptr<TriangleMesh> Run(const std::vector<double>& radii) {
-        if (!has_normals) {
+        if (!has_normals_) {
             utility::LogWarning("ReconstructBallPivoting requires normals\n");
-            return mesh;
+            return mesh_;
         }
 
-        mesh->triangles_.clear();
+        mesh_->triangles_.clear();
 
         for (double radius : radii) {
             utility::LogDebug("[Run] ################################\n");
@@ -656,11 +676,11 @@ public:
             if (radius <= 0) {
                 utility::LogWarning(
                         "got an invalid, negative radius as parameter\n");
-                return mesh;
+                return mesh_;
             }
 
             // update radius => update border edges
-            for (auto it = border_edges.begin(); it != border_edges.end();) {
+            for (auto it = border_edges_.begin(); it != border_edges_.end();) {
                 BallPivotingEdgePtr edge = *it;
                 BallPivotingTrianglePtr triangle = edge->triangle0_;
                 utility::LogDebug(
@@ -676,7 +696,7 @@ public:
                     utility::LogDebug("[Run]   yes, we can work on this\n");
                     std::vector<int> indices;
                     std::vector<double> dists2;
-                    kdtree.SearchRadius(center, radius, indices, dists2);
+                    kdtree_.SearchRadius(center, radius, indices, dists2);
                     bool empty_ball = true;
                     for (auto idx : indices) {
                         if (idx != triangle->vert0_->idx_ &&
@@ -691,11 +711,11 @@ public:
 
                     if (empty_ball) {
                         utility::LogDebug(
-                                "[Run]   yeah, add edge to edge_front: {:d}\n",
-                                edge_front.size());
+                                "[Run]   yeah, add edge to edge_front_: {:d}\n",
+                                edge_front_.size());
                         edge->type_ = BallPivotingEdge::Type::Front;
-                        edge_front.push_back(edge);
-                        it = border_edges.erase(it);
+                        edge_front_.push_back(edge);
+                        it = border_edges_.erase(it);
                         continue;
                     }
                 }
@@ -703,26 +723,26 @@ public:
             }
 
             // do the reconstruction
-            if (edge_front.empty()) {
+            if (edge_front_.empty()) {
                 FindSeedTriangle(radius);
             } else {
                 ExpandTriangulation(radius);
             }
 
-            utility::LogDebug("[Run] mesh has {:d} triangles\n",
-                              mesh->triangles_.size());
+            utility::LogDebug("[Run] mesh_ has {:d} triangles\n",
+                              mesh_->triangles_.size());
             utility::LogDebug("[Run] ################################\n");
         }
-        return mesh;
+        return mesh_;
     }
 
 private:
-    bool has_normals;
-    KDTreeFlann kdtree;
-    std::list<BallPivotingEdgePtr> edge_front;
-    std::list<BallPivotingEdgePtr> border_edges;
+    bool has_normals_;
+    KDTreeFlann kdtree_;
+    std::list<BallPivotingEdgePtr> edge_front_;
+    std::list<BallPivotingEdgePtr> border_edges_;
     std::vector<BallPivotingVertexPtr> vertices;
-    std::shared_ptr<TriangleMesh> mesh;
+    std::shared_ptr<TriangleMesh> mesh_;
 };
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudBallPivoting(
