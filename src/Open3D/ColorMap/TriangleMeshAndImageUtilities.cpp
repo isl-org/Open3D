@@ -302,6 +302,8 @@ void SetGeometryColorAverage(
     size_t n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
+    std::vector<size_t> valid_vertices;
+    std::vector<size_t> invalid_vertices;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -330,9 +332,32 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-        if (sum > 0.0) {
-            mesh.vertex_colors_[i] /= sum;
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        {
+            if (sum > 0.0) {
+                mesh.vertex_colors_[i] /= sum;
+                valid_vertices.push_back(i);
+            } else {
+                invalid_vertices.push_back(i);
+            }
         }
+    }
+    std::shared_ptr<geometry::TriangleMesh> valid_mesh =
+            mesh.SelectDownSample(valid_vertices);
+    geometry::KDTreeFlann kd_tree(*valid_mesh);
+    size_t k = 3;
+    for (const size_t& i : invalid_vertices) {
+        std::vector<int> indices;  // indices to valid_mesh
+        std::vector<double> dists;
+        kd_tree.SearchKNN(mesh.vertices_[i], k, indices, dists);
+        Eigen::Vector3d new_color(0, 0, 0);
+        for (const int& index : indices) {
+            new_color += valid_mesh->vertex_colors_[index];
+        }
+        new_color /= indices.size();
+        mesh.vertex_colors_[i] = new_color;
     }
 }
 }  // namespace color_map
