@@ -53,30 +53,7 @@ namespace open3d {
 namespace io {
 namespace k4a_plugin {
 
-// static void* GetDynamicLibHandle(const std::string& lib_name) {
-//     static std::unordered_map<std::string, void*> map_lib_name_to_handle;
-
-//     if (map_lib_name_to_handle.count(lib_name) == 0) {
-//         void* handle = dlopen(lib_name.c_str(), RTLD_LAZY);
-//         if (!handle) {
-//             utility::LogFatal("Cannot load {}\n", dlerror());
-//         } else {
-//             utility::LogInfo("Loaded {}\n", lib_name);
-//             struct link_map* map = nullptr;
-//             if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
-//                 if (map != nullptr) {
-//                     utility::LogInfo("Library path {}\n", map->l_name);
-//                 } else {
-//                     utility::LogWarning("Cannot get link_map\n");
-//                 }
-//             } else {
-//                 utility::LogWarning("Cannot get dlinfo\n");
-//             }
-//         }
-//         map_lib_name_to_handle[lib_name] = handle;
-//     }
-//     return map_lib_name_to_handle.at(lib_name);
-// }
+#ifdef _WIN32
 
 static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
     static std::unordered_map<std::string, HINSTANCE> map_lib_name_to_handle;
@@ -86,39 +63,10 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
         if (!handle) {
             utility::LogFatal("Cannot load {}\n");
         }
-        // else {
-        //     utility::LogInfo("Loaded {}\n", lib_name);
-        //     struct link_map* map = nullptr;
-        //     if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
-        //         if (map != nullptr) {
-        //             utility::LogInfo("Library path {}\n", map->l_name);
-        //         } else {
-        //             utility::LogWarning("Cannot get link_map\n");
-        //         }
-        //     } else {
-        //         utility::LogWarning("Cannot get dlinfo\n");
-        //     }
-        // }
         map_lib_name_to_handle[lib_name] = handle;
     }
     return map_lib_name_to_handle.at(lib_name);
 }
-
-// #define DEFINE_BRIDGED_FUNC_WITH_COUNT(lib_name, return_type, f_name,          \
-//                                        num_args, ...)                          \
-//     return_type f_name(EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) {          \
-//         typedef return_type (*f_type)(                                         \
-//                 EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));                  \
-//         static f_type f = nullptr;                                             \
-//                                                                                \
-//         if (!f) {                                                              \
-//             f = (f_type)dlsym(GetDynamicLibHandle(lib_name), #f_name);         \
-//             if (!f) {                                                          \
-//                 utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
-//             }                                                                  \
-//         }                                                                      \
-//         return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));                       \
-//     }
 
 #define DEFINE_BRIDGED_FUNC_WITH_COUNT(lib_name, return_type, f_name, \
                                        num_args, ...)                 \
@@ -136,6 +84,51 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
         }                                                             \
         return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));              \
     }
+
+#else
+
+static void* GetDynamicLibHandle(const std::string& lib_name) {
+    static std::unordered_map<std::string, void*> map_lib_name_to_handle;
+
+    if (map_lib_name_to_handle.count(lib_name) == 0) {
+        void* handle = dlopen(lib_name.c_str(), RTLD_LAZY);
+        if (!handle) {
+            utility::LogFatal("Cannot load {}\n", dlerror());
+        } else {
+            utility::LogInfo("Loaded {}\n", lib_name);
+            struct link_map* map = nullptr;
+            if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
+                if (map != nullptr) {
+                    utility::LogInfo("Library path {}\n", map->l_name);
+                } else {
+                    utility::LogWarning("Cannot get link_map\n");
+                }
+            } else {
+                utility::LogWarning("Cannot get dlinfo\n");
+            }
+        }
+        map_lib_name_to_handle[lib_name] = handle;
+    }
+    return map_lib_name_to_handle.at(lib_name);
+}
+
+#define DEFINE_BRIDGED_FUNC_WITH_COUNT(lib_name, return_type, f_name,          \
+                                       num_args, ...)                          \
+    return_type f_name(EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__)) {          \
+        typedef return_type (*f_type)(                                         \
+                EXTRACT_TYPES_PARAMS(num_args, __VA_ARGS__));                  \
+        static f_type f = nullptr;                                             \
+                                                                               \
+        if (!f) {                                                              \
+            f = (f_type)dlsym(GetDynamicLibHandle(lib_name), #f_name);         \
+            if (!f) {                                                          \
+                utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
+            }                                                                  \
+        }                                                                      \
+        return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));                       \
+    }
+
+#endif
 
 #define DEFINE_BRIDGED_FUNC(lib_name, return_type, f_name, ...)   \
     DEFINE_BRIDGED_FUNC_WITH_COUNT(lib_name, return_type, f_name, \
