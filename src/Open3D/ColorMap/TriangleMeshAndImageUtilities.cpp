@@ -239,7 +239,7 @@ void SetGeometryColorAverage(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t i = 0; i < n_vertex; i++) {
+    for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
         for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
@@ -280,17 +280,21 @@ void SetGeometryColorAverage(
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
                 mesh.SelectDownSample(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-        for (const size_t& i : invalid_vertices) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int i = 0; i < invalid_vertices.size(); ++i) {
+            size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh
             std::vector<double> dists;
-            kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
-                              indices, dists);
+            kd_tree.SearchKNN(mesh.vertices_[invalid_vertex],
+                              invisible_vertex_color_knn, indices, dists);
             Eigen::Vector3d new_color(0, 0, 0);
             for (const int& index : indices) {
                 new_color += valid_mesh->vertex_colors_[index];
             }
             new_color /= indices.size();
-            mesh.vertex_colors_[i] = new_color;
+            mesh.vertex_colors_[invalid_vertex] = new_color;
         }
     }
 }
@@ -311,7 +315,7 @@ void SetGeometryColorAverage(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t i = 0; i < n_vertex; i++) {
+    for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
         for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
@@ -352,17 +356,21 @@ void SetGeometryColorAverage(
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
                 mesh.SelectDownSample(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-        for (const size_t& i : invalid_vertices) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int i = 0; i < invalid_vertices.size(); ++i) {
+            size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh
             std::vector<double> dists;
-            kd_tree.SearchKNN(mesh.vertices_[i], invisible_vertex_color_knn,
-                              indices, dists);
+            kd_tree.SearchKNN(mesh.vertices_[invalid_vertex],
+                              invisible_vertex_color_knn, indices, dists);
             Eigen::Vector3d new_color(0, 0, 0);
             for (const int& index : indices) {
                 new_color += valid_mesh->vertex_colors_[index];
             }
             new_color /= indices.size();
-            mesh.vertex_colors_[i] = new_color;
+            mesh.vertex_colors_[invalid_vertex] = new_color;
         }
     }
 }
