@@ -293,5 +293,11 @@ std::shared_ptr<TriangleMesh> PointCloud::ComputeConvexHull(
     return Qhull::ComputeConvexHull(points_, pt_map);
 }
 
+std::shared_ptr<TriangleMesh> PointCloud::HiddenPointRemoval(
+        Eigen::Vector3d camera, double radius,
+        std::vector<int> &pt_map) const {
+    return Qhull::HiddenPointRemoval(points_, camera, radius, pt_map);
+}
+
 }  // namespace geometry
 }  // namespace open3d

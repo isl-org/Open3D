@@ -57,6 +57,17 @@ public:
         std::vector<int> pt_map;
         return Qhull::ComputeDelaunayTetrahedralization(points, pt_map);
     };
+
+    static std::shared_ptr<TriangleMesh> HiddenPointRemoval(
+        const std::vector<Eigen::Vector3d>& points, Eigen::Vector3d camera,
+        double radius, std::vector<int> &pt_map);
+
+    static std::shared_ptr<TriangleMesh> HiddenPointRemoval(
+        const std::vector<Eigen::Vector3d>& points, Eigen::Vector3d camera,
+        double radius){
+      std::vector<int> pt_map;
+      return Qhull::HiddenPointRemoval(points, camera, radius, pt_map);
+    };
 };
 
 }  // namespace geometry

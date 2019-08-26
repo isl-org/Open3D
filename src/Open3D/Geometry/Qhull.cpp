@@ -179,5 +179,62 @@ std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
     return delaunay_triangulation;
 }
 
+/// This is the implementation of the Hidden Point Removal operator described
+/// in Katz et. al. 'Direct Visibility of Point Sets', 2007. Some additional
+/// information about the choice of `radius` for noisy point clouds can be
+/// found in Mehra et. al. 'Visibility of Noisy Point Cloud Data', 2010.
+std::shared_ptr<TriangleMesh> Qhull::HiddenPointRemoval(
+        const std::vector<Eigen::Vector3d>& points, Eigen::Vector3d camera,
+        double radius, std::vector<int> &pt_map) {
+
+    if(radius <= 0)
+    {
+        utility::LogWarning(
+            "[HiddenPointRemoval] radius must be larger than zero.\n");
+        return std::make_shared<TriangleMesh>();
+    }
+
+    // perform spherical projection
+    std::vector<Eigen::Vector3d> spherical_projection;
+    for (size_t pidx = 0; pidx < points.size(); ++pidx) {
+      Eigen::Vector3d projected_point = points[pidx] - camera;
+        double norm = projected_point.norm();
+        spherical_projection.push_back(projected_point + 2 *
+            (radius - norm) * projected_point / norm);
+    }
+
+    // add origin
+    size_t origin_pidx = spherical_projection.size();
+    spherical_projection.push_back(Eigen::Vector3d(0, 0, 0));
+
+    // calculate convex hull of spherical projection
+    auto visible_mesh = Qhull::ComputeConvexHull(spherical_projection,
+                                                 pt_map);
+
+    // reassign original points to mesh
+    int origin_vidx = pt_map.size();
+    for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
+        size_t pidx = pt_map[vidx];
+        visible_mesh->vertices_[vidx] = points[pidx];
+        if(pidx == origin_pidx) origin_vidx = vidx;
+    }
+
+    // erase origin if part of mesh
+    if(origin_vidx < (int)(visible_mesh->vertices_.size())) {
+        visible_mesh->vertices_.erase(visible_mesh->vertices_.begin() +
+                                      origin_vidx);
+        pt_map.erase(pt_map.begin() + origin_vidx);
+        for(size_t tidx = visible_mesh->triangles_.size(); tidx-- > 0;){
+            if(visible_mesh->triangles_[tidx](0) == origin_vidx ||
+                    visible_mesh->triangles_[tidx](1) == origin_vidx ||
+                    visible_mesh->triangles_[tidx](2) == origin_vidx) {
+                visible_mesh->triangles_.erase(
+                    visible_mesh->triangles_.begin() + tidx);
+            }
+        }
+    }
+    return visible_mesh;
+}
+
 }  // namespace geometry
 }  // namespace open3d

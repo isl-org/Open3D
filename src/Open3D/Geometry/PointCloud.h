@@ -188,6 +188,12 @@ public:
     std::shared_ptr<TriangleMesh> ComputeConvexHull(
             std::vector<int> &pt_map) const;
 
+    /// Function that creates a mesh for a given view point, removing all
+    /// invisible (hidden) points
+    std::shared_ptr<TriangleMesh> HiddenPointRemoval(
+            Eigen::Vector3d camera, double radius,
+            std::vector<int> &pt_map) const;
+
     /// Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
     /// in Large Spatial Databases with Noise", 1996

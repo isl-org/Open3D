@@ -146,6 +146,12 @@ void pybind_pointcloud(py::module &m) {
                  &geometry::PointCloud::ComputeConvexHull,
                  "Computes the convex hull of the point cloud.",
                  "pt_map"_a = std::vector<int>())
+            .def("hidden_point_removal",
+                 &geometry::PointCloud::HiddenPointRemoval,
+                 "Remove hidden points from a point cloud and return a mesh of "
+                 "the remaining points. Based on Katz et al. 'Direct "
+                 "Visibility of Point Sets', 2007.",
+                 "camera"_a, "radius"_a, "pt_map"_a = std::vector<int>())
             .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCAN,
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
