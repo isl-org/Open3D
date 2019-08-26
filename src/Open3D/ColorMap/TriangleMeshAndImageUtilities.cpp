@@ -283,7 +283,7 @@ void SetGeometryColorAverage(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int i = 0; i < invalid_vertices.size(); ++i) {
+        for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
             size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh
             std::vector<double> dists;
@@ -359,7 +359,7 @@ void SetGeometryColorAverage(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int i = 0; i < invalid_vertices.size(); ++i) {
+        for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
             size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh
             std::vector<double> dists;
