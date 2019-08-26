@@ -89,21 +89,21 @@ TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(vertex(0), vertex(1), vertex(2), 1.0);
-        vertex = new_point.block<3, 1>(0, 0);
+        vertex = new_point.head<3>() / new_point(3);
     }
     for (auto &vertex_normal : vertex_normals_) {
         Eigen::Vector4d new_normal =
                 transformation * Eigen::Vector4d(vertex_normal(0),
                                                  vertex_normal(1),
                                                  vertex_normal(2), 0.0);
-        vertex_normal = new_normal.block<3, 1>(0, 0);
+        vertex_normal = new_normal.head<3>();
     }
     for (auto &triangle_normal : triangle_normals_) {
         Eigen::Vector4d new_normal =
                 transformation * Eigen::Vector4d(triangle_normal(0),
                                                  triangle_normal(1),
                                                  triangle_normal(2), 0.0);
-        triangle_normal = new_normal.block<3, 1>(0, 0);
+        triangle_normal = new_normal.head<3>();
     }
     return *this;
 }

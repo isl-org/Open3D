@@ -76,7 +76,7 @@ LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(point(0), point(1), point(2), 1.0);
-        point = new_point.block<3, 1>(0, 0);
+        point = new_point.head<3>() / new_point(3);
     }
     return *this;
 }
