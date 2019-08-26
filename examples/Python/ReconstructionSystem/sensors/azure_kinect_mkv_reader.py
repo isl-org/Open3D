@@ -4,9 +4,8 @@ import os
 import json
 import sys
 
-filepath, filename = os.path.split(os.path.abspath(__file__))
-sys.path.append(filepath + '/..')
-print(filepath)
+pwd = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(pwd, '..'))
 from initialize_config import initialize_config
 
 flag_stop = False
@@ -40,9 +39,7 @@ def main(reader, output_path):
     vis_geometry_added = False
     vis.create_window('reader', 1920, 540)
 
-    print('MKV reader initialized. '
-          'Press [SPACE] to start. '
-          'Press [ESC] to exit.')
+    print("MKV reader initialized. Press [SPACE] to start, [ESC] to exit.")
 
     if output_path is not None:
         abspath = os.path.abspath(output_path)
