@@ -328,7 +328,6 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
-     ${k4a_INCLUDE_DIRS}  # TODO: remove the need to install k4a header
 )
 
 # set 3RDPARTY_LIBRARY_DIRS
