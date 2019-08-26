@@ -106,7 +106,8 @@ void SetGeometryColorAverage(
         const std::vector<std::shared_ptr<geometry::Image>>& images_rgbd,
         const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        int image_boundary_margin = 10);
+        int image_boundary_margin = 10,
+        int invisible_vertex_color_knn = 3);
 
 void SetGeometryColorAverage(
         geometry::TriangleMesh& mesh,
@@ -114,6 +115,7 @@ void SetGeometryColorAverage(
         const std::vector<ImageWarpingField>& warping_fields,
         const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        int image_boundary_margin = 10);
+        int image_boundary_margin = 10,
+        int invisible_vertex_color_knn = 3);
 }  // namespace color_map
 }  // namespace open3d
