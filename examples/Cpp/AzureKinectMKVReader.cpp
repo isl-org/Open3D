@@ -51,7 +51,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     Json::Value value;
 
     utility::LogInfo("Writing to config.json\n");
-    utility::LogWarning(
+    utility::LogInfo(
             "Please change path_dataset and path_intrinsic when you move the "
             "dataset.\n");
 
@@ -107,14 +107,17 @@ int main(int argc, char **argv) {
         if (output_path.empty()) {
             utility::LogError("Output path {} is empty, only play mkv.\n",
                               output_path);
+            return 1;
         }
         if (utility::filesystem::DirectoryExists(output_path)) {
             utility::LogError(
                     "Output path {} already existing, only play mkv.\n",
                     output_path);
+            return 1;
         } else if (!utility::filesystem::MakeDirectory(output_path)) {
             utility::LogError("Unable to create path {}, only play mkv.\n",
                               output_path);
+            return 1;
         } else {
             utility::LogInfo("Decompress images to {}\n", output_path);
             utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");

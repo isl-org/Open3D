@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Advanced/o3d.color_map.color_map_optimization.py
+# examples/Python/Advanced/color_map_optimization_for_reconstruction_system.py
 
 import argparse
 import open3d as o3d
@@ -27,9 +27,14 @@ def parse_keys(filename):
 
 
 def collect_keyframe_rgbd(color_files, depth_files, keys):
-    assert (keys[-1] < len(color_files))
+    if len(keys) == 0:
+        raise RuntimeError("No key frames selected")
+    if keys[-1] >= len(color_files):
+        raise ValueError("keys[-1]: {} index out of range".format(keys[-1]))
+
     selected_color_files = []
     selected_depth_files = []
+
     for key in keys:
         selected_color_files.append(color_files[key])
         selected_depth_files.append(depth_files[key])
@@ -38,7 +43,11 @@ def collect_keyframe_rgbd(color_files, depth_files, keys):
 
 
 def collect_keyframe_pose(traj, intrinsic, keys):
-    assert (keys[-1] < len(traj.parameters))
+    if len(keys) == 0:
+        raise RuntimeError("No key frames selected")
+    if keys[-1] >= len(traj.parameters):
+        raise ValueError("keys[-1]: {} index out of range".format(keys[-1]))
+
     selectd_params = []
     for key in keys:
         param = traj.parameters[key]
@@ -53,10 +62,17 @@ def main(config, keys):
 
     # Read RGBD images
     color_files, depth_files = get_rgbd_file_lists(path)
-    assert (len(color_files) == len(depth_files))
+    if len(color_files) != len(depth_files):
+        raise ValueError(
+            "The number of color images {} must equal to the number of depth images {}."
+            .format(len(color_files), len(depth_files)))
+
     camera = o3d.io.read_pinhole_camera_trajectory(
         os.path.join(path, config["template_global_traj"]))
-    assert (len(color_files) == len(camera.parameters))
+    if len(color_files) != len(camera.parameters):
+        raise ValueError(
+            "The number of color images {} must equal to the number of camera parameters {}."
+            .format(len(color_files), len(depth_files)))
 
     color_files, depth_files = collect_keyframe_rgbd(color_files, depth_files,
                                                      keys)
