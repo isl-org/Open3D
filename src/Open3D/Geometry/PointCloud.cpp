@@ -288,8 +288,9 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
     return nn_dis;
 }
 
-std::shared_ptr<TriangleMesh> PointCloud::ComputeConvexHull() const {
-    return Qhull::ComputeConvexHull(points_);
+std::shared_ptr<TriangleMesh> PointCloud::ComputeConvexHull(
+        std::vector<int> &pt_map) const {
+    return Qhull::ComputeConvexHull(points_, pt_map);
 }
 
 }  // namespace geometry

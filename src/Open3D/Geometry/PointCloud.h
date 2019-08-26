@@ -185,7 +185,8 @@ public:
     std::vector<double> ComputeNearestNeighborDistance() const;
 
     /// Function that computes the convex hull of the point cloud using qhull
-    std::shared_ptr<TriangleMesh> ComputeConvexHull() const;
+    std::shared_ptr<TriangleMesh> ComputeConvexHull(
+            std::vector<int> &pt_map) const;
 
     /// Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters

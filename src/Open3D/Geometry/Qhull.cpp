@@ -39,7 +39,7 @@ namespace open3d {
 namespace geometry {
 
 std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
-        const std::vector<Eigen::Vector3d>& points) {
+        const std::vector<Eigen::Vector3d>& points, std::vector<int> &pt_map) {
     auto convex_hull = std::make_shared<TriangleMesh>();
 
     std::vector<double> qhull_points_data(points.size() * 3);
@@ -84,6 +84,7 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
                 double* coords = p.coordinates();
                 convex_hull->vertices_.push_back(
                         Eigen::Vector3d(coords[0], coords[1], coords[2]));
+                pt_map.push_back(vidx);
             }
         }
 
@@ -100,7 +101,7 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
 }
 
 std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
-        const std::vector<Eigen::Vector3d>& points) {
+        const std::vector<Eigen::Vector3d>& points, std::vector<int> &pt_map) {
     typedef decltype(TetraMesh::tetras_)::value_type Vector4i;
     auto delaunay_triangulation = std::make_shared<TetraMesh>();
 
@@ -161,6 +162,7 @@ std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
                 double* coords = p.coordinates();
                 delaunay_triangulation->vertices_.push_back(
                         Eigen::Vector3d(coords[0], coords[1], coords[2]));
+                pt_map.push_back(vidx);
             }
         }
 

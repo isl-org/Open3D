@@ -31,6 +31,7 @@
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
+#include <vector>
 
 using namespace open3d;
 
@@ -143,7 +144,8 @@ void pybind_pointcloud(py::module &m) {
                  "neighbor in the point cloud")
             .def("compute_convex_hull",
                  &geometry::PointCloud::ComputeConvexHull,
-                 "Computes the convex hull of the point cloud.")
+                 "Computes the convex hull of the point cloud.",
+                 "pt_map"_a = std::vector<int>())
             .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCAN,
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
@@ -258,8 +260,11 @@ void pybind_pointcloud(py::module &m) {
                                     "compute_mahalanobis_distance");
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_nearest_neighbor_distance");
-    docstring::ClassMethodDocInject(m, "PointCloud", "compute_convex_hull",
-                                    {{"input", "The input point cloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "compute_convex_hull",
+            {{"input", "The input point cloud."},
+             {"pt_map", "A IntVector that is filled with the indices of the "
+              "input points corresponding to the points in the mesh."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",

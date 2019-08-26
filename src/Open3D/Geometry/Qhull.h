@@ -39,10 +39,24 @@ class TetraMesh;
 class Qhull {
 public:
     static std::shared_ptr<TriangleMesh> ComputeConvexHull(
-            const std::vector<Eigen::Vector3d>& points);
+            const std::vector<Eigen::Vector3d>& points,
+            std::vector<int> &pt_map);
+
+    static std::shared_ptr<TriangleMesh> ComputeConvexHull(
+            const std::vector<Eigen::Vector3d>& points){
+        std::vector<int> pt_map;
+        return Qhull::ComputeConvexHull(points, pt_map);
+    };
 
     static std::shared_ptr<TetraMesh> ComputeDelaunayTetrahedralization(
-            const std::vector<Eigen::Vector3d>& points);
+            const std::vector<Eigen::Vector3d>& points,
+            std::vector<int> &pt_map);
+
+    static std::shared_ptr<TetraMesh> ComputeDelaunayTetrahedralization(
+            const std::vector<Eigen::Vector3d>& points){
+        std::vector<int> pt_map;
+        return Qhull::ComputeDelaunayTetrahedralization(points, pt_map);
+    };
 };
 
 }  // namespace geometry
