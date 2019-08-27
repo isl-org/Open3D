@@ -25,13 +25,13 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/PointCloud.h"
+#include <vector>
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
 #include "Python/geometry/geometry_trampoline.h"
-#include <vector>
 
 using namespace open3d;
 
@@ -144,14 +144,13 @@ void pybind_pointcloud(py::module &m) {
                  "neighbor in the point cloud")
             .def("compute_convex_hull",
                  &geometry::PointCloud::ComputeConvexHull,
-                 "Computes the convex hull of the point cloud.",
-                 "pt_map"_a = std::vector<int>())
+                 "Computes the convex hull of the point cloud.")
             .def("hidden_point_removal",
                  &geometry::PointCloud::HiddenPointRemoval,
-                 "Remove hidden points from a point cloud and return a mesh of "
-                 "the remaining points. Based on Katz et al. 'Direct "
+                 "Removes hidden points from a point cloud and returns a mesh "
+                 "of the remaining points. Based on Katz et al. 'Direct "
                  "Visibility of Point Sets', 2007.",
-                 "camera"_a, "radius"_a, "pt_map"_a = std::vector<int>())
+                 "camera_location"_a, "radius"_a)
             .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCAN,
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
@@ -266,11 +265,14 @@ void pybind_pointcloud(py::module &m) {
                                     "compute_mahalanobis_distance");
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_nearest_neighbor_distance");
+    docstring::ClassMethodDocInject(m, "PointCloud", "compute_convex_hull",
+                                    {{"input", "The input point cloud."}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "compute_convex_hull",
+            m, "PointCloud", "hidden_point_removal",
             {{"input", "The input point cloud."},
-             {"pt_map", "A IntVector that is filled with the indices of the "
-              "input points corresponding to the points in the mesh."}});
+             {"camera_location",
+              "All points not visible from that location will be reomved"},
+             {"radius", "The radius of the sperical projection"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",

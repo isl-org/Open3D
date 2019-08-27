@@ -168,7 +168,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points) {
     PointCloud hull_pcd;
-    hull_pcd.points_ = Qhull::ComputeConvexHull(points)->vertices_;
+    hull_pcd.points_ = std::get<0>(Qhull::ComputeConvexHull(points))->vertices_;
 
     Eigen::Vector3d mean;
     Eigen::Matrix3d cov;

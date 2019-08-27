@@ -185,14 +185,19 @@ public:
     std::vector<double> ComputeNearestNeighborDistance() const;
 
     /// Function that computes the convex hull of the point cloud using qhull
-    std::shared_ptr<TriangleMesh> ComputeConvexHull(
-            std::vector<int> &pt_map) const;
+    std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+    ComputeConvexHull() const;
 
-    /// Function that creates a mesh for a given view point, removing all
-    /// invisible (hidden) points
-    std::shared_ptr<TriangleMesh> HiddenPointRemoval(
-            Eigen::Vector3d camera, double radius,
-            std::vector<int> &pt_map) const;
+    /// This is an implementation of the Hidden Point Removal operator
+    /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.
+    /// \param camera_location is the view point that is used to remove
+    /// invisible points. \param radius defines the radius of the spherical
+    /// projection. Additional information about the choice of \param radius
+    /// for noisy point clouds can be found in Mehra et. al. 'Visibility of
+    /// Noisy Point Cloud Data', 2010.
+    std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+    HiddenPointRemoval(const Eigen::Vector3d &camera_location,
+                       const double radius) const;
 
     /// Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters

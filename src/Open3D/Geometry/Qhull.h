@@ -38,36 +38,12 @@ class TetraMesh;
 
 class Qhull {
 public:
-    static std::shared_ptr<TriangleMesh> ComputeConvexHull(
-            const std::vector<Eigen::Vector3d>& points,
-            std::vector<int> &pt_map);
+    static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+    ComputeConvexHull(const std::vector<Eigen::Vector3d>& points);
 
-    static std::shared_ptr<TriangleMesh> ComputeConvexHull(
-            const std::vector<Eigen::Vector3d>& points){
-        std::vector<int> pt_map;
-        return Qhull::ComputeConvexHull(points, pt_map);
-    };
-
-    static std::shared_ptr<TetraMesh> ComputeDelaunayTetrahedralization(
-            const std::vector<Eigen::Vector3d>& points,
-            std::vector<int> &pt_map);
-
-    static std::shared_ptr<TetraMesh> ComputeDelaunayTetrahedralization(
-            const std::vector<Eigen::Vector3d>& points){
-        std::vector<int> pt_map;
-        return Qhull::ComputeDelaunayTetrahedralization(points, pt_map);
-    };
-
-    static std::shared_ptr<TriangleMesh> HiddenPointRemoval(
-        const std::vector<Eigen::Vector3d>& points, Eigen::Vector3d camera,
-        double radius, std::vector<int> &pt_map);
-
-    static std::shared_ptr<TriangleMesh> HiddenPointRemoval(
-        const std::vector<Eigen::Vector3d>& points, Eigen::Vector3d camera,
-        double radius){
-      std::vector<int> pt_map;
-      return Qhull::HiddenPointRemoval(points, camera, radius, pt_map);
-    };
+    static std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+    ComputeDelaunayTetrahedralization(
+            const std::vector<Eigen::Vector3d>& points);
 };
 
 }  // namespace geometry

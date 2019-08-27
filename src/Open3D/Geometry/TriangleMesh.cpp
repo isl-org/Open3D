@@ -1358,7 +1358,8 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
     return false;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::ComputeConvexHull() const {
+std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+TriangleMesh::ComputeConvexHull() const {
     return Qhull::ComputeConvexHull(vertices_);
 }
 
