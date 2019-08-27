@@ -82,7 +82,7 @@ TetraMesh &TetraMesh::Transform(const Eigen::Matrix4d &transformation) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(vertex(0), vertex(1), vertex(2), 1.0);
-        vertex = new_point.block<3, 1>(0, 0);
+        vertex = new_point.head<3>() / new_point(3);
     }
     return *this;
 }

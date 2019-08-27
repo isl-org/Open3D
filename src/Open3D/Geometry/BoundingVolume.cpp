@@ -87,10 +87,10 @@ OrientedBoundingBox& OrientedBoundingBox::Transform(
     x = transformation * x;
     y = transformation * y;
     z = transformation * z;
-    center_ = c.block<3, 1>(0, 0);
-    x_axis_ = x.block<3, 1>(0, 0) - center_;
-    y_axis_ = y.block<3, 1>(0, 0) - center_;
-    z_axis_ = z.block<3, 1>(0, 0) - center_;
+    center_ = c.head<3>() / c(3);
+    x_axis_ = x.head<3>() / x(3) - center_;
+    y_axis_ = y.head<3>() / y(3) - center_;
+    z_axis_ = z.head<3>() / z(3) - center_;
     return *this;
 }
 
