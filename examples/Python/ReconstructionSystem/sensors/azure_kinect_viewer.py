@@ -1,38 +1,41 @@
 import argparse
-import datetime
 import open3d as o3d
-import os
-
-flag_stop = False
 
 
-def escape_callback(vis):
-    global flag_stop, sensor
-    flag_stop = True
-    return False
+class ViewerWithCallback:
 
+    def __init__(self, config, device, align_depth_to_color):
+        self.flag_exit = False
+        self.align_depth_to_color = align_depth_to_color
 
-def main(sensor, align_depth_to_color):
-    glfw_key_escape = 256
-    vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(glfw_key_escape, escape_callback)
+        self.sensor = o3d.io.AzureKinectSensor(config)
+        if self.sensor.connect(device) != 0:
+            raise RuntimeError('Failed to connect to sensor')
 
-    vis_geometry_added = False
-    vis.create_window('viewer', 1920, 540)
+    def escape_callback(self, vis):
+        self.flag_exit = True
+        return False
 
-    print('Sensor initialized. ' 'Press [ESC] to exit.')
-    while not flag_stop:
-        rgbd = sensor.capture_frame(align_depth_to_color)
-        if rgbd is None:
-            continue
+    def run(self):
+        glfw_key_escape = 256
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.register_key_callback(glfw_key_escape, self.escape_callback)
+        vis.create_window('viewer', 1920, 540)
+        print("Sensor initialized. Press [ESC] to exit.")
 
-        if not vis_geometry_added:
-            vis.add_geometry(rgbd)
-            vis_geometry_added = True
+        vis_geometry_added = False
+        while not self.flag_exit:
+            rgbd = self.sensor.capture_frame(self.align_depth_to_color)
+            if rgbd is None:
+                continue
 
-        vis.update_geometry()
-        vis.poll_events()
-        vis.update_renderer()
+            if not vis_geometry_added:
+                vis.add_geometry(rgbd)
+                vis_geometry_added = True
+
+            vis.update_geometry()
+            vis.poll_events()
+            vis.update_renderer()
 
 
 if __name__ == '__main__':
@@ -49,7 +52,6 @@ if __name__ == '__main__':
                         '--align_depth_to_color',
                         action='store_true',
                         help='enable align depth image to color')
-
     args = parser.parse_args()
 
     if args.list:
@@ -66,10 +68,5 @@ if __name__ == '__main__':
         print('Unsupported device id, fall back to 0')
         device = 0
 
-    sensor = o3d.io.AzureKinectSensor(config)
-    rc = sensor.connect(device)
-    if rc != 0:
-        print('Failed to connect to sensor')
-        exit()
-
-    main(sensor, args.align_depth_to_color)
+    v = ViewerWithCallback(config, device, args.align_depth_to_color)
+    v.run()

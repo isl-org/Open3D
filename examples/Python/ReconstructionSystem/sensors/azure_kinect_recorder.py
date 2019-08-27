@@ -3,7 +3,7 @@ import datetime
 import open3d as o3d
 
 
-class RecorderWithControl:
+class RecorderWithCallback:
 
     def __init__(self, config, device, filename, align_depth_to_color):
         # Global flags
@@ -90,7 +90,6 @@ if __name__ == '__main__':
                         '--align_depth_to_color',
                         action='store_true',
                         help='enable align depth image to color')
-
     args = parser.parse_args()
 
     if args.list:
@@ -114,5 +113,6 @@ if __name__ == '__main__':
         print('Unsupported device id, fall back to 0')
         device = 0
 
-    r = RecorderWithControl(config, device, filename, args.align_depth_to_color)
+    r = RecorderWithCallback(config, device, filename,
+                             args.align_depth_to_color)
     r.run()
