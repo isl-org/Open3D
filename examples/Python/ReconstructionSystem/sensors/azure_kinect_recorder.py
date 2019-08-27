@@ -1,75 +1,78 @@
 import argparse
 import datetime
 import open3d as o3d
-import os
-
-flag_stop = False
 
 
-def escape_callback(vis):
-    global flag_stop, recorder
-    flag_stop = True
-    if recorder.is_record_created():
-        print('Recording finished.')
-    else:
-        print('Nothing has been recorded.')
-    return False
+class RecorderWithControl:
 
+    def __init__(self, config, device, filename, align_depth_to_color):
+        # Global flags
+        self.flag_exit = False
+        self.flag_record = False
+        self.filename = filename
 
-flag_record = False
+        self.align_depth_to_color = align_depth_to_color
+        self.recorder = o3d.io.AzureKinectRecorder(config, device)
+        if self.recorder.init_sensor() != 0:
+            raise RuntimeError('Failed to connect to sensor')
 
+    def escape_callback(self, vis):
+        self.flag_exit = True
+        if self.recorder.is_record_created():
+            print('Recording finished.')
+        else:
+            print('Nothing has been recorded.')
+        return False
 
-def space_callback(vis):
-    global flag_record, recorder, filename
-    if flag_record:
-        print('Recording paused. '
-              'Press [Space] to continue. '
-              'Press [ESC] to save and exit.')
-        flag_record = False
+    def space_callback(self, vis):
+        if self.flag_record:
+            print('Recording paused. '
+                  'Press [Space] to continue. '
+                  'Press [ESC] to save and exit.')
+            self.flag_record = False
 
-    elif not recorder.is_record_created():
-        if recorder.open_record(filename):
-            print('Recording started. '
+        elif not self.recorder.is_record_created():
+            if self.recorder.open_record(self.filename):
+                print('Recording started. '
+                      'Press [SPACE] to pause. '
+                      'Press [ESC] to save and exit.')
+                self.flag_record = True
+
+        else:
+            print('Recording resumed, video may be discontinuous. '
                   'Press [SPACE] to pause. '
                   'Press [ESC] to save and exit.')
-            flag_record = True
+            self.flag_record = True
 
-    else:
-        print('Recording resumed, video may be discontinuous. '
-              'Press [SPACE] to pause. '
-              'Press [ESC] to save and exit.')
-        flag_record = True
+        return False
 
-    return False
+    def run(self):
+        glfw_key_escape = 256
+        glfw_key_space = 32
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.register_key_callback(glfw_key_escape, self.escape_callback)
+        vis.register_key_callback(glfw_key_space, self.space_callback)
 
+        vis.create_window('recorder', 1920, 540)
+        print("Recorder initialized. Press [SPACE] to start. "
+              "Press [ESC] to save and exit.")
 
-def main(recorder, align_depth_to_color):
-    glfw_key_escape = 256
-    glfw_key_space = 32
-    vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(glfw_key_escape, escape_callback)
-    vis.register_key_callback(glfw_key_space, space_callback)
+        vis_geometry_added = False
+        while not self.flag_exit:
+            rgbd = self.recorder.record_frame(self.flag_record,
+                                              self.align_depth_to_color)
+            if rgbd is None:
+                continue
 
-    vis_geometry_added = False
-    vis.create_window('recorder', 1920, 540)
+            if not vis_geometry_added:
+                vis.add_geometry(rgbd)
+                vis_geometry_added = True
 
-    print('Recorder initialized. '
-          'Press [SPACE] to start. '
-          'Press [ESC] to save and exit.')
-    flag_record = True
+            vis.update_geometry()
+            vis.poll_events()
+            vis.update_renderer()
 
-    while not flag_stop:
-        rgbd = recorder.record_frame(flag_record, align_depth_to_color)
-        if rgbd is None:
-            continue
-
-        if not vis_geometry_added:
-            vis.add_geometry(rgbd)
-            vis_geometry_added = True
-
-        vis.update_geometry()
-        vis.poll_events()
-        vis.update_renderer()
+        self.recorder.close_record()
 
 
 if __name__ == '__main__':
@@ -111,12 +114,5 @@ if __name__ == '__main__':
         print('Unsupported device id, fall back to 0')
         device = 0
 
-    recorder = o3d.io.AzureKinectRecorder(config, device)
-    rc = recorder.init_sensor()
-    if rc != 0:
-        print('Failed to connect to sensor')
-        exit()
-
-    main(recorder, args.align_depth_to_color)
-
-    recorder.close_record()
+    r = RecorderWithControl(config, device, filename, args.align_depth_to_color)
+    r.run()
