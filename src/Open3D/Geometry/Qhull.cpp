@@ -216,7 +216,10 @@ std::shared_ptr<TriangleMesh> Qhull::HiddenPointRemoval(
     for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
         size_t pidx = pt_map[vidx];
         visible_mesh->vertices_[vidx] = points[pidx];
-        if(pidx == origin_pidx) origin_vidx = vidx;
+        if(pidx == origin_pidx) {
+            origin_vidx = vidx;
+            visible_mesh->vertices_[vidx] = camera;
+        }
     }
 
     // erase origin if part of mesh
@@ -230,6 +233,14 @@ std::shared_ptr<TriangleMesh> Qhull::HiddenPointRemoval(
                     visible_mesh->triangles_[tidx](2) == origin_vidx) {
                 visible_mesh->triangles_.erase(
                     visible_mesh->triangles_.begin() + tidx);
+            }
+            else {
+                if(visible_mesh->triangles_[tidx](0) > origin_vidx)
+                    visible_mesh->triangles_[tidx](0) -= 1;
+                if(visible_mesh->triangles_[tidx](1) > origin_vidx)
+                    visible_mesh->triangles_[tidx](1) -= 1;
+                if(visible_mesh->triangles_[tidx](2) > origin_vidx)
+                    visible_mesh->triangles_[tidx](2) -= 1;
             }
         }
     }
