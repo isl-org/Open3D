@@ -39,14 +39,6 @@
 namespace open3d {
 namespace io {
 
-static std::unordered_map<std::string, std::pair<int, int>>
-        resolution_to_width_height({{"720P", std::make_pair(1280, 720)},
-                                    {"1080P", std::make_pair(1920, 1080)},
-                                    {"1440P", std::make_pair(2560, 1440)},
-                                    {"1536P", std::make_pair(2048, 1536)},
-                                    {"2160P", std::make_pair(3840, 2160)},
-                                    {"3072P", std::make_pair(4096, 3072)}});
-
 MKVReader::MKVReader() : handle_(nullptr), transformation_(nullptr) {}
 
 bool MKVReader::IsOpened() { return handle_ != nullptr; }
@@ -88,6 +80,14 @@ int MKVReader::Open(const std::string &filename) {
 void MKVReader::Close() { k4a_plugin::k4a_playback_close(handle_); }
 
 Json::Value MKVReader::GetMetadataJson() {
+    static const std::unordered_map<std::string, std::pair<int, int>>
+            resolution_to_width_height({{"720P", std::make_pair(1280, 720)},
+                                        {"1080P", std::make_pair(1920, 1080)},
+                                        {"1440P", std::make_pair(2560, 1440)},
+                                        {"1536P", std::make_pair(2048, 1536)},
+                                        {"2160P", std::make_pair(3840, 2160)},
+                                        {"3072P", std::make_pair(4096, 3072)}});
+
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
         return Json::Value();
@@ -132,7 +132,7 @@ Json::Value MKVReader::GetMetadataJson() {
     value["width"] = width_height.first;
     value["height"] = width_height.second;
 
-    /** For internal usages */
+    // For internal usages
     transformation_ = k4a_plugin::k4a_transformation_create(&calibration);
 
     return value;

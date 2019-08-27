@@ -168,7 +168,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["color_format"]
     if (config.count("color_format") != 0 &&
         string_to_k4a_image_format_t.count(config.at("color_format")) == 0) {
         rc = false;
@@ -177,7 +176,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["color_resolution"]
     if (config.count("color_resolution") != 0 &&
         string_to_k4a_color_resolution_t.count(config.at("color_resolution")) ==
                 0) {
@@ -187,7 +185,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["depth_mode"]
     if (config.count("depth_mode") != 0 &&
         string_to_k4a_depth_mode_t.count(config.at("depth_mode")) == 0) {
         rc = false;
@@ -196,7 +193,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["camera_fps"]
     if (config.count("camera_fps") != 0 &&
         string_to_k4a_fps_t.count(config.at("camera_fps")) == 0) {
         rc = false;
@@ -216,7 +212,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["synchronized_images_only"]
     if (config.count("synchronized_images_only") != 0 &&
         config.at("synchronized_images_only") != "true" &&
         config.at("synchronized_images_only") != "false") {
@@ -227,9 +222,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["depth_delay_off_color_u]
-
-    // config["wired_sync_mode"]
     if (config.count("wired_sync_mode") != 0 &&
         string_to_k4a_wired_sync_mode_t.count(config.at("wired_sync_mode")) ==
                 0) {
@@ -239,9 +231,6 @@ bool AzureKinectSensorConfig::IsValidConfig(
         }
     }
 
-    // config["subordinate_delay_off_master_u]
-
-    // config["disable_streaming_indicator"]
     if (config.count("disable_streaming_indicator") != 0 &&
         config.at("disable_streaming_indicator") != "true" &&
         config.at("disable_streaming_indicator") != "false") {
