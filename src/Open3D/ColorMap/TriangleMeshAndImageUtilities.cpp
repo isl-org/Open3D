@@ -293,7 +293,9 @@ void SetGeometryColorAverage(
             for (const int& index : indices) {
                 new_color += valid_mesh->vertex_colors_[index];
             }
-            new_color /= indices.size();
+            if (indices.size() > 0) {
+                new_color /= indices.size();
+            }
             mesh.vertex_colors_[invalid_vertex] = new_color;
         }
     }
@@ -369,7 +371,9 @@ void SetGeometryColorAverage(
             for (const int& index : indices) {
                 new_color += valid_mesh->vertex_colors_[index];
             }
-            new_color /= indices.size();
+            if (indices.size() > 0) {
+                new_color /= indices.size();
+            }
             mesh.vertex_colors_[invalid_vertex] = new_color;
         }
     }
