@@ -51,12 +51,13 @@ public:
     bool IsEmpty() const override;
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-    virtual OrientedBoundingBox& Translate(
-            const Eigen::Vector3d& translation) override;
+    virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
+                                           bool relative = true) override;
     virtual OrientedBoundingBox& Scale(const double scale,
                                        bool center = true) override;
     virtual OrientedBoundingBox& Rotate(
@@ -100,12 +101,13 @@ public:
     bool IsEmpty() const override;
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(
-            const Eigen::Vector3d& translation) override;
+            const Eigen::Vector3d& translation, bool relative = true) override;
     virtual AxisAlignedBoundingBox& Scale(const double scale,
                                           bool center = true) override;
     virtual AxisAlignedBoundingBox& Rotate(
@@ -121,10 +123,6 @@ public:
 
     double Volume() const;
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
-
-    Eigen::Vector3d GetCenter() const {
-        return (min_bound_ + max_bound_) * 0.5;
-    }
 
     Eigen::Vector3d GetExtend() const { return (max_bound_ - min_bound_); }
 

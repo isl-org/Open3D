@@ -53,6 +53,7 @@ def problem_generator():
 
 if __name__ == "__main__":
     for pcd, radii in problem_generator():
+        o3d.visualization.draw_geometries([pcd])
         rec_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
             pcd, o3d.utility.DoubleVector(radii))
         o3d.visualization.draw_geometries([pcd, rec_mesh])

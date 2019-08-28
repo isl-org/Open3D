@@ -29,6 +29,12 @@
 #include <cctype>
 #include <unordered_set>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif  // _WIN32
+
 namespace open3d {
 namespace utility {
 
@@ -81,6 +87,14 @@ size_t WordLength(const std::string& doc,
         length++;
     }
     return length;
+}
+
+void Sleep(int milliseconds) {
+#ifdef _WIN32
+    Sleep(milliseconds);
+#else
+    usleep(milliseconds * 1000);
+#endif  // _WIN32
 }
 
 }  // namespace utility

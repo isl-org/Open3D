@@ -57,10 +57,12 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
+    Eigen::Vector3d GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox() const override;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
-    PointCloud &Translate(const Eigen::Vector3d &translation) override;
+    PointCloud &Translate(const Eigen::Vector3d &translation,
+                          bool relative = true) override;
     PointCloud &Scale(const double scale, bool center = true) override;
     PointCloud &Rotate(const Eigen::Vector3d &rotation,
                        bool center = true,
@@ -192,7 +194,9 @@ public:
     /// in Large Spatial Databases with Noise", 1996
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
-    std::vector<int> ClusterDBSCAN(double eps, size_t min_points) const;
+    std::vector<int> ClusterDBSCAN(double eps,
+                                   size_t min_points,
+                                   bool print_progress = false) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)

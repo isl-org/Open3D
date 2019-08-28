@@ -354,6 +354,10 @@ Eigen::Vector3d Octree::GetMaxBound() const {
     }
 }
 
+Eigen::Vector3d Octree::GetCenter() const {
+    return origin_ + Eigen::Vector3d(size_, size_, size_) / 2;
+}
+
 AxisAlignedBoundingBox Octree::GetAxisAlignedBoundingBox() const {
     AxisAlignedBoundingBox box;
     box.min_bound_ = GetMinBound();
@@ -371,7 +375,7 @@ Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     return *this;
 }
 
-Octree& Octree::Translate(const Eigen::Vector3d& translation) {
+Octree& Octree::Translate(const Eigen::Vector3d& translation, bool relative) {
     throw std::runtime_error("Not implemented");
     return *this;
 }

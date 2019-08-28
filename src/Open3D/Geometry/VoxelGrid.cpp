@@ -26,6 +26,7 @@
 
 #include "Open3D/Geometry/VoxelGrid.h"
 
+#include <numeric>
 #include <unordered_map>
 
 #include "Open3D/Camera/PinholeCameraParameters.h"
@@ -78,6 +79,21 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     }
 }
 
+Eigen::Vector3d VoxelGrid::GetCenter() const {
+    Eigen::Vector3d center(0, 0, 0);
+    if (!HasVoxels()) {
+        return center;
+    }
+    center = std::accumulate(
+            voxels_.begin(), voxels_.end(), center,
+            [this](const Eigen::Vector3d &vec, const Voxel &vox) {
+                return vec + vox.grid_index_.cast<double>() * voxel_size_ +
+                       origin_;
+            });
+    center /= double(voxels_.size());
+    return center;
+}
+
 AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
     AxisAlignedBoundingBox box;
     box.min_bound_ = GetMinBound();
@@ -95,7 +111,8 @@ VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation) {
+VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation,
+                                bool relative) {
     throw std::runtime_error("Not implemented");
     return *this;
 }

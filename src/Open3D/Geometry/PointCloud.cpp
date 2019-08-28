@@ -68,6 +68,16 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
             });
 }
 
+Eigen::Vector3d PointCloud::GetCenter() const {
+    Eigen::Vector3d center(0, 0, 0);
+    if (!HasPoints()) {
+        return center;
+    }
+    center = std::accumulate(points_.begin(), points_.end(), center);
+    center /= double(points_.size());
+    return center;
+}
+
 AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
@@ -92,9 +102,14 @@ PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     return *this;
 }
 
-PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
+PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation,
+                                  bool relative) {
+    Eigen::Vector3d transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
     for (auto &point : points_) {
-        point += translation;
+        point += transform;
     }
     return *this;
 }
@@ -102,9 +117,7 @@ PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
 PointCloud &PointCloud::Scale(const double scale, bool center) {
     Eigen::Vector3d point_center(0, 0, 0);
     if (center && !points_.empty()) {
-        point_center =
-                std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= double(points_.size());
+        point_center = GetCenter();
     }
     for (auto &point : points_) {
         point = (point - point_center) * scale + point_center;
@@ -117,9 +130,7 @@ PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
                                RotationType type) {
     Eigen::Vector3d point_center(0, 0, 0);
     if (center && !points_.empty()) {
-        point_center =
-                std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= double(points_.size());
+        point_center = GetCenter();
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {

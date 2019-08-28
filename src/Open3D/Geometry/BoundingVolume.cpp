@@ -65,6 +65,8 @@ Eigen::Vector3d OrientedBoundingBox::GetMaxBound() const {
             });
 }
 
+Eigen::Vector3d OrientedBoundingBox::GetCenter() const { return center_; }
+
 AxisAlignedBoundingBox OrientedBoundingBox::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetBoxPoints());
 }
@@ -95,8 +97,12 @@ OrientedBoundingBox& OrientedBoundingBox::Transform(
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Translate(
-        const Eigen::Vector3d& translation) {
-    center_ += translation;
+        const Eigen::Vector3d& translation, bool relative) {
+    if (relative) {
+        center_ += translation;
+    } else {
+        center_ = translation;
+    }
     return *this;
 }
 
@@ -230,6 +236,10 @@ Eigen::Vector3d AxisAlignedBoundingBox::GetMaxBound() const {
     return max_bound_;
 }
 
+Eigen::Vector3d AxisAlignedBoundingBox::GetCenter() const {
+    return (min_bound_ + max_bound_) * 0.5;
+}
+
 AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
         const {
     return *this;
@@ -248,9 +258,15 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
-        const Eigen::Vector3d& translation) {
-    min_bound_ += translation;
-    max_bound_ += translation;
+        const Eigen::Vector3d& translation, bool relative) {
+    if (relative) {
+        min_bound_ += translation;
+        max_bound_ += translation;
+    } else {
+        const Eigen::Vector3d half_extend = GetHalfExtend();
+        min_bound_ = translation - half_extend;
+        max_bound_ = translation + half_extend;
+    }
     return *this;
 }
 

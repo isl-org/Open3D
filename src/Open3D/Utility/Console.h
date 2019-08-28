@@ -259,12 +259,18 @@ class ConsoleProgressBar {
 public:
     ConsoleProgressBar(size_t expected_count,
                        const std::string progress_info,
-                       bool active = false)
-        : expected_count_(expected_count),
-          current_count_(-1),
-          progress_info_(progress_info),
-          progress_pixel_(0),
-          active_(active) {
+                       bool active = false) {
+        reset(expected_count, progress_info, active);
+    }
+
+    void reset(size_t expected_count,
+               const std::string progress_info,
+               bool active) {
+        expected_count_ = expected_count;
+        current_count_ = -1;
+        progress_info_ = progress_info;
+        progress_pixel_ = 0;
+        active_ = active;
         operator++();
     }
 

@@ -69,6 +69,16 @@ Eigen::Vector3d TetraMesh::GetMaxBound() const {
             });
 }
 
+Eigen::Vector3d TetraMesh::GetCenter() const {
+    Eigen::Vector3d center(0, 0, 0);
+    if (!HasVertices()) {
+        return center;
+    }
+    center = std::accumulate(vertices_.begin(), vertices_.end(), center);
+    center /= double(vertices_.size());
+    return center;
+}
+
 AxisAlignedBoundingBox TetraMesh::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
 }
@@ -87,9 +97,14 @@ TetraMesh &TetraMesh::Transform(const Eigen::Matrix4d &transformation) {
     return *this;
 }
 
-TetraMesh &TetraMesh::Translate(const Eigen::Vector3d &translation) {
+TetraMesh &TetraMesh::Translate(const Eigen::Vector3d &translation,
+                                bool relative) {
+    Eigen::Vector3d transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
     for (auto &vertex : vertices_) {
-        vertex += translation;
+        vertex += transform;
     }
     return *this;
 }
@@ -97,9 +112,7 @@ TetraMesh &TetraMesh::Translate(const Eigen::Vector3d &translation) {
 TetraMesh &TetraMesh::Scale(const double scale, bool center) {
     Eigen::Vector3d vertex_center(0, 0, 0);
     if (center && !vertices_.empty()) {
-        vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
-                                        vertex_center);
-        vertex_center /= double(vertices_.size());
+        vertex_center = GetCenter();
     }
     for (auto &vertex : vertices_) {
         vertex = (vertex - vertex_center) * scale + vertex_center;
@@ -112,9 +125,7 @@ TetraMesh &TetraMesh::Rotate(const Eigen::Vector3d &rotation,
                              RotationType type) {
     Eigen::Vector3d vertex_center(0, 0, 0);
     if (center && !vertices_.empty()) {
-        vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
-                                        vertex_center);
-        vertex_center /= double(vertices_.size());
+        vertex_center = GetCenter();
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {
