@@ -8,6 +8,7 @@ pwd = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(pwd, '..'))
 from initialize_config import initialize_config
 
+
 class ReaderWithCallback:
 
     def __init__(self, input, output):
@@ -25,7 +26,6 @@ class ReaderWithCallback:
         self.flag_exit = True
         return False
 
-
     def space_callback(self, vis):
         if self.flag_play:
             print('Playback paused, press [SPACE] to continue.')
@@ -33,7 +33,6 @@ class ReaderWithCallback:
             print('Playback resumed, press [SPACE] to pause.')
         self.flag_play = not self.flag_play
         return False
-
 
     def run(self):
         glfw_key_escape = 256
