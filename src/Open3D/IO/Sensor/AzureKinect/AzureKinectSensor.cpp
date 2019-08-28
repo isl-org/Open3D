@@ -154,6 +154,24 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
 }
 
 void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
+    if (bgra.bytes_per_channel_ != 1) {
+        utility::LogFatal("BGRA input image must have 1 byte per channel.");
+    }
+    if (rgb.bytes_per_channel_ != 1) {
+        utility::LogFatal("RGB output image must have 1 byte per channel.");
+    }
+    if (bgra.num_of_channels_ != 4) {
+        utility::LogFatal("BGRA input image must have 4 channels.");
+    }
+    if (rgb.num_of_channels_ != 3) {
+        utility::LogFatal("RGB output image must have 3 channels.");
+    }
+    if (bgra.width_ != rgb.width_ || bgra.height_ != rgb.height_) {
+        utility::LogFatal(
+                "BGRA input image and RGB output image have different "
+                "dimensions.");
+    }
+
     assert(bgra.bytes_per_channel_ == 1 && bgra.num_of_channels_ == 4);
     assert(rgb.bytes_per_channel_ == 1 && rgb.num_of_channels_ == 3);
     assert(bgra.width_ == rgb.width_ && bgra.height_ == rgb.height_);
