@@ -172,10 +172,6 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
                 "dimensions.");
     }
 
-    assert(bgra.bytes_per_channel_ == 1 && bgra.num_of_channels_ == 4);
-    assert(rgb.bytes_per_channel_ == 1 && rgb.num_of_channels_ == 3);
-    assert(bgra.width_ == rgb.width_ && bgra.height_ == rgb.height_);
-
     int N = bgra.width_ * bgra.height_;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
