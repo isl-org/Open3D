@@ -153,21 +153,21 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
     return im_rgbd;
 }
 
-void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb) {
-    assert(rgba.bytes_per_channel_ == 1 && rgba.num_of_channels_ == 4);
+void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
+    assert(bgra.bytes_per_channel_ == 1 && bgra.num_of_channels_ == 4);
     assert(rgb.bytes_per_channel_ == 1 && rgb.num_of_channels_ == 3);
-    assert(rgba.width_ == rgb.width_ && rgba.height_ == rgb.height_);
+    assert(bgra.width_ == rgb.width_ && bgra.height_ == rgb.height_);
 
-    int N = rgba.width_ * rgba.height_;
+    int N = bgra.width_ * bgra.height_;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
     for (int uv = 0; uv < N; ++uv) {
-        int v = uv / rgba.width_;
-        int u = uv % rgba.width_;
+        int v = uv / bgra.width_;
+        int u = uv % bgra.width_;
         for (int c = 0; c < 3; ++c) {
             *rgb.PointerAt<uint8_t>(u, v, c) =
-                    *rgba.PointerAt<uint8_t>(u, v, 2 - c);
+                    *bgra.PointerAt<uint8_t>(u, v, 2 - c);
         }
     }
 }
