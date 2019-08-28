@@ -20,10 +20,9 @@ if (BUILD_AZURE_KINECT)
         )
         set(k4a_LIBRARY_DIRS ${k4a_STATIC_LIBRARY_DIR} ${k4a_DYNAMIC_LIBRARY_DIR})
     else()
-        # The property names are compatible with k4a 1.1.1, future k4a version
-        # might change the property names.
-        find_package(k4a 1.1.1 QUIET)
-        find_package(k4arecord 1.1.1 QUIET)
+        # The property names are tested with k4a 1.2, future versions might work
+        find_package(k4a 1.2 QUIET)
+        find_package(k4arecord 1.2 QUIET)
         if (k4a_FOUND)
             get_target_property(k4a_INCLUDE_DIRS       k4a::k4a       INTERFACE_INCLUDE_DIRECTORIES)
             get_target_property(k4a_LIBRARIES          k4a::k4a       IMPORTED_LOCATION_RELWITHDEBINFO)
@@ -36,9 +35,7 @@ if (BUILD_AZURE_KINECT)
 
             # Alias target to be consistent with windows
             add_library(k4a INTERFACE)
-            # target_link_libraries(k4a INTERFACE ${k4a_LIBRARIES})
             add_library(k4arecord INTERFACE)
-            # target_link_libraries(k4arecord INTERFACE ${k4arecord_LIBRARIES})
 
             set(k4a_INCLUDE_DIRS k4a_INCLUDE_DIRS)
 
@@ -50,9 +47,10 @@ if (BUILD_AZURE_KINECT)
                     to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
         endif ()
     endif()
-    set(k4a_LIBRARIES k4a k4arecord)
 
+    set(k4a_LIBRARIES k4a k4arecord)
 else()
+    # Conditionally include header files in Open3D.h
     set(BUILD_AZURE_KINECT_COMMENT "//")
 endif()
 
