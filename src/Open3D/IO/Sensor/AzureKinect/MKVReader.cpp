@@ -60,7 +60,7 @@ std::string MKVReader::GetTagInMetadata(const std::string &tag_name) {
     }
 }
 
-int MKVReader::Open(const std::string &filename) {
+bool MKVReader::Open(const std::string &filename) {
     if (IsOpened()) {
         Close();
     }
@@ -68,13 +68,13 @@ int MKVReader::Open(const std::string &filename) {
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_open(filename.c_str(), &handle_)) {
         utility::LogError("Unable to open file {}\n", filename);
-        return -1;
+        return false;
     }
 
     metadata_.ConvertFromJsonValue(GetMetadataJson());
     is_eof_ = false;
 
-    return 0;
+    return true;
 }
 
 void MKVReader::Close() { k4a_plugin::k4a_playback_close(handle_); }
@@ -138,25 +138,25 @@ Json::Value MKVReader::GetMetadataJson() {
     return value;
 }
 
-int MKVReader::SeekTimestamp(size_t timestamp) {
+bool MKVReader::SeekTimestamp(size_t timestamp) {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
-        return -1;
+        return false;
     }
 
     if (timestamp >= metadata_.stream_length_usec_) {
         utility::LogError("Timestamp {} exceeds maximum {} (us).\n", timestamp,
                           metadata_.stream_length_usec_);
-        return -1;
+        return false;
     }
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_seek_timestamp(handle_, timestamp,
                                                 K4A_PLAYBACK_SEEK_BEGIN)) {
         utility::LogError("Unable to go to timestamp {}\n", timestamp);
-        return -1;
+        return false;
     }
-    return 0;
+    return true;
 }
 
 std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {

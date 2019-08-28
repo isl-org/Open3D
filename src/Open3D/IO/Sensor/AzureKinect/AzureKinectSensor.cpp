@@ -46,7 +46,7 @@ AzureKinectSensor::~AzureKinectSensor() {
     k4a_plugin::k4a_device_close(device_);
 }
 
-int AzureKinectSensor::Connect(size_t sensor_index) {
+bool AzureKinectSensor::Connect(size_t sensor_index) {
     utility::LogInfo("AzureKinectSensor::Connect\n");
     utility::LogInfo("sensor_index {}\n", sensor_index);
     auto device_config = sensor_config_.ConvertToNativeConfig();
@@ -74,7 +74,7 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
         utility::LogError(
                 "Config error: either the color or depth modes must be "
                 "enabled to record.\n");
-        return 1;
+        return false;
     }
 
     // check available devices
@@ -82,14 +82,14 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
             k4a_plugin::k4a_device_get_installed_count();
     if (sensor_index >= installed_devices) {
         utility::LogError("Device not found.\n");
-        return 1;
+        return false;
     }
 
     // open device
     if (K4A_FAILED(k4a_plugin::k4a_device_open(sensor_index, &device_))) {
         utility::LogError(
                 "Runtime error: k4a_plugin::k4a_device_open() failed\n");
-        return 1;
+        return false;
     }
 
     // get and print device info
@@ -101,7 +101,7 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
                 "Runtime error: k4a_plugin::k4a_device_set_color_control() "
                 "failed\n");
         k4a_plugin::k4a_device_close(device_);
-        return 1;
+        return false;
     }
 
     // set color control, assume absoluteExposureValue == 0
@@ -112,7 +112,7 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
                 "Runtime error: k4a_plugin::k4a_device_set_color_control() "
                 "failed\n");
         k4a_plugin::k4a_device_close(device_);
-        return 1;
+        return false;
     }
 
     // set calibration
@@ -123,7 +123,7 @@ int AzureKinectSensor::Connect(size_t sensor_index) {
     transform_depth_to_color_ =
             k4a_plugin::k4a_transformation_create(&calibration);
 
-    return 0;
+    return true;
 }
 
 k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
@@ -172,7 +172,7 @@ void ConvertBGRAToRGB(geometry::Image &rgba, geometry::Image &rgb) {
     }
 }
 
-int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
+bool AzureKinectSensor::PrintFirmware(k4a_device_t device) {
     char serial_number_buffer[256];
     size_t serial_number_buffer_size = sizeof(serial_number_buffer);
     if (K4A_BUFFER_RESULT_SUCCEEDED !=
@@ -181,14 +181,14 @@ int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
         utility::LogError(
                 "Runtime error: k4a_plugin::k4a_device_get_serialnum() "
                 "failed\n");
-        return 1;
+        return false;
     }
 
     k4a_hardware_version_t version_info;
     if (K4A_FAILED(k4a_plugin::k4a_device_get_version(device, &version_info))) {
         utility::LogError(
                 "Runtime error: k4a_plugin::k4a_device_get_version() failed\n");
-        return 1;
+        return false;
     }
 
     utility::LogInfo("Serial number: {}\n", serial_number_buffer);
@@ -202,10 +202,10 @@ int AzureKinectSensor::PrintFirmware(k4a_device_t device) {
                      version_info.depth.minor, version_info.depth.iteration,
                      version_info.depth_sensor.major,
                      version_info.depth_sensor.minor);
-    return 0;
+    return true;
 }
 
-int AzureKinectSensor::ListDevices() {
+bool AzureKinectSensor::ListDevices() {
     uint32_t device_count = k4a_plugin::k4a_device_get_installed_count();
     if (device_count > 0) {
         for (uint8_t i = 0; i < device_count; i++) {
@@ -216,13 +216,14 @@ int AzureKinectSensor::ListDevices() {
                 k4a_plugin::k4a_device_close(device);
             } else {
                 utility::LogError("Device Open Failed\n");
+                return false;
             }
         }
     } else {
         utility::LogError("No devices connected.\n");
     }
 
-    return 0;
+    return true;
 }
 
 std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(

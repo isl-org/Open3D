@@ -9,7 +9,7 @@ class ViewerWithCallback:
         self.align_depth_to_color = align_depth_to_color
 
         self.sensor = o3d.io.AzureKinectSensor(config)
-        if self.sensor.connect(device) != 0:
+        if not self.sensor.connect(device):
             raise RuntimeError('Failed to connect to sensor')
 
     def escape_callback(self, vis):

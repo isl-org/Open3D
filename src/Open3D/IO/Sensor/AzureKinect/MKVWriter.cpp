@@ -37,9 +37,9 @@ namespace io {
 
 MKVWriter::MKVWriter() : handle_(nullptr) {}
 
-int MKVWriter::Open(const std::string &filename,
-                    const _k4a_device_configuration_t &config,
-                    k4a_device_t device) {
+bool MKVWriter::Open(const std::string &filename,
+                     const _k4a_device_configuration_t &config,
+                     k4a_device_t device) {
     if (IsOpened()) {
         Close();
     }
@@ -48,22 +48,22 @@ int MKVWriter::Open(const std::string &filename,
                                                               device, config,
                                                               &handle_)) {
         utility::LogError("Unable to open file {}\n", filename);
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 bool MKVWriter::IsOpened() { return handle_ != nullptr; }
 
-int MKVWriter::SetMetadata(const MKVMetadata &metadata) {
+bool MKVWriter::SetMetadata(const MKVMetadata &metadata) {
     metadata_ = metadata;
 
     if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_write_header(handle_)) {
         utility::LogError("Unable to write header\n");
-        return -1;
+        return false;
     }
-    return 0;
+    return true;
 }
 
 void MKVWriter::Close() {
@@ -73,19 +73,19 @@ void MKVWriter::Close() {
     k4a_plugin::k4a_record_close(handle_);
 }
 
-int MKVWriter::NextFrame(k4a_capture_t capture) {
+bool MKVWriter::NextFrame(k4a_capture_t capture) {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
-        return -1;
+        return false;
     }
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_record_write_capture(handle_, capture)) {
         utility::LogError("Unable to write frame to mkv.\n");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 }  // namespace io
 }  // namespace open3d

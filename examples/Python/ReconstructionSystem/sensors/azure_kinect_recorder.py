@@ -13,7 +13,7 @@ class RecorderWithCallback:
 
         self.align_depth_to_color = align_depth_to_color
         self.recorder = o3d.io.AzureKinectRecorder(config, device)
-        if self.recorder.init_sensor() != 0:
+        if not self.recorder.init_sensor():
             raise RuntimeError('Failed to connect to sensor')
 
     def escape_callback(self, vis):

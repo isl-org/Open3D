@@ -43,9 +43,7 @@ int main(int argc, char **argv) {
     if (utility::ProgramOptionExists(argc, argv, "--config")) {
         auto config_filename =
                 utility::GetProgramOptionAsString(argc, argv, "--config", "");
-        bool success = io::ReadIJsonConvertibleFromJSON(config_filename,
-                                                        sensor_config);
-        if (!success) {
+        if (!io::ReadIJsonConvertibleFromJSON(config_filename, sensor_config)) {
             utility::LogInfo("Invalid sensor config\n");
             return 1;
         }
@@ -66,19 +64,18 @@ int main(int argc, char **argv) {
 
     // Init sensor
     io::AzureKinectSensor sensor(sensor_config);
-    int error = sensor.Connect(sensor_index);
-    if (error != 0) {
+    if (!sensor.Connect(sensor_index)) {
         utility::LogError("Failed to connect to sensor, abort.\n");
         return 1;
     }
 
     // Start viewing
-    bool flag_stop = false;
+    bool flag_exit = false;
     bool is_geometry_added = false;
     visualization::VisualizerWithKeyCallback vis;
     vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
                             [&](visualization::Visualizer *vis) {
-                                flag_stop = true;
+                                flag_exit = true;
                                 return false;
                             });
 
@@ -100,7 +97,7 @@ int main(int argc, char **argv) {
         vis.PollEvents();
         vis.UpdateRender();
 
-    } while (!flag_stop);
+    } while (!flag_exit);
 
     return 0;
 }

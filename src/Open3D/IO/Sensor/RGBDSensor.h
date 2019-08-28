@@ -41,7 +41,7 @@ namespace io {
 class RGBDSensor {
 public:
     RGBDSensor() {}
-    virtual int Connect(size_t sensor_index) = 0;
+    virtual bool Connect(size_t sensor_index) = 0;
     virtual ~RGBDSensor(){};
 
     /// Capture one frame, return an RGBDImage.

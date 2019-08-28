@@ -52,12 +52,12 @@ public:
     AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
     ~AzureKinectSensor();
 
-    int Connect(size_t sensor_index) override;
+    bool Connect(size_t sensor_index) override;
     std::shared_ptr<geometry::RGBDImage> CaptureFrame(
             bool enable_align_depth_to_color) const override;
 
-    static int PrintFirmware(_k4a_device_t* device);
-    static int ListDevices();
+    static bool PrintFirmware(_k4a_device_t* device);
+    static bool ListDevices();
     static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
             _k4a_capture_t* capture, _k4a_transformation_t* transformation);
 

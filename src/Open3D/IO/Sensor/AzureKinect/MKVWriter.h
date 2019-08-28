@@ -46,13 +46,13 @@ public:
     bool IsOpened();
 
     /* We assume device is already set properly according to config */
-    int Open(const std::string &filename,
-             const _k4a_device_configuration_t &config,
-             _k4a_device_t *device);
+    bool Open(const std::string &filename,
+              const _k4a_device_configuration_t &config,
+              _k4a_device_t *device);
     void Close();
 
-    int SetMetadata(const MKVMetadata &metadata);
-    int NextFrame(_k4a_capture_t *);
+    bool SetMetadata(const MKVMetadata &metadata);
+    bool NextFrame(_k4a_capture_t *);
 
 private:
     _k4a_record_t *handle_;

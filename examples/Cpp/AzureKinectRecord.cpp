@@ -77,14 +77,13 @@ int main(int argc, char **argv) {
 
     // Init recorder
     io::AzureKinectRecorder recorder(sensor_config, sensor_index);
-    int error = recorder.InitSensor();
-    if (error != 0) {
+    if (!recorder.InitSensor()) {
         utility::LogError("Failed to connect to sensor, abort.\n");
         return 1;
     }
 
     bool flag_record = false;
-    bool flag_stop = false;
+    bool flag_exit = false;
     bool is_geometry_added = false;
     visualization::VisualizerWithKeyCallback vis;
     vis.RegisterKeyCallback(
@@ -115,7 +114,7 @@ int main(int argc, char **argv) {
 
     vis.RegisterKeyCallback(
             GLFW_KEY_ESCAPE, [&](visualization::Visualizer *vis) {
-                flag_stop = true;
+                flag_exit = true;
                 if (recorder.IsRecordCreated()) {
                     utility::LogInfo("Recording finished.\n");
                 } else {
@@ -148,7 +147,7 @@ int main(int argc, char **argv) {
         vis.PollEvents();
         vis.UpdateRender();
 
-    } while (!flag_stop);
+    } while (!flag_exit);
 
     recorder.CloseRecord();
 

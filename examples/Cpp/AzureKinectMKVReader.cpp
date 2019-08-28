@@ -36,8 +36,7 @@ using namespace open3d;
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        utility::LogError("Cannot write to {}\n", filename);
-        return;
+        utility::LogFatal("Cannot write to {}\n", filename);
     }
 
     Json::StreamWriterBuilder builder;
@@ -79,7 +78,6 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
 }
 
 void PrintUsage() {
-    using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:\n");
@@ -88,7 +86,6 @@ void PrintUsage() {
 }
 
 int main(int argc, char **argv) {
-    using namespace open3d;
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (!utility::ProgramOptionExists(argc, argv, "--input")) {
@@ -133,12 +130,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    bool flag_stop = false;
+    bool flag_exit = false;
     bool flag_play = true;
     visualization::VisualizerWithKeyCallback vis;
     vis.RegisterKeyCallback(GLFW_KEY_ESCAPE,
                             [&](visualization::Visualizer *vis) {
-                                flag_stop = true;
+                                flag_exit = true;
                                 return true;
                             });
     vis.RegisterKeyCallback(
@@ -168,7 +165,7 @@ int main(int argc, char **argv) {
         WriteJsonToFile(fmt::format("{}/config.json", output_path),
                         GenerateDatasetConfig(output_path));
     }
-    while (!mkv_reader.IsEOF() && !flag_stop) {
+    while (!mkv_reader.IsEOF() && !flag_exit) {
         if (flag_play) {
             auto im_rgbd = mkv_reader.NextFrame();
             if (im_rgbd == nullptr) continue;

@@ -46,11 +46,11 @@ public:
     bool IsOpened();
     bool IsEOF() { return is_eof_; }
 
-    int Open(const std::string &filename);
+    bool Open(const std::string &filename);
     void Close();
 
     MKVMetadata &GetMetadata() { return metadata_; }
-    int SeekTimestamp(size_t timestamp);
+    bool SeekTimestamp(size_t timestamp);
     std::shared_ptr<geometry::RGBDImage> NextFrame();
 
 private:
