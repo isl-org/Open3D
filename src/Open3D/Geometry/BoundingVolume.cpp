@@ -65,6 +65,8 @@ Eigen::Vector3d OrientedBoundingBox::GetMaxBound() const {
             });
 }
 
+Eigen::Vector3d OrientedBoundingBox::GetCenter() const { return center_; }
+
 AxisAlignedBoundingBox OrientedBoundingBox::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetBoxPoints());
 }
@@ -87,16 +89,20 @@ OrientedBoundingBox& OrientedBoundingBox::Transform(
     x = transformation * x;
     y = transformation * y;
     z = transformation * z;
-    center_ = c.block<3, 1>(0, 0);
-    x_axis_ = x.block<3, 1>(0, 0) - center_;
-    y_axis_ = y.block<3, 1>(0, 0) - center_;
-    z_axis_ = z.block<3, 1>(0, 0) - center_;
+    center_ = c.head<3>() / c(3);
+    x_axis_ = x.head<3>() / x(3) - center_;
+    y_axis_ = y.head<3>() / y(3) - center_;
+    z_axis_ = z.head<3>() / z(3) - center_;
     return *this;
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Translate(
-        const Eigen::Vector3d& translation) {
-    center_ += translation;
+        const Eigen::Vector3d& translation, bool relative) {
+    if (relative) {
+        center_ += translation;
+    } else {
+        center_ = translation;
+    }
     return *this;
 }
 
@@ -230,6 +236,10 @@ Eigen::Vector3d AxisAlignedBoundingBox::GetMaxBound() const {
     return max_bound_;
 }
 
+Eigen::Vector3d AxisAlignedBoundingBox::GetCenter() const {
+    return (min_bound_ + max_bound_) * 0.5;
+}
+
 AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
         const {
     return *this;
@@ -248,9 +258,15 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
-        const Eigen::Vector3d& translation) {
-    min_bound_ += translation;
-    max_bound_ += translation;
+        const Eigen::Vector3d& translation, bool relative) {
+    if (relative) {
+        min_bound_ += translation;
+        max_bound_ += translation;
+    } else {
+        const Eigen::Vector3d half_extend = GetHalfExtend();
+        min_bound_ = translation - half_extend;
+        max_bound_ = translation + half_extend;
+    }
     return *this;
 }
 

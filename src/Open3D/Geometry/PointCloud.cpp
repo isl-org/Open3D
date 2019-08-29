@@ -68,6 +68,16 @@ Eigen::Vector3d PointCloud::GetMaxBound() const {
             });
 }
 
+Eigen::Vector3d PointCloud::GetCenter() const {
+    Eigen::Vector3d center(0, 0, 0);
+    if (!HasPoints()) {
+        return center;
+    }
+    center = std::accumulate(points_.begin(), points_.end(), center);
+    center /= double(points_.size());
+    return center;
+}
+
 AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
@@ -81,20 +91,25 @@ PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(point(0), point(1), point(2), 1.0);
-        point = new_point.block<3, 1>(0, 0);
+        point = new_point.head<3>() / new_point(3);
     }
     for (auto &normal : normals_) {
         Eigen::Vector4d new_normal =
                 transformation *
                 Eigen::Vector4d(normal(0), normal(1), normal(2), 0.0);
-        normal = new_normal.block<3, 1>(0, 0);
+        normal = new_normal.head<3>();
     }
     return *this;
 }
 
-PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
+PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation,
+                                  bool relative) {
+    Eigen::Vector3d transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
     for (auto &point : points_) {
-        point += translation;
+        point += transform;
     }
     return *this;
 }
@@ -102,9 +117,7 @@ PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation) {
 PointCloud &PointCloud::Scale(const double scale, bool center) {
     Eigen::Vector3d point_center(0, 0, 0);
     if (center && !points_.empty()) {
-        point_center =
-                std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= double(points_.size());
+        point_center = GetCenter();
     }
     for (auto &point : points_) {
         point = (point - point_center) * scale + point_center;
@@ -117,9 +130,7 @@ PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
                                RotationType type) {
     Eigen::Vector3d point_center(0, 0, 0);
     if (center && !points_.empty()) {
-        point_center =
-                std::accumulate(points_.begin(), points_.end(), point_center);
-        point_center /= double(points_.size());
+        point_center = GetCenter();
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &point : points_) {

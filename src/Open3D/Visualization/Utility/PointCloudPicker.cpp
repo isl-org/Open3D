@@ -58,6 +58,14 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     }
 }
 
+Eigen::Vector3d PointCloudPicker::GetCenter() const {
+    if (pointcloud_ptr_) {
+        return ((const geometry::PointCloud&)(*pointcloud_ptr_)).GetCenter();
+    } else {
+        return Eigen::Vector3d(0.0, 0.0, 0.0);
+    }
+}
+
 geometry::AxisAlignedBoundingBox PointCloudPicker::GetAxisAlignedBoundingBox()
         const {
     if (pointcloud_ptr_) {
@@ -84,7 +92,7 @@ PointCloudPicker& PointCloudPicker::Transform(
 }
 
 PointCloudPicker& PointCloudPicker::Translate(
-        const Eigen::Vector3d& translation) {
+        const Eigen::Vector3d& translation, bool relative) {
     // Do nothing
     return *this;
 }

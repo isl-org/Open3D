@@ -76,6 +76,16 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const {
             });
 }
 
+Eigen::Vector3d TriangleMesh::GetCenter() const {
+    Eigen::Vector3d center(0, 0, 0);
+    if (!HasVertices()) {
+        return center;
+    }
+    center = std::accumulate(vertices_.begin(), vertices_.end(), center);
+    center /= double(vertices_.size());
+    return center;
+}
+
 AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
 }
@@ -89,28 +99,33 @@ TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
         Eigen::Vector4d new_point =
                 transformation *
                 Eigen::Vector4d(vertex(0), vertex(1), vertex(2), 1.0);
-        vertex = new_point.block<3, 1>(0, 0);
+        vertex = new_point.head<3>() / new_point(3);
     }
     for (auto &vertex_normal : vertex_normals_) {
         Eigen::Vector4d new_normal =
                 transformation * Eigen::Vector4d(vertex_normal(0),
                                                  vertex_normal(1),
                                                  vertex_normal(2), 0.0);
-        vertex_normal = new_normal.block<3, 1>(0, 0);
+        vertex_normal = new_normal.head<3>();
     }
     for (auto &triangle_normal : triangle_normals_) {
         Eigen::Vector4d new_normal =
                 transformation * Eigen::Vector4d(triangle_normal(0),
                                                  triangle_normal(1),
                                                  triangle_normal(2), 0.0);
-        triangle_normal = new_normal.block<3, 1>(0, 0);
+        triangle_normal = new_normal.head<3>();
     }
     return *this;
 }
 
-TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation) {
+TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation,
+                                      bool relative) {
+    Eigen::Vector3d transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
     for (auto &vertex : vertices_) {
-        vertex += translation;
+        vertex += transform;
     }
     return *this;
 }
@@ -118,9 +133,7 @@ TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation) {
 TriangleMesh &TriangleMesh::Scale(const double scale, bool center) {
     Eigen::Vector3d vertex_center(0, 0, 0);
     if (center && !vertices_.empty()) {
-        vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
-                                        vertex_center);
-        vertex_center /= double(vertices_.size());
+        vertex_center = GetCenter();
     }
     for (auto &vertex : vertices_) {
         vertex = (vertex - vertex_center) * scale + vertex_center;
@@ -133,9 +146,7 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
                                    RotationType type) {
     Eigen::Vector3d vertex_center(0, 0, 0);
     if (center && !vertices_.empty()) {
-        vertex_center = std::accumulate(vertices_.begin(), vertices_.end(),
-                                        vertex_center);
-        vertex_center /= double(vertices_.size());
+        vertex_center = GetCenter();
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto &vertex : vertices_) {

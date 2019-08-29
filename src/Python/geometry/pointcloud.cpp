@@ -149,7 +149,7 @@ void pybind_pointcloud(py::module &m) {
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
-                 "eps"_a, "min_points"_a)
+                 "eps"_a, "min_points"_a, "print_progress"_a = false)
             .def_static(
                     "create_from_depth_image",
                     &geometry::PointCloud::CreateFromDepthImage,
@@ -264,7 +264,9 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "cluster_dbscan",
             {{"eps",
               "Density parameter that is used to find neighbouring points."},
-             {"min_points", "Minimum number of points to form a cluster."}});
+             {"min_points", "Minimum number of points to form a cluster."},
+             {"print_progress",
+              "If true the progress is visualized in the console."}});
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
 }

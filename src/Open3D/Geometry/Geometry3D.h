@@ -52,10 +52,12 @@ public:
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;
     virtual Eigen::Vector3d GetMaxBound() const = 0;
+    virtual Eigen::Vector3d GetCenter() const = 0;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const = 0;
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
-    virtual Geometry3D& Translate(const Eigen::Vector3d& translation) = 0;
+    virtual Geometry3D& Translate(const Eigen::Vector3d& translation,
+                                  bool relative = true) = 0;
     virtual Geometry3D& Scale(const double scale, bool center = true) = 0;
     virtual Geometry3D& Rotate(const Eigen::Vector3d& rotation,
                                bool center = true,

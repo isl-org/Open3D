@@ -31,6 +31,9 @@ __pycache__
 *.egg-info/
 *.ipynb_checkpoints/
 *.py[cod]
+*.bak
+node_modules/
+static/
 *.old*
 
 # Example resources

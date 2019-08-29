@@ -51,10 +51,12 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
+    Eigen::Vector3d GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox() const override;
     TetraMesh &Transform(const Eigen::Matrix4d &transformation) override;
-    TetraMesh &Translate(const Eigen::Vector3d &translation) override;
+    TetraMesh &Translate(const Eigen::Vector3d &translation,
+                         bool relative = true) override;
     TetraMesh &Scale(const double scale, bool center = true) override;
     TetraMesh &Rotate(const Eigen::Vector3d &rotation,
                       bool center = true,
