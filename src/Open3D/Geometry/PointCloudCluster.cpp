@@ -32,13 +32,40 @@
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Utility/Console.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace open3d {
 namespace geometry {
 
 std::vector<int> PointCloud::ClusterDBSCAN(double eps,
-                                           size_t min_points) const {
+                                           size_t min_points,
+                                           bool print_progress) const {
     KDTreeFlann kdtree(*this);
+
+    // precompute all neighbours
+    utility::LogDebug("Precompute Neighbours\n");
+    utility::ConsoleProgressBar progress_bar(
+            points_.size(), "Precompute Neighbours", print_progress);
+    std::vector<std::vector<int>> nbs(points_.size());
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int idx = 0; idx < int(points_.size()); ++idx) {
+        std::vector<double> dists2;
+        kdtree.SearchRadius(points_[idx], eps, nbs[idx], dists2);
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        { ++progress_bar; }
+    }
+    utility::LogDebug("Done Precompute Neighbours\n");
+
     // set all labels to undefined (-2)
+    utility::LogDebug("Compute Clusters\n");
+    progress_bar.reset(points_.size(), "Clustering", print_progress);
     std::vector<int> labels(points_.size(), -2);
     int cluster_label = 0;
     for (size_t idx = 0; idx < points_.size(); ++idx) {
@@ -46,22 +73,18 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
             continue;
         }
 
-        // find neighbours
-        std::vector<int> nbs;
-        std::vector<double> dists2;
-        kdtree.SearchRadius(points_[idx], eps, nbs, dists2);
-
         // check density
-        if (nbs.size() < min_points) {
+        if (nbs[idx].size() < min_points) {
             labels[idx] = -1;
             continue;
         }
 
-        std::unordered_set<int> nbs_next(nbs.begin(), nbs.end());
+        std::unordered_set<int> nbs_next(nbs[idx].begin(), nbs[idx].end());
         std::unordered_set<int> nbs_visited;
         nbs_visited.insert(int(idx));
 
         labels[idx] = cluster_label;
+        ++progress_bar;
         while (!nbs_next.empty()) {
             int nb = *nbs_next.begin();
             nbs_next.erase(nbs_next.begin());
@@ -69,15 +92,16 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 
             if (labels[nb] == -1) {  // noise label
                 labels[nb] = cluster_label;
+                ++progress_bar;
             }
             if (labels[nb] != -2) {  // not undefined label
                 continue;
             }
             labels[nb] = cluster_label;
+            ++progress_bar;
 
-            kdtree.SearchRadius(points_[nb], eps, nbs, dists2);
-            if (nbs.size() >= min_points) {
-                for (int qnb : nbs) {
+            if (nbs[nb].size() >= min_points) {
+                for (int qnb : nbs[nb]) {
                     if (nbs_visited.count(qnb) == 0) {
                         nbs_next.insert(qnb);
                     }
@@ -87,6 +111,8 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 
         cluster_label++;
     }
+
+    utility::LogDebug("Done Compute Clusters: {:d}\n", cluster_label);
     return labels;
 }
 

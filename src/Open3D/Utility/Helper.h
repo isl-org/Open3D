@@ -126,5 +126,7 @@ std::string& RightStripString(std::string& str,
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
 
+void Sleep(int milliseconds);
+
 }  // namespace utility
 }  // namespace open3d

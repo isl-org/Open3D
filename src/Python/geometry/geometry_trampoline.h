@@ -60,6 +60,9 @@ public:
     Eigen::Vector3d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
     }
+    Eigen::Vector3d GetCenter() const override {
+        PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
+    }
     geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox()
             const override {
         PYBIND11_OVERLOAD_PURE(geometry::AxisAlignedBoundingBox,

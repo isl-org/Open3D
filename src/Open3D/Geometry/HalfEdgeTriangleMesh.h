@@ -71,12 +71,13 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
+    Eigen::Vector3d GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox() const override;
     HalfEdgeTriangleMesh &Transform(
             const Eigen::Matrix4d &transformation) override;
-    HalfEdgeTriangleMesh &Translate(
-            const Eigen::Vector3d &translation) override;
+    HalfEdgeTriangleMesh &Translate(const Eigen::Vector3d &translation,
+                                    bool relative = true) override;
     HalfEdgeTriangleMesh &Scale(const double scale,
                                 bool center = true) override;
     HalfEdgeTriangleMesh &Rotate(

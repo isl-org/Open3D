@@ -92,6 +92,8 @@ void pybind_geometry_classes(py::module &m) {
                  "Returns min bounds for geometry coordinates.")
             .def("get_max_bound", &geometry::Geometry3D::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
+            .def("get_center", &geometry::Geometry3D::GetCenter,
+                 "Returns the center of the geometry coordinates.")
             .def("get_axis_aligned_bounding_box",
                  &geometry::Geometry3D::GetAxisAlignedBoundingBox,
                  "Returns an axis-aligned bounding box of the geometry.")
@@ -102,7 +104,8 @@ void pybind_geometry_classes(py::module &m) {
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
             .def("translate", &geometry::Geometry3D::Translate,
-                 "Apply translation to the geometry coordinates.")
+                 "Apply translation to the geometry coordinates.",
+                 "translation"_a, "relative"_a = true)
             .def("scale", &geometry::Geometry3D::Scale,
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a = true)
@@ -112,12 +115,20 @@ void pybind_geometry_classes(py::module &m) {
                  "type"_a = geometry::Geometry3D::RotationType::XYZ);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
+    docstring::ClassMethodDocInject(m, "Geometry3D", "get_center");
     docstring::ClassMethodDocInject(m, "Geometry3D",
                                     "get_axis_aligned_bounding_box");
     docstring::ClassMethodDocInject(m, "Geometry3D",
                                     "get_oriented_bounding_box");
     docstring::ClassMethodDocInject(m, "Geometry3D", "transform");
-    docstring::ClassMethodDocInject(m, "Geometry3D", "translate");
+    docstring::ClassMethodDocInject(
+            m, "Geometry3D", "translate",
+            {{"translation", "A 3D vector to transform the geometry"},
+             {"relative",
+              "If true, the translation vector is directly added to the "
+              "geometry "
+              "coordinates. Otherwise, the center is moved to the translation "
+              "vector."}});
     docstring::ClassMethodDocInject(
             m, "Geometry3D", "scale",
             {{"scale",
