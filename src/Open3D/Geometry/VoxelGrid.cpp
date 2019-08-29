@@ -84,11 +84,13 @@ Eigen::Vector3d VoxelGrid::GetCenter() const {
     if (!HasVoxels()) {
         return center;
     }
+    const Eigen::Vector3d half_voxel_size(0.5 * voxel_size_, 0.5 * voxel_size_,
+                                          0.5 * voxel_size_);
     center = std::accumulate(
             voxels_.begin(), voxels_.end(), center,
-            [this](const Eigen::Vector3d &vec, const Voxel &vox) {
+            [&](const Eigen::Vector3d &vec, const Voxel &vox) {
                 return vec + vox.grid_index_.cast<double>() * voxel_size_ +
-                       origin_;
+                       origin_ + half_voxel_size;
             });
     center /= double(voxels_.size());
     return center;

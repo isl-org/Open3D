@@ -23,6 +23,7 @@ examples/Python/ReconstructionSystem/dataset/
 *.egg-info/
 *.ipynb_checkpoints/
 *.py[cod]
+*.bak
 node_modules/
 static/
 **/package-lock.json

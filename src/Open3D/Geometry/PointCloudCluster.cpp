@@ -52,7 +52,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t idx = 0; idx < points_.size(); ++idx) {
+    for (int idx = 0; idx < int(points_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(points_[idx], eps, nbs[idx], dists2);
 
