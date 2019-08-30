@@ -24,15 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
 
-using namespace open3d;
+#include <json/json.h>
+#include <unordered_map>
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
+namespace open3d {
+namespace io {
+
+bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
+    intrinsics_.ConvertToJsonValue(value);
+
+    value["serial_number_"] = serial_number_;
+    value["color_mode"] = color_mode_;
+    value["depth_mode"] = depth_mode_;
+
+    value["stream_length_usec"] = stream_length_usec_;
+    value["width"] = width_;
+    value["height"] = height_;
+
+    return true;
 }
+bool MKVMetadata::ConvertFromJsonValue(const Json::Value &value) {
+    intrinsics_.ConvertFromJsonValue(value);
+
+    serial_number_ = value["serial_number"].asString();
+    color_mode_ = value["color_mode"].asString();
+    depth_mode_ = value["depth_mode"].asString();
+
+    stream_length_usec_ = value["stream_length_usec"].asUInt64();
+    width_ = value["width"].asInt();
+    height_ = value["height"].asInt();
+
+    return true;
+}
+}  // namespace io
+}  // namespace open3d

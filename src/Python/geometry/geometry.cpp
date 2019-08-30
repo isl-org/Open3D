@@ -69,6 +69,7 @@ void pybind_geometry_classes(py::module &m) {
             .value("HalfEdgeTriangleMesh",
                    geometry::Geometry::GeometryType::HalfEdgeTriangleMesh)
             .value("Image", geometry::Geometry::GeometryType::Image)
+            .value("RGBDImage", geometry::Geometry::GeometryType::RGBDImage)
             .value("TetraMesh", geometry::Geometry::GeometryType::TetraMesh)
             .export_values();
 

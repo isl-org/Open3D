@@ -32,6 +32,9 @@ include requirements.txt
 # Compiled module
 include open3d/open3d*.pyd
 include open3d/open3d*.so
+include open3d/*depthengine*
+include open3d/*k4a*
+include open3d/*libstdc*
 
 # JS
 recursive-include open3d/static *.*

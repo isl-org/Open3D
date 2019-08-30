@@ -117,7 +117,8 @@ bool WritePinholeCameraTrajectoryToLOG(
         return false;
     }
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
-        const auto &trans = trajectory.parameters_[i].extrinsic_;
+        Eigen::Matrix4d_u trans =
+                trajectory.parameters_[i].extrinsic_.inverse();
         fprintf(f, "%d %d %d\n", (int)i, (int)i, (int)i + 1);
         fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0, 0), trans(0, 1),
                 trans(0, 2), trans(0, 3));

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,15 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
-#include "Python/open3d_pybind.h"
+#pragma once
 
-using namespace open3d;
+#include <atomic>
+#include <memory>
+#include <string>
 
-void pybind_io(py::module &m) {
-    py::module m_io = m.def_submodule("io");
-    pybind_class_io(m_io);
-#ifdef BUILD_AZURE_KINECT
-    pybind_sensor(m_io);
-#endif
-}
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
+#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+#include "Open3D/IO/Sensor/RGBDRecorder.h"
+
+struct _k4a_record_t;  // typedef _k4a_record_t* k4a_record_t;
+
+namespace open3d {
+
+namespace geometry {
+class RGBDImage;
+class Image;
+}  // namespace geometry
+
+namespace io {
+
+class AzureKinectRecorder : public RGBDRecorder {
+public:
+    AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
+                        size_t sensor_index);
+    ~AzureKinectRecorder() override;
+
+    bool InitSensor() override;
+    bool OpenRecord(const std::string& filename) override;
+    bool CloseRecord() override;
+    std::shared_ptr<geometry::RGBDImage> RecordFrame(
+            bool write, bool enable_align_depth_to_color) override;
+
+    bool IsRecordCreated() { return is_record_created_; }
+
+protected:
+    AzureKinectSensor sensor_;
+    _k4a_record_t* recording_;
+    size_t device_index_;
+
+    bool is_record_created_ = false;
+};
+
+}  // namespace io
+}  // namespace open3d

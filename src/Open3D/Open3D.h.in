@@ -26,8 +26,7 @@
 
 #pragma once
 
-// Core
-
+// Note: do not modify Open3D.h, modify Open3D.h.in instead
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Camera/PinholeCameraParameters.h"
 #include "Open3D/Camera/PinholeCameraTrajectory.h"
@@ -76,3 +75,14 @@
 #include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
+
+// clang-format off
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensorConfig.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/MKVMetadata.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/MKVReader.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/MKVWriter.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/RGBDRecorder.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/RGBDSensorConfig.h"
+@BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/RGBDSensor.h"
