@@ -25,7 +25,7 @@
 # ----------------------------------------------------------------------------
 
 try:
-    # Azure Kinect is not yet officially supported on Ubuntu 16.04, this is an
+    # Azure Kinect is not officially supported on Ubuntu 16.04, this is an
     # unofficial workaround. Install the fix package with
     # `pip install open3d_azure_kinect_ubuntu1604_fix`
     import open3d_azure_kinect_ubuntu1604_fix

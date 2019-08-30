@@ -21,10 +21,10 @@ On Ubuntu, you'll need to set up a udev rule to use the Kinect camera without
 After installation, you may run ``k4aviewer`` from the Linux terminal or
 ``k4aviewer.exe`` on Windows to make sure that the device is working.
 
-Currently, Open3D supports ``v1.2.0`` Azure Kinect SDK, though future version
-might also be compatible.
+Currently, Open3D supports version ``v1.2.0`` Azure Kinect SDK, though future
+versions might also be compatible.
 
-If you're using Ubuntu 16.04, Azure Kinect is not yet officially supported. We
+If you're using Ubuntu 16.04, Azure Kinect is not officially supported. We
 have an unofficial workaround, see :ref:`azure_kinect_u1604_fix` for details.
 
 
@@ -200,7 +200,7 @@ The ``open3d_azure_kinect_ubuntu1604_fix`` will preload the shared libs and set
 ``LD_LIBRARY_PATH`` which are then used by ``dlopen`` when the Kinect library
 is loaded from the compiled module.
 
-For compile Open3D from source, you'll need to build and install K4A SDK
+To compile Open3D from source, you'll need to build and install K4A SDK
 manually. However, at runtime, you'll still need to ensure
 the 18.04 copy of ``libstdc++.so`` and ``libdepthengine.so`` are visible from
 ``LD_LIBRARY_PATH``.

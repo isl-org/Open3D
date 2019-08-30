@@ -68,7 +68,7 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
             std::string full_path = k4a_lib_path_hint + lib_name;
             handle = LoadLibrary(TEXT(full_path.c_str()));
             if (handle != NULL) {
-                utility::LogInfo("Loaded {}\n", full_path);
+                utility::LogDebug("Loaded {}\n", full_path);
                 break;
             }
         }
