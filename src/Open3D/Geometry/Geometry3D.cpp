@@ -142,8 +142,8 @@ void Geometry3D::RotatePoints(const Eigen::Vector3d& rotation,
         points_center = ComputeCenter(points);
     }
     const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
-    for (auto& points : points) {
-        points = R * (points - points_center) + points_center;
+    for (auto& point : points) {
+        point = R * (point - points_center) + points_center;
     }
 }
 
