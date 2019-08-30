@@ -90,10 +90,7 @@ public:
 
     /// Assigns each point in the PointCloud the same color \param color.
     PointCloud &PaintUniformColor(const Eigen::Vector3d &color) {
-        colors_.resize(points_.size());
-        for (size_t i = 0; i < points_.size(); i++) {
-            colors_[i] = color;
-        }
+        ResizeAndPaintUniformColor(colors_, points_.size(), color);
         return *this;
     }
 

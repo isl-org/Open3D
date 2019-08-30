@@ -49,20 +49,12 @@ bool OrientedBoundingBox::IsEmpty() const { return Volume() == 0; }
 
 Eigen::Vector3d OrientedBoundingBox::GetMinBound() const {
     auto points = GetBoxPoints();
-    return std::accumulate(
-            points.begin(), points.end(), points[0],
-            [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
-                return a.array().min(b.array()).matrix();
-            });
+    return ComputeMinBound(points);
 }
 
 Eigen::Vector3d OrientedBoundingBox::GetMaxBound() const {
     auto points = GetBoxPoints();
-    return std::accumulate(
-            points.begin(), points.end(), points[0],
-            [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) {
-                return a.array().max(b.array()).matrix();
-            });
+    return ComputeMaxBound(points);
 }
 
 Eigen::Vector3d OrientedBoundingBox::GetCenter() const { return center_; }

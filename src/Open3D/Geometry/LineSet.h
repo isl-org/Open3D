@@ -81,10 +81,7 @@ public:
 
     /// Assigns each line in the LineSet the same color \param color.
     LineSet &PaintUniformColor(const Eigen::Vector3d &color) {
-        colors_.resize(lines_.size());
-        for (size_t i = 0; i < lines_.size(); i++) {
-            colors_[i] = color;
-        }
+        ResizeAndPaintUniformColor(colors_, lines_.size(), color);
         return *this;
     }
 

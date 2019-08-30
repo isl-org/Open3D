@@ -203,10 +203,7 @@ public:
 
     /// Assigns each vertex in the TriangleMesh the same color \param color.
     TriangleMesh &PaintUniformColor(const Eigen::Vector3d &color) {
-        vertex_colors_.resize(vertices_.size());
-        for (size_t i = 0; i < vertices_.size(); i++) {
-            vertex_colors_[i] = color;
-        }
+        ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
         return *this;
     }
 
