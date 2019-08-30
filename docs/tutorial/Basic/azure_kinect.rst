@@ -8,11 +8,11 @@ Azure Kinect is only officially supported on Windows and Ubuntu 18.04.
 Installation
 ============
 
-Install Azure Kinect SDK (K4A)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install the Azure Kinect SDK
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Follow `the guide <https://github.com/microsoft/Azure-Kinect-Sensor-SDK>`_
-to install Azure Kinect SDK.
+to install the Azure Kinect SDK (K4A).
 
 On Ubuntu, you'll need to set up a udev rule to use the Kinect camera without
 ``sudo``, follow
@@ -21,11 +21,11 @@ On Ubuntu, you'll need to set up a udev rule to use the Kinect camera without
 After installation, you may run ``k4aviewer`` from the Linux terminal or
 ``k4aviewer.exe`` on Windows to make sure that the device is working.
 
-Currently, Open3D supports version ``v1.2.0`` Azure Kinect SDK, though future
+Currently, Open3D supports the Azure Kinect SDK version ``v1.2.0``, though future
 versions might also be compatible.
 
-If you're using Ubuntu 16.04, Azure Kinect is not officially supported. We
-have an unofficial workaround, see :ref:`azure_kinect_u1604_fix` for details.
+If you're using Ubuntu 16.04, the Azure Kinect SDK is not officially supported.
+We have an unofficial workaround, see :ref:`azure_kinect_u1604_fix` for details.
 
 
 Using Open3D from Pip or Conda
