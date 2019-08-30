@@ -27,6 +27,7 @@
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
 #include <k4arecord/record.h>
+#include <cstdlib>
 #include <cstring>
 #include <unordered_map>
 #include <vector>
@@ -41,6 +42,7 @@
 #include "Open3D/IO/Sensor/AzureKinect/K4aPlugin.h"
 #include "Open3D/IO/Sensor/AzureKinect/PluginMacros.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace io {
@@ -106,11 +108,38 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
     static std::unordered_map<std::string, void*> map_lib_name_to_handle;
 
     if (map_lib_name_to_handle.count(lib_name) == 0) {
-        void* handle = dlopen(lib_name.c_str(), RTLD_LAZY);
+        // Hack to support Ubuntu 16.04 K4A library loading
+        //
+        // Dependency:
+        // In __init__.py Python file, one of os.environ['LD_LIBRARY_PATH'] is
+        // set to contain libk4a.so, libk4arecord.so and libdepthengine.so.
+        //
+        // Normally LD_LIBRARY_PATH cannot be set at runtime (only possible at
+        // program load time). Here we explicitly try to load from
+        // LD_LIBRARY_PATH.
+        std::vector<std::string> k4a_lib_path_hints;
+        if (const char* ld_paths_c = std::getenv("LD_LIBRARY_PATH")) {
+            utility::SplitString(k4a_lib_path_hints, ld_paths_c, ":", true);
+        }
+        k4a_lib_path_hints.insert(k4a_lib_path_hints.begin(), "");
+
+        void* handle = nullptr;
+        std::string full_path;
+        for (const std::string& k4a_lib_path_hint : k4a_lib_path_hints) {
+            if (k4a_lib_path_hint == "") {
+                full_path = lib_name;
+            } else {
+                full_path = k4a_lib_path_hint + "/" + lib_name;
+            }
+            handle = dlopen(full_path.c_str(), RTLD_NOW);
+            if (handle != NULL) {
+                break;
+            }
+        }
         if (!handle) {
             utility::LogFatal("Cannot load {}\n", dlerror());
         } else {
-            utility::LogInfo("Loaded {}\n", lib_name);
+            utility::LogInfo("Loaded {}\n", full_path);
             struct link_map* map = nullptr;
             if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
                 if (map != nullptr) {
