@@ -44,7 +44,9 @@ class ReaderWithCallback:
         vis_geometry_added = False
         vis.create_window('reader', 1920, 540)
 
-        print("MKV reader initialized. Press [SPACE] to start, [ESC] to exit.")
+        print(
+            "MKV reader initialized. Press [SPACE] to pause/start, [ESC] to exit."
+        )
 
         if self.output is not None:
             abspath = os.path.abspath(self.output)

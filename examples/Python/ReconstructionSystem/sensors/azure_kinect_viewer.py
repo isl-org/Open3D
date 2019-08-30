@@ -63,6 +63,8 @@ if __name__ == '__main__':
     else:
         config = o3d.io.AzureKinectSensorConfig()
 
+    o3d.io.write_azure_kinect_sensor_config("sensor_config.json", config)
+
     device = args.device
     if device < 0 or device > 255:
         print('Unsupported device id, fall back to 0')
