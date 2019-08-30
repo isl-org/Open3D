@@ -207,6 +207,35 @@ TEST(LineSet, Transform) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+TEST(LineSet, PaintUniformColor) {
+    size_t size = 100;
+
+    Vector3d vmin(0.0, 0.0, 0.0);
+    Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    geometry::LineSet ls;
+
+    EXPECT_TRUE(ls.IsEmpty());
+
+    ls.points_.resize(size);
+    Rand(ls.points_, vmin, vmax, 0);
+    ls.lines_.resize(size);
+    Rand(ls.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
+
+    EXPECT_FALSE(ls.HasColors());
+
+    Vector3d color(233. / 255., 171. / 255., 53.0 / 255.);
+    ls.PaintUniformColor(color);
+
+    EXPECT_TRUE(ls.HasColors());
+
+    for (size_t i = 0; i < ls.colors_.size(); i++)
+        ExpectEQ(color, ls.colors_[i]);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(LineSet, OperatorAppend) {
     size_t size = 100;
 

@@ -946,10 +946,11 @@ TEST(TriangleMesh, PaintUniformColor) {
     tm.vertices_.resize(size);
     tm.vertex_colors_.resize(size);
 
-    tm.PaintUniformColor(Vector3d(31.0, 120.0, 205.0));
+    Vector3d color(233. / 255., 171. / 255., 53.0 / 255.);
+    tm.PaintUniformColor(color);
 
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-        ExpectEQ(Vector3d(31.0, 120.0, 205.0), tm.vertex_colors_[i]);
+        ExpectEQ(color, tm.vertex_colors_[i]);
 }
 
 // ----------------------------------------------------------------------------

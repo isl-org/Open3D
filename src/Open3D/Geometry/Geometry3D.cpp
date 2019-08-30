@@ -73,9 +73,19 @@ void Geometry3D::ResizeAndPaintUniformColor(
         const size_t size,
         const Eigen::Vector3d& color) const {
     colors.resize(size);
-    // TODO: print warning if wrong color value
+    Eigen::Vector3d clipped_color = color;
+    if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
+        utility::LogWarning(
+                "invalid color in PaintUniformColor, clipping to [0, 1]\n");
+        clipped_color = clipped_color.array()
+                                .max(Eigen::Vector3d(0, 0, 0).array())
+                                .matrix();
+        clipped_color = clipped_color.array()
+                                .min(Eigen::Vector3d(1, 1, 1).array())
+                                .matrix();
+    }
     for (size_t i = 0; i < size; i++) {
-        colors[i] = color;
+        colors[i] = clipped_color;
     }
 }
 

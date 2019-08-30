@@ -309,12 +309,13 @@ TEST(PointCloud, PaintUniformColor) {
 
     EXPECT_FALSE(pc.HasColors());
 
-    pc.PaintUniformColor(Vector3d(233.0, 171.0, 53.0));
+    Vector3d color(233. / 255., 171. / 255., 53.0 / 255.);
+    pc.PaintUniformColor(color);
 
     EXPECT_TRUE(pc.HasColors());
 
     for (size_t i = 0; i < pc.colors_.size(); i++)
-        ExpectEQ(Vector3d(233.0, 171.0, 53.0), pc.colors_[i]);
+        ExpectEQ(color, pc.colors_[i]);
 }
 
 // ----------------------------------------------------------------------------
