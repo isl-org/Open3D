@@ -18,4 +18,4 @@ interface of Open3D.
     icp_registration
     working_with_numpy
     jupyter
-    azure_kinect_record
+    azure_kinect
