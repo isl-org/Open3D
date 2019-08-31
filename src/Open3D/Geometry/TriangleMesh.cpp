@@ -55,35 +55,15 @@ TriangleMesh &TriangleMesh::Clear() {
 bool TriangleMesh::IsEmpty() const { return !HasVertices(); }
 
 Eigen::Vector3d TriangleMesh::GetMinBound() const {
-    if (!HasVertices()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    return std::accumulate(
-            vertices_.begin(), vertices_.end(), vertices_[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a.array().min(b.array()).matrix();
-            });
+    return ComputeMinBound(vertices_);
 }
 
 Eigen::Vector3d TriangleMesh::GetMaxBound() const {
-    if (!HasVertices()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    return std::accumulate(
-            vertices_.begin(), vertices_.end(), vertices_[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a.array().max(b.array()).matrix();
-            });
+    return ComputeMaxBound(vertices_);
 }
 
 Eigen::Vector3d TriangleMesh::GetCenter() const {
-    Eigen::Vector3d center(0, 0, 0);
-    if (!HasVertices()) {
-        return center;
-    }
-    center = std::accumulate(vertices_.begin(), vertices_.end(), center);
-    center /= double(vertices_.size());
-    return center;
+    return ComputeCenter(vertices_);
 }
 
 AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
@@ -95,69 +75,29 @@ OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
 }
 
 TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
-    for (auto &vertex : vertices_) {
-        Eigen::Vector4d new_point =
-                transformation *
-                Eigen::Vector4d(vertex(0), vertex(1), vertex(2), 1.0);
-        vertex = new_point.head<3>() / new_point(3);
-    }
-    for (auto &vertex_normal : vertex_normals_) {
-        Eigen::Vector4d new_normal =
-                transformation * Eigen::Vector4d(vertex_normal(0),
-                                                 vertex_normal(1),
-                                                 vertex_normal(2), 0.0);
-        vertex_normal = new_normal.head<3>();
-    }
-    for (auto &triangle_normal : triangle_normals_) {
-        Eigen::Vector4d new_normal =
-                transformation * Eigen::Vector4d(triangle_normal(0),
-                                                 triangle_normal(1),
-                                                 triangle_normal(2), 0.0);
-        triangle_normal = new_normal.head<3>();
-    }
+    TransformPoints(transformation, vertices_);
+    TransformNormals(transformation, vertex_normals_);
+    TransformNormals(transformation, triangle_normals_);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation,
                                       bool relative) {
-    Eigen::Vector3d transform = translation;
-    if (!relative) {
-        transform -= GetCenter();
-    }
-    for (auto &vertex : vertices_) {
-        vertex += transform;
-    }
+    TranslatePoints(translation, vertices_, relative);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Scale(const double scale, bool center) {
-    Eigen::Vector3d vertex_center(0, 0, 0);
-    if (center && !vertices_.empty()) {
-        vertex_center = GetCenter();
-    }
-    for (auto &vertex : vertices_) {
-        vertex = (vertex - vertex_center) * scale + vertex_center;
-    }
+    ScalePoints(scale, vertices_, center);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
                                    bool center,
                                    RotationType type) {
-    Eigen::Vector3d vertex_center(0, 0, 0);
-    if (center && !vertices_.empty()) {
-        vertex_center = GetCenter();
-    }
-    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
-    for (auto &vertex : vertices_) {
-        vertex = R * (vertex - vertex_center) + vertex_center;
-    }
-    for (auto &normal : vertex_normals_) {
-        normal = R * normal;
-    }
-    for (auto &normal : triangle_normals_) {
-        normal = R * normal;
-    }
+    RotatePoints(rotation, vertices_, center, type);
+    RotateNormals(rotation, vertex_normals_, center, type);
+    RotateNormals(rotation, triangle_normals_, center, type);
     return *this;
 }
 
