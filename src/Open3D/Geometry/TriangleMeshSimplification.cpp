@@ -75,7 +75,7 @@ public:
         return q;
     }
 
-    bool IsInvertible() const { return abs(A_.determinant()) > 1e-4; }
+    bool IsInvertible() const { return std::fabs(A_.determinant()) > 1e-4; }
 
     Eigen::Vector3d Minimum() const { return -A_.ldlt().solve(b_); }
 

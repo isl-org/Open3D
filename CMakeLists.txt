@@ -236,6 +236,11 @@ link_directories(${3RDPARTY_LIBRARY_DIRS})
 # set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/src
+)
+
+# Suppress 3rdparty header warnings with SYSTEM
+include_directories(
+    SYSTEM
     ${PROJECT_SOURCE_DIR}/3rdparty
     ${3RDPARTY_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
