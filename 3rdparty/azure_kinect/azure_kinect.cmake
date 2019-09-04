@@ -6,7 +6,11 @@ if (BUILD_AZURE_KINECT)
     # - k4a_INCLUDE_DIRS
     if (WIN32)
         # We assume k4a 1.2.0 is installed in the default directory
-        set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
+        if (K4A_INCLUDE_DIR)
+            set(k4a_INCLUDE_DIRS ${K4A_INCLUDE_DIR})
+        else()
+            set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
+        endif()
     elseif(APPLE)
         message(FATAL_ERROR "Azure Kinect is not supported on macOS")
     else()
