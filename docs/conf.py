@@ -33,6 +33,7 @@ def get_git_short_hash():
 
 
 def get_git_tag_short_hash(tag):
+    _ = subprocess.check_output(['git', 'fetch', '--tags'])
     tags = subprocess.check_output(['git', 'show-ref', '--hash=8', tag])
     tags = tags.decode("utf-8").strip()
     tag = tags.split('\n')[0]

@@ -56,6 +56,11 @@ pybind11_add_module(${PACKAGE_NAME}
     ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
 )
 
+# Suppress Pybind11 warnings
+target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
+    ${PYBIND11_INCLUDE_DIR}
+)
+
 # The Python headers won't be included outside the project, so it is okay to
 # use the target_compile_definitions approach. Otherwise, use configure_file.
 if (BUILD_AZURE_KINECT)
