@@ -22,41 +22,43 @@ if (BUILD_AZURE_KINECT)
         # User need to run `pip install open3d-azure-kinect-ubuntu1604` first.
         # The Python package will provide headers and pre-compiled libs for
         # building k4a
-        find_program(LSB_RELEASE_EXEC lsb_release)
-        if (LSB_RELEASE_EXEC)
-            execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
-                OUTPUT_VARIABLE LSB_DISTRIBUTION
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            execute_process(COMMAND ${LSB_RELEASE_EXEC} -cs
-                OUTPUT_VARIABLE LSB_CODENAME
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            if(LSB_DISTRIBUTION STREQUAL "Ubuntu" AND LSB_CODENAME STREQUAL "xenial")
-                message(STATUS "Ubuntu 16.04 detected, trying to load from open3d-azure-kinect-ubuntu1604 pip package")
-                if (NOT PYTHON_EXECUTABLE)
-                    find_program(PYTHON_IN_PATH "python")
-                    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
-                endif()
-                message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
-                execute_process(
-                    COMMAND ${PYTHON_EXECUTABLE} -c "import imp; print(imp.find_module('open3d_azure_kinect_ubuntu1604_fix')[1])"
-                    OUTPUT_VARIABLE AZURE_PACKAGE_FIX_PATH
+        if (NOT k4a_FOUND)
+            find_program(LSB_RELEASE_EXEC lsb_release)
+            if (LSB_RELEASE_EXEC)
+                execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+                    OUTPUT_VARIABLE LSB_DISTRIBUTION
                     OUTPUT_STRIP_TRAILING_WHITESPACE
-                    ERROR_QUIET
                 )
-                if (AZURE_PACKAGE_FIX_PATH)
-                    message(STATUS "Found open3d_azure_kinect_ubuntu1604_fix pip package: ${AZURE_PACKAGE_FIX_PATH}")
-                    set(k4a_INCLUDE_DIRS ${AZURE_PACKAGE_FIX_PATH}/include)
-                    set(k4a_FOUND TRUE)
+                execute_process(COMMAND ${LSB_RELEASE_EXEC} -cs
+                    OUTPUT_VARIABLE LSB_CODENAME
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
+                if(LSB_DISTRIBUTION STREQUAL "Ubuntu" AND LSB_CODENAME STREQUAL "xenial")
+                    message(STATUS "Ubuntu 16.04 detected, trying to load from open3d-azure-kinect-ubuntu1604 pip package")
+                    if (NOT PYTHON_EXECUTABLE)
+                        find_program(PYTHON_IN_PATH "python")
+                        set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
+                    endif()
+                    message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
+                    execute_process(
+                        COMMAND ${PYTHON_EXECUTABLE} -c "import imp; print(imp.find_module('open3d_azure_kinect_ubuntu1604_fix')[1])"
+                        OUTPUT_VARIABLE AZURE_PACKAGE_FIX_PATH
+                        OUTPUT_STRIP_TRAILING_WHITESPACE
+                        ERROR_QUIET
+                    )
+                    if (AZURE_PACKAGE_FIX_PATH)
+                        message(STATUS "Found open3d_azure_kinect_ubuntu1604_fix pip package: ${AZURE_PACKAGE_FIX_PATH}")
+                        set(k4a_INCLUDE_DIRS ${AZURE_PACKAGE_FIX_PATH}/include)
+                        set(k4a_FOUND TRUE)
+                    else()
+                        message(STATUS "Cannot find open3d_azure_kinect_ubuntu1604_fix pip pacakge")
+                    endif()
                 else()
-                    message(STATUS "Cannot find open3d_azure_kinect_ubuntu1604_fix pip pacakge")
+                    message(STATUS "Not Ubuntu 16.04, skipping open3d-azure-kinect-ubuntu1604 pip package load")
                 endif()
             else()
-                message(STATUS "Not Ubuntu 16.04, skipping open3d-azure-kinect-ubuntu1604 pip package load")
+                message(STATUS "Cannot find lsb_release command")
             endif()
-        else()
-            message(STATUS "Cannot find lsb_release command")
         endif()
 
         if (k4a_FOUND)
@@ -66,8 +68,6 @@ if (BUILD_AZURE_KINECT)
                     to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
         endif()
     endif()
-
-    set(k4a_LIBRARIES k4a k4arecord)
 else()
     # Conditionally include header files in Open3D.h
     set(BUILD_AZURE_KINECT_COMMENT "//")
