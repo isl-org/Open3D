@@ -1,3 +1,9 @@
+if (BUILD_AZURE_KINECT AND APPLE)
+    message(WARNING "Azure Kinect is not supported on macOS, setting BUILD_AZURE_KINECT to OFF")
+    set(BUILD_AZURE_KINECT OFF)
+    set(BUILD_AZURE_KINECT OFF PARENT_SCOPE)
+endif()
+
 if (BUILD_AZURE_KINECT)
     # Conditionally include header files in Open3D.h
     set(BUILD_AZURE_KINECT_COMMENT "")
@@ -11,8 +17,6 @@ if (BUILD_AZURE_KINECT)
         else()
             set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
         endif()
-    elseif(APPLE)
-        message(FATAL_ERROR "Azure Kinect is not supported on macOS")
     else()
         # Attempt 1: system-wide installed K4a
         # The property names are tested with k4a 1.2, future versions might work
