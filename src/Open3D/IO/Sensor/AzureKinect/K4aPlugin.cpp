@@ -50,12 +50,6 @@ namespace k4a_plugin {
 
 #ifdef _WIN32
 
-// clang-format off
-static const std::vector<std::string> k4a_lib_path_hints = {
-    "",
-    "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\bin\\"
-};
-// clang-format on
 static const std::string k4a_lib_name = "k4a.dll";
 static const std::string k4arecord_lib_name = "k4arecord.dll";
 
@@ -63,9 +57,30 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
     static std::unordered_map<std::string, HINSTANCE> map_lib_name_to_handle;
 
     if (map_lib_name_to_handle.count(lib_name) == 0) {
+        // clang-format off
+        // To use custom library path for K4a, set environment variable K4A_LIB_DIR
+        // Exammple:
+        // set K4A_LIB_DIR=C:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\bin
+        // Note that double qoutes and "\\" are not needed
+        std::string env_lib_dir = "";
+        char const* temp = std::getenv("K4A_LIB_DIR");
+        if (temp != nullptr) {
+            env_lib_dir = std::string(temp);
+        }
+        utility::LogDebug("Environment variable K4A_LIB_DIR: {}\n", env_lib_dir);
+
+        static const std::vector<std::string> k4a_lib_path_hints = {
+            env_lib_dir,
+            "",
+            "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\bin"
+        };
+        // clang-format on
+
         HINSTANCE handle = NULL;
         for (const std::string& k4a_lib_path_hint : k4a_lib_path_hints) {
-            std::string full_path = k4a_lib_path_hint + lib_name;
+            utility::LogDebug("Trying k4a_lib_path_hint: {}\n",
+                              k4a_lib_path_hint);
+            std::string full_path = k4a_lib_path_hint + "\\" + lib_name;
             handle = LoadLibrary(TEXT(full_path.c_str()));
             if (handle != NULL) {
                 utility::LogDebug("Loaded {}\n", full_path);
@@ -93,7 +108,7 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
             if (f == nullptr) {                                       \
                 utility::LogFatal("Cannot load func {}\n", #f_name);  \
             } else {                                                  \
-                utility::LogInfo("Loaded func {}\n", #f_name);        \
+                utility::LogDebug("Loaded func {}\n", #f_name);       \
             }                                                         \
         }                                                             \
         return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));              \
@@ -139,11 +154,11 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
         if (!handle) {
             utility::LogFatal("Cannot load {}\n", dlerror());
         } else {
-            utility::LogInfo("Loaded {}\n", full_path);
+            utility::LogDebug("Loaded {}\n", full_path);
             struct link_map* map = nullptr;
             if (!dlinfo(handle, RTLD_DI_LINKMAP, &map)) {
                 if (map != nullptr) {
-                    utility::LogInfo("Library path {}\n", map->l_name);
+                    utility::LogDebug("Library path {}\n", map->l_name);
                 } else {
                     utility::LogWarning("Cannot get link_map\n");
                 }

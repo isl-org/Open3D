@@ -28,6 +28,7 @@
 
 #include <json/json.h>
 #include <k4a/k4a.h>
+#include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -38,20 +39,18 @@
 namespace open3d {
 namespace io {
 
-static std::unordered_map<k4a_image_format_t, std::string>
-        k4a_image_format_t_to_string({
-                {K4A_IMAGE_FORMAT_COLOR_MJPG, "K4A_IMAGE_FORMAT_COLOR_MJPG"},
-                {K4A_IMAGE_FORMAT_COLOR_NV12, "K4A_IMAGE_FORMAT_COLOR_NV12"},
-                {K4A_IMAGE_FORMAT_COLOR_YUY2, "K4A_IMAGE_FORMAT_COLOR_YUY2"},
-                {K4A_IMAGE_FORMAT_COLOR_BGRA32,
-                 "K4A_IMAGE_FORMAT_COLOR_BGRA32"},
-                {K4A_IMAGE_FORMAT_DEPTH16, "K4A_IMAGE_FORMAT_DEPTH16"},
-                {K4A_IMAGE_FORMAT_IR16, "K4A_IMAGE_FORMAT_IR16"},
-                {K4A_IMAGE_FORMAT_CUSTOM, "K4A_IMAGE_FORMAT_CUSTOM"},
-        });
+static std::map<k4a_image_format_t, std::string> k4a_image_format_t_to_string{
+        {K4A_IMAGE_FORMAT_COLOR_MJPG, "K4A_IMAGE_FORMAT_COLOR_MJPG"},
+        {K4A_IMAGE_FORMAT_COLOR_NV12, "K4A_IMAGE_FORMAT_COLOR_NV12"},
+        {K4A_IMAGE_FORMAT_COLOR_YUY2, "K4A_IMAGE_FORMAT_COLOR_YUY2"},
+        {K4A_IMAGE_FORMAT_COLOR_BGRA32, "K4A_IMAGE_FORMAT_COLOR_BGRA32"},
+        {K4A_IMAGE_FORMAT_DEPTH16, "K4A_IMAGE_FORMAT_DEPTH16"},
+        {K4A_IMAGE_FORMAT_IR16, "K4A_IMAGE_FORMAT_IR16"},
+        {K4A_IMAGE_FORMAT_CUSTOM, "K4A_IMAGE_FORMAT_CUSTOM"},
+};
 
-static std::unordered_map<k4a_color_resolution_t, std::string>
-        k4a_color_resolution_t_to_string({
+static std::map<k4a_color_resolution_t, std::string>
+        k4a_color_resolution_t_to_string{
                 {K4A_COLOR_RESOLUTION_OFF, "K4A_COLOR_RESOLUTION_OFF"},
                 {K4A_COLOR_RESOLUTION_720P, "K4A_COLOR_RESOLUTION_720P"},
                 {K4A_COLOR_RESOLUTION_1080P, "K4A_COLOR_RESOLUTION_1080P"},
@@ -59,49 +58,44 @@ static std::unordered_map<k4a_color_resolution_t, std::string>
                 {K4A_COLOR_RESOLUTION_1536P, "K4A_COLOR_RESOLUTION_1536P"},
                 {K4A_COLOR_RESOLUTION_2160P, "K4A_COLOR_RESOLUTION_2160P"},
                 {K4A_COLOR_RESOLUTION_3072P, "K4A_COLOR_RESOLUTION_3072P"},
-        });
+        };
 
-static std::unordered_map<k4a_depth_mode_t, std::string>
-        k4a_depth_mode_t_to_string({
-                {K4A_DEPTH_MODE_OFF, "K4A_DEPTH_MODE_OFF"},
-                {K4A_DEPTH_MODE_NFOV_2X2BINNED,
-                 "K4A_DEPTH_MODE_NFOV_2X2BINNED"},
-                {K4A_DEPTH_MODE_NFOV_UNBINNED, "K4A_DEPTH_MODE_NFOV_UNBINNED"},
-                {K4A_DEPTH_MODE_WFOV_2X2BINNED,
-                 "K4A_DEPTH_MODE_WFOV_2X2BINNED"},
-                {K4A_DEPTH_MODE_WFOV_UNBINNED, "K4A_DEPTH_MODE_WFOV_UNBINNED"},
-                {K4A_DEPTH_MODE_PASSIVE_IR, "K4A_DEPTH_MODE_PASSIVE_IR"},
-        });
+static std::map<k4a_depth_mode_t, std::string> k4a_depth_mode_t_to_string{
+        {K4A_DEPTH_MODE_OFF, "K4A_DEPTH_MODE_OFF"},
+        {K4A_DEPTH_MODE_NFOV_2X2BINNED, "K4A_DEPTH_MODE_NFOV_2X2BINNED"},
+        {K4A_DEPTH_MODE_NFOV_UNBINNED, "K4A_DEPTH_MODE_NFOV_UNBINNED"},
+        {K4A_DEPTH_MODE_WFOV_2X2BINNED, "K4A_DEPTH_MODE_WFOV_2X2BINNED"},
+        {K4A_DEPTH_MODE_WFOV_UNBINNED, "K4A_DEPTH_MODE_WFOV_UNBINNED"},
+        {K4A_DEPTH_MODE_PASSIVE_IR, "K4A_DEPTH_MODE_PASSIVE_IR"},
+};
 
-static std::unordered_map<k4a_fps_t, std::string> k4a_fps_t_to_string({
+static std::map<k4a_fps_t, std::string> k4a_fps_t_to_string{
         {K4A_FRAMES_PER_SECOND_5, "K4A_FRAMES_PER_SECOND_5"},
         {K4A_FRAMES_PER_SECOND_15, "K4A_FRAMES_PER_SECOND_15"},
         {K4A_FRAMES_PER_SECOND_30, "K4A_FRAMES_PER_SECOND_30"},
-});
+};
 
-static std::unordered_map<k4a_wired_sync_mode_t, std::string>
-        k4a_wired_sync_mode_t_to_string({
+static std::map<k4a_wired_sync_mode_t, std::string>
+        k4a_wired_sync_mode_t_to_string{
                 {K4A_WIRED_SYNC_MODE_STANDALONE,
                  "K4A_WIRED_SYNC_MODE_STANDALONE"},
                 {K4A_WIRED_SYNC_MODE_MASTER, "K4A_WIRED_SYNC_MODE_MASTER"},
                 {K4A_WIRED_SYNC_MODE_SUBORDINATE,
                  "K4A_WIRED_SYNC_MODE_SUBORDINATE"},
-        });
+        };
 
-static std::unordered_map<std::string, k4a_image_format_t>
-        string_to_k4a_image_format_t({
-                {"K4A_IMAGE_FORMAT_COLOR_MJPG", K4A_IMAGE_FORMAT_COLOR_MJPG},
-                {"K4A_IMAGE_FORMAT_COLOR_NV12", K4A_IMAGE_FORMAT_COLOR_NV12},
-                {"K4A_IMAGE_FORMAT_COLOR_YUY2", K4A_IMAGE_FORMAT_COLOR_YUY2},
-                {"K4A_IMAGE_FORMAT_COLOR_BGRA32",
-                 K4A_IMAGE_FORMAT_COLOR_BGRA32},
-                {"K4A_IMAGE_FORMAT_DEPTH16", K4A_IMAGE_FORMAT_DEPTH16},
-                {"K4A_IMAGE_FORMAT_IR16", K4A_IMAGE_FORMAT_IR16},
-                {"K4A_IMAGE_FORMAT_CUSTOM", K4A_IMAGE_FORMAT_CUSTOM},
-        });
+static std::map<std::string, k4a_image_format_t> string_to_k4a_image_format_t({
+        {"K4A_IMAGE_FORMAT_COLOR_MJPG", K4A_IMAGE_FORMAT_COLOR_MJPG},
+        {"K4A_IMAGE_FORMAT_COLOR_NV12", K4A_IMAGE_FORMAT_COLOR_NV12},
+        {"K4A_IMAGE_FORMAT_COLOR_YUY2", K4A_IMAGE_FORMAT_COLOR_YUY2},
+        {"K4A_IMAGE_FORMAT_COLOR_BGRA32", K4A_IMAGE_FORMAT_COLOR_BGRA32},
+        {"K4A_IMAGE_FORMAT_DEPTH16", K4A_IMAGE_FORMAT_DEPTH16},
+        {"K4A_IMAGE_FORMAT_IR16", K4A_IMAGE_FORMAT_IR16},
+        {"K4A_IMAGE_FORMAT_CUSTOM", K4A_IMAGE_FORMAT_CUSTOM},
+});
 
-static std::unordered_map<std::string, k4a_color_resolution_t>
-        string_to_k4a_color_resolution_t({
+static std::map<std::string, k4a_color_resolution_t>
+        string_to_k4a_color_resolution_t{
                 {"K4A_COLOR_RESOLUTION_OFF", K4A_COLOR_RESOLUTION_OFF},
                 {"K4A_COLOR_RESOLUTION_720P", K4A_COLOR_RESOLUTION_720P},
                 {"K4A_COLOR_RESOLUTION_1080P", K4A_COLOR_RESOLUTION_1080P},
@@ -109,34 +103,31 @@ static std::unordered_map<std::string, k4a_color_resolution_t>
                 {"K4A_COLOR_RESOLUTION_1536P", K4A_COLOR_RESOLUTION_1536P},
                 {"K4A_COLOR_RESOLUTION_2160P", K4A_COLOR_RESOLUTION_2160P},
                 {"K4A_COLOR_RESOLUTION_3072P", K4A_COLOR_RESOLUTION_3072P},
-        });
+        };
 
-static std::unordered_map<std::string, k4a_depth_mode_t>
-        string_to_k4a_depth_mode_t({
-                {"K4A_DEPTH_MODE_OFF", K4A_DEPTH_MODE_OFF},
-                {"K4A_DEPTH_MODE_NFOV_2X2BINNED",
-                 K4A_DEPTH_MODE_NFOV_2X2BINNED},
-                {"K4A_DEPTH_MODE_NFOV_UNBINNED", K4A_DEPTH_MODE_NFOV_UNBINNED},
-                {"K4A_DEPTH_MODE_WFOV_2X2BINNED",
-                 K4A_DEPTH_MODE_WFOV_2X2BINNED},
-                {"K4A_DEPTH_MODE_WFOV_UNBINNED", K4A_DEPTH_MODE_WFOV_UNBINNED},
-                {"K4A_DEPTH_MODE_PASSIVE_IR", K4A_DEPTH_MODE_PASSIVE_IR},
-        });
+static std::map<std::string, k4a_depth_mode_t> string_to_k4a_depth_mode_t{
+        {"K4A_DEPTH_MODE_OFF", K4A_DEPTH_MODE_OFF},
+        {"K4A_DEPTH_MODE_NFOV_2X2BINNED", K4A_DEPTH_MODE_NFOV_2X2BINNED},
+        {"K4A_DEPTH_MODE_NFOV_UNBINNED", K4A_DEPTH_MODE_NFOV_UNBINNED},
+        {"K4A_DEPTH_MODE_WFOV_2X2BINNED", K4A_DEPTH_MODE_WFOV_2X2BINNED},
+        {"K4A_DEPTH_MODE_WFOV_UNBINNED", K4A_DEPTH_MODE_WFOV_UNBINNED},
+        {"K4A_DEPTH_MODE_PASSIVE_IR", K4A_DEPTH_MODE_PASSIVE_IR},
+};
 
-static std::unordered_map<std::string, k4a_fps_t> string_to_k4a_fps_t({
+static std::map<std::string, k4a_fps_t> string_to_k4a_fps_t{
         {"K4A_FRAMES_PER_SECOND_5", K4A_FRAMES_PER_SECOND_5},
         {"K4A_FRAMES_PER_SECOND_15", K4A_FRAMES_PER_SECOND_15},
         {"K4A_FRAMES_PER_SECOND_30", K4A_FRAMES_PER_SECOND_30},
-});
+};
 
-static std::unordered_map<std::string, k4a_wired_sync_mode_t>
-        string_to_k4a_wired_sync_mode_t({
+static std::map<std::string, k4a_wired_sync_mode_t>
+        string_to_k4a_wired_sync_mode_t{
                 {"K4A_WIRED_SYNC_MODE_STANDALONE",
                  K4A_WIRED_SYNC_MODE_STANDALONE},
                 {"K4A_WIRED_SYNC_MODE_MASTER", K4A_WIRED_SYNC_MODE_MASTER},
                 {"K4A_WIRED_SYNC_MODE_SUBORDINATE",
                  K4A_WIRED_SYNC_MODE_SUBORDINATE},
-        });
+        };
 
 static std::unordered_map<std::string, std::string> standard_config{
         {"color_format", "K4A_IMAGE_FORMAT_COLOR_MJPG"},

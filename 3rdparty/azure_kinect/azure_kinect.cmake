@@ -1,54 +1,90 @@
+if (BUILD_AZURE_KINECT AND APPLE)
+    message(WARNING "Azure Kinect is not supported on macOS, setting BUILD_AZURE_KINECT to OFF")
+    set(BUILD_AZURE_KINECT OFF)
+    set(BUILD_AZURE_KINECT OFF PARENT_SCOPE)
+endif()
+
+function(find_k4a_with_ubuntu_1604_pip_package)
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    if (LSB_RELEASE_EXEC)
+        execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+            OUTPUT_VARIABLE LSB_DISTRIBUTION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(COMMAND ${LSB_RELEASE_EXEC} -cs
+            OUTPUT_VARIABLE LSB_CODENAME
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(LSB_DISTRIBUTION STREQUAL "Ubuntu" AND LSB_CODENAME STREQUAL "xenial")
+            message(STATUS "Ubuntu 16.04 detected, trying to load from open3d-azure-kinect-ubuntu1604 pip package")
+            if (NOT PYTHON_EXECUTABLE)
+                find_program(PYTHON_IN_PATH "python")
+                set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
+            endif()
+            message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
+            execute_process(
+                COMMAND ${PYTHON_EXECUTABLE} -c "import imp; print(imp.find_module('open3d_azure_kinect_ubuntu1604_fix')[1])"
+                OUTPUT_VARIABLE AZURE_PACKAGE_FIX_PATH
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+            if (AZURE_PACKAGE_FIX_PATH)
+                message(STATUS "Found open3d_azure_kinect_ubuntu1604_fix pip package: ${AZURE_PACKAGE_FIX_PATH}")
+                set(k4a_INCLUDE_DIRS ${AZURE_PACKAGE_FIX_PATH}/include)
+                set(k4a_FOUND TRUE)
+            else()
+                message(STATUS "Cannot find open3d_azure_kinect_ubuntu1604_fix pip pacakge")
+            endif()
+        else()
+            message(STATUS "Not Ubuntu 16.04, skipping open3d-azure-kinect-ubuntu1604 pip package load")
+        endif()
+    else()
+        message(STATUS "Cannot find lsb_release command")
+    endif()
+
+    # Export variables to function caller
+    set(k4a_INCLUDE_DIRS ${k4a_INCLUDE_DIRS} PARENT_SCOPE)
+    set(k4a_FOUND ${k4a_FOUND} PARENT_SCOPE)
+endfunction()
+
+
 if (BUILD_AZURE_KINECT)
     # Conditionally include header files in Open3D.h
     set(BUILD_AZURE_KINECT_COMMENT "")
 
     # Export the following variables:
     # - k4a_INCLUDE_DIRS
-    # - k4a_LIBRARY_DIRS
-    # - k4a_LIBRARIES
     if (WIN32)
         # We assume k4a 1.2.0 is installed in the default directory
-        set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
-        # On Windows, we need to
-        # 1) link with k4a.lib, k4arecord.lib
-        set(k4a_STATIC_LIBRARY_DIR
-            "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\lib"
-        )
-        # 2) copy depthengine_2_0.dll, k4a.dll, k4a.record.dll to executable location
-        set(k4a_DYNAMIC_LIBRARY_DIR
-            "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\windows-desktop\\amd64\\release\\bin"
-        )
-        set(k4a_LIBRARY_DIRS ${k4a_STATIC_LIBRARY_DIR} ${k4a_DYNAMIC_LIBRARY_DIR})
+        if (K4A_INCLUDE_DIR)
+            set(k4a_INCLUDE_DIRS ${K4A_INCLUDE_DIR})
+        else()
+            set(k4a_INCLUDE_DIRS "C:\\Program Files\\Azure Kinect SDK v1.2.0\\sdk\\include")
+        endif()
     else()
+        # Attempt 1: system-wide installed K4a
         # The property names are tested with k4a 1.2, future versions might work
         find_package(k4a 1.2 QUIET)
         find_package(k4arecord 1.2 QUIET)
         if (k4a_FOUND)
-            get_target_property(k4a_INCLUDE_DIRS       k4a::k4a       INTERFACE_INCLUDE_DIRECTORIES)
-            get_target_property(k4a_LIBRARIES          k4a::k4a       IMPORTED_LOCATION_RELWITHDEBINFO)
-            get_target_property(k4arecord_INCLUDE_DIRS k4a::k4arecord INTERFACE_INCLUDE_DIRECTORIES)
-            get_target_property(k4arecord_LIBRARIES    k4a::k4arecord IMPORTED_LOCATION_RELWITHDEBINFO)
+            get_target_property(k4a_INCLUDE_DIRS k4a::k4a INTERFACE_INCLUDE_DIRECTORIES)
+        endif()
+
+        # Attempt 2: "open3d-azure-kinect-ubuntu1604"
+        # User need to run `pip install open3d-azure-kinect-ubuntu1604` first.
+        # The Python package will provide headers and pre-compiled libs for
+        # building k4a
+        if (NOT k4a_FOUND)
+            find_k4a_with_ubuntu_1604_pip_package()
+        endif()
+
+        if (k4a_FOUND)
             message(STATUS "k4a_INCLUDE_DIRS: ${k4a_INCLUDE_DIRS}")
-            message(STATUS "k4a_LIBRARIES: ${k4a_LIBRARIES}")
-            message(STATUS "k4arecord_INCLUDE_DIRS: ${k4arecord_INCLUDE_DIRS}")
-            message(STATUS "k4arecord_LIBRARIES: ${k4arecord_LIBRARIES}")
-
-            # Alias target to be consistent with windows
-            add_library(k4a INTERFACE)
-            add_library(k4arecord INTERFACE)
-
-            set(k4a_INCLUDE_DIRS k4a_INCLUDE_DIRS)
-
-            # Assume libk4a and libk4arecord are both in k4a_LIBRARY_DIR
-            get_filename_component(k4a_LIBRARY_DIR ${k4a_LIBRARIES} DIRECTORY)
-            set(k4a_LIBRARY_DIRS ${k4a_LIBRARY_DIR})
-        else ()
+        else()
             message(FATAL_ERROR "Kinect SDK NOT found. Please install according \
                     to https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md")
-        endif ()
+        endif()
     endif()
-
-    set(k4a_LIBRARIES k4a k4arecord)
 else()
     # Conditionally include header files in Open3D.h
     set(BUILD_AZURE_KINECT_COMMENT "//")
