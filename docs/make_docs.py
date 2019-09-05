@@ -199,7 +199,6 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, html_output_dir, is_release):
-        # Hard-coded parameters for Python API docs generation for now
         # Directory structure for the Open3D Python package:
         # open3d
         # - __init__.py
