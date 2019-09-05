@@ -82,7 +82,7 @@
 // clang-format off
 #define EXTRACT_TYPES_PARAMS_0(...)
 
-// Workaround: with older compilers ##__VA_ARGS__ my not eliminate unnecessary
+// Workaround: with older compilers ##__VA_ARGS__ may not eliminate unnecessary
 // comma when __VA_ARGS__ is empty.
 // In this case, COUNT_ARGS() will be 1 where it should be 0.
 #define EXTRACT_TYPES_PARAMS_1(...)
@@ -175,7 +175,7 @@
 // clang-format off
 #define EXTRACT_PARAMS_0(...)
 
-// Workaround: with older compilers ##__VA_ARGS__ my not eliminate unnecessary
+// Workaround: with older compilers ##__VA_ARGS__ may not eliminate unnecessary
 // comma when __VA_ARGS__ is empty.
 // In this case, COUNT_ARGS() will be 1 where it should be 0.
 #define EXTRACT_PARAMS_1(...)
