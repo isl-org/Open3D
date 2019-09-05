@@ -3,7 +3,11 @@
 About This Project
 #######################
 
-Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
+Open3D is an open-source library that supports rapid development of software
+that deals with 3D data. The Open3D frontend exposes a set of carefully selected
+data structures and algorithms in both C++ and Python. The backend is highly
+optimized and is set up for parallelization. We welcome contributions from the
+open-source community.
 
 If you use Open3D in an academic project, please cite our paper:
 ::
@@ -30,9 +34,15 @@ Supported platforms
 
 The package has been tested on:
 
-* Ubuntu 16.04 with Python 2.7 and 3.5
-* Windows 10 with Python 2.7 and 3.5
-* MacOS High Sierra 10.13.4 with Python 2.7
+* Ubuntu 16.04, Ubuntu 18.04
+* Windows 10 64-bit
+* macOS High Sierra and above
+
+With Python version:
+* 2.7
+* 3.5
+* 3.6
+* 3.7
 
 Resources
 ======================

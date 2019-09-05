@@ -9,7 +9,7 @@ Installing from PyPI or Conda
 =============================
 
 Open3D Python packages are distributed via
-`PyPI <https://pypi.org/project/open3d-python/>`_ and
+`PyPI <https://pypi.org/project/open3d/>`_ and
 `Conda <https://anaconda.org/open3d-admin/open3d>`_.
 
 Supported Python versions:
@@ -29,7 +29,7 @@ PyPI
 
 .. code-block:: bash
 
-    pip install open3d-python
+    pip install open3d
 
 Note: In general, we recommend using a
 `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_ for
@@ -39,11 +39,11 @@ permission issues. For example:
 
 .. code-block:: bash
 
-    pip3 install open3d-python
+    pip3 install open3d
     # or
-    pip install --user open3d-python
+    pip install --user open3d
     # or
-    python3 -m pip install --user open3d-python
+    python3 -m pip install --user open3d
 
 Conda
 -----

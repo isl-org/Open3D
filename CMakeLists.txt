@@ -32,10 +32,10 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
                                            ".${OPEN3D_VERSION_MINOR}"
                                            ".${OPEN3D_VERSION_PATCH}")
 
-# pypi package name controls specifies the repository name on pypi
-# possbie names include:
-# - open3d: default name when building from source and for conda
-# - open3d-python: for PyPI
+# PyPI package name controls specifies the repository name on PyPI. The default
+# name is "open3d". In the past, for historical reasons, we've used the
+# following names for PyPI, while they are now deprecated:
+# - open3d-python
 # - py3d
 # - open3d-original
 # - open3d-official
