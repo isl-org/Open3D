@@ -37,7 +37,7 @@ from .open3d import * # py2 py3 compatible
 __version__ = '@PROJECT_VERSION@'
 
 if "@ENABLE_JUPYTER@" == "ON":
-    from open3d.j_visualizer import *
+    from .j_visualizer import *
 
     def _jupyter_nbextension_paths():
         return [{
