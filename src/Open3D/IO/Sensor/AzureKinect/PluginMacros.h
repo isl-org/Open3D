@@ -82,6 +82,11 @@
 // clang-format off
 #define EXTRACT_TYPES_PARAMS_0(...)
 
+// Workaround: with older compilers ##__VA_ARGS__ my not eliminate unnecessary
+// comma when __VA_ARGS__ is empty.
+// In this case, COUNT_ARGS() will be 1 where it should be 0.
+#define EXTRACT_TYPES_PARAMS_1(...)
+
 #define EXTRACT_TYPES_PARAMS_2(...) \
     EXPAND(ARGS_1(__VA_ARGS__)) EXPAND(ARGS_2(__VA_ARGS__))
 
@@ -169,6 +174,11 @@
 //     a1, a2, a3, a4
 // clang-format off
 #define EXTRACT_PARAMS_0(...)
+
+// Workaround: with older compilers ##__VA_ARGS__ my not eliminate unnecessary
+// comma when __VA_ARGS__ is empty.
+// In this case, COUNT_ARGS() will be 1 where it should be 0.
+#define EXTRACT_PARAMS_1(...)
 
 #define EXTRACT_PARAMS_2(...) \
     EXPAND(ARGS_2(__VA_ARGS__))
