@@ -1,9 +1,8 @@
 # Currently this meta file is created manaully. We can also generate this meta
-# file with `conda skeleton pypi open3d-python`. The main difference is that
+# file with `conda skeleton pypi open3d`. The main difference is that
 # the this manaully create meta.yaml uses the shared objects in the local
 # `pip_package` folder, while the auto generated meta uses the PyPI source
-# distribution during Conda package creation. The manual meta file is chosen
-# since we'll use the `open3d` name rather than open3d-python`.
+# distribution during Conda package creation.
 
 package:
     name: open3d

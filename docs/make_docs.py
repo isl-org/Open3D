@@ -51,71 +51,6 @@ def _create_or_clear_dir(dir_path):
     print("Created directory %s" % dir_path)
 
 
-class TemporaryDirectory(object):
-    """
-    Porting Python 3's TemporaryDirectory context manager to Python 2
-    https://github.com/python/cpython/blob/master/Lib/tempfile.py
-    """
-
-    def __init__(self, suffix=None, prefix=None, dir=None):
-        self.name = mkdtemp(suffix, prefix, dir)
-        self._finalizer = weakref.finalize(
-            self,
-            self._cleanup,
-            self.name,
-            warn_message="Implicitly cleaning up {!r}".format(self))
-
-    @classmethod
-    def _rmtree(cls, name):
-
-        def onerror(func, path, exc_info):
-            if issubclass(exc_info[0], PermissionError):
-
-                def resetperms(path):
-                    try:
-                        os.chflags(path, 0)
-                    except AttributeError:
-                        pass
-                    os.chmod(path, 0o700)
-
-                try:
-                    if path != name:
-                        resetperms(os.path.dirname(path))
-                    resetperms(path)
-
-                    try:
-                        os.unlink(path)
-                    # PermissionError is raised on FreeBSD for directories
-                    except (IsADirectoryError, PermissionError):
-                        cls._rmtree(path)
-                except FileNotFoundError:
-                    pass
-            elif issubclass(exc_info[0], FileNotFoundError):
-                pass
-            else:
-                raise ()
-
-        shutil.rmtree(name, onerror=onerror)
-
-    @classmethod
-    def _cleanup(cls, name, warn_message):
-        cls._rmtree(name)
-        warnings.warn(warn_message, ResourceWarning)
-
-    def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, self.name)
-
-    def __enter__(self):
-        return self.name
-
-    def __exit__(self, exc, value, tb):
-        self.cleanup()
-
-    def cleanup(self):
-        if self._finalizer.detach():
-            self._rmtree(self.name)
-
-
 class PyAPIDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
@@ -263,8 +198,7 @@ class SphinxDocsBuilder:
     (3) Calls `sphinx-build` with the user argument
     """
 
-    def __init__(self, html_output_dir):
-        # Hard-coded parameters for Python API docs generation for now
+    def __init__(self, html_output_dir, is_release):
         # Directory structure for the Open3D Python package:
         # open3d
         # - __init__.py
@@ -273,6 +207,7 @@ class SphinxDocsBuilder:
         self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
         self.html_output_dir = html_output_dir
+        self.is_release = is_release
 
     def run(self):
         self._gen_python_api_docs()
@@ -293,20 +228,41 @@ class SphinxDocsBuilder:
         """
         Call Sphinx command with hard-coded "html" target
         """
-        with TemporaryDirectory() as build_dir:
+        build_dir = os.path.join(self.html_output_dir, "html")
+
+        if self.is_release:
+            version_list = [
+                line.rstrip('\n').split(' ')[1]
+                for line in open('../src/Open3D/version.txt')
+            ]
+            release_version = '.'.join(version_list[:3])
+            print("Building docs for release:", release_version)
+
             cmd = [
                 "sphinx-build",
-                "-M",
+                "-b",
                 "html",
-                ".",
-                build_dir,
+                "-D",
+                "version=" + release_version,
+                "-D",
+                "release=" + release_version,
                 "-j",
                 str(multiprocessing.cpu_count()),
+                ".",
+                build_dir,
             ]
-            print('Calling: "%s"' % " ".join(cmd))
-            subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
-            shutil.copytree(os.path.join(build_dir, "html"),
-                            os.path.join(self.html_output_dir, "html"))
+        else:
+            cmd = [
+                "sphinx-build",
+                "-b",
+                "html",
+                "-j",
+                str(multiprocessing.cpu_count()),
+                ".",
+                build_dir,
+            ]
+        print('Calling: "%s"' % " ".join(cmd))
+        subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
 
 
 class DoxygenDocsBuilder:
@@ -340,6 +296,11 @@ if __name__ == "__main__":
                         action="store_true",
                         default=False,
                         help="Build Doxygen for C++ API docs.")
+    parser.add_argument("--is_release",
+                        dest="is_release",
+                        action="store_true",
+                        default=False,
+                        help="Show Open3D version number rather than git hash.")
     args = parser.parse_args()
 
     # Clear output dir if new docs are to be built
@@ -350,7 +311,7 @@ if __name__ == "__main__":
     # To customize build, run sphinx-build manually
     if args.build_sphinx:
         print("Sphinx build enabled")
-        sdb = SphinxDocsBuilder(html_output_dir)
+        sdb = SphinxDocsBuilder(html_output_dir, args.is_release)
         sdb.run()
     else:
         print("Sphinx build disabled, use --sphinx to enable")

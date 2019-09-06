@@ -94,9 +94,8 @@ def check_properties(name, mesh):
     if not edge_manifold:
         print('  # Remove non-manifold edges')
         mesh.remove_non_manifold_edges()
-        print(
-            f'  # Is mesh now edge-manifold: {fmt_bool(mesh.is_edge_manifold())}'
-        )
+        print('  # Is mesh now edge-manifold: {}'.format(
+            fmt_bool(mesh.is_edge_manifold())))
         o3d.visualization.draw_geometries([mesh])
 
 
