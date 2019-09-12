@@ -2,14 +2,13 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Advanced/outlier_removal.py
+# examples/Python/Benchmark/benchmark_tsdf.py
 
 import open3d as o3d
 import numpy as np
 import time
 import os
 import sys
-from pathlib import Path
 
 pwd = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(pwd, '..', 'Advanced'))
@@ -17,9 +16,8 @@ from trajectory_io import read_trajectory
 
 
 def run_benchmark():
-    pwd = Path(os.path.dirname(os.path.realpath(__file__)))
-    camera_poses = read_trajectory(
-        str(pwd.parent.parent / "TestData/RGBD/odometry.log"))
+    dataset_path = os.path.join(pwd, "..", "..", "TestData", "RGBD")
+    camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = o3d.integration.UniformTSDFVolume(
@@ -32,9 +30,9 @@ def run_benchmark():
     s = time.time()
     for i in range(len(camera_poses)):
         color = o3d.io.read_image(
-            str(pwd.parent.parent / f"TestData/RGBD/color/{i:05d}.jpg"))
+            os.path.join(dataset_path, "color", "{0:05d}.jpg".format(i)))
         depth = o3d.io.read_image(
-            str(pwd.parent.parent / f"TestData/RGBD/depth/{i:05d}.png"))
+            os.path.join(dataset_path, "depth", "{0:05d}.png".format(i)))
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(
