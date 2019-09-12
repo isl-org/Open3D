@@ -74,9 +74,9 @@ void UniformTSDFVolume::Integrate(
          image.color_.num_of_channels_ != 1) ||
         (color_type_ == TSDFVolumeColorType::Gray32 &&
          image.color_.bytes_per_channel_ != 4) ||
-        (color_type_ != TSDFVolumeColorType::None &&
+        (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.width_ != intrinsic.width_) ||
-        (color_type_ != TSDFVolumeColorType::None &&
+        (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.height_ != intrinsic.height_)) {
         utility::LogWarning(
                 "[UniformTSDFVolume::Integrate] Unsupported image format.\n");
@@ -206,7 +206,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                             double f1 = std::abs((double)f[edge_to_vert[i][1]]);
                             pt(edge_index(3)) += f0 * voxel_length_ / (f0 + f1);
                             mesh->vertices_.push_back(pt + origin_);
-                            if (color_type_ != TSDFVolumeColorType::None) {
+                            if (color_type_ != TSDFVolumeColorType::NoColor) {
                                 const auto &c0 = c[edge_to_vert[i][0]];
                                 const auto &c1 = c[edge_to_vert[i][1]];
                                 mesh->vertex_colors_.push_back(
