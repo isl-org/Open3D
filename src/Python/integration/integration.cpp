@@ -59,7 +59,8 @@ void pybind_integration_classes(py::module &m) {
     // open3d.integration.TSDFVolumeColorType
     py::enum_<integration::TSDFVolumeColorType> tsdf_volume_color_type(
             m, "TSDFVolumeColorType", py::arithmetic());
-    tsdf_volume_color_type.value("None", integration::TSDFVolumeColorType::None)
+    tsdf_volume_color_type
+            .value("NoColor", integration::TSDFVolumeColorType::NoColor)
             .value("RGB8", integration::TSDFVolumeColorType::RGB8)
             .value("Gray32", integration::TSDFVolumeColorType::Gray32)
             .export_values();
@@ -134,7 +135,7 @@ In SIGGRAPH, 1996)");
                      return std::string("integration::UniformTSDFVolume ") +
                             (vol.color_type_ ==
                                              integration::TSDFVolumeColorType::
-                                                     None
+                                                     NoColor
                                      ? std::string("without color.")
                                      : std::string("with color."));
                  })  // todo: extend
@@ -194,7 +195,7 @@ In SIGGRAPH, 2013)");
                      return std::string("integration::ScalableTSDFVolume ") +
                             (vol.color_type_ ==
                                              integration::TSDFVolumeColorType::
-                                                     None
+                                                     NoColor
                                      ? std::string("without color.")
                                      : std::string("with color."));
                  })
