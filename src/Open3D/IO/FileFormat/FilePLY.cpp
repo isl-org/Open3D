@@ -318,9 +318,9 @@ int ReadVoxelCallback(p_ply_argument argument) {
         return 0;  // some sanity check
     }
 
-    double value = ply_get_argument_value(argument);
-    state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
-            index) = int(value);
+    //double value = ply_get_argument_value(argument);
+    //state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
+    //        index) = int(value);
     if (index == 2) {  // reading 'z'
         state_ptr->voxel_index++;
         ++(*state_ptr->progress_bar);
@@ -337,9 +337,9 @@ int ReadColorCallback(p_ply_argument argument) {
         return 0;
     }
 
-    double value = ply_get_argument_value(argument);
-    state_ptr->voxelgrid_ptr->voxels_[state_ptr->color_index].color_(index) =
-            value / 255.0;
+    // double value = ply_get_argument_value(argument);
+    // state_ptr->voxelgrid_ptr->voxels_[state_ptr->color_index].color_(index) =
+    //         value / 255.0;
     if (index == 2) {  // reading 'blue'
         state_ptr->color_index++;
         ++(*state_ptr->progress_bar);
@@ -832,7 +832,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     state.color_index = 0;
 
     voxelgrid.Clear();
-    voxelgrid.voxels_.resize(state.voxel_num);
+    // voxelgrid.voxels_.resize(state.voxel_num);
 
     utility::ConsoleProgressBar progress_bar(state.voxel_num + state.color_num,
                                              "Reading PLY: ", print_progress);
@@ -904,8 +904,8 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_write(ply_file, origin(2));
     ply_write(ply_file, voxelgrid.voxel_size_);
 
-    for (size_t i = 0; i < voxelgrid.voxels_.size(); i++) {
-        const geometry::Voxel &voxel = voxelgrid.voxels_[i];
+    for (auto &voxel_iter : voxelgrid.voxels_) {
+        const geometry::Voxel &voxel = voxel_iter.second;
         ply_write(ply_file, voxel.grid_index_(0));
         ply_write(ply_file, voxel.grid_index_(1));
         ply_write(ply_file, voxel.grid_index_(2));

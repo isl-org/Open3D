@@ -37,6 +37,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+// class VoxelGrid;
 class VoxelGrid;
 
 /// Design decision: do not store origin and size of a node in OctreeNode

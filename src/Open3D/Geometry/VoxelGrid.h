@@ -29,9 +29,13 @@
 #include <Eigen/Core>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Geometry/VoxelGrid.h"
+
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -90,15 +94,22 @@ public:
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
     // Function that returns the 3d coordinates of the queried voxel center
-    Eigen::Vector3d GetVoxelCenterCoordinate(int idx) const {
-        const Eigen::Vector3i &grid_index = voxels_[idx].grid_index_;
-        return ((grid_index.cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) *
-                voxel_size_) +
-               origin_;
+    Eigen::Vector3d GetVoxelCenterCoordinate(Eigen::Vector3i idx) const {
+        // const Eigen::Vector3i &grid_index = voxels_[idx].grid_index_;
+        auto i = voxels_.find(idx);
+        if (i != voxels_.end()) {
+            auto voxel = i->second;
+            return ((voxel.grid_index_.cast<double>() +
+                    Eigen::Vector3d(0.5, 0.5, 0.5)) * voxel_size_) +
+                    origin_;
+        }
+        else {
+            return Eigen::Vector3d::Zero();
+        }
     }
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
-    std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(int index) const;
+    std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(Eigen::Vector3i index) const;
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the
@@ -163,7 +174,10 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::vector<Voxel> voxels_;
+    // std::vector<Voxel> voxels_;
+    std::unordered_map<Eigen::Vector3i, Voxel,
+            utility::hash_eigen::hash<Eigen::Vector3i>>
+            voxels_;
 };
 
 /// Class to aggregate color values from different votes in one voxel
