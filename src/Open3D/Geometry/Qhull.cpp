@@ -38,9 +38,10 @@
 namespace open3d {
 namespace geometry {
 
-std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
-        const std::vector<Eigen::Vector3d>& points) {
+std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
     auto convex_hull = std::make_shared<TriangleMesh>();
+    std::vector<size_t> pt_map;
 
     std::vector<double> qhull_points_data(points.size() * 3);
     for (size_t pidx = 0; pidx < points.size(); ++pidx) {
@@ -84,6 +85,7 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
                 double* coords = p.coordinates();
                 convex_hull->vertices_.push_back(
                         Eigen::Vector3d(coords[0], coords[1], coords[2]));
+                pt_map.push_back(vidx);
             }
         }
 
@@ -96,26 +98,28 @@ std::shared_ptr<TriangleMesh> Qhull::ComputeConvexHull(
         triangle(2) = vert_map[triangle(2)];
     }
 
-    return convex_hull;
+    return std::make_tuple(convex_hull, pt_map);
 }
 
-std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
+std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+Qhull::ComputeDelaunayTetrahedralization(
         const std::vector<Eigen::Vector3d>& points) {
     typedef decltype(TetraMesh::tetras_)::value_type Vector4i;
     auto delaunay_triangulation = std::make_shared<TetraMesh>();
+    std::vector<size_t> pt_map;
 
     if (points.size() < 4) {
         utility::LogWarning(
                 "[ComputeDelaunayTriangulation3D] not enough points to create "
                 "a tetrahedral mesh.\n");
-        return delaunay_triangulation;
+        return std::make_tuple(delaunay_triangulation, pt_map);
     }
 
     // qhull cannot deal with this case
     if (points.size() == 4) {
         delaunay_triangulation->vertices_ = points;
         delaunay_triangulation->tetras_.push_back(Vector4i(0, 1, 2, 3));
-        return delaunay_triangulation;
+        return std::make_tuple(delaunay_triangulation, pt_map);
     }
 
     std::vector<double> qhull_points_data(points.size() * 3);
@@ -161,6 +165,7 @@ std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
                 double* coords = p.coordinates();
                 delaunay_triangulation->vertices_.push_back(
                         Eigen::Vector3d(coords[0], coords[1], coords[2]));
+                pt_map.push_back(vidx);
             }
         }
 
@@ -174,7 +179,7 @@ std::shared_ptr<TetraMesh> Qhull::ComputeDelaunayTetrahedralization(
         tetra(3) = vert_map[tetra(3)];
     }
 
-    return delaunay_triangulation;
+    return std::make_tuple(delaunay_triangulation, pt_map);
 }
 
 }  // namespace geometry
