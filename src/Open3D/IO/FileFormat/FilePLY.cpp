@@ -819,12 +819,11 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
         ply_close(ply_file);
         return false;
     }
-
     state.color_num = ply_set_read_cb(ply_file, "vertex", "red",
                                       ReadColorCallback, &state, 0);
     ply_set_read_cb(ply_file, "vertex", "green", ReadColorCallback, &state, 1);
     ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
-
+    
     ply_set_read_cb(ply_file, "origin", "x", ReadOriginCallback, &state, 0);
     ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
     ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
@@ -834,16 +833,8 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     state.voxel_index = 0;
     state.color_index = 0;
 
-    voxelgrid.Clear();
-    for (auto &it : voxelgrid_ptr){
-        if (state.color_num > 0)
-            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_, it.color_);
-        else
-            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_);
-    }
-    voxelgrid.origin_ = state.origin;
-    voxelgrid.voxel_size_ = state.voxel_size;
-
+    voxelgrid_ptr.clear();
+    voxelgrid_ptr.resize(state.voxel_num);
     utility::ConsoleProgressBar progress_bar(state.voxel_num + state.color_num,
                                              "Reading PLY: ", print_progress);
     state.progress_bar = &progress_bar;
@@ -854,6 +845,16 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
         ply_close(ply_file);
         return false;
     }
+
+    voxelgrid.Clear();
+    for (auto &it : voxelgrid_ptr) {
+        if (state.color_num > 0)
+            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_, it.color_);
+        else
+            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_);
+    }
+    voxelgrid.origin_ = state.origin;
+    voxelgrid.voxel_size_ = state.voxel_size;
 
     ply_close(ply_file);
     return true;
