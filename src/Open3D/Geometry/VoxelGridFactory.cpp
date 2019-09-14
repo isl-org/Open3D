@@ -48,13 +48,11 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
     int num_d = int(std::round(depth / voxel_size));
     output->origin_ = origin;
     output->voxel_size_ = voxel_size;
-    int cnt = 0;
     for (int widx = 0; widx < num_w; widx++) {
         for (int hidx = 0; hidx < num_h; hidx++) {
             for (int didx = 0; didx < num_d; didx++) {
-                Eigen::Vector3i grid_index = {widx, hidx, didx};
+                Eigen::Vector3i grid_index(widx, hidx, didx);
                 output->voxels_[grid_index] = geometry::Voxel(grid_index);
-                cnt++;
             }
         }
     }
