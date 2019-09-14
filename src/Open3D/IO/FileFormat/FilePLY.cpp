@@ -280,7 +280,9 @@ namespace ply_voxelgrid_reader {
 
 struct PLYReaderState {
     utility::ConsoleProgressBar *progress_bar;
-    geometry::VoxelGrid *voxelgrid_ptr;
+    std::vector<geometry::Voxel> *voxelgrid_ptr;
+    Eigen::Vector3d origin;
+    double voxel_size;
     long voxel_index;
     long voxel_num;
     long color_index;
@@ -294,7 +296,7 @@ int ReadOriginCallback(p_ply_argument argument) {
                                &index);
 
     double value = ply_get_argument_value(argument);
-    state_ptr->voxelgrid_ptr->origin_(index) = value;
+    state_ptr->origin(index) = value;
     return 1;
 }
 
@@ -305,7 +307,7 @@ int ReadScaleCallback(p_ply_argument argument) {
                                &index);
 
     double value = ply_get_argument_value(argument);
-    state_ptr->voxelgrid_ptr->voxel_size_ = value;
+    state_ptr->voxel_size = value;
     return 1;
 }
 
@@ -318,9 +320,9 @@ int ReadVoxelCallback(p_ply_argument argument) {
         return 0;  // some sanity check
     }
 
-    // double value = ply_get_argument_value(argument);
-    // state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
-    //         index) = int(value);
+    double value = ply_get_argument_value(argument);
+    auto &ptr = *(state_ptr->voxelgrid_ptr);
+    ptr[state_ptr->voxel_index].grid_index_(index) = int(value);
     if (index == 2) {  // reading 'z'
         state_ptr->voxel_index++;
         ++(*state_ptr->progress_bar);
@@ -337,9 +339,9 @@ int ReadColorCallback(p_ply_argument argument) {
         return 0;
     }
 
-    // double value = ply_get_argument_value(argument);
-    // state_ptr->voxelgrid_ptr->voxels_[state_ptr->color_index].color_(index) =
-    //         value / 255.0;
+    double value = ply_get_argument_value(argument);
+    auto &ptr = *(state_ptr->voxelgrid_ptr);
+    ptr[state_ptr->color_index].color_(index) = value / 255.0;
     if (index == 2) {  // reading 'blue'
         state_ptr->color_index++;
         ++(*state_ptr->progress_bar);
@@ -805,7 +807,8 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     }
 
     PLYReaderState state;
-    state.voxelgrid_ptr = &voxelgrid;
+    std::vector<geometry::Voxel> voxelgrid_ptr;
+    state.voxelgrid_ptr = &voxelgrid_ptr;
     state.voxel_num = ply_set_read_cb(ply_file, "vertex", "x",
                                       ReadVoxelCallback, &state, 0);
     ply_set_read_cb(ply_file, "vertex", "y", ReadVoxelCallback, &state, 1);
@@ -832,7 +835,14 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     state.color_index = 0;
 
     voxelgrid.Clear();
-    // voxelgrid.voxels_.resize(state.voxel_num);
+    for (auto &it : voxelgrid_ptr){
+        if (state.color_num > 0)
+            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_, it.color_);
+        else
+            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_);
+    }
+    voxelgrid.origin_ = state.origin;
+    voxelgrid.voxel_size_ = state.voxel_size;
 
     utility::ConsoleProgressBar progress_bar(state.voxel_num + state.color_num,
                                              "Reading PLY: ", print_progress);
@@ -904,8 +914,8 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_write(ply_file, origin(2));
     ply_write(ply_file, voxelgrid.voxel_size_);
 
-    for (auto &voxel_iter : voxelgrid.voxels_) {
-        const geometry::Voxel &voxel = voxel_iter.second;
+    for (auto &it : voxelgrid.voxels_) {
+        const geometry::Voxel &voxel = it.second;
         ply_write(ply_file, voxel.grid_index_(0));
         ply_write(ply_file, voxel.grid_index_(1));
         ply_write(ply_file, voxel.grid_index_(2));
