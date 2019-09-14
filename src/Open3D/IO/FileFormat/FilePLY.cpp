@@ -813,7 +813,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
                                       ReadVoxelCallback, &state, 0);
     ply_set_read_cb(ply_file, "vertex", "y", ReadVoxelCallback, &state, 1);
     ply_set_read_cb(ply_file, "vertex", "z", ReadVoxelCallback, &state, 2);
-    
+
     if (state.voxel_num <= 0) {
         utility::LogWarning("Read PLY failed: number of vertex <= 0.\n");
         ply_close(ply_file);
@@ -824,7 +824,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
                                       ReadColorCallback, &state, 0);
     ply_set_read_cb(ply_file, "vertex", "green", ReadColorCallback, &state, 1);
     ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
-    
+
     ply_set_read_cb(ply_file, "origin", "x", ReadOriginCallback, &state, 0);
     ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
     ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
@@ -850,7 +850,8 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     voxelgrid.Clear();
     for (auto &it : voxelgrid_ptr) {
         if (state.color_num > 0)
-            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_, it.color_);
+            voxelgrid.voxels_[it.grid_index_] =
+                    geometry::Voxel(it.grid_index_, it.color_);
         else
             voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_);
     }

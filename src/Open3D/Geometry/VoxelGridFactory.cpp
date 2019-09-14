@@ -156,7 +156,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                     if (IntersectionTest::TriangleAABB(
                                 box_center, box_half_size, v0, v1, v2)) {
                         Eigen::Vector3i grid_index(widx, hidx, didx);
-                        output->voxels_[grid_index] = geometry::Voxel(grid_index);
+                        output->voxels_[grid_index] =
+                                geometry::Voxel(grid_index);
                         break;
                     }
                 }

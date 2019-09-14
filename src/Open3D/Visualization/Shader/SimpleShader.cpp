@@ -559,8 +559,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
         // 8 vertices in a voxel
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
-                voxel.grid_index_.cast<float>() *
-                        voxel_grid.voxel_size_;
+                voxel.grid_index_.cast<float>() * voxel_grid.voxel_size_;
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
             vertices.push_back(base_vertex + vertex_offset.cast<float>() *
@@ -650,8 +649,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
         // 8 vertices in a voxel
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
-                voxel.grid_index_.cast<float>() *
-                        voxel_grid.voxel_size_;
+                voxel.grid_index_.cast<float>() * voxel_grid.voxel_size_;
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
             vertices.push_back(base_vertex + vertex_offset.cast<float>() *

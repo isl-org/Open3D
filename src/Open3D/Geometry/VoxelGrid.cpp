@@ -76,7 +76,8 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
             const geometry::Voxel &voxel = it.second;
             max_grid_index = max_grid_index.max(voxel.grid_index_.array());
         }
-        return (max_grid_index.cast<double>() + 1) * voxel_size_ + origin_.array();
+        return (max_grid_index.cast<double>() + 1) * voxel_size_ +
+               origin_.array();
     }
 }
 
@@ -89,8 +90,8 @@ Eigen::Vector3d VoxelGrid::GetCenter() const {
                                           0.5 * voxel_size_);
     for (const auto &it : voxels_) {
         const geometry::Voxel &voxel = it.second;
-        center += voxel.grid_index_.cast<double>() * voxel_size_ +
-                       origin_ + half_voxel_size;
+        center += voxel.grid_index_.cast<double>() * voxel_size_ + origin_ +
+                  half_voxel_size;
     }
     center /= double(voxels_.size());
     return center;
@@ -154,7 +155,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         return *this;
     }
     std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
-                        utility::hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
@@ -179,9 +180,9 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     }
     this->voxels_.clear();
     for (const auto &accpoint : voxelindex_to_accpoint) {
-        this->voxels_[accpoint.second.GetVoxelIndex()] = 
-                            Voxel(accpoint.second.GetVoxelIndex(),
-                            accpoint.second.GetAverageColor());
+        this->voxels_[accpoint.second.GetVoxelIndex()] =
+                Voxel(accpoint.second.GetVoxelIndex(),
+                      accpoint.second.GetAverageColor());
     }
     return *this;
 }

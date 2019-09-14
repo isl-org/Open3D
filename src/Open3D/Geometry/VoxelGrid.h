@@ -28,8 +28,8 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Utility/Console.h"
@@ -98,16 +98,17 @@ public:
         if (it != voxels_.end()) {
             auto voxel = it->second;
             return ((voxel.grid_index_.cast<double>() +
-                    Eigen::Vector3d(0.5, 0.5, 0.5)) * voxel_size_) +
-                    origin_;
-        }
-        else {
+                     Eigen::Vector3d(0.5, 0.5, 0.5)) *
+                    voxel_size_) +
+                   origin_;
+        } else {
             return Eigen::Vector3d::Zero();
         }
     }
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
-    std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(Eigen::Vector3i index) const;
+    std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
+            Eigen::Vector3i index) const;
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the
@@ -172,8 +173,9 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    std::unordered_map<Eigen::Vector3i, Voxel,
-            utility::hash_eigen::hash<Eigen::Vector3i>>
+    std::unordered_map<Eigen::Vector3i,
+                       Voxel,
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             voxels_;
 };
 
