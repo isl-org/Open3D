@@ -318,9 +318,9 @@ int ReadVoxelCallback(p_ply_argument argument) {
         return 0;  // some sanity check
     }
 
-    //double value = ply_get_argument_value(argument);
-    //state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
-    //        index) = int(value);
+    // double value = ply_get_argument_value(argument);
+    // state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index].grid_index_(
+    //         index) = int(value);
     if (index == 2) {  // reading 'z'
         state_ptr->voxel_index++;
         ++(*state_ptr->progress_bar);

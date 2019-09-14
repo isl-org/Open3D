@@ -614,15 +614,15 @@ void Octree::CreateFromVoxelGrid(const geometry::VoxelGrid& voxel_grid) {
     origin_ = voxel_grid.origin_;
     size_ = (voxel_grid.GetMaxBound() - origin_).maxCoeff();
     double half_voxel_size = voxel_grid.voxel_size_ / 2.;
-    // for (size_t vid = 0; vid < voxel_grid.voxels_.size(); ++vid) {
-    for (auto &voxel : voxel_grid.voxels_) {
+    for (const auto &voxel_iter : voxel_grid.voxels_) {
+        const geometry::Voxel &voxel = voxel_iter.second;
         Eigen::Vector3d mid_point =
                 half_voxel_size + origin_.array() +
-                voxel.first.array().cast<double>() *
+                voxel.grid_index_.array().cast<double>() *
                         voxel_grid.voxel_size_;
         InsertPoint(mid_point, geometry::OctreeColorLeafNode::GetInitFunction(),
                     geometry::OctreeColorLeafNode::GetUpdateFunction(
-                            voxel.second.color_));
+                            voxel.color_));
     }
 }
 

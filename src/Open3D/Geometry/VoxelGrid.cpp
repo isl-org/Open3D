@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/VoxelGrid.h"
-// #include "Open3D/Geometry/VoxelGrid.h"
 
 #include <numeric>
 #include <unordered_map>
@@ -59,9 +58,10 @@ Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Eigen::Array3i min_grid_index;
-        for (auto &iter : voxels_) {
-            min_grid_index = min_grid_index.min(iter.second.grid_index_.array());
+        Eigen::Array3i min_grid_index = voxels_.begin()->first;
+        for (const auto &it : voxels_) {
+            const geometry::Voxel &voxel = it.second;
+            min_grid_index = min_grid_index.min(voxel.grid_index_.array());
         }
         return min_grid_index.cast<double>() * voxel_size_ + origin_.array();
     }
@@ -71,9 +71,10 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Eigen::Array3i max_grid_index;
-        for (auto &iter : voxels_) {
-            max_grid_index = max_grid_index.max(iter.second.grid_index_.array());
+        Eigen::Array3i max_grid_index = voxels_.begin()->first;
+        for (const auto &it : voxels_) {
+            const geometry::Voxel &voxel = it.second;
+            max_grid_index = max_grid_index.max(voxel.grid_index_.array());
         }
         return max_grid_index.cast<double>() * voxel_size_ + origin_.array();
     }
@@ -86,12 +87,11 @@ Eigen::Vector3d VoxelGrid::GetCenter() const {
     }
     const Eigen::Vector3d half_voxel_size(0.5 * voxel_size_, 0.5 * voxel_size_,
                                           0.5 * voxel_size_);
-    // center = std::accumulate(
-    //         voxels_.begin(), voxels_.end(), center,
-    //         [&](const Eigen::Vector3d &vec, const Voxel &vox) {
-    //             return vec + vox.grid_index_.cast<double>() * voxel_size_ +
-    //                    origin_ + half_voxel_size;
-    //         });
+    for (const auto &it : voxels_) {
+        const geometry::Voxel &voxel = it.second;
+        center += voxel.grid_index_.cast<double>() * voxel_size_ +
+                       origin_ + half_voxel_size;
+    }
     center /= double(voxels_.size());
     return center;
 }
@@ -159,20 +159,22 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
     bool has_colors = voxelgrid.HasColors();
-    for (auto &voxel : voxelgrid.voxels_) {
+    for (const auto &it : voxelgrid.voxels_) {
+        const geometry::Voxel &voxel = it.second;
         if (has_colors) {
-            voxelindex_to_accpoint[voxel.first].Add(voxel.first,
-                                                          voxel.second.color_);
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_,
+                                                          voxel.color_);
         } else {
-            voxelindex_to_accpoint[voxel.first].Add(voxel.first);
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_);
         }
     }
-    for (auto &voxel : voxels_) {
+    for (const auto &it : voxels_) {
+        const geometry::Voxel &voxel = it.second;
         if (has_colors) {
-            voxelindex_to_accpoint[voxel.first].Add(voxel.first,
-                                                          voxel.second.color_);
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_,
+                                                          voxel.color_);
         } else {
-            voxelindex_to_accpoint[voxel.first].Add(voxel.first);
+            voxelindex_to_accpoint[voxel.grid_index_].Add(voxel.grid_index_);
         }
     }
     this->voxels_.clear();
@@ -273,8 +275,8 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
     // depth is behind the depth of the depth map at the projected pixel.
     size_t n_voxels = voxels_.size();
     std::vector<bool> carve(n_voxels, true);
-    for (auto &voxel_iter : voxels_) {
-        const geometry::Voxel &voxel = voxel_iter.second;
+    for (const auto &it : voxels_) {
+        const geometry::Voxel &voxel = it.second;
         auto pts = GetVoxelBoundingPoints(voxel.grid_index_);
         for (auto &x : pts) {
             auto x_trans = rot * x + trans;
@@ -286,22 +288,11 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             bool within_boundary;
             std::tie(within_boundary, d) = depth_map.FloatValueAt(u, v);
             if (within_boundary && d > 0 && z >= d) {
-                // carve[vidx] = false;
+                voxels_.erase(voxel.grid_index_);
                 break;
             }
         }
     }
-
-    // remove all voxels that have been marked as carve
-    // int next = 0;
-    // for (size_t vidx = 0; vidx < n_voxels; vidx++) {
-    //     if (!carve[vidx]) {
-    //         voxels_[next] = voxels_[vidx];
-    //         next++;
-    //     }
-    // }
-    // voxels_.resize(next);
-
     return *this;
 }
 
@@ -324,10 +315,8 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
     // is set (>0).
     size_t n_voxels = voxels_.size();
     std::vector<bool> carve(n_voxels, true);
-    for (auto &voxel_iter : voxels_) {
-        const geometry::Voxel &voxel = voxel_iter.second;
-    // std::vector<bool> carve(n_voxels, true);
-    // for (size_t vidx = 0; vidx < n_voxels; vidx++) {
+    for (const auto &it : voxels_) {
+        const geometry::Voxel &voxel = it.second;
         auto pts = GetVoxelBoundingPoints(voxel.grid_index_);
         for (auto &x : pts) {
             auto x_trans = rot * x + trans;
@@ -339,22 +328,11 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             bool within_boundary;
             std::tie(within_boundary, d) = silhouette_mask.FloatValueAt(u, v);
             if (within_boundary && d > 0) {
-                // carve[vidx] = false;
+                voxels_.erase(voxel.grid_index_);
                 break;
             }
         }
     }
-
-    // remove all voxels that have been marked as carve
-    // int next = 0;
-    // for (size_t vidx = 0; vidx < n_voxels; vidx++) {
-    //     if (!carve[vidx]) {
-    //         voxels_[next] = voxels_[vidx];
-    //         next++;
-    //     }
-    // }
-    // voxels_.resize(next);
-
     return *this;
 }
 

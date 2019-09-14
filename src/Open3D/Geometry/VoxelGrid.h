@@ -33,7 +33,6 @@
 
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Utility/Console.h"
-#include "Open3D/Geometry/VoxelGrid.h"
 
 #include "Open3D/Utility/Helper.h"
 
@@ -95,10 +94,9 @@ public:
 
     // Function that returns the 3d coordinates of the queried voxel center
     Eigen::Vector3d GetVoxelCenterCoordinate(Eigen::Vector3i idx) const {
-        // const Eigen::Vector3i &grid_index = voxels_[idx].grid_index_;
-        auto i = voxels_.find(idx);
-        if (i != voxels_.end()) {
-            auto voxel = i->second;
+        auto it = voxels_.find(idx);
+        if (it != voxels_.end()) {
+            auto voxel = it->second;
             return ((voxel.grid_index_.cast<double>() +
                     Eigen::Vector3d(0.5, 0.5, 0.5)) * voxel_size_) +
                     origin_;
@@ -174,7 +172,6 @@ public:
 public:
     double voxel_size_;
     Eigen::Vector3d origin_;
-    // std::vector<Voxel> voxels_;
     std::unordered_map<Eigen::Vector3i, Voxel,
             utility::hash_eigen::hash<Eigen::Vector3i>>
             voxels_;
