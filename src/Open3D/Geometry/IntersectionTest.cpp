@@ -60,7 +60,8 @@ bool IntersectionTest::TriangleTriangle3d(const Eigen::Vector3d& p0,
               (p2 - mu).array().square() + (q0 - mu).array().square() +
               (q1 - mu).array().square() + (q2 - mu).array().square()) /
              5)
-                    .sqrt();
+                    .sqrt() +
+            1e-12;
     Eigen::Vector3d p0m = (p0 - mu).array() / sigma.array();
     Eigen::Vector3d p1m = (p1 - mu).array() / sigma.array();
     Eigen::Vector3d p2m = (p2 - mu).array() / sigma.array();
