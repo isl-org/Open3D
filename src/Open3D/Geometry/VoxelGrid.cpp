@@ -76,7 +76,7 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const {
             const geometry::Voxel &voxel = it.second;
             max_grid_index = max_grid_index.max(voxel.grid_index_.array());
         }
-        return max_grid_index.cast<double>() * voxel_size_ + origin_.array();
+        return (max_grid_index.cast<double>() + 1) * voxel_size_ + origin_.array();
     }
 }
 
