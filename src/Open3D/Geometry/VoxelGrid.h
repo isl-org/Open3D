@@ -110,6 +110,10 @@ public:
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
             Eigen::Vector3i index) const;
 
+    // Element-wise check if a query in the list is included in the VoxelGrid
+    std::vector<bool> CheckIfIncluded(
+            const std::vector<Eigen::Vector3d>& queries);
+
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the
     /// projected depth of the boundary point. The point is not carved if none

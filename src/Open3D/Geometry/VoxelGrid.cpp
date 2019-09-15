@@ -212,6 +212,23 @@ std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
     return points;
 }
 
+std::vector<bool> VoxelGrid::CheckIfIncluded(
+        const std::vector<Eigen::Vector3d>& queries) {
+    std::vector<bool> output;
+    output.resize(queries.size());
+    size_t i = 0;
+    for (auto &query_double : queries) {
+        auto query = GetVoxel(query_double);
+        auto it = voxels_.find(query);
+        if (it == voxels_.end())
+            output[i] = false;
+        else
+            output[i] = true;
+        i++;
+    }
+    return output;
+}
+
 void VoxelGrid::CreateFromOctree(const Octree &octree) {
     // TODO: currently only handles color leaf nodes
     // Get leaf nodes and their node_info
