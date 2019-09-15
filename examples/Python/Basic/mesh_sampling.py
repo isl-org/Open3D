@@ -8,6 +8,8 @@ import numpy as np
 import time
 import open3d as o3d
 
+import sys
+sys.path.append("../Misc")
 import meshes
 
 

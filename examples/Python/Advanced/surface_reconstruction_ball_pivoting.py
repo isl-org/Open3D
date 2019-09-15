@@ -8,7 +8,7 @@ import open3d as o3d
 import numpy as np
 import sys
 
-sys.path.append("../Basic")
+sys.path.append("../Misc")
 import meshes
 
 

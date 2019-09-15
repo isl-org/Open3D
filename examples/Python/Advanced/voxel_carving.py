@@ -2,6 +2,8 @@ import open3d as o3d
 import numpy as np
 import os
 
+import sys
+sys.path.append("../Misc/")
 import meshes
 
 
@@ -44,16 +46,16 @@ def preprocess(model):
     return model
 
 
-def mesh_voxelization(mesh,
-                      output_filename,
-                      camera_path,
-                      cubic_size,
-                      voxel_resolution,
-                      w=300,
-                      h=300,
-                      use_depth=True,
-                      surface_method='pointcloud',
-                      visualization=False):
+def voxel_carving(mesh,
+                  output_filename,
+                  camera_path,
+                  cubic_size,
+                  voxel_resolution,
+                  w=300,
+                  h=300,
+                  use_depth=True,
+                  surface_method='pointcloud',
+                  visualization=False):
 
     mesh.compute_vertex_normals()
     camera_sphere = o3d.io.read_triangle_mesh(camera_path)
@@ -158,9 +160,9 @@ if __name__ == '__main__':
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    mesh_voxelization(mesh,
-                      output_filename,
-                      camera_path,
-                      cubic_size,
-                      voxel_resolution,
-                      visualization=True)
+    voxel_carving(mesh,
+                  output_filename,
+                  camera_path,
+                  cubic_size,
+                  voxel_resolution,
+                  visualization=True)

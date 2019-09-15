@@ -6,6 +6,8 @@ import numpy as np
 import open3d as o3d
 import os
 
+import sys
+sys.path.append("../Misc")
 import meshes
 
 if __name__ == "__main__":

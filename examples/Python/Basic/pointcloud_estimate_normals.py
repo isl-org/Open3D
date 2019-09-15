@@ -7,6 +7,8 @@
 import numpy as np
 import open3d as o3d
 import time
+import sys
+sys.path.append("../Misc")
 import meshes
 
 np.random.seed(42)
