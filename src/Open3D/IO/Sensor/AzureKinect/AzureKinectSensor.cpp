@@ -172,16 +172,19 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
                 "dimensions.");
     }
 
-    int N = bgra.width_ * bgra.height_;
 #ifdef _OPENMP
+#ifdef _WIN32
 #pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
 #endif
-    for (int uv = 0; uv < N; ++uv) {
-        int v = uv / bgra.width_;
-        int u = uv % bgra.width_;
-        for (int c = 0; c < 3; ++c) {
-            *rgb.PointerAt<uint8_t>(u, v, c) =
-                    *bgra.PointerAt<uint8_t>(u, v, 2 - c);
+#endif
+    for (int v = 0; v < bgra.height_; ++v) {
+        for (int u = 0; u < bgra.width_; ++u) {
+            for (int c = 0; c < 3; ++c) {
+                *rgb.PointerAt<uint8_t>(u, v, c) =
+                        *bgra.PointerAt<uint8_t>(u, v, 2 - c);
+            }
         }
     }
 }

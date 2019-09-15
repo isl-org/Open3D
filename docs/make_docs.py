@@ -303,9 +303,17 @@ if __name__ == "__main__":
                         help="Show Open3D version number rather than git hash.")
     args = parser.parse_args()
 
+    pwd = os.path.dirname(os.path.realpath(__file__))
+
     # Clear output dir if new docs are to be built
-    html_output_dir = "_out"
+    html_output_dir = os.path.join(pwd, "_out")
     _create_or_clear_dir(html_output_dir)
+
+    # Clear C++ build directory
+    cpp_build_dir = os.path.join(pwd, "_static", "C++", "build")
+    if os.path.exists(cpp_build_dir):
+        shutil.rmtree(cpp_build_dir)
+        print("Removed directory %s" % cpp_build_dir)
 
     # Sphinx is hard-coded to build with the "html" option
     # To customize build, run sphinx-build manually

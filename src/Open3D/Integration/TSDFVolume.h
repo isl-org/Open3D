@@ -35,7 +35,7 @@ namespace open3d {
 namespace integration {
 
 enum class TSDFVolumeColorType {
-    None = 0,
+    NoColor = 0,
     RGB8 = 1,
     Gray32 = 2,
 };

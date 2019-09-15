@@ -28,6 +28,7 @@
 
 #include <Eigen/Core>
 #include <memory>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -301,7 +302,8 @@ public:
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
 
     /// Function that computes the convex hull of the triangle mesh using qhull
-    std::shared_ptr<TriangleMesh> ComputeConvexHull() const;
+    std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+    ComputeConvexHull() const;
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh

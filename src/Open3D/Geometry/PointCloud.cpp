@@ -26,6 +26,7 @@
 
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 #include <Eigen/Dense>
 #include <numeric>
@@ -246,8 +247,73 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
     return nn_dis;
 }
 
-std::shared_ptr<TriangleMesh> PointCloud::ComputeConvexHull() const {
+std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+PointCloud::ComputeConvexHull() const {
     return Qhull::ComputeConvexHull(points_);
+}
+
+std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
+PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
+                               const double radius) const {
+    if (radius <= 0) {
+        utility::LogWarning(
+                "[HiddenPointRemoval] radius must be larger than zero.\n");
+        return std::make_tuple(std::make_shared<TriangleMesh>(),
+                               std::vector<size_t>());
+    }
+
+    // perform spherical projection
+    std::vector<Eigen::Vector3d> spherical_projection;
+    for (size_t pidx = 0; pidx < points_.size(); ++pidx) {
+        Eigen::Vector3d projected_point = points_[pidx] - camera_location;
+        double norm = projected_point.norm();
+        spherical_projection.push_back(
+                projected_point + 2 * (radius - norm) * projected_point / norm);
+    }
+
+    // add origin
+    size_t origin_pidx = spherical_projection.size();
+    spherical_projection.push_back(Eigen::Vector3d(0, 0, 0));
+
+    // calculate convex hull of spherical projection
+    std::shared_ptr<TriangleMesh> visible_mesh;
+    std::vector<size_t> pt_map;
+    std::tie(visible_mesh, pt_map) =
+            Qhull::ComputeConvexHull(spherical_projection);
+
+    // reassign original points to mesh
+    int origin_vidx = pt_map.size();
+    for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
+        size_t pidx = pt_map[vidx];
+        visible_mesh->vertices_[vidx] = points_[pidx];
+        if (pidx == origin_pidx) {
+            origin_vidx = vidx;
+            visible_mesh->vertices_[vidx] = camera_location;
+        }
+    }
+
+    // erase origin if part of mesh
+    if (origin_vidx < (int)(visible_mesh->vertices_.size())) {
+        visible_mesh->vertices_.erase(visible_mesh->vertices_.begin() +
+                                      origin_vidx);
+        pt_map.erase(pt_map.begin() + origin_vidx);
+        for (size_t tidx = visible_mesh->triangles_.size(); tidx-- > 0;) {
+            if (visible_mesh->triangles_[tidx](0) == origin_vidx ||
+                visible_mesh->triangles_[tidx](1) == origin_vidx ||
+                visible_mesh->triangles_[tidx](2) == origin_vidx) {
+                visible_mesh->triangles_.erase(
+                        visible_mesh->triangles_.begin() + tidx);
+            } else {
+                if (visible_mesh->triangles_[tidx](0) > origin_vidx)
+                    visible_mesh->triangles_[tidx](0) -= 1;
+                if (visible_mesh->triangles_[tidx](1) > origin_vidx)
+                    visible_mesh->triangles_[tidx](1) -= 1;
+                if (visible_mesh->triangles_[tidx](2) > origin_vidx)
+                    visible_mesh->triangles_[tidx](2) -= 1;
+            }
+        }
+    }
+    return std::make_tuple(visible_mesh, pt_map);
 }
 
 }  // namespace geometry

@@ -66,9 +66,9 @@ void ScalableTSDFVolume::Integrate(
          image.color_.num_of_channels_ != 1) ||
         (color_type_ == TSDFVolumeColorType::Gray32 &&
          image.color_.bytes_per_channel_ != 4) ||
-        (color_type_ != TSDFVolumeColorType::None &&
+        (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.width_ != intrinsic.width_) ||
-        (color_type_ != TSDFVolumeColorType::None &&
+        (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.height_ != intrinsic.height_)) {
         utility::LogWarning(
                 "[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
@@ -121,7 +121,7 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                         Eigen::Vector3i idx0(x, y, z);
                         w0 = volume0.voxels_[volume0.IndexOf(idx0)].weight_;
                         f0 = volume0.voxels_[volume0.IndexOf(idx0)].tsdf_;
-                        if (color_type_ != TSDFVolumeColorType::None)
+                        if (color_type_ != TSDFVolumeColorType::NoColor)
                             c0 = volume0.voxels_[volume0.IndexOf(idx0)]
                                          .color_.cast<float>();
                         if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
@@ -145,7 +145,7 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                     f1 = volume0.voxels_[volume0.IndexOf(idx1)]
                                                  .tsdf_;
                                     if (color_type_ !=
-                                        TSDFVolumeColorType::None)
+                                        TSDFVolumeColorType::NoColor)
                                         c1 = volume0.voxels_[volume0.IndexOf(
                                                                      idx1)]
                                                      .color_.cast<float>();
@@ -166,7 +166,7 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                                                      idx1)]
                                                      .tsdf_;
                                         if (color_type_ !=
-                                            TSDFVolumeColorType::None)
+                                            TSDFVolumeColorType::NoColor)
                                             c1 = volume1.voxels_
                                                          [volume1.IndexOf(idx1)]
                                                                  .color_
@@ -329,7 +329,7 @@ ScalableTSDFVolume::ExtractTriangleMesh() {
                                             f0 * voxel_length_ / (f0 + f1);
                                     mesh->vertices_.push_back(pt);
                                     if (color_type_ !=
-                                        TSDFVolumeColorType::None) {
+                                        TSDFVolumeColorType::NoColor) {
                                         const auto &c0 = c[edge_to_vert[i][0]];
                                         const auto &c1 = c[edge_to_vert[i][1]];
                                         mesh->vertex_colors_.push_back(
