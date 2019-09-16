@@ -178,9 +178,9 @@ void pybind_image(py::module &m) {
                  },
                  "Function to filter Image", "filter_type"_a)
             .def("flipud", &geometry::Image::FlipUD,
-                 "Function to flip image upside down")
+                 "Function to flip image vertically (upside down)")
             .def("fliplr", &geometry::Image::FlipLR,
-                 "Function to flip image left to right")
+                 "Function to flip image horizontally (from left to right)")
             .def("create_pyramid",
                  [](const geometry::Image &input, size_t num_of_levels,
                     bool with_gaussian_filter) {
