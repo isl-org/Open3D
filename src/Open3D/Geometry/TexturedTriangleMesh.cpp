@@ -24,29 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/Geometry/TexturedTriangleMesh.h"
+#include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/IntersectionTest.h"
+#include "Open3D/Geometry/KDTreeFlann.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/Qhull.h"
 
-#include "Python/open3d_pybind.h"
+#include <Eigen/Dense>
+#include <numeric>
+#include <queue>
+#include <random>
+#include <tuple>
 
-void pybind_geometry(py::module &m);
+#include "Open3D/Utility/Console.h"
 
-void pybind_pointcloud(py::module &m);
-void pybind_voxelgrid(py::module &m);
-void pybind_lineset(py::module &m);
-void pybind_meshbase(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_texturedtrianglemesh(py::module &m);
-void pybind_halfedgetrianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_tetramesh(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_pointcloud_methods(py::module &m);
-void pybind_voxelgrid_methods(py::module &m);
-void pybind_meshbase_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_texturedtrianglemesh_methods(py::module &m);
-void pybind_lineset_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_octree_methods(py::module &m);
-void pybind_octree(py::module &m);
-void pybind_boundingvolume(py::module &m);
+namespace open3d {
+namespace geometry {
+
+TexturedTriangleMesh &TexturedTriangleMesh::Clear() {
+    TriangleMesh::Clear();
+    uvs_.clear();
+    texture_.Clear();
+    return *this;
+}
+
+TexturedTriangleMesh &TexturedTriangleMesh::operator+=(
+        const TexturedTriangleMesh &mesh) {
+    // TODO: need to copy image into a new one and update uv coordinates
+    throw std::runtime_error("Not implemented");
+}
+
+TexturedTriangleMesh TexturedTriangleMesh::operator+(
+        const TexturedTriangleMesh &mesh) const {
+    return (TexturedTriangleMesh(*this) += mesh);
+}
+
+}  // namespace geometry
+}  // namespace open3d

@@ -43,60 +43,23 @@ namespace open3d {
 namespace geometry {
 
 TriangleMesh &TriangleMesh::Clear() {
-    vertices_.clear();
-    vertex_normals_.clear();
-    vertex_colors_.clear();
+    MeshBase::Clear();
     triangles_.clear();
     triangle_normals_.clear();
     adjacency_list_.clear();
     return *this;
 }
 
-bool TriangleMesh::IsEmpty() const { return !HasVertices(); }
-
-Eigen::Vector3d TriangleMesh::GetMinBound() const {
-    return ComputeMinBound(vertices_);
-}
-
-Eigen::Vector3d TriangleMesh::GetMaxBound() const {
-    return ComputeMaxBound(vertices_);
-}
-
-Eigen::Vector3d TriangleMesh::GetCenter() const {
-    return ComputeCenter(vertices_);
-}
-
-AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
-}
-
-OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(vertices_);
-}
-
 TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
-    TransformPoints(transformation, vertices_);
-    TransformNormals(transformation, vertex_normals_);
+    MeshBase::Transform(transformation);
     TransformNormals(transformation, triangle_normals_);
-    return *this;
-}
-
-TriangleMesh &TriangleMesh::Translate(const Eigen::Vector3d &translation,
-                                      bool relative) {
-    TranslatePoints(translation, vertices_, relative);
-    return *this;
-}
-
-TriangleMesh &TriangleMesh::Scale(const double scale, bool center) {
-    ScalePoints(scale, vertices_, center);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
                                    bool center,
                                    RotationType type) {
-    RotatePoints(rotation, vertices_, center, type);
-    RotateNormals(rotation, vertex_normals_, center, type);
+    MeshBase::Rotate(rotation, center, type);
     RotateNormals(rotation, triangle_normals_, center, type);
     return *this;
 }
@@ -104,29 +67,10 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();
-    size_t add_vert_num = mesh.vertices_.size();
-    size_t new_vert_num = old_vert_num + add_vert_num;
+    MeshBase::operator+=(mesh);
     size_t old_tri_num = triangles_.size();
     size_t add_tri_num = mesh.triangles_.size();
     size_t new_tri_num = old_tri_num + add_tri_num;
-    if ((!HasVertices() || HasVertexNormals()) && mesh.HasVertexNormals()) {
-        vertex_normals_.resize(new_vert_num);
-        for (size_t i = 0; i < add_vert_num; i++)
-            vertex_normals_[old_vert_num + i] = mesh.vertex_normals_[i];
-    } else {
-        vertex_normals_.clear();
-    }
-    if ((!HasVertices() || HasVertexColors()) && mesh.HasVertexColors()) {
-        vertex_colors_.resize(new_vert_num);
-        for (size_t i = 0; i < add_vert_num; i++)
-            vertex_colors_[old_vert_num + i] = mesh.vertex_colors_[i];
-    } else {
-        vertex_colors_.clear();
-    }
-    vertices_.resize(new_vert_num);
-    for (size_t i = 0; i < add_vert_num; i++)
-        vertices_[old_vert_num + i] = mesh.vertices_[i];
-
     if ((!HasTriangles() || HasTriangleNormals()) &&
         mesh.HasTriangleNormals()) {
         triangle_normals_.resize(new_tri_num);
@@ -1307,11 +1251,6 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
         }
     }
     return false;
-}
-
-std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-TriangleMesh::ComputeConvexHull() const {
-    return Qhull::ComputeConvexHull(vertices_);
 }
 
 }  // namespace geometry

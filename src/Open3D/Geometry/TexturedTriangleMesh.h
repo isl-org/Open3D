@@ -26,27 +26,51 @@
 
 #pragma once
 
-#include "Python/open3d_pybind.h"
+#include <Eigen/Core>
+#include <memory>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-void pybind_geometry(py::module &m);
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Utility/Helper.h"
 
-void pybind_pointcloud(py::module &m);
-void pybind_voxelgrid(py::module &m);
-void pybind_lineset(py::module &m);
-void pybind_meshbase(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_texturedtrianglemesh(py::module &m);
-void pybind_halfedgetrianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_tetramesh(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_pointcloud_methods(py::module &m);
-void pybind_voxelgrid_methods(py::module &m);
-void pybind_meshbase_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_texturedtrianglemesh_methods(py::module &m);
-void pybind_lineset_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_octree_methods(py::module &m);
-void pybind_octree(py::module &m);
-void pybind_boundingvolume(py::module &m);
+namespace open3d {
+namespace geometry {
+
+class Image;
+
+class TexturedTriangleMesh : public TriangleMesh {
+public:
+    TexturedTriangleMesh()
+        : TriangleMesh(Geometry::GeometryType::TexturedTriangleMesh) {}
+    ~TexturedTriangleMesh() override {}
+
+public:
+    virtual TexturedTriangleMesh &Clear() override;
+
+public:
+    TexturedTriangleMesh &operator+=(const TexturedTriangleMesh &mesh);
+    TexturedTriangleMesh operator+(const TexturedTriangleMesh &mesh) const;
+
+    // assumes for each triangle we have three uv coordinates
+    bool HasUvs() const {
+        return HasTriangles() && uvs_.size() == 3 * triangles_.size();
+    }
+
+    bool HasTexture() const { return !texture_.IsEmpty(); }
+
+protected:
+    // Forward child class type to avoid indirect nonvirtual base
+    TexturedTriangleMesh(Geometry::GeometryType type) : TriangleMesh(type) {}
+
+public:
+    // 3 uv coordinates per triangle
+    std::vector<Eigen::Vector2d> uvs_;
+    Image texture_;
+};
+
+}  // namespace geometry
+}  // namespace open3d

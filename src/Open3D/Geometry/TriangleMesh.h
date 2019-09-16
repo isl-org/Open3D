@@ -33,7 +33,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/MeshBase.h"
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {
@@ -41,43 +41,19 @@ namespace geometry {
 
 class PointCloud;
 
-class TriangleMesh : public Geometry3D {
+class TriangleMesh : public MeshBase {
 public:
-    /// Indicates the method that is used for mesh simplification if multiple
-    /// vertices are combined to a single one.
-    /// \param Average indicates that the average position is computed as
-    /// output.
-    /// \param Quadric indicates that the distance to the adjacent triangle
-    /// planes is minimized. Cf. "Simplifying Surfaces with Color and Texture
-    /// using Quadric Error Metrics" by Garland and Heckbert.
-    enum class SimplificationContraction { Average, Quadric };
-
-    /// Indicates the scope of filter operations.
-    /// \param All indicates that all properties (color, normal,
-    /// vertex position) are filtered.
-    /// \param Color indicates that only the colors are filtered.
-    /// \param Normal indicates that only the normals are filtered.
-    /// \param Vertex indicates that only the vertex positions are filtered.
-    enum class FilterScope { All, Color, Normal, Vertex };
-
-    TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {}
+    TriangleMesh() : MeshBase(Geometry::GeometryType::TriangleMesh) {}
     ~TriangleMesh() override {}
 
 public:
-    TriangleMesh &Clear() override;
-    bool IsEmpty() const override;
-    Eigen::Vector3d GetMinBound() const override;
-    Eigen::Vector3d GetMaxBound() const override;
-    Eigen::Vector3d GetCenter() const override;
-    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
-    TriangleMesh &Transform(const Eigen::Matrix4d &transformation) override;
-    TriangleMesh &Translate(const Eigen::Vector3d &translation,
-                            bool relative = true) override;
-    TriangleMesh &Scale(const double scale, bool center = true) override;
-    TriangleMesh &Rotate(const Eigen::Vector3d &rotation,
-                         bool center = true,
-                         RotationType type = RotationType::XYZ) override;
+    virtual TriangleMesh &Clear() override;
+    virtual TriangleMesh &Transform(
+            const Eigen::Matrix4d &transformation) override;
+    virtual TriangleMesh &Rotate(
+            const Eigen::Vector3d &rotation,
+            bool center = true,
+            RotationType type = RotationType::XYZ) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
@@ -161,20 +137,8 @@ public:
             double mu = -0.53,
             FilterScope scope = FilterScope::All) const;
 
-    bool HasVertices() const { return vertices_.size() > 0; }
-
     bool HasTriangles() const {
         return vertices_.size() > 0 && triangles_.size() > 0;
-    }
-
-    bool HasVertexNormals() const {
-        return vertices_.size() > 0 &&
-               vertex_normals_.size() == vertices_.size();
-    }
-
-    bool HasVertexColors() const {
-        return vertices_.size() > 0 &&
-               vertex_colors_.size() == vertices_.size();
     }
 
     bool HasTriangleNormals() const {
@@ -187,24 +151,13 @@ public:
     }
 
     TriangleMesh &NormalizeNormals() {
-        for (size_t i = 0; i < vertex_normals_.size(); i++) {
-            vertex_normals_[i].normalize();
-            if (std::isnan(vertex_normals_[i](0))) {
-                vertex_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
-            }
-        }
+        MeshBase::NormalizeNormals();
         for (size_t i = 0; i < triangle_normals_.size(); i++) {
             triangle_normals_[i].normalize();
             if (std::isnan(triangle_normals_[i](0))) {
                 triangle_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
             }
         }
-        return *this;
-    }
-
-    /// Assigns each vertex in the TriangleMesh the same color \param color.
-    TriangleMesh &PaintUniformColor(const Eigen::Vector3d &color) {
-        ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
         return *this;
     }
 
@@ -300,10 +253,6 @@ public:
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
-
-    /// Function that computes the convex hull of the triangle mesh using qhull
-    std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-    ComputeConvexHull() const;
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh
@@ -481,7 +430,7 @@ public:
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
-    TriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
+    TriangleMesh(Geometry::GeometryType type) : MeshBase(type) {}
 
     void FilterSmoothLaplacianHelper(
             std::shared_ptr<TriangleMesh> &mesh,
@@ -495,9 +444,6 @@ protected:
             bool filter_color) const;
 
 public:
-    std::vector<Eigen::Vector3d> vertices_;
-    std::vector<Eigen::Vector3d> vertex_normals_;
-    std::vector<Eigen::Vector3d> vertex_colors_;
     std::vector<Eigen::Vector3i> triangles_;
     std::vector<Eigen::Vector3d> triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;

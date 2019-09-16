@@ -37,13 +37,15 @@ public:
         VoxelGrid = 2,
         Octree = 3,
         LineSet = 4,
-        TriangleMesh = 5,
-        HalfEdgeTriangleMesh = 6,
-        Image = 7,
-        RGBDImage = 8,
-        TetraMesh = 9,
-        OrientedBoundingBox = 10,
-        AxisAlignedBoundingBox = 11,
+        MeshBase = 5,
+        TriangleMesh = 6,
+        TexturedTriangleMesh = 7,
+        HalfEdgeTriangleMesh = 8,
+        Image = 9,
+        RGBDImage = 10,
+        TetraMesh = 11,
+        OrientedBoundingBox = 12,
+        AxisAlignedBoundingBox = 13,
     };
 
 public:
