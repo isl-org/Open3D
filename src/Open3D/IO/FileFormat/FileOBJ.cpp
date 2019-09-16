@@ -28,6 +28,7 @@
 #include <numeric>
 #include <vector>
 
+#include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
 
@@ -61,13 +62,19 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 
     mesh.Clear();
 
-    // copy vertex and vertex_color data
+    // copy vertex and data
     for (size_t vidx = 0; vidx < attrib.vertices.size(); vidx += 3) {
         tinyobj::real_t vx = attrib.vertices[vidx + 0];
         tinyobj::real_t vy = attrib.vertices[vidx + 1];
         tinyobj::real_t vz = attrib.vertices[vidx + 2];
         mesh.vertices_.push_back(Eigen::Vector3d(vx, vy, vz));
     }
+
+    // copy vertex color and uv data (might co-exist)
+    // policy:
+    // if (uv and texture): uv
+    // if (color and uv and no texture): color
+    // if (uv only): uv
     for (size_t vidx = 0; vidx < attrib.colors.size(); vidx += 3) {
         tinyobj::real_t r = attrib.colors[vidx + 0];
         tinyobj::real_t g = attrib.colors[vidx + 1];
@@ -75,9 +82,20 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         mesh.vertex_colors_.push_back(Eigen::Vector3d(r, g, b));
     }
 
+    if (!materials.empty()) {
+        if (!materials[0].diffuse_texname.empty()) {
+            utility::LogDebug("mesh.materials[0].diffuse_name == {}\n",
+                              materials[0].diffuse_texname);
+            mesh.texture_ =
+                    io::CreateImageFromFile(materials[0].diffuse_texname);
+        }
+    }
+
     // resize normal data and create bool indicator vector
     mesh.vertex_normals_.resize(mesh.vertices_.size());
+    mesh.vertex_uvs_.resize(mesh.vertices_.size());
     std::vector<bool> normals_indicator(mesh.vertices_.size(), false);
+    std::vector<bool> uvs_indicator(mesh.vertex_uvs_.size(), false);
 
     // copy face data and copy normals data
     for (size_t s = 0; s < shapes.size(); s++) {
@@ -110,6 +128,18 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                     mesh.vertex_normals_[vidx](2) = nz;
                     normals_indicator[vidx] = true;
                 }
+
+                if (!uvs_indicator[vidx] &&
+                    (2 * idx.texcoord_index + 1) <
+                            int(attrib.texcoords.size())) {
+                    tinyobj::real_t tx =
+                            attrib.texcoords[idx.texcoord_index + 0];
+                    tinyobj::real_t ty =
+                            attrib.texcoords[idx.texcoord_index + 1];
+                    mesh.vertex_uvs_[vidx](0) = tx;
+                    mesh.vertex_uvs_[vidx](1) = ty;
+                    uvs_indicator[vidx] = true;
+                }
             }
             mesh.triangles_.push_back(facet);
             index_offset += fv;
@@ -122,6 +152,14 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                             true, [](bool a, bool b) { return a && b; });
     if (!all_normals_set) {
         mesh.vertex_normals_.clear();
+    }
+
+    bool all_uvs_set =
+            std::accumulate(uvs_indicator.begin(), uvs_indicator.end(), true,
+                            [](bool a, bool b) { return a && b; });
+    if (!all_uvs_set) {
+        utility::LogDebug("!all_uvs_set!\n");
+        mesh.vertex_uvs_.clear();
     }
     return true;
 }

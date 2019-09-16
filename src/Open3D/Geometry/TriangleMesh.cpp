@@ -46,6 +46,7 @@ TriangleMesh &TriangleMesh::Clear() {
     vertices_.clear();
     vertex_normals_.clear();
     vertex_colors_.clear();
+    vertex_uvs_.clear();
     triangles_.clear();
     triangle_normals_.clear();
     adjacency_list_.clear();
@@ -122,6 +123,13 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
             vertex_colors_[old_vert_num + i] = mesh.vertex_colors_[i];
     } else {
         vertex_colors_.clear();
+    }
+    if ((!HasVertices() || HasVertexUVs()) && mesh.HasVertexUVs()) {
+        vertex_uvs_.resize(new_vert_num);
+        for (size_t i = 0; i < add_vert_num; i++)
+            vertex_uvs_[old_vert_num + i] = mesh.vertex_uvs_[i];
+    } else {
+        vertex_uvs_.clear();
     }
     vertices_.resize(new_vert_num);
     for (size_t i = 0; i < add_vert_num; i++)

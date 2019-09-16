@@ -41,6 +41,8 @@ namespace geometry {
 
 class PointCloud;
 
+class Image;
+
 class TriangleMesh : public Geometry3D {
 public:
     /// Indicates the method that is used for mesh simplification if multiple
@@ -175,6 +177,10 @@ public:
     bool HasVertexColors() const {
         return vertices_.size() > 0 &&
                vertex_colors_.size() == vertices_.size();
+    }
+
+    bool HasVertexUVs() const {
+        return vertices_.size() > 0 && vertex_uvs_.size() == vertices_.size();
     }
 
     bool HasTriangleNormals() const {
@@ -501,6 +507,9 @@ public:
     std::vector<Eigen::Vector3i> triangles_;
     std::vector<Eigen::Vector3d> triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
+
+    std::vector<Eigen::Vector2d> vertex_uvs_;
+    std::shared_ptr<Image> texture_;
 };
 
 }  // namespace geometry
