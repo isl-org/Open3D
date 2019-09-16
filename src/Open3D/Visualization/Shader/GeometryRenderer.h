@@ -36,6 +36,7 @@
 #include "Open3D/Visualization/Shader/Simple2DShader.h"
 #include "Open3D/Visualization/Shader/SimpleBlackShader.h"
 #include "Open3D/Visualization/Shader/SimpleShader.h"
+#include "Open3D/Visualization/Shader/TexturePhongShader.h"
 
 namespace open3d {
 namespace visualization {
@@ -177,6 +178,7 @@ public:
 protected:
     SimpleShaderForTriangleMesh simple_mesh_shader_;
     PhongShaderForTriangleMesh phong_mesh_shader_;
+    TexturePhongShaderForTriangleMesh texture_phong_mesh_shader_;
     NormalShaderForTriangleMesh normal_mesh_shader_;
     SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
 };

@@ -272,28 +272,27 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
 
 std::shared_ptr<Image> Image::Flip() const {
     auto output = std::make_shared<Image>();
-    if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogWarning("[FilpImage] Unsupported image format.\n");
-        return output;
-    }
-    output->Prepare(height_, width_, 1, 4);
+    // if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
+    //     utility::LogWarning("[FilpImage] Unsupported image format.\n");
+    //     return output;
+    // }
+    output->Prepare(height_, width_, num_of_channels_, bytes_per_channel_);
 
-#ifdef _OPENMP
-#ifdef _WIN32
-#pragma omp parallel for schedule(static)
-#else
-#pragma omp parallel for collapse(2) schedule(static)
-#endif
-#endif
+    // #ifdef _OPENMP
+    // #ifdef _WIN32
+    // #pragma omp parallel for schedule(static)
+    // #else
+    // #pragma omp parallel for collapse(2) schedule(static)
+    // #endif
+    // #endif
+    int bytes_per_line = BytesPerLine();
     for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-            float *pi = PointerAt<float>(x, y, 0);
-            float *po = output->PointerAt<float>(y, x, 0);
-            *po = *pi;
-        }
+        std::copy(data_.data() + y * bytes_per_line,
+                  data_.data() + (y + 1) * bytes_per_line,
+                  output->data_.data() + (height_ - y - 1) * bytes_per_line);
     }
     return output;
-}
+}  // namespace geometry
 
 std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     auto output = std::make_shared<Image>();

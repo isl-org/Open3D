@@ -183,6 +183,8 @@ public:
         return vertices_.size() > 0 && vertex_uvs_.size() == vertices_.size();
     }
 
+    bool HasTexture() const;
+
     bool HasTriangleNormals() const {
         return HasTriangles() && triangles_.size() == triangle_normals_.size();
     }

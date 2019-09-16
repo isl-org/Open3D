@@ -26,6 +26,7 @@
 
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/IntersectionTest.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
@@ -54,6 +55,10 @@ TriangleMesh &TriangleMesh::Clear() {
 }
 
 bool TriangleMesh::IsEmpty() const { return !HasVertices(); }
+
+bool TriangleMesh::HasTexture() const {
+    return texture_ != nullptr && !texture_->IsEmpty();
+}
 
 Eigen::Vector3d TriangleMesh::GetMinBound() const {
     return ComputeMinBound(vertices_);

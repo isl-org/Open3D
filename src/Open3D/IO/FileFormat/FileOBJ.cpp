@@ -87,7 +87,8 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             utility::LogDebug("mesh.materials[0].diffuse_name == {}\n",
                               materials[0].diffuse_texname);
             mesh.texture_ =
-                    io::CreateImageFromFile(materials[0].diffuse_texname);
+                    io::CreateImageFromFile(materials[0].diffuse_texname)
+                            ->Flip();
         }
     }
 
@@ -133,9 +134,9 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                     (2 * idx.texcoord_index + 1) <
                             int(attrib.texcoords.size())) {
                     tinyobj::real_t tx =
-                            attrib.texcoords[idx.texcoord_index + 0];
+                            attrib.texcoords[2 * idx.texcoord_index + 0];
                     tinyobj::real_t ty =
-                            attrib.texcoords[idx.texcoord_index + 1];
+                            attrib.texcoords[2 * idx.texcoord_index + 1];
                     mesh.vertex_uvs_[vidx](0) = tx;
                     mesh.vertex_uvs_[vidx](1) = ty;
                     uvs_indicator[vidx] = true;
@@ -158,7 +159,6 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             std::accumulate(uvs_indicator.begin(), uvs_indicator.end(), true,
                             [](bool a, bool b) { return a && b; });
     if (!all_uvs_set) {
-        utility::LogDebug("!all_uvs_set!\n");
         mesh.vertex_uvs_.clear();
     }
     return true;
