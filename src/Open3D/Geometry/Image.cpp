@@ -264,13 +264,13 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
     }
 
     auto temp1 = FilterHorizontal(dx);
-    auto temp2 = temp1->Flip();
+    auto temp2 = temp1->Transpose();
     auto temp3 = temp2->FilterHorizontal(dy);
-    auto temp4 = temp3->Flip();
+    auto temp4 = temp3->Transpose();
     return temp4;
 }
 
-std::shared_ptr<Image> Image::Flip() const {
+std::shared_ptr<Image> Image::Transpose() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogWarning("[FilpImage] Unsupported image format.\n");
@@ -292,6 +292,48 @@ std::shared_ptr<Image> Image::Flip() const {
             *po = *pi;
         }
     }
+    return output;
+}
+
+std::shared_ptr<Image> Image::FlipUD() const {
+    auto output = std::make_shared<Image>();
+    output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
+
+    int bytes_per_line = BytesPerLine();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int y = 0; y < height_; y++) {
+        std::copy(data_.data() + y * bytes_per_line,
+                  data_.data() + (y + 1) * bytes_per_line,
+                  output->data_.data() + (height_ - y - 1) * bytes_per_line);
+    }
+    return output;
+}
+
+std::shared_ptr<Image> Image::FlipLR() const {
+    auto output = std::make_shared<Image>();
+    output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
+
+    int bytes_per_line = BytesPerLine();
+    int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
+#ifdef _OPENMP
+#ifdef _WIN32
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(2) schedule(static)
+#endif
+#endif
+    for (int y = 0; y < height_; y++) {
+        for (int x = 0; x < width_; x++) {
+            std::copy(data_.data() + y * bytes_per_line + x * bytes_per_pixel,
+                      data_.data() + y * bytes_per_line +
+                              (x + 1) * bytes_per_pixel,
+                      output->data_.data() + y * bytes_per_line +
+                              (width_ - x - 1) * bytes_per_pixel);
+        }
+    }
+
     return output;
 }
 

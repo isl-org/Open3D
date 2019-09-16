@@ -511,7 +511,7 @@ TEST(Image, ConvertDepthToFloatImage) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FlipImage) {
+TEST(Image, TransposeImage) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
             233, 45,  204, 198, 205, 80,  90,  190, 133, 138, 127, 155, 87,

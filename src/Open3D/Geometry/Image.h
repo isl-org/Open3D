@@ -128,7 +128,12 @@ public:
     std::shared_ptr<Image> ConvertDepthToFloatImage(
             double depth_scale = 1000.0, double depth_trunc = 3.0) const;
 
-    std::shared_ptr<Image> Flip() const;
+    std::shared_ptr<Image> Transpose() const;
+
+    /// Function to flip image left and right
+    std::shared_ptr<Image> FlipLR() const;
+    /// Function to flip image up and down
+    std::shared_ptr<Image> FlipUD() const;
 
     /// Function to filter image with pre-defined filtering type
     std::shared_ptr<Image> Filter(Image::FilterType type) const;
