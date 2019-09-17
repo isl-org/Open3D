@@ -33,6 +33,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/MeshBase.h"
 #include "Open3D/Utility/Helper.h"
 
@@ -58,6 +59,36 @@ public:
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
     TriangleMesh operator+(const TriangleMesh &mesh) const;
+
+    bool HasTriangles() const {
+        return vertices_.size() > 0 && triangles_.size() > 0;
+    }
+
+    bool HasTriangleNormals() const {
+        return HasTriangles() && triangles_.size() == triangle_normals_.size();
+    }
+
+    bool HasAdjacencyList() const {
+        return vertices_.size() > 0 &&
+               adjacency_list_.size() == vertices_.size();
+    }
+
+    bool HasTriangleUvs() const {
+        return HasTriangles() && triangle_uvs_.size() == 3 * triangles_.size();
+    }
+
+    bool HasTexture() const { return !texture_.IsEmpty(); }
+
+    TriangleMesh &NormalizeNormals() {
+        MeshBase::NormalizeNormals();
+        for (size_t i = 0; i < triangle_normals_.size(); i++) {
+            triangle_normals_[i].normalize();
+            if (std::isnan(triangle_normals_[i](0))) {
+                triangle_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
+            }
+        }
+        return *this;
+    }
 
     /// Function to compute triangle normals, usually called before rendering
     TriangleMesh &ComputeTriangleNormals(bool normalized = true);
@@ -136,30 +167,6 @@ public:
             double lambda = 0.5,
             double mu = -0.53,
             FilterScope scope = FilterScope::All) const;
-
-    bool HasTriangles() const {
-        return vertices_.size() > 0 && triangles_.size() > 0;
-    }
-
-    bool HasTriangleNormals() const {
-        return HasTriangles() && triangles_.size() == triangle_normals_.size();
-    }
-
-    bool HasAdjacencyList() const {
-        return vertices_.size() > 0 &&
-               adjacency_list_.size() == vertices_.size();
-    }
-
-    TriangleMesh &NormalizeNormals() {
-        MeshBase::NormalizeNormals();
-        for (size_t i = 0; i < triangle_normals_.size(); i++) {
-            triangle_normals_[i].normalize();
-            if (std::isnan(triangle_normals_[i](0))) {
-                triangle_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
-            }
-        }
-        return *this;
-    }
 
     /// Function that computes the Euler-Poincaré characteristic, i.e.,
     /// V + F - E, where V is the number of vertices, F is the number
@@ -292,8 +299,8 @@ public:
     /// The result can be a non-manifold mesh.
     std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
             double voxel_size,
-            TriangleMesh::SimplificationContraction contraction =
-                    TriangleMesh::SimplificationContraction::Average) const;
+            SimplificationContraction contraction =
+                    SimplificationContraction::Average) const;
 
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
@@ -447,6 +454,8 @@ public:
     std::vector<Eigen::Vector3i> triangles_;
     std::vector<Eigen::Vector3d> triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
+    std::vector<Eigen::Vector2d> triangle_uvs_;
+    Image texture_;
 };
 
 }  // namespace geometry

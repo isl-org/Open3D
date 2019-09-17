@@ -167,6 +167,12 @@ std::shared_ptr<PointCloud> PointCloud::SelectDownSample(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
         const std::vector<size_t> &indices) const {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[SelectDownSample] This mesh contains triangle uvs that are "
+                "not handled "
+                "in this function\n");
+    }
     auto output = std::make_shared<TriangleMesh>();
     bool has_triangle_normals = HasTriangleNormals();
     bool has_vertex_normals = HasVertexNormals();

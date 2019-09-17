@@ -47,6 +47,8 @@ TriangleMesh &TriangleMesh::Clear() {
     triangles_.clear();
     triangle_normals_.clear();
     adjacency_list_.clear();
+    triangle_uvs_.clear();
+    texture_.Clear();
     return *this;
 }
 
@@ -87,6 +89,10 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     }
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
+    }
+    if (HasTriangleUvs() || HasTexture()) {
+        // TODO: implement copy
+        utility::LogWarning("copy of uvs and texture is not implemented yet\n");
     }
     return (*this);
 }
@@ -686,6 +692,12 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
 }
 
 TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[RemoveDuplicatedTriangles] This mesh contains triangle uvs "
+                "that are not handled "
+                "in this function\n");
+    }
     typedef std::tuple<int, int, int> Index3;
     std::unordered_map<Index3, size_t, utility::hash_tuple::hash<Index3>>
             triangle_to_old_index;
@@ -776,6 +788,12 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
 }
 
 TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[RemoveDegenerateTriangles] This mesh contains triangle uvs "
+                "that are not handled "
+                "in this function\n");
+    }
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
     size_t k = 0;
@@ -801,6 +819,12 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
 }
 
 TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[RemoveNonManifoldEdges] This mesh contains triangle uvs that "
+                "are not handled "
+                "in this function\n");
+    }
     std::vector<double> triangle_areas;
     GetSurfaceArea(triangle_areas);
 

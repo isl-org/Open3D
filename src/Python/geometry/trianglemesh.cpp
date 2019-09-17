@@ -145,6 +145,10 @@ void pybind_trianglemesh(py::module &m) {
             .def("has_adjacency_list",
                  &geometry::TriangleMesh::HasAdjacencyList,
                  "Returns ``True`` if the mesh contains adjacency normals.")
+            .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
+                 "Returns ``True`` if the mesh contains uv coordinates.")
+            .def("has_texture", &geometry::TriangleMesh::HasTexture,
+                 "Returns ``True`` if the mesh contains a texture image.")
             .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
                  "Normalize both triangle normals and vertex normals to legnth "
                  "1.")
@@ -343,7 +347,16 @@ void pybind_trianglemesh(py::module &m) {
             .def_readwrite(
                     "adjacency_list", &geometry::TriangleMesh::adjacency_list_,
                     "List of Sets: The set ``adjacency_list[i]`` contains the "
-                    "indices of adjacent vertices of vertex i.");
+                    "indices of adjacent vertices of vertex i.")
+            .def_readwrite("triangle_uvs",
+                           &geometry::TriangleMesh::triangle_uvs_,
+                           "``float64`` array of shape ``(3 * num_triangles, "
+                           "2)``, use "
+                           "``numpy.asarray()`` to access data: List of "
+                           "uvs denoted by the index of points forming "
+                           "the triangle.")
+            .def_readwrite("texture", &geometry::TriangleMesh::texture_,
+                           "open3d.geometry.Image: The texture image.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
@@ -356,6 +369,8 @@ void pybind_trianglemesh(py::module &m) {
             {{"normalized",
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "has_vertex_normals",

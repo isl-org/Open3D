@@ -173,14 +173,12 @@ void pybind_geometry(py::module &m) {
     pybind_lineset(m_submodule);
     pybind_meshbase(m_submodule);
     pybind_trianglemesh(m_submodule);
-    pybind_texturedtrianglemesh(m_submodule);
     pybind_halfedgetrianglemesh(m_submodule);
     pybind_image(m_submodule);
     pybind_tetramesh(m_submodule);
     pybind_pointcloud_methods(m_submodule);
     pybind_voxelgrid_methods(m_submodule);
     pybind_meshbase_methods(m_submodule);
-    pybind_texturedtrianglemesh_methods(m_submodule);
     pybind_lineset_methods(m_submodule);
     pybind_image_methods(m_submodule);
     pybind_octree_methods(m_submodule);
