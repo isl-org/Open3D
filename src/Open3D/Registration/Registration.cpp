@@ -157,12 +157,15 @@ RegistrationResult RegistrationICP(
         utility::LogWarning("Invalid max_correspondence_distance.\n");
         return RegistrationResult(init);
     }
-    if (estimation.GetTransformationEstimationType() ==
-                TransformationEstimationType::PointToPlane &&
+    if ((estimation.GetTransformationEstimationType() ==
+                 TransformationEstimationType::PointToPlane ||
+         estimation.GetTransformationEstimationType() ==
+                 TransformationEstimationType::ColoredICP) &&
         (!source.HasNormals() || !target.HasNormals())) {
         utility::LogWarning(
-                "TransformationEstimationPointToPlane requires "
-                "pre-computed normal vectors.\n");
+                "TransformationEstimationPointToPlane and "
+                "TransformationEstimationColoredICP "
+                "require pre-computed normal vectors.\n");
         return RegistrationResult(init);
     }
 
