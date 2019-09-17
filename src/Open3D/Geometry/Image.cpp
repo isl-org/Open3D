@@ -295,7 +295,7 @@ std::shared_ptr<Image> Image::Transpose() const {
     return output;
 }
 
-std::shared_ptr<Image> Image::FlipUD() const {
+std::shared_ptr<Image> Image::FlipVertical() const {
     auto output = std::make_shared<Image>();
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
@@ -311,7 +311,7 @@ std::shared_ptr<Image> Image::FlipUD() const {
     return output;
 }
 
-std::shared_ptr<Image> Image::FlipLR() const {
+std::shared_ptr<Image> Image::FlipHorizontal() const {
     auto output = std::make_shared<Image>();
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 

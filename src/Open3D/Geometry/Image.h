@@ -130,10 +130,10 @@ public:
 
     std::shared_ptr<Image> Transpose() const;
 
-    /// Function to flip image left and right
-    std::shared_ptr<Image> FlipLR() const;
-    /// Function to flip image up and down
-    std::shared_ptr<Image> FlipUD() const;
+    /// Function to flip image horizontally (from left to right)
+    std::shared_ptr<Image> FlipHorizontal() const;
+    /// Function to flip image vertically (upside down)
+    std::shared_ptr<Image> FlipVertical() const;
 
     /// Function to filter image with pre-defined filtering type
     std::shared_ptr<Image> Filter(Image::FilterType type) const;
