@@ -111,6 +111,7 @@ public:
             Eigen::Vector3i index) const;
 
     // Element-wise check if a query in the list is included in the VoxelGrid
+    // Queries are double precision and are mapped to the closest voxel.
     std::vector<bool> CheckIfIncluded(
             const std::vector<Eigen::Vector3d>& queries);
 

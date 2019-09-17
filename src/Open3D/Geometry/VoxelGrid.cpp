@@ -219,11 +219,7 @@ std::vector<bool> VoxelGrid::CheckIfIncluded(
     size_t i = 0;
     for (auto &query_double : queries) {
         auto query = GetVoxel(query_double);
-        auto it = voxels_.find(query);
-        if (it == voxels_.end())
-            output[i] = false;
-        else
-            output[i] = true;
+        output[i] = voxels_.count(query) > 0;
         i++;
     }
     return output;
@@ -291,8 +287,8 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
 
     // get for each voxel if it projects to a valid pixel and check if the voxel
     // depth is behind the depth of the depth map at the projected pixel.
-    bool carve = true;
     for (auto it = voxels_.begin(); it != voxels_.end();) {
+        bool carve = true;
         const geometry::Voxel &voxel = it->second;
         auto pts = GetVoxelBoundingPoints(voxel.grid_index_);
         for (auto &x : pts) {
@@ -313,7 +309,6 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             it = voxels_.erase(it);
         else
             it++;
-        carve = true;
     }
     return *this;
 }
@@ -335,8 +330,8 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
 
     // get for each voxel if it projects to a valid pixel and check if the pixel
     // is set (>0).
-    bool carve = true;
     for (auto it = voxels_.begin(); it != voxels_.end();) {
+        bool carve = true;
         const geometry::Voxel &voxel = it->second;
         auto pts = GetVoxelBoundingPoints(voxel.grid_index_);
         for (auto &x : pts) {
@@ -357,7 +352,6 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             it = voxels_.erase(it);
         else
             it++;
-        carve = true;
     }
     return *this;
 }

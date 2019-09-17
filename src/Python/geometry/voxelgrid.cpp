@@ -95,7 +95,8 @@ void pybind_voxelgrid(py::module &m) {
             .def("check_if_included", &geometry::VoxelGrid::CheckIfIncluded,
                  "queries"_a,
                  "Element-wise check if a query in the list is included in "
-                 "the VoxelGrid.")
+                 "the VoxelGrid. Queries are double precision and "
+                 "are mapped to the closest voxel.")
             .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
                  "depth_map"_a, "camera_params"_a,
                  "Remove all voxels from the VoxelGrid where none of the "
