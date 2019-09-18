@@ -113,6 +113,16 @@ void pybind_trianglemesh(py::module &m) {
                  "successively deleting  triangles with the smallest surface "
                  "area adjacent to the non-manifold edge until the number of "
                  "adjacent triangles to the edge is `<= 2`.")
+            .def("merge_close_vertices",
+                 &geometry::TriangleMesh::MergeCloseVertices,
+                 "Function that will merge close by vertices to a single one. "
+                 "The vertex position, "
+                 "normal and color will be the average of the vertices. The "
+                 "parameter eps "
+                 "defines the maximum distance of close by vertices.  This "
+                 "function might help to "
+                 "close triangle soups.",
+                 "eps"_a)
             .def("filter_sharpen", &geometry::TriangleMesh::FilterSharpen,
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
@@ -423,6 +433,10 @@ void pybind_trianglemesh(py::module &m) {
                                     "remove_degenerate_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "remove_non_manifold_edges");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "merge_close_vertices",
+            {{"eps",
+              "Parameter that defines the distance between close vertices."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "filter_sharpen",
             {{"number_of_iterations",
