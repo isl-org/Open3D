@@ -154,8 +154,8 @@ int HalfEdgeTriangleMesh::NextHalfEdgeOnBoundary(
     return next_half_edge_index;
 }
 
-std::shared_ptr<HalfEdgeTriangleMesh> HalfEdgeTriangleMesh::CreateFromMesh(
-        const TriangleMesh &mesh) {
+std::shared_ptr<HalfEdgeTriangleMesh>
+HalfEdgeTriangleMesh::CreateFromTriangleMesh(const TriangleMesh &mesh) {
     auto mesh_cpy = std::make_shared<TriangleMesh>();
     auto het_mesh = std::make_shared<HalfEdgeTriangleMesh>();
 
@@ -287,6 +287,8 @@ std::shared_ptr<HalfEdgeTriangleMesh> HalfEdgeTriangleMesh::CreateFromMesh(
     het_mesh->vertices_ = mesh_cpy->vertices_;
     het_mesh->vertex_normals_ = mesh_cpy->vertex_normals_;
     het_mesh->vertex_colors_ = mesh_cpy->vertex_colors_;
+    het_mesh->triangles_ = mesh_cpy->triangles_;
+    het_mesh->triangle_normals_ = mesh_cpy->triangle_normals_;
 
     return het_mesh;
 }
