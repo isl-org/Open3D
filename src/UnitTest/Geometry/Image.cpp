@@ -530,20 +530,87 @@ TEST(Image, TransposeImage) {
     int height = 5;
     int num_of_channels = 1;
     int bytes_per_channel = 4;
-    int flip_bytes_per_channel = 1;
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
-    auto flip_image = image.ConvertDepthToFloatImage();
+    auto transpose_image = image.ConvertDepthToFloatImage();
 
+    EXPECT_FALSE(transpose_image->IsEmpty());
+    EXPECT_EQ(width, transpose_image->height_);
+    EXPECT_EQ(height, transpose_image->width_);
+    EXPECT_EQ(num_of_channels, transpose_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(float)), transpose_image->bytes_per_channel_);
+    ExpectEQ(ref, transpose_image->data_);
+}
+
+TEST(Image, FlipVerticalImage) {
+    // reference data used to validate the creation of the float image
+    // clang-format off
+    vector<uint8_t> input = {
+      0, 1, 2, 3, 4, 5,
+      6, 7, 8, 9, 10, 11,
+      12, 13, 14, 15, 16, 17
+    };
+    vector<uint8_t> flipped = {
+      12, 13, 14, 15, 16, 17,
+      6, 7, 8, 9, 10, 11,
+      0, 1, 2, 3, 4, 5,
+    };
+    // clang-format on
+
+    geometry::Image image;
+    // test image dimensions
+    int width = 6;
+    int height = 3;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    image.data_ = input;
+
+    auto flip_image = image.FlipVertical();
     EXPECT_FALSE(flip_image->IsEmpty());
     EXPECT_EQ(width, flip_image->width_);
     EXPECT_EQ(height, flip_image->height_);
-    EXPECT_EQ(flip_bytes_per_channel, flip_image->num_of_channels_);
-    EXPECT_EQ(int(sizeof(float)), flip_image->bytes_per_channel_);
-    ExpectEQ(ref, flip_image->data_);
+    EXPECT_EQ(num_of_channels, flip_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(uint8_t)), flip_image->bytes_per_channel_);
+    ExpectEQ(flipped, flip_image->data_);
+}
+
+TEST(Image, FlipHorizontalImage) {
+    // reference data used to validate the creation of the float image
+    // clang-format off
+    vector<uint8_t> input = {
+      0, 1, 2, 3, 4, 5,
+      6, 7, 8, 9, 10, 11,
+      12, 13, 14, 15, 16, 17
+    };
+    vector<uint8_t> flipped = {
+      5, 4, 3, 2, 1, 0,
+      11, 10, 9, 8, 7, 6,
+      17, 16, 15, 14, 13, 12
+    };
+    // clang-format on
+
+    geometry::Image image;
+    // test image dimensions
+    int width = 6;
+    int height = 3;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    image.data_ = input;
+
+    auto flip_image = image.FlipHorizontal();
+    EXPECT_FALSE(flip_image->IsEmpty());
+    EXPECT_EQ(width, flip_image->width_);
+    EXPECT_EQ(height, flip_image->height_);
+    EXPECT_EQ(num_of_channels, flip_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(uint8_t)), flip_image->bytes_per_channel_);
+    ExpectEQ(flipped, flip_image->data_);
 }
 
 // ----------------------------------------------------------------------------
