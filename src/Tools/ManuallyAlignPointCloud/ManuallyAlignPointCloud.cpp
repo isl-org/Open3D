@@ -188,12 +188,12 @@ int main(int argc, char **argv) {
 
         io::WritePointCloud(source_filename, *source_ptr);
         auto source_dis = source_ptr->ComputePointCloudDistance(*target_ptr);
-        f = fopen(source_binname.c_str(), "wb");
+        f = utility::filesystem::FOpen(source_binname, "wb");
         fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
         fclose(f);
         io::WritePointCloud(target_filename, *target_ptr);
         auto target_dis = target_ptr->ComputePointCloudDistance(*source_ptr);
-        f = fopen(target_binname.c_str(), "wb");
+        f = utility::filesystem::FOpen(target_binname, "wb");
         fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
         fclose(f);
         return 1;

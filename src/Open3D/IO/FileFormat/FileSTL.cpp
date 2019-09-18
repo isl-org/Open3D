@@ -29,6 +29,7 @@
 
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 namespace io {
@@ -36,7 +37,7 @@ namespace io {
 bool ReadTriangleMeshFromSTL(const std::string &filename,
                              geometry::TriangleMesh &mesh,
                              bool print_progress) {
-    FILE *myFile = fopen(filename.c_str(), "rb");
+    FILE *myFile = utility::filesystem::FOpen(filename.c_str(), "rb");
 
     if (!myFile) {
         utility::LogWarning("Read STL failed: unable to open file.\n");

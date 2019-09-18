@@ -31,6 +31,7 @@
 
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 namespace io {
@@ -41,7 +42,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     FILE *file_in;
     JSAMPARRAY buffer;
 
-    if ((file_in = fopen(filename.c_str(), "rb")) == NULL) {
+    if ((file_in = utility::filesystem::FOpen(filename, "rb")) == NULL) {
         utility::LogWarning("Read JPG failed: unable to open file: {}\n",
                             filename);
         return false;
@@ -111,7 +112,7 @@ bool WriteImageToJPG(const std::string &filename,
     FILE *file_out;
     JSAMPROW row_pointer[1];
 
-    if ((file_out = fopen(filename.c_str(), "wb")) == NULL) {
+    if ((file_out = utility::filesystem::FOpen(filename, "wb")) == NULL) {
         utility::LogWarning("Write JPG failed: unable to open file: {}\n",
                             filename);
         return false;
