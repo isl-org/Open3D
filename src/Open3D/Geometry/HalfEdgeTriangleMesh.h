@@ -30,13 +30,12 @@
 #include <unordered_map>
 
 #include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/MeshBase.h"
 
 namespace open3d {
 namespace geometry {
 
-// TODO likely broken
-class HalfEdgeTriangleMesh : public Geometry3D {
+class HalfEdgeTriangleMesh : public MeshBase {
 public:
     class HalfEdge {
     public:
@@ -64,32 +63,9 @@ public:
 
 public:
     HalfEdgeTriangleMesh()
-        : Geometry3D(Geometry::GeometryType::HalfEdgeTriangleMesh) {}
+        : MeshBase(Geometry::GeometryType::HalfEdgeTriangleMesh) {}
 
-    /// Clear all data in HalfEdgeTriangleMesh
-    HalfEdgeTriangleMesh &Clear() override;
-    bool IsEmpty() const override;
-    Eigen::Vector3d GetMinBound() const override;
-    Eigen::Vector3d GetMaxBound() const override;
-    Eigen::Vector3d GetCenter() const override;
-    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
-    HalfEdgeTriangleMesh &Transform(
-            const Eigen::Matrix4d &transformation) override;
-    HalfEdgeTriangleMesh &Translate(const Eigen::Vector3d &translation,
-                                    bool relative = true) override;
-    HalfEdgeTriangleMesh &Scale(const double scale,
-                                bool center = true) override;
-    HalfEdgeTriangleMesh &Rotate(
-            const Eigen::Vector3d &rotation,
-            bool center = true,
-            RotationType type = RotationType::XYZ) override;
-
-    /// Compute and update half edges, half edge can only be computed if the
-    /// mesh is a manifold. Returns true if half edges are computed.
-    bool ComputeHalfEdges();
-
-    bool HasVertices() const { return vertices_.size() > 0; }
+    virtual HalfEdgeTriangleMesh &Clear() override;
 
     /// True if half-edges have already been computed
     bool HasHalfEdges() const;
@@ -105,20 +81,15 @@ public:
     /// Returns a vector of boundaries. A boundary is a vector of vertices.
     std::vector<std::vector<int>> GetBoundaries() const;
 
-    HalfEdgeTriangleMesh &RemoveDuplicatedVertices();
-    HalfEdgeTriangleMesh &RemoveDuplicatedTriangles();
-    HalfEdgeTriangleMesh &RemoveUnreferencedVertices();
-    HalfEdgeTriangleMesh &RemoveDegenerateTriangles();
-
     HalfEdgeTriangleMesh &operator+=(const HalfEdgeTriangleMesh &mesh);
 
     HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
 
-    static std::shared_ptr<HalfEdgeTriangleMesh> CreateFromMesh(
+    static std::shared_ptr<HalfEdgeTriangleMesh> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
 
 protected:
-    HalfEdgeTriangleMesh(Geometry::GeometryType type) : Geometry3D(type) {}
+    HalfEdgeTriangleMesh(Geometry::GeometryType type) : MeshBase(type) {}
 
     /// Returns the next half edge from starting vertex of the input half edge,
     /// in a counterclock wise manner. Returns -1 if when hitting a boundary.
@@ -127,13 +98,8 @@ protected:
     int NextHalfEdgeOnBoundary(int curr_half_edge_index) const;
 
 public:
-    std::vector<Eigen::Vector3d> vertices_;
-    std::vector<Eigen::Vector3d> vertex_normals_;
-    std::vector<Eigen::Vector3d> vertex_colors_;
     std::vector<Eigen::Vector3i> triangles_;
     std::vector<Eigen::Vector3d> triangle_normals_;
-    std::vector<std::unordered_set<int>> adjacency_list_;
-
     std::vector<HalfEdge> half_edges_;
 
     /// Counter-clockwise ordered half-edges started from each vertex

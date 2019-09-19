@@ -67,16 +67,16 @@ int main(int argc, char *argv[]) {
     std::vector<double> distances(pcd->points_.size());
     if (utility::ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
         distances = pcd->ComputeMahalanobisDistance();
-        FILE *f = fopen(binname.c_str(), "wb");
+        FILE *f = utility::filesystem::FOpen(binname, "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);
     } else if (utility::ProgramOptionExists(argc, argv, "--nn_distance")) {
         distances = pcd->ComputeNearestNeighborDistance();
-        FILE *f = fopen(binname.c_str(), "wb");
+        FILE *f = utility::filesystem::FOpen(binname, "wb");
         fwrite(distances.data(), sizeof(double), distances.size(), f);
         fclose(f);
     } else {
-        FILE *f = fopen(binname.c_str(), "rb");
+        FILE *f = utility::filesystem::FOpen(binname, "rb");
         if (f == NULL) {
             utility::LogWarning("Cannot open bin file.\n");
             return 1;

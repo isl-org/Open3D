@@ -265,7 +265,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
             const auto &vertex = mesh.vertices_[vi];
             points[idx] = vertex.cast<float>();
 
-            uvs[idx] = mesh.vertex_uvs_[vi].cast<float>();
+            uvs[idx] = mesh.triangle_uvs_[vi].cast<float>();
 
             if (option.mesh_shade_option_ ==
                 RenderOption::MeshShadeOption::FlatShade) {
@@ -280,7 +280,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
 
     GLenum format;
-    switch (mesh.texture_->num_of_channels_) {
+    switch (mesh.texture_.num_of_channels_) {
         case 1: {
             format = GL_RED;
             break;
@@ -300,7 +300,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     }
 
     GLenum type;
-    switch (mesh.texture_->bytes_per_channel_) {
+    switch (mesh.texture_.bytes_per_channel_) {
         case 1: {
             type = GL_UNSIGNED_BYTE;
             break;
@@ -318,9 +318,9 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
             return false;
         }
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.texture_->width_,
-                 mesh.texture_->height_, 0, format, type,
-                 mesh.texture_->data_.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.texture_.width_,
+                 mesh.texture_.height_, 0, format, type,
+                 mesh.texture_.data_.data());
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);

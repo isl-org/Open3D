@@ -342,13 +342,13 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     io::WritePointCloud(source_filename, *source_copy_ptr_);
     auto source_dis =
             source_copy_ptr_->ComputePointCloudDistance(*target_copy_ptr_);
-    f = fopen(source_binname.c_str(), "wb");
+    f = utility::filesystem::FOpen(source_binname, "wb");
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
     io::WritePointCloud(target_filename, *target_copy_ptr_);
     auto target_dis =
             target_copy_ptr_->ComputePointCloudDistance(*source_copy_ptr_);
-    f = fopen(target_binname.c_str(), "wb");
+    f = utility::filesystem::FOpen(target_binname, "wb");
     fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
     fclose(f);
 }

@@ -255,7 +255,7 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
         if (option.mesh_color_option_ ==
             RenderOption::MeshColorOption::Normal) {
             success &= normal_mesh_shader_.Render(mesh, option, view);
-        } else if (mesh.HasVertexUVs() && mesh.HasTexture()) {
+        } else if (mesh.HasTexture()) {
             success &= texture_phong_mesh_shader_.Render(mesh, option, view);
         } else {
             success &= phong_mesh_shader_.Render(mesh, option, view);
