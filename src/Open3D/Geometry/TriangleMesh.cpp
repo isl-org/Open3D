@@ -899,6 +899,86 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
     return *this;
 }
 
+TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
+    KDTreeFlann kdtree(*this);
+    // precompute all neighbours
+    utility::LogDebug("Precompute Neighbours\n");
+    std::vector<std::vector<int>> nbs(vertices_.size());
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int idx = 0; idx < int(vertices_.size()); ++idx) {
+        std::vector<double> dists2;
+        kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
+    }
+    utility::LogDebug("Done Precompute Neighbours\n");
+
+    bool has_vertex_normals = HasVertexNormals();
+    bool has_vertex_colors = HasVertexColors();
+    std::vector<Eigen::Vector3d> new_vertices;
+    std::vector<Eigen::Vector3d> new_vertex_normals;
+    std::vector<Eigen::Vector3d> new_vertex_colors;
+    std::unordered_map<int, int> new_vert_mapping;
+    for (int vidx = 0; vidx < int(vertices_.size()); ++vidx) {
+        if (new_vert_mapping.count(vidx) > 0) {
+            continue;
+        }
+
+        int new_vidx = int(new_vertices.size());
+        new_vert_mapping[vidx] = new_vidx;
+
+        Eigen::Vector3d vertex = vertices_[vidx];
+        Eigen::Vector3d normal;
+        if (has_vertex_normals) {
+            normal = vertex_normals_[vidx];
+        }
+        Eigen::Vector3d color;
+        if (has_vertex_colors) {
+            color = vertex_colors_[vidx];
+        }
+        int n = 1;
+        for (int nb : nbs[vidx]) {
+            if (vidx == nb || new_vert_mapping.count(nb) > 0) {
+                continue;
+            }
+            vertex += vertices_[nb];
+            if (has_vertex_normals) {
+                normal += vertex_normals_[nb];
+            }
+            if (has_vertex_colors) {
+                color += vertex_colors_[nb];
+            }
+            new_vert_mapping[nb] = new_vidx;
+            n += 1;
+        }
+        new_vertices.push_back(vertex / n);
+        if (has_vertex_normals) {
+            new_vertex_normals.push_back(normal / n);
+        }
+        if (has_vertex_colors) {
+            new_vertex_colors.push_back(color / n);
+        }
+    }
+    utility::LogDebug("Merged {} vertices\n",
+                      vertices_.size() - new_vertices.size());
+
+    std::swap(vertices_, new_vertices);
+    std::swap(vertex_normals_, new_vertex_normals);
+    std::swap(vertex_colors_, new_vertex_colors);
+
+    for (auto &triangle : triangles_) {
+        triangle(0) = new_vert_mapping[triangle(0)];
+        triangle(1) = new_vert_mapping[triangle(1)];
+        triangle(2) = new_vert_mapping[triangle(2)];
+    }
+
+    if (HasTriangleNormals()) {
+        ComputeTriangleNormals();
+    }
+
+    return *this;
+}
+
 template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                           F &swap) {

@@ -121,6 +121,12 @@ public:
     /// edge until the number of adjacent triangles to the edge is `<= 2`.
     TriangleMesh &RemoveNonManifoldEdges();
 
+    /// Function that will merge close by vertices to a single one. The vertex
+    /// position, normal and color will be the average of the vertices. The
+    /// parameter \param eps defines the maximum distance of close by vertices.
+    /// This function might help to close triangle soups.
+    TriangleMesh &MergeCloseVertices(double eps);
+
     /// Function to sharpen triangle mesh. The output value ($v_o$) is the
     /// input value ($v_i$) plus \param strength times the input value minus
     /// the sum of he adjacent values.
