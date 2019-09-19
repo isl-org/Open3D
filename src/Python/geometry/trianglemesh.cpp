@@ -34,7 +34,7 @@ using namespace open3d;
 
 void pybind_trianglemesh(py::module &m) {
     py::class_<geometry::TriangleMesh, PyGeometry3D<geometry::TriangleMesh>,
-               std::shared_ptr<geometry::TriangleMesh>, geometry::Geometry3D>
+               std::shared_ptr<geometry::TriangleMesh>, geometry::MeshBase>
             trianglemesh(m, "TriangleMesh",
                          "TriangleMesh class. Triangle mesh contains vertices "
                          "and triangles represented by the indices to the "
@@ -42,27 +42,6 @@ void pybind_trianglemesh(py::module &m) {
                          "triangle normals, vertex normals and vertex colors.");
     py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
-    py::enum_<geometry::TriangleMesh::SimplificationContraction>(
-            m, "SimplificationContraction")
-            .value("Average",
-                   geometry::TriangleMesh::SimplificationContraction::Average,
-                   "The vertex positions are computed by the averaging.")
-            .value("Quadric",
-                   geometry::TriangleMesh::SimplificationContraction::Quadric,
-                   "The vertex positions are computed by minimizing the "
-                   "distance to the adjacent triangle planes.")
-            .export_values();
-    py::enum_<geometry::TriangleMesh::FilterScope>(m, "FilterScope")
-            .value("All", geometry::TriangleMesh::FilterScope::All,
-                   "All properties (color, normal, vertex position) are "
-                   "filtered.")
-            .value("Color", geometry::TriangleMesh::FilterScope::Color,
-                   "Only the color values are filtered.")
-            .value("Normal", geometry::TriangleMesh::FilterScope::Normal,
-                   "Only the normal values are filtered.")
-            .value("Vertex", geometry::TriangleMesh::FilterScope::Vertex,
-                   "Only the vertex positions are filtered.")
-            .export_values();
     trianglemesh
             .def("__repr__",
                  [](const geometry::TriangleMesh &mesh) {
@@ -120,7 +99,7 @@ void pybind_trianglemesh(py::module &m) {
                  ":math:`v_o = v_i x strength (v_i * |N| - \\sum_{n \\in N} "
                  "v_n)`",
                  "number_of_iterations"_a = 1, "strength"_a = 1,
-                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
             .def("filter_smooth_simple",
                  &geometry::TriangleMesh::FilterSmoothSimple,
                  "Function to smooth triangle mesh with simple neighbour "
@@ -129,7 +108,7 @@ void pybind_trianglemesh(py::module &m) {
                  ":math:`v_o` the output value, and :math:`N` is the set of "
                  "adjacent neighbours.",
                  "number_of_iterations"_a = 1,
-                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
             .def("filter_smooth_laplacian",
                  &geometry::TriangleMesh::FilterSmoothLaplacian,
                  "Function to smooth triangle mesh using Laplacian. :math:`v_o "
@@ -140,7 +119,7 @@ void pybind_trianglemesh(py::module &m) {
                  "inverse distance (closer neighbours have higher weight), and "
                  "lambda is the smoothing parameter.",
                  "number_of_iterations"_a = 1, "lambda"_a = 0.5,
-                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
             .def("filter_smooth_taubin",
                  &geometry::TriangleMesh::FilterSmoothTaubin,
                  "Function to smooth triangle mesh using method of Taubin, "
@@ -150,7 +129,7 @@ void pybind_trianglemesh(py::module &m) {
                  "parameter mu as smoothing parameter. This method avoids "
                  "shrinkage of the triangle mesh.",
                  "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
-                 "filter_scope"_a = geometry::TriangleMesh::FilterScope::All)
+                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -166,6 +145,10 @@ void pybind_trianglemesh(py::module &m) {
             .def("has_adjacency_list",
                  &geometry::TriangleMesh::HasAdjacencyList,
                  "Returns ``True`` if the mesh contains adjacency normals.")
+            .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
+                 "Returns ``True`` if the mesh contains uv coordinates.")
+            .def("has_texture", &geometry::TriangleMesh::HasTexture,
+                 "Returns ``True`` if the mesh contains a texture image.")
             .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
                  "Normalize both triangle normals and vertex normals to legnth "
                  "1.")
@@ -245,8 +228,8 @@ void pybind_trianglemesh(py::module &m) {
                  &geometry::TriangleMesh::SimplifyVertexClustering,
                  "Function to simplify mesh using vertex clustering.",
                  "voxel_size"_a,
-                 "contraction"_a = geometry::TriangleMesh::
-                         SimplificationContraction::Average)
+                 "contraction"_a =
+                         geometry::MeshBase::SimplificationContraction::Average)
             .def("simplify_quadric_decimation",
                  &geometry::TriangleMesh::SimplifyQuadricDecimation,
                  "Function to simplify mesh using Quadric Error Metric "
@@ -364,7 +347,16 @@ void pybind_trianglemesh(py::module &m) {
             .def_readwrite(
                     "adjacency_list", &geometry::TriangleMesh::adjacency_list_,
                     "List of Sets: The set ``adjacency_list[i]`` contains the "
-                    "indices of adjacent vertices of vertex i.");
+                    "indices of adjacent vertices of vertex i.")
+            .def_readwrite("triangle_uvs",
+                           &geometry::TriangleMesh::triangle_uvs_,
+                           "``float64`` array of shape ``(3 * num_triangles, "
+                           "2)``, use "
+                           "``numpy.asarray()`` to access data: List of "
+                           "uvs denoted by the index of points forming "
+                           "the triangle.")
+            .def_readwrite("texture", &geometry::TriangleMesh::texture_,
+                           "open3d.geometry.Image: The texture image.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
@@ -377,6 +369,8 @@ void pybind_trianglemesh(py::module &m) {
             {{"normalized",
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "has_vertex_normals",

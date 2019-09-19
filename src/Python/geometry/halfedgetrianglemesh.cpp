@@ -81,7 +81,7 @@ void pybind_halfedgetrianglemesh(py::module &m) {
     py::class_<geometry::HalfEdgeTriangleMesh,
                PyGeometry3D<geometry::HalfEdgeTriangleMesh>,
                std::shared_ptr<geometry::HalfEdgeTriangleMesh>,
-               geometry::Geometry3D>
+               geometry::MeshBase>
             half_edge_triangle_mesh(
                     m, "HalfEdgeTriangleMesh",
                     "HalfEdgeTriangleMesh inherits TriangleMesh class with the "
@@ -98,14 +98,20 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                                     "geometry::HalfEdgeTriangleMesh with ") +
                             std::to_string(mesh.vertices_.size()) +
                             " points and " +
-                            std::to_string(mesh.triangles_.size()) +
-                            " triangles.";
+                            std::to_string(mesh.half_edges_.size()) +
+                            " half edges.";
                  })
-            .def("compute_half_edges",
-                 &geometry::HalfEdgeTriangleMesh::ComputeHalfEdges,
-                 "Compute and update half edges, half edge can only be "
-                 "computed if the mesh is a manifold. Returns ``True`` if half "
-                 "edges are computed.")
+            .def_readwrite("triangles",
+                           &geometry::HalfEdgeTriangleMesh::triangles_,
+                           "``int`` array of shape ``(num_triangles, 3)``, use "
+                           "``numpy.asarray()`` to access data: List of "
+                           "triangles denoted by the index of points forming "
+                           "the triangle.")
+            .def_readwrite("triangle_normals",
+                           &geometry::HalfEdgeTriangleMesh::triangle_normals_,
+                           "``float64`` array of shape ``(num_triangles, 3)``, "
+                           "use ``numpy.asarray()`` to access data: Triangle "
+                           "normals.")
             .def("has_half_edges",
                  &geometry::HalfEdgeTriangleMesh::HasHalfEdges,
                  "Returns ``True`` if half-edges have already been computed.")
@@ -125,8 +131,8 @@ void pybind_halfedgetrianglemesh(py::module &m) {
                  &geometry::HalfEdgeTriangleMesh::GetBoundaries,
                  "Returns a vector of boundaries. A boundary is a vector of "
                  "vertices.")
-            .def_static("create_from_mesh",
-                        &geometry::HalfEdgeTriangleMesh::CreateFromMesh,
+            .def_static("create_from_triangle_mesh",
+                        &geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh,
                         "mesh"_a,
                         "Convert HalfEdgeTriangleMesh from TriangleMesh. "
                         "Throws exception if "
@@ -144,12 +150,10 @@ void pybind_halfedgetrianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "boundary_vertices_from_vertex");
     docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
-                                    "compute_half_edges");
-    docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "get_boundaries");
     docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
                                     "has_half_edges");
     docstring::ClassMethodDocInject(m, "HalfEdgeTriangleMesh",
-                                    "create_from_mesh",
+                                    "create_from_triangle_mesh",
                                     {{"mesh", "The input TriangleMesh"}});
 }

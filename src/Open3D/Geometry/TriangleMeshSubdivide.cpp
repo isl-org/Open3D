@@ -37,6 +37,12 @@ namespace geometry {
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
         int number_of_iterations) const {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[SubdivideMidpoint] This mesh contains triangle uvs that are "
+                "not handled "
+                "in this function\n");
+    }
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->vertices_ = vertices_;
     mesh->vertex_colors_ = vertex_colors_;
@@ -110,6 +116,12 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         int number_of_iterations) const {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[SubdivideLoop] This mesh contains triangle uvs that are not "
+                "handled "
+                "in this function\n");
+    }
     typedef std::unordered_map<Eigen::Vector2i, int,
                                utility::hash_eigen::hash<Eigen::Vector2i>>
             EdgeNewVertMap;
