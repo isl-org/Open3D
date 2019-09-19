@@ -35,6 +35,7 @@ __pycache__
 node_modules/
 static/
 *.old*
+compile_commands.json
 
 # Example resources
 examples/Python/ReconstructionSystem/dataset/

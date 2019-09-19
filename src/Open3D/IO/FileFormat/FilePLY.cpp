@@ -567,6 +567,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
                             bool write_vertex_colors /* = true*/,
+                            bool write_triangle_uvs /* = false*/,
                             bool print_progress) {
     if (mesh.IsEmpty()) {
         utility::LogWarning("Write PLY failed: mesh has 0 vertices.\n");

@@ -166,6 +166,7 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
                             bool write_vertex_colors /* = true*/,
+                            bool write_triangle_uvs /* =false*/,
                             bool print_progress) {
     std::ofstream file(filename.c_str(), std::ios::out);
     if (!file) {
