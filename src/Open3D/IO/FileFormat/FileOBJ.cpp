@@ -31,6 +31,7 @@
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobjloader/tiny_obj_loader.h"
@@ -46,8 +47,12 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     std::vector<tinyobj::material_t> materials;
     std::string warn;
     std::string err;
+
+    std::string mtl_base_path =
+            utility::filesystem::GetFileParentDirectory(filename);
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
-                                filename.c_str());
+                                filename.c_str(), mtl_base_path.c_str());
+    utility::LogError("Back in IO: materials.size() = {}\n", materials.size());
 
     if (!warn.empty()) {
         utility::LogWarning("Read OBJ failed: {}\n", warn);
@@ -70,26 +75,11 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         mesh.vertices_.push_back(Eigen::Vector3d(vx, vy, vz));
     }
 
-    // copy vertex color and uv data (might co-exist)
-    // policy:
-    // if (uv and texture): uv
-    // if (color and uv and no texture): color
-    // if (uv only): uv
     for (size_t vidx = 0; vidx < attrib.colors.size(); vidx += 3) {
         tinyobj::real_t r = attrib.colors[vidx + 0];
         tinyobj::real_t g = attrib.colors[vidx + 1];
         tinyobj::real_t b = attrib.colors[vidx + 2];
         mesh.vertex_colors_.push_back(Eigen::Vector3d(r, g, b));
-    }
-
-    if (!materials.empty()) {
-        if (!materials[0].diffuse_texname.empty()) {
-            utility::LogDebug("mesh.materials[0].diffuse_name == {}\n",
-                              materials[0].diffuse_texname);
-            mesh.texture_ =
-                    *(io::CreateImageFromFile(materials[0].diffuse_texname)
-                              ->FlipVertical());
-        }
     }
 
     // resize normal data and create bool indicator vector
@@ -128,7 +118,8 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                     normals_indicator[vidx] = true;
                 }
 
-                if (2 * idx.texcoord_index + 1 < int(attrib.texcoords.size())) {
+                if (!attrib.texcoords.empty() &&
+                    2 * idx.texcoord_index + 1 < int(attrib.texcoords.size())) {
                     tinyobj::real_t tx =
                             attrib.texcoords[2 * idx.texcoord_index + 0];
                     tinyobj::real_t ty =
@@ -148,9 +139,23 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     if (!all_normals_set) {
         mesh.vertex_normals_.clear();
     }
+
+    // if not all triangles have corresponding uvs, then remove uvs
     if (3 * mesh.triangles_.size() != mesh.triangle_uvs_.size()) {
         mesh.triangle_uvs_.clear();
-        utility::LogWarning("Unable to load triangle uvs\n");
+    }
+
+    // Now we assert only one shape is stored, and we only extract the first
+    // diffuse material
+    for (auto& material : materials) {
+        utility::LogInfo("name: {}\n", material.name);
+        if (!material.diffuse_texname.empty()) {
+            utility::LogInfo("diffuse_name: {}\n", material.diffuse_texname);
+            mesh.texture_ = *(io::CreateImageFromFile(mtl_base_path +
+                                                      material.diffuse_texname)
+                                      ->FlipVertical());
+            break;
+        }
     }
 
     return true;
