@@ -40,10 +40,10 @@ public:
     TensorArray(const Shape& tensor_shape,
                 size_t max_size,
                 const std::string& device = "cpu")
-        : tensor_shape_(tensor_shape),
+        : curr_size_(0),
           max_size_(max_size),
-          device_(device),
-          curr_size_(0) {
+          tensor_shape_(tensor_shape),
+          device_(device) {
         if (device == "cpu" || device == "gpu") {
             v_ = static_cast<T*>(MemoryManager::Allocate(
                     TensorByteSize() * max_size_, device_));
