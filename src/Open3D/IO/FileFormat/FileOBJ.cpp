@@ -104,7 +104,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                 int vidx = idx.vertex_index;
                 facet(v) = vidx;
 
-                if (!normals_indicator[vidx] &&
+                if (!attrib.normals.empty() && !normals_indicator[vidx] &&
                     (3 * idx.normal_index + 2) < int(attrib.normals.size())) {
                     tinyobj::real_t nx =
                             attrib.normals[3 * idx.normal_index + 0];
