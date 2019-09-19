@@ -1003,6 +1003,11 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
         triangle(1) = new_vert_mapping[triangle(1)];
         triangle(2) = new_vert_mapping[triangle(2)];
     }
+
+    if (HasTriangleNormals()) {
+        ComputeTriangleNormals();
+    }
+
     return *this;
 }
 

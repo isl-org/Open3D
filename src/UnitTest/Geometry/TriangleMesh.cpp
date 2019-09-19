@@ -33,6 +33,15 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+void ExpectEQ(const open3d::geometry::TriangleMesh& mesh0,
+              const open3d::geometry::TriangleMesh& mesh1) {
+    ExpectEQ(mesh0.vertices_, mesh1.vertices_);
+    ExpectEQ(mesh0.vertex_normals_, mesh1.vertex_normals_);
+    ExpectEQ(mesh0.vertex_colors_, mesh1.vertex_colors_);
+    ExpectEQ(mesh0.triangles_, mesh1.triangles_);
+    ExpectEQ(mesh0.triangle_normals_, mesh1.triangle_normals_);
+}
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
@@ -666,6 +675,62 @@ TEST(TriangleMesh, Purge) {
     ExpectEQ(ref_vertex_colors, tm.vertex_colors_);
     ExpectEQ(ref_triangles, tm.triangles_);
     ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(TriangleMesh, MergeCloseVertices) {
+    geometry::TriangleMesh mesh;
+    mesh.vertices_ = {{0.000000, 0.000000, 0.000000},
+                      {0.000000, 0.200000, 0.000000},
+                      {1.000000, 0.200000, 0.000000},
+                      {1.000000, 0.000000, 0.000000}};
+    mesh.vertex_normals_ = {{0.000000, 0.000000, 1.000000},
+                            {0.000000, 0.000000, 1.000000},
+                            {0.000000, 0.000000, 1.000000},
+                            {0.000000, 0.000000, 1.000000}};
+    mesh.triangles_ = {{0, 2, 1}, {2, 0, 3}};
+    mesh.triangle_normals_ = {{0.000000, 0.000000, 1.000000},
+                              {0.000000, 0.000000, 1.000000}};
+
+    geometry::TriangleMesh ref;
+    ref.vertices_ = {{0.000000, 0.100000, 0.000000},
+                     {1.000000, 0.100000, 0.000000}};
+    ref.vertex_normals_ = {{0.000000, 0.000000, 1.000000},
+                           {0.000000, 0.000000, 1.000000}};
+    ref.triangles_ = {{0, 1, 0}, {1, 0, 1}};
+    ref.triangle_normals_ = {{0.000000, 0.000000, 0.000000},
+                             {0.000000, 0.000000, -0.000000}};
+
+    mesh.MergeCloseVertices(1);
+    ExpectEQ(mesh, ref);
+
+    mesh.vertices_ = {{0.000000, 0.000000, 0.000000},
+                      {0.000000, 0.200000, 0.000000},
+                      {1.000000, 0.200000, 0.000000},
+                      {1.000000, 0.000000, 0.000000}};
+    mesh.vertex_normals_ = {{0.000000, 0.000000, 1.000000},
+                            {0.000000, 0.000000, 1.000000},
+                            {0.000000, 0.000000, 1.000000},
+                            {0.000000, 0.000000, 1.000000}};
+    mesh.triangles_ = {{0, 2, 1}, {2, 0, 3}};
+    mesh.triangle_normals_ = {{0.000000, 0.000000, 1.000000},
+                              {0.000000, 0.000000, 1.000000}};
+    ref.vertices_ = {{0.000000, 0.000000, 0.000000},
+                     {0.000000, 0.200000, 0.000000},
+                     {1.000000, 0.200000, 0.000000},
+                     {1.000000, 0.000000, 0.000000}};
+    ref.vertex_normals_ = {{0.000000, 0.000000, 1.000000},
+                           {0.000000, 0.000000, 1.000000},
+                           {0.000000, 0.000000, 1.000000},
+                           {0.000000, 0.000000, 1.000000}};
+    ref.triangles_ = {{0, 2, 1}, {2, 0, 3}};
+    ref.triangle_normals_ = {{0.000000, 0.000000, 1.000000},
+                             {0.000000, 0.000000, 1.000000}};
+
+    mesh.MergeCloseVertices(0.1);
+    ExpectEQ(mesh, ref);
 }
 
 // ----------------------------------------------------------------------------

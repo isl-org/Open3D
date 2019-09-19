@@ -34,10 +34,14 @@ def apply_noise(mesh, noise):
 def triangle():
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(
-        np.array([(np.sqrt(8 / 9), 0, -1 / 3),
-                  (-np.sqrt(2 / 9), np.sqrt(2 / 3), -1 / 3),
-                  (-np.sqrt(2 / 9), -np.sqrt(2 / 3), -1 / 3)],
-                 dtype=np.float32))
+        np.array(
+            [
+                (np.sqrt(8 / 9), 0, -1 / 3),
+                (-np.sqrt(2 / 9), np.sqrt(2 / 3), -1 / 3),
+                (-np.sqrt(2 / 9), -np.sqrt(2 / 3), -1 / 3),
+            ],
+            dtype=np.float32,
+        ))
     mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 1, 2]]))
     mesh.compute_vertex_normals()
     return mesh
@@ -66,11 +70,28 @@ def non_manifold_edge():
 
 
 def non_manifold_vertex():
-    verts = np.array([[-1, 0, -1], [1, 0, -1], [0, 1, -1], [0, 0, 0],
-                      [-1, 0, 1], [1, 0, 1], [0, 1, 1]],
-                     dtype=np.float64)
-    triangles = np.array([[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3], [4, 5, 6],
-                          [4, 5, 3], [5, 6, 3], [4, 6, 3]])
+    verts = np.array(
+        [
+            [-1, 0, -1],
+            [1, 0, -1],
+            [0, 1, -1],
+            [0, 0, 0],
+            [-1, 0, 1],
+            [1, 0, 1],
+            [0, 1, 1],
+        ],
+        dtype=np.float64,
+    )
+    triangles = np.array([
+        [0, 1, 2],
+        [0, 1, 3],
+        [1, 2, 3],
+        [2, 0, 3],
+        [4, 5, 6],
+        [4, 5, 3],
+        [5, 6, 3],
+        [4, 6, 3],
+    ])
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
@@ -103,48 +124,50 @@ def _relative_path(path):
 
 
 def knot():
-    mesh = o3d.io.read_triangle_mesh(_relative_path('../../TestData/knot.ply'))
+    mesh = o3d.io.read_triangle_mesh(_relative_path("../../TestData/knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def bathtub():
     mesh = o3d.io.read_triangle_mesh(
-        _relative_path('../../TestData/bathtub_0154.ply'))
+        _relative_path("../../TestData/bathtub_0154.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def armadillo():
-    armadillo_path = _relative_path('../../TestData/Armadillo.ply')
+    armadillo_path = _relative_path("../../TestData/Armadillo.ply")
     if not os.path.exists(armadillo_path):
-        print('downloading armadillo mesh')
-        url = 'http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz'
-        urllib.request.urlretrieve(url, armadillo_path + '.gz')
-        print('extract armadillo mesh')
-        with gzip.open(armadillo_path + '.gz', 'rb') as fin:
-            with open(armadillo_path, 'wb') as fout:
+        print("downloading armadillo mesh")
+        url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
+        urllib.request.urlretrieve(url, armadillo_path + ".gz")
+        print("extract armadillo mesh")
+        with gzip.open(armadillo_path + ".gz", "rb") as fin:
+            with open(armadillo_path, "wb") as fout:
                 shutil.copyfileobj(fin, fout)
-        os.remove(armadillo_path + '.gz')
+        os.remove(armadillo_path + ".gz")
     mesh = o3d.io.read_triangle_mesh(armadillo_path)
     mesh.compute_vertex_normals()
     return mesh
 
 
 def bunny():
-    bunny_path = _relative_path('../../TestData/Bunny.ply')
+    bunny_path = _relative_path("../../TestData/Bunny.ply")
     if not os.path.exists(bunny_path):
-        print('downloading bunny mesh')
-        url = 'http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz'
-        urllib.request.urlretrieve(url, bunny_path + '.tar.gz')
-        print('extract bunny mesh')
-        with tarfile.open(bunny_path + '.tar.gz') as tar:
+        print("downloading bunny mesh")
+        url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
+        urllib.request.urlretrieve(url, bunny_path + ".tar.gz")
+        print("extract bunny mesh")
+        with tarfile.open(bunny_path + ".tar.gz") as tar:
             tar.extractall(path=os.path.dirname(bunny_path))
         shutil.move(
-            os.path.join(os.path.dirname(bunny_path), 'bunny', 'reconstruction',
-                         'bun_zipper.ply'), bunny_path)
-        os.remove(bunny_path + '.tar.gz')
-        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), 'bunny'))
+            os.path.join(os.path.dirname(bunny_path), "bunny", "reconstruction",
+                         "bun_zipper.ply"),
+            bunny_path,
+        )
+        os.remove(bunny_path + ".tar.gz")
+        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), "bunny"))
     mesh = o3d.io.read_triangle_mesh(bunny_path)
     mesh.compute_vertex_normals()
     return mesh
@@ -158,47 +181,20 @@ def center_and_scale(mesh):
     return mesh
 
 
-if __name__ == '__main__':
+def print_mesh_for_cpp(mesh, prefix=""):
 
-    def process(mesh):
-        mesh.compute_vertex_normals()
-        mesh = center_and_scale(mesh)
-        return mesh
+    def _print(prefix, values, fmt):
+        if values.shape[0] > 0:
+            print(f"{prefix} = {{")
+            print(",\n".join([
+                f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}"
+                for v in values
+            ]))
+            print(f"}};")
 
-    print('visualize')
-    print('  tetrahedron, octahedron, icosahedron')
-    print('  torus, moebius strip one twist, moebius strip two twists')
-    d = 1.5
-    geoms = [
-        process(o3d.geometry.TriangleMesh.create_tetrahedron()).translate(
-            (-d, 0, 0)),
-        process(o3d.geometry.TriangleMesh.create_octahedron()).translate(
-            (0, 0, 0)),
-        process(o3d.geometry.TriangleMesh.create_icosahedron()).translate(
-            (d, 0, 0)),
-        process(o3d.geometry.TriangleMesh.create_torus()).translate(
-            (-d, -d, 0)),
-        process(o3d.geometry.TriangleMesh.create_moebius(twists=1)).translate(
-            (0, -d, 0)),
-        process(o3d.geometry.TriangleMesh.create_moebius(twists=2)).translate(
-            (d, -d, 0)),
-    ]
-
-    vis = o3d.visualization.Visualizer()
-    vis.create_window()
-    vis.get_render_option().mesh_show_back_face = True
-    for geom in geoms:
-        vis.add_geometry(geom)
-
-    scales = [0.995 for _ in range(100)] + [1 / 0.995 for _ in range(100)]
-    axisangles = [(0.2 / np.sqrt(2), 0.2 / np.sqrt(2), 0) for _ in range(200)]
-
-    for scale, aa in zip(scales, axisangles):
-        for geom in geoms:
-            geom.scale(scale).rotate(aa,
-                                     center=True,
-                                     type=o3d.geometry.RotationType.AxisAngle)
-        vis.update_geometry()
-        vis.poll_events()
-        vis.update_renderer()
-        time.sleep(0.05)
+    _print(f"{prefix}vertices_", np.asarray(mesh.vertices), ".6f")
+    _print(f"{prefix}vertex_normals_", np.asarray(mesh.vertex_normals), ".6f")
+    _print(f"{prefix}vertex_colors_", np.asarray(mesh.vertex_colors), ".6f")
+    _print(f"{prefix}triangles_", np.asarray(mesh.triangles), "d")
+    _print(f"{prefix}triangle_normals_", np.asarray(mesh.triangle_normals),
+           ".6f")
