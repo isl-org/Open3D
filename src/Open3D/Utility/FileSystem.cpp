@@ -32,6 +32,7 @@
 #ifdef WINDOWS
 #include <direct.h>
 #include <dirent/dirent.h>
+#include <windows.h>
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
@@ -210,7 +211,8 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
             CP_UTF8, 0, filename.c_str(), filename.length(),
             const_cast<wchar_t *>(filename_w.c_str()), filename.length());
     filename_w.resize(newSize);
-    fp = _wfopen(filename_w.c_str(), mode.c_str());
+    std::wstring mode_w(mode.begin(), mode.end());
+    fp = _wfopen(filename_w.c_str(), mode_w.c_str());
 #endif
     return fp;
 }
