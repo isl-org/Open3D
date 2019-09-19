@@ -272,11 +272,11 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
 
 std::shared_ptr<Image> Image::Transpose() const {
     auto output = std::make_shared<Image>();
-    if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogWarning("[FilpImage] Unsupported image format.\n");
-        return output;
-    }
-    output->Prepare(height_, width_, 1, 4);
+    output->Prepare(height_, width_, num_of_channels_, bytes_per_channel_);
+
+    int out_bytes_per_line = output->BytesPerLine();
+    int in_bytes_per_line = BytesPerLine();
+    int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 
 #ifdef _OPENMP
 #ifdef _WIN32
@@ -287,11 +287,15 @@ std::shared_ptr<Image> Image::Transpose() const {
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
-            float *pi = PointerAt<float>(x, y, 0);
-            float *po = output->PointerAt<float>(y, x, 0);
-            *po = *pi;
+            std::copy(
+                    data_.data() + y * in_bytes_per_line + x * bytes_per_pixel,
+                    data_.data() + y * in_bytes_per_line +
+                            (x + 1) * bytes_per_pixel,
+                    output->data_.data() + x * out_bytes_per_line +
+                            y * bytes_per_pixel);
         }
     }
+
     return output;
 }
 

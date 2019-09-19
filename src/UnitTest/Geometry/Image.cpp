@@ -511,38 +511,84 @@ TEST(Image, ConvertDepthToFloatImage) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, TransposeImage) {
+TEST(Image, TransposeUint8) {
     // reference data used to validate the creation of the float image
-    vector<uint8_t> ref = {
-            233, 45,  204, 198, 205, 80,  90,  190, 133, 138, 127, 155, 87,
-            84,  248, 228, 162, 170, 40,  149, 207, 33,  38,  200, 202, 69,
-            37,  22,  14,  88,  133, 208, 193, 48,  166, 128, 138, 215, 79,
-            191, 92,  78,  108, 222, 242, 70,  210, 229, 44,  47,  138, 16,
-            0,   0,   0,   0,   82,  224, 121, 11,  74,  130, 236, 211, 171,
-            230, 100, 188, 10,  236, 138, 5,   67,  163, 243, 178, 0,   0,
-            0,   0,   69,  238, 117, 219, 165, 205, 62,  222, 140, 136, 249,
-            145, 118, 162, 118, 230, 110, 1,   179, 227};
+    // clang-format off
+    vector<uint8_t> input = {
+        0,  1,  2,  3,  4,  5,
+        6,  7,  8,  9,  10, 11,
+        12, 13, 14, 15, 16, 17
+    };
+    vector<uint8_t> transposed_ref = {
+        0,  6,  12,
+        1,  7,  13,
+        2,  8,  14,
+        3,  9,  15,
+        4,  10, 16,
+        5,  11, 17
+    };
+    // clang-format on
 
     geometry::Image image;
 
-    // test image dimensions
-    int width = 5;
-    int height = 5;
+    int width = 6;
+    int height = 3;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    image.data_ = input;
+
+    auto transposed_image = image.Transpose();
+    EXPECT_FALSE(transposed_image->IsEmpty());
+    EXPECT_EQ(height, transposed_image->width_);
+    EXPECT_EQ(width, transposed_image->height_);
+    EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(uint8_t)), transposed_image->bytes_per_channel_);
+    ExpectEQ(transposed_ref, transposed_image->data_);
+}
+
+TEST(Image, TransposeFloat) {
+    // reference data used to validate the creation of the float image
+    // clang-format off
+    vector<float> input = {
+        0,  1,  2,  3,  4,  5,
+        6,  7,  8,  9,  10, 11,
+        12, 13, 14, 15, 16, 17
+    };
+    vector<float> transposed_ref = {
+        0,  6,  12,
+        1,  7,  13,
+        2,  8,  14,
+        3,  9,  15,
+        4,  10, 16,
+        5,  11, 17
+    };
+    // clang-format on
+
+    geometry::Image image;
+
+    int width = 6;
+    int height = 3;
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    std::memcpy(image.data_.data(), input.data(), input.size() * sizeof(float));
 
-    Rand(image.data_, 0, 255, 0);
+    auto transposed_image = image.Transpose();
+    EXPECT_FALSE(transposed_image->IsEmpty());
+    EXPECT_EQ(height, transposed_image->width_);
+    EXPECT_EQ(width, transposed_image->height_);
+    EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(float)), transposed_image->bytes_per_channel_);
 
-    auto transpose_image = image.ConvertDepthToFloatImage();
-
-    EXPECT_FALSE(transpose_image->IsEmpty());
-    EXPECT_EQ(width, transpose_image->height_);
-    EXPECT_EQ(height, transpose_image->width_);
-    EXPECT_EQ(num_of_channels, transpose_image->num_of_channels_);
-    EXPECT_EQ(int(sizeof(float)), transpose_image->bytes_per_channel_);
-    ExpectEQ(ref, transpose_image->data_);
+    const float* transpose_image_floats =
+            reinterpret_cast<const float*>(transposed_image->data_.data());
+    vector<float> transpose_image_data(
+            transpose_image_floats,
+            transpose_image_floats + transposed_ref.size());
+    ExpectEQ(transposed_ref, transpose_image_data);
 }
 
 TEST(Image, FlipVerticalImage) {
