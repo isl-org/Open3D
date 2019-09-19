@@ -66,6 +66,9 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
                                        const std::string &extname,
                                        std::vector<std::string> &filenames);
 
+// wrapper for fopen that enables unicode paths on Windows
+FILE *FOpen(const std::string &filename, const std::string &mode);
+
 }  // namespace filesystem
 }  // namespace utility
 }  // namespace open3d

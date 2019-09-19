@@ -31,6 +31,7 @@
 
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Utility/Helper.h"
 
 // References for PCD file IO
@@ -714,7 +715,7 @@ bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            bool print_progress) {
     PCDHeader header;
-    FILE *file = fopen(filename.c_str(), "rb");
+    FILE *file = utility::filesystem::FOpen(filename.c_str(), "rb");
     if (file == NULL) {
         utility::LogWarning("Read PCD failed: unable to open file: {}\n",
                             filename);
@@ -758,7 +759,7 @@ bool WritePointCloudToPCD(const std::string &filename,
         utility::LogWarning("Write PCD failed: unable to generate header.\n");
         return false;
     }
-    FILE *file = fopen(filename.c_str(), "wb");
+    FILE *file = utility::filesystem::FOpen(filename.c_str(), "wb");
     if (file == NULL) {
         utility::LogWarning("Write PCD failed: unable to open file.\n");
         return false;

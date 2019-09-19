@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
             io::CreatePinholeCameraTrajectoryFromFile(log_filename);
     std::string dir_name =
             utility::filesystem::GetFileParentDirectory(match_filename).c_str();
-    FILE *file = fopen(match_filename.c_str(), "r");
+    FILE *file = utility::filesystem::FOpen(match_filename, "r");
     if (file == NULL) {
         utility::LogError("Unable to open file {}\n", match_filename);
         fclose(file);
