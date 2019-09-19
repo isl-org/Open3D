@@ -96,9 +96,6 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     mesh.vertex_normals_.resize(mesh.vertices_.size());
     std::vector<bool> normals_indicator(mesh.vertices_.size(), false);
 
-    mesh.triangle_uvs_.resize(mesh.vertices_.size());
-    std::vector<bool> uvs_indicator(mesh.triangle_uvs_.size(), false);
-
     // copy face data and copy normals data
     for (size_t s = 0; s < shapes.size(); s++) {
         size_t index_offset = 0;
@@ -131,16 +128,12 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                     normals_indicator[vidx] = true;
                 }
 
-                if (!uvs_indicator[vidx] &&
-                    (2 * idx.texcoord_index + 1) <
-                            int(attrib.texcoords.size())) {
+                if (2 * idx.texcoord_index + 1 < int(attrib.texcoords.size())) {
                     tinyobj::real_t tx =
                             attrib.texcoords[2 * idx.texcoord_index + 0];
                     tinyobj::real_t ty =
                             attrib.texcoords[2 * idx.texcoord_index + 1];
-                    mesh.triangle_uvs_[vidx](0) = tx;
-                    mesh.triangle_uvs_[vidx](1) = ty;
-                    uvs_indicator[vidx] = true;
+                    mesh.triangle_uvs_.push_back(Eigen::Vector2d(tx, ty));
                 }
             }
             mesh.triangles_.push_back(facet);
@@ -155,13 +148,11 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     if (!all_normals_set) {
         mesh.vertex_normals_.clear();
     }
-
-    bool all_uvs_set =
-            std::accumulate(uvs_indicator.begin(), uvs_indicator.end(), true,
-                            [](bool a, bool b) { return a && b; });
-    if (!all_uvs_set) {
+    if (3 * mesh.triangles_.size() != mesh.triangle_uvs_.size()) {
         mesh.triangle_uvs_.clear();
+        utility::LogWarning("Unable to load triangle uvs\n");
     }
+
     return true;
 }
 
