@@ -55,9 +55,9 @@ void* MemoryManager::Allocate(size_t byte_size, const std::string& device) {
 void MemoryManager::Free(void* ptr) {
     if (ptr) {
         if (IsCUDAPointer(ptr)) {
-            GetImpl("gpu")->Free(ptr);
+            GetImpl("GPU")->Free(ptr);
         } else {
-            GetImpl("cpu")->Free(ptr);
+            GetImpl("CPU")->Free(ptr);
         }
     }
 }
@@ -68,21 +68,21 @@ void MemoryManager::CopyTo(void* dst_ptr,
     if (dst_ptr == nullptr || src_ptr == nullptr) {
         throw std::runtime_error("CopyTo: nullptr detected");
     }
-    std::string dst_device = IsCUDAPointer(dst_ptr) ? "gpu" : "cpu";
-    std::string src_device = IsCUDAPointer(src_ptr) ? "gpu" : "cpu";
+    std::string dst_device = IsCUDAPointer(dst_ptr) ? "GPU" : "CPU";
+    std::string src_device = IsCUDAPointer(src_ptr) ? "GPU" : "CPU";
 
-    if (src_device == "gpu" || dst_device == "gpu") {
-        GetImpl("gpu")->CopyTo(dst_ptr, src_ptr, num_bytes);
+    if (src_device == "GPU" || dst_device == "GPU") {
+        GetImpl("GPU")->CopyTo(dst_ptr, src_ptr, num_bytes);
     } else {
-        GetImpl("cpu")->CopyTo(dst_ptr, src_ptr, num_bytes);
+        GetImpl("CPU")->CopyTo(dst_ptr, src_ptr, num_bytes);
     }
 }
 
 bool MemoryManager::IsCUDAPointer(const void* ptr) {
-    if (MemoryManagerBackendRegistry()->Has("gpu")) {
-        return GetImpl("gpu")->IsCUDAPointer(ptr);
+    if (MemoryManagerBackendRegistry()->Has("GPU")) {
+        return GetImpl("GPU")->IsCUDAPointer(ptr);
     } else {
-        return GetImpl("cpu")->IsCUDAPointer(ptr);
+        return GetImpl("CPU")->IsCUDAPointer(ptr);
     }
 }
 

@@ -54,16 +54,16 @@ void MemoryManagerGPU::CopyTo(void* dst_ptr,
         throw std::runtime_error("CopyTo: nullptr detected");
     }
 
-    std::string dst_device = IsCUDAPointer(dst_ptr) ? "gpu" : "cpu";
-    std::string src_device = IsCUDAPointer(src_ptr) ? "gpu" : "cpu";
+    std::string dst_device = IsCUDAPointer(dst_ptr) ? "GPU" : "CPU";
+    std::string src_device = IsCUDAPointer(src_ptr) ? "GPU" : "CPU";
 
-    if (src_device == "cpu" && dst_device == "cpu") {
+    if (src_device == "CPU" && dst_device == "CPU") {
         std::memcpy(dst_ptr, src_ptr, num_bytes);
-    } else if (src_device == "cpu" && dst_device == "gpu") {
+    } else if (src_device == "CPU" && dst_device == "GPU") {
         cudaMemcpy(dst_ptr, src_ptr, num_bytes, cudaMemcpyHostToDevice);
-    } else if (src_device == "gpu" && dst_device == "cpu") {
+    } else if (src_device == "GPU" && dst_device == "CPU") {
         cudaMemcpy(dst_ptr, src_ptr, num_bytes, cudaMemcpyDeviceToHost);
-    } else if (src_device == "gpu" && dst_device == "gpu") {
+    } else if (src_device == "GPU" && dst_device == "GPU") {
         cudaMemcpy(dst_ptr, src_ptr, num_bytes, cudaMemcpyDeviceToDevice);
     }
 }
@@ -78,7 +78,7 @@ bool MemoryManagerGPU::IsCUDAPointer(const void* ptr) {
 }
 
 OPEN3D_REGISTER_SINGLETON_OBJECT(MemoryManagerBackendRegistry,
-                                 "gpu",
+                                 "GPU",
                                  std::make_shared<MemoryManagerGPU>());
 
 }  // namespace open3d
