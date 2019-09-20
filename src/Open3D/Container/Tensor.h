@@ -30,7 +30,6 @@
 #include <iostream>
 #include <string>
 
-#include "Open3D/Container/Device.h"
 #include "Open3D/Container/MemoryManager.h"
 #include "Open3D/Container/Shape.h"
 
@@ -39,19 +38,56 @@
 //       folder
 namespace open3d {
 
-// TODO: MemoryManager can return Blob at alloc
-struct Blob {
+template <typename T>
+class Tensor {
 public:
-    Blob(size_t byte_size, const Device& device)
-        : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Allocate(byte_size_, device_.DeviceTypeStr());
+    Tensor(const Shape& shape, const std::string& device = "CPU")
+        : shape_(shape),
+          device_(device),
+          num_elements_(shape.NumElements()),
+          byte_size_(sizeof(T) * shape.NumElements()) {
+        if (device == "CPU" || device == "GPU") {
+            v_ = static_cast<T*>(MemoryManager::Allocate(byte_size_, device_));
+        } else {
+            throw std::runtime_error("Unrecognized device");
+        }
     }
-    ~Blob() { MemoryManager::Free(v_); };
+
+    Tensor(const std::vector<T>& init_vals,
+           const Shape& shape,
+           const std::string& device = "CPU")
+        : Tensor(shape, device) {
+        if (init_vals.size() != num_elements_) {
+            throw std::runtime_error(
+                    "Tensor initialization values' size does not match the "
+                    "shape.");
+        }
+
+        if (device == "CPU" || device == "GPU") {
+            MemoryManager::CopyTo(v_, init_vals.data(), byte_size_);
+        } else if (device == "GPU") {
+            throw std::runtime_error("Unimplemented");
+        } else {
+            throw std::runtime_error("Unrecognized device");
+        }
+    }
+
+    ~Tensor() { MemoryManager::Free(v_); };
+
+    std::vector<T> ToStdVector() const {
+        std::vector<T> vec(num_elements_);
+        MemoryManager::CopyTo(vec.data(), v_, byte_size_);
+        return vec;
+    }
 
 public:
-    void* v_ = nullptr;
-    size_t byte_size_ = 0;
-    Device device_;
+    T* v_;
+
+public:
+    const Shape shape_;
+    const std::string device_;
+    const size_t num_elements_;  // Num elements
+    const size_t byte_size_;     // Num bytes
 };
 
 }  // namespace open3d
