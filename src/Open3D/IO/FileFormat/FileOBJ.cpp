@@ -170,12 +170,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     std::string object_name = utility::filesystem::GetFileNameWithoutExtension(
             utility::filesystem::GetFileNameWithoutDirectory(filename));
 
-    auto obj_ios_flag = std::ios::out;
-    if (!write_ascii) {
-        obj_ios_flag |= std::ios::binary;
-    }
     std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
-
     if (!file) {
         utility::LogWarning("Write OBJ failed: unable to open file.\n");
         return false;

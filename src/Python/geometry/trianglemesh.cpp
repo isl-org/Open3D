@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Python/docstring.h"
 #include "Python/geometry/geometry.h"
@@ -45,11 +46,21 @@ void pybind_trianglemesh(py::module &m) {
     trianglemesh
             .def("__repr__",
                  [](const geometry::TriangleMesh &mesh) {
-                     return std::string("geometry::TriangleMesh with ") +
-                            std::to_string(mesh.vertices_.size()) +
-                            " points and " +
-                            std::to_string(mesh.triangles_.size()) +
-                            " triangles.";
+                     std::string info =
+                             std::string("geometry::TriangleMesh with ") +
+                             std::to_string(mesh.vertices_.size()) +
+                             " points and " +
+                             std::to_string(mesh.triangles_.size()) +
+                             " triangles";
+                     if (mesh.HasTexture()) {
+                         info += ", and (" +
+                                 std::to_string(mesh.texture_.width_) + ", " +
+                                 std::to_string(mesh.texture_.height_) +
+                                 ") texture.";
+                     } else {
+                         info += ".";
+                     }
+                     return info;
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
