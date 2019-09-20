@@ -45,7 +45,7 @@ public:
           tensor_shape_(tensor_shape),
           device_(device) {
         if (device == "CPU" || device == "GPU") {
-            v_ = static_cast<T*>(MemoryManager::Allocate(
+            v_ = static_cast<T*>(MemoryManager::Alloc(
                     TensorByteSize() * max_size_, device_));
         } else {
             throw std::runtime_error("Unrecognized device");

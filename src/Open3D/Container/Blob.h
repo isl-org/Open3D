@@ -44,7 +44,7 @@ struct Blob {
 public:
     Blob(size_t byte_size, const Device& device)
         : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Allocate(byte_size_, device_.DeviceTypeStr());
+        v_ = MemoryManager::Alloc(byte_size_, device_.DeviceTypeStr());
     }
     ~Blob() { MemoryManager::Free(v_); };
 
