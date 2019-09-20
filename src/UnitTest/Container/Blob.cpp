@@ -33,17 +33,6 @@
 using namespace std;
 using namespace open3d;
 
-TEST(Blob, Registry) {
-    EXPECT_TRUE(MemoryManagerBackendRegistry()->Has("CPU"));
-    EXPECT_NE(MemoryManagerBackendRegistry()->GetSingletonObject("CPU"),
-              nullptr);
-}
+TEST(Blob, CPUBlob) { Blob b(10, Device("CPU:0")); }
 
-TEST(Blob, CPUBlob) {
-    Blob b(10, Device("CPU:0"));
-}
-
-TEST(Blob, GPU_CONDITIONAL_TEST(GPUBlob)) {
-    Blob b(10, Device("GPU:0"));
-}
-
+TEST(Blob, GPU_CONDITIONAL_TEST(GPUBlob)) { Blob b(10, Device("GPU:0")); }
