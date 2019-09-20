@@ -8,7 +8,7 @@ out vec3 vertex_position_world;
 out vec3 vertex_normal_camera;
 out vec3 eye_dir_camera;
 out mat4 light_dir_camera_4;
-out vec2 fragment_vertex_uv;
+out vec2 fragment_uv;
 
 uniform mat4 MVP;
 uniform mat4 V;
@@ -30,6 +30,6 @@ void main()
   if (dot(eye_dir_camera, vertex_normal_camera) < 0.0)
     vertex_normal_camera = vertex_normal_camera * -1.0;
 
-  fragment_vertex_uv = vertex_uv;
+  fragment_uv = vertex_uv;
 }
 

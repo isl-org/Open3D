@@ -4,7 +4,7 @@ in vec3 vertex_position_world;
 in vec3 vertex_normal_camera;
 in vec3 eye_dir_camera;
 in mat4 light_dir_camera_4;
-in vec2 fragment_vertex_uv;
+in vec2 fragment_uv;
 
 uniform mat4 light_color_4;
 uniform vec4 light_diffuse_power_4;
@@ -17,7 +17,7 @@ out vec4 FragColor;
 
 void main()
 {
-    vec3 diffuse_color = texture(diffuse_texture, fragment_vertex_uv).rgb;
+    vec3 diffuse_color = texture(diffuse_texture, fragment_uv).rgb;
     vec3 ambient_color = light_ambient.xyz * diffuse_color;
     vec3 specular_color = vec3(1.0, 1.0, 1.0);
     vec4 cos_theta;
