@@ -47,8 +47,8 @@ std::shared_ptr<MemoryManagerBackend> MemoryManager::GetImpl(
     }
 }
 
-void* MemoryManager::Allocate(size_t byte_size, const std::string& device) {
-    return GetImpl(device)->Allocate(byte_size);
+void* MemoryManager::Alloc(size_t byte_size, const std::string& device) {
+    return GetImpl(device)->Alloc(byte_size);
 }
 
 // TODO: consider removing the "device" argument, check ptr device first

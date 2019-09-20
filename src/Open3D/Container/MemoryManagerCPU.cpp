@@ -29,7 +29,7 @@
 
 namespace open3d {
 
-void* MemoryManagerCPU::Allocate(size_t byte_size) {
+void* MemoryManagerCPU::Alloc(size_t byte_size) {
     void* ptr = malloc(byte_size);
     if (byte_size != 0 && !ptr) {
         std::runtime_error("CPU malloc failed");

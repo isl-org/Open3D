@@ -32,7 +32,7 @@ namespace open3d {
 
 class MemoryManagerCPU : public MemoryManagerBackend {
 public:
-    void* Allocate(size_t byte_size) final;
+    void* Alloc(size_t byte_size) final;
     void Free(void* ptr) final;
     void CopyTo(void* dst_ptr,
                 const void* src_ptr,

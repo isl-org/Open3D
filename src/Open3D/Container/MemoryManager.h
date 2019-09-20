@@ -40,7 +40,7 @@ namespace open3d {
 // This can futher be extened to a stateful memory manager (e.g memory pool)
 class MemoryManagerBackend {
 public:
-    virtual void* Allocate(size_t byte_size) = 0;
+    virtual void* Alloc(size_t byte_size) = 0;
     virtual void Free(void* ptr) = 0;
     virtual void CopyTo(void* dst_ptr,
                         const void* src_ptr,
@@ -55,7 +55,7 @@ OPEN3D_DECLARE_REGISTRY_FOR_SINGLETON(MemoryManagerBackendRegistry,
 // MemoryManager is stateless (static functions), except for the registry
 class MemoryManager {
 public:
-    static void* Allocate(size_t byte_size, const std::string& device);
+    static void* Alloc(size_t byte_size, const std::string& device);
     static void Free(void* ptr);
     static void CopyTo(void* dst_ptr,
                        const void* src_ptr,

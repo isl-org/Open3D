@@ -47,7 +47,7 @@ public:
           num_elements_(shape.NumElements()),
           byte_size_(sizeof(T) * shape.NumElements()) {
         if (device == "CPU" || device == "GPU") {
-            v_ = static_cast<T*>(MemoryManager::Allocate(byte_size_, device_));
+            v_ = static_cast<T*>(MemoryManager::Alloc(byte_size_, device_));
         } else {
             throw std::runtime_error("Unrecognized device");
         }

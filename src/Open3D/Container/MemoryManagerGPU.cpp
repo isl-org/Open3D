@@ -31,7 +31,7 @@
 
 namespace open3d {
 
-void* MemoryManagerGPU::Allocate(size_t byte_size) {
+void* MemoryManagerGPU::Alloc(size_t byte_size) {
     void* ptr;
     cudaMalloc(static_cast<void**>(&ptr), byte_size);
     return ptr;
