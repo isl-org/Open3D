@@ -39,28 +39,18 @@
 //       folder
 namespace open3d {
 
-template <typename T>
 class Blob {
 public:
-    Blob(const Shape& shape, const Device& device)
-        : shape_(shape),
-          device_(device),
-          num_elements_(shape.NumElements()),
-          byte_size_(sizeof(T) * shape.NumElements()) {
-        v_ = static_cast<T*>(
-                MemoryManager::Allocate(byte_size_, device_.DeviceTypeStr()));
+    Blob(size_t byte_size, const Device& device)
+        : byte_size_(byte_size), device_(device) {
+        v_ = MemoryManager::Allocate(byte_size_, device_.DeviceTypeStr());
     }
-
     ~Blob() { MemoryManager::Free(v_); };
 
 public:
-    T* v_ = nullptr;
-
-public:
-    Shape shape_ = {};
+    void* v_ = nullptr;
+    size_t byte_size_ = 0;
     Device device_;
-    size_t num_elements_ = 0;  // Num elements
-    size_t byte_size_ = 0;     // Total num bytes
 };
 
 }  // namespace open3d

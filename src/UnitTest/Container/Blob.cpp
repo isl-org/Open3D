@@ -39,19 +39,11 @@ TEST(Blob, Registry) {
               nullptr);
 }
 
-TEST(Blob, CPU_Blob) {
-    Shape shape;
-
-    // Create tensor
-    shape = {4, 4};
-    Blob<float> matrix4f(shape, Device("CPU:0"));
+TEST(Blob, CPUBlob) {
+    Blob b(10, Device("CPU:0"));
 }
 
-TEST(Blob, GPU_CONDITIONAL_TEST(GPU_Blob)) {
-    Shape shape;
-
-    // Create tensor
-    shape = {4, 4};
-    Blob<float> matrix4f(shape, Device("GPU:0"));
+TEST(Blob, GPU_CONDITIONAL_TEST(GPUBlob)) {
+    Blob b(10, Device("GPU:0"));
 }
 
