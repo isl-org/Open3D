@@ -30,6 +30,7 @@
 #include <iostream>
 #include <string>
 
+#include "Open3D/Container/Device.h"
 #include "Open3D/Container/MemoryManager.h"
 #include "Open3D/Container/Shape.h"
 
@@ -41,53 +42,25 @@ namespace open3d {
 template <typename T>
 class Blob {
 public:
-    Blob(const Shape& shape, const std::string& device = "cpu")
+    Blob(const Shape& shape, const Device& device)
         : shape_(shape),
           device_(device),
           num_elements_(shape.NumElements()),
           byte_size_(sizeof(T) * shape.NumElements()) {
-        if (device == "cpu" || device == "gpu") {
-            v_ = static_cast<T*>(MemoryManager::Allocate(byte_size_, device_));
-        } else {
-            throw std::runtime_error("Unrecognized device");
-        }
-    }
-
-    Blob(const std::vector<T>& init_vals,
-         const Shape& shape,
-         const std::string& device = "cpu")
-        : Blob(shape, device) {
-        if (init_vals.size() != num_elements_) {
-            throw std::runtime_error(
-                    "Blob initialization values' size does not match the "
-                    "shape.");
-        }
-
-        if (device == "cpu" || device == "gpu") {
-            MemoryManager::CopyTo(v_, init_vals.data(), byte_size_);
-        } else if (device == "gpu") {
-            throw std::runtime_error("Unimplemented");
-        } else {
-            throw std::runtime_error("Unrecognized device");
-        }
+        v_ = static_cast<T*>(
+                MemoryManager::Allocate(byte_size_, device_.DeviceTypeStr()));
     }
 
     ~Blob() { MemoryManager::Free(v_); };
 
-    std::vector<T> ToStdVector() const {
-        std::vector<T> vec(num_elements_);
-        MemoryManager::CopyTo(vec.data(), v_, byte_size_);
-        return vec;
-    }
+public:
+    T* v_ = nullptr;
 
 public:
-    T* v_;
-
-public:
-    const Shape shape_;
-    const std::string device_;
-    const size_t num_elements_;  // Num elements
-    const size_t byte_size_;     // Num bytes
+    Shape shape_ = {};
+    Device device_;
+    size_t num_elements_ = 0;  // Num elements
+    size_t byte_size_ = 0;     // Total num bytes
 };
 
 }  // namespace open3d

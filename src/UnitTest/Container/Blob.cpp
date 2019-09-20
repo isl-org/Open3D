@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Container/Blob.h"
+#include "Open3D/Container/Device.h"
 #include "Open3D/Container/MemoryManager.h"
 #include "Open3D/Container/TensorArray.h"
 #include "TestUtility/UnitTest.h"
@@ -32,54 +33,25 @@
 using namespace std;
 using namespace open3d;
 
-TEST(Container, Registry) {
-    EXPECT_TRUE(MemoryManagerBackendRegistry()->Has("cpu"));
-    EXPECT_NE(MemoryManagerBackendRegistry()->GetSingletonObject("cpu"),
+TEST(Blob, Registry) {
+    EXPECT_TRUE(MemoryManagerBackendRegistry()->Has("CPU"));
+    EXPECT_NE(MemoryManagerBackendRegistry()->GetSingletonObject("CPU"),
               nullptr);
 }
 
-TEST(Container, CPU_Blob) {
+TEST(Blob, CPU_Blob) {
     Shape shape;
 
     // Create tensor
     shape = {4, 4};
-    Blob<float> matrix4f(shape, "cpu");
-
-    // Create tensor with init values
-    shape = {3};
-    std::vector<float> init_val({1, 2, 3});
-    Blob<float> vector3f(init_val, shape, "cpu");
-
-    // Check that the values are actually copied
-    std::vector<float> out_val = vector3f.ToStdVector();
-    unit_test::ExpectEQ(out_val, {1, 2, 3});
+    Blob<float> matrix4f(shape, Device("CPU:0"));
 }
 
-TEST(Container, CPU_Array) {
-    Shape tensor_shape = {3};
-    size_t max_size = 10000;
-    TensorArray<float> points(tensor_shape, max_size, "cpu");
-}
-
-TEST(Container, GPU_CONDITIONAL_TEST(GPU_Blob)) {
+TEST(Blob, GPU_CONDITIONAL_TEST(GPU_Blob)) {
     Shape shape;
 
     // Create tensor
     shape = {4, 4};
-    Blob<float> matrix4f(shape, "gpu");
-
-    // Create tensor with init values
-    shape = {3};
-    std::vector<float> init_val({1, 2, 3});
-    Blob<float> vector3f(init_val, shape, "gpu");
-
-    // Check that the values are actually copied
-    std::vector<float> out_val = vector3f.ToStdVector();
-    unit_test::ExpectEQ(out_val, {1, 2, 3});
+    Blob<float> matrix4f(shape, Device("GPU:0"));
 }
 
-TEST(Container, GPU_CONDITIONAL_TEST(GPU_Array)) {
-    Shape tensor_shape = {3};
-    size_t max_size = 100000;
-    TensorArray<float> points(tensor_shape, max_size, "gpu");
-}

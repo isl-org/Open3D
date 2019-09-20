@@ -56,7 +56,7 @@ void MemoryManagerCPU::CopyTo(void* dst_ptr,
 bool MemoryManagerCPU::IsCUDAPointer(const void* ptr) { return false; }
 
 OPEN3D_REGISTER_SINGLETON_OBJECT(MemoryManagerBackendRegistry,
-                                 "cpu",
+                                 "CPU",
                                  std::make_shared<MemoryManagerCPU>());
 
 }  // namespace open3d

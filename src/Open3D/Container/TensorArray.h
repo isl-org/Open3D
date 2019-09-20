@@ -39,12 +39,12 @@ class TensorArray {
 public:
     TensorArray(const Shape& tensor_shape,
                 size_t max_size,
-                const std::string& device = "cpu")
+                const std::string& device = "CPU")
         : curr_size_(0),
           max_size_(max_size),
           tensor_shape_(tensor_shape),
           device_(device) {
-        if (device == "cpu" || device == "gpu") {
+        if (device == "CPU" || device == "GPU") {
             v_ = static_cast<T*>(MemoryManager::Allocate(
                     TensorByteSize() * max_size_, device_));
         } else {

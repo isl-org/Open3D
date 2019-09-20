@@ -55,17 +55,27 @@ public:
         bool is_valid = false;
         if (tokens.size() == 2) {
             device_id_ = std::stoi(tokens[1]);
-            std::string device_type = utility::ToLower(tokens[0]);
-            if (device_type == "cpu") {
+            if (tokens[0] == "CPU") {
                 device_type_ = DeviceType::kCPU;
                 is_valid = true;
-            } else if (device_type == "gpu") {
+            } else if (tokens[0] == "GPU") {
                 device_type_ = DeviceType::kGPU;
                 is_valid = true;
             }
         }
         if (!is_valid) {
             utility::LogFatal("Invalid device string.\n");
+        }
+    }
+
+    std::string DeviceTypeStr() const {
+        if (device_type_ == DeviceType::kCPU) {
+            return "CPU";
+        } else if (device_type_ == DeviceType::kGPU) {
+            return "GPU";
+        } else {
+            utility::LogFatal("Invalid device\n");
+            return ""; // Supress warning
         }
     }
 
