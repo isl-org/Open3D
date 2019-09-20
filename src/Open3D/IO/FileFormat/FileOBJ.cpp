@@ -165,7 +165,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
                             bool write_vertex_colors /* = true*/,
-                            bool write_triangle_uvs /* = false*/,
+                            bool write_triangle_uvs /* = true*/,
                             bool print_progress) {
     std::string object_name = utility::filesystem::GetFileNameWithoutExtension(
             utility::filesystem::GetFileNameWithoutDirectory(filename));

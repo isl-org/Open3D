@@ -567,8 +567,13 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
                             bool write_vertex_colors /* = true*/,
-                            bool write_triangle_uvs /* = false*/,
+                            bool write_triangle_uvs /* = true*/,
                             bool print_progress) {
+    if (write_triangle_uvs) {
+        utility::LogWarning(
+                "Only supports writing triangle_uvs to .obj files\n");
+    }
+
     if (mesh.IsEmpty()) {
         utility::LogWarning("Write PLY failed: mesh has 0 vertices.\n");
         return false;

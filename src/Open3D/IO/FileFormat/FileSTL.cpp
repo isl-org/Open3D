@@ -107,8 +107,13 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
                             bool write_vertex_colors /* = true*/,
-                            bool write_triangle_uvs /* = false*/,
+                            bool write_triangle_uvs /* = true*/,
                             bool print_progress) {
+    if (write_triangle_uvs) {
+        utility::LogWarning(
+                "Only supports writing triangle_uvs to .obj files\n");
+    }
+
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {

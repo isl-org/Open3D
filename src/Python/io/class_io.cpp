@@ -191,7 +191,7 @@ void pybind_class_io(py::module &m_io) {
              "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
              "write_ascii"_a = false, "compressed"_a = false,
              "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
-             "write_triangle_uvs"_a = false, "print_progress"_a = false);
+             "write_triangle_uvs"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 

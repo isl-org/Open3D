@@ -392,8 +392,12 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
                              bool compressed /* = false*/,
                              bool write_vertex_normals /* = true*/,
                              bool write_vertex_colors /* = true*/,
-                             bool write_triangle_uvs /* =false*/,
+                             bool write_triangle_uvs /* = true*/,
                              bool print_progress) {
+    if (write_triangle_uvs) {
+        utility::LogWarning(
+                "Only supports writing triangle_uvs to .obj files\n");
+    }
     tinygltf::Model model;
     model.asset.generator = "Open3D";
     model.asset.version = "2.0";
