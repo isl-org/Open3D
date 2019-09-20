@@ -21,10 +21,11 @@ if __name__ == "__main__":
     print("Testing IO for textured meshes ...")
     textured_mesh = o3d.io.read_triangle_mesh("../../TestData/rock/rock.obj")
     print(textured_mesh)
-    o3d.io.write_triangle_mesh("copy_of_rock.obj", textured_mesh, write_triangle_uvs=True)
+    o3d.io.write_triangle_mesh("copy_of_rock.obj",
+                               textured_mesh,
+                               write_triangle_uvs=True)
     copy_textured_mesh = o3d.io.read_triangle_mesh('copy_of_rock.obj')
     print(copy_textured_mesh)
-
 
     print("Testing IO for images ...")
     img = o3d.io.read_image("../../TestData/lena_color.jpg")
