@@ -34,7 +34,7 @@ import numpy as np
 def geometry_to_json(geometry):
     """Convert Open3D geometry to Json (Dict)"""
     json = dict()
-    if isinstance(geometry, o3.PointCloud):
+    if isinstance(geometry, o3.geometry.PointCloud):
         json['type'] = 'PointCloud'
         # TODO: do not flatten
         json['points'] = np.asarray(
