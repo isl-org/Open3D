@@ -3,7 +3,8 @@ import numpy as np
 import os
 
 import sys
-sys.path.append("../Misc/")
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dir_path, '../Misc'))
 import meshes
 
 
