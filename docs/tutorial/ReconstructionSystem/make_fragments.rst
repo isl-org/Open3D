@@ -17,8 +17,8 @@ Register RGBD image pairs
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 34
-   :lines: 5,35-60
+   :lineno-start: 33
+   :lines: 5,34-59
    :linenos:
 
 The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as initialization. For non-adjacent RGBD images, wide baseline matching is used as an initialization. In particular, function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment, which is used as the initialization of ``compute_rgbd_odometry``.
@@ -31,8 +31,8 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 62
-   :lines: 5,63-109
+   :lineno-start: 61
+   :lines: 5,62-108
    :linenos:
 
 This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
@@ -54,8 +54,8 @@ Make a fragment
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 111
-   :lines: 5,112-146
+   :lineno-start: 110
+   :lines: 5,111-145
    :linenos:
 
 Once the poses are estimates, :ref:`rgbd_integration` is used to reconstruct a colored fragment from each RGBD sequence.
@@ -65,8 +65,8 @@ Batch processing
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/make_fragments.py
    :language: python
-   :lineno-start: 168
-   :lines: 5,169-188
+   :lineno-start: 167
+   :lines: 5,168-187
    :linenos:
 
 The main function calls each individual function explained above.
