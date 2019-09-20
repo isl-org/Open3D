@@ -55,12 +55,6 @@ TEST(Tensor, CPU_Tensor) {
     unit_test::ExpectEQ(out_val, {1, 2, 3});
 }
 
-// TEST(Tensor, CPU_Array) {
-//     Shape tensor_shape = {3};
-//     size_t max_size = 10000;
-//     TensorArray<float> points(tensor_shape, max_size, "CPU:0");
-// }
-
 TEST(Tensor, GPU_CONDITIONAL_TEST(GPU_Tensor)) {
     Shape shape;
 
@@ -77,9 +71,3 @@ TEST(Tensor, GPU_CONDITIONAL_TEST(GPU_Tensor)) {
     std::vector<float> out_val = vector3f.ToStdVector();
     unit_test::ExpectEQ(out_val, {1, 2, 3});
 }
-
-// TEST(Tensor, GPU_CONDITIONAL_TEST(GPU_Array)) {
-//     Shape tensor_shape = {3};
-//     size_t max_size = 100000;
-//     TensorArray<float> points(tensor_shape, max_size, "GPU:0");
-// }
