@@ -24,20 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Context.h"
-#include "TestUtility/UnitTest.h"
+#pragma once
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
 
-TEST(Context, DefaultConstructor) {
-    Context ctx;
-    EXPECT_EQ(ctx.device_type_, Context::DeviceType::kCPU);
-    EXPECT_EQ(ctx.device_id_, 0);
-}
+/// Device context spedifies device type and device id
+/// For CPU, there is only one device with id 0
+/// TODO: staitc factory functions, s.t. Device context cannot be changed
+class Device {
+public:
+    /// Type for device
+    enum class DeviceType { kCPU = 0, kGPU = 1 };
 
-TEST(Context, SpecifiedConstructor) {
-    Context ctx(Context::DeviceType::kGPU, 1);
-    EXPECT_EQ(ctx.device_type_, Context::DeviceType::kGPU);
-    EXPECT_EQ(ctx.device_id_, 1);
-}
+    /// Defalut constructor
+    Device() : device_type_(DeviceType::kCPU), device_id_(0) {}
+
+    /// Constructor with device specified
+    Device(const DeviceType& device_type, int device_id)
+        : device_type_(device_type), device_id_(device_id) {}
+
+public:
+    DeviceType device_type_;
+
+    int device_id_;
+};
+
+}  // namespace open3d
