@@ -26,7 +26,6 @@
 
 #include "Open3D/Container/Tensor.h"
 #include "Open3D/Container/MemoryManager.h"
-#include "Open3D/Container/TensorArray.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
