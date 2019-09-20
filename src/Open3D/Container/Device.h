@@ -25,6 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <string>
+#include <vector>
+
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -42,6 +47,27 @@ public:
     /// Constructor with device specified
     Device(const DeviceType& device_type, int device_id)
         : device_type_(device_type), device_id_(device_id) {}
+
+    /// Constructor from string
+    Device(const std::string& type_colon_id) {
+        std::vector<std::string> tokens;
+        utility::SplitString(tokens, type_colon_id, ":", true);
+        bool is_valid = false;
+        if (tokens.size() == 2) {
+            device_id_ = std::stoi(tokens[1]);
+            std::string device_type = utility::ToLower(tokens[0]);
+            if (device_type == "cpu") {
+                device_type_ = DeviceType::kCPU;
+                is_valid = true;
+            } else if (device_type == "gpu") {
+                device_type_ = DeviceType::kGPU;
+                is_valid = true;
+            }
+        }
+        if (!is_valid) {
+            utility::LogFatal("Invalid device string.\n");
+        }
+    }
 
 public:
     DeviceType device_type_;

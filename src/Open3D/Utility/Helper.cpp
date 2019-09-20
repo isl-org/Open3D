@@ -26,6 +26,7 @@
 
 #include "Open3D/Utility/Helper.h"
 
+#include <algorithm>
 #include <cctype>
 #include <unordered_set>
 
@@ -37,6 +38,12 @@
 
 namespace open3d {
 namespace utility {
+
+std::string ToLower(const std::string& s) {
+    std::string rc = s;
+    std::transform(rc.begin(), rc.end(), rc.begin(), ::tolower);
+    return rc;
+}
 
 void SplitString(std::vector<std::string>& tokens,
                  const std::string& str,
