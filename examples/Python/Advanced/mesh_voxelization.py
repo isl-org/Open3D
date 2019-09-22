@@ -51,7 +51,7 @@ if __name__ == "__main__":
         mesh = preprocess(mesh)
         o3d.visualization.draw_geometries([mesh])
         print("")
-        
+
         print("Sample uniform points")
         start = time.time()
         pcd = mesh.sample_points_uniformly(number_of_points=100000)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         print("visualize sampled point cloud")
         o3d.visualization.draw_geometries([pcd])
         print("")
-        
+
         print("Voxelize point cloud")
         start = time.time()
         voxel = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         o3d.visualization.draw_geometries([voxel])
         print("")
 
-        print("Save and load voxel grid") 
+        print("Save and load voxel grid")
         print(voxel)
         start = time.time()
         o3d.io.write_voxel_grid("save.ply", voxel)
@@ -87,15 +87,19 @@ if __name__ == "__main__":
         print("Element-wise check if points belong to voxel grid")
         queries = np.asarray(pcd.points)
         start = time.time()
-        output = voxel_load.check_if_included(o3d.utility.Vector3dVector(queries))
+        output = voxel_load.check_if_included(
+            o3d.utility.Vector3dVector(queries))
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         print(output[:10])
         print("")
-        
-        print("Element-wise check if points with additive Gaussian noise belong to voxel grid")
+
+        print(
+            "Element-wise check if points with additive Gaussian noise belong to voxel grid"
+        )
         queries_noise = queries + np.random.normal(0, 0.1, (len(pcd.points), 3))
         start = time.time()
-        output_noise = voxel_load.check_if_included(o3d.utility.Vector3dVector(queries_noise))
+        output_noise = voxel_load.check_if_included(
+            o3d.utility.Vector3dVector(queries_noise))
         print(output_noise[:10])
         print("took %.2f milliseconds" % ((time.time() - start) * 1000.0))
         print("")

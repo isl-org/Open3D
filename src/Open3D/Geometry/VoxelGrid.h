@@ -106,6 +106,9 @@ public:
         }
     }
 
+    /// Add a voxel with specified grid index and color
+    void AddVoxel(const Voxel &voxel);
+
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
             Eigen::Vector3i index) const;
@@ -113,7 +116,7 @@ public:
     // Element-wise check if a query in the list is included in the VoxelGrid
     // Queries are double precision and are mapped to the closest voxel.
     std::vector<bool> CheckIfIncluded(
-            const std::vector<Eigen::Vector3d>& queries);
+            const std::vector<Eigen::Vector3d> &queries);
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the

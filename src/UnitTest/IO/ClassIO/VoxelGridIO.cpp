@@ -37,12 +37,10 @@ TEST(VoxelGridIO, PLYWriteRead) {
     auto src_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     src_voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
     src_voxel_grid->voxel_size_ = 5;
-    src_voxel_grid->voxels_ = {
-            geometry::Voxel(Eigen::Vector3i(1, 2, 3),
-                            Eigen::Vector3d(0.1, 0.2, 0.3)),
-            geometry::Voxel(Eigen::Vector3i(4, 5, 6),
-                            Eigen::Vector3d(0.4, 0.5, 0.6)),
-    };
+    src_voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(1, 2, 3),
+                                             Eigen::Vector3d(0.1, 0.2, 0.3)));
+    src_voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(4, 5, 6),
+                                             Eigen::Vector3d(0.4, 0.5, 0.6)));
 
     // Write to file
     std::string file_name = std::string(TEST_DATA_DIR) + "/temp_voxel_grid.ply";
@@ -54,15 +52,19 @@ TEST(VoxelGridIO, PLYWriteRead) {
     EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Check values, account for unit8 conversion lost
-    for (size_t i = 0; i < src_voxel_grid->voxels_.size(); ++i) {
-        ExpectEQ(src_voxel_grid->voxels_[i].grid_index_,
-                 dst_voxel_grid->voxels_[i].grid_index_);
-        ExpectEQ(Eigen::Vector3d(src_voxel_grid->voxels_[i]
-                                         .color_.cast<uint8_t>()
-                                         .cast<double>()),
-                 Eigen::Vector3d(dst_voxel_grid->voxels_[i]
-                                         .color_.cast<uint8_t>()
-                                         .cast<double>()));
+    for (auto src_it = src_voxel_grid->voxels_.begin(),
+              dst_it = dst_voxel_grid->voxels_.begin();
+         src_it != src_voxel_grid->voxels_.end() ||
+         dst_it != dst_voxel_grid->voxels_.end();) {
+        const geometry::Voxel &src_voxel = src_it->second;
+        const geometry::Voxel &dst_voxel = dst_it->second;
+        ExpectEQ(src_voxel.grid_index_, dst_voxel.grid_index_);
+        ExpectEQ(Eigen::Vector3d(
+                         src_voxel.color_.cast<uint8_t>().cast<double>()),
+                 Eigen::Vector3d(
+                         dst_voxel.color_.cast<uint8_t>().cast<double>()));
+        src_it++;
+        dst_it++;
     }
 
     // Uncomment the line below for visualization test

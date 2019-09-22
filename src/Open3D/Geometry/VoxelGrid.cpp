@@ -212,8 +212,12 @@ std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
     return points;
 }
 
+void VoxelGrid::AddVoxel(const Voxel &voxel) {
+    voxels_[voxel.grid_index_] = voxel;
+}
+
 std::vector<bool> VoxelGrid::CheckIfIncluded(
-        const std::vector<Eigen::Vector3d>& queries) {
+        const std::vector<Eigen::Vector3d> &queries) {
     std::vector<bool> output;
     output.resize(queries.size());
     size_t i = 0;

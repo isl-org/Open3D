@@ -147,7 +147,8 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
-    docstring::ClassMethodDocInject(m, "VoxelGrid", "check_if_included",
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "check_if_included",
             {{"query", "a list of voxel indices to check."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "carve_depth_map",
