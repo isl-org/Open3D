@@ -28,6 +28,7 @@
 
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Utility/Helper.h"
 
 namespace open3d {
@@ -36,7 +37,7 @@ namespace io {
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            bool print_progress) {
-    FILE *file = fopen(filename.c_str(), "r");
+    FILE *file = utility::filesystem::FOpen(filename, "r");
     if (file == NULL) {
         utility::LogWarning("Read PTS failed: unable to open file.\n");
         return false;
@@ -97,7 +98,7 @@ bool WritePointCloudToPTS(const std::string &filename,
                           bool write_ascii /* = false*/,
                           bool compressed /* = false*/,
                           bool print_progress) {
-    FILE *file = fopen(filename.c_str(), "w");
+    FILE *file = utility::filesystem::FOpen(filename, "w");
     if (file == NULL) {
         utility::LogWarning("Write PTS failed: unable to open file.\n");
         return false;

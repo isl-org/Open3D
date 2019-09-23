@@ -40,97 +40,8 @@ namespace open3d {
 namespace geometry {
 
 TetraMesh &TetraMesh::Clear() {
-    vertices_.clear();
+    MeshBase::Clear();
     tetras_.clear();
-    return *this;
-}
-
-bool TetraMesh::IsEmpty() const { return !HasVertices(); }
-
-Eigen::Vector3d TetraMesh::GetMinBound() const {
-    if (!HasVertices()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    return std::accumulate(
-            vertices_.begin(), vertices_.end(), vertices_[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a.array().min(b.array()).matrix();
-            });
-}
-
-Eigen::Vector3d TetraMesh::GetMaxBound() const {
-    if (!HasVertices()) {
-        return Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-    return std::accumulate(
-            vertices_.begin(), vertices_.end(), vertices_[0],
-            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-                return a.array().max(b.array()).matrix();
-            });
-}
-
-Eigen::Vector3d TetraMesh::GetCenter() const {
-    Eigen::Vector3d center(0, 0, 0);
-    if (!HasVertices()) {
-        return center;
-    }
-    center = std::accumulate(vertices_.begin(), vertices_.end(), center);
-    center /= double(vertices_.size());
-    return center;
-}
-
-AxisAlignedBoundingBox TetraMesh::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
-}
-
-OrientedBoundingBox TetraMesh::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(vertices_);
-}
-
-TetraMesh &TetraMesh::Transform(const Eigen::Matrix4d &transformation) {
-    for (auto &vertex : vertices_) {
-        Eigen::Vector4d new_point =
-                transformation *
-                Eigen::Vector4d(vertex(0), vertex(1), vertex(2), 1.0);
-        vertex = new_point.head<3>() / new_point(3);
-    }
-    return *this;
-}
-
-TetraMesh &TetraMesh::Translate(const Eigen::Vector3d &translation,
-                                bool relative) {
-    Eigen::Vector3d transform = translation;
-    if (!relative) {
-        transform -= GetCenter();
-    }
-    for (auto &vertex : vertices_) {
-        vertex += transform;
-    }
-    return *this;
-}
-
-TetraMesh &TetraMesh::Scale(const double scale, bool center) {
-    Eigen::Vector3d vertex_center(0, 0, 0);
-    if (center && !vertices_.empty()) {
-        vertex_center = GetCenter();
-    }
-    for (auto &vertex : vertices_) {
-        vertex = (vertex - vertex_center) * scale + vertex_center;
-    }
-    return *this;
-}
-
-TetraMesh &TetraMesh::Rotate(const Eigen::Vector3d &rotation,
-                             bool center,
-                             RotationType type) {
-    Eigen::Vector3d vertex_center(0, 0, 0);
-    if (center && !vertices_.empty()) {
-        vertex_center = GetCenter();
-    }
-    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
-    for (auto &vertex : vertices_) {
-        vertex = R * (vertex - vertex_center) + vertex_center;
-    }
     return *this;
 }
 
@@ -138,14 +49,9 @@ TetraMesh &TetraMesh::operator+=(const TetraMesh &mesh) {
     typedef decltype(tetras_)::value_type Vector4i;
     if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();
-    size_t add_vert_num = mesh.vertices_.size();
-    size_t new_vert_num = old_vert_num + add_vert_num;
     size_t old_tetra_num = tetras_.size();
     size_t add_tetra_num = mesh.tetras_.size();
-    vertices_.resize(new_vert_num);
-    for (size_t i = 0; i < add_vert_num; i++)
-        vertices_[old_vert_num + i] = mesh.vertices_[i];
-
+    MeshBase::operator+=(mesh);
     tetras_.resize(tetras_.size() + mesh.tetras_.size());
     Vector4i index_shift = Vector4i::Constant((int64_t)old_vert_num);
     for (size_t i = 0; i < add_tetra_num; i++) {

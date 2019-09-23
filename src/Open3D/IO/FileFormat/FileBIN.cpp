@@ -29,6 +29,7 @@
 
 #include "Open3D/IO/ClassIO/FeatureIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 
@@ -77,7 +78,7 @@ namespace io {
 
 bool ReadFeatureFromBIN(const std::string &filename,
                         registration::Feature &feature) {
-    FILE *fid = fopen(filename.c_str(), "rb");
+    FILE *fid = utility::filesystem::FOpen(filename, "rb");
     if (fid == NULL) {
         utility::LogWarning("Read BIN failed: unable to open file: {}\n",
                             filename);
@@ -90,7 +91,7 @@ bool ReadFeatureFromBIN(const std::string &filename,
 
 bool WriteFeatureToBIN(const std::string &filename,
                        const registration::Feature &feature) {
-    FILE *fid = fopen(filename.c_str(), "wb");
+    FILE *fid = utility::filesystem::FOpen(filename, "wb");
     if (fid == NULL) {
         utility::LogWarning("Write BIN failed: unable to open file: {}\n",
                             filename);

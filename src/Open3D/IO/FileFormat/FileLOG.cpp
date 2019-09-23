@@ -28,6 +28,7 @@
 
 #include "Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 // The log file is the redwood-data format for camera trajectories
 // See these pages for details:
@@ -49,7 +50,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(
                 camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
     trajectory.parameters_.clear();
-    FILE *f = fopen(filename.c_str(), "r");
+    FILE *f = utility::filesystem::FOpen(filename, "r");
     if (f == NULL) {
         utility::LogWarning("Read LOG failed: unable to open file: {}\n",
                             filename.c_str());
@@ -110,7 +111,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(
 bool WritePinholeCameraTrajectoryToLOG(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory) {
-    FILE *f = fopen(filename.c_str(), "w");
+    FILE *f = utility::filesystem::FOpen(filename.c_str(), "w");
     if (f == NULL) {
         utility::LogWarning("Write LOG failed: unable to open file: {}\n",
                             filename);

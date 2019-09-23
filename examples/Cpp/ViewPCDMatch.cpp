@@ -36,7 +36,7 @@ bool ReadLogFile(const std::string &filename,
     using namespace open3d;
     metadata.clear();
     transformations.clear();
-    FILE *f = fopen(filename.c_str(), "r");
+    FILE *f = utility::filesystem::FOpen(filename, "r");
     if (f == NULL) {
         utility::LogWarning("Read LOG failed: unable to open file.\n");
         return false;

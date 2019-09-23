@@ -34,7 +34,7 @@ using namespace open3d;
 
 void pybind_tetramesh(py::module &m) {
     py::class_<geometry::TetraMesh, PyGeometry3D<geometry::TetraMesh>,
-               std::shared_ptr<geometry::TetraMesh>, geometry::Geometry3D>
+               std::shared_ptr<geometry::TetraMesh>, geometry::MeshBase>
             trianglemesh(m, "TetraMesh",
                          "TetraMesh class. Tetra mesh contains vertices "
                          "and tetrahedra represented by the indices to the "

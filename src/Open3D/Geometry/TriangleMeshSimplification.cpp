@@ -91,8 +91,14 @@ public:
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         double voxel_size,
-        TriangleMesh::SimplificationContraction
+        SimplificationContraction
                 contraction /* = SimplificationContraction::Average */) const {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[SimplifyVertexClustering] This mesh contains triangle uvs "
+                "that are not handled "
+                "in this function\n");
+    }
     auto mesh = std::make_shared<TriangleMesh>();
     if (voxel_size <= 0.0) {
         utility::LogWarning("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
@@ -170,7 +176,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         return aggr;
     };
 
-    if (contraction == TriangleMesh::SimplificationContraction::Average) {
+    if (contraction == SimplificationContraction::Average) {
         for (const auto& voxel : voxel_vertices) {
             int vox_vidx = voxel_vert_ind[voxel.first];
             mesh->vertices_[vox_vidx] = AvgVertex(voxel.second);
@@ -181,8 +187,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
                 mesh->vertex_colors_[vox_vidx] = AvgColor(voxel.second);
             }
         }
-    } else if (contraction ==
-               TriangleMesh::SimplificationContraction::Quadric) {
+    } else if (contraction == SimplificationContraction::Quadric) {
         // Map triangles
         std::unordered_map<int, std::unordered_set<int>> vert_to_triangles;
         for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
@@ -265,6 +270,12 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         int target_number_of_triangles) const {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[SimplifyQuadricDecimation] This mesh contains triangle uvs "
+                "that are not handled "
+                "in this function\n");
+    }
     typedef std::tuple<double, int, int> CostEdge;
 
     auto mesh = std::make_shared<TriangleMesh>();

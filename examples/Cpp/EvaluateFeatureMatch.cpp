@@ -37,7 +37,7 @@ public:
 
 public:
     bool LoadFromFile(const std::string &filename) {
-        FILE *fid = fopen(filename.c_str(), "rb");
+        FILE *fid = open3d::utility::filesystem::FOpen(filename, "rb");
         fread(&dataset_size_, sizeof(int), 1, fid);
         fread(&dimension_, sizeof(int), 1, fid);
         data_.resize(dataset_size_ * dimension_);
@@ -103,7 +103,7 @@ bool ReadLogFile(const std::string &filename,
     using namespace open3d;
     pair_ids.clear();
     transformations.clear();
-    FILE *f = fopen(filename.c_str(), "r");
+    FILE *f = open3d::utility::filesystem::FOpen(filename, "r");
     if (f == NULL) {
         utility::LogWarning("Read LOG failed: unable to open file.\n");
         return false;
@@ -154,7 +154,7 @@ bool ReadLogFile(const std::string &filename,
 }
 
 void WriteBinaryResult(const std::string &filename, std::vector<double> &data) {
-    FILE *f = fopen(filename.c_str(), "wb");
+    FILE *f = open3d::utility::filesystem::FOpen(filename, "wb");
     fwrite(data.data(), sizeof(double), data.size(), f);
     fclose(f);
 }
