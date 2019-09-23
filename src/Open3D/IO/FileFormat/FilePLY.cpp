@@ -569,9 +569,11 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool write_vertex_colors /* = true*/,
                             bool write_triangle_uvs /* = true*/,
                             bool print_progress) {
-    if (write_triangle_uvs) {
+    if (write_triangle_uvs && mesh.HasTriangleUvs()) {
         utility::LogWarning(
-                "Only supports writing triangle_uvs to .obj files\n");
+                "This file format currently does not support writing textures "
+                "and uv "
+                "coordinates. Consider using .obj\n");
     }
 
     if (mesh.IsEmpty()) {
