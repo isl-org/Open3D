@@ -52,19 +52,19 @@ TEST(VoxelGridIO, PLYWriteRead) {
     EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Check values, account for unit8 conversion lost
-    for (auto src_it = src_voxel_grid->voxels_.begin(),
-              dst_it = dst_voxel_grid->voxels_.begin();
-         src_it != src_voxel_grid->voxels_.end() ||
-         dst_it != dst_voxel_grid->voxels_.end();) {
-        const geometry::Voxel &src_voxel = src_it->second;
-        const geometry::Voxel &dst_voxel = dst_it->second;
-        ExpectEQ(src_voxel.grid_index_, dst_voxel.grid_index_);
-        ExpectEQ(Eigen::Vector3d(
-                         src_voxel.color_.cast<uint8_t>().cast<double>()),
-                 Eigen::Vector3d(
-                         dst_voxel.color_.cast<uint8_t>().cast<double>()));
-        src_it++;
-        dst_it++;
+    EXPECT_EQ(src_voxel_grid->origin_, dst_voxel_grid->origin_);
+    EXPECT_EQ(src_voxel_grid->voxel_size_, dst_voxel_grid->voxel_size_);
+    EXPECT_EQ(src_voxel_grid->voxels_.size(), dst_voxel_grid->voxels_.size());
+    for (auto &src_it : src_voxel_grid->voxels_) {
+        const auto &src_voxel = src_it.second;
+        const auto &src_i = src_voxel.grid_index_;
+        const auto &src_c = src_voxel.color_;
+        ExpectEQ(src_i, dst_voxel_grid->voxels_[src_i].grid_index_);
+        ExpectEQ(
+                Eigen::Vector3d((src_c * 255.0).cast<uint8_t>().cast<double>()),
+                Eigen::Vector3d((dst_voxel_grid->voxels_[src_i].color_ * 255.0)
+                                        .cast<uint8_t>()
+                                        .cast<double>()));
     }
 
     // Uncomment the line below for visualization test

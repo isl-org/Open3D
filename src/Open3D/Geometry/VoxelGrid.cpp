@@ -180,9 +180,8 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     }
     this->voxels_.clear();
     for (const auto &accpoint : voxelindex_to_accpoint) {
-        this->voxels_[accpoint.second.GetVoxelIndex()] =
-                Voxel(accpoint.second.GetVoxelIndex(),
-                      accpoint.second.GetAverageColor());
+        this->AddVoxel(Voxel(accpoint.second.GetVoxelIndex(),
+                             accpoint.second.GetAverageColor()));
     }
     return *this;
 }
@@ -263,7 +262,7 @@ void VoxelGrid::CreateFromOctree(const Octree &octree) {
                 Eigen::floor((node_center - Eigen::Array3d(origin_)) /
                              voxel_size_)
                         .cast<int>();
-        voxels_[grid_index] = Voxel(grid_index, node->color_);
+        AddVoxel(Voxel(grid_index, node->color_));
     }
 }
 

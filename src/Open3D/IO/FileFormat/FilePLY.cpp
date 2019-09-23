@@ -850,10 +850,9 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     voxelgrid.Clear();
     for (auto &it : voxelgrid_ptr) {
         if (state.color_num > 0)
-            voxelgrid.voxels_[it.grid_index_] =
-                    geometry::Voxel(it.grid_index_, it.color_);
+            voxelgrid.AddVoxel(geometry::Voxel(it.grid_index_, it.color_));
         else
-            voxelgrid.voxels_[it.grid_index_] = geometry::Voxel(it.grid_index_);
+            voxelgrid.AddVoxel(geometry::Voxel(it.grid_index_));
     }
     voxelgrid.origin_ = state.origin;
     voxelgrid.voxel_size_ = state.voxel_size;

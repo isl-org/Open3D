@@ -52,7 +52,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
         for (int hidx = 0; hidx < num_h; hidx++) {
             for (int didx = 0; didx < num_d; didx++) {
                 Eigen::Vector3i grid_index(widx, hidx, didx);
-                output->voxels_[grid_index] = geometry::Voxel(grid_index);
+                output->AddVoxel(geometry::Voxel(grid_index));
             }
         }
     }
@@ -100,7 +100,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         const Eigen::Vector3d &color =
                 has_colors ? accpoint.second.GetAverageColor()
                            : Eigen::Vector3d(0, 0, 0);
-        output->voxels_[grid_index] = geometry::Voxel(grid_index, color);
+        output->AddVoxel(geometry::Voxel(grid_index, color));
     }
     utility::LogDebug(
             "Pointcloud is voxelized from {:d} points to {:d} voxels.\n",
@@ -156,8 +156,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                     if (IntersectionTest::TriangleAABB(
                                 box_center, box_half_size, v0, v1, v2)) {
                         Eigen::Vector3i grid_index(widx, hidx, didx);
-                        output->voxels_[grid_index] =
-                                geometry::Voxel(grid_index);
+                        output->AddVoxel(geometry::Voxel(grid_index));
                         break;
                     }
                 }

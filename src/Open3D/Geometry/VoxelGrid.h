@@ -179,8 +179,8 @@ public:
             const Eigen::Vector3d &max_bound);
 
 public:
-    double voxel_size_;
-    Eigen::Vector3d origin_;
+    double voxel_size_ = 0.0;
+    Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
     std::unordered_map<Eigen::Vector3i,
                        Voxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
