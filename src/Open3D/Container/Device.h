@@ -75,7 +75,7 @@ public:
             return "GPU";
         } else {
             utility::LogFatal("Invalid device\n");
-            return ""; // Supress warning
+            return ""; // Suppress warning
         }
     }
 

@@ -2,7 +2,7 @@
 # https://cmake.org/cmake/help/v3.0/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
