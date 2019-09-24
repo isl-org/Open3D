@@ -85,16 +85,17 @@ option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
 
 # Build CUDA module by defalt if CUDA is available
+# Compatible with CMake 3.8+
 if (BUILD_CUDA_MODULE)
-    find_package(CUDA 8.0)
-    if (CUDA_FOUND)
-        message(STATUS "Building CUDA enabled")
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        message(STATUS "Building CUDA disabled")
+        enable_language(CUDA)
     else()
         set(BUILD_CUDA_MODULE OFF)
-        message(STATUS "Building CUDA disabled")
+        message(STATUS "No CUDA support")
     endif()
-else ()
-    message(STATUS "Building CUDA disabled")
 endif ()
 
 # default built type
