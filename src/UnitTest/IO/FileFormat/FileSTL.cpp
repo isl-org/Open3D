@@ -40,10 +40,10 @@ TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     tm_gt.triangles_ = {{0, 1, 2}};
     tm_gt.ComputeVertexNormals();
 
-    io::WriteTriangleMeshToSTL("tmp.stl", tm_gt);
+    io::WriteTriangleMesh("tmp.stl", tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMeshFromSTL("tmp.stl", tm_test, false);
+    io::ReadTriangleMesh("tmp.stl", tm_test, false);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
