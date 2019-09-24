@@ -196,7 +196,7 @@ Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
 }
 
 std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
-        Eigen::Vector3i index) const {
+        const Eigen::Vector3i &index) const {
     double r = voxel_size_ / 2.0;
     auto x = GetVoxelCenterCoordinate(index);
     std::vector<Eigen::Vector3d> points;
