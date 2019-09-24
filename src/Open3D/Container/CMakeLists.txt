@@ -15,7 +15,7 @@ set (SRC_GPU
 if (BUILD_CUDA_MODULE)
     add_definitions(-DBUILD_CUDA_MODULE)
     add_library(Container OBJECT ${SRC_CPU} ${SRC_GPU})
-    target_include_directories(Container PUBLIC ${CUDA_INCLUDE_DIRS})
+    target_include_directories(Container PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 else()
     add_library(Container ${SRC_CPU})
 endif()
