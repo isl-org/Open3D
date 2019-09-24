@@ -81,7 +81,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      bool print_progress) {
+                      bool print_progress /* = false */) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -117,8 +117,8 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool compressed /* = false*/,
                        bool write_vertex_normals /* = true*/,
                        bool write_vertex_colors /* = true*/,
-                       bool write_triangle_uvs /* = false*/,
-                       bool print_progress) {
+                       bool write_triangle_uvs /* = true*/,
+                       bool print_progress /* = false*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {

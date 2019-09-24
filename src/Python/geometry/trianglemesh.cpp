@@ -46,17 +46,15 @@ void pybind_trianglemesh(py::module &m) {
     trianglemesh
             .def("__repr__",
                  [](const geometry::TriangleMesh &mesh) {
-                     std::string info =
-                             std::string("geometry::TriangleMesh with ") +
-                             std::to_string(mesh.vertices_.size()) +
-                             " points and " +
-                             std::to_string(mesh.triangles_.size()) +
-                             " triangles";
+                     std::string info = fmt::format(
+                             "geometry::TriangleMesh with {} points and {} "
+                             "triangles",
+                             mesh.vertices_.size(), mesh.triangles_.size());
+
                      if (mesh.HasTexture()) {
-                         info += ", and (" +
-                                 std::to_string(mesh.texture_.width_) + ", " +
-                                 std::to_string(mesh.texture_.height_) +
-                                 ") texture.";
+                         info += fmt::format(", and ({}, {}) texture.",
+                                             mesh.texture_.width_,
+                                             mesh.texture_.height_);
                      } else {
                          info += ".";
                      }
