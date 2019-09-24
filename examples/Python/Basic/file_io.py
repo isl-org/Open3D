@@ -19,12 +19,12 @@ if __name__ == "__main__":
     o3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)
 
     print("Testing IO for textured meshes ...")
-    textured_mesh = o3d.io.read_triangle_mesh("../../TestData/rock/rock.obj")
+    textured_mesh = o3d.io.read_triangle_mesh("../../TestData/crate/crate.obj")
     print(textured_mesh)
-    o3d.io.write_triangle_mesh("copy_of_rock.obj",
+    o3d.io.write_triangle_mesh("copy_of_crate.obj",
                                textured_mesh,
                                write_triangle_uvs=True)
-    copy_textured_mesh = o3d.io.read_triangle_mesh('copy_of_rock.obj')
+    copy_textured_mesh = o3d.io.read_triangle_mesh('copy_of_crate.obj')
     print(copy_textured_mesh)
 
     print("Testing IO for images ...")

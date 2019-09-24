@@ -50,6 +50,6 @@ if __name__ == "__main__":
     o3d.visualization.draw_geometries([line_set])
 
     print("Let's draw a textured triangle mesh from obj file.")
-    textured_mesh = o3d.io.read_triangle_mesh("../../TestData/rock/rock.obj")
+    textured_mesh = o3d.io.read_triangle_mesh("../../TestData/crate/crate.obj")
     textured_mesh.compute_vertex_normals()
     o3d.visualization.draw_geometries([textured_mesh])
