@@ -42,6 +42,7 @@ add_library(${CMAKE_PROJECT_NAME}
     Open3DConfig.cpp
     $<TARGET_OBJECTS:Camera>
     $<TARGET_OBJECTS:ColorMap>
+    $<TARGET_OBJECTS:Container>
     $<TARGET_OBJECTS:Geometry>
     $<TARGET_OBJECTS:Integration>
     $<TARGET_OBJECTS:Odometry>
@@ -74,8 +75,7 @@ endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
-                      ${OMP_LIBRARIES}
-                      ${ENABLE_WHOLE_ARCHIVE} Container ${DISABLE_WHOLE_ARCHIVE})
+                      ${OMP_LIBRARIES})
 
 # input_dirs: a list of absolute paths in the source dir
 # output_dirs: a list of relative paths in the install dir
