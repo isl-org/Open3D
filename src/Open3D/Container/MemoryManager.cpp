@@ -28,6 +28,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <unordered_map>
 
 #include "Open3D/Container/Blob.h"
 #include "Open3D/Container/CudaUtils.h"
@@ -37,32 +38,28 @@
 namespace open3d {
 
 void* MemoryManager::Alloc(size_t byte_size, const Device& device) {
-    void* ptr;
-    if (device.device_type_ == Device::DeviceType::kCPU) {
-        ptr = malloc(byte_size);
-        if (byte_size != 0 && !ptr) {
-            utility::LogFatal("CPU malloc failed\n");
-        }
-    } else if (device.device_type_ == Device::DeviceType::kGPU) {
-        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
-    } else {
-        utility::LogFatal("Unimplemented device\n");
-    }
-    return ptr;
+    return GetDeviceMemoryManager(device)->Alloc(byte_size, device);
 }
 
 void MemoryManager::Free(Blob* blob) {
-    if (blob->device_.device_type_ == Device::DeviceType::kCPU) {
-        if (blob->v_) {
-            free(blob->v_);
-        }
-    } else if (blob->device_.device_type_ == Device::DeviceType::kGPU) {
-        if (blob->v_) {
-            OPEN3D_CUDA_CHECK(cudaFree(blob->v_));
-        }
-    } else {
+    return GetDeviceMemoryManager(blob->device_)->Free(blob);
+}
+
+std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
+        const Device& device) {
+    static std::unordered_map<Device::DeviceType,
+                              std::shared_ptr<DeviceMemoryManager>>
+            map_device_type_to_memory_manager = {
+                    {Device::DeviceType::kCPU,
+                     std::make_shared<CPUMemoryManager>()},
+                    {Device::DeviceType::kGPU,
+                     std::make_shared<GPUMemoryManager>()},
+            };
+    if (map_device_type_to_memory_manager.find(device.device_type_) ==
+        map_device_type_to_memory_manager.end()) {
         utility::LogFatal("Unimplemented device\n");
     }
+    return map_device_type_to_memory_manager.at(device.device_type_);
 }
 
 CPUMemoryManager::CPUMemoryManager() {}
