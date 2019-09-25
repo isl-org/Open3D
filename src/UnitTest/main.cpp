@@ -30,10 +30,12 @@
 #include "TestUtility/Print.h"
 #include "TestUtility/Rand.h"
 #include "TestUtility/Raw.h"
+#include "Open3D/Utility/Console.h"
+
 using namespace std;
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
-
+    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
     return RUN_ALL_TESTS();
 }

@@ -88,7 +88,10 @@ void CPUMemoryManager::Free(Blob* blob) {
     }
 }
 
-GPUMemoryManager::GPUMemoryManager() { EnableP2P(); }
+GPUMemoryManager::GPUMemoryManager() {
+    // TODO: reenable this when p2p is supported
+    // EnableP2P();
+}
 
 void GPUMemoryManager::EnableP2P() {
     int device_count = -1;
@@ -96,38 +99,26 @@ void GPUMemoryManager::EnableP2P() {
     if (device_count <= 0) {
         utility::LogFatal("CUDA device not found, device_count={}\n",
                           device_count);
+    } else {
+        utility::LogDebug("device_count = {}\n", device_count);
     }
 
     // Enable P2P
-    std::vector<int> device_ids(device_count);
-    std::iota(std::begin(device_ids), std::end(device_ids), 0);
-    int n = static_cast<int>(device_ids.size());
-    int enabled = 0;
-    std::vector<int> p2p(n * n);
-
-    for (int i = 0; i < n; ++i) {
-        SetDevice(device_ids[i]);
-        for (int j = 0; j < n; j++) {
-            int access;
-            cudaDeviceCanAccessPeer(&access, device_ids[i], device_ids[j]);
-            if (access) {
-                cudaError_t e = cudaDeviceEnablePeerAccess(device_ids[j], 0);
-                if (e == cudaSuccess ||
-                    e == cudaErrorPeerAccessAlreadyEnabled) {
-                    ++enabled;
-                    p2p[i * n + j] = 1;
-                }
+    for (int curr_id = 0; curr_id < device_count; ++curr_id) {
+        SetDevice(curr_id);
+        for (int peer_id = 0; peer_id < device_count; ++peer_id) {
+            if (curr_id == peer_id) {
+                continue;
+            }
+            int accessible = 0;
+            OPEN3D_CUDA_CHECK(
+                    cudaDeviceCanAccessPeer(&accessible, curr_id, peer_id));
+            if (accessible == 1) {
+                OPEN3D_CUDA_CHECK(cudaDeviceEnablePeerAccess(peer_id, 0));
+            } else {
+                utility::LogWarning("{} can't access {}\n", curr_id, peer_id);
             }
         }
-    }
-    if (enabled != n * (n - 1)) {
-        utility::LogWarning(
-                "{} GPUs detected. Only {} out of {} GPU pairs are enabled "
-                "direct access.\n",
-                device_count, enabled, n * (n - 1));
-    } else {
-        utility::LogDebug(
-                "{} GPUs detected. P2P communication fully enabled.\n");
     }
 }
 
