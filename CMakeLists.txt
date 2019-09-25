@@ -92,6 +92,8 @@ if (BUILD_CUDA_MODULE)
     if(CMAKE_CUDA_COMPILER)
         message(STATUS "Building CUDA disabled")
         enable_language(CUDA)
+        # Still, we need to find https://stackoverflow.com/a/48540499/1255535
+        find_package(CUDA 8.0 REQUIRED)
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
