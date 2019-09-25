@@ -28,6 +28,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <numeric>
 #include <unordered_map>
 
 #include "Open3D/Container/Blob.h"
@@ -87,8 +88,55 @@ void CPUMemoryManager::Free(Blob* blob) {
     }
 }
 
-GPUMemoryManager::GPUMemoryManager() {
+GPUMemoryManager::GPUMemoryManager() { EnableP2P(); }
+
+void GPUMemoryManager::EnableP2P() {
+    int device_count = -1;
+    OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&device_count));
+    if (device_count <= 0) {
+        utility::LogFatal("CUDA device not found, device_count={}\n",
+                          device_count);
+    }
+
     // Enable P2P
+    std::vector<int> device_ids(device_count);
+    std::iota(std::begin(device_ids), std::end(device_ids), 0);
+    int n = static_cast<int>(device_ids.size());
+    int enabled = 0;
+    std::vector<int> p2p(n * n);
+
+    for (int i = 0; i < n; ++i) {
+        SetDevice(device_ids[i]);
+        for (int j = 0; j < n; j++) {
+            int access;
+            cudaDeviceCanAccessPeer(&access, device_ids[i], device_ids[j]);
+            if (access) {
+                cudaError_t e = cudaDeviceEnablePeerAccess(device_ids[j], 0);
+                if (e == cudaSuccess ||
+                    e == cudaErrorPeerAccessAlreadyEnabled) {
+                    ++enabled;
+                    p2p[i * n + j] = 1;
+                }
+            }
+        }
+    }
+    if (enabled != n * (n - 1)) {
+        utility::LogWarning(
+                "{} GPUs detected. Only {} out of {} GPU pairs are enabled "
+                "direct access.\n",
+                device_count, enabled, n * (n - 1));
+    } else {
+        utility::LogDebug(
+                "{} GPUs detected. P2P communication fully enabled.\n");
+    }
+}
+
+void GPUMemoryManager::SetDevice(int device_id) {
+    int curr_device_id = -1;
+    OPEN3D_CUDA_CHECK(cudaGetDevice(&curr_device_id));
+    if (curr_device_id != device_id) {
+        OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
+    }
 }
 
 void* GPUMemoryManager::Alloc(size_t byte_size, const Device& device) {

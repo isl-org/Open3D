@@ -56,6 +56,10 @@ public:
     GPUMemoryManager();
     void* Alloc(size_t byte_size, const Device& device) override;
     void Free(Blob* blob) override;
+
+protected:
+    void EnableP2P();
+    void SetDevice(int device_id);
 };
 
 class MemoryManager {
