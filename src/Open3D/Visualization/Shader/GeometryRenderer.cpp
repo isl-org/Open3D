@@ -255,11 +255,20 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
         if (option.mesh_color_option_ ==
             RenderOption::MeshColorOption::Normal) {
             success &= normal_mesh_shader_.Render(mesh, option, view);
+        } else if (option.mesh_color_option_ ==
+                           RenderOption::MeshColorOption::Color &&
+                   mesh.HasTriangleUvs() && mesh.HasTexture()) {
+            success &= texture_phong_mesh_shader_.Render(mesh, option, view);
         } else {
             success &= phong_mesh_shader_.Render(mesh, option, view);
         }
-    } else {
-        success &= simple_mesh_shader_.Render(mesh, option, view);
+    } else {  // if normals are not ready
+        if (option.mesh_color_option_ == RenderOption::MeshColorOption::Color &&
+            mesh.HasTriangleUvs() && mesh.HasTexture()) {
+            success &= texture_simple_mesh_shader_.Render(mesh, option, view);
+        } else {
+            success &= simple_mesh_shader_.Render(mesh, option, view);
+        }
     }
     if (option.mesh_show_wireframe_) {
         success &= simpleblack_wireframe_shader_.Render(mesh, option, view);
@@ -281,7 +290,9 @@ bool TriangleMeshRenderer::AddGeometry(
 
 bool TriangleMeshRenderer::UpdateGeometry() {
     simple_mesh_shader_.InvalidateGeometry();
+    texture_simple_mesh_shader_.InvalidateGeometry();
     phong_mesh_shader_.InvalidateGeometry();
+    texture_phong_mesh_shader_.InvalidateGeometry();
     normal_mesh_shader_.InvalidateGeometry();
     simpleblack_wireframe_shader_.InvalidateGeometry();
     return true;

@@ -166,7 +166,14 @@ bool WriteTriangleMeshToOFF(const std::string &filename,
                             bool compressed /* = false*/,
                             bool write_vertex_normals /* = true*/,
                             bool write_vertex_colors /* = true*/,
+                            bool write_triangle_uvs /* = true*/,
                             bool print_progress) {
+    if (write_triangle_uvs && mesh.HasTriangleUvs()) {
+        utility::LogWarning(
+                "This file format does not support writing textures and uv "
+                "coordinates. Consider using .obj\n");
+    }
+
     std::ofstream file(filename.c_str(), std::ios::out);
     if (!file) {
         utility::LogWarning("Write OFF failed: unable to open file.\n");

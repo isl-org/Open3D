@@ -37,7 +37,7 @@ if __name__ == "__main__":
     o3d.visualization.draw_geometries(
         [mesh_box + mesh_sphere + mesh_cylinder + mesh_frame])
 
-    print("Let\'s draw a cubic using o3d.geometry.LineSet")
+    print("Let\'s draw a cubic using o3d.geometry.LineSet.")
     points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1],
               [0, 1, 1], [1, 1, 1]]
     lines = [[0, 1], [0, 2], [1, 3], [2, 3], [4, 5], [4, 6], [5, 7], [6, 7],
@@ -48,3 +48,8 @@ if __name__ == "__main__":
     line_set.lines = o3d.utility.Vector2iVector(lines)
     line_set.colors = o3d.utility.Vector3dVector(colors)
     o3d.visualization.draw_geometries([line_set])
+
+    print("Let's draw a textured triangle mesh from obj file.")
+    textured_mesh = o3d.io.read_triangle_mesh("../../TestData/crate/crate.obj")
+    textured_mesh.compute_vertex_normals()
+    o3d.visualization.draw_geometries([textured_mesh])

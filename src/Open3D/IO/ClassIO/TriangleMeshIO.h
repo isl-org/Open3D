@@ -49,6 +49,8 @@ bool ReadTriangleMesh(const std::string &filename,
 /// The function calls write functions based on the extension name of filename.
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
+/// At current only .obj format supports uv coordinates (triangle_uvs) and
+/// textures.
 /// \return return true if the write function is successful, false otherwise.
 bool WriteTriangleMesh(const std::string &filename,
                        const geometry::TriangleMesh &mesh,
@@ -56,67 +58,73 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool compressed = false,
                        bool write_vertex_normals = true,
                        bool write_vertex_colors = true,
+                       bool write_triangle_uvs = true,
                        bool print_progress = false);
 
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool print_progress = false);
+                             bool print_progress);
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
-                            bool write_ascii = false,
-                            bool compressed = false,
-                            bool write_vertex_normals = true,
-                            bool write_vertex_colors = true,
-                            bool print_progress = false);
+                            bool write_ascii,
+                            bool compressed,
+                            bool write_vertex_normals,
+                            bool write_vertex_colors,
+                            bool write_triangle_uvs,
+                            bool print_progress);
 
 bool ReadTriangleMeshFromSTL(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool print_progress = false);
+                             bool print_progress);
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
-                            bool write_ascii = false,
-                            bool compressed = false,
-                            bool write_vertex_normals = true,
-                            bool write_vertex_colors = true,
-                            bool print_progress = false);
+                            bool write_ascii,
+                            bool compressed,
+                            bool write_vertex_normals,
+                            bool write_vertex_colors,
+                            bool write_triangle_uvs,
+                            bool print_progress);
 
 bool ReadTriangleMeshFromOBJ(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool print_progress = false);
+                             bool print_progress);
 
 bool WriteTriangleMeshToOBJ(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
-                            bool write_ascii = false,
-                            bool compressed = false,
-                            bool write_vertex_normals = true,
-                            bool write_vertex_colors = true,
-                            bool print_progress = false);
+                            bool write_ascii,
+                            bool compressed,
+                            bool write_vertex_normals,
+                            bool write_vertex_colors,
+                            bool write_triangle_uvs,
+                            bool print_progress);
 
 bool ReadTriangleMeshFromOFF(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool print_progress = false);
+                             bool print_progress);
 
 bool WriteTriangleMeshToOFF(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
-                            bool write_ascii = false,
-                            bool compressed = false,
-                            bool write_vertex_normals = true,
-                            bool write_vertex_colors = true,
-                            bool print_progress = false);
+                            bool write_ascii,
+                            bool compressed,
+                            bool write_vertex_normals,
+                            bool write_vertex_colors,
+                            bool write_triangle_uvs,
+                            bool print_progress);
 
 bool ReadTriangleMeshFromGLTF(const std::string &filename,
                               geometry::TriangleMesh &mesh,
-                              bool print_progress = false);
+                              bool print_progress);
 
 bool WriteTriangleMeshToGLTF(const std::string &filename,
                              const geometry::TriangleMesh &mesh,
-                             bool write_ascii = false,
-                             bool compressed = false,
-                             bool write_vertex_normals = true,
-                             bool write_vertex_colors = true,
-                             bool print_progress = false);
+                             bool write_ascii,
+                             bool compressed,
+                             bool write_vertex_normals,
+                             bool write_vertex_colors,
+                             bool write_triangle_uvs,
+                             bool print_progress);
 
 /// Function to convert a polygon into a collection of
 /// triangles whose vertices are only those of the polygon.

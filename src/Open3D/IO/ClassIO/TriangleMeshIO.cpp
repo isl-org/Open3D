@@ -57,6 +57,7 @@ static const std::unordered_map<
                            const bool,
                            const bool,
                            const bool,
+                           const bool,
                            const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"ply", WriteTriangleMeshToPLY},
@@ -80,7 +81,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
-                      bool print_progress) {
+                      bool print_progress /* = false */) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -116,7 +117,8 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool compressed /* = false*/,
                        bool write_vertex_normals /* = true*/,
                        bool write_vertex_colors /* = true*/,
-                       bool print_progress) {
+                       bool write_triangle_uvs /* = true*/,
+                       bool print_progress /* = false*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -135,7 +137,7 @@ bool WriteTriangleMesh(const std::string &filename,
     }
     bool success = map_itr->second(filename, mesh, write_ascii, compressed,
                                    write_vertex_normals, write_vertex_colors,
-                                   print_progress);
+                                   write_triangle_uvs, print_progress);
     utility::LogDebug(
             "Write geometry::TriangleMesh: {:d} triangles and {:d} vertices.\n",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());

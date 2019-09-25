@@ -40,10 +40,10 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
     tm_gt.triangles_ = {{0, 1, 2}};
     tm_gt.ComputeVertexNormals();
 
-    io::WriteTriangleMeshToGLTF("tmp.gltf", tm_gt);
+    io::WriteTriangleMesh("tmp.gltf", tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMeshFromGLTF("tmp.gltf", tm_test, false);
+    io::ReadTriangleMesh("tmp.gltf", tm_test, false);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
@@ -56,10 +56,10 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLB) {
     tm_gt.triangles_ = {{0, 1, 2}};
     tm_gt.ComputeVertexNormals();
 
-    io::WriteTriangleMeshToGLTF("tmp.glb", tm_gt);
+    io::WriteTriangleMesh("tmp.glb", tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMeshFromGLTF("tmp.glb", tm_test, false);
+    io::ReadTriangleMesh("tmp.glb", tm_test, false);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
