@@ -1,21 +1,11 @@
 # Build
-
-# Common source code shared by CUDA and host
-set (SRC_CPU
+set (CONTAINER_SRC
     MemoryManager.cpp
-    MemoryManagerCPU.cpp
-)
-
-# Additional source code for when CUDA is enabled
-set (SRC_GPU
-    MemoryManagerGPU.cpp
 )
 
 # Create object library
+add_library(Container OBJECT ${CONTAINER_SRC})
 if (BUILD_CUDA_MODULE)
     add_definitions(-DBUILD_CUDA_MODULE)
-    add_library(Container OBJECT ${SRC_CPU} ${SRC_GPU})
     target_include_directories(Container PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-else()
-    add_library(Container ${SRC_CPU})
 endif()

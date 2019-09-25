@@ -24,39 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/MemoryManagerCPU.h"
-#include "Open3D/Registry.h"
+#include "Open3D/Container/Storage.h"
+#include "TestUtility/UnitTest.h"
 
-namespace open3d {
+using namespace std;
+using namespace open3d;
 
-void* MemoryManagerCPU::Alloc(size_t byte_size) {
-    void* ptr = malloc(byte_size);
-    if (byte_size != 0 && !ptr) {
-        std::runtime_error("CPU malloc failed");
-        throw std::bad_alloc();
-    }
-    return ptr;
+TEST(Storage, CPU) {
 }
 
-void MemoryManagerCPU::Free(void* ptr) {
-    if (ptr) {
-        free(ptr);
-    }
+TEST(Storage, GPU) {
+
 }
-
-void MemoryManagerCPU::CopyTo(void* dst_ptr,
-                              const void* src_ptr,
-                              std::size_t num_bytes) {
-    if (dst_ptr == nullptr || src_ptr == nullptr) {
-        throw std::runtime_error("CopyTo: nullptr detected");
-    }
-    std::memcpy(dst_ptr, src_ptr, num_bytes);
-}
-
-bool MemoryManagerCPU::IsCUDAPointer(const void* ptr) { return false; }
-
-OPEN3D_REGISTER_SINGLETON_OBJECT(MemoryManagerBackendRegistry,
-                                 "CPU",
-                                 std::make_shared<MemoryManagerCPU>());
-
-}  // namespace open3d

@@ -32,39 +32,16 @@
 #include <string>
 #include <unordered_map>
 
-#include "Open3D/Registry.h"
-
 namespace open3d {
 
-// Base class for MemoryManagerCPU and MemoryManagerGPU
-// This can futher be extened to a stateful memory manager (e.g memory pool)
-class MemoryManagerBackend {
-public:
-    virtual void* Alloc(size_t byte_size) = 0;
-    virtual void Free(void* ptr) = 0;
-    virtual void CopyTo(void* dst_ptr,
-                        const void* src_ptr,
-                        std::size_t num_bytes) = 0;
-    virtual bool IsCUDAPointer(const void* ptr) = 0;
-};
+class Blob;
 
-OPEN3D_DECLARE_REGISTRY_FOR_SINGLETON(MemoryManagerBackendRegistry,
-                                      std::shared_ptr<MemoryManagerBackend>);
+class Device;
 
-// MemoryManager external API
-// MemoryManager is stateless (static functions), except for the registry
 class MemoryManager {
 public:
-    static void* Alloc(size_t byte_size, const std::string& device);
-    static void Free(void* ptr);
-    static void CopyTo(void* dst_ptr,
-                       const void* src_ptr,
-                       std::size_t num_bytes);
-    static bool IsCUDAPointer(const void* ptr);
-
-protected:
-    static std::shared_ptr<MemoryManagerBackend> GetImpl(
-            const std::string& device);
+    static void* Alloc(size_t byte_size, const Device& device);
+    static void Free(Blob* blob);
 };
 
 }  // namespace open3d

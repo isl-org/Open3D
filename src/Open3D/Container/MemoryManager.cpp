@@ -26,63 +26,42 @@
 
 #include "Open3D/Container/MemoryManager.h"
 
-#include <cstring>
-#include <iostream>
-#include <stdexcept>
-#include <string>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
+#include "Open3D/Container/Blob.h"
+#include "Open3D/Container/CudaUtils.h"
+#include "Open3D/Container/Device.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
-OPEN3D_DEFINE_REGISTRY_FOR_SINGLETON(MemoryManagerBackendRegistry,
-                                     std::shared_ptr<MemoryManagerBackend>);
-
-std::shared_ptr<MemoryManagerBackend> MemoryManager::GetImpl(
-        const std::string& device) {
-    if (MemoryManagerBackendRegistry()->Has(device)) {
-        return MemoryManagerBackendRegistry()->GetSingletonObject(device);
-    } else {
-        throw std::runtime_error("Cannot get MemoryManager impl for " + device);
-    }
-}
-
-void* MemoryManager::Alloc(size_t byte_size, const std::string& device) {
-    return GetImpl(device)->Alloc(byte_size);
-}
-
-// TODO: consider removing the "device" argument, check ptr device first
-void MemoryManager::Free(void* ptr) {
-    if (ptr) {
-        if (IsCUDAPointer(ptr)) {
-            GetImpl("GPU")->Free(ptr);
-        } else {
-            GetImpl("CPU")->Free(ptr);
+void* MemoryManager::Alloc(size_t byte_size, const Device& device) {
+    void* ptr;
+    if (device.device_type_ == Device::DeviceType::kCPU) {
+        ptr = malloc(byte_size);
+        if (byte_size != 0 && !ptr) {
+            utility::LogFatal("CPU malloc failed\n");
         }
+    } else if (device.device_type_ == Device::DeviceType::kGPU) {
+        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+    } else {
+        utility::LogFatal("Unimplemented device\n");
     }
+    return ptr;
 }
 
-void MemoryManager::CopyTo(void* dst_ptr,
-                           const void* src_ptr,
-                           std::size_t num_bytes) {
-    if (dst_ptr == nullptr || src_ptr == nullptr) {
-        throw std::runtime_error("CopyTo: nullptr detected");
-    }
-    std::string dst_device = IsCUDAPointer(dst_ptr) ? "GPU" : "CPU";
-    std::string src_device = IsCUDAPointer(src_ptr) ? "GPU" : "CPU";
-
-    if (src_device == "GPU" || dst_device == "GPU") {
-        GetImpl("GPU")->CopyTo(dst_ptr, src_ptr, num_bytes);
+void MemoryManager::Free(Blob* blob) {
+    if (blob->device_.device_type_ == Device::DeviceType::kCPU) {
+        if (blob->v_) {
+            free(blob->v_);
+        }
+    } else if (blob->device_.device_type_ == Device::DeviceType::kGPU) {
+        if (blob->v_) {
+            OPEN3D_CUDA_CHECK(cudaFree(blob->v_));
+        }
     } else {
-        GetImpl("CPU")->CopyTo(dst_ptr, src_ptr, num_bytes);
-    }
-}
-
-bool MemoryManager::IsCUDAPointer(const void* ptr) {
-    if (MemoryManagerBackendRegistry()->Has("GPU")) {
-        return GetImpl("GPU")->IsCUDAPointer(ptr);
-    } else {
-        return GetImpl("CPU")->IsCUDAPointer(ptr);
+        utility::LogFatal("Unimplemented device\n");
     }
 }
 

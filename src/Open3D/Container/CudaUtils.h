@@ -26,18 +26,19 @@
 
 #pragma once
 
-#include "Open3D/Container/MemoryManager.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
+
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
-class MemoryManagerGPU : public MemoryManagerBackend {
-public:
-    void* Alloc(size_t byte_size) final;
-    void Free(void* ptr) final;
-    void CopyTo(void* dst_ptr,
-                const void* src_ptr,
-                std::size_t num_bytes) final;
-    bool IsCUDAPointer(const void* ptr) final;
-};
+#define OPEN3D_CUDA_CHECK(err) __OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 
-}  // namespace open3d
+void __OPEN3D_CUDA_CHECK(cudaError_t err, const char *file, const int line) {
+    if (err != cudaSuccess) {
+        utility::LogFatal("{}:{} CUDA runtime error: {}\n", file, line,
+                          cudaGetErrorString(err));
+    }
+}
+}

@@ -24,49 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Tensor.h"
-#include "Open3D/Container/MemoryManager.h"
-#include "TestUtility/UnitTest.h"
+#pragma once
 
-using namespace std;
-using namespace open3d;
+#include <cstring>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
-TEST(Tensor, Registry) {
-    EXPECT_TRUE(MemoryManagerBackendRegistry()->Has("CPU"));
-    EXPECT_NE(MemoryManagerBackendRegistry()->GetSingletonObject("CPU"),
-              nullptr);
-}
+namespace open3d {
 
-TEST(Tensor, CPU_Tensor) {
-    Shape shape;
+class StorageManger {
+public:
+    virtual void* Alloc(size_t byte_size) = 0;
+    virtual void Free(void* ptr) = 0;
+    virtual void CopyTo(void* dst_ptr,
+                        const void* src_ptr,
+                        std::size_t num_bytes) = 0;
+    virtual bool IsCUDAPointer(const void* ptr) = 0;
+};
 
-    // Create tensor
-    shape = {4, 4};
-    Tensor<float> matrix4f(shape, "CPU");
-
-    // Create tensor with init values
-    shape = {3};
-    std::vector<float> init_val({1, 2, 3});
-    Tensor<float> vector3f(init_val, shape, "CPU");
-
-    // Check that the values are actually copied
-    std::vector<float> out_val = vector3f.ToStdVector();
-    unit_test::ExpectEQ(out_val, {1, 2, 3});
-}
-
-TEST(Tensor, GPU_CONDITIONAL_TEST(GPU_Tensor)) {
-    Shape shape;
-
-    // Create tensor
-    shape = {4, 4};
-    Tensor<float> matrix4f(shape, "GPU");
-
-    // Create tensor with init values
-    shape = {3};
-    std::vector<float> init_val({1, 2, 3});
-    Tensor<float> vector3f(init_val, shape, "GPU");
-
-    // Check that the values are actually copied
-    std::vector<float> out_val = vector3f.ToStdVector();
-    unit_test::ExpectEQ(out_val, {1, 2, 3});
-}
+}  // namespace open3d
