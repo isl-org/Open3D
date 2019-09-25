@@ -92,6 +92,11 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxels.")
             .def("get_voxel", &geometry::VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
+            .def("check_if_included", &geometry::VoxelGrid::CheckIfIncluded,
+                 "queries"_a,
+                 "Element-wise check if a query in the list is included in "
+                 "the VoxelGrid. Queries are double precision and "
+                 "are mapped to the closest voxel.")
             .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
                  "depth_map"_a, "camera_params"_a,
                  "Remove all voxels from the VoxelGrid where none of the "
@@ -142,6 +147,9 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "check_if_included",
+            {{"query", "a list of voxel indices to check."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "carve_depth_map",
             {{"depth_map", "Depth map (Image) used for VoxelGrid carving."},

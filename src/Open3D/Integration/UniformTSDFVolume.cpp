@@ -273,8 +273,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                 if (w != 0.0f && f < 0.98f && f >= -0.98f) {
                     double c = (f + 1.0) * 0.5;
                     Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
-                    voxel_grid->voxels_.emplace_back(Eigen::Vector3i(x, y, z),
-                                                     color);
+                    Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
+                    voxel_grid->voxels_[index] = geometry::Voxel(index, color);
                 }
             }
         }

@@ -28,10 +28,13 @@
 
 #include <Eigen/Core>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Utility/Console.h"
+
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -90,15 +93,30 @@ public:
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
     // Function that returns the 3d coordinates of the queried voxel center
-    Eigen::Vector3d GetVoxelCenterCoordinate(int idx) const {
-        const Eigen::Vector3i &grid_index = voxels_[idx].grid_index_;
-        return ((grid_index.cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) *
-                voxel_size_) +
-               origin_;
+    Eigen::Vector3d GetVoxelCenterCoordinate(const Eigen::Vector3i &idx) const {
+        auto it = voxels_.find(idx);
+        if (it != voxels_.end()) {
+            auto voxel = it->second;
+            return ((voxel.grid_index_.cast<double>() +
+                     Eigen::Vector3d(0.5, 0.5, 0.5)) *
+                    voxel_size_) +
+                   origin_;
+        } else {
+            return Eigen::Vector3d::Zero();
+        }
     }
 
+    /// Add a voxel with specified grid index and color
+    void AddVoxel(const Voxel &voxel);
+
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
-    std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(int index) const;
+    std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
+            const Eigen::Vector3i &index) const;
+
+    // Element-wise check if a query in the list is included in the VoxelGrid
+    // Queries are double precision and are mapped to the closest voxel.
+    std::vector<bool> CheckIfIncluded(
+            const std::vector<Eigen::Vector3d> &queries);
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the
@@ -161,9 +179,12 @@ public:
             const Eigen::Vector3d &max_bound);
 
 public:
-    double voxel_size_;
-    Eigen::Vector3d origin_;
-    std::vector<Voxel> voxels_;
+    double voxel_size_ = 0.0;
+    Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
+    std::unordered_map<Eigen::Vector3i,
+                       Voxel,
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
+            voxels_;
 };
 
 /// Class to aggregate color values from different votes in one voxel

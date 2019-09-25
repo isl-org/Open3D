@@ -7,6 +7,10 @@
 import numpy as np
 import open3d as o3d
 
+import os
+import sys
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dir_path, '../Misc'))
 import meshes
 
 
