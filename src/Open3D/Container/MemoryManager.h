@@ -44,14 +44,14 @@ public:
     virtual void Free(Blob* blob) = 0;
 };
 
-class CPUMemoryManager: public DeviceMemoryManager {
+class CPUMemoryManager : public DeviceMemoryManager {
 public:
     CPUMemoryManager();
     void* Alloc(size_t byte_size, const Device& device) override;
     void Free(Blob* blob) override;
 };
 
-class GPUMemoryManager: public DeviceMemoryManager {
+class GPUMemoryManager : public DeviceMemoryManager {
 public:
     GPUMemoryManager();
     void* Alloc(size_t byte_size, const Device& device) override;
@@ -62,9 +62,10 @@ class MemoryManager {
 public:
     static void* Alloc(size_t byte_size, const Device& device);
     static void Free(Blob* blob);
+
 protected:
-    static std::shared_ptr<DeviceMemoryManager>
-        GetDeviceMemoryManager(const Device& device);
+    static std::shared_ptr<DeviceMemoryManager> GetDeviceMemoryManager(
+            const Device& device);
 };
 
 }  // namespace open3d

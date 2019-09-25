@@ -65,4 +65,53 @@ void MemoryManager::Free(Blob* blob) {
     }
 }
 
+CPUMemoryManager::CPUMemoryManager() {}
+
+void* CPUMemoryManager::Alloc(size_t byte_size, const Device& device) {
+    void* ptr;
+    if (device.device_type_ == Device::DeviceType::kCPU) {
+        ptr = malloc(byte_size);
+        if (byte_size != 0 && !ptr) {
+            utility::LogFatal("CPU malloc failed\n");
+        }
+    } else {
+        utility::LogFatal("Unimplemented device\n");
+    }
+    return ptr;
+}
+
+void CPUMemoryManager::Free(Blob* blob) {
+    if (blob->device_.device_type_ == Device::DeviceType::kCPU) {
+        if (blob->v_) {
+            free(blob->v_);
+        }
+    } else {
+        utility::LogFatal("Unimplemented device\n");
+    }
+}
+
+GPUMemoryManager::GPUMemoryManager() {
+    // Enable P2P
+}
+
+void* GPUMemoryManager::Alloc(size_t byte_size, const Device& device) {
+    void* ptr;
+    if (device.device_type_ == Device::DeviceType::kGPU) {
+        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+    } else {
+        utility::LogFatal("Unimplemented device\n");
+    }
+    return ptr;
+}
+
+void GPUMemoryManager::Free(Blob* blob) {
+    if (blob->device_.device_type_ == Device::DeviceType::kGPU) {
+        if (blob->v_) {
+            OPEN3D_CUDA_CHECK(cudaFree(blob->v_));
+        }
+    } else {
+        utility::LogFatal("Unimplemented device\n");
+    }
+}
+
 }  // namespace open3d
