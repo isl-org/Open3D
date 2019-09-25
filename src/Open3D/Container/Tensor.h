@@ -27,67 +27,70 @@
 #pragma once
 
 #include <cstddef>
-#include <iostream>
+#include <memory>
 #include <string>
 
-#include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Container/Blob.h"
+#include "Open3D/Container/Device.h"
+#include "Open3D/Container/Dtype.h"
 #include "Open3D/Container/Shape.h"
 
-// TODO: move the contents of this folder to "Open3D/src"?
-//       currently they are in "open3d" top namespace but under "TensorArray"
-//       folder
 namespace open3d {
 
-template <typename T>
 class Tensor {
 public:
-    Tensor(const Shape& shape, const std::string& device = "CPU")
+    Tensor(const Shape& shape,
+           const Dtype& dtype,
+           const Device& device = Device("CPU:0"))
         : shape_(shape),
+          dtype_(dtype),
           device_(device),
-          num_elements_(shape.NumElements()),
-          byte_size_(sizeof(T) * shape.NumElements()) {
-        if (device == "CPU" || device == "GPU") {
-            v_ = static_cast<T*>(MemoryManager::Alloc(byte_size_, device_));
-        } else {
-            throw std::runtime_error("Unrecognized device");
-        }
+          blob_(std::make_shared<Blob>(ByteSize(), device)) {}
+
+    size_t ByteSize() const {
+        return shape_.NumElements() * DtypeUtil::ByteSize(dtype_);
     }
 
-    Tensor(const std::vector<T>& init_vals,
-           const Shape& shape,
-           const std::string& device = "CPU")
-        : Tensor(shape, device) {
-        if (init_vals.size() != num_elements_) {
-            throw std::runtime_error(
-                    "Tensor initialization values' size does not match the "
-                    "shape.");
-        }
+    std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
-        if (device == "CPU" || device == "GPU") {
-            MemoryManager::CopyTo(v_, init_vals.data(), byte_size_);
-        } else if (device == "GPU") {
-            throw std::runtime_error("Unimplemented");
-        } else {
-            throw std::runtime_error("Unrecognized device");
-        }
-    }
+    Shape GetShape() const { return shape_; }
 
-    ~Tensor() { MemoryManager::Free(v_); };
+    Dtype GetDtype() const { return dtype_; }
 
-    std::vector<T> ToStdVector() const {
-        std::vector<T> vec(num_elements_);
-        MemoryManager::CopyTo(vec.data(), v_, byte_size_);
-        return vec;
-    }
+    Device GetDevice() const { return device_; }
 
-public:
-    T* v_;
+    // Tensor(const std::vector<T>& init_vals,
+    //        const Shape& shape,
+    //        const std::string& device = "CPU")
+    //     : Tensor(shape, device) {
+    //     if (init_vals.size() != num_elements_) {
+    //         throw std::runtime_error(
+    //                 "Tensor initialization values' size does not match the "
+    //                 "shape.");
+    //     }
 
-public:
-    const Shape shape_;
-    const std::string device_;
-    const size_t num_elements_;  // Num elements
-    const size_t byte_size_;     // Num bytes
+    //     if (device == "CPU" || device == "GPU") {
+    //         MemoryManager::CopyTo(v_, init_vals.data(), byte_size_);
+    //     } else if (device == "GPU") {
+    //         throw std::runtime_error("Unimplemented");
+    //     } else {
+    //         throw std::runtime_error("Unrecognized device");
+    //     }
+    // }
+
+    // ~Tensor() { MemoryManager::Free(v_); };
+
+    // std::vector<T> ToStdVector() const {
+    //     std::vector<T> vec(num_elements_);
+    //     MemoryManager::CopyTo(vec.data(), v_, byte_size_);
+    //     return vec;
+    // }
+
+protected:
+    Shape shape_;
+    Dtype dtype_;
+    Device device_;
+    std::shared_ptr<Blob> blob_;
 };
 
 }  // namespace open3d

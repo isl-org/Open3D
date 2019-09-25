@@ -33,12 +33,8 @@
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/MemoryManager.h"
 
-// TODO: move the contents of this folder to "Open3D/src"?
-//       currently they are in "open3d" top namespace but under "TensorArray"
-//       folder
 namespace open3d {
 
-// TODO: MemoryManager can return Blob at alloc
 class Blob {
 public:
     Blob(size_t byte_size, const Device& device)

@@ -26,21 +26,43 @@
 
 #pragma once
 
-#include <cstring>
-#include <memory>
-#include <stdexcept>
-#include <string>
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
-class StorageManger {
+enum class Dtype {
+    f32,
+    f64,
+    int32,
+    int64,
+    uint8,
+};
+
+class DtypeUtil {
 public:
-    virtual void* Alloc(size_t byte_size) = 0;
-    virtual void Free(void* ptr) = 0;
-    virtual void CopyTo(void* dst_ptr,
-                        const void* src_ptr,
-                        std::size_t num_bytes) = 0;
-    virtual bool IsCUDAPointer(const void* ptr) = 0;
+    static size_t ByteSize(const Dtype& dtype) {
+        size_t byte_size = 0;
+        switch (dtype) {
+            case Dtype::f32:
+                byte_size = 4;
+                break;
+            case Dtype::f64:
+                byte_size = 8;
+                break;
+            case Dtype::int32:
+                byte_size = 4;
+                break;
+            case Dtype::int64:
+                byte_size = 8;
+                break;
+            case Dtype::uint8:
+                byte_size = 1;
+                break;
+            default:
+                utility::LogFatal("Unsupported data type\n");
+        }
+        return byte_size;
+    }
 };
 
 }  // namespace open3d
