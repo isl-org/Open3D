@@ -24,15 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Storage.h"
+#include "Open3D/Container/Tensor.h"
+#include "Open3D/Container/Dtype.h"
+#include "Open3D/Container/Shape.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
 using namespace open3d;
 
-TEST(Storage, CPU) {
+TEST(Tensor, CPU) {
+    Shape shape{2, 3};
+    Dtype dtype = Dtype::f32;
+    Device device("CPU:0");
+    Tensor t(shape, dtype, device);
+
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetBlob()->byte_size_, 4 * 2 * 3);
+    EXPECT_EQ(t.GetBlob()->device_, device);
 }
 
-TEST(Storage, GPU) {
+TEST(Tensor, GPU) {
+    Shape shape{2, 3};
+    Dtype dtype = Dtype::f32;
+    Device device("GPU:0");
+    Tensor t(shape, dtype, device);
 
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetBlob()->byte_size_, 4 * 2 * 3);
+    EXPECT_EQ(t.GetBlob()->device_, device);
 }

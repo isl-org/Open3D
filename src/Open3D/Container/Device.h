@@ -75,13 +75,17 @@ public:
             return "GPU";
         } else {
             utility::LogFatal("Invalid device\n");
-            return ""; // Suppress warning
+            return "";  // Suppress warning
         }
+    }
+
+    bool operator==(const Device& other) const {
+        return this->device_type_ == other.device_type_ &&
+               this->device_id_ == other.device_id_;
     }
 
 public:
     DeviceType device_type_;
-
     int device_id_;
 };
 
