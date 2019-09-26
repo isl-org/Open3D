@@ -68,7 +68,7 @@ public:
     }
 
     template <typename T>
-    static Dtype FromType() {
+    static inline Dtype FromType() {
         utility::LogFatal("Unsupported data type\n");
         return Dtype::undefined;
     }
@@ -99,27 +99,27 @@ public:
 };
 
 template <>
-Dtype DtypeUtil::FromType<float>() {
+inline Dtype DtypeUtil::FromType<float>() {
     return Dtype::f32;
 }
 
 template <>
-Dtype DtypeUtil::FromType<double>() {
+inline Dtype DtypeUtil::FromType<double>() {
     return Dtype::f64;
 }
 
 template <>
-Dtype DtypeUtil::FromType<int32_t>() {
+inline Dtype DtypeUtil::FromType<int32_t>() {
     return Dtype::int32;
 }
 
 template <>
-Dtype DtypeUtil::FromType<int64_t>() {
+inline Dtype DtypeUtil::FromType<int64_t>() {
     return Dtype::int64;
 }
 
 template <>
-Dtype DtypeUtil::FromType<uint8_t>() {
+inline Dtype DtypeUtil::FromType<uint8_t>() {
     return Dtype::uint8;
 }
 
