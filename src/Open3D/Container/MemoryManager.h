@@ -44,6 +44,11 @@ class MemoryManager {
 public:
     static void* Malloc(size_t byte_size, const Device& device);
     static void Free(Blob* blob);
+    static void Memcpy(void* dst_ptr,
+                       const Device& dst_device,
+                       void* src_ptr,
+                       const Device& src_device,
+                       size_t num_bytes);
 
 protected:
     static std::shared_ptr<DeviceMemoryManager> GetDeviceMemoryManager(
