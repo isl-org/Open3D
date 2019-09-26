@@ -124,16 +124,3 @@ Dtype DtypeUtil::FromType<uint8_t>() {
 }
 
 }  // namespace open3d
-
-// template <>
-// struct fmt::formatter<Dtype> {
-//     template <typename ParseContext>
-//     constexpr auto parse(ParseContext &ctx) {
-//         return ctx.begin();
-//     }
-
-//     template <typename FormatContext>
-//     auto format(const open3d::Dtype &d, FormatContext &ctx) {
-//         return format_to(ctx.out(), "{}", open3d::DtypeUtil::ToString(d));
-//     }
-// };
