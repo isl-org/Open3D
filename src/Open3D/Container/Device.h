@@ -64,24 +64,29 @@ public:
             }
         }
         if (!is_valid) {
-            utility::LogFatal("Invalid device string.\n");
-        }
-    }
-
-    std::string DeviceTypeStr() const {
-        if (device_type_ == DeviceType::kCPU) {
-            return "CPU";
-        } else if (device_type_ == DeviceType::kGPU) {
-            return "GPU";
-        } else {
-            utility::LogFatal("Invalid device\n");
-            return "";  // Suppress warning
+            utility::LogFatal("Invalid device string {}.\n", type_colon_id);
         }
     }
 
     bool operator==(const Device& other) const {
         return this->device_type_ == other.device_type_ &&
                this->device_id_ == other.device_id_;
+    }
+
+    std::string ToString() const {
+        std::string str = "";
+        switch (device_type_) {
+            case DeviceType::kCPU:
+                str += "CPU";
+                break;
+            case DeviceType::kGPU:
+                str += "GPU";
+                break;
+            default:
+                utility::LogFatal("Unsupported device type\n");
+        }
+        str += ":" + std::to_string(device_id_);
+        return str;
     }
 
 public:

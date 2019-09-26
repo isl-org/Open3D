@@ -27,7 +27,10 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <vector>
+
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
@@ -72,6 +75,8 @@ public:
         }
         return size;
     }
+
+    std::string ToString() const { return fmt::format("{}", *this); }
 };
 
 }  // namespace open3d
