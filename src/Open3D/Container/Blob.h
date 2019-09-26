@@ -39,7 +39,7 @@ class Blob {
 public:
     Blob(size_t byte_size, const Device& device)
         : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Alloc(byte_size_, device_);
+        v_ = MemoryManager::Malloc(byte_size_, device_);
     }
     ~Blob() { MemoryManager::Free(this); };
 
