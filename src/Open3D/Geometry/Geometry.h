@@ -39,13 +39,12 @@ public:
         LineSet = 4,
         MeshBase = 5,
         TriangleMesh = 6,
-        TexturedTriangleMesh = 7,
-        HalfEdgeTriangleMesh = 8,
-        Image = 9,
-        RGBDImage = 10,
-        TetraMesh = 11,
-        OrientedBoundingBox = 12,
-        AxisAlignedBoundingBox = 13,
+        HalfEdgeTriangleMesh = 7,
+        Image = 8,
+        RGBDImage = 9,
+        TetraMesh = 10,
+        OrientedBoundingBox = 11,
+        AxisAlignedBoundingBox = 12,
     };
 
 public:
