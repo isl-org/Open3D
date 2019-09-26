@@ -45,6 +45,7 @@ public:
     static void* Malloc(size_t byte_size, const Device& device);
     static void Free(Blob* blob);
     static void Free(void* ptr, const Device& device);
+    static void Memcpy(Blob* dst_blob, const Blob* src_blob);
     static void Memcpy(void* dst_ptr,
                        const Device& dst_device,
                        const void* src_ptr,

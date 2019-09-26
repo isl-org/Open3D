@@ -50,6 +50,19 @@ void MemoryManager::Free(void* ptr, const Device& device) {
     return GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
+void MemoryManager::Memcpy(Blob* dst_blob, const Blob* src_blob) {
+    if (dst_blob->v_ == src_blob->v_) {
+        utility::LogFatal("dst and src have same buffer address\n");
+    }
+    if (dst_blob->byte_size_ != src_blob->byte_size_) {
+        utility::LogFatal(
+                "dst and src do not have the same byte_size, {} != {}\n",
+                dst_blob->byte_size_, src_blob->byte_size_);
+    }
+    Memcpy(dst_blob->v_, dst_blob->device_, src_blob->v_, src_blob->device_,
+           src_blob->byte_size_);
+}
+
 void MemoryManager::Memcpy(void* dst_ptr,
                            const Device& dst_device,
                            const void* src_ptr,

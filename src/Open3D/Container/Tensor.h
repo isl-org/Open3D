@@ -78,6 +78,12 @@ public:
                                       init_vals.size() * sizeof(T));
     }
 
+    Tensor CopyTo(const Device& device) {
+        Tensor tensor(shape_, dtype_, device);
+        MemoryManager::Memcpy(tensor.blob_.get(), blob_.get());
+        return tensor;
+    }
+
     size_t ByteSize() const {
         return shape_.NumElements() * DtypeUtil::ByteSize(dtype_);
     }

@@ -75,6 +75,24 @@ TEST(Tensor, WithInitValueSizeMismatch) {
                  std::runtime_error);
 }
 
+TEST(Tensor, CopyTo) {
+    Device src_device("CPU:0");
+    Device dst_device("GPU:0");
+    Shape shape{2, 3};
+    Dtype dtype(Dtype::f32);
+
+    std::vector<float> vals{0, 1, 2, 3, 4, 5};
+    Tensor src_t(vals, shape, dtype, dst_device);
+
+    Tensor dst_t = src_t.CopyTo(dst_device);
+
+    EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
+    EXPECT_EQ(dst_t.GetBlob()->byte_size_,
+              shape.NumElements() * DtypeUtil::ByteSize(dtype));
+    EXPECT_EQ(dst_t.GetDevice(), dst_device);
+    EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
+}
+
 // TEST(Tensor, PrintShape) {
 //     Shape shape{2, 3};
 //     utility::LogWarning("Shape is {}\n", shape);
