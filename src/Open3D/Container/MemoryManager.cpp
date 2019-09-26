@@ -75,6 +75,22 @@ void MemoryManager::Memcpy(void* dst_ptr,
     device_mm->Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
 }
 
+void MemoryManager::MemcpyFromHost(void* dst_ptr,
+                                   const Device& dst_device,
+                                   void* host_ptr,
+                                   size_t num_bytes) {
+    // Currenlty default host is CPU:0
+    Memcpy(dst_ptr, dst_device, host_ptr, Device("CPU:0"), num_bytes);
+}
+
+void MemoryManager::MemcpyToHost(void* host_ptr,
+                                 void* src_ptr,
+                                 const Device& src_device,
+                                 size_t num_bytes) {
+    // Currenlty default host is CPU:0
+    Memcpy(host_ptr, Device("CPU:0"), src_ptr, src_device, num_bytes);
+}
+
 std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
@@ -114,6 +130,7 @@ void CPUMemoryManager::Memcpy(void* dst_ptr,
                               void* src_ptr,
                               const Device& src_device,
                               size_t num_bytes) {
+    // TODO: safer memcpy_s
     memcpy(dst_ptr, src_ptr, num_bytes);
 }
 

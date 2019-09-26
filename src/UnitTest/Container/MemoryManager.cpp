@@ -47,10 +47,17 @@ TEST(MemoryManager, GPUMallocFree) {
 
 TEST(MemoryManager, CPUToCPUMemcpy) {
     Device src_device("CPU:0");
-    void* src_ptr = MemoryManager::Malloc(10, src_device);
     Device dst_device("CPU:0");
-    void* dst_ptr = MemoryManager::Malloc(10, dst_device);
-    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, 10);
+    void* src_ptr = MemoryManager::Malloc(6, src_device);
+    void* dst_ptr = MemoryManager::Malloc(6, dst_device);
+    char src_vals[6] = "hello";
+    char dst_vals[6] = "xxxxx";
+
+    strcpy((char*)src_ptr, src_vals);
+    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, 6);
+    strcpy(dst_vals, (const char*)dst_ptr);
+    ASSERT_STREQ(dst_vals, src_vals);
+
     MemoryManager::Free(src_ptr, src_device);
     MemoryManager::Free(dst_ptr, dst_device);
 }
