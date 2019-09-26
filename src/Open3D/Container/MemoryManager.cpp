@@ -50,11 +50,30 @@ void MemoryManager::Free(void* ptr, const Device& device) {
     return GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
-void Memcpy(void* dst_ptr,
-            const Device& dst_device,
-            void* src_ptr,
-            const Device& src_device,
-            size_t num_bytes) {}
+void MemoryManager::Memcpy(void* dst_ptr,
+                           const Device& dst_device,
+                           void* src_ptr,
+                           const Device& src_device,
+                           size_t num_bytes) {
+    if ((dst_device.device_type_ != Device::DeviceType::kCPU &&
+         dst_device.device_type_ != Device::DeviceType::kGPU) ||
+        (src_device.device_type_ != Device::DeviceType::kCPU &&
+         src_device.device_type_ != Device::DeviceType::kGPU)) {
+        utility::LogFatal("Unimplemented device for Memcpy\n");
+    }
+
+    std::shared_ptr<DeviceMemoryManager> device_mm;
+    if (dst_device.device_type_ == Device::DeviceType::kCPU &&
+        src_device.device_type_ == Device::DeviceType::kCPU) {
+        device_mm = GetDeviceMemoryManager(src_device);
+    } else if (src_device.device_type_ == Device::DeviceType::kGPU) {
+        device_mm = GetDeviceMemoryManager(src_device);
+    } else {
+        device_mm = GetDeviceMemoryManager(dst_device);
+    }
+
+    device_mm->Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
+}
 
 std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
@@ -77,25 +96,25 @@ CPUMemoryManager::CPUMemoryManager() {}
 
 void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
-    if (device.device_type_ == Device::DeviceType::kCPU) {
-        ptr = malloc(byte_size);
-        if (byte_size != 0 && !ptr) {
-            utility::LogFatal("CPU malloc failed\n");
-        }
-    } else {
-        utility::LogFatal("Unimplemented device\n");
+    ptr = malloc(byte_size);
+    if (byte_size != 0 && !ptr) {
+        utility::LogFatal("CPU malloc failed\n");
     }
     return ptr;
 }
 
 void CPUMemoryManager::Free(void* ptr, const Device& device) {
-    if (device.device_type_ == Device::DeviceType::kCPU) {
-        if (ptr) {
-            free(ptr);
-        }
-    } else {
-        utility::LogFatal("Unimplemented device\n");
+    if (ptr) {
+        free(ptr);
     }
+}
+
+void CPUMemoryManager::Memcpy(void* dst_ptr,
+                              const Device& dst_device,
+                              void* src_ptr,
+                              const Device& src_device,
+                              size_t num_bytes) {
+    memcpy(dst_ptr, src_ptr, num_bytes);
 }
 
 GPUMemoryManager::GPUMemoryManager() {
@@ -161,6 +180,41 @@ void GPUMemoryManager::Free(void* ptr, const Device& device) {
     } else {
         utility::LogFatal("Unimplemented device\n");
     }
+}
+
+void GPUMemoryManager::Memcpy(void* dst_ptr,
+                              const Device& dst_device,
+                              void* src_ptr,
+                              const Device& src_device,
+                              size_t num_bytes) {
+    cudaMemcpyKind memcpy_kind;
+
+    if (dst_device.device_type_ == Device::DeviceType::kGPU &&
+        src_device.device_type_ == Device::DeviceType::kCPU) {
+        memcpy_kind = cudaMemcpyHostToDevice;
+        if (!IsCUDAPointer(dst_ptr)) {
+            utility::LogFatal("dst_ptr is not a CUDA pointer\n");
+        }
+    } else if (dst_device.device_type_ == Device::DeviceType::kCPU &&
+               src_device.device_type_ == Device::DeviceType::kGPU) {
+        memcpy_kind = cudaMemcpyDeviceToHost;
+        if (!IsCUDAPointer(src_ptr)) {
+            utility::LogFatal("src_ptr is not a CUDA pointer\n");
+        }
+    } else if (dst_device.device_type_ == Device::DeviceType::kGPU &&
+               src_device.device_type_ == Device::DeviceType::kGPU) {
+        memcpy_kind = cudaMemcpyDeviceToDevice;
+        if (!IsCUDAPointer(dst_ptr)) {
+            utility::LogFatal("dst_ptr is not a CUDA pointer\n");
+        }
+        if (!IsCUDAPointer(src_ptr)) {
+            utility::LogFatal("src_ptr is not a CUDA pointer\n");
+        }
+    } else {
+        utility::LogFatal("Wrong cudaMemcpyKind\n");
+    }
+
+    OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes, memcpy_kind));
 }
 
 bool GPUMemoryManager::IsCUDAPointer(const void* ptr) {
