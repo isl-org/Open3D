@@ -72,20 +72,14 @@ public:
         return instance;
     }
 
-    /// Internal function to change text color for the console
-    /// Note there is no security check for parameters.
-    /// \param text_color, from 0 to 7, they are black, red, green, yellow,
-    /// blue, magenta, cyan, white \param emphasis_text is 0 or 1
-    void ChangeConsoleColor(TextColor text_color, int highlight_text);
-    void ResetConsoleColor();
-
     void VFatal(const char *format, fmt::format_args args) {
         if (verbosity_level_ >= VerbosityLevel::Fatal) {
-            ChangeConsoleColor(TextColor::Red, 1);
-            fmt::print("[Open3D FATAL] ");
-            fmt::vprint(format, args);
-            ResetConsoleColor();
-            exit(-1);
+            std::string err_msg = fmt::vformat(format, args);
+            std::string full_msg =
+                    fmt::format("{}[Open3D FATAL] {}{}",
+                                SChangeConsoleColor(TextColor::Red, 1), err_msg,
+                                SResetConsoleColor());
+            throw std::runtime_error(full_msg);
         }
     }
 
@@ -149,11 +143,12 @@ public:
     template <typename... Args>
     void Fatalf(const char *format, const Args &... args) {
         if (verbosity_level_ >= VerbosityLevel::Fatal) {
-            ChangeConsoleColor(TextColor::Red, 1);
-            fmt::print("[Open3D FATAL] ");
-            fmt::printf(format, args...);
-            ResetConsoleColor();
-            exit(-1);
+            std::string err_msg = fmt::sprintf(format, args...);
+            std::string full_msg =
+                    fmt::format("{}[Open3D FATAL] {}{}",
+                                SChangeConsoleColor(TextColor::Red, 1), err_msg,
+                                SResetConsoleColor());
+            throw std::runtime_error(full_msg);
         }
     }
 
@@ -192,6 +187,18 @@ public:
             fmt::printf(format, args...);
         }
     }
+
+protected:
+    /// Internal function to change text color for the console
+    /// Note there is no security check for parameters.
+    /// \param text_color, from 0 to 7, they are black, red, green, yellow,
+    /// blue, magenta, cyan, white \param emphasis_text is 0 or 1
+    void ChangeConsoleColor(TextColor text_color, int highlight_text);
+    void ResetConsoleColor();
+    /// Prefix to change console text color
+    std::string SChangeConsoleColor(TextColor text_color, int highlight_text);
+    /// Suffix to reset console text color
+    std::string SResetConsoleColor();
 
 public:
     VerbosityLevel verbosity_level_;
@@ -335,5 +342,6 @@ bool ProgramOptionExists(int argc, char **argv, const std::string &option);
 bool ProgramOptionExistsAny(int argc,
                             char **argv,
                             const std::vector<std::string> &options);
+
 }  // namespace utility
 }  // namespace open3d
