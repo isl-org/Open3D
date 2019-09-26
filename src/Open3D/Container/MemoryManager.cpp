@@ -52,7 +52,7 @@ void MemoryManager::Free(void* ptr, const Device& device) {
 
 void MemoryManager::Memcpy(void* dst_ptr,
                            const Device& dst_device,
-                           void* src_ptr,
+                           const void* src_ptr,
                            const Device& src_device,
                            size_t num_bytes) {
     if ((dst_device.device_type_ != Device::DeviceType::kCPU &&
@@ -77,14 +77,14 @@ void MemoryManager::Memcpy(void* dst_ptr,
 
 void MemoryManager::MemcpyFromHost(void* dst_ptr,
                                    const Device& dst_device,
-                                   void* host_ptr,
+                                   const void* host_ptr,
                                    size_t num_bytes) {
     // Currenlty default host is CPU:0
     Memcpy(dst_ptr, dst_device, host_ptr, Device("CPU:0"), num_bytes);
 }
 
 void MemoryManager::MemcpyToHost(void* host_ptr,
-                                 void* src_ptr,
+                                 const void* src_ptr,
                                  const Device& src_device,
                                  size_t num_bytes) {
     // Currenlty default host is CPU:0
@@ -127,7 +127,7 @@ void CPUMemoryManager::Free(void* ptr, const Device& device) {
 
 void CPUMemoryManager::Memcpy(void* dst_ptr,
                               const Device& dst_device,
-                              void* src_ptr,
+                              const void* src_ptr,
                               const Device& src_device,
                               size_t num_bytes) {
     // TODO: safer memcpy_s
@@ -201,7 +201,7 @@ void GPUMemoryManager::Free(void* ptr, const Device& device) {
 
 void GPUMemoryManager::Memcpy(void* dst_ptr,
                               const Device& dst_device,
-                              void* src_ptr,
+                              const void* src_ptr,
                               const Device& src_device,
                               size_t num_bytes) {
     cudaMemcpyKind memcpy_kind;

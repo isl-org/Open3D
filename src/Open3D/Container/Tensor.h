@@ -74,6 +74,8 @@ public:
         }
 
         // Copy data to blob
+        MemoryManager::MemcpyFromHost(blob_->v_, device_, init_vals.data(),
+                                      init_vals.size() * sizeof(T));
     }
 
     size_t ByteSize() const {

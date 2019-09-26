@@ -47,17 +47,17 @@ public:
     static void Free(void* ptr, const Device& device);
     static void Memcpy(void* dst_ptr,
                        const Device& dst_device,
-                       void* src_ptr,
+                       const void* src_ptr,
                        const Device& src_device,
                        size_t num_bytes);
     /// Same as Memcpy, but with host (CPU:0) as default src_device
     static void MemcpyFromHost(void* dst_ptr,
                                const Device& dst_device,
-                               void* host_ptr,
+                               const void* host_ptr,
                                size_t num_bytes);
     /// Same as Memcpy, but with host (CPU:0) as default dst_device
     static void MemcpyToHost(void* host_ptr,
-                             void* src_ptr,
+                             const void* src_ptr,
                              const Device& src_device,
                              size_t num_bytes);
 
@@ -72,7 +72,7 @@ public:
     virtual void Free(void* ptr, const Device& device) = 0;
     virtual void Memcpy(void* dst_ptr,
                         const Device& dst_device,
-                        void* src_ptr,
+                        const void* src_ptr,
                         const Device& src_device,
                         size_t num_bytes) = 0;
 };
@@ -84,7 +84,7 @@ public:
     void Free(void* blob, const Device& device) override;
     void Memcpy(void* dst_ptr,
                 const Device& dst_device,
-                void* src_ptr,
+                const void* src_ptr,
                 const Device& src_device,
                 size_t num_bytes) override;
 };
@@ -96,7 +96,7 @@ public:
     void Free(void* blob, const Device& device) override;
     void Memcpy(void* dst_ptr,
                 const Device& dst_device,
-                void* src_ptr,
+                const void* src_ptr,
                 const Device& src_device,
                 size_t num_bytes) override;
 
