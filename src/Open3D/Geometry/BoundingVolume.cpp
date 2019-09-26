@@ -289,6 +289,18 @@ std::string AxisAlignedBoundingBox::GetPrintInfo() const {
                        max_bound_(0), max_bound_(1), max_bound_(2));
 }
 
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::operator+=(
+        const AxisAlignedBoundingBox& other) {
+    if (IsEmpty()) {
+        min_bound_ = other.min_bound_;
+        max_bound_ = other.max_bound_;
+    } else if (!other.IsEmpty()) {
+        min_bound_ = min_bound_.array().min(other.min_bound_.array()).matrix();
+        max_bound_ = max_bound_.array().max(other.max_bound_.array()).matrix();
+    }
+    return *this;
+}
+
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points) {
     AxisAlignedBoundingBox box;
