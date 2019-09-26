@@ -59,7 +59,6 @@ protected:
 class DeviceMemoryManager {
 public:
     virtual void* Malloc(size_t byte_size, const Device& device) = 0;
-    virtual void Free(Blob* blob) = 0;
     virtual void Free(void* ptr, const Device& device) = 0;
 };
 
@@ -67,7 +66,6 @@ class CPUMemoryManager : public DeviceMemoryManager {
 public:
     CPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
-    void Free(Blob* blob) override;
     void Free(void* blob, const Device& device) override;
 };
 
@@ -75,7 +73,6 @@ class GPUMemoryManager : public DeviceMemoryManager {
 public:
     GPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
-    void Free(Blob* blob) override;
     void Free(void* blob, const Device& device) override;
 
 protected:

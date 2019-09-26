@@ -43,7 +43,7 @@ void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
 }
 
 void MemoryManager::Free(Blob* blob) {
-    return GetDeviceMemoryManager(blob->device_)->Free(blob);
+    return GetDeviceMemoryManager(blob->device_)->Free(blob->v_, blob->device_);
 }
 
 void MemoryManager::Free(void* ptr, const Device& device) {
@@ -87,8 +87,6 @@ void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     }
     return ptr;
 }
-
-void CPUMemoryManager::Free(Blob* blob) { Free(blob->v_, blob->device_); }
 
 void CPUMemoryManager::Free(void* ptr, const Device& device) {
     if (device.device_type_ == Device::DeviceType::kCPU) {
@@ -151,8 +149,6 @@ void* GPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     }
     return ptr;
 }
-
-void GPUMemoryManager::Free(Blob* blob) { Free(blob->v_, blob->device_); }
 
 void GPUMemoryManager::Free(void* ptr, const Device& device) {
     if (device.device_type_ == Device::DeviceType::kGPU) {
