@@ -46,6 +46,12 @@ void MemoryManager::Free(Blob* blob) {
     return GetDeviceMemoryManager(blob->device_)->Free(blob);
 }
 
+void Memcpy(void* dst_ptr,
+            const Device& dst_device,
+            void* src_ptr,
+            const Device& src_device,
+            size_t num_bytes) {}
+
 std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
