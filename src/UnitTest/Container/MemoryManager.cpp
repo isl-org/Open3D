@@ -34,5 +34,13 @@ using namespace std;
 using namespace open3d;
 
 TEST(MemoryManager, CPUMallocFree) {
-    // void* buf = MemoryManager::Malloc(10, Device("CPU:0"));
+    Device device("CPU:0");
+    void* ptr = MemoryManager::Malloc(10, device);
+    MemoryManager::Free(ptr, device);
+}
+
+TEST(MemoryManager, GPUMallocFree) {
+    Device device("GPU:0");
+    void* ptr = MemoryManager::Malloc(10, device);
+    MemoryManager::Free(ptr, device);
 }
