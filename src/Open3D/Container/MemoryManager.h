@@ -44,6 +44,7 @@ class MemoryManager {
 public:
     static void* Malloc(size_t byte_size, const Device& device);
     static void Free(Blob* blob);
+    static void Free(void* ptr, const Device& device);
     static void Memcpy(void* dst_ptr,
                        const Device& dst_device,
                        void* src_ptr,
@@ -59,6 +60,7 @@ class DeviceMemoryManager {
 public:
     virtual void* Malloc(size_t byte_size, const Device& device) = 0;
     virtual void Free(Blob* blob) = 0;
+    virtual void Free(void* ptr, const Device& device) = 0;
 };
 
 class CPUMemoryManager : public DeviceMemoryManager {
@@ -66,6 +68,7 @@ public:
     CPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
     void Free(Blob* blob) override;
+    void Free(void* blob, const Device& device) override;
 };
 
 class GPUMemoryManager : public DeviceMemoryManager {
@@ -73,8 +76,10 @@ public:
     GPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
     void Free(Blob* blob) override;
+    void Free(void* blob, const Device& device) override;
 
 protected:
+    bool IsCUDAPointer(const void* ptr);
     void EnableP2P();
     void SetDevice(int device_id);
 };

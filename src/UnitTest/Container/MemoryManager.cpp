@@ -25,8 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Container/MemoryManager.h"
-#include "Open3D/Container/Shape.h"
-#include "Open3D/Container/Tensor.h"
+#include "Open3D/Container/Device.h"
 #include "TestUtility/UnitTest.h"
 
 #include <vector>
@@ -34,13 +33,6 @@
 using namespace std;
 using namespace open3d;
 
-TEST(MemoryManager, CPU) {
-    Shape shape{2, 3};
-    Dtype dtype = Dtype::f32;
-    Device device("CPU:0");
-    Tensor t(shape, dtype, device);
-
-    EXPECT_EQ(t.GetShape(), shape);
-    EXPECT_EQ(t.GetBlob()->byte_size_, 4 * 2 * 3);
-    EXPECT_EQ(t.GetBlob()->device_, device);
+TEST(MemoryManager, CPUMallocFree) {
+    // void* buf = MemoryManager::Malloc(10, Device("CPU:0"));
 }

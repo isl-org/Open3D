@@ -46,6 +46,10 @@ void MemoryManager::Free(Blob* blob) {
     return GetDeviceMemoryManager(blob->device_)->Free(blob);
 }
 
+void MemoryManager::Free(void* ptr, const Device& device) {
+    return GetDeviceMemoryManager(device)->Free(ptr, device);
+}
+
 void Memcpy(void* dst_ptr,
             const Device& dst_device,
             void* src_ptr,
@@ -84,10 +88,12 @@ void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     return ptr;
 }
 
-void CPUMemoryManager::Free(Blob* blob) {
-    if (blob->device_.device_type_ == Device::DeviceType::kCPU) {
-        if (blob->v_) {
-            free(blob->v_);
+void CPUMemoryManager::Free(Blob* blob) { Free(blob->v_, blob->device_); }
+
+void CPUMemoryManager::Free(void* ptr, const Device& device) {
+    if (device.device_type_ == Device::DeviceType::kCPU) {
+        if (ptr) {
+            free(ptr);
         }
     } else {
         utility::LogFatal("Unimplemented device\n");
@@ -146,14 +152,28 @@ void* GPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     return ptr;
 }
 
-void GPUMemoryManager::Free(Blob* blob) {
-    if (blob->device_.device_type_ == Device::DeviceType::kGPU) {
-        if (blob->v_) {
-            OPEN3D_CUDA_CHECK(cudaFree(blob->v_));
+void GPUMemoryManager::Free(Blob* blob) { Free(blob->v_, blob->device_); }
+
+void GPUMemoryManager::Free(void* ptr, const Device& device) {
+    if (device.device_type_ == Device::DeviceType::kGPU) {
+        if (!IsCUDAPointer(ptr)) {
+            utility::LogFatal("Freeing non-CUDA pointer\n");
+        }
+        if (ptr) {
+            OPEN3D_CUDA_CHECK(cudaFree(ptr));
         }
     } else {
         utility::LogFatal("Unimplemented device\n");
     }
+}
+
+bool GPUMemoryManager::IsCUDAPointer(const void* ptr) {
+    cudaPointerAttributes attributes;
+    cudaPointerGetAttributes(&attributes, ptr);
+    if (attributes.devicePointer != nullptr) {
+        return true;
+    }
+    return false;
 }
 
 }  // namespace open3d
