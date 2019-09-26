@@ -60,6 +60,11 @@ class DeviceMemoryManager {
 public:
     virtual void* Malloc(size_t byte_size, const Device& device) = 0;
     virtual void Free(void* ptr, const Device& device) = 0;
+    virtual void Memcpy(void* dst_ptr,
+                        const Device& dst_device,
+                        void* src_ptr,
+                        const Device& src_device,
+                        size_t num_bytes) = 0;
 };
 
 class CPUMemoryManager : public DeviceMemoryManager {
@@ -67,6 +72,11 @@ public:
     CPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
     void Free(void* blob, const Device& device) override;
+    void Memcpy(void* dst_ptr,
+                const Device& dst_device,
+                void* src_ptr,
+                const Device& src_device,
+                size_t num_bytes) override;
 };
 
 class GPUMemoryManager : public DeviceMemoryManager {
@@ -74,6 +84,11 @@ public:
     GPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
     void Free(void* blob, const Device& device) override;
+    void Memcpy(void* dst_ptr,
+                const Device& dst_device,
+                void* src_ptr,
+                const Device& src_device,
+                size_t num_bytes) override;
 
 protected:
     bool IsCUDAPointer(const void* ptr);

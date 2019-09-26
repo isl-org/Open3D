@@ -44,3 +44,43 @@ TEST(MemoryManager, GPUMallocFree) {
     void* ptr = MemoryManager::Malloc(10, device);
     MemoryManager::Free(ptr, device);
 }
+
+TEST(MemoryManager, CPUToCPUMemcpy) {
+    Device src_device("CPU:0");
+    void* src_ptr = MemoryManager::Malloc(10, src_device);
+    Device dst_device("CPU:0");
+    void* dst_ptr = MemoryManager::Malloc(10, dst_device);
+    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, 10);
+    MemoryManager::Free(src_ptr, src_device);
+    MemoryManager::Free(dst_ptr, dst_device);
+}
+
+TEST(MemoryManager, CPUToGPUMemcpy) {
+    Device src_device("CPU:0");
+    void* src_ptr = MemoryManager::Malloc(10, src_device);
+    Device dst_device("GPU:0");
+    void* dst_ptr = MemoryManager::Malloc(10, dst_device);
+    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, 10);
+    MemoryManager::Free(src_ptr, src_device);
+    MemoryManager::Free(dst_ptr, dst_device);
+}
+
+TEST(MemoryManager, GPUToCPUMemcpy) {
+    Device src_device("GPU:0");
+    void* src_ptr = MemoryManager::Malloc(10, src_device);
+    Device dst_device("CPU:0");
+    void* dst_ptr = MemoryManager::Malloc(10, dst_device);
+    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, 10);
+    MemoryManager::Free(src_ptr, src_device);
+    MemoryManager::Free(dst_ptr, dst_device);
+}
+
+TEST(MemoryManager, GPUToGPUMemcpy) {
+    Device src_device("GPU:0");
+    void* src_ptr = MemoryManager::Malloc(10, src_device);
+    Device dst_device("GPU:0");
+    void* dst_ptr = MemoryManager::Malloc(10, dst_device);
+    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, 10);
+    MemoryManager::Free(src_ptr, src_device);
+    MemoryManager::Free(dst_ptr, dst_device);
+}
