@@ -26,11 +26,14 @@
 
 #pragma once
 
+#include "string"
+
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
 enum class Dtype {
+    undefined,
     f32,
     f64,
     int32,
@@ -40,7 +43,7 @@ enum class Dtype {
 
 class DtypeUtil {
 public:
-    static size_t ByteSize(const Dtype& dtype) {
+    static size_t ByteSize(const Dtype &dtype) {
         size_t byte_size = 0;
         switch (dtype) {
             case Dtype::f32:
@@ -63,6 +66,74 @@ public:
         }
         return byte_size;
     }
+
+    template <typename T>
+    static Dtype FromType() {
+        utility::LogFatal("Unsupported data type\n");
+        return Dtype::undefined;
+    }
+
+    static std::string ToString(const Dtype &dtype) {
+        std::string str = "";
+        switch (dtype) {
+            case Dtype::f32:
+                str = "f32";
+                break;
+            case Dtype::f64:
+                str = "f64";
+                break;
+            case Dtype::int32:
+                str = "int32";
+                break;
+            case Dtype::int64:
+                str = "int64";
+                break;
+            case Dtype::uint8:
+                str = "uint8";
+                break;
+            default:
+                utility::LogFatal("Unsupported data type\n");
+        }
+        return str;
+    }
 };
 
+template <>
+Dtype DtypeUtil::FromType<float>() {
+    return Dtype::f32;
+}
+
+template <>
+Dtype DtypeUtil::FromType<double>() {
+    return Dtype::f64;
+}
+
+template <>
+Dtype DtypeUtil::FromType<int32_t>() {
+    return Dtype::int32;
+}
+
+template <>
+Dtype DtypeUtil::FromType<int64_t>() {
+    return Dtype::int64;
+}
+
+template <>
+Dtype DtypeUtil::FromType<uint8_t>() {
+    return Dtype::uint8;
+}
+
 }  // namespace open3d
+
+// template <>
+// struct fmt::formatter<Dtype> {
+//     template <typename ParseContext>
+//     constexpr auto parse(ParseContext &ctx) {
+//         return ctx.begin();
+//     }
+
+//     template <typename FormatContext>
+//     auto format(const open3d::Dtype &d, FormatContext &ctx) {
+//         return format_to(ctx.out(), "{}", open3d::DtypeUtil::ToString(d));
+//     }
+// };

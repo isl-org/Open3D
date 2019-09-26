@@ -1,6 +1,7 @@
 # Build
 set (CONTAINER_SRC
     MemoryManager.cpp
+    Tensor.cpp
 )
 
 # Create object library
