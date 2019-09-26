@@ -39,10 +39,10 @@ namespace open3d {
 class Device {
 public:
     /// Type for device
-    enum class DeviceType { kCPU = 0, kGPU = 1 };
+    enum class DeviceType { CPU = 0, GPU = 1 };
 
     /// Defalut constructor
-    Device() : device_type_(DeviceType::kCPU), device_id_(0) {}
+    Device() : device_type_(DeviceType::CPU), device_id_(0) {}
 
     /// Constructor with device specified
     Device(const DeviceType& device_type, int device_id)
@@ -56,10 +56,10 @@ public:
         if (tokens.size() == 2) {
             device_id_ = std::stoi(tokens[1]);
             if (tokens[0] == "CPU") {
-                device_type_ = DeviceType::kCPU;
+                device_type_ = DeviceType::CPU;
                 is_valid = true;
             } else if (tokens[0] == "GPU") {
-                device_type_ = DeviceType::kGPU;
+                device_type_ = DeviceType::GPU;
                 is_valid = true;
             }
         }
@@ -76,10 +76,10 @@ public:
     std::string ToString() const {
         std::string str = "";
         switch (device_type_) {
-            case DeviceType::kCPU:
+            case DeviceType::CPU:
                 str += "CPU";
                 break;
-            case DeviceType::kGPU:
+            case DeviceType::GPU:
                 str += "GPU";
                 break;
             default:

@@ -27,10 +27,10 @@
 #include <gtest/gtest.h>
 #include <string>
 
+#include "Open3D/Utility/Console.h"
 #include "TestUtility/Print.h"
 #include "TestUtility/Rand.h"
 #include "TestUtility/Raw.h"
-#include "Open3D/Utility/Console.h"
 
 using namespace std;
 
