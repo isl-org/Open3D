@@ -56,15 +56,21 @@ TEST(Tensor, GPU) {
     EXPECT_EQ(t.GetBlob()->device_, device);
 }
 
-TEST(Tensor, WithInitValueMismatch) {
+TEST(Tensor, WithInitValue) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     Tensor t(vals, {2, 3}, Dtype::f32, Device("CPU:0"));
 }
 
-TEST(Tensor, DISABLED_WithInitValueMismatch) {
-    // TODO: expect exception
+TEST(Tensor, WithInitValueTypeMismatch) {
     std::vector<int> vals{0, 1, 2, 3, 4, 5};
-    Tensor t(vals, {2, 3}, Dtype::f32, Device("CPU:0"));
+    EXPECT_THROW(Tensor(vals, {2, 3}, Dtype::f32, Device("CPU:0")),
+                 std::runtime_error);
+}
+
+TEST(Tensor, WithInitValueSizeMismatch) {
+    std::vector<float> vals{0, 1, 2, 3, 4};
+    EXPECT_THROW(Tensor(vals, {2, 3}, Dtype::f32, Device("CPU:0")),
+                 std::runtime_error);
 }
 
 // TEST(Tensor, PrintShape) {
