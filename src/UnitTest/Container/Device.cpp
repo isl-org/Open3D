@@ -32,18 +32,18 @@ using namespace open3d;
 
 TEST(Device, DefaultConstructor) {
     Device ctx;
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::kCPU);
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CPU);
     EXPECT_EQ(ctx.device_id_, 0);
 }
 
 TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::kGPU, 1);
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::kGPU);
+    Device ctx(Device::DeviceType::GPU, 1);
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
     EXPECT_EQ(ctx.device_id_, 1);
 }
 
 TEST(Device, StringConstructor) {
     Device ctx("GPU:1");
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::kGPU);
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
     EXPECT_EQ(ctx.device_id_, 1);
 }
