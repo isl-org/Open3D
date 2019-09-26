@@ -50,6 +50,16 @@ public:
                        void* src_ptr,
                        const Device& src_device,
                        size_t num_bytes);
+    /// Same as Memcpy, but with host (CPU:0) as default src_device
+    static void MemcpyFromHost(void* dst_ptr,
+                               const Device& dst_device,
+                               void* host_ptr,
+                               size_t num_bytes);
+    /// Same as Memcpy, but with host (CPU:0) as default dst_device
+    static void MemcpyToHost(void* host_ptr,
+                             void* src_ptr,
+                             const Device& src_device,
+                             size_t num_bytes);
 
 protected:
     static std::shared_ptr<DeviceMemoryManager> GetDeviceMemoryManager(
