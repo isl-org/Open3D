@@ -51,23 +51,40 @@ public:
         return shape_.NumElements() * DtypeUtil::ByteSize(dtype_);
     }
 
-    std::shared_ptr<Blob> GetBlob() const { return blob_; }
+    template <typename T>
+    Tensor(const std::vector<T>& init_vals,
+           const Shape& shape,
+           const Dtype& dtype,
+           const Device& device = Device("CPU:0"))
+        : shape_(shape),
+          dtype_(dtype),
+          device_(device),
+          blob_(std::make_shared<Blob>(ByteSize(), device)) {
+        // Check number of elements
+        if (init_vals.size() != shape_.NumElements()) {
+            utility::LogFatal(
+                    "Tensor initialization values' size does not match the "
+                    "shape.\n");
+        }
 
-    Shape GetShape() const { return shape_; }
-
-    Dtype GetDtype() const { return dtype_; }
-
-    Device GetDevice() const { return device_; }
+        // Check data types
+        if (DtypeUtil::FromType<T>() == dtype) {
+        } else {
+        }
+    }
 
     // Tensor(const std::vector<T>& init_vals,
     //        const Shape& shape,
     //        const std::string& device = "CPU")
     //     : Tensor(shape, device) {
-    //     if (init_vals.size() != num_elements_) {
-    //         throw std::runtime_error(
+    //     // Check num elements
+    //     if (init_vals.size() != shape_.NumElements()) {
+    //         utility::LogFatal(
     //                 "Tensor initialization values' size does not match the "
-    //                 "shape.");
+    //                 "shape.\n");
     //     }
+
+    //     // Check data type
 
     //     if (device == "CPU" || device == "GPU") {
     //         MemoryManager::CopyTo(v_, init_vals.data(), byte_size_);
@@ -85,6 +102,15 @@ public:
     //     MemoryManager::CopyTo(vec.data(), v_, byte_size_);
     //     return vec;
     // }
+
+public:
+    std::shared_ptr<Blob> GetBlob() const { return blob_; }
+
+    Shape GetShape() const { return shape_; }
+
+    Dtype GetDtype() const { return dtype_; }
+
+    Device GetDevice() const { return device_; }
 
 protected:
     Shape shape_;

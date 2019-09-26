@@ -29,6 +29,8 @@
 #include "Open3D/Container/Shape.h"
 #include "TestUtility/UnitTest.h"
 
+#include <vector>
+
 using namespace std;
 using namespace open3d;
 
@@ -52,4 +54,9 @@ TEST(Tensor, GPU) {
     EXPECT_EQ(t.GetShape(), shape);
     EXPECT_EQ(t.GetBlob()->byte_size_, 4 * 2 * 3);
     EXPECT_EQ(t.GetBlob()->device_, device);
+}
+
+TEST(Tensor, WithInitValue) {
+    std::vector<float> vals{0, 1, 2, 3, 4, 5};
+    Tensor t(vals, {2, 3}, Dtype::f32, Device("CPU:0"));
 }
