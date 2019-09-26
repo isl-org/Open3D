@@ -38,8 +38,8 @@
 
 namespace open3d {
 
-void* MemoryManager::Alloc(size_t byte_size, const Device& device) {
-    return GetDeviceMemoryManager(device)->Alloc(byte_size, device);
+void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
+    return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
 }
 
 void MemoryManager::Free(Blob* blob) {
@@ -65,7 +65,7 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
 
 CPUMemoryManager::CPUMemoryManager() {}
 
-void* CPUMemoryManager::Alloc(size_t byte_size, const Device& device) {
+void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
     if (device.device_type_ == Device::DeviceType::kCPU) {
         ptr = malloc(byte_size);
@@ -130,7 +130,7 @@ void GPUMemoryManager::SetDevice(int device_id) {
     }
 }
 
-void* GPUMemoryManager::Alloc(size_t byte_size, const Device& device) {
+void* GPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
     if (device.device_type_ == Device::DeviceType::kGPU) {
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));

@@ -47,19 +47,12 @@ public:
           device_(device),
           blob_(std::make_shared<Blob>(ByteSize(), device)) {}
 
-    size_t ByteSize() const {
-        return shape_.NumElements() * DtypeUtil::ByteSize(dtype_);
-    }
-
     template <typename T>
     Tensor(const std::vector<T>& init_vals,
            const Shape& shape,
            const Dtype& dtype,
            const Device& device = Device("CPU:0"))
-        : shape_(shape),
-          dtype_(dtype),
-          device_(device),
-          blob_(std::make_shared<Blob>(ByteSize(), device)) {
+        : Tensor(shape, dtype, device) {
         // Check number of elements
         if (init_vals.size() != shape_.NumElements()) {
             utility::LogFatal(
@@ -68,40 +61,24 @@ public:
         }
 
         // Check data types
-        if (DtypeUtil::FromType<T>() == dtype) {
-        } else {
+        if (DtypeUtil::FromType<T>() != dtype_) {
+            utility::LogFatal(
+                    "Init values have type {} but Tensor has type {}\n",
+                    DtypeUtil::ToString(DtypeUtil::FromType<T>()),
+                    DtypeUtil::ToString(dtype_));
         }
+        if (DtypeUtil::ByteSize(dtype_) != sizeof(T)) {
+            utility::LogFatal(
+                    "Internal error: element size mismatch {} != {}\n",
+                    DtypeUtil::ByteSize(dtype_), sizeof(T));
+        }
+
+        // Copy data to blob
     }
 
-    // Tensor(const std::vector<T>& init_vals,
-    //        const Shape& shape,
-    //        const std::string& device = "CPU")
-    //     : Tensor(shape, device) {
-    //     // Check num elements
-    //     if (init_vals.size() != shape_.NumElements()) {
-    //         utility::LogFatal(
-    //                 "Tensor initialization values' size does not match the "
-    //                 "shape.\n");
-    //     }
-
-    //     // Check data type
-
-    //     if (device == "CPU" || device == "GPU") {
-    //         MemoryManager::CopyTo(v_, init_vals.data(), byte_size_);
-    //     } else if (device == "GPU") {
-    //         throw std::runtime_error("Unimplemented");
-    //     } else {
-    //         throw std::runtime_error("Unrecognized device");
-    //     }
-    // }
-
-    // ~Tensor() { MemoryManager::Free(v_); };
-
-    // std::vector<T> ToStdVector() const {
-    //     std::vector<T> vec(num_elements_);
-    //     MemoryManager::CopyTo(vec.data(), v_, byte_size_);
-    //     return vec;
-    // }
+    size_t ByteSize() const {
+        return shape_.NumElements() * DtypeUtil::ByteSize(dtype_);
+    }
 
 public:
     std::shared_ptr<Blob> GetBlob() const { return blob_; }

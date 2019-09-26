@@ -32,44 +32,46 @@
 #include <string>
 #include <unordered_map>
 
+#include "Open3D/Container/Device.h"
+
 namespace open3d {
 
 class Blob;
 
-class Device;
+class DeviceMemoryManager;
+
+class MemoryManager {
+public:
+    static void* Malloc(size_t byte_size, const Device& device);
+    static void Free(Blob* blob);
+
+protected:
+    static std::shared_ptr<DeviceMemoryManager> GetDeviceMemoryManager(
+            const Device& device);
+};
 
 class DeviceMemoryManager {
 public:
-    virtual void* Alloc(size_t byte_size, const Device& device) = 0;
+    virtual void* Malloc(size_t byte_size, const Device& device) = 0;
     virtual void Free(Blob* blob) = 0;
 };
 
 class CPUMemoryManager : public DeviceMemoryManager {
 public:
     CPUMemoryManager();
-    void* Alloc(size_t byte_size, const Device& device) override;
+    void* Malloc(size_t byte_size, const Device& device) override;
     void Free(Blob* blob) override;
 };
 
 class GPUMemoryManager : public DeviceMemoryManager {
 public:
     GPUMemoryManager();
-    void* Alloc(size_t byte_size, const Device& device) override;
+    void* Malloc(size_t byte_size, const Device& device) override;
     void Free(Blob* blob) override;
 
 protected:
     void EnableP2P();
     void SetDevice(int device_id);
-};
-
-class MemoryManager {
-public:
-    static void* Alloc(size_t byte_size, const Device& device);
-    static void Free(Blob* blob);
-
-protected:
-    static std::shared_ptr<DeviceMemoryManager> GetDeviceMemoryManager(
-            const Device& device);
 };
 
 }  // namespace open3d
