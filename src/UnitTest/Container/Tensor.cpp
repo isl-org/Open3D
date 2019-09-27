@@ -82,7 +82,7 @@ TEST(Tensor, CopyTo) {
     Dtype dtype(Dtype::f32);
 
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
-    Tensor src_t(vals, shape, dtype, dst_device);
+    Tensor src_t(vals, shape, dtype, src_device);
 
     Tensor dst_t = src_t.CopyTo(dst_device);
 
