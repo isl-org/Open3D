@@ -92,8 +92,3 @@ TEST(Tensor, CopyTo) {
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
 }
-
-// TEST(Tensor, PrintShape) {
-//     Shape shape{2, 3};
-//     utility::LogWarning("Shape is {}\n", shape);
-// }

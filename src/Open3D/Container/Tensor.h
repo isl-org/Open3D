@@ -37,6 +37,21 @@
 
 namespace open3d {
 
+class Slice {
+public:
+    Slice(int start, int stop, int step = 1)
+        : start_(start), stop_(stop), step_(step) {
+        if (step == 0) {
+            utility::LogFatal("Step size cannot be 0\n");
+        }
+    }
+
+protected:
+    int start_;
+    int stop_;
+    int step_;
+};
+
 class Tensor {
 public:
     Tensor(const Shape& shape,
