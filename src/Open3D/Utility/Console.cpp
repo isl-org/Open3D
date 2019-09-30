@@ -80,22 +80,19 @@ void Logger::ResetConsoleColor() const {
 #endif
 }
 
-std::string Logger::SChangeConsoleColor(TextColor text_color,
-                                        int highlight_text) const {
-#ifdef _WIN32
-    return "";
-#else
-    return fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+std::string Logger::ColorString(const std::string &text,
+                                TextColor text_color,
+                                int highlight_text) const {
+    std::string msg = "";
+#ifndef _WIN32
+    msg += fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
                         (int)text_color + 30);
 #endif
-}
-
-std::string Logger::SResetConsoleColor() const {
-#ifdef _WIN32
-    return "";
-#else
-    return fmt::sprintf("%c[0;m", 0x1B);
+    msg += text;
+#ifndef _WIN32
+    msg += fmt::sprintf("%c[0;m", 0x1B);
 #endif
+    return msg;
 }
 
 std::string GetCurrentTimeStamp() {
