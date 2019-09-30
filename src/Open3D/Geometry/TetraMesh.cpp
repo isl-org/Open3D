@@ -254,7 +254,7 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
         const auto &tetra = tetras_[tetra_i];
 
         std::array<Eigen::Vector3d, 4> verts;
-        std::array<Index2, 4> keys;
+        std::array<Index2, 4> keys;  // keys for the edges
         std::array<Index, 4> verts_indices;
         std::array<Eigen::Vector3d, 4> edge_dirs;
         int num_verts = 0;
@@ -306,7 +306,7 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
 
             triangle_mesh->triangles_.push_back(tri);
         } else if (4 == num_verts) {
-            std::array<int, 4> order;
+            std::array<int, 4> order = {-1, 0, 0, 0};
             if (HasCommonVertexIndex(keys[0], keys[1]) &&
                 HasCommonVertexIndex(keys[0], keys[2])) {
                 order = {1, 0, 2, 3};
@@ -318,37 +318,46 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
                 order = {2, 0, 3, 1};
             }
 
-            // accumulate to improve robustness of the triangle orientation test
-            double dot = 0;
-            for (int i = 0; i < 4; ++i) {
-                Eigen::Vector3d tri_normal = ComputeTriangleNormal(
-                        verts[order[(4 + i - 1) % 4]], verts[order[i]],
-                        verts[order[(i + 1) % 4]]);
-                dot += tri_normal.dot(edge_dirs[order[i]]);
-            }
-            if (dot < 0) std::reverse(order.begin(), order.end());
+            if (order[0] != -1) {
+                // accumulate to improve robustness of the triangle orientation
+                // test
+                double dot = 0;
+                for (int i = 0; i < 4; ++i) {
+                    Eigen::Vector3d tri_normal = ComputeTriangleNormal(
+                            verts[order[(4 + i - 1) % 4]], verts[order[i]],
+                            verts[order[(i + 1) % 4]]);
+                    dot += tri_normal.dot(edge_dirs[order[i]]);
+                }
+                if (dot < 0) std::reverse(order.begin(), order.end());
 
-            std::array<Eigen::Vector3i, 2> tris;
-            if ((verts[order[0]] - verts[order[2]]).squaredNorm() <
-                (verts[order[1]] - verts[order[3]]).squaredNorm()) {
-                tris[0] << verts_indices[order[0]], verts_indices[order[1]],
-                        verts_indices[order[2]];
-                tris[1] << verts_indices[order[2]], verts_indices[order[3]],
-                        verts_indices[order[0]];
+                std::array<Eigen::Vector3i, 2> tris;
+                if ((verts[order[0]] - verts[order[2]]).squaredNorm() <
+                    (verts[order[1]] - verts[order[3]]).squaredNorm()) {
+                    tris[0] << verts_indices[order[0]], verts_indices[order[1]],
+                            verts_indices[order[2]];
+                    tris[1] << verts_indices[order[2]], verts_indices[order[3]],
+                            verts_indices[order[0]];
+                } else {
+                    tris[0] << verts_indices[order[0]], verts_indices[order[1]],
+                            verts_indices[order[3]];
+                    tris[1] << verts_indices[order[1]], verts_indices[order[2]],
+                            verts_indices[order[3]];
+                }
+
+                triangle_mesh->triangles_.insert(
+                        triangle_mesh->triangles_.end(), {tris[0], tris[1]});
             } else {
-                tris[0] << verts_indices[order[0]], verts_indices[order[1]],
-                        verts_indices[order[3]];
-                tris[1] << verts_indices[order[1]], verts_indices[order[2]],
-                        verts_indices[order[3]];
+                utility::LogWarning(
+                        "[ExtractTriangleMesh] failed to create triangles for "
+                        "tetrahedron {:d}: invalid edge configuration for "
+                        "tetrahedron\n",
+                        int(tetra_i));
             }
-
-            triangle_mesh->triangles_.insert(triangle_mesh->triangles_.end(),
-                                             {tris[0], tris[1]});
         } else if (0 != num_verts) {
             utility::LogWarning(
                     "[ExtractTriangleMesh] failed to create triangles for "
-                    "tetrahedron {:d}\n",
-                    int(tetra_i));
+                    "tetrahedron {:d}: unexpected number of vertices {:d}\n",
+                    int(tetra_i), num_verts);
         }
     }
 
