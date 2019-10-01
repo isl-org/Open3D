@@ -35,7 +35,9 @@ namespace open3d {
 
 #define OPEN3D_CUDA_CHECK(err) __OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 
-void __OPEN3D_CUDA_CHECK(cudaError_t err, const char *file, const int line) {
+inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
+                                const char *file,
+                                const int line) {
     if (err != cudaSuccess) {
         utility::LogFatal("{}:{} CUDA runtime error: {}\n", file, line,
                           cudaGetErrorString(err));

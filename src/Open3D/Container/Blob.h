@@ -44,8 +44,11 @@ public:
     ~Blob() { MemoryManager::Free(this); };
 
 public:
+    /// Device data pointer
     void* v_ = nullptr;
+    /// Size of Blob in bytes
     size_t byte_size_ = 0;
+    /// Device context for the blob
     Device device_;
 };
 
