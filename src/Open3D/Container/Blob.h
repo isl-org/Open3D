@@ -35,13 +35,13 @@
 
 namespace open3d {
 
-class Blob {
+class Blob : public std::enable_shared_from_this<Blob> {
 public:
     Blob(size_t byte_size, const Device& device)
         : byte_size_(byte_size), device_(device) {
         v_ = MemoryManager::Malloc(byte_size_, device_);
     }
-    ~Blob() { MemoryManager::Free(this); };
+    ~Blob() { MemoryManager::Free(shared_from_this()); };
 
 public:
     /// Device data pointer

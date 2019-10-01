@@ -43,9 +43,10 @@ class DeviceMemoryManager;
 class MemoryManager {
 public:
     static void* Malloc(size_t byte_size, const Device& device);
-    static void Free(Blob* blob);
+    static void Free(const std::shared_ptr<Blob>& blob);
     static void Free(void* ptr, const Device& device);
-    static void Memcpy(Blob* dst_blob, const Blob* src_blob);
+    static void Memcpy(const std::shared_ptr<Blob>& dst_blob,
+                       const std::shared_ptr<Blob>& src_blob);
     static void Memcpy(void* dst_ptr,
                        const Device& dst_device,
                        const void* src_ptr,
@@ -82,7 +83,7 @@ class CPUMemoryManager : public DeviceMemoryManager {
 public:
     CPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
-    void Free(void* blob, const Device& device) override;
+    void Free(void* ptr, const Device& device) override;
     void Memcpy(void* dst_ptr,
                 const Device& dst_device,
                 const void* src_ptr,
@@ -94,7 +95,7 @@ class GPUMemoryManager : public DeviceMemoryManager {
 public:
     GPUMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
-    void Free(void* blob, const Device& device) override;
+    void Free(void* ptr, const Device& device) override;
     void Memcpy(void* dst_ptr,
                 const Device& dst_device,
                 const void* src_ptr,

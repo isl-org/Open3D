@@ -39,7 +39,7 @@ void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
     return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
 }
 
-void MemoryManager::Free(Blob* blob) {
+void MemoryManager::Free(const std::shared_ptr<Blob>& blob) {
     return GetDeviceMemoryManager(blob->device_)->Free(blob->v_, blob->device_);
 }
 
@@ -47,7 +47,8 @@ void MemoryManager::Free(void* ptr, const Device& device) {
     return GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
-void MemoryManager::Memcpy(Blob* dst_blob, const Blob* src_blob) {
+void MemoryManager::Memcpy(const std::shared_ptr<Blob>& dst_blob,
+                           const std::shared_ptr<Blob>& src_blob) {
     if (dst_blob->v_ == src_blob->v_) {
         utility::LogFatal("dst and src have same buffer address\n");
     }
