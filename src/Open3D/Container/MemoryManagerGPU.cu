@@ -142,4 +142,4 @@ bool GPUMemoryManager::IsCUDAPointer(const void* ptr) {
     return false;
 }
 
-}
+}  // namespace open3d
