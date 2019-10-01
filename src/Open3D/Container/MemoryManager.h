@@ -44,8 +44,8 @@ class MemoryManager {
 public:
     static void* Malloc(size_t byte_size, const Device& device);
     static void Free(void* ptr, const Device& device);
-    static void Memcpy(const std::shared_ptr<Blob>& dst_blob,
-                       const std::shared_ptr<Blob>& src_blob);
+    static void MemcpyBlob(const std::shared_ptr<Blob>& dst_blob,
+                           const std::shared_ptr<Blob>& src_blob);
     static void Memcpy(void* dst_ptr,
                        const Device& dst_device,
                        const void* src_ptr,

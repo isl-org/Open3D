@@ -95,7 +95,7 @@ public:
 
     Tensor CopyTo(const Device& device) {
         Tensor tensor(shape_, dtype_, device);
-        MemoryManager::Memcpy(tensor.blob_, blob_);
+        MemoryManager::MemcpyBlob(tensor.blob_, blob_);
         return tensor;
     }
 
