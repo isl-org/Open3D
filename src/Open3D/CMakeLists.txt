@@ -77,10 +77,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
 
-if (BUILD_CUDA_MODULE)
-    target_link_libraries(${CMAKE_PROJECT_NAME} ${CUDA_LIBRARIES})
-endif()
-
 # input_dirs: a list of absolute paths in the source dir
 # output_dirs: a list of relative paths in the install dir
 # input_base_dir: the base dir of input_dirs
