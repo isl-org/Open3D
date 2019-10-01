@@ -47,3 +47,9 @@ TEST(Device, StringConstructor) {
     EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
     EXPECT_EQ(ctx.device_id_, 1);
 }
+
+TEST(Device, StringConstructorLower) {
+    Device ctx("gpu:1");
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    EXPECT_EQ(ctx.device_id_, 1);
+}

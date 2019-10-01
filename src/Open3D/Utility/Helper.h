@@ -101,9 +101,6 @@ struct hash {
 
 }  // namespace hash_eigen
 
-/// Convet string to the lower case
-std::string ToLower(const std::string& s);
-
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void SplitString(std::vector<std::string>& tokens,
@@ -128,6 +125,9 @@ std::string& RightStripString(std::string& str,
 /// str.strip()
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
+
+/// Convet string to the lower case
+std::string ToLower(const std::string& s);
 
 void Sleep(int milliseconds);
 

@@ -55,10 +55,11 @@ public:
         bool is_valid = false;
         if (tokens.size() == 2) {
             device_id_ = std::stoi(tokens[1]);
-            if (tokens[0] == "CPU") {
+            std::string device_name_lower = utility::ToLower(tokens[0]);
+            if (device_name_lower == "cpu") {
                 device_type_ = DeviceType::CPU;
                 is_valid = true;
-            } else if (tokens[0] == "GPU") {
+            } else if (device_name_lower == "gpu") {
                 device_type_ = DeviceType::GPU;
                 is_valid = true;
             }
