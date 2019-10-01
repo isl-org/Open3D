@@ -34,8 +34,8 @@ namespace open3d {
 
 enum class Dtype {
     undefined,
-    f32,
-    f64,
+    float32,
+    float64,
     int32,
     int64,
     uint8,
@@ -46,10 +46,10 @@ public:
     static size_t ByteSize(const Dtype &dtype) {
         size_t byte_size = 0;
         switch (dtype) {
-            case Dtype::f32:
+            case Dtype::float32:
                 byte_size = 4;
                 break;
-            case Dtype::f64:
+            case Dtype::float64:
                 byte_size = 8;
                 break;
             case Dtype::int32:
@@ -76,11 +76,11 @@ public:
     static std::string ToString(const Dtype &dtype) {
         std::string str = "";
         switch (dtype) {
-            case Dtype::f32:
-                str = "f32";
+            case Dtype::float32:
+                str = "float32";
                 break;
-            case Dtype::f64:
-                str = "f64";
+            case Dtype::float64:
+                str = "float64";
                 break;
             case Dtype::int32:
                 str = "int32";
@@ -100,12 +100,12 @@ public:
 
 template <>
 inline Dtype DtypeUtil::FromType<float>() {
-    return Dtype::f32;
+    return Dtype::float32;
 }
 
 template <>
 inline Dtype DtypeUtil::FromType<double>() {
-    return Dtype::f64;
+    return Dtype::float64;
 }
 
 template <>
