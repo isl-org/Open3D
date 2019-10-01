@@ -1,6 +1,8 @@
 # Build
 set (CONTAINER_SRC
     MemoryManager.cpp
+    MemoryManagerCPU.cpp
+    MemoryManagerGPU.cu
     Tensor.cpp
 )
 

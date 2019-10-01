@@ -26,13 +26,10 @@
 
 #include "Open3D/Container/MemoryManager.h"
 
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <numeric>
 #include <unordered_map>
 
 #include "Open3D/Container/Blob.h"
-#include "Open3D/Container/CudaUtils.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Utility/Console.h"
 
@@ -119,141 +116,6 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         utility::LogFatal("Unimplemented device\n");
     }
     return map_device_type_to_memory_manager.at(device.device_type_);
-}
-
-CPUMemoryManager::CPUMemoryManager() {}
-
-void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
-    void* ptr;
-    ptr = malloc(byte_size);
-    if (byte_size != 0 && !ptr) {
-        utility::LogFatal("CPU malloc failed\n");
-    }
-    return ptr;
-}
-
-void CPUMemoryManager::Free(void* ptr, const Device& device) {
-    if (ptr) {
-        free(ptr);
-    }
-}
-
-void CPUMemoryManager::Memcpy(void* dst_ptr,
-                              const Device& dst_device,
-                              const void* src_ptr,
-                              const Device& src_device,
-                              size_t num_bytes) {
-    // TODO: safer memcpy_s
-    memcpy(dst_ptr, src_ptr, num_bytes);
-}
-
-GPUMemoryManager::GPUMemoryManager() {
-    // TODO: reenable this when p2p is supported
-    // EnableP2P();
-}
-
-void GPUMemoryManager::EnableP2P() {
-    int device_count = -1;
-    OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&device_count));
-    if (device_count <= 0) {
-        utility::LogFatal("CUDA device not found, device_count={}\n",
-                          device_count);
-    } else {
-        utility::LogDebug("device_count = {}\n", device_count);
-    }
-
-    // Enable P2P
-    for (int curr_id = 0; curr_id < device_count; ++curr_id) {
-        SetDevice(curr_id);
-        for (int peer_id = 0; peer_id < device_count; ++peer_id) {
-            if (curr_id == peer_id) {
-                continue;
-            }
-            int accessible = 0;
-            OPEN3D_CUDA_CHECK(
-                    cudaDeviceCanAccessPeer(&accessible, curr_id, peer_id));
-            if (accessible == 1) {
-                OPEN3D_CUDA_CHECK(cudaDeviceEnablePeerAccess(peer_id, 0));
-            } else {
-                utility::LogWarning("{} can't access {}\n", curr_id, peer_id);
-            }
-        }
-    }
-}
-
-void GPUMemoryManager::SetDevice(int device_id) {
-    int curr_device_id = -1;
-    OPEN3D_CUDA_CHECK(cudaGetDevice(&curr_device_id));
-    if (curr_device_id != device_id) {
-        OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
-    }
-}
-
-void* GPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
-    void* ptr;
-    if (device.device_type_ == Device::DeviceType::GPU) {
-        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
-    } else {
-        utility::LogFatal("Unimplemented device\n");
-    }
-    return ptr;
-}
-
-void GPUMemoryManager::Free(void* ptr, const Device& device) {
-    if (device.device_type_ == Device::DeviceType::GPU) {
-        if (!IsCUDAPointer(ptr)) {
-            utility::LogFatal("Freeing non-CUDA pointer\n");
-        }
-        if (ptr) {
-            OPEN3D_CUDA_CHECK(cudaFree(ptr));
-        }
-    } else {
-        utility::LogFatal("Unimplemented device\n");
-    }
-}
-
-void GPUMemoryManager::Memcpy(void* dst_ptr,
-                              const Device& dst_device,
-                              const void* src_ptr,
-                              const Device& src_device,
-                              size_t num_bytes) {
-    cudaMemcpyKind memcpy_kind;
-
-    if (dst_device.device_type_ == Device::DeviceType::GPU &&
-        src_device.device_type_ == Device::DeviceType::CPU) {
-        memcpy_kind = cudaMemcpyHostToDevice;
-        if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogFatal("dst_ptr is not a CUDA pointer\n");
-        }
-    } else if (dst_device.device_type_ == Device::DeviceType::CPU &&
-               src_device.device_type_ == Device::DeviceType::GPU) {
-        memcpy_kind = cudaMemcpyDeviceToHost;
-        if (!IsCUDAPointer(src_ptr)) {
-            utility::LogFatal("src_ptr is not a CUDA pointer\n");
-        }
-    } else if (dst_device.device_type_ == Device::DeviceType::GPU &&
-               src_device.device_type_ == Device::DeviceType::GPU) {
-        memcpy_kind = cudaMemcpyDeviceToDevice;
-        if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogFatal("dst_ptr is not a CUDA pointer\n");
-        }
-        if (!IsCUDAPointer(src_ptr)) {
-            utility::LogFatal("src_ptr is not a CUDA pointer\n");
-        }
-    } else {
-        utility::LogFatal("Wrong cudaMemcpyKind\n");
-    }
-
-    OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes, memcpy_kind));
-}
-
-bool GPUMemoryManager::IsCUDAPointer(const void* ptr) {
-    cudaPointerAttributes attributes;
-    cudaPointerGetAttributes(&attributes, ptr);
-    if (attributes.devicePointer != nullptr) {
-        return true;
-    }
-    return false;
 }
 
 }  // namespace open3d
