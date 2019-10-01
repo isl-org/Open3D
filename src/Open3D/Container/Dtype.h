@@ -30,6 +30,11 @@
 
 #include "Open3D/Utility/Console.h"
 
+static_assert(sizeof(float) == 4,
+              "Unsupported platform: float must be 4 bytes");
+static_assert(sizeof(double) == 8,
+              "Unsupported platform: double must be 8 bytes");
+
 namespace open3d {
 
 enum class Dtype {
