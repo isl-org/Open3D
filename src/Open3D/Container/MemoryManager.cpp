@@ -45,6 +45,9 @@ void MemoryManager::Free(void* ptr, const Device& device) {
 
 void MemoryManager::MemcpyBlob(const std::shared_ptr<Blob>& dst_blob,
                                const std::shared_ptr<Blob>& src_blob) {
+    if (dst_blob == nullptr || src_blob == nullptr) {
+        utility::LogFatal("Either dst_blob or src_blob is null\n");
+    }
     if (dst_blob->v_ == src_blob->v_) {
         utility::LogFatal("dst and src have same buffer address\n");
     }

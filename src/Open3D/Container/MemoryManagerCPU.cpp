@@ -26,13 +26,15 @@
 
 #include "Open3D/Container/MemoryManager.h"
 
+#include <cstdlib>
+
 namespace open3d {
 
 CPUMemoryManager::CPUMemoryManager() {}
 
 void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
-    ptr = malloc(byte_size);
+    ptr = std::malloc(byte_size);
     if (byte_size != 0 && !ptr) {
         utility::LogFatal("CPU malloc failed\n");
     }
@@ -41,7 +43,7 @@ void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
 
 void CPUMemoryManager::Free(void* ptr, const Device& device) {
     if (ptr) {
-        free(ptr);
+        std::free(ptr);
     }
 }
 
@@ -50,8 +52,7 @@ void CPUMemoryManager::Memcpy(void* dst_ptr,
                               const void* src_ptr,
                               const Device& src_device,
                               size_t num_bytes) {
-    // TODO: safer memcpy_s
-    memcpy(dst_ptr, src_ptr, num_bytes);
+    std::memcpy(dst_ptr, src_ptr, num_bytes);
 }
 
 }  // namespace open3d
