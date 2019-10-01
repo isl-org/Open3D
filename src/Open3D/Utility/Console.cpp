@@ -35,6 +35,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <sstream>
 #include <string>
 
 #ifdef _WIN32
@@ -83,16 +84,16 @@ void Logger::ResetConsoleColor() const {
 std::string Logger::ColorString(const std::string &text,
                                 TextColor text_color,
                                 int highlight_text) const {
-    std::string msg = "";
+    std::ostringstream msg;
 #ifndef _WIN32
-    msg += fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+    msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
                         (int)text_color + 30);
 #endif
-    msg += text;
+    msg << text;
 #ifndef _WIN32
-    msg += fmt::sprintf("%c[0;m", 0x1B);
+    msg << fmt::sprintf("%c[0;m", 0x1B);
 #endif
-    return msg;
+    return msg.str();
 }
 
 std::string GetCurrentTimeStamp() {
