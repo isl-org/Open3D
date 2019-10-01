@@ -41,7 +41,7 @@ public:
         : byte_size_(byte_size), device_(device) {
         v_ = MemoryManager::Malloc(byte_size_, device_);
     }
-    ~Blob() { MemoryManager::Free(shared_from_this()); };
+    ~Blob() { MemoryManager::Free(v_, device_); };
 
 public:
     /// Device data pointer

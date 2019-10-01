@@ -39,10 +39,6 @@ void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
     return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
 }
 
-void MemoryManager::Free(const std::shared_ptr<Blob>& blob) {
-    return GetDeviceMemoryManager(blob->device_)->Free(blob->v_, blob->device_);
-}
-
 void MemoryManager::Free(void* ptr, const Device& device) {
     return GetDeviceMemoryManager(device)->Free(ptr, device);
 }
