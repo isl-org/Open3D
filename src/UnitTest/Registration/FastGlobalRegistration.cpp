@@ -26,30 +26,18 @@
 
 #include "TestUtility/UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_FastGlobalRegistrationOption) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }

@@ -26,40 +26,22 @@
 
 #include "TestUtility/UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationLevenbergMarquardt) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationConvergenceCriteria) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationOption) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_CreatePoseGraphWithoutInvalidEdges) {
     unit_test::NotImplemented();
 }

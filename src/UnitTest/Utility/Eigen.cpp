@@ -32,9 +32,6 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, TransformVector6dToMatrix4d) {
     Matrix4d ref_matrix4d;
     ref_matrix4d << 0.829278, -0.425147, 0.362696, 0.666667, 0.453036, 0.891445,
@@ -52,9 +49,6 @@ TEST(Eigen, TransformVector6dToMatrix4d) {
     ExpectEQ(ref_matrix4d, matrix4d);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, TransformMatrix4dToVector6d) {
     Matrix4d ref_matrix4d;
     ref_matrix4d << 0.829278, -0.425147, 0.362696, 0.666667, 0.453036, 0.891445,
@@ -67,9 +61,6 @@ TEST(Eigen, TransformMatrix4dToVector6d) {
         EXPECT_NEAR((i + 1) / 6.0, vector6d(i, 0), THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, SolveLinearSystemPSD) {
     Matrix3d A;
     Vector3d b;
@@ -123,9 +114,6 @@ TEST(Eigen, SolveLinearSystemPSD) {
     ExpectEQ(x, x_ref);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix) {
     Matrix6d JTJ = Matrix6d::Random();
 
@@ -154,9 +142,6 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
     Matrix6d JTJ = Matrix6d::Random();
 
@@ -186,9 +171,6 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, ComputeJTJandJTr) {
     Matrix6d ref_JTJ;
     ref_JTJ << 2.819131, 0.023929, -0.403568, 1.276125, 0.437555, -1.123875,
@@ -226,9 +208,6 @@ TEST(Eigen, ComputeJTJandJTr) {
     ExpectEQ(ref_JTJ, JTJ);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Eigen, ComputeJTJandJTr_vector) {
     Matrix6d ref_JTJ;
     ref_JTJ << 28.191311, 0.239293, -4.035679, 12.761246, 4.375548, -11.238754,

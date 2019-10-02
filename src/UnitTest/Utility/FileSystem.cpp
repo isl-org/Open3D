@@ -135,9 +135,6 @@ TEST(FileSystem, GetFileNameWithoutExtension) {
     EXPECT_EQ("test/test_dir/fileName ", result);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileNameWithoutDirectory) {
     string path;
     string result;
@@ -361,9 +358,6 @@ TEST(FileSystem, DeleteDirectory) {
     EXPECT_FALSE(status);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(FileSystem, File_Exists_Remove) {
     string path = "test/test_dir";
     string fileName = "fileName.ext";

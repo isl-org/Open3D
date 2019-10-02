@@ -37,9 +37,6 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, Constructor) {
     geometry::PointCloud pc;
 
@@ -64,14 +61,8 @@ TEST(PointCloud, Constructor) {
     EXPECT_FALSE(pc.HasColors());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, Clear) {
     int size = 100;
 
@@ -109,9 +100,6 @@ TEST(PointCloud, Clear) {
     EXPECT_FALSE(pc.HasColors());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, IsEmpty) {
     int size = 100;
 
@@ -129,9 +117,6 @@ TEST(PointCloud, IsEmpty) {
     EXPECT_FALSE(pc.IsEmpty());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, GetMinBound) {
     int size = 100;
 
@@ -148,9 +133,6 @@ TEST(PointCloud, GetMinBound) {
     ExpectEQ(Vector3d(19.607843, 0.0, 0.0), pc.GetMinBound());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, GetMaxBound) {
     int size = 100;
 
@@ -167,9 +149,6 @@ TEST(PointCloud, GetMaxBound) {
     ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, Transform) {
     vector<Vector3d> ref_points = {
             {1.411252, 4.274168, 3.130918}, {1.231757, 4.154505, 3.183678},
@@ -211,9 +190,6 @@ TEST(PointCloud, Transform) {
     ExpectEQ(ref_normals, pc.normals_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, HasPoints) {
     int size = 100;
 
@@ -226,9 +202,6 @@ TEST(PointCloud, HasPoints) {
     EXPECT_TRUE(pc.HasPoints());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, HasNormals) {
     int size = 100;
 
@@ -242,9 +215,6 @@ TEST(PointCloud, HasNormals) {
     EXPECT_TRUE(pc.HasNormals());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, HasColors) {
     int size = 100;
 
@@ -258,9 +228,6 @@ TEST(PointCloud, HasColors) {
     EXPECT_TRUE(pc.HasColors());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, NormalizeNormals) {
     vector<Vector3d> ref = {
             {0.692861, 0.323767, 0.644296}, {0.650010, 0.742869, 0.160101},
@@ -290,9 +257,6 @@ TEST(PointCloud, NormalizeNormals) {
     ExpectEQ(ref, pc.normals_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, PaintUniformColor) {
     size_t size = 100;
 
@@ -318,9 +282,6 @@ TEST(PointCloud, PaintUniformColor) {
         ExpectEQ(color, pc.colors_[i]);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, OperatorAppend) {
     size_t size = 100;
 
@@ -377,9 +338,6 @@ TEST(PointCloud, OperatorAppend) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, OperatorADD) {
     size_t size = 100;
 
@@ -435,16 +393,10 @@ TEST(PointCloud, OperatorADD) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromFile) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, SelectDownSample) {
     vector<Vector3d> ref = {{796.078431, 909.803922, 196.078431},
                             {768.627451, 525.490196, 768.627451},
@@ -494,9 +446,6 @@ TEST(PointCloud, SelectDownSample) {
     ExpectEQ(ref, output_pc->points_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, VoxelDownSample) {
     vector<Vector3d> ref_points = {{19.607843, 454.901961, 62.745098},
                                    {66.666667, 949.019608, 525.490196},
@@ -577,9 +526,6 @@ TEST(PointCloud, VoxelDownSample) {
     ExpectEQ(ref_colors, output_pc->colors_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, UniformDownSample) {
     vector<Vector3d> ref = {{839.215686, 392.156863, 780.392157},
                             {364.705882, 509.803922, 949.019608},
@@ -622,9 +568,6 @@ TEST(PointCloud, UniformDownSample) {
     ExpectEQ(ref, output_pc->points_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, CropPointCloud) {
     size_t size = 100;
     geometry::PointCloud pc;
@@ -643,9 +586,6 @@ TEST(PointCloud, CropPointCloud) {
     ExpectGE(maxBound, output_pc->points_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, EstimateNormals) {
     vector<Vector3d> ref = {
             {0.282003, 0.866394, 0.412111},   {0.550791, 0.829572, -0.091869},
@@ -697,9 +637,6 @@ TEST(PointCloud, EstimateNormals) {
     ExpectEQ(ref, pc.normals_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     vector<Vector3d> ref = {
             {0.282003, 0.866394, 0.412111},   {0.550791, 0.829572, -0.091869},
@@ -738,9 +675,6 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     ExpectEQ(ref, pc.normals_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, OrientNormalsTowardsCameraLocation) {
     vector<Vector3d> ref = {{-0.282003, -0.866394, -0.412111},
                             {-0.550791, -0.829572, 0.091869},
@@ -798,9 +732,6 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation) {
     ExpectEQ(ref, pc.normals_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
     vector<double> ref = {
             157.498711, 127.737235, 113.386920, 192.476725, 134.367386,
@@ -835,9 +766,6 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
     ExpectEQ(ref, distance);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
     int size = 40;
     geometry::PointCloud pc;
@@ -863,9 +791,6 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
     ExpectEQ(ref_covariance, covariance);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudMahalanobisDistance) {
     vector<double> ref = {
             1.439881, 1.872615, 1.232338, 0.437462, 1.617472, 1.556793,
@@ -901,9 +826,6 @@ TEST(PointCloud, ComputePointCloudMahalanobisDistance) {
     ExpectEQ(ref, distance);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudNearestNeighborDistance) {
     vector<double> ref = {
             115.403443, 127.737235, 113.386920, 160.257386, 134.367386,
@@ -942,9 +864,6 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance) {
     ExpectEQ(ref, distance);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, CreatePointCloudFromDepthImage) {
     vector<Vector3d> ref = {{-15.709662, -11.776101, 25.813999},
                             {-31.647980, -23.798088, 52.167000},

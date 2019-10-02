@@ -35,9 +35,6 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
     vector<Vector6d, utility::Vector6d_allocator> ref_J_r(20);
     ref_J_r[0] << -0.216112, 0.111107, -0.007304, 0.030973, 0.046549, -0.208322;

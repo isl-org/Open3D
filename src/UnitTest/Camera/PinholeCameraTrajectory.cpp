@@ -34,16 +34,10 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
     camera::PinholeCameraTrajectory src;
     camera::PinholeCameraTrajectory dst;
