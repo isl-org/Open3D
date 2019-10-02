@@ -79,9 +79,7 @@ public:
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;
     VoxelGrid &Scale(const double scale, bool center = true) override;
-    VoxelGrid &Rotate(const Eigen::Vector3d &rotation,
-                      bool center = true,
-                      RotationType type = RotationType::XYZ) override;
+    VoxelGrid &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;

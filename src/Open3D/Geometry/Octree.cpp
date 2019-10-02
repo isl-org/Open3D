@@ -385,9 +385,7 @@ Octree& Octree::Scale(const double scale, bool center) {
     return *this;
 }
 
-Octree& Octree::Rotate(const Eigen::Vector3d& rotation,
-                       bool center,
-                       RotationType type) {
+Octree& Octree::Rotate(const Eigen::Matrix3d& R, bool center) {
     throw std::runtime_error("Not implemented");
     return *this;
 }

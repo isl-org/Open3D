@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "TestUtility/UnitTest.h"
 
@@ -1334,7 +1335,8 @@ TEST(TriangleMesh, CropTriangleMesh) {
     Vector3d cropBoundMin(300.0, 300.0, 300.0);
     Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
-    auto output_tm = tm.Crop(cropBoundMin, cropBoundMax);
+    auto output_tm = tm.Crop(
+            geometry::AxisAlignedBoundingBox(cropBoundMin, cropBoundMax));
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);

@@ -54,11 +54,9 @@ void pybind_boundingvolume(py::module &m) {
                  "Returns the eight points that define the bounding box.")
             .def_readwrite("center", &geometry::OrientedBoundingBox::center_,
                            "``float64`` array of shape ``(3, )``")
-            .def_readwrite("x_axis", &geometry::OrientedBoundingBox::x_axis_,
-                           "``float64`` array of shape ``(3, )``")
-            .def_readwrite("y_axis", &geometry::OrientedBoundingBox::y_axis_,
-                           "``float64`` array of shape ``(3, )``")
-            .def_readwrite("z_axis", &geometry::OrientedBoundingBox::z_axis_,
+            .def_readwrite("R", &geometry::OrientedBoundingBox::R_,
+                           "``float64`` array of shape ``(3,3 )``")
+            .def_readwrite("extent", &geometry::OrientedBoundingBox::extent_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("color", &geometry::OrientedBoundingBox::color_,
                            "``float64`` array of shape ``(3, )``");
@@ -87,6 +85,9 @@ void pybind_boundingvolume(py::module &m) {
             .def("get_box_points",
                  &geometry::AxisAlignedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
+            .def("get_extent", &geometry::AxisAlignedBoundingBox::GetExtent,
+                 "get the extent/length of the bounding box in x, y, and z "
+                 "dimension.")
             .def_readwrite("min_bound",
                            &geometry::AxisAlignedBoundingBox::min_bound_,
                            "``float64`` array of shape ``(3, )``")
@@ -98,4 +99,5 @@ void pybind_boundingvolume(py::module &m) {
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
                                     "get_box_points");
+    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox", "get_extent");
 }

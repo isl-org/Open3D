@@ -51,10 +51,8 @@ public:
     virtual TriangleMesh &Clear() override;
     virtual TriangleMesh &Transform(
             const Eigen::Matrix4d &transformation) override;
-    virtual TriangleMesh &Rotate(
-            const Eigen::Vector3d &rotation,
-            bool center = true,
-            RotationType type = RotationType::XYZ) override;
+    virtual TriangleMesh &Rotate(const Eigen::Matrix3d &R,
+                                 bool center = true) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
@@ -319,11 +317,16 @@ public:
     std::shared_ptr<TriangleMesh> SelectDownSample(
             const std::vector<size_t> &indices) const;
 
-    /// Function to crop \param input tringlemesh into output tringlemesh
-    /// All points with coordinates less than \param min_bound or larger than
-    /// \param max_bound are clipped.
-    std::shared_ptr<TriangleMesh> Crop(const Eigen::Vector3d &min_bound,
-                                       const Eigen::Vector3d &max_bound) const;
+    /// Function to crop pointcloud into output pointcloud
+    /// All points with coordinates outside the bounding box \param bbox are
+    /// clipped.
+    std::shared_ptr<TriangleMesh> Crop(
+            const AxisAlignedBoundingBox &bbox) const;
+
+    /// Function to crop pointcloud into output pointcloud
+    /// All points with coordinates outside the bounding box \param bbox are
+    /// clipped.
+    std::shared_ptr<TriangleMesh> Crop(const OrientedBoundingBox &bbox) const;
 
     /// Function that computes a triangle mesh from a oriented PointCloud \param
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.

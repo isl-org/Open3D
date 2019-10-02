@@ -160,9 +160,7 @@ public:
     Octree& Translate(const Eigen::Vector3d& translation,
                       bool relative = true) override;
     Octree& Scale(const double scale, bool center = true) override;
-    Octree& Rotate(const Eigen::Vector3d& rotation,
-                   bool center = true,
-                   RotationType type = RotationType::XYZ) override;
+    Octree& Rotate(const Eigen::Matrix3d& R, bool center = true) override;
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
 
