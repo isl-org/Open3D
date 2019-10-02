@@ -24,7 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "Open3D/Utility/Console.h"
 #include "TestUtility/UnitTest.h"
+
+using namespace open3d;
+
+TEST(Logger, LogFatal) {
+    EXPECT_THROW(utility::LogFatal("Example exeption message\n"),
+                 std::runtime_error);
+}
 
 // ----------------------------------------------------------------------------
 //
