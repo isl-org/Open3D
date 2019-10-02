@@ -35,6 +35,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <sstream>
 #include <string>
 
 #ifdef _WIN32
@@ -49,7 +50,8 @@ namespace open3d {
 
 namespace utility {
 
-void Logger::ChangeConsoleColor(TextColor text_color, int highlight_text) {
+void Logger::ChangeConsoleColor(TextColor text_color,
+                                int highlight_text) const {
 #ifdef _WIN32
     const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
     const WORD COLOR_MASK[8] = {
@@ -69,7 +71,7 @@ void Logger::ChangeConsoleColor(TextColor text_color, int highlight_text) {
 #endif
 }
 
-void Logger::ResetConsoleColor() {
+void Logger::ResetConsoleColor() const {
 #ifdef _WIN32
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(
@@ -79,22 +81,19 @@ void Logger::ResetConsoleColor() {
 #endif
 }
 
-std::string Logger::SChangeConsoleColor(TextColor text_color,
-                                        int highlight_text) {
-#ifdef _WIN32
-    return "";
-#else
-    return fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
+std::string Logger::ColorString(const std::string &text,
+                                TextColor text_color,
+                                int highlight_text) const {
+    std::ostringstream msg;
+#ifndef _WIN32
+    msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
                         (int)text_color + 30);
 #endif
-}
-
-std::string Logger::SResetConsoleColor() {
-#ifdef _WIN32
-    return "";
-#else
-    return fmt::sprintf("%c[0;m", 0x1B);
+    msg << text;
+#ifndef _WIN32
+    msg << fmt::sprintf("%c[0;m", 0x1B);
 #endif
+    return msg.str();
 }
 
 std::string GetCurrentTimeStamp() {
