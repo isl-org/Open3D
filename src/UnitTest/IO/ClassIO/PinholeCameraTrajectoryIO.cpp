@@ -26,38 +26,23 @@
 
 #include "TestUtility/UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO,
      DISABLED_CreatePinholeCameraTrajectoryFromFile) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectory) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectory) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectoryFromLOG) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectoryToLOG) {
     unit_test::NotImplemented();
 }

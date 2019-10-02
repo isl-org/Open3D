@@ -37,9 +37,6 @@ useful again after a decision has been made about the way to make these
 subcomponents visible to UnitTest.
 */
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ImageWarpingField, DISABLED_Constructor) {
     // vector<double> ref = {
     //         0.00,   0.00,   16.00,  0.00,   32.00,  0.00,   48.00,  0.00,
@@ -150,9 +147,6 @@ TEST(ImageWarpingField, DISABLED_InitializeWarpingFields) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ImageWarpingField, QueryFlow) {
     // vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
     //                  22,  38,  41,  42,  47,  55,  58,  60,  72,  75,
@@ -197,9 +191,6 @@ TEST(ImageWarpingField, QueryFlow) {
     //     unit_test::ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ImageWarpingField, GetImageWarpingField) {
     // vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
     //                  22,  38,  41,  42,  47,  55,  58,  60,  72,  75,

@@ -35,9 +35,6 @@ using namespace std;
 using namespace unit_test;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, Constructor) {
     geometry::Image image;
     geometry::Image color;
@@ -72,14 +69,8 @@ TEST(RGBDImage, Constructor) {
     ExpectEQ(depth->data_, rgbd_image.depth_.data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, CreateFromColorAndDepth) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
@@ -134,9 +125,6 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, CreateFromRedwoodFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
@@ -191,9 +179,6 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, CreateFromTUMFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
@@ -247,9 +232,6 @@ TEST(RGBDImage, CreateFromTUMFormat) {
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, CreateFromSUNFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
@@ -303,9 +285,6 @@ TEST(RGBDImage, CreateFromSUNFormat) {
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, CreateFromNYUFormat) {
     vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
@@ -359,9 +338,6 @@ TEST(RGBDImage, CreateFromNYUFormat) {
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, FilterPyramid) {
     vector<vector<uint8_t>> ref_color = {
             {49,  63,  46,  63,  234, 198, 45,  63,  152, 189, 39,  63,  151,
@@ -425,9 +401,6 @@ TEST(RGBDImage, FilterPyramid) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(RGBDImage, CreatePyramid) {
     vector<vector<uint8_t>> ref_color = {
             {216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,

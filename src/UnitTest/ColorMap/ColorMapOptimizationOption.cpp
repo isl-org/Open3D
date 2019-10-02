@@ -35,9 +35,6 @@ useful again after a decision has been made about the way to make these
 subcomponents visible to UnitTest.
 */
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimizationOption, DISABLED_Constructor) {
     // open3d::ColorMapOptimizationOption option;
 

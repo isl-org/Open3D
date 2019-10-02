@@ -26,49 +26,28 @@
 
 #include "TestUtility/UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_Check) { unit_test::NotImplemented(); }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal) {
     unit_test::NotImplemented();
 }

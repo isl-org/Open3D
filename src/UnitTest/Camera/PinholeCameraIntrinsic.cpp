@@ -34,9 +34,6 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Default) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -47,9 +44,6 @@ TEST(PinholeCameraIntrinsic, Constructor_Default) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault) {
     camera::PinholeCameraIntrinsic intrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
@@ -63,9 +57,6 @@ TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
     camera::PinholeCameraIntrinsic intrinsic(
             camera::PinholeCameraIntrinsicParameters::
@@ -80,9 +71,6 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault) {
     camera::PinholeCameraIntrinsic intrinsic(
             camera::PinholeCameraIntrinsicParameters::
@@ -98,9 +86,6 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Init) {
     int width = 640;
     int height = 480;
@@ -122,16 +107,10 @@ TEST(PinholeCameraIntrinsic, Constructor_Init) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -160,9 +139,6 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetFocalLength) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -186,9 +162,6 @@ TEST(PinholeCameraIntrinsic, GetFocalLength) {
     EXPECT_NEAR(fy, output.second, THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -212,9 +185,6 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
     EXPECT_NEAR(cy, output.second, THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetSkew) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -237,9 +207,6 @@ TEST(PinholeCameraIntrinsic, GetSkew) {
     EXPECT_NEAR(0.0, output, THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, IsValid) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -259,9 +226,6 @@ TEST(PinholeCameraIntrinsic, IsValid) {
     EXPECT_TRUE(intrinsic.IsValid());
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
     camera::PinholeCameraIntrinsic src;
     camera::PinholeCameraIntrinsic dst;

@@ -27,7 +27,4 @@
 #include "Open3D/Geometry/PointCloud.h"
 #include "TestUtility/UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(AccumulatedPoint, DISABLED_Default) { unit_test::NotImplemented(); }
