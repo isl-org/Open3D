@@ -38,7 +38,7 @@ using namespace open3d;
 
 TEST(Tensor, CPU) {
     Shape shape{2, 3};
-    Dtype dtype = Dtype::float32;
+    Dtype dtype = Dtype::Float32;
     Device device("CPU:0");
     Tensor t(shape, dtype, device);
 
@@ -49,7 +49,7 @@ TEST(Tensor, CPU) {
 
 TEST(Tensor, GPU) {
     Shape shape{2, 3};
-    Dtype dtype = Dtype::float32;
+    Dtype dtype = Dtype::Float32;
     Device device("GPU:0");
     Tensor t(shape, dtype, device);
 
@@ -60,18 +60,18 @@ TEST(Tensor, GPU) {
 
 TEST(Tensor, WithInitValue) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
-    Tensor t(vals, {2, 3}, Dtype::float32, Device("CPU:0"));
+    Tensor t(vals, {2, 3}, Dtype::Float32, Device("CPU:0"));
 }
 
 TEST(Tensor, WithInitValueTypeMismatch) {
     std::vector<int> vals{0, 1, 2, 3, 4, 5};
-    EXPECT_THROW(Tensor(vals, {2, 3}, Dtype::float32, Device("CPU:0")),
+    EXPECT_THROW(Tensor(vals, {2, 3}, Dtype::Float32, Device("CPU:0")),
                  std::runtime_error);
 }
 
 TEST(Tensor, WithInitValueSizeMismatch) {
     std::vector<float> vals{0, 1, 2, 3, 4};
-    EXPECT_THROW(Tensor(vals, {2, 3}, Dtype::float32, Device("CPU:0")),
+    EXPECT_THROW(Tensor(vals, {2, 3}, Dtype::Float32, Device("CPU:0")),
                  std::runtime_error);
 }
 
@@ -79,7 +79,7 @@ TEST(Tensor, CopyTo) {
     Device src_device("CPU:0");
     Device dst_device("GPU:0");
     Shape shape{2, 3};
-    Dtype dtype(Dtype::float32);
+    Dtype dtype(Dtype::Float32);
 
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     Tensor src_t(vals, shape, dtype, src_device);

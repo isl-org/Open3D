@@ -38,12 +38,12 @@ static_assert(sizeof(double) == 8,
 namespace open3d {
 
 enum class Dtype {
-    undefined,
-    float32,
-    float64,
-    int32,
-    int64,
-    uint8,
+    Undefined,
+    Float32,
+    Float64,
+    Int32,
+    Int64,
+    Uint8,
 };
 
 class DtypeUtil {
@@ -51,19 +51,19 @@ public:
     static size_t ByteSize(const Dtype &dtype) {
         size_t byte_size = 0;
         switch (dtype) {
-            case Dtype::float32:
+            case Dtype::Float32:
                 byte_size = 4;
                 break;
-            case Dtype::float64:
+            case Dtype::Float64:
                 byte_size = 8;
                 break;
-            case Dtype::int32:
+            case Dtype::Int32:
                 byte_size = 4;
                 break;
-            case Dtype::int64:
+            case Dtype::Int64:
                 byte_size = 8;
                 break;
-            case Dtype::uint8:
+            case Dtype::Uint8:
                 byte_size = 1;
                 break;
             default:
@@ -75,26 +75,26 @@ public:
     template <typename T>
     static inline Dtype FromType() {
         utility::LogFatal("Unsupported data type\n");
-        return Dtype::undefined;
+        return Dtype::Undefined;
     }
 
     static std::string ToString(const Dtype &dtype) {
         std::string str = "";
         switch (dtype) {
-            case Dtype::float32:
-                str = "float32";
+            case Dtype::Float32:
+                str = "Float32";
                 break;
-            case Dtype::float64:
-                str = "float64";
+            case Dtype::Float64:
+                str = "Float64";
                 break;
-            case Dtype::int32:
-                str = "int32";
+            case Dtype::Int32:
+                str = "Int32";
                 break;
-            case Dtype::int64:
-                str = "int64";
+            case Dtype::Int64:
+                str = "Int64";
                 break;
-            case Dtype::uint8:
-                str = "uint8";
+            case Dtype::Uint8:
+                str = "Uint8";
                 break;
             default:
                 utility::LogFatal("Unsupported data type\n");
@@ -105,27 +105,27 @@ public:
 
 template <>
 inline Dtype DtypeUtil::FromType<float>() {
-    return Dtype::float32;
+    return Dtype::Float32;
 }
 
 template <>
 inline Dtype DtypeUtil::FromType<double>() {
-    return Dtype::float64;
+    return Dtype::Float64;
 }
 
 template <>
 inline Dtype DtypeUtil::FromType<int32_t>() {
-    return Dtype::int32;
+    return Dtype::Int32;
 }
 
 template <>
 inline Dtype DtypeUtil::FromType<int64_t>() {
-    return Dtype::int64;
+    return Dtype::Int64;
 }
 
 template <>
 inline Dtype DtypeUtil::FromType<uint8_t>() {
-    return Dtype::uint8;
+    return Dtype::Uint8;
 }
 
 }  // namespace open3d
