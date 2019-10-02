@@ -30,9 +30,6 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const int& width,
         const int& height,

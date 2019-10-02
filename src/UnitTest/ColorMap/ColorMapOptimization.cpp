@@ -41,9 +41,6 @@ useful again after a decision has been made about the way to make these
 subcomponents visible to UnitTest.
 */
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 vector<geometry::Image> GenerateImages(const int& width,
                                        const int& height,
                                        const int& num_of_channels,
@@ -67,9 +64,6 @@ vector<geometry::Image> GenerateImages(const int& width,
     return images;
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 vector<shared_ptr<geometry::Image>> GenerateSharedImages(
         const int& width,
         const int& height,
@@ -86,9 +80,6 @@ vector<shared_ptr<geometry::Image>> GenerateSharedImages(
     return output;
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 vector<geometry::RGBDImage> GenerateRGBDImages(const int& width,
                                                const int& height,
                                                const size_t& size) {
@@ -113,9 +104,6 @@ vector<geometry::RGBDImage> GenerateRGBDImages(const int& width,
     return rgbdImages;
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 camera::PinholeCameraTrajectory GenerateCamera(const int& width,
                                                const int& height,
                                                const Eigen::Vector3d& pose) {
@@ -141,9 +129,6 @@ camera::PinholeCameraTrajectory GenerateCamera(const int& width,
     return camera;
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth) {
     vector<Eigen::Vector3d> ref_points = {
             {1.072613, 0.611307, 42.921570}, {0.897783, 0.859754, 43.784313},
@@ -181,9 +166,6 @@ TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
     vector<vector<int>> ref_second = {
             {1,   421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432,
@@ -246,9 +228,6 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
         EXPECT_EQ(ref_second[0][i], second[0][i]);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_MakeWarpingFields) {
     // int ref_anchor_w = 4;
     // int ref_anchor_h = 4;
@@ -290,9 +269,6 @@ TEST(ColorMapOptimization, DISABLED_MakeWarpingFields) {
     // }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
     vector<bool> ref_bool = {0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0,
                              0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0};
@@ -375,9 +351,6 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     vector<bool> ref_bool = {0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0,
                              0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0};
@@ -465,9 +438,6 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
     vector<double> ref_proxy_intensity = {
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
@@ -536,9 +506,6 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
         EXPECT_NEAR(ref_proxy_intensity[i], proxy_intensity[i], THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     vector<double> ref_proxy_intensity = {
             0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,
@@ -617,9 +584,6 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     for (size_t i = 0; i < proxy_intensity.size(); i++)
         EXPECT_NEAR(ref_proxy_intensity[i], proxy_intensity[i], THRESHOLD_1E_6);
 }
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     vector<double> ref_proxy_intensity = {
             0.000000,  0.000000,  0.000000,  10.319723, 10.134256, 0.000000,
@@ -697,9 +661,6 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
         EXPECT_NEAR(ref_proxy_intensity[i], proxy_intensity[i], THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     vector<double> ref_proxy_intensity = {
             0.000000, 0.000000,  0.000000,  10.120416, 10.192388, 0.000000,
@@ -762,9 +723,6 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
         EXPECT_NEAR(ref_proxy_intensity[i], proxy_intensity[i], THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     vector<Eigen::Vector3d> ref_vertex_colors = {
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
@@ -819,9 +777,6 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
         ExpectEQ(ref_vertex_colors[i], mesh->vertex_colors_[i]);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     vector<Eigen::Vector3d> ref_vertex_colors = {
             {0.000000, 0.000000, 0.000000}, {0.000000, 0.000000, 0.000000},
@@ -887,9 +842,6 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
         ExpectEQ(ref_vertex_colors[i], mesh->vertex_colors_[i]);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
     vector<vector<double>> ref_images0_data = {
             {76,  133, 33,  63,  159, 183, 31,  63,  11,  93,  9,   63,  164,
@@ -981,9 +933,6 @@ TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_MakeDepthMasks) {
     vector<vector<double>> ref_images_data = {
             {0,   0,   255, 255, 255, 255, 255, 255, 255, 0,   0,   0,   255,
@@ -1024,9 +973,6 @@ TEST(ColorMapOptimization, DISABLED_MakeDepthMasks) {
     // }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     vector<Eigen::Vector3d> ref_vertices = {{0.000000, 0.000000, 10.000000},
                                             {0.000000, 0.000000, -10.000000},

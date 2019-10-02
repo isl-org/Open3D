@@ -203,9 +203,6 @@ TEST(Image, DISABLED_MemberData) {
               int(image.data_.size()));
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
@@ -444,9 +441,6 @@ TEST(Image, CreateFloatImage_3_4_Equal) {
     TEST_CreateFloatImage(3, 4, ref, ConversionType::Equal);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, PointerAt) {
     geometry::Image image;
 
@@ -470,9 +464,6 @@ TEST(Image, PointerAt) {
     EXPECT_NEAR(3.0f, *image.PointerAt<float>(1, 1), THRESHOLD_1E_6);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, ConvertDepthToFloatImage) {
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {
@@ -508,9 +499,6 @@ TEST(Image, ConvertDepthToFloatImage) {
     ExpectEQ(ref, float_image->data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, TransposeUint8) {
     // reference data used to validate the creation of the float image
     // clang-format off
@@ -691,9 +679,6 @@ void TEST_Filter(const vector<uint8_t>& ref,
     ExpectEQ(ref, output->data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Filter_Gaussian3) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -709,9 +694,6 @@ TEST(Image, Filter_Gaussian3) {
     TEST_Filter(ref, FilterType::Gaussian3);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Filter_Gaussian5) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -727,9 +709,6 @@ TEST(Image, Filter_Gaussian5) {
     TEST_Filter(ref, FilterType::Gaussian5);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Filter_Gaussian7) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -745,9 +724,6 @@ TEST(Image, Filter_Gaussian7) {
     TEST_Filter(ref, FilterType::Gaussian7);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Filter_Sobel3Dx) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -763,9 +739,6 @@ TEST(Image, Filter_Sobel3Dx) {
     TEST_Filter(ref, FilterType::Sobel3Dx);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Filter_Sobel3Dy) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -781,9 +754,6 @@ TEST(Image, Filter_Sobel3Dy) {
     TEST_Filter(ref, FilterType::Sobel3Dy);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, FilterHorizontal) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -822,9 +792,6 @@ TEST(Image, FilterHorizontal) {
     ExpectEQ(ref, output->data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Downsample) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {172, 41, 59,  204, 93, 130, 242, 232,
@@ -854,9 +821,6 @@ TEST(Image, Downsample) {
     ExpectEQ(ref, output->data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, Dilate) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -893,9 +857,6 @@ TEST(Image, Dilate) {
     ExpectEQ(ref, output->data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, LinearTransform) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -932,9 +893,6 @@ TEST(Image, LinearTransform) {
     ExpectEQ(ref, output->data_);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, ClipIntensity) {
     // reference data used to validate the filtering of an image
     vector<uint8_t> ref = {
@@ -1017,9 +975,6 @@ TEST(Image, CreateImageFromFloatImage_16bit) {
     TEST_CreateImageFromFloatImage<uint16_t>();
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, FilterPyramid) {
     // reference data used to validate the filtering of an image
     vector<vector<uint8_t>> ref = {
@@ -1074,9 +1029,6 @@ TEST(Image, FilterPyramid) {
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(Image, CreatePyramid) {
     // reference data used to validate the filtering of an image
     vector<vector<uint8_t>> ref = {

@@ -33,9 +33,6 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(IntersectionTest, PointsCoplanar) {
     Eigen::Vector3d p0(0, 0, 0);
     Eigen::Vector3d p1(1, 0, 0);
@@ -47,9 +44,6 @@ TEST(IntersectionTest, PointsCoplanar) {
     EXPECT_TRUE(geometry::IntersectionTest::PointsCoplanar(p0, p1, p2, p2));
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(IntersectionTest, LinesMinimumDistance) {
     Eigen::Vector3d p0(0, 0, 0);
     Eigen::Vector3d p1(1, 0, 0);
@@ -68,9 +62,6 @@ TEST(IntersectionTest, LinesMinimumDistance) {
               0.);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(IntersectionTest, LineSegmentsMinimumDistance) {
     Eigen::Vector3d p0(0, 0, 0);
     Eigen::Vector3d p1(1, 0, 0);

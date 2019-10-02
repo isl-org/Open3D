@@ -26,9 +26,6 @@
 
 #include "TestUtility/UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraParameters, DISABLED_ConvertToFromJsonValue) {
     unit_test::NotImplemented();
 }
