@@ -344,6 +344,8 @@ RegistrationResult FastGlobalRegistration(
         const FastGlobalRegistrationOption& option /* =
         FastGlobalRegistrationOption()*/) {
     std::vector<geometry::PointCloud> point_cloud_vec;
+    geometry::PointCloud source_orig = source;
+    geometry::PointCloud target_orig = target;
     point_cloud_vec.push_back(source);
     point_cloud_vec.push_back(target);
 
@@ -363,11 +365,11 @@ RegistrationResult FastGlobalRegistration(
 
     // as the original code T * point_cloud_vec[1] is aligned with
     // point_cloud_vec[0] matrix inverse is applied here.
-    // clang-format off
-    return RegistrationResult(GetTransformationOriginalScale(transformation,
-                                                             pcd_mean_vec,
-                                                             scale_global).inverse());
-    // clang-format on
+    return EvaluateRegistration(
+            source_orig, target_orig, option.maximum_correspondence_distance_,
+            GetTransformationOriginalScale(transformation, pcd_mean_vec,
+                                           scale_global)
+                    .inverse());
 }
 
 }  // namespace registration

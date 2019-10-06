@@ -34,8 +34,8 @@ if __name__ == "__main__":
     result_ransac = execute_global_registration(source_down, target_down,
                                                 source_fpfh, target_fpfh,
                                                 voxel_size)
-    print(result_ransac)
     print("Global registration took %.3f sec.\n" % (time.time() - start))
+    print(result_ransac)
     draw_registration_result(source_down, target_down,
                              result_ransac.transformation)
 
@@ -44,5 +44,6 @@ if __name__ == "__main__":
                                                    source_fpfh, target_fpfh,
                                                    voxel_size)
     print("Fast global registration took %.3f sec.\n" % (time.time() - start))
+    print(result_fast)
     draw_registration_result(source_down, target_down,
                              result_fast.transformation)
