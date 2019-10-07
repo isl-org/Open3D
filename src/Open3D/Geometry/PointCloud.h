@@ -64,9 +64,7 @@ public:
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
     PointCloud &Scale(const double scale, bool center = true) override;
-    PointCloud &Rotate(const Eigen::Vector3d &rotation,
-                       bool center = true,
-                       RotationType type = RotationType::XYZ) override;
+    PointCloud &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
 
     PointCloud &operator+=(const PointCloud &cloud);
     PointCloud operator+(const PointCloud &cloud) const;
@@ -124,11 +122,15 @@ public:
     /// uniformly \param every_k_points indicates the sample rate.
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
-    /// Function to crop \param input pointcloud into output pointcloud
-    /// All points with coordinates less than \param min_bound or larger than
-    /// \param max_bound are clipped.
-    std::shared_ptr<PointCloud> Crop(const Eigen::Vector3d &min_bound,
-                                     const Eigen::Vector3d &max_bound) const;
+    /// Function to crop pointcloud into output pointcloud
+    /// All points with coordinates outside the bounding box \param bbox are
+    /// clipped.
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox) const;
+
+    /// Function to crop pointcloud into output pointcloud
+    /// All points with coordinates outside the bounding box \param bbox are
+    /// clipped.
+    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
 
     /// Function to remove points that have less than \param nb_points in a
     /// sphere of radius \param search_radius

@@ -73,17 +73,6 @@ void pybind_geometry_classes(py::module &m) {
             .value("TetraMesh", geometry::Geometry::GeometryType::TetraMesh)
             .export_values();
 
-    // open3d.geometry.Geometry3D
-    py::enum_<geometry::Geometry3D::RotationType>(m, "RotationType")
-            .value("XYZ", geometry::Geometry3D::RotationType::XYZ)
-            .value("YZX", geometry::Geometry3D::RotationType::YZX)
-            .value("ZXY", geometry::Geometry3D::RotationType::ZXY)
-            .value("XZY", geometry::Geometry3D::RotationType::XZY)
-            .value("ZYX", geometry::Geometry3D::RotationType::ZYX)
-            .value("YXZ", geometry::Geometry3D::RotationType::YXZ)
-            .value("AxisAngle", geometry::Geometry3D::RotationType::AxisAngle)
-            .export_values();
-
     py::class_<geometry::Geometry3D, PyGeometry3D<geometry::Geometry3D>,
                std::shared_ptr<geometry::Geometry3D>, geometry::Geometry>
             geometry3d(m, "Geometry3D",
@@ -112,8 +101,31 @@ void pybind_geometry_classes(py::module &m) {
                  "center"_a = true)
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
-                 "rotation"_a, "center"_a = true,
-                 "type"_a = geometry::Geometry3D::RotationType::XYZ);
+                 "R"_a, "center"_a = true)
+            .def_static("get_rotation_matrix_from_xyz",
+                        &geometry::Geometry3D::GetRotationMatrixFromXYZ,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_yzx",
+                        &geometry::Geometry3D::GetRotationMatrixFromYZX,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_zxy",
+                        &geometry::Geometry3D::GetRotationMatrixFromZXY,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_xzy",
+                        &geometry::Geometry3D::GetRotationMatrixFromXZY,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_zyx",
+                        &geometry::Geometry3D::GetRotationMatrixFromZYX,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_yxz",
+                        &geometry::Geometry3D::GetRotationMatrixFromYXZ,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_axis_angle",
+                        &geometry::Geometry3D::GetRotationMatrixFromAxisAngle,
+                        "rotation"_a)
+            .def_static("get_rotation_matrix_from_quaternion",
+                        &geometry::Geometry3D::GetRotationMatrixFromQuaternion,
+                        "rotation"_a);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_center");
@@ -137,18 +149,11 @@ void pybind_geometry_classes(py::module &m) {
               "of the geometry"},
              {"center",
               "If true, then the scale is applied to the centered geometry"}});
-    docstring::ClassMethodDocInject(
-            m, "Geometry3D", "rotate",
-            {{"rotation",
-              "A 3D vector that either defines the three angles for "
-              "Euler rotation, or in the axis-angle representation "
-              "the normalized vector defines the axis of rotation and "
-              "the norm the angle around this axis."},
-             {"center",
-              "If true, then the rotation is applied to the centered geometry"},
-             {"type",
-              "Type of rotation, i.e., an Euler format, or "
-              "axis-angle."}});
+    docstring::ClassMethodDocInject(m, "Geometry3D", "rotate",
+                                    {{"R", "The rotation matrix"},
+                                     {"center",
+                                      "If true, then the rotation is applied "
+                                      "to the centered geometry"}});
 
     // open3d.geometry.Geometry2D
     py::class_<geometry::Geometry2D, PyGeometry2D<geometry::Geometry2D>,

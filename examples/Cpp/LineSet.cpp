@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
         if ((point_pair.first - point_pair.second).norm() <
-            0.05 * bounding_box.GetMaxExtend()) {
+            0.05 * bounding_box.GetMaxExtent()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);

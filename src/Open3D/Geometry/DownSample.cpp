@@ -27,6 +27,7 @@
 #include <numeric>
 #include <unordered_map>
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
@@ -380,24 +381,26 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
 }
 
 std::shared_ptr<PointCloud> PointCloud::Crop(
-        const Eigen::Vector3d &min_bound,
-        const Eigen::Vector3d &max_bound) const {
-    if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
-        min_bound(2) > max_bound(2)) {
+        const AxisAlignedBoundingBox &bbox) const {
+    if (bbox.IsEmpty()) {
         utility::LogWarning(
-                "[CropPointCloud] Illegal boundary clipped all points.\n");
+                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
+                "size, or has wrong "
+                "bounds.\n");
         return std::make_shared<PointCloud>();
     }
-    std::vector<size_t> indices;
-    for (size_t i = 0; i < points_.size(); i++) {
-        const auto &point = points_[i];
-        if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
-            point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
-            point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
-            indices.push_back(i);
-        }
+    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
+}
+std::shared_ptr<PointCloud> PointCloud::Crop(
+        const OrientedBoundingBox &bbox) const {
+    if (bbox.IsEmpty()) {
+        utility::LogWarning(
+                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
+                "size, or has wrong "
+                "bounds.\n");
+        return std::make_shared<PointCloud>();
     }
-    return SelectDownSample(indices);
+    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
@@ -493,24 +496,28 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
-        const Eigen::Vector3d &min_bound,
-        const Eigen::Vector3d &max_bound) const {
-    if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
-        min_bound(2) > max_bound(2)) {
+        const AxisAlignedBoundingBox &bbox) const {
+    if (bbox.IsEmpty()) {
         utility::LogWarning(
-                "[CropTriangleMesh] Illegal boundary clipped all points.\n");
+                "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
+                "size, or has wrong "
+                "bounds.\n");
         return std::make_shared<TriangleMesh>();
     }
-    std::vector<size_t> indices;
-    for (size_t i = 0; i < vertices_.size(); i++) {
-        const auto &point = vertices_[i];
-        if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
-            point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
-            point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
-            indices.push_back(i);
-        }
-    }
-    return SelectDownSample(indices);
+    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(vertices_));
 }
+
+std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
+        const OrientedBoundingBox &bbox) const {
+    if (bbox.IsEmpty()) {
+        utility::LogWarning(
+                "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
+                "size, or has wrong "
+                "bounds.\n");
+        return std::make_shared<TriangleMesh>();
+    }
+    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(vertices_));
+}
+
 }  // namespace geometry
 }  // namespace open3d

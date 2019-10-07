@@ -76,9 +76,8 @@ public:
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,
                                 bool relative = true) override;
     virtual MeshBase &Scale(const double scale, bool center = true) override;
-    virtual MeshBase &Rotate(const Eigen::Vector3d &rotation,
-                             bool center = true,
-                             RotationType type = RotationType::XYZ) override;
+    virtual MeshBase &Rotate(const Eigen::Matrix3d &R,
+                             bool center = true) override;
 
     MeshBase &operator+=(const MeshBase &mesh);
     MeshBase operator+(const MeshBase &mesh) const;

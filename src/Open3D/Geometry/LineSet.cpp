@@ -74,10 +74,8 @@ LineSet &LineSet::Scale(const double scale, bool center) {
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Vector3d &rotation,
-                         bool center,
-                         RotationType type) {
-    RotatePoints(rotation, points_, center, type);
+LineSet &LineSet::Rotate(const Eigen::Matrix3d &R, bool center) {
+    RotatePoints(R, points_, center);
     return *this;
 }
 

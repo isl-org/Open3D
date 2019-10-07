@@ -90,9 +90,20 @@ void pybind_pointcloud(py::module &m) {
                  "points with "
                  "the 0-th point always chosen, not at random.",
                  "every_k_points"_a)
-            .def("crop", &geometry::PointCloud::Crop,
+            .def("crop",
+                 (std::shared_ptr<geometry::PointCloud>(
+                         geometry::PointCloud::*)(
+                         const geometry::AxisAlignedBoundingBox &) const) &
+                         geometry::PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
-                 "min_bound"_a, "max_bound"_a)
+                 "bounding_box"_a)
+            .def("crop",
+                 (std::shared_ptr<geometry::PointCloud>(
+                         geometry::PointCloud::*)(
+                         const geometry::OrientedBoundingBox &) const) &
+                         geometry::PointCloud::Crop,
+                 "Function to crop input pointcloud into output pointcloud",
+                 "bounding_box"_a)
             .def("remove_none_finite_points",
                  &geometry::PointCloud::RemoveNoneFinitePoints,
                  "Function to remove none-finite points from the PointCloud",
@@ -225,8 +236,7 @@ void pybind_pointcloud(py::module &m) {
               "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
-            {{"min_bound", "Minimum bound for point coordinate"},
-             {"max_bound", "Maximum bound for point coordinate"}});
+            {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_none_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},

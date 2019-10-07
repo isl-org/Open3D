@@ -40,10 +40,16 @@ public:
     OrientedBoundingBox()
         : Geometry3D(Geometry::GeometryType::OrientedBoundingBox),
           center_(0, 0, 0),
-          x_axis_(0, 0, 0),
-          y_axis_(0, 0, 0),
-          z_axis_(0, 0, 0),
+          R_(Eigen::Matrix3d::Identity()),
+          extent_(0, 0, 0),
           color_(0, 0, 0) {}
+    OrientedBoundingBox(const Eigen::Vector3d& center,
+                        const Eigen::Matrix3d& R,
+                        const Eigen::Vector3d& extent)
+        : Geometry3D(Geometry::GeometryType::OrientedBoundingBox),
+          center_(center),
+          R_(R),
+          extent_(extent) {}
     ~OrientedBoundingBox() override {}
 
 public:
@@ -60,13 +66,15 @@ public:
                                            bool relative = true) override;
     virtual OrientedBoundingBox& Scale(const double scale,
                                        bool center = true) override;
-    virtual OrientedBoundingBox& Rotate(
-            const Eigen::Vector3d& rotation,
-            bool center = true,
-            RotationType type = RotationType::XYZ) override;
+    virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
+                                        bool center = true) override;
 
     double Volume() const;
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
+
+    /// Return indices to points that are within the bounding box.
+    std::vector<size_t> GetPointIndicesWithinBoundingBox(
+            const std::vector<Eigen::Vector3d>& points) const;
 
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox& aabox);
@@ -81,9 +89,8 @@ public:
 
 public:
     Eigen::Vector3d center_;
-    Eigen::Vector3d x_axis_;
-    Eigen::Vector3d y_axis_;
-    Eigen::Vector3d z_axis_;
+    Eigen::Matrix3d R_;
+    Eigen::Vector3d extent_;
     Eigen::Vector3d color_;
 };
 
@@ -93,6 +100,12 @@ public:
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
           max_bound_(0, 0, 0),
+          color_(0, 0, 0) {}
+    AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
+                           const Eigen::Vector3d& max_bound)
+        : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
+          min_bound_(min_bound),
+          max_bound_(max_bound),
           color_(0, 0, 0) {}
     ~AxisAlignedBoundingBox() override {}
 
@@ -110,21 +123,16 @@ public:
             const Eigen::Vector3d& translation, bool relative = true) override;
     virtual AxisAlignedBoundingBox& Scale(const double scale,
                                           bool center = true) override;
-    virtual AxisAlignedBoundingBox& Rotate(
-            const Eigen::Vector3d& rotation,
-            bool center = true,
-            RotationType type = RotationType::XYZ) override;
+    virtual AxisAlignedBoundingBox& Rotate(const Eigen::Matrix3d& R,
+                                           bool center = true) override;
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 
-    double Volume() const;
-    std::vector<Eigen::Vector3d> GetBoxPoints() const;
+    Eigen::Vector3d GetExtent() const { return (max_bound_ - min_bound_); }
 
-    Eigen::Vector3d GetExtend() const { return (max_bound_ - min_bound_); }
+    Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
-    Eigen::Vector3d GetHalfExtend() const { return GetExtend() * 0.5; }
-
-    double GetMaxExtend() const { return (max_bound_ - min_bound_).maxCoeff(); }
+    double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
     double GetXPercentage(double x) const {
         return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
@@ -137,6 +145,13 @@ public:
     double GetZPercentage(double z) const {
         return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
     }
+
+    double Volume() const;
+    std::vector<Eigen::Vector3d> GetBoxPoints() const;
+
+    /// Return indices to points that are within the bounding box.
+    std::vector<size_t> GetPointIndicesWithinBoundingBox(
+            const std::vector<Eigen::Vector3d>& points) const;
 
     std::string GetPrintInfo() const;
 

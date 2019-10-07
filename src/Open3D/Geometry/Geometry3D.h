@@ -40,8 +40,6 @@ class OrientedBoundingBox;
 
 class Geometry3D : public Geometry {
 public:
-    enum class RotationType { XYZ, YZX, ZXY, XZY, ZYX, YXZ, AxisAngle };
-
     ~Geometry3D() override {}
 
 protected:
@@ -59,9 +57,25 @@ public:
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation,
                                   bool relative = true) = 0;
     virtual Geometry3D& Scale(const double scale, bool center = true) = 0;
-    virtual Geometry3D& Rotate(const Eigen::Vector3d& rotation,
-                               bool center = true,
-                               RotationType type = RotationType::XYZ) = 0;
+    virtual Geometry3D& Rotate(const Eigen::Matrix3d& R,
+                               bool center = true) = 0;
+
+    static Eigen::Matrix3d GetRotationMatrixFromXYZ(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromYZX(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromZXY(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromXZY(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromZYX(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromYXZ(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromAxisAngle(
+            const Eigen::Vector3d& rotation);
+    static Eigen::Matrix3d GetRotationMatrixFromQuaternion(
+            const Eigen::Vector4d& rotation);
 
 protected:
     Eigen::Vector3d ComputeMinBound(
@@ -85,18 +99,12 @@ protected:
     void ScalePoints(const double scale,
                      std::vector<Eigen::Vector3d>& points,
                      bool center) const;
-    void RotatePoints(const Eigen::Vector3d& rotation,
+    void RotatePoints(const Eigen::Matrix3d& R,
                       std::vector<Eigen::Vector3d>& points,
-                      bool center,
-                      RotationType type) const;
-    void RotateNormals(const Eigen::Vector3d& rotation,
+                      bool center) const;
+    void RotateNormals(const Eigen::Matrix3d& R,
                        std::vector<Eigen::Vector3d>& normals,
-                       bool center,
-                       RotationType type) const;
-
-    Eigen::Matrix3d GetRotationMatrix(
-            const Eigen::Vector3d& rotation,
-            RotationType type = RotationType::XYZ) const;
+                       bool center) const;
 };
 
 }  // namespace geometry

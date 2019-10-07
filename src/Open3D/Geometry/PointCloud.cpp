@@ -82,11 +82,9 @@ PointCloud &PointCloud::Scale(const double scale, bool center) {
     return *this;
 }
 
-PointCloud &PointCloud::Rotate(const Eigen::Vector3d &rotation,
-                               bool center,
-                               RotationType type) {
-    RotatePoints(rotation, points_, center, type);
-    RotateNormals(rotation, normals_, center, type);
+PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R, bool center) {
+    RotatePoints(R, points_, center);
+    RotateNormals(R, normals_, center);
     return *this;
 }
 

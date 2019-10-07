@@ -96,7 +96,8 @@ void convert(int argc,
                 argc, argv, "--clip_y_max", std::numeric_limits<double>::max());
         max_bound(2) = utility::GetProgramOptionAsDouble(
                 argc, argv, "--clip_z_max", std::numeric_limits<double>::max());
-        pointcloud_ptr = pointcloud_ptr->Crop(min_bound, max_bound);
+        pointcloud_ptr = pointcloud_ptr->Crop(
+                geometry::AxisAlignedBoundingBox(min_bound, max_bound));
         processed = true;
     }
 

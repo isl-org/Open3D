@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/RGBDImage.h"
@@ -580,7 +581,8 @@ TEST(PointCloud, CropPointCloud) {
 
     Vector3d minBound(200.0, 200.0, 200.0);
     Vector3d maxBound(800.0, 800.0, 800.0);
-    auto output_pc = pc.Crop(minBound, maxBound);
+    auto output_pc =
+            pc.Crop(geometry::AxisAlignedBoundingBox(minBound, maxBound));
 
     ExpectLE(minBound, output_pc->points_);
     ExpectGE(maxBound, output_pc->points_);
