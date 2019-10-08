@@ -58,11 +58,9 @@ TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
     return *this;
 }
 
-TriangleMesh &TriangleMesh::Rotate(const Eigen::Vector3d &rotation,
-                                   bool center,
-                                   RotationType type) {
-    MeshBase::Rotate(rotation, center, type);
-    RotateNormals(rotation, triangle_normals_, center, type);
+TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R, bool center) {
+    MeshBase::Rotate(R, center);
+    RotateNormals(R, triangle_normals_, center);
     return *this;
 }
 

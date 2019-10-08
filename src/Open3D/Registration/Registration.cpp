@@ -113,6 +113,7 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
         if (dis2 < max_dis2) {
             good++;
             error2 += dis2;
+            result.correspondence_set_.push_back(c);
         }
     }
     if (good == 0) {

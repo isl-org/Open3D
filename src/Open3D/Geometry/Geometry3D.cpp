@@ -133,62 +133,80 @@ void Geometry3D::ScalePoints(const double scale,
     }
 }
 
-void Geometry3D::RotatePoints(const Eigen::Vector3d& rotation,
+void Geometry3D::RotatePoints(const Eigen::Matrix3d& R,
                               std::vector<Eigen::Vector3d>& points,
-                              bool center,
-                              RotationType type) const {
+                              bool center) const {
     Eigen::Vector3d points_center(0, 0, 0);
     if (center && !points.empty()) {
         points_center = ComputeCenter(points);
     }
-    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
     for (auto& point : points) {
         point = R * (point - points_center) + points_center;
     }
 }
 
-void Geometry3D::RotateNormals(const Eigen::Vector3d& rotation,
+void Geometry3D::RotateNormals(const Eigen::Matrix3d& R,
                                std::vector<Eigen::Vector3d>& normals,
-                               bool center,
-                               RotationType type) const {
-    const Eigen::Matrix3d R = GetRotationMatrix(rotation, type);
+                               bool center) const {
     for (auto& normal : normals) {
         normal = R * normal;
     }
 }
 
-Eigen::Matrix3d Geometry3D::GetRotationMatrix(const Eigen::Vector3d& rotation,
-                                              RotationType type) const {
-    if (type == RotationType::XYZ) {
-        return open3d::utility::RotationMatrixX(rotation(0)) *
-               open3d::utility::RotationMatrixY(rotation(1)) *
-               open3d::utility::RotationMatrixZ(rotation(2));
-    } else if (type == RotationType::YZX) {
-        return open3d::utility::RotationMatrixY(rotation(0)) *
-               open3d::utility::RotationMatrixZ(rotation(1)) *
-               open3d::utility::RotationMatrixX(rotation(2));
-    } else if (type == RotationType::ZXY) {
-        return open3d::utility::RotationMatrixZ(rotation(0)) *
-               open3d::utility::RotationMatrixX(rotation(1)) *
-               open3d::utility::RotationMatrixY(rotation(2));
-    } else if (type == RotationType::XZY) {
-        return open3d::utility::RotationMatrixX(rotation(0)) *
-               open3d::utility::RotationMatrixZ(rotation(1)) *
-               open3d::utility::RotationMatrixY(rotation(2));
-    } else if (type == RotationType::ZYX) {
-        return open3d::utility::RotationMatrixZ(rotation(0)) *
-               open3d::utility::RotationMatrixY(rotation(1)) *
-               open3d::utility::RotationMatrixX(rotation(2));
-    } else if (type == RotationType::YXZ) {
-        return open3d::utility::RotationMatrixY(rotation(0)) *
-               open3d::utility::RotationMatrixX(rotation(1)) *
-               open3d::utility::RotationMatrixZ(rotation(2));
-    } else if (type == RotationType::AxisAngle) {
-        const double phi = rotation.norm();
-        return Eigen::AngleAxisd(phi, rotation / phi).toRotationMatrix();
-    } else {
-        return Eigen::Matrix3d::Identity();
-    }
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromXYZ(
+        const Eigen::Vector3d& rotation) {
+    return open3d::utility::RotationMatrixX(rotation(0)) *
+           open3d::utility::RotationMatrixY(rotation(1)) *
+           open3d::utility::RotationMatrixZ(rotation(2));
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromYZX(
+        const Eigen::Vector3d& rotation) {
+    return open3d::utility::RotationMatrixY(rotation(0)) *
+           open3d::utility::RotationMatrixZ(rotation(1)) *
+           open3d::utility::RotationMatrixX(rotation(2));
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromZXY(
+        const Eigen::Vector3d& rotation) {
+    return open3d::utility::RotationMatrixZ(rotation(0)) *
+           open3d::utility::RotationMatrixX(rotation(1)) *
+           open3d::utility::RotationMatrixY(rotation(2));
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromXZY(
+        const Eigen::Vector3d& rotation) {
+    return open3d::utility::RotationMatrixX(rotation(0)) *
+           open3d::utility::RotationMatrixZ(rotation(1)) *
+           open3d::utility::RotationMatrixY(rotation(2));
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromZYX(
+        const Eigen::Vector3d& rotation) {
+    return open3d::utility::RotationMatrixZ(rotation(0)) *
+           open3d::utility::RotationMatrixY(rotation(1)) *
+           open3d::utility::RotationMatrixX(rotation(2));
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromYXZ(
+        const Eigen::Vector3d& rotation) {
+    return open3d::utility::RotationMatrixY(rotation(0)) *
+           open3d::utility::RotationMatrixX(rotation(1)) *
+           open3d::utility::RotationMatrixZ(rotation(2));
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromAxisAngle(
+        const Eigen::Vector3d& rotation) {
+    const double phi = rotation.norm();
+    return Eigen::AngleAxisd(phi, rotation / phi).toRotationMatrix();
+}
+
+Eigen::Matrix3d Geometry3D::GetRotationMatrixFromQuaternion(
+        const Eigen::Vector4d& rotation) {
+    return Eigen::Quaterniond(rotation(0), rotation(1), rotation(2),
+                              rotation(3))
+            .normalized()
+            .toRotationMatrix();
 }
 
 }  // namespace geometry

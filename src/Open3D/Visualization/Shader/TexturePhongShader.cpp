@@ -169,7 +169,7 @@ void TexturePhongShader::SetLighting(const ViewControl &view,
     for (int i = 0; i < 4; i++) {
         light_position_world_data_.block<3, 1>(0, i) =
                 box.GetCenter().cast<GLfloat>() +
-                (float)box.GetMaxExtend() *
+                (float)box.GetMaxExtent() *
                         ((float)option.light_position_relative_[i](0) *
                                  view.GetRight() +
                          (float)option.light_position_relative_[i](1) *

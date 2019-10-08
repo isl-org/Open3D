@@ -125,9 +125,7 @@ VoxelGrid &VoxelGrid::Scale(const double scale, bool center) {
     return *this;
 }
 
-VoxelGrid &VoxelGrid::Rotate(const Eigen::Vector3d &rotation,
-                             bool center,
-                             RotationType type) {
+VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R, bool center) {
     throw std::runtime_error("Not implemented");
     return *this;
 }

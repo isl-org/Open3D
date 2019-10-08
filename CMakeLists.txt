@@ -227,7 +227,7 @@ include_directories(${3RDPARTY_INSTALL_PREFIX}/include)
 # libs in Open3D/build/3rdparty_install/lib.
 # This isn't required for Ubuntu/Mac since the link directory info is propagated
 # with the interface library. We still need this for Windows.
-link_directories(${CMAKE_PROJECT_NAME} ${3RDPARTY_INSTALL_PREFIX}/lib)
+link_directories(${3RDPARTY_INSTALL_PREFIX}/lib)
 
 # Handling dependencies
 add_subdirectory(3rdparty)

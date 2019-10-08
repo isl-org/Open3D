@@ -217,10 +217,20 @@ void pybind_trianglemesh(py::module &m) {
                  "``indices``: "
                  "Indices of vertices to be selected.",
                  "indices"_a)
-            .def("crop", &geometry::TriangleMesh::Crop,
-                 "Function to crop input triangle mesh into output triangle "
-                 "mesh",
-                 "min_bound"_a, "max_bound"_a)
+            .def("crop",
+                 (std::shared_ptr<geometry::TriangleMesh>(
+                         geometry::TriangleMesh::*)(
+                         const geometry::AxisAlignedBoundingBox &) const) &
+                         geometry::TriangleMesh::Crop,
+                 "Function to crop input TriangleMesh into output TriangleMesh",
+                 "bounding_box"_a)
+            .def("crop",
+                 (std::shared_ptr<geometry::TriangleMesh>(
+                         geometry::TriangleMesh::*)(
+                         const geometry::OrientedBoundingBox &) const) &
+                         geometry::TriangleMesh::Crop,
+                 "Function to crop input TriangleMesh into output TriangleMesh",
+                 "bounding_box"_a)
             .def("sample_points_uniformly",
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
@@ -469,8 +479,7 @@ void pybind_trianglemesh(py::module &m) {
             {{"indices", "Indices of vertices to be selected."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",
-            {{"min_bound", "Minimum bound for vertex coordinate."},
-             {"max_bound", "Maximum bound for vertex coordinate."}});
+            {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_uniformly",
             {{"number_of_points",

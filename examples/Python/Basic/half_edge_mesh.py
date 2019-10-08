@@ -22,7 +22,10 @@ def draw_geometries_with_back_face(geometries):
 if __name__ == "__main__":
     # Initialize a HalfEdgeTriangleMesh from TriangleMesh
     mesh = o3d.io.read_triangle_mesh("../../TestData/sphere.ply")
-    mesh = mesh.crop([-1, -1, -1], [1, 0.6, 1])
+    bbox = o3d.geometry.AxisAlignedBoundingBox()
+    bbox.min_bound = [-1, -1, -1]
+    bbox.max_bound = [1, 0.6, 1]
+    mesh = mesh.crop(bbox)
     het_mesh = o3d.geometry.HalfEdgeTriangleMesh.create_from_triangle_mesh(mesh)
     draw_geometries_with_back_face([het_mesh])
 
