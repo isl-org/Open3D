@@ -54,8 +54,8 @@ using namespace registration;
 /// See [Choi et al 2015] for more detail. Reference list in
 /// GlobalOptimization.h
 
+// clang-format off
 const std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator>
-        // clang-format off
         jacobian_operator = {
                 // for alpha
                 (Eigen::Matrix4d() << 0, 0, 0, 0,
