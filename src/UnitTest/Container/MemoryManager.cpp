@@ -24,18 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <string>
+#include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Container/Device.h"
+#include "TestUtility/UnitTest.h"
 
-#include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
+#include <vector>
 
 using namespace std;
+using namespace open3d;
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
+TEST(MemoryManager, CPUMallocFree) {
+    Device device("CPU:0");
+    void* ptr = MemoryManager::Malloc(10, device);
+    MemoryManager::Free(ptr, device);
+}
+
+TEST(MemoryManager, GPUMallocFree) {
+    Device device("GPU:0");
+    void* ptr = MemoryManager::Malloc(10, device);
+    MemoryManager::Free(ptr, device);
+}
+
+static void RunMemcpyTest(const Device& src_device, const Device& dst_device) {
+    char src_vals[6] = "hello";
+    char dst_vals[6] = "xxxxx";
+    size_t num_bytes = strlen(src_vals) + 1;
+
+    void* src_ptr = MemoryManager::Malloc(num_bytes, src_device);
+    MemoryManager::MemcpyFromHost(src_ptr, src_device, (void*)src_vals,
+                                  num_bytes);
+
+    void* dst_ptr = MemoryManager::Malloc(num_bytes, dst_device);
+    MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
+    MemoryManager::MemcpyToHost((void*)dst_vals, dst_ptr, dst_device,
+                                num_bytes);
+
+    ASSERT_STREQ(dst_vals, src_vals);
+    MemoryManager::Free(src_ptr, src_device);
+    MemoryManager::Free(dst_ptr, dst_device);
+}
+
+TEST(MemoryManager, Memcpy) {
+    RunMemcpyTest(Device("CPU:0"), Device("CPU:0"));
+    RunMemcpyTest(Device("CPU:0"), Device("GPU:0"));
+    RunMemcpyTest(Device("GPU:0"), Device("CPU:0"));
+    RunMemcpyTest(Device("GPU:0"), Device("GPU:0"));
 }

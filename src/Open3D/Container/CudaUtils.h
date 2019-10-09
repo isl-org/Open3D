@@ -24,18 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <string>
+#pragma once
+
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
 
-using namespace std;
+namespace open3d {
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
+#define OPEN3D_CUDA_CHECK(err) __OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
+
+inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
+                                const char *file,
+                                const int line) {
+    if (err != cudaSuccess) {
+        utility::LogFatal("{}:{} CUDA runtime error: {}\n", file, line,
+                          cudaGetErrorString(err));
+    }
+}
 }

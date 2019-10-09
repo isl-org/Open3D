@@ -126,6 +126,9 @@ std::string& RightStripString(std::string& str,
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
 
+/// Convet string to the lower case
+std::string ToLower(const std::string& s);
+
 void Sleep(int milliseconds);
 
 }  // namespace utility

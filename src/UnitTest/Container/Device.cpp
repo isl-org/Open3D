@@ -24,18 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <string>
-
-#include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
+#include "Open3D/Container/Device.h"
+#include "TestUtility/UnitTest.h"
 
 using namespace std;
+using namespace open3d;
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
+TEST(Device, DefaultConstructor) {
+    Device ctx;
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CPU);
+    EXPECT_EQ(ctx.device_id_, 0);
+}
+
+TEST(Device, SpecifiedConstructor) {
+    Device ctx(Device::DeviceType::GPU, 1);
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    EXPECT_EQ(ctx.device_id_, 1);
+}
+
+TEST(Device, StringConstructor) {
+    Device ctx("GPU:1");
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    EXPECT_EQ(ctx.device_id_, 1);
+}
+
+TEST(Device, StringConstructorLower) {
+    Device ctx("gpu:1");
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    EXPECT_EQ(ctx.device_id_, 1);
 }

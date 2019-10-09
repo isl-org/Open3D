@@ -24,18 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <string>
+#include "Open3D/Container/MemoryManager.h"
 
-#include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
+#include <cstdlib>
 
-using namespace std;
+namespace open3d {
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
+CPUMemoryManager::CPUMemoryManager() {}
+
+void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
+    void* ptr;
+    ptr = std::malloc(byte_size);
+    if (byte_size != 0 && !ptr) {
+        utility::LogFatal("CPU malloc failed\n");
+    }
+    return ptr;
 }
+
+void CPUMemoryManager::Free(void* ptr, const Device& device) {
+    if (ptr) {
+        std::free(ptr);
+    }
+}
+
+void CPUMemoryManager::Memcpy(void* dst_ptr,
+                              const Device& dst_device,
+                              const void* src_ptr,
+                              const Device& src_device,
+                              size_t num_bytes) {
+    std::memcpy(dst_ptr, src_ptr, num_bytes);
+}
+
+}  // namespace open3d

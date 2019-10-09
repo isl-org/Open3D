@@ -2,7 +2,7 @@
 # https://cmake.org/cmake/help/v3.0/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
@@ -82,6 +82,21 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
+
+# Build CUDA module by defalt if CUDA is available
+# Compatible with CMake 3.8+
+if (BUILD_CUDA_MODULE)
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        message(STATUS "Building CUDA enabled")
+        enable_language(CUDA)
+    else()
+        set(BUILD_CUDA_MODULE OFF)
+        message(STATUS "No CUDA support")
+    endif()
+endif ()
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -150,8 +165,8 @@ elseif (CYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
     # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    add_compile_options(-Wno-deprecated-declarations)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wno-deprecated-declarations -Wno-unused-result")
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
     endif (NOT BUILD_SHARED_LIBS)
@@ -161,9 +176,7 @@ elseif (UNIX)
     add_definitions(-DUNIX)
     # enable c++11
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
-    add_compile_options(-Wno-deprecated-declarations)
-    add_compile_options(-Wno-unused-result)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wno-deprecated-declarations -Wno-unused-result")
     add_definitions(-O3)
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
