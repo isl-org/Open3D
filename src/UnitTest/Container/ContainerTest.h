@@ -26,57 +26,67 @@
 
 #pragma once
 
-#include <cstddef>
-#include <string>
 #include <vector>
 
-#include "Open3D/Utility/Console.h"
+#include "Open3D/Container/Device.h"
+#include "Open3D/Container/SizeVector.h"
+
+#include "TestUtility/UnitTest.h"
 
 namespace open3d {
 
-// Ref:
-// https://github.com/NervanaSystems/ngraph/blob/master/src/ngraph/shape.hpp
-class Shape : public std::vector<size_t> {
+class PermuteDevices : public testing::TestWithParam<Device> {
 public:
-    Shape(const std::initializer_list<size_t>& dim_sizes)
-        : std::vector<size_t>(dim_sizes) {}
-
-    Shape(const std::vector<size_t>& dim_sizes)
-        : std::vector<size_t>(dim_sizes) {}
-
-    Shape(const Shape& other) : std::vector<size_t>(other) {}
-
-    explicit Shape(size_t n, size_t initial_value = 0)
-        : std::vector<size_t>(n, initial_value) {}
-
-    template <class InputIterator>
-    Shape(InputIterator first, InputIterator last)
-        : std::vector<size_t>(first, last) {}
-
-    Shape() {}
-
-    Shape& operator=(const Shape& v) {
-        static_cast<std::vector<size_t>*>(this)->operator=(v);
-        return *this;
+    static std::vector<Device> TestCases() {
+#ifdef BUILD_CUDA_MODULE
+        return {
+                Device("CPU:0"),
+                Device("GPU:0"),
+        };
+#else
+        return {
+                Device("CPU:0"),
+        };
+#endif
     }
+};
 
-    Shape& operator=(Shape&& v) {
-        static_cast<std::vector<size_t>*>(this)->operator=(v);
-        return *this;
+class PermuteDevicePairs
+    : public testing::TestWithParam<std::pair<Device, Device>> {
+public:
+    static std::vector<std::pair<Device, Device>> TestCases() {
+#ifdef BUILD_CUDA_MODULE
+        return {
+                {Device("CPU:0"), Device("CPU:0")},
+                {Device("CPU:0"), Device("GPU:0")},
+                {Device("GPU:0"), Device("CPU:0")},
+                {Device("GPU:0"), Device("GPU:0")},
+        };
+#else
+        return {
+                {Device("CPU:0"), Device("CPU:0")},
+        };
+#endif
     }
+};
 
-    size_t NumElements() const {
-        if (this->size() == 0) {
-            return 0;
-        }
-        size_t size = 1;
-        for (const size_t& d : *this) {
-            size *= d;
-        }
-        return size;
+class PermuteSizesDefaultStrides
+    : public testing::TestWithParam<std::pair<SizeVector, SizeVector>> {
+public:
+    static std::vector<std::pair<SizeVector, SizeVector>> TestCases() {
+        return {
+                {{}, {}},
+                {{0}, {1}},
+                {{0, 0}, {1, 1}},
+                {{0, 1}, {1, 1}},
+                {{1, 0}, {1, 1}},
+                {{1}, {1}},
+                {{1, 2}, {2, 1}},
+                {{1, 2, 3}, {6, 3, 1}},
+                {{4, 3, 2}, {6, 2, 1}},
+                {{2, 0, 3}, {3, 3, 1}},
+        };
     }
-
-    std::string ToString() const { return fmt::format("{}", *this); }
 };
 
 }  // namespace open3d

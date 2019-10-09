@@ -25,7 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Container/Blob.h"
 #include "Open3D/Container/Device.h"
+
+#include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"
 
 #include <vector>
@@ -33,40 +36,63 @@
 using namespace std;
 using namespace open3d;
 
-TEST(MemoryManager, CPUMallocFree) {
-    Device device("CPU:0");
+class MemoryManagerPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(MemoryManager,
+                         MemoryManagerPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
+
+class MemoryManagerPermuteDevicePairs : public PermuteDevicePairs {};
+INSTANTIATE_TEST_SUITE_P(
+        MemoryManager,
+        MemoryManagerPermuteDevicePairs,
+        testing::ValuesIn(MemoryManagerPermuteDevicePairs::TestCases()));
+
+TEST_P(MemoryManagerPermuteDevices, MallocFree) {
+    Device device = GetParam();
+
     void* ptr = MemoryManager::Malloc(10, device);
     MemoryManager::Free(ptr, device);
 }
 
-TEST(MemoryManager, GPUMallocFree) {
-    Device device("GPU:0");
-    void* ptr = MemoryManager::Malloc(10, device);
-    MemoryManager::Free(ptr, device);
-}
+TEST_P(MemoryManagerPermuteDevicePairs, Memcpy) {
+    Device dst_device;
+    Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
 
-static void RunMemcpyTest(const Device& src_device, const Device& dst_device) {
-    char src_vals[6] = "hello";
     char dst_vals[6] = "xxxxx";
+    char src_vals[6] = "hello";
     size_t num_bytes = strlen(src_vals) + 1;
 
+    void* dst_ptr = MemoryManager::Malloc(num_bytes, dst_device);
     void* src_ptr = MemoryManager::Malloc(num_bytes, src_device);
     MemoryManager::MemcpyFromHost(src_ptr, src_device, (void*)src_vals,
                                   num_bytes);
 
-    void* dst_ptr = MemoryManager::Malloc(num_bytes, dst_device);
     MemoryManager::Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
     MemoryManager::MemcpyToHost((void*)dst_vals, dst_ptr, dst_device,
                                 num_bytes);
-
     ASSERT_STREQ(dst_vals, src_vals);
-    MemoryManager::Free(src_ptr, src_device);
+
     MemoryManager::Free(dst_ptr, dst_device);
+    MemoryManager::Free(src_ptr, src_device);
 }
 
-TEST(MemoryManager, Memcpy) {
-    RunMemcpyTest(Device("CPU:0"), Device("CPU:0"));
-    RunMemcpyTest(Device("CPU:0"), Device("GPU:0"));
-    RunMemcpyTest(Device("GPU:0"), Device("CPU:0"));
-    RunMemcpyTest(Device("GPU:0"), Device("GPU:0"));
+TEST_P(MemoryManagerPermuteDevicePairs, MemcpyBlob) {
+    Device dst_device;
+    Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
+    char dst_vals[6] = "xxxxx";
+    char src_vals[6] = "hello";
+    size_t num_bytes = strlen(src_vals) + 1;
+
+    auto dst_blob = std::make_shared<Blob>(num_bytes, dst_device);
+    auto src_blob = std::make_shared<Blob>(num_bytes, src_device);
+    MemoryManager::MemcpyFromHost(src_blob->v_, src_device, (void*)src_vals,
+                                  num_bytes);
+
+    MemoryManager::MemcpyBlob(dst_blob, src_blob);
+    MemoryManager::MemcpyToHost((void*)dst_vals, dst_blob->v_, dst_device,
+                                num_bytes);
+    ASSERT_STREQ(dst_vals, src_vals);
 }

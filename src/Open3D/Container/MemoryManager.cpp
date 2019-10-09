@@ -32,6 +32,7 @@
 #include "Open3D/Container/Blob.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -104,12 +105,15 @@ void MemoryManager::MemcpyToHost(void* host_ptr,
 std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
-                              std::shared_ptr<DeviceMemoryManager>>
+                              std::shared_ptr<DeviceMemoryManager>,
+                              utility::hash_enum_class::hash>
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
                      std::make_shared<CPUMemoryManager>()},
+#ifdef BUILD_CUDA_MODULE
                     {Device::DeviceType::GPU,
                      std::make_shared<GPUMemoryManager>()},
+#endif
             };
     if (map_device_type_to_memory_manager.find(device.device_type_) ==
         map_device_type_to_memory_manager.end()) {

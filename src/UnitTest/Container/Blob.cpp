@@ -29,9 +29,18 @@
 #include "Open3D/Container/MemoryManager.h"
 #include "TestUtility/UnitTest.h"
 
+#include "Container/ContainerTest.h"
+
 using namespace std;
 using namespace open3d;
 
-TEST(Blob, CPUBlob) { Blob b(10, Device("CPU:0")); }
+class BlobPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(Blob,
+                         BlobPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST(Blob, GPU_CONDITIONAL_TEST(GPUBlob)) { Blob b(10, Device("GPU:0")); }
+TEST_P(BlobPermuteDevices, BlobConstructor) {
+    Device device = GetParam();
+
+    Blob b(10, Device(device));
+}

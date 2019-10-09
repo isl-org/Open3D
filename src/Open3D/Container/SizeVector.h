@@ -24,37 +24,60 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
+#include <cstddef>
+#include <string>
+#include <vector>
+
 #include "Open3D/Utility/Console.h"
-#include "Python/docstring.h"
-#include "Python/open3d_pybind.h"
 
-using namespace open3d;
+namespace open3d {
 
-void pybind_console(py::module &m) {
-    py::enum_<utility::VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
-                                          "VerbosityLevel");
-    vl.value("Fatal", utility::VerbosityLevel::Fatal)
-            .value("Error", utility::VerbosityLevel::Error)
-            .value("Warning", utility::VerbosityLevel::Warning)
-            .value("Info", utility::VerbosityLevel::Info)
-            .value("Debug", utility::VerbosityLevel::Debug)
-            .export_values();
-    // Trick to write docs without listing the members in the enum class again.
-    vl.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for VerbosityLevel.";
-            }),
-            py::none(), py::none(), "");
+/// SizeVector is a vector of size_t, typically used in Tensor shape and strides
+/// Similar design from
+/// https://github.com/NervanaSystems/ngraph/blob/master/src/ngraph/shape.hpp
+class SizeVector : public std::vector<size_t> {
+public:
+    SizeVector(const std::initializer_list<size_t>& dim_sizes)
+        : std::vector<size_t>(dim_sizes) {}
 
-    m.def("set_verbosity_level", &utility::SetVerbosityLevel,
-          "Set global verbosity level of Open3D", py::arg("verbosity_level"));
-    docstring::FunctionDocInject(
-            m, "set_verbosity_level",
-            {{"verbosity_level",
-              "Messages with equal or less than ``verbosity_level`` verbosity "
-              "will be printed."}});
+    SizeVector(const std::vector<size_t>& dim_sizes)
+        : std::vector<size_t>(dim_sizes) {}
 
-    m.def("get_verbosity_level", &utility::GetVerbosityLevel,
-          "Get global verbosity level of Open3D");
-    docstring::FunctionDocInject(m, "get_verbosity_level");
-}
+    SizeVector(const SizeVector& other) : std::vector<size_t>(other) {}
+
+    explicit SizeVector(size_t n, size_t initial_value = 0)
+        : std::vector<size_t>(n, initial_value) {}
+
+    template <class InputIterator>
+    SizeVector(InputIterator first, InputIterator last)
+        : std::vector<size_t>(first, last) {}
+
+    SizeVector() {}
+
+    SizeVector& operator=(const SizeVector& v) {
+        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        return *this;
+    }
+
+    SizeVector& operator=(SizeVector&& v) {
+        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        return *this;
+    }
+
+    size_t NumElements() const {
+        if (this->size() == 0) {
+            return 0;
+        }
+        size_t size = 1;
+        for (const size_t& d : *this) {
+            size *= d;
+        }
+        return size;
+    }
+
+    std::string ToString() const { return fmt::format("{}", *this); }
+};
+
+}  // namespace open3d

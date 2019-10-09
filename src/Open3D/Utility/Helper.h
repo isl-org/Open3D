@@ -101,6 +101,19 @@ struct hash {
 
 }  // namespace hash_eigen
 
+namespace hash_enum_class {
+
+// Hash function for enum class for C++ standard less than C++14
+// https://stackoverflow.com/a/24847480/1255535
+struct hash {
+    template <typename T>
+    std::size_t operator()(T t) const {
+        return static_cast<std::size_t>(t);
+    }
+};
+
+}  // namespace hash_enum_class
+
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void SplitString(std::vector<std::string>& tokens,
