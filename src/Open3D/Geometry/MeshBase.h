@@ -117,6 +117,9 @@ public:
 protected:
     // Forward child class type to avoid indirect nonvirtual base
     MeshBase(Geometry::GeometryType type) : Geometry3D(type) {}
+    MeshBase(Geometry::GeometryType type,
+             const std::vector<Eigen::Vector3d> &vertices)
+        : Geometry3D(type), vertices_(vertices) {}
 
 public:
     std::vector<Eigen::Vector3d> vertices_;

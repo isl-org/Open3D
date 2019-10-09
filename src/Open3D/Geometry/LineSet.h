@@ -44,6 +44,11 @@ class TetraMesh;
 class LineSet : public Geometry3D {
 public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
+    LineSet(const std::vector<Eigen::Vector3d> &points,
+            const std::vector<Eigen::Vector2i> &lines)
+        : Geometry3D(Geometry::GeometryType::LineSet),
+          points_(points),
+          lines_(lines) {}
     ~LineSet() override {}
 
 public:

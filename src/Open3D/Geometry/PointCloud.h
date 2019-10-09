@@ -50,6 +50,8 @@ class VoxelGrid;
 class PointCloud : public Geometry3D {
 public:
     PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
+    PointCloud(const std::vector<Eigen::Vector3d> &points)
+        : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
     ~PointCloud() override {}
 
 public:

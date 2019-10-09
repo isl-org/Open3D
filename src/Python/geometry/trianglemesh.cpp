@@ -44,6 +44,10 @@ void pybind_trianglemesh(py::module &m) {
     py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
     trianglemesh
+            .def(py::init<const std::vector<Eigen::Vector3d> &,
+                          const std::vector<Eigen::Vector3i> &>(),
+                 "Create a triangle mesh from vertices and triangle indices",
+                 "vertices"_a, "triangles"_a)
             .def("__repr__",
                  [](const geometry::TriangleMesh &mesh) {
                      std::string info = fmt::format(

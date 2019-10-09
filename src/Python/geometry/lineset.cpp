@@ -41,11 +41,15 @@ void pybind_lineset(py::module &m) {
                     "pairs.");
     py::detail::bind_default_constructor<geometry::LineSet>(lineset);
     py::detail::bind_copy_functions<geometry::LineSet>(lineset);
-    lineset.def("__repr__",
-                [](const geometry::LineSet &lineset) {
-                    return std::string("geometry::LineSet with ") +
-                           std::to_string(lineset.lines_.size()) + " lines.";
-                })
+    lineset.def(py::init<const std::vector<Eigen::Vector3d> &,
+                         const std::vector<Eigen::Vector2i> &>(),
+                "Create a LineSet from given points and line indices",
+                "points"_a, "lines"_a)
+            .def("__repr__",
+                 [](const geometry::LineSet &lineset) {
+                     return std::string("geometry::LineSet with ") +
+                            std::to_string(lineset.lines_.size()) + " lines.";
+                 })
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("has_points", &geometry::LineSet::HasPoints,
