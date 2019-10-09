@@ -42,6 +42,11 @@ void pybind_tetramesh(py::module &m) {
     py::detail::bind_default_constructor<geometry::TetraMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TetraMesh>(trianglemesh);
     trianglemesh
+            .def(py::init<const std::vector<Eigen::Vector3d> &,
+                          const std::vector<Eigen::Vector4i,
+                                            utility::Vector4i_allocator> &>(),
+                 "Create a tetrahedra mesh from vertices and tetra indices",
+                 "vertices"_a, "tetras"_a)
             .def("__repr__",
                  [](const geometry::TetraMesh &mesh) {
                      return std::string("geometry::TetraMesh with ") +

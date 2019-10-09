@@ -32,28 +32,29 @@ def apply_noise(mesh, noise):
 
 
 def triangle():
-    mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(
-        np.array(
-            [
-                (np.sqrt(8 / 9), 0, -1 / 3),
-                (-np.sqrt(2 / 9), np.sqrt(2 / 3), -1 / 3),
-                (-np.sqrt(2 / 9), -np.sqrt(2 / 3), -1 / 3),
-            ],
-            dtype=np.float32,
-        ))
-    mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 1, 2]]))
+    mesh = o3d.geometry.TriangleMesh(
+        vertices=o3d.utility.Vector3dVector(
+            np.array(
+                [
+                    (np.sqrt(8 / 9), 0, -1 / 3),
+                    (-np.sqrt(2 / 9), np.sqrt(2 / 3), -1 / 3),
+                    (-np.sqrt(2 / 9), -np.sqrt(2 / 3), -1 / 3),
+                ],
+                dtype=np.float32,
+            )),
+        triangles=o3d.utility.Vector3iVector(np.array([[0, 1, 2]])),
+    )
     mesh.compute_vertex_normals()
     return mesh
 
 
 def plane():
-    mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(
-        np.array([[0, 0, 0], [0, 0.2, 0], [1, 0.2, 0], [1, 0, 0]],
-                 dtype=np.float32))
-    mesh.triangles = o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0,
-                                                                      3]]))
+    mesh = o3d.geometry.TriangleMesh(
+        vertices=o3d.utility.Vector3dVector(
+            np.array([[0, 0, 0], [0, 0.2, 0], [1, 0.2, 0], [1, 0, 0]],
+                     dtype=np.float32)),
+        triangles=o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0, 3]])),
+    )
     mesh.compute_vertex_normals()
     return mesh
 

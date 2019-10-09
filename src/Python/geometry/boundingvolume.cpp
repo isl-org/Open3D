@@ -44,6 +44,12 @@ void pybind_boundingvolume(py::module &m) {
     py::detail::bind_copy_functions<geometry::OrientedBoundingBox>(
             oriented_bounding_box);
     oriented_bounding_box
+            .def(py::init<const Eigen::Vector3d &, const Eigen::Matrix3d &,
+                          const Eigen::Vector3d &>(),
+                 "Create OrientedBoudingBox from center, rotation R and extent "
+                 "in x, y and z "
+                 "direction",
+                 "center"_a, "R"_a, "extent"_a)
             .def("__repr__",
                  [](const geometry::OrientedBoundingBox &box) {
                      return std::string("geometry::OrientedBoundingBox");
@@ -76,6 +82,10 @@ void pybind_boundingvolume(py::module &m) {
     py::detail::bind_copy_functions<geometry::AxisAlignedBoundingBox>(
             axis_aligned_bounding_box);
     axis_aligned_bounding_box
+            .def(py::init<const Eigen::Vector3d &, const Eigen::Vector3d &>(),
+                 "Create an AxisAlignedBoundingBox from min bounds and max "
+                 "bounds in x, y and z",
+                 "min_bound"_a, "max_bound"_a)
             .def("__repr__",
                  [](const geometry::AxisAlignedBoundingBox &box) {
                      return std::string("geometry::AxisAlignedBoundingBox");

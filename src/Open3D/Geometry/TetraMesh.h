@@ -44,6 +44,11 @@ class TriangleMesh;
 class TetraMesh : public MeshBase {
 public:
     TetraMesh() : MeshBase(Geometry::GeometryType::TetraMesh) {}
+    TetraMesh(const std::vector<Eigen::Vector3d> &vertices,
+              const std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
+                      &tetras)
+        : MeshBase(Geometry::GeometryType::TetraMesh, vertices),
+          tetras_(tetras) {}
     ~TetraMesh() override {}
 
 public:

@@ -45,6 +45,8 @@ void pybind_pointcloud(py::module &m) {
     py::detail::bind_default_constructor<geometry::PointCloud>(pointcloud);
     py::detail::bind_copy_functions<geometry::PointCloud>(pointcloud);
     pointcloud
+            .def(py::init<const std::vector<Eigen::Vector3d> &>(),
+                 "Create a PointCloud from points", "points"_a)
             .def("__repr__",
                  [](const geometry::PointCloud &pcd) {
                      return std::string("geometry::PointCloud with ") +

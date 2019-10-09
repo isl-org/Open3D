@@ -45,6 +45,10 @@ class PointCloud;
 class TriangleMesh : public MeshBase {
 public:
     TriangleMesh() : MeshBase(Geometry::GeometryType::TriangleMesh) {}
+    TriangleMesh(const std::vector<Eigen::Vector3d> &vertices,
+                 const std::vector<Eigen::Vector3i> &triangles)
+        : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
+          triangles_(triangles) {}
     ~TriangleMesh() override {}
 
 public:
