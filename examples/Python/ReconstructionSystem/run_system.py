@@ -6,11 +6,17 @@
 
 import json
 import argparse
-import time, datetime
+import time
+import datetime
+import os
 import sys
-sys.path.append("../Utility")
-from file import check_folder_structure
-sys.path.append(".")
+
+_this_path = os.path.realpath(__file__)
+_this_dir = os.path.dirname(_this_path)
+sys.path.append(os.path.join(_this_dir))
+sys.path.append(os.path.join(_this_dir, "../Utility"))
+
+from file import check_folder_structure, resolve_relative_path
 from initialize_config import initialize_config
 
 if __name__ == "__main__":
@@ -43,12 +49,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # check folder structure
-    if args.config is not None:
-        with open(args.config) as json_file:
-            config = json.load(json_file)
-            initialize_config(config)
-            check_folder_structure(config["path_dataset"])
-    assert config is not None
+    with open(args.config) as json_file:
+        config = json.load(json_file)
+        initialize_config(config)
+        config["path_dataset"] = resolve_relative_path(args.config, config["path_dataset"])
+        config["path_intrinsic"] = resolve_relative_path(args.config, config["path_intrinsic"])
+        check_folder_structure(config["path_dataset"])
 
     if args.debug_mode:
         config['debug_mode'] = True
