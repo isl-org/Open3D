@@ -24,18 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <string>
+#include "Open3D/Container/Tensor.h"
 
-#include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
-
-using namespace std;
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+namespace open3d {}

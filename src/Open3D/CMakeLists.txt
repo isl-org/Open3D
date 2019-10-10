@@ -7,6 +7,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
 # Subdirectories
 add_subdirectory(Camera)
 add_subdirectory(ColorMap)
+add_subdirectory(Container)
 add_subdirectory(Geometry)
 add_subdirectory(Integration)
 add_subdirectory(Odometry)
@@ -18,6 +19,7 @@ add_subdirectory(Visualization)
 # Source group for Visual Studio
 ADD_SOURCE_GROUP(Camera)
 ADD_SOURCE_GROUP(ColorMap)
+ADD_SOURCE_GROUP(Container)
 ADD_SOURCE_GROUP(Geometry)
 ADD_SOURCE_GROUP(Integration)
 ADD_SOURCE_GROUP(Odometry)
@@ -37,10 +39,10 @@ install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 add_library(${CMAKE_PROJECT_NAME}
-    Open3DConfig.h
     Open3DConfig.cpp
     $<TARGET_OBJECTS:Camera>
     $<TARGET_OBJECTS:ColorMap>
+    $<TARGET_OBJECTS:Container>
     $<TARGET_OBJECTS:Geometry>
     $<TARGET_OBJECTS:Integration>
     $<TARGET_OBJECTS:Odometry>
@@ -60,6 +62,16 @@ else ()
     find_package(OpenGL REQUIRED)
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
+
+# Use whole-archive to support static registration
+# TODO: handle Windows
+if(APPLE)
+    set(ENABLE_WHOLE_ARCHIVE -Wl,-force_load)
+    set(DISABLE_WHOLE_ARCHIVE "") # -noall_load is obsolete
+else()
+    set(ENABLE_WHOLE_ARCHIVE -Wl,--whole-archive)
+    set(DISABLE_WHOLE_ARCHIVE -Wl,--no-whole-archive)
+endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}

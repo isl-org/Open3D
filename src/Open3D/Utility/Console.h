@@ -267,7 +267,7 @@ public:
                const std::string &progress_info,
                bool active) {
         expected_count_ = expected_count;
-        current_count_ = -1;
+        current_count_ = static_cast<size_t>(-1);  // Guaranteed to wraparound
         progress_info_ = progress_info;
         progress_pixel_ = 0;
         active_ = active;

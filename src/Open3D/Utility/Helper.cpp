@@ -26,6 +26,7 @@
 
 #include "Open3D/Utility/Helper.h"
 
+#include <algorithm>
 #include <cctype>
 #include <unordered_set>
 
@@ -65,6 +66,13 @@ std::string& RightStripString(std::string& str, const std::string& chars) {
 
 std::string& StripString(std::string& str, const std::string& chars) {
     return LeftStripString(RightStripString(str, chars), chars);
+}
+
+std::string ToLower(const std::string& str) {
+    std::string out = str;
+    std::transform(str.begin(), str.end(), out.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return out;
 }
 
 // Count the length of current word starting from start_pos
