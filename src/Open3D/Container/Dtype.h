@@ -78,6 +78,9 @@ public:
         return byte_size;
     }
 
+    /// Convert from C++ types to Dtype. Known types are explicitly specialized,
+    /// e.g. DtypeUtil::FromType<float>(). Unsupported type will result in an
+    /// exception.
     template <typename T>
     static inline Dtype FromType() {
         utility::LogFatal("Unsupported data type\n");
