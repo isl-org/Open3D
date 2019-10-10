@@ -66,9 +66,9 @@ void MemoryManager::Memcpy(void* dst_ptr,
                            const Device& src_device,
                            size_t num_bytes) {
     if ((dst_device.device_type_ != Device::DeviceType::CPU &&
-         dst_device.device_type_ != Device::DeviceType::GPU) ||
+         dst_device.device_type_ != Device::DeviceType::CUDA) ||
         (src_device.device_type_ != Device::DeviceType::CPU &&
-         src_device.device_type_ != Device::DeviceType::GPU)) {
+         src_device.device_type_ != Device::DeviceType::CUDA)) {
         utility::LogFatal("Unimplemented device for Memcpy\n");
     }
 
@@ -76,7 +76,7 @@ void MemoryManager::Memcpy(void* dst_ptr,
     if (dst_device.device_type_ == Device::DeviceType::CPU &&
         src_device.device_type_ == Device::DeviceType::CPU) {
         device_mm = GetDeviceMemoryManager(src_device);
-    } else if (src_device.device_type_ == Device::DeviceType::GPU) {
+    } else if (src_device.device_type_ == Device::DeviceType::CUDA) {
         device_mm = GetDeviceMemoryManager(src_device);
     } else {
         device_mm = GetDeviceMemoryManager(dst_device);
@@ -108,8 +108,8 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
                      std::make_shared<CPUMemoryManager>()},
-                    {Device::DeviceType::GPU,
-                     std::make_shared<GPUMemoryManager>()},
+                    {Device::DeviceType::CUDA,
+                     std::make_shared<CUDAMemoryManager>()},
             };
     if (map_device_type_to_memory_manager.find(device.device_type_) ==
         map_device_type_to_memory_manager.end()) {

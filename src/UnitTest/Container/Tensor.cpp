@@ -47,10 +47,10 @@ TEST(Tensor, CPU) {
     EXPECT_EQ(t.GetBlob()->device_, device);
 }
 
-TEST(Tensor, GPU) {
+TEST(Tensor, CUDA) {
     Shape shape{2, 3};
     Dtype dtype = Dtype::Float32;
-    Device device("GPU:0");
+    Device device("CUDA:0");
     Tensor t(shape, dtype, device);
 
     EXPECT_EQ(t.GetShape(), shape);
@@ -77,7 +77,7 @@ TEST(Tensor, WithInitValueSizeMismatch) {
 
 TEST(Tensor, CopyTo) {
     Device src_device("CPU:0");
-    Device dst_device("GPU:0");
+    Device dst_device("CUDA:0");
     Shape shape{2, 3};
     Dtype dtype(Dtype::Float32);
 

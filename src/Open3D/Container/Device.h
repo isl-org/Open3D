@@ -35,11 +35,10 @@ namespace open3d {
 
 /// Device context spedifies device type and device id
 /// For CPU, there is only one device with id 0
-/// TODO: staitc factory functions, s.t. Device context cannot be changed
 class Device {
 public:
     /// Type for device
-    enum class DeviceType { CPU = 0, GPU = 1 };
+    enum class DeviceType { CPU = 0, CUDA = 1 };
 
     /// Defalut constructor
     Device() : device_type_(DeviceType::CPU), device_id_(0) {}
@@ -48,26 +47,10 @@ public:
     Device(const DeviceType& device_type, int device_id)
         : device_type_(device_type), device_id_(device_id) {}
 
-    /// Constructor from string
-    Device(const std::string& type_colon_id) {
-        std::vector<std::string> tokens;
-        utility::SplitString(tokens, type_colon_id, ":", true);
-        bool is_valid = false;
-        if (tokens.size() == 2) {
-            device_id_ = std::stoi(tokens[1]);
-            std::string device_name_lower = utility::ToLower(tokens[0]);
-            if (device_name_lower == "cpu") {
-                device_type_ = DeviceType::CPU;
-                is_valid = true;
-            } else if (device_name_lower == "gpu") {
-                device_type_ = DeviceType::GPU;
-                is_valid = true;
-            }
-        }
-        if (!is_valid) {
-            utility::LogFatal("Invalid device string {}.\n", type_colon_id);
-        }
-    }
+    /// Constructor from string, e.g. "CUDA:0"
+    Device(const std::string& type_colon_id)
+        : device_type_(StringToDeviceType(type_colon_id)),
+          device_id_(StringToDeviceId(type_colon_id)) {}
 
     bool operator==(const Device& other) const {
         return this->device_type_ == other.device_type_ &&
@@ -80,8 +63,8 @@ public:
             case DeviceType::CPU:
                 str += "CPU";
                 break;
-            case DeviceType::GPU:
-                str += "GPU";
+            case DeviceType::CUDA:
+                str += "CUDA";
                 break;
             default:
                 utility::LogFatal("Unsupported device type\n");
@@ -90,9 +73,37 @@ public:
         return str;
     }
 
+protected:
+    static DeviceType StringToDeviceType(const std::string& type_colon_id) {
+        std::vector<std::string> tokens;
+        utility::SplitString(tokens, type_colon_id, ":", true);
+        if (tokens.size() == 2) {
+            std::string device_name_lower = utility::ToLower(tokens[0]);
+            if (device_name_lower == "cpu") {
+                return DeviceType::CPU;
+            } else if (device_name_lower == "cuda") {
+                return DeviceType::CUDA;
+            } else {
+                utility::LogFatal("Invalid device string {}.\n", type_colon_id);
+            }
+        } else {
+            utility::LogFatal("Invalid device string {}.\n", type_colon_id);
+        }
+    }
+
+    static int StringToDeviceId(const std::string& type_colon_id) {
+        std::vector<std::string> tokens;
+        utility::SplitString(tokens, type_colon_id, ":", true);
+        if (tokens.size() == 2) {
+            return std::stoi(tokens[1]);
+        } else {
+            utility::LogFatal("Invalid device string {}.\n", type_colon_id);
+        }
+    }
+
 public:
-    DeviceType device_type_;
-    int device_id_;
+    const DeviceType device_type_;
+    const int device_id_;
 };
 
 }  // namespace open3d

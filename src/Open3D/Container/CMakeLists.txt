@@ -2,7 +2,7 @@
 set (CONTAINER_SRC
     MemoryManager.cpp
     MemoryManagerCPU.cpp
-    MemoryManagerGPU.cu
+    MemoryManagerCUDA.cu
     Tensor.cpp
 )
 

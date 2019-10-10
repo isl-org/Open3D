@@ -39,8 +39,8 @@ TEST(MemoryManager, CPUMallocFree) {
     MemoryManager::Free(ptr, device);
 }
 
-TEST(MemoryManager, GPUMallocFree) {
-    Device device("GPU:0");
+TEST(MemoryManager, CUDAMallocFree) {
+    Device device("CUDA:0");
     void* ptr = MemoryManager::Malloc(10, device);
     MemoryManager::Free(ptr, device);
 }
@@ -66,7 +66,7 @@ static void RunMemcpyTest(const Device& src_device, const Device& dst_device) {
 
 TEST(MemoryManager, Memcpy) {
     RunMemcpyTest(Device("CPU:0"), Device("CPU:0"));
-    RunMemcpyTest(Device("CPU:0"), Device("GPU:0"));
-    RunMemcpyTest(Device("GPU:0"), Device("CPU:0"));
-    RunMemcpyTest(Device("GPU:0"), Device("GPU:0"));
+    RunMemcpyTest(Device("CPU:0"), Device("CUDA:0"));
+    RunMemcpyTest(Device("CUDA:0"), Device("CPU:0"));
+    RunMemcpyTest(Device("CUDA:0"), Device("CUDA:0"));
 }

@@ -37,19 +37,19 @@ TEST(Device, DefaultConstructor) {
 }
 
 TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::GPU, 1);
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    Device ctx(Device::DeviceType::CUDA, 1);
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.device_id_, 1);
 }
 
 TEST(Device, StringConstructor) {
-    Device ctx("GPU:1");
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    Device ctx("CUDA:1");
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.device_id_, 1);
 }
 
 TEST(Device, StringConstructorLower) {
-    Device ctx("gpu:1");
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::GPU);
+    Device ctx("cuda:1");
+    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.device_id_, 1);
 }

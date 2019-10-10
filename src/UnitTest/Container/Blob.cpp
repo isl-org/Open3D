@@ -34,4 +34,4 @@ using namespace open3d;
 
 TEST(Blob, CPUBlob) { Blob b(10, Device("CPU:0")); }
 
-TEST(Blob, GPU_CONDITIONAL_TEST(GPUBlob)) { Blob b(10, Device("GPU:0")); }
+TEST(Blob, CUDA_CONDITIONAL_TEST(CUDABlob)) { Blob b(10, Device("CUDA:0")); }

@@ -43,4 +43,5 @@ inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
                           cudaGetErrorString(err));
     }
 }
-}
+
+}  // namespace open3d
