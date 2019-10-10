@@ -3,9 +3,8 @@
 # See license file or visit www.open3d.org for details
 
 # examples/Python/Utility/file.py
-
 from os import listdir, makedirs
-from os.path import exists, isfile, join, splitext
+from os.path import exists, isfile, join, splitext, isabs, abspath, dirname
 import shutil
 import re
 
@@ -30,9 +29,16 @@ def get_file_list(path, extension=None):
 
 
 def add_if_exists(path_dataset, folder_names):
+    path = None
     for folder_name in folder_names:
-        if exists(join(path_dataset, folder_name)):
-            path = join(path_dataset, folder_name)
+        _path = join(path_dataset, folder_name)
+        if exists(_path):
+            path = _path
+
+    if path is None:
+        raise ValueError("Could not find any of {!r} in path {!r}".format(
+            folder_names, path_dataset))
+
     return path
 
 
@@ -78,3 +84,9 @@ def write_poses_to_log(filename, poses):
                 pose[2, 0], pose[2, 1], pose[2, 2], pose[2, 3]))
             f.write('{0:.8f} {1:.8f} {2:.8f} {3:.8f}\n'.format(
                 pose[3, 0], pose[3, 1], pose[3, 2], pose[3, 3]))
+
+
+def resolve_relative_path(relative_to, path):
+    if not isabs(path):
+        return abspath(join(dirname(relative_to), path))
+    return path
