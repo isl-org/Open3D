@@ -94,7 +94,7 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
                  std::runtime_error);
 }
 
-TEST_P(TensorPermuteDevicePairs, CopyTo) {
+TEST_P(TensorPermuteDevicePairs, Copy) {
     Device dst_device;
     Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -105,7 +105,7 @@ TEST_P(TensorPermuteDevicePairs, CopyTo) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     Tensor src_t(vals, shape, dtype, src_device);
 
-    Tensor dst_t = src_t.CopyTo(dst_device);
+    Tensor dst_t = src_t.Copy(dst_device);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetBlob()->byte_size_,
@@ -232,7 +232,7 @@ TEST_P(TensorPermuteDevices, CopyContinuous) {
                                         1 * 3 * 4 * sizeof(float));
     EXPECT_NE(t_1.GetDataPtr(), t_1.GetBlob()->v_);
 
-    Tensor t_1_copy = t_1.CopyTo(device);
+    Tensor t_1_copy = t_1.Copy(device);
     EXPECT_EQ(t_1_copy.GetShape(), SizeVector({3, 4}));
     EXPECT_EQ(t_1_copy.GetStrides(), SizeVector({4, 1}));
     EXPECT_EQ(t_1_copy.GetDataPtr(),
@@ -289,10 +289,10 @@ TEST_P(TensorPermuteDevices, CopyNonContinuous) {
     EXPECT_FALSE(t_1.IsContiguous());
 
     // Copy ensures contiguous
-    Tensor t_1_copy = t_1.CopyTo(device);
+    Tensor t_1_copy = t_1.Copy(device);
     EXPECT_TRUE(t_1_copy.IsContiguous());
 
     // Clone replicates the exact syntax
-    Tensor t_1_clone = t_1.CloneTo(device);
+    Tensor t_1_clone = t_1.Clone(device);
     EXPECT_FALSE(t_1_clone.IsContiguous());
 }

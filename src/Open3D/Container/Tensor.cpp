@@ -36,7 +36,7 @@
 
 namespace open3d {
 
-Tensor Tensor::CopyTo(const Device& device) const {
+Tensor Tensor::Copy(const Device& device) const {
     // TODO: contiguous transform can happen together with copy in kernel
     Tensor contiguous_tensor = Contiguous();
     Tensor dst_tensor(shape_, dtype_, device);
@@ -47,7 +47,7 @@ Tensor Tensor::CopyTo(const Device& device) const {
     return dst_tensor;
 }
 
-Tensor Tensor::CloneTo(const Device& device) const {
+Tensor Tensor::Clone(const Device& device) const {
     auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);
     MemoryManager::MemcpyBlob(new_blob, blob_);
     size_t data_offset =
@@ -65,9 +65,9 @@ Tensor Tensor::Contiguous() const {
         // TOOD: Consider making a Tensor accessor class
         if (device_.device_type_ == Device::DeviceType::CUDA) {
             // TODO: write a CUDA Kernel
-            Tensor cpu_clone = CloneTo(Device("CPU:0"));
+            Tensor cpu_clone = Clone(Device("CPU:0"));
             Tensor cpu_contiguous = cpu_clone.Contiguous();
-            Tensor cuda_contiguous = cpu_contiguous.CloneTo(device_);
+            Tensor cuda_contiguous = cpu_contiguous.Clone(device_);
             return cuda_contiguous;
         } else if (device_.device_type_ == Device::DeviceType::CPU) {
             Tensor dst_tensor(shape_, dtype_, device_);
@@ -121,7 +121,7 @@ std::string Tensor::ToString(bool with_suffix,
     if (device_.device_type_ == Device::DeviceType::CUDA) {
         // Copy to CPU for printing
         // TODO: improve Contiguous() so that only the used part is copied
-        Tensor host_tensor = CopyTo(Device("CPU:0"));
+        Tensor host_tensor = Copy(Device("CPU:0"));
         rc << host_tensor.ToString(false, "");
     } else if (!IsContiguous()) {
         // Copy to Contiguous() buffer for printing

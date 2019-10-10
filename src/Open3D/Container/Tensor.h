@@ -92,12 +92,12 @@ public:
 
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
-    Tensor CopyTo(const Device& device) const;
+    Tensor Copy(const Device& device) const;
 
     /// Clone Tensor to a specified device
     /// The resulting Tensor have the exact shape, stride and data_ptr to blob_
     /// beginning offset.
-    Tensor CloneTo(const Device& device) const;
+    Tensor Clone(const Device& device) const;
 
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
