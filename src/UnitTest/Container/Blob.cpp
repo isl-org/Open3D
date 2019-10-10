@@ -24,18 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <string>
-
-#include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
+#include "Open3D/Container/Blob.h"
+#include "Open3D/Container/Device.h"
+#include "Open3D/Container/MemoryManager.h"
+#include "TestUtility/UnitTest.h"
 
 using namespace std;
+using namespace open3d;
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+TEST(Blob, CPUBlob) { Blob b(10, Device("CPU:0")); }
+
+TEST(Blob, CUDA_CONDITIONAL_TEST(CUDABlob)) { Blob b(10, Device("CUDA:0")); }

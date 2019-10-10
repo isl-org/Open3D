@@ -24,18 +24,59 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
+#pragma once
+
+#include <cstddef>
 #include <string>
+#include <vector>
 
 #include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
 
-using namespace std;
+namespace open3d {
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+// Ref:
+// https://github.com/NervanaSystems/ngraph/blob/master/src/ngraph/shape.hpp
+class Shape : public std::vector<size_t> {
+public:
+    Shape(const std::initializer_list<size_t>& dim_sizes)
+        : std::vector<size_t>(dim_sizes) {}
+
+    Shape(const std::vector<size_t>& dim_sizes)
+        : std::vector<size_t>(dim_sizes) {}
+
+    Shape(const Shape& other) : std::vector<size_t>(other) {}
+
+    explicit Shape(size_t n, size_t initial_value = 0)
+        : std::vector<size_t>(n, initial_value) {}
+
+    template <class InputIterator>
+    Shape(InputIterator first, InputIterator last)
+        : std::vector<size_t>(first, last) {}
+
+    Shape() {}
+
+    Shape& operator=(const Shape& v) {
+        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        return *this;
+    }
+
+    Shape& operator=(Shape&& v) {
+        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        return *this;
+    }
+
+    size_t NumElements() const {
+        if (this->size() == 0) {
+            return 0;
+        }
+        size_t size = 1;
+        for (const size_t& d : *this) {
+            size *= d;
+        }
+        return size;
+    }
+
+    std::string ToString() const { return fmt::format("{}", *this); }
+};
+
+}  // namespace open3d
