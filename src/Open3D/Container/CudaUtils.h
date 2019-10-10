@@ -31,9 +31,10 @@
 
 #include "Open3D/Utility/Console.h"
 
-namespace open3d {
+#define OPEN3D_CUDA_CHECK(err) \
+    open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 
-#define OPEN3D_CUDA_CHECK(err) __OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
+namespace open3d {
 
 inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
                                 const char *file,

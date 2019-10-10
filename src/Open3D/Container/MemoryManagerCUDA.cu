@@ -33,8 +33,7 @@
 
 namespace open3d {
 
-CUDAMemoryManager::CUDAMemoryManager() {
-}
+CUDAMemoryManager::CUDAMemoryManager() {}
 
 void CUDAMemoryManager::SetDevice(int device_id) {
     int curr_device_id = -1;
@@ -68,10 +67,10 @@ void CUDAMemoryManager::Free(void* ptr, const Device& device) {
 }
 
 void CUDAMemoryManager::Memcpy(void* dst_ptr,
-                              const Device& dst_device,
-                              const void* src_ptr,
-                              const Device& src_device,
-                              size_t num_bytes) {
+                               const Device& dst_device,
+                               const void* src_ptr,
+                               const Device& src_device,
+                               size_t num_bytes) {
     cudaMemcpyKind memcpy_kind;
 
     if (dst_device.device_type_ == Device::DeviceType::CUDA &&
