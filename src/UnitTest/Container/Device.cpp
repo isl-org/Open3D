@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Container/Device.h"
+
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
