@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
             utility::filesystem::GetFileParentDirectory(match_filename).c_str();
     FILE *file = utility::filesystem::FOpen(match_filename, "r");
     if (file == NULL) {
-        utility::LogError("Unable to open file {}\n", match_filename);
+        utility::LogWarning("Unable to open file {}\n", match_filename);
         fclose(file);
         return 0;
     }

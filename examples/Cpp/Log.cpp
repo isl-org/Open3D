@@ -39,8 +39,6 @@ int main(int argc, char **argv) {
                      "format:", 0.42001);
     utility::LogWarning("This Warning message should be visible, {} {:.2f}\n",
                         "format:", 0.42001);
-    utility::LogError("This Error message should be visible, {} {:.2f}\n",
-                      "format:", 0.42001);
 
     utility::LogDebugf("This Debug message should be visible, %s %.2f\n",
                        "formatf:", 0.42001);
@@ -48,8 +46,6 @@ int main(int argc, char **argv) {
                       "formatf:", 0.42001);
     utility::LogWarningf("This Warning message should be visible, %s %.2f\n",
                          "formatf:", 0.42001);
-    utility::LogErrorf("This Error message should be visible, %s %.2f\n",
-                       "formatf:", 0.42001);
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
@@ -59,17 +55,15 @@ int main(int argc, char **argv) {
                      "format:", 0.42001);
     utility::LogWarning("This Warning message should be visible, {} {:.2f}\n",
                         "format:", 0.42001);
-    utility::LogError("This Error message should be visible, {} {:.2f}\n",
-                      "format:", 0.42001);
 
     try {
-        utility::LogFatal("This Fatal exception is catched\n");
+        utility::LogError("This Error exception is catched\n");
     } catch (const std::exception &e) {
         utility::LogInfo("Catched exception msg: {}", e.what());
     }
     utility::LogInfo("This Info message shall print in regular color\n");
-    utility::LogFatal("This Fatal message terminates the program\n");
-    utility::LogFatal("This Fatal message should NOT be visible\n");
+    utility::LogError("This Error message terminates the program\n");
+    utility::LogError("This Error message should NOT be visible\n");
 
     return 0;
 }

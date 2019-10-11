@@ -40,8 +40,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SubdivideMidpoint] This mesh contains triangle uvs that are "
-                "not handled "
-                "in this function\n");
+                "not handled in this function\n");
     }
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->vertices_ = vertices_;
@@ -119,8 +118,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SubdivideLoop] This mesh contains triangle uvs that are not "
-                "handled "
-                "in this function\n");
+                "handled in this function\n");
     }
     typedef std::unordered_map<Eigen::Vector2i, int,
                                utility::hash_eigen::hash<Eigen::Vector2i>>

@@ -96,7 +96,7 @@ bool Visualizer::CreateVisualizerWindow(
 
     glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
     if (!GLFWEnvironmentSingleton::InitGLFW()) {
-        utility::LogError("Failed to initialize GLFW\n");
+        utility::LogWarning("Failed to initialize GLFW\n");
         return false;
     }
 
@@ -109,7 +109,7 @@ bool Visualizer::CreateVisualizerWindow(
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
     if (!window_) {
-        utility::LogError("Failed to create window\n");
+        utility::LogWarning("Failed to create window\n");
         return false;
     }
     glfwSetWindowPos(window_, left, top);

@@ -29,16 +29,14 @@
 
 using namespace open3d;
 
-TEST(Logger, LogFatal) {
-    EXPECT_THROW(utility::LogFatal("Example exeption message\n"),
+TEST(Logger, LogError) {
+    EXPECT_THROW(utility::LogError("Example exeption message\n"),
                  std::runtime_error);
 }
 
 TEST(Console, DISABLED_SetVerbosityLevel) { unit_test::NotImplemented(); }
 
 TEST(Console, DISABLED_GetVerbosityLevel) { unit_test::NotImplemented(); }
-
-TEST(Console, DISABLED_PrintError) { unit_test::NotImplemented(); }
 
 TEST(Console, DISABLED_PrintWarning) { unit_test::NotImplemented(); }
 

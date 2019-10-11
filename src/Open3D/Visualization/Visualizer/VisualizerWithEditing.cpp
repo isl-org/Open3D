@@ -208,10 +208,9 @@ int VisualizerWithEditing::PickPoint(double x, double y) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     if (!GLEW_ARB_framebuffer_object) {
         // OpenGL 2.1 doesn't require this, 3.1+ does
-        utility::LogError(
+        utility::LogWarning(
                 "[PickPoint] Your GPU does not provide framebuffer objects. "
-                "Use "
-                "a texture instead.\n");
+                "Use a texture instead.\n");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_MULTISAMPLE);
         return -1;
@@ -228,7 +227,7 @@ int VisualizerWithEditing::PickPoint(double x, double y) {
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers);  // "1" is the size of DrawBuffers
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        utility::LogError("[PickPoint] Something is wrong with FBO.\n");
+        utility::LogWarning("[PickPoint] Something is wrong with FBO.\n");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_MULTISAMPLE);
         return -1;
@@ -344,7 +343,7 @@ void VisualizerWithEditing::KeyPressCallback(
                             buff.c_str());
                     if (str == NULL) {
                         utility::LogWarning(
-                                "Illegal input, use default voxel size.\n");
+                                "Illegal input, using default voxel size.\n");
                     } else {
                         char *end;
                         errno = 0;
@@ -352,7 +351,8 @@ void VisualizerWithEditing::KeyPressCallback(
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
                             utility::LogWarning(
-                                    "Illegal input, use default voxel size.\n");
+                                    "Illegal input, using default voxel "
+                                    "size.\n");
                         } else {
                             voxel_size_ = l;
                         }

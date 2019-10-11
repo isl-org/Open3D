@@ -46,7 +46,8 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::LogError("[DrawGeometries] Failed creating OpenGL window.\n");
+        utility::LogWarning(
+                "[DrawGeometries] Failed creating OpenGL window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
@@ -75,7 +76,7 @@ bool DrawGeometriesWithCustomAnimation(
     VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::LogError(
+        utility::LogWarning(
                 "[DrawGeometriesWithCustomAnimation] Failed creating OpenGL "
                 "window.\n");
         return false;
@@ -122,7 +123,7 @@ bool DrawGeometriesWithAnimationCallback(
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::LogError(
+        utility::LogWarning(
                 "[DrawGeometriesWithAnimationCallback] Failed creating OpenGL "
                 "window.\n");
         return false;
@@ -156,7 +157,7 @@ bool DrawGeometriesWithKeyCallbacks(
     VisualizerWithKeyCallback visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::LogError(
+        utility::LogWarning(
                 "[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL "
                 "window.\n");
         return false;
@@ -192,7 +193,7 @@ bool DrawGeometriesWithEditing(
     VisualizerWithEditing visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::LogError(
+        utility::LogWarning(
                 "[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
         return false;
     }

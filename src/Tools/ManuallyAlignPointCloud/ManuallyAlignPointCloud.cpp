@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
     auto target_ptr = io::CreatePointCloudFromFile(argv[2]);
     if (source_ptr->IsEmpty() || target_ptr->IsEmpty()) {
         utility::LogWarning("Failed to read one of the point clouds.\n");
-        return 0;
+        return 1;
     }
 
     if (!alignment_filename.empty()) {
@@ -228,5 +228,5 @@ int main(int argc, char **argv) {
     vis_source.DestroyVisualizerWindow();
     vis_target.DestroyVisualizerWindow();
     vis_main.DestroyVisualizerWindow();
-    return 1;
+    return 0;
 }

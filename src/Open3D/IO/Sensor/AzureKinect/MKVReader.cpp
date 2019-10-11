@@ -53,10 +53,8 @@ std::string MKVReader::GetTagInMetadata(const std::string &tag_name) {
         return res_buffer;
     } else if (K4A_BUFFER_RESULT_TOO_SMALL == result) {
         utility::LogError("{} tag's content is too long.\n", tag_name);
-        return "";
     } else {
         utility::LogError("{} tag does not exist.\n", tag_name);
-        return "";
     }
 }
 
@@ -67,7 +65,7 @@ bool MKVReader::Open(const std::string &filename) {
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_open(filename.c_str(), &handle_)) {
-        utility::LogError("Unable to open file {}\n", filename);
+        utility::LogWarning("Unable to open file {}\n", filename);
         return false;
     }
 
@@ -90,7 +88,6 @@ Json::Value MKVReader::GetMetadataJson() {
 
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
-        return Json::Value();
     }
 
     Json::Value value;
@@ -119,13 +116,11 @@ Json::Value MKVReader::GetMetadataJson() {
     size_t pos = color_mode.find('_');
     if (pos == std::string::npos) {
         utility::LogError("Unknown color format {}\n", color_mode);
-        return value;
     }
     std::string resolution =
             std::string(color_mode.begin() + pos + 1, color_mode.end());
     if (resolution_to_width_height.count(resolution) == 0) {
         utility::LogError("Unknown resolution format {}\n", resolution);
-        return value;
     }
 
     auto width_height = resolution_to_width_height.at(resolution);
@@ -140,20 +135,20 @@ Json::Value MKVReader::GetMetadataJson() {
 
 bool MKVReader::SeekTimestamp(size_t timestamp) {
     if (!IsOpened()) {
-        utility::LogError("Null file handler. Please call Open().\n");
+        utility::LogWarning("Null file handler. Please call Open().\n");
         return false;
     }
 
     if (timestamp >= metadata_.stream_length_usec_) {
-        utility::LogError("Timestamp {} exceeds maximum {} (us).\n", timestamp,
-                          metadata_.stream_length_usec_);
+        utility::LogWarning("Timestamp {} exceeds maximum {} (us).\n",
+                            timestamp, metadata_.stream_length_usec_);
         return false;
     }
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_seek_timestamp(handle_, timestamp,
                                                 K4A_PLAYBACK_SEEK_BEGIN)) {
-        utility::LogError("Unable to go to timestamp {}\n", timestamp);
+        utility::LogWarning("Unable to go to timestamp {}\n", timestamp);
         return false;
     }
     return true;
@@ -162,7 +157,6 @@ bool MKVReader::SeekTimestamp(size_t timestamp) {
 std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
     if (!IsOpened()) {
         utility::LogError("Null file handler. Please call Open().\n");
-        return nullptr;
     }
 
     k4a_capture_t k4a_capture;

@@ -40,7 +40,7 @@ namespace visualization {
 bool Visualizer::InitOpenGL() {
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
-        utility::LogError("Failed to initialize GLEW.\n");
+        utility::LogWarning("Failed to initialize GLEW.\n");
         return false;
     }
 
@@ -109,16 +109,14 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
     if (view_control_ptr_->ConvertToViewParameters(current_status) == false) {
-        utility::LogWarning("Something is wrong copying view status.\n");
-        return;
+        utility::LogError("Something is wrong copying view status.\n");
     }
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
     std::string clipboard_string;
     if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {
-        utility::LogWarning("Something is wrong copying view status.\n");
-        return;
+        utility::LogError("Something is wrong copying view status.\n");
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());
 }
@@ -130,12 +128,10 @@ void Visualizer::CopyViewStatusFromClipboard() {
         ViewTrajectory trajectory;
         if (io::ReadIJsonConvertibleFromJSONString(clipboard_string,
                                                    trajectory) == false) {
-            utility::LogWarning("Something is wrong copying view status.\n");
-            return;
+            utility::LogError("Something is wrong copying view status.\n");
         }
         if (trajectory.view_status_.size() != 1) {
-            utility::LogWarning("Something is wrong copying view status.\n");
-            return;
+            utility::LogError("Something is wrong copying view status.\n");
         }
         view_control_ptr_->ConvertFromViewParameters(
                 trajectory.view_status_[0]);

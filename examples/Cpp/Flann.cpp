@@ -45,12 +45,12 @@ int main(int argc, char **argv) {
     if (io::ReadPointCloud(argv[1], *cloud_ptr)) {
         utility::LogInfo("Successfully read {}\n", argv[1]);
     } else {
-        utility::LogError("Failed to read {}\n\n", argv[1]);
+        utility::LogWarning("Failed to read {}\n\n", argv[1]);
         return 1;
     }
 
     if ((int)cloud_ptr->points_.size() < 100) {
-        utility::LogError("Boring point cloud.\n");
+        utility::LogWarning("Boring point cloud.\n");
         return 1;
     }
 
@@ -98,14 +98,14 @@ int main(int argc, char **argv) {
 
     auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     if (io::ReadPointCloud(argv[1], *new_cloud_ptr)) {
-        utility::LogWarning("Successfully read {}\n", argv[1]);
+        utility::LogInfo("Successfully read {}\n", argv[1]);
     } else {
-        utility::LogError("Failed to read {}\n\n", argv[1]);
+        utility::LogWarning("Failed to read {}\n\n", argv[1]);
         return 1;
     }
 
     if ((int)new_cloud_ptr->points_.size() < 100) {
-        utility::LogError("Boring point cloud.\n");
+        utility::LogWarning("Boring point cloud.\n");
         return 1;
     }
 

@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -61,13 +61,14 @@ int main(int argc, char *argv[]) {
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
         visualization::DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
     } else {
-        utility::LogError("Unrecognized option: {}\n", option);
+        utility::LogWarning("Unrecognized option: {}\n", option);
+        return 1;
     }
     utility::LogInfo("End of the test.\n");
 

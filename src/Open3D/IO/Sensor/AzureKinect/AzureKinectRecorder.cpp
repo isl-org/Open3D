@@ -66,12 +66,12 @@ bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
                     filename.c_str(), sensor_.device_,
                     sensor_.sensor_config_.ConvertToNativeConfig(),
                     &recording_))) {
-            utility::LogError("Unable to create recording file: {}\n",
-                              filename);
+            utility::LogWarning("Unable to create recording file: {}\n",
+                                filename);
             return false;
         }
         if (K4A_FAILED(k4a_plugin::k4a_record_write_header(recording_))) {
-            utility::LogError("Unable to write header\n");
+            utility::LogWarning("Unable to write header\n");
             return false;
         }
         utility::LogInfo("Writing to header\n");
@@ -85,7 +85,7 @@ bool AzureKinectRecorder::CloseRecord() {
     if (is_record_created_) {
         utility::LogInfo("Saving recording...\n");
         if (K4A_FAILED(k4a_plugin::k4a_record_flush(recording_))) {
-            utility::LogError("Unable to flush record file\n");
+            utility::LogWarning("Unable to flush record file\n");
             return false;
         }
         k4a_plugin::k4a_record_close(recording_);
@@ -103,7 +103,6 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
         if (K4A_FAILED(k4a_plugin::k4a_record_write_capture(recording_,
                                                             capture))) {
             utility::LogError("Unable to write to capture\n");
-            return nullptr;
         }
     }
 

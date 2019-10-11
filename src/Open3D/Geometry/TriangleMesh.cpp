@@ -90,7 +90,9 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     }
     if (HasTriangleUvs() || HasTexture()) {
         // TODO: implement copy
-        utility::LogWarning("copy of uvs and texture is not implemented yet\n");
+        utility::LogWarning(
+                "[TriangleMesh] copy of uvs and texture is not implemented "
+                "yet\n");
     }
     return (*this);
 }
@@ -479,13 +481,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
         size_t number_of_points) const {
     if (number_of_points <= 0) {
-        utility::LogWarning("[SamplePointsUniformly] number_of_points <= 0");
-        return std::make_shared<PointCloud>();
+        utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogWarning(
+        utility::LogError(
                 "[SamplePointsUniformly] input mesh has no triangles");
-        return std::make_shared<PointCloud>();
     }
 
     // Compute area of each triangle and sum surface area
@@ -501,27 +501,21 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) const {
     if (number_of_points <= 0) {
-        utility::LogWarning("[SamplePointsPoissonDisk] number_of_points <= 0");
-        return std::make_shared<PointCloud>();
+        utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogWarning(
+        utility::LogError(
                 "[SamplePointsPoissonDisk] input mesh has no triangles");
-        return std::make_shared<PointCloud>();
     }
     if (pcl_init == nullptr && init_factor < 1) {
-        utility::LogWarning(
+        utility::LogError(
                 "[SamplePointsPoissonDisk] either pass pcl_init with #points "
-                "> "
-                "number_of_points or init_factor > 1");
-        return std::make_shared<PointCloud>();
+                "> number_of_points or init_factor > 1");
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
-        utility::LogWarning(
+        utility::LogError(
                 "[SamplePointsPoissonDisk] either pass pcl_init with #points "
-                "> "
-                "number_of_points, or init_factor > 1");
-        return std::make_shared<PointCloud>();
+                "> number_of_points, or init_factor > 1");
     }
 
     // Compute area of each triangle and sum surface area
@@ -693,8 +687,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveDuplicatedTriangles] This mesh contains triangle uvs "
-                "that are not handled "
-                "in this function\n");
+                "that are not handled in this function\n");
     }
     typedef std::tuple<int, int, int> Index3;
     std::unordered_map<Index3, size_t, utility::hash_tuple::hash<Index3>>
@@ -789,8 +782,7 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveDegenerateTriangles] This mesh contains triangle uvs "
-                "that are not handled "
-                "in this function\n");
+                "that are not handled in this function\n");
     }
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
@@ -820,8 +812,7 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveNonManifoldEdges] This mesh contains triangle uvs that "
-                "are not handled "
-                "in this function\n");
+                "are not handled in this function\n");
     }
     std::vector<double> triangle_areas;
     GetSurfaceArea(triangle_areas);

@@ -88,7 +88,7 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
             }
         }
         if (handle == NULL) {
-            utility::LogFatal("Cannot load {}\n", lib_name);
+            utility::LogError("Cannot load {}\n", lib_name);
         }
         map_lib_name_to_handle[lib_name] = handle;
     }
@@ -106,7 +106,7 @@ static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
             f = (f_type)GetProcAddress(GetDynamicLibHandle(lib_name), \
                                        #f_name);                      \
             if (f == nullptr) {                                       \
-                utility::LogFatal("Cannot load func {}\n", #f_name);  \
+                utility::LogError("Cannot load func {}\n", #f_name);  \
             } else {                                                  \
                 utility::LogDebug("Loaded func {}\n", #f_name);       \
             }                                                         \
@@ -152,7 +152,7 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
             }
         }
         if (!handle) {
-            utility::LogFatal("Cannot load {}\n", dlerror());
+            utility::LogError("Cannot load {}\n", dlerror());
         } else {
             utility::LogDebug("Loaded {}\n", full_path);
             struct link_map* map = nullptr;
@@ -181,7 +181,7 @@ static void* GetDynamicLibHandle(const std::string& lib_name) {
         if (!f) {                                                              \
             f = (f_type)dlsym(GetDynamicLibHandle(lib_name), #f_name);         \
             if (!f) {                                                          \
-                utility::LogFatal("Cannot load {}: {}\n", #f_name, dlerror()); \
+                utility::LogError("Cannot load {}: {}\n", #f_name, dlerror()); \
             }                                                                  \
         }                                                                      \
         return f(EXTRACT_PARAMS(num_args, __VA_ARGS__));                       \

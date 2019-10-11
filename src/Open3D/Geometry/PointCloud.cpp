@@ -254,10 +254,8 @@ std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
 PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                                const double radius) const {
     if (radius <= 0) {
-        utility::LogWarning(
+        utility::LogError(
                 "[HiddenPointRemoval] radius must be larger than zero.\n");
-        return std::make_tuple(std::make_shared<TriangleMesh>(),
-                               std::vector<size_t>());
     }
 
     // perform spherical projection

@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
         }
     } else {
         utility::LogWarning("Failed to read {}\n\n", filename_rgb);
+        return 1;
     }
 
     geometry::Image depth_image_16bit;
@@ -149,7 +150,8 @@ int main(int argc, char **argv) {
             io::WriteImage(outputname, *level_16bit);
         }
     } else {
-        utility::LogError("Failed to read {}\n\n", filename_depth);
+        utility::LogWarning("Failed to read {}\n\n", filename_depth);
+        return 1;
     }
 
     return 0;

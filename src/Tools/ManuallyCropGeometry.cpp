@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
         auto pcd_ptr = io::CreatePointCloudFromFile(argv[2]);
         if (pcd_ptr->IsEmpty()) {
             utility::LogWarning("Failed to read the point cloud.\n");
-            return 0;
+            return 1;
         }
         vis.AddGeometry(pcd_ptr);
         if (pcd_ptr->points_.size() > 5000000) {
@@ -78,11 +78,11 @@ int main(int argc, char **argv) {
         auto mesh_ptr = io::CreateMeshFromFile(argv[2]);
         if (mesh_ptr->IsEmpty()) {
             utility::LogWarning("Failed to read the mesh.\n");
-            return 0;
+            return 1;
         }
         vis.AddGeometry(mesh_ptr);
     }
     vis.Run();
     vis.DestroyVisualizerWindow();
-    return 1;
+    return 0;
 }

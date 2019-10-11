@@ -64,13 +64,14 @@ int main(int argc, char* argv[]) {
                            intrinsic_path.c_str());
     } else {
         utility::LogWarning("Camera intrinsic path is not given\n");
+        return 1;
     }
     camera::PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
         !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         utility::LogWarning(
                 "Failed to read intrinsic parameters for depth image.\n");
-        utility::LogWarning("Use default value for Primesense camera.\n");
+        utility::LogWarning("Using default value for Primesense camera.\n");
         intrinsic = camera::PinholeCameraIntrinsic(
                 camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }

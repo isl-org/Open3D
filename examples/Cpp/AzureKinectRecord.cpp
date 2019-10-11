@@ -63,8 +63,8 @@ int main(int argc, char **argv) {
     int sensor_index =
             utility::GetProgramOptionAsInt(argc, argv, "--device", 0);
     if (sensor_index < 0 || sensor_index > 255) {
-        utility::LogError("Sensor index must between [0, 255]: {}\n",
-                          sensor_index);
+        utility::LogWarning("Sensor index must between [0, 255]: {}\n",
+                            sensor_index);
         return 1;
     }
 
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
     // Init recorder
     io::AzureKinectRecorder recorder(sensor_config, sensor_index);
     if (!recorder.InitSensor()) {
-        utility::LogError("Failed to connect to sensor, abort.\n");
+        utility::LogWarning("Failed to connect to sensor, abort.\n");
         return 1;
     }
 

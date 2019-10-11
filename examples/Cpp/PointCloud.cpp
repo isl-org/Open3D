@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
         }
          */
     } else {
-        utility::LogError("Failed to read {}\n\n", argv[1]);
+        utility::LogWarning("Failed to read {}\n\n", argv[1]);
     }
 
     // 3. test pointcloud visualization

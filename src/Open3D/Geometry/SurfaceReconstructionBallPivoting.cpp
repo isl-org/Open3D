@@ -664,8 +664,7 @@ public:
 
     std::shared_ptr<TriangleMesh> Run(const std::vector<double>& radii) {
         if (!has_normals_) {
-            utility::LogWarning("ReconstructBallPivoting requires normals\n");
-            return mesh_;
+            utility::LogError("ReconstructBallPivoting requires normals\n");
         }
 
         mesh_->triangles_.clear();
@@ -674,9 +673,8 @@ public:
             utility::LogDebug("[Run] ################################\n");
             utility::LogDebug("[Run] change to radius {:.4f}\n", radius);
             if (radius <= 0) {
-                utility::LogWarning(
+                utility::LogError(
                         "got an invalid, negative radius as parameter\n");
-                return mesh_;
             }
 
             // update radius => update border edges

@@ -171,8 +171,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectDownSample(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SelectDownSample] This mesh contains triangle uvs that are "
-                "not handled "
-                "in this function\n");
+                "not handled in this function\n");
     }
     auto output = std::make_shared<TriangleMesh>();
     bool has_triangle_normals = HasTriangleNormals();
@@ -257,8 +256,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         double voxel_size) const {
     auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
-        utility::LogWarning("[VoxelDownSample] voxel_size <= 0.\n");
-        return output;
+        utility::LogError("[VoxelDownSample] voxel_size <= 0.\n");
     }
     Eigen::Vector3d voxel_size3 =
             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
@@ -266,8 +264,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogWarning("[VoxelDownSample] voxel_size is too small.\n");
-        return output;
+        utility::LogError("[VoxelDownSample] voxel_size is too small.\n");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
@@ -306,8 +303,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     auto output = std::make_shared<PointCloud>();
     Eigen::MatrixXi cubic_id;
     if (voxel_size <= 0.0) {
-        utility::LogWarning("[VoxelDownSample] voxel_size <= 0.\n");
-        return std::make_tuple(output, cubic_id);
+        utility::LogError("[VoxelDownSample] voxel_size <= 0.\n");
     }
     // Note: this is different from VoxelDownSample.
     // It is for fixing coordinate for multiscale voxel space
@@ -315,8 +311,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     auto voxel_max_bound = max_bound;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogWarning("[VoxelDownSample] voxel_size is too small.\n");
-        return std::make_tuple(output, cubic_id);
+        utility::LogError("[VoxelDownSample] voxel_size is too small.\n");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
@@ -370,8 +365,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
 std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
         size_t every_k_points) const {
     if (every_k_points == 0) {
-        utility::LogWarning("[UniformDownSample] Illegal sample rate.\n");
-        return std::make_shared<PointCloud>();
+        utility::LogError("[UniformDownSample] Illegal sample rate.\n");
     }
     std::vector<size_t> indices;
     for (size_t i = 0; i < points_.size(); i += every_k_points) {
@@ -383,22 +377,19 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
 std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
-        utility::LogWarning(
+        utility::LogError(
                 "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong "
-                "bounds.\n");
-        return std::make_shared<PointCloud>();
+                "size, or has wrong bounds.\n");
     }
     return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 std::shared_ptr<PointCloud> PointCloud::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
-        utility::LogWarning(
+        utility::LogError(
                 "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong "
                 "bounds.\n");
-        return std::make_shared<PointCloud>();
     }
     return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
@@ -406,11 +397,9 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
-        utility::LogWarning(
+        utility::LogError(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
                 "number of points and radius must be positive\n");
-        return std::make_tuple(std::make_shared<PointCloud>(),
-                               std::vector<size_t>());
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
@@ -438,12 +427,9 @@ std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                       double std_ratio) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
-        utility::LogWarning(
+        utility::LogError(
                 "[RemoveStatisticalOutliers] Illegal input parameters, number "
-                "of neighbors"
-                "and standard deviation ratio must be positive\n");
-        return std::make_tuple(std::make_shared<PointCloud>(),
-                               std::vector<size_t>());
+                "of neighbors and standard deviation ratio must be positive\n");
     }
     if (points_.size() == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
@@ -498,11 +484,9 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
 std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
-        utility::LogWarning(
+        utility::LogError(
                 "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong "
-                "bounds.\n");
-        return std::make_shared<TriangleMesh>();
+                "size, or has wrong bounds.\n");
     }
     return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(vertices_));
 }
@@ -510,10 +494,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
 std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
-        utility::LogWarning(
+        utility::LogError(
                 "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong "
-                "bounds.\n");
+                "size, or has wrong bounds.\n");
         return std::make_shared<TriangleMesh>();
     }
     return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(vertices_));

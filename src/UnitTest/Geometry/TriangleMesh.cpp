@@ -694,10 +694,7 @@ TEST(TriangleMesh, MergeCloseVertices) {
 
 TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
-    auto pcd_empty = mesh_empty.SamplePointsUniformly(100);
-    EXPECT_TRUE(pcd_empty->points_.size() == 0);
-    EXPECT_TRUE(pcd_empty->colors_.size() == 0);
-    EXPECT_TRUE(pcd_empty->normals_.size() == 0);
+    EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
 
     vector<Vector3d> vertices = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
     vector<Vector3i> triangles = {{0, 1, 2}};

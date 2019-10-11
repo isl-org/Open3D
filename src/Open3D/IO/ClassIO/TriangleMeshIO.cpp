@@ -105,8 +105,7 @@ bool ReadTriangleMesh(const std::string &filename,
     if (mesh.HasVertices() && !mesh.HasTriangles()) {
         utility::LogWarning(
                 "geometry::TriangleMesh appears to be a geometry::PointCloud "
-                "(only contains "
-                "vertices, but no triangles).\n");
+                "(only contains vertices, but no triangles).\n");
     }
     return success;
 }

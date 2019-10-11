@@ -449,7 +449,7 @@ bool ReadPCDData(FILE *file,
             pointcloud.Clear();
             return false;
         }
-        utility::LogWarning(
+        utility::LogDebug(
                 "PCD data with {:d} compressed size, and {:d} uncompressed "
                 "size.\n",
                 compressed_size, uncompressed_size);

@@ -96,13 +96,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SimplifyVertexClustering] This mesh contains triangle uvs "
-                "that are not handled "
-                "in this function\n");
+                "that are not handled in this function\n");
     }
     auto mesh = std::make_shared<TriangleMesh>();
     if (voxel_size <= 0.0) {
-        utility::LogWarning("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
-        return mesh;
+        utility::LogError("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
     }
 
     Eigen::Vector3d voxel_size3 =
@@ -111,9 +109,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogWarning(
+        utility::LogError(
                 "[VoxelGridFromPointCloud] voxel_size is too small.\n");
-        return mesh;
     }
 
     auto GetVoxelIdx = [&](const Eigen::Vector3d& vert) {
@@ -273,8 +270,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SimplifyQuadricDecimation] This mesh contains triangle uvs "
-                "that are not handled "
-                "in this function\n");
+                "that are not handled in this function\n");
     }
     typedef std::tuple<double, int, int> CostEdge;
 

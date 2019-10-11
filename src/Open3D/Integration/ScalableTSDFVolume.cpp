@@ -70,9 +70,8 @@ void ScalableTSDFVolume::Integrate(
          image.color_.width_ != intrinsic.width_) ||
         (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.height_ != intrinsic.height_)) {
-        utility::LogWarning(
+        utility::LogError(
                 "[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
-        return;
     }
     auto depth2cameradistance =
             geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(

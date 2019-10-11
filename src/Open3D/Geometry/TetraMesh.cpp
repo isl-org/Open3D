@@ -198,10 +198,9 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
     auto triangle_mesh = std::make_shared<TriangleMesh>();
 
     if (values.size() != vertices_.size()) {
-        utility::LogWarning(
+        utility::LogError(
                 "[ExtractTriangleMesh] number of values does not match the "
                 "number of vertices.\n");
-        return triangle_mesh;
     }
 
     auto SurfaceIntersectionTest = [](double v0, double v1, double level) {

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadImage(argv[2], *image_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         visualization::DrawGeometries({image_ptr}, "Image", image_ptr->width_,
@@ -161,14 +161,14 @@ int main(int argc, char *argv[]) {
         if (io::ReadImage(argv[2], *color_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
 
         if (io::ReadImage(argv[3], *depth_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[3]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[3]);
+            utility::LogWarning("Failed to read {}\n\n", argv[3]);
             return 1;
         }
 
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::LogInfo("Successfully read {}\n", argv[2]);
         } else {
-            utility::LogError("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();

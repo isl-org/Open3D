@@ -50,7 +50,7 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
         } else if (class_name == "OctreeColorLeafNode") {
             node = std::make_shared<OctreeColorLeafNode>();
         } else {
-            utility::LogWarning("Unhandled class name {}\n", class_name);
+            utility::LogError("Unhandled class name {}\n", class_name);
         }
     }
     // Convert from json
@@ -67,7 +67,7 @@ std::shared_ptr<OctreeNodeInfo> OctreeInternalNode::GetInsertionNodeInfo(
         const std::shared_ptr<OctreeNodeInfo>& node_info,
         const Eigen::Vector3d& point) {
     if (!Octree::IsPointInBound(point, node_info->origin_, node_info->size_)) {
-        throw std::runtime_error(
+        utility::LogError(
                 "Internal error: cannot insert to child since point not in "
                 "parent node bound.");
     }
@@ -140,7 +140,7 @@ OctreeColorLeafNode::GetUpdateFunction(const Eigen::Vector3d& color) {
                             node)) {
             color_leaf_node->color_ = color;
         } else {
-            throw std::runtime_error(
+            utility::LogError(
                     "Internal error: leaf node must be OctreeLeafNode");
         }
     };
@@ -202,7 +202,7 @@ Octree::Octree(const Octree& src_octree)
                                    src_node)) {
             map_src_to_dst_node[src_leaf_node] = src_leaf_node->Clone();
         } else {
-            throw std::runtime_error("Internal error: unknown node type");
+            utility::LogError("Internal error: unknown node type");
         }
     };
     src_octree.Traverse(f_build_map);
@@ -371,29 +371,29 @@ OrientedBoundingBox Octree::GetOrientedBoundingBox() const {
 }
 
 Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 Octree& Octree::Translate(const Eigen::Vector3d& translation, bool relative) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 Octree& Octree::Scale(const double scale, bool center) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 Octree& Octree::Rotate(const Eigen::Matrix3d& R, bool center) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 void Octree::ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
                                    double size_expand) {
     if (size_expand > 1 || size_expand < 0) {
-        throw std::runtime_error("size_expand shall be between 0 and 1");
+        utility::LogError("size_expand shall be between 0 and 1");
     }
 
     // Set bounds
@@ -450,7 +450,7 @@ void Octree::InsertPointRecurse(
         if (auto leaf_node = std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
             f_update(leaf_node);
         } else {
-            throw std::runtime_error(
+            utility::LogError(
                     "Internal error: leaf node must be OctreeLeafNode");
         }
     } else {
@@ -475,7 +475,7 @@ void Octree::InsertPointRecurse(
             InsertPointRecurse(internal_node->children_[child_index],
                                child_node_info, point, f_init, f_update);
         } else {
-            throw std::runtime_error(
+            utility::LogError(
                     "Internal error: internal node must be "
                     "OctreeInternalNode");
         }
@@ -539,7 +539,7 @@ void Octree::TraverseRecurse(
                        std::dynamic_pointer_cast<OctreeLeafNode>(node)) {
         f(leaf_node, node_info);
     } else {
-        throw std::runtime_error("Internal error: unknown node type");
+        utility::LogError("Internal error: unknown node type");
     }
 }
 

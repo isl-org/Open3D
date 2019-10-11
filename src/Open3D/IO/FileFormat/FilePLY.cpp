@@ -574,8 +574,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
     if (write_triangle_uvs && mesh.HasTriangleUvs()) {
         utility::LogWarning(
                 "This file format currently does not support writing textures "
-                "and uv "
-                "coordinates. Consider using .obj\n");
+                "and uv coordinates. Consider using .obj\n");
     }
 
     if (mesh.IsEmpty()) {

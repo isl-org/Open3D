@@ -71,7 +71,7 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
 
     if (device_config.color_resolution == K4A_COLOR_RESOLUTION_OFF &&
         device_config.depth_mode == K4A_DEPTH_MODE_OFF) {
-        utility::LogError(
+        utility::LogWarning(
                 "Config error: either the color or depth modes must be "
                 "enabled to record.\n");
         return false;
@@ -81,13 +81,13 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     const uint32_t installed_devices =
             k4a_plugin::k4a_device_get_installed_count();
     if (sensor_index >= installed_devices) {
-        utility::LogError("Device not found.\n");
+        utility::LogWarning("Device not found.\n");
         return false;
     }
 
     // open device
     if (K4A_FAILED(k4a_plugin::k4a_device_open(sensor_index, &device_))) {
-        utility::LogError(
+        utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_open() failed\n");
         return false;
     }
@@ -97,7 +97,7 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
 
     if (K4A_FAILED(k4a_plugin::k4a_device_start_cameras(device_,
                                                         &device_config))) {
-        utility::LogError(
+        utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_set_color_control() "
                 "failed\n");
         k4a_plugin::k4a_device_close(device_);
@@ -108,7 +108,7 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     if (K4A_FAILED(k4a_plugin::k4a_device_set_color_control(
                 device_, K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE,
                 K4A_COLOR_CONTROL_MODE_AUTO, 0))) {
-        utility::LogError(
+        utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_set_color_control() "
                 "failed\n");
         k4a_plugin::k4a_device_close(device_);
@@ -133,7 +133,7 @@ k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
     if (result == K4A_WAIT_RESULT_TIMEOUT) {
         return nullptr;
     } else if (result != K4A_WAIT_RESULT_SUCCEEDED) {
-        utility::LogError(
+        utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_get_capture() returned "
                 "{}\n",
                 result);
@@ -155,19 +155,19 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
 
 void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
     if (bgra.bytes_per_channel_ != 1) {
-        utility::LogFatal("BGRA input image must have 1 byte per channel.");
+        utility::LogError("BGRA input image must have 1 byte per channel.");
     }
     if (rgb.bytes_per_channel_ != 1) {
-        utility::LogFatal("RGB output image must have 1 byte per channel.");
+        utility::LogError("RGB output image must have 1 byte per channel.");
     }
     if (bgra.num_of_channels_ != 4) {
-        utility::LogFatal("BGRA input image must have 4 channels.");
+        utility::LogError("BGRA input image must have 4 channels.");
     }
     if (rgb.num_of_channels_ != 3) {
-        utility::LogFatal("RGB output image must have 3 channels.");
+        utility::LogError("RGB output image must have 3 channels.");
     }
     if (bgra.width_ != rgb.width_ || bgra.height_ != rgb.height_) {
-        utility::LogFatal(
+        utility::LogError(
                 "BGRA input image and RGB output image have different "
                 "dimensions.");
     }
@@ -195,7 +195,7 @@ bool AzureKinectSensor::PrintFirmware(k4a_device_t device) {
     if (K4A_BUFFER_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_device_get_serialnum(device, serial_number_buffer,
                                              &serial_number_buffer_size)) {
-        utility::LogError(
+        utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_get_serialnum() "
                 "failed\n");
         return false;
@@ -203,7 +203,7 @@ bool AzureKinectSensor::PrintFirmware(k4a_device_t device) {
 
     k4a_hardware_version_t version_info;
     if (K4A_FAILED(k4a_plugin::k4a_device_get_version(device, &version_info))) {
-        utility::LogError(
+        utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_get_version() failed\n");
         return false;
     }
@@ -232,7 +232,7 @@ bool AzureKinectSensor::ListDevices() {
                 AzureKinectSensor::PrintFirmware(device);
                 k4a_plugin::k4a_device_close(device);
             } else {
-                utility::LogError("Device Open Failed\n");
+                utility::LogWarning("Device Open Failed\n");
                 return false;
             }
         }
@@ -265,7 +265,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
     /* Process color */
     if (K4A_IMAGE_FORMAT_COLOR_MJPG !=
         k4a_plugin::k4a_image_get_format(k4a_color)) {
-        utility::LogError(
+        utility::LogWarning(
                 "Unexpected image format. The stream may have "
                 "corrupted.\n");
         return nullptr;
@@ -286,7 +286,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
                               k4a_plugin::k4a_image_get_size(k4a_color)),
                       color_buffer->data_.data(), width, 0 /* pitch */, height,
                       TJPF_BGRA, TJFLAG_FASTDCT | TJFLAG_FASTUPSAMPLE)) {
-        utility::LogError("Failed to decompress color image.\n");
+        utility::LogWarning("Failed to decompress color image.\n");
         return nullptr;
     }
     tjDestroy(tjHandle);
@@ -304,7 +304,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::DecompressCapture(
         if (K4A_RESULT_SUCCEEDED !=
             k4a_plugin::k4a_transformation_depth_image_to_color_camera(
                     transformation, k4a_depth, k4a_transformed_depth)) {
-            utility::LogError(
+            utility::LogWarning(
                     "Failed to transform depth frame to color frame.\n");
             return nullptr;
         }

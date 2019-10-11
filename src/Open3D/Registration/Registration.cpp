@@ -155,19 +155,17 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        utility::LogWarning("Invalid max_correspondence_distance.\n");
-        return RegistrationResult(init);
+        utility::LogError("Invalid max_correspondence_distance.\n");
     }
     if ((estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::ColoredICP) &&
         (!source.HasNormals() || !target.HasNormals())) {
-        utility::LogWarning(
+        utility::LogError(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors.\n");
-        return RegistrationResult(init);
     }
 
     Eigen::Matrix4d transformation = init;
