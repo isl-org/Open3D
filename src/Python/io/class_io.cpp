@@ -332,7 +332,7 @@ void pybind_class_io(py::module &m_io) {
                          io::ReadIJsonConvertibleFromJSON(filename, config);
                  if (!success) {
                      utility::LogWarning(
-                             "Invalid sensor config {}, use default instead\n",
+                             "Invalid sensor config {}, using default instead",
                              filename);
                      return io::AzureKinectSensorConfig();
                  }
@@ -360,7 +360,7 @@ void pybind_class_io(py::module &m_io) {
                          io::ReadIJsonConvertibleFromJSON(filename, metadata);
                  if (!success) {
                      utility::LogWarning(
-                             "Invalid mkv metadata {}, use default instead\n",
+                             "Invalid mkv metadata {}, using default instead",
                              filename);
                      return io::MKVMetadata();
                  }

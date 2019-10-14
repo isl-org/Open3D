@@ -54,7 +54,7 @@ bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         utility::LogWarning(
                 "PinholeCameraParameters read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     if (value.get("class_name", "").asString() != "PinholeCameraParameters" ||
@@ -62,7 +62,7 @@ bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value) {
         value.get("version_minor", 0).asInt() != 0) {
         utility::LogWarning(
                 "PinholeCameraParameters read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     if (intrinsic_.ConvertFromJsonValue(value["intrinsic"]) == false) {

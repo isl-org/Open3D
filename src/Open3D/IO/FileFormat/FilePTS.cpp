@@ -39,7 +39,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                            bool print_progress) {
     FILE *file = utility::filesystem::FOpen(filename, "r");
     if (file == NULL) {
-        utility::LogWarning("Read PTS failed: unable to open file.\n");
+        utility::LogWarning("Read PTS failed: unable to open file.");
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -48,7 +48,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         sscanf(line_buffer, "%d", &num_of_pts);
     }
     if (num_of_pts <= 0) {
-        utility::LogWarning("Read PTS failed: unable to read header.\n");
+        utility::LogWarning("Read PTS failed: unable to read header.");
         fclose(file);
         return false;
     }
@@ -63,7 +63,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             num_of_fields = (int)st.size();
             if (num_of_fields < 3) {
                 utility::LogWarning(
-                        "Read PTS failed: insufficient data fields.\n");
+                        "Read PTS failed: insufficient data fields.");
                 fclose(file);
                 return false;
             }
@@ -100,7 +100,7 @@ bool WritePointCloudToPTS(const std::string &filename,
                           bool print_progress) {
     FILE *file = utility::filesystem::FOpen(filename, "w");
     if (file == NULL) {
-        utility::LogWarning("Write PTS failed: unable to open file.\n");
+        utility::LogWarning("Write PTS failed: unable to open file.");
         return false;
     }
     fprintf(file, "%d\r\n", (int)pointcloud.points_.size());

@@ -30,37 +30,37 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage:\n");
-    utility::LogInfo("    > ViewGeometry [options]\n");
-    utility::LogInfo("      Open a window to view geometry.\n");
-    utility::LogInfo("\n");
-    utility::LogInfo("Basic options:\n");
-    utility::LogInfo("    --help, -h                : Print help information.\n");
-    utility::LogInfo("    --mesh file               : Add a triangle mesh from file.\n");
-    utility::LogInfo("    --pointcloud file         : Add a point cloud from file.\n");
-    utility::LogInfo("    --lineset file            : Add a line set from file.\n");
-    utility::LogInfo("    --voxelgrid file          : Add a voxel grid from file.\n");
-    utility::LogInfo("    --image file              : Add an image from file.\n");
-    utility::LogInfo("    --depth file              : Add a point cloud converted from a depth image.\n");
-    utility::LogInfo("    --depth_camera file       : Use with --depth, read a json file that stores\n");
-    utility::LogInfo("                                the camera parameters.\n");
-    utility::LogInfo("    --show_frame              : Add a coordinate frame.\n");
-    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::LogInfo("\n");
-    utility::LogInfo("Animation options:\n");
-    utility::LogInfo("    --render_option file      : Read a json file of rendering settings.\n");
-    utility::LogInfo("    --view_trajectory file    : Read a json file of view trajectory.\n");
-    utility::LogInfo("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
-    utility::LogInfo("    --auto_recording [i|d]    : Automatically plays the animation, record\n");
-    utility::LogInfo("                                images (i) or depth images (d). Exits when\n");
-    utility::LogInfo("                                animation ends.\n");
-    utility::LogInfo("\n");
-    utility::LogInfo("Window options:\n");
-    utility::LogInfo("    --window_name name        : Set window name.\n");
-    utility::LogInfo("    --height n                : Set window height.\n");
-    utility::LogInfo("    --width n                 : Set window width.\n");
-    utility::LogInfo("    --top n                   : Set window top edge.\n");
-    utility::LogInfo("    --left n                  : Set window left edge.\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > ViewGeometry [options]");
+    utility::LogInfo("      Open a window to view geometry.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --mesh file               : Add a triangle mesh from file.");
+    utility::LogInfo("    --pointcloud file         : Add a point cloud from file.");
+    utility::LogInfo("    --lineset file            : Add a line set from file.");
+    utility::LogInfo("    --voxelgrid file          : Add a voxel grid from file.");
+    utility::LogInfo("    --image file              : Add an image from file.");
+    utility::LogInfo("    --depth file              : Add a point cloud converted from a depth image.");
+    utility::LogInfo("    --depth_camera file       : Use with --depth, read a json file that stores");
+    utility::LogInfo("                                the camera parameters.");
+    utility::LogInfo("    --show_frame              : Add a coordinate frame.");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).");
+    utility::LogInfo("");
+    utility::LogInfo("Animation options:");
+    utility::LogInfo("    --render_option file      : Read a json file of rendering settings.");
+    utility::LogInfo("    --view_trajectory file    : Read a json file of view trajectory.");
+    utility::LogInfo("    --camera_trajectory file  : Read a json file of camera trajectory.");
+    utility::LogInfo("    --auto_recording [i|d]    : Automatically plays the animation, record");
+    utility::LogInfo("                                images (i) or depth images (d). Exits when");
+    utility::LogInfo("                                animation ends.");
+    utility::LogInfo("");
+    utility::LogInfo("Window options:");
+    utility::LogInfo("    --window_name name        : Set window name.");
+    utility::LogInfo("    --height n                : Set window height.");
+    utility::LogInfo("    --width n                 : Set window width.");
+    utility::LogInfo("    --top n                   : Set window top edge.");
+    utility::LogInfo("    --left n                  : Set window left edge.");
     // clang-format on
 }
 
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     visualization::VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        utility::LogWarning("Failed creating OpenGL window.\n");
+        utility::LogWarning("Failed creating OpenGL window.");
         return 0;
     }
 
@@ -117,13 +117,15 @@ int main(int argc, char **argv) {
         auto mesh_ptr = io::CreateMeshFromFile(mesh_filename);
         mesh_ptr->ComputeVertexNormals();
         if (visualizer.AddGeometry(mesh_ptr) == false) {
-            utility::LogWarning("Failed adding triangle mesh.\n");
+            utility::LogWarning("Failed adding triangle mesh.");
+            return 1;
         }
     }
     if (!pcd_filename.empty()) {
         auto pointcloud_ptr = io::CreatePointCloudFromFile(pcd_filename);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
-            utility::LogWarning("Failed adding point cloud.\n");
+            utility::LogWarning("Failed adding point cloud.");
+            return 1;
         }
         if (pointcloud_ptr->points_.size() > 5000000) {
             visualizer.GetRenderOption().point_size_ = 1.0;
@@ -132,19 +134,22 @@ int main(int argc, char **argv) {
     if (!lineset_filename.empty()) {
         auto lineset_ptr = io::CreateLineSetFromFile(lineset_filename);
         if (visualizer.AddGeometry(lineset_ptr) == false) {
-            utility::LogWarning("Failed adding line set.\n");
+            utility::LogWarning("Failed adding line set.");
+            return 1;
         }
     }
     if (!voxelgrid_filename.empty()) {
         auto voxelgrid_ptr = io::CreateVoxelGridFromFile(voxelgrid_filename);
         if (visualizer.AddGeometry(voxelgrid_ptr) == false) {
-            utility::LogWarning("Failed adding voxel grid.\n");
+            utility::LogWarning("Failed adding voxel grid.");
+            return 1;
         }
     }
     if (!image_filename.empty()) {
         auto image_ptr = io::CreateImageFromFile(image_filename);
         if (visualizer.AddGeometry(image_ptr) == false) {
-            utility::LogWarning("Failed adding image.\n");
+            utility::LogWarning("Failed adding image.");
+            return 1;
         }
     }
     if (!depth_filename.empty()) {
@@ -152,8 +157,8 @@ int main(int argc, char **argv) {
         if (depth_parameter_filename.empty() ||
             !io::ReadIJsonConvertible(depth_parameter_filename, parameters)) {
             utility::LogWarning(
-                    "Failed to read intrinsic parameters for depth image.\n");
-            utility::LogWarning("Use default value for Primesense camera.\n");
+                    "Failed to read intrinsic parameters for depth image.");
+            utility::LogWarning("Using default value for Primesense camera.");
             parameters.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
                                                 239.5);
         }
@@ -161,20 +166,22 @@ int main(int argc, char **argv) {
         auto pointcloud_ptr = geometry::PointCloud::CreateFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
-            utility::LogWarning("Failed adding depth image.\n");
+            utility::LogWarning("Failed adding depth image.");
+            return 1;
         }
     }
 
     if (visualizer.HasGeometry() == false) {
-        utility::LogWarning("No geometry to render!\n");
+        utility::LogWarning("No geometry to render!");
         visualizer.DestroyVisualizerWindow();
-        return 0;
+        return 1;
     }
 
     if (!render_filename.empty()) {
         if (io::ReadIJsonConvertible(render_filename,
                                      visualizer.GetRenderOption()) == false) {
-            utility::LogWarning("Failed loading rendering settings.\n");
+            utility::LogWarning("Failed loading rendering settings.");
+            return 1;
         }
     }
 
@@ -182,13 +189,15 @@ int main(int argc, char **argv) {
         auto &view_control = (visualization::ViewControlWithCustomAnimation &)
                                      visualizer.GetViewControl();
         if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
-            utility::LogWarning("Failed loading view trajectory.\n");
+            utility::LogWarning("Failed loading view trajectory.");
+            return 1;
         }
     } else if (!camera_filename.empty()) {
         camera::PinholeCameraTrajectory camera_trajectory;
         if (io::ReadIJsonConvertible(camera_filename, camera_trajectory) ==
             false) {
-            utility::LogWarning("Failed loading camera trajectory.\n");
+            utility::LogWarning("Failed loading camera trajectory.");
+            return 1;
         } else {
             auto &view_control =
                     (visualization::ViewControlWithCustomAnimation &)
@@ -197,7 +206,8 @@ int main(int argc, char **argv) {
                         camera_trajectory) == false) {
                 utility::LogWarning(
                         "Failed converting camera trajectory to view "
-                        "trajectory.\n");
+                        "trajectory.");
+                return 1;
             }
         }
     }
@@ -220,5 +230,5 @@ int main(int argc, char **argv) {
     }
     visualizer.DestroyVisualizerWindow();
 
-    return 1;
+    return 0;
 }

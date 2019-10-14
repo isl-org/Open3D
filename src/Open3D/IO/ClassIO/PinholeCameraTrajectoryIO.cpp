@@ -87,7 +87,7 @@ bool ReadPinholeCameraTrajectory(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read camera::PinholeCameraTrajectory failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -95,7 +95,7 @@ bool ReadPinholeCameraTrajectory(const std::string &filename,
     if (map_itr == file_extension_to_trajectory_read_function.end()) {
         utility::LogWarning(
                 "Read camera::PinholeCameraTrajectory failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     return map_itr->second(filename, trajectory);
@@ -109,7 +109,7 @@ bool WritePinholeCameraTrajectory(
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Write camera::PinholeCameraTrajectory failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -117,7 +117,7 @@ bool WritePinholeCameraTrajectory(
     if (map_itr == file_extension_to_trajectory_write_function.end()) {
         utility::LogWarning(
                 "Write camera::PinholeCameraTrajectory failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     return map_itr->second(filename, trajectory);

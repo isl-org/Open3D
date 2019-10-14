@@ -30,15 +30,15 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage:\n");
-    utility::LogInfo("    > MergeMesh source_directory target_file [option]\n");
-    utility::LogInfo("      Merge mesh files under <source_directory>.\n");
-    utility::LogInfo("\n");
-    utility::LogInfo("Options (listed in the order of execution priority):\n");
-    utility::LogInfo("    --help, -h                : Print help information.\n");
-    utility::LogInfo("    --verbose n               : Set verbose level (0-4).\n");
-    utility::LogInfo("    --purge                   : Clear duplicated and unreferenced vertices and\n");
-    utility::LogInfo("                                triangles.\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > MergeMesh source_directory target_file [option]");
+    utility::LogInfo("      Merge mesh files under <source_directory>.");
+    utility::LogInfo("");
+    utility::LogInfo("Options (listed in the order of execution priority):");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4).");
+    utility::LogInfo("    --purge                   : Clear duplicated and unreferenced vertices and");
+    utility::LogInfo("                                triangles.");
     // clang-format on
 }
 

@@ -62,7 +62,7 @@ bool ReadIJsonConvertible(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read utility::IJsonConvertible failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -70,7 +70,7 @@ bool ReadIJsonConvertible(const std::string &filename,
     if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
         utility::LogWarning(
                 "Read utility::IJsonConvertible failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     return map_itr->second(filename, object);
@@ -83,7 +83,7 @@ bool WriteIJsonConvertible(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Write utility::IJsonConvertible failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr = file_extension_to_ijsonconvertible_write_function.find(
@@ -91,7 +91,7 @@ bool WriteIJsonConvertible(const std::string &filename,
     if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
         utility::LogWarning(
                 "Write utility::IJsonConvertible failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     return map_itr->second(filename, object);

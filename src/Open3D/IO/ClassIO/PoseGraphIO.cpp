@@ -79,7 +79,7 @@ bool ReadPoseGraph(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read registration::PoseGraph failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -87,7 +87,7 @@ bool ReadPoseGraph(const std::string &filename,
     if (map_itr == file_extension_to_pose_graph_read_function.end()) {
         utility::LogWarning(
                 "Read registration::PoseGraph failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     return map_itr->second(filename, pose_graph);
@@ -100,7 +100,7 @@ bool WritePoseGraph(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Write registration::PoseGraph failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -108,7 +108,7 @@ bool WritePoseGraph(const std::string &filename,
     if (map_itr == file_extension_to_pose_graph_write_function.end()) {
         utility::LogWarning(
                 "Write registration::PoseGraph failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     return map_itr->second(filename, pose_graph);

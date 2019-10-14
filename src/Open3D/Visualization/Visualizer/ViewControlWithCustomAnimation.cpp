@@ -240,7 +240,7 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
         json_filename =
                 "ViewTrajectory_" + utility::GetCurrentTimeStamp() + ".json";
     }
-    utility::LogDebug("[Visualizer] Trejactory capture to {}\n",
+    utility::LogDebug("[Visualizer] Trejactory capture to {}",
                       json_filename.c_str());
     return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }

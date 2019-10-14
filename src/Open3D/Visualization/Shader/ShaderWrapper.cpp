@@ -57,7 +57,7 @@ void ShaderWrapper::InvalidateGeometry() {
 }
 
 void ShaderWrapper::PrintShaderWarning(const std::string &message) const {
-    utility::LogWarning("[{}] {}\n", GetShaderName(), message);
+    utility::LogWarning("[{}] {}", GetShaderName(), message);
 }
 
 bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
@@ -145,7 +145,7 @@ bool ShaderWrapper::ValidateShader(GLuint shader_index) {
             std::vector<char> error_message(info_log_length + 1);
             glGetShaderInfoLog(shader_index, info_log_length, NULL,
                                &error_message[0]);
-            utility::LogError("Shader error: {}\n", &error_message[0]);
+            utility::LogWarning("Shader error: {}", &error_message[0]);
         }
         return false;
     }
@@ -162,7 +162,7 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index) {
             std::vector<char> error_message(info_log_length + 1);
             glGetShaderInfoLog(program_index, info_log_length, NULL,
                                &error_message[0]);
-            utility::LogError("Shader error: {}\n", &error_message[0]);
+            utility::LogWarning("Shader error: {}", &error_message[0]);
         }
         return false;
     }

@@ -52,11 +52,9 @@ std::string MKVReader::GetTagInMetadata(const std::string &tag_name) {
     if (K4A_BUFFER_RESULT_SUCCEEDED == result) {
         return res_buffer;
     } else if (K4A_BUFFER_RESULT_TOO_SMALL == result) {
-        utility::LogError("{} tag's content is too long.\n", tag_name);
-        return "";
+        utility::LogError("{} tag's content is too long.", tag_name);
     } else {
-        utility::LogError("{} tag does not exist.\n", tag_name);
-        return "";
+        utility::LogError("{} tag does not exist.", tag_name);
     }
 }
 
@@ -67,7 +65,7 @@ bool MKVReader::Open(const std::string &filename) {
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_open(filename.c_str(), &handle_)) {
-        utility::LogError("Unable to open file {}\n", filename);
+        utility::LogWarning("Unable to open file {}", filename);
         return false;
     }
 
@@ -89,8 +87,7 @@ Json::Value MKVReader::GetMetadataJson() {
                                         {"3072P", std::make_pair(4096, 3072)}});
 
     if (!IsOpened()) {
-        utility::LogError("Null file handler. Please call Open().\n");
-        return Json::Value();
+        utility::LogError("Null file handler. Please call Open().");
     }
 
     Json::Value value;
@@ -98,7 +95,7 @@ Json::Value MKVReader::GetMetadataJson() {
     k4a_calibration_t calibration;
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_get_calibration(handle_, &calibration)) {
-        utility::LogError("Failed to get calibration\n");
+        utility::LogError("Failed to get calibration");
     }
 
     camera::PinholeCameraIntrinsic pinhole_camera;
@@ -118,14 +115,12 @@ Json::Value MKVReader::GetMetadataJson() {
     auto color_mode = value["color_mode"].asString();
     size_t pos = color_mode.find('_');
     if (pos == std::string::npos) {
-        utility::LogError("Unknown color format {}\n", color_mode);
-        return value;
+        utility::LogError("Unknown color format {}", color_mode);
     }
     std::string resolution =
             std::string(color_mode.begin() + pos + 1, color_mode.end());
     if (resolution_to_width_height.count(resolution) == 0) {
-        utility::LogError("Unknown resolution format {}\n", resolution);
-        return value;
+        utility::LogError("Unknown resolution format {}", resolution);
     }
 
     auto width_height = resolution_to_width_height.at(resolution);
@@ -140,20 +135,20 @@ Json::Value MKVReader::GetMetadataJson() {
 
 bool MKVReader::SeekTimestamp(size_t timestamp) {
     if (!IsOpened()) {
-        utility::LogError("Null file handler. Please call Open().\n");
+        utility::LogWarning("Null file handler. Please call Open().");
         return false;
     }
 
     if (timestamp >= metadata_.stream_length_usec_) {
-        utility::LogError("Timestamp {} exceeds maximum {} (us).\n", timestamp,
-                          metadata_.stream_length_usec_);
+        utility::LogWarning("Timestamp {} exceeds maximum {} (us).", timestamp,
+                            metadata_.stream_length_usec_);
         return false;
     }
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_playback_seek_timestamp(handle_, timestamp,
                                                 K4A_PLAYBACK_SEEK_BEGIN)) {
-        utility::LogError("Unable to go to timestamp {}\n", timestamp);
+        utility::LogWarning("Unable to go to timestamp {}", timestamp);
         return false;
     }
     return true;
@@ -161,19 +156,18 @@ bool MKVReader::SeekTimestamp(size_t timestamp) {
 
 std::shared_ptr<geometry::RGBDImage> MKVReader::NextFrame() {
     if (!IsOpened()) {
-        utility::LogError("Null file handler. Please call Open().\n");
-        return nullptr;
+        utility::LogError("Null file handler. Please call Open().");
     }
 
     k4a_capture_t k4a_capture;
     k4a_stream_result_t res =
             k4a_plugin::k4a_playback_get_next_capture(handle_, &k4a_capture);
     if (K4A_STREAM_RESULT_EOF == res) {
-        utility::LogInfo("EOF reached\n");
+        utility::LogInfo("EOF reached");
         is_eof_ = true;
         return nullptr;
     } else if (K4A_STREAM_RESULT_FAILED == res) {
-        utility::LogInfo("Empty frame encountered, skip\n");
+        utility::LogInfo("Empty frame encountered, skip");
         return nullptr;
     }
 

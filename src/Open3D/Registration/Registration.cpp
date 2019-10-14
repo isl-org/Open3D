@@ -155,19 +155,17 @@ RegistrationResult RegistrationICP(
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
-        utility::LogWarning("Invalid max_correspondence_distance.\n");
-        return RegistrationResult(init);
+        utility::LogError("Invalid max_correspondence_distance.");
     }
     if ((estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::ColoredICP) &&
         (!source.HasNormals() || !target.HasNormals())) {
-        utility::LogWarning(
+        utility::LogError(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors.\n");
-        return RegistrationResult(init);
+                "require pre-computed normal vectors.");
     }
 
     Eigen::Matrix4d transformation = init;
@@ -181,8 +179,8 @@ RegistrationResult RegistrationICP(
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}\n",
-                          i, result.fitness_, result.inlier_rmse_);
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
+                          result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
                 pcd, target, result.correspondence_set_);
         transformation = update * transformation;
@@ -238,7 +236,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             result = this_result;
         }
     }
-    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
+    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}", result.fitness_,
                       result.inlier_rmse_);
     return result;
 }
@@ -369,8 +367,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #ifdef _OPENMP
     }
 #endif
-    utility::LogDebug("total_validation : {:d}\n", total_validation);
-    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}\n", result.fitness_,
+    utility::LogDebug("total_validation : {:d}", total_validation);
+    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}", result.fitness_,
                       result.inlier_rmse_);
     return result;
 }

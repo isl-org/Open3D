@@ -57,7 +57,7 @@ double Timer::GetDuration() const {
 }
 
 void Timer::Print(const std::string &timer_info) const {
-    LogInfo("{} {:.2f} ms.\n", timer_info,
+    LogInfo("{} {:.2f} ms.", timer_info,
             end_time_in_milliseconds_ - start_time_in_milliseconds_);
 }
 
@@ -92,10 +92,10 @@ void FPSTimer::Signal() {
         event_fragment_count_ >= events_to_print_) {
         // print and reset
         if (expectation_ == -1) {
-            LogInfo("{} at {:.2f} fps.\n", fps_timer_info_,
+            LogInfo("{} at {:.2f} fps.", fps_timer_info_,
                     double(event_fragment_count_ + 1) / GetDuration() * 1000.0);
         } else {
-            LogInfo("{} at {:.2f} fps (progress {:.2f}%).\n",
+            LogInfo("{} at {:.2f} fps (progress {:.2f}%).",
                     fps_timer_info_.c_str(),
                     double(event_fragment_count_ + 1) / GetDuration() * 1000.0,
                     (double)event_total_count_ * 100.0 / (double)expectation_);

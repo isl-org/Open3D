@@ -76,7 +76,7 @@ void Geometry3D::ResizeAndPaintUniformColor(
     Eigen::Vector3d clipped_color = color;
     if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
         utility::LogWarning(
-                "invalid color in PaintUniformColor, clipping to [0, 1]\n");
+                "invalid color in PaintUniformColor, clipping to [0, 1]");
         clipped_color = clipped_color.array()
                                 .max(Eigen::Vector3d(0, 0, 0).array())
                                 .matrix();

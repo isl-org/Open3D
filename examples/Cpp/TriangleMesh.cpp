@@ -30,10 +30,10 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::LogInfo("Usage :\n");
-    utility::LogInfo("    > TriangleMesh sphere\n");
-    utility::LogInfo("    > TriangleMesh merge <file1> <file2>\n");
-    utility::LogInfo("    > TriangleMesh normal <file1> <file2>\n");
+    utility::LogInfo("Usage :");
+    utility::LogInfo("    > TriangleMesh sphere");
+    utility::LogInfo("    > TriangleMesh merge <file1> <file2>");
+    utility::LogInfo("    > TriangleMesh normal <file1> <file2>");
 }
 
 void PaintMesh(open3d::geometry::TriangleMesh &mesh,
@@ -91,13 +91,13 @@ int main(int argc, char *argv[]) {
     } else if (option == "merge") {
         auto mesh1 = io::CreateMeshFromFile(argv[2]);
         auto mesh2 = io::CreateMeshFromFile(argv[3]);
-        utility::LogInfo("Mesh1 has {:d} vertices, {:d} triangles.\n",
+        utility::LogInfo("Mesh1 has {:d} vertices, {:d} triangles.",
                          mesh1->vertices_.size(), mesh1->triangles_.size());
-        utility::LogInfo("Mesh2 has {:d} vertices, {:d} triangles.\n",
+        utility::LogInfo("Mesh2 has {:d} vertices, {:d} triangles.",
                          mesh2->vertices_.size(), mesh2->triangles_.size());
         *mesh1 += *mesh2;
         utility::LogInfo(
-                "After merge, Mesh1 has {:d} vertices, {:d} triangles.\n",
+                "After merge, Mesh1 has {:d} vertices, {:d} triangles.",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         mesh1->RemoveDuplicatedVertices();
         mesh1->RemoveDuplicatedTriangles();
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
         mesh1->RemoveUnreferencedVertices();
         utility::LogInfo(
                 "After purge vertices, Mesh1 has {:d} vertices, {:d} "
-                "triangles.\n",
+                "triangles.",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         visualization::DrawGeometries({mesh1});
         io::WriteTriangleMesh("temp.ply", *mesh1, true, true);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
             mesh1->vertex_colors_[i] = Eigen::Vector3d(color, color, color);
             r += sqrt(dists[0]);
         }
-        utility::LogInfo("Average distance is {:.6f}.\n",
+        utility::LogInfo("Average distance is {:.6f}.",
                          r / (double)mesh1->vertices_.size());
         if (argc > 5) {
             io::WriteTriangleMesh(argv[5], *mesh1);
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
         camera::PinholeCameraTrajectory trajectory;
         io::ReadIJsonConvertible(argv[3], trajectory);
         if (utility::filesystem::DirectoryExists("image") == false) {
-            utility::LogWarning("No image!\n");
+            utility::LogWarning("No image!");
             return 0;
         }
         int idx = 3000;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
             std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
             auto result = fimage->FloatValueAt(uv(0), uv(1));
             if (result.first) {
-                utility::LogInfo("{:.6f}\n", result.second);
+                utility::LogInfo("{:.6f}", result.second);
             }
             visualization::DrawGeometries({fimage}, "Test", 1920, 1080);
         }
