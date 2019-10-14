@@ -119,17 +119,17 @@ void Visualizer::KeyPressCallback(
     switch (key) {
         case GLFW_KEY_LEFT_BRACKET:
             view_control_ptr_->ChangeFieldOfView(-1.0);
-            utility::LogDebug("[Visualizer] Field of view set to {:.2f}.\n",
+            utility::LogDebug("[Visualizer] Field of view set to {:.2f}.",
                               view_control_ptr_->GetFieldOfView());
             break;
         case GLFW_KEY_RIGHT_BRACKET:
             view_control_ptr_->ChangeFieldOfView(1.0);
-            utility::LogDebug("[Visualizer] Field of view set to {:.2f}.\n",
+            utility::LogDebug("[Visualizer] Field of view set to {:.2f}.",
                               view_control_ptr_->GetFieldOfView());
             break;
         case GLFW_KEY_R:
             ResetViewPoint();
-            utility::LogDebug("[Visualizer] Reset view point.\n");
+            utility::LogDebug("[Visualizer] Reset view point.");
             break;
         case GLFW_KEY_C:
             if (mods & GLFW_MOD_CONTROL || mods & GLFW_MOD_SUPER) {
@@ -160,34 +160,34 @@ void Visualizer::KeyPressCallback(
             break;
         case GLFW_KEY_L:
             render_option_ptr_->ToggleLightOn();
-            utility::LogDebug("[Visualizer] Lighting {}.\n",
+            utility::LogDebug("[Visualizer] Lighting {}.",
                               render_option_ptr_->light_on_ ? "ON" : "OFF");
             break;
         case GLFW_KEY_EQUAL:
             if (mods & GLFW_MOD_SHIFT) {
                 render_option_ptr_->ChangeLineWidth(1.0);
-                utility::LogDebug("[Visualizer] Line width set to {:.2f}.\n",
+                utility::LogDebug("[Visualizer] Line width set to {:.2f}.",
                                   render_option_ptr_->line_width_);
             } else {
                 render_option_ptr_->ChangePointSize(1.0);
                 if (render_option_ptr_->point_show_normal_) {
                     UpdateGeometry();
                 }
-                utility::LogDebug("[Visualizer] Point size set to {:.2f}.\n",
+                utility::LogDebug("[Visualizer] Point size set to {:.2f}.",
                                   render_option_ptr_->point_size_);
             }
             break;
         case GLFW_KEY_MINUS:
             if (mods & GLFW_MOD_SHIFT) {
                 render_option_ptr_->ChangeLineWidth(-1.0);
-                utility::LogDebug("[Visualizer] Line width set to {:.2f}.\n",
+                utility::LogDebug("[Visualizer] Line width set to {:.2f}.",
                                   render_option_ptr_->line_width_);
             } else {
                 render_option_ptr_->ChangePointSize(-1.0);
                 if (render_option_ptr_->point_show_normal_) {
                     UpdateGeometry();
                 }
-                utility::LogDebug("[Visualizer] Point size set to {:.2f}.\n",
+                utility::LogDebug("[Visualizer] Point size set to {:.2f}.",
                                   render_option_ptr_->point_size_);
             }
             break;
@@ -197,14 +197,14 @@ void Visualizer::KeyPressCallback(
                 UpdateGeometry();
             }
             utility::LogDebug(
-                    "[Visualizer] Point normal rendering {}.\n",
+                    "[Visualizer] Point normal rendering {}.",
                     render_option_ptr_->point_show_normal_ ? "ON" : "OFF");
             break;
         case GLFW_KEY_S:
             render_option_ptr_->ToggleShadingOption();
             UpdateGeometry();
             utility::LogDebug(
-                    "[Visualizer] Mesh shading mode is {}.\n",
+                    "[Visualizer] Mesh shading mode is {}.",
                     render_option_ptr_->mesh_shade_option_ ==
                                     RenderOption::MeshShadeOption::FlatShade
                             ? "FLAT"
@@ -213,20 +213,20 @@ void Visualizer::KeyPressCallback(
         case GLFW_KEY_W:
             render_option_ptr_->ToggleMeshShowWireframe();
             utility::LogDebug(
-                    "[Visualizer] Mesh wireframe rendering {}.\n",
+                    "[Visualizer] Mesh wireframe rendering {}.",
                     render_option_ptr_->mesh_show_wireframe_ ? "ON" : "OFF");
             break;
         case GLFW_KEY_B:
             render_option_ptr_->ToggleMeshShowBackFace();
             utility::LogDebug(
-                    "[Visualizer] Mesh back face rendering {}.\n",
+                    "[Visualizer] Mesh back face rendering {}.",
                     render_option_ptr_->mesh_show_back_face_ ? "ON" : "OFF");
             break;
         case GLFW_KEY_I:
             render_option_ptr_->ToggleInterpolationOption();
             UpdateGeometry();
             utility::LogDebug(
-                    "[Visualizer] geometry::Image interpolation mode is {}.\n",
+                    "[Visualizer] geometry::Image interpolation mode is {}.",
                     render_option_ptr_->interpolation_option_ ==
                                     RenderOption::TextureInterpolationOption::
                                             Nearest
@@ -236,7 +236,7 @@ void Visualizer::KeyPressCallback(
         case GLFW_KEY_T:
             render_option_ptr_->ToggleImageStretchOption();
             utility::LogDebug(
-                    "[Visualizer] geometry::Image stretch mode is #{}.\n",
+                    "[Visualizer] geometry::Image stretch mode is #{}.",
                     int(render_option_ptr_->image_stretch_option_));
             break;
         case GLFW_KEY_0:
@@ -244,16 +244,16 @@ void Visualizer::KeyPressCallback(
                 render_option_ptr_->mesh_color_option_ =
                         RenderOption::MeshColorOption::Default;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Mesh color set to DEFAULT.\n");
+                utility::LogDebug("[Visualizer] Mesh color set to DEFAULT.");
             } else if (mods & GLFW_MOD_SHIFT) {
                 SetGlobalColorMap(ColorMap::ColorMapOption::Gray);
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Color map set to GRAY.\n");
+                utility::LogDebug("[Visualizer] Color map set to GRAY.");
             } else {
                 render_option_ptr_->point_color_option_ =
                         RenderOption::PointColorOption::Default;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Point color set to DEFAULT.\n");
+                utility::LogDebug("[Visualizer] Point color set to DEFAULT.");
             }
             break;
         case GLFW_KEY_1:
@@ -261,16 +261,16 @@ void Visualizer::KeyPressCallback(
                 render_option_ptr_->mesh_color_option_ =
                         RenderOption::MeshColorOption::Color;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Mesh color set to COLOR.\n");
+                utility::LogDebug("[Visualizer] Mesh color set to COLOR.");
             } else if (mods & GLFW_MOD_SHIFT) {
                 SetGlobalColorMap(ColorMap::ColorMapOption::Jet);
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Color map set to JET.\n");
+                utility::LogDebug("[Visualizer] Color map set to JET.");
             } else {
                 render_option_ptr_->point_color_option_ =
                         RenderOption::PointColorOption::Color;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Point color set to COLOR.\n");
+                utility::LogDebug("[Visualizer] Point color set to COLOR.");
             }
             break;
         case GLFW_KEY_2:
@@ -278,16 +278,16 @@ void Visualizer::KeyPressCallback(
                 render_option_ptr_->mesh_color_option_ =
                         RenderOption::MeshColorOption::XCoordinate;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Mesh color set to X.\n");
+                utility::LogDebug("[Visualizer] Mesh color set to X.");
             } else if (mods & GLFW_MOD_SHIFT) {
                 SetGlobalColorMap(ColorMap::ColorMapOption::Summer);
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Color map set to SUMMER.\n");
+                utility::LogDebug("[Visualizer] Color map set to SUMMER.");
             } else {
                 render_option_ptr_->point_color_option_ =
                         RenderOption::PointColorOption::XCoordinate;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Point color set to X.\n");
+                utility::LogDebug("[Visualizer] Point color set to X.");
             }
             break;
         case GLFW_KEY_3:
@@ -295,16 +295,16 @@ void Visualizer::KeyPressCallback(
                 render_option_ptr_->mesh_color_option_ =
                         RenderOption::MeshColorOption::YCoordinate;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Mesh color set to Y.\n");
+                utility::LogDebug("[Visualizer] Mesh color set to Y.");
             } else if (mods & GLFW_MOD_SHIFT) {
                 SetGlobalColorMap(ColorMap::ColorMapOption::Winter);
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Color map set to WINTER.\n");
+                utility::LogDebug("[Visualizer] Color map set to WINTER.");
             } else {
                 render_option_ptr_->point_color_option_ =
                         RenderOption::PointColorOption::YCoordinate;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Point color set to Y.\n");
+                utility::LogDebug("[Visualizer] Point color set to Y.");
             }
             break;
         case GLFW_KEY_4:
@@ -312,16 +312,16 @@ void Visualizer::KeyPressCallback(
                 render_option_ptr_->mesh_color_option_ =
                         RenderOption::MeshColorOption::ZCoordinate;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Mesh color set to Z.\n");
+                utility::LogDebug("[Visualizer] Mesh color set to Z.");
             } else if (mods & GLFW_MOD_SHIFT) {
                 SetGlobalColorMap(ColorMap::ColorMapOption::Hot);
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Color map set to HOT.\n");
+                utility::LogDebug("[Visualizer] Color map set to HOT.");
             } else {
                 render_option_ptr_->point_color_option_ =
                         RenderOption::PointColorOption::ZCoordinate;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Point color set to Z.\n");
+                utility::LogDebug("[Visualizer] Point color set to Z.");
             }
             break;
         case GLFW_KEY_9:
@@ -329,13 +329,13 @@ void Visualizer::KeyPressCallback(
                 render_option_ptr_->mesh_color_option_ =
                         RenderOption::MeshColorOption::Normal;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Mesh color set to NORMAL.\n");
+                utility::LogDebug("[Visualizer] Mesh color set to NORMAL.");
             } else if (mods & GLFW_MOD_SHIFT) {
             } else {
                 render_option_ptr_->point_color_option_ =
                         RenderOption::PointColorOption::Normal;
                 UpdateGeometry();
-                utility::LogDebug("[Visualizer] Point color set to NORMAL.\n");
+                utility::LogDebug("[Visualizer] Point color set to NORMAL.");
             }
             break;
         default:

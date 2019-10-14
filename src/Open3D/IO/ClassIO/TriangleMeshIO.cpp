@@ -87,7 +87,7 @@ bool ReadTriangleMesh(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read geometry::TriangleMesh failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -95,17 +95,17 @@ bool ReadTriangleMesh(const std::string &filename,
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         utility::LogWarning(
                 "Read geometry::TriangleMesh failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     bool success = map_itr->second(filename, mesh, print_progress);
     utility::LogDebug(
-            "Read geometry::TriangleMesh: {:d} triangles and {:d} vertices.\n",
+            "Read geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     if (mesh.HasVertices() && !mesh.HasTriangles()) {
         utility::LogWarning(
                 "geometry::TriangleMesh appears to be a geometry::PointCloud "
-                "(only contains vertices, but no triangles).\n");
+                "(only contains vertices, but no triangles).");
     }
     return success;
 }
@@ -123,7 +123,7 @@ bool WriteTriangleMesh(const std::string &filename,
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Write geometry::TriangleMesh failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     auto map_itr =
@@ -131,14 +131,14 @@ bool WriteTriangleMesh(const std::string &filename,
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
         utility::LogWarning(
                 "Write geometry::TriangleMesh failed: unknown file "
-                "extension.\n");
+                "extension.");
         return false;
     }
     bool success = map_itr->second(filename, mesh, write_ascii, compressed,
                                    write_vertex_normals, write_vertex_colors,
                                    write_triangle_uvs, print_progress);
     utility::LogDebug(
-            "Write geometry::TriangleMesh: {:d} triangles and {:d} vertices.\n",
+            "Write geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     return success;
 }

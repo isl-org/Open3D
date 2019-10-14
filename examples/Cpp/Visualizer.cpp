@@ -34,10 +34,10 @@ void PrintUsage() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage:\n");
-    utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-    utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
-    utility::LogInfo("    > Visualizer [rgbd] [color] [depth] [--rgbd_type]\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]");
+    utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]");
+    utility::LogInfo("    > Visualizer [rgbd] [color] [depth] [--rgbd_type]");
     // clang-format on
 }
 int main(int argc, char *argv[]) {
@@ -53,9 +53,9 @@ int main(int argc, char *argv[]) {
     if (option == "mesh") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -63,9 +63,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "spin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -80,9 +80,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "slowspin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -99,9 +99,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "pointcloud") {
         auto cloud_ptr = std::make_shared<geometry::PointCloud>();
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -109,9 +109,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "rainbow") {
         auto cloud_ptr = std::make_shared<geometry::PointCloud>();
         if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -140,9 +140,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "image") {
         auto image_ptr = std::make_shared<geometry::Image>();
         if (io::ReadImage(argv[2], *image_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         visualization::DrawGeometries({image_ptr}, "Image", image_ptr->width_,
@@ -159,16 +159,16 @@ int main(int argc, char *argv[]) {
         auto depth_ptr = std::make_shared<geometry::Image>();
 
         if (io::ReadImage(argv[2], *color_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
 
         if (io::ReadImage(argv[3], *depth_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[3]);
+            utility::LogInfo("Successfully read {}", argv[3]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[3]);
+            utility::LogWarning("Failed to read {}", argv[3]);
             return 1;
         }
 
@@ -203,9 +203,9 @@ int main(int argc, char *argv[]) {
     } else if (option == "animation") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            utility::LogInfo("Successfully read {}\n", argv[2]);
+            utility::LogInfo("Successfully read {}", argv[2]);
         } else {
-            utility::LogWarning("Failed to read {}\n\n", argv[2]);
+            utility::LogWarning("Failed to read {}", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    utility::LogInfo("End of the test.\n");
+    utility::LogInfo("End of the test.");
 
     return 0;
 }

@@ -50,7 +50,7 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
         } else if (class_name == "OctreeColorLeafNode") {
             node = std::make_shared<OctreeColorLeafNode>();
         } else {
-            utility::LogError("Unhandled class name {}\n", class_name);
+            utility::LogError("Unhandled class name {}", class_name);
         }
     }
     // Convert from json
@@ -106,13 +106,12 @@ bool OctreeInternalNode::ConvertFromJsonValue(const Json::Value& value) {
     if (value.isObject() == false) {
         utility::LogWarning(
                 "ConvertFromJsonValue read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     std::string class_name = value.get("class_name", "").asString();
     if (class_name != "OctreeInternalNode") {
-        utility::LogWarning("class_name {} != OctreeInternalNode\n",
-                            class_name);
+        utility::LogWarning("class_name {} != OctreeInternalNode", class_name);
         return false;
     }
     bool rc = true;
@@ -171,7 +170,7 @@ bool OctreeColorLeafNode::ConvertFromJsonValue(const Json::Value& value) {
     if (value.isObject() == false) {
         utility::LogWarning(
                 "OctreeColorLeafNode read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     if (value.get("class_name", "") != "OctreeColorLeafNode") {
@@ -590,7 +589,7 @@ bool Octree::ConvertToJsonValue(Json::Value& value) const {
 bool Octree::ConvertFromJsonValue(const Json::Value& value) {
     if (value.isObject() == false) {
         utility::LogWarning(
-                "Octree read JSON failed: unsupported json format.\n");
+                "Octree read JSON failed: unsupported json format.");
         return false;
     }
     if (value.get("class_name", "") != "Octree") {

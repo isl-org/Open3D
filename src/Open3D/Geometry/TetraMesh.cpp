@@ -95,7 +95,7 @@ TetraMesh &TetraMesh::RemoveDuplicatedVertices() {
         }
     }
     utility::LogDebug(
-            "[RemoveDuplicatedVertices] {:d} vertices have been removed.\n",
+            "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
             (int)(old_vertex_num - k));
 
     return *this;
@@ -125,9 +125,8 @@ TetraMesh &TetraMesh::RemoveDuplicatedTetras() {
         }
     }
     tetras_.resize(k);
-    utility::LogDebug(
-            "[RemoveDuplicatedTetras] {:d} tetras have been removed.\n",
-            (int)(old_tetra_num - k));
+    utility::LogDebug("[RemoveDuplicatedTetras] {:d} tetras have been removed.",
+                      (int)(old_tetra_num - k));
 
     return *this;
 }
@@ -163,7 +162,7 @@ TetraMesh &TetraMesh::RemoveUnreferencedVertices() {
         }
     }
     utility::LogDebug(
-            "[RemoveUnreferencedVertices] {:d} vertices have been removed.\n",
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
             (int)(old_vertex_num - k));
 
     return *this;
@@ -184,7 +183,7 @@ TetraMesh &TetraMesh::RemoveDegenerateTetras() {
     tetras_.resize(k);
     utility::LogDebug(
             "[RemoveDegenerateTetras] {:d} tetras have been "
-            "removed.\n",
+            "removed.",
             (int)(old_tetra_num - k));
     return *this;
 }
@@ -200,7 +199,7 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
     if (values.size() != vertices_.size()) {
         utility::LogError(
                 "[ExtractTriangleMesh] number of values does not match the "
-                "number of vertices.\n");
+                "number of vertices.");
     }
 
     auto SurfaceIntersectionTest = [](double v0, double v1, double level) {
@@ -349,13 +348,13 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
                 utility::LogWarning(
                         "[ExtractTriangleMesh] failed to create triangles for "
                         "tetrahedron {:d}: invalid edge configuration for "
-                        "tetrahedron\n",
+                        "tetrahedron",
                         int(tetra_i));
             }
         } else if (0 != num_verts) {
             utility::LogWarning(
                     "[ExtractTriangleMesh] failed to create triangles for "
-                    "tetrahedron {:d}: unexpected number of vertices {:d}\n",
+                    "tetrahedron {:d}: unexpected number of vertices {:d}",
                     int(tetra_i), num_verts);
         }
     }

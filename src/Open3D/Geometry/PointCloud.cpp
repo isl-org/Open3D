@@ -133,7 +133,7 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
         if (kdtree.SearchKNN(points_[i], 1, indices, dists) == 0) {
             utility::LogDebug(
                     "[ComputePointCloudToPointCloudDistance] Found a point "
-                    "without neighbors.\n");
+                    "without neighbors.");
             distances[i] = 0.0;
         } else {
             distances[i] = std::sqrt(dists[0]);
@@ -166,7 +166,7 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
     utility::LogDebug(
-            "[RemoveNoneFinitePoints] {:d} nan points have been removed.\n",
+            "[RemoveNoneFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
     return *this;
 }
@@ -236,7 +236,7 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
         if (kdtree.SearchKNN(points_[i], 2, indices, dists) <= 1) {
             utility::LogDebug(
                     "[ComputePointCloudNearestNeighborDistance] Found a point "
-                    "without neighbors.\n");
+                    "without neighbors.");
             nn_dis[i] = 0.0;
         } else {
             nn_dis[i] = std::sqrt(dists[1]);
@@ -255,7 +255,7 @@ PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                                const double radius) const {
     if (radius <= 0) {
         utility::LogError(
-                "[HiddenPointRemoval] radius must be larger than zero.\n");
+                "[HiddenPointRemoval] radius must be larger than zero.");
     }
 
     // perform spherical projection

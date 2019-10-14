@@ -92,7 +92,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
         // TODO: implement copy
         utility::LogWarning(
                 "[TriangleMesh] copy of uvs and texture is not implemented "
-                "yet\n");
+                "yet");
     }
     return (*this);
 }
@@ -677,7 +677,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
         }
     }
     utility::LogDebug(
-            "[RemoveDuplicatedVertices] {:d} vertices have been removed.\n",
+            "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
             (int)(old_vertex_num - k));
 
     return *this;
@@ -687,7 +687,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveDuplicatedTriangles] This mesh contains triangle uvs "
-                "that are not handled in this function\n");
+                "that are not handled in this function");
     }
     typedef std::tuple<int, int, int> Index3;
     std::unordered_map<Index3, size_t, utility::hash_tuple::hash<Index3>>
@@ -729,7 +729,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
         ComputeAdjacencyList();
     }
     utility::LogDebug(
-            "[RemoveDuplicatedTriangles] {:d} triangles have been removed.\n",
+            "[RemoveDuplicatedTriangles] {:d} triangles have been removed.",
             (int)(old_triangle_num - k));
 
     return *this;
@@ -772,7 +772,7 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
         }
     }
     utility::LogDebug(
-            "[RemoveUnreferencedVertices] {:d} vertices have been removed.\n",
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
             (int)(old_vertex_num - k));
 
     return *this;
@@ -782,7 +782,7 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveDegenerateTriangles] This mesh contains triangle uvs "
-                "that are not handled in this function\n");
+                "that are not handled in this function");
     }
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
@@ -803,7 +803,7 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     }
     utility::LogDebug(
             "[RemoveDegenerateTriangles] {:d} triangles have been "
-            "removed.\n",
+            "removed.",
             (int)(old_triangle_num - k));
     return *this;
 }
@@ -812,7 +812,7 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[RemoveNonManifoldEdges] This mesh contains triangle uvs that "
-                "are not handled in this function\n");
+                "are not handled in this function");
     }
     std::vector<double> triangle_areas;
     GetSurfaceArea(triangle_areas);
@@ -891,7 +891,7 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
 TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     KDTreeFlann kdtree(*this);
     // precompute all neighbours
-    utility::LogDebug("Precompute Neighbours\n");
+    utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -900,7 +900,7 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
     }
-    utility::LogDebug("Done Precompute Neighbours\n");
+    utility::LogDebug("Done Precompute Neighbours");
 
     bool has_vertex_normals = HasVertexNormals();
     bool has_vertex_colors = HasVertexColors();
@@ -948,7 +948,7 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
             new_vertex_colors.push_back(color / n);
         }
     }
-    utility::LogDebug("Merged {} vertices\n",
+    utility::LogDebug("Merged {} vertices",
                       vertices_.size() - new_vertices.size());
 
     std::swap(vertices_, new_vertices);

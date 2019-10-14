@@ -79,7 +79,7 @@ void UniformTSDFVolume::Integrate(
         (color_type_ != TSDFVolumeColorType::NoColor &&
          image.color_.height_ != intrinsic.height_)) {
         utility::LogError(
-                "[UniformTSDFVolume::Integrate] Unsupported image format.\n");
+                "[UniformTSDFVolume::Integrate] Unsupported image format.");
     }
     auto depth2cameradistance =
             geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(

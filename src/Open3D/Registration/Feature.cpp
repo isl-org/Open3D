@@ -123,7 +123,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     if (input.HasNormals() == false) {
         utility::LogError(
                 "[ComputeFPFHFeature] Failed because input point cloud has no "
-                "normal.\n");
+                "normal.");
     }
     geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);

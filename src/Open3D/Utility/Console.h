@@ -42,9 +42,22 @@ namespace open3d {
 namespace utility {
 
 enum class VerbosityLevel {
+    /// LogError throws now a runtime_error with the given error message. This
+    /// should be used if there is no point in continuing the given algorithm at
+    /// some point and the error is not returned in another way (e.g., via a
+    /// bool/int as return value).
     Error = 0,
+    /// LogWarning is used if an error occured, but the error is also signaled
+    /// via a return value (i.e., there is no need to throw an exception). This
+    /// warning should further be used, if the algorithms encounters a state
+    /// that does not break its continuation, but the output is likely not to be
+    /// what the user expected.
     Warning = 1,
+    /// LogInfo is used to inform the user with expected output, e.g, pressed a
+    /// key in the visualizer prints helping information.
     Info = 2,
+    /// LogDebug is used to print debug/additional information on the state of
+    /// the algorithm.
     Debug = 3,
 };
 
@@ -82,6 +95,7 @@ public:
             ChangeConsoleColor(TextColor::Yellow, 1);
             fmt::print("[Open3D WARNING] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
             ResetConsoleColor();
         }
     }
@@ -90,6 +104,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Info) {
             fmt::print("[Open3D INFO] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
         }
     }
 
@@ -97,6 +112,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Debug) {
             fmt::print("[Open3D DEBUG] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
         }
     }
 
@@ -137,6 +153,7 @@ public:
             fmt::print("[Open3D WARNING] ");
             fmt::printf(format, args...);
             ResetConsoleColor();
+            fmt::print("\n");
         }
     }
 
@@ -145,6 +162,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Info) {
             fmt::print("[Open3D INFO] ");
             fmt::printf(format, args...);
+            fmt::print("\n");
         }
     }
 
@@ -153,6 +171,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Debug) {
             fmt::print("[Open3D DEBUG] ");
             fmt::printf(format, args...);
+            fmt::print("\n");
         }
     }
 

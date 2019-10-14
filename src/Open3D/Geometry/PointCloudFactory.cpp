@@ -137,7 +137,7 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
         }
     }
     utility::LogError(
-            "[CreatePointCloudFromDepthImage] Unsupported image format.\n");
+            "[CreatePointCloudFromDepthImage] Unsupported image format.");
     return std::make_shared<PointCloud>();
 }
 
@@ -158,7 +158,7 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         }
     }
     utility::LogError(
-            "[CreatePointCloudFromRGBDImage] Unsupported image format.\n");
+            "[CreatePointCloudFromRGBDImage] Unsupported image format.");
     return std::make_shared<PointCloud>();
 }
 

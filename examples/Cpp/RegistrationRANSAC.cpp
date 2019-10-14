@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     if (argc != 3 && argc != 4) {
         utility::LogInfo(
                 "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
-                "[path_to_second_point_cloud] --visualize\n");
+                "[path_to_second_point_cloud] --visualize");
         return 1;
     }
 

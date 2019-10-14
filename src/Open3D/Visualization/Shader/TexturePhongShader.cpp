@@ -293,7 +293,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
             break;
         }
         default: {
-            utility::LogWarning("Unknown format, abort!\n");
+            utility::LogWarning("Unknown format, abort!");
             return false;
         }
     }
@@ -313,7 +313,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
             break;
         }
         default: {
-            utility::LogWarning("Unknown format, abort!\n");
+            utility::LogWarning("Unknown format, abort!");
             return false;
         }
     }

@@ -57,7 +57,7 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
     if (value.get("class_name", "").asString() != "PinholeCameraTrajectory" ||
@@ -65,7 +65,7 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
         value.get("version_minor", 0).asInt() != 0) {
         utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: unsupported json "
-                "format.\n");
+                "format.");
         return false;
     }
 
@@ -74,7 +74,7 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (parameter_array.size() == 0) {
         utility::LogWarning(
                 "PinholeCameraTrajectory read JSON failed: empty "
-                "trajectory.\n");
+                "trajectory.");
         return false;
     }
     parameters_.resize(parameter_array.size());

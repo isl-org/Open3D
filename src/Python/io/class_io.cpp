@@ -325,22 +325,21 @@ void pybind_class_io(py::module &m_io) {
                                  map_shared_argument_docstrings);
 
 #ifdef BUILD_AZURE_KINECT
-    m_io.def(
-            "read_azure_kinect_sensor_config",
-            [](const std::string &filename) {
-                io::AzureKinectSensorConfig config;
-                bool success =
-                        io::ReadIJsonConvertibleFromJSON(filename, config);
-                if (!success) {
-                    utility::LogWarning(
-                            "Invalid sensor config {}, using default instead\n",
-                            filename);
-                    return io::AzureKinectSensorConfig();
-                }
-                return config;
-            },
-            "Function to read Azure Kinect sensor config from file",
-            "filename"_a);
+    m_io.def("read_azure_kinect_sensor_config",
+             [](const std::string &filename) {
+                 io::AzureKinectSensorConfig config;
+                 bool success =
+                         io::ReadIJsonConvertibleFromJSON(filename, config);
+                 if (!success) {
+                     utility::LogWarning(
+                             "Invalid sensor config {}, using default instead",
+                             filename);
+                     return io::AzureKinectSensorConfig();
+                 }
+                 return config;
+             },
+             "Function to read Azure Kinect sensor config from file",
+             "filename"_a);
     docstring::FunctionDocInject(m_io, "read_azure_kinect_sensor_config",
                                  map_shared_argument_docstrings);
 
@@ -361,7 +360,7 @@ void pybind_class_io(py::module &m_io) {
                          io::ReadIJsonConvertibleFromJSON(filename, metadata);
                  if (!success) {
                      utility::LogWarning(
-                             "Invalid mkv metadata {}, using default instead\n",
+                             "Invalid mkv metadata {}, using default instead",
                              filename);
                      return io::MKVMetadata();
                  }

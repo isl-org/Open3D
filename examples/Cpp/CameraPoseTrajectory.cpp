@@ -35,9 +35,8 @@ int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 3) {
-        utility::LogInfo("Usage :\n");
-        utility::LogInfo(
-                ">    CameraPoseTrajectory trajectory_file pcds_dir\n");
+        utility::LogInfo("Usage :");
+        utility::LogInfo(">    CameraPoseTrajectory trajectory_file pcds_dir");
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;

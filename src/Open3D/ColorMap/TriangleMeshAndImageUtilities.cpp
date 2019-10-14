@@ -92,7 +92,7 @@ CreateVertexAndImageVisibility(
                 }
             }
         }
-        utility::LogDebug("[cam {:d}] {:.5f} percents are visible\n", c,
+        utility::LogDebug("[cam {:d}] {:.5f} percents are visible", c,
                           double(viscnt) / n_vertex * 100);
         fflush(stdout);
     }

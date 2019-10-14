@@ -202,7 +202,7 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
         utility::LogError(
-                "[ConvertDepthImageToXYZImage] Unsupported image format.\n");
+                "[ConvertDepthImageToXYZImage] Unsupported image format.");
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
     const double inv_fy = 1.0 / intrinsic_matrix(1, 1);
@@ -306,7 +306,7 @@ void NormalizeIntensity(geometry::Image &image_s,
         image_s.height_ != image_t.height_) {
         utility::LogError(
                 "[NormalizeIntensity] Size of two input images should be "
-                "same\n");
+                "same");
     }
     double mean_s = 0.0, mean_t = 0.0;
     for (size_t row = 0; row < correspondence.size(); row++) {
@@ -434,7 +434,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     std::tie(is_success, extrinsic) =
             utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
     if (!is_success) {
-        utility::LogWarning("[ComputeOdometry] no solution!\n");
+        utility::LogWarning("[ComputeOdometry] no solution!");
         return std::make_tuple(false, Eigen::Matrix4d::Identity());
     } else {
         return std::make_tuple(true, extrinsic);
@@ -491,7 +491,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
             result_odo = curr_odo * result_odo;
 
             if (!is_success) {
-                utility::LogWarning("[ComputeOdometry] no solution!\n");
+                utility::LogWarning("[ComputeOdometry] no solution!");
                 return std::make_tuple(false, Eigen::Matrix4d::Identity());
             }
         }
@@ -514,7 +514,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const OdometryOption &option /*= OdometryOption()*/) {
     if (!CheckRGBDImagePair(source, target)) {
         utility::LogWarning(
-                "[RGBDOdometry] Two RGBD pairs should be same in size.\n");
+                "[RGBDOdometry] Two RGBD pairs should be same in size.");
         return std::make_tuple(false, Eigen::Matrix4d::Identity(),
                                Eigen::Matrix6d::Zero());
     }

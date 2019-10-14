@@ -33,37 +33,37 @@ int main(int argc, char **argv) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    utility::LogDebug("This Debug message should be visible, {} {:.2f}\n",
+    utility::LogDebug("This Debug message should be visible, {} {:.2f}",
                       "format:", 0.42001);
-    utility::LogInfo("This Info message should be visible, {} {:.2f}\n",
+    utility::LogInfo("This Info message should be visible, {} {:.2f}",
                      "format:", 0.42001);
-    utility::LogWarning("This Warning message should be visible, {} {:.2f}\n",
+    utility::LogWarning("This Warning message should be visible, {} {:.2f}",
                         "format:", 0.42001);
 
-    utility::LogDebugf("This Debug message should be visible, %s %.2f\n",
+    utility::LogDebugf("This Debug message should be visible, %s %.2f",
                        "formatf:", 0.42001);
-    utility::LogInfof("This Info message should be visible, %s %.2f\n",
+    utility::LogInfof("This Info message should be visible, %s %.2f",
                       "formatf:", 0.42001);
-    utility::LogWarningf("This Warning message should be visible, %s %.2f\n",
+    utility::LogWarningf("This Warning message should be visible, %s %.2f",
                          "formatf:", 0.42001);
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
-    utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}\n",
+    utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}",
                       "format:", 0.42001);
-    utility::LogInfo("This Info message should be visible, {} {:.2f}\n",
+    utility::LogInfo("This Info message should be visible, {} {:.2f}",
                      "format:", 0.42001);
-    utility::LogWarning("This Warning message should be visible, {} {:.2f}\n",
+    utility::LogWarning("This Warning message should be visible, {} {:.2f}",
                         "format:", 0.42001);
 
     try {
-        utility::LogError("This Error exception is catched\n");
+        utility::LogError("This Error exception is catched");
     } catch (const std::exception &e) {
         utility::LogInfo("Catched exception msg: {}", e.what());
     }
-    utility::LogInfo("This Info message shall print in regular color\n");
-    utility::LogError("This Error message terminates the program\n");
-    utility::LogError("This Error message should NOT be visible\n");
+    utility::LogInfo("This Info message shall print in regular color");
+    utility::LogError("This Error message terminates the program");
+    utility::LogError("This Error message should NOT be visible");
 
     return 0;
 }

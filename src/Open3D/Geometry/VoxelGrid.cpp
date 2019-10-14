@@ -134,20 +134,20 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     if (voxel_size_ != voxelgrid.voxel_size_) {
         utility::LogError(
                 "[VoxelGrid] Could not combine VoxelGrid because voxel_size "
-                "differs (this=%f, other=%f.\n",
+                "differs (this=%f, other=%f)",
                 voxel_size_, voxelgrid.voxel_size_);
     }
     if (origin_ != voxelgrid.origin_) {
         utility::LogError(
                 "[VoxelGrid] Could not combine VoxelGrid because origin "
-                "differs (this=%f,%f,%f, other=%f,%f,%f.\n",
+                "differs (this=%f,%f,%f, other=%f,%f,%f)",
                 origin_(0), origin_(1), origin_(2), voxelgrid.origin_(0),
                 voxelgrid.origin_(1), voxelgrid.origin_(2));
     }
     if (this->HasColors() != voxelgrid.HasColors()) {
         utility::LogError(
                 "[VoxelGrid] Could not combine VoxelGrid one has colors and "
-                "the other not.\n");
+                "the other not.");
     }
     std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
@@ -275,7 +275,7 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
         depth_map.width_ != camera_parameter.intrinsic_.width_) {
         utility::LogError(
                 "[VoxelGrid] provided depth_map dimensions are not compatible "
-                "with the provided camera_parameters\n");
+                "with the provided camera_parameters");
     }
 
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
@@ -317,7 +317,7 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
         silhouette_mask.width_ != camera_parameter.intrinsic_.width_) {
         utility::LogError(
                 "[VoxelGrid] provided silhouette_mask dimensions are not "
-                "compatible with the provided camera_parameters\n");
+                "compatible with the provided camera_parameters");
     }
 
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);

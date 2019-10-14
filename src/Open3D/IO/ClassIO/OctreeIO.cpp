@@ -68,17 +68,17 @@ bool ReadOctree(const std::string &filename,
     }
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read geometry::Octree failed: unknown file extension.\n");
+                "Read geometry::Octree failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_octree_read_function.find(filename_ext);
     if (map_itr == file_extension_to_octree_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::Octree failed: unknown file extension.\n");
+                "Read geometry::Octree failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, octree);
-    utility::LogDebug("Read geometry::Octree.\n");
+    utility::LogDebug("Read geometry::Octree.");
     return success;
 }
 
@@ -87,17 +87,17 @@ bool WriteOctree(const std::string &filename, const geometry::Octree &octree) {
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write geometry::Octree failed: unknown file extension.\n");
+                "Write geometry::Octree failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_octree_write_function.find(filename_ext);
     if (map_itr == file_extension_to_octree_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::Octree failed: unknown file extension.\n");
+                "Write geometry::Octree failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, octree);
-    utility::LogDebug("Write geometry::Octree.\n");
+    utility::LogDebug("Write geometry::Octree.");
     return success;
 }
 
