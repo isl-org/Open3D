@@ -32,8 +32,6 @@
 namespace open3d {
 namespace kernel {
 
-// TODO: use dispatch mecanism to register GPU and CPU implementation
-//       attached a statically stored string to function map
 void CopyCPU(const Tensor& src, Tensor& dst);
 
 #ifdef BUILD_CUDA_MODULE

@@ -80,7 +80,7 @@ set(DIRECTORIES_OF_INTEREST_CPP
     docs/_static
 )
 
-message(STATUS "C++ apply-style...")
+message(STATUS "C++/CUDA apply-style...")
 foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_CPP})
     set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
     set(CU_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cu")
@@ -90,4 +90,4 @@ foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_CPP})
         style_apply_file_cpp(${FILE})
     endforeach(FILE)
 endforeach(DIRECTORY)
-message(STATUS "C++ apply-style done")
+message(STATUS "C++/CUDA apply-style done")

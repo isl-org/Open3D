@@ -44,10 +44,9 @@ public:
 
     ~Blob() { MemoryManager::Free(v_, device_); };
 
+    /// Returns true if ptr is within the memory range of Blob
     bool IsPtrInBlob(const void* ptr) const {
-        const char* ptr_char = static_cast<const char*>(ptr);
-        const char* start = static_cast<const char*>(v_);
-        return (ptr_char >= start) && (ptr_char < (start + byte_size_));
+        return (ptr >= v_) && (ptr < static_cast<const char*>(v_) + byte_size_);
     }
 
 public:
