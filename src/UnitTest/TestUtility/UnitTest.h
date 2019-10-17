@@ -44,7 +44,7 @@
 
 // GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
 // The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
-#define GPU_CONDITIONAL_TEST(test_name) \
+#define CUDA_CONDITIONAL_TEST(test_name) \
     OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
 
 namespace unit_test {

@@ -26,23 +26,21 @@
 
 #pragma once
 
-#include <cuda.h>
-#include <cuda_runtime.h>
-
+#include "Open3D/Container/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
-#define OPEN3D_CUDA_CHECK(err) \
-    open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
-
 namespace open3d {
+namespace kernel {
 
-inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
-                                const char *file,
-                                const int line) {
-    if (err != cudaSuccess) {
-        utility::LogFatal("{}:{} CUDA runtime error: {}\n", file, line,
-                          cudaGetErrorString(err));
-    }
-}
+// TODO: use dispatch mecanism to register GPU and CPU implementation
+//       attached a statically stored string to function map
+void CopyCPU(const Tensor& src, Tensor& dst);
 
+#ifdef BUILD_CUDA_MODULE
+void CopyCUDA(const Tensor& src, Tensor& dst);
+#endif
+
+void Copy(const Tensor& src, Tensor& dst);
+
+}  // namespace kernel
 }  // namespace open3d

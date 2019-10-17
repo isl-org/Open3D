@@ -26,39 +26,29 @@
 
 #pragma once
 
-#include <cstddef>
-#include <iostream>
-#include <string>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
-#include "Open3D/Container/Device.h"
-#include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Utility/Console.h"
+
+#define OPEN3D_CUDA_CHECK(err) \
+    open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 
 namespace open3d {
 
-class Blob : public std::enable_shared_from_this<Blob> {
-public:
-    Blob(size_t byte_size, const Device& device)
-        : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Malloc(byte_size_, device_);
+inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
+                                const char *file,
+                                const int line) {
+    if (err != cudaSuccess) {
+        utility::LogFatal("{}:{} CUDA runtime error: {}\n", file, line,
+                          cudaGetErrorString(err));
     }
+}
 
-    ~Blob() { MemoryManager::Free(v_, device_); };
+#define OPEN3D_HOST_DEVICE __host__ __device__
 
-    bool IsPtrInBlob(const void* ptr) const {
-        const char* ptr_char = static_cast<const char*>(ptr);
-        const char* start = static_cast<const char*>(v_);
-        return (ptr_char >= start) && (ptr_char < (start + byte_size_));
-    }
-
-public:
-    /// Device data pointer
-    void* v_ = nullptr;
-
-    /// Size of Blob in bytes
-    size_t byte_size_ = 0;
-
-    /// Device context for the blob
-    Device device_;
-};
+#define OPEN3D_ASSERT_HOST_DEVICE(type)                                   \
+    static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
+                  #type " must be a __host__ __device__ lambda")
 
 }  // namespace open3d

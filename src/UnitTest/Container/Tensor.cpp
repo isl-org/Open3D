@@ -94,7 +94,7 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
                  std::runtime_error);
 }
 
-TEST_P(TensorPermuteDevicePairs, CopyTo) {
+TEST_P(TensorPermuteDevicePairs, Copy) {
     Device dst_device;
     Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -105,7 +105,7 @@ TEST_P(TensorPermuteDevicePairs, CopyTo) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     Tensor src_t(vals, shape, dtype, src_device);
 
-    Tensor dst_t = src_t.CopyTo(dst_device);
+    Tensor dst_t = src_t.Copy(dst_device);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetBlob()->byte_size_,
@@ -176,7 +176,7 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
     EXPECT_EQ(t_1_2_3.GetBlob(), t.GetBlob());
 }
 
-TEST_P(TensorPermuteDevices, AsScalar) {
+TEST_P(TensorPermuteDevices, Item) {
     Device device = GetParam();
 
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
@@ -184,17 +184,17 @@ TEST_P(TensorPermuteDevices, AsScalar) {
     Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
 
     Tensor t_0 = t[0];
-    EXPECT_THROW(t_0.AsScalar<float>(), std::runtime_error);
+    EXPECT_THROW(t_0.Item<float>(), std::runtime_error);
 
     Tensor t_1 = t[1];
-    EXPECT_THROW(t_1.AsScalar<float>(), std::runtime_error);
+    EXPECT_THROW(t_1.Item<float>(), std::runtime_error);
 
     Tensor t_1_2 = t[1][2];
-    EXPECT_THROW(t_1_2.AsScalar<float>(), std::runtime_error);
+    EXPECT_THROW(t_1_2.Item<float>(), std::runtime_error);
 
     Tensor t_1_2_3 = t[1][2][3];
-    EXPECT_THROW(t_1_2_3.AsScalar<int32_t>(), std::runtime_error);
-    EXPECT_EQ(t_1_2_3.AsScalar<float>(), 23.f);
+    EXPECT_THROW(t_1_2_3.Item<int32_t>(), std::runtime_error);
+    EXPECT_EQ(t_1_2_3.Item<float>(), 23.f);
 }
 
 TEST_P(TensorPermuteDevices, ToString) {
@@ -203,27 +203,60 @@ TEST_P(TensorPermuteDevices, ToString) {
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
     Tensor t1(vals, {24}, Dtype::Float32, device);
-    // utility::LogDebug("\n{}\n", t1.ToString());
+    EXPECT_EQ(
+            t1.ToString(/*with_suffix=*/false),
+            R"([0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23])");
 
     Tensor t2(vals, {6, 4}, Dtype::Float32, device);
-    // utility::LogDebug("\n{}\n", t2.ToString());
+    EXPECT_EQ(t2.ToString(/*with_suffix=*/false),
+              R"([[0 1 2 3],
+ [4 5 6 7],
+ [8 9 10 11],
+ [12 13 14 15],
+ [16 17 18 19],
+ [20 21 22 23]])");
 
     Tensor t3(vals, {2, 3, 4}, Dtype::Float32, device);
-    // utility::LogDebug("\n{}\n", t3.ToString());
+    EXPECT_EQ(t3.ToString(/*with_suffix=*/false),
+              R"([[[0 1 2 3],
+  [4 5 6 7],
+  [8 9 10 11]],
+ [[12 13 14 15],
+  [16 17 18 19],
+  [20 21 22 23]]])");
 
     Tensor t4(vals, {2, 3, 2, 2}, Dtype::Float32, device);
+    EXPECT_EQ(t4.ToString(/*with_suffix=*/false),
+              R"([[[[0 1],
+   [2 3]],
+  [[4 5],
+   [6 7]],
+  [[8 9],
+   [10 11]]],
+ [[[12 13],
+   [14 15]],
+  [[16 17],
+   [18 19]],
+  [[20 21],
+   [22 23]]]])");
+
+    // utility::LogDebug("\n{}\n", t1.ToString());
+    // utility::LogDebug("\n{}\n", t3.ToString());
+    // utility::LogDebug("\n{}\n", t2.ToString());
     // utility::LogDebug("\n{}\n", t4.ToString());
 }
 
-TEST_P(TensorPermuteDevices, CopyContinuous) {
+TEST_P(TensorPermuteDevices, CopyContiguous) {
     Device device = GetParam();
 
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
     Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+    EXPECT_TRUE(t.IsContiguous());
 
     Tensor t_0 = t[0];
-    EXPECT_THROW(t_0.AsScalar<float>(), std::runtime_error);
+    EXPECT_THROW(t_0.Item<float>(), std::runtime_error);
+    EXPECT_TRUE(t_0.IsContiguous());
 
     Tensor t_1 = t[1];
     EXPECT_EQ(t_1.GetShape(), SizeVector({3, 4}));
@@ -231,8 +264,9 @@ TEST_P(TensorPermuteDevices, CopyContinuous) {
     EXPECT_EQ(t_1.GetDataPtr(), static_cast<uint8_t *>(t.GetDataPtr()) +
                                         1 * 3 * 4 * sizeof(float));
     EXPECT_NE(t_1.GetDataPtr(), t_1.GetBlob()->v_);
+    EXPECT_TRUE(t_1.IsContiguous());
 
-    Tensor t_1_copy = t_1.CopyTo(device);
+    Tensor t_1_copy = t_1.Copy(device);
     EXPECT_EQ(t_1_copy.GetShape(), SizeVector({3, 4}));
     EXPECT_EQ(t_1_copy.GetStrides(), SizeVector({4, 1}));
     EXPECT_EQ(t_1_copy.GetDataPtr(),
@@ -277,7 +311,7 @@ TEST_P(TensorPermuteDevices, Slice) {
                       DtypeUtil::ByteSize(Dtype::Float32) * 3 * 4);
 }
 
-TEST_P(TensorPermuteDevices, CopyNonContinuous) {
+TEST_P(TensorPermuteDevices, CopyNonContiguous) {
     Device device = GetParam();
 
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
@@ -289,10 +323,10 @@ TEST_P(TensorPermuteDevices, CopyNonContinuous) {
     EXPECT_FALSE(t_1.IsContiguous());
 
     // Copy ensures contiguous
-    Tensor t_1_copy = t_1.CopyTo(device);
+    Tensor t_1_copy = t_1.Copy(device);
     EXPECT_TRUE(t_1_copy.IsContiguous());
 
     // Clone replicates the exact syntax
-    Tensor t_1_clone = t_1.CloneTo(device);
+    Tensor t_1_clone = t_1.Clone(device);
     EXPECT_FALSE(t_1_clone.IsContiguous());
 }

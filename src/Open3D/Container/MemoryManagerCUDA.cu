@@ -29,7 +29,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Container/CudaUtils.h"
+#include "Open3D/Container/CudaUtils.cuh"
 
 namespace open3d {
 

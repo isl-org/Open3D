@@ -54,7 +54,7 @@ public:
         data_ptr_ = blob_->v_;
     }
 
-    /// Constructor for creating a contiguous Tensor wiht initial values
+    /// Constructor for creating a contiguous Tensor with initial values
     template <typename T>
     Tensor(const std::vector<T>& init_vals,
            const SizeVector& shape,
@@ -88,33 +88,36 @@ public:
           data_ptr_(data_ptr),
           dtype_(dtype),
           device_(device),
-          blob_(blob) {}
+          blob_(blob) {
+        if (!blob->IsPtrInBlob(data_ptr)) {
+            utility::LogFatal("data_ptr not in the memory range of blob\n");
+        }
+    }
 
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
-    Tensor CopyTo(const Device& device) const;
+    Tensor Copy(const Device& device) const;
 
     /// Clone Tensor to a specified device
     /// The resulting Tensor have the exact shape, stride and data_ptr to blob_
     /// beginning offset.
-    Tensor CloneTo(const Device& device) const;
+    Tensor Clone(const Device& device) const;
 
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
 
     /// Extract the i-th Tensor along the first axis, creating a new view
-    Tensor operator[](size_t i) const;
+    Tensor operator[](int i) const;
 
     /// Slice Tensor
-    Tensor Slice(size_t dim, size_t start, size_t stop, size_t step = 1) const;
+    Tensor Slice(size_t dim, int start, int stop, int step = 1) const;
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
     template <typename T>
-    T AsScalar() const {
+    T Item() const {
         if (shape_.size() != 0) {
-            utility::LogFatal(
-                    "AsScalar only works for scalar Tensor of shape ()");
+            utility::LogFatal("Item only works for scalar Tensor of shape ()");
         }
         AssertTemplateDtype<T>();
         T value;
@@ -164,9 +167,9 @@ public:
         }
     }
 
-protected:
     static SizeVector DefaultStrides(const SizeVector& shape);
 
+protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
 protected:

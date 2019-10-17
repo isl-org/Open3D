@@ -44,3 +44,14 @@ TEST_P(BlobPermuteDevices, BlobConstructor) {
 
     Blob b(10, Device(device));
 }
+
+TEST_P(BlobPermuteDevices, IsPtrInBlob) {
+    Device device = GetParam();
+
+    Blob b(10, Device(device));
+
+    const char* head = static_cast<const char*>(b.v_);
+    EXPECT_TRUE(b.IsPtrInBlob(head));
+    EXPECT_TRUE(b.IsPtrInBlob(head + 9));
+    EXPECT_FALSE(b.IsPtrInBlob(head + 10));
+}

@@ -27,6 +27,7 @@
 #pragma once
 
 #include <cstddef>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -70,11 +71,8 @@ public:
         if (this->size() == 0) {
             return 0;
         }
-        size_t size = 1;
-        for (const size_t& d : *this) {
-            size *= d;
-        }
-        return size;
+        return std::accumulate(this->begin(), this->end(), 1,
+                               std::multiplies<size_t>());
     }
 
     std::string ToString() const { return fmt::format("{}", *this); }

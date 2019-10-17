@@ -28,6 +28,7 @@
 
 #include "string"
 
+#include "Open3D/Container/Dispatch.h"
 #include "Open3D/Utility/Console.h"
 
 static_assert(sizeof(float) == 4,
