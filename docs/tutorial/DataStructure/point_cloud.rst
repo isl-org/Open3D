@@ -1,6 +1,24 @@
 PointCloud
+
 ===========
-his tutorial demonstrates basic usage of a point cloud in C++.
+
+A point cloud is a collection of data points in space. Point clouds are generally 
+produced by 3D scanners, which measure many points on the external surfaces 
+of objects around them. 
+In a 3D coordinates system, for example, a point cloud may define the shape of some 
+real or created physical system. 
+
+
+Use cases - 
+
+=====================================================================
+
+
+Point clouds are used to create 3D meshes and other models used in 3D modeling for various 
+fields including medical imaging, architecture, 3D printing, manufacturing, 3D gaming and 
+various virtual reality (VR) applications in Open3D.
+
+This tutorial demonstrates basic usage of a point cloud in C++.
 ------------------
 
 #include "Open3D.h"
@@ -91,8 +109,6 @@ Paint point cloud
 =======================================
 
 paint_uniform_color  - It paints all the points to a uniform color. The color is in RGB space, [0, 1] range.
-
-
 
 
 
