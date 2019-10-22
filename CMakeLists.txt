@@ -82,6 +82,7 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -89,6 +90,15 @@ if (NOT CMAKE_BUILD_TYPE)
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
 endif ()
+
+# Importing Python libraries compiled with different CXX ABI may cause segfaults
+# in regex. By default, we use the old CXX ABI for PyTorch compatibility.
+# https://stackoverflow.com/q/51382355/1255535
+if (GLIBCXX_USE_CXX11_ABI)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+endif()
 
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
