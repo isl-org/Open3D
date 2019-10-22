@@ -129,8 +129,18 @@ public:
         return value;
     }
 
-    // Returns True if the underlying memory buffer is contiguous. A contiguous
-    // Tensor's data_ptr_ does not need to point to the beginning of blob_.
+    /// Retrive all values as an std::vector, for debugging and testing
+    template <typename T>
+    std::vector<T> ToFlatVector() const {
+        AssertTemplateDtype<T>();
+        std::vector<T> values(NumElements());
+        std::memcpy(values.data(), Copy(Device("CPU:0")).GetDataPtr(),
+                    DtypeUtil::ByteSize(GetDtype()) * NumElements());
+        return values;
+    }
+
+    /// Returns True if the underlying memory buffer is contiguous. A contiguous
+    /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
     bool IsContiguous() const { return DefaultStrides(shape_) == strides_; };
 
     /// Returns a contiguous Tensor containing the same data in the same device.
@@ -151,6 +161,8 @@ public:
     Device GetDevice() const { return device_; }
 
     std::shared_ptr<Blob> GetBlob() const { return blob_; }
+
+    size_t NumElements() const { return shape_.NumElements(); }
 
     template <typename T>
     void AssertTemplateDtype() const {
