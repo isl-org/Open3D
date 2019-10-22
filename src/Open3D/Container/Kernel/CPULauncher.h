@@ -63,7 +63,7 @@ public:
     template <typename scalar_t, typename func_t>
     static void LaunchUnaryEWKernel(const Tensor& src,
                                     Tensor& dst,
-                                    const func_t& element_kernel) {
+                                    func_t element_kernel) {
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
         size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
