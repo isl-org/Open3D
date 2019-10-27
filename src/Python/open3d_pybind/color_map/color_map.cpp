@@ -83,8 +83,8 @@ void pybind_color_map_classes(py::module &m) {
                     "maximum_allowable_depth",
                     &color_map::ColorMapOptimizationOption::
                             maximum_allowable_depth_,
-                    "float: (Default ``2.5``) Parameter for point visibility "
-                    "check. Points with depth larger than "
+                    "float: (Default ``2.5``) Parameter to check the "
+                    "visibility of a point. Points with depth larger than "
                     "``maximum_allowable_depth`` in a RGB-D will be marked as "
                     "invisible for the camera producing that RGB-D image. "
                     "Select a proper value to include necessary points while "
@@ -98,15 +98,16 @@ void pybind_color_map_classes(py::module &m) {
                     "value in the RGB-D image and the point's depth "
                     "value in the 3D mesh is greater than "
                     "``depth_threshold_for_visiblity_check``, the "
-                    "point is mark as invisible to the camera producing "
+                    "point is marked as invisible to the camera producing "
                     "the RGB-D image.")
             .def_readwrite(
                     "depth_threshold_for_discontinuity_check",
                     &color_map::ColorMapOptimizationOption::
                             depth_threshold_for_discontinuity_check_,
-                    "float: (Default ``0.1``) Parameter for point visibility "
-                    "check. It's often desirable to ignore points where there "
-                    "are abrupt change in depth value. First the depth "
+                    "float: (Default ``0.1``) Parameter to check the "
+                    "visibility of a point. It's often desirable "
+                    "to ignore points where there "
+                    "is an abrupt change in depth value. First the depth "
                     "gradient image is computed, points are considered "
                     "to be invisible if the depth gradient magnitude is "
                     "larger than ``depth_threshold_for_discontinuity_check``.")
@@ -114,8 +115,8 @@ void pybind_color_map_classes(py::module &m) {
                     "half_dilation_kernel_size_for_discontinuity_map",
                     &color_map::ColorMapOptimizationOption::
                             half_dilation_kernel_size_for_discontinuity_map_,
-                    "int: (Default ``3``) Parameter for point visibility "
-                    "check. Related to "
+                    "int: (Default ``3``) Parameter to check the "
+                    "visibility of a point. Related to "
                     "``depth_threshold_for_discontinuity_check``, "
                     "when boundary points are detected, dilation is performed "
                     "to ignore points near the object boundary. "
@@ -129,7 +130,7 @@ void pybind_color_map_classes(py::module &m) {
                     "int: (Default ``10``) If a projected 3D point onto a 2D "
                     "image lies in the image border within "
                     "``image_boundary_margin``, the 3D point is "
-                    "cosidered invisible from the camera producing the "
+                    "considered invisible from the camera producing the "
                     "image. This parmeter is not used for visibility "
                     "check, but used when computing the final color "
                     "assignment after color map optimization.")
@@ -138,7 +139,7 @@ void pybind_color_map_classes(py::module &m) {
                     &color_map::ColorMapOptimizationOption::
                             invisible_vertex_color_knn_,
                     "int: (Default ``3``) If a vertex is invisible from all "
-                    "images, we assign the averged color of the k nearest "
+                    "images, we assign the averaged color of the k nearest "
                     "visible vertices to fill the invisible vertex. Set to "
                     "``0`` to disable this feature and all invisible vertices "
                     "will be black.")
@@ -174,7 +175,9 @@ void pybind_color_map_classes(py::module &m) {
 
 void pybind_color_map_methods(py::module &m) {
     m.def("color_map_optimization", &color_map::ColorMapOptimization,
-          "Function for color mapping of reconstructed scenes via optimization",
+          "Function for color mapping of reconstructed scenes via optimization. "
+          "This is implementation of following paper Q.-Y. Zhou and V. Koltun, Color Map "
+          "optimization for 3D Reconstruction with Consumer Depth Cameras, SIGGRAPH 2014"
           "mesh"_a, "imgs_rgbd"_a, "camera"_a,
           "option"_a = color_map::ColorMapOptimizationOption());
     docstring::FunctionDocInject(
