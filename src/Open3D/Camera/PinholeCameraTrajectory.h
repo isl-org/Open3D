@@ -34,6 +34,7 @@
 namespace open3d {
 namespace camera {
 
+/// Contains a list of PinholeCameraParameters, useful to storing trajectories
 class PinholeCameraTrajectory : public utility::IJsonConvertible {
 public:
     PinholeCameraTrajectory();
@@ -44,6 +45,7 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
+    /// List of PinholeCameraParameters objects
     std::vector<PinholeCameraParameters> parameters_;
 };
 

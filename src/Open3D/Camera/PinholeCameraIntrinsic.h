@@ -33,9 +33,13 @@
 namespace open3d {
 namespace camera {
 
+/// Sets default camera intrinsic parameters according to PrimeSense & Kinect Presets
 enum class PinholeCameraIntrinsicParameters {
+    /// Default settings for PrimeSense short range 3D Camera Sensor
     PrimeSenseDefault = 0,
+    /// Default settings for Kinect2 depth camera
     Kinect2DepthCameraDefault = 1,
+    /// Default settings for Kinect2 color camera
     Kinect2ColorCameraDefault = 2,
 };
 
