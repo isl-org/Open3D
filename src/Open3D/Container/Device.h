@@ -102,8 +102,8 @@ protected:
     }
 
 public:
-    const DeviceType device_type_;
-    const int device_id_;
+    DeviceType device_type_;
+    int device_id_;
 };
 
 }  // namespace open3d

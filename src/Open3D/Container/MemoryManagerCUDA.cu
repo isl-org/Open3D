@@ -29,7 +29,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Container/CudaUtils.h"
+#include "Open3D/Container/CudaUtils.cuh"
 
 namespace open3d {
 
@@ -55,10 +55,7 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
 
 void CUDAMemoryManager::Free(void* ptr, const Device& device) {
     if (device.device_type_ == Device::DeviceType::CUDA) {
-        if (!IsCUDAPointer(ptr)) {
-            utility::LogFatal("Freeing non-CUDA pointer\n");
-        }
-        if (ptr) {
+        if (IsCUDAPointer(ptr) && ptr) {
             OPEN3D_CUDA_CHECK(cudaFree(ptr));
         }
     } else {

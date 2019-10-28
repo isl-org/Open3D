@@ -26,38 +26,4 @@
 
 #pragma once
 
-#include <cstddef>
-#include <iostream>
-#include <string>
-
-#include "Open3D/Container/Device.h"
-#include "Open3D/Container/MemoryManager.h"
-
-namespace open3d {
-
-class Blob : public std::enable_shared_from_this<Blob> {
-public:
-    Blob(size_t byte_size, const Device& device)
-        : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Malloc(byte_size_, device_);
-    }
-
-    ~Blob() { MemoryManager::Free(v_, device_); };
-
-    /// Returns true if ptr is within the memory range of Blob
-    bool IsPtrInBlob(const void* ptr) const {
-        return (ptr >= v_) && (ptr < static_cast<const char*>(v_) + byte_size_);
-    }
-
-public:
-    /// Device data pointer
-    void* v_ = nullptr;
-
-    /// Size of Blob in bytes
-    size_t byte_size_ = 0;
-
-    /// Device context for the blob
-    Device device_;
-};
-
-}  // namespace open3d
+#include "Open3D/Container/Kernel/UnaryEW.h"

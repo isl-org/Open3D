@@ -29,9 +29,29 @@
 #include "Open3D/Container/MemoryManager.h"
 #include "TestUtility/UnitTest.h"
 
+#include "Container/ContainerTest.h"
+
 using namespace std;
 using namespace open3d;
 
-TEST(Blob, CPUBlob) { Blob b(10, Device("CPU:0")); }
+class BlobPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(Blob,
+                         BlobPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST(Blob, CUDA_CONDITIONAL_TEST(CUDABlob)) { Blob b(10, Device("CUDA:0")); }
+TEST_P(BlobPermuteDevices, BlobConstructor) {
+    Device device = GetParam();
+
+    Blob b(10, Device(device));
+}
+
+TEST_P(BlobPermuteDevices, IsPtrInBlob) {
+    Device device = GetParam();
+
+    Blob b(10, Device(device));
+
+    const char* head = static_cast<const char*>(b.v_);
+    EXPECT_TRUE(b.IsPtrInBlob(head));
+    EXPECT_TRUE(b.IsPtrInBlob(head + 9));
+    EXPECT_FALSE(b.IsPtrInBlob(head + 10));
+}

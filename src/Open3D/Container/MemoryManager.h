@@ -90,6 +90,7 @@ public:
                 size_t num_bytes) override;
 };
 
+#ifdef BUILD_CUDA_MODULE
 class CUDAMemoryManager : public DeviceMemoryManager {
 public:
     CUDAMemoryManager();
@@ -106,5 +107,6 @@ protected:
     void EnableP2P();
     void SetDevice(int device_id);
 };
+#endif
 
 }  // namespace open3d

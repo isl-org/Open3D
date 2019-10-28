@@ -27,37 +27,55 @@
 #pragma once
 
 #include <cstddef>
-#include <iostream>
+#include <numeric>
 #include <string>
+#include <vector>
 
-#include "Open3D/Container/Device.h"
-#include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
-class Blob : public std::enable_shared_from_this<Blob> {
+/// SizeVector is a vector of size_t, typically used in Tensor shape and strides
+/// Similar design from
+/// https://github.com/NervanaSystems/ngraph/blob/master/src/ngraph/shape.hpp
+class SizeVector : public std::vector<size_t> {
 public:
-    Blob(size_t byte_size, const Device& device)
-        : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Malloc(byte_size_, device_);
+    SizeVector(const std::initializer_list<size_t>& dim_sizes)
+        : std::vector<size_t>(dim_sizes) {}
+
+    SizeVector(const std::vector<size_t>& dim_sizes)
+        : std::vector<size_t>(dim_sizes) {}
+
+    SizeVector(const SizeVector& other) : std::vector<size_t>(other) {}
+
+    explicit SizeVector(size_t n, size_t initial_value = 0)
+        : std::vector<size_t>(n, initial_value) {}
+
+    template <class InputIterator>
+    SizeVector(InputIterator first, InputIterator last)
+        : std::vector<size_t>(first, last) {}
+
+    SizeVector() {}
+
+    SizeVector& operator=(const SizeVector& v) {
+        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        return *this;
     }
 
-    ~Blob() { MemoryManager::Free(v_, device_); };
-
-    /// Returns true if ptr is within the memory range of Blob
-    bool IsPtrInBlob(const void* ptr) const {
-        return (ptr >= v_) && (ptr < static_cast<const char*>(v_) + byte_size_);
+    SizeVector& operator=(SizeVector&& v) {
+        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        return *this;
     }
 
-public:
-    /// Device data pointer
-    void* v_ = nullptr;
+    size_t NumElements() const {
+        if (this->size() == 0) {
+            return 0;
+        }
+        return std::accumulate(this->begin(), this->end(), 1,
+                               std::multiplies<size_t>());
+    }
 
-    /// Size of Blob in bytes
-    size_t byte_size_ = 0;
-
-    /// Device context for the blob
-    Device device_;
+    std::string ToString() const { return fmt::format("{}", *this); }
 };
 
 }  // namespace open3d

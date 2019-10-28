@@ -90,7 +90,7 @@ set(DIRECTORIES_OF_INTEREST_CPP
     docs/_static
 )
 
-message(STATUS "C++ check-style...")
+message(STATUS "C++/CUDA check-style...")
 foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST_CPP})
     set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
     set(CU_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cu")
@@ -103,4 +103,4 @@ endforeach(DIRECTORY)
 if(ERROR_LIST_CPP)
     message(FATAL_ERROR "Style errors")
 endif()
-message(STATUS "C++ check-style done")
+message(STATUS "C++/CUDA check-style done")

@@ -26,38 +26,19 @@
 
 #pragma once
 
-#include <cstddef>
-#include <iostream>
-#include <string>
-
-#include "Open3D/Container/Device.h"
-#include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Container/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
+namespace kernel {
 
-class Blob : public std::enable_shared_from_this<Blob> {
-public:
-    Blob(size_t byte_size, const Device& device)
-        : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Malloc(byte_size_, device_);
-    }
+void CopyCPU(const Tensor& src, Tensor& dst);
 
-    ~Blob() { MemoryManager::Free(v_, device_); };
+#ifdef BUILD_CUDA_MODULE
+void CopyCUDA(const Tensor& src, Tensor& dst);
+#endif
 
-    /// Returns true if ptr is within the memory range of Blob
-    bool IsPtrInBlob(const void* ptr) const {
-        return (ptr >= v_) && (ptr < static_cast<const char*>(v_) + byte_size_);
-    }
+void Copy(const Tensor& src, Tensor& dst);
 
-public:
-    /// Device data pointer
-    void* v_ = nullptr;
-
-    /// Size of Blob in bytes
-    size_t byte_size_ = 0;
-
-    /// Device context for the blob
-    Device device_;
-};
-
+}  // namespace kernel
 }  // namespace open3d
