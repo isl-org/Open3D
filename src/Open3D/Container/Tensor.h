@@ -134,8 +134,9 @@ public:
     std::vector<T> ToFlatVector() const {
         AssertTemplateDtype<T>();
         std::vector<T> values(NumElements());
-        std::memcpy(values.data(), Copy(Device("CPU:0")).GetDataPtr(),
-                    DtypeUtil::ByteSize(GetDtype()) * NumElements());
+        MemoryManager::MemcpyToHost(
+                values.data(), Contiguous().GetDataPtr(), GetDevice(),
+                DtypeUtil::ByteSize(GetDtype()) * NumElements());
         return values;
     }
 

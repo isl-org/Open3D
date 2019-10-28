@@ -69,20 +69,16 @@ public:
         size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
         OffsetCalculator offset_calculator(src.GetStrides(), dst.GetStrides());
 
-        auto f = [=](size_t dst_idx) {
-            size_t src_idx = offset_calculator.GetOffset(dst_idx);
-            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
-            element_kernel(src_ptr, dst_ptr);
-        };
-
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
         for (int64_t dst_idx = 0;
              dst_idx < static_cast<int64_t>(src.GetShape().NumElements());
              dst_idx++) {
-            f(dst_idx);
+            size_t src_idx = offset_calculator.GetOffset(dst_idx);
+            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
+            element_kernel(src_ptr, dst_ptr);
         }
     }
 };
