@@ -273,6 +273,26 @@ void pybind_trianglemesh(py::module &m) {
             .def("compute_convex_hull",
                  &geometry::TriangleMesh::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
+            .def("cluster_connected_triangles",
+                 &geometry::TriangleMesh::ClusterConnectedTriangles,
+                 "Function that clusters connected triangles, i.e., triangles "
+                 "that are connected via edges are assigned the same cluster "
+                 "index.  This function retuns an array that contains the "
+                 "cluster index per triangle, a second array contains the "
+                 "number of triangles per cluster, and a third vector contains "
+                 "the surface area per cluster.")
+            .def("remove_triangles_by_index",
+                 &geometry::TriangleMesh::RemoveTrianglesByIndex,
+                 "This function removes the triangles with index in "
+                 "triangle_indices.  Call RemoveUnreferencedVertices to clean "
+                 "up vertices afterwards.",
+                 "triangle_indices"_a)
+            .def("remove_triangles_by_mask",
+                 &geometry::TriangleMesh::RemoveTrianglesByMask,
+                 "This function removes the triangles where triangle_mask is "
+                 "set to true.  Call RemoveUnreferencedVertices to clean up "
+                 "vertices afterwards.",
+                 "triangle_mask"_a)
             .def_static(
                     "create_from_point_cloud_ball_pivoting",
                     &geometry::TriangleMesh::CreateFromPointCloudBallPivoting,
@@ -522,6 +542,18 @@ void pybind_trianglemesh(py::module &m) {
               "The number of triangles that the simplified mesh should have. "
               "It is not guranteed that this number will be reached."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "cluster_connected_triangles");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "remove_triangles_by_index",
+            {{"triangle_indices",
+              "1D array of triangle indices that should be removed from the "
+              "TriangleMesh."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_triangles_by_mask",
+                                    {{"triangle_mask",
+                                      "1D bool array, True values indicate "
+                                      "triangles that should be removed."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
             {{"pcd",

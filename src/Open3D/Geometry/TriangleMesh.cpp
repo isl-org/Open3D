@@ -1346,5 +1346,133 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
     return false;
 }
 
+std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
+TriangleMesh::ClusterConnectedTriangles() {
+    std::vector<int> triangle_clusters(triangles_.size(), -1);
+    std::vector<size_t> num_triangles;
+    std::vector<double> areas;
+
+    // NOTE: this could be speed up with openmp
+    utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
+    auto edges_to_triangles = GetEdgeToTrianglesMap();
+    std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
+    for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
+        const auto &triangle = triangles_[tidx];
+        for (auto tnb : edges_to_triangles[Eigen::Vector2i(
+                     std::min(triangle(0), triangle(1)),
+                     std::max(triangle(0), triangle(1)))]) {
+            adjacency_list[tidx].insert(tnb);
+        }
+        for (auto tnb : edges_to_triangles[Eigen::Vector2i(
+                     std::min(triangle(0), triangle(2)),
+                     std::max(triangle(0), triangle(2)))]) {
+            adjacency_list[tidx].insert(tnb);
+        }
+        for (auto tnb : edges_to_triangles[Eigen::Vector2i(
+                     std::min(triangle(1), triangle(2)),
+                     std::max(triangle(1), triangle(2)))]) {
+            adjacency_list[tidx].insert(tnb);
+        }
+    }
+    utility::LogDebug(
+            "[ClusterConnectedTriangles] Done computing triangle adjacency");
+
+    int cluster_idx = 0;
+
+    int n_visited_triangles = 0;
+    auto LogDebugVisitTriangle = [&]() {
+        n_visited_triangles++;
+        if (n_visited_triangles % (triangles_.size() / 100) == 0) {
+            utility::LogDebug("proecessed triangle {}/{}, #clusters={}",
+                              n_visited_triangles + 1, triangles_.size(),
+                              cluster_idx + 1);
+        }
+    };
+
+    std::unordered_set<int> triangles_to_process;
+    for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
+        triangles_to_process.insert(tidx);
+    }
+
+    while (triangles_to_process.size() > 0) {
+        int tidx = *triangles_to_process.begin();
+
+        // Assign all triangles that are reachable from tidx the same
+        // cluster_idx
+        std::queue<int> triangle_queue;
+        int cluster_n_triangles = 0;
+        double cluster_area = 0;
+        auto ProcessTriangle = [&](int tidx) {
+            if (triangles_to_process.count(tidx) > 0) {
+                triangles_to_process.erase(tidx);
+                triangle_queue.push(tidx);
+                cluster_n_triangles++;
+                cluster_area += GetTriangleArea(tidx);
+                LogDebugVisitTriangle();
+            }
+        };
+        ProcessTriangle(tidx);
+
+        while (triangle_queue.size() > 0) {
+            tidx = triangle_queue.front();
+            triangle_queue.pop();
+            triangle_clusters[tidx] = cluster_idx;
+
+            for (auto tnb : adjacency_list[tidx]) {
+                ProcessTriangle(tnb);
+            }
+        }
+
+        num_triangles.push_back(cluster_n_triangles);
+        areas.push_back(cluster_area);
+        cluster_idx++;
+    }
+
+    utility::LogDebug(
+            "[ClusterConnectedTriangles] Done clustering, #clusters={}",
+            cluster_idx);
+    return std::make_tuple(triangle_clusters, num_triangles, areas);
+}
+
+void TriangleMesh::RemoveTrianglesByIndex(
+        const std::vector<size_t> &triangle_indices) {
+    std::vector<bool> triangle_mask(triangles_.size(), false);
+    for (auto tidx : triangle_indices) {
+        if (tidx >= 0 && tidx < triangles_.size()) {
+            triangle_mask[tidx] = true;
+        } else {
+            utility::LogWarning(
+                    "[RemoveTriangles] contains triangle index {} that is not "
+                    "within the bounds",
+                    tidx);
+        }
+    }
+
+    RemoveTrianglesByMask(triangle_mask);
+}
+
+void TriangleMesh::RemoveTrianglesByMask(
+        const std::vector<bool> &triangle_mask) {
+    if (triangle_mask.size() != triangles_.size()) {
+        utility::LogError("triangle_mask has a different size than triangles_");
+    }
+
+    bool has_tri_normal = HasTriangleNormals();
+    int to_tidx = 0;
+    for (size_t from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
+        if (!triangle_mask[from_tidx]) {
+            triangles_[to_tidx] = triangles_[from_tidx];
+            if (has_tri_normal) {
+                triangle_normals_[to_tidx] = triangle_normals_[from_tidx];
+            }
+            to_tidx++;
+        }
+    }
+    triangles_.resize(to_tidx);
+    if (has_tri_normal) {
+        triangle_normals_.resize(to_tidx);
+    }
+}
+
 }  // namespace geometry
 }  // namespace open3d
