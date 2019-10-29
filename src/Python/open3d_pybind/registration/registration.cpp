@@ -31,6 +31,7 @@
 #include "Open3D/Registration/FastGlobalRegistration.h"
 #include "Open3D/Registration/Feature.h"
 #include "Open3D/Registration/TransformationEstimation.h"
+#include "Open3D/Utility/Console.h"
 
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/registration/registration.h"
@@ -108,15 +109,12 @@ void pybind_registration_classes(py::module &m) {
                     &registration::ICPConvergenceCriteria::max_iteration_,
                     "Maximum iteration before iteration stops.")
             .def("__repr__", [](const registration::ICPConvergenceCriteria &c) {
-                return std::string(
-                               "registration::ICPConvergenceCriteria class "
-                               "with ") +
-                       std::string("relative_fitness = ") +
-                       std::to_string(c.relative_fitness_) +
-                       std::string(", relative_rmse = ") +
-                       std::to_string(c.relative_rmse_) +
-                       std::string(", and max_iteration = " +
-                                   std::to_string(c.max_iteration_));
+                return fmt::format(
+                        "registration::ICPConvergenceCriteria class "
+                        "with relative_fitness={:e}, relative_rmse={:e}, "
+                        "and max_iteration={:d}",
+                        c.relative_fitness_, c.relative_rmse_,
+                        c.max_iteration_);
             });
 
     // ope3dn.registration.RANSACConvergenceCriteria
@@ -148,13 +146,11 @@ void pybind_registration_classes(py::module &m) {
                     "iteration stops.")
             .def("__repr__",
                  [](const registration::RANSACConvergenceCriteria &c) {
-                     return std::string(
-                                    "registration::RANSACConvergenceCriteria "
-                                    "class with ") +
-                            std::string("max_iteration = ") +
-                            std::to_string(c.max_iteration_) +
-                            std::string(", and max_validation = " +
-                                        std::to_string(c.max_validation_));
+                     return fmt::format(
+                             "registration::RANSACConvergenceCriteria "
+                             "class with max_iteration={:d}, "
+                             "and max_validation={:d}",
+                             c.max_iteration_, c.max_validation_);
                  });
 
     // ope3dn.registration.TransformationEstimation
@@ -292,11 +288,11 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             .def("__repr__",
                  [](const registration::CorrespondenceCheckerBasedOnEdgeLength
                             &c) {
-                     return std::string(
-                                    "registration::"
-                                    "CorrespondenceCheckerBasedOnEdgeLength "
-                                    "with similarity threshold ") +
-                            std::to_string(c.similarity_threshold_);
+                     return fmt::format(
+                             "registration::"
+                             "CorrespondenceCheckerBasedOnEdgeLength "
+                             "with similarity_threshold={:f}",
+                             c.similarity_threshold_);
                  })
             .def_readwrite(
                     "similarity_threshold",
@@ -330,11 +326,11 @@ must hold true for all edges.)");
             .def("__repr__",
                  [](const registration::CorrespondenceCheckerBasedOnDistance
                             &c) {
-                     return std::string(
-                                    "registration::"
-                                    "CorrespondenceCheckerBasedOnDistance with "
-                                    "distance threshold ") +
-                            std::to_string(c.distance_threshold_);
+                     return fmt::format(
+                             "registration::"
+                             "CorrespondenceCheckerBasedOnDistance with "
+                             "distance_threshold={:f}",
+                             c.distance_threshold_);
                  })
             .def_readwrite("distance_threshold",
                            &registration::CorrespondenceCheckerBasedOnDistance::
@@ -361,11 +357,11 @@ must hold true for all edges.)");
              "normal_angle_threshold"_a)
             .def("__repr__",
                  [](const registration::CorrespondenceCheckerBasedOnNormal &c) {
-                     return std::string(
-                                    "registration::"
-                                    "CorrespondenceCheckerBasedOnNormal with "
-                                    "normal threshold ") +
-                            std::to_string(c.normal_angle_threshold_);
+                     return fmt::format(
+                             "registration::"
+                             "CorrespondenceCheckerBasedOnNormal with "
+                             "normal_threshold={:f}",
+                             c.normal_angle_threshold_);
                  })
             .def_readwrite("normal_angle_threshold",
                            &registration::CorrespondenceCheckerBasedOnNormal::
@@ -429,25 +425,20 @@ must hold true for all edges.)");
                            "float: Maximum tuple numbers.")
             .def("__repr__",
                  [](const registration::FastGlobalRegistrationOption &c) {
-                     return std::string(
-                                    "registration::"
-                                    "FastGlobalRegistrationOption class "
-                                    "with ") +
-                            std::string("\ndivision_factor = ") +
-                            std::to_string(c.division_factor_) +
-                            std::string("\nuse_absolute_scale = ") +
-                            std::to_string(c.use_absolute_scale_) +
-                            std::string("\ndecrease_mu = ") +
-                            std::to_string(c.decrease_mu_) +
-                            std::string(
-                                    "\nmaximum_correspondence_distance = ") +
-                            std::to_string(c.maximum_correspondence_distance_) +
-                            std::string("\niteration_number = ") +
-                            std::to_string(c.iteration_number_) +
-                            std::string("\ntuple_scale = ") +
-                            std::to_string(c.tuple_scale_) +
-                            std::string("\nmaximum_tuple_count = ") +
-                            std::to_string(c.maximum_tuple_count_);
+                     return fmt::format(
+                             "registration::"
+                             "FastGlobalRegistrationOption class "
+                             "with \ndivision_factor={}"
+                             "\nuse_absolute_scale={}"
+                             "\ndecrease_mu={}"
+                             "\nmaximum_correspondence_distance={}"
+                             "\niteration_number={}"
+                             "\ntuple_scale={}"
+                             "\nmaximum_tuple_count={}",
+                             c.division_factor_, c.use_absolute_scale_,
+                             c.decrease_mu_, c.maximum_correspondence_distance_,
+                             c.iteration_number_, c.tuple_scale_,
+                             c.maximum_tuple_count_);
                  });
 
     // ope3dn.registration.RegistrationResult
@@ -477,15 +468,14 @@ must hold true for all edges.)");
                     "float: The overlapping area (# of inlier correspondences "
                     "/ # of points in target). Higher is better.")
             .def("__repr__", [](const registration::RegistrationResult &rr) {
-                return std::string(
-                               "registration::RegistrationResult with fitness "
-                               "= ") +
-                       std::to_string(rr.fitness_) +
-                       std::string(", inlier_rmse = ") +
-                       std::to_string(rr.inlier_rmse_) +
-                       std::string(", and correspondence_set size of ") +
-                       std::to_string(rr.correspondence_set_.size()) +
-                       std::string("\nAccess transformation to get result.");
+                return fmt::format(
+                        "registration::RegistrationResult with "
+                        "fitness={:e}"
+                        ", inlier_rmse={:e}"
+                        ", and correspondence_set size of {:d}"
+                        "\nAccess transformation to get result.",
+                        rr.fitness_, rr.inlier_rmse_,
+                        rr.correspondence_set_.size());
             });
 }
 
