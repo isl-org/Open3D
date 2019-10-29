@@ -33,6 +33,7 @@
 
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Geometry/KDTreeSearchParam.h"
+#include "Open3D/Registration/Registration.h"
 
 namespace open3d {
 
@@ -210,6 +211,20 @@ public:
     std::vector<int> ClusterDBSCAN(double eps,
                                    size_t min_points,
                                    bool print_progress = false) const;
+
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    ///
+    /// \param distance_threshold Max distance a point can be from the plane
+    /// model, and still be considered an inlier.
+    /// \param ransac_n Number of initial points to be considered inliers in
+    /// each iteration.
+    /// \param criteria The maximum number of iterations. See \ref
+    /// RANSACConvergenceCriteria.
+    std::tuple<Eigen::Vector4d, std::vector<int>> SegmentPlane(
+            double distance_threshold = 0.01,
+            int ransac_n = 3,
+            const registration::RANSACConvergenceCriteria &criteria =
+                    registration::RANSACConvergenceCriteria()) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)
