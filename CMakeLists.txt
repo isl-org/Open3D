@@ -13,6 +13,12 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     set(OpenGL_GL_PREFERENCE LEGACY)
 endif()
 
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No CMAKE_BUILD_TYPE specified, default to Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+string(TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
+
 # central location for specifying the Open3D version
 file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
@@ -155,8 +161,11 @@ elseif (APPLE)
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
     endif (NOT BUILD_SHARED_LIBS)
-    # compile speed optimization for clang
-    add_definitions(-O3)
+    # In Release build -O3 will be added automatically by CMake
+    # We still enable -O3 at Debug build to optimize performance
+    if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+        add_definitions(-O3)
+    endif()
 elseif (UNIX)
     add_definitions(-DUNIX)
     # enable c++11
@@ -164,7 +173,11 @@ elseif (UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
     add_compile_options(-Wno-unused-result)
-    add_definitions(-O3)
+    # In Release build -O3 will be added automatically by CMake
+    # We still enable -O3 at debug build to optimize performance
+    if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+        add_definitions(-O3)
+    endif()
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
     message(STATUS "Disable RealSense since it is not fully supported on Linux.")
