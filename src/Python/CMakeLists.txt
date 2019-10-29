@@ -52,9 +52,17 @@ ADD_SOURCE_GROUP(Core)
 ADD_SOURCE_GROUP(IO)
 ADD_SOURCE_GROUP(Tutorial)
 ADD_SOURCE_GROUP(Visualization)
-pybind11_add_module(${PACKAGE_NAME}
-    ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
-)
+
+# NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
+if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
+    pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS
+        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    )
+else ()
+    pybind11_add_module(${PACKAGE_NAME}
+        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    )
+endif ()
 
 # Suppress Pybind11 warnings
 target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE

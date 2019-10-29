@@ -18,5 +18,9 @@ add_library(IO OBJECT
             ${LIBLZF_SOURCE_FILES})
 ShowAndAbortOnWarning(IO)
 
+if (UNIX)
+    set_source_files_properties( "FileFormat/FileSTL.cpp" PROPERTIES COMPILE_FLAGS -Wno-unused-result )
+endif ()
+
 # Enforce 3rd party dependencies
 add_dependencies(IO build_all_3rd_party_libs)
