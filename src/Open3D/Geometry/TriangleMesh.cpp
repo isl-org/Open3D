@@ -37,6 +37,10 @@
 #include <random>
 #include <tuple>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -1347,15 +1351,17 @@ bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
 }
 
 std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
-TriangleMesh::ClusterConnectedTriangles() {
+TriangleMesh::ClusterConnectedTriangles() const {
     std::vector<int> triangle_clusters(triangles_.size(), -1);
     std::vector<size_t> num_triangles;
     std::vector<double> areas;
 
-    // NOTE: this could be speed up with openmp
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
         for (auto tnb : edges_to_triangles[Eigen::Vector2i(
@@ -1377,49 +1383,34 @@ TriangleMesh::ClusterConnectedTriangles() {
     utility::LogDebug(
             "[ClusterConnectedTriangles] Done computing triangle adjacency");
 
-    int cluster_idx = 0;
-
-    int n_visited_triangles = 0;
-    auto LogDebugVisitTriangle = [&]() {
-        n_visited_triangles++;
-        if (n_visited_triangles % (triangles_.size() / 100) == 0) {
-            utility::LogDebug("proecessed triangle {}/{}, #clusters={}",
-                              n_visited_triangles + 1, triangles_.size(),
-                              cluster_idx + 1);
-        }
-    };
-
     std::unordered_set<int> triangles_to_process;
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         triangles_to_process.insert(tidx);
     }
 
+    int cluster_idx = 0;
     while (triangles_to_process.size() > 0) {
         int tidx = *triangles_to_process.begin();
 
-        // Assign all triangles that are reachable from tidx the same
-        // cluster_idx
         std::queue<int> triangle_queue;
         int cluster_n_triangles = 0;
         double cluster_area = 0;
-        auto ProcessTriangle = [&](int tidx) {
-            if (triangles_to_process.count(tidx) > 0) {
-                triangles_to_process.erase(tidx);
-                triangle_queue.push(tidx);
-                cluster_n_triangles++;
-                cluster_area += GetTriangleArea(tidx);
-                LogDebugVisitTriangle();
-            }
-        };
-        ProcessTriangle(tidx);
 
-        while (triangle_queue.size() > 0) {
+        triangles_to_process.erase(tidx);
+        triangle_queue.push(tidx);
+        while (!triangle_queue.empty()) {
             tidx = triangle_queue.front();
             triangle_queue.pop();
             triangle_clusters[tidx] = cluster_idx;
 
+            cluster_n_triangles++;
+            cluster_area += GetTriangleArea(tidx);
+
             for (auto tnb : adjacency_list[tidx]) {
-                ProcessTriangle(tnb);
+                if (triangles_to_process.count(tnb) > 0) {
+                    triangles_to_process.erase(tnb);
+                    triangle_queue.push(tnb);
+                }
             }
         }
 

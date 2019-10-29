@@ -284,13 +284,13 @@ void pybind_trianglemesh(py::module &m) {
             .def("remove_triangles_by_index",
                  &geometry::TriangleMesh::RemoveTrianglesByIndex,
                  "This function removes the triangles with index in "
-                 "triangle_indices.  Call RemoveUnreferencedVertices to clean "
-                 "up vertices afterwards.",
+                 "triangle_indices.  Call remove_unreferenced_vertices to "
+                 "clean up vertices afterwards.",
                  "triangle_indices"_a)
             .def("remove_triangles_by_mask",
                  &geometry::TriangleMesh::RemoveTrianglesByMask,
                  "This function removes the triangles where triangle_mask is "
-                 "set to true.  Call RemoveUnreferencedVertices to clean up "
+                 "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
             .def_static(
