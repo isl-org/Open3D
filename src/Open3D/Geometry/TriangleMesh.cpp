@@ -1383,33 +1383,29 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug(
             "[ClusterConnectedTriangles] Done computing triangle adjacency");
 
-    std::unordered_set<int> triangles_to_process;
-    for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
-        triangles_to_process.insert(tidx);
-    }
-
     int cluster_idx = 0;
-    while (triangles_to_process.size() > 0) {
-        int tidx = *triangles_to_process.begin();
+    for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
+        if (triangle_clusters[tidx] != -1) {
+            continue;
+        }
 
         std::queue<int> triangle_queue;
         int cluster_n_triangles = 0;
         double cluster_area = 0;
 
-        triangles_to_process.erase(tidx);
         triangle_queue.push(tidx);
+        triangle_clusters[tidx] = cluster_idx;
         while (!triangle_queue.empty()) {
             tidx = triangle_queue.front();
             triangle_queue.pop();
-            triangle_clusters[tidx] = cluster_idx;
 
             cluster_n_triangles++;
             cluster_area += GetTriangleArea(tidx);
 
             for (auto tnb : adjacency_list[tidx]) {
-                if (triangles_to_process.count(tnb) > 0) {
-                    triangles_to_process.erase(tnb);
+                if (triangle_clusters[tnb] == -1) {
                     triangle_queue.push(tnb);
+                    triangle_clusters[tnb] = cluster_idx;
                 }
             }
         }

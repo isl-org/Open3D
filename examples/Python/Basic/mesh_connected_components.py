@@ -14,6 +14,11 @@ if __name__ == "__main__":
 
     print("Generate data")
     mesh = meshes.bunny()
+
+    print("Subdivide mesh to make it a bit harder")
+    mesh = mesh.subdivide_midpoint(number_of_iterations=2)
+    print(mesh)
+
     vert = np.asarray(mesh.vertices)
     min_vert, max_vert = vert.min(axis=0), vert.max(axis=0)
     for _ in range(30):
@@ -30,9 +35,6 @@ if __name__ == "__main__":
         mesh += cube
     mesh.compute_vertex_normals()
 
-    print("Show input mesh")
-    o3d.visualization.draw_geometries([mesh])
-
     print("Cluster connected triangles")
     tic = time.time()
     triangle_clusters, cluster_n_triangles, cluster_area = (
@@ -41,6 +43,9 @@ if __name__ == "__main__":
     triangle_clusters = np.asarray(triangle_clusters)
     cluster_n_triangles = np.asarray(cluster_n_triangles)
     cluster_area = np.asarray(cluster_area)
+
+    print("Show input mesh")
+    o3d.visualization.draw_geometries([mesh])
 
     print("Show mesh with small clusters removed")
     mesh_0 = copy.deepcopy(mesh)
