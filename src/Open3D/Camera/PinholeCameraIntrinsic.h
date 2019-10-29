@@ -33,13 +33,13 @@
 namespace open3d {
 namespace camera {
 
-/// Sets default camera intrinsic parameters according to PrimeSense & Kinect Presets
+/// \enum Sets default camera intrinsic parameters for sensors.
 enum class PinholeCameraIntrinsicParameters {
-    /// Default settings for PrimeSense short range 3D Camera Sensor
+    /// Default settings for PrimeSense camera sensor.
     PrimeSenseDefault = 0,
-    /// Default settings for Kinect2 depth camera
+    /// Default settings for Kinect2 depth camera.
     Kinect2DepthCameraDefault = 1,
-    /// Default settings for Kinect2 color camera
+    /// Default settings for Kinect2 color camera.
     Kinect2ColorCameraDefault = 2,
 };
 
@@ -85,9 +85,9 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    /// Width of the image
+    /// Width of the image.
     int width_ = -1;
-    /// Height of the image
+    /// Height of the image.
     int height_ = -1;
     /// 3x3 matrix \n
     /// Intrinsic camera matrix:\n

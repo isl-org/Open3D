@@ -34,7 +34,7 @@
 namespace open3d {
 namespace camera {
 
-/// Contains both intrinsic and extrinsic pinhole camera parameters
+/// Contains both intrinsic and extrinsic pinhole camera parameters.
 class PinholeCameraParameters : public utility::IJsonConvertible {
 public:
     PinholeCameraParameters();
@@ -45,9 +45,9 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    /// PinholeCameraIntrinsic object
+    /// PinholeCameraIntrinsic object.
     PinholeCameraIntrinsic intrinsic_;
-    /// Camera extrinsic parameters
+    /// Camera extrinsic parameters.
     Eigen::Matrix4d_u extrinsic_;
 };
 }  // namespace camera

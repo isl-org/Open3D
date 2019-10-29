@@ -126,7 +126,7 @@ void pybind_camera_classes(py::module &m) {
             .export_values();
     pinhole_intr_params.attr("__doc__") = docstring::static_property(
             py::cpp_function(
-                    [](py::handle arg) -> std::string { return "Enum class that contains default camera intrinsic parameters according to PrimeSense & Kinect Presets"; }),
+                    [](py::handle arg) -> std::string { return "Enum class that contains default camera intrinsic parameters for different sensors."; }),
             py::none(), py::none(), "");
 
     // open3d.camera.PinholeCameraParameters
