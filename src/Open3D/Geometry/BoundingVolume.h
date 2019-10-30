@@ -107,7 +107,7 @@ public:
     /// rotation, or in the axis-angle representation the normalized vector
     /// defines the axis of rotation and the norm the angle around this axis.
     /// \param center - If `true`, then the rotation is applied to the centered
-    /// geometry
+    /// geometry.
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                         bool center = true) override;
 
@@ -222,13 +222,13 @@ public:
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 
-    /// Returns the full extent of the bounding box
+    /// Returns the full extent of the bounding box.
     Eigen::Vector3d GetExtent() const { return (max_bound_ - min_bound_); }
 
-    /// Returns the half extent of the bounding box
+    /// Returns the half extent of the bounding box.
     Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
-    /// Returns the maximum extent of the bounding box
+    /// Returns the maximum extent of the bounding box.
     double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
     double GetXPercentage(double x) const {
