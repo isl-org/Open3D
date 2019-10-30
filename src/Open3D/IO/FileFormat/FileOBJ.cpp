@@ -54,10 +54,10 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                                 filename.c_str(), mtl_base_path.c_str());
 
     if (!warn.empty()) {
-        utility::LogWarning("Read OBJ failed: {}\n", warn);
+        utility::LogWarning("Read OBJ failed: {}", warn);
     }
     if (!err.empty()) {
-        utility::LogWarning("Read OBJ failed: {}\n", err);
+        utility::LogWarning("Read OBJ failed: {}", err);
     }
 
     if (!ret) {
@@ -94,7 +94,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             if (fv != 3) {
                 utility::LogWarning(
                         "Read OBJ failed: facet with number of vertices not "
-                        "equal to 3\n");
+                        "equal to 3");
                 return false;
             }
 
@@ -172,22 +172,22 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
 
     std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
     if (!file) {
-        utility::LogWarning("Write OBJ failed: unable to open file.\n");
+        utility::LogWarning("Write OBJ failed: unable to open file.");
         return false;
     }
 
     if (mesh.HasTriangleNormals()) {
-        utility::LogWarning("Write OBJ can not include triangle normals.\n");
+        utility::LogWarning("Write OBJ can not include triangle normals.");
     }
 
-    file << "# Created by Open3D \n";
-    file << "# object name: " << object_name << "\n";
-    file << "# number of vertices: " << mesh.vertices_.size() << "\n";
-    file << "# number of triangles: " << mesh.triangles_.size() << "\n";
+    file << "# Created by Open3D " << std::endl;
+    file << "# object name: " << object_name << std::endl;
+    file << "# number of vertices: " << mesh.vertices_.size() << std::endl;
+    file << "# number of triangles: " << mesh.triangles_.size() << std::endl;
 
     // always write material name in obj file, regardless of uvs or textures
-    file << "mtllib " << object_name << ".mtl\n";
-    file << "usemtl " << object_name << "\n";
+    file << "mtllib " << object_name << ".mtl" << std::endl;
+    file << "usemtl " << object_name << std::endl;
 
     utility::ConsoleProgressBar progress_bar(
             mesh.vertices_.size() + mesh.triangles_.size(),
@@ -202,12 +202,12 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
             const Eigen::Vector3d& color = mesh.vertex_colors_[vidx];
             file << " " << color(0) << " " << color(1) << " " << color(2);
         }
-        file << "\n";
+        file << std::endl;
 
         if (write_vertex_normals) {
             const Eigen::Vector3d& normal = mesh.vertex_normals_[vidx];
             file << "vn " << normal(0) << " " << normal(1) << " " << normal(2)
-                 << "\n";
+                 << std::endl;
         }
 
         ++progress_bar;
@@ -221,7 +221,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     // loose triangle-wise representation is provided
     if (write_triangle_uvs) {
         for (auto& uv : mesh.triangle_uvs_) {
-            file << "vt " << uv(0) << " " << uv(1) << "\n";
+            file << "vt " << uv(0) << " " << uv(1) << std::endl;
         }
     }
 
@@ -234,19 +234,19 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
             file << triangle(1) + 1 << "/" << 3 * tidx + 2 << "/"
                  << triangle(1) + 1 << " ";
             file << triangle(2) + 1 << "/" << 3 * tidx + 3 << "/"
-                 << triangle(2) + 1 << "\n";
+                 << triangle(2) + 1 << std::endl;
         } else if (!write_vertex_normals && write_triangle_uvs) {
             file << "f ";
             file << triangle(0) + 1 << "/" << 3 * tidx + 1 << " ";
             file << triangle(1) + 1 << "/" << 3 * tidx + 2 << " ";
-            file << triangle(2) + 1 << "/" << 3 * tidx + 3 << "\n";
+            file << triangle(2) + 1 << "/" << 3 * tidx + 3 << std::endl;
         } else if (write_vertex_normals && !write_triangle_uvs) {
             file << "f " << triangle(0) + 1 << "//" << triangle(0) + 1 << " "
                  << triangle(1) + 1 << "//" << triangle(1) + 1 << " "
-                 << triangle(2) + 1 << "//" << triangle(2) + 1 << "\n";
+                 << triangle(2) + 1 << "//" << triangle(2) + 1 << std::endl;
         } else {
             file << "f " << triangle(0) + 1 << " " << triangle(1) + 1 << " "
-                 << triangle(2) + 1 << "\n";
+                 << triangle(2) + 1 << std::endl;
         }
         ++progress_bar;
     }
@@ -265,21 +265,21 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     std::ofstream mtl_file(mtl_filename.c_str(), std::ios::out);
     if (!mtl_file) {
         utility::LogWarning(
-                "Write OBJ successful, but failed to write material file.\n");
+                "Write OBJ successful, but failed to write material file.");
         return true;
     }
-    mtl_file << "# Created by Open3D \n";
-    mtl_file << "# object name: " << object_name << "\n";
-    mtl_file << "newmtl " << object_name << "\n";
-    mtl_file << "Ka 1.000 1.000 1.000\n";
-    mtl_file << "Kd 1.000 1.000 1.000\n";
-    mtl_file << "Ks 0.000 0.000 0.000\n";
+    mtl_file << "# Created by Open3D " << std::endl;
+    mtl_file << "# object name: " << object_name << std::endl;
+    mtl_file << "newmtl " << object_name << std::endl;
+    mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+    mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+    mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
 
     if (write_triangle_uvs && mesh.HasTexture()) {
         if (!io::WriteImage(tex_filename, *mesh.texture_.FlipVertical())) {
             utility::LogWarning(
                     "Write OBJ successful, but failed to write texture "
-                    "file.\n");
+                    "file.");
             return true;
         }
         mtl_file << "map_Kd " << object_name << ".png";

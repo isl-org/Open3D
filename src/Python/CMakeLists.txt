@@ -41,19 +41,19 @@ message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
 set(PACKAGE_NAME open3d)
 
-file(GLOB_RECURSE PY_ALL_HEADER_FILES "*.h")
-file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
+file(GLOB_RECURSE PY_ALL_SOURCE_FILES "open3d_pybind/*.cpp")
 
 if (NOT BUILD_AZURE_KINECT)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
+    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/open3d_pybind/io/sensor.cpp")
 endif()
 
-ADD_SOURCE_GROUP(Core)
-ADD_SOURCE_GROUP(IO)
-ADD_SOURCE_GROUP(Tutorial)
-ADD_SOURCE_GROUP(Visualization)
 pybind11_add_module(${PACKAGE_NAME}
-    ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    ${PY_ALL_SOURCE_FILES}
+)
+
+target_include_directories(${PACKAGE_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Suppress Pybind11 warnings
@@ -91,7 +91,7 @@ message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
-            -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/package
+            -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>

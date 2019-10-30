@@ -90,18 +90,18 @@ bool ReadPointCloud(const std::string &filename,
     }
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read geometry::PointCloud failed: unknown file extension.\n");
+                "Read geometry::PointCloud failed: unknown file extension.");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_read_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::PointCloud failed: unknown file extension.\n");
+                "Read geometry::PointCloud failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, pointcloud, print_progress);
-    utility::LogDebug("Read geometry::PointCloud: {:d} vertices.\n",
+    utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
                       (int)pointcloud.points_.size());
     if (remove_nan_points || remove_infinite_points) {
         pointcloud.RemoveNoneFinitePoints(remove_nan_points,
@@ -119,19 +119,19 @@ bool WritePointCloud(const std::string &filename,
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write geometry::PointCloud failed: unknown file extension.\n");
+                "Write geometry::PointCloud failed: unknown file extension.");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::PointCloud failed: unknown file extension.\n");
+                "Write geometry::PointCloud failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, pointcloud, write_ascii,
                                    compressed, print_progress);
-    utility::LogDebug("Write geometry::PointCloud: {:d} vertices.\n",
+    utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
                       (int)pointcloud.points_.size());
     return success;
 }

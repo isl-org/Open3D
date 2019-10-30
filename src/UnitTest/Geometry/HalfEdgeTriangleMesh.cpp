@@ -368,8 +368,8 @@ TEST(HalfEdgeTriangleMesh, BoundaryHalfEdgesFromVertex_Hexagon) {
                           {{1, 0}, {0, 2}, {2, 5}, {5, 6}, {6, 4}, {4, 1}});
     assert_ordreded_edges(het_mesh, het_mesh->BoundaryHalfEdgesFromVertex(2),
                           {{2, 5}, {5, 6}, {6, 4}, {4, 1}, {1, 0}, {0, 2}});
-    assert_ordreded_edges(het_mesh, het_mesh->BoundaryHalfEdgesFromVertex(3),
-                          {});  // Vertex 3 is not a boundary, thus empty
+    EXPECT_THROW(het_mesh->BoundaryHalfEdgesFromVertex(3),
+                 std::runtime_error);  // Vertex 3 is not a boundary, thus empty
     assert_ordreded_edges(het_mesh, het_mesh->BoundaryHalfEdgesFromVertex(4),
                           {{4, 1}, {1, 0}, {0, 2}, {2, 5}, {5, 6}, {6, 4}});
     assert_ordreded_edges(het_mesh, het_mesh->BoundaryHalfEdgesFromVertex(5),
@@ -421,7 +421,7 @@ TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_TwoTriangles) {
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(3), {3, 1, 0, 2});
 }
 
-TEST(HalfEdgeTriangleMesh, BoundarVerticesFromVertex_Hexagon) {
+TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_Hexagon) {
     auto mesh = get_mesh_hexagon();
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
@@ -431,8 +431,8 @@ TEST(HalfEdgeTriangleMesh, BoundarVerticesFromVertex_Hexagon) {
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(0), {0, 2, 5, 6, 4, 1});
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(1), {1, 0, 2, 5, 6, 4});
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(2), {2, 5, 6, 4, 1, 0});
-    ExpectEQ(het_mesh->BoundaryVerticesFromVertex(3),
-             {});  // Vertex 3 is not a boundary, thus empty
+    EXPECT_THROW(het_mesh->BoundaryVerticesFromVertex(3),
+                 std::runtime_error);  // Vertex 3 is not a boundary, thus empty
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(4), {4, 1, 0, 2, 5, 6});
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(5), {5, 6, 4, 1, 0, 2});
     ExpectEQ(het_mesh->BoundaryVerticesFromVertex(6), {6, 4, 1, 0, 2, 5});

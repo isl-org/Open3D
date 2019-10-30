@@ -34,16 +34,16 @@ void PrintHelp(char* argv[]) {
 
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage:\n");
-    utility::LogInfo(">    OdometryRGBD [color_source] [source_target] [color_target] [depth_target] [options]\n");
-    utility::LogInfo("     Given RGBD image pair, estimate 6D odometry.\n");
-    utility::LogInfo("     [options]\n");
-    utility::LogInfo("     --camera_intrinsic [intrinsic_path]\n");
-    utility::LogInfo("     --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)\n");
-    utility::LogInfo("     --verbose : indicate this to display detailed information\n");
-    utility::LogInfo("     --hybrid : compute odometry using hybrid objective\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    OdometryRGBD [color_source] [source_target] [color_target] [depth_target] [options]");
+    utility::LogInfo("     Given RGBD image pair, estimate 6D odometry.");
+    utility::LogInfo("     [options]");
+    utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
+    utility::LogInfo("     --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
+    utility::LogInfo("     --verbose : indicate this to display detailed information");
+    utility::LogInfo("     --hybrid : compute odometry using hybrid objective");
     // clang-NewPormat on
-    utility::LogInfo("\n");
+    utility::LogInfo("");
 }
 
 int main(int argc, char* argv[]) {
@@ -60,17 +60,18 @@ int main(int argc, char* argv[]) {
         intrinsic_path = utility::GetProgramOptionAsString(argc, argv,
                                                            "--camera_intrinsic")
                                  .c_str();
-        utility::LogInfo("Camera intrinsic path {}\n",
+        utility::LogInfo("Camera intrinsic path {}",
                            intrinsic_path.c_str());
     } else {
-        utility::LogWarning("Camera intrinsic path is not given\n");
+        utility::LogWarning("Camera intrinsic path is not given");
+        return 1;
     }
     camera::PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
         !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         utility::LogWarning(
-                "Failed to read intrinsic parameters for depth image.\n");
-        utility::LogWarning("Use default value for Primesense camera.\n");
+                "Failed to read intrinsic parameters for depth image.");
+        utility::LogWarning("Using default value for Primesense camera.");
         intrinsic = camera::PinholeCameraIntrinsic(
                 camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }

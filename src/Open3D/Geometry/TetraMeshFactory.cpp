@@ -35,10 +35,9 @@ namespace geometry {
 std::shared_ptr<TetraMesh> TetraMesh::CreateFromPointCloud(
         const PointCloud& point_cloud) {
     if (point_cloud.points_.size() < 4) {
-        utility::LogWarning(
+        utility::LogError(
                 "[CreateFromPointCloud] not enough points to create a "
-                "tetrahedral mesh.\n");
-        return std::make_shared<TetraMesh>();
+                "tetrahedral mesh.");
     }
     return std::get<0>(
             Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_));

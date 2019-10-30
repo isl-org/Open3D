@@ -128,14 +128,14 @@ bool ViewControl::ConvertToPinholeCameraParameters(
     if (window_height_ <= 0 || window_width_ <= 0) {
         utility::LogWarning(
                 "[ViewControl] ConvertToPinholeCameraParameters() failed "
-                "because window height and width are not set.\n");
+                "because window height and width are not set.");
         return false;
     }
     if (GetProjectionType() == ProjectionType::Orthogonal) {
         utility::LogWarning(
                 "[ViewControl] ConvertToPinholeCameraParameters() failed "
                 "because orthogonal view cannot be translated to a pinhole "
-                "camera.\n");
+                "camera.");
         return false;
     }
     SetProjectionParameters();
@@ -179,7 +179,7 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
                 (double)window_height_ / 2.0 - 0.5) {
         utility::LogWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
-                "because window height and width do not match.\n");
+                "because window height and width do not match.");
         return false;
     }
     double tan_half_fov =
@@ -193,7 +193,7 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
         field_of_view_ = old_fov;
         utility::LogWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
-                "because field of view is impossible.\n");
+                "because field of view is impossible.");
         return false;
     }
     right_ = extrinsic.block<1, 3>(0, 0).transpose();

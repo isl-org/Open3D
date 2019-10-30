@@ -40,7 +40,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
     FILE *myFile = utility::filesystem::FOpen(filename.c_str(), "rb");
 
     if (!myFile) {
-        utility::LogWarning("Read STL failed: unable to open file.\n");
+        utility::LogWarning("Read STL failed: unable to open file.");
         fclose(myFile);
         return false;
     }
@@ -51,13 +51,13 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         fread(header, sizeof(char), 80, myFile);
         fread(&num_of_triangles, sizeof(unsigned int), 1, myFile);
     } else {
-        utility::LogWarning("Read STL failed: unable to read header.\n");
+        utility::LogWarning("Read STL failed: unable to read header.");
         fclose(myFile);
         return false;
     }
 
     if (num_of_triangles == 0) {
-        utility::LogWarning("Read STL failed: empty file.\n");
+        utility::LogWarning("Read STL failed: empty file.");
         fclose(myFile);
         return false;
     }
@@ -90,7 +90,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
             // ignore buffer[48] and buffer [49] because it is rarely used.
 
         } else {
-            utility::LogWarning("Read STL failed: not enough triangles.\n");
+            utility::LogWarning("Read STL failed: not enough triangles.");
             fclose(myFile);
             return false;
         }
@@ -112,24 +112,24 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     if (write_triangle_uvs && mesh.HasTriangleUvs()) {
         utility::LogWarning(
                 "This file format does not support writing textures and uv "
-                "coordinates. Consider using .obj\n");
+                "coordinates. Consider using .obj");
     }
 
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {
-        utility::LogWarning("Write STL failed: unable to open file.\n");
+        utility::LogWarning("Write STL failed: unable to open file.");
         return false;
     }
 
     if (!mesh.HasTriangleNormals()) {
-        utility::LogWarning("Write STL failed: compute normals first.\n");
+        utility::LogWarning("Write STL failed: compute normals first.");
         return false;
     }
 
     size_t num_of_triangles = mesh.triangles_.size();
     if (num_of_triangles == 0) {
-        utility::LogWarning("Write STL failed: empty file.\n");
+        utility::LogWarning("Write STL failed: empty file.");
         return false;
     }
     char header[80] = "Created by Open3D";

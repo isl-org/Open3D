@@ -80,9 +80,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
 #ifdef _OPENMP
-    utility::LogInfo("OpenMP is supported.\n");
+    utility::LogInfo("OpenMP is supported.");
 #else
-    utility::LogInfo("OpenMP is not supported.\n");
+    utility::LogInfo("OpenMP is not supported.");
 #endif
 
 #ifdef _OPENMP
@@ -105,19 +105,19 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
     if (nThreads == NUM_THREADS) {
-        utility::LogInfo("{:d} OpenMP threads were used.\n", NUM_THREADS);
+        utility::LogInfo("{:d} OpenMP threads were used.", NUM_THREADS);
     } else {
-        utility::LogInfo("Expected {:d} OpenMP threads, but {:d} were used.\n",
+        utility::LogInfo("Expected {:d} OpenMP threads, but {:d} were used.",
                          NUM_THREADS, nThreads);
     }
 
     if (nSum != nSumCalc) {
         utility::LogInfo(
                 "The sum of {:d} through {:d} should be {:d}, "
-                "but {:d} was reported!\n",
+                "but {:d} was reported!",
                 NUM_START, NUM_END, nSumCalc, nSum);
     } else {
-        utility::LogInfo("The sum of {:d} through {:d} is {:d}\n", NUM_START,
+        utility::LogInfo("The sum of {:d} through {:d} is {:d}", NUM_START,
                          NUM_END, nSum);
     }
 
@@ -125,7 +125,7 @@ void TestMatrixMultiplication(int argc, char **argv) {
     if (argc > 1) {
         test_thread = std::stoi(argv[1]);
     }
-    open3d::utility::LogInfo("Benchmark multithreading up to {:d} threads.\n",
+    open3d::utility::LogInfo("Benchmark multithreading up to {:d} threads.",
                              test_thread);
 
     for (int i = 1; i <= test_thread; i *= 2) {

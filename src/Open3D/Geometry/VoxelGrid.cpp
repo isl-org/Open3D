@@ -110,47 +110,44 @@ OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox() const {
 }
 
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
-    throw std::runtime_error("VoxelGrid::Transform is not supported");
+    utility::LogError("VoxelGrid::Transform is not supported");
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3d &translation,
                                 bool relative) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Scale(const double scale, bool center) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R, bool center) {
-    throw std::runtime_error("Not implemented");
+    utility::LogError("Not implemented");
     return *this;
 }
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     if (voxel_size_ != voxelgrid.voxel_size_) {
-        utility::LogWarningf(
+        utility::LogError(
                 "[VoxelGrid] Could not combine VoxelGrid because voxel_size "
-                "differs (this=%f, other=%f.\n",
+                "differs (this=%f, other=%f)",
                 voxel_size_, voxelgrid.voxel_size_);
-        return *this;
     }
     if (origin_ != voxelgrid.origin_) {
-        utility::LogWarningf(
+        utility::LogError(
                 "[VoxelGrid] Could not combine VoxelGrid because origin "
-                "differs (this=%f,%f,%f, other=%f,%f,%f.\n",
+                "differs (this=%f,%f,%f, other=%f,%f,%f)",
                 origin_(0), origin_(1), origin_(2), voxelgrid.origin_(0),
                 voxelgrid.origin_(1), voxelgrid.origin_(2));
-        return *this;
     }
     if (this->HasColors() != voxelgrid.HasColors()) {
-        utility::LogWarningf(
+        utility::LogError(
                 "[VoxelGrid] Could not combine VoxelGrid one has colors and "
-                "the other not.\n");
-        return *this;
+                "the other not.");
     }
     std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
@@ -276,10 +273,9 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
         const camera::PinholeCameraParameters &camera_parameter) {
     if (depth_map.height_ != camera_parameter.intrinsic_.height_ ||
         depth_map.width_ != camera_parameter.intrinsic_.width_) {
-        utility::LogWarning(
+        utility::LogError(
                 "[VoxelGrid] provided depth_map dimensions are not compatible "
-                "with the provided camera_parameters\n");
-        return *this;
+                "with the provided camera_parameters");
     }
 
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
@@ -319,10 +315,9 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
         const camera::PinholeCameraParameters &camera_parameter) {
     if (silhouette_mask.height_ != camera_parameter.intrinsic_.height_ ||
         silhouette_mask.width_ != camera_parameter.intrinsic_.width_) {
-        utility::LogWarning(
+        utility::LogError(
                 "[VoxelGrid] provided silhouette_mask dimensions are not "
-                "compatible with the provided camera_parameters\n");
-        return *this;
+                "compatible with the provided camera_parameters");
     }
 
     auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);

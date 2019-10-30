@@ -41,7 +41,7 @@ bool ReadPoses(const std::string& trajectory_path,
                std::vector<Eigen::Matrix4d>& poses) {
     FILE* f = utility::filesystem::FOpen(trajectory_path, "r");
     if (f == NULL) {
-        utility::LogWarning("Read poses failed: unable to open file: {}\n",
+        utility::LogWarning("Read poses failed: unable to open file: {}",
                             trajectory_path);
         return false;
     }

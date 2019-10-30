@@ -38,7 +38,7 @@ bool ReadPointCloudFromXYZN(const std::string &filename,
                             bool print_progress) {
     FILE *file = utility::filesystem::FOpen(filename, "r");
     if (file == NULL) {
-        utility::LogWarning("Read XYZN failed: unable to open file: {}\n",
+        utility::LogWarning("Read XYZN failed: unable to open file: {}",
                             filename);
         return false;
     }
@@ -70,7 +70,7 @@ bool WritePointCloudToXYZN(const std::string &filename,
 
     FILE *file = utility::filesystem::FOpen(filename, "w");
     if (file == NULL) {
-        utility::LogWarning("Write XYZN failed: unable to open file: {}\n",
+        utility::LogWarning("Write XYZN failed: unable to open file: {}",
                             filename);
         return false;
     }
@@ -80,7 +80,7 @@ bool WritePointCloudToXYZN(const std::string &filename,
         const Eigen::Vector3d &normal = pointcloud.normals_[i];
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
                     point(1), point(2), normal(0), normal(1), normal(2)) < 0) {
-            utility::LogWarning("Write XYZN failed: unable to write file: {}\n",
+            utility::LogWarning("Write XYZN failed: unable to write file: {}",
                                 filename);
             fclose(file);
             return false;  // error happens during writing.

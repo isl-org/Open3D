@@ -109,7 +109,7 @@ bool VisualizerWithEditing::AddGeometry(
     geometry_renderer_ptrs_.insert(editing_geometry_renderer_ptr_);
     ResetViewPoint(true);
     utility::LogDebug(
-            "Add geometry and update bounding box to {}\n",
+            "Add geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
@@ -117,26 +117,26 @@ bool VisualizerWithEditing::AddGeometry(
 void VisualizerWithEditing::PrintVisualizerHelp() {
     Visualizer::PrintVisualizerHelp();
     // clang-format off
-    utility::LogInfo("  -- Editing control --\n");
-    utility::LogInfo("    F            : Enter freeview mode.\n");
-    utility::LogInfo("    X            : Enter orthogonal view along X axis, press again to flip.\n");
-    utility::LogInfo("    Y            : Enter orthogonal view along Y axis, press again to flip.\n");
-    utility::LogInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.\n");
-    utility::LogInfo("    K            : Lock / unlock camera.\n");
-    utility::LogInfo("    Ctrl + D     : Downsample point cloud with a voxel grid.\n");
-    utility::LogInfo("    Ctrl + R     : Reset geometry to its initial state.\n");
-    utility::LogInfo("    Shift + +/-  : Increase/decrease picked point size..\n");
-    utility::LogInfo("    Shift + mouse left button   : Pick a point and add in queue.\n");
-    utility::LogInfo("    Shift + mouse right button  : Remove last picked point from queue.\n");
-    utility::LogInfo("\n");
-    utility::LogInfo("    -- When camera is locked --\n");
-    utility::LogInfo("    Mouse left button + drag    : Create a selection rectangle.\n");
-    utility::LogInfo("    Ctrl + mouse buttons + drag : Hold Ctrl key to draw a selection polygon.\n");
-    utility::LogInfo("                                  Left mouse button to add point. Right mouse\n");
-    utility::LogInfo("                                  button to remove point. Release Ctrl key to\n");
-    utility::LogInfo("                                  close the polygon.\n");
-    utility::LogInfo("    C                           : Crop the geometry with selection region.\n");
-    utility::LogInfo("\n");
+    utility::LogInfo("  -- Editing control --");
+    utility::LogInfo("    F            : Enter freeview mode.");
+    utility::LogInfo("    X            : Enter orthogonal view along X axis, press again to flip.");
+    utility::LogInfo("    Y            : Enter orthogonal view along Y axis, press again to flip.");
+    utility::LogInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.");
+    utility::LogInfo("    K            : Lock / unlock camera.");
+    utility::LogInfo("    Ctrl + D     : Downsample point cloud with a voxel grid.");
+    utility::LogInfo("    Ctrl + R     : Reset geometry to its initial state.");
+    utility::LogInfo("    Shift + +/-  : Increase/decrease picked point size..");
+    utility::LogInfo("    Shift + mouse left button   : Pick a point and add in queue.");
+    utility::LogInfo("    Shift + mouse right button  : Remove last picked point from queue.");
+    utility::LogInfo("");
+    utility::LogInfo("    -- When camera is locked --");
+    utility::LogInfo("    Mouse left button + drag    : Create a selection rectangle.");
+    utility::LogInfo("    Ctrl + mouse buttons + drag : Hold Ctrl key to draw a selection polygon.");
+    utility::LogInfo("                                  Left mouse button to add point. Right mouse");
+    utility::LogInfo("                                  button to remove point. Release Ctrl key to");
+    utility::LogInfo("                                  close the polygon.");
+    utility::LogInfo("    C                           : Crop the geometry with selection region.");
+    utility::LogInfo("");
     // clang-format on
 }
 
@@ -208,10 +208,9 @@ int VisualizerWithEditing::PickPoint(double x, double y) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     if (!GLEW_ARB_framebuffer_object) {
         // OpenGL 2.1 doesn't require this, 3.1+ does
-        utility::LogError(
+        utility::LogWarning(
                 "[PickPoint] Your GPU does not provide framebuffer objects. "
-                "Use "
-                "a texture instead.\n");
+                "Use a texture instead.");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_MULTISAMPLE);
         return -1;
@@ -228,7 +227,7 @@ int VisualizerWithEditing::PickPoint(double x, double y) {
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers);  // "1" is the size of DrawBuffers
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        utility::LogError("[PickPoint] Something is wrong with FBO.\n");
+        utility::LogWarning("[PickPoint] Something is wrong with FBO.");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_MULTISAMPLE);
         return -1;
@@ -300,27 +299,24 @@ void VisualizerWithEditing::KeyPressCallback(
         case GLFW_KEY_F:
             view_control.SetEditingMode(
                     ViewControlWithEditing::EditingMode::FreeMode);
-            utility::LogDebug("[Visualizer] Enter freeview mode.\n");
+            utility::LogDebug("[Visualizer] Enter freeview mode.");
             break;
         case GLFW_KEY_X:
             view_control.ToggleEditingX();
-            utility::LogDebug(
-                    "[Visualizer] Enter orthogonal X editing mode.\n");
+            utility::LogDebug("[Visualizer] Enter orthogonal X editing mode.");
             break;
         case GLFW_KEY_Y:
             view_control.ToggleEditingY();
-            utility::LogDebug(
-                    "[Visualizer] Enter orthogonal Y editing mode.\n");
+            utility::LogDebug("[Visualizer] Enter orthogonal Y editing mode.");
             break;
         case GLFW_KEY_Z:
             view_control.ToggleEditingZ();
-            utility::LogDebug(
-                    "[Visualizer] Enter orthogonal Z editing mode.\n");
+            utility::LogDebug("[Visualizer] Enter orthogonal Z editing mode.");
             break;
         case GLFW_KEY_K:
             view_control.ToggleLocking();
             InvalidateSelectionPolygon();
-            utility::LogDebug("[Visualizer] Camera %s.\n",
+            utility::LogDebug("[Visualizer] Camera %s.",
                               view_control.IsLocked() ? "Lock" : "Unlock");
             break;
         case GLFW_KEY_R:
@@ -344,7 +340,7 @@ void VisualizerWithEditing::KeyPressCallback(
                             buff.c_str());
                     if (str == NULL) {
                         utility::LogWarning(
-                                "Illegal input, use default voxel size.\n");
+                                "Illegal input, using default voxel size.");
                     } else {
                         char *end;
                         errno = 0;
@@ -352,7 +348,8 @@ void VisualizerWithEditing::KeyPressCallback(
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
                             utility::LogWarning(
-                                    "Illegal input, use default voxel size.\n");
+                                    "Illegal input, using default voxel "
+                                    "size.");
                         } else {
                             voxel_size_ = l;
                         }
@@ -361,9 +358,8 @@ void VisualizerWithEditing::KeyPressCallback(
                 if (voxel_size_ > 0.0 && editing_geometry_ptr_ &&
                     editing_geometry_ptr_->GetGeometryType() ==
                             geometry::Geometry::GeometryType::PointCloud) {
-                    utility::LogInfo(
-                            "Voxel downsample with voxel size {:.4f}.\n",
-                            voxel_size_);
+                    utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
+                                     voxel_size_);
                     geometry::PointCloud &pcd =
                             (geometry::PointCloud &)*editing_geometry_ptr_;
                     pcd = *pcd.VoxelDownSample(voxel_size_);
@@ -371,7 +367,7 @@ void VisualizerWithEditing::KeyPressCallback(
                 } else {
                     utility::LogWarning(
                             "No voxel downsample performed due to illegal "
-                            "voxel size.\n");
+                            "voxel size.");
                 }
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
@@ -404,7 +400,7 @@ void VisualizerWithEditing::KeyPressCallback(
                     }
                     if (filename == NULL) {
                         utility::LogWarning(
-                                "No filename is given. Abort saving.\n");
+                                "No filename is given. Abort saving.");
                     } else {
                         SaveCroppingResult(filename);
                         crop_action_count_++;
@@ -436,7 +432,7 @@ void VisualizerWithEditing::KeyPressCallback(
                     }
                     if (filename == NULL) {
                         utility::LogWarning(
-                                "No filename is given. Abort saving.\n");
+                                "No filename is given. Abort saving.");
                     } else {
                         SaveCroppingResult(filename);
                         crop_action_count_++;
@@ -608,14 +604,14 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
 #endif
             int index = PickPoint(x, y);
             if (index == -1) {
-                utility::LogInfo("No point has been picked.\n");
+                utility::LogInfo("No point has been picked.");
             } else {
                 const auto &point =
                         ((const geometry::PointCloud &)(*editing_geometry_ptr_))
                                 .points_[index];
                 utility::LogInfo(
                         "Picked point #{:d} ({:.2}, {:.2}, {:.2}) to add in "
-                        "queue.\n",
+                        "queue.",
                         index, point(0), point(1), point(2));
                 pointcloud_picker_ptr_->picked_indices_.push_back(
                         (size_t)index);
@@ -625,7 +621,7 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
                    action == GLFW_RELEASE && (mods & GLFW_MOD_SHIFT)) {
             if (pointcloud_picker_ptr_->picked_indices_.empty() == false) {
                 utility::LogInfo(
-                        "Remove picked point #{} from pick queue.\n",
+                        "Remove picked point #{} from pick queue.",
                         pointcloud_picker_ptr_->picked_indices_.back());
                 pointcloud_picker_ptr_->picked_indices_.pop_back();
                 is_redraw_required_ = true;

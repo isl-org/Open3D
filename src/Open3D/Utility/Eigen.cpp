@@ -45,14 +45,14 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
     // PSD implies symmetric
     check_symmetric = check_symmetric || check_psd;
     if (check_symmetric && !A.isApprox(A.transpose())) {
-        LogWarning("check_symmetric failed, empty vector will be returned\n");
+        LogWarning("check_symmetric failed, empty vector will be returned");
         return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
     }
 
     if (check_det) {
         double det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
-            LogWarning("check_det failed, empty vector will be returned\n");
+            LogWarning("check_det failed, empty vector will be returned");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
@@ -61,7 +61,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
     if (check_psd) {
         Eigen::LLT<Eigen::MatrixXd> A_llt(A);
         if (A_llt.info() == Eigen::NumericalIssue) {
-            LogWarning("check_psd failed, empty vector will be returned\n");
+            LogWarning("check_psd failed, empty vector will be returned");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
@@ -79,10 +79,10 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
                 // Both decompose and solve are successful
                 return std::make_tuple(true, std::move(x));
             } else {
-                LogWarning("Cholesky solve failed, switched to dense solver\n");
+                LogWarning("Cholesky solve failed, switched to dense solver");
             }
         } else {
-            LogWarning("Cholesky decompose failed, switched to dense solver\n");
+            LogWarning("Cholesky decompose failed, switched to dense solver");
         }
     }
 
@@ -144,7 +144,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
     if (JTJ.rows() != JTr.rows() || JTJ.cols() % 6 != 0) {
         LogWarning(
                 "[SolveJacobianSystemAndObtainExtrinsicMatrixArray] "
-                "Unsupported matrix format.\n");
+                "Unsupported matrix format.");
         return std::make_tuple(false, std::move(output_matrix_array));
     }
 
@@ -207,7 +207,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
     }
 #endif
     if (verbose) {
-        LogDebug("Residual : {:.2e} (# of elements : {:d})\n",
+        LogDebug("Residual : {:.2e} (# of elements : {:d})",
                  r2_sum / (double)iteration_num, iteration_num);
     }
     return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
@@ -260,7 +260,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
     }
 #endif
     if (verbose) {
-        LogDebug("Residual : {:.2e} (# of elements : {:d})\n",
+        LogDebug("Residual : {:.2e} (# of elements : {:d})",
                  r2_sum / (double)iteration_num, iteration_num);
     }
     return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);

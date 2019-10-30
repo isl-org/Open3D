@@ -201,9 +201,8 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
-        utility::LogWarning(
-                "[ConvertDepthImageToXYZImage] Unsupported image format.\n");
-        return image_xyz;
+        utility::LogError(
+                "[ConvertDepthImageToXYZImage] Unsupported image format.");
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
     const double inv_fy = 1.0 / intrinsic_matrix(1, 1);
@@ -305,10 +304,9 @@ void NormalizeIntensity(geometry::Image &image_s,
                         CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        utility::LogWarning(
+        utility::LogError(
                 "[NormalizeIntensity] Size of two input images should be "
-                "same\n");
-        return;
+                "same");
     }
     double mean_s = 0.0, mean_t = 0.0;
     for (size_t row = 0; row < correspondence.size(); row++) {
@@ -436,7 +434,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     std::tie(is_success, extrinsic) =
             utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
     if (!is_success) {
-        utility::LogWarning("[ComputeOdometry] no solution!\n");
+        utility::LogWarning("[ComputeOdometry] no solution!");
         return std::make_tuple(false, Eigen::Matrix4d::Identity());
     } else {
         return std::make_tuple(true, extrinsic);
@@ -493,7 +491,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
             result_odo = curr_odo * result_odo;
 
             if (!is_success) {
-                utility::LogWarning("[ComputeOdometry] no solution!\n");
+                utility::LogWarning("[ComputeOdometry] no solution!");
                 return std::make_tuple(false, Eigen::Matrix4d::Identity());
             }
         }
@@ -516,7 +514,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const OdometryOption &option /*= OdometryOption()*/) {
     if (!CheckRGBDImagePair(source, target)) {
         utility::LogWarning(
-                "[RGBDOdometry] Two RGBD pairs should be same in size.\n");
+                "[RGBDOdometry] Two RGBD pairs should be same in size.");
         return std::make_tuple(false, Eigen::Matrix4d::Identity(),
                                Eigen::Matrix6d::Zero());
     }

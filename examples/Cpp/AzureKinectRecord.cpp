@@ -18,14 +18,14 @@ using namespace open3d;
 void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage: \n");
-    utility::LogInfo("Options: \n");
-    utility::LogInfo("--config  Config .json file (default: none)\n");
-    utility::LogInfo("--list    List the currently connected K4A devices\n");
-    utility::LogInfo("--device  Specify the device index to use (default: 0)\n");
-    utility::LogInfo("--output  Output mkv file name (default: current_time.mkv)\n");
-    utility::LogInfo("-a        Align depth with color image (default: disabled)\n");
-    utility::LogInfo("-h        Print this helper\n");
+    utility::LogInfo("Usage: ");
+    utility::LogInfo("Options: ");
+    utility::LogInfo("--config  Config .json file (default: none)");
+    utility::LogInfo("--list    List the currently connected K4A devices");
+    utility::LogInfo("--device  Specify the device index to use (default: 0)");
+    utility::LogInfo("--output  Output mkv file name (default: current_time.mkv)");
+    utility::LogInfo("-a        Align depth with color image (default: disabled)");
+    utility::LogInfo("-h        Print this helper");
     // clang-format on
 }
 
@@ -53,18 +53,18 @@ int main(int argc, char **argv) {
         bool success = io::ReadIJsonConvertibleFromJSON(config_filename,
                                                         sensor_config);
         if (!success) {
-            utility::LogInfo("Invalid sensor config\n");
+            utility::LogInfo("Invalid sensor config");
             return 1;
         }
     } else {
-        utility::LogInfo("Use default sensor config\n");
+        utility::LogInfo("Use default sensor config");
     }
 
     int sensor_index =
             utility::GetProgramOptionAsInt(argc, argv, "--device", 0);
     if (sensor_index < 0 || sensor_index > 255) {
-        utility::LogError("Sensor index must between [0, 255]: {}\n",
-                          sensor_index);
+        utility::LogWarning("Sensor index must between [0, 255]: {}",
+                            sensor_index);
         return 1;
     }
 
@@ -73,12 +73,12 @@ int main(int argc, char **argv) {
 
     std::string recording_filename = utility::GetProgramOptionAsString(
             argc, argv, "--output", utility::GetCurrentTimeStamp() + ".mkv");
-    utility::LogInfo("Prepare writing to {}\n", recording_filename);
+    utility::LogInfo("Prepare writing to {}", recording_filename);
 
     // Init recorder
     io::AzureKinectRecorder recorder(sensor_config, sensor_index);
     if (!recorder.InitSensor()) {
-        utility::LogError("Failed to connect to sensor, abort.\n");
+        utility::LogWarning("Failed to connect to sensor, abort.");
         return 1;
     }
 
@@ -92,21 +92,21 @@ int main(int argc, char **argv) {
                     utility::LogInfo(
                             "Recording paused. "
                             "Press [SPACE] to continue. "
-                            "Press [ESC] to save and exit.\n");
+                            "Press [ESC] to save and exit.");
                     flag_record = false;
                 } else if (!recorder.IsRecordCreated()) {
                     if (recorder.OpenRecord(recording_filename)) {
                         utility::LogInfo(
                                 "Recording started. "
                                 "Press [SPACE] to pause. "
-                                "Press [ESC] to save and exit.\n");
+                                "Press [ESC] to save and exit.");
                         flag_record = true;
                     }  // else flag_record keeps false
                 } else {
                     utility::LogInfo(
                             "Recording resumed, video may be discontinuous. "
                             "Press [SPACE] to pause. "
-                            "Press [ESC] to save and exit.\n");
+                            "Press [ESC] to save and exit.");
                     flag_record = true;
                 }
                 return false;
@@ -116,9 +116,9 @@ int main(int argc, char **argv) {
             GLFW_KEY_ESCAPE, [&](visualization::Visualizer *vis) {
                 flag_exit = true;
                 if (recorder.IsRecordCreated()) {
-                    utility::LogInfo("Recording finished.\n");
+                    utility::LogInfo("Recording finished.");
                 } else {
-                    utility::LogInfo("Nothing has been recorded.\n");
+                    utility::LogInfo("Nothing has been recorded.");
                 }
                 return false;
             });
@@ -126,14 +126,14 @@ int main(int argc, char **argv) {
     utility::LogInfo(
             "In the visulizer window, "
             "press [SPACE] to start recording, "
-            "press [ESC] to exit.\n");
+            "press [ESC] to exit.");
 
     vis.CreateVisualizerWindow("Open3D Azure Kinect Recorder", 1920, 540);
     do {
         auto im_rgbd =
                 recorder.RecordFrame(flag_record, enable_align_depth_to_color);
         if (im_rgbd == nullptr) {
-            utility::LogInfo("Invalid capture, skipping this frame\n");
+            utility::LogInfo("Invalid capture, skipping this frame");
             continue;
         }
 

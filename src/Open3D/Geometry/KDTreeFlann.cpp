@@ -75,7 +75,7 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
         case Geometry::GeometryType::Unspecified:
         default:
             utility::LogWarning(
-                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
             return false;
     }
 }
@@ -190,8 +190,7 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     dimension_ = data.rows();
     dataset_size_ = data.cols();
     if (dimension_ == 0 || dataset_size_ == 0) {
-        utility::LogWarning(
-                "[KDTreeFlann::SetRawData] Failed due to no data.\n");
+        utility::LogWarning("[KDTreeFlann::SetRawData] Failed due to no data.");
         return false;
     }
     data_.resize(dataset_size_ * dimension_);

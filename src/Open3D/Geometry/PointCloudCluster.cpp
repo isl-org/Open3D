@@ -45,7 +45,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
     KDTreeFlann kdtree(*this);
 
     // precompute all neighbours
-    utility::LogDebug("Precompute Neighbours\n");
+    utility::LogDebug("Precompute Neighbours");
     utility::ConsoleProgressBar progress_bar(
             points_.size(), "Precompute Neighbours", print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
@@ -61,10 +61,10 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 #endif
         { ++progress_bar; }
     }
-    utility::LogDebug("Done Precompute Neighbours\n");
+    utility::LogDebug("Done Precompute Neighbours");
 
     // set all labels to undefined (-2)
-    utility::LogDebug("Compute Clusters\n");
+    utility::LogDebug("Compute Clusters");
     progress_bar.reset(points_.size(), "Clustering", print_progress);
     std::vector<int> labels(points_.size(), -2);
     int cluster_label = 0;
@@ -112,7 +112,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
         cluster_label++;
     }
 
-    utility::LogDebug("Done Compute Clusters: {:d}\n", cluster_label);
+    utility::LogDebug("Done Compute Clusters: {:d}", cluster_label);
     return labels;
 }
 

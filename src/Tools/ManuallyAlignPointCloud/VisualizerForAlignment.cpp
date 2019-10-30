@@ -33,15 +33,15 @@ namespace open3d {
 void VisualizerForAlignment::PrintVisualizerHelp() {
     visualization::Visualizer::PrintVisualizerHelp();
     // clang-format off
-    utility::LogInfo("  -- Alignment control --\n");
-    utility::LogInfo("    Ctrl + R     : Reset source and target to initial state.\n");
-    utility::LogInfo("    Ctrl + S     : Save current alignment session into a JSON file.\n");
-    utility::LogInfo("    Ctrl + O     : Load current alignment session from a JSON file.\n");
-    utility::LogInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
-    utility::LogInfo("    Ctrl + I     : Run ICP refinement.\n");
-    utility::LogInfo("    Ctrl + D     : Run voxel downsample for both source and target.\n");
-    utility::LogInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.\n");
-    utility::LogInfo("    Ctrl + E     : Evaluate error and save to files.\n");
+    utility::LogInfo("  -- Alignment control --");
+    utility::LogInfo("    Ctrl + R     : Reset source and target to initial state.");
+    utility::LogInfo("    Ctrl + S     : Save current alignment session into a JSON file.");
+    utility::LogInfo("    Ctrl + O     : Load current alignment session from a JSON file.");
+    utility::LogInfo("    Ctrl + A     : Align point clouds based on manually annotations.");
+    utility::LogInfo("    Ctrl + I     : Run ICP refinement.");
+    utility::LogInfo("    Ctrl + D     : Run voxel downsample for both source and target.");
+    utility::LogInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.");
+    utility::LogInfo("    Ctrl + E     : Evaluate error and save to files.");
     // clang-format on
 }
 
@@ -118,7 +118,7 @@ void VisualizerForAlignment::KeyPressCallback(
                             "if it is non-positive)",
                             buffer.c_str());
                     if (str == NULL) {
-                        utility::LogWarning("Dialog closed.\n");
+                        utility::LogWarning("Dialog closed.");
                         return;
                     } else {
                         char *end;
@@ -128,7 +128,7 @@ void VisualizerForAlignment::KeyPressCallback(
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
                             utility::LogWarning(
                                     "Illegal input, use default max "
-                                    "correspondence distance.\n");
+                                    "correspondence distance.");
                         } else {
                             max_correspondence_distance_ = l;
                         }
@@ -136,7 +136,7 @@ void VisualizerForAlignment::KeyPressCallback(
                 }
                 if (max_correspondence_distance_ > 0.0) {
                     utility::LogInfo(
-                            "ICP with max correspondence distance {:.4f}.\n",
+                            "ICP with max correspondence distance {:.4f}.",
                             max_correspondence_distance_);
                     auto result = registration::RegistrationICP(
                             *source_copy_ptr_, *target_copy_ptr_,
@@ -148,8 +148,7 @@ void VisualizerForAlignment::KeyPressCallback(
                                                                  30));
                     utility::LogInfo(
                             "Registration finished with fitness {:.4f} and "
-                            "RMSE "
-                            "{:.4f}.\n",
+                            "RMSE {:.4f}.",
                             result.fitness_, result.inlier_rmse_);
                     if (result.fitness_ > 0.0) {
                         transformation_ =
@@ -161,7 +160,7 @@ void VisualizerForAlignment::KeyPressCallback(
                 } else {
                     utility::LogWarning(
                             "No ICP performed due to illegal max "
-                            "correspondence distance.\n");
+                            "correspondence distance.");
                 }
                 return;
             }
@@ -173,7 +172,7 @@ void VisualizerForAlignment::KeyPressCallback(
                             "Set voxel size (ignored if it is non-positive)",
                             buffer.c_str());
                     if (str == NULL) {
-                        utility::LogWarning("Dialog closed.\n");
+                        utility::LogWarning("Dialog closed.");
                         return;
                     } else {
                         char *end;
@@ -182,23 +181,22 @@ void VisualizerForAlignment::KeyPressCallback(
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
                             utility::LogWarning(
-                                    "Illegal input, use default voxel size.\n");
+                                    "Illegal input, use default voxel size.");
                         } else {
                             voxel_size_ = l;
                         }
                     }
                 }
                 if (voxel_size_ > 0.0) {
-                    utility::LogInfo(
-                            "Voxel downsample with voxel size {:.4f}.\n",
-                            voxel_size_);
+                    utility::LogInfo("Voxel downsample with voxel size {:.4f}.",
+                                     voxel_size_);
                     *source_copy_ptr_ =
                             *source_copy_ptr_->VoxelDownSample(voxel_size_);
                     UpdateGeometry();
                 } else {
                     utility::LogWarning(
                             "No voxel downsample performed due to illegal "
-                            "voxel size.\n");
+                            "voxel size.");
                 }
                 return;
             }
@@ -282,7 +280,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
         source_idx.size() != target_idx.size()) {
         utility::LogWarning(
                 "# of picked points mismatch: {:d} in source, {:d} in "
-                "target.\n",
+                "target.",
                 (int)source_idx.size(), (int)target_idx.size());
         return false;
     }
@@ -291,7 +289,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     for (size_t i = 0; i < source_idx.size(); i++) {
         corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
     }
-    utility::LogInfo("Error is {:.4f} before alignment.\n",
+    utility::LogInfo("Error is {:.4f} before alignment.",
                      p2p.ComputeRMSE(*alignment_session_.source_ptr_,
                                      *alignment_session_.target_ptr_, corres));
     transformation_ =
@@ -300,24 +298,24 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
     source_copy_ptr_->Transform(transformation_);
-    utility::LogInfo("Error is {:.4f} before alignment.\n",
+    utility::LogInfo("Error is {:.4f} before alignment.",
                      p2p.ComputeRMSE(*source_copy_ptr_,
                                      *alignment_session_.target_ptr_, corres));
     return true;
 }
 
 void VisualizerForAlignment::PrintTransformation() {
-    utility::LogInfo("Current transformation is:\n");
-    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(0, 0),
+    utility::LogInfo("Current transformation is:");
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(0, 0),
                      transformation_(0, 1), transformation_(0, 2),
                      transformation_(0, 3));
-    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(1, 0),
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(1, 0),
                      transformation_(1, 1), transformation_(1, 2),
                      transformation_(1, 3));
-    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(2, 0),
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(2, 0),
                      transformation_(2, 1), transformation_(2, 2),
                      transformation_(2, 3));
-    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}\n", transformation_(3, 0),
+    utility::LogInfo("\t{:.6f} {:.6f} {:.6f} {:.6f}", transformation_(3, 0),
                      transformation_(3, 1), transformation_(3, 2),
                      transformation_(3, 3));
 }

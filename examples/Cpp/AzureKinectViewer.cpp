@@ -18,12 +18,12 @@ using namespace open3d;
 void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Options: \n");
-    utility::LogInfo("--config  Config .json file (default: none)\n");
-    utility::LogInfo("--list    List the currently connected K4A devices\n");
-    utility::LogInfo("--device  Specify the device index to use (default: 0)\n");
-    utility::LogInfo("-a        Align depth with color image (default: disabled)\n");
-    utility::LogInfo("-h        Print this helper\n");
+    utility::LogInfo("Options: ");
+    utility::LogInfo("--config  Config .json file (default: none)");
+    utility::LogInfo("--list    List the currently connected K4A devices");
+    utility::LogInfo("--device  Specify the device index to use (default: 0)");
+    utility::LogInfo("-a        Align depth with color image (default: disabled)");
+    utility::LogInfo("-h        Print this helper");
     // clang-format on
 }
 
@@ -44,18 +44,18 @@ int main(int argc, char **argv) {
         auto config_filename =
                 utility::GetProgramOptionAsString(argc, argv, "--config", "");
         if (!io::ReadIJsonConvertibleFromJSON(config_filename, sensor_config)) {
-            utility::LogInfo("Invalid sensor config\n");
+            utility::LogInfo("Invalid sensor config");
             return 1;
         }
     } else {
-        utility::LogInfo("Use default sensor config\n");
+        utility::LogInfo("Use default sensor config");
     }
 
     int sensor_index =
             utility::GetProgramOptionAsInt(argc, argv, "--device", 0);
     if (sensor_index < 0 || sensor_index > 255) {
-        utility::LogError("Sensor index must between [0, 255]: {}\n",
-                          sensor_index);
+        utility::LogWarning("Sensor index must between [0, 255]: {}",
+                            sensor_index);
         return 1;
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
     // Init sensor
     io::AzureKinectSensor sensor(sensor_config);
     if (!sensor.Connect(sensor_index)) {
-        utility::LogError("Failed to connect to sensor, abort.\n");
+        utility::LogWarning("Failed to connect to sensor, abort.");
         return 1;
     }
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     do {
         auto im_rgbd = sensor.CaptureFrame(enable_align_depth_to_color);
         if (im_rgbd == nullptr) {
-            utility::LogInfo("Invalid capture, skipping this frame\n");
+            utility::LogInfo("Invalid capture, skipping this frame");
             continue;
         }
 

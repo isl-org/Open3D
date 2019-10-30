@@ -78,17 +78,17 @@ bool ReadVoxelGrid(const std::string &filename,
     }
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read geometry::VoxelGrid failed: unknown file extension.\n");
+                "Read geometry::VoxelGrid failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_voxelgrid_read_function.find(filename_ext);
     if (map_itr == file_extension_to_voxelgrid_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::VoxelGrid failed: unknown file extension.\n");
+                "Read geometry::VoxelGrid failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, voxelgrid, print_progress);
-    utility::LogDebug("Read geometry::VoxelGrid: {:d} voxels.\n",
+    utility::LogDebug("Read geometry::VoxelGrid: {:d} voxels.",
                       (int)voxelgrid.voxels_.size());
     return success;
 }
@@ -102,19 +102,19 @@ bool WriteVoxelGrid(const std::string &filename,
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write geometry::VoxelGrid failed: unknown file extension.\n");
+                "Write geometry::VoxelGrid failed: unknown file extension.");
         return false;
     }
     auto map_itr =
             file_extension_to_voxelgrid_write_function.find(filename_ext);
     if (map_itr == file_extension_to_voxelgrid_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::VoxelGrid failed: unknown file extension.\n");
+                "Write geometry::VoxelGrid failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, voxelgrid, write_ascii, compressed,
                                    print_progress);
-    utility::LogDebug("Write geometry::VoxelGrid: {:d} voxels.\n",
+    utility::LogDebug("Write geometry::VoxelGrid: {:d} voxels.",
                       (int)voxelgrid.voxels_.size());
     return success;
 }

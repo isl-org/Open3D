@@ -66,15 +66,15 @@ bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
                     filename.c_str(), sensor_.device_,
                     sensor_.sensor_config_.ConvertToNativeConfig(),
                     &recording_))) {
-            utility::LogError("Unable to create recording file: {}\n",
-                              filename);
+            utility::LogWarning("Unable to create recording file: {}",
+                                filename);
             return false;
         }
         if (K4A_FAILED(k4a_plugin::k4a_record_write_header(recording_))) {
-            utility::LogError("Unable to write header\n");
+            utility::LogWarning("Unable to write header");
             return false;
         }
-        utility::LogInfo("Writing to header\n");
+        utility::LogInfo("Writing to header");
 
         is_record_created_ = true;
     }
@@ -83,13 +83,13 @@ bool AzureKinectRecorder::OpenRecord(const std::string& filename) {
 
 bool AzureKinectRecorder::CloseRecord() {
     if (is_record_created_) {
-        utility::LogInfo("Saving recording...\n");
+        utility::LogInfo("Saving recording...");
         if (K4A_FAILED(k4a_plugin::k4a_record_flush(recording_))) {
-            utility::LogError("Unable to flush record file\n");
+            utility::LogWarning("Unable to flush record file");
             return false;
         }
         k4a_plugin::k4a_record_close(recording_);
-        utility::LogInfo("Done\n");
+        utility::LogInfo("Done");
 
         is_record_created_ = false;
     }
@@ -102,8 +102,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
     if (capture != nullptr && is_record_created_ && write) {
         if (K4A_FAILED(k4a_plugin::k4a_record_write_capture(recording_,
                                                             capture))) {
-            utility::LogError("Unable to write to capture\n");
-            return nullptr;
+            utility::LogError("Unable to write to capture");
         }
     }
 
@@ -112,7 +111,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
                              ? sensor_.transform_depth_to_color_
                              : nullptr);
     if (im_rgbd == nullptr) {
-        utility::LogInfo("Invalid capture, skipping this frame\n");
+        utility::LogInfo("Invalid capture, skipping this frame");
         return nullptr;
     }
     k4a_plugin::k4a_capture_release(capture);

@@ -196,7 +196,7 @@ public:
         if (num_of_points_ > 0 && voxel_index != voxel_index_) {
             utility::LogWarning(
                     "Tried to aggregate ColorVoxel with different "
-                    "voxel_index\n");
+                    "voxel_index");
         }
         voxel_index_ = voxel_index;
     }

@@ -82,7 +82,7 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
     if (source.HasNormals() == false || target.HasNormals() == false) {
         utility::LogWarning(
                 "[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no "
-                "normals.\n");
+                "normals.");
         return true;
     }
     double cos_normal_angle_threshold = std::cos(normal_angle_threshold_);

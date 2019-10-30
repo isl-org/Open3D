@@ -36,7 +36,7 @@ using namespace visualization;
 class GlobalColorMapSingleton {
 private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
-        utility::LogDebug("Global colormap init.\n");
+        utility::LogDebug("Global colormap init.");
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
@@ -44,7 +44,7 @@ private:
 
 public:
     ~GlobalColorMapSingleton() {
-        utility::LogDebug("Global colormap destruct.\n");
+        utility::LogDebug("Global colormap destruct.");
     }
 
 public:
