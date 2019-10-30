@@ -43,16 +43,26 @@ namespace geometry {
 
 class Image;
 
-/// Typedef and functions for ImagePyramid
+/// Typedef and functions for ImagePyramid.
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
+/// \class Image
+///
+/// \brief The image class stores image with customizable width, height, num of
+/// channels and bytes per channel.
 class Image : public Geometry2D {
 public:
+    /// \enum ColorToIntensityConversionType
+    ///
+    /// \brief Specifies whether or not all the colors have equal intensity.
     enum class ColorToIntensityConversionType {
         Equal,
         Weighted,
     };
 
+    /// \enum FilterType
+    ///
+    /// \brief Specifies the Image filter type.
     enum class FilterType {
         Gaussian3,
         Gaussian5,
@@ -66,13 +76,19 @@ public:
     ~Image() override {}
 
 public:
+    /// Clear all elements in the geometry.
     Image &Clear() override;
+    /// Returns `true`` iff the geometry is empty.
     bool IsEmpty() const override;
+    /// Returns min bounds for geometry coordinates.
     Eigen::Vector2d GetMinBound() const override;
+    /// Returns max bounds for geometry coordinates.
     Eigen::Vector2d GetMaxBound() const override;
+    /// Returns `true` if the u, v lies within the image boundary.
     bool TestImageBoundary(double u, double v, double inner_margin = 0.0) const;
 
 public:
+    /// Returns `true` if the object has valid data.
     virtual bool HasData() const {
         return width_ > 0 && height_ > 0 &&
                data_.size() == size_t(height_ * BytesPerLine());
@@ -90,6 +106,7 @@ public:
         return *this;
     }
 
+    /// Returns total data per line in bytes.
     int BytesPerLine() const {
         return width_ * num_of_channels_ * bytes_per_channel_;
     }
@@ -97,7 +114,7 @@ public:
     /// Function to access the bilinear interpolated float value of a
     /// (single-channel) float image.
     /// Returns a tuple, where the first bool indicates if the u,v coordinates
-    /// are withing the image dimensions, and the second double value is the
+    /// are within the image dimensions, and the second double value is the
     /// interpolated pixel value.
     std::pair<bool, double> FloatValueAt(double u, double v) const;
 
@@ -117,11 +134,11 @@ public:
             Image::ColorToIntensityConversionType type =
                     Image::ColorToIntensityConversionType::Weighted) const;
 
-    /// Function to access the raw data of a single-channel Image
+    /// Function to access the raw data of a single-channel Image.
     template <typename T>
     T *PointerAt(int u, int v) const;
 
-    /// Function to access the raw data of a multi-channel Image
+    /// Function to access the raw data of a multi-channel Image.
     template <typename T>
     T *PointerAt(int u, int v, int ch) const;
 
@@ -130,51 +147,51 @@ public:
 
     std::shared_ptr<Image> Transpose() const;
 
-    /// Function to flip image horizontally (from left to right)
+    /// Function to flip image horizontally (from left to right).
     std::shared_ptr<Image> FlipHorizontal() const;
-    /// Function to flip image vertically (upside down)
+    /// Function to flip image vertically (upside down).
     std::shared_ptr<Image> FlipVertical() const;
 
-    /// Function to filter image with pre-defined filtering type
+    /// Function to filter image with pre-defined filtering type.
     std::shared_ptr<Image> Filter(Image::FilterType type) const;
 
-    /// Function to filter image with arbitrary dx, dy separable filters
+    /// Function to filter image with arbitrary dx, dy separable filters.
     std::shared_ptr<Image> Filter(const std::vector<double> &dx,
                                   const std::vector<double> &dy) const;
 
     std::shared_ptr<Image> FilterHorizontal(
             const std::vector<double> &kernel) const;
 
-    /// Function to 2x image downsample using simple 2x2 averaging
+    /// Function to 2x image downsample using simple 2x2 averaging.
     std::shared_ptr<Image> Downsample() const;
 
-    /// Function to dilate 8bit mask map
+    /// Function to dilate 8bit mask map.
     std::shared_ptr<Image> Dilate(int half_kernel_size = 1) const;
 
     /// Function to linearly transform pixel intensities
-    /// image_new = scale * image + offset
+    /// image_new = scale * image + offset.
     Image &LinearTransform(double scale = 1.0, double offset = 0.0);
 
-    /// Function to clipping pixel intensities
-    /// min is lower bound
-    /// max is upper bound
+    /// Function to clipping pixel intensities.
+    /// \param min is lower bound.
+    /// \param max is upper bound.
     Image &ClipIntensity(double min = 0.0, double max = 1.0);
 
     /// Function to change data types of image
     /// crafted for specific usage such as
-    /// single channel float image -> 8-bit RGB or 16-bit depth image
+    /// single channel float image -> 8-bit RGB or 16-bit depth image.
     template <typename T>
     std::shared_ptr<Image> CreateImageFromFloatImage() const;
 
-    /// Function to filter image pyramid
+    /// Function to filter image pyramid.
     static ImagePyramid FilterPyramid(const ImagePyramid &input,
                                       Image::FilterType type);
 
-    /// Function to create image pyramid
+    /// Function to create image pyramid.
     ImagePyramid CreatePyramid(size_t num_of_levels,
                                bool with_gaussian_filter = true) const;
 
-    /// Function to create a depthmap boundary mask from depth image
+    /// Function to create a depthmap boundary mask from depth image.
     std::shared_ptr<Image> CreateDepthBoundaryMask(
             double depth_threshold_for_discontinuity_check = 0.1,
             int half_dilation_kernel_size_for_discontinuity_map = 3) const;
@@ -185,9 +202,13 @@ protected:
     }
 
 public:
+    /// Width of the image.
     int width_ = 0;
+    /// Height of the image.
     int height_ = 0;
+    /// Number of chanels in the image.
     int num_of_channels_ = 0;
+    /// Number of bytes per channel.
     int bytes_per_channel_ = 0;
     std::vector<uint8_t> data_;
 };
