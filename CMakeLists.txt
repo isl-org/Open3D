@@ -187,7 +187,7 @@ elseif (UNIX)
     add_definitions(-DUNIX)
     # enable c++11
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wno-deprecated-declarations -Wno-unused-result")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wno-deprecated-declarations")
     # In Release build -O3 will be added automatically by CMake
     # We still enable -O3 at debug build to optimize performance
     if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
