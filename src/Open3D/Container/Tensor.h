@@ -63,9 +63,9 @@ public:
         : Tensor(shape, dtype, device) {
         // Check number of elements
         if (init_vals.size() != shape_.NumElements()) {
-            utility::LogFatal(
+            utility::LogError(
                     "Tensor initialization values' size does not match the "
-                    "shape.\n");
+                    "shape.");
         }
 
         // Check data types
@@ -90,7 +90,7 @@ public:
           device_(device),
           blob_(blob) {
         if (!blob->IsPtrInBlob(data_ptr)) {
-            utility::LogFatal("data_ptr not in the memory range of blob\n");
+            utility::LogError("data_ptr not in the memory range of blob");
         }
     }
 
@@ -117,7 +117,7 @@ public:
     template <typename T>
     T Item() const {
         if (shape_.size() != 0) {
-            utility::LogFatal("Item only works for scalar Tensor of shape ()");
+            utility::LogError("Item only works for scalar Tensor of shape ()");
         }
         AssertTemplateDtype<T>();
         T value;
@@ -168,15 +168,14 @@ public:
     template <typename T>
     void AssertTemplateDtype() const {
         if (DtypeUtil::FromType<T>() != dtype_) {
-            utility::LogFatal(
-                    "Requested values have type {} but Tensor has type {}\n",
+            utility::LogError(
+                    "Requested values have type {} but Tensor has type {}",
                     DtypeUtil::ToString(DtypeUtil::FromType<T>()),
                     DtypeUtil::ToString(dtype_));
         }
         if (DtypeUtil::ByteSize(dtype_) != sizeof(T)) {
-            utility::LogFatal(
-                    "Internal error: element size mismatch {} != {}\n",
-                    DtypeUtil::ByteSize(dtype_), sizeof(T));
+            utility::LogError("Internal error: element size mismatch {} != {}",
+                              DtypeUtil::ByteSize(dtype_), sizeof(T));
         }
     }
 

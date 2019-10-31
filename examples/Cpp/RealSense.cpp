@@ -57,9 +57,9 @@ int main(int argc, char **args) {
     dev->set_option(rs::option::color_white_balance, 2100.0);
 
     auto depth_image_ptr = std::make_shared<geometry::Image>();
-    depth_image_ptr->PrepareImage(640, 480, 1, 2);
+    depth_image_ptr->Prepare(640, 480, 1, 2);
     auto color_image_ptr = std::make_shared<geometry::Image>();
-    color_image_ptr->PrepareImage(1920, 1080, 3, 1);
+    color_image_ptr->Prepare(1920, 1080, 3, 1);
     utility::FPSTimer timer("Realsense stream");
 
     rs::extrinsics extrinsics =

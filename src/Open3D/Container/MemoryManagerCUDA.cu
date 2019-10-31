@@ -48,7 +48,7 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
     if (device.device_type_ == Device::DeviceType::CUDA) {
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
     } else {
-        utility::LogFatal("Unimplemented device\n");
+        utility::LogError("Unimplemented device");
     }
     return ptr;
 }
@@ -59,7 +59,7 @@ void CUDAMemoryManager::Free(void* ptr, const Device& device) {
             OPEN3D_CUDA_CHECK(cudaFree(ptr));
         }
     } else {
-        utility::LogFatal("Unimplemented device\n");
+        utility::LogError("Unimplemented device");
     }
 }
 
@@ -74,25 +74,25 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
         src_device.device_type_ == Device::DeviceType::CPU) {
         memcpy_kind = cudaMemcpyHostToDevice;
         if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogFatal("dst_ptr is not a CUDA pointer\n");
+            utility::LogError("dst_ptr is not a CUDA pointer");
         }
     } else if (dst_device.device_type_ == Device::DeviceType::CPU &&
                src_device.device_type_ == Device::DeviceType::CUDA) {
         memcpy_kind = cudaMemcpyDeviceToHost;
         if (!IsCUDAPointer(src_ptr)) {
-            utility::LogFatal("src_ptr is not a CUDA pointer\n");
+            utility::LogError("src_ptr is not a CUDA pointer");
         }
     } else if (dst_device.device_type_ == Device::DeviceType::CUDA &&
                src_device.device_type_ == Device::DeviceType::CUDA) {
         memcpy_kind = cudaMemcpyDeviceToDevice;
         if (!IsCUDAPointer(dst_ptr)) {
-            utility::LogFatal("dst_ptr is not a CUDA pointer\n");
+            utility::LogError("dst_ptr is not a CUDA pointer");
         }
         if (!IsCUDAPointer(src_ptr)) {
-            utility::LogFatal("src_ptr is not a CUDA pointer\n");
+            utility::LogError("src_ptr is not a CUDA pointer");
         }
     } else {
-        utility::LogFatal("Wrong cudaMemcpyKind\n");
+        utility::LogError("Wrong cudaMemcpyKind");
     }
 
     OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes, memcpy_kind));

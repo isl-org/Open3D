@@ -240,10 +240,10 @@ TEST_P(TensorPermuteDevices, ToString) {
   [[20 21],
    [22 23]]]])");
 
-    // utility::LogDebug("\n{}\n", t1.ToString());
-    // utility::LogDebug("\n{}\n", t3.ToString());
-    // utility::LogDebug("\n{}\n", t2.ToString());
-    // utility::LogDebug("\n{}\n", t4.ToString());
+    // utility::LogDebug("\n{}", t1.ToString());
+    // utility::LogDebug("\n{}", t3.ToString());
+    // utility::LogDebug("\n{}", t2.ToString());
+    // utility::LogDebug("\n{}", t4.ToString());
 }
 
 TEST_P(TensorPermuteDevices, CopyContiguous) {

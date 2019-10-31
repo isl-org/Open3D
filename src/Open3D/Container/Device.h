@@ -67,7 +67,7 @@ public:
                 str += "CUDA";
                 break;
             default:
-                utility::LogFatal("Unsupported device type\n");
+                utility::LogError("Unsupported device type");
         }
         str += ":" + std::to_string(device_id_);
         return str;
@@ -84,10 +84,10 @@ protected:
             } else if (device_name_lower == "cuda") {
                 return DeviceType::CUDA;
             } else {
-                utility::LogFatal("Invalid device string {}.\n", type_colon_id);
+                utility::LogError("Invalid device string {}.", type_colon_id);
             }
         } else {
-            utility::LogFatal("Invalid device string {}.\n", type_colon_id);
+            utility::LogError("Invalid device string {}.", type_colon_id);
         }
     }
 
@@ -97,7 +97,7 @@ protected:
         if (tokens.size() == 2) {
             return std::stoi(tokens[1]);
         } else {
-            utility::LogFatal("Invalid device string {}.\n", type_colon_id);
+            utility::LogError("Invalid device string {}.", type_colon_id);
         }
     }
 

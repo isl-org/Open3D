@@ -128,20 +128,20 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
 
 Tensor Tensor::operator[](int i) const {
     if (shape_.size() == 0) {
-        utility::LogFatal("Tensor has shape (), cannot be indexed.\n");
+        utility::LogError("Tensor has shape (), cannot be indexed.");
     }
     if (i < 0) {
-        utility::LogFatal(
-                "Only non-ngegative index is supported, but {} < 0.\n", i);
+        utility::LogError("Only non-ngegative index is supported, but {} < 0.",
+                          i);
     }
     if (i >= shape_[0]) {
-        utility::LogFatal("Index {} is out of bounds for axis of length {}.\n",
-                          i, shape_[0]);
+        utility::LogError("Index {} is out of bounds for axis of length {}.", i,
+                          shape_[0]);
     }
     if (shape_.size() != strides_.size()) {
-        utility::LogFatal(
+        utility::LogError(
                 "Internal error, shape and strides dimension mismatch {} != "
-                "{}\n",
+                "{}",
                 shape_.size(), strides_.size());
     }
     SizeVector new_shape(shape_.begin() + 1, shape_.end());
@@ -153,25 +153,24 @@ Tensor Tensor::operator[](int i) const {
 
 Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
     if (shape_.size() == 0) {
-        utility::LogFatal("Slice cannot be applied to 0-dim Tensor\n");
+        utility::LogError("Slice cannot be applied to 0-dim Tensor");
     }
     if (dim < 0 || dim >= shape_.size()) {
-        utility::LogFatal(
-                "Dim {} is out of bound for SizeVector of length {}\n", dim,
-                shape_.size());
+        utility::LogError("Dim {} is out of bound for SizeVector of length {}",
+                          dim, shape_.size());
     }
     // TODO: support negative step sizes
     if (step == 0) {
-        utility::LogFatal("Step size cannot be 0\n");
+        utility::LogError("Step size cannot be 0");
     }
     // TODO: support wrap-around start/stop index
     if (start < 0 || start >= shape_[dim]) {
-        utility::LogFatal("Index {} is out of bounds for axis of length {}.\n",
+        utility::LogError("Index {} is out of bounds for axis of length {}.",
                           start, shape_[dim]);
     }
     // The stop index is non-inclusive
     if (stop < 0 || stop > shape_[dim]) {
-        utility::LogFatal("Index {} is out of bounds for axis of length {}.\n",
+        utility::LogError("Index {} is out of bounds for axis of length {}.",
                           stop, shape_[dim]);
     }
     if (stop < start) {

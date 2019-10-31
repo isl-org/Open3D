@@ -200,7 +200,7 @@ inline VerbosityLevel GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void LogError(const char *format, const Args &... args) {
+inline void LogError[[noreturn]](const char *format, const Args &... args) {
     Logger::i().VError(format, fmt::make_format_args(args...));
 }
 
