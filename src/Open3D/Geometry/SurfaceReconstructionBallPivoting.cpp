@@ -136,7 +136,7 @@ void BallPivotingEdge::AddAdjacentTriangle(BallPivotingTrianglePtr triangle) {
             triangle1_ = triangle;
             type_ = Type::Inner;
         } else {
-            utility::LogDebug("!!! This case should not happen\n");
+            utility::LogDebug("!!! This case should not happen");
         }
     }
 }
@@ -242,7 +242,7 @@ public:
                         const BallPivotingVertexPtr& v2,
                         const Eigen::Vector3d& center) {
         utility::LogDebug(
-                "[CreateTriangle] with v0.idx={}, v1.idx={}, v2.idx={}\n",
+                "[CreateTriangle] with v0.idx={}, v1.idx={}, v2.idx={}",
                 v0->idx_, v1->idx_, v2->idx_);
         BallPivotingTrianglePtr triangle =
                 std::make_shared<BallPivotingTriangle>(v0, v1, v2, center);
@@ -301,7 +301,7 @@ public:
     bool IsCompatible(const BallPivotingVertexPtr& v0,
                       const BallPivotingVertexPtr& v1,
                       const BallPivotingVertexPtr& v2) {
-        utility::LogDebug("[IsCompatible] v0.idx={}, v1.idx={}, v2.idx={}\n",
+        utility::LogDebug("[IsCompatible] v0.idx={}, v1.idx={}, v2.idx={}",
                           v0->idx_, v1->idx_, v2->idx_);
         Eigen::Vector3d normal =
                 ComputeFaceNormal(v0->point_, v1->point_, v2->point_);
@@ -311,7 +311,7 @@ public:
         bool ret = normal.dot(v0->normal_) > -1e-16 &&
                    normal.dot(v1->normal_) > -1e-16 &&
                    normal.dot(v2->normal_) > -1e-16;
-        utility::LogDebug("[IsCompatible] retuns = {}\n", ret);
+        utility::LogDebug("[IsCompatible] retuns = {}", ret);
         return ret;
     }
 
@@ -319,29 +319,29 @@ public:
             const BallPivotingEdgePtr& edge,
             double radius,
             Eigen::Vector3d& candidate_center) {
-        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), radius={}\n",
+        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), radius={}",
                           edge->source_->idx_, edge->target_->idx_, radius);
         BallPivotingVertexPtr src = edge->source_;
         BallPivotingVertexPtr tgt = edge->target_;
 
         const BallPivotingVertexPtr opp = edge->GetOppositeVertex();
-        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), opp={}\n",
+        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), opp={}",
                           src->idx_, tgt->idx_, opp->idx_);
-        utility::LogDebug("[FindCandidateVertex] src={} => {}\n", src->idx_,
+        utility::LogDebug("[FindCandidateVertex] src={} => {}", src->idx_,
                           src->point_.transpose());
-        utility::LogDebug("[FindCandidateVertex] tgt={} => {}\n", tgt->idx_,
+        utility::LogDebug("[FindCandidateVertex] tgt={} => {}", tgt->idx_,
                           tgt->point_.transpose());
-        utility::LogDebug("[FindCandidateVertex] src={} => {}\n", opp->idx_,
+        utility::LogDebug("[FindCandidateVertex] src={} => {}", opp->idx_,
                           opp->point_.transpose());
 
         Eigen::Vector3d mp = 0.5 * (src->point_ + tgt->point_);
-        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), mp={}\n",
+        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), mp={}",
                           edge->source_->idx_, edge->target_->idx_,
                           mp.transpose());
 
         BallPivotingTrianglePtr triangle = edge->triangle0_;
         const Eigen::Vector3d& center = triangle->ball_center_;
-        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), center={}\n",
+        utility::LogDebug("[FindCandidateVertex] edge=({}, {}), center={}",
                           edge->source_->idx_, edge->target_->idx_,
                           center.transpose());
 
@@ -354,24 +354,23 @@ public:
         std::vector<int> indices;
         std::vector<double> dists2;
         kdtree_.SearchRadius(mp, 2 * radius, indices, dists2);
-        utility::LogDebug(
-                "[FindCandidateVertex] found {} potential candidates\n",
-                indices.size());
+        utility::LogDebug("[FindCandidateVertex] found {} potential candidates",
+                          indices.size());
 
         BallPivotingVertexPtr min_candidate = nullptr;
         double min_angle = 2 * M_PI;
         for (auto nbidx : indices) {
-            utility::LogDebug("[FindCandidateVertex] nbidx {:d}\n", nbidx);
+            utility::LogDebug("[FindCandidateVertex] nbidx {:d}", nbidx);
             const BallPivotingVertexPtr& candidate = vertices[nbidx];
             if (candidate->idx_ == src->idx_ || candidate->idx_ == tgt->idx_ ||
                 candidate->idx_ == opp->idx_) {
                 utility::LogDebug(
                         "[FindCandidateVertex] candidate {:d} is a triangle "
-                        "vertex of the edge\n",
+                        "vertex of the edge",
                         candidate->idx_);
                 continue;
             }
-            utility::LogDebug("[FindCandidateVertex] candidate={:d} => {}\n",
+            utility::LogDebug("[FindCandidateVertex] candidate={:d} => {}",
                               candidate->idx_, candidate->point_.transpose());
 
             bool coplanar = IntersectionTest::PointsCoplanar(
@@ -384,7 +383,7 @@ public:
                                      opp->point_) < 1e-12)) {
                 utility::LogDebug(
                         "[FindCandidateVertex] candidate {:d} is interesecting "
-                        "the existing triangle\n",
+                        "the existing triangle",
                         candidate->idx_);
                 continue;
             }
@@ -394,18 +393,17 @@ public:
                                    radius, new_center)) {
                 utility::LogDebug(
                         "[FindCandidateVertex] candidate {:d} can not compute "
-                        "ball\n",
+                        "ball",
                         candidate->idx_);
                 continue;
             }
-            utility::LogDebug(
-                    "[FindCandidateVertex] candidate {:d} center={}\n",
-                    candidate->idx_, new_center.transpose());
+            utility::LogDebug("[FindCandidateVertex] candidate {:d} center={}",
+                              candidate->idx_, new_center.transpose());
 
             Eigen::Vector3d b = new_center - mp;
             b /= b.norm();
             utility::LogDebug(
-                    "[FindCandidateVertex] candidate {:d} v={}, a={}, b={}\n",
+                    "[FindCandidateVertex] candidate {:d} v={}, a={}, b={}",
                     candidate->idx_, v.transpose(), a.transpose(),
                     b.transpose());
 
@@ -413,7 +411,7 @@ public:
             cosinus = std::min(cosinus, 1.0);
             cosinus = std::max(cosinus, -1.0);
             utility::LogDebug(
-                    "[FindCandidateVertex] candidate {:d} cosinus={:f}\n",
+                    "[FindCandidateVertex] candidate {:d} cosinus={:f}",
                     candidate->idx_, cosinus);
 
             double angle = std::acos(cosinus);
@@ -426,7 +424,7 @@ public:
             if (angle >= min_angle) {
                 utility::LogDebug(
                         "[FindCandidateVertex] candidate {:d} angle {:f} > "
-                        "min_angle {:f}\n",
+                        "min_angle {:f}",
                         candidate->idx_, angle, min_angle);
                 continue;
             }
@@ -441,7 +439,7 @@ public:
                 if ((new_center - nb->point_).norm() < radius - 1e-16) {
                     utility::LogDebug(
                             "[FindCandidateVertex] candidate {:d} not an empty "
-                            "ball\n",
+                            "ball",
                             candidate->idx_);
                     empty_ball = false;
                     break;
@@ -449,9 +447,8 @@ public:
             }
 
             if (empty_ball) {
-                utility::LogDebug(
-                        "[FindCandidateVertex] candidate {:d} works\n",
-                        candidate->idx_);
+                utility::LogDebug("[FindCandidateVertex] candidate {:d} works",
+                                  candidate->idx_);
                 min_angle = angle;
                 min_candidate = vertices[nbidx];
                 candidate_center = new_center;
@@ -459,16 +456,16 @@ public:
         }
 
         if (min_candidate == nullptr) {
-            utility::LogDebug("[FindCandidateVertex] returns nullptr\n");
+            utility::LogDebug("[FindCandidateVertex] returns nullptr");
         } else {
-            utility::LogDebug("[FindCandidateVertex] returns {:d}\n",
+            utility::LogDebug("[FindCandidateVertex] returns {:d}",
                               min_candidate->idx_);
         }
         return min_candidate;
     }
 
     void ExpandTriangulation(double radius) {
-        utility::LogDebug("[ExpandTriangulation] radius={}\n", radius);
+        utility::LogDebug("[ExpandTriangulation] radius={}", radius);
         while (!edge_front_.empty()) {
             BallPivotingEdgePtr edge = edge_front_.front();
             edge_front_.pop_front();
@@ -517,7 +514,7 @@ public:
                          Eigen::Vector3d& center) {
         utility::LogDebug(
                 "[TryTriangleSeed] v0.idx={}, v1.idx={}, v2.idx={}, "
-                "radius={}\n",
+                "radius={}",
                 v0->idx_, v1->idx_, v2->idx_, radius);
 
         if (!IsCompatible(v0, v1, v2)) {
@@ -528,13 +525,13 @@ public:
         BallPivotingEdgePtr e1 = GetLinkingEdge(v1, v2);
         if (e0 != nullptr && e0->type_ == BallPivotingEdge::Type::Inner) {
             utility::LogDebug(
-                    "[TryTriangleSeed] returns {} because e0 is inner edge\n",
+                    "[TryTriangleSeed] returns {} because e0 is inner edge",
                     false);
             return false;
         }
         if (e1 != nullptr && e1->type_ == BallPivotingEdge::Type::Inner) {
             utility::LogDebug(
-                    "[TryTriangleSeed] returns {} because e1 is inner edge\n",
+                    "[TryTriangleSeed] returns {} because e1 is inner edge",
                     false);
             return false;
         }
@@ -542,7 +539,7 @@ public:
         if (!ComputeBallCenter(v0->idx_, v1->idx_, v2->idx_, radius, center)) {
             utility::LogDebug(
                     "[TryTriangleSeed] returns {} could not compute ball "
-                    "center\n",
+                    "center",
                     false);
             return false;
         }
@@ -557,18 +554,18 @@ public:
             if ((center - v->point_).norm() < radius - 1e-16) {
                 utility::LogDebug(
                         "[TryTriangleSeed] returns {} computed ball is not "
-                        "empty\n",
+                        "empty",
                         false);
                 return false;
             }
         }
 
-        utility::LogDebug("[TryTriangleSeed] returns {}\n", true);
+        utility::LogDebug("[TryTriangleSeed] returns {}", true);
         return true;
     }
 
     bool TrySeed(BallPivotingVertexPtr& v, double radius) {
-        utility::LogDebug("[TrySeed] with v.idx={}, radius={}\n", v->idx_,
+        utility::LogDebug("[TrySeed] with v.idx={}, radius={}", v->idx_,
                           radius);
         std::vector<int> indices;
         std::vector<double> dists2;
@@ -640,19 +637,19 @@ public:
                 if (edge_front_.size() > 0) {
                     utility::LogDebug(
                             "[TrySeed] edge_front_.size() > 0 => return "
-                            "true\n");
+                            "true");
                     return true;
                 }
             }
         }
 
-        utility::LogDebug("[TrySeed] return false\n");
+        utility::LogDebug("[TrySeed] return false");
         return false;
     }
 
     void FindSeedTriangle(double radius) {
         for (size_t vidx = 0; vidx < vertices.size(); ++vidx) {
-            utility::LogDebug("[FindSeedTriangle] with radius={}, vidx={}\n",
+            utility::LogDebug("[FindSeedTriangle] with radius={}, vidx={}",
                               radius, vidx);
             if (vertices[vidx]->type_ == BallPivotingVertex::Type::Orphan) {
                 if (TrySeed(vertices[vidx], radius)) {
@@ -664,19 +661,17 @@ public:
 
     std::shared_ptr<TriangleMesh> Run(const std::vector<double>& radii) {
         if (!has_normals_) {
-            utility::LogWarning("ReconstructBallPivoting requires normals\n");
-            return mesh_;
+            utility::LogError("ReconstructBallPivoting requires normals");
         }
 
         mesh_->triangles_.clear();
 
         for (double radius : radii) {
-            utility::LogDebug("[Run] ################################\n");
-            utility::LogDebug("[Run] change to radius {:.4f}\n", radius);
+            utility::LogDebug("[Run] ################################");
+            utility::LogDebug("[Run] change to radius {:.4f}", radius);
             if (radius <= 0) {
-                utility::LogWarning(
-                        "got an invalid, negative radius as parameter\n");
-                return mesh_;
+                utility::LogError(
+                        "got an invalid, negative radius as parameter");
             }
 
             // update radius => update border edges
@@ -684,7 +679,7 @@ public:
                 BallPivotingEdgePtr edge = *it;
                 BallPivotingTrianglePtr triangle = edge->triangle0_;
                 utility::LogDebug(
-                        "[Run] try edge {:d}-{:d} of triangle {:d}-{:d}-{:d}\n",
+                        "[Run] try edge {:d}-{:d} of triangle {:d}-{:d}-{:d}",
                         edge->source_->idx_, edge->target_->idx_,
                         triangle->vert0_->idx_, triangle->vert1_->idx_,
                         triangle->vert2_->idx_);
@@ -693,7 +688,7 @@ public:
                 if (ComputeBallCenter(triangle->vert0_->idx_,
                                       triangle->vert1_->idx_,
                                       triangle->vert2_->idx_, radius, center)) {
-                    utility::LogDebug("[Run]   yes, we can work on this\n");
+                    utility::LogDebug("[Run]   yes, we can work on this");
                     std::vector<int> indices;
                     std::vector<double> dists2;
                     kdtree_.SearchRadius(center, radius, indices, dists2);
@@ -703,7 +698,7 @@ public:
                             idx != triangle->vert1_->idx_ &&
                             idx != triangle->vert2_->idx_) {
                             utility::LogDebug(
-                                    "[Run]   but no, the ball is not empty\n");
+                                    "[Run]   but no, the ball is not empty");
                             empty_ball = false;
                             break;
                         }
@@ -711,7 +706,7 @@ public:
 
                     if (empty_ball) {
                         utility::LogDebug(
-                                "[Run]   yeah, add edge to edge_front_: {:d}\n",
+                                "[Run]   yeah, add edge to edge_front_: {:d}",
                                 edge_front_.size());
                         edge->type_ = BallPivotingEdge::Type::Front;
                         edge_front_.push_back(edge);
@@ -729,9 +724,9 @@ public:
                 ExpandTriangulation(radius);
             }
 
-            utility::LogDebug("[Run] mesh_ has {:d} triangles\n",
+            utility::LogDebug("[Run] mesh_ has {:d} triangles",
                               mesh_->triangles_.size());
-            utility::LogDebug("[Run] ################################\n");
+            utility::LogDebug("[Run] ################################");
         }
         return mesh_;
     }

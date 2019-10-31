@@ -30,8 +30,8 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage :\n");
-    utility::LogInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
+    utility::LogInfo("Usage :");
+    utility::LogInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]");
     // clang-format on
 }
 
@@ -42,22 +42,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    utility::LogInfo("Switch is {}.\n",
+    utility::LogInfo("Switch is {}.",
                      utility::ProgramOptionExists(argc, argv, "--switch")
                              ? "ON"
                              : "OFF");
-    utility::LogInfo("Int is {:d}\n",
+    utility::LogInfo("Int is {:d}",
                      utility::GetProgramOptionAsInt(argc, argv, "--int"));
-    utility::LogInfo("Double is {:.10f}\n",
+    utility::LogInfo("Double is {:.10f}",
                      utility::GetProgramOptionAsDouble(argc, argv, "--double"));
-    utility::LogInfo("String is {}\n",
+    utility::LogInfo("String is {}",
                      utility::GetProgramOptionAsString(argc, argv, "--string"));
     std::vector<std::string> strs;
     utility::SplitString(
             strs, utility::GetProgramOptionAsString(argc, argv, "--string"),
             ",.", true);
     for (auto &str : strs) {
-        utility::LogInfo("\tSubstring : {}\n", str);
+        utility::LogInfo("\tSubstring : {}", str);
     }
     Eigen::VectorXd vec =
             utility::GetProgramOptionAsEigenVectorXd(argc, argv, "--vector");
@@ -69,6 +69,6 @@ int main(int argc, char *argv[]) {
             utility::LogInfo("{:.2f}", vec(i));
         }
     }
-    utility::LogInfo(")\n");
+    utility::LogInfo(")");
     return 0;
 }

@@ -107,7 +107,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
     }
 
     if (!warn.empty() || !err.empty()) {
-        utility::LogWarning("Read GLTF failed: unable to open file {}\n",
+        utility::LogWarning("Read GLTF failed: unable to open file {}",
                             filename);
     }
     if (!ret) {
@@ -117,7 +117,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
     if (model.meshes.size() > 1) {
         utility::LogInfo(
                 "The file contains more than one mesh. All meshes will be "
-                "loaded as a single mesh.\n");
+                "loaded as a single mesh.");
     }
 
     mesh.Clear();
@@ -237,7 +237,7 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                             default: {
                                 utility::LogWarning(
                                         "Unrecognized component type for "
-                                        "vertex colors\n");
+                                        "vertex colors");
                                 break;
                             }
                         }
@@ -397,7 +397,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     if (write_triangle_uvs && mesh.HasTriangleUvs()) {
         utility::LogWarning(
                 "This file format does not support writing textures and uv "
-                "coordinates. Consider using .obj\n");
+                "coordinates. Consider using .obj");
     }
     tinygltf::Model model;
     model.asset.generator = "Open3D";
@@ -594,13 +594,13 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     if (filename_ext == "glb") {
         if (!loader.WriteGltfSceneToFile(&model, filename, false, true, true,
                                          true)) {
-            utility::LogWarning("Write GLTF failed.\n");
+            utility::LogWarning("Write GLTF failed.");
             return false;
         }
     } else {
         if (!loader.WriteGltfSceneToFile(&model, filename, false, true, true,
                                          false)) {
-            utility::LogWarning("Write GLTF failed.\n");
+            utility::LogWarning("Write GLTF failed.");
             return false;
         }
     }

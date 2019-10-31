@@ -55,7 +55,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
-        utility::LogWarning("Read PNG failed: unable to parse header.\n");
+        utility::LogWarning("Read PNG failed: unable to parse header.");
         return false;
     }
 
@@ -68,7 +68,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     SetPNGImageFromImage(image, pngimage);
     if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
         0) {
-        utility::LogWarning("Read PNG failed: unable to read file: {}\n",
+        utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
         return false;
     }
@@ -79,7 +79,7 @@ bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
                      int quality) {
     if (image.HasData() == false) {
-        utility::LogWarning("Write PNG failed: image has no data.\n");
+        utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
     png_image pngimage;
@@ -88,7 +88,7 @@ bool WriteImageToPNG(const std::string &filename,
     SetPNGImageFromImage(image, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
                                 image.data_.data(), 0, NULL) == 0) {
-        utility::LogWarning("Write PNG failed: unable to write file: {}\n",
+        utility::LogWarning("Write PNG failed: unable to write file: {}",
                             filename);
         return false;
     }

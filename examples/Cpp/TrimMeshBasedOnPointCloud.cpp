@@ -30,17 +30,17 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage:\n");
-    utility::LogInfo("    > TrimMeshBasedOnPointCloud [options]\n");
-    utility::LogInfo("      Trim a mesh baesd on distance to a point cloud.\n");
-    utility::LogInfo("\n");
-    utility::LogInfo("Basic options:\n");
-    utility::LogInfo("    --help, -h                : Print help information.\n");
-    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    utility::LogInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.\n");
-    utility::LogInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
-    utility::LogInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
-    utility::LogInfo("    --distance d              : Maximum distance. MUST HAVE.\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > TrimMeshBasedOnPointCloud [options]");
+    utility::LogInfo("      Trim a mesh baesd on distance to a point cloud.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
+    utility::LogInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.");
+    utility::LogInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.");
+    utility::LogInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.");
+    utility::LogInfo("    --distance d              : Maximum distance. MUST HAVE.");
     // clang-format on
 }
 
@@ -62,17 +62,17 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsString(argc, argv, "--pointcloud");
     auto distance = utility::GetProgramOptionAsDouble(argc, argv, "--distance");
     if (distance <= 0.0) {
-        utility::LogWarning("Illegal distance.\n");
+        utility::LogWarning("Illegal distance.");
         return 1;
     }
     if (in_mesh_file.empty() || out_mesh_file.empty() || pcd_file.empty()) {
-        utility::LogWarning("Missing file names.\n");
+        utility::LogWarning("Missing file names.");
         return 1;
     }
     auto mesh = io::CreateMeshFromFile(in_mesh_file);
     auto pcd = io::CreatePointCloudFromFile(pcd_file);
     if (mesh->IsEmpty() || pcd->IsEmpty()) {
-        utility::LogWarning("Empty geometry.\n");
+        utility::LogWarning("Empty geometry.");
         return 1;
     }
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     }
     utility::LogInfo(
             "[TrimMeshBasedOnPointCloud] {:d} vertices and {:d} triangles have "
-            "been removed.\n",
+            "been removed.",
             old_vertex_num - k, old_triangle_num - kt);
     io::WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;

@@ -37,10 +37,9 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         bool convert_rgb_to_intensity /* = true*/) {
     std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
-        utility::LogWarning(
+        utility::LogError(
                 "[CreateFromColorAndDepth] Unsupported image "
-                "format.\n");
-        return rgbd_image;
+                "format.");
     }
     rgbd_image->depth_ =
             *depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
@@ -77,9 +76,8 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromSUNFormat(
         bool convert_rgb_to_intensity /* = true*/) {
     std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
-        utility::LogWarning(
-                "[CreateRGBDImageFromSUNFormat] Unsupported image format.\n");
-        return rgbd_image;
+        utility::LogError(
+                "[CreateRGBDImageFromSUNFormat] Unsupported image format.");
     }
     for (int v = 0; v < depth.height_; v++) {
         for (int u = 0; u < depth.width_; u++) {
@@ -99,9 +97,8 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromNYUFormat(
         bool convert_rgb_to_intensity /* = true*/) {
     std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {
-        utility::LogWarning(
-                "[CreateRGBDImageFromNYUFormat] Unsupported image format.\n");
-        return rgbd_image;
+        utility::LogError(
+                "[CreateRGBDImageFromNYUFormat] Unsupported image format.");
     }
     for (int v = 0; v < depth.height_; v++) {
         for (int u = 0; u < depth.width_; u++) {

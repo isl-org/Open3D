@@ -34,8 +34,8 @@ int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc != 2) {
-        utility::LogInfo("Usage :\n");
-        utility::LogInfo(">    ColorMapOptimization data_dir\n");
+        utility::LogInfo("Usage :");
+        utility::LogInfo(">    ColorMapOptimization data_dir");
         return 1;
     }
     // Read RGBD images
@@ -48,9 +48,9 @@ int main(int argc, char *argv[]) {
     assert(depth_filenames.size() == color_filenames.size());
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for (size_t i = 0; i < depth_filenames.size(); i++) {
-        utility::LogDebug("reading {}...\n", depth_filenames[i]);
+        utility::LogDebug("reading {}...", depth_filenames[i]);
         auto depth = io::CreateImageFromFile(depth_filenames[i]);
-        utility::LogDebug("reading {}...\n", color_filenames[i]);
+        utility::LogDebug("reading {}...", color_filenames[i]);
         auto color = io::CreateImageFromFile(color_filenames[i]);
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
                 *color, *depth, 1000.0, 3.0, false);

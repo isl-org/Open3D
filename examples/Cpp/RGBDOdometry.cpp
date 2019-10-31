@@ -30,9 +30,8 @@ using namespace open3d;
 
 void PrintHelp() {
     PrintOpen3DVersion();
-    utility::LogInfo("Usage :\n");
-    utility::LogInfo(
-            "    > RGBDOdometry [color1] [depth1] [color2] [depth2]\n");
+    utility::LogInfo("Usage :");
+    utility::LogInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]");
 }
 
 std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
@@ -43,15 +42,13 @@ std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
     geometry::Image color, depth;
     io::ReadImage(color_filename, color);
     io::ReadImage(depth_filename, depth);
-    utility::LogInfo("Reading RGBD image : \n");
-    utility::LogInfo(
-            "     Color : {:d} x {:d} x {:d} ({:d} bits per channel)\n",
-            color.width_, color.height_, color.num_of_channels_,
-            color.bytes_per_channel_ * 8);
-    utility::LogInfo(
-            "     Depth : {:d} x {:d} x {:d} ({:d} bits per channel)\n",
-            depth.width_, depth.height_, depth.num_of_channels_,
-            depth.bytes_per_channel_ * 8);
+    utility::LogInfo("Reading RGBD image : ");
+    utility::LogInfo("     Color : {:d} x {:d} x {:d} ({:d} bits per channel)",
+                     color.width_, color.height_, color.num_of_channels_,
+                     color.bytes_per_channel_ * 8);
+    utility::LogInfo("     Depth : {:d} x {:d} x {:d} ({:d} bits per channel)",
+                     depth.width_, depth.height_, depth.num_of_channels_,
+                     depth.bytes_per_channel_ * 8);
     double depth_scale = 1000.0, depth_trunc = 3.0;
     bool convert_rgb_to_intensity = true;
     std::shared_ptr<geometry::RGBDImage> rgbd_image =

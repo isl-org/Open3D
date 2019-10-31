@@ -78,17 +78,17 @@ bool ReadLineSet(const std::string &filename,
     }
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Read geometry::LineSet failed: unknown file extension.\n");
+                "Read geometry::LineSet failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_lineset_read_function.find(filename_ext);
     if (map_itr == file_extension_to_lineset_read_function.end()) {
         utility::LogWarning(
-                "Read geometry::LineSet failed: unknown file extension.\n");
+                "Read geometry::LineSet failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, lineset, print_progress);
-    utility::LogDebug("Read geometry::LineSet: {:d} vertices.\n",
+    utility::LogDebug("Read geometry::LineSet: {:d} vertices.",
                       (int)lineset.points_.size());
     return success;
 }
@@ -102,18 +102,18 @@ bool WriteLineSet(const std::string &filename,
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         utility::LogWarning(
-                "Write geometry::LineSet failed: unknown file extension.\n");
+                "Write geometry::LineSet failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_lineset_write_function.find(filename_ext);
     if (map_itr == file_extension_to_lineset_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::LineSet failed: unknown file extension.\n");
+                "Write geometry::LineSet failed: unknown file extension.");
         return false;
     }
     bool success = map_itr->second(filename, lineset, write_ascii, compressed,
                                    print_progress);
-    utility::LogDebug("Write geometry::LineSet: {:d} vertices.\n",
+    utility::LogDebug("Write geometry::LineSet: {:d} vertices.",
                       (int)lineset.points_.size());
     return success;
 }

@@ -154,8 +154,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
     for (const auto &it : config) {
         if (standard_config.find(it.first) == standard_config.end()) {
             rc = false;
-            utility::LogWarning("IsValidConfig: Unrecognized key {}\n",
-                                it.first);
+            utility::LogWarning("IsValidConfig: Unrecognized key {}", it.first);
         }
     }
 
@@ -163,7 +162,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
         string_to_k4a_image_format_t.count(config.at("color_format")) == 0) {
         rc = false;
         if (verbose) {
-            utility::LogWarning("IsValidConfig: color_format invalid\n");
+            utility::LogWarning("IsValidConfig: color_format invalid");
         }
     }
 
@@ -172,7 +171,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
                 0) {
         rc = false;
         if (verbose) {
-            utility::LogWarning("IsValidConfig: color_resolution invalid\n");
+            utility::LogWarning("IsValidConfig: color_resolution invalid");
         }
     }
 
@@ -180,7 +179,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
         string_to_k4a_depth_mode_t.count(config.at("depth_mode")) == 0) {
         rc = false;
         if (verbose) {
-            utility::LogWarning("IsValidConfig: depth_mode invalid\n");
+            utility::LogWarning("IsValidConfig: depth_mode invalid");
         }
     }
 
@@ -188,7 +187,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
         string_to_k4a_fps_t.count(config.at("camera_fps")) == 0) {
         rc = false;
         if (verbose) {
-            utility::LogWarning("IsValidConfig: camera_fps invalid\n");
+            utility::LogWarning("IsValidConfig: camera_fps invalid");
         }
     } else {
         if (config.count("camera_fps") != 0 &&
@@ -198,7 +197,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
             rc = false;
             if (verbose) {
                 utility::LogWarning(
-                        "K4A_COLOR_RESOLUTION_3072P does not support 30 FPS\n");
+                        "K4A_COLOR_RESOLUTION_3072P does not support 30 FPS");
             }
         }
     }
@@ -209,7 +208,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
         rc = false;
         if (verbose) {
             utility::LogWarning(
-                    "IsValidConfig: synchronized_images_only invalid\n");
+                    "IsValidConfig: synchronized_images_only invalid");
         }
     }
 
@@ -218,7 +217,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
                 0) {
         rc = false;
         if (verbose) {
-            utility::LogWarning("IsValidConfig: wired_sync_mode invalid\n");
+            utility::LogWarning("IsValidConfig: wired_sync_mode invalid");
         }
     }
 
@@ -228,7 +227,7 @@ bool AzureKinectSensorConfig::IsValidConfig(
         rc = false;
         if (verbose) {
             utility::LogWarning(
-                    "IsValidConfig: disable_streaming_indicator invalid\n");
+                    "IsValidConfig: disable_streaming_indicator invalid");
         }
     }
 
@@ -239,7 +238,7 @@ AzureKinectSensorConfig::AzureKinectSensorConfig(
         const std::unordered_map<std::string, std::string> &config)
     : AzureKinectSensorConfig() {
     if (!IsValidConfig(config)) {
-        utility::LogWarning("Invalid configs, default configs will be used.\n");
+        utility::LogWarning("Invalid configs, default configs will be used.");
         return;
     }
     for (const auto &it : config) {
@@ -294,7 +293,7 @@ void AzureKinectSensorConfig::ConvertFromNativeConfig(
     if (!IsValidConfig(config_)) {
         utility::LogError(
                 "Internal error, invalid configs. Maybe SDK version is "
-                "mismatched.\n");
+                "mismatched.");
     }
 }
 

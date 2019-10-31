@@ -46,30 +46,30 @@
 ///
 /// Inspired by:
 ///     https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/Dispatch.h
-#define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, LAMBDA_FUNC)        \
-    [&] {                                                     \
-        switch (DTYPE) {                                      \
-            case open3d::Dtype::Float32: {                    \
-                using scalar_t = float;                       \
-                return LAMBDA_FUNC();                         \
-            }                                                 \
-            case open3d::Dtype::Float64: {                    \
-                using scalar_t = double;                      \
-                return LAMBDA_FUNC();                         \
-            }                                                 \
-            case open3d::Dtype::Int32: {                      \
-                using scalar_t = int32_t;                     \
-                return LAMBDA_FUNC();                         \
-            }                                                 \
-            case open3d::Dtype::Int64: {                      \
-                using scalar_t = int64_t;                     \
-                return LAMBDA_FUNC();                         \
-            }                                                 \
-            case open3d::Dtype::UInt8: {                      \
-                using scalar_t = uint8_t;                     \
-                return LAMBDA_FUNC();                         \
-            }                                                 \
-            default:                                          \
-                utility::LogFatal("Unsupported data type\n"); \
-        }                                                     \
+#define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, LAMBDA_FUNC)      \
+    [&] {                                                   \
+        switch (DTYPE) {                                    \
+            case open3d::Dtype::Float32: {                  \
+                using scalar_t = float;                     \
+                return LAMBDA_FUNC();                       \
+            }                                               \
+            case open3d::Dtype::Float64: {                  \
+                using scalar_t = double;                    \
+                return LAMBDA_FUNC();                       \
+            }                                               \
+            case open3d::Dtype::Int32: {                    \
+                using scalar_t = int32_t;                   \
+                return LAMBDA_FUNC();                       \
+            }                                               \
+            case open3d::Dtype::Int64: {                    \
+                using scalar_t = int64_t;                   \
+                return LAMBDA_FUNC();                       \
+            }                                               \
+            case open3d::Dtype::UInt8: {                    \
+                using scalar_t = uint8_t;                   \
+                return LAMBDA_FUNC();                       \
+            }                                               \
+            default:                                        \
+                utility::LogError("Unsupported data type"); \
+        }                                                   \
     }()

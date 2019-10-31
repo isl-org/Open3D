@@ -275,7 +275,7 @@ std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
 bool CheckRightTerm(const Eigen::VectorXd &right_term,
                     const GlobalOptimizationConvergenceCriteria &criteria) {
     if (right_term.maxCoeff() < criteria.min_right_term_) {
-        utility::LogDebug("Maximum coefficient of right term < {:e}\n",
+        utility::LogDebug("Maximum coefficient of right term < {:e}",
                           criteria.min_right_term_);
         return true;
     }
@@ -288,7 +288,7 @@ bool CheckRelativeIncrement(
         const GlobalOptimizationConvergenceCriteria &criteria) {
     if (delta.norm() < criteria.min_relative_increment_ *
                                (x.norm() + criteria.min_relative_increment_)) {
-        utility::LogDebug("Delta.norm() < {:e} * (x.norm() + {:e})\n",
+        utility::LogDebug("Delta.norm() < {:e} * (x.norm() + {:e})",
                           criteria.min_relative_increment_,
                           criteria.min_relative_increment_);
         return true;
@@ -303,7 +303,7 @@ bool CheckRelativeResidualIncrement(
     if (current_residual - new_residual <
         criteria.min_relative_residual_increment_ * current_residual) {
         utility::LogDebug(
-                "Current_residual - new_residual < {:e} * current_residual\n",
+                "Current_residual - new_residual < {:e} * current_residual",
                 criteria.min_relative_residual_increment_);
         return true;
     }
@@ -313,7 +313,7 @@ bool CheckRelativeResidualIncrement(
 bool CheckResidual(double residual,
                    const GlobalOptimizationConvergenceCriteria &criteria) {
     if (residual < criteria.min_residual_) {
-        utility::LogDebug("Current_residual < {:e}\n", criteria.min_residual_);
+        utility::LogDebug("Current_residual < {:e}", criteria.min_residual_);
         return true;
     }
     return false;
@@ -322,7 +322,7 @@ bool CheckResidual(double residual,
 bool CheckMaxIteration(int iteration,
                        const GlobalOptimizationConvergenceCriteria &criteria) {
     if (iteration >= criteria.max_iteration_) {
-        utility::LogDebug("Reached maximum number of iterations ({:d})\n",
+        utility::LogDebug("Reached maximum number of iterations ({:d})",
                           criteria.max_iteration_);
         return true;
     }
@@ -332,7 +332,7 @@ bool CheckMaxIteration(int iteration,
 bool CheckMaxIterationLM(
         int iteration, const GlobalOptimizationConvergenceCriteria &criteria) {
     if (iteration >= criteria.max_iteration_lm_) {
-        utility::LogDebug("Reached maximum number of iterations ({:d})\n",
+        utility::LogDebug("Reached maximum number of iterations ({:d})",
                           criteria.max_iteration_lm_);
         return true;
     }
@@ -364,7 +364,7 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
                                       const PoseGraph &pose_graph_orig,
                                       int reference_node) {
-    utility::LogDebug("CompensateReferencePoseGraphNode : reference : {:d}\n",
+    utility::LogDebug("CompensateReferencePoseGraphNode : reference : {:d}",
                       reference_node);
     int n_nodes = (int)pose_graph_new.nodes_.size();
     if (reference_node < 0 || reference_node >= n_nodes) {
@@ -425,13 +425,13 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
     int n_edges = (int)pose_graph.edges_.size();
 
     if (!ValidatePoseGraphConnectivity(pose_graph, false)) {
-        utility::LogWarning("Invalid PoseGraph - graph is not connected.\n");
+        utility::LogWarning("Invalid PoseGraph - graph is not connected.");
         return false;
     }
 
     if (!ValidatePoseGraphConnectivity(pose_graph, true)) {
         utility::LogWarning(
-                "Certain-edge subset of PoseGraph is not connected.\n");
+                "Certain-edge subset of PoseGraph is not connected.");
     }
 
     for (int j = 0; j < n_edges; j++) {
@@ -443,7 +443,7 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
         if (!valid) {
             utility::LogWarning(
                     "Invalid PoseGraph - an edge references an invalide "
-                    "node.\n");
+                    "node.");
             return false;
         }
     }
@@ -452,11 +452,11 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
         if (!t.uncertain_ && t.confidence_ != 1.0) {
             utility::LogWarning(
                     "Invalid PoseGraph - the certain edge does not have 1.0 as "
-                    "a confidence.\n");
+                    "a confidence.");
             return false;
         }
     }
-    utility::LogDebug("Validating PoseGraph - finished.\n");
+    utility::LogDebug("Validating PoseGraph - finished.");
     return true;
 }
 
@@ -497,9 +497,9 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
 
     utility::LogDebug(
             "[GlobalOptimizationGaussNewton] Optimizing PoseGraph having {:d} "
-            "nodes and %d edges. \n",
+            "nodes and %d edges.",
             n_nodes, n_edges);
-    utility::LogDebug("Line process weight : {:f}\n", line_process_weight);
+    utility::LogDebug("Line process weight : {:f}", line_process_weight);
 
     Eigen::VectorXd zeta = ComputeZeta(pose_graph);
     double current_residual, new_residual;
@@ -517,7 +517,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
 
     std::tie(H, b) = ComputeLinearSystem(pose_graph, zeta);
 
-    utility::LogDebug("[Initial     ] residual : {:e}\n", current_residual);
+    utility::LogDebug("[Initial     ] residual : {:e}", current_residual);
 
     bool stop = false;
     if (stop || CheckRightTerm(b, criteria)) return;
@@ -567,7 +567,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
         utility::LogDebug(
                 "[Iteration {:02d}] residual : {:e}, valid edges : {:d}, time "
                 ": {:.3f} "
-                "sec.\n",
+                "sec.",
                 iter, current_residual, valid_edges_num,
                 timer_iter.GetDuration() / 1000.0);
         stop = stop || CheckResidual(current_residual, criteria) ||
@@ -575,7 +575,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
     }  // end for
     timer_overall.Stop();
     utility::LogDebug(
-            "[GlobalOptimizationGaussNewton] total time : {:.3f} sec.\n",
+            "[GlobalOptimizationGaussNewton] total time : {:.3f} sec.",
             timer_overall.GetDuration() / 1000.0);
 }
 
@@ -589,9 +589,9 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
 
     utility::LogDebug(
             "[GlobalOptimizationLM] Optimizing PoseGraph having {:d} nodes and "
-            "{:d} edges. \n",
+            "{:d} edges.",
             n_nodes, n_edges);
-    utility::LogDebug("Line process weight : {:f}\n", line_process_weight);
+    utility::LogDebug("Line process weight : {:f}", line_process_weight);
 
     Eigen::VectorXd zeta = ComputeZeta(pose_graph);
     double current_residual, new_residual;
@@ -615,7 +615,7 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
     double ni = 2.0;
     double rho = 0.0;
 
-    utility::LogDebug("[Initial     ] residual : {:e}, lambda : {:e}\n",
+    utility::LogDebug("[Initial     ] residual : {:e}, lambda : {:e}",
                       current_residual, current_lambda);
 
     bool stop = false;
@@ -684,7 +684,7 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
             utility::LogDebug(
                     "[Iteration {:02d}] residual : {:e}, valid edges : {:d}, "
                     "time : "
-                    "{:.3f} sec.\n",
+                    "{:.3f} sec.",
                     iter, current_residual, valid_edges_num,
                     timer_iter.GetDuration() / 1000.0);
         }
@@ -692,7 +692,7 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
                CheckMaxIteration(iter, criteria);
     }  // end for
     timer_overall.Stop();
-    utility::LogDebug("[GlobalOptimizationLM] total time : {:.3f} sec.\n",
+    utility::LogDebug("[GlobalOptimizationLM] total time : {:.3f} sec.",
                       timer_overall.GetDuration() / 1000.0);
 }
 

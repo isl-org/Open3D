@@ -29,13 +29,12 @@
 using namespace open3d;
 
 void PrintVoxelGridInformation(const geometry::VoxelGrid& voxel_grid) {
-    utility::LogInfo("geometry::VoxelGrid with {:d} voxels\n",
+    utility::LogInfo("geometry::VoxelGrid with {:d} voxels",
                      voxel_grid.voxels_.size());
-    utility::LogInfo("               origin: [{:f} {:f} {:f}]\n",
+    utility::LogInfo("               origin: [{:f} {:f} {:f}]",
                      voxel_grid.origin_(0), voxel_grid.origin_(1),
                      voxel_grid.origin_(2));
-    utility::LogInfo("               voxel_size: {:f}\n",
-                     voxel_grid.voxel_size_);
+    utility::LogInfo("               voxel_size: {:f}", voxel_grid.voxel_size_);
     return;
 }
 
@@ -46,8 +45,8 @@ int main(int argc, char** args) {
     if (argc < 3) {
         PrintOpen3DVersion();
         // clang-format off
-        utility::LogInfo("Usage:\n");
-        utility::LogInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]\n");
+        utility::LogInfo("Usage:");
+        utility::LogInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]");
         // clang-format on
         return 1;
     }

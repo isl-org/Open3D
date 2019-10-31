@@ -36,7 +36,7 @@ using namespace open3d;
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        utility::LogFatal("Cannot write to {}\n", filename);
+        utility::LogError("Cannot write to {}", filename);
     }
 
     Json::StreamWriterBuilder builder;
@@ -49,10 +49,10 @@ void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
 Json::Value GenerateDatasetConfig(const std::string &output_path) {
     Json::Value value;
 
-    utility::LogInfo("Writing to config.json\n");
+    utility::LogInfo("Writing to config.json");
     utility::LogInfo(
             "Please change path_dataset and path_intrinsic when you move the "
-            "dataset.\n");
+            "dataset.");
 
     if (output_path[0] == '/') {  // global dir
         value["path_dataset"] = output_path;
@@ -80,8 +80,8 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
 void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage:\n");
-    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]\n");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
 }
 
@@ -98,25 +98,24 @@ int main(int argc, char **argv) {
     bool write_image = false;
     std::string output_path;
     if (!utility::ProgramOptionExists(argc, argv, "--output")) {
-        utility::LogInfo("No output image path, only play mkv.\n");
+        utility::LogInfo("No output image path, only play mkv.");
     } else {
         output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            utility::LogError("Output path {} is empty, only play mkv.\n",
+            utility::LogError("Output path {} is empty, only play mkv.",
                               output_path);
             return 1;
         }
         if (utility::filesystem::DirectoryExists(output_path)) {
-            utility::LogError(
-                    "Output path {} already existing, only play mkv.\n",
-                    output_path);
+            utility::LogError("Output path {} already existing, only play mkv.",
+                              output_path);
             return 1;
         } else if (!utility::filesystem::MakeDirectory(output_path)) {
-            utility::LogError("Unable to create path {}, only play mkv.\n",
+            utility::LogError("Unable to create path {}, only play mkv.",
                               output_path);
             return 1;
         } else {
-            utility::LogInfo("Decompress images to {}\n", output_path);
+            utility::LogInfo("Decompress images to {}", output_path);
             utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
             utility::filesystem::MakeDirectoryHierarchy(output_path + "/depth");
             write_image = true;
@@ -126,7 +125,7 @@ int main(int argc, char **argv) {
     io::MKVReader mkv_reader;
     mkv_reader.Open(mkv_filename);
     if (!mkv_reader.IsOpened()) {
-        utility::LogError("Unable to open {}\n", mkv_filename);
+        utility::LogError("Unable to open {}", mkv_filename);
         return 1;
     }
 
@@ -142,10 +141,10 @@ int main(int argc, char **argv) {
             GLFW_KEY_SPACE, [&](visualization::Visualizer *vis) {
                 if (flag_play) {
                     utility::LogInfo(
-                            "Playback paused, press [SPACE] to continue\n");
+                            "Playback paused, press [SPACE] to continue");
                 } else {
                     utility::LogInfo(
-                            "Playback resumed, press [SPACE] to pause\n");
+                            "Playback resumed, press [SPACE] to pause");
                 }
                 flag_play = !flag_play;
                 return true;
@@ -154,7 +153,7 @@ int main(int argc, char **argv) {
     vis.CreateVisualizerWindow("Open3D Azure Kinect MKV player", 1920, 540);
     utility::LogInfo(
             "Starting to play. Press [SPACE] to pause. Press [ESC] to "
-            "exit.\n");
+            "exit.");
 
     bool is_geometry_added = false;
     int idx = 0;
@@ -178,12 +177,12 @@ int main(int argc, char **argv) {
             if (write_image) {
                 auto color_file =
                         fmt::format("{0}/color/{1:05d}.jpg", output_path, idx);
-                utility::LogInfo("Writing to {}\n", color_file);
+                utility::LogInfo("Writing to {}", color_file);
                 io::WriteImage(color_file, im_rgbd->color_);
 
                 auto depth_file =
                         fmt::format("{0}/depth/{1:05d}.png", output_path, idx);
-                utility::LogInfo("Writing to {}\n", depth_file);
+                utility::LogInfo("Writing to {}", depth_file);
                 io::WriteImage(depth_file, im_rgbd->depth_);
 
                 ++idx;

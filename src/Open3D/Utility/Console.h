@@ -42,11 +42,23 @@ namespace open3d {
 namespace utility {
 
 enum class VerbosityLevel {
-    Fatal = 0,
-    Error = 1,
-    Warning = 2,
-    Info = 3,
-    Debug = 4,
+    /// LogError throws now a runtime_error with the given error message. This
+    /// should be used if there is no point in continuing the given algorithm at
+    /// some point and the error is not returned in another way (e.g., via a
+    /// bool/int as return value).
+    Error = 0,
+    /// LogWarning is used if an error occured, but the error is also signaled
+    /// via a return value (i.e., there is no need to throw an exception). This
+    /// warning should further be used, if the algorithms encounters a state
+    /// that does not break its continuation, but the output is likely not to be
+    /// what the user expected.
+    Warning = 1,
+    /// LogInfo is used to inform the user with expected output, e.g, pressed a
+    /// key in the visualizer prints helping information.
+    Info = 2,
+    /// LogDebug is used to print debug/additional information on the state of
+    /// the algorithm.
+    Debug = 3,
 };
 
 class Logger {
@@ -71,20 +83,11 @@ public:
         return instance;
     }
 
-    void VFatal[[noreturn]](const char *format, fmt::format_args args) const {
+    void VError[[noreturn]](const char *format, fmt::format_args args) const {
         std::string err_msg = fmt::vformat(format, args);
-        err_msg = fmt::format("[Open3D FATAL] {}", err_msg);
+        err_msg = fmt::format("[Open3D ERROR] {}", err_msg);
         err_msg = ColorString(err_msg, TextColor::Red, 1);
         throw std::runtime_error(err_msg);
-    }
-
-    void VError(const char *format, fmt::format_args args) const {
-        if (verbosity_level_ >= VerbosityLevel::Error) {
-            ChangeConsoleColor(TextColor::Red, 1);
-            fmt::print("[Open3D ERROR] ");
-            fmt::vprint(format, args);
-            ResetConsoleColor();
-        }
     }
 
     void VWarning(const char *format, fmt::format_args args) const {
@@ -92,6 +95,7 @@ public:
             ChangeConsoleColor(TextColor::Yellow, 1);
             fmt::print("[Open3D WARNING] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
             ResetConsoleColor();
         }
     }
@@ -100,6 +104,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Info) {
             fmt::print("[Open3D INFO] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
         }
     }
 
@@ -107,12 +112,8 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Debug) {
             fmt::print("[Open3D DEBUG] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
         }
-    }
-
-    template <typename... Args>
-    void Fatal(const char *format, const Args &... args) const {
-        VFatal(format, fmt::make_format_args(args...));
     }
 
     template <typename... Args>
@@ -136,22 +137,12 @@ public:
     }
 
     template <typename... Args>
-    void Fatalf(const char *format, const Args &... args) const {
-        if (verbosity_level_ >= VerbosityLevel::Fatal) {
-            std::string err_msg = fmt::sprintf(format, args...);
-            err_msg = fmt::format("[Open3D FATAL] {}", err_msg);
-            err_msg = ColorString(err_msg, TextColor::Red, 1);
-            throw std::runtime_error(err_msg);
-        }
-    }
-
-    template <typename... Args>
     void Errorf(const char *format, const Args &... args) const {
         if (verbosity_level_ >= VerbosityLevel::Error) {
-            ChangeConsoleColor(TextColor::Red, 1);
-            fmt::print("[Open3D ERROR] ");
-            fmt::printf(format, args...);
-            ResetConsoleColor();
+            std::string err_msg = fmt::sprintf(format, args...);
+            err_msg = fmt::format("[Open3D Error] {}", err_msg);
+            err_msg = ColorString(err_msg, TextColor::Red, 1);
+            throw std::runtime_error(err_msg);
         }
     }
 
@@ -162,6 +153,7 @@ public:
             fmt::print("[Open3D WARNING] ");
             fmt::printf(format, args...);
             ResetConsoleColor();
+            fmt::print("\n");
         }
     }
 
@@ -170,6 +162,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Info) {
             fmt::print("[Open3D INFO] ");
             fmt::printf(format, args...);
+            fmt::print("\n");
         }
     }
 
@@ -178,6 +171,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Debug) {
             fmt::print("[Open3D DEBUG] ");
             fmt::printf(format, args...);
+            fmt::print("\n");
         }
     }
 
@@ -206,12 +200,7 @@ inline VerbosityLevel GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void LogFatal[[noreturn]](const char *format, const Args &... args) {
-    Logger::i().VFatal(format, fmt::make_format_args(args...));
-}
-
-template <typename... Args>
-inline void LogError(const char *format, const Args &... args) {
+inline void LogError[[noreturn]](const char *format, const Args &... args) {
     Logger::i().VError(format, fmt::make_format_args(args...));
 }
 
@@ -228,11 +217,6 @@ inline void LogInfo(const char *format, const Args &... args) {
 template <typename... Args>
 inline void LogDebug(const char *format, const Args &... args) {
     Logger::i().VDebug(format, fmt::make_format_args(args...));
-}
-
-template <typename... Args>
-inline void LogFatalf(const char *format, const Args &... args) {
-    Logger::i().Fatalf(format, args...);
 }
 
 template <typename... Args>

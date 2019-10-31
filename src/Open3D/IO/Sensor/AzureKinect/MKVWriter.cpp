@@ -47,7 +47,7 @@ bool MKVWriter::Open(const std::string &filename,
     if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_create(filename.c_str(),
                                                               device, config,
                                                               &handle_)) {
-        utility::LogError("Unable to open file {}\n", filename);
+        utility::LogWarning("Unable to open file {}", filename);
         return false;
     }
 
@@ -60,7 +60,7 @@ bool MKVWriter::SetMetadata(const MKVMetadata &metadata) {
     metadata_ = metadata;
 
     if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_write_header(handle_)) {
-        utility::LogError("Unable to write header\n");
+        utility::LogWarning("Unable to write header");
         return false;
     }
     return true;
@@ -68,20 +68,20 @@ bool MKVWriter::SetMetadata(const MKVMetadata &metadata) {
 
 void MKVWriter::Close() {
     if (K4A_RESULT_SUCCEEDED != k4a_plugin::k4a_record_flush(handle_)) {
-        utility::LogError("Unable to flush before writing\n");
+        utility::LogWarning("Unable to flush before writing");
     }
     k4a_plugin::k4a_record_close(handle_);
 }
 
 bool MKVWriter::NextFrame(k4a_capture_t capture) {
     if (!IsOpened()) {
-        utility::LogError("Null file handler. Please call Open().\n");
+        utility::LogWarning("Null file handler. Please call Open().");
         return false;
     }
 
     if (K4A_RESULT_SUCCEEDED !=
         k4a_plugin::k4a_record_write_capture(handle_, capture)) {
-        utility::LogError("Unable to write frame to mkv.\n");
+        utility::LogWarning("Unable to write frame to mkv.");
         return false;
     }
 

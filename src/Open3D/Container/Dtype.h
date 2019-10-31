@@ -74,7 +74,7 @@ public:
                 byte_size = 1;
                 break;
             default:
-                utility::LogFatal("Unsupported data type\n");
+                utility::LogError("Unsupported data type");
         }
         return byte_size;
     }
@@ -84,7 +84,7 @@ public:
     /// exception.
     template <typename T>
     static inline Dtype FromType() {
-        utility::LogFatal("Unsupported data type\n");
+        utility::LogError("Unsupported data type");
         return Dtype::Undefined;
     }
 
@@ -107,7 +107,7 @@ public:
                 str = "UInt8";
                 break;
             default:
-                utility::LogFatal("Unsupported data type\n");
+                utility::LogError("Unsupported data type");
         }
         return str;
     }

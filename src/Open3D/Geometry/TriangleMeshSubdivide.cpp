@@ -40,8 +40,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SubdivideMidpoint] This mesh contains triangle uvs that are "
-                "not handled "
-                "in this function\n");
+                "not handled in this function");
     }
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->vertices_ = vertices_;
@@ -119,8 +118,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
     if (HasTriangleUvs()) {
         utility::LogWarning(
                 "[SubdivideLoop] This mesh contains triangle uvs that are not "
-                "handled "
-                "in this function\n");
+                "handled in this function");
     }
     typedef std::unordered_map<Eigen::Vector2i, int,
                                utility::hash_eigen::hash<Eigen::Vector2i>>
@@ -155,7 +153,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         if (boundary_nbs.size() > 2) {
             utility::LogWarning(
                     "[SubdivideLoop] boundary edge with > 2 neighbours, maybe "
-                    "mesh is not manifold.\n");
+                    "mesh is not manifold.");
         }
 
         double beta, alpha;
@@ -307,7 +305,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         if (edge_to_triangles[e0].size() > 2 ||
             edge_to_triangles[e1].size() > 2 ||
             edge_to_triangles[e2].size() > 2) {
-            utility::LogWarning("[SubdivideLoop] non-manifold edge.\n");
+            utility::LogWarning("[SubdivideLoop] non-manifold edge.");
         }
 
         vertex_neighbours[tria(0)].insert(tria(1));

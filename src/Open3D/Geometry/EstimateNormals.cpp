@@ -305,7 +305,7 @@ bool PointCloud::OrientNormalsToAlignWithDirection(
     if (HasNormals() == false) {
         utility::LogWarning(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
-                "PointCloud. Call EstimateNormals() first.\n");
+                "PointCloud. Call EstimateNormals() first.");
     }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -326,7 +326,7 @@ bool PointCloud::OrientNormalsTowardsCameraLocation(
     if (HasNormals() == false) {
         utility::LogWarning(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
-                "PointCloud. Call EstimateNormals() first.\n");
+                "PointCloud. Call EstimateNormals() first.");
     }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)

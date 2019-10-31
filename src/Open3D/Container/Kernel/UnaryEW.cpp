@@ -36,20 +36,20 @@ void Copy(const Tensor& src, Tensor& dst) {
     // Check shape
     // TODO: in the future, we may support automatic broadcasting
     if (src.GetShape() != dst.GetShape()) {
-        utility::LogFatal("src and dst tensor shape mismatch {} != {}\n",
+        utility::LogError("src and dst tensor shape mismatch {} != {}",
                           src.GetShape().ToString(), dst.GetShape().ToString());
     }
 
     // Check strides
     // TODO: currently we require dst to be contiguous
     if (!dst.IsContiguous()) {
-        utility::LogFatal("Unimplemented: dst must be contiguous\n");
+        utility::LogError("Unimplemented: dst must be contiguous");
     }
 
     // Check dtype
     // TODO: in the future, we may want to allow automatic casting
     if (src.GetDtype() != dst.GetDtype()) {
-        utility::LogFatal("src and dst tensor dtype mismatch {} != {}\n",
+        utility::LogError("src and dst tensor dtype mismatch {} != {}",
                           DtypeUtil::ToString(src.GetDtype()),
                           DtypeUtil::ToString(dst.GetDtype()));
     }
@@ -61,7 +61,7 @@ void Copy(const Tensor& src, Tensor& dst) {
          src_device_type != Device::DeviceType::CUDA) ||
         (dst_device_type != Device::DeviceType::CPU &&
          dst_device_type != Device::DeviceType::CUDA)) {
-        utility::LogFatal("Unimplemented device\n");
+        utility::LogError("Unimplemented device");
     }
     if (src_device_type == Device::DeviceType::CPU &&
         src_device_type == Device::DeviceType::CPU) {
