@@ -199,3 +199,21 @@ def print_mesh_for_cpp(mesh, prefix=""):
     _print(f"{prefix}triangles_", np.asarray(mesh.triangles), "d")
     _print(f"{prefix}triangle_normals_", np.asarray(mesh.triangle_normals),
            ".6f")
+
+
+def print_1D_array_for_cpp(array, prefix="vec"):
+    if array.dtype == np.float32:
+        dtype = "float"
+    elif array.dtype == np.float64:
+        dtype = "double"
+    elif array.dtype == np.int32:
+        dtype = "int"
+    elif array.dtype == np.uint32:
+        dtype = "size_t"
+    elif array.dtype == np.bool:
+        dtype = "bool"
+    else:
+        raise Exception("invalid dtype")
+    print(f"std::vector<{dtype}> {prefix} = {{")
+    print(", ".join(map(str, array)))
+    print("};")
