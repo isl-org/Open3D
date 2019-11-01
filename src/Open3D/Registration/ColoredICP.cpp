@@ -102,7 +102,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         std::vector<double> point_squared_distance;
 
         if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
-                              point_idx, point_squared_distance) >= 3) {
+                              point_idx, point_squared_distance) >= 4) {
             // approximate image gradient of vt's tangential plane
             size_t nn = point_idx.size();
             Eigen::MatrixXd A(nn, 3);
