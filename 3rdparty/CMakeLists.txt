@@ -143,7 +143,7 @@ elseif (PNG_FOUND)
 else ()
     message(STATUS "Unable to find libpng installed in the system")
     message(STATUS "Building libpng from source")
-    set(build_png on)
+    set(BUILD_PNG on)
 endif ()
 
 if (BUILD_PNG)
