@@ -186,4 +186,75 @@ Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, device_, blob_);
 }
 
+Tensor Tensor::Index(const std::vector<Tensor>& indices) const {
+    /// Example: t = tensor.zeros(3, 4, 5), indices = [:, [0, 2], :]
+
+    /// Dimension check
+    if (indices.size() > shape_.size()) {
+        utility::LogError("Number of indices {} exceeds tensor dimension {}.",
+                          indices.size(), shape_.size());
+    }
+
+    /// Index tensor conversion
+    /// [:, [0, 2], :] => [Tensor(), Tensor([0, 2]), Tensor()]
+
+    /// New contiguous tensor creation
+    /// new_shape = (3, 2, 5)
+    /// new_strides = (2*5, 5, 1)
+    /// new_tensor(new_shape, new_strides)
+
+    /// OffsetCalculator(int dst_idx (of new tensor))
+    /// int src_idx = 0;
+    /// for (int dim = 0; dim < num_dims_; dim++) {
+    ///     int dim_idx = dst_idx / dst_strides_[dim];
+    ///     // here we assume stride of index tensors is 1
+    ///     // (also needs out-of-bound handling)
+    ///     dim_idx = indices[dim] == NULL ? dim_idx : indices[dim][dim_idx]
+    ///     dim_idx += dim_idx * src_strides_[dim];
+
+    ///     src_idx += tensor[dim] [dim_idx] * src_strides_[dim]
+    ///     dst_idx = dst_idx % dst_strides_[dim];
+    /// }
+    /// return src_idx;
+
+    /// Assignment:
+    /// new_tensor[dst_idx] = t[src_idx]
+}
+
+void Tensor::IndexPut(const std::vector<Tensor>& indices, const Tensor& value) {
+    /// Example: t = tensor.zeros(3, 4, 5), indices = [:, [0, 2], :]
+
+    /// Dimension check
+    if (indices.size() > shape_.size()) {
+        utility::LogError("Number of indices {} exceeds tensor dimension {}.",
+                          indices.size(), shape_.size());
+    }
+
+    /// Index tensor conversion
+    /// [:, [0, 2], :] => [Tensor(), Tensor([0, 2]), Tensor()]
+
+    /// New contiguous tensor creation
+    /// dst_shape = (3, 2, 5)
+    /// dst_strides = (2*5, 5, 1)
+
+    /// assert dst_shape == value.shape (don't support broadcasting yet)
+
+    /// Assignment: OffsetCalculator(int dst_idx (of value))
+    /// int src_idx = 0;
+    /// for (int dim = 0; dim < num_dims_; dim++) {
+    ///     int dim_idx = dst_idx / dst_strides_[dim];
+    ///     // here we assume stride of index tensors is 1
+    ///     // (also needs out-of-bound handling)
+    ///     dim_idx = indices[dim] == NULL ? dim_idx : indices[dim][dim_idx]
+    ///     dim_idx += dim_idx * src_strides_[dim];
+
+    ///     src_idx += tensor[dim] [dim_idx] * src_strides_[dim]
+    ///     dst_idx = dst_idx % dst_strides_[dim];
+    /// }
+    /// return src_idx;
+
+    /// Assignment
+    /// t[src_idx] = value[dst_idx]
+}
+
 }  // namespace open3d

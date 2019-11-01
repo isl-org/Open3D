@@ -112,6 +112,19 @@ public:
     /// Slice Tensor
     Tensor Slice(size_t dim, int start, int stop, int step = 1) const;
 
+    /// Advanced indexing getter and setter
+    /// https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Indexing.cpp
+    /// In the initial implementation, we don't support mixed slices and
+    /// indices. Suppose tensor is (3, 4, 5)), we support:
+    /// tensor[[0, 1, 2], :, :]
+    /// tensor[:, [0, 1, 2], [2, 1, 3]],
+    /// tensor[[0, 1, 2], [2, 1, 3], [4, 1, 0]]
+    /// we do not support:
+    /// tensor([0, 1, 2], :, [4, 1, 0])
+    /// before transpose is implemented
+    Tensor Index(const std::vector<Tensor>& indices) const;
+    void IndexPut(const std::vector<Tensor>& indices, const Tensor& value);
+
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
     template <typename T>
