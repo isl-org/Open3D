@@ -197,6 +197,24 @@ TEST_P(TensorPermuteDevices, Item) {
     EXPECT_EQ(t_1_2_3.Item<float>(), 23.f);
 }
 
+TEST_P(TensorPermuteDevices, ItemAssign) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // Assigning to rvalue
+    float new_val_0 = 100.f;
+    t[1][2][3] = new_val_0;
+    EXPECT_EQ(t[1][2][3].Item<float>(), 100);
+
+    // Assigning to rvalue, with implicit casting (uint8_t -> float)
+    uint8_t new_val_1 = 101;
+    t[1][2][3] = new_val_1;
+    EXPECT_EQ(t[1][2][3].Item<float>(), 101);
+}
+
 TEST_P(TensorPermuteDevices, ToString) {
     Device device = GetParam();
 
@@ -309,6 +327,57 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_4.GetDataPtr(),
               static_cast<const uint8_t *>(blob_head) +
                       DtypeUtil::ByteSize(Dtype::Float32) * 3 * 4);
+}
+
+TEST_P(TensorPermuteDevices, SliceAssign) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor dst(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // Assigning a contiguous Tensor to lvalue
+    // src_0 == [[120, 140], [200, 220]]
+    Tensor src_0(std::vector<float>({120, 140, 200, 220}), {2, 2},
+                 Dtype::Float32, device);
+    Tensor dst_slice = dst[1].Slice(0, 0, 3, 2).Slice(1, 0, 4, 2);
+    dst_slice = src_0;
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
+                                  8,  9,  10, 11, 120, 13, 140, 15,
+                                  16, 17, 18, 19, 200, 21, 220, 23}));
+
+    // Assigning a contiguous Tensor to rvalue
+    // src_1 == [[121, 141], [201, 221]]
+    Tensor src_1(std::vector<float>({121, 141, 201, 221}), {2, 2},
+                 Dtype::Float32, device);
+    dst[1].Slice(0, 0, 3, 2).Slice(1, 0, 4, 2) = src_1;
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
+                                  8,  9,  10, 11, 121, 13, 141, 15,
+                                  16, 17, 18, 19, 201, 21, 221, 23}));
+
+    // Assigning a non-contiguous Tensor to lvalue
+    // src_2 == [[122, 142], [202, 222]]
+    Tensor src_2_tmp(std::vector<float>({122, 142, -1, -1, 202, 222}), {3, 2},
+                     Dtype::Float32, device);    // Shape (3, 2)
+    Tensor src_2 = src_2_tmp.Slice(0, 0, 3, 2);  // Shape (2, 2)
+    dst_slice = src_2;
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
+                                  8,  9,  10, 11, 122, 13, 142, 15,
+                                  16, 17, 18, 19, 202, 21, 222, 23}));
+
+    // Assigning a non-contiguous Tensor to rvalue
+    // src_3 == [[123, 143], [203, 223]]
+    Tensor src_3_tmp(std::vector<float>({123, 143, -1, -1, 203, 223}), {3, 2},
+                     Dtype::Float32, device);    // Shape (3, 2)
+    Tensor src_3 = src_3_tmp.Slice(0, 0, 3, 2);  // Shape (2, 2)
+    dst[1].Slice(0, 0, 3, 2).Slice(1, 0, 4, 2) = src_3;
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
+                                  8,  9,  10, 11, 123, 13, 143, 15,
+                                  16, 17, 18, 19, 203, 21, 223, 23}));
 }
 
 TEST_P(TensorPermuteDevices, CopyNonContiguous) {

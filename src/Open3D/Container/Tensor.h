@@ -94,6 +94,44 @@ public:
         }
     }
 
+    /// Copy constructor with lvalue input, e.g. `Tensor dst(src)`
+    Tensor(const Tensor& other);
+
+    /// Copy constructor with rvalue input, e.g. `Tensor dst(src[0])`
+    Tensor(Tensor&& other);
+
+    /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
+    Tensor& operator=(const Tensor& other) &;
+
+    /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`
+    Tensor& operator=(Tensor&& other) &;
+
+    /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
+    Tensor& operator=(const Tensor& other) &&;
+
+    /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
+    Tensor& operator=(Tensor&& other) &&;
+
+    /// Tensor assignment rvalue = rvalue_scalar, e.g. `tensor_a[0] = 100`
+    /// Implicit casting is performed to the underlying dtype.
+    ///
+    /// Note that we don't have lvalue = rvalue_scalar, e.g. we don't support
+    /// Tensor a_slice = tensor_a[0]; a_slice = 100;
+    template <typename T>
+    Tensor& operator=(const T& v) && {
+        if (shape_.size() != 0) {
+            utility::LogError(
+                    "Assignment with scalar only works for scalar Tensor of "
+                    "shape ()");
+        }
+        DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
+            scalar_t casted_v = static_cast<scalar_t>(v);
+            MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
+                                          sizeof(scalar_t));
+        });
+        return *this;
+    }
+
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
     Tensor Copy(const Device& device) const;
@@ -121,11 +159,7 @@ public:
         }
         AssertTemplateDtype<T>();
         T value;
-        if (device_.device_type_ == Device::DeviceType::CUDA) {
-            MemoryManager::MemcpyToHost(&value, data_ptr_, device_, sizeof(T));
-        } else {
-            value = *static_cast<T*>(data_ptr_);
-        }
+        MemoryManager::MemcpyToHost(&value, data_ptr_, device_, sizeof(T));
         return value;
     }
 
