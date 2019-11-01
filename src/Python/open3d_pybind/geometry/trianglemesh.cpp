@@ -174,7 +174,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("has_texture", &geometry::TriangleMesh::HasTexture,
                  "Returns ``True`` if the mesh contains a texture image.")
             .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
-                 "Normalize both triangle normals and vertex normals to legnth "
+                 "Normalize both triangle normals and vertex normals to length "
                  "1.")
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
@@ -525,7 +525,7 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
             {{"pcd",
-              "PointCloud from whicht the TriangleMesh surface is "
+              "PointCloud from which the TriangleMesh surface is "
               "reconstructed. Has to contain normals."},
              {"radii",
               "The radii of the ball that are used for the surface "
