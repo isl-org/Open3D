@@ -38,31 +38,40 @@
 namespace open3d {
 namespace geometry {
 
-// std::exchange introduced in C++14
-template <class T, class U = T>
-T exchange(T &obj, U &&new_value) {
-    T old_value = std::move(obj);
-    obj = std::forward<U>(new_value);
-    return old_value;
-}
-
+// Stores the current best result in the RANSAC algorithm.
 class RANSACResult {
 public:
-    RANSACResult() : inlier_rmse_(0), fitness_(0) {}
+    RANSACResult() : fitness_(0), inlier_rmse_(0) {}
     ~RANSACResult() {}
 
 public:
-    double inlier_rmse_;
     double fitness_;
+    double inlier_rmse_;
 };
 
+// Calculates the number of inliers given a list of points and a plane model,
+// and the total distance between the inliers and the plane. These numbers are
+// then used to evaluate how well the plane model fits the given points.
 RANSACResult EvaluateRANSACBasedOnDistance(
-        const std::vector<int> &inliers,
         const std::vector<Eigen::Vector3d> &points,
-        const double error) {
+        const Eigen::Vector4d plane_model,
+        std::vector<int> &inliers,
+        double distance_threshold,
+        double error) {
     RANSACResult result;
-    int inlier_num = inliers.size();
 
+    for (int idx = 0; idx < points.size(); ++idx) {
+        Eigen::Vector4d point(points[idx](0), points[idx](1), points[idx](2),
+                              1);
+        double distance = std::abs(plane_model.dot(point));
+
+        if (distance < distance_threshold) {
+            error += distance;
+            inliers.emplace_back(idx);
+        }
+    }
+
+    int inlier_num = inliers.size();
     if (inlier_num == 0) {
         result.fitness_ = 0;
         result.inlier_rmse_ = 0;
@@ -74,10 +83,9 @@ RANSACResult EvaluateRANSACBasedOnDistance(
 }
 
 std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
-        double distance_threshold /* = 0.01 */,
-        int ransac_n /* = 3 */,
-        const registration::RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria() */) const {
+        const double distance_threshold /* = 0.01 */,
+        const int ransac_n /* = 3 */,
+        const int num_iterations /* = 100 */) const {
     RANSACResult result;
     double error = 0;
 
@@ -85,11 +93,9 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
     Eigen::Vector4d plane_model = Eigen::Vector4d(0, 0, 0, 0);
     // Initialize the best plane model.
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
-    const int num_model_parameters = 3;
 
     // Initialize consensus set.
     std::vector<int> inliers;
-    int prev_inliers_num = 0;
 
     int num_points = points_.size();
     std::vector<int> indices(num_points);
@@ -98,47 +104,34 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
     std::random_device rd;
     std::mt19937 rng(rd());
 
-    for (int itr = 0;
-         itr < criteria.max_iteration_ && itr < criteria.max_validation_;
-         itr++) {
-        if (prev_inliers_num == inliers.size()) {
-            for (int i = 0; i < ransac_n; ++i) {
-                indices[i] = exchange(indices[rng() % num_points], indices[i]);
-            }
+    // Return if ransac_n less than the required plane model parameters.
+    if (ransac_n < 3) {
+        utility::LogError(
+                "ransac_n should be set to higher than or equal to 3.");
+        return std::make_tuple(best_plane_model, inliers);
+    }
 
-            inliers.clear();
-            for (size_t idx = 0; idx < ransac_n; ++idx) {
-                inliers.emplace_back(indices[idx]);
-            }
+    for (int itr = 0; itr < num_iterations; itr++) {
+        for (int i = 0; i < ransac_n; ++i) {
+            std::swap(indices[i], indices[rng() % num_points]);
         }
-        prev_inliers_num = inliers.size();
+        inliers.clear();
+        for (size_t idx = 0; idx < ransac_n; ++idx) {
+            inliers.emplace_back(indices[idx]);
+        }
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
-        for (int i = 0; i < num_model_parameters; ++i) {
-            inliers[i] = exchange(inliers[rng() % inliers.size()], indices[i]);
-        }
         plane_model = TriangleMesh::ComputeTrianglePlane(
                 points_[inliers[0]], points_[inliers[1]], points_[inliers[2]]);
         if (plane_model.isZero(0)) {
             continue;
         }
 
-        inliers.clear();
         error = 0;
-        for (int idx = 0; idx < points_.size(); ++idx) {
-            Eigen::Vector4d point(points_[idx](0), points_[idx](1),
-                                  points_[idx](2), 1);
-            double distance = std::abs(plane_model.dot(point));
-
-            if (distance < distance_threshold) {
-                error += distance;
-                inliers.emplace_back(idx);
-            }
-        }
-
-        auto this_result =
-                EvaluateRANSACBasedOnDistance(inliers, points_, error);
+        inliers.clear();
+        auto this_result = EvaluateRANSACBasedOnDistance(
+                points_, plane_model, inliers, distance_threshold, error);
         if (this_result.fitness_ > result.fitness_ ||
             (this_result.fitness_ == result.fitness_ &&
              this_result.inlier_rmse_ < result.inlier_rmse_)) {
@@ -159,7 +152,7 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
         }
     }
 
-    utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:.4f}, RMSE: {:.4f}",
+    utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
                       inliers.size(), result.fitness_, result.inlier_rmse_);
     return std::make_tuple(best_plane_model, inliers);
 }
