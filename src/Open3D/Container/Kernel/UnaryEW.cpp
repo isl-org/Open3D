@@ -73,5 +73,12 @@ void Copy(const Tensor& src, Tensor& dst) {
     }
 }
 
+void IndexedGet(const Tensor& src,
+                Tensor& dst,
+                const std::vector<Tensor>& indices) {}
+void IndexedSet(const Tensor& src,
+                Tensor& dst,
+                const std::vector<Tensor>& indices) {}
+
 }  // namespace kernel
 }  // namespace open3d

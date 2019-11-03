@@ -32,6 +32,7 @@
 namespace open3d {
 namespace kernel {
 
+/// Raw copy
 void CopyCPU(const Tensor& src, Tensor& dst);
 
 #ifdef BUILD_CUDA_MODULE
@@ -39,6 +40,32 @@ void CopyCUDA(const Tensor& src, Tensor& dst);
 #endif
 
 void Copy(const Tensor& src, Tensor& dst);
+
+/// dst = src[indices]
+void IndexedGetCPU(const Tensor& src,
+                   Tensor& dst,
+                   const std::vector<Tensor>& indices);
+#ifdef BUILD_CUDA_MODULE
+void IndexedGetCUDA(const Tensor& src,
+                    Tensor& dst,
+                    const std::vector<Tensor>& indices);
+#endif
+void IndexedGet(const Tensor& src,
+                Tensor& dst,
+                const std::vector<Tensor>& indices);
+
+/// dst[indices] = src
+void IndexedSetCPU(const Tensor& src,
+                   Tensor& dst,
+                   const std::vector<Tensor>& indices);
+#ifdef BUILD_CUDA_MODULE
+void IndexedSetCUDA(const Tensor& src,
+                    Tensor& dst,
+                    const std::vector<Tensor>& indices);
+#endif
+void IndexedSet(const Tensor& src,
+                Tensor& dst,
+                const std::vector<Tensor>& indices);
 
 }  // namespace kernel
 }  // namespace open3d

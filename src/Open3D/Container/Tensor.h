@@ -114,14 +114,11 @@ public:
 
     /// Advanced indexing getter and setter
     /// https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Indexing.cpp
-    /// In the initial implementation, we don't support mixed slices and
-    /// indices. Suppose tensor is (3, 4, 5)), we support:
-    /// tensor[[0, 1, 2], :, :]
-    /// tensor[:, [0, 1, 2], [2, 1, 3]],
-    /// tensor[[0, 1, 2], [2, 1, 3], [4, 1, 0]]
-    /// we do not support:
-    /// tensor([0, 1, 2], :, [4, 1, 0])
-    /// before transpose is implemented
+    /// We support combination of
+    /// None: (:, Tensor()),
+    /// Broadcasting: ([3], Tensor([3]))
+    /// Fancy indexing: ([3, 2, 4], Tensor([3, 2, 4]))
+    /// Note: now we only support 1D contiguous tensors
     Tensor Index(const std::vector<Tensor>& indices) const;
     void IndexPut(const std::vector<Tensor>& indices, const Tensor& value);
 

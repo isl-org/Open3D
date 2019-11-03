@@ -28,7 +28,6 @@
 #include "Open3D/Container/Dtype.h"
 #include "Open3D/Container/MemoryManager.h"
 #include "Open3D/Container/SizeVector.h"
-#include "Open3D/Container/Tensor.h"
 
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"
@@ -341,4 +340,26 @@ TEST_P(TensorPermuteDevices, CopyNonContiguous) {
     EXPECT_EQ(t_1_clone.GetStrides(), SizeVector({12, 8, 2}));
     EXPECT_EQ(t_1_clone.ToFlatVector<float>(),
               std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
+}
+
+TEST_P(TensorPermuteDevices, Index) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t[:, [0, 2, 1], [2, 1, 3]]
+    std::vector<int> index1 = {0, 2, 1};
+    std::vector<int> index2 = {2, 1, 3};
+    std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
+                                   Tensor(index1, {3}, Dtype::Int32, device),
+                                   Tensor(index2, {3}, Dtype::Int32, device)};
+
+    Tensor t_1 = t.Index(indices);
+    EXPECT_TRUE(t_1.IsContiguous());
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 3, 3}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({9, 3, 1}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({2, 9, 7, 14, 21, 19}));
 }

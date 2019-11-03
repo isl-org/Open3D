@@ -70,5 +70,12 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
     }
 }
 
+void IndexedGetCUDA(const Tensor& src,
+                    Tensor& dst,
+                    const std::vector<Tensor>& indices) {}
+void IndexedSetCUDA(const Tensor& src,
+                    Tensor& dst,
+                    const std::vector<Tensor>& indices) {}
+
 }  // namespace kernel
 }  // namespace open3d

@@ -32,6 +32,7 @@
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/Dispatch.h"
 #include "Open3D/Container/Dtype.h"
+#include "Open3D/Container/Indexing.h"
 #include "Open3D/Container/Kernel/Kernel.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Utility/Console.h"
@@ -187,74 +188,50 @@ Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
 }
 
 Tensor Tensor::Index(const std::vector<Tensor>& indices) const {
-    /// Example: t = tensor.zeros(3, 4, 5), indices = [:, [0, 2], :]
-
     /// Dimension check
     if (indices.size() > shape_.size()) {
         utility::LogError("Number of indices {} exceeds tensor dimension {}.",
                           indices.size(), shape_.size());
     }
 
-    /// Index tensor conversion
-    /// [:, [0, 2], :] => [Tensor(), Tensor([0, 2]), Tensor()]
+    utility::LogInfo("1st");
 
-    /// New contiguous tensor creation
-    /// new_shape = (3, 2, 5)
-    /// new_strides = (2*5, 5, 1)
-    /// new_tensor(new_shape, new_strides)
+    auto result = PreprocessIndexTensors(*this, indices);
+    auto preprocessed_indices = result.first;
+    auto output_shape = result.second;
 
-    /// OffsetCalculator(int dst_idx (of new tensor))
-    /// int src_idx = 0;
-    /// for (int dim = 0; dim < num_dims_; dim++) {
-    ///     int dim_idx = dst_idx / dst_strides_[dim];
-    ///     // here we assume stride of index tensors is 1
-    ///     // (also needs out-of-bound handling)
-    ///     dim_idx = indices[dim] == NULL ? dim_idx : indices[dim][dim_idx]
-    ///     dim_idx += dim_idx * src_strides_[dim];
+    utility::LogInfo("2");
 
-    ///     src_idx += tensor[dim] [dim_idx] * src_strides_[dim]
-    ///     dst_idx = dst_idx % dst_strides_[dim];
-    /// }
-    /// return src_idx;
+    /// Allocate tensor for a copy
+    Tensor dst = Tensor(output_shape, dtype_, device_);
 
-    /// Assignment:
-    /// new_tensor[dst_idx] = t[src_idx]
+    utility::LogInfo("3");
+    /// dst = *this[indices]
+    kernel::IndexedGet(*this, dst, preprocessed_indices);
+
+    utility::LogInfo("4");
+
+    return dst;
 }
 
 void Tensor::IndexPut(const std::vector<Tensor>& indices, const Tensor& value) {
-    /// Example: t = tensor.zeros(3, 4, 5), indices = [:, [0, 2], :]
-
     /// Dimension check
     if (indices.size() > shape_.size()) {
         utility::LogError("Number of indices {} exceeds tensor dimension {}.",
                           indices.size(), shape_.size());
     }
 
-    /// Index tensor conversion
-    /// [:, [0, 2], :] => [Tensor(), Tensor([0, 2]), Tensor()]
+    auto result = PreprocessIndexTensors(*this, indices);
+    auto preprocessed_indices = result.first;
+    auto value_shape = result.second;
 
-    /// New contiguous tensor creation
-    /// dst_shape = (3, 2, 5)
-    /// dst_strides = (2*5, 5, 1)
+    if (value_shape != value.GetShape()) {
+        utility::LogError("Indices and value shape mismatch ({} vs {}).",
+                          value_shape, value.GetShape());
+    }
 
-    /// assert dst_shape == value.shape (don't support broadcasting yet)
-
-    /// Assignment: OffsetCalculator(int dst_idx (of value))
-    /// int src_idx = 0;
-    /// for (int dim = 0; dim < num_dims_; dim++) {
-    ///     int dim_idx = dst_idx / dst_strides_[dim];
-    ///     // here we assume stride of index tensors is 1
-    ///     // (also needs out-of-bound handling)
-    ///     dim_idx = indices[dim] == NULL ? dim_idx : indices[dim][dim_idx]
-    ///     dim_idx += dim_idx * src_strides_[dim];
-
-    ///     src_idx += tensor[dim] [dim_idx] * src_strides_[dim]
-    ///     dst_idx = dst_idx % dst_strides_[dim];
-    /// }
-    /// return src_idx;
-
-    /// Assignment
-    /// t[src_idx] = value[dst_idx]
+    /// *this[indices] = value
+    kernel::IndexedSet(value, *this, preprocessed_indices);
 }
 
 }  // namespace open3d

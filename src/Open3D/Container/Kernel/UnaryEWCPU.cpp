@@ -59,5 +59,11 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
     }
 }
 
+void IndexedGetCPU(const Tensor& src,
+                   Tensor& dst,
+                   const std::vector<Tensor>& indices) {}
+void IndexedSetCPU(const Tensor& src,
+                   Tensor& dst,
+                   const std::vector<Tensor>& indices) {}
 }  // namespace kernel
 }  // namespace open3d
