@@ -82,6 +82,54 @@ RANSACResult EvaluateRANSACBasedOnDistance(
     return result;
 }
 
+// Find the plane such that the summed squared distance from the
+// plane to all points is minimized.
+//
+// Reference:
+// https://www.ilikebigbits.com/2015_03_04_plane_from_points.html
+Eigen::Vector4d GetPlaneFromPoints(const std::vector<Eigen::Vector3d> &points,
+                                   const std::vector<int> &inliers) {
+    Eigen::Vector3d centroid(0, 0, 0);
+    for (size_t idx : inliers) {
+        centroid += points[idx];
+    }
+    centroid /= double(inliers.size());
+
+    double xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+
+    for (size_t idx : inliers) {
+        Eigen::Vector3d r = points[idx] - centroid;
+        xx += r(0) * r(0);
+        xy += r(0) * r(1);
+        xz += r(0) * r(2);
+        yy += r(1) * r(1);
+        yz += r(1) * r(2);
+        zz += r(2) * r(2);
+    }
+
+    double det_x = yy * zz - yz * yz;
+    double det_y = xx * zz - xz * xz;
+    double det_z = xx * yy - xy * xy;
+
+    Eigen::Vector3d abc;
+    if (det_x > det_y && det_x > det_z) {
+        abc = Eigen::Vector3d(det_x, xz * yz - xy * zz, xy * yz - xz * yy);
+    } else if (det_y > det_z) {
+        abc = Eigen::Vector3d(xz * yz - xy * zz, det_y, xy * xz - yz * xx);
+    } else {
+        abc = Eigen::Vector3d(xy * yz - xz * yy, xy * xz - yz * xx, det_z);
+    }
+
+    double norm = abc.norm();
+    // Return invalid plane if the points don't span a plane.
+    if (norm == 0) {
+        return Eigen::Vector4d(0, 0, 0, 0);
+    }
+    abc /= abc.norm();
+    double d = -abc.dot(centroid);
+    return Eigen::Vector4d(abc(0), abc(1), abc(2), d);
+}
+
 std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
@@ -104,7 +152,7 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
     std::random_device rd;
     std::mt19937 rng(rd());
 
-    // Return if ransac_n less than the required plane model parameters.
+    // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
         utility::LogError(
                 "ransac_n should be set to higher than or equal to 3.");
@@ -151,6 +199,9 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
             inliers.emplace_back(idx);
         }
     }
+
+    // Improve best_plane_model using the final inliers.
+    best_plane_model = GetPlaneFromPoints(points_, inliers);
 
     utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
                       inliers.size(), result.fitness_, result.inlier_rmse_);
