@@ -72,7 +72,9 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
 
 void IndexedGetCUDA(const Tensor& src,
                     Tensor& dst,
-                    const std::vector<Tensor>& indices) {}
+                    const std::vector<Tensor>& indices,
+                    const SizeVector& indexing_shape) {}
+
 void IndexedSetCUDA(const Tensor& src,
                     Tensor& dst,
                     const std::vector<Tensor>& indices) {}

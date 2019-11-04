@@ -194,22 +194,20 @@ Tensor Tensor::Index(const std::vector<Tensor>& indices) const {
                           indices.size(), shape_.size());
     }
 
-    utility::LogInfo("1st");
+    std::vector<Tensor> preprocessed_indices;
+    SizeVector output_shape;
+    SizeVector indexing_shape;
+    std::tie(preprocessed_indices, output_shape, indexing_shape) =
+            PreprocessIndexTensors(*this, indices);
 
-    auto result = PreprocessIndexTensors(*this, indices);
-    auto preprocessed_indices = result.first;
-    auto output_shape = result.second;
-
-    utility::LogInfo("2");
+    utility::LogInfo("output_shape: {}, indexing_shape: {}", output_shape,
+                     indexing_shape);
 
     /// Allocate tensor for a copy
     Tensor dst = Tensor(output_shape, dtype_, device_);
 
-    utility::LogInfo("3");
     /// dst = *this[indices]
-    kernel::IndexedGet(*this, dst, preprocessed_indices);
-
-    utility::LogInfo("4");
+    kernel::IndexedGet(*this, dst, preprocessed_indices, indexing_shape);
 
     return dst;
 }
@@ -221,13 +219,15 @@ void Tensor::IndexPut(const std::vector<Tensor>& indices, const Tensor& value) {
                           indices.size(), shape_.size());
     }
 
-    auto result = PreprocessIndexTensors(*this, indices);
-    auto preprocessed_indices = result.first;
-    auto value_shape = result.second;
+    std::vector<Tensor> preprocessed_indices;
+    SizeVector output_shape;
+    SizeVector indexing_shape;
+    std::tie(preprocessed_indices, output_shape, indexing_shape) =
+            PreprocessIndexTensors(*this, indices);
 
-    if (value_shape != value.GetShape()) {
+    if (output_shape != value.GetShape()) {
         utility::LogError("Indices and value shape mismatch ({} vs {}).",
-                          value_shape, value.GetShape());
+                          output_shape, value.GetShape());
     }
 
     /// *this[indices] = value

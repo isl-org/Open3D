@@ -75,7 +75,13 @@ void Copy(const Tensor& src, Tensor& dst) {
 
 void IndexedGet(const Tensor& src,
                 Tensor& dst,
-                const std::vector<Tensor>& indices) {}
+                const std::vector<Tensor>& indices,
+                const SizeVector& indexing_shape) {
+    if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
+        dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
+        IndexedGetCPU(src, dst, indices, indexing_shape);
+    }
+}
 void IndexedSet(const Tensor& src,
                 Tensor& dst,
                 const std::vector<Tensor>& indices) {}

@@ -44,15 +44,18 @@ void Copy(const Tensor& src, Tensor& dst);
 /// dst = src[indices]
 void IndexedGetCPU(const Tensor& src,
                    Tensor& dst,
-                   const std::vector<Tensor>& indices);
+                   const std::vector<Tensor>& indices,
+                   const SizeVector& indexing_shape);
 #ifdef BUILD_CUDA_MODULE
 void IndexedGetCUDA(const Tensor& src,
                     Tensor& dst,
-                    const std::vector<Tensor>& indices);
+                    const std::vector<Tensor>& indices,
+                    const SizeVector& indexing_shape);
 #endif
 void IndexedGet(const Tensor& src,
                 Tensor& dst,
-                const std::vector<Tensor>& indices);
+                const std::vector<Tensor>& indices,
+                const SizeVector& indexing_shape);
 
 /// dst[indices] = src
 void IndexedSetCPU(const Tensor& src,

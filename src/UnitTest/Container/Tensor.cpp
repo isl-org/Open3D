@@ -349,17 +349,17 @@ TEST_P(TensorPermuteDevices, Index) {
                             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
     Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
 
-    // t[:, [0, 2, 1], [2, 1, 3]]
-    std::vector<int> index1 = {0, 2, 1};
-    std::vector<int> index2 = {2, 1, 3};
+    // t[:, [1], [0, 2, 1]]
+    std::vector<int> index1 = {1};
+    std::vector<int> index2 = {0, 2, 1};
     std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
-                                   Tensor(index1, {3}, Dtype::Int32, device),
+                                   Tensor(index1, {1}, Dtype::Int32, device),
                                    Tensor(index2, {3}, Dtype::Int32, device)};
 
     Tensor t_1 = t.Index(indices);
     EXPECT_TRUE(t_1.IsContiguous());
-    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 3, 3}));
-    EXPECT_EQ(t_1.GetStrides(), SizeVector({9, 3, 1}));
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 1, 3}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({3, 3, 1}));
     EXPECT_EQ(t_1.ToFlatVector<float>(),
-              std::vector<float>({2, 9, 7, 14, 21, 19}));
+              std::vector<float>({4, 6, 5, 16, 18, 17}));
 }

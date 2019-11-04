@@ -28,20 +28,19 @@
 #include "Tensor.h"
 
 namespace open3d {
-std::pair<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
+std::tuple<std::vector<Tensor>, SizeVector, SizeVector> PreprocessIndexTensors(
         const Tensor& tensor, const std::vector<Tensor>& indices) {
-    std::vector<Tensor> output_indices;
+    std::vector<Tensor> output_indices = indices;
     SizeVector output_shape;
+    SizeVector indexing_shape;
 
     size_t non_trivial_index_size = 0;
     const auto& tensor_shape = tensor.GetShape();
 
-    utility::LogInfo("tensor_shape {}", tensor_shape);
     size_t i = 0;
     for (; i < indices.size(); ++i) {
         const Tensor& index = indices[i];
         const auto& index_shape = index.GetShape();
-        utility::LogInfo("iteration {}, shape {}", i, index_shape);
 
         if (!index.IsContiguous()) {
             utility::LogError("Only contiguous indexing tensors are supported");
@@ -56,6 +55,7 @@ std::pair<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         /// 0-d indexing tensor: all elements (no element)
         if (index_shape.size() == 0 || index_shape[0] == 0) {
             output_shape.emplace_back(tensor_shape[i]);
+            indexing_shape.emplace_back(0);
         }
 
         /// 1-d indexing tensor: broadcasting (one element)
@@ -64,6 +64,7 @@ std::pair<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
             auto index_size = index_shape[0];
             if (index_size == 1) {
                 output_shape.emplace_back(1);
+                indexing_shape.emplace_back(1);
             } else {
                 if (non_trivial_index_size != 0 &&
                     non_trivial_index_size != index_size) {
@@ -75,19 +76,19 @@ std::pair<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
                     non_trivial_index_size = index_size;
                 }
                 output_shape.emplace_back(non_trivial_index_size);
+                indexing_shape.emplace_back(non_trivial_index_size);
             }
-
-            output_indices.emplace_back(index);
         }
     }
 
     Tensor empty_index = Tensor(SizeVector(), Dtype::Int32, tensor.GetDevice());
     for (; i < tensor_shape.size(); ++i) {
         output_shape.emplace_back(tensor_shape[i]);
+        indexing_shape.emplace_back(0);
         output_indices.emplace_back(empty_index);
     }
 
-    return std::make_pair(output_indices, output_shape);
+    return std::make_tuple(output_indices, output_shape, indexing_shape);
 }
 
 }  // namespace open3d

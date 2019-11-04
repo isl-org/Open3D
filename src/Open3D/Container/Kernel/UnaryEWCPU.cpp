@@ -61,7 +61,15 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
 
 void IndexedGetCPU(const Tensor& src,
                    Tensor& dst,
-                   const std::vector<Tensor>& indices) {}
+                   const std::vector<Tensor>& indices,
+                   const SizeVector& indexing_shape) {
+    Dtype dtype = src.GetDtype();
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        CPULauncher::LaunchIndexedUnaryEWKernel<scalar_t>(
+                src, dst, indices, indexing_shape,
+                CPUCopyElementKernel<scalar_t>);
+    });
+}
 void IndexedSetCPU(const Tensor& src,
                    Tensor& dst,
                    const std::vector<Tensor>& indices) {}
