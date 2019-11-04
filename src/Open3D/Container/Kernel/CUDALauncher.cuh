@@ -96,12 +96,14 @@ public:
     public:
         IndexedOffsetCalculator(
                 const std::vector<size_t>& src_strides,
+                const std::vector<size_t>& src_shape,
                 const std::vector<size_t>& dst_strides,
                 const std::vector<size_t>& indexing_shapes,
                 const std::vector<const int*>& indexing_tensor_data_ptrs)
             : num_dims_(src_strides.size()) {
             for (int i = 0; i < num_dims_; i++) {
                 src_strides_[i] = static_cast<int>(src_strides[i]);
+                src_shape_[i] = static_cast<int>(src_shape[i]);
                 dst_strides_[i] = static_cast<int>(dst_strides[i]);
                 indexing_shapes_[i] = static_cast<int>(indexing_shapes[i]);
                 indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
@@ -111,20 +113,22 @@ public:
         OPEN3D_HOST_DEVICE int GetOffset(size_t thread_idx) const {
             size_t output_idx = 0;
             for (size_t dim = 0; dim < num_dims_; dim++) {
-                size_t dim_idx = thread_idx / dst_strides_[dim];
+                int64_t dim_idx = thread_idx / dst_strides_[dim];
                 size_t dim_size = indexing_shapes_[dim];
 
-                if (dim_size == 0) {
-                    output_idx += dim_idx * src_strides_[dim];
-                } else if (dim_size == 1) {
-                    // TODO assert, negative indexing; reduce dimension
-                    output_idx += indexing_tensor_data_ptrs_[dim][0] *
-                                  src_strides_[dim];
-                } else {
-                    // TODO assert, negative indexing
-                    output_idx += indexing_tensor_data_ptrs_[dim][dim_idx] *
-                                  src_strides_[dim];
-                }
+                // clang-format off
+                dim_idx = (dim_size == 0) ?
+                  dim_idx
+                  : ((dim_size == 1)
+                     ? indexing_tensor_data_ptrs_[dim][0]
+                     : indexing_tensor_data_ptrs_[dim][dim_idx]);
+                // clang-format on
+
+                assert(dim_idx >= -(int64_t)src_shape_[dim] &&
+                       dim_idx < (int64_t)src_shape_[dim]);
+                dim_idx = (dim_idx >= 0) ? dim_idx : src_shape_[dim] + dim_idx;
+
+                output_idx += dim_idx * src_strides_[dim];
                 thread_idx = thread_idx % dst_strides_[dim];
             }
             return output_idx;
@@ -133,6 +137,7 @@ public:
     protected:
         int num_dims_;
         int src_strides_[MAX_DIMS];
+        int src_shape_[MAX_DIMS];
         int dst_strides_[MAX_DIMS];
         int indexing_shapes_[MAX_DIMS];
         const int* indexing_tensor_data_ptrs_[MAX_DIMS];
@@ -185,8 +190,8 @@ public:
         }
 
         IndexedOffsetCalculator src_offset_calculator(
-                src.GetStrides(), dst.GetStrides(), indexing_shapes,
-                indexing_tensor_data_ptrs);
+                src.GetStrides(), src.GetShape(), dst.GetStrides(),
+                indexing_shapes, indexing_tensor_data_ptrs);
 
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());

@@ -351,7 +351,7 @@ TEST_P(TensorPermuteDevices, Index) {
 
     // t[:, [1], [0, 2, 1]]
     std::vector<int> index1 = {1};
-    std::vector<int> index2 = {0, 2, 1};
+    std::vector<int> index2 = {0, 2, -1};
     std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
                                    Tensor(index1, {1}, Dtype::Int32, device),
                                    Tensor(index2, {3}, Dtype::Int32, device)};
@@ -361,5 +361,5 @@ TEST_P(TensorPermuteDevices, Index) {
     EXPECT_EQ(t_1.GetShape(), SizeVector({2, 1, 3}));
     EXPECT_EQ(t_1.GetStrides(), SizeVector({3, 3, 1}));
     EXPECT_EQ(t_1.ToFlatVector<float>(),
-              std::vector<float>({4, 6, 5, 16, 18, 17}));
+              std::vector<float>({4, 6, 7, 16, 18, 19}));
 }
