@@ -209,14 +209,12 @@ public:
                                           bool center = true) override;
     /// \brief Apply rotation to the geometry coordinates and normals.
     ///
-    /// \param rotation -  A 3D vector that either defines the three angles for
+    /// \param R -  A 3D vector that either defines the three angles for
     /// Euler rotation, or in the axis-angle representation the normalized
     /// vector defines the axis of rotation and the norm the angle around this
     /// axis.
     /// \param center -  If `true`, then the rotation is applied to the
     /// centered geometry.
-    /// \param type - Type of rotation, i.e., an Euler
-    /// format, or axis-angle.
     virtual AxisAlignedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                            bool center = true) override;
 
