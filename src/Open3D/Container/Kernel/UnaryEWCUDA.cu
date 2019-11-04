@@ -73,7 +73,17 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
 void IndexedGetCUDA(const Tensor& src,
                     Tensor& dst,
                     const std::vector<Tensor>& indices,
-                    const SizeVector& indexing_shape) {}
+                    const SizeVector& indexing_shape) {
+    Dtype dtype = src.GetDtype();
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        CUDALauncher::LaunchIndexedUnaryEWKernel<scalar_t>(
+                src, dst, indices, indexing_shape,
+                // Need to wrap as extended CUDA lamba function
+                [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                    CUDACopyElementKernel<scalar_t>(src, dst);
+                });
+    });
+}
 
 void IndexedSetCUDA(const Tensor& src,
                     Tensor& dst,

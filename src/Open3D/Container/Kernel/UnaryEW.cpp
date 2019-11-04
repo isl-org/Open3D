@@ -79,7 +79,13 @@ void IndexedGet(const Tensor& src,
                 const SizeVector& indexing_shape) {
     if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
         dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
+        utility::LogInfo("CPU");
         IndexedGetCPU(src, dst, indices, indexing_shape);
+
+    } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
+               dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
+        utility::LogInfo("Cuda");
+        IndexedGetCUDA(src, dst, indices, indexing_shape);
     }
 }
 void IndexedSet(const Tensor& src,

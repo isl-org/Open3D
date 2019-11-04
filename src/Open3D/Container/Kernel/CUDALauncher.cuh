@@ -92,6 +92,52 @@ public:
         int dst_strides_[MAX_DIMS];
     };
 
+    class IndexedOffsetCalculator {
+    public:
+        IndexedOffsetCalculator(
+                const std::vector<size_t>& src_strides,
+                const std::vector<size_t>& dst_strides,
+                const std::vector<size_t>& indexing_shapes,
+                const std::vector<const int*>& indexing_tensor_data_ptrs)
+            : num_dims_(src_strides.size()) {
+            for (int i = 0; i < num_dims_; i++) {
+                src_strides_[i] = static_cast<int>(src_strides[i]);
+                dst_strides_[i] = static_cast<int>(dst_strides[i]);
+                indexing_shapes_[i] = static_cast<int>(indexing_shapes[i]);
+                indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
+            }
+        }
+
+        OPEN3D_HOST_DEVICE int GetOffset(size_t thread_idx) const {
+            size_t output_idx = 0;
+            for (size_t dim = 0; dim < num_dims_; dim++) {
+                size_t dim_idx = thread_idx / dst_strides_[dim];
+                size_t dim_size = indexing_shapes_[dim];
+
+                if (dim_size == 0) {
+                    output_idx += dim_idx * src_strides_[dim];
+                } else if (dim_size == 1) {
+                    // TODO assert, negative indexing; reduce dimension
+                    output_idx += indexing_tensor_data_ptrs_[dim][0] *
+                                  src_strides_[dim];
+                } else {
+                    // TODO assert, negative indexing
+                    output_idx += indexing_tensor_data_ptrs_[dim][dim_idx] *
+                                  src_strides_[dim];
+                }
+                thread_idx = thread_idx % dst_strides_[dim];
+            }
+            return output_idx;
+        }
+
+    protected:
+        int num_dims_;
+        int src_strides_[MAX_DIMS];
+        int dst_strides_[MAX_DIMS];
+        int indexing_shapes_[MAX_DIMS];
+        const int* indexing_tensor_data_ptrs_[MAX_DIMS];
+    };
+
 public:
     template <typename scalar_t, typename func_t>
     static void LaunchUnaryEWKernel(const Tensor& src,
@@ -111,6 +157,43 @@ public:
 
         auto f = [=] OPEN3D_HOST_DEVICE(int dst_idx) {
             int src_idx = offset_calculator.GetOffset(dst_idx);
+            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
+            element_kernel(src_ptr, dst_ptr);
+        };
+
+        ElementWiseKernel<threads_per_block, items_per_thread>
+                <<<grid_size, threads_per_block, 0>>>(N, f);
+    }
+
+    template <typename scalar_t, typename func_t>
+    static void LaunchIndexedUnaryEWKernel(const Tensor& src,
+                                           Tensor& dst,
+                                           const std::vector<Tensor>& indices,
+                                           const SizeVector& indexing_shapes,
+                                           func_t element_kernel) {
+        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+        int N = static_cast<int>(dst.GetShape().NumElements());
+        int items_per_block = threads_per_block * items_per_thread;
+        int grid_size = (N + items_per_block - 1) / items_per_block;
+
+        std::vector<const int*> indexing_tensor_data_ptrs;
+        for (int i = 0; i < indices.size(); ++i) {
+            auto index_tensor_ptr =
+                    static_cast<const int*>(indices[i].GetDataPtr());
+            indexing_tensor_data_ptrs.push_back(index_tensor_ptr);
+        }
+
+        IndexedOffsetCalculator src_offset_calculator(
+                src.GetStrides(), dst.GetStrides(), indexing_shapes,
+                indexing_tensor_data_ptrs);
+
+        const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
+        char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
+        int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+
+        auto f = [=] OPEN3D_HOST_DEVICE(int dst_idx) {
+            int src_idx = src_offset_calculator.GetOffset(dst_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
