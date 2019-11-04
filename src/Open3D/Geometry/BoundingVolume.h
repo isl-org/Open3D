@@ -85,7 +85,7 @@ public:
     /// Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-    /// Apply translation to the geometry coordinates.
+    /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation - A 3D vector to transform the geometry.
     /// \param relative - If `true`, the translation vector is directly added to
@@ -93,7 +93,7 @@ public:
     /// translation vector.
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
-    /// Apply scaling to the geometry coordinates.
+    /// \brief Apply scaling to the geometry coordinates.
     ///
     /// \param scale -  The scale parameter that is multiplied to the
     /// points/vertices of the geometry.
@@ -101,7 +101,7 @@ public:
     /// geometry.
     virtual OrientedBoundingBox& Scale(const double scale,
                                        bool center = true) override;
-    /// Apply rotation to the geometry coordinates and normals.
+    /// \brief Apply rotation to the geometry coordinates and normals.
     ///
     /// \param R - A 3D vector that either defines the three angles for Euler
     /// rotation, or in the axis-angle representation the normalized vector
@@ -192,7 +192,7 @@ public:
     /// Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-    /// Apply translation to the geometry coordinates.
+    /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation - A 3D vector to transform the geometry.
     /// \param relative - If `true`, the translation vector is directly added to
@@ -200,14 +200,14 @@ public:
     /// translation vector.
     virtual AxisAlignedBoundingBox& Translate(
             const Eigen::Vector3d& translation, bool relative = true) override;
-    /// Apply scaling to the geometry coordinates.
+    /// \brief Apply scaling to the geometry coordinates.
     ///
     /// \param scale - The scale parameter that is multiplied to the
     /// points/vertices of the geometry. \param center - If `true`, then the
     /// scale is applied to the centered geometry.
     virtual AxisAlignedBoundingBox& Scale(const double scale,
                                           bool center = true) override;
-    /// Apply rotation to the geometry coordinates and normals.
+    /// \brief Apply rotation to the geometry coordinates and normals.
     ///
     /// \param rotation -  A 3D vector that either defines the three angles for
     /// Euler rotation, or in the axis-angle representation the normalized
