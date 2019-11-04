@@ -56,7 +56,7 @@ public:
         HalfEdgeTriangleMesh = 7,
         /// Image
         Image = 8,
-        /// RGBDImage's
+        /// RGBDImage
         RGBDImage = 9,
         /// TetraMesh
         TetraMesh = 10,
@@ -73,7 +73,7 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type - Specifies the type of geometry of the object constructed.
-    /// \param type - specifies whether the dimension is 2D or 3D.
+    /// \param dimension - specifies whether the dimension is 2D or 3D.
     Geometry(GeometryType type, int dimension)
         : geometry_type_(type), dimension_(dimension) {}
 
@@ -88,9 +88,9 @@ public:
     int Dimension() const { return dimension_; }
 
 private:
-    /// Type of geometry from GeometryType
+    /// Type of geometry from GeometryType.
     GeometryType geometry_type_ = GeometryType::Unspecified;
-    /// Number of dimensions of the object
+    /// Number of dimensions of the object.
     int dimension_ = 3;
 };
 

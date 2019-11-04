@@ -68,9 +68,9 @@ public:
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
     /// Returns an oriented bounding box of the geometry.
     virtual OrientedBoundingBox GetOrientedBoundingBox() const = 0;
-    /// Apply transformation (4x4 matrix) to the geometry coordinates.
+    /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
-    /// Apply translation to the geometry coordinates.
+    /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation - A 3D vector to transform the geometry.
     /// \param relative - If `true`, the translation vector is directly added to
@@ -78,14 +78,14 @@ public:
     /// translation vector.
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation,
                                   bool relative = true) = 0;
-    /// Apply scaling to the geometry coordinates.
+    /// \brief Apply scaling to the geometry coordinates.
     ///
     /// \param scale -  The scale parameter that is multiplied to the
     /// points/vertices of the geometry.
     /// \param center - If `true`, then the scale is applied to the centered
     /// geometry.
     virtual Geometry3D& Scale(const double scale, bool center = true) = 0;
-    /// Apply rotation to the geometry coordinates and normals.
+    /// \brief Apply rotation to the geometry coordinates and normals.
     ///
     /// \param R - A 3D vector that either defines the three angles for Euler
     /// rotation, or in the axis-angle representation the normalized vector
