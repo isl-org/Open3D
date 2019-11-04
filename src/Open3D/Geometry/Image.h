@@ -56,7 +56,9 @@ public:
     ///
     /// \brief Specifies whether or not all the colors have equal intensity.
     enum class ColorToIntensityConversionType {
+        /// All colors are equal.
         Equal,
+        /// All colors have a weighted intensity.
         Weighted,
     };
 
@@ -64,10 +66,15 @@ public:
     ///
     /// \brief Specifies the Image filter type.
     enum class FilterType {
+        /// Gaussian filter of 3 width.
         Gaussian3,
+        /// Gaussian filter of 5 width.
         Gaussian5,
+        /// Gaussian filter of 7 width.
         Gaussian7,
+        /// Sobel filter along X-axis.
         Sobel3Dx,
+        /// Sobel filter along Y-axis.
         Sobel3Dy
     };
 
@@ -76,15 +83,15 @@ public:
     ~Image() override {}
 
 public:
-    /// Clear all elements in the geometry.
     Image &Clear() override;
-    /// Returns `true`` iff the geometry is empty.
     bool IsEmpty() const override;
-    /// Returns min bounds for geometry coordinates.
     Eigen::Vector2d GetMinBound() const override;
-    /// Returns max bounds for geometry coordinates.
     Eigen::Vector2d GetMaxBound() const override;
     /// Returns `true` if the u, v lies within the image boundary.
+    ///
+    /// \param u is the x-coordinate value.
+    /// \param v is the y-coordinate value
+    /// \param inner_margin is the margiin from the image boundary.
     bool TestImageBoundary(double u, double v, double inner_margin = 0.0) const;
 
 public:
