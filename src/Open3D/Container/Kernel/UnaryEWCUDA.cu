@@ -42,12 +42,11 @@ static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
 
 void CopyCUDA(const Tensor& src, Tensor& dst) {
     // It has been checked that
-    // - src and dst have the same shape, dtype, and dst
-    // - dst must be contiguous
+    // - src and dst have the same shape, dtype
     // - at least one of src or dst is CUDA device
     SizeVector shape = src.GetShape();
     Dtype dtype = src.GetDtype();
-    if (src.IsContiguous()) {
+    if (src.IsContiguous() && dst.IsContiguous()) {
         MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
                               src.GetDataPtr(), src.GetDevice(),
                               DtypeUtil::ByteSize(dtype) * shape.NumElements());

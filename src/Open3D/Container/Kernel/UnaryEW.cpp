@@ -40,12 +40,6 @@ void Copy(const Tensor& src, Tensor& dst) {
                           src.GetShape().ToString(), dst.GetShape().ToString());
     }
 
-    // Check strides
-    // TODO: currently we require dst to be contiguous
-    if (!dst.IsContiguous()) {
-        utility::LogError("Unimplemented: dst must be contiguous");
-    }
-
     // Check dtype
     // TODO: in the future, we may want to allow automatic casting
     if (src.GetDtype() != dst.GetDtype()) {
