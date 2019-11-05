@@ -84,8 +84,10 @@ void IndexedGet(const Tensor& src,
 
     } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
                dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
         utility::LogInfo("Cuda");
         IndexedGetCUDA(src, dst, indices, indexing_shape);
+#endif
     }
 }
 void IndexedSet(const Tensor& src,
