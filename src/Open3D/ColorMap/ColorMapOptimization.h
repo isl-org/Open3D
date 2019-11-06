@@ -133,23 +133,22 @@ public:
     int invisible_vertex_color_knn_;
 };
 
-/// \fn ColorMapOptimization
-///
-/// \brief Function for color mapping of reconstructed scenes via optimization
+/// \brief Function for color mapping of reconstructed scenes via optimization.
 ///
 /// This is implementation of following paper
 /// Q.-Y. Zhou and V. Koltun,
 /// Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
 /// SIGGRAPH 2014.
+///
+/// \param mesh - The input geometry mesh.
+/// \param imgs_rgbd - A list of RGBDImages seen by cameras.
+/// \param camera - Cameras’ parameters.
+/// \param option - Color map optimization options. Takes the original
+/// ColorMapOptimizationOption values by default.
 void ColorMapOptimization(
-        /// The input geometry mesh.
         geometry::TriangleMesh& mesh,
-        ///  A list of RGBDImages seen by cameras.
         const std::vector<std::shared_ptr<geometry::RGBDImage>>& imgs_rgbd,
-        /// Cameras’ parameters.
         camera::PinholeCameraTrajectory& camera,
-        /// Color map optimization options. Takes the original
-        /// ColorMapOptimizationOption values by default.
         const ColorMapOptimizationOption& option =
                 ColorMapOptimizationOption());
 }  // namespace color_map
