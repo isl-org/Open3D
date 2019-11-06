@@ -177,10 +177,10 @@ void pybind_color_map_methods(py::module &m) {
     m.def("color_map_optimization", &color_map::ColorMapOptimization,
           "Function for color mapping of reconstructed scenes via "
           "optimization, "
-          "This is implementation of following paper Q.-Y. Zhou and V. Koltun, "
+          "This is implementation of following by paper Q-Y Zhou and V Koltun: "
           "Color Map "
           "optimization for 3D Reconstruction with Consumer Depth Cameras, "
-          "SIGGRAPH 2014."
+          "SIGGRAPH 2014.",
           "mesh"_a,
           "imgs_rgbd"_a, "camera"_a,
           "option"_a = color_map::ColorMapOptimizationOption());
