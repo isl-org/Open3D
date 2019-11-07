@@ -181,8 +181,7 @@ void pybind_color_map_methods(py::module &m) {
           "Color Map "
           "optimization for 3D Reconstruction with Consumer Depth Cameras, "
           "SIGGRAPH 2014.",
-          "mesh"_a,
-          "imgs_rgbd"_a, "camera"_a,
+          "mesh"_a, "imgs_rgbd"_a, "camera"_a,
           "option"_a = color_map::ColorMapOptimizationOption());
     docstring::FunctionDocInject(
             m, "color_map_optimization",

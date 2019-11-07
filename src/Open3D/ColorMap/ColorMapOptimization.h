@@ -140,10 +140,10 @@ public:
 /// Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
 /// SIGGRAPH 2014.
 ///
-/// \param mesh - The input geometry mesh.
-/// \param imgs_rgbd - A list of RGBDImages seen by cameras.
-/// \param camera - Cameras’ parameters.
-/// \param option - Color map optimization options. Takes the original
+/// \param mesh The input geometry mesh.
+/// \param imgs_rgbd A list of RGBDImages seen by cameras.
+/// \param camera Cameras’ parameters.
+/// \param option Color map optimization options. Takes the original
 /// ColorMapOptimizationOption values by default.
 void ColorMapOptimization(
         geometry::TriangleMesh& mesh,
