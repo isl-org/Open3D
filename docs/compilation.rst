@@ -10,8 +10,8 @@ Conda.
 
 The basic tools needed are `git <https://git-scm.com/>`_,
 `CMake <https://cmake.org/>`_, and **a non-ancient C++ compiler** that supports
-C++11, such as gcc 4.8+, Visual Studio 2015 update 3+, or XCode 8.0+. If Python
-binding is needed, make sure Python 2.7 or 3.5+ is installed.
+C++11, such as GCC 5.x or newer, Visual Studio 2015 update 3+, or XCode 8.0+. If
+Python binding is needed, make sure Python 2.7 or 3.5+ is installed.
 
 Download source code from the `repository <https://github.com/intel-isl/Open3D>`_.
 

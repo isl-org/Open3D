@@ -30,7 +30,7 @@ Most importantly, do not break the build. Before submitting a pull request, make
 
 * Windows, Visual Studio 2015 update 3+, CMake 3.0+
 * OS X, Clang included in the latest Xcode, CMake 3.0+
-* Ubuntu 16.04, native gcc (4.8+ or 5.x), CMake 3.0+
+* Ubuntu 16.04, GCC 5.x or newer, CMake 3.0+
 
 For C++ code, it is recommended to use C++11 features. However, do not use C++14 or C++17 features since some of them are not properly supported by mainstream compilers.
 
