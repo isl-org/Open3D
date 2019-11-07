@@ -47,7 +47,7 @@ enum class PinholeCameraIntrinsicParameters {
 
 /// \class PinholeCameraIntrinsic
 ///
-/// \brief Contains the intrinsic pinhole camera parameters.
+/// \brief Contains the pinhole camera intrinsic parameters.
 class PinholeCameraIntrinsic : public utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
@@ -59,12 +59,12 @@ public:
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);
     /// \brief Parameterized Constructor.
     ///
-    /// \param width - width of the image.
-    /// \param height - height of the image.
-    /// \param fx - focal length along the X-axis.
-    /// \param fy - focal length along the Y-axis.
-    /// \param cx - principal point of the X-axis.
-    /// \param cy - principal point of the Y-axis.
+    /// \param width width of the image.
+    /// \param height height of the image.
+    /// \param fx focal length along the X-axis.
+    /// \param fy focal length along the Y-axis.
+    /// \param cx principal point of the X-axis.
+    /// \param cy principal point of the Y-axis.
     PinholeCameraIntrinsic(
             int width, int height, double fx, double fy, double cx, double cy);
     ~PinholeCameraIntrinsic() override;
@@ -100,7 +100,7 @@ public:
         return std::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
     }
 
-    /// Returns the skew
+    /// Returns the skew.
     double GetSkew() const { return intrinsic_matrix_(0, 1); }
 
     /// Returns `true` iff both the width and height are greater than 0.
