@@ -72,25 +72,25 @@ public:
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
     /// \brief Apply translation to the geometry coordinates.
     ///
-    /// \param translation - A 3D vector to transform the geometry.
-    /// \param relative - If `true`, the translation vector is directly added to
+    /// \param translation A 3D vector to transform the geometry.
+    /// \param relative If `true`, the translation vector is directly added to
     /// the geometry coordinates. Otherwise, the center is moved to the
     /// translation vector.
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation,
                                   bool relative = true) = 0;
     /// \brief Apply scaling to the geometry coordinates.
     ///
-    /// \param scale -  The scale parameter that is multiplied to the
+    /// \param scale  The scale parameter that is multiplied to the
     /// points/vertices of the geometry.
-    /// \param center - If `true`, then the scale is applied to the centered
+    /// \param center If `true`, then the scale is applied to the centered
     /// geometry.
     virtual Geometry3D& Scale(const double scale, bool center = true) = 0;
     /// \brief Apply rotation to the geometry coordinates and normals.
     ///
-    /// \param R - A 3D vector that either defines the three angles for Euler
+    /// \param R A 3D vector that either defines the three angles for Euler
     /// rotation, or in the axis-angle representation the normalized vector
     /// defines the axis of rotation and the norm the angle around this axis.
-    /// \param center - If `true`, then the rotation is applied to the centered
+    /// \param center If `true`, then the rotation is applied to the centered
     /// geometry.
     virtual Geometry3D& Rotate(const Eigen::Matrix3d& R,
                                bool center = true) = 0;
@@ -121,13 +121,13 @@ public:
             const Eigen::Vector4d& rotation);
 
 protected:
-    /// Compute min bound of a set points.
+    /// Compute min bound of a list points.
     Eigen::Vector3d ComputeMinBound(
             const std::vector<Eigen::Vector3d>& points) const;
-    /// Compute max bound of a set points.
+    /// Compute max bound of a list points.
     Eigen::Vector3d ComputeMaxBound(
             const std::vector<Eigen::Vector3d>& points) const;
-    /// Computer center of a set of points.
+    /// Computer center of a list of points.
     Eigen::Vector3d ComputeCenter(
             const std::vector<Eigen::Vector3d>& points) const;
 
@@ -135,32 +135,64 @@ protected:
     ///
     /// \brief Resizes the colors vector and paints a uniform color.
     ///
-    /// \param colors - An array of eigen vectors specifies colors in RGB.
-    /// \param size - The resultant size of the colors array.
-    /// \param color - The final color in which the colors will be painted.
+    /// \param colors An array of eigen vectors specifies colors in RGB.
+    /// \param size The resultant size of the colors array.
+    /// \param color The final color in which the colors will be painted.
     void ResizeAndPaintUniformColor(std::vector<Eigen::Vector3d>& colors,
                                     const size_t size,
                                     const Eigen::Vector3d& color) const;
 
-    /// Transforms all points along the transformation matrix.
+    /// \brief Transforms all points with the transformation matrix.
+    ///
+    /// \param transformation 4x4 matrix for transformation.
+    /// \param points A list of points to be transformed.
     void TransformPoints(const Eigen::Matrix4d& transformation,
                          std::vector<Eigen::Vector3d>& points) const;
-    /// Transforms all normals along the transformation matrix.
+    /// \brief Transforms the normals with the transformation matrix.
+    ///
+    /// \param transformation 4x4 matrix for transformation.
+    /// \param normals A list of normals to be transformed.
     void TransformNormals(const Eigen::Matrix4d& transformation,
                           std::vector<Eigen::Vector3d>& normals) const;
-    /// Translate all points along the translation matrix.
+    /// \brief Apply translation to the geometry coordinates.
+    ///
+    /// \param translation A 3D vector to transform the geometry.
+    /// \param points A list of points to be transformed.
+    /// \param relative If `true`, the translation vector is directly added to
+    /// the geometry coordinates. Otherwise, the center is moved to the
+    /// translation vector.
     void TranslatePoints(const Eigen::Vector3d& translation,
                          std::vector<Eigen::Vector3d>& points,
                          bool relative) const;
-    /// Scale all points by the scaling factor.
+    /// \brief Scale the coordinates of all points by the scaling factor \p scale.
+    ///
+    /// \param scale The scale parameter that is multiplied to the
+    /// points/vertices of the geometry.
+    /// \param points A list of points to be transformed.
+    /// \param center If `true`, then the scale is applied to the centered
+    /// geometry.
     void ScalePoints(const double scale,
                      std::vector<Eigen::Vector3d>& points,
                      bool center) const;
-    /// Rotate all points along the rotation matrix.
+    /// \brief Rotate all points with the rotation matrix \p R.
+    ///
+    /// \param R A 3D vector that either defines the three angles for Euler
+    /// rotation, or in the axis-angle representation the normalized vector
+    /// defines the axis of rotation and the norm the angle around this axis.
+    /// \param points A list of points to be transformed.
+    /// \param center If `true`, then the rotation is applied to the centered
+    /// geometry.
     void RotatePoints(const Eigen::Matrix3d& R,
                       std::vector<Eigen::Vector3d>& points,
                       bool center) const;
-    /// Rotate all normals along the rotation matrix.
+    /// \brief Rotate all normals with the rotation matrix \p R.
+    ///
+    /// \param R A 3D vector that either defines the three angles for Euler
+    /// rotation, or in the axis-angle representation the normalized vector
+    /// defines the axis of rotation and the norm the angle around this axis.
+    /// \param normals A list of normals to be transformed
+    /// \param center If `true`, then the rotation is applied to the centered
+    /// geometry.
     void RotateNormals(const Eigen::Matrix3d& R,
                        std::vector<Eigen::Vector3d>& normals,
                        bool center) const;

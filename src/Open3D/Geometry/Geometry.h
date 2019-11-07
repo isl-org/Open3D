@@ -36,9 +36,9 @@ class Geometry {
 public:
     /// \enum GeometryType
     ///
-    /// \brief Specifies possible geometry types of a Geometry instance.
+    /// \brief Specifies possible geometry types.
     enum class GeometryType {
-        /// Not specified
+        /// Unspecified geometry type.
         Unspecified = 0,
         /// PointCloud
         PointCloud = 1,
@@ -72,8 +72,8 @@ public:
 protected:
     /// \brief Parameterized Constructor.
     ///
-    /// \param type - Specifies the type of geometry of the object constructed.
-    /// \param dimension - specifies whether the dimension is 2D or 3D.
+    /// \param type specifies the type of geometry of the object constructed.
+    /// \param dimension specifies whether the dimension is 2D or 3D.
     Geometry(GeometryType type, int dimension)
         : geometry_type_(type), dimension_(dimension) {}
 
@@ -90,7 +90,7 @@ public:
 private:
     /// Type of geometry from GeometryType.
     GeometryType geometry_type_ = GeometryType::Unspecified;
-    /// Number of dimensions of the object.
+    /// Number of dimensions of the geometry.
     int dimension_ = 3;
 };
 

@@ -45,7 +45,7 @@ public:
 protected:
     /// \brief Parameterized Constructor.
     ///
-    /// \param type - type of object based on GeometryType
+    /// \param type  type of object based on GeometryType
     Geometry2D(GeometryType type) : Geometry(type, 2) {}
 
 public:
