@@ -39,8 +39,8 @@ class AxisAlignedBoundingBox;
 ///
 /// \brief A bounding box oriented along an arbitrary frame of reference.
 ///
-/// The oriented bounding box is defined by its center position, extent and
-/// rotation matrix.
+/// The oriented bounding box is defined by its center position, rotation
+/// maxtrix and extent.
 class OrientedBoundingBox : public Geometry3D {
 public:
     /// \brief Default constructor.
@@ -54,10 +54,10 @@ public:
           color_(0, 0, 0) {}
     /// \brief Parameterized constructor.
     ///
-    /// \param center - specifies the center position of the bounding box.
-    /// \param R - the rotation matrix specifying the orientation of the
-    /// bounding box with the original fram of reference.
-    /// \param extent - The extent of the bounding box.
+    /// \param center Specifies the center position of the bounding box.
+    /// \param R The rotation matrix specifying the orientation of the
+    /// bounding box with the original frame of reference.
+    /// \param extent The extent of the bounding box.
     OrientedBoundingBox(const Eigen::Vector3d& center,
                         const Eigen::Matrix3d& R,
                         const Eigen::Vector3d& extent)
@@ -68,46 +68,22 @@ public:
     ~OrientedBoundingBox() override {}
 
 public:
-    /// Clear all elements in the geometry.
-    OrientedBoundingBox& Clear() override;
-    /// Returns `true` iff the geometry is empty.
+    OrientedBoundingBox& Clear() override;=
     bool IsEmpty() const override;
-    /// Returns min bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMinBound() const override;
-    /// Returns max bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMaxBound() const override;
-    /// Returns the center of the geometry coordinates.
     virtual Eigen::Vector3d GetCenter() const override;
-    /// Returns an axis-aligned bounding box of the geometry.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    /// Returns an oriented bounding box of the geometry.
     virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
-    /// Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-    /// \brief Apply translation to the geometry coordinates.
-    ///
-    /// \param translation - A 3D vector to transform the geometry.
-    /// \param relative - If `true`, the translation vector is directly added to
-    /// the geometry coordinates. Otherwise, the center is moved to the
-    /// translation vector.
+    
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
-    /// \brief Apply scaling to the geometry coordinates.
-    ///
-    /// \param scale -  The scale parameter that is multiplied to the
-    /// points/vertices of the geometry.
-    /// \param center - If `true`, then the scale is applied to the centered
-    /// geometry.
+
     virtual OrientedBoundingBox& Scale(const double scale,
                                        bool center = true) override;
-    /// \brief Apply rotation to the geometry coordinates and normals.
-    ///
-    /// \param R - A 3D vector that either defines the three angles for Euler
-    /// rotation, or in the axis-angle representation the normalized vector
-    /// defines the axis of rotation and the norm the angle around this axis.
-    /// \param center - If `true`, then the rotation is applied to the centered
-    /// geometry.
+
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                         bool center = true) override;
 
@@ -121,6 +97,8 @@ public:
             const std::vector<Eigen::Vector3d>& points) const;
 
     /// Returns an oriented bounding box from the Axis Aligned Bounding Box.
+    ///
+    /// \param aabox AxisAlignedBoundingBox object from which OrientedBoundingBox is created.
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox& aabox);
 
@@ -138,7 +116,7 @@ public:
     /// The rotation matrix of the bounding box to transform the original frame
     /// of reference to the frame of this box.
     Eigen::Matrix3d R_;
-    /// The extent of the bounding box in it's frame of reference.
+    /// The extent of the bounding box in its frame of reference.
     Eigen::Vector3d extent_;
     /// The color of the bounding box in RGB.
     Eigen::Vector3d color_;
@@ -146,10 +124,9 @@ public:
 
 /// \class AxisAlignedBoundingBox
 ///
-/// \brief A bounding box that aligned along the coordinate axes can be computed
-/// from 3D geometries.
+/// \brief A bounding box that is aligned along the coordinate axes.
 ///
-///  The axis aligned bounding box uses the cooridnate axes for bounding box
+///  The AxisAlignedBoundingBox uses the cooridnate axes for bounding box
 ///  generation. This means that the bounding box is oriented along the
 ///  coordinate axes.
 class AxisAlignedBoundingBox : public Geometry3D {
@@ -164,8 +141,8 @@ public:
           color_(0, 0, 0) {}
     /// \brief Parameterized constructor.
     ///
-    /// \param min_bound lower bounds of the bounding box for all axes.
-    /// \param max_bound upper bounds of the bounding box for all axes.
+    /// \param min_bound Lower bounds of the bounding box for all axes.
+    /// \param max_bound Upper bounds of the bounding box for all axes.
     AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
                            const Eigen::Vector3d& max_bound)
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
@@ -175,58 +152,31 @@ public:
     ~AxisAlignedBoundingBox() override {}
 
 public:
-    /// Clear all elements in the geometry.
     AxisAlignedBoundingBox& Clear() override;
-    /// Returns `true` iff the geometry is empty.
     bool IsEmpty() const override;
-    /// Returns min bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMinBound() const override;
-    /// Returns max bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMaxBound() const override;
-    /// Returns the center of the geometry coordinates.
     virtual Eigen::Vector3d GetCenter() const override;
-    /// Returns an axis-aligned bounding box of the geometry.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    /// Returns an oriented bounding box of the geometry.
     virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
-    /// Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-    /// \brief Apply translation to the geometry coordinates.
-    ///
-    /// \param translation - A 3D vector to transform the geometry.
-    /// \param relative - If `true`, the translation vector is directly added to
-    /// the geometry coordinates. Otherwise, the center is moved to the
-    /// translation vector.
     virtual AxisAlignedBoundingBox& Translate(
             const Eigen::Vector3d& translation, bool relative = true) override;
-    /// \brief Apply scaling to the geometry coordinates.
-    ///
-    /// \param scale - The scale parameter that is multiplied to the
-    /// points/vertices of the geometry. \param center - If `true`, then the
-    /// scale is applied to the centered geometry.
     virtual AxisAlignedBoundingBox& Scale(const double scale,
                                           bool center = true) override;
-    /// \brief Apply rotation to the geometry coordinates and normals.
-    ///
-    /// \param R -  A 3D vector that either defines the three angles for
-    /// Euler rotation, or in the axis-angle representation the normalized
-    /// vector defines the axis of rotation and the norm the angle around this
-    /// axis.
-    /// \param center -  If `true`, then the rotation is applied to the
-    /// centered geometry.
     virtual AxisAlignedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                            bool center = true) override;
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 
-    /// Returns the full extent of the bounding box.
+    /// Get the extent/length of the bounding box in x, y, and z dimension
     Eigen::Vector3d GetExtent() const { return (max_bound_ - min_bound_); }
 
     /// Returns the half extent of the bounding box.
     Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
-    /// Returns the maximum extent of the bounding box.
+    /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis' extents.
     double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
     double GetXPercentage(double x) const {
@@ -247,6 +197,8 @@ public:
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
+    ///
+    /// \param points A list of points.
     std::vector<size_t> GetPointIndicesWithinBoundingBox(
             const std::vector<Eigen::Vector3d>& points) const;
 
@@ -254,6 +206,8 @@ public:
     std::string GetPrintInfo() const;
 
     /// Creates the bounding box that encloses the set of points.
+    ///
+    /// \param points A list of points.
     static AxisAlignedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points);
 

@@ -99,7 +99,7 @@ void pybind_boundingvolume(py::module &m) {
                  &geometry::AxisAlignedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
             .def("get_extent", &geometry::AxisAlignedBoundingBox::GetExtent,
-                 "get the extent/length of the bounding box in x, y, and z "
+                 "Get the extent/length of the bounding box in x, y, and z "
                  "dimension.")
             .def_readwrite("min_bound",
                            &geometry::AxisAlignedBoundingBox::min_bound_,
