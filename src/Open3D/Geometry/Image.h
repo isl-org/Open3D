@@ -79,6 +79,7 @@ public:
     };
 
 public:
+    /// \brief Default Constructor.
     Image() : Geometry2D(Geometry::GeometryType::Image) {}
     ~Image() override {}
 
@@ -91,7 +92,7 @@ public:
     ///
     /// \param u is the x-coordinate value.
     /// \param v is the y-coordinate value
-    /// \param inner_margin is the margiin from the image boundary.
+    /// \param inner_margin is the margin from the image boundary.
     bool TestImageBoundary(double u, double v, double inner_margin = 0.0) const;
 
 public:
