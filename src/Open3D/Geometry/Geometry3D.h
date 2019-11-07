@@ -164,7 +164,8 @@ protected:
     void TranslatePoints(const Eigen::Vector3d& translation,
                          std::vector<Eigen::Vector3d>& points,
                          bool relative) const;
-    /// \brief Scale the coordinates of all points by the scaling factor \p scale.
+    /// \brief Scale the coordinates of all points by the scaling factor \p
+    /// scale.
     ///
     /// \param scale The scale parameter that is multiplied to the
     /// points/vertices of the geometry.
