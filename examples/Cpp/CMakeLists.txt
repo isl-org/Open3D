@@ -1,6 +1,9 @@
 macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME} "${EXAMPLE_CPP_NAME}.cpp")
     ShowAndAbortOnWarning(${EXAMPLE_CPP_NAME})
+    if (UNIX)
+        set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES COMPILE_FLAGS -Wno-unused-result )
+    endif ()
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
