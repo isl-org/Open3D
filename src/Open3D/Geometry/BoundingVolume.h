@@ -68,7 +68,7 @@ public:
     ~OrientedBoundingBox() override {}
 
 public:
-    OrientedBoundingBox& Clear() override;=
+    OrientedBoundingBox& Clear() override;
     bool IsEmpty() const override;
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
@@ -77,7 +77,7 @@ public:
     virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-    
+
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
 
@@ -98,7 +98,8 @@ public:
 
     /// Returns an oriented bounding box from the Axis Aligned Bounding Box.
     ///
-    /// \param aabox AxisAlignedBoundingBox object from which OrientedBoundingBox is created.
+    /// \param aabox AxisAlignedBoundingBox object from which
+    /// OrientedBoundingBox is created.
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox& aabox);
 
@@ -176,7 +177,8 @@ public:
     /// Returns the half extent of the bounding box.
     Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
-    /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis' extents.
+    /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
+    /// extents.
     double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
     double GetXPercentage(double x) const {
