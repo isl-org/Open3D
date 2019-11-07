@@ -85,6 +85,7 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON)
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -92,6 +93,36 @@ if (NOT CMAKE_BUILD_TYPE)
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
 endif ()
+
+# Importing Python libraries compiled with different CXX ABI may cause segfaults
+# in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
+# and TensorFlow Python releases use the older CXX ABI; while when they are
+# compiled from source, newer ABI is enabled by default.
+#
+# When building from source, `-DGLIBCXX_USE_CXX11_ABI=ON` is set by default.
+# Some pre-installed dependencies such as `libjsoncpp-dev` on newer Ubuntu
+# are only compatible with the newer CXX11 ABI.
+#
+# When releasing Open3D as a Python package on Pip or Conda, we set
+# `-DGLIBCXX_USE_CXX11_ABI=OFF` and compile all dependencies
+# (like `jasoncpp`) from source, in order to ensure compatibility with
+# PyTorch and TensorFlow Python releases.
+#
+# If you build PyTorch or TensorFlow from source or if you run into ABI
+# compatibility issues with them, please:
+#     1. Check PyTorch and TensorFlow ABI with
+#         import torch
+#         import tensorflow
+#         print(torch._C._GLIBCXX_USE_CXX11_ABI)
+#         print(tensorflow.__cxx11_abi_flag__)
+#     2. Configure Open3D to compile all dependencies from source
+#        (e.g. `-DBUILD_JSONCPP=ON`), with the corresponding ABI version
+#        obtained from step 1.
+if (GLIBCXX_USE_CXX11_ABI)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+endif()
 
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -194,10 +225,6 @@ if (WITH_OPENMP)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-
-        set(Config_Open3D_C_FLAGS          ${OpenMP_C_FLAGS})
-        set(Config_Open3D_CXX_FLAGS        ${OpenMP_CXX_FLAGS})
-        set(Config_Open3D_EXE_LINKER_FLAGS ${OpenMP_EXE_LINKER_FLAGS})
     else ()
         message(STATUS "OpenMP NOT found")
     endif ()

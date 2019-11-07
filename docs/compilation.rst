@@ -127,6 +127,32 @@ Open3D to a user location. In the absence of this argument Open3D will be
 installed to a system location (sudo required). For more customizations of the
 build, please see :ref:`compilation_options`.
 
+.. note::
+    When building from source, ``-DGLIBCXX_USE_CXX11_ABI=ON`` is set by default.
+    Some pre-installed dependencies such as ``libjsoncpp-dev`` on newer Ubuntu
+    are only compatible with the newer CXX11 ABI.
+
+    When releasing Open3D as a Python package on Pip or Conda, we set
+    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies
+    (like ``jasoncpp``) from source, in order to ensure compatibility with
+    PyTorch and TensorFlow Python releases.
+
+    If you build PyTorch or TensorFlow from source or if you run into ABI
+    compatibility issues with them, please:
+
+    1. Check PyTorch and TensorFlow ABI with
+
+       .. code-block:: python
+
+           import torch
+           import tensorflow
+           print(torch._C._GLIBCXX_USE_CXX11_ABI)
+           print(tensorflow.__cxx11_abi_flag__)
+
+    2. Configure Open3D to compile all dependencies from source
+       (e.g. ``-DBUILD_JSONCPP=ON``), with the corresponding ABI version obtained
+       from step 1.
+
 .. _compilation_ubuntu_build:
 
 4. Build
