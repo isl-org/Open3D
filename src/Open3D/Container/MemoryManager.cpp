@@ -66,6 +66,11 @@ void MemoryManager::Memcpy(void* dst_ptr,
                            const void* src_ptr,
                            const Device& src_device,
                            size_t num_bytes) {
+    // 0-element Tensor's data_ptr_ is nullptr
+    if (src_ptr == nullptr || dst_ptr == nullptr) {
+        return;
+    }
+
     if ((dst_device.device_type_ != Device::DeviceType::CPU &&
          dst_device.device_type_ != Device::DeviceType::CUDA) ||
         (src_device.device_type_ != Device::DeviceType::CPU &&
