@@ -57,54 +57,94 @@ protected:
     int thread_strides_[MAX_DIMS];
 };
 
+// # result.ndim == M
+// # x.ndim      == N
+// result[i_1, ..., i_M] == x[ind_1[i_1, ..., i_M],
+//                            ind_2[i_1, ..., i_M],
+//                            ...,
+//                            ind_N[i_1, ..., i_M]]
+// # result.ndim == M + 3
+// # x.ndim      == N + 3
+// result[A, B, i_1, ..., i_M, C] == x[A, B,
+//                                     ind_1[i_1, ..., i_M],
+//                                     ind_2[i_1, ..., i_M],
+//                                     ...,
+//                                     ind_N[i_1, ..., i_M],
+//                                     C]
+// E.g.
+// A = np.ones((10, 20, 30, 40, 50))
+// A[:, [1, 2], [2, 3], :, :]  # Supported,
+//                               output_shape:  [10, 2, 40, 50]
+//                               indexing_ndims:[0, 2, 2, 0, 0]
+//                               slice_map:     [0, -1, 3, 4]
+// A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
+//                             # For this case, a transpose op is necessary
+// In our case, M == 1, since we only allow 1D indexing Tensor.
 class IndexedOffsetCalculator {
 public:
     IndexedOffsetCalculator(
             const std::vector<size_t>& src_strides,
             const std::vector<size_t>& src_shape,
-            const std::vector<size_t>& thread_strides,
-            const std::vector<size_t>& indexing_shapes,
-            const std::vector<const int*>& indexing_tensor_data_ptrs)
-        : num_dims_(src_strides.size()) {
-        for (int i = 0; i < num_dims_; i++) {
+            const std::vector<size_t>& dst_strides,
+            const std::vector<size_t>& indexing_ndims,
+            const std::vector<const int*>& indexing_tensor_data_ptrs) {
+        src_ndims_ = src_strides.size();
+        dst_ndims_ = dst_strides.size();
+
+        bool fancy_index_visited = false;
+        int size_map_next_idx = 0;
+        for (int i = 0; i < src_ndims_; i++) {
             src_strides_[i] = static_cast<int>(src_strides[i]);
             src_shape_[i] = static_cast<int>(src_shape[i]);
-            thread_strides_[i] = static_cast<int>(thread_strides[i]);
-            indexing_shapes_[i] = static_cast<int>(indexing_shapes[i]);
+            indexing_ndims_[i] = static_cast<int>(indexing_ndims[i]);
             indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
+
+            if (indexing_ndims_[i] == 0) {
+                slice_map_[size_map_next_idx] = i;
+                size_map_next_idx++;
+            } else if (!fancy_index_visited) {
+                slice_map_[size_map_next_idx] = -1;
+                size_map_next_idx++;
+            }
+        }
+
+        for (int i = 0; i < dst_ndims_; i++) {
+            dst_strides_[i] = static_cast<int>(dst_strides[i]);
         }
     }
 
-    OPEN3D_HOST_DEVICE int GetOffset(size_t thread_idx) const {
-        size_t output_idx = 0;
-        for (size_t dim = 0; dim < num_dims_; dim++) {
-            int64_t dim_idx = thread_idx / thread_strides_[dim];
-            size_t dim_size = indexing_shapes_[dim];
+    OPEN3D_HOST_DEVICE int GetOffset(size_t dst_idx) const {
+        size_t src_idx = 0;
+        for (size_t dim = 0; dim < dst_ndims_; dim++) {
+            int64_t dim_idx = dst_idx / dst_strides_[dim];
 
-            // clang-format off
-                dim_idx = (dim_size == 0) ? dim_idx
-                  : ((dim_size == 1)
-                     ? indexing_tensor_data_ptrs_[dim][0]
-                     : indexing_tensor_data_ptrs_[dim][dim_idx]);
-            // clang-format on
-
-            assert(dim_idx >= -(int64_t)src_shape_[dim] &&
-                   dim_idx < (int64_t)src_shape_[dim]);
-            dim_idx = (dim_idx >= 0) ? dim_idx : src_shape_[dim] + dim_idx;
-
-            output_idx += dim_idx * src_strides_[dim];
-            thread_idx = thread_idx % thread_strides_[dim];
+            if (slice_map_[dim] != -1) {
+                // This dim is mapped to some input slice
+                src_idx += dim_idx * src_strides_[slice_map_[dim]];
+            } else {
+                // This dim is mapped to one or more fancy indexed input dim(s)
+                for (size_t src_dim = 0; src_dim < src_ndims_; src_dim++) {
+                    if (indexing_ndims_[src_dim] != 0) {
+                        src_idx +=
+                                indexing_tensor_data_ptrs_[src_dim][dim_idx] *
+                                src_strides_[src_dim];
+                    }
+                }
+            }
+            dst_idx = dst_idx % dst_strides_[dim];
         }
-        return output_idx;
+        return src_idx;
     }
 
 protected:
-    int num_dims_;
+    int src_ndims_;
+    int dst_ndims_;
     int src_strides_[MAX_DIMS];
     int src_shape_[MAX_DIMS];
-    int thread_strides_[MAX_DIMS];
-    int indexing_shapes_[MAX_DIMS];
+    int dst_strides_[MAX_DIMS];
+    int indexing_ndims_[MAX_DIMS];
+    int slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
     const int* indexing_tensor_data_ptrs_[MAX_DIMS];
-};
+};  // namespace kernel
 }  // namespace kernel
 }  // namespace open3d

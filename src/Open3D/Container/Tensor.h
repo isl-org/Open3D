@@ -132,6 +132,21 @@ public:
         return *this;
     }
 
+    /// TODO: this is a very naive implementation
+    template <typename T>
+    void Fill(const T& v) {
+        DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
+            scalar_t casted_v = static_cast<scalar_t>(v);
+            for (size_t i = 0; i < NumElements(); ++i) {
+                MemoryManager::MemcpyFromHost(
+                        static_cast<uint8_t*>(GetDataPtr()) +
+                                sizeof(scalar_t) * i,
+                        GetDevice(), &casted_v, sizeof(scalar_t));
+            }
+
+        });
+    }
+
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
     Tensor Copy(const Device& device) const;

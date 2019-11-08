@@ -411,6 +411,26 @@ TEST_P(TensorPermuteDevices, CopyNonContiguous) {
               std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
 }
 
+TEST_P(TensorPermuteDevices, IndexGetNew) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t[:, [1, 2], [1, 2]]
+    std::vector<int> index1 = {1, 2};
+    std::vector<int> index2 = {1, 2};
+    std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
+                                   Tensor(index1, {2}, Dtype::Int32, device),
+                                   Tensor(index2, {2}, Dtype::Int32, device)};
+
+    Tensor t_1 = t.IndexGet(indices);
+    EXPECT_TRUE(t_1.IsContiguous());
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 2}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({5, 10, 17, 22}));
+}
+
 TEST_P(TensorPermuteDevices, IndexGet) {
     Device device = GetParam();
 
@@ -420,24 +440,24 @@ TEST_P(TensorPermuteDevices, IndexGet) {
 
     // t[:, [1], [0, 2, 1]]
     std::vector<int> index1 = {1};
-    std::vector<int> index2 = {0, 2, -1};
+    std::vector<int> index2 = {0, 2, 1};
     std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
                                    Tensor(index1, {1}, Dtype::Int32, device),
                                    Tensor(index2, {3}, Dtype::Int32, device)};
 
     Tensor t_1 = t.IndexGet(indices);
     EXPECT_TRUE(t_1.IsContiguous());
-    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 1, 3}));
-    EXPECT_EQ(t_1.GetStrides(), SizeVector({3, 3, 1}));
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({3, 1}));
     EXPECT_EQ(t_1.ToFlatVector<float>(),
-              std::vector<float>({4, 6, 7, 16, 18, 19}));
+              std::vector<float>({4, 6, 5, 16, 18, 17}));
 }
 
 TEST_P(TensorPermuteDevices, IndexSet) {
     Device device = GetParam();
 
-    std::vector<float> vals({4, 6, 7, 16, 18, 19});
-    Tensor rhs(vals, {2, 1, 3}, Dtype::Float32, device);
+    std::vector<float> vals({4, 6, 5, 16, 18, 17});
+    Tensor rhs(vals, {2, 3}, Dtype::Float32, device);
 
     std::vector<float> zeros(2 * 3 * 4);
     std::fill(zeros.begin(), zeros.end(), 0);
@@ -445,13 +465,13 @@ TEST_P(TensorPermuteDevices, IndexSet) {
 
     // t[:, [1], [0, 2, 1]]
     std::vector<int> index1 = {1};
-    std::vector<int> index2 = {0, 2, -1};
+    std::vector<int> index2 = {0, 2, 1};
     std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
                                    Tensor(index1, {1}, Dtype::Int32, device),
                                    Tensor(index2, {3}, Dtype::Int32, device)};
 
     t.IndexSet(indices, rhs);
     EXPECT_EQ(t.ToFlatVector<float>(),
-              std::vector<float>({0, 0, 0, 0, 4,  0, 6,  7,  0, 0, 0, 0,
-                                  0, 0, 0, 0, 16, 0, 18, 19, 0, 0, 0, 0}));
+              std::vector<float>({0, 0, 0, 0, 4,  5,  6,  0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 16, 17, 18, 0, 0, 0, 0, 0}));
 }

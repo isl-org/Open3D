@@ -24,18 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+/// \file CudaUtils.h
+/// \brief Common CUDA utilities
+///
+/// CudaUtils.h may be included from CPU-only code.
+/// Use #ifdef __CUDACC__ to mark conitional compilation
+
 #pragma once
+
+#include "Open3D/Utility/Console.h"
+
+#ifdef BUILD_CUDA_MODULE
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Utility/Console.h"
-
+#define OPEN3D_HOST_DEVICE __host__ __device__
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
+    static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
+                  #type " must be a __host__ __device__ lambda")
 #define OPEN3D_CUDA_CHECK(err) \
     open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 
+#else  // #ifdef BUILD_CUDA_MODULE
+
+#define OPEN3D_HOST_DEVICE
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
+#define OPEN3D_CUDA_CHECK(err)
+
+#endif  // #ifdef BUILD_CUDA_MODULE
+
 namespace open3d {
 
+#ifdef BUILD_CUDA_MODULE
 inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
                                 const char *file,
                                 const int line) {
@@ -44,15 +65,6 @@ inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
                           cudaGetErrorString(err));
     }
 }
-
-#ifdef __CUDACC__
-#define OPEN3D_HOST_DEVICE __host__ __device__
-#else
-#define OPEN3D_HOST_DEVICE
 #endif
-
-#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
-    static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
-                  #type " must be a __host__ __device__ lambda")
 
 }  // namespace open3d
