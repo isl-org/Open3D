@@ -50,12 +50,12 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int64_t dst_raw_idx = 0;
-             dst_raw_idx < static_cast<int64_t>(src.GetShape().NumElements());
-             dst_raw_idx++) {
-            size_t src_idx = src_offset_calculator.GetOffset(dst_raw_idx);
+        for (int64_t thread_idx = 0;
+             thread_idx < static_cast<int64_t>(src.GetShape().NumElements());
+             thread_idx++) {
+            size_t src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            size_t dst_idx = dst_offset_calculator.GetOffset(dst_raw_idx);
+            size_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         }
@@ -67,28 +67,18 @@ public:
                                            const std::vector<Tensor>& indices,
                                            const SizeVector& indexing_shapes,
                                            func_t element_kernel) {
-        utility::LogInfo("IndexedKernel!");
-
         std::vector<const int*> indexing_tensor_data_ptrs;
-        utility::LogInfo("src.GetStrides() = {}", src.GetStrides());
-        utility::LogInfo("dst.GetStrides() = {}", dst.GetStrides());
-        for (int i = 0; i < indices.size(); ++i) {
-            utility::LogInfo("indices[{}] {}", i, indices[i].ToString());
-            auto index_tensor_ptr =
-                    static_cast<const int*>(indices[i].GetDataPtr());
-
-            std::vector<int> tmp;
-            for (auto j = 0; j < indexing_shapes[i]; ++j) {
-                tmp.push_back(index_tensor_ptr[j]);
-            }
-            utility::LogInfo("index_tensor_ptr: {}", tmp);
-
+        for (auto& index : indices) {
+            auto index_tensor_ptr = static_cast<const int*>(index.GetDataPtr());
             indexing_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
+        auto default_strides = Tensor::DefaultStrides(dst.GetShape());
         IndexedOffsetCalculator src_offset_calculator(
-                src.GetStrides(), src.GetShape(), dst.GetStrides(),
+                src.GetStrides(), src.GetShape(), default_strides,
                 indexing_shapes, indexing_tensor_data_ptrs);
+        OffsetCalculator dst_offset_calculator(dst.GetStrides(),
+                                               default_strides);
 
         int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
@@ -98,9 +88,10 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int64_t dst_idx = 0; dst_idx < num_elems; dst_idx++) {
-            size_t src_idx = src_offset_calculator.GetOffset(dst_idx);
+        for (int64_t thread_idx = 0; thread_idx < num_elems; thread_idx++) {
+            size_t src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            size_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         }

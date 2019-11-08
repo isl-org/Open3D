@@ -29,8 +29,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Container/Kernel/Scheduler.h"
 #include "Open3D/Container/CudaUtils.cuh"
+#include "Open3D/Container/Kernel/Scheduler.h"
 
 // CUDA kernel launcher's goal is to separate scheduling (looping through each
 // valid element) and computation (operations performed on each element).
@@ -80,10 +80,10 @@ public:
         OffsetCalculator dst_offset_calculator(dst.GetStrides(),
                                                default_strides);
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int dst_raw_idx) {
-            int src_idx = src_offset_calculator.GetOffset(dst_raw_idx);
+        auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
+            int src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            int dst_idx = dst_offset_calculator.GetOffset(dst_raw_idx);
+            int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         };
@@ -113,14 +113,17 @@ public:
         IndexedOffsetCalculator src_offset_calculator(
                 src.GetStrides(), src.GetShape(), dst.GetStrides(),
                 indexing_shapes, indexing_tensor_data_ptrs);
+        OffsetCalculator dst_offset_calculator(
+                dst.GetStrides(), Tensor::DefaultStrides(dst.GetShape()));
 
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
         int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int dst_idx) {
-            int src_idx = src_offset_calculator.GetOffset(dst_idx);
+        auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
+            int src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         };
