@@ -43,11 +43,10 @@ static void CPUCopyElementKernel(const void* src, void* dst) {
 }
 
 void CopyCPU(const Tensor& src, Tensor& dst) {
-    // src and dst have been checked to have the same shape, dtype, device, and
-    // dst must be contiguous
+    // src and dst have been checked to have the same shape, dtype, device
     SizeVector shape = src.GetShape();
     Dtype dtype = src.GetDtype();
-    if (src.IsContiguous()) {
+    if (src.IsContiguous() && dst.IsContiguous()) {
         MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
                               src.GetDataPtr(), src.GetDevice(),
                               DtypeUtil::ByteSize(dtype) * shape.NumElements());

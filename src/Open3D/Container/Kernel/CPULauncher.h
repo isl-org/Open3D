@@ -35,7 +35,7 @@ namespace kernel {
 class CPULauncher {
 public:
     /// Recover src tensor element offsets given dst tensor element offsets
-    /// src and dst tensors have the same size but different strides
+    /// src and dst tensors have the same size but may have different strides
     class OffsetCalculator {
     public:
         OffsetCalculator(const std::vector<size_t>& src_strides,
@@ -114,16 +114,21 @@ public:
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
         size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
-        OffsetCalculator offset_calculator(src.GetStrides(), dst.GetStrides());
+        SizeVector default_strides = Tensor::DefaultStrides(src.GetShape());
+        OffsetCalculator src_offset_calculator(src.GetStrides(),
+                                               default_strides);
+        OffsetCalculator dst_offset_calculator(dst.GetStrides(),
+                                               default_strides);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int64_t dst_idx = 0;
-             dst_idx < static_cast<int64_t>(src.GetShape().NumElements());
-             dst_idx++) {
-            size_t src_idx = offset_calculator.GetOffset(dst_idx);
+        for (int64_t dst_raw_idx = 0;
+             dst_raw_idx < static_cast<int64_t>(src.GetShape().NumElements());
+             dst_raw_idx++) {
+            size_t src_idx = src_offset_calculator.GetOffset(dst_raw_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            size_t dst_idx = dst_offset_calculator.GetOffset(dst_raw_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         }

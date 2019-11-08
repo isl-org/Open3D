@@ -62,7 +62,7 @@ __global__ void ElementWiseKernel(int N, func_t f) {
 class CUDALauncher {
 public:
     /// Recover src tensor element offsets given dst tensor element offsets
-    /// src and dst tensors have the same size but different strides
+    /// src and dst tensors have the same size but may have different strides
     class OffsetCalculator {
     public:
         OffsetCalculator(size_t num_dims,
@@ -155,13 +155,19 @@ public:
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
         int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
-        OffsetCalculator offset_calculator(src.GetShape().size(),
-                                           src.GetStrides().data(),
-                                           dst.GetStrides().data());
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int dst_idx) {
-            int src_idx = offset_calculator.GetOffset(dst_idx);
+        SizeVector default_strides = Tensor::DefaultStrides(src.GetShape());
+        OffsetCalculator src_offset_calculator(src.GetShape().size(),
+                                               src.GetStrides().data(),
+                                               default_strides.data());
+        OffsetCalculator dst_offset_calculator(dst.GetShape().size(),
+                                               dst.GetStrides().data(),
+                                               default_strides.data());
+
+        auto f = [=] OPEN3D_HOST_DEVICE(int dst_raw_idx) {
+            int src_idx = src_offset_calculator.GetOffset(dst_raw_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            int dst_idx = dst_offset_calculator.GetOffset(dst_raw_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         };

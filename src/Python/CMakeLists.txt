@@ -48,9 +48,16 @@ if (NOT BUILD_AZURE_KINECT)
         "${CMAKE_CURRENT_SOURCE_DIR}/open3d_pybind/io/sensor.cpp")
 endif()
 
-pybind11_add_module(${PACKAGE_NAME}
-    ${PY_ALL_SOURCE_FILES}
-)
+# NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
+if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
+    pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS
+        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    )
+else ()
+    pybind11_add_module(${PACKAGE_NAME}
+        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    )
+endif ()
 
 target_include_directories(${PACKAGE_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
