@@ -60,15 +60,18 @@ void IndexedGet(const Tensor& src,
 /// dst[indices] = src
 void IndexedSetCPU(const Tensor& src,
                    Tensor& dst,
-                   const std::vector<Tensor>& indices);
+                   const std::vector<Tensor>& indices,
+                   const SizeVector& indexing_shape);
 #ifdef BUILD_CUDA_MODULE
 void IndexedSetCUDA(const Tensor& src,
                     Tensor& dst,
-                    const std::vector<Tensor>& indices);
+                    const std::vector<Tensor>& indices,
+                    const SizeVector& indexing_shape);
 #endif
 void IndexedSet(const Tensor& src,
                 Tensor& dst,
-                const std::vector<Tensor>& indices);
+                const std::vector<Tensor>& indices,
+                const SizeVector& indexing_shape);
 
 }  // namespace kernel
 }  // namespace open3d

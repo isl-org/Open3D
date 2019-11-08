@@ -61,12 +61,14 @@ public:
         }
     }
 
+    /// dst = src[indices]
     template <typename scalar_t, typename func_t>
-    static void LaunchIndexedUnaryEWKernel(const Tensor& src,
-                                           Tensor& dst,
-                                           const std::vector<Tensor>& indices,
-                                           const SizeVector& indexing_shapes,
-                                           func_t element_kernel) {
+    static void LaunchRhsIndexedUnaryEWKernel(
+            const Tensor& src,
+            Tensor& dst,
+            const std::vector<Tensor>& indices,
+            const SizeVector& indexing_shapes,
+            func_t element_kernel) {
         std::vector<const int*> indexing_tensor_data_ptrs;
         for (auto& index : indices) {
             auto index_tensor_ptr = static_cast<const int*>(index.GetDataPtr());
@@ -81,6 +83,44 @@ public:
                                                default_strides);
 
         int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
+        const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
+        char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
+        size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int64_t thread_idx = 0; thread_idx < num_elems; thread_idx++) {
+            size_t src_idx = src_offset_calculator.GetOffset(thread_idx);
+            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            size_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
+            element_kernel(src_ptr, dst_ptr);
+        }
+    }
+
+    /// dst[indices] = src
+    template <typename scalar_t, typename func_t>
+    static void LaunchLhsIndexedUnaryEWKernel(
+            const Tensor& src,
+            Tensor& dst,
+            const std::vector<Tensor>& indices,
+            const SizeVector& indexing_shapes,
+            func_t element_kernel) {
+        std::vector<const int*> indexing_tensor_data_ptrs;
+        for (auto& index : indices) {
+            auto index_tensor_ptr = static_cast<const int*>(index.GetDataPtr());
+            indexing_tensor_data_ptrs.push_back(index_tensor_ptr);
+        }
+
+        auto default_strides = Tensor::DefaultStrides(src.GetShape());
+        OffsetCalculator src_offset_calculator(src.GetStrides(),
+                                               default_strides);
+        IndexedOffsetCalculator dst_offset_calculator(
+                dst.GetStrides(), dst.GetShape(), default_strides,
+                indexing_shapes, indexing_tensor_data_ptrs);
+
+        int64_t num_elems = static_cast<int64_t>(src.GetShape().NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
         size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());

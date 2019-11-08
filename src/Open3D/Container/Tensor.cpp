@@ -223,23 +223,18 @@ Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, device_, blob_);
 }
 
-Tensor Tensor::Index(const std::vector<Tensor>& indices) const {
+Tensor Tensor::IndexGet(const std::vector<Tensor>& indices) const {
     /// Dimension check
     if (indices.size() > shape_.size()) {
         utility::LogError("Number of indices {} exceeds tensor dimension {}.",
                           indices.size(), shape_.size());
     }
 
-    utility::LogInfo("Index!");
-
     std::vector<Tensor> preprocessed_indices;
     SizeVector output_shape;
     SizeVector indexing_shape;
     std::tie(preprocessed_indices, output_shape, indexing_shape) =
             PreprocessIndexTensors(*this, indices);
-
-    utility::LogInfo("output_shape: {}, indexing_shape: {}", output_shape,
-                     indexing_shape);
 
     /// Allocate tensor for a copy
     Tensor dst = Tensor(output_shape, dtype_, device_);
@@ -250,7 +245,7 @@ Tensor Tensor::Index(const std::vector<Tensor>& indices) const {
     return dst;
 }
 
-void Tensor::IndexPut(const std::vector<Tensor>& indices, const Tensor& value) {
+void Tensor::IndexSet(const std::vector<Tensor>& indices, const Tensor& value) {
     /// Dimension check
     if (indices.size() > shape_.size()) {
         utility::LogError("Number of indices {} exceeds tensor dimension {}.",
@@ -269,7 +264,7 @@ void Tensor::IndexPut(const std::vector<Tensor>& indices, const Tensor& value) {
     }
 
     /// *this[indices] = value
-    kernel::IndexedSet(value, *this, preprocessed_indices);
+    kernel::IndexedSet(value, *this, preprocessed_indices, indexing_shape);
 }
 
 }  // namespace open3d

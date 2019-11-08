@@ -411,7 +411,7 @@ TEST_P(TensorPermuteDevices, CopyNonContiguous) {
               std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
 }
 
-TEST_P(TensorPermuteDevices, Index) {
+TEST_P(TensorPermuteDevices, IndexGet) {
     Device device = GetParam();
 
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
@@ -425,10 +425,33 @@ TEST_P(TensorPermuteDevices, Index) {
                                    Tensor(index1, {1}, Dtype::Int32, device),
                                    Tensor(index2, {3}, Dtype::Int32, device)};
 
-    Tensor t_1 = t.Index(indices);
+    Tensor t_1 = t.IndexGet(indices);
     EXPECT_TRUE(t_1.IsContiguous());
     EXPECT_EQ(t_1.GetShape(), SizeVector({2, 1, 3}));
     EXPECT_EQ(t_1.GetStrides(), SizeVector({3, 3, 1}));
     EXPECT_EQ(t_1.ToFlatVector<float>(),
               std::vector<float>({4, 6, 7, 16, 18, 19}));
+}
+
+TEST_P(TensorPermuteDevices, IndexSet) {
+    Device device = GetParam();
+
+    std::vector<float> vals({4, 6, 7, 16, 18, 19});
+    Tensor rhs(vals, {2, 1, 3}, Dtype::Float32, device);
+
+    std::vector<float> zeros(2 * 3 * 4);
+    std::fill(zeros.begin(), zeros.end(), 0);
+    Tensor t(zeros, {2, 3, 4}, Dtype::Float32, device);
+
+    // t[:, [1], [0, 2, 1]]
+    std::vector<int> index1 = {1};
+    std::vector<int> index2 = {0, 2, -1};
+    std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),
+                                   Tensor(index1, {1}, Dtype::Int32, device),
+                                   Tensor(index2, {3}, Dtype::Int32, device)};
+
+    t.IndexSet(indices, rhs);
+    EXPECT_EQ(t.ToFlatVector<float>(),
+              std::vector<float>({0, 0, 0, 0, 4,  0, 6,  7,  0, 0, 0, 0,
+                                  0, 0, 0, 0, 16, 0, 18, 19, 0, 0, 0, 0}));
 }

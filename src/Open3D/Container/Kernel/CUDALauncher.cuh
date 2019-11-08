@@ -92,12 +92,14 @@ public:
                 <<<grid_size, threads_per_block, 0>>>(N, f);
     }
 
+    /// dst = src[indices]
     template <typename scalar_t, typename func_t>
-    static void LaunchIndexedUnaryEWKernel(const Tensor& src,
-                                           Tensor& dst,
-                                           const std::vector<Tensor>& indices,
-                                           const SizeVector& indexing_shapes,
-                                           func_t element_kernel) {
+    static void LaunchRhsIndexedUnaryEWKernel(
+            const Tensor& src,
+            Tensor& dst,
+            const std::vector<Tensor>& indices,
+            const SizeVector& indexing_shapes,
+            func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
         int N = static_cast<int>(dst.GetShape().NumElements());
         int items_per_block = threads_per_block * items_per_thread;
@@ -110,11 +112,55 @@ public:
             indexing_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
+        auto default_strides = Tensor::DefaultStrides(dst.GetShape());
         IndexedOffsetCalculator src_offset_calculator(
-                src.GetStrides(), src.GetShape(), dst.GetStrides(),
+                src.GetStrides(), src.GetShape(), default_strides,
                 indexing_shapes, indexing_tensor_data_ptrs);
         OffsetCalculator dst_offset_calculator(
-                dst.GetStrides(), Tensor::DefaultStrides(dst.GetShape()));
+                dst.GetStrides(), default_strides);
+
+        const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
+        char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
+        int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+
+        auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
+            int src_idx = src_offset_calculator.GetOffset(thread_idx);
+            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
+            int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
+            element_kernel(src_ptr, dst_ptr);
+        };
+
+        ElementWiseKernel<threads_per_block, items_per_thread>
+                <<<grid_size, threads_per_block, 0>>>(N, f);
+    }
+
+    /// dst[indices] = src
+    template <typename scalar_t, typename func_t>
+    static void LaunchLhsIndexedUnaryEWKernel(
+            const Tensor& src,
+            Tensor& dst,
+            const std::vector<Tensor>& indices,
+            const SizeVector& indexing_shapes,
+            func_t element_kernel) {
+        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+        int N = static_cast<int>(src.GetShape().NumElements());
+        int items_per_block = threads_per_block * items_per_thread;
+        int grid_size = (N + items_per_block - 1) / items_per_block;
+
+        std::vector<const int*> indexing_tensor_data_ptrs;
+        for (int i = 0; i < indices.size(); ++i) {
+            auto index_tensor_ptr =
+                    static_cast<const int*>(indices[i].GetDataPtr());
+            indexing_tensor_data_ptrs.push_back(index_tensor_ptr);
+        }
+
+        auto default_strides = Tensor::DefaultStrides(src.GetShape());
+        OffsetCalculator src_offset_calculator(
+                src.GetStrides(), default_strides);
+        IndexedOffsetCalculator dst_offset_calculator(
+                dst.GetStrides(), dst.GetShape(), default_strides,
+                indexing_shapes, indexing_tensor_data_ptrs);
 
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());

@@ -78,20 +78,31 @@ void IndexedGet(const Tensor& src,
                 const SizeVector& indexing_shape) {
     if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
         dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
-        utility::LogInfo("CPU");
         IndexedGetCPU(src, dst, indices, indexing_shape);
 
     } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
                dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        utility::LogInfo("Cuda");
         IndexedGetCUDA(src, dst, indices, indexing_shape);
 #endif
     }
 }
+
 void IndexedSet(const Tensor& src,
                 Tensor& dst,
-                const std::vector<Tensor>& indices) {}
+                const std::vector<Tensor>& indices,
+                const SizeVector& indexing_shape) {
+    if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
+        dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
+        IndexedSetCPU(src, dst, indices, indexing_shape);
+
+    } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
+               dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        IndexedSetCUDA(src, dst, indices, indexing_shape);
+#endif
+    }
+}
 
 }  // namespace kernel
 }  // namespace open3d

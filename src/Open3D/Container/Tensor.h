@@ -157,8 +157,8 @@ public:
     /// Broadcasting: ([3], Tensor([3]))
     /// Fancy indexing: ([3, 2, 4], Tensor([3, 2, 4]))
     /// Note: now we only support 1D contiguous tensors
-    Tensor Index(const std::vector<Tensor>& indices) const;
-    void IndexPut(const std::vector<Tensor>& indices, const Tensor& value);
+    Tensor IndexGet(const std::vector<Tensor>& indices) const;
+    void IndexSet(const std::vector<Tensor>& indices, const Tensor& value);
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
