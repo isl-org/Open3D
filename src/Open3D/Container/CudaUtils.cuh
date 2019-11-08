@@ -45,7 +45,11 @@ inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
     }
 }
 
+#ifdef __CUDACC__
 #define OPEN3D_HOST_DEVICE __host__ __device__
+#else
+#define OPEN3D_HOST_DEVICE
+#endif
 
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \

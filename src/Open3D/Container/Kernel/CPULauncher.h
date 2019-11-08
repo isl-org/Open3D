@@ -27,85 +27,12 @@
 #pragma once
 #include <cassert>
 #include <vector>
+#include "Open3D/Container/Kernel/Scheduler.h"
 #include "Open3D/Container/Tensor.h"
-
 namespace open3d {
 namespace kernel {
 
 class CPULauncher {
-public:
-    /// Recover src tensor element offsets given dst tensor element offsets
-    /// src and dst tensors have the same size but may have different strides
-    class OffsetCalculator {
-    public:
-        OffsetCalculator(const std::vector<size_t>& src_strides,
-                         const std::vector<size_t>& dst_strides)
-            : num_dims_(src_strides.size()),
-              src_strides_(src_strides),
-              dst_strides_(dst_strides) {}
-
-        size_t GetOffset(size_t dst_idx) const {
-            size_t src_idx = 0;
-            for (size_t dim = 0; dim < num_dims_; dim++) {
-                src_idx += dst_idx / dst_strides_[dim] * src_strides_[dim];
-                dst_idx = dst_idx % dst_strides_[dim];
-            }
-            return src_idx;
-        }
-
-    protected:
-        size_t num_dims_;
-        std::vector<size_t> src_strides_;
-        std::vector<size_t> dst_strides_;
-    };
-
-    class IndexedOffsetCalculator {
-    public:
-        IndexedOffsetCalculator(
-                const std::vector<size_t>& src_strides,
-                const std::vector<size_t>& src_shape,
-                const std::vector<size_t>& dst_strides,
-                const std::vector<size_t>& indexing_shapes,
-                const std::vector<const int*>& indexing_tensor_data_ptrs)
-            : num_dims_(src_strides.size()),
-              src_strides_(src_strides),
-              src_shape_(src_shape),
-              dst_strides_(dst_strides),
-              indexing_shapes_(indexing_shapes),
-              indexing_tensor_data_ptrs_(indexing_tensor_data_ptrs) {}
-
-        size_t GetOffset(size_t thread_idx) const {
-            size_t output_idx = 0;
-            for (size_t dim = 0; dim < num_dims_; dim++) {
-                int64_t dim_idx = thread_idx / dst_strides_[dim];
-                size_t dim_size = indexing_shapes_[dim];
-
-                // clang-format off
-                dim_idx = (dim_size == 0) ? dim_idx
-                  : ((dim_size == 1)
-                     ? indexing_tensor_data_ptrs_[dim][0]
-                     : indexing_tensor_data_ptrs_[dim][dim_idx]);
-                // clang-format on
-
-                assert(dim_idx >= -(int64_t)src_shape_[dim] &&
-                       dim_idx < (int64_t)src_shape_[dim]);
-                dim_idx = (dim_idx >= 0) ? dim_idx : src_shape_[dim] + dim_idx;
-
-                output_idx += dim_idx * src_strides_[dim];
-                thread_idx = thread_idx % dst_strides_[dim];
-            }
-            return output_idx;
-        }
-
-    protected:
-        size_t num_dims_;
-        std::vector<size_t> src_strides_;
-        std::vector<size_t> src_shape_;
-        std::vector<size_t> dst_strides_;
-        std::vector<size_t> indexing_shapes_;
-        std::vector<const int*> indexing_tensor_data_ptrs_;
-    };
-
 public:
     template <typename scalar_t, typename func_t>
     static void LaunchUnaryEWKernel(const Tensor& src,
