@@ -81,8 +81,7 @@ public:
                 size_t dim_size = indexing_shapes_[dim];
 
                 // clang-format off
-                dim_idx = (dim_size == 0) ?
-                  dim_idx
+                dim_idx = (dim_size == 0) ? dim_idx
                   : ((dim_size == 1)
                      ? indexing_tensor_data_ptrs_[dim][0]
                      : indexing_tensor_data_ptrs_[dim][dim_idx]);
