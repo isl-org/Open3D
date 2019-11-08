@@ -181,6 +181,7 @@ public:
     Image &LinearTransform(double scale = 1.0, double offset = 0.0);
 
     /// Function to clipping pixel intensities.
+    /// 
     /// \param min is lower bound.
     /// \param max is upper bound.
     Image &ClipIntensity(double min = 0.0, double max = 1.0);
