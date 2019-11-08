@@ -48,6 +48,11 @@ void Copy(const Tensor& src, Tensor& dst) {
                           DtypeUtil::ToString(dst.GetDtype()));
     }
 
+    // Skip empty tensors
+    if (src.GetShape().size() == 0) {
+        return;
+    }
+
     // Disbatch to device
     Device::DeviceType src_device_type = src.GetDevice().device_type_;
     Device::DeviceType dst_device_type = dst.GetDevice().device_type_;

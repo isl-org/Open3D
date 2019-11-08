@@ -414,11 +414,13 @@ TEST_P(TensorPermuteDevices, CopyNonContiguous) {
 TEST_P(TensorPermuteDevices, Index) {
     Device device = GetParam();
 
+    utility::LogInfo("values");
     std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
     Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
 
     // t[:, [1], [0, 2, 1]]
+    utility::LogInfo("indices");
     std::vector<int> index1 = {1};
     std::vector<int> index2 = {0, 2, -1};
     std::vector<Tensor> indices = {Tensor(SizeVector(), Dtype::Int32, device),

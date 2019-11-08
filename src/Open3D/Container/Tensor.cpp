@@ -230,6 +230,8 @@ Tensor Tensor::Index(const std::vector<Tensor>& indices) const {
                           indices.size(), shape_.size());
     }
 
+    utility::LogInfo("Index!");
+
     std::vector<Tensor> preprocessed_indices;
     SizeVector output_shape;
     SizeVector indexing_shape;
