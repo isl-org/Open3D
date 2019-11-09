@@ -220,7 +220,7 @@ public:
     /// \param num_iterations Number of iterations.
     /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
     /// the plane inliers.
-    std::tuple<Eigen::Vector4d, std::vector<int>> SegmentPlane(
+    std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100) const;

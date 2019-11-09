@@ -1056,3 +1056,25 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage_1_4) {
                                        color_bytes_per_channel, ref_points,
                                        ref_colors);
 }
+
+TEST(PointCloud, SegmentPlane) {
+    // Points sampled from the plane x + y + z + 1 = 0
+    vector<Vector3d> ref = {{1.0, 1.0, -3.0},
+                            {2.0, 2.0, -5.0},
+                            {-1.0, -1.0, 1.0},
+                            {-2.0, -2.0, 3.0},
+                            {10.0, 10.0, -21.0}};
+
+    geometry::PointCloud pc;
+
+    for (int i = 0; i < ref.size(); i++) {
+        pc.points_.emplace_back(ref[i]);
+    }
+
+    Eigen::Vector4d plane_model;
+    std::vector<size_t> inliers;
+    std::tie(plane_model, inliers) = pc.SegmentPlane(0.01, 3, 10);
+    auto output_pc = pc.SelectDownSample(inliers);
+
+    ExpectEQ(ref, output_pc->points_);
+}

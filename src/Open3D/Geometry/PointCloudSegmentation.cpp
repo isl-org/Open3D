@@ -55,12 +55,12 @@ public:
 RANSACResult EvaluateRANSACBasedOnDistance(
         const std::vector<Eigen::Vector3d> &points,
         const Eigen::Vector4d plane_model,
-        std::vector<int> &inliers,
+        std::vector<size_t> &inliers,
         double distance_threshold,
         double error) {
     RANSACResult result;
 
-    for (int idx = 0; idx < points.size(); ++idx) {
+    for (size_t idx = 0; idx < points.size(); ++idx) {
         Eigen::Vector4d point(points[idx](0), points[idx](1), points[idx](2),
                               1);
         double distance = std::abs(plane_model.dot(point));
@@ -71,7 +71,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
         }
     }
 
-    int inlier_num = inliers.size();
+    size_t inlier_num = inliers.size();
     if (inlier_num == 0) {
         result.fitness_ = 0;
         result.inlier_rmse_ = 0;
@@ -88,7 +88,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
 // Reference:
 // https://www.ilikebigbits.com/2015_03_04_plane_from_points.html
 Eigen::Vector4d GetPlaneFromPoints(const std::vector<Eigen::Vector3d> &points,
-                                   const std::vector<int> &inliers) {
+                                   const std::vector<size_t> &inliers) {
     Eigen::Vector3d centroid(0, 0, 0);
     for (size_t idx : inliers) {
         centroid += points[idx];
@@ -130,7 +130,7 @@ Eigen::Vector4d GetPlaneFromPoints(const std::vector<Eigen::Vector3d> &points,
     return Eigen::Vector4d(abc(0), abc(1), abc(2), d);
 }
 
-std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
+std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
         const int num_iterations /* = 100 */) const {
@@ -143,10 +143,10 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
 
     // Initialize consensus set.
-    std::vector<int> inliers;
+    std::vector<size_t> inliers;
 
-    int num_points = points_.size();
-    std::vector<int> indices(num_points);
+    size_t num_points = points_.size();
+    std::vector<size_t> indices(num_points);
     std::iota(std::begin(indices), std::end(indices), 0);
 
     std::random_device rd;
@@ -164,7 +164,7 @@ std::tuple<Eigen::Vector4d, std::vector<int>> PointCloud::SegmentPlane(
             std::swap(indices[i], indices[rng() % num_points]);
         }
         inliers.clear();
-        for (size_t idx = 0; idx < ransac_n; ++idx) {
+        for (int idx = 0; idx < ransac_n; ++idx) {
             inliers.emplace_back(indices[idx]);
         }
 

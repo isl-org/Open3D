@@ -13,7 +13,9 @@ if __name__ == "__main__":
     print(
         "Find the plane model and the inliers of the largest planar segment in the point cloud."
     )
-    plane_model, inliers = pcd.segment_plane(0.01, 3, 250)
+    plane_model, inliers = pcd.segment_plane(
+        distance_threshold=0.01, ransac_n=3, num_iterations=250
+    )
 
     [a, b, c, d] = plane_model
     print(f"Plane model: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
