@@ -33,11 +33,15 @@
 namespace open3d {
 namespace visualization {
 
+/// \class VisualizerWithKeyCallback
+///
+/// \brief Visualizer with custom key callack capabilities.
 class VisualizerWithKeyCallback : public Visualizer {
 public:
     typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;
 
 public:
+    /// \brief Default Constructor.
     VisualizerWithKeyCallback();
     ~VisualizerWithKeyCallback() override;
     VisualizerWithKeyCallback(const VisualizerWithKeyCallback &) = delete;

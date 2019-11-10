@@ -41,6 +41,10 @@ class AxisAlignedBoundingBox;
 class TriangleMesh;
 class TetraMesh;
 
+/// \class LineSet
+///
+/// \brief LineSet define a sets of lines in 3D. A typical application is to
+/// display the point cloud correspondence pairs.
 class LineSet : public Geometry3D {
 public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
@@ -68,36 +72,60 @@ public:
     LineSet &operator+=(const LineSet &lineset);
     LineSet operator+(const LineSet &lineset) const;
 
+    /// Returns `true` iff the number of points are greater than 0.
     bool HasPoints() const { return points_.size() > 0; }
 
+    /// Returns `true` iff the number of lines are greater than 0 & HasPoints()
+    /// is `true`.
     bool HasLines() const { return HasPoints() && lines_.size() > 0; }
 
+    /// Returns `true` iff all lines have colors and HasLines() is `true`.
     bool HasColors() const {
         return HasLines() && colors_.size() == lines_.size();
     }
 
+    /// \fn GetLineCoordinate
+    ///
+    /// \brief Returns the coordinates of the line at the given index.
+    /// \param line_index - Index of the line.
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
             size_t line_index) const {
         return std::make_pair(points_[lines_[line_index][0]],
                               points_[lines_[line_index][1]]);
     }
 
-    /// Assigns each line in the LineSet the same color \param color.
+    /// \fn PaintUniformColor
+    ///
+    /// \brief Assigns each line in the LineSet the same color.
+    /// \param color - specifies the color to be applied.
     LineSet &PaintUniformColor(const Eigen::Vector3d &color) {
         ResizeAndPaintUniformColor(colors_, lines_.size(), color);
         return *this;
     }
 
-    /// Factory function to create a LineSet from two PointClouds
-    /// (\param cloud0, \param cloud1) and a correspondence set
-    /// \param correspondences.
+    /// \fn CreateFromPointCloudCorrespondences
+    ///
+    /// \brief Factory function to create a LineSet from two PointClouds
+    /// (\param cloud0, \param cloud1) and a correspondence set.
+    /// \param cloud0 - First point cloud.
+    /// \param cloud1 - Second point cloud.
+    /// \param correspondences - Set of correspondences..
     static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
             const PointCloud &cloud0,
             const PointCloud &cloud1,
             const std::vector<std::pair<int, int>> &correspondences);
 
+    /// \fn CreateFromOrientedBoundingBox
+    ///
+    /// \brief Factory function to create a LineSet from an OrientedBoundingBox.
+    /// \param box - The input bounding box.
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
             const OrientedBoundingBox &box);
+
+    /// \fn CreateFromAxisAlignedBoundingBox
+    ///
+    /// \brief Factory function to create a LineSet from an
+    /// AxisAlignedBoundingBox. \param box - The input bounding box.
     static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox &box);
 
@@ -111,8 +139,11 @@ public:
     static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh &mesh);
 
 public:
+    /// Points coordinates.
     std::vector<Eigen::Vector3d> points_;
+    /// Lines denoted by the index of points forming the line.
     std::vector<Eigen::Vector2i> lines_;
+    /// RGB colors of lines.
     std::vector<Eigen::Vector3d> colors_;
 };
 

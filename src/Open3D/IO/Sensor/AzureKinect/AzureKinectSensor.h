@@ -47,8 +47,12 @@ namespace io {
 // Avoid including AzureKinectRecorder.h
 class AzureKinectRecorder;
 
+/// \class AzureKinectSensor
+///
+/// AzureKinect sensor.
 class AzureKinectSensor : public RGBDSensor {
 public:
+    /// \brief Default Constructor.
     AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);
     ~AzureKinectSensor();
 
@@ -57,6 +61,7 @@ public:
             bool enable_align_depth_to_color) const override;
 
     static bool PrintFirmware(_k4a_device_t* device);
+    /// List available Azure Kinect devices.
     static bool ListDevices();
     static std::shared_ptr<geometry::RGBDImage> DecompressCapture(
             _k4a_capture_t* capture, _k4a_transformation_t* transformation);

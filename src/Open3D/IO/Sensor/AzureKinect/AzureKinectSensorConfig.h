@@ -38,6 +38,10 @@ namespace open3d {
 namespace io {
 
 // Alternative implementation of _k4a_device_configuration_t with string values
+
+/// \class AzureKinectSensorConfig
+///
+/// AzureKinect sensor configuration.
 class AzureKinectSensorConfig : public RGBDSensorConfig {
 public:
     /// Default constructor, default configs will be used

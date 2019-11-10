@@ -106,7 +106,7 @@ void pybind_octree(py::module &m) {
                std::shared_ptr<geometry::OctreeInternalNode>,
                geometry::OctreeNode>
             octree_internal_node(m, "OctreeInternalNode",
-                                 "OctreeInternalNode class, conataining "
+                                 "OctreeInternalNode class, containing "
                                  "OctreeNode children.");
     octree_internal_node.def(
             "__repr__", [](const geometry::OctreeInternalNode &internal_node) {

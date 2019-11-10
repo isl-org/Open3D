@@ -69,6 +69,7 @@ public:
 
     /// Debug function to extract the voxel data into a VoxelGrid
     std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud() const;
+    /// Debug function to extract the voxel data VoxelGrid
     std::shared_ptr<geometry::VoxelGrid> ExtractVoxelGrid() const;
 
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
@@ -90,8 +91,11 @@ public:
 public:
     std::vector<geometry::TSDFVoxel> voxels_;
     Eigen::Vector3d origin_;
+    /// Total length, where voxel_length = length / resolution.
     double length_;
+    /// Resolution over the total length, where voxel_length = length / resolution.
     int resolution_;
+    /// Number of voxels present.
     int voxel_num_;
 
 private:

@@ -97,7 +97,7 @@ In SIGGRAPH, 1996)");
                  "Function to extract a triangle mesh")
             .def_readwrite("voxel_length",
                            &integration::TSDFVolume::voxel_length_,
-                           "float: Voxel size.")
+                           "float: Length of the voxel in meters.")
             .def_readwrite("sdf_trunc", &integration::TSDFVolume::sdf_trunc_,
                            "float: Truncation value for signed distance "
                            "function (SDF).")

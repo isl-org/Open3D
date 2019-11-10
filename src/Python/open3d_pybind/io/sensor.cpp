@@ -137,7 +137,8 @@ void pybind_sensor(py::module &m) {
             m, "AzureKinectMKVReader", "AzureKinect mkv file reader.");
     azure_kinect_mkv_reader.def(py::init([]() { return io::MKVReader(); }));
     azure_kinect_mkv_reader
-            .def("is_opened", &io::MKVReader::IsOpened, "Is mkv file opened.")
+            .def("is_opened", &io::MKVReader::IsOpened,
+                 "Check if the mkv file  is opened.")
             .def("open", &io::MKVReader::Open, "filename"_a,
                  "Open an mkv playback.")
             .def("close", &io::MKVReader::Close,

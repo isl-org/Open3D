@@ -34,6 +34,9 @@ namespace visualization {
 class SelectionPolygon;
 class PointCloudPicker;
 
+/// \class VisualizerWithEditing
+///
+/// \brief Visualizer with editing capabilities.
 class VisualizerWithEditing : public Visualizer {
 public:
     enum class SelectionMode {
@@ -43,6 +46,9 @@ public:
     };
 
 public:
+    /// Function to add geometry to the scene and create corresponding shaders.
+    ///
+    /// \param geometry The Geometry object.
     VisualizerWithEditing(double voxel_size = -1.0,
                           bool use_dialog = true,
                           const std::string &directory = "")

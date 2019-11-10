@@ -44,8 +44,19 @@ class RGBDImage;
 }
 
 namespace odometry {
-/// Function to estimate 6D odometry between two RGB-D images
-/// output: is_success, 4x4 motion matrix, 6x6 information matrix
+
+/// \fn ComputeRGBDOdometry
+/// 
+/// \brief Function to estimate 6D rigid motion from two RGBD image pairs.
+///
+/// \param source Source RGBD image.
+/// \param target Target RGBD image.
+/// \param pinhole_camera_intrinsic Camera intrinsic parameters.  Default value: PinholeCameraIntrinsic [width=-1, height=-1]
+/// \param odo_init Initial 4x4 motion matrix estimation. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]])
+/// \param jacobin_method The odometry Jacobian method to use.
+/// \param option Odometry hyper parameteres. Default value: OdometryOption [iteration_number_per_pyramid_level = [ 20, 10, 5, ], max_depth_diff = 0.030000, min_depth = 0.000000, max_depth = 4.000000]
+///
+/// \return is_success, 4x4 motion matrix, 6x6 information matrix.
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,

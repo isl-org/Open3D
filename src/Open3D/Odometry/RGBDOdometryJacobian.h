@@ -49,9 +49,12 @@ namespace odometry {
 typedef std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
         CorrespondenceSetPixelWise;
 
-/// Base class that computes Jacobian from two RGB-D images
+/// \class RGBDOdometryJacobian
+///
+/// \brief Base class that computes Jacobian from two RGB-D images.
 class RGBDOdometryJacobian {
 public:
+    /// \brief Default Constructor.
     RGBDOdometryJacobian() {}
     virtual ~RGBDOdometryJacobian() {}
 
@@ -74,7 +77,10 @@ public:
             const CorrespondenceSetPixelWise &corresps) const = 0;
 };
 
-/// Class to compute Jacobian using color term
+/// \class RGBDOdometryJacobianFromColorTerm
+///
+/// \brief Class to compute Jacobian using color term.
+///
 /// Energy: (I_p-I_q)^2
 /// reference:
 /// F. Steinbrucker, J. Sturm, and D. Cremers.
@@ -82,10 +88,12 @@ public:
 /// In ICCV Workshops, 2011.
 class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 public:
+    /// \brief Default Constructor.
     RGBDOdometryJacobianFromColorTerm() {}
     ~RGBDOdometryJacobianFromColorTerm() override {}
 
 public:
+    /// \brief Parameterized Constructor
     void ComputeJacobianAndResidual(
             int row,
             std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
@@ -100,17 +108,22 @@ public:
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
-/// Class to compute Jacobian using hybrid term
+/// \class RGBDOdometryJacobianFromHybridTerm
+///
+/// \brief Class to compute Jacobian using hybrid term.
+///
 /// Energy: (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
 /// reference:
 /// J. Park, Q.-Y. Zhou, and V. Koltun
-/// anonymous submission
+/// anonymous submission.
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
+    /// \brief Default Constructor.
     RGBDOdometryJacobianFromHybridTerm() {}
     ~RGBDOdometryJacobianFromHybridTerm() override {}
 
 public:
+    /// \brief Parameterized Constructor.
     void ComputeJacobianAndResidual(
             int row,
             std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,

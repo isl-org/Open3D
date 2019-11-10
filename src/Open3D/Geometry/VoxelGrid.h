@@ -49,48 +49,96 @@ class TriangleMesh;
 class Octree;
 class Image;
 
+/// \class Voxel
+///
+/// \brief Base Voxel class, containing grid id and color.
 class Voxel {
 public:
+    /// \brief Default Constructor.
     Voxel() {}
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param grid_index - Grid coordinate index of the voxel.
     Voxel(const Eigen::Vector3i &grid_index) : grid_index_(grid_index) {}
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param grid_index - Grid coordinate index of the voxel.
+    /// \param color - Color of the voxel.
     Voxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3d &color)
         : grid_index_(grid_index), color_(color) {}
     ~Voxel() {}
 
 public:
+    /// Grid coordinate index of the voxel.
     Eigen::Vector3i grid_index_ = Eigen::Vector3i(0, 0, 0);
+    /// Color of the voxel.
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
 
+/// \class VoxelGrid
+///
+/// \brief VoxelGrid is a collection of voxels which are aligned in grid.
 class VoxelGrid : public Geometry3D {
 public:
+    /// \brief Default Constructor.
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
+    /// \brief Copy Constructor.
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
 
+    /// Clear all elements in the geometry.
     VoxelGrid &Clear() override;
+    /// Returns `true` iff the geometry is empty.
     bool IsEmpty() const override;
+    /// Returns min bounds for geometry coordinates.
     Eigen::Vector3d GetMinBound() const override;
+    /// Returns max bounds for geometry coordinates.
     Eigen::Vector3d GetMaxBound() const override;
+    /// Returns center for geometry coordinates.
     Eigen::Vector3d GetCenter() const override;
+    /// Returns an axis-aligned bounding box of the geometry.
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    /// Returns an oriented bounding box of the geometry.
     OrientedBoundingBox GetOrientedBoundingBox() const override;
+    /// Apply transformation (4x4 matrix) to the geometry coordinates.
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
+    /// Apply translation to the geometry coordinates.
+    ///
+    /// \param translation - A 3D vector to transform the geometry.
+    /// \param relative - If `true`, the translation vector is directly added to
+    /// the geometry coordinates. Otherwise, the center is moved to the
+    /// translation vector.
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;
+    /// Apply scaling to the geometry coordinates.
+    ///
+    /// \param scale -  The scale parameter that is multiplied to the
+    /// points/vertices of the geometry.
+    /// \param center - If `true`, then the scale is applied to the centered
+    /// geometry.
     VoxelGrid &Scale(const double scale, bool center = true) override;
+    /// Apply rotation to the geometry coordinates and normals.
+    ///
+    /// \param R - A 3D vector that either defines the three angles for Euler
+    /// rotation, or in the axis-angle representation the normalized vector
+    /// defines the axis of rotation and the norm the angle around this axis.
+    /// \param center - If `true`, then the rotation is applied to the centered
+    /// geometry.
     VoxelGrid &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
-
+    
+    /// Returns `true` if the voxel grid contains voxels.
     bool HasVoxels() const { return voxels_.size() > 0; }
+    /// Returns `true` if the voxel grid contains voxel colors.
     bool HasColors() const {
         return true;  // By default, the colors are (0, 0, 0)
     }
+    /// Returns voxel index given query point.
     Eigen::Vector3i GetVoxel(const Eigen::Vector3d &point) const;
 
-    // Function that returns the 3d coordinates of the queried voxel center
+    /// Function that returns the 3d coordinates of the queried voxel center.
     Eigen::Vector3d GetVoxelCenterCoordinate(const Eigen::Vector3i &idx) const {
         auto it = voxels_.find(idx);
         if (it != voxels_.end()) {
@@ -104,15 +152,15 @@ public:
         }
     }
 
-    /// Add a voxel with specified grid index and color
+    /// Add a voxel with specified grid index and color.
     void AddVoxel(const Voxel &voxel);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
             const Eigen::Vector3i &index) const;
 
-    // Element-wise check if a query in the list is included in the VoxelGrid
-    // Queries are double precision and are mapped to the closest voxel.
+    /// Element-wise check if a query in the list is included in the VoxelGrid
+    /// Queries are double precision and are mapped to the closest voxel.
     std::vector<bool> CheckIfIncluded(
             const std::vector<Eigen::Vector3d> &queries);
 
@@ -136,40 +184,40 @@ public:
 
     std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
 
-    // Creates a voxel grid where every voxel is set (hence dense). This is a
-    // useful starting point for voxel carving.
+    /// Creates a voxel grid where every voxel is set (hence dense). This is a
+    /// useful starting point for voxel carving.
     static std::shared_ptr<VoxelGrid> CreateDense(const Eigen::Vector3d &origin,
                                                   double voxel_size,
                                                   double width,
                                                   double height,
                                                   double depth);
 
-    // Creates a VoxelGrid from a given PointCloud. The color value of a given
-    // voxel is the average color value of the points that fall into it (if the
-    // PointCloud has colors).
-    // The bounds of the created VoxelGrid are computed from the PointCloud.
+    /// Creates a VoxelGrid from a given PointCloud. The color value of a given
+    /// voxel is the average color value of the points that fall into it (if the
+    /// PointCloud has colors).
+    /// The bounds of the created VoxelGrid are computed from the PointCloud.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
             const PointCloud &input, double voxel_size);
 
-    // Creates a VoxelGrid from a given PointCloud. The color value of a given
-    // voxel is the average color value of the points that fall into it (if the
-    // PointCloud has colors).
-    // The bounds of the created VoxelGrid are defined by the given parameters.
+    /// Creates a VoxelGrid from a given PointCloud. The color value of a given
+    /// voxel is the average color value of the points that fall into it (if the
+    /// PointCloud has colors).
+    /// The bounds of the created VoxelGrid are defined by the given parameters.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloudWithinBounds(
             const PointCloud &input,
             double voxel_size,
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound);
 
-    // Creates a VoxelGrid from a given TriangleMesh. No color information is
-    // converted. The bounds of the created VoxelGrid are computed from the
-    // TriangleMesh..
+    /// Creates a VoxelGrid from a given TriangleMesh. No color information is
+    /// converted. The bounds of the created VoxelGrid are computed from the
+    /// TriangleMesh..
     static std::shared_ptr<VoxelGrid> CreateFromTriangleMesh(
             const TriangleMesh &input, double voxel_size);
 
-    // Creates a VoxelGrid from a given TriangleMesh. No color information is
-    // converted. The bounds of the created VoxelGrid are defined by the given
-    // parameters..
+    /// Creates a VoxelGrid from a given TriangleMesh. No color information is
+    /// converted. The bounds of the created VoxelGrid are defined by the given
+    /// parameters..
     static std::shared_ptr<VoxelGrid> CreateFromTriangleMeshWithinBounds(
             const TriangleMesh &input,
             double voxel_size,
@@ -178,14 +226,18 @@ public:
 
 public:
     double voxel_size_ = 0.0;
+    /// Coorindate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
+    /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
                        Voxel,
                        utility::hash_eigen::hash<Eigen::Vector3i>>
             voxels_;
 };
 
-/// Class to aggregate color values from different votes in one voxel
+/// \class AvgColorVoxel
+///
+/// \brief Class to aggregate color values from different votes in one voxel
 /// Computes the average color value in the voxel.
 class AvgColorVoxel {
 public:
