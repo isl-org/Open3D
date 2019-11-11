@@ -77,13 +77,10 @@ public:
     virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
-
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
-
     virtual OrientedBoundingBox& Scale(const double scale,
                                        bool center = true) override;
-
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                         bool center = true) override;
 
@@ -96,7 +93,7 @@ public:
     std::vector<size_t> GetPointIndicesWithinBoundingBox(
             const std::vector<Eigen::Vector3d>& points) const;
 
-    /// Returns an oriented bounding box from the Axis Aligned Bounding Box.
+    /// Returns an oriented bounding box from the AxisAlignedBoundingBox.
     ///
     /// \param aabox AxisAlignedBoundingBox object from which
     /// OrientedBoundingBox is created.
@@ -171,7 +168,7 @@ public:
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 
-    /// Get the extent/length of the bounding box in x, y, and z dimension
+    /// Get the extent/length of the bounding box in x, y, and z dimension.
     Eigen::Vector3d GetExtent() const { return (max_bound_ - min_bound_); }
 
     /// Returns the half extent of the bounding box.
