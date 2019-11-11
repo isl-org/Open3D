@@ -2,6 +2,7 @@
 find_package(PkgConfig QUIET)
 find_package(OpenGL    QUIET)
 find_package(pybind11  QUIET)
+find_package(SDL2      QUIET)
 
 if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
@@ -313,6 +314,30 @@ endif()
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
+# Filament library
+if (ENABLE_GUI)
+    # Filament can only be compiled with Clang and Visual Studio, not GCC
+    if (UNIX AND NOT APPLE AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        message(STATUS "Filament requires Clang >= 7, it cannot be built with GCC.")
+        message(STATUS "ENABLE_GUI is set to OFF")
+        set(ENABLE_GUI OFF)
+    else ()
+        message(STATUS "Building Filament from source")
+        include(filament/filament.cmake)
+        INSTALL_HEADERS(filament)
+    endif ()
+endif()
+
+if (ENABLE_GUI)
+    if (SDL2_FOUND)
+        message(STATUS "Using installed SDL2 ${SDL2_VERSION}")
+    else ()
+        message(STATUS "Building SDL2 from source")
+        add_subdirectory(SDL2-2.0.10)
+        INSTALL_HEADERS(SDL2-2.0.10)
+    endif ()
+endif()
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
      ${EIGEN3_INCLUDE_DIRS}
@@ -334,6 +359,13 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
 )
+
+if (ENABLE_GUI)
+list(APPEND 3RDPARTY_INCLUDE_DIRS
+     ${filament_INCLUDE_DIRS}
+     ${SDL2_INCLUDE_DIRS}
+)
+endif()
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -367,6 +399,14 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
 )
+
+if (ENABLE_GUI)
+list(APPEND 3RDPARTY_LIBRARIES
+     ${filament_LIBRARIES}
+     ${SDL2_LIBRARIES}
+)
+endif()
+
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,

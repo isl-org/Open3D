@@ -28,3 +28,6 @@
 [submodule "3rdparty/libjpeg-turbo/libjpeg-turbo"]
 	path = 3rdparty/libjpeg-turbo/libjpeg-turbo
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
+[submodule "3rdparty/filament/filament"]
+	path = 3rdparty/filament/filament
+	url = https://github.com/google/filament.git
