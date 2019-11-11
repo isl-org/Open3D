@@ -49,9 +49,7 @@ protected:
     Geometry2D(GeometryType type) : Geometry(type, 2) {}
 
 public:
-    /// Clear all elements in the geometry.
     Geometry& Clear() override = 0;
-    /// Returns `true` iff the geometry is empty.
     bool IsEmpty() const override = 0;
     /// Returns min bounds for geometry coordinates.
     virtual Eigen::Vector2d GetMinBound() const = 0;

@@ -50,13 +50,11 @@ public:
 protected:
     /// \brief Parameterized Constructor.
     ///
-    /// \param type - type of object based on GeometryType.
+    /// \param type type of object based on GeometryType.
     Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
 public:
-    /// Clear all elements in the geometry.
     Geometry3D& Clear() override = 0;
-    /// Returns `true` iff the geometry is empty.
     bool IsEmpty() const override = 0;
     /// Returns min bounds for geometry coordinates.
     virtual Eigen::Vector3d GetMinBound() const = 0;
@@ -191,7 +189,7 @@ protected:
     /// \param R A 3D vector that either defines the three angles for Euler
     /// rotation, or in the axis-angle representation the normalized vector
     /// defines the axis of rotation and the norm the angle around this axis.
-    /// \param normals A list of normals to be transformed
+    /// \param normals A list of normals to be transformed.
     /// \param center If `true`, then the rotation is applied to the centered
     /// geometry.
     void RotateNormals(const Eigen::Matrix3d& R,
