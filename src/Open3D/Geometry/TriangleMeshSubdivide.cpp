@@ -128,10 +128,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
             EdgeTrianglesMap;
     typedef std::vector<std::unordered_set<int>> VertexNeighbours;
 
-    auto CreateEdge = [](int vidx0, int vidx1) {
-        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
-    };
-
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
 
@@ -143,7 +139,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         // check if boundary edge and get nb vertices in that case
         std::unordered_set<int> boundary_nbs;
         for (int nb : nbs) {
-            const Eigen::Vector2i edge = CreateEdge(vidx, nb);
+            const Eigen::Vector2i edge = GetOrderedEdge(vidx, nb);
             if (edge_to_triangles.at(edge).size() == 1) {
                 boundary_nbs.insert(nb);
             }
@@ -205,7 +201,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
                              std::shared_ptr<TriangleMesh>& new_mesh,
                              EdgeNewVertMap& new_verts,
                              const EdgeTrianglesMap& edge_to_triangles) {
-        Eigen::Vector2i edge = CreateEdge(vidx0, vidx1);
+        Eigen::Vector2i edge = GetOrderedEdge(vidx0, vidx1);
         if (new_verts.count(edge) == 0) {
             Eigen::Vector3d new_vert =
                     old_mesh->vertices_[vidx0] + old_mesh->vertices_[vidx1];
@@ -280,9 +276,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
                               EdgeTrianglesMap& edge_to_triangles,
                               VertexNeighbours& vertex_neighbours) {
         mesh->triangles_[tidx] = Eigen::Vector3i(vidx0, vidx1, vidx2);
-        edge_to_triangles[CreateEdge(vidx0, vidx1)].insert(tidx);
-        edge_to_triangles[CreateEdge(vidx1, vidx2)].insert(tidx);
-        edge_to_triangles[CreateEdge(vidx2, vidx0)].insert(tidx);
+        edge_to_triangles[GetOrderedEdge(vidx0, vidx1)].insert(tidx);
+        edge_to_triangles[GetOrderedEdge(vidx1, vidx2)].insert(tidx);
+        edge_to_triangles[GetOrderedEdge(vidx2, vidx0)].insert(tidx);
         vertex_neighbours[vidx0].insert(vidx1);
         vertex_neighbours[vidx0].insert(vidx2);
         vertex_neighbours[vidx1].insert(vidx0);
@@ -295,11 +291,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
     VertexNeighbours vertex_neighbours(vertices_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto& tria = triangles_[tidx];
-        Eigen::Vector2i e0 = CreateEdge(tria(0), tria(1));
+        Eigen::Vector2i e0 = GetOrderedEdge(tria(0), tria(1));
         edge_to_triangles[e0].insert(int(tidx));
-        Eigen::Vector2i e1 = CreateEdge(tria(1), tria(2));
+        Eigen::Vector2i e1 = GetOrderedEdge(tria(1), tria(2));
         edge_to_triangles[e1].insert(int(tidx));
-        Eigen::Vector2i e2 = CreateEdge(tria(2), tria(0));
+        Eigen::Vector2i e2 = GetOrderedEdge(tria(2), tria(0));
         edge_to_triangles[e2].insert(int(tidx));
 
         if (edge_to_triangles[e0].size() > 2 ||
