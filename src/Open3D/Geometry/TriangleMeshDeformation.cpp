@@ -99,8 +99,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
                                       Eigen::VectorXd(vertices_.size()),
                                       Eigen::VectorXd(vertices_.size())};
     for (size_t iter = 0; iter < max_iter; ++iter) {
-        // Update rotations
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
         for (int i = 0; i < int(vertices_.size()); ++i) {
+            // Update rotations
             Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
             for (int j : prime->adjacency_list_[i]) {
                 Eigen::Vector3d e0 = vertices_[i] - vertices_[j];
@@ -123,8 +126,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             }
         }
 
-        // Update Positions
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
         for (int i = 0; i < int(vertices_.size()); ++i) {
+            // Update Positions
             Eigen::Vector3d bi(0, 0, 0);
             if (constraints.count(i) > 0) {
                 bi = constraints[i];
@@ -139,6 +145,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             b[1](i) = bi(1);
             b[2](i) = bi(2);
         }
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
         for (int comp = 0; comp < 3; ++comp) {
             Eigen::VectorXd p_prime = solver.solve(b[comp]);
             if (solver.info() != Eigen::Success) {

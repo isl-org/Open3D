@@ -539,7 +539,7 @@ public:
     std::vector<std::unordered_set<int>> adjacency_list_;
     std::vector<Eigen::Vector2d> triangle_uvs_;
     Image texture_;
-};  // namespace geometry
+};
 
 }  // namespace geometry
 }  // namespace open3d
