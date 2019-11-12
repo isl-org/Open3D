@@ -152,13 +152,13 @@ if (WIN32)
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
-    # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    # enable c++14
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_definitions(-DCYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
-    # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    # enable c++14
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_compile_options(-Wno-deprecated-declarations)
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -170,9 +170,9 @@ elseif (APPLE)
     endif()
 elseif (UNIX)
     add_definitions(-DUNIX)
-    # enable c++11
+    # enable c++14, specify libc++ instead of libstdc++ because Clang uses it
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=libc++ -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
     add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake

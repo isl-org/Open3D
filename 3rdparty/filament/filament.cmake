@@ -70,9 +70,6 @@ elseif (APPLE)
 
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fobjc-link-runtime")
 else ()
-#    # These are needed by Clang on Linux
-#    target_link_libraries(demo pthread)
-#    target_link_libraries(demo dl)
-#    target_link_libraries(demo c++)
-#    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    # These are needed by Clang on Linux
+    list(APPEND filament_LIBRARIES pthread dl c++)
 endif()
