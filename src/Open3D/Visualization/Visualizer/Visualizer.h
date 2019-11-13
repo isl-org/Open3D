@@ -119,6 +119,8 @@ public:
     /// undefined. Programmers are responsible for calling UpdateGeometry() to
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
+    virtual bool AddGeometryNoFit(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr);
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
