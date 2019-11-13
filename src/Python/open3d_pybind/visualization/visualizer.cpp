@@ -89,6 +89,10 @@ void pybind_visualizer(py::module &m) {
                  "Function to inform render needed to be updated")
             .def("poll_events", &visualization::Visualizer::PollEvents,
                  "Function to poll events")
+            .def("add_geometry_no_fit", &visualization::Visualizer::AddGeometryNoFit,
+                 "Function to add geometry to the scene and create "
+                 "corresponding shaders",
+                 "geometry"_a)
             .def("add_geometry", &visualization::Visualizer::AddGeometry,
                  "Function to add geometry to the scene and create "
                  "corresponding shaders",

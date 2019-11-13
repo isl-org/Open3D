@@ -293,6 +293,92 @@ bool Visualizer::PollEvents() {
     return !glfwWindowShouldClose(window_);
 }
 
+bool Visualizer::AddGeometryNoFit(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (is_initialized_ == false) {
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+    std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
+    if (geometry_ptr->GetGeometryType() ==
+        geometry::Geometry::GeometryType::Unspecified) {
+        return false;
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::PointCloud) {
+        renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::VoxelGrid) {
+        renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::Octree) {
+        renderer_ptr = std::make_shared<glsl::OctreeRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::LineSet) {
+        renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+                       geometry::Geometry::GeometryType::TriangleMesh ||
+               geometry_ptr->GetGeometryType() ==
+                       geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
+        renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::Image) {
+        renderer_ptr = std::make_shared<glsl::ImageRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::RGBDImage) {
+        renderer_ptr = std::make_shared<glsl::RGBDImageRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::TetraMesh) {
+        renderer_ptr = std::make_shared<glsl::TetraMeshRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::OrientedBoundingBox) {
+        renderer_ptr = std::make_shared<glsl::OrientedBoundingBoxRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
+        renderer_ptr = std::make_shared<glsl::AxisAlignedBoundingBoxRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    geometry_renderer_ptrs_.insert(renderer_ptr);
+    geometry_ptrs_.insert(geometry_ptr);
+    //view_control_ptr_->FitInGeometry(*geometry_ptr);
+    //ResetViewPoint();
+    //utility::LogDebug(
+    //        "Add geometry and update bounding box to {}",
+    //        view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    return UpdateGeometry();
+}
+
+
 bool Visualizer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (is_initialized_ == false) {
@@ -392,10 +478,10 @@ bool Visualizer::RemoveGeometry(
     if (geometry_renderer_delete == NULL) return false;
     geometry_renderer_ptrs_.erase(geometry_renderer_delete);
     geometry_ptrs_.erase(geometry_ptr);
-    ResetViewPoint(true);
-    utility::LogDebug(
-            "Remove geometry and update bounding box to {}",
-            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    //ResetViewPoint(true);
+    //utility::LogDebug(
+    //        "Remove geometry and update bounding box to {}",
+    //        view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
