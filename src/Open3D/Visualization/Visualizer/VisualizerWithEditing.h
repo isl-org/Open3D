@@ -54,8 +54,8 @@ public:
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
 public:
-    bool AddGeometry(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool AddGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr,
+                     bool reset_bounding_box = true) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;

@@ -89,16 +89,13 @@ void pybind_visualizer(py::module &m) {
                  "Function to inform render needed to be updated")
             .def("poll_events", &visualization::Visualizer::PollEvents,
                  "Function to poll events")
-            .def("add_geometry_no_fit", &visualization::Visualizer::AddGeometryNoFit,
-                 "Function to add geometry to the scene and create "
-                 "corresponding shaders",
-                 "geometry"_a)
             .def("add_geometry", &visualization::Visualizer::AddGeometry,
                  "Function to add geometry to the scene and create "
                  "corresponding shaders",
-                 "geometry"_a)
+                 "geometry"_a, "reset_bounding_box"_a = true)
             .def("remove_geometry", &visualization::Visualizer::RemoveGeometry,
-                 "Function to remove geometry", "geometry"_a)
+                 "Function to remove geometry", "geometry"_a,
+                 "reset_bounding_box"_a = true)
             .def("get_view_control", &visualization::Visualizer::GetViewControl,
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
