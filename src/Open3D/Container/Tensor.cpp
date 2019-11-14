@@ -29,6 +29,7 @@
 #include <sstream>
 
 #include "Open3D/Container/Blob.h"
+#include "Open3D/Container/Broadcast.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/Dispatch.h"
 #include "Open3D/Container/Dtype.h"
@@ -67,19 +68,33 @@ Tensor& Tensor::operator=(Tensor&& other) & {
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
     return *this;
-};
+}
 
 /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
-};
+}
+
+/// Assign (copy) values from another Tensor, shape, dtype, device may change.
+void Tensor::Assign(const Tensor& other) {
+    shape_ = other.shape_;
+    strides_ = DefaultStrides(shape_);
+    dtype_ = other.dtype_;
+    device_ = other.device_;
+    blob_ = std::make_shared<Blob>(
+            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), device_);
+    data_ptr_ = blob_->v_;
+    kernel::Copy(other, *this);
+}
 
 Tensor Tensor::Copy(const Device& device) const {
     Tensor dst_tensor(shape_, dtype_, device);
     kernel::Copy(*this, dst_tensor);
     return dst_tensor;
 }
+
+void Tensor::CopyFrom(const Tensor& other) { kernel::Copy(other, *this); }
 
 Tensor Tensor::Clone(const Device& device) const {
     auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);
@@ -223,48 +238,51 @@ Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, device_, blob_);
 }
 
-Tensor Tensor::IndexGet(const std::vector<Tensor>& indices) const {
+Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     /// Dimension check
-    if (indices.size() > shape_.size()) {
-        utility::LogError("Number of indices {} exceeds tensor dimension {}.",
-                          indices.size(), shape_.size());
+    if (index_tensors.size() > shape_.size()) {
+        utility::LogError(
+                "Number of index_tensors {} exceeds tensor dimension {}.",
+                index_tensors.size(), shape_.size());
     }
 
-    std::vector<Tensor> preprocessed_indices;
-    SizeVector output_shape;
-    SizeVector indexing_shape;
-    std::tie(preprocessed_indices, output_shape, indexing_shape) =
-            PreprocessIndexTensors(*this, indices);
+    std::vector<Tensor> full_index_tensors;
+    SizeVector indexed_out_shape;
+    std::tie(full_index_tensors, indexed_out_shape) =
+            PreprocessIndexTensors(*this, index_tensors);
 
     /// Allocate tensor for a copy
-    Tensor dst = Tensor(output_shape, dtype_, device_);
+    Tensor dst = Tensor(indexed_out_shape, dtype_, device_);
 
-    /// dst = *this[indices]
-    kernel::IndexedGet(*this, dst, preprocessed_indices, indexing_shape);
+    /// dst = *this[index_tensors]
+    kernel::IndexedGet(*this, dst, full_index_tensors, indexed_out_shape);
 
     return dst;
 }
 
-void Tensor::IndexSet(const std::vector<Tensor>& indices, const Tensor& value) {
+void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
+                      const Tensor& src_tensor) {
     /// Dimension check
-    if (indices.size() > shape_.size()) {
-        utility::LogError("Number of indices {} exceeds tensor dimension {}.",
-                          indices.size(), shape_.size());
+    if (index_tensors.size() > shape_.size()) {
+        utility::LogError(
+                "Number of index_tensors {} exceeds tensor dimension {}.",
+                index_tensors.size(), shape_.size());
     }
 
-    std::vector<Tensor> preprocessed_indices;
-    SizeVector output_shape;
-    SizeVector indexing_shape;
-    std::tie(preprocessed_indices, output_shape, indexing_shape) =
-            PreprocessIndexTensors(*this, indices);
+    std::vector<Tensor> full_index_tensors;
+    SizeVector indexed_out_shape;
+    std::tie(full_index_tensors, indexed_out_shape) =
+            PreprocessIndexTensors(*this, index_tensors);
 
-    if (output_shape != value.GetShape()) {
-        utility::LogError("Indices and value shape mismatch ({} vs {}).",
-                          output_shape, value.GetShape());
+    // Broadcast src_tensor.GetShape() to indexed_out_shape
+    if (!CanBeBrocastToShape(src_tensor.GetShape(), indexed_out_shape)) {
+        utility::LogError("IndexSet: cannot broadcast {} to {}.",
+                          src_tensor.GetShape(), indexed_out_shape);
     }
 
-    /// *this[indices] = value
-    kernel::IndexedSet(value, *this, preprocessed_indices, indexing_shape);
+    // *this[index_tensors] = src_tensor
+    kernel::IndexedSet(src_tensor, *this, full_index_tensors,
+                       indexed_out_shape);
 }
 
 }  // namespace open3d

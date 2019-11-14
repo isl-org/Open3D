@@ -32,41 +32,30 @@
 
 namespace open3d {
 
-std::tuple<std::vector<Tensor>, SizeVector, SizeVector> PreprocessIndexTensors(
-        const Tensor& tensor, const std::vector<Tensor>& indices) {
-    // Helpers
-    const auto& tensor_shape = tensor.GetShape();
-    Tensor empty_index = Tensor(SizeVector(), Dtype::Int32, tensor.GetDevice());
-
+std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
+        const Tensor& tensor, const std::vector<Tensor>& index_tensors) {
     // Fill implied 0-d indexing tensors at the tail dimensions.
-    std::vector<Tensor> processed_indices = indices;
-    for (size_t i = 0; i < tensor_shape.size() - indices.size(); ++i) {
-        processed_indices.emplace_back(empty_index);
-    }
-    for (const auto& processed_index : processed_indices) {
-        utility::LogInfo("processed_index.GetShape(): {}",
-                         processed_index.GetShape());
+    Tensor empty_index_tensor =
+            Tensor(SizeVector(), Dtype::Int32, tensor.GetDevice());
+    std::vector<Tensor> full_index_tensors = index_tensors;
+    for (size_t i = 0; i < tensor.NumDims() - index_tensors.size(); ++i) {
+        full_index_tensors.push_back(empty_index_tensor);
     }
 
-    // Find all trivial and non-trivial indices
-    std::vector<SizeVector> index_shapes;
-    for (const Tensor& index : processed_indices) {
-        index_shapes.emplace_back(index.GetShape());
-    }
-    SizeVector trivial_dims;
-    SizeVector non_trivial_dims;
+    // Find all trivial and non-trivial index_tensors
+    std::vector<size_t> trivial_dims;
+    std::vector<size_t> non_trivial_dims;
     std::vector<SizeVector> non_trivial_shapes;
-    for (size_t dim = 0; dim < processed_indices.size(); ++dim) {
-        if (index_shapes[dim].size() == 0) {
-            trivial_dims.emplace_back(dim);
+    for (size_t dim = 0; dim < full_index_tensors.size(); ++dim) {
+        if (full_index_tensors[dim].NumDims() == 0) {
+            trivial_dims.push_back(dim);
         } else {
-            non_trivial_dims.emplace_back(dim);
-            non_trivial_shapes.emplace_back(index_shapes[dim]);
+            non_trivial_dims.push_back(dim);
+            non_trivial_shapes.push_back(full_index_tensors[dim].GetShape());
         }
     }
-    utility::LogInfo("non_trivial_dims: {}", non_trivial_dims);
 
-    // Try broadcasting non-trivial shapes
+    // Broadcast non-trivial shapes
     SizeVector broadcasted_non_trivial_shape = {};
     for (const SizeVector& non_trivial_shape : non_trivial_shapes) {
         if (IsCompatibleBroadcastShape(broadcasted_non_trivial_shape,
@@ -81,39 +70,23 @@ std::tuple<std::vector<Tensor>, SizeVector, SizeVector> PreprocessIndexTensors(
         }
     }
 
-    // TODO: Only 1D indexing Tensors are supported for now.
-    if (broadcasted_non_trivial_shape.size() > 1) {
-        utility::LogError("Only 1D indexing tensors are supported");
-    }
-
-    // Now, broadcast non-trivial Tensors
-    std::vector<Tensor> processed_broadcasted_indices;
-    for (const Tensor& index : processed_indices) {
-        if (index.GetShape().size() == 0) {
-            processed_broadcasted_indices.emplace_back(index);
-        } else {
-            processed_broadcasted_indices.emplace_back(
-                    BroadcastToShape(index, broadcasted_non_trivial_shape));
+    // Now, broadcast non-trivial index tensors
+    for (size_t i = 0; i < full_index_tensors.size(); ++i) {
+        if (full_index_tensors[i].NumDims() != 0) {
+            full_index_tensors[i].Assign(BroadcastToShape(
+                    full_index_tensors[i], broadcasted_non_trivial_shape));
         }
     }
-    processed_indices.clear();
-    processed_indices = processed_broadcasted_indices;
-    index_shapes.clear();
-    for (const Tensor& index : processed_indices) {
-        index_shapes.emplace_back(index.GetShape());
-    }
 
-    // TODO: Only supporting the case where advanced indexes are all next to
-    //       each other. E.g.
+    // TODO: Only supporting cases where advanced indexes are all next to each
+    //       other. E.g.
     // A = np.ones((10, 20, 30, 40, 50))
     // A[:, [1, 2], [2, 3], :, :]  # Supported,
-    //                               output_shape:  [10, 2, 40, 50]
-    //                               indexing_ndims:[0, 2, 2, 0, 0]
-    //                               slice_map:     [0, -1, 3, 4]
+    //                               output_shape: [10, 2, 40, 50]
+    //                               slice_map:    [0, -1, 3, 4]
     // A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
     //                             # For this case, a transpose op is necessary
-    // See:
-    // https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#combining-advanced-and-basic-indexing
+    // See: https://tinyurl.com/yzjq5jvv
     for (size_t i = 1; i < non_trivial_dims.size(); ++i) {
         if (non_trivial_dims[i - 1] + 1 != non_trivial_dims[i]) {
             utility::LogError(
@@ -125,8 +98,9 @@ std::tuple<std::vector<Tensor>, SizeVector, SizeVector> PreprocessIndexTensors(
     SizeVector output_shape;
     std::vector<int> slice_map;
     bool filled_non_trivial_dims = false;
+    const auto& tensor_shape = tensor.GetShape();
     for (size_t dim = 0; dim < tensor_shape.size(); ++dim) {
-        if (index_shapes[dim].size() == 0) {
+        if (full_index_tensors[dim].NumDims() == 0) {
             output_shape.emplace_back(tensor_shape[dim]);
             slice_map.emplace_back(dim);
         } else {
@@ -139,12 +113,7 @@ std::tuple<std::vector<Tensor>, SizeVector, SizeVector> PreprocessIndexTensors(
         }
     }
 
-    SizeVector indexing_ndims;
-    for (const SizeVector& index_shape : index_shapes) {
-        indexing_ndims.emplace_back(index_shape.size());
-    }
-
-    return std::make_tuple(processed_indices, output_shape, indexing_ndims);
+    return std::make_tuple(full_index_tensors, output_shape);
 }
 
 }  // namespace open3d

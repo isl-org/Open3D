@@ -32,7 +32,6 @@ class SizeVector;
 
 /// Fill in None slices ([:]) for unindexed dimensions
 /// return compact shape of the resulting tensor
-std::tuple<std::vector<Tensor>, SizeVector, SizeVector>
-PreprocessIndexTensors(const Tensor& tensor,
-                       const std::vector<Tensor>& indices);
+std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
+        const Tensor& tensor, const std::vector<Tensor>& index_tensors);
 }  // namespace open3d

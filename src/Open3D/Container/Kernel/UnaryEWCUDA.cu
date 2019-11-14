@@ -46,12 +46,16 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
     // - at least one of src or dst is CUDA device
     SizeVector shape = src.GetShape();
     Dtype dtype = src.GetDtype();
-    if (src.IsContiguous() && dst.IsContiguous()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
-    } else {
-        if (src.GetDevice() == dst.GetDevice()) {
+
+    if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
+        dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
+        if (src.IsContiguous() && dst.IsContiguous() &&
+            src.GetShape() == dst.GetShape()) {
+            MemoryManager::Memcpy(
+                    dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
+                    src.GetDevice(),
+                    DtypeUtil::ByteSize(dtype) * shape.NumElements());
+        } else {
             DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
                 CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
                         src, dst,
@@ -60,23 +64,43 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                             CUDACopyElementKernel<scalar_t>(src, dst);
                         });
             });
-        } else {
-            // Works for both CPU -> GPU or GPU -> CPU
-            Tensor src_conti = src.Copy(src.GetDevice());
-            // Careful about the resursions
-            CopyCUDA(src_conti, dst);
         }
+    } else if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
+                       dst.GetDevice().device_type_ ==
+                               Device::DeviceType::CUDA ||
+               src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
+                       dst.GetDevice().device_type_ ==
+                               Device::DeviceType::CPU) {
+        Tensor src_conti = src.Contiguous();  // No op if already contiguous
+        if (dst.IsContiguous() && src.GetShape() == dst.GetShape()) {
+            MemoryManager::Memcpy(
+                    dst.GetDataPtr(), dst.GetDevice(), src_conti.GetDataPtr(),
+                    src_conti.GetDevice(),
+                    DtypeUtil::ByteSize(dtype) * shape.NumElements());
+        } else {
+            Tensor src_transfer(src.GetShape(), src.GetDtype(),
+                                dst.GetDevice());
+            MemoryManager::Memcpy(
+                    src_transfer.GetDataPtr(), src_transfer.GetDevice(),
+                    src_conti.GetDataPtr(), src_conti.GetDevice(),
+                    DtypeUtil::ByteSize(dtype) * shape.NumElements());
+            dst.CopyFrom(src_transfer);
+        }
+    } else {
+        utility::LogError("Wrong device type {} -> {}",
+                          src.GetDevice().ToString(),
+                          dst.GetDevice().ToString());
     }
 }
 
 void IndexedGetCUDA(const Tensor& src,
                     Tensor& dst,
-                    const std::vector<Tensor>& indices,
-                    const SizeVector& indexing_shape) {
+                    const std::vector<Tensor>& index_tensors,
+                    const SizeVector& indexed_out_shape) {
     Dtype dtype = src.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         CUDALauncher::LaunchRhsIndexedUnaryEWKernel<scalar_t>(
-                src, dst, indices, indexing_shape,
+                src, dst, index_tensors, indexed_out_shape,
                 // Need to wrap as extended CUDA lamba function
                 [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyElementKernel<scalar_t>(src, dst);
@@ -86,12 +110,12 @@ void IndexedGetCUDA(const Tensor& src,
 
 void IndexedSetCUDA(const Tensor& src,
                     Tensor& dst,
-                    const std::vector<Tensor>& indices,
-                    const SizeVector& indexing_shape) {
+                    const std::vector<Tensor>& index_tensors,
+                    const SizeVector& indexed_out_shape) {
     Dtype dtype = src.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         CUDALauncher::LaunchLhsIndexedUnaryEWKernel<scalar_t>(
-                src, dst, indices, indexing_shape,
+                src, dst, index_tensors, indexed_out_shape,
                 // Need to wrap as extended CUDA lamba function
                 [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyElementKernel<scalar_t>(src, dst);

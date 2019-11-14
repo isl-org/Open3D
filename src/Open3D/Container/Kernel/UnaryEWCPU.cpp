@@ -46,7 +46,8 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
     // src and dst have been checked to have the same shape, dtype, device
     SizeVector shape = src.GetShape();
     Dtype dtype = src.GetDtype();
-    if (src.IsContiguous() && dst.IsContiguous()) {
+    if (src.IsContiguous() && dst.IsContiguous() &&
+        src.GetShape() == dst.GetShape()) {
         MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
                               src.GetDataPtr(), src.GetDevice(),
                               DtypeUtil::ByteSize(dtype) * shape.NumElements());
@@ -60,23 +61,23 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
 
 void IndexedGetCPU(const Tensor& src,
                    Tensor& dst,
-                   const std::vector<Tensor>& indices,
-                   const SizeVector& indexing_shape) {
+                   const std::vector<Tensor>& index_tensors,
+                   const SizeVector& indexed_out_shape) {
     Dtype dtype = src.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         CPULauncher::LaunchRhsIndexedUnaryEWKernel<scalar_t>(
-                src, dst, indices, indexing_shape,
+                src, dst, index_tensors, indexed_out_shape,
                 CPUCopyElementKernel<scalar_t>);
     });
 }
 void IndexedSetCPU(const Tensor& src,
                    Tensor& dst,
-                   const std::vector<Tensor>& indices,
-                   const SizeVector& indexing_shape) {
+                   const std::vector<Tensor>& index_tensors,
+                   const SizeVector& indexed_out_shape) {
     Dtype dtype = src.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         CPULauncher::LaunchLhsIndexedUnaryEWKernel<scalar_t>(
-                src, dst, indices, indexing_shape,
+                src, dst, index_tensors, indexed_out_shape,
                 CPUCopyElementKernel<scalar_t>);
     });
 }

@@ -132,6 +132,11 @@ public:
         return *this;
     }
 
+    /// Assign (copy) values from another Tensor, shape, dtype, device may
+    /// change. Slices of the original Tensor still keeps the original memory.
+    /// After assignment, the Tensor will be contiguous.
+    void Assign(const Tensor& other);
+
     /// TODO: this is a very naive implementation
     template <typename T>
     void Fill(const T& v) {
@@ -150,6 +155,9 @@ public:
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
     Tensor Copy(const Device& device) const;
+
+    /// Copy Tensor values to current tensor for source tensor
+    void CopyFrom(const Tensor& other);
 
     /// Clone Tensor to a specified device
     /// The resulting Tensor have the exact shape, stride and data_ptr to blob_
@@ -172,8 +180,9 @@ public:
     /// Broadcasting: ([3], Tensor([3]))
     /// Fancy indexing: ([3, 2, 4], Tensor([3, 2, 4]))
     /// Note: now we only support 1D contiguous tensors
-    Tensor IndexGet(const std::vector<Tensor>& indices) const;
-    void IndexSet(const std::vector<Tensor>& indices, const Tensor& value);
+    Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
+    void IndexSet(const std::vector<Tensor>& index_tensors,
+                  const Tensor& src_tensor);
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
@@ -223,6 +232,8 @@ public:
     std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
     size_t NumElements() const { return shape_.NumElements(); }
+
+    size_t NumDims() const { return shape_.size(); }
 
     template <typename T>
     void AssertTemplateDtype() const {
