@@ -176,14 +176,31 @@ public:
     /// Slice Tensor
     Tensor Slice(size_t dim, int start, int stop, int step = 1) const;
 
-    /// Advanced indexing getter and setter
-    /// https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Indexing.cpp
-    /// We support combination of
-    /// None: (:, Tensor()),
-    /// Broadcasting: ([3], Tensor([3]))
-    /// Fancy indexing: ([3, 2, 4], Tensor([3, 2, 4]))
-    /// Note: now we only support 1D contiguous tensors
+    /// \brief Advanced indexing getter
+    ///
+    /// We use the Numpy advanced indexing symnatics, see:
+    /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
+    ///
+    /// TODO: Only support 1D index tensors.
+    /// TODO: Only support advanced indices are all next to each other. E.g.
+    /// ```
+    /// A = np.ones((10, 20, 30, 40, 50))
+    /// A[:, [1, 2], [2, 3], :, :]  # Supported,
+    ///                               output_shape: [10, 2, 40, 50]
+    ///                               slice_map:    [0, -1, 3, 4]
+    /// A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
+    ///                             # For this case, a transpose op is necessary
+    /// ```
+    /// See: https://tinyurl.com/yzjq5jvv
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
+
+    /// \brief Advanced indexing getter.
+    ///
+    /// We use the Numpy advanced indexing symnatics, see:
+    /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
+    ///
+    /// TODO: Only support 1D index tensors.
+    /// TODO: Only support advanced indices are all next to each other.
     void IndexSet(const std::vector<Tensor>& index_tensors,
                   const Tensor& src_tensor);
 

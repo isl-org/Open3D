@@ -33,8 +33,10 @@
 
 namespace open3d {
 
-/// Fill in None slices ([:]) for unindexed dimensions
-/// return compact shape of the resulting tensor
+/// \brief Fill dimensions and get output shape for Advanced (fancy) indexing.
+/// \param tensor The Tensor to be indexed.
+/// \param index_tensors The Tensors that specify the index.
+/// \return A tuple of full_index_tensors and output_shape.
 std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         const Tensor& tensor, const std::vector<Tensor>& index_tensors);
 

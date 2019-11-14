@@ -86,8 +86,8 @@ SizeVector BroadcastedShape(const SizeVector& left_shape,
     return broadcasted_shape;
 }
 
-bool CanBeBrocastToShape(const SizeVector& src_shape,
-                         const SizeVector& dst_shape) {
+bool CanBeBrocastedToShape(const SizeVector& src_shape,
+                           const SizeVector& dst_shape) {
     if (IsCompatibleBroadcastShape(src_shape, dst_shape)) {
         return BroadcastedShape(src_shape, dst_shape) == dst_shape;
     } else {

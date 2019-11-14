@@ -52,7 +52,7 @@ SizeVector BroadcastedShape(const SizeVector& left_shape,
 /// \param src_shape Source tensor shape.
 /// \param dst_shape Destination tensor shape.
 /// \return Returns true if \p src_shape can be brocasted to \p dst_shape.
-bool CanBeBrocastToShape(const SizeVector& src_shape,
-                         const SizeVector& dst_shape);
+bool CanBeBrocastedToShape(const SizeVector& src_shape,
+                           const SizeVector& dst_shape);
 
 }  // namespace open3d

@@ -70,6 +70,11 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         }
     }
 
+    // TODO: Only support 1D indexing tensor for now
+    if (broadcasted_non_trivial_shape.size() != 1) {
+        utility::LogError("Only supporting 1D index tensor for now.");
+    }
+
     // Now, broadcast non-trivial index tensors
     for (size_t i = 0; i < full_index_tensors.size(); ++i) {
         if (full_index_tensors[i].NumDims() != 0) {
@@ -78,20 +83,12 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         }
     }
 
-    // TODO: Only supporting cases where advanced indexes are all next to each
-    //       other. E.g.
-    // A = np.ones((10, 20, 30, 40, 50))
-    // A[:, [1, 2], [2, 3], :, :]  # Supported,
-    //                               output_shape: [10, 2, 40, 50]
-    //                               slice_map:    [0, -1, 3, 4]
-    // A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
-    //                             # For this case, a transpose op is necessary
-    // See: https://tinyurl.com/yzjq5jvv
+    // TODO: Only support advanced indices are all next to each other.
     for (size_t i = 1; i < non_trivial_dims.size(); ++i) {
         if (non_trivial_dims[i - 1] + 1 != non_trivial_dims[i]) {
             utility::LogError(
-                    "Only supporting the case where advanced indexes are all "
-                    "next each other");
+                    "Only supporting the case where advanced indices are all "
+                    "next each other.");
         }
     }
 

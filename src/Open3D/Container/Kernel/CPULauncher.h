@@ -64,7 +64,7 @@ public:
         }
     }
 
-    /// dst = src[index_tensors]
+    // dst = src[index_tensors]
     template <typename scalar_t, typename func_t>
     static void LaunchRhsIndexedUnaryEWKernel(
             const Tensor& src,
@@ -117,7 +117,7 @@ public:
         }
     }
 
-    /// dst[index_tensors] = src
+    // dst[index_tensors] = src
     template <typename scalar_t, typename func_t>
     static void LaunchLhsIndexedUnaryEWKernel(
             const Tensor& src,

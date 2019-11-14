@@ -41,7 +41,6 @@ void CopyCUDA(const Tensor& src, Tensor& dst);
 
 void Copy(const Tensor& src, Tensor& dst);
 
-/// dst = src[index_tensors]
 void IndexedGetCPU(const Tensor& src,
                    Tensor& dst,
                    const std::vector<Tensor>& index_tensors,
@@ -57,7 +56,6 @@ void IndexedGet(const Tensor& src,
                 const std::vector<Tensor>& index_tensors,
                 const SizeVector& indexed_out_shape);
 
-/// dst[index_tensors] = src
 void IndexedSetCPU(const Tensor& src,
                    Tensor& dst,
                    const std::vector<Tensor>& index_tensors,

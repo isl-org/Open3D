@@ -246,7 +246,7 @@ Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
-    /// Dimension check
+    // Dimension check
     if (index_tensors.size() > shape_.size()) {
         utility::LogError(
                 "Number of index_tensors {} exceeds tensor dimension {}.",
@@ -258,10 +258,10 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     std::tie(full_index_tensors, indexed_out_shape) =
             PreprocessIndexTensors(*this, index_tensors);
 
-    /// Allocate tensor for a copy
+    // Allocate tensor for a copy
     Tensor dst = Tensor(indexed_out_shape, dtype_, device_);
 
-    /// dst = *this[index_tensors]
+    // dst = *this[index_tensors]
     kernel::IndexedGet(*this, dst, full_index_tensors, indexed_out_shape);
 
     return dst;
@@ -269,7 +269,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
-    /// Dimension check
+    // Dimension check
     if (index_tensors.size() > shape_.size()) {
         utility::LogError(
                 "Number of index_tensors {} exceeds tensor dimension {}.",
@@ -282,7 +282,7 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
             PreprocessIndexTensors(*this, index_tensors);
 
     // Broadcast src_tensor.GetShape() to indexed_out_shape
-    if (!CanBeBrocastToShape(src_tensor.GetShape(), indexed_out_shape)) {
+    if (!CanBeBrocastedToShape(src_tensor.GetShape(), indexed_out_shape)) {
         utility::LogError("IndexSet: cannot broadcast {} to {}.",
                           src_tensor.GetShape(), indexed_out_shape);
     }

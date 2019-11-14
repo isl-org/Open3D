@@ -64,7 +64,7 @@ public:
             utility::LogError("Shape size {} and strides size {} mismatch.",
                               ref_shape.size(), ref_strides.size());
         }
-        if (!CanBeBrocastToShape(tar_shape, ref_shape)) {
+        if (!CanBeBrocastedToShape(tar_shape, ref_shape)) {
             utility::LogError("Shape {} can not be broadcasted to {}.",
                               tar_shape, ref_shape);
         }

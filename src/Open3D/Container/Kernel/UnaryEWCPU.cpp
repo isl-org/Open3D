@@ -70,6 +70,7 @@ void IndexedGetCPU(const Tensor& src,
                 CPUCopyElementKernel<scalar_t>);
     });
 }
+
 void IndexedSetCPU(const Tensor& src,
                    Tensor& dst,
                    const std::vector<Tensor>& index_tensors,
