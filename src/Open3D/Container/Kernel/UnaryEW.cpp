@@ -34,13 +34,6 @@ namespace open3d {
 namespace kernel {
 
 void Copy(const Tensor& src, Tensor& dst) {
-    // Check shape
-    // TODO: in the future, we may support automatic broadcasting
-    // if (src.GetShape() != dst.GetShape()) {
-    //     utility::LogError("src and dst tensor shape mismatch {} != {}",
-    //                       src.GetShape().ToString(),
-    //                       dst.GetShape().ToString());
-    // }
     if (!CanBeBrocastToShape(src.GetShape(), dst.GetShape())) {
         utility::LogError("Shape {} can not be broadcasted to {}.",
                           src.GetShape(), dst.GetShape());

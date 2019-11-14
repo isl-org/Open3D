@@ -73,8 +73,8 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
     // Now, broadcast non-trivial index tensors
     for (size_t i = 0; i < full_index_tensors.size(); ++i) {
         if (full_index_tensors[i].NumDims() != 0) {
-            full_index_tensors[i].Assign(BroadcastToShape(
-                    full_index_tensors[i], broadcasted_non_trivial_shape));
+            full_index_tensors[i].Assign(full_index_tensors[i].Broadcast(
+                    broadcasted_non_trivial_shape));
         }
     }
 

@@ -55,7 +55,4 @@ SizeVector BroadcastedShape(const SizeVector& left_shape,
 bool CanBeBrocastToShape(const SizeVector& src_shape,
                          const SizeVector& dst_shape);
 
-// TODO: only support (1,) to (x,) broadcasting
-Tensor BroadcastToShape(const Tensor& src_tensor, const SizeVector& dst_shape);
-
 }  // namespace open3d

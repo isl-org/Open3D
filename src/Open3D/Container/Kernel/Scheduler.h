@@ -37,7 +37,7 @@ namespace kernel {
 static constexpr int MAX_DIMS = 10;
 
 /// \brief Compute offset of the target Tensor \p tar_tensor, given the offset
-/// of the reference Tensor \p ref_tensor. Broadcast is supported.
+/// of the reference Tensor \p ref_tensor.
 ///
 /// Offset is the number of elements (not bytes) counting from the first
 /// element. For example, for a contiguous Tensor of shape (2, 3, 4), the very
@@ -46,35 +46,9 @@ static constexpr int MAX_DIMS = 10;
 ///
 /// Example use case: for unary element-wise ops, we loop through all offsets in
 /// the dst Tensor, and compute each corresponding offset in the src Tensor.
-class OffsetCalculator {
-public:
-    OffsetCalculator(const SizeVector& tar_strides,
-                     const SizeVector& ref_strides)
-        : num_dims_(static_cast<int>(tar_strides.size())) {
-        for (int i = 0; i < num_dims_; i++) {
-            tar_strides_[i] = static_cast<int>(tar_strides[i]);
-            ref_strides_[i] = static_cast<int>(ref_strides[i]);
-        }
-    }
-
-    OPEN3D_HOST_DEVICE int GetOffset(int ref_offset) const {
-        int tar_offset = 0;
-#pragma unroll
-        for (int dim = 0; dim < num_dims_; dim++) {
-            tar_offset += ref_offset / ref_strides_[dim] * tar_strides_[dim];
-            ref_offset = ref_offset % ref_strides_[dim];
-        }
-        return tar_offset;
-    }
-
-protected:
-    int num_dims_;
-    int tar_strides_[MAX_DIMS];
-    int ref_strides_[MAX_DIMS];
-};
-
-/// We need to broadcast tar_shape to ref_shape.
-/// That is, given ref_offset, find tar_offset.
+///
+/// Broadcast is supported. Specifically, we broadcast tar_shape to ref_shape.
+/// Therefore, given ref_offset, this finds the tar_offset.
 class OffsetBroadcastCalculator {
 public:
     OffsetBroadcastCalculator(const SizeVector& tar_shape,
@@ -130,15 +104,6 @@ public:
             ref_shape_[i] = ref_shape[i];
             ref_strides_[i] = ref_strides[i];
         }
-
-        // utility::LogInfo("{}", "tar_shape");
-        // PrintArray(tar_shape_, ndims_);
-        // utility::LogInfo("{}", "tar_strides_");
-        // PrintArray(tar_strides_, ndims_);
-        // utility::LogInfo("{}", "ref_shape_");
-        // PrintArray(ref_shape_, ndims_);
-        // utility::LogInfo("{}", "tar_strides_");
-        // PrintArray(tar_strides_, ndims_);
     }
 
     OPEN3D_HOST_DEVICE int GetOffset(int ref_offset) const {

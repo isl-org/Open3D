@@ -152,6 +152,9 @@ public:
         });
     }
 
+    /// Broadcast Tensor to a new broadcastable shape
+    Tensor Broadcast(const SizeVector& dst_shape) const;
+
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
     Tensor Copy(const Device& device) const;

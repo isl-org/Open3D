@@ -24,14 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include <vector>
 
+#include "Open3D/Container/SizeVector.h"
+#include "Open3D/Container/Tensor.h"
+
 namespace open3d {
-class Tensor;
-class SizeVector;
 
 /// Fill in None slices ([:]) for unindexed dimensions
 /// return compact shape of the resulting tensor
 std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         const Tensor& tensor, const std::vector<Tensor>& index_tensors);
+
 }  // namespace open3d

@@ -88,6 +88,13 @@ void Tensor::Assign(const Tensor& other) {
     kernel::Copy(other, *this);
 }
 
+/// Broadcast Tensor to a new broadcastable shape
+Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
+    Tensor dst_tensor(dst_shape, GetDtype(), GetDevice());
+    dst_tensor = *this;
+    return dst_tensor;
+}
+
 Tensor Tensor::Copy(const Device& device) const {
     Tensor dst_tensor(shape_, dtype_, device);
     kernel::Copy(*this, dst_tensor);

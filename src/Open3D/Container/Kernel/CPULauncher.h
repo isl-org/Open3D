@@ -94,8 +94,9 @@ public:
         OffsetBroadcastCalculator broadcast_offset_calculator(
                 mid_shape, mid_strides, dst.GetShape(),
                 Tensor::DefaultStrides(dst.GetShape()));
-        OffsetCalculator dst_offset_calculator(
-                dst.GetStrides(), Tensor::DefaultStrides(dst.GetShape()));
+        OffsetBroadcastCalculator dst_offset_calculator(
+                dst.GetShape(), dst.GetStrides(), dst.GetShape(),
+                Tensor::DefaultStrides(dst.GetShape()));
 
         int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());

@@ -95,24 +95,4 @@ bool CanBeBrocastToShape(const SizeVector& src_shape,
     }
 }
 
-Tensor BroadcastToShape(const Tensor& src_tensor, const SizeVector& dst_shape) {
-    if (src_tensor.GetShape().size() != 1 || dst_shape.size() != 1) {
-        utility::LogError("Only 1D tensor broadcast are supported, {}, {}",
-                          src_tensor.GetShape(), dst_shape);
-    }
-
-    if (src_tensor.GetShape()[0] == 1) {
-        Tensor dst_tensor(dst_shape, src_tensor.GetDtype(),
-                          src_tensor.GetDevice());
-        DISPATCH_DTYPE_TO_TEMPLATE(src_tensor.GetDtype(), [&]() {
-            dst_tensor.Fill(src_tensor[0].Item<scalar_t>());
-        });
-        return dst_tensor;
-    } else if (src_tensor.GetShape() == dst_shape) {
-        return src_tensor;
-    } else {
-        utility::LogError("Wrong broadcast shape");
-    }
-}
-
 }  // namespace open3d
