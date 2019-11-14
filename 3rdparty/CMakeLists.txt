@@ -313,6 +313,10 @@ endif()
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
+# PoissonRecon
+set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon/)
+
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
      ${EIGEN3_INCLUDE_DIRS}
@@ -333,6 +337,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${googletest_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
+     ${poisson_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL

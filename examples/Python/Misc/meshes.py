@@ -174,6 +174,16 @@ def bunny():
     return mesh
 
 
+def eagle():
+    path = _relative_path("../../TestData/eagle.ply")
+    if not os.path.exists(path):
+        print("downloading eagle pcl")
+        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
+        urllib.request.urlretrieve(url, path)
+    pcd = o3d.io.read_point_cloud(path)
+    return pcd
+
+
 def center_and_scale(mesh):
     vertices = np.asarray(mesh.vertices)
     vertices = vertices / max(vertices.max(axis=0) - vertices.min(axis=0))

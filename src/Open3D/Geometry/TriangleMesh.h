@@ -369,6 +369,34 @@ public:
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
 
+    /// \brief Function that computes a triangle mesh from a oriented PointCloud
+    /// pcd. This implements the Screened Poisson Reconstruction proposed in
+    /// Kazhdan and Hoppe, "Screened Poisson Surface Reconstruction", 2013.
+    /// This function uses the original implementation by Kazhdan. See
+    /// https://github.com/mkazhdan/PoissonRecon
+    ///
+    /// \param pcd PointCloud with normals and optionally colors.
+    /// \param depth Maximum depth of the tree that will be used for surface
+    /// reconstruction. Running at depth d corresponds to solving on a grid
+    /// whose resolution is no larger than 2^d x 2^d x 2^d. Note that since the
+    /// reconstructor adapts the octree to the sampling density, the specified
+    /// reconstruction depth is only an upper bound.
+    /// \param width Specifies the
+    /// target width of the finest level octree cells. This parameter is ignored
+    /// if depth is specified.
+    /// \param scale Specifies the ratio between the
+    /// diameter of the cube used for reconstruction and the diameter of the
+    /// samples' bounding cube. \param linear_fit If true, the reconstructor use
+    /// linear interpolation to estimate the positions of iso-vertices.
+    /// \return The estimated TriangleMesh, and per vertex densitie values that
+    /// can be used to to trim the mesh.
+    static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
+    CreateFromPointCloudPoisson(const PointCloud &pcd,
+                                size_t depth = 8,
+                                size_t width = 0,
+                                float scale = 1.1f,
+                                bool linear_fit = false);
+
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.

@@ -307,6 +307,16 @@ void pybind_trianglemesh(py::module &m) {
                     "radius over the point cloud, whenever the ball touches "
                     "three points a triangle is created.",
                     "pcd"_a, "radii"_a)
+            .def_static("create_from_point_cloud_poisson",
+                        &geometry::TriangleMesh::CreateFromPointCloudPoisson,
+                        "Function that computes a triangle mesh from a "
+                        "oriented PointCloud pcd. This implements the Screened "
+                        "Poisson Reconstruction proposed in Kazhdan and Hoppe, "
+                        "\"Screened Poisson Surface Reconstruction\", 2013. "
+                        "This function uses the original implementation by "
+                        "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
+                        "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
+                        "linear_fit"_a = false)
             .def_static("create_box", &geometry::TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
@@ -562,6 +572,27 @@ void pybind_trianglemesh(py::module &m) {
              {"radii",
               "The radii of the ball that are used for the surface "
               "reconstruction."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_from_point_cloud_poisson",
+            {{"pcd",
+              "PointCloud from which the TriangleMesh surface is "
+              "reconstructed. Has to contain normals."},
+             {"depth",
+              "Maximum depth of the tree that will be used for surface "
+              "reconstruction. Running at depth d corresponds to solving on a "
+              "grid whose resolution is no larger than 2^d x 2^d x 2^d. Note "
+              "that since the reconstructor adapts the octree to the sampling "
+              "density, the specified reconstruction depth is only an upper "
+              "bound."},
+             {"width",
+              "Specifies the target width of the finest level octree cells. "
+              "This parameter is ignored if depth is specified"},
+             {"scale",
+              "Specifies the ratio between the diameter of the cube used for "
+              "reconstruction and the diameter of the samples' bounding cube."},
+             {"linear_fit",
+              "If true, the reconstructor use linear interpolation to estimate "
+              "the positions of iso-vertices."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},
