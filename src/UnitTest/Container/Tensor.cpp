@@ -95,6 +95,38 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
                  std::runtime_error);
 }
 
+TEST_P(TensorPermuteDevices, Fill) {
+    Device device = GetParam();
+    Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
+    t.Slice(1, 0, 3, 2).Fill(1);  // t[:, 0:3:2].fill(1)
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 0, 1, 1, 0, 1}));
+}
+
+TEST_P(TensorPermuteDevices, FillSlice) {
+    Device device = GetParam();
+    Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
+    t.Fill(1);
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 1, 1, 1, 1, 1}));
+}
+
+TEST_P(TensorPermuteDevices, FillFancy) {
+    Device device = GetParam();
+    Tensor t(std::vector<float>(2 * 3 * 4, 0), {2, 3, 4}, Dtype::Float32,
+             device);
+    Tensor v(std::vector<float>({1}), SizeVector({}), Dtype::Float32, device);
+
+    // t[:, [1, 2], [1, 2]]
+    std::vector<Tensor> indices = {
+            Tensor(SizeVector(), Dtype::Int32, device),
+            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device),
+            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device)};
+
+    t.IndexSet(indices, v);  // We cannot use T.Fill() here
+    EXPECT_EQ(t.ToFlatVector<float>(),
+              std::vector<float>({0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
+                                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0}));
+}
+
 TEST_P(TensorPermuteDevicePairs, Copy) {
     Device dst_device;
     Device src_device;
@@ -534,8 +566,7 @@ TEST_P(TensorPermuteDevices, IndexSet) {
     std::vector<float> vals({4, 6, 5, 16, 18, 17});
     Tensor rhs(vals, {2, 3}, Dtype::Float32, device);
 
-    std::vector<float> zeros(2 * 3 * 4);
-    std::fill(zeros.begin(), zeros.end(), 0);
+    std::vector<float> zeros(2 * 3 * 4, 0);
     Tensor t(zeros, {2, 3, 4}, Dtype::Float32, device);
 
     // t[:, [1], [0, 2, 1]]

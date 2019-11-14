@@ -112,16 +112,16 @@ public:
             index_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
-        SizeVector index_tensor_sizes;
+        std::vector<bool> is_trivial_dims;
         for (const Tensor& index_tensor : index_tensors) {
-            index_tensor_sizes.push_back(index_tensor.NumElements());
+            is_trivial_dims.push_back(index_tensor.NumDims() == 0);
         }
 
         SizeVector mid_shape = indexed_out_shape;
         SizeVector mid_strides = Tensor::DefaultStrides(mid_shape);
         IndexedOffsetCalculator fancy_offset_calculator(
-                src.GetShape(), src.GetStrides(), mid_strides,
-                index_tensor_sizes, index_tensor_data_ptrs);
+                src.GetShape(), src.GetStrides(), mid_strides, is_trivial_dims,
+                index_tensor_data_ptrs);
         OffsetBroadcastCalculator broadcast_offset_calculator(
                 mid_shape, mid_strides, dst.GetShape(),
                 Tensor::DefaultStrides(dst.GetShape()));
@@ -167,9 +167,9 @@ public:
             index_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
-        SizeVector index_tensor_sizes;
+        std::vector<bool> is_trivial_dims;
         for (const Tensor& index_tensor : index_tensors) {
-            index_tensor_sizes.push_back(index_tensor.NumElements());
+            is_trivial_dims.push_back(index_tensor.NumDims() == 0);
         }
 
         // [src] --broadcast--> [mid] --fancy idx--> [dst]
@@ -178,8 +178,8 @@ public:
         OffsetBroadcastCalculator src_offset_calculator(
                 src.GetShape(), src.GetStrides(), mid_shape, mid_strides);
         IndexedOffsetCalculator dst_offset_calculator(
-                dst.GetShape(), dst.GetStrides(), mid_strides,
-                index_tensor_sizes, index_tensor_data_ptrs);
+                dst.GetShape(), dst.GetStrides(), mid_strides, is_trivial_dims,
+                index_tensor_data_ptrs);
 
         int num_elems = static_cast<int>(mid_shape.NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());

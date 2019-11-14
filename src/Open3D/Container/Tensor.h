@@ -64,8 +64,9 @@ public:
         // Check number of elements
         if (init_vals.size() != shape_.NumElements()) {
             utility::LogError(
-                    "Tensor initialization values' size does not match the "
-                    "shape.");
+                    "Tensor initialization values' size {} does not match the "
+                    "shape {}",
+                    init_vals.size(), shape_.NumElements());
         }
 
         // Check data types
@@ -137,18 +138,15 @@ public:
     /// After assignment, the Tensor will be contiguous.
     void Assign(const Tensor& other);
 
-    /// TODO: this is a very naive implementation
+    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
+    /// casted to the Tensor's dtype.
     template <typename T>
     void Fill(const T& v) {
         DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
             scalar_t casted_v = static_cast<scalar_t>(v);
-            for (size_t i = 0; i < NumElements(); ++i) {
-                MemoryManager::MemcpyFromHost(
-                        static_cast<uint8_t*>(GetDataPtr()) +
-                                sizeof(scalar_t) * i,
-                        GetDevice(), &casted_v, sizeof(scalar_t));
-            }
-
+            Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
+                       GetDtype(), GetDevice());
+            *this = tmp;
         });
     }
 

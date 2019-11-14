@@ -141,7 +141,7 @@ public:
             const SizeVector& tar_strides,
             const SizeVector& ref_shape,
             const SizeVector& ref_strides,
-            const std::vector<size_t>& index_tensor_sizes,
+            const std::vector<bool>& is_trivial_dims,
             const std::vector<const int*>& indexing_tensor_data_ptrs) {
         tar_ndims_ = tar_strides.size();
         ref_ndims_ = ref_strides.size();
@@ -151,10 +151,10 @@ public:
         for (int i = 0; i < tar_ndims_; i++) {
             tar_strides_[i] = static_cast<int>(tar_strides[i]);
             tar_shape_[i] = static_cast<int>(tar_shape[i]);
-            index_tensor_sizes_[i] = static_cast<int>(index_tensor_sizes[i]);
+            is_trivial_dims_[i] = is_trivial_dims[i];
             indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
 
-            if (index_tensor_sizes_[i] == 0) {
+            if (is_trivial_dims_[i]) {
                 slice_map_[size_map_next_idx] = i;
                 size_map_next_idx++;
             } else if (!fancy_index_visited) {
@@ -180,7 +180,7 @@ public:
             } else {
                 // This dim is mapped to one or more fancy indexed input dim(s)
                 for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
-                    if (index_tensor_sizes_[tar_dim] != 0) {
+                    if (!is_trivial_dims_[tar_dim]) {
                         tar_offset +=
                                 indexing_tensor_data_ptrs_[tar_dim][dim_idx] *
                                 tar_strides_[tar_dim];
@@ -201,7 +201,7 @@ protected:
     int ref_shape_[MAX_DIMS];
     int ref_strides_[MAX_DIMS];
 
-    int index_tensor_sizes_[MAX_DIMS];
+    bool is_trivial_dims_[MAX_DIMS];
     int slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
     const int* indexing_tensor_data_ptrs_[MAX_DIMS];
 };
@@ -237,7 +237,7 @@ public:
             const SizeVector& tar_shape,
             const SizeVector& tar_strides,
             const SizeVector& ref_strides,
-            const std::vector<size_t>& index_tensor_sizes,
+            const std::vector<bool>& is_trivial_dims,
             const std::vector<const int*>& indexing_tensor_data_ptrs) {
         tar_ndims_ = tar_strides.size();
         ref_ndims_ = ref_strides.size();
@@ -247,10 +247,10 @@ public:
         for (int i = 0; i < tar_ndims_; i++) {
             tar_strides_[i] = static_cast<int>(tar_strides[i]);
             tar_shape_[i] = static_cast<int>(tar_shape[i]);
-            index_tensor_sizes_[i] = static_cast<int>(index_tensor_sizes[i]);
+            is_trivial_dims_[i] = is_trivial_dims[i];
             indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
 
-            if (index_tensor_sizes_[i] == 0) {
+            if (is_trivial_dims_[i]) {
                 slice_map_[size_map_next_idx] = i;
                 size_map_next_idx++;
             } else if (!fancy_index_visited) {
@@ -276,7 +276,7 @@ public:
             } else {
                 // This dim is mapped to one or more fancy indexed input dim(s)
                 for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
-                    if (index_tensor_sizes_[tar_dim] != 0) {
+                    if (!is_trivial_dims_[tar_dim]) {
                         tar_offset +=
                                 indexing_tensor_data_ptrs_[tar_dim][dim_idx] *
                                 tar_strides_[tar_dim];
@@ -297,7 +297,7 @@ protected:
     int ref_shape_[MAX_DIMS];
     int ref_strides_[MAX_DIMS];
 
-    int index_tensor_sizes_[MAX_DIMS];
+    bool is_trivial_dims_[MAX_DIMS];
     int slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
     const int* indexing_tensor_data_ptrs_[MAX_DIMS];
 };

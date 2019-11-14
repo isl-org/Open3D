@@ -69,7 +69,7 @@ public:
 
     size_t NumElements() const {
         if (this->size() == 0) {
-            return 0;
+            return 1;
         }
         return std::accumulate(this->begin(), this->end(), 1,
                                std::multiplies<size_t>());
