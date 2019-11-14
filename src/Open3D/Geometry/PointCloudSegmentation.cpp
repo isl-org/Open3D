@@ -29,6 +29,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iterator>
+#include <numeric>
 #include <random>
 #include <unordered_set>
 
@@ -38,7 +39,9 @@
 namespace open3d {
 namespace geometry {
 
-// Stores the current best result in the RANSAC algorithm.
+/// \class RANSACResult
+///
+/// \brief Stores the current best result in the RANSAC algorithm.
 class RANSACResult {
 public:
     RANSACResult() : fitness_(0), inlier_rmse_(0) {}

@@ -1067,7 +1067,7 @@ TEST(PointCloud, SegmentPlane) {
 
     geometry::PointCloud pc;
 
-    for (int i = 0; i < ref.size(); i++) {
+    for (size_t i = 0; i < ref.size(); i++) {
         pc.points_.emplace_back(ref[i]);
     }
 
