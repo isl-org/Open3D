@@ -205,13 +205,13 @@ XForm<Real, Dim + 1> GetBoundingBoxXForm(Point<Real, Dim> min,
                                          Real scaleFactor) {
     Point<Real, Dim> center = (max + min) / 2;
     Real scale = max[0] - min[0];
-    for (int d = 1; d < Dim; d++)
+    for (unsigned int d = 1; d < Dim; d++)
         scale = std::max<Real>(scale, max[d] - min[d]);
     scale *= scaleFactor;
-    for (int i = 0; i < Dim; i++) center[i] -= scale / 2;
+    for (unsigned int i = 0; i < Dim; i++) center[i] -= scale / 2;
     XForm<Real, Dim + 1> tXForm = XForm<Real, Dim + 1>::Identity(),
                          sXForm = XForm<Real, Dim + 1>::Identity();
-    for (int i = 0; i < Dim; i++)
+    for (unsigned int i = 0; i < Dim; i++)
         sXForm(i, i) = (Real)(1. / scale), tXForm(Dim, i) = -center[i];
     return sXForm * tXForm;
 }
@@ -223,7 +223,7 @@ XForm<Real, Dim + 1> GetBoundingBoxXForm(Point<Real, Dim> min,
                                          int& depth) {
     // Get the target resolution (along the largest dimension)
     Real resolution = (max[0] - min[0]) / width;
-    for (int d = 1; d < Dim; d++)
+    for (unsigned int d = 1; d < Dim; d++)
         resolution = std::max<Real>(resolution, (max[d] - min[d]) / width);
     resolution *= scaleFactor;
     depth = 0;
@@ -232,10 +232,10 @@ XForm<Real, Dim + 1> GetBoundingBoxXForm(Point<Real, Dim> min,
     Point<Real, Dim> center = (max + min) / 2;
     Real scale = (1 << depth) * width;
 
-    for (int i = 0; i < Dim; i++) center[i] -= scale / 2;
+    for (unsigned int i = 0; i < Dim; i++) center[i] -= scale / 2;
     XForm<Real, Dim + 1> tXForm = XForm<Real, Dim + 1>::Identity(),
                          sXForm = XForm<Real, Dim + 1>::Identity();
-    for (int i = 0; i < Dim; i++)
+    for (unsigned int i = 0; i < Dim; i++)
         sXForm(i, i) = (Real)(1. / scale), tXForm(Dim, i) = -center[i];
     return sXForm * tXForm;
 }
@@ -587,12 +587,12 @@ void Execute(const open3d::geometry::PointCloud& pcd,
                     IsotropicUIntPack<Dim, 0>, Dim>
                     F;
             unsigned int derivatives2[Dim];
-            for (int d = 0; d < Dim; d++) derivatives2[d] = 0;
+            for (unsigned int d = 0; d < Dim; d++) derivatives2[d] = 0;
             typedef IsotropicUIntPack<Dim, 1> Derivatives1;
             typedef IsotropicUIntPack<Dim, 0> Derivatives2;
-            for (int d = 0; d < Dim; d++) {
+            for (unsigned int d = 0; d < Dim; d++) {
                 unsigned int derivatives1[Dim];
-                for (int dd = 0; dd < Dim; dd++)
+                for (unsigned int dd = 0; dd < Dim; dd++)
                     derivatives1[dd] = dd == d ? 1 : 0;
                 F.weights[d]
                          [TensorDerivatives<Derivatives1>::Index(derivatives1)]

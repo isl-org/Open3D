@@ -290,6 +290,8 @@ struct SparseNodeData<Data, UIntPack<FEMSigs...>>
     : public _SparseOrDenseNodeData<Data, UIntPack<FEMSigs...>> {
     static const unsigned int Dim = sizeof...(FEMSigs);
 
+    virtual ~SparseNodeData() {}
+
     size_t size(void) const { return _data.size(); }
     const Data& operator[](size_t idx) const { return _data[idx]; }
     Data& operator[](size_t idx) { return _data[idx]; }
@@ -2646,6 +2648,7 @@ public:
             : _kernelDepth(kernelDepth), _coDimension(coDimension) {
             ;
         }
+        virtual ~DensityEstimator() {}
         int coDimension(void) const { return _coDimension; }
         int kernelDepth(void) const { return _kernelDepth; }
 
