@@ -357,6 +357,16 @@ public:
     /// Should have same size as \ref triangles_.
     void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
 
+    /// \brief Alpha shapes are a generalization of the convex hull. With
+    /// decreasing alpha value the shape schrinks and creates cavities.
+    /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
+    /// \param pcd PointCloud for what the alpha shape should be computed.
+    /// \param alpha parameter to controll the shape. A very big value will
+    /// give a shape close to the convex hull.
+    /// \param return TriangleMesh of the alpha shape.
+    static std::shared_ptr<TriangleMesh> CreateFromPointCloudAlphaShape(
+            const PointCloud &pcd, double alpha);
+
     /// Function that computes a triangle mesh from a oriented PointCloud \param
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface

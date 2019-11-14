@@ -293,6 +293,13 @@ void pybind_trianglemesh(py::module &m) {
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
+            .def_static("create_from_point_cloud_alpha_shape",
+                        &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
+                        "Alpha shapes are a generalization of the convex hull. "
+                        "With decreasing alpha value the shape schrinks and "
+                        "creates cavities. See Edelsbrunner and Muecke, "
+                        "\"Three-Dimensional Alpha Shapes\", 1994.",
+                        "pcd"_a, "alpha"_a)
             .def_static(
                     "create_from_point_cloud_ball_pivoting",
                     &geometry::TriangleMesh::CreateFromPointCloudBallPivoting,
@@ -554,6 +561,14 @@ void pybind_trianglemesh(py::module &m) {
                                     {{"triangle_mask",
                                       "1D bool array, True values indicate "
                                       "triangles that should be removed."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
+            {{"pcd",
+              "PointCloud from whicht the TriangleMesh surface is "
+              "reconstructed."},
+             {"alpha",
+              "Parameter to controll the shape. A very big value will give a "
+              "shape close to the convex hull."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
             {{"pcd",
