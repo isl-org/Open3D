@@ -47,16 +47,18 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
 
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->vertices_ = tetra_mesh->vertices_;
-    utility::LogInfo("{}, {}, {}", pcd.points_.size(),
-                     tetra_mesh->vertices_.size(), pt_map.size());
-    // if (pcd.HasNormals()) {
-    // for(size_t idx = 0; idx < pt_map.size(); ++idx) {
-    //     mesh->vertex_normals_.push_back(pcd.normals_[]);
-    // }
-    // }
-    // if (pcd.HasColors()) {
-    //     mesh->vertex_colors_ = pcd.colors_;
-    // }
+    if (pcd.HasNormals()) {
+        mesh->vertex_normals_.resize(mesh->vertices_.size());
+        for (size_t idx = 0; idx < pt_map.size(); ++idx) {
+            mesh->vertex_normals_[idx] = pcd.normals_[pt_map[idx]];
+        }
+    }
+    if (pcd.HasColors()) {
+        mesh->vertex_colors_.resize(mesh->vertices_.size());
+        for (size_t idx = 0; idx < pt_map.size(); ++idx) {
+            mesh->vertex_colors_[idx] = pcd.colors_[pt_map[idx]];
+        }
+    }
 
     std::vector<double> vsqn(tetra_mesh->vertices_.size());
     for (size_t vidx = 0; vidx < vsqn.size(); ++vidx) {
