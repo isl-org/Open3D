@@ -41,6 +41,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class TetraMesh;
 
 class TriangleMesh : public MeshBase {
 public:
@@ -250,6 +251,21 @@ public:
     /// triangle index
     double GetTriangleArea(size_t triangle_idx) const;
 
+    static inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
+                                                     int vidx1,
+                                                     int vidx2) {
+        if (vidx0 > vidx2) {
+            std::swap(vidx0, vidx2);
+        }
+        if (vidx0 > vidx1) {
+            std::swap(vidx0, vidx1);
+        }
+        if (vidx1 > vidx2) {
+            std::swap(vidx1, vidx2);
+        }
+        return Eigen::Vector3i(vidx0, vidx1, vidx2);
+    }
+
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
     double GetSurfaceArea() const;
@@ -363,9 +379,16 @@ public:
     /// \param pcd PointCloud for what the alpha shape should be computed.
     /// \param alpha parameter to controll the shape. A very big value will
     /// give a shape close to the convex hull.
-    /// \param return TriangleMesh of the alpha shape.
+    /// \param tetra_mesh If not a nullptr, than uses this to construct the
+    /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
+    /// \param pt_map Optional map from tetra_mesh vertex indices to pcd
+    /// points.
+    /// \return TriangleMesh of the alpha shape.
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudAlphaShape(
-            const PointCloud &pcd, double alpha);
+            const PointCloud &pcd,
+            double alpha,
+            std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
+            std::vector<size_t> *pt_map = nullptr);
 
     /// Function that computes a triangle mesh from a oriented PointCloud \param
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.

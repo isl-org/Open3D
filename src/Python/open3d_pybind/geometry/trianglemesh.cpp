@@ -299,7 +299,7 @@ void pybind_trianglemesh(py::module &m) {
                         "With decreasing alpha value the shape schrinks and "
                         "creates cavities. See Edelsbrunner and Muecke, "
                         "\"Three-Dimensional Alpha Shapes\", 1994.",
-                        "pcd"_a, "alpha"_a)
+                        "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a)
             .def_static(
                     "create_from_point_cloud_ball_pivoting",
                     &geometry::TriangleMesh::CreateFromPointCloudBallPivoting,
@@ -568,7 +568,12 @@ void pybind_trianglemesh(py::module &m) {
               "reconstructed."},
              {"alpha",
               "Parameter to controll the shape. A very big value will give a "
-              "shape close to the convex hull."}});
+              "shape close to the convex hull."},
+             {"tetra_mesh",
+              "If not None, than uses this to construct the alpha shape. "
+              "Otherwise, TetraMesh is computed from pcd."},
+             {"pt_map",
+              "Optional map from tetra_mesh vertex indices to pcd points."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
             {{"pcd",
