@@ -72,8 +72,8 @@ public:
 protected:
     /// \brief Parameterized Constructor.
     ///
-    /// \param type specifies the type of geometry of the object constructed.
-    /// \param dimension specifies whether the dimension is 2D or 3D.
+    /// \param type Specifies the type of geometry of the object constructed.
+    /// \param dimension Specifies whether the dimension is 2D or 3D.
     Geometry(GeometryType type, int dimension)
         : geometry_type_(type), dimension_(dimension) {}
 
