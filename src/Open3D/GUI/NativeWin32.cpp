@@ -27,7 +27,7 @@ namespace gui {
 void* GetNativeDrawable(SDL_Window *window) {
     SDL_SysWMinfo wmi;
     SDL_VERSION(&wmi.version);
-    SDL_GetWindowWMInfo(sdlWindow, &wmi);
+    SDL_GetWindowWMInfo(window, &wmi);
     return (void*)wmi.info.win.window;
 }
 

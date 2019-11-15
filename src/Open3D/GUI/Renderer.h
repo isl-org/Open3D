@@ -27,6 +27,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 namespace open3d {
 namespace gui {

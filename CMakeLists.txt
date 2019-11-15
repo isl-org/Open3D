@@ -172,7 +172,7 @@ elseif (UNIX)
     add_definitions(-DUNIX)
     # enable c++14, specify libc++ instead of libstdc++ because Clang uses it
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=libc++ -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
     add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake
