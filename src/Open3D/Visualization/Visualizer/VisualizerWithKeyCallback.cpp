@@ -63,11 +63,11 @@ void VisualizerWithKeyCallback::KeyPressCallback(
 	auto action_callback = key_action_to_callback_.find(key);
     if (action_callback != key_action_to_callback_.end()) {
             if (action_callback->second(this, action, mods)) {
-	            UpdateGeometry();
-			}
+                UpdateGeometry();
+            }
             UpdateRender();
-		    return;
-	}
+            return;
+    }
 
     if (action == GLFW_RELEASE) {
         return;
