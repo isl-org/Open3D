@@ -258,10 +258,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     std::tie(full_index_tensors, indexed_out_shape) =
             PreprocessIndexTensors(*this, index_tensors);
 
-    // Allocate tensor for a copy
     Tensor dst = Tensor(indexed_out_shape, dtype_, device_);
-
-    // dst = *this[index_tensors]
     kernel::IndexedGet(*this, dst, full_index_tensors, indexed_out_shape);
 
     return dst;
@@ -287,7 +284,6 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                           src_tensor.GetShape(), indexed_out_shape);
     }
 
-    // *this[index_tensors] = src_tensor
     kernel::IndexedSet(src_tensor, *this, full_index_tensors,
                        indexed_out_shape);
 }

@@ -67,15 +67,17 @@ void MemoryManager::Memcpy(void* dst_ptr,
                            const Device& src_device,
                            size_t num_bytes) {
     // 0-element Tensor's data_ptr_ is nullptr
-    if (src_ptr == nullptr || dst_ptr == nullptr) {
+    if (num_bytes == 0) {
         return;
+    } else if (src_ptr == nullptr || dst_ptr == nullptr) {
+        utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
     }
 
     if ((dst_device.device_type_ != Device::DeviceType::CPU &&
          dst_device.device_type_ != Device::DeviceType::CUDA) ||
         (src_device.device_type_ != Device::DeviceType::CPU &&
          src_device.device_type_ != Device::DeviceType::CUDA)) {
-        utility::LogError("Unimplemented device for Memcpy");
+        utility::LogError("Unimplemented device for Memcpy.");
     }
 
     std::shared_ptr<DeviceMemoryManager> device_mm;

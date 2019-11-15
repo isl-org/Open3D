@@ -70,7 +70,6 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         }
     }
 
-    // TODO: Only support 1D indexing tensor for now
     if (broadcasted_non_trivial_shape.size() != 1) {
         utility::LogError("Only supporting 1D index tensor for now.");
     }
@@ -83,12 +82,13 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         }
     }
 
-    // TODO: Only support advanced indices are all next to each other.
     for (size_t i = 1; i < non_trivial_dims.size(); ++i) {
         if (non_trivial_dims[i - 1] + 1 != non_trivial_dims[i]) {
             utility::LogError(
-                    "Only supporting the case where advanced indices are all "
-                    "next each other.");
+                    "Only supporting the case where advanced indices are all"
+                    "next to each other, however advanced index in dimension "
+                    "{} and {} are separated by one or more slices.",
+                    non_trivial_dims[i - 1], non_trivial_dims[i]);
         }
     }
 

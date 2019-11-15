@@ -179,8 +179,8 @@ public:
     /// We use the Numpy advanced indexing symnatics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
     ///
-    /// TODO: Only support 1D index tensors.
-    /// TODO: Only support advanced indices are all next to each other. E.g.
+    /// Note: Only support 1D index tensors.
+    /// Note: Only support advanced indices are all next to each other. E.g.
     /// ```
     /// A = np.ones((10, 20, 30, 40, 50))
     /// A[:, [1, 2], [2, 3], :, :]  # Supported,
@@ -189,7 +189,6 @@ public:
     /// A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
     ///                             # For this case, a transpose op is necessary
     /// ```
-    /// See: https://tinyurl.com/yzjq5jvv
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
 
     /// \brief Advanced indexing getter.
@@ -197,8 +196,8 @@ public:
     /// We use the Numpy advanced indexing symnatics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
     ///
-    /// TODO: Only support 1D index tensors.
-    /// TODO: Only support advanced indices are all next to each other.
+    /// Note: Only support 1D index tensors.
+    /// Note: Only support advanced indices are all next to each other.
     void IndexSet(const std::vector<Tensor>& index_tensors,
                   const Tensor& src_tensor);
 

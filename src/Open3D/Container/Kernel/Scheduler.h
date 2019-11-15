@@ -229,8 +229,6 @@ protected:
 /// A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
 ///                             # For this case, a transpose op is necessary
 /// In our case, M == 1, since we only allow 1D indexing Tensor.
-///
-/// TODO: Broacasting is not supported yet.
 class IndexedOffsetCalculator {
 public:
     IndexedOffsetCalculator(
