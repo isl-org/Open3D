@@ -26,48 +26,34 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "Widget.h"
 
-#include "Gui.h"
+#include "Renderer.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-class Widget;
+class Color;
 
-struct DrawContext {
-};
-
-class Window {
-    friend class Application;
-    friend class Renderer;
+class SceneWidget : public Widget {
+    using Super = Widget;
 public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
+    SceneWidget(Renderer& r);
+    virtual ~SceneWidget();
 
-    uint32_t GetID() const;
+    void SetFrame(const Rect& f) override;
 
-    Renderer& GetRenderer();
+    void SetBackgroundColor(const Color& color);
 
-    Size GetSize() const;
+    void AddMesh(Renderer::MeshId meshId);
+    void RemoveMesh(Renderer::MeshId meshId);
 
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout();
-
-private:
-    void Draw();
-    void* GetNativeDrawable() const;
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+} // gui
+} // open3d

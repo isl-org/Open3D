@@ -40,10 +40,12 @@ public:
     Application();
     virtual ~Application();
 
-    std::shared_ptr<Window> createWindow(const std::string& title,
-                                         int width, int height);
+    void AddWindow(std::shared_ptr<Window> window);
 
-    void run();
+    void Run();
+
+private:
+    void CloseWindow(std::shared_ptr<Window> window);
 
 private:
     struct Impl;

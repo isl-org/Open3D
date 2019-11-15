@@ -28,11 +28,105 @@
 
 using namespace open3d;
 
+namespace {
+
+/*struct Geometry {
+    std::vector<float> vertices;
+    std::vector<float> normals;
+    std::vector<float> indices;
+
+    void AddVertex(float x, float y, float z) {
+        vertices.push_back(x);
+        vertices.push_back(y);
+        vertices.push_back(z);
+    }
+    void AddNormal(float x, float y, float z) {
+        normals.push_back(x);
+        normals.push_back(y);
+        normals.push_back(z);
+    }
+};
+
+enum SphereDetail { NORMAL = 40, MILLION = 1000, TEN_MILLION = 3162 };
+gui::Renderer::GeometryId createSphereGeometry(gui::Renderer& renderer,
+                                               SphereDetail detail = NORMAL) {
+    int N = int(detail);
+    float R = 1.0;
+    // We could use fewer vertices by reusing the north and south poles to
+    // be triangle fans, and reusing the vertices where the strips join at
+    // longitude 0, but that would make the code more complex, and this is
+    // just exploration code.
+    int nVerts = (N + 1) * (N + 1);
+    int nTris = 2 * N * N;
+
+//    std::vector<float> verts;
+//    std::vector<float> normals;
+    Geometry g;
+    g.vertices.reserve(3 * nVerts);
+    g.normals.reserve(3 * nVerts);
+    for (int y = 0;  y <= N;  ++y) {
+        for (int i = 0;  i <= N;  ++i) {
+            float lat = -M_PI / 2.0 + M_PI * (float(y) / float(N));
+            float lng = 2.0 * M_PI * (float(i) / float(N));
+            float x = std::cos(lng) * std::cos(lat);
+            float y = std::sin(lat);
+            float z = std::sin(lng) * std::cos(lat);
+            g.AddVertex(R * x, R * y, R * z);
+            g.AddNormal(x, y, z);
+        }
+    }
+
+    std::vector<uint32_t> indices;
+    indices.reserve(3 * nTris);
+    for (int y = 0;  y < N;  ++y) {
+        int latStartVIdx = y * (N + 1);
+        int nextLatStartVIdx = (y + 1) * (N + 1);
+        for (int i = 0;  i < N;  ++i) {
+            indices.push_back(latStartVIdx + i);
+            indices.push_back(nextLatStartVIdx + i);
+            indices.push_back(latStartVIdx + i + 1);
+
+            indices.push_back(latStartVIdx + i + 1);
+            indices.push_back(nextLatStartVIdx + i);
+            indices.push_back(nextLatStartVIdx + i + 1);
+        }
+    }
+
+    return renderer.CreateGeometry(&g.vertices, &g.normals, &indices,
+                                   gui::BoundingBox(0, 0, 0, R));
+}
+*/
+}
+class DemoWindow : public gui::Window {
+public:
+    DemoWindow() : gui::Window("GuiDemo", 640, 480) {
+        scene_ = std::make_shared<gui::SceneWidget>(GetRenderer());
+        scene_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
+
+//        auto geometry = createSphereGeometry(GetRenderer(), NORMAL);
+//        auto mesh = GetRenderer().CreateMesh(geometry, -1);
+//        scene_->AddMesh(mesh);
+
+        AddChild(scene_);
+    }
+
+protected:
+    void Layout() override {
+        auto windowSize = GetSize();
+        scene_->SetFrame(gui::Rect(0, 0, windowSize.width, windowSize.height));
+    }
+
+private:
+    std::shared_ptr<gui::SceneWidget> scene_;
+};
+
 int main(int argc, char *argv[]) {
     gui::Application app;
 
-    app.createWindow("GuiDemo", 640, 480)->show();
-    app.run();
-    
+    auto w = std::make_shared<DemoWindow>();
+    app.AddWindow(w);
+    w->Show();
+
+    app.Run();    
     return 0;
 }

@@ -26,9 +26,13 @@
 
 #include "Window.h"
 
+#include "Native.h"
 #include "Renderer.h"
+#include "Widget.h"
 
 #include <SDL.h>
+
+#include <vector>
 
 namespace {
 // Makes sure that SDL_Quit gets called after the last window is destroyed
@@ -69,6 +73,9 @@ struct Window::Impl
 {
     SDL_Window *window = nullptr;
     Renderer *renderer;
+    std::vector<std::shared_ptr<Widget>> children;
+    bool needsLayout = true;
+    int nSkippedFrames = 0;
 };
 
 Window::Window(const std::string& title, int width, int height)
@@ -83,26 +90,67 @@ Window::Window(const std::string& title, int width, int height)
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not SDL's context, so create the renderer after the window.
-    impl_->renderer = new Renderer();
+    impl_->renderer = new Renderer(*this);
 }
 
 Window::~Window() {
+    impl_->children.clear();  // needs to happen before deleting renderer
     delete impl_->renderer;
     SDL_DestroyWindow(impl_->window);
 
     SDLLibrary::instance().quit();
 }
 
-Renderer& Window::renderer() {
+void* Window::GetNativeDrawable() const {
+    return open3d::gui::GetNativeDrawable(impl_->window);
+}
+
+uint32_t Window::GetID() const {
+    return SDL_GetWindowID(impl_->window);
+}
+
+Renderer& Window::GetRenderer() {
     return *impl_->renderer;
 }
 
-void Window::show(bool vis /*= true*/) {
+Size Window::GetSize() const {
+    uint32_t w, h;
+    SDL_GL_GetDrawableSize(impl_->window, (int*) &w, (int*) &h);
+    return Size(w, h);
+}
+
+void Window::Show(bool vis /*= true*/) {
     if (vis) {
         SDL_ShowWindow(impl_->window);
     } else {
         SDL_HideWindow(impl_->window);
     }
+}
+
+void Window::AddChild(std::shared_ptr<Widget> w) {
+    impl_->children.push_back(w);
+    impl_->needsLayout = true;
+}
+
+void Window::Draw() {
+    if (impl_->needsLayout) {
+        Layout();
+        impl_->needsLayout = false;
+    }
+
+    DrawContext dc;
+    if (impl_->renderer->BeginFrame()) {
+        for (auto &child : impl_->children) {
+            child->Draw(dc);
+        }
+
+        impl_->renderer->EndFrame();
+    } else {
+        ++impl_->nSkippedFrames;
+    }
+}
+
+void Window::Layout() {
 }
 
 } // gui

@@ -1,10 +1,3 @@
-// ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
-// ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 www.open3d.org
-//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -24,50 +17,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <memory>
-#include <string>
-
 #include "Gui.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-class Widget;
+Size::Size()
+    : width(0), height(0)
+{}
 
-struct DrawContext {
-};
+Size::Size(int w, int h)
+    : width(w), height(h)
+{}
 
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
+// ----------------------------------------------------------------------------
+Rect::Rect()
+    : x(0), y(0), width(0), height(0)
+{}
 
-    uint32_t GetID() const;
+Rect::Rect(int x_, int y_, int w_, int h_)
+    : x(x_), y(y_), width(w_), height(h_)
+{}
 
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout();
-
-private:
-    void Draw();
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
+int Rect::GetTop() const {
+    return this->y;
 }
+
+int Rect::GetBottom() const {
+    return this->y + this->height;
 }
+
+int Rect::GetLeft() const {
+    return this->x;
+}
+
+int Rect::GetRight() const {
+    return this->x + this->width;
+}
+
+} // gui
+} // open3d

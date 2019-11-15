@@ -32,13 +32,13 @@
 
 #include <chrono>
 #include <thread>
-#include <vector>
+#include <unordered_map>
 
 namespace open3d {
 namespace gui {
 
 struct Application::Impl {
-    std::vector<std::shared_ptr<Window>> windowList;
+    std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
 };
 
 Application::Application()
@@ -48,14 +48,11 @@ Application::Application()
 Application::~Application() {
 }
 
-std::shared_ptr<Window> Application::createWindow(const std::string& title,
-                                                  int width, int height) {
-    auto w = std::make_shared<Window>(title, width, height);
-    impl_->windowList.push_back(w);
-    return w;
+void Application::AddWindow(std::shared_ptr<Window> window) {
+    impl_->windows[window->GetID()] = window;
 }
 
-void Application::run() {
+void Application::Run() {
 /*    ImGuiIO& io = ImGui::GetIO();
 #ifdef WIN32
     SDL_SysWMinfo wmInfo;
@@ -152,7 +149,7 @@ void Application::run() {
             const SDL_Event& event = events[i];
 //            ImGuiIO* io = mImGuiHelper ? &ImGui::GetIO() : nullptr;
             switch (event.type) {
-                case SDL_QUIT:   // sent if not last window
+                case SDL_QUIT:   // sent after last window closed
                     done = true;
                     break;
                 case SDL_KEYDOWN:
@@ -182,26 +179,42 @@ void Application::run() {
 //                    }
                     SDL_free(event.drop.file);
                     break;
-                case SDL_WINDOWEVENT:
+                case SDL_WINDOWEVENT: {
+                    auto wIt = impl_->windows.find(event.window.windowID);
+                    if (wIt == impl_->windows.end()) {
+                        break;
+                    }
+                    auto window = wIt->second;
                     switch (event.window.event) {
-                        case SDL_WINDOWEVENT_RESIZED:
+//                        case SDL_WINDOWEVENT_RESIZED:
 //                            window->resize();
                             break;
                         case SDL_WINDOWEVENT_CLOSE:  // sent if not last window
+                            CloseWindow(window);
                             break;
                         default:
                             break;
                     }
                     break;
+                }
                 default:
                     break;
             }
+        }
+
+        for (auto &kv : impl_->windows) {
+            kv.second->Draw();
         }
 
 //        std::this_thread::sleep_for(std::chrono::microseconds(1000));
         SDL_Delay(1);
     }
 }
+
+void Application::CloseWindow(std::shared_ptr<Window> window) {
+    impl_->windows.erase(window->GetID());
+}
+
 
 } // gui
 } // open3d

@@ -1,10 +1,3 @@
-// ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
-// ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018 www.open3d.org
-//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -24,50 +17,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Native.h"
 
-#include <memory>
-#include <string>
-
-#include "Gui.h"
+#include <SDL_syswm.h>
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-class Widget;
-
-struct DrawContext {
-};
-
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
-
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout();
-
-private:
-    void Draw();
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
+void* GetNativeDrawable(SDL_Window *window) {
+    SDL_SysWMinfo wmi;
+    SDL_VERSION(&wmi.version);
+    SDL_GetWindowWMInfo(sdlWindow, &wmi);
+    return (void*)wmi.info.win.window;
 }
-}
+
+} // gui
+} // open3d

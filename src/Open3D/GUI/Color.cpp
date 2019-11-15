@@ -24,50 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-#include "Gui.h"
+#include "Color.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-class Widget;
-
-struct DrawContext {
-};
-
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
-
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout();
-
-private:
-    void Draw();
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
+Color::Color()
+    : rgba_{ 0.0f, 0.0f, 0.0f, 1.0f }
+{
 }
+
+Color::Color(float r, float g, float b, float a /*= 1.0*/)
+    : rgba_{ r, g, b, a }
+{
 }
+
+float Color::GetRed() const { return rgba_[0]; }
+float Color::GetGreen() const { return rgba_[1]; }
+float Color::GetBlue() const { return rgba_[2]; }
+float Color::GetAlpha() const { return rgba_[3]; }
+
+const float* Color::GetPointer() const { return rgba_; }
+
+} // gui
+} // open3d

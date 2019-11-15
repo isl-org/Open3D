@@ -24,50 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-#include "Gui.h"
+#include "SceneWidget.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-class Widget;
+struct SceneWidget::Impl {
+    RendererView view;
 
-struct DrawContext {
+    Impl(Renderer& r, Renderer::ViewId viewId)
+        : view(r, viewId)
+    {}
 };
 
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
-
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout();
-
-private:
-    void Draw();
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
+SceneWidget::SceneWidget(Renderer& r)
+    : impl_(new SceneWidget::Impl(r, r.CreateView()))
+{
 }
+
+SceneWidget::~SceneWidget() {
 }
+
+void SceneWidget::SetFrame(const Rect& f) {
+    Super::SetFrame(f);
+    impl_->view.SetViewport(f);
+}
+
+void SceneWidget::SetBackgroundColor(const Color& color) {
+    impl_->view.SetClearColor(color);
+}
+
+void SceneWidget::AddMesh(Renderer::MeshId meshId) {
+    impl_->view.GetScene().AddMesh(meshId);
+}
+
+void SceneWidget::RemoveMesh(Renderer::MeshId meshId) {
+    impl_->view.GetScene().RemoveMesh(meshId);
+}
+
+Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
+    impl_->view.Draw();
+    return Widget::DrawResult::NONE;
+}
+
+} // gui
+} // open3d

@@ -24,50 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-#include "Gui.h"
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-class Widget;
-
-struct DrawContext {
+struct Widget::Impl {
+    Rect frame;
 };
 
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
-
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout();
-
-private:
-    void Draw();
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
+Widget::Widget()
+: impl_(new Widget::Impl())
+{
 }
+
+Widget::~Widget() {
 }
+
+const Rect& Widget::GetFrame() const {
+    return impl_->frame;
+}
+
+void Widget::SetFrame(const Rect& f) {
+    impl_->frame = f;
+}
+
+Size Widget::CalcPreferredSize() const {
+    return Size(100000, 100000);
+}
+
+} // gui
+} // open3d
