@@ -53,6 +53,8 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 }
 
 void Application::Run() {
+    SDL_Init(SDL_INIT_EVENTS);
+
 /*    ImGuiIO& io = ImGui::GetIO();
 #ifdef WIN32
     SDL_SysWMinfo wmInfo;
@@ -209,6 +211,8 @@ void Application::Run() {
 //        std::this_thread::sleep_for(std::chrono::microseconds(1000));
         SDL_Delay(1);
     }
+
+    SDL_Quit();
 }
 
 void Application::CloseWindow(std::shared_ptr<Window> window) {

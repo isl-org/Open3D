@@ -34,37 +34,6 @@
 
 #include <vector>
 
-namespace {
-// Makes sure that SDL_Quit gets called after the last window is destroyed
-class SDLLibrary {
-public:
-    static SDLLibrary& instance() {
-        static SDLLibrary *lib = nullptr;
-        if (!lib) {
-            lib = new SDLLibrary();
-        }
-        return *lib;
-    }
-
-    void init() {
-        if (count_ == 0) {
-            SDL_Init(SDL_INIT_EVENTS);
-        }
-        count_ += 1;
-    }
-
-    void quit() {
-        count_ -= 1;
-        if (count_ == 0) {
-            SDL_Quit();
-        }
-    }
-
-private:
-    int count_ = 0;
-};
-}
-
 // ----------------------------------------------------------------------------
 namespace open3d {
 namespace gui {
@@ -80,8 +49,6 @@ struct Window::Impl
 
 Window::Window(const std::string& title, int width, int height)
     : impl_(new Window::Impl()) {
-    SDLLibrary::instance().init();
-
     const int x = SDL_WINDOWPOS_CENTERED;
     const int y = SDL_WINDOWPOS_CENTERED;
     uint32_t flags = SDL_WINDOW_SHOWN |  // so SDL's context gets created
@@ -97,8 +64,6 @@ Window::~Window() {
     impl_->children.clear();  // needs to happen before deleting renderer
     delete impl_->renderer;
     SDL_DestroyWindow(impl_->window);
-
-    SDLLibrary::instance().quit();
 }
 
 void* Window::GetNativeDrawable() const {
