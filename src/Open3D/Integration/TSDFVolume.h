@@ -47,6 +47,8 @@ enum class TSDFVolumeColorType {
 /// B. Curless and M. Levoy
 /// A volumetric method for building complex models from range images
 /// In SIGGRAPH, 1996
+
+/// A Truncated Signed Distance Field is a 3D voxel array which represents objects within a volume of space. Can refer here - http://graphics.stanford.edu/papers/volrange/volrange.pdf
 class TSDFVolume {
 public:
     TSDFVolume(double voxel_length,

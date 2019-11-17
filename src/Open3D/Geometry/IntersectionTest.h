@@ -30,7 +30,8 @@
 
 namespace open3d {
 namespace geometry {
-
+    
+/// Algorithm for finding out intersection between Lines and Planes.
 class IntersectionTest {
 public:
     static bool AABBAABB(const Eigen::Vector3d& min0,

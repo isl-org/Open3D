@@ -50,7 +50,9 @@ private:
     double end_time_in_milliseconds_;
 };
 
-class ScopeTimer : public Timer {
+/// Signals the scope.
+class ScopeTimer : public Timer {ls
+
 public:
     ScopeTimer(const std::string &scope_timer_info = "");
     ~ScopeTimer();
@@ -58,7 +60,7 @@ public:
 private:
     std::string scope_timer_info_;
 };
-
+///  Signals an event.
 class FPSTimer : public Timer {
 public:
     FPSTimer(const std::string &fps_timer_info = "",

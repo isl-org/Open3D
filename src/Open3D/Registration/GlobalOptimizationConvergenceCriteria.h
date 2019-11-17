@@ -29,6 +29,7 @@
 namespace open3d {
 namespace registration {
 
+/// Identifies which distance value is used for finding neighboring points and balances parameter to decide which one is more reliable.
 class GlobalOptimizationOption {
 public:
     GlobalOptimizationOption(double max_correspondence_distance = 0.075,
@@ -69,6 +70,7 @@ public:
     int reference_node_;
 };
 
+/// Identifies convergence criteria for Global Optimization.
 class GlobalOptimizationConvergenceCriteria {
 public:
     GlobalOptimizationConvergenceCriteria(

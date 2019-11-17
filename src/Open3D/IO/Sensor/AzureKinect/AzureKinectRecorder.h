@@ -45,6 +45,7 @@ class Image;
 
 namespace io {
 
+/// Record data streams from the sensor SDK to a file.
 class AzureKinectRecorder : public RGBDRecorder {
 public:
     AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,

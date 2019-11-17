@@ -38,6 +38,7 @@ class RGBDImage;
 
 namespace io {
 
+// Detecting RGBD Images
 class RGBDSensor {
 public:
     RGBDSensor() {}

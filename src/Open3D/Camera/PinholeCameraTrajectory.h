@@ -34,6 +34,7 @@
 namespace open3d {
 namespace camera {
 
+///  Determination of the path followed by the pinhole camera.
 class PinholeCameraTrajectory : public utility::IJsonConvertible {
 public:
     PinholeCameraTrajectory();

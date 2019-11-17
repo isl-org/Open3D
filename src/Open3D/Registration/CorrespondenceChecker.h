@@ -39,6 +39,7 @@ namespace geometry {
 class PointCloud;
 }
 
+/// The aim is to find the relative positions and orientations in the coordinate system.
 namespace registration {
 /// Base class that checks if two (small) point clouds can be aligned
 /// This class is used in feature based matching algorithms (such as RANSAC and

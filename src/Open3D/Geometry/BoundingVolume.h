@@ -35,6 +35,7 @@ namespace geometry {
 
 class AxisAlignedBoundingBox;
 
+/// An oriented bounding box is bounded parallel pipes which have faces and edges that are not parallel to the basis vectors.
 class OrientedBoundingBox : public Geometry3D {
 public:
     OrientedBoundingBox()

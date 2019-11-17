@@ -33,6 +33,7 @@ namespace open3d {
 
 namespace geometry {
 
+/// UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid.
 class TSDFVoxel : public Voxel {
 public:
     TSDFVoxel() : Voxel() {}

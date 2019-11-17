@@ -39,6 +39,7 @@ enum class PinholeCameraIntrinsicParameters {
     Kinect2ColorCameraDefault = 2,
 };
 
+/// It refers to finding the parameters of a pinhole camera model approximating the camera that has produced the image or video.
 class PinholeCameraIntrinsic : public utility::IJsonConvertible {
 public:
     PinholeCameraIntrinsic();

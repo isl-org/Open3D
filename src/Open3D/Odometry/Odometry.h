@@ -43,6 +43,7 @@ namespace geometry {
 class RGBDImage;
 }
 
+/// Odometry is the use of data from motion sensors to estimate change in position over time. It is used to track motion.
 namespace odometry {
 /// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix

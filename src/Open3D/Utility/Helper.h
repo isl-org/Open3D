@@ -42,6 +42,7 @@ namespace utility {
 /// See Mike Seymour in magic-numbers-in-boosthash-combine:
 ///   http://stackoverflow.com/questions/4948780
 
+/// The namespace hash_tuple defines a general hash function for std::tuple
 namespace hash_tuple {
 
 template <typename TT>

@@ -36,6 +36,7 @@ namespace geometry {
 class TriangleMesh;
 class TetraMesh;
 
+/// It is the algorithm used for computing convex hulls.
 class Qhull {
 public:
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>

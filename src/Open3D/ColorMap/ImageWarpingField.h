@@ -31,6 +31,7 @@
 namespace open3d {
 namespace color_map {
 
+/// It is the process of digitally manipulating an image such that any shapes portrayed in the image have been significantly distorted.
 class ImageWarpingField : public utility::IJsonConvertible {
 public:
     ImageWarpingField();

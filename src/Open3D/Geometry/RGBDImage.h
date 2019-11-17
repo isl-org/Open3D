@@ -32,6 +32,7 @@
 namespace open3d {
 namespace geometry {
 
+/// A RGB-D image is comprised of Red-Green-Black image and its corresponding depth image.
 class RGBDImage;
 
 /// Typedef and functions for RGBDImagePyramid

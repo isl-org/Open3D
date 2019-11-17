@@ -61,6 +61,7 @@ enum class VerbosityLevel {
     Debug = 3,
 };
 
+/// To handle errors.
 class Logger {
 public:
     enum class TextColor {

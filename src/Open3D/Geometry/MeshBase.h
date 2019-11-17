@@ -42,6 +42,7 @@ namespace geometry {
 class PointCloud;
 class TriangleMesh;
 
+/// A base mesh is a low-resolution polygonal model that can be used as the starting point for making structures digitally. 
 class MeshBase : public Geometry3D {
 public:
     /// Indicates the method that is used for mesh simplification if multiple

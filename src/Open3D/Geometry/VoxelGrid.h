@@ -49,6 +49,7 @@ class TriangleMesh;
 class Octree;
 class Image;
 
+/// It is normally a grid in 3D space It is a collection of aligned boxes.
 class Voxel {
 public:
     Voxel() {}
@@ -62,6 +63,7 @@ public:
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
 };
 
+/// It is normally a grid in 3D space It is a collection of aligned boxes.
 class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}

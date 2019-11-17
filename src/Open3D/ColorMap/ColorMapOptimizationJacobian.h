@@ -45,6 +45,7 @@ namespace color_map {
 
 class ImageWarpingField;
 
+/// Graph coloring has been employed to efficiently compute sparse Jacobian matrices. It is the matrix of all its first-order partial derivatives.
 class ColorMapOptimizationJacobian {
 public:
     ColorMapOptimizationJacobian() {}

@@ -31,6 +31,7 @@
 namespace open3d {
 namespace odometry {
 
+/// Class that defines odometry options.
 class OdometryOption {
 public:
     OdometryOption(

@@ -29,6 +29,7 @@
 namespace open3d {
 namespace geometry {
 
+/// Efficient algorithms are designed for the performing various operations on complex 3D models.
 class Geometry {
 public:
     enum class GeometryType {

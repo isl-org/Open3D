@@ -34,6 +34,7 @@
 namespace open3d {
 namespace registration {
 
+/// Class to optimize a PoseGraph
 class PoseGraph;
 
 /// Function to optimize a PoseGraph

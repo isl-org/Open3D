@@ -38,6 +38,7 @@ namespace geometry {
 class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
 
+/// Efficient algorithms are designed for the performing various operations on complex 3D models.
 class Geometry3D : public Geometry {
 public:
     ~Geometry3D() override {}

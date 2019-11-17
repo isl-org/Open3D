@@ -40,6 +40,7 @@ class PointCloud;
 
 namespace registration {
 
+// Contains the feature of the registration
 class Feature {
 public:
     void Resize(int dim, int n) {

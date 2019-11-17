@@ -55,6 +55,7 @@ class UniformTSDFVolume;
 /// removing outlier structures like floating noise pixels and bumps along
 /// structure edges.
 
+/// A Truncated Signed Distance Field is a 3D voxel array which represents objects within a volume of space. It permits efficient integration and raycasting operations. Can refer here - http://graphics.stanford.edu/papers/volrange/volrange.pdf
 class ScalableTSDFVolume : public TSDFVolume {
 public:
     struct VolumeUnit {

@@ -47,6 +47,7 @@ namespace io {
 // Avoid including AzureKinectRecorder.h
 class AzureKinectRecorder;
 
+/// Reading data from Azure Kinect Device
 class AzureKinectSensor : public RGBDSensor {
 public:
     AzureKinectSensor(const AzureKinectSensorConfig& sensor_config);

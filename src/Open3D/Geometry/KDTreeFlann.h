@@ -46,6 +46,7 @@ class Index;
 namespace open3d {
 namespace geometry {
 
+/// It is a binary search tree where data is stored in the nodes and each node is a dimensional point in space. It is a partitioning structure used for organizing points.
 class KDTreeFlann {
 public:
     KDTreeFlann();

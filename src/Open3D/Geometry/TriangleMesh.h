@@ -42,6 +42,7 @@ namespace geometry {
 
 class PointCloud;
 
+/// It is one of the simplest types of mesh that consists of 3 sides.
 class TriangleMesh : public MeshBase {
 public:
     TriangleMesh() : MeshBase(Geometry::GeometryType::TriangleMesh) {}

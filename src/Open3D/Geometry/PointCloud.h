@@ -47,6 +47,7 @@ class RGBDImage;
 class TriangleMesh;
 class VoxelGrid;
 
+/// A Point Cloud is a collection of data points in space.
 class PointCloud : public Geometry3D {
 public:
     PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
@@ -140,7 +141,7 @@ public:
     RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
 
     /// Function to remove points that are further away from their
-    /// \param nb_neighbor neighbors in average.
+    /// \param nb_neighbors neighbors in average.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
 

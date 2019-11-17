@@ -41,6 +41,7 @@ namespace geometry {
 class PointCloud;
 class TriangleMesh;
 
+/// It is a tetrahedron mesh that has 4 vertices, 6 edges, and is bounded by 4 triangular faces.
 class TetraMesh : public MeshBase {
 public:
     TetraMesh() : MeshBase(Geometry::GeometryType::TetraMesh) {}

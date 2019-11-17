@@ -30,7 +30,7 @@
 
 namespace open3d {
 namespace io {
-
+// The configuration of RGBDSensor
 class RGBDSensorConfig : public utility::IJsonConvertible {};
 
 }  // namespace io

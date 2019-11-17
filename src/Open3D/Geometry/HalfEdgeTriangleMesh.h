@@ -35,6 +35,7 @@
 namespace open3d {
 namespace geometry {
 
+/// These are split edge-based structures that put the connectivity information into the edges.
 class HalfEdgeTriangleMesh : public MeshBase {
 public:
     class HalfEdge {

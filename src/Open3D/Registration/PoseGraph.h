@@ -35,6 +35,7 @@
 namespace open3d {
 namespace registration {
 
+/// It contains information about nodes of PoseGraph.
 class PoseGraphNode : public utility::IJsonConvertible {
 public:
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
@@ -49,6 +50,7 @@ public:
     Eigen::Matrix4d_u pose_;
 };
 
+/// It contains information about edges of PoseGraph.
 class PoseGraphEdge : public utility::IJsonConvertible {
 public:
     PoseGraphEdge(
@@ -85,6 +87,7 @@ public:
     double confidence_;
 };
 
+/// It stores information for a 3-D graph representation in the forms of edges and nodes.
 class PoseGraph : public utility::IJsonConvertible {
 public:
     PoseGraph();

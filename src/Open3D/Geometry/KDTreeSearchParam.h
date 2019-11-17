@@ -29,6 +29,7 @@
 namespace open3d {
 namespace geometry {
 
+/// KD Tree are useful for range and nearest neighbour searches.
 class KDTreeSearchParam {
 public:
     enum class SearchType {

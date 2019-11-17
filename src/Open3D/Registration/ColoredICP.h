@@ -37,6 +37,8 @@ class PointCloud;
 }
 
 namespace registration {
+
+/// Contains the result of relative positions and orientations in the coordinate system.
 class RegistrationResult;
 
 /// Function to align colored point clouds

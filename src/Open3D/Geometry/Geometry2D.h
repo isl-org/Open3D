@@ -33,6 +33,7 @@
 namespace open3d {
 namespace geometry {
 
+/// Efficient algorithms are designed for the performing various operations on complex 2D models.
 class Geometry2D : public Geometry {
 public:
     ~Geometry2D() override {}

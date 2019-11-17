@@ -34,6 +34,7 @@
 namespace open3d {
 namespace camera {
 
+/// It contains the parameters containing the magnitude of the parameters of camera that depicts the kind of image saved.
 class PinholeCameraParameters : public utility::IJsonConvertible {
 public:
     PinholeCameraParameters();
