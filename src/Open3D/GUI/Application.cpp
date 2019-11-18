@@ -208,8 +208,7 @@ void Application::Run() {
             kv.second->Draw();
         }
 
-//        std::this_thread::sleep_for(std::chrono::microseconds(1000));
-        SDL_Delay(1);
+        SDL_Delay(1); // millisec
     }
 
     SDL_Quit();

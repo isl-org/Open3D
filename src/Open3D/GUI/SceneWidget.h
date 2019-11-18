@@ -45,6 +45,8 @@ public:
 
     void SetBackgroundColor(const Color& color);
 
+    RendererCamera& GetCamera();
+
     void AddMesh(Renderer::MeshId meshId);
     void RemoveMesh(Renderer::MeshId meshId);
 

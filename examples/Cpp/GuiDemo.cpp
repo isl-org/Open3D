@@ -30,7 +30,7 @@ using namespace open3d;
 
 namespace {
 
-/*struct Geometry {
+struct Geometry {
     std::vector<float> vertices;
     std::vector<float> normals;
     std::vector<float> indices;
@@ -92,10 +92,10 @@ gui::Renderer::GeometryId createSphereGeometry(gui::Renderer& renderer,
         }
     }
 
-    return renderer.CreateGeometry(&g.vertices, &g.normals, &indices,
+    return renderer.CreateGeometry(g.vertices, g.normals, indices,
                                    gui::BoundingBox(0, 0, 0, R));
 }
-*/
+
 }
 class DemoWindow : public gui::Window {
 public:
@@ -103,9 +103,15 @@ public:
         scene_ = std::make_shared<gui::SceneWidget>(GetRenderer());
         scene_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
 
-//        auto geometry = createSphereGeometry(GetRenderer(), NORMAL);
-//        auto mesh = GetRenderer().CreateMesh(geometry, -1);
-//        scene_->AddMesh(mesh);
+        const float near = 0.1f;
+        const float far = 50.0f;
+        const float fov = 90.0f;
+        scene_->GetCamera().SetProjection(near, far, fov);
+        scene_->GetCamera().LookAt(0, 0, -5,   0, 0, 0,   0, 1, 0);
+
+        auto geometry = createSphereGeometry(GetRenderer(), NORMAL);
+        auto mesh = GetRenderer().CreateMesh(geometry, -1);
+        scene_->AddMesh(mesh);
 
         AddChild(scene_);
     }

@@ -64,6 +64,7 @@ class Transform;
 class Renderer {
     friend class RendererScene;
     friend class RendererView;
+    friend class RendererCamera;
     friend class SceneWidget;
 public:
     using SceneId = int;
@@ -106,10 +107,10 @@ public:
 //    IBLId CreateIBL(...);
 
     // This is an expensive operation
-    // Consumes vertices, normals, and indices.
-    GeometryId CreateGeometry(std::vector<float> *vertices,
-                              std::vector<float> *normals,
-                              std::vector<uint32_t> *indices,
+    // Copies vertices, normals, and indices.
+    GeometryId CreateGeometry(const std::vector<float>& vertices,
+                              const std::vector<float>& normals,
+                              const std::vector<uint32_t>& indices,
                               const BoundingBox& bbox);
 
     // This is (should be) a cheap operation
@@ -152,6 +153,19 @@ public:
     ~RendererCamera();
 
     Renderer::CameraId GetId() const;
+
+    // Updates the projection.
+    void ResizeProjection(float aspectRatio);
+
+    // Sets projection parameters.  If ResizeProjection() has been called
+    // before (that is, we know the size of our drawable), this will take
+    // effect immediately, otherwise it will be at the next (i.e. first)
+    // resize.
+    void SetProjection(float near, float far, float verticalFoV);
+
+    void LookAt(float centerX, float centerY, float centerZ,
+                float eyeX, float eyeY, float eyeZ,
+                float upX, float upY, float upZ);
 
 private:
     struct Impl;

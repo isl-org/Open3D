@@ -54,6 +54,10 @@ void SceneWidget::SetBackgroundColor(const Color& color) {
     impl_->view.SetClearColor(color);
 }
 
+RendererCamera& SceneWidget::GetCamera() {
+    return impl_->view.GetCamera();
+}
+
 void SceneWidget::AddMesh(Renderer::MeshId meshId) {
     impl_->view.GetScene().AddMesh(meshId);
 }

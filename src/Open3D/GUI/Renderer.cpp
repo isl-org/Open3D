@@ -53,20 +53,33 @@ namespace {
 
 static const int BOGUS_ID = -1;
 
+void freeTempBuffer(void *buffer, size_t, void*) {
+    free(buffer);
+}
+
 template <typename T>
-class ObjectPool {
+class PoolBase {
 public:
     using Id = int32_t;
     using Iterator = typename std::unordered_map<Id, T>::iterator;
     using ConstIterator = typename std::unordered_map<Id, T>::const_iterator;
 
-    virtual ~ObjectPool() {
+    virtual ~PoolBase() {
+        // We can't call DestroyItem() in the destructor, since it is virtual
+        // and at this point the derived class has been cleaned up.  So the
+        // derived class must call DestroyAll(), which DestroyItem() is still
+        // valid.
+        assert(items_.empty());
+    }
+
+    void DestroyAll() {
         for (auto &kv : items_) {
             DestroyItem(kv.second);
         }
+        items_.clear();
     }
 
-    virtual void DestroyItem(T& item) {}
+    virtual void DestroyItem(T& item) = 0;
 
     Id Add(const T& newItem) {
         currId_ += 1;
@@ -95,10 +108,24 @@ protected:
 };
 
 template <typename T>
-class EngineObjectPool : public ObjectPool<T> {
+class ObjectPool : public PoolBase<T> {
+public:
+    virtual ~ObjectPool() {
+        this->DestroyAll();
+    }
+
+    void DestroyItem(T& item) override {}
+};
+
+template <typename T>
+class EngineObjectPool : public PoolBase<T> {
 public:
     EngineObjectPool(Engine *engine) {
         engine_ = engine;
+    }
+
+    ~EngineObjectPool() {
+        this->DestroyAll();
     }
 
     void DestroyItem(T& item) override {
@@ -154,9 +181,6 @@ void Transform::Rotate(float axis_x, float axis_y, float axis_z,
 // means to try to avoid ravioli code.
 struct Geometry {
     BoundingBox boundingBox;
-    std::vector<float> vertices;
-    std::vector<math::quatf> tangents;
-    std::vector<uint32_t> indices;
     Renderer::VertexBufferId vbufferId = BOGUS_ID;
     Renderer::IndexBufferId ibufferId = BOGUS_ID;
 };
@@ -290,34 +314,39 @@ Renderer::MaterialId Renderer::CreateNonMetal(const Color& baseColor,
 //LightId Renderer::CreateLight(...);
 //IBLId Renderer::CreateIBL(...);
 
-Renderer::GeometryId Renderer::CreateGeometry(std::vector<float> *vertices,
-                                              std::vector<float> *normals,
-                                              std::vector<uint32_t> *indices,
+Renderer::GeometryId Renderer::CreateGeometry(const std::vector<float>& vertices,
+                                              const std::vector<float>& normals,
+                                              const std::vector<uint32_t>& indices,
                                               const BoundingBox& bbox) {
     auto engine = impl_->engine;
 
-    int nVerts = vertices->size() / 3;
+    int nVerts = vertices.size() / 3;
 
     std::vector<math::quatf> tangents(nVerts);
     auto orientation = geometry::SurfaceOrientation::Builder()
                                     .vertexCount(nVerts)
-                                    .normals((math::float3*)normals->data())
+                                    .normals((math::float3*)normals.data())
                                     .build();
     orientation.getQuats(tangents.data(), nVerts);
 
-    // Filament doesn't document whether BufferDescriptor copies the data in
-    // the pointer you give it, or whether it keeps the pointer.  It seems to
-    // be the latter.  This means that we have to keep the data around for the
-    // lifetime of the geometry, which is what the Geometry object is for.
     auto geometryId = impl_->alloc->geometries.Add(Geometry());
     auto &g = impl_->alloc->geometries.Get(geometryId);
     g.boundingBox = bbox;
-    std::swap(g.vertices, *vertices);
-    std::swap(g.tangents, tangents);
-    std::swap(g.indices, *indices);
-    int nVertBytes = sizeof(g.vertices.data()) * g.vertices.size();
-    int nTanBytes = sizeof(g.tangents.data()) * g.tangents.size();
-    int nIdxBytes = sizeof(g.indices.data()) * g.indices.size();
+
+    // Filament doesn't document whether BufferDescriptor copies the data in
+    // the pointer you give it, or whether it keeps the pointer.  It seems to
+    // put the buffer in a queue and copy the data on another thread a short
+    // time from now. This means that we have to keep the data around for a
+    // while, so we need to allocate a special pointer for it.
+    int nVertBytes = sizeof(*vertices.data()) * vertices.size();
+    int nTanBytes = sizeof(*tangents.data()) * tangents.size();
+    int nIdxBytes = sizeof(*indices.data()) * indices.size();
+    auto *v = (float*)malloc(nVertBytes);
+    memcpy(v, vertices.data(), nVertBytes);
+    auto *t = (math::quatf*)malloc(nTanBytes);
+    memcpy(t, tangents.data(), nTanBytes);
+    auto *i = (uint32_t*)malloc(nIdxBytes);
+    memcpy(i, indices.data(), nIdxBytes);
 
     VertexBuffer::Builder vbb;
     vbb.vertexCount(nVerts)
@@ -329,23 +358,23 @@ Renderer::GeometryId Renderer::CreateGeometry(std::vector<float> *vertices,
                   VertexBuffer::AttributeType::FLOAT4, 0, 0);
     auto vbuffer = vbb.build(*engine);
     vbuffer->setBufferAt(*engine, 0,
-                         VertexBuffer::BufferDescriptor(g.vertices.data(),
-                                                        nVertBytes,
-                                                        nullptr, nullptr));
+                         VertexBuffer::BufferDescriptor(v, nVertBytes,
+                                                        freeTempBuffer,
+                                                        nullptr));
     vbuffer->setBufferAt(*engine, 1,
-                         VertexBuffer::BufferDescriptor(g.tangents.data(),
-                                                        nTanBytes,
-                                                        nullptr, nullptr));
+                         VertexBuffer::BufferDescriptor(t, nTanBytes,
+                                                        freeTempBuffer,
+                                                        nullptr));
     auto idxType = ((sizeof(indices[0]) == 2) ? IndexBuffer::IndexType::USHORT
                                               : IndexBuffer::IndexType::UINT);
     auto ibuffer = IndexBuffer::Builder()
-                            .indexCount(g.indices.size())
+                            .indexCount(indices.size())
                             .bufferType(idxType)
                             .build(*engine);
     ibuffer->setBuffer(*engine,
-                       IndexBuffer::BufferDescriptor(g.indices.data(),
-                                                     nIdxBytes,
-                                                     nullptr, nullptr));
+                       IndexBuffer::BufferDescriptor(i, nIdxBytes,
+                                                     freeTempBuffer,
+                                                     nullptr));
 
     g.vbufferId = impl_->alloc->vbuffers.Add(vbuffer);
     g.ibufferId = impl_->alloc->ibuffers.Add(ibuffer);
@@ -437,7 +466,9 @@ RendererView::RendererView(Renderer& renderer, Renderer::ViewId id)
         auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(impl_->scene->GetId());
         view->setScene(scene);
 
+        // Set defaults
         view->setClearColor(LinearColorA{ 0.0f, 0.0f, 0.0f, 1.0f });
+        GetCamera().SetProjection(0.01, 50, 90.0);
     }
 }
 
@@ -466,6 +497,7 @@ void RendererView::SetClearColor(const Color &c) {
 void RendererView::SetViewport(const Rect &r) {
     if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
         view->setViewport(Viewport(r.x, r.y, r.width, r.height));
+        GetCamera().ResizeProjection(float(r.width) / float(r.height));
     }
 }
 
@@ -477,6 +509,10 @@ void RendererView::Draw() {
 struct RendererCamera::Impl {
     Renderer& renderer;
     Renderer::CameraId cameraId = BOGUS_ID;
+    float aspectRatio = -0.0;  // invalid
+    float near = 0.01f;
+    float far = 50.0f;
+    float verticalFoV = 90.0f;
 
     Impl(Renderer& r) : renderer(r) {
     }
@@ -495,6 +531,34 @@ Renderer::CameraId RendererCamera::GetId() const {
     return impl_->cameraId;
 }
 
+void RendererCamera::ResizeProjection(float aspectRatio) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
+        impl_->aspectRatio = aspectRatio;
+        camera->setProjection(impl_->verticalFoV, aspectRatio, impl_->near, impl_->far,
+                              Camera::Fov::VERTICAL);
+    }
+}
+
+void RendererCamera::SetProjection(float near, float far, float verticalFoV) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
+        impl_->near = near;
+        impl_->far = far;
+        impl_->verticalFoV = verticalFoV;
+        if (impl_->aspectRatio > 0.0) {
+            camera->setProjection(verticalFoV, impl_->aspectRatio, near, far, Camera::Fov::VERTICAL);
+        }
+    }
+}
+
+void RendererCamera::LookAt(float centerX, float centerY, float centerZ,
+                            float eyeX, float eyeY, float eyeZ,
+                            float upX, float upY, float upZ) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
+        camera->lookAt(math::float3{ centerX, centerY, centerZ},
+                       math::float3{ eyeX, eyeY, eyeZ },
+                       math::float3{ upX, upY, upZ });
+    }
+}
 // ----------------------------------------------------------------------------
 struct RendererScene::Impl {
     Renderer& renderer;
