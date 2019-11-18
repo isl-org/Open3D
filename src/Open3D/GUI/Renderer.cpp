@@ -550,12 +550,12 @@ void RendererCamera::SetProjection(float near, float far, float verticalFoV) {
     }
 }
 
-void RendererCamera::LookAt(float centerX, float centerY, float centerZ,
-                            float eyeX, float eyeY, float eyeZ,
+void RendererCamera::LookAt(float eyeX, float eyeY, float eyeZ,
+                            float centerX, float centerY, float centerZ,
                             float upX, float upY, float upZ) {
     if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
-        camera->lookAt(math::float3{ centerX, centerY, centerZ},
-                       math::float3{ eyeX, eyeY, eyeZ },
+        camera->lookAt(math::float3{ eyeX, eyeY, eyeZ },
+                       math::float3{ centerX, centerY, centerZ},
                        math::float3{ upX, upY, upZ });
     }
 }
