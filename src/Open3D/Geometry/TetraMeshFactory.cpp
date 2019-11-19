@@ -32,15 +32,14 @@
 namespace open3d {
 namespace geometry {
 
-std::shared_ptr<TetraMesh> TetraMesh::CreateFromPointCloud(
-        const PointCloud& point_cloud) {
+std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+TetraMesh::CreateFromPointCloud(const PointCloud& point_cloud) {
     if (point_cloud.points_.size() < 4) {
         utility::LogError(
                 "[CreateFromPointCloud] not enough points to create a "
                 "tetrahedral mesh.");
     }
-    return std::get<0>(
-            Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_));
+    return Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_);
 }
 
 }  // namespace geometry
