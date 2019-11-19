@@ -37,12 +37,15 @@ namespace geometry {
 
 /// \class HalfEdgeTriangleMesh
 ///
-/// \brief HalfEdgeTriangleMesh inherits TriangleMesh class with the addition of HalfEdge data structure for each half edge in the mesh as well as related functions.
+/// \brief HalfEdgeTriangleMesh inherits TriangleMesh class with the addition of
+/// HalfEdge data structure for each half edge in the mesh as well as related
+/// functions.
 class HalfEdgeTriangleMesh : public MeshBase {
 public:
     /// \class HalfEdge
     ///
-    /// \brief HalfEdge class contains vertex, triangle info about a half edge, as well as relations of next and twin half edge.
+    /// \brief HalfEdge class contains vertex, triangle info about a half edge,
+    /// as well as relations of next and twin half edge.
     class HalfEdge {
     public:
         /// \brief Default Constructor.
@@ -57,7 +60,8 @@ public:
                  int triangle_index,
                  int next,
                  int twin);
-        /// Returns `true` iff the half edge is the boundary (has not twin, i.e. twin index == -1).
+        /// Returns `true` iff the half edge is the boundary (has not twin, i.e.
+        /// twin index == -1).
         bool IsBoundary() const { return twin_ == -1; }
 
     public:
@@ -78,7 +82,6 @@ public:
     HalfEdgeTriangleMesh()
         : MeshBase(Geometry::GeometryType::HalfEdgeTriangleMesh) {}
 
-    /// Clear all elements in the geometry.
     virtual HalfEdgeTriangleMesh &Clear() override;
 
     /// Returns `true` if half-edges have already been computed.
@@ -99,7 +102,8 @@ public:
 
     HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
 
-    /// Convert HalfEdgeTriangleMesh from TriangleMesh. Throws exception if the input mesh is not manifold.
+    /// Convert HalfEdgeTriangleMesh from TriangleMesh. Throws exception if the
+    /// input mesh is not manifold.
     static std::shared_ptr<HalfEdgeTriangleMesh> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
 
@@ -107,7 +111,8 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// Creates an empty instance with GeometryType of specified type.
-    /// \param type specifies GeometryType for the HalfEdgeTriangleMesh.
+    ///
+    /// \param type Specifies GeometryType for the HalfEdgeTriangleMesh.
     HalfEdgeTriangleMesh(Geometry::GeometryType type) : MeshBase(type) {}
 
     /// Returns the next half edge from starting vertex of the input half edge,
@@ -124,7 +129,7 @@ public:
     /// List of HalfEdge in the mesh.
     std::vector<HalfEdge> half_edges_;
 
-    /// Counter-clockwise ordered half-edges started from each vertex
+    /// Counter-clockwise ordered half-edges started from each vertex.
     /// If the vertex is on boundary, the starting edge must be on boundary too.
     std::vector<std::vector<int>> ordered_half_edge_from_vertex_;
 };

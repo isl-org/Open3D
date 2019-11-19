@@ -446,6 +446,37 @@ public:
     /// clipped.
     /// \param bbox defines the input Oriented Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(const OrientedBoundingBox &bbox) const;
+    
+    /// \fn ClusterConnectedTriangles
+    ///
+    /// \brief Function that clusters connected triangles, i.e., triangles that
+    /// are connected via edges are assigned the same cluster index.
+    ///
+    /// \return A vector that contains the cluster index per
+    /// triangle, a second vector contains the number of triangles per
+    /// cluster, and a third vector contains the surface area per cluster.
+    std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
+    ClusterConnectedTriangles() const;
+    
+    /// \fn RemoveTrianglesByIndex
+    ///
+    /// \brief This function removes the triangles with index in
+    /// \p triangle_indices. Call \ref RemoveUnreferencedVertices to clean up
+    /// vertices afterwards.
+    ///
+    /// \param triangle_indices Indices of the triangles that should be
+    /// removed.
+    void RemoveTrianglesByIndex(const std::vector<size_t> &triangle_indices);
+    
+    /// \fn RemoveTrianglesByMask
+    ///
+    /// \brief This function removes the triangles that are masked in
+    /// \p triangle_mask. Call \ref RemoveUnreferencedVertices to clean up
+    /// vertices afterwards.
+    ///
+    /// \param triangle_mask Mask of triangles that should be removed.
+    /// Should have same size as \ref triangles_.
+    void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
 
     /// \fn CreateFromPointCloudBallPivoting
     ///

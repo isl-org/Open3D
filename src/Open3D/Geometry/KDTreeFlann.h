@@ -55,12 +55,15 @@ public:
     KDTreeFlann();
     /// \brief Parameterized Constructor.
     ///
-    /// \param data provides set of data points for KDTree construction.
+    /// \param data Provides set of data points for KDTree construction.
     KDTreeFlann(const Eigen::MatrixXd &data);
     /// \brief Parameterized Constructor.
     ///
-    /// \param geometry provides geometry from which KDTree is constructed.
+    /// \param geometry Provides geometry from which KDTree is constructed.
     KDTreeFlann(const Geometry &geometry);
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param feature Provides a set of features from which the KDTree is constructed.
     KDTreeFlann(const registration::Feature &feature);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
@@ -68,10 +71,16 @@ public:
 
 public:
     /// Sets the data for the KDTree from a matrix.
+    ///
+    /// \param data Data points for KDTree Construction.
     bool SetMatrixData(const Eigen::MatrixXd &data);
     /// Sets the data for the KDTree from geometry.
+    ///
+    /// \param geometry Geometry for KDTree Construction.
     bool SetGeometry(const Geometry &geometry);
     /// Sets the data for the KDTree from the feature data.
+    ///
+    /// \param feature Set of features for KDTree construction.
     bool SetFeature(const registration::Feature &feature);
 
     template <typename T>

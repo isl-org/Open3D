@@ -64,7 +64,7 @@ class KDTreeSearchParamKNN : public KDTreeSearchParam {
 public:
     /// \brief Default Cosntructor.
     ///
-    /// \param knn specifies the knn neighbors that will searched. Default
+    /// \param knn Specifies the knn neighbors that will searched. Default
     /// is 30.
     KDTreeSearchParamKNN(int knn = 30)
         : KDTreeSearchParam(SearchType::Knn), knn_(knn) {}
@@ -81,7 +81,7 @@ class KDTreeSearchParamRadius : public KDTreeSearchParam {
 public:
     /// \brief Default Cosntructor.
     ///
-    /// \param radius specifies the radius of the search.
+    /// \param radius Specifies the radius of the search.
     KDTreeSearchParamRadius(double radius)
         : KDTreeSearchParam(SearchType::Radius), radius_(radius) {}
 
@@ -97,8 +97,8 @@ class KDTreeSearchParamHybrid : public KDTreeSearchParam {
 public:
     /// \brief Default Cosntructor.
     ///
-    /// \param radius specifies the radius of the search.
-    /// \param max_nn specifies the max neighbors to be searched.
+    /// \param radius Specifies the radius of the search.
+    /// \param max_nn Specifies the max neighbors to be searched.
     KDTreeSearchParamHybrid(double radius, int max_nn)
         : KDTreeSearchParam(SearchType::Hybrid),
           radius_(radius),

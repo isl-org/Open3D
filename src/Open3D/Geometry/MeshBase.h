@@ -42,10 +42,17 @@ namespace geometry {
 class PointCloud;
 class TriangleMesh;
 
+/// \class MeshBase
+///
+/// \brief MeshBash Class.
+///
+/// Triangle mesh contains vertices. Optionally, the mesh may also contain
+/// vertex normals and vertex colors.
 class MeshBase : public Geometry3D {
 public:
-    /// Indicates the method that is used for mesh simplification if multiple
-    /// vertices are combined to a single one.
+    /// \brief Indicates the method that is used for mesh simplification if
+    /// multiple vertices are combined to a single one.
+    ///
     /// \param Average indicates that the average position is computed as
     /// output.
     /// \param Quadric indicates that the distance to the adjacent triangle
@@ -53,7 +60,8 @@ public:
     /// using Quadric Error Metrics" by Garland and Heckbert.
     enum class SimplificationContraction { Average, Quadric };
 
-    /// Indicates the scope of filter operations.
+    /// \brief Indicates the scope of filter operations.
+    ///
     /// \param All indicates that all properties (color, normal,
     /// vertex position) are filtered.
     /// \param Color indicates that only the colors are filtered.
@@ -61,6 +69,7 @@ public:
     /// \param Vertex indicates that only the vertex positions are filtered.
     enum class FilterScope { All, Color, Normal, Vertex };
 
+    /// \brief Default Constructor.
     MeshBase() : Geometry3D(Geometry::GeometryType::MeshBase) {}
     ~MeshBase() override {}
 
@@ -82,18 +91,22 @@ public:
     MeshBase &operator+=(const MeshBase &mesh);
     MeshBase operator+(const MeshBase &mesh) const;
 
+    /// Returns `True` if the mesh contains vertices.
     bool HasVertices() const { return vertices_.size() > 0; }
 
+    /// Returns `True` if the mesh contains vertex normals.
     bool HasVertexNormals() const {
         return vertices_.size() > 0 &&
                vertex_normals_.size() == vertices_.size();
     }
 
+    /// Returns `True` if the mesh contains vertex colors.
     bool HasVertexColors() const {
         return vertices_.size() > 0 &&
                vertex_colors_.size() == vertices_.size();
     }
 
+    /// Normalize vertex normals to length 1.
     MeshBase &NormalizeNormals() {
         for (size_t i = 0; i < vertex_normals_.size(); i++) {
             vertex_normals_[i].normalize();
@@ -104,7 +117,9 @@ public:
         return *this;
     }
 
-    /// Assigns each vertex in the TriangleMesh the same color \param color.
+    /// \brief Assigns each vertex in the TriangleMesh the same color
+    ///
+    /// \param color RGB colors of vertices.
     MeshBase &PaintUniformColor(const Eigen::Vector3d &color) {
         ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
         return *this;
@@ -122,8 +137,11 @@ protected:
         : Geometry3D(type), vertices_(vertices) {}
 
 public:
+    /// Vertex coordinates.
     std::vector<Eigen::Vector3d> vertices_;
+    /// Vertex normals.
     std::vector<Eigen::Vector3d> vertex_normals_;
+    /// RGB colors of vertices.
     std::vector<Eigen::Vector3d> vertex_colors_;
 };
 

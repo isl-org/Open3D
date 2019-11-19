@@ -172,7 +172,7 @@ RegistrationResult RegistrationICP(
 /// \param estimation Estimation method.
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param criteria Convergence criteria.
-RegistrationResult  (
+RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,

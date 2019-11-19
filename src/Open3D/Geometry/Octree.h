@@ -41,23 +41,22 @@ class VoxelGrid;
 
 /// \class OctreeNodeInfo
 ///
-/// \brief Contains OctreeNode's information.
+/// \brief OctreeNode's information.
 ///
-/// Design decision: do not store origin and size of a node in OctreeNode
-/// OctreeNodeInfo is computed on the fly.
+/// OctreeNodeInfo is computed on the fly, not stored with the Node.
 class OctreeNodeInfo {
 public:
     /// \brief Default Constructor.
     ///
     /// Initializes all values as 0.
     OctreeNodeInfo() : origin_(0, 0, 0), size_(0), depth_(0), child_index_(0) {}
-    
+
     /// \brief Parameterized Constructor.
     ///
-    /// \param origin is the origin coordinate of the node
-    /// \param size of the node.
-    /// \param depth  of the node to the root. The root is of depth 0.
-    /// \param child_index node’s child index of itself.
+    /// \param origin Origin coordinate of the node
+    /// \param size Size of the node.
+    /// \param depth  Depth of the node to the root. The root is of depth 0.
+    /// \param child_index Node’s child index of itself.
     OctreeNodeInfo(const Eigen::Vector3d& origin,
                    const double& size,
                    const size_t& depth,
@@ -75,7 +74,8 @@ public:
     double size_;
     /// Depth of the node to the root. The root is of depth 0.
     size_t depth_;
-    /// Node’s child index of itself. For non-root nodes, child_index is 0~7; root node’s child_index is -1.
+    /// Node’s child index of itself. For non-root nodes, child_index is 0~7;
+    /// root node’s child_index is -1.
     size_t child_index_;
 };
 
@@ -144,6 +144,7 @@ public:
 class OctreeLeafNode : public OctreeNode {
 public:
     virtual bool operator==(const OctreeLeafNode& other) const = 0;
+    /// Clone this OctreeLeafNode.
     virtual std::shared_ptr<OctreeLeafNode> Clone() const = 0;
 };
 
@@ -157,12 +158,16 @@ public:
     std::shared_ptr<OctreeLeafNode> Clone() const override;
     /// \brief Get lambda function for initializing OctreeLeafNode.
     ///
-    /// When the init function is called, an empty OctreeColorLeafNode is created.
+    /// When the init function is called, an empty OctreeColorLeafNode is
+    /// created.
     static std::function<std::shared_ptr<OctreeLeafNode>()> GetInitFunction();
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     /// \brief Get lambda function for updating OctreeLeafNode.
     ///
-    /// When called, the update function update the corresponding node with the input color.
+    /// When called, the update function update the corresponding node with the
+    /// input color.
+    ///
+    /// \param color Color of the node.
     GetUpdateFunction(const Eigen::Vector3d& color);
 
     bool ConvertToJsonValue(Json::Value& value) const override;
@@ -185,7 +190,7 @@ public:
           max_depth_(0) {}
     /// \brief Parameterized Constructor.
     ///
-    /// \param max_depth sets the value of the max depth of the Octree.
+    /// \param max_depth Sets the value of the max depth of the Octree.
     Octree(const size_t& max_depth)
         : Geometry3D(Geometry::GeometryType::Octree),
           origin_(0, 0, 0),
@@ -193,9 +198,9 @@ public:
           max_depth_(max_depth) {}
     /// \brief Parameterized Constructor.
     ///
-    /// \param max_depth sets the value of the max depth of the Octree.
-    /// \param origin sets the global min bound of the Octree.
-    /// \param size sets the outer bounding box edge size for the whole octree.
+    /// \param max_depth Sets the value of the max depth of the Octree.
+    /// \param origin Sets the global min bound of the Octree.
+    /// \param size Sets the outer bounding box edge size for the whole octree.
     Octree(const size_t& max_depth,
            const Eigen::Vector3d& origin,
            const double& size)
@@ -226,8 +231,11 @@ public:
     /// \fn ConvertFromPointCloud
     ///
     /// \brief Convert octree from point cloud.
-    /// \param point_cloud is the input point cloud.
-    /// \param size_expand A small expansion size such that the octree is slightly bigger than the original point cloud bounds to accmondate all points.
+    ///
+    /// \param point_cloud  Input point cloud.
+    /// \param size_expand A small expansion size such that the octree is
+    /// slightly bigger than the original point cloud bounds to accomodate all
+    /// points.
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
                                double size_expand = 0.01);
 
@@ -249,6 +257,7 @@ public:
     /// \fn Insert point
     ///
     /// \brief Insert a point to the octree.
+    ///
     /// \param point Coordinates of the point.
     void InsertPoint(
             const Eigen::Vector3d& point,
@@ -258,8 +267,8 @@ public:
 
     /// \fn Traverse
     ///
-    /// \brief DFS traversal of Octree from the root, with callback function called
-    /// for each node.
+    /// \brief DFS traversal of Octree from the root, with callback function
+    /// called for each node.
     void Traverse(
             const std::function<void(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
@@ -267,20 +276,31 @@ public:
 
     /// \fn Traverse
     ///
-    /// \brief Const version of Traverse. DFS traversal of Octree from the root, with
-    /// callback function called for each node.
+    /// \brief Const version of Traverse. DFS traversal of Octree from the root,
+    /// with callback function called for each node.
     void Traverse(
             const std::function<void(const std::shared_ptr<OctreeNode>&,
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f) const;
 
     std::pair<std::shared_ptr<OctreeLeafNode>, std::shared_ptr<OctreeNodeInfo>>
-    
-    /// Returns leaf OctreeNode and OctreeNodeInfo where the querypoint should reside.
+
+    /// \fn LocateLeafNode
+    ///
+    /// \brief Returns leaf OctreeNode and OctreeNodeInfo where the querypoint
+    /// should reside.
+    ///
+    /// \param point Coordinates of the point.
     LocateLeafNode(const Eigen::Vector3d& point) const;
 
-    /// Return true if point within bound, that is,
+    /// \fn IsPointInBound
+    ///
+    /// \brief Return true if point within bound, that is,
     /// origin <= point < origin + size.
+    ///
+    /// \param point Coordinates of the point.
+    /// \param origin Origin coordinates.
+    /// \param size Size of the Octree.
     static bool IsPointInBound(const Eigen::Vector3d& point,
                                const Eigen::Vector3d& origin,
                                const double& size);
@@ -288,7 +308,7 @@ public:
     /// Returns true if the Octree is completely the same, used for testing.
     bool operator==(const Octree& other) const;
 
-    /// Convert to voxel grid.
+    /// Convert to VoxelGrid.
     std::shared_ptr<geometry::VoxelGrid> ToVoxelGrid() const;
 
     /// Convert from voxel grid.
