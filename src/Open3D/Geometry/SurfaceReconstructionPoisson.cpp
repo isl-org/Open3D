@@ -32,7 +32,7 @@
 #include <iostream>
 #include <list>
 
-#include "poisson/PreProcessor.h"
+#include "PoissonRecon/Src/PreProcessor.h"
 
 // The order of the B-Spline used to splat in data for color interpolation
 #define DATA_DEGREE 0
@@ -52,11 +52,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "poisson/CmdLineParser.h"
-#include "poisson/FEMTree.h"
-#include "poisson/MyMiscellany.h"
-#include "poisson/PPolynomial.h"
-#include "poisson/PointStreamData.h"
+// clang-format off
+#include "PoissonRecon/Src/MyMiscellany.h"
+#include "PoissonRecon/Src/CmdLineParser.h"
+#include "PoissonRecon/Src/FEMTree.h"
+#include "PoissonRecon/Src/PPolynomial.h"
+#include "PoissonRecon/Src/PointStreamData.h"
+// clang-format on
 
 namespace open3d {
 namespace geometry {
