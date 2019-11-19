@@ -32,6 +32,10 @@
 
 using namespace open3d;
 
+/**
+    Example program for original R200, F200 RealSense devices.
+    This works with original RealSense SDK.
+*/
 int main(int argc, char **args) {
     rs::context ctx;
     utility::LogInfo("There are {:d} connected RealSense devices.",
@@ -62,8 +66,7 @@ int main(int argc, char **args) {
     color_image_ptr->Prepare(1920, 1080, 3, 1);
     utility::FPSTimer timer("Realsense stream");
 
-    rs::extrinsics extrinsics =
-            dev->get_extrinsics(rs::stream::depth, rs::stream::rectified_color);
+    rs::extrinsics extrinsics = dev->get_extrinsics(rs::stream::depth, rs::stream::rectified_color);
     for (int i = 0; i < 9; i++) {
         utility::LogInfo("{:.6f} ", extrinsics.rotation[i]);
     }
@@ -74,28 +77,21 @@ int main(int argc, char **args) {
     utility::LogInfo("");
 
     rs::intrinsics depth_intr = dev->get_stream_intrinsics(rs::stream::depth);
-    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", depth_intr.width,
-                     depth_intr.height, depth_intr.fx, depth_intr.fy,
-                     depth_intr.ppx, depth_intr.ppy);
+    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", depth_intr.width, depth_intr.height, depth_intr.fx, depth_intr.fy, depth_intr.ppx, depth_intr.ppy);
     for (int i = 0; i < 5; i++) {
         utility::LogInfo("{:.6f} ", depth_intr.coeffs[i]);
     }
     utility::LogInfo("");
 
     rs::intrinsics color_intr = dev->get_stream_intrinsics(rs::stream::color);
-    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", color_intr.width,
-                     color_intr.height, color_intr.fx, color_intr.fy,
-                     color_intr.ppx, color_intr.ppy);
+    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", color_intr.width, color_intr.height, color_intr.fx, color_intr.fy, color_intr.ppx, color_intr.ppy);
     for (int i = 0; i < 5; i++) {
         utility::LogInfo("{:.6f} ", color_intr.coeffs[i]);
     }
     utility::LogInfo("");
 
-    rs::intrinsics rect_intr =
-            dev->get_stream_intrinsics(rs::stream::rectified_color);
-    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", rect_intr.width,
-                     rect_intr.height, rect_intr.fx, rect_intr.fy,
-                     rect_intr.ppx, rect_intr.ppy);
+    rs::intrinsics rect_intr = dev->get_stream_intrinsics(rs::stream::rectified_color);
+    utility::LogInfo("{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}", rect_intr.width, rect_intr.height, rect_intr.fx, rect_intr.fy, rect_intr.ppx, rect_intr.ppy);
     for (int i = 0; i < 5; i++) {
         utility::LogInfo("{:.6f} ", rect_intr.coeffs[i]);
     }
