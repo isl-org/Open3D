@@ -42,6 +42,11 @@ namespace geometry {
 
 class PointCloud;
 
+/// \class TriangleMesh
+///
+/// \brief Triangle mesh contains vertices and triangles represented by the indices to the vertices.
+///
+/// Optionally, the mesh may also contain triangle normals, vertex normals and vertex colors.
 class TriangleMesh : public MeshBase {
 public:
     /// \brief Default Constructor.
