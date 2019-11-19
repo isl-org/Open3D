@@ -58,12 +58,12 @@ public:
     Voxel() {}
     /// \brief Parameterized Constructor.
     ///
-    /// \param grid_index - Grid coordinate index of the voxel.
+    /// \param grid_index Grid coordinate index of the voxel.
     Voxel(const Eigen::Vector3i &grid_index) : grid_index_(grid_index) {}
     /// \brief Parameterized Constructor.
     ///
-    /// \param grid_index - Grid coordinate index of the voxel.
-    /// \param color - Color of the voxel.
+    /// \param grid_index Grid coordinate index of the voxel.
+    /// \param color Color of the voxel.
     Voxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3d &color)
         : grid_index_(grid_index), color_(color) {}
     ~Voxel() {}
@@ -85,50 +85,22 @@ public:
     /// \brief Copy Constructor.
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
-
-    /// Clear all elements in the geometry.
     VoxelGrid &Clear() override;
-    /// Returns `true` iff the geometry is empty.
     bool IsEmpty() const override;
-    /// Returns min bounds for geometry coordinates.
     Eigen::Vector3d GetMinBound() const override;
-    /// Returns max bounds for geometry coordinates.
     Eigen::Vector3d GetMaxBound() const override;
-    /// Returns center for geometry coordinates.
     Eigen::Vector3d GetCenter() const override;
-    /// Returns an axis-aligned bounding box of the geometry.
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    /// Returns an oriented bounding box of the geometry.
     OrientedBoundingBox GetOrientedBoundingBox() const override;
-    /// Apply transformation (4x4 matrix) to the geometry coordinates.
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
-    /// Apply translation to the geometry coordinates.
-    ///
-    /// \param translation - A 3D vector to transform the geometry.
-    /// \param relative - If `true`, the translation vector is directly added to
-    /// the geometry coordinates. Otherwise, the center is moved to the
-    /// translation vector.
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;
-    /// Apply scaling to the geometry coordinates.
-    ///
-    /// \param scale -  The scale parameter that is multiplied to the
-    /// points/vertices of the geometry.
-    /// \param center - If `true`, then the scale is applied to the centered
-    /// geometry.
     VoxelGrid &Scale(const double scale, bool center = true) override;
-    /// Apply rotation to the geometry coordinates and normals.
-    ///
-    /// \param R - A 3D vector that either defines the three angles for Euler
-    /// rotation, or in the axis-angle representation the normalized vector
-    /// defines the axis of rotation and the norm the angle around this axis.
-    /// \param center - If `true`, then the rotation is applied to the centered
-    /// geometry.
     VoxelGrid &Rotate(const Eigen::Matrix3d &R, bool center = true) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
-    
+
     /// Returns `true` if the voxel grid contains voxels.
     bool HasVoxels() const { return voxels_.size() > 0; }
     /// Returns `true` if the voxel grid contains voxel colors.
@@ -168,6 +140,9 @@ public:
     /// of the voxel projects to depth value that is smaller, or equal than the
     /// projected depth of the boundary point. The point is not carved if none
     /// of the boundary points of the voxel projects to a valid image location.
+    ///
+    /// \param depth_map Depth map (Image) used for VoxelGrid carving.
+    /// \param camera_params Input Camera Parameters.
     VoxelGrid &CarveDepthMap(
             const Image &depth_map,
             const camera::PinholeCameraParameters &camera_parameter);
@@ -176,16 +151,31 @@ public:
     /// of the voxel projects to a valid mask pixel (pixel value > 0). The point
     /// is not carved if none of the boundary points of the voxel projects to a
     /// valid image location.
+    ///
+    /// \param silhouette_mask Silhouette mask (Image) used for VoxelGrid
+    /// carving. \param camera_params Input Camera Parameters.
     VoxelGrid &CarveSilhouette(
             const Image &silhouette_mask,
             const camera::PinholeCameraParameters &camera_parameter);
 
+    /// Create VoxelGrid from Octree
+    ///
+    /// \param octree The input Octree.
     void CreateFromOctree(const Octree &octree);
 
+    /// Convert to Octree.
+    ///
+    /// \param max_depth Maximum depth of the octree.
     std::shared_ptr<geometry::Octree> ToOctree(const size_t &max_depth) const;
 
     /// Creates a voxel grid where every voxel is set (hence dense). This is a
     /// useful starting point for voxel carving.
+    ///
+    /// \param origin Coordinate center of the VoxelGrid
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
+    /// \param width Spatial width extend of the VoxelGrid.
+    /// \param height Spatial height extend of the VoxelGrid.
+    /// \param depth Spatial depth extend of the VoxelGrid.
     static std::shared_ptr<VoxelGrid> CreateDense(const Eigen::Vector3d &origin,
                                                   double voxel_size,
                                                   double width,
@@ -196,6 +186,9 @@ public:
     /// voxel is the average color value of the points that fall into it (if the
     /// PointCloud has colors).
     /// The bounds of the created VoxelGrid are computed from the PointCloud.
+    ///
+    /// \param input The input PointCloud.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
             const PointCloud &input, double voxel_size);
 
@@ -203,6 +196,11 @@ public:
     /// voxel is the average color value of the points that fall into it (if the
     /// PointCloud has colors).
     /// The bounds of the created VoxelGrid are defined by the given parameters.
+    ///
+    /// \param input The input PointCloud.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
+    /// \param min_bound Minimum boundary point for the VoxelGrid to create.
+    /// \param max_bound Maximum boundary point for the VoxelGrid to create.
     static std::shared_ptr<VoxelGrid> CreateFromPointCloudWithinBounds(
             const PointCloud &input,
             double voxel_size,
@@ -211,13 +209,21 @@ public:
 
     /// Creates a VoxelGrid from a given TriangleMesh. No color information is
     /// converted. The bounds of the created VoxelGrid are computed from the
-    /// TriangleMesh..
+    /// TriangleMesh.
+    ///
+    /// \param input The input TriangleMesh.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
     static std::shared_ptr<VoxelGrid> CreateFromTriangleMesh(
             const TriangleMesh &input, double voxel_size);
 
     /// Creates a VoxelGrid from a given TriangleMesh. No color information is
     /// converted. The bounds of the created VoxelGrid are defined by the given
     /// parameters..
+    ///
+    /// \param input The input TriangleMesh.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
+    /// \param min_bound Minimum boundary point for the VoxelGrid to create.
+    /// \param max_bound Maximum boundary point for the VoxelGrid to create.
     static std::shared_ptr<VoxelGrid> CreateFromTriangleMeshWithinBounds(
             const TriangleMesh &input,
             double voxel_size,
@@ -225,6 +231,7 @@ public:
             const Eigen::Vector3d &max_bound);
 
 public:
+    /// Size of the voxel.
     double voxel_size_ = 0.0;
     /// Coorindate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();

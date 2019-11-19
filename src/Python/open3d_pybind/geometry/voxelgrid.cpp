@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Camera/PinholeCameraParameters.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/VoxelGrid.h"
 
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/geometry/geometry.h"
@@ -125,25 +125,40 @@ void pybind_voxelgrid(py::module &m) {
                         "depth"_a)
             .def_static("create_from_point_cloud",
                         &geometry::VoxelGrid::CreateFromPointCloud,
-                        "Function to make voxels from a PointCloud", "input"_a,
-                        "voxel_size"_a)
+                        "Creates a VoxelGrid from a given PointCloud. The "
+                        "color value of a given  voxel is the average color "
+                        "value of the points that fall into it (if the "
+                        "PointCloud has colors). The bounds of the created "
+                        "VoxelGrid are computed from the PointCloud.",
+                        "input"_a, "voxel_size"_a)
             .def_static("create_from_point_cloud_within_bounds",
                         &geometry::VoxelGrid::CreateFromPointCloudWithinBounds,
-                        "Function to make voxels from a PointCloud", "input"_a,
-                        "voxel_size"_a, "min_bound"_a, "max_bound"_a)
+                        "Creates a VoxelGrid from a given PointCloud. The "
+                        "color value of a given voxel is the average color "
+                        "value of the points that fall into it (if the "
+                        "PointCloud has colors). The bounds of the created "
+                        "VoxelGrid are defined by the given parameters.",
+                        "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_static("create_from_triangle_mesh",
                         &geometry::VoxelGrid::CreateFromTriangleMesh,
-                        "Function to make voxels from a TriangleMesh",
+                        "Creates a VoxelGrid from a given TriangleMesh. No "
+                        "color information is converted. The bounds of the "
+                        "created VoxelGrid are computed from the  "
+                        "TriangleMesh.",
                         "input"_a, "voxel_size"_a)
             .def_static(
                     "create_from_triangle_mesh_within_bounds",
                     &geometry::VoxelGrid::CreateFromTriangleMeshWithinBounds,
-                    "Function to make voxels from a PointCloud", "input"_a,
-                    "voxel_size"_a, "min_bound"_a, "max_bound"_a)
+                    "Creates a VoxelGrid from a given TriangleMesh. No color "
+                    "information is converted. The bounds "
+                    "of the created VoxelGrid are defined by the given "
+                    "parameters",
+                    "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coorindate of the "
                            "origin point.")
-            .def_readwrite("voxel_size", &geometry::VoxelGrid::voxel_size_);
+            .def_readwrite("voxel_size", &geometry::VoxelGrid::voxel_size_,
+                           "``float64`` Size of the voxel.");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
