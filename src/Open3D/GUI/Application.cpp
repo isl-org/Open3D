@@ -34,18 +34,92 @@
 #include <thread>
 #include <unordered_map>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#if !defined(WIN32)
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
+#ifdef WIN32
+#define getcwd _getcwd
+#endif // WIN32
+
+#include <iostream> // debugging
+
+namespace {
+
+bool isDirectory(const std::string& path) {
+    struct stat statbuf;
+    if (stat(path.c_str(), &statbuf) != 0)
+        return false;
+    return S_ISDIR(statbuf.st_mode);
+}
+
+std::string findResourcePath(int argc, const char *argv[]) {
+    std::string argv0;
+    if (argc != 0 && argv) {
+        argv0 = argv[0];
+    }
+
+    // Convert backslash (Windows) to forward slash
+    for (auto &c : argv0) {
+        if (c == '\\') {
+            c = '/';
+        }
+    }
+
+    // Chop off the process name
+    auto lastSlash = argv0.rfind("/");
+    auto path = argv0.substr(0, lastSlash);
+
+    if (argv0[0] == '/' || (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
+        // is absolute path, we're done
+    } else {
+        // relative path:  prepend working directory
+        char *cwd = getcwd(nullptr, 0); // will malloc()
+        path = std::string(cwd) + "/" + path;
+        free(cwd);
+    }
+
+#ifdef __APPLE__
+    if (path.rfind("MacOS") == path.size() - 5) {  // path is in a bundle
+        return path.substr(0, path.size() - 5) + "Resources";
+    }
+#endif // __APPLE__
+
+    auto rsrcPath = path + "/resources";
+    if (!isDirectory(rsrcPath)) {
+        return path + "/../resources";  // building with Xcode
+    }
+    return rsrcPath;
+}
+
+}
+
 namespace open3d {
 namespace gui {
 
 struct Application::Impl {
+    std::string resourcePath;
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
 };
+
+Application& Application::GetInstance() {
+    static Application gApp;
+    return gApp;
+}
 
 Application::Application()
     : impl_(new Application::Impl()) {
 }
 
 Application::~Application() {
+}
+
+void Application::Initialize(int argc, const char *argv[]) {
+    impl_->resourcePath = findResourcePath(argc, argv);
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
@@ -208,7 +282,7 @@ void Application::Run() {
             kv.second->Draw();
         }
 
-        SDL_Delay(1); // millisec
+        SDL_Delay(10); // millisec
     }
 
     SDL_Quit();
@@ -218,6 +292,9 @@ void Application::CloseWindow(std::shared_ptr<Window> window) {
     impl_->windows.erase(window->GetID());
 }
 
+const char* Application::GetResourcePath() const {
+    return impl_->resourcePath.c_str();
+}
 
 } // gui
 } // open3d

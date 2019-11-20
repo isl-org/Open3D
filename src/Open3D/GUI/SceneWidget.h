@@ -47,7 +47,11 @@ public:
 
     RendererCamera& GetCamera();
 
-    void AddMesh(Renderer::MeshId meshId);
+    void AddLight(Renderer::LightId lightId);
+    void RemoveLight(Renderer::LightId lightId);
+
+    void AddMesh(Renderer::MeshId meshId,
+                 float x = 0, float y = 0, float z = 0);
     void RemoveMesh(Renderer::MeshId meshId);
 
     Widget::DrawResult Draw(const DrawContext& context) override;

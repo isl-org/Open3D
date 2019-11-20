@@ -26,19 +26,31 @@
 
 #include "Renderer.h"
 
+#include "Application.h"
 #include "Color.h"
 #include "Window.h"
 
 #include <filament/Box.h>
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
+#include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
 #include <filament/View.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
+#include <sys/errno.h>
+#include <fcntl.h>
+#if !defined(WIN32)
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -55,6 +67,77 @@ static const int BOGUS_ID = -1;
 
 void freeTempBuffer(void *buffer, size_t, void*) {
     free(buffer);
+}
+
+std::string getIOErrorString(int errnoVal) {
+    switch (errnoVal) {
+        case EPERM:   return "Operation not permitted";
+        case EACCES:  return "Access denied";
+        case EAGAIN:  return "EAGAIN";
+        case EDQUOT:  return "Over quota";
+        case EEXIST:  return "File already exists";
+        case EFAULT:  return "Bad filename pointer";
+        case EINTR:   return "open() interrupted by a signal";
+        case EIO:     return "I/O error";
+        case ELOOP:   return "Too many symlinks, could be a loop";
+        case EMFILE:  return "Process is out of file descriptors";
+        case ENAMETOOLONG: return "Filename is too long";
+        case ENFILE:  return "File system table is full";
+        case ENOENT:  return "No such file or directory";
+        case ENOSPC:  return "No space available to create file";
+        case ENOTDIR: return "Bad path";
+        case EOVERFLOW: return "File is too big";
+        case EROFS:   return "Can't modify file on read-only filesystem";
+        default: {
+            std::stringstream s;
+            s << "IO error " << errnoVal << " (see sys/errno.h)";
+            return s.str();
+        }
+    }
+}
+
+bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::string *errorStr)
+{
+    bytes->clear();
+    if (errorStr) {
+        *errorStr = "";
+    }
+
+    // Open file
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1) {
+        if (errorStr) {
+            *errorStr = getIOErrorString(errno);
+        }
+        return false;
+    }
+
+    // Get file size
+    size_t filesize = (size_t)lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
+
+    // Read data
+    bytes->resize(filesize);
+    read(fd, bytes->data(), filesize);
+
+    // We're done, close and return
+    close(fd);
+    return true;
+}
+
+Material* loadMaterialTemplate(const std::string& path,
+                       Engine *engine)
+{
+    std::vector<char> bytes;
+    std::string errorStr;
+    if (!readBinaryFile(path, &bytes, &errorStr)) {
+        std::cout << "[ERROR] Could not read " << path << ": " << errorStr << std::endl;
+        return nullptr;
+    }
+
+    return Material::Builder()
+                    .package(bytes.data(), bytes.size())
+                    .build(*engine);
 }
 
 template <typename T>
@@ -117,6 +200,42 @@ public:
     void DestroyItem(T& item) override {}
 };
 
+class LightPool : public PoolBase<utils::Entity> {
+public:
+    LightPool(Engine *engine) {
+        engine_ = engine;
+    }
+
+    ~LightPool() {
+        this->DestroyAll();
+    }
+
+    void DestroyItem(utils::Entity& item) override {
+        engine_->getLightManager().destroy(item);
+    }
+
+private:
+    Engine *engine_;
+};
+
+class TransformPool : public PoolBase<utils::Entity> {
+public:
+    TransformPool(Engine *engine) {
+        engine_ = engine;
+    }
+
+    ~TransformPool() {
+        this->DestroyAll();
+    }
+
+    void DestroyItem(utils::Entity& item) override {
+        engine_->getTransformManager().destroy(item);
+    }
+
+private:
+    Engine *engine_;
+};
+
 template <typename T>
 class EngineObjectPool : public PoolBase<T> {
 public:
@@ -154,28 +273,35 @@ BoundingBox::BoundingBox(float xmin, float xmax, float ymin, float ymax, float z
 }
 
 // ----------------------------------------------------------------------------
-/*struct Transform::Impl {
-    math::mat4 matrix;
+struct Transform::Impl {
+    math::mat4f matrix;
+};
+
+Transform::Transform()
+: impl_(new Transform::Impl()) {
 }
 
-Transform::Transform() {
-    std::cout << "TODO: implement Transform()" << std::endl;
+Transform::Transform(const Transform& t)
+: impl_(new Transform::Impl()) {
+    impl_->matrix = t.impl_->matrix;
 }
 
-Transform::Transform(const Transform& t) {
-    std::cout << "TODO: implement Transform(const Transform&)" << std::endl;
-
+Transform::~Transform() {
 }
 
 void Transform::Translate(float x, float y, float z) {
-    std::cout << "TODO: implement Transform::Translate()" << std::endl;
+    impl_->matrix = impl_->matrix.translation(math::float3{ x, y, z });
 }
 
-void Transform::Rotate(float axis_x, float axis_y, float axis_z,
-                       float degrees) {
-    std::cout << "TODO: implement Transform::Rotate()" << std::endl;
+//void Transform::Rotate(float axis_x, float axis_y, float axis_z,
+//                       float degrees) {
+//    std::cout << "TODO: implement Transform::Rotate()" << std::endl;
+//}
+
+void* Transform::GetNative() const {
+    return &impl_->matrix;
 }
-*/
+
 // ----------------------------------------------------------------------------
 // This just holds all the information.  The buffers get deallocated by other
 // means to try to avoid ravioli code.
@@ -191,18 +317,23 @@ struct Renderer::Impl
     filament::Engine *engine;
     filament::Renderer *renderer;
     filament::SwapChain *swapChain = nullptr;
+    filament::Material *metalTemplate = nullptr;
+    filament::Material *nonMetalTemplate = nullptr;
     struct Alloc {
         EngineObjectPool<filament::View*> views;
         EngineObjectPool<filament::Scene*> scenes;
         EngineObjectPool<filament::Camera*> cameras;
+        LightPool lights;
         EngineObjectPool<utils::Entity> renderables;
+        TransformPool transforms;
         EngineObjectPool<filament::VertexBuffer*> vbuffers;
         EngineObjectPool<filament::IndexBuffer*> ibuffers;
         EngineObjectPool<filament::MaterialInstance*> materials;
         ObjectPool<Geometry> geometries;
 
         Alloc(Engine *e)
-            : views(e), scenes(e), cameras(e), renderables(e), vbuffers(e), ibuffers(e), materials(e)
+            : views(e), scenes(e), cameras(e), lights(e), renderables(e)
+            , transforms(e), vbuffers(e), ibuffers(e), materials(e)
         {}
     };
     // Use naked pointer to indicate we are responsible to manage this:
@@ -228,6 +359,8 @@ Renderer::Renderer(const Window& window)
 Renderer::~Renderer()
 {
     delete impl_->alloc;
+    impl_->engine->destroy(impl_->metalTemplate);
+    impl_->engine->destroy(impl_->nonMetalTemplate);
     impl_->engine->destroy(impl_->swapChain);
     impl_->engine->destroy(impl_->renderer);
     Engine::destroy(&impl_->engine);
@@ -300,18 +433,56 @@ void Renderer::DestroyCamera(Renderer::CameraId cameraId) {
 Renderer::MaterialId Renderer::CreateMetal(const Color& baseColor,
                                            float metallic, float roughness,
                                            float anisotropy) {
-    std::cout << "Renderer::CreateMetal()" << std::endl;
-    return BOGUS_ID;
+    if (!impl_->metalTemplate) {
+        std::string resourcePath = Application::GetInstance().GetResourcePath();
+        impl_->metalTemplate = loadMaterialTemplate(resourcePath + "/metal.filamat", impl_->engine);
+    }
+    if (!impl_->metalTemplate) {
+        return BOGUS_ID;
+    }
+    auto mat = impl_->metalTemplate->createInstance();
+    mat->setParameter("baseColor", RgbType::sRGB,
+                      math::float3{ baseColor.GetRed(), baseColor.GetGreen(),
+                                    baseColor.GetBlue() });
+    mat->setParameter("metallic", metallic);
+    mat->setParameter("roughness", roughness);
+    mat->setParameter("anisotropy", anisotropy);
+    return impl_->alloc->materials.Add(mat);
 }
 
 Renderer::MaterialId Renderer::CreateNonMetal(const Color& baseColor,
                                               float roughness, float clearCoat,
                                               float clearCoatRoughness) {
-    std::cout << "Renderer::CreateNonMetal" << std::endl;
-    return BOGUS_ID;
+    if (!impl_->nonMetalTemplate) {
+        std::string resourcePath = Application::GetInstance().GetResourcePath();
+        impl_->nonMetalTemplate = loadMaterialTemplate(resourcePath + "/nonmetal.filamat", impl_->engine);
+    }
+    if (!impl_->nonMetalTemplate) {
+        return BOGUS_ID;
+    }
+    auto mat = impl_->nonMetalTemplate->createInstance();
+    mat->setParameter("baseColor", RgbType::sRGB,
+                      math::float3{ baseColor.GetRed(), baseColor.GetGreen(),
+                                    baseColor.GetBlue() });
+    mat->setParameter("roughness", roughness);
+    mat->setParameter("clearCoat", clearCoat);
+    mat->setParameter("clearCoatRoughness", clearCoatRoughness);
+    return impl_->alloc->materials.Add(mat);
 }
 
-//LightId Renderer::CreateLight(...);
+Renderer::LightId Renderer::CreateSunLight(float dirX, float dirY, float dirZ,
+                                           float intensityLux, /*=100000,*/
+                                           const Color& color, /*=Color(1, 1, 1),*/
+                                           bool castsShadow /*=false*/) {
+    auto sun = utils::EntityManager::get().create();
+    filament::LightManager::Builder(LightManager::Type::SUN)
+                                .direction(math::float3{ dirX, dirY, dirZ })
+                                .intensity(intensityLux)
+                                .castShadows(castsShadow)
+                                .build(*impl_->engine, sun);
+    return impl_->alloc->lights.Add(sun);
+}
+
 //IBLId Renderer::CreateIBL(...);
 
 Renderer::GeometryId Renderer::CreateGeometry(const std::vector<float>& vertices,
@@ -384,15 +555,13 @@ Renderer::GeometryId Renderer::CreateGeometry(const std::vector<float>& vertices
 
 Renderer::MeshId Renderer::CreateMesh(GeometryId geometryId,
                                       MaterialId materialId) {
-    if (!impl_->alloc->geometries.Has(geometryId)/* ||
-        !impl_->alloc->materials.Has(materialId)*/) {
+    if (!impl_->alloc->geometries.Has(geometryId)) {
         return BOGUS_ID;
     }
     auto &g = impl_->alloc->geometries.Get(geometryId);
     auto verts = impl_->alloc->vbuffers.Get(g.vbufferId);
     auto indices = impl_->alloc->ibuffers.Get(g.ibufferId);
-//    auto m = impl_->alloc->materials.Get(materialId)
-    filament::MaterialInstance *m = nullptr;
+    auto m = impl_->alloc->materials.Get(materialId);
 
     auto renderable = utils::EntityManager::get().create();
     auto meshId = impl_->alloc->renderables.Add(renderable);
@@ -410,6 +579,22 @@ Renderer::MeshId Renderer::CreateMesh(GeometryId geometryId,
     objBuilder.build(*impl_->engine, renderable);
 
     return meshId;
+}
+
+void Renderer::SetMeshTransform(MeshId meshId, const Transform& t) {
+    if (!impl_->alloc->renderables.Has(meshId)) {
+        return;
+    }
+    auto mesh = impl_->alloc->renderables.Get(meshId);
+
+    auto& transformMgr = impl_->engine->getTransformManager();
+    transformMgr.create(mesh);  // (re)creates a transform on mesh entity
+    auto transform = transformMgr.getInstance(mesh);  // now we get the transform
+    auto worldMat = *(math::mat4f*)t.GetNative() * transformMgr.getWorldTransform(transform);
+    transformMgr.setTransform(transform, worldMat);
+
+    // Who owns this transform instance? It seems to be disposed of automatically,
+    // but that is really unlike Filament.  Makes me nervous.
 }
 
 void* Renderer::GetViewPointer(ViewId id) {
@@ -431,6 +616,14 @@ void* Renderer::GetScenePointer(SceneId id) {
 void* Renderer::GetCameraPointer(CameraId id) {
     if (impl_->alloc->cameras.Has(id)) {
         return impl_->alloc->cameras.Get(id);
+    } else {
+        return nullptr;
+    }
+}
+
+void* Renderer::GetLightPointer(MeshId id) {
+    if (impl_->alloc->lights.Has(id)) {
+        return &impl_->alloc->lights.Get(id);
     } else {
         return nullptr;
     }
@@ -586,19 +779,26 @@ void RendererScene::AddIBL(Renderer::IBLId iblId) {
 }
 
 void RendererScene::AddLight(Renderer::LightId lightId) {
-    std::cout << "TODO: implement RendererScene::AddLight()" << std::endl;
+    auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(impl_->sceneId);
+    if (!scene) {
+        return;
+    }
+    if (auto light = (utils::Entity*)impl_->renderer.GetLightPointer(lightId)) {
+        scene->addEntity(*light);
+    }
 }
 
 void RendererScene::RemoveLight(Renderer::LightId lightId) {
     std::cout << "TODO: implement RendererScene::RemoveLight()" << std::endl;
 }
 
-void RendererScene::AddMesh(Renderer::MeshId meshId/*, const Transform& transform*/) {
+void RendererScene::AddMesh(Renderer::MeshId meshId, const Transform& transform) {
     auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(impl_->sceneId);
     if (!scene) {
         return;
     }
     if (auto mesh = (utils::Entity*)impl_->renderer.GetMeshPointer(meshId)) {
+        impl_->renderer.SetMeshTransform(meshId, transform);
         scene->addEntity(*mesh);
     }
 }

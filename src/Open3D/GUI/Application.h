@@ -37,14 +37,20 @@ class Window;
 class Application
 {
 public:
-    Application();
+    static Application& GetInstance();
+
     virtual ~Application();
+
+    void Initialize(int argc, const char *argv[]);
+    void Run();
 
     void AddWindow(std::shared_ptr<Window> window);
 
-    void Run();
+    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
 
 private:
+    Application();
+
     void CloseWindow(std::shared_ptr<Window> window);
 
 private:

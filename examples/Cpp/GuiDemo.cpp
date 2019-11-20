@@ -59,8 +59,6 @@ gui::Renderer::GeometryId createSphereGeometry(gui::Renderer& renderer,
     int nVerts = (N + 1) * (N + 1);
     int nTris = 2 * N * N;
 
-//    std::vector<float> verts;
-//    std::vector<float> normals;
     Geometry g;
     g.vertices.reserve(3 * nVerts);
     g.normals.reserve(3 * nVerts);
@@ -97,9 +95,28 @@ gui::Renderer::GeometryId createSphereGeometry(gui::Renderer& renderer,
 }
 
 }
+
 class DemoWindow : public gui::Window {
 public:
     DemoWindow() : gui::Window("GuiDemo", 640, 480) {
+        // Create materials
+        auto redPlastic = GetRenderer().CreateNonMetal(gui::Color(0.8, 0.0, 0.0),
+                                                       0.5f, // roughness
+                                                       1.0f, // clear coat
+                                                       0.3f);// clear coat roughness
+
+        auto blueCeramic = GetRenderer().CreateNonMetal(gui::Color(0.537, 0.812, 0.941),
+                                                        0.5f, 1.0f, 0.01f);
+
+        auto green = GetRenderer().CreateNonMetal(gui::Color(0.537, 0.941, 0.6),
+                                                  0.25f, 0.0f, 0.01f);
+
+        auto white = GetRenderer().CreateNonMetal(gui::Color(1.0, 1.0, 1.0),
+                                                       0.5f, // roughness
+                                                       1.0f, // clear coat
+                                                       0.3f);// clear coat roughness
+
+        // Create scene
         scene_ = std::make_shared<gui::SceneWidget>(GetRenderer());
         scene_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
 
@@ -107,11 +124,24 @@ public:
         const float far = 50.0f;
         const float fov = 90.0f;
         scene_->GetCamera().SetProjection(near, far, fov);
-        scene_->GetCamera().LookAt(0, 0, -5,   0, 0, 0,   0, 1, 0);
+        scene_->GetCamera().LookAt(0, 0, 5,   0, 0, 0,   0, 1, 0);
 
+        auto sun = GetRenderer().CreateSunLight(-0.707, -.707, 0.0);
+        scene_->AddLight(sun);
+
+        // Add geometry
         auto geometry = createSphereGeometry(GetRenderer(), NORMAL);
-        auto mesh = GetRenderer().CreateMesh(geometry, -1);
+        auto mesh = GetRenderer().CreateMesh(geometry, white);
         scene_->AddMesh(mesh);
+
+        mesh = GetRenderer().CreateMesh(geometry, redPlastic);
+        scene_->AddMesh(mesh, 2, 0, 0);
+
+        mesh = GetRenderer().CreateMesh(geometry, green);
+        scene_->AddMesh(mesh, 0, 2, 0);
+
+        mesh = GetRenderer().CreateMesh(geometry, blueCeramic);
+        scene_->AddMesh(mesh, 0, 0, 2);
 
         AddChild(scene_);
     }
@@ -126,8 +156,9 @@ private:
     std::shared_ptr<gui::SceneWidget> scene_;
 };
 
-int main(int argc, char *argv[]) {
-    gui::Application app;
+int main(int argc, const char *argv[]) {
+    auto &app = gui::Application::GetInstance();
+    app.Initialize(argc, argv);
 
     auto w = std::make_shared<DemoWindow>();
     app.AddWindow(w);

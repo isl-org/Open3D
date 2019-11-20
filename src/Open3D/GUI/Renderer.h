@@ -29,10 +29,11 @@
 #include <memory>
 #include <vector>
 
+#include "Color.h"
+
 namespace open3d {
 namespace gui {
 
-class Color;
 struct Rect;
 class Window;
 
@@ -46,20 +47,21 @@ struct BoundingBox {
     BoundingBox(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
 };
 
-/*class Transform {
+class Transform {
 public:
     Transform();  // identity
     explicit Transform(const Transform& t);
+    ~Transform();
 
     void Translate(float x, float y, float z);
-    void Rotate(float axis_x, float axis_y, float axis_z, float degrees);
+    //void Rotate(float axis_x, float axis_y, float axis_z, float degrees);
+
+    void* GetNative() const;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
-*/
-class Transform;
 
 class Renderer {
     friend class RendererScene;
@@ -70,13 +72,13 @@ public:
     using SceneId = int;
     using ViewId = int;
     using CameraId = int;
+    using LightId = int;
+    using IBLId = int;
     using MaterialId = int;
     using VertexBufferId = int;
     using IndexBufferId = int;
     using GeometryId = int;
     using MeshId = int;
-    using LightId = int;
-    using IBLId = int;
 
     explicit Renderer(const Window& window);
     virtual ~Renderer();
@@ -93,6 +95,11 @@ public:
     void DestroyScene(SceneId sceneId);
     CameraId CreateCamera();
     void DestroyCamera(CameraId cameraId);
+
+    LightId CreateSunLight(float dirX, float dirY, float dirZ,
+                           float intensityLux = 100000,
+                           const Color& color = Color(1, 1, 1),
+                           bool castsShadow = false);
 
     MaterialId CreateMetal(const Color& baseColor,
                            float metallic,    // 0 (not metal) to 1 (metal)
@@ -115,11 +122,13 @@ public:
 
     // This is (should be) a cheap operation
     MeshId CreateMesh(GeometryId geometryId, MaterialId materialId);
+    void SetMeshTransform(MeshId meshId, const Transform& t);
 
 private:
     void* GetViewPointer(ViewId id);
     void* GetScenePointer(SceneId id);
     void* GetCameraPointer(CameraId id);
+    void* GetLightPointer(LightId id);
     void* GetMeshPointer(MeshId id);
 
 private:
@@ -183,7 +192,7 @@ public:
     void AddIBL(Renderer::IBLId iblId);
     void AddLight(Renderer::LightId lightId);
     void RemoveLight(Renderer::LightId lightId);
-    void AddMesh(Renderer::MeshId meshId/*, const Transform& transform*/);
+    void AddMesh(Renderer::MeshId meshId, const Transform& transform);
     void RemoveMesh(Renderer::MeshId meshId);
 
 private:

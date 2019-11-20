@@ -58,8 +58,19 @@ RendererCamera& SceneWidget::GetCamera() {
     return impl_->view.GetCamera();
 }
 
-void SceneWidget::AddMesh(Renderer::MeshId meshId) {
-    impl_->view.GetScene().AddMesh(meshId);
+void SceneWidget::AddLight(Renderer::LightId lightId) {
+    impl_->view.GetScene().AddLight(lightId);
+}
+
+void SceneWidget::RemoveLight(Renderer::LightId lightId) {
+    impl_->view.GetScene().RemoveLight(lightId);
+}
+
+void SceneWidget::AddMesh(Renderer::MeshId meshId,
+                          float x /*=0*/, float y /*=0*/, float z /*=0*/) {
+    Transform t;
+    t.Translate(x, y, z);
+    impl_->view.GetScene().AddMesh(meshId, t);
 }
 
 void SceneWidget::RemoveMesh(Renderer::MeshId meshId) {
