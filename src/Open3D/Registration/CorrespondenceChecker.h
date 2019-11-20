@@ -52,7 +52,8 @@ class CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
-    /// \param require_pointcloud_alignment Specifies whether point cloud alignment is required.
+    /// \param require_pointcloud_alignment Specifies whether point cloud
+    /// alignment is required.
     CorrespondenceChecker(bool require_pointcloud_alignment)
         : require_pointcloud_alignment_(require_pointcloud_alignment) {}
     virtual ~CorrespondenceChecker() {}
@@ -81,14 +82,19 @@ public:
 
 /// \class CorrespondenceCheckerBasedOnEdgeLength
 ///
-/// \brief Check if two point clouds build the polygons with similar edge lengths.
+/// \brief Check if two point clouds build the polygons with similar edge
+/// lengths.
 ///
-/// That is, checks if the lengths of any two arbitrary edges (line formed by two vertices) individually drawn withinin source point cloud and within the target point cloud with correspondences are similar. The only parameter similarity_threshold is a number between 0 (loose) and 1 (strict)
+/// That is, checks if the lengths of any two arbitrary edges (line formed by
+/// two vertices) individually drawn withinin source point cloud and within the
+/// target point cloud with correspondences are similar. The only parameter
+/// similarity_threshold is a number between 0 (loose) and 1 (strict).
 class CorrespondenceCheckerBasedOnEdgeLength : public CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
-    /// \param similarity_threshold specifies the threshold within which 2 arbitrary edges are similar.
+    /// \param similarity_threshold specifies the threshold within which 2
+    /// arbitrary edges are similar.
     CorrespondenceCheckerBasedOnEdgeLength(double similarity_threshold = 0.9)
         : CorrespondenceChecker(false),
           similarity_threshold_(similarity_threshold) {}
@@ -101,7 +107,10 @@ public:
                const Eigen::Matrix4d &transformation) const override;
 
 public:
-    /// For the check to be true, ||edgesource||>similarity_threshold×||edgetarget||  and     ||edgetarget||>similarity_threshold×||edgesource||    must hold true for all edges.
+    /// For the check to be true,
+    /// ||edgesource||>similarity_threshold×||edgetarget|| and
+    /// ||edgetarget||>similarity_threshold×||edgesource|| must hold true for
+    /// all edges.
     double similarity_threshold_;
 };
 
@@ -133,13 +142,13 @@ public:
 ///
 /// \brief Class to check if two aligned point clouds have similar normals.
 ///
-/// It considers vertex normal affinity of any correspondences. It computes dot product of two normal vectors. It takes radian value for the threshold.
+/// It considers vertex normal affinity of any correspondences. It computes dot
+/// product of two normal vectors. It takes radian value for the threshold.
 class CorrespondenceCheckerBasedOnNormal : public CorrespondenceChecker {
 public:
     /// \brief Parameterized Constructor.
     ///
     /// \param normal_angle_threshold Radian value for angle threshold.
-    
     CorrespondenceCheckerBasedOnNormal(double normal_angle_threshold)
         : CorrespondenceChecker(true),
           normal_angle_threshold_(normal_angle_threshold) {}
@@ -152,7 +161,7 @@ public:
                const Eigen::Matrix4d &transformation) const override;
 
 public:
-   /// Radian value for angle threshold.
+    /// Radian value for angle threshold.
     double normal_angle_threshold_;
 };
 

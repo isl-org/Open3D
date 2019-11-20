@@ -78,7 +78,7 @@ public:
 };
 
 void pybind_registration_classes(py::module &m) {
-    // ope3dn.registration.ICPConvergenceCriteria
+    // open3d.registration.ICPConvergenceCriteria
     py::class_<registration::ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria",
             "Class that defines the convergence criteria of ICP. ICP algorithm "
@@ -117,7 +117,7 @@ void pybind_registration_classes(py::module &m) {
                         c.max_iteration_);
             });
 
-    // ope3dn.registration.RANSACConvergenceCriteria
+    // open3d.registration.RANSACConvergenceCriteria
     py::class_<registration::RANSACConvergenceCriteria> ransac_criteria(
             m, "RANSACConvergenceCriteria",
             "Class that defines the convergence criteria of RANSAC. RANSAC "
@@ -153,7 +153,7 @@ void pybind_registration_classes(py::module &m) {
                              c.max_iteration_, c.max_validation_);
                  });
 
-    // ope3dn.registration.TransformationEstimation
+    // open3d.registration.TransformationEstimation
     py::class_<
             registration::TransformationEstimation,
             PyTransformationEstimation<registration::TransformationEstimation>>
@@ -183,7 +183,7 @@ void pybind_registration_classes(py::module &m) {
              {"corres",
               "Correspondence set between source and target point cloud."}});
 
-    // ope3dn.registration.TransformationEstimationPointToPoint:
+    // open3d.registration.TransformationEstimationPointToPoint:
     // TransformationEstimation
     py::class_<registration::TransformationEstimationPointToPoint,
                PyTransformationEstimation<
@@ -223,7 +223,7 @@ The homogeneous transformation is given by
 Sets :math:`c = 1` if ``with_scaling`` is ``False``.
 )");
 
-    // ope3dn.registration.TransformationEstimationPointToPlane:
+    // open3d.registration.TransformationEstimationPointToPlane:
     // TransformationEstimation
     py::class_<registration::TransformationEstimationPointToPlane,
                PyTransformationEstimation<
@@ -242,7 +242,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                 return std::string("TransformationEstimationPointToPlane");
             });
 
-    // ope3dn.registration.CorrespondenceChecker
+    // open3d.registration.CorrespondenceChecker
     py::class_<registration::CorrespondenceChecker,
                PyCorrespondenceChecker<registration::CorrespondenceChecker>>
             cc(m, "CorrespondenceChecker",
@@ -255,6 +255,11 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
            "target"_a, "corres"_a, "transformation"_a,
            "Function to check if two points can be aligned. The two input "
            "point clouds must have exact the same number of points.");
+    cc.def_readwrite(
+            "require_pointcloud_alignment_",
+            &registration::CorrespondenceChecker::
+                    require_pointcloud_alignment_,
+            "Some checkers do not require point clouds to be aligned, e.g., the edge length checker. Some checkers do, e.g., the distance checker.");
     docstring::ClassMethodDocInject(
             m, "CorrespondenceChecker", "Check",
             {{"source", "Source point cloud."},
@@ -263,7 +268,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
               "Correspondence set between source and target point cloud."},
              {"transformation", "The estimated transformation (inplace)."}});
 
-    // ope3dn.registration.CorrespondenceCheckerBasedOnEdgeLength:
+    // open3d.registration.CorrespondenceCheckerBasedOnEdgeLength:
     // CorrespondenceChecker
     py::class_<registration::CorrespondenceCheckerBasedOnEdgeLength,
                PyCorrespondenceChecker<
@@ -307,7 +312,7 @@ check to be true,
 
 must hold true for all edges.)");
 
-    // ope3dn.registration.CorrespondenceCheckerBasedOnDistance:
+    // open3d.registration.CorrespondenceCheckerBasedOnDistance:
     // CorrespondenceChecker
     py::class_<registration::CorrespondenceCheckerBasedOnDistance,
                PyCorrespondenceChecker<
@@ -337,7 +342,7 @@ must hold true for all edges.)");
                                    distance_threshold_,
                            "Distance threashold for the check.");
 
-    // ope3dn.registration.CorrespondenceCheckerBasedOnNormal:
+    // open3d.registration.CorrespondenceCheckerBasedOnNormal:
     // CorrespondenceChecker
     py::class_<registration::CorrespondenceCheckerBasedOnNormal,
                PyCorrespondenceChecker<
@@ -368,7 +373,7 @@ must hold true for all edges.)");
                                    normal_angle_threshold_,
                            "Radian value for angle threshold.");
 
-    // ope3dn.registration.FastGlobalRegistrationOption:
+    // open3d.registration.FastGlobalRegistrationOption:
     py::class_<registration::FastGlobalRegistrationOption> fgr_option(
             m, "FastGlobalRegistrationOption",
             "Options for FastGlobalRegistration.");
@@ -441,7 +446,7 @@ must hold true for all edges.)");
                              c.maximum_tuple_count_);
                  });
 
-    // ope3dn.registration.RegistrationResult
+    // open3d.registration.RegistrationResult
     py::class_<registration::RegistrationResult> registration_result(
             m, "RegistrationResult",
             "Class that contains the registration results.");

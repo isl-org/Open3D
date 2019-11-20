@@ -51,6 +51,8 @@ public:
 public:
 /// \fn OptimizePoseGraph
 ///
+/// \brief Run pose graph optimization method.
+///
 /// \param pose_graph The pose graph to be optimized (in-place).
 /// \param criteria Convergence criteria.
 /// \param option Global optimization options.

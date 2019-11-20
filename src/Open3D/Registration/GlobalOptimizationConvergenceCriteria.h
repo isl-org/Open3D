@@ -72,9 +72,9 @@ public:
     /// Balancing parameter to decide which one is more reliable: odometry vs
     /// loop-closure. [0,1] -> try to unchange odometry edges, [1) -> try to
     /// utilize loop-closure. Recommendation: 0.1 for RGBD Odometry, 2.0 for
-    /// fragment registration
+    /// fragment registration.
     double preference_loop_closure_;
-    /// The pose of this node is unchanged after optimization
+    /// The pose of this node is unchanged after optimization.
     int reference_node_;
 };
 
@@ -122,11 +122,11 @@ public:
     ~GlobalOptimizationConvergenceCriteria() {}
 
 public:
-    /// maximum iteration number for iterative optmization module.
+    /// Maximum iteration number for iterative optimization module.
     int max_iteration_;
     /// \brief Minimum relative increments.
     ///
-    /// several convergence criteria to determine
+    /// Several convergence criteria to determine
     /// stability of iterative optimization.
     double min_relative_increment_;
     /// Minimum relative residual increments.
@@ -137,12 +137,12 @@ public:
     double min_residual_;
     /// \brief Maximum iteration number for Levenberg Marquardt method.
     ///
-    /// max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop
+    /// \p max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop
     /// that automatically changes steepest gradient gain.
     int max_iteration_lm_;
     /// \brief Upper scale factor value.
     ///
-    /// below two variables used for levenberg marquardt algorithm
+    /// Scaling factors are used for levenberg marquardt algorithm
     /// these are scaling factors that increase/decrease lambda
     /// used in H_LM = H + lambda * I
     double upper_scale_factor_;

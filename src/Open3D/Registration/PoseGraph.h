@@ -37,7 +37,7 @@ namespace registration {
 
 /// \class PoseGraphNode
 ///
-/// \brief Node of PostGraph.
+/// \brief Node of PoseGraph.
 class PoseGraphNode : public utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
@@ -55,7 +55,7 @@ public:
 
 /// \class PoseGraphEdge
 ///
-/// \brief Edge of PostGraph.
+/// \brief Edge of PoseGraph.
 class PoseGraphEdge : public utility::IJsonConvertible {
 public:
     /// \brief Parameterized Constructor.
@@ -94,9 +94,13 @@ public:
     Eigen::Matrix4d_u transformation_;
     /// Information matrix.
     Eigen::Matrix6d_u information_;
-    /// odometry edge has uncertain == false
+    /// \brief Whether the edge is uncertain.
+    ///
+    /// Odometry edge has uncertain == false
     /// loop closure edges has uncertain == true
     bool uncertain_;
+    /// \brief Confidence value of the edge.
+    ///
     /// if uncertain_ is true, it has confidence bounded in [0,1].
     /// 1 means reliable, and 0 means unreliable edge.
     /// This correspondence to line process value in [Choi et al 2015]
@@ -118,9 +122,9 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    /// List of PostGraphNode.
+    /// List of PoseGraphNode.
     std::vector<PoseGraphNode> nodes_;
-    /// List of PostGraphEdge.
+    /// List of PoseGraphEdge.
     std::vector<PoseGraphEdge> edges_;
 };
 

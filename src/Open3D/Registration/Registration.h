@@ -48,8 +48,8 @@ class Feature;
 /// \brief Class that defines the convergence criteria of ICP.
 ///
 /// ICP algorithm stops if the relative change of fitness and rmse hit
-/// relative_fitness_ and relative_rmse_ individually, or the iteration number
-/// exceeds max_iteration_.
+/// \p relative_fitness_ and \p relative_rmse_ individually, or the iteration number
+/// exceeds \p max_iteration_.
 class ICPConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
@@ -66,9 +66,9 @@ public:
     ~ICPConvergenceCriteria() {}
 
 public:
-    /// If relative change (difference) of fitness score is lower than relative_fitness, the iteration stops.
+    /// If relative change (difference) of fitness score is lower than `relative_fitness`, the iteration stops.
     double relative_fitness_;
-    /// If relative change (difference) of inliner RMSE score is lower than relative_rmse, the iteration stops.
+    /// If relative change (difference) of inliner RMSE score is lower than `relative_rmse`, the iteration stops.
     double relative_rmse_;
     /// Maximum iteration before iteration stops.
     int max_iteration_;

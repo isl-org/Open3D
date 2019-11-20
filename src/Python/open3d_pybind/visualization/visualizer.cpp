@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Visualization/Visualizer/Visualizer.h"
 #include "Open3D/Geometry/Image.h"
+#include "Open3D/Visualization/Visualizer/Visualizer.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 
@@ -72,19 +72,25 @@ void pybind_visualizer(py::module &m) {
                  "visible"_a = true)
             .def("destroy_window",
                  &visualization::Visualizer::DestroyVisualizerWindow,
-                 "Function to destroy a window")
+                 "Function to destroy a window. This function MUST be called "
+                 "from the main thread.")
             .def("register_animation_callback",
                  &visualization::Visualizer::RegisterAnimationCallback,
-                 "Function to register a callback function for animation",
+                 "Function to register a callback function for animation. The "
+                 "callback function returns if UpdateGeometry() needs to be "
+                 "run.",
                  "callback_func"_a)
             .def("run", &visualization::Visualizer::Run,
-                 "Function to activate the window")
+                 "Function to activate the window. This function will block "
+                 "the current thread until the window is closed.")
             .def("close", &visualization::Visualizer::Close,
                  "Function to notify the window to be closed")
             .def("reset_view_point", &visualization::Visualizer::ResetViewPoint,
                  "Function to reset view point")
             .def("update_geometry", &visualization::Visualizer::UpdateGeometry,
-                 "Function to update geometry")
+                 "Function to update geometry. This function must be called "
+                 "when geometry has been changed. Otherwise the behavior of "
+                 "Visualizer is undefined.")
             .def("update_renderer", &visualization::Visualizer::UpdateRender,
                  "Function to inform render needed to be updated")
             .def("poll_events", &visualization::Visualizer::PollEvents,

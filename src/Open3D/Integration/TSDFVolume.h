@@ -48,11 +48,12 @@ enum class TSDFVolumeColorType {
 
 /// \class TSDFVolume
 ///
-/// \brief Interface class of the Truncated Signed Distance Function (TSDF) volume
+/// \brief Base class of the Truncated Signed Distance Function (TSDF) volume.
 ///
 /// This volume is usually used to integrate surface data (e.g., a series of
 /// RGB-D images) into a Mesh or PointCloud. The basic technique is presented in
 /// the following paper:
+///
 /// B. Curless and M. Levoy
 /// A volumetric method for building complex models from range images
 /// In SIGGRAPH, 1996
@@ -83,8 +84,8 @@ public:
     /// Function to extract a point cloud with normals.
     virtual std::shared_ptr<geometry::PointCloud> ExtractPointCloud() = 0;
 
-    /// \brief Function to extract a triangle mesh, using the marching cubes algorithm.
-    /// (https://en.wikipedia.org/wiki/Marching_cubes)
+    /// \brief Function to extract a triangle mesh, using the marching cubes
+    /// algorithm. (https://en.wikipedia.org/wiki/Marching_cubes)
     virtual std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() = 0;
 
 public:

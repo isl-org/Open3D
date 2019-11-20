@@ -116,12 +116,14 @@ public:
     /// Function to to notify the window to be closed
     void Close();
 
-    /// Function to process the event queue and return if the window is closed
+    /// \brief Function to process the event queue and return if the window is closed.
+    ///
     /// Use this function if you want to manage the while loop yourself. This
     /// function will block the thread.
     bool WaitEvents();
 
-    /// Function to process the event queue and return if the window is closed
+    /// Function to process the event queue and return if the window is closed.
+    ///
     /// Use this function if you want to manage the while loop yourself. This
     /// function will NOT block the thread. Thus it is suitable for computation
     /// heavy task behind the scene.

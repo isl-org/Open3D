@@ -66,7 +66,7 @@ public:
 /// \fn ComputeFPFHFeature
 ///
 /// Function to compute FPFH feature for a point cloud.
-/// 
+///
 /// \param input The Input point cloud.
 /// \param search_param KDTree KNN search parameter.
 std::shared_ptr<Feature> ComputeFPFHFeature(

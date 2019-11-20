@@ -43,14 +43,20 @@ class Feature;
 class RegistrationResult;
 
 /// \class FastGlobalRegistrationOption
+///
+/// \brief Options for FastGlobalRegistration.
 class FastGlobalRegistrationOption {
 public:
     /// \brief Parameterized Constructor.
     ///
     /// \param division_factor Division factor used for graduated non-convexity.
-    /// \param use_absolute_scale Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0).
-    /// \param decrease_mu Set to `true` to decrease scale mu by division_factor for graduated non-convexity.
-    /// \param maximum_correspondence_distance Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE).
+    /// \param use_absolute_scale Measure distance in absolute scale (1) or in
+    /// scale relative to the diameter of the model (0).
+    /// \param decrease_mu Set
+    /// to `true` to decrease scale mu by division_factor for graduated
+    /// non-convexity.
+    /// \param maximum_correspondence_distance Maximum
+    /// correspondence distance (also see comment of USE_ABSOLUTE_SCALE).
     /// \param iteration_number Maximum number of iterations.
     /// \param tuple_scale Similarity measure used for tuples of feature points.
     /// \param maximum_tuple_count Maximum numer of tuples.
@@ -76,9 +82,11 @@ public:
     /// Measure distance in absolute scale (1) or in scale relative to the
     /// diameter of the model (0).
     bool use_absolute_scale_;
-    /// Set to `true` to decrease scale mu by division_factor for graduated non-convexity.
+    /// Set to `true` to decrease scale mu by division_factor for graduated
+    /// non-convexity.
     bool decrease_mu_;
-    /// Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE).
+    /// Maximum correspondence distance (also see comment of
+    /// USE_ABSOLUTE_SCALE).
     double maximum_correspondence_distance_;
     /// Maximum number of iterations.
     int iteration_number_;

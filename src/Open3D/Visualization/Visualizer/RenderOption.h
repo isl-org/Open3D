@@ -35,7 +35,7 @@ namespace visualization {
 
 /// \class RenderOption
 ///
-/// \brief Defines rendering options for visulizer.
+/// \brief Defines rendering options for visualizer.
 class RenderOption : public utility::IJsonConvertible {
 public:
     // Global options

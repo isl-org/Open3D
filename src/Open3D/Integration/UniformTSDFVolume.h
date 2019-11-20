@@ -50,6 +50,9 @@ public:
 
 namespace integration {
 
+/// \class UniformTSDFVolume
+///
+/// \brief UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996).
 class UniformTSDFVolume : public TSDFVolume {
 public:
     UniformTSDFVolume(double length,

@@ -38,7 +38,7 @@ void pybind_renderoption(py::module &m) {
     py::class_<visualization::RenderOption,
                std::shared_ptr<visualization::RenderOption>>
             renderoption(m, "RenderOption",
-                         "Defines rendering options for visulizer.");
+                         "Defines rendering options for visualizer.");
     py::detail::bind_default_constructor<visualization::RenderOption>(
             renderoption);
     renderoption
