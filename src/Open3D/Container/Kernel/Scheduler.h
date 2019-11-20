@@ -275,9 +275,15 @@ public:
                 // This dim is mapped to one or more fancy indexed input dim(s)
                 for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
                     if (!is_trivial_dims_[tar_dim]) {
-                        tar_offset +=
-                                indexing_tensor_data_ptrs_[tar_dim][dim_idx] *
-                                tar_strides_[tar_dim];
+                        int64_t tar_dim_idx =
+                                indexing_tensor_data_ptrs_[tar_dim][dim_idx];
+                        if (tar_dim_idx < 0) {
+                            tar_dim_idx += tar_shape_[tar_dim];
+                        }
+                        assert(tar_dim_idx >= 0 &&
+                               tar_dim_idx < static_cast<int64_t>(
+                                                     tar_shape_[tar_dim]));
+                        tar_offset += tar_dim_idx * tar_strides_[tar_dim];
                     }
                 }
             }

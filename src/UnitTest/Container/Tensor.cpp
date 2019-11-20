@@ -485,6 +485,25 @@ TEST_P(TensorPermuteDevices, IndexGet) {
     EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({5, 10, 17, 22}));
 }
 
+TEST_P(TensorPermuteDevices, IndexGetNegative) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t[:, [1, -1], [1, -2]]
+    std::vector<Tensor> indices = {
+            Tensor(SizeVector(), Dtype::Int32, device),
+            Tensor(std::vector<int>({1, -1}), {2}, Dtype::Int32, device),
+            Tensor(std::vector<int>({1, -2}), {2}, Dtype::Int32, device)};
+
+    Tensor t_1 = t.IndexGet(indices);
+    EXPECT_TRUE(t_1.IsContiguous());
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 2}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({5, 10, 17, 22}));
+}
+
 TEST_P(TensorPermuteDevices, IndexGetBroadcast) {
     Device device = GetParam();
 
