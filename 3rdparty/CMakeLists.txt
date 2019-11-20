@@ -316,10 +316,12 @@ INSTALL_HEADERS(fmt)
 
 # Filament library
 if (ENABLE_GUI)
+    set(FILAMENT_CC_PATH ${CMAKE_C_COMPILER})
+    set(FILAMENT_CXX_PATH ${CMAKE_CXX_COMPILER})
     # Filament can only be compiled with Clang and Visual Studio, not GCC
     if (UNIX AND NOT APPLE AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        find_program(CLANG_C_PATH clang-7) # used by filament.cmake
-        find_program(CLANG_CXX_PATH clang++-7)
+        find_program(FILAMENT_CC_PATH clang-7) # used by filament.cmake
+        find_program(FILAMENT_CXX_PATH clang++-7)
         if (NOT CLANG_CXX_PATH)
             message(STATUS "Filament requires Clang >= 7, it cannot be built with GCC.")
             message(STATUS "ENABLE_GUI is set to OFF")
