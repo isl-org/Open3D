@@ -33,9 +33,9 @@ Core features
 Supported compilers
 ======================
 
-* GCC 5.x or later on Linux
-* XCode 8.0 or later on OS X
-* Visual Studio 2015 update 3 or later on Windows
+* GCC 5.x or newer on Linux
+* XCode 8.0 or newer on OS X
+* Visual Studio 2017 or newer on Windows
 
 Resources
 ======================
