@@ -34,6 +34,7 @@ EXAMPLE_CPP(PoseGraph                 ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ProgramOptions            ${CMAKE_PROJECT_NAME})
 if (BUILD_LIBREALSENSE)
     EXAMPLE_CPP(RealSense             ${CMAKE_PROJECT_NAME} realsense)
+    EXAMPLE_CPP(RealSense2             ${CMAKE_PROJECT_NAME} realsense2)
 endif (BUILD_LIBREALSENSE)
 
 if (BUILD_AZURE_KINECT)

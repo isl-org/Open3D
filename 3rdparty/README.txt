@@ -54,7 +54,12 @@ A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
 librealsense                0.9.1                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200, SR300
-and R200 cameras
+and R200 cameras. (Discontinued)
+https://github.com/IntelRealSense/librealsense
+--------------------------------------------------------------------------------
+librealsense2               2.29.0                              Apache-2 license
+A cross-platform library for capturing data from the Intel RealSense cameras 
+(D415, etc). Does not support earlier cameras.
 https://github.com/IntelRealSense/librealsense
 --------------------------------------------------------------------------------
 tinyfiledialogs             2.7.2                                   zlib license
