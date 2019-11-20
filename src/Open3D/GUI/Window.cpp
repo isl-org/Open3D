@@ -97,7 +97,10 @@ void Window::AddChild(std::shared_ptr<Widget> w) {
     impl_->needsLayout = true;
 }
 
-void Window::Draw() {
+void Window::Layout() {
+}
+
+void Window::OnDraw() {
     if (impl_->needsLayout) {
         Layout();
         impl_->needsLayout = false;
@@ -115,7 +118,8 @@ void Window::Draw() {
     }
 }
 
-void Window::Layout() {
+void Window::OnResize() {
+    impl_->needsLayout = true;
 }
 
 } // gui

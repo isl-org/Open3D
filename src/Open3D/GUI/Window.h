@@ -61,7 +61,8 @@ protected:
     virtual void Layout();
 
 private:
-    void Draw();
+    void OnDraw();
+    void OnResize();
     void* GetNativeDrawable() const;
 
 private:

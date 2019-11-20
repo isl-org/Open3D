@@ -262,8 +262,8 @@ void Application::Run() {
                     }
                     auto window = wIt->second;
                     switch (event.window.event) {
-//                        case SDL_WINDOWEVENT_RESIZED:
-//                            window->resize();
+                        case SDL_WINDOWEVENT_RESIZED:
+                            window->OnResize();
                             break;
                         case SDL_WINDOWEVENT_CLOSE:  // sent if not last window
                             CloseWindow(window);
@@ -279,7 +279,7 @@ void Application::Run() {
         }
 
         for (auto &kv : impl_->windows) {
-            kv.second->Draw();
+            kv.second->OnDraw();
         }
 
         SDL_Delay(10); // millisec
