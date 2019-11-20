@@ -93,8 +93,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
         ComputeAdjacencyList();
     }
     if (HasTriangleUvs() || HasTexture()) {
-        // TODO: implement copy
-        utility::LogWarning(
+        utility::LogError(
                 "[TriangleMesh] copy of uvs and texture is not implemented "
                 "yet");
     }
@@ -984,11 +983,8 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
             adjacent_triangles;
     std::queue<int> triangle_queue;
 
-    auto CreateOrderedEdge = [](int vidx0, int vidx1) {
-        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
-    };
     auto VerifyAndAdd = [&](int vidx0, int vidx1) {
-        Eigen::Vector2i key = CreateOrderedEdge(vidx0, vidx1);
+        Eigen::Vector2i key = TriangleMesh::GetOrderedEdge(vidx0, vidx1);
         if (edge_to_orientation.count(key) > 0) {
             if (edge_to_orientation.at(key)(0) == vidx0) {
                 return false;
@@ -1010,9 +1006,12 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        adjacent_triangles[CreateOrderedEdge(vidx0, vidx1)].insert(int(tidx));
-        adjacent_triangles[CreateOrderedEdge(vidx1, vidx2)].insert(int(tidx));
-        adjacent_triangles[CreateOrderedEdge(vidx2, vidx0)].insert(int(tidx));
+        adjacent_triangles[TriangleMesh::GetOrderedEdge(vidx0, vidx1)].insert(
+                int(tidx));
+        adjacent_triangles[TriangleMesh::GetOrderedEdge(vidx1, vidx2)].insert(
+                int(tidx));
+        adjacent_triangles[TriangleMesh::GetOrderedEdge(vidx2, vidx0)].insert(
+                int(tidx));
     }
 
     while (!unvisited_triangles.empty()) {
@@ -1033,9 +1032,9 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        Eigen::Vector2i key01 = CreateOrderedEdge(vidx0, vidx1);
-        Eigen::Vector2i key12 = CreateOrderedEdge(vidx1, vidx2);
-        Eigen::Vector2i key20 = CreateOrderedEdge(vidx2, vidx0);
+        Eigen::Vector2i key01 = TriangleMesh::GetOrderedEdge(vidx0, vidx1);
+        Eigen::Vector2i key12 = TriangleMesh::GetOrderedEdge(vidx1, vidx2);
+        Eigen::Vector2i key20 = TriangleMesh::GetOrderedEdge(vidx2, vidx0);
         bool exist01 = edge_to_orientation.count(key01) > 0;
         bool exist12 = edge_to_orientation.count(key12) > 0;
         bool exist20 = edge_to_orientation.count(key20) > 0;
@@ -1101,16 +1100,32 @@ TriangleMesh::GetEdgeToTrianglesMap() const {
                        utility::hash_eigen::hash<Eigen::Vector2i>>
             trias_per_edge;
     auto AddEdge = [&](int vidx0, int vidx1, int tidx) {
-        int min0 = std::min(vidx0, vidx1);
-        int max0 = std::max(vidx0, vidx1);
-        Eigen::Vector2i edge(min0, max0);
-        trias_per_edge[edge].push_back(tidx);
+        trias_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(tidx);
     };
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto &triangle = triangles_[tidx];
         AddEdge(triangle(0), triangle(1), int(tidx));
         AddEdge(triangle(1), triangle(2), int(tidx));
         AddEdge(triangle(2), triangle(0), int(tidx));
+    }
+    return trias_per_edge;
+}
+
+std::unordered_map<Eigen::Vector2i,
+                   std::vector<int>,
+                   utility::hash_eigen::hash<Eigen::Vector2i>>
+TriangleMesh::GetEdgeToVerticesMap() const {
+    std::unordered_map<Eigen::Vector2i, std::vector<int>,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            trias_per_edge;
+    auto AddEdge = [&](int vidx0, int vidx1, int vidx2) {
+        trias_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(vidx2);
+    };
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        const auto &triangle = triangles_[tidx];
+        AddEdge(triangle(0), triangle(1), triangle(2));
+        AddEdge(triangle(1), triangle(2), triangle(0));
+        AddEdge(triangle(2), triangle(0), triangle(1));
     }
     return trias_per_edge;
 }
@@ -1181,17 +1196,9 @@ int TriangleMesh::EulerPoincareCharacteristic() const {
                        utility::hash_eigen::hash<Eigen::Vector2i>>
             edges;
     for (auto triangle : triangles_) {
-        int min0 = std::min(triangle(0), triangle(1));
-        int max0 = std::max(triangle(0), triangle(1));
-        edges.emplace(Eigen::Vector2i(min0, max0));
-
-        int min1 = std::min(triangle(0), triangle(2));
-        int max1 = std::max(triangle(0), triangle(2));
-        edges.emplace(Eigen::Vector2i(min1, max1));
-
-        int min2 = std::min(triangle(1), triangle(2));
-        int max2 = std::max(triangle(1), triangle(2));
-        edges.emplace(Eigen::Vector2i(min2, max2));
+        edges.emplace(GetOrderedEdge(triangle(0), triangle(1)));
+        edges.emplace(GetOrderedEdge(triangle(0), triangle(2)));
+        edges.emplace(GetOrderedEdge(triangle(1), triangle(2)));
     }
 
     int E = int(edges.size());
@@ -1364,19 +1371,16 @@ TriangleMesh::ClusterConnectedTriangles() const {
 #endif
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
-        for (auto tnb : edges_to_triangles[Eigen::Vector2i(
-                     std::min(triangle(0), triangle(1)),
-                     std::max(triangle(0), triangle(1)))]) {
+        for (auto tnb :
+             edges_to_triangles[GetOrderedEdge(triangle(0), triangle(1))]) {
             adjacency_list[tidx].insert(tnb);
         }
-        for (auto tnb : edges_to_triangles[Eigen::Vector2i(
-                     std::min(triangle(0), triangle(2)),
-                     std::max(triangle(0), triangle(2)))]) {
+        for (auto tnb :
+             edges_to_triangles[GetOrderedEdge(triangle(0), triangle(2))]) {
             adjacency_list[tidx].insert(tnb);
         }
-        for (auto tnb : edges_to_triangles[Eigen::Vector2i(
-                     std::min(triangle(1), triangle(2)),
-                     std::max(triangle(1), triangle(2)))]) {
+        for (auto tnb :
+             edges_to_triangles[GetOrderedEdge(triangle(1), triangle(2))]) {
             adjacency_list[tidx].insert(tnb);
         }
     }
@@ -1459,6 +1463,39 @@ void TriangleMesh::RemoveTrianglesByMask(
     if (has_tri_normal) {
         triangle_normals_.resize(to_tidx);
     }
+}
+
+std::unordered_map<Eigen::Vector2i,
+                   double,
+                   utility::hash_eigen::hash<Eigen::Vector2i>>
+TriangleMesh::ComputeEdgeWeightsCot(
+        const std::unordered_map<Eigen::Vector2i,
+                                 std::vector<int>,
+                                 utility::hash_eigen::hash<Eigen::Vector2i>>
+                &edges_to_vertices,
+        double min_weight) const {
+    std::unordered_map<Eigen::Vector2i, double,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+            weights;
+    for (const auto &edge_v2s : edges_to_vertices) {
+        Eigen::Vector2i edge = edge_v2s.first;
+        double weight_sum = 0;
+        int N = 0;
+        for (int v2 : edge_v2s.second) {
+            Eigen::Vector3d a = vertices_[edge(0)] - vertices_[v2];
+            Eigen::Vector3d b = vertices_[edge(1)] - vertices_[v2];
+            double weight = a.dot(b) / (a.cross(b)).norm();
+            weight_sum += weight;
+            N++;
+        }
+        double weight = N > 0 ? weight_sum / N : 0;
+        if (weight < min_weight) {
+            weights[edge] = min_weight;
+        } else {
+            weights[edge] = weight;
+        }
+    }
+    return weights;
 }
 
 }  // namespace geometry

@@ -48,11 +48,13 @@ def triangle():
     return mesh
 
 
-def plane():
+def plane(height=0.2, width=1):
     mesh = o3d.geometry.TriangleMesh(
         vertices=o3d.utility.Vector3dVector(
-            np.array([[0, 0, 0], [0, 0.2, 0], [1, 0.2, 0], [1, 0, 0]],
-                     dtype=np.float32)),
+            np.array(
+                [[0, 0, 0], [0, height, 0], [width, height, 0], [width, 0, 0]],
+                dtype=np.float32,
+            )),
         triangles=o3d.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0, 3]])),
     )
     mesh.compute_vertex_normals()
@@ -182,26 +184,7 @@ def center_and_scale(mesh):
     return mesh
 
 
-def print_mesh_for_cpp(mesh, prefix=""):
-
-    def _print(prefix, values, fmt):
-        if values.shape[0] > 0:
-            print(f"{prefix} = {{")
-            print(",\n".join([
-                f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}"
-                for v in values
-            ]))
-            print(f"}};")
-
-    _print(f"{prefix}vertices_", np.asarray(mesh.vertices), ".6f")
-    _print(f"{prefix}vertex_normals_", np.asarray(mesh.vertex_normals), ".6f")
-    _print(f"{prefix}vertex_colors_", np.asarray(mesh.vertex_colors), ".6f")
-    _print(f"{prefix}triangles_", np.asarray(mesh.triangles), "d")
-    _print(f"{prefix}triangle_normals_", np.asarray(mesh.triangle_normals),
-           ".6f")
-
-
-def print_1D_array_for_cpp(array, prefix="vec"):
+def print_1D_array_for_cpp(prefix, array):
     if array.dtype == np.float32:
         dtype = "float"
     elif array.dtype == np.float64:
@@ -217,3 +200,25 @@ def print_1D_array_for_cpp(array, prefix="vec"):
     print(f"std::vector<{dtype}> {prefix} = {{")
     print(", ".join(map(str, array)))
     print("};")
+
+
+def print_2D_array_for_cpp(prefix, values, fmt):
+    if values.shape[0] > 0:
+        print(f"{prefix} = {{")
+        print(",\n".join([
+            f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}" for v in values
+        ]))
+        print(f"}};")
+
+
+def print_mesh_for_cpp(mesh, prefix=""):
+    print_2D_array_for_cpp(f"{prefix}vertices_", np.asarray(mesh.vertices),
+                           ".6f")
+    print_2D_array_for_cpp(f"{prefix}vertex_normals_",
+                           np.asarray(mesh.vertex_normals), ".6f")
+    print_2D_array_for_cpp(f"{prefix}vertex_colors_",
+                           np.asarray(mesh.vertex_colors), ".6f")
+    print_2D_array_for_cpp(f"{prefix}triangles_", np.asarray(mesh.triangles),
+                           "d")
+    print_2D_array_for_cpp(f"{prefix}triangle_normals_",
+                           np.asarray(mesh.triangle_normals), ".6f")
