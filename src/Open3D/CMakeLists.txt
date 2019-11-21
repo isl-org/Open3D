@@ -13,6 +13,9 @@ add_subdirectory(Odometry)
 add_subdirectory(Registration)
 add_subdirectory(Utility)
 add_subdirectory(IO)
+if (ENABLE_GUI)
+    add_subdirectory(GUI)
+endif()
 add_subdirectory(Visualization)
 
 # Source group for Visual Studio
@@ -24,6 +27,9 @@ ADD_SOURCE_GROUP(Odometry)
 ADD_SOURCE_GROUP(Registration)
 ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
+if (ENABLE_GUI)
+    ADD_SOURCE_GROUP(GUI)
+endif()
 ADD_SOURCE_GROUP(Visualization)
 
 # Install headers
@@ -47,6 +53,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:Registration>
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
+    $<TARGET_OBJECTS:GUI>
     $<TARGET_OBJECTS:Visualization>
 )
 ShowAndAbortOnWarning(${CMAKE_PROJECT_NAME})
