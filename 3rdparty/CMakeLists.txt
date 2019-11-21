@@ -187,11 +187,15 @@ if (BUILD_PYBIND11)
     add_subdirectory(pybind11)
 endif ()
 
-# RealSense
+# RealSense SDK 1 and SDK 2.
 if (BUILD_LIBREALSENSE)
     message(STATUS "Building LIBREALSENSE from source")
     add_subdirectory(librealsense)
     Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense" librealsense_INCLUDE_DIRS)
+
+    message(STATUS "Building LIBREALSENSE2 from source")
+    add_subdirectory(librealsense2)
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense2" librealsense2_INCLUDE_DIRS)
 endif ()
 
 # tinyfiledialogs
@@ -324,6 +328,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${liblzf_INCLUDE_DIRS}
      ${tomasakeninemoeller_INCLUDE_DIRS}
      ${librealsense_INCLUDE_DIRS}
+     ${librealsense2_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${tinyfiledialogs_INCLUDE_DIRS}
