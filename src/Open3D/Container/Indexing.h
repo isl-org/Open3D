@@ -26,50 +26,18 @@
 
 #pragma once
 
+#include <vector>
+
+#include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"
-#include "Open3D/Utility/Console.h"
 
 namespace open3d {
-namespace kernel {
 
-/// Raw copy
-void CopyCPU(const Tensor& src, Tensor& dst);
+/// \brief Fill dimensions and get output shape for Advanced (fancy) indexing.
+/// \param tensor The Tensor to be indexed.
+/// \param index_tensors The Tensors that specify the index.
+/// \return A tuple of full_index_tensors and output_shape.
+std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
+        const Tensor& tensor, const std::vector<Tensor>& index_tensors);
 
-#ifdef BUILD_CUDA_MODULE
-void CopyCUDA(const Tensor& src, Tensor& dst);
-#endif
-
-void Copy(const Tensor& src, Tensor& dst);
-
-void IndexedGetCPU(const Tensor& src,
-                   Tensor& dst,
-                   const std::vector<Tensor>& index_tensors,
-                   const SizeVector& indexed_out_shape);
-#ifdef BUILD_CUDA_MODULE
-void IndexedGetCUDA(const Tensor& src,
-                    Tensor& dst,
-                    const std::vector<Tensor>& index_tensors,
-                    const SizeVector& indexed_out_shape);
-#endif
-void IndexedGet(const Tensor& src,
-                Tensor& dst,
-                const std::vector<Tensor>& index_tensors,
-                const SizeVector& indexed_out_shape);
-
-void IndexedSetCPU(const Tensor& src,
-                   Tensor& dst,
-                   const std::vector<Tensor>& index_tensors,
-                   const SizeVector& indexed_out_shape);
-#ifdef BUILD_CUDA_MODULE
-void IndexedSetCUDA(const Tensor& src,
-                    Tensor& dst,
-                    const std::vector<Tensor>& index_tensors,
-                    const SizeVector& indexed_out_shape);
-#endif
-void IndexedSet(const Tensor& src,
-                Tensor& dst,
-                const std::vector<Tensor>& index_tensors,
-                const SizeVector& indexed_out_shape);
-
-}  // namespace kernel
 }  // namespace open3d

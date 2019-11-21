@@ -26,6 +26,7 @@
 
 #include "Open3D/Container/Kernel/UnaryEW.h"
 
+#include "Open3D/Container/Broadcast.h"
 #include "Open3D/Container/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
@@ -33,11 +34,9 @@ namespace open3d {
 namespace kernel {
 
 void Copy(const Tensor& src, Tensor& dst) {
-    // Check shape
-    // TODO: in the future, we may support automatic broadcasting
-    if (src.GetShape() != dst.GetShape()) {
-        utility::LogError("src and dst tensor shape mismatch {} != {}",
-                          src.GetShape().ToString(), dst.GetShape().ToString());
+    if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
+        utility::LogError("Shape {} can not be broadcasted to {}.",
+                          src.GetShape(), dst.GetShape());
     }
 
     // Check dtype
@@ -58,7 +57,7 @@ void Copy(const Tensor& src, Tensor& dst) {
         utility::LogError("Unimplemented device");
     }
     if (src_device_type == Device::DeviceType::CPU &&
-        src_device_type == Device::DeviceType::CPU) {
+        dst_device_type == Device::DeviceType::CPU) {
         CopyCPU(src, dst);
     } else {
 #ifdef BUILD_CUDA_MODULE
@@ -66,6 +65,41 @@ void Copy(const Tensor& src, Tensor& dst) {
 #endif
     }
 }
+
+void IndexedGet(const Tensor& src,
+                Tensor& dst,
+                const std::vector<Tensor>& index_tensors,
+                const SizeVector& indexed_out_shape) {
+    if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
+        dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
+        IndexedGetCPU(src, dst, index_tensors, indexed_out_shape);
+    } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
+               dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        IndexedGetCUDA(src, dst, index_tensors, indexed_out_shape);
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void IndexedSet(const Tensor& src,
+                Tensor& dst,
+                const std::vector<Tensor>& index_tensors,
+                const SizeVector& indexed_out_shape) {
+    if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
+        dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
+        IndexedSetCPU(src, dst, index_tensors, indexed_out_shape);
+
+    } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
+               dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        IndexedSetCUDA(src, dst, index_tensors, indexed_out_shape);
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}  // namespace kernel
 
 }  // namespace kernel
 }  // namespace open3d

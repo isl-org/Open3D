@@ -64,8 +64,9 @@ public:
         // Check number of elements
         if (init_vals.size() != shape_.NumElements()) {
             utility::LogError(
-                    "Tensor initialization values' size does not match the "
-                    "shape.");
+                    "Tensor initialization values' size {} does not match the "
+                    "shape {}",
+                    init_vals.size(), shape_.NumElements());
         }
 
         // Check data types
@@ -132,9 +133,32 @@ public:
         return *this;
     }
 
+    /// Assign (copy) values from another Tensor, shape, dtype, device may
+    /// change. Slices of the original Tensor still keeps the original memory.
+    /// After assignment, the Tensor will be contiguous.
+    void Assign(const Tensor& other);
+
+    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
+    /// casted to the Tensor's dtype.
+    template <typename T>
+    void Fill(const T& v) {
+        DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
+            scalar_t casted_v = static_cast<scalar_t>(v);
+            Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
+                       GetDtype(), GetDevice());
+            *this = tmp;
+        });
+    }
+
+    /// Broadcast Tensor to a new broadcastable shape
+    Tensor Broadcast(const SizeVector& dst_shape) const;
+
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
     Tensor Copy(const Device& device) const;
+
+    /// Copy Tensor values to current tensor for source tensor
+    void CopyFrom(const Tensor& other);
 
     /// Clone Tensor to a specified device
     /// The resulting Tensor have the exact shape, stride and data_ptr to blob_
@@ -149,6 +173,33 @@ public:
 
     /// Slice Tensor
     Tensor Slice(size_t dim, int start, int stop, int step = 1) const;
+
+    /// \brief Advanced indexing getter
+    ///
+    /// We use the Numpy advanced indexing symnatics, see:
+    /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
+    ///
+    /// Note: Only support 1D index tensors.
+    /// Note: Only support advanced indices are all next to each other. E.g.
+    /// ```
+    /// A = np.ones((10, 20, 30, 40, 50))
+    /// A[:, [1, 2], [2, 3], :, :]  # Supported,
+    ///                               output_shape: [10, 2, 40, 50]
+    ///                               slice_map:    [0, -1, 3, 4]
+    /// A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
+    ///                             # For this case, a transpose op is necessary
+    /// ```
+    Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
+
+    /// \brief Advanced indexing getter.
+    ///
+    /// We use the Numpy advanced indexing symnatics, see:
+    /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
+    ///
+    /// Note: Only support 1D index tensors.
+    /// Note: Only support advanced indices are all next to each other.
+    void IndexSet(const std::vector<Tensor>& index_tensors,
+                  const Tensor& src_tensor);
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
@@ -198,6 +249,8 @@ public:
     std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
     size_t NumElements() const { return shape_.NumElements(); }
+
+    size_t NumDims() const { return shape_.size(); }
 
     template <typename T>
     void AssertTemplateDtype() const {

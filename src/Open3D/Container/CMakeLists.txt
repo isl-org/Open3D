@@ -8,6 +8,8 @@ set (KERNEL_CUDA_SRC
 )
 
 set (CONTAINER_SRC
+    Broadcast.cpp
+    Indexing.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
     MemoryManagerCUDA.cu

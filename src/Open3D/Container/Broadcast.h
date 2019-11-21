@@ -26,50 +26,33 @@
 
 #pragma once
 
+#include "Open3D/Container/Dispatch.h"
+#include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
-namespace kernel {
 
-/// Raw copy
-void CopyCPU(const Tensor& src, Tensor& dst);
+/// \brief Returns true if two shapes are compatible for broadcasting.
+/// \param left_shape Shape of the left-hand-side Tensor.
+/// \param right_shape Shape of the left-hand-side Tensor.
+/// \return Returns true if \p left_shape and \p right_shape are compatible for
+/// broadcasting.
+bool IsCompatibleBroadcastShape(const SizeVector& left_shape,
+                                const SizeVector& right_shape);
 
-#ifdef BUILD_CUDA_MODULE
-void CopyCUDA(const Tensor& src, Tensor& dst);
-#endif
+/// \brief Returns the broadcasted shape of two shapes.
+/// \param left_shape Shape of the left-hand-side Tensor.
+/// \param right_shape Shape of the left-hand-side Tensor.
+/// \return The broadcasted shape.
+SizeVector BroadcastedShape(const SizeVector& left_shape,
+                            const SizeVector& right_shape);
 
-void Copy(const Tensor& src, Tensor& dst);
+/// \brief Returns true if \p src_shape can be brocasted to \p dst_shape.
+/// \param src_shape Source tensor shape.
+/// \param dst_shape Destination tensor shape.
+/// \return Returns true if \p src_shape can be brocasted to \p dst_shape.
+bool CanBeBrocastedToShape(const SizeVector& src_shape,
+                           const SizeVector& dst_shape);
 
-void IndexedGetCPU(const Tensor& src,
-                   Tensor& dst,
-                   const std::vector<Tensor>& index_tensors,
-                   const SizeVector& indexed_out_shape);
-#ifdef BUILD_CUDA_MODULE
-void IndexedGetCUDA(const Tensor& src,
-                    Tensor& dst,
-                    const std::vector<Tensor>& index_tensors,
-                    const SizeVector& indexed_out_shape);
-#endif
-void IndexedGet(const Tensor& src,
-                Tensor& dst,
-                const std::vector<Tensor>& index_tensors,
-                const SizeVector& indexed_out_shape);
-
-void IndexedSetCPU(const Tensor& src,
-                   Tensor& dst,
-                   const std::vector<Tensor>& index_tensors,
-                   const SizeVector& indexed_out_shape);
-#ifdef BUILD_CUDA_MODULE
-void IndexedSetCUDA(const Tensor& src,
-                    Tensor& dst,
-                    const std::vector<Tensor>& index_tensors,
-                    const SizeVector& indexed_out_shape);
-#endif
-void IndexedSet(const Tensor& src,
-                Tensor& dst,
-                const std::vector<Tensor>& index_tensors,
-                const SizeVector& indexed_out_shape);
-
-}  // namespace kernel
 }  // namespace open3d

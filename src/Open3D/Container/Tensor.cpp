@@ -29,9 +29,11 @@
 #include <sstream>
 
 #include "Open3D/Container/Blob.h"
+#include "Open3D/Container/Broadcast.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/Dispatch.h"
 #include "Open3D/Container/Dtype.h"
+#include "Open3D/Container/Indexing.h"
 #include "Open3D/Container/Kernel/Kernel.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Utility/Console.h"
@@ -66,19 +68,40 @@ Tensor& Tensor::operator=(Tensor&& other) & {
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
     return *this;
-};
+}
 
 /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
-};
+}
+
+/// Assign (copy) values from another Tensor, shape, dtype, device may change.
+void Tensor::Assign(const Tensor& other) {
+    shape_ = other.shape_;
+    strides_ = DefaultStrides(shape_);
+    dtype_ = other.dtype_;
+    device_ = other.device_;
+    blob_ = std::make_shared<Blob>(
+            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), device_);
+    data_ptr_ = blob_->v_;
+    kernel::Copy(other, *this);
+}
+
+/// Broadcast Tensor to a new broadcastable shape
+Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
+    Tensor dst_tensor(dst_shape, GetDtype(), GetDevice());
+    dst_tensor = *this;
+    return dst_tensor;
+}
 
 Tensor Tensor::Copy(const Device& device) const {
     Tensor dst_tensor(shape_, dtype_, device);
     kernel::Copy(*this, dst_tensor);
     return dst_tensor;
 }
+
+void Tensor::CopyFrom(const Tensor& other) { kernel::Copy(other, *this); }
 
 Tensor Tensor::Clone(const Device& device) const {
     auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);
@@ -220,6 +243,49 @@ Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
     new_shape[dim] = (stop - start + step - 1) / step;
     new_strides[dim] = strides_[dim] * step;
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, device_, blob_);
+}
+
+Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
+    // Dimension check
+    if (index_tensors.size() > shape_.size()) {
+        utility::LogError(
+                "Number of index_tensors {} exceeds tensor dimension {}.",
+                index_tensors.size(), shape_.size());
+    }
+
+    std::vector<Tensor> full_index_tensors;
+    SizeVector indexed_out_shape;
+    std::tie(full_index_tensors, indexed_out_shape) =
+            PreprocessIndexTensors(*this, index_tensors);
+
+    Tensor dst = Tensor(indexed_out_shape, dtype_, device_);
+    kernel::IndexedGet(*this, dst, full_index_tensors, indexed_out_shape);
+
+    return dst;
+}
+
+void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
+                      const Tensor& src_tensor) {
+    // Dimension check
+    if (index_tensors.size() > shape_.size()) {
+        utility::LogError(
+                "Number of index_tensors {} exceeds tensor dimension {}.",
+                index_tensors.size(), shape_.size());
+    }
+
+    std::vector<Tensor> full_index_tensors;
+    SizeVector indexed_out_shape;
+    std::tie(full_index_tensors, indexed_out_shape) =
+            PreprocessIndexTensors(*this, index_tensors);
+
+    // Broadcast src_tensor.GetShape() to indexed_out_shape
+    if (!CanBeBrocastedToShape(src_tensor.GetShape(), indexed_out_shape)) {
+        utility::LogError("IndexSet: cannot broadcast {} to {}.",
+                          src_tensor.GetShape(), indexed_out_shape);
+    }
+
+    kernel::IndexedSet(src_tensor, *this, full_index_tensors,
+                       indexed_out_shape);
 }
 
 }  // namespace open3d
