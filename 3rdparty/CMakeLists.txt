@@ -193,9 +193,9 @@ if (BUILD_LIBREALSENSE)
     add_subdirectory(librealsense)
     Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense" librealsense_INCLUDE_DIRS)
 
-    message(STATUS "Building LIBREALSENSE2 from source")
-    add_subdirectory(librealsense2)
-    Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense2" librealsense2_INCLUDE_DIRS)
+#    message(STATUS "Building LIBREALSENSE2 from source")
+#    add_subdirectory(librealsense2)
+#    Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense2" librealsense2_INCLUDE_DIRS)
 endif ()
 
 # tinyfiledialogs
