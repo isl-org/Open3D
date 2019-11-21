@@ -28,9 +28,9 @@ Maintain sanity of the project
 
 Most importantly, do not break the build. Before submitting a pull request, make sure the project builds **without any error or warning** under the following toolchains:
 
-* Windows, Visual Studio 2017 or newer, CMake 3.0+
-* OS X, Clang included in the latest Xcode, CMake 3.0+
-* Ubuntu 16.04, GCC 5.x or newer, CMake 3.0+
+* Windows, Visual Studio 2017 or newer, CMake 3.1+
+* OS X, Clang included in the latest Xcode, CMake 3.1+
+* Ubuntu 16.04, GCC 5.x or newer, CMake 3.1+
 
 For C++ code, it is recommended to use C++11 features. However, do not use C++14 or C++17 features since some of them are not properly supported by mainstream compilers.
 
