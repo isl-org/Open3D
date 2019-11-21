@@ -41,6 +41,7 @@ if (ENABLE_GUI)
                       DEPENDS ${GUIDEMO_RSRCDIR}/metal.filamat
                               ${GUIDEMO_RSRCDIR}/nonmetal.filamat
                      )
+    add_dependencies(GuiDemoResources filament_copy)
     add_dependencies(GuiDemo GuiDemoResources)
 endif (ENABLE_GUI)
 EXAMPLE_CPP(Image                     ${CMAKE_PROJECT_NAME})
