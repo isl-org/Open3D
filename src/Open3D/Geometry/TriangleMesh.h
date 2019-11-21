@@ -242,6 +242,13 @@ public:
                        utility::hash_eigen::hash<Eigen::Vector2i>>
     GetEdgeToTrianglesMap() const;
 
+    /// Function that returns a map from edges (vertex0, vertex1) to the
+    /// vertex (vertex2) indices the given edge belongs to.
+    std::unordered_map<Eigen::Vector2i,
+                       std::vector<int>,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    GetEdgeToVerticesMap() const;
+
     /// Function that computes the area of a mesh triangle
     static double ComputeTriangleArea(const Eigen::Vector3d &p0,
                                       const Eigen::Vector3d &p1,
@@ -284,6 +291,11 @@ public:
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
+
+    /// Helper function to get an edge with ordered vertex indices.
+    static inline Eigen::Vector2i GetOrderedEdge(int vidx0, int vidx1) {
+        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+    }
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh
@@ -372,6 +384,21 @@ public:
     /// \param triangle_mask Mask of triangles that should be removed.
     /// Should have same size as \ref triangles_.
     void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
+
+    /// \brief This function deforms the mesh using the method by
+    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
+    ///
+    /// \param constraint_vertex_indices Indices of the triangle vertices that
+    /// should be constrained by the vertex positions in
+    /// constraint_vertex_positions.
+    /// \param constraint_vertex_positions Vertex positions used for the
+    /// constraints.
+    /// \param max_iter maximum number of iterations to minimize energy
+    /// functional. \return The deformed TriangleMesh
+    std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
+            const std::vector<int> &constraint_vertex_indices,
+            const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
+            size_t max_iter) const;
 
     /// \brief Alpha shapes are a generalization of the convex hull. With
     /// decreasing alpha value the shape schrinks and creates cavities.
@@ -548,6 +575,24 @@ protected:
             bool filter_vertex,
             bool filter_normal,
             bool filter_color) const;
+
+    /// \brief Function that computes for each edge in the triangle mesh and
+    /// passed as parameter edges_to_vertices the cot weight.
+    ///
+    /// \param edges_to_vertices map from edge to vector of neighbouring
+    /// vertices.
+    /// \param min_weight minimum weight returned. Weights smaller than this
+    /// get clamped.
+    /// \return cot weight per edge.
+    std::unordered_map<Eigen::Vector2i,
+                       double,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    ComputeEdgeWeightsCot(
+            const std::unordered_map<Eigen::Vector2i,
+                                     std::vector<int>,
+                                     utility::hash_eigen::hash<Eigen::Vector2i>>
+                    &edges_to_vertices,
+            double min_weight = std::numeric_limits<double>::lowest()) const;
 
 public:
     std::vector<Eigen::Vector3i> triangles_;
