@@ -4,11 +4,12 @@ find_package(OpenGL    QUIET)
 find_package(pybind11  QUIET)
 
 if (PKGCONFIG_FOUND)
-    pkg_search_module(EIGEN3    eigen3>=3.2.7   QUIET)
-    pkg_search_module(GLFW      glfw3           QUIET)
-    pkg_search_module(GLEW      glew            QUIET)
-    pkg_search_module(JSONCPP   jsoncpp>=1.7.0  QUIET)
-    pkg_search_module(PNG       libpng>=1.6.0   QUIET)
+    pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
+    pkg_search_module(GLFW            glfw3           QUIET)
+    pkg_search_module(GLEW            glew            QUIET)
+    pkg_search_module(JSONCPP         jsoncpp>=1.7.0  QUIET)
+    pkg_search_module(PNG             libpng>=1.6.0   QUIET)
+    pkg_search_module(JPEG_TURBO      libturbojpeg    QUIET)
 endif (PKGCONFIG_FOUND)
 
 macro(INSTALL_HEADERS source)
@@ -99,10 +100,6 @@ if (BUILD_GLFW)
     list(APPEND GLFW_LIBRARIES    ${OPENGL_gl_LIBRARY})
 endif ()
 
-# JPEG
-message(STATUS "Building libjpeg-turbo from source")
-include(libjpeg-turbo/libjpeg-turbo.cmake)
-
 # Azure Kinect
 include(azure_kinect/azure_kinect.cmake)
 
@@ -144,9 +141,6 @@ if (BUILD_PNG)
 elseif (PNG_FOUND)
     message(STATUS "Using installed LIBPNG ${PNG_VERSION}")
 else ()
-    message(STATUS "Unable to find LIBPNG installed in the system")
-    message(STATUS "Building LIBPNG from source")
-    set(BUILD_PNG ON)
 endif ()
 
 if (BUILD_PNG)
@@ -154,6 +148,24 @@ if (BUILD_PNG)
     add_subdirectory(libpng)
     list(APPEND PNG_LIBRARIES zlib)
 endif ()
+
+# JPEG
+if (BUILD_JPEG)
+    message(STATUS "Building libjpeg-turbo from source (BUILD_JPEG=ON)")
+elseif (JPEG_TURBO_FOUND)
+    message(STATUS "Using installed libjpeg-turbo ${JPEG_TUROB_VERSION}")
+    message(STATUS ${JPEG_TURBO_INCLUDE_DIRS})
+    message(STATUS ${JPEG_TURBO_LIBRARIES})
+else ()
+    message(STATUS "Unable to find libjpeg-turbo installed in the system")
+    message(STATUS "Building libjpeg-turbo from source")
+    set(BUILD_JPEG ON)
+endif ()
+
+if (BUILD_JPEG)
+    message(STATUS "Building libjpeg-turbo from source")
+    include(libjpeg-turbo/libjpeg-turbo.cmake)
+endif()
 
 # PyBind
 # http://pybind11.readthedocs.io/en/stable/compiling.html
@@ -177,10 +189,6 @@ if (BUILD_LIBREALSENSE)
     message(STATUS "Building LIBREALSENSE from source")
     add_subdirectory(librealsense)
     Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense" librealsense_INCLUDE_DIRS)
-
-    message(STATUS "Building LIBREALSENSE2 from source")
-    add_subdirectory(librealsense2)
-    Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense2" librealsense2_INCLUDE_DIRS)
 endif ()
 
 # tinyfiledialogs
@@ -341,6 +349,7 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${GLFW_LIBRARY_DIRS}
     ${JSONCPP_LIBRARY_DIRS}
     ${PNG_LIBRARY_DIRS}
+    ${JPEG_TURBO_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
