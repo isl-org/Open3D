@@ -1,0 +1,24 @@
+# build
+file(GLOB_RECURSE GUI_SOURCE_FILES "*.cpp")
+file(GLOB_RECURSE GUI_HEADER_FILES "*.h")
+
+list(REMOVE_ITEM GUI_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Native.h)
+if (WIN32)
+    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeMacOS.cpp)
+    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
+elseif (APPLE)
+    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
+    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeLinux.cpp)
+    list(APPEND GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeMacOS.mm)
+else ()
+    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeWin32.cpp)
+    list(REMOVE_ITEM GUI_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/NativeMacOS.cpp)
+endif()
+
+# create object library
+add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
+set_property(TARGET GUI PROPERTY CXX_STANDARD 14)
+ShowAndAbortOnWarning(GUI)
+
+# Enforce 3rd party dependencies
+add_dependencies(GUI build_all_3rd_party_libs)

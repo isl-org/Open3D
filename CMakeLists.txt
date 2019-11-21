@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 add_custom_target(build_all_3rd_party_libs
-    COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
+    COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
@@ -87,6 +87,7 @@ option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
+option(ENABLE_GUI                "Builds Filament, requires Clang >= 7"     ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 
@@ -151,13 +152,13 @@ if (WIN32)
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
-    # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    # enable c++14
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_definitions(-DCYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
-    # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    # enable c++14
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_compile_options(-Wno-deprecated-declarations)
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -169,9 +170,9 @@ elseif (APPLE)
     endif()
 elseif (UNIX)
     add_definitions(-DUNIX)
-    # enable c++11
+    # enable c++14, specify libc++ instead of libstdc++ because Clang uses it
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
     add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake

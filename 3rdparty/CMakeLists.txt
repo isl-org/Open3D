@@ -1,7 +1,7 @@
-
 find_package(PkgConfig QUIET)
 find_package(OpenGL    QUIET)
 find_package(pybind11  QUIET)
+find_package(SDL2      QUIET)
 
 if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
@@ -313,6 +313,64 @@ endif()
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
+# Filament library
+if (ENABLE_GUI)
+    set(FILAMENT_CC_PATH ${CMAKE_C_COMPILER})
+    set(FILAMENT_CXX_PATH ${CMAKE_CXX_COMPILER})
+    # Filament can only be compiled with Clang and Visual Studio, not GCC
+    if (UNIX AND NOT APPLE AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        unset(FILAMENT_CC_PATH)
+        unset(FILAMENT_CXX_PATH)
+        # Find if a clang binary exists
+        find_program(FILAMENT_CC_PATH NAMES clang-7 clang)
+        find_program(FILAMENT_CXX_PATH NAMES clang++-7 clang++)
+
+        # If it does, check that it is at least version 7 (required by Filament)
+        if (FILAMENT_CXX_PATH)
+            # Can't use check_c_source_compiles() because it uses the current
+            # compiler. Also, CMake appears to have no way to make a temporary
+            # file, so we have to do it ourselves. Since we are guaranteed to
+            # be on Unix here, using /tmp is safe.
+            set(CHKVER_C /tmp/open3d.checkclang.c)
+            file(WRITE ${CHKVER_C} 
+"#if __clang_major__ < 7
+#error Need clang >= 7
+#endif
+int main(int argc, char *argv[]) { return 0; }"
+                )
+            execute_process(COMMAND ${FILAMENT_CXX_PATH} -c -o /dev/null ${CHKVER_C}
+                            ERROR_VARIABLE CLANG_NOT_USABLE)
+            if (CLANG_NOT_USABLE)
+                unset(FILAMENT_CC_PATH)
+                unset(FILAMENT_CXX_PATH)
+            endif()
+            file(REMOVE ${CHKVER_C})
+        endif()
+
+        # If the version is not >= 7, then disable GUI
+        if (NOT FILAMENT_CXX_PATH)
+            message(STATUS "Filament requires Clang >= 7, it cannot be built with GCC.")
+            message(STATUS "ENABLE_GUI is set to OFF")
+            set(ENABLE_GUI OFF)
+        endif()
+    endif()
+    if (ENABLE_GUI)
+        message(STATUS "Building Filament from source")
+        include(filament/filament.cmake)
+        INSTALL_HEADERS(filament)
+    endif ()
+endif()
+
+if (ENABLE_GUI)
+    if (SDL2_FOUND)
+        message(STATUS "Using installed SDL2 ${SDL2_VERSION}")
+    else ()
+        message(STATUS "Building SDL2 from source")
+        add_subdirectory(SDL2-2.0.10)
+        INSTALL_HEADERS(SDL2-2.0.10)
+    endif ()
+endif()
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
      ${EIGEN3_INCLUDE_DIRS}
@@ -334,6 +392,13 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
 )
+
+if (ENABLE_GUI)
+list(APPEND 3RDPARTY_INCLUDE_DIRS
+     ${filament_INCLUDE_DIRS}
+     ${SDL2_INCLUDE_DIRS}
+)
+endif()
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -367,6 +432,14 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
 )
+
+if (ENABLE_GUI)
+list(APPEND 3RDPARTY_LIBRARIES
+     ${filament_LIBRARIES}
+     ${SDL2_LIBRARIES}
+)
+endif()
+
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
