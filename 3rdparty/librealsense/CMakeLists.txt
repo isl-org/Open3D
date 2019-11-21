@@ -8,12 +8,15 @@ set(REALSENSE_LIBRARY realsense)
 
 file(GLOB librealsense_sources src/*.c src/*.cpp)
 file(GLOB librealsense_headers src/*.h)
+file(GLOB librealsense_system_headers include/realsense/*.h)
 file(GLOB libuvc_sources src/libuvc/*.c)
 file(GLOB libuvc_headers src/libuvc/*.h)
 
 if(WIN32)
     set(realsense_sources ${librealsense_sources})
-    set(realsense_headers ${librealsense_headers})
+    set(realsense_headers ${librealsense_headers} ${librealsense_system_headers})
+#include_directories(${librealsense_system_headers})
+
     add_definitions(-DUNICODE -D_UNICODE)
     add_definitions(-DRS_USE_WMF_BACKEND)
     if(MSVC)
