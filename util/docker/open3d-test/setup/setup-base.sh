@@ -20,7 +20,7 @@ apt-get install -qq -y --no-install-recommends \
     libxi-dev \
     tzdata >/dev/null 2>&1
 
-# the cmake 3+ package has a different name on Ubuntu 14.04
+# the cmake 3.1+ package has a different name on Ubuntu 14.04
 if [ "${UBUNTU_VERSION}" = "14.04" ]; then
     apt-get install -qq -y --no-install-recommends cmake3 >/dev/null 2>&1;
 else

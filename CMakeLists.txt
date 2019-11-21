@@ -1,17 +1,13 @@
 # References:
-# https://cmake.org/cmake/help/v3.0/
+# https://cmake.org/cmake/help/v3.1/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.1)
+set (CMAKE_CXX_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
 )
-
-if (NOT CMAKE_VERSION VERSION_LESS "3.1")
-    cmake_policy(SET CMP0054 NEW)
-    set(OpenGL_GL_PREFERENCE LEGACY)
-endif()
 
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No CMAKE_BUILD_TYPE specified, default to Debug")
@@ -151,13 +147,9 @@ if (WIN32)
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
-    # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     add_definitions(-DCYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
-    # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     add_compile_options(-Wno-deprecated-declarations)
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -169,9 +161,8 @@ elseif (APPLE)
     endif()
 elseif (UNIX)
     add_definitions(-DUNIX)
-    # enable c++11
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
     add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake
