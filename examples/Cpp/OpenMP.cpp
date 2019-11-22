@@ -87,19 +87,21 @@ void TestMatrixMultiplication(int argc, char **argv) {
 
 #ifdef _OPENMP
     omp_set_num_threads(NUM_THREADS);
-#endif
 
-#pragma omp parallel default(none) private(i) \
+    #pragma omp parallel default(none) private(i) \
         shared(nSum, nThreads, nStart, nEnd)
+#endif
     {
 #ifdef _OPENMP
 #pragma omp master
         nThreads = omp_get_num_threads();
-#endif
 
-#pragma omp for
+#pragma omp for  
+#endif
         for (i = nStart; i <= nEnd; ++i) {
+#ifdef _OPENMP
 #pragma omp atomic
+#endif
             nSum += i;
         }
     }
@@ -134,8 +136,8 @@ void TestMatrixMultiplication(int argc, char **argv) {
         open3d::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
+        #pragma omp parallel default(none) shared(nThreads)
 #endif
-#pragma omp parallel default(none) shared(nThreads)
         { simple_task(); }
     }
 
@@ -157,8 +159,8 @@ void TestMatrixMultiplication(int argc, char **argv) {
         open3d::utility::ScopeTimer t(buff.c_str());
 #ifdef _OPENMP
         omp_set_num_threads(i);
+        #pragma omp parallel default(none) shared(nThreads)
 #endif
-#pragma omp parallel default(none) shared(nThreads)
         { svd_task(); }
     }
 

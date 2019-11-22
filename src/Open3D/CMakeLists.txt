@@ -72,6 +72,10 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
 
+# When building with Filament, we building with libc++(from sources)
+# so we need to include some basic libs
+target_link_libraries(${CMAKE_PROJECT_NAME} c c++ c++abi gcc_s gcc_eh m dl)
+
 # input_dirs: a list of absolute paths in the source dir
 # output_dirs: a list of relative paths in the install dir
 # input_base_dir: the base dir of input_dirs

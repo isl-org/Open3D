@@ -26,6 +26,8 @@
 
 #include "Open3D/Open3D.h"
 
+#include <utils/Path.h>
+
 using namespace open3d;
 
 namespace {
@@ -159,6 +161,12 @@ private:
 int main(int argc, const char *argv[]) {
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
+
+    std::string str;
+    {
+        utils::Path path("/some/path.elf");
+        str = path.getPath();
+    }
 
     auto w = std::make_shared<DemoWindow>();
     app.AddWindow(w);

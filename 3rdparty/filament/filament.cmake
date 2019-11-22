@@ -21,6 +21,7 @@ ExternalProject_Add(
     CMAKE_ARGS
         -DCMAKE_C_COMPILER=${FILAMENT_CC_PATH}
         -DCMAKE_CXX_COMPILER=${FILAMENT_CXX_PATH}
+        -DCMAKE_CXX_FLAGS=-stdlib=libc++
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_TMP_INSTALL_DIR}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 )
@@ -48,10 +49,10 @@ add_dependencies(filament filament_copy)
 # For linking with Open3D after installation
 set(filament_LIBRARIES ${filament_LIB_FILES} ${SDL2_LIBRARIES} ${FREETYPE_LIBRARIES})
 
-#target_include_directories(filament SYSTEM INTERFACE
 target_include_directories(filament SYSTEM INTERFACE
     ${3RDPARTY_INSTALL_PREFIX}/include/filament
 )
+
 #target_link_libraries(filament INTERFACE ${FILAMENT_LIBRARIES})
 
 #if (NOT BUILD_SHARED_LIBS)
@@ -73,5 +74,5 @@ elseif (APPLE)
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fobjc-link-runtime")
 else ()
     # These are needed by Clang on Linux
-    list(APPEND filament_LIBRARIES pthread dl c++)
+    list(APPEND filament_LIBRARIES c c++ c++abi pthread dl)
 endif()

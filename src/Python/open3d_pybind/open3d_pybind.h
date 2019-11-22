@@ -26,6 +26,21 @@
 
 #pragma once
 
+// If we compiling using libc++ with gcc
+// we need this hack, because libc++ doesn't have some gcc exceptions
+#ifdef USING_LIBCXX
+namespace __cxxabiv1
+{  
+  class __forced_unwind
+  {
+    virtual ~__forced_unwind() throw();
+
+    // Prevent catch by value.
+    virtual void __pure_dummy() = 0; 
+  };
+}
+#endif
+
 #include <pybind11/detail/internals.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>

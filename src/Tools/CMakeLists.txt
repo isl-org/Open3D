@@ -1,4 +1,5 @@
 add_subdirectory(ManuallyAlignPointCloud)
+add_subdirectory(EncodeShader)
 
 macro(TOOL TOOL_NAME)
     add_executable(${TOOL_NAME} "${TOOL_NAME}.cpp")
@@ -13,7 +14,6 @@ macro(TOOL TOOL_NAME)
 endmacro(TOOL)
 
 TOOL(ConvertPointCloud      ${CMAKE_PROJECT_NAME})
-TOOL(EncodeShader)
 TOOL(ManuallyCropGeometry   ${CMAKE_PROJECT_NAME})
 TOOL(MergeMesh              ${CMAKE_PROJECT_NAME})
 TOOL(ViewGeometry           ${CMAKE_PROJECT_NAME})
