@@ -29,30 +29,15 @@
 #include "Open3D/Utility/Console.h"
 
 #include <Eigen/Dense>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <list>
 
-#include "PoissonRecon/Src/PreProcessor.h"
-
-// The order of the B-Spline used to splat in data for color interpolation
-#define DATA_DEGREE 0
-// The order of the B-Spline used to splat in the weights for density estimation
-#define WEIGHT_DEGREE 2
-// The order of the B-Spline used to splat in the normals for constructing the
-// Laplacian constraints
-#define NORMAL_DEGREE 2
-// The default finite-element degree
-#define DEFAULT_FEM_DEGREE 1
-// The default finite-element boundary type
-#define DEFAULT_FEM_BOUNDARY BOUNDARY_NEUMANN
-// The dimension of the system
-#define DIMENSION 3
-
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 // clang-format off
+#include "PoissonRecon/Src/PreProcessor.h"
 #include "PoissonRecon/Src/MyMiscellany.h"
 #include "PoissonRecon/Src/CmdLineParser.h"
 #include "PoissonRecon/Src/FEMTree.h"
@@ -60,31 +45,44 @@
 #include "PoissonRecon/Src/PointStreamData.h"
 // clang-format on
 
+// The order of the B-Spline used to splat in data for color interpolation
+static const int DATA_DEGREE = 0;
+// The order of the B-Spline used to splat in the weights for density estimation
+static const int WEIGHT_DEGREE = 2;
+// The order of the B-Spline used to splat in the normals for constructing the
+// Laplacian constraints
+static const int NORMAL_DEGREE = 2;
+// The default finite-element degree
+static const int DEFAULT_FEM_DEGREE = 1;
+// The default finite-element boundary type
+static const BoundaryType DEFAULT_FEM_BOUNDARY = BOUNDARY_NEUMANN;
+// The dimension of the system
+static const int DIMENSION = 3;
+
 namespace open3d {
 namespace geometry {
-
 namespace poisson {
 
 class Open3DData {
 public:
     Open3DData() : normal_(0, 0, 0), color_(0, 0, 0) {}
-    Open3DData(Eigen::Vector3d normal, Eigen::Vector3d color)
+    Open3DData(const Eigen::Vector3d& normal, const Eigen::Vector3d& color)
         : normal_(normal), color_(color) {}
 
     Open3DData operator*(double s) const {
         return Open3DData(s * normal_, s * color_);
     }
     Open3DData operator/(double s) const {
-        return Open3DData((1 / s) * normal_, (1 / s) * color_);
+        return Open3DData(normal_ / s, (1 / s) * color_);
     }
     Open3DData& operator+=(const Open3DData& d) {
-        normal_ = normal_ + d.normal_;
-        color_ = color_ + d.color_;
+        normal_ += d.normal_;
+        color_ += d.color_;
         return *this;
     }
     Open3DData& operator*=(double s) {
-        normal_ = normal_ * s;
-        color_ = color_ * s;
+        normal_ *= s;
+        color_ *= s;
         return *this;
     }
 
@@ -139,7 +137,7 @@ class Open3DVertex {
 public:
     typedef _Real Real;
 
-    Open3DVertex() {}
+    Open3DVertex() : Open3DVertex(Point<Real, 3>(0, 0, 0)) {}
     Open3DVertex(Point<Real, 3> point)
         : point(point), normal_(0, 0, 0), color_(0, 0, 0), w_(0) {}
 
@@ -181,23 +179,24 @@ struct FEMTreeProfiler {
     FEMTree<Dim, Real>& tree;
     double t;
 
-    FEMTreeProfiler(FEMTree<Dim, Real>& t) : tree(t) { ; }
+    FEMTreeProfiler(FEMTree<Dim, Real>& t) : tree(t) {}
     void start(void) {
         t = Time(), FEMTree<Dim, Real>::ResetLocalMemoryUsage();
     }
     void dumpOutput(const char* header) const {
         FEMTree<Dim, Real>::MemoryUsage();
-        if (header)
+        if (header) {
             utility::LogDebug("{} {} (s), {} (MB) / {} (MB) / {} (MB)", header,
                               Time() - t,
                               FEMTree<Dim, Real>::LocalMemoryUsage(),
                               FEMTree<Dim, Real>::MaxMemoryUsage(),
                               MemoryInfo::PeakMemoryUsageMB());
-        else
+        } else {
             utility::LogDebug("{} (s), {} (MB) / {} (MB) / {} (MB)", Time() - t,
                               FEMTree<Dim, Real>::LocalMemoryUsage(),
                               FEMTree<Dim, Real>::MaxMemoryUsage(),
                               MemoryInfo::PeakMemoryUsageMB());
+        }
     }
 };
 
@@ -207,16 +206,21 @@ XForm<Real, Dim + 1> GetBoundingBoxXForm(Point<Real, Dim> min,
                                          Real scaleFactor) {
     Point<Real, Dim> center = (max + min) / 2;
     Real scale = max[0] - min[0];
-    for (unsigned int d = 1; d < Dim; d++)
+    for (unsigned int d = 1; d < Dim; d++) {
         scale = std::max<Real>(scale, max[d] - min[d]);
+    }
     scale *= scaleFactor;
-    for (unsigned int i = 0; i < Dim; i++) center[i] -= scale / 2;
+    for (unsigned int i = 0; i < Dim; i++) {
+        center[i] -= scale / 2;
+    }
     XForm<Real, Dim + 1> tXForm = XForm<Real, Dim + 1>::Identity(),
                          sXForm = XForm<Real, Dim + 1>::Identity();
-    for (unsigned int i = 0; i < Dim; i++)
+    for (unsigned int i = 0; i < Dim; i++) {
         sXForm(i, i) = (Real)(1. / scale), tXForm(Dim, i) = -center[i];
+    }
     return sXForm * tXForm;
 }
+
 template <class Real, unsigned int Dim>
 XForm<Real, Dim + 1> GetBoundingBoxXForm(Point<Real, Dim> min,
                                          Point<Real, Dim> max,
@@ -225,20 +229,26 @@ XForm<Real, Dim + 1> GetBoundingBoxXForm(Point<Real, Dim> min,
                                          int& depth) {
     // Get the target resolution (along the largest dimension)
     Real resolution = (max[0] - min[0]) / width;
-    for (unsigned int d = 1; d < Dim; d++)
+    for (unsigned int d = 1; d < Dim; d++) {
         resolution = std::max<Real>(resolution, (max[d] - min[d]) / width);
+    }
     resolution *= scaleFactor;
     depth = 0;
-    while ((1 << depth) < resolution) depth++;
+    while ((1 << depth) < resolution) {
+        depth++;
+    }
 
     Point<Real, Dim> center = (max + min) / 2;
     Real scale = (1 << depth) * width;
 
-    for (unsigned int i = 0; i < Dim; i++) center[i] -= scale / 2;
+    for (unsigned int i = 0; i < Dim; i++) {
+        center[i] -= scale / 2;
+    }
     XForm<Real, Dim + 1> tXForm = XForm<Real, Dim + 1>::Identity(),
                          sXForm = XForm<Real, Dim + 1>::Identity();
-    for (unsigned int i = 0; i < Dim; i++)
+    for (unsigned int i = 0; i < Dim; i++) {
         sXForm(i, i) = (Real)(1. / scale), tXForm(Dim, i) = -center[i];
+    }
     return sXForm * tXForm;
 }
 
@@ -251,6 +261,7 @@ XForm<Real, Dim + 1> GetPointXForm(InputPointStream<Real, Dim>& stream,
     stream.boundingBox(min, max);
     return GetBoundingBoxXForm(min, max, width, scaleFactor, depth);
 }
+
 template <class Real, unsigned int Dim>
 XForm<Real, Dim + 1> GetPointXForm(InputPointStream<Real, Dim>& stream,
                                    Real scaleFactor) {
@@ -268,6 +279,7 @@ struct ConstraintDual {
         return CumulativeDerivativeValues<Real, Dim, 0>(target * weight);
     };
 };
+
 template <unsigned int Dim, typename Real>
 struct SystemDual {
     Real weight;
@@ -283,6 +295,7 @@ struct SystemDual {
         return dValues * weight;
     };
 };
+
 template <unsigned int Dim>
 struct SystemDual<Dim, double> {
     typedef double Real;
@@ -492,10 +505,10 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 
     // int kernelDepth = KernelDepth.set ? KernelDepth.value : Depth.value - 2;
     int kernelDepth = depth - 2;
-    if (kernelDepth > depth) {
-        // TODO warning
-        kernelDepth = depth;
-    }
+    // if (kernelDepth > depth) {
+    //     // TODO warning
+    //     kernelDepth = depth;
+    // }
 
     DenseNodeData<Real, Sigs> solution;
     {
