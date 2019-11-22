@@ -36,7 +36,7 @@
 namespace open3d {
 
 /// SizeVector is a vector of int64_t, typically used in Tensor shape and
-/// strides. A signed int type is chosen to allow negative strides.
+/// strides. A signed int64_t type is chosen to allow negative strides.
 class SizeVector : public std::vector<int64_t> {
 public:
     SizeVector(const std::initializer_list<int64_t>& dim_sizes)

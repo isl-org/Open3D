@@ -40,20 +40,20 @@
 // The kernel launch mechanism is inspired by PyTorch's launch Loops.cuh.
 // See: https://tinyurl.com/y4lak257
 
-static constexpr int threads_per_block = 128;
-static constexpr int items_per_thread = 4;
+static constexpr int64_t threads_per_block = 128;
+static constexpr int64_t items_per_thread = 4;
 
 namespace open3d {
 namespace kernel {
 
 // Applies f for each element
 // Works for unary / binary elementwise operations
-template <int threads_per_block, int items_per_thread, typename func_t>
-__global__ void ElementWiseKernel(int num_elems, func_t f) {
-    int items_per_block = threads_per_block * items_per_thread;
-    int idx = blockIdx.x * items_per_block + threadIdx.x;
+template <int64_t threads_per_block, int64_t items_per_thread, typename func_t>
+__global__ void ElementWiseKernel(int64_t num_elems, func_t f) {
+    int64_t items_per_block = threads_per_block * items_per_thread;
+    int64_t idx = blockIdx.x * items_per_block + threadIdx.x;
 #pragma unroll
-    for (int i = 0; i < items_per_thread; i++) {
+    for (int64_t i = 0; i < items_per_thread; i++) {
         if (idx < num_elems) {
             f(idx);
             idx += threads_per_block;
@@ -68,13 +68,13 @@ public:
                                     Tensor& dst,
                                     func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-        int num_elems = static_cast<int>(dst.GetShape().NumElements());
-        int items_per_block = threads_per_block * items_per_thread;
-        int grid_size = (num_elems + items_per_block - 1) / items_per_block;
+        int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
+        int64_t items_per_block = threads_per_block * items_per_thread;
+        int64_t grid_size = (num_elems + items_per_block - 1) / items_per_block;
 
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
         OffsetBroadcastCalculator src_offset_calculator(
                 src.GetShape(), src.GetStrides(), dst.GetShape(),
@@ -83,10 +83,10 @@ public:
                 dst.GetShape(), dst.GetStrides(), dst.GetShape(),
                 Tensor::DefaultStrides(dst.GetShape()));
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
-            int src_idx = src_offset_calculator.GetOffset(thread_idx);
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t thread_idx) {
+            int64_t src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         };
@@ -105,10 +105,10 @@ public:
             func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-        std::vector<const int*> index_tensor_data_ptrs;
-        for (int i = 0; i < index_tensors.size(); ++i) {
+        std::vector<const int64_t*> index_tensor_data_ptrs;
+        for (int64_t i = 0; i < index_tensors.size(); ++i) {
             auto index_tensor_ptr =
-                    static_cast<const int*>(index_tensors[i].GetDataPtr());
+                    static_cast<const int64_t*>(index_tensors[i].GetDataPtr());
             index_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
@@ -129,23 +129,23 @@ public:
                 dst.GetShape(), dst.GetStrides(), dst.GetShape(),
                 Tensor::DefaultStrides(dst.GetShape()));
 
-        int num_elems = static_cast<int>(dst.GetShape().NumElements());
+        int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t thread_idx) {
             int64_t fancied_idx =
                     broadcast_offset_calculator.GetOffset(thread_idx);
             int64_t src_idx = fancy_offset_calculator.GetOffset(fancied_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         };
 
-        int items_per_block = threads_per_block * items_per_thread;
-        int grid_size = (num_elems + items_per_block - 1) / items_per_block;
+        int64_t items_per_block = threads_per_block * items_per_thread;
+        int64_t grid_size = (num_elems + items_per_block - 1) / items_per_block;
         ElementWiseKernel<threads_per_block, items_per_thread>
                 <<<grid_size, threads_per_block, 0>>>(num_elems, f);
     }
@@ -160,10 +160,10 @@ public:
             func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-        std::vector<const int*> index_tensor_data_ptrs;
-        for (int i = 0; i < index_tensors.size(); ++i) {
+        std::vector<const int64_t*> index_tensor_data_ptrs;
+        for (int64_t i = 0; i < index_tensors.size(); ++i) {
             auto index_tensor_ptr =
-                    static_cast<const int*>(index_tensors[i].GetDataPtr());
+                    static_cast<const int64_t*>(index_tensors[i].GetDataPtr());
             index_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
@@ -181,21 +181,21 @@ public:
                 dst.GetShape(), dst.GetStrides(), mid_strides, is_trivial_dims,
                 index_tensor_data_ptrs);
 
-        int num_elems = static_cast<int>(mid_shape.NumElements());
+        int64_t num_elems = static_cast<int64_t>(mid_shape.NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
-            int src_idx = src_offset_calculator.GetOffset(thread_idx);
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t thread_idx) {
+            int64_t src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         };
 
-        int items_per_block = threads_per_block * items_per_thread;
-        int grid_size = (num_elems + items_per_block - 1) / items_per_block;
+        int64_t items_per_block = threads_per_block * items_per_thread;
+        int64_t grid_size = (num_elems + items_per_block - 1) / items_per_block;
         ElementWiseKernel<threads_per_block, items_per_thread>
                 <<<grid_size, threads_per_block, 0>>>(num_elems, f);
     }

@@ -185,7 +185,7 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     return str;
 }
 
-Tensor Tensor::operator[](int i) const {
+Tensor Tensor::operator[](int64_t i) const {
     if (shape_.size() == 0) {
         utility::LogError("Tensor has shape (), cannot be indexed.");
     }
@@ -210,7 +210,10 @@ Tensor Tensor::operator[](int i) const {
     return Tensor(new_shape, new_stride, new_data_ptr, dtype_, device_, blob_);
 }
 
-Tensor Tensor::Slice(int64_t dim, int start, int stop, int step) const {
+Tensor Tensor::Slice(int64_t dim,
+                     int64_t start,
+                     int64_t stop,
+                     int64_t step) const {
     if (shape_.size() == 0) {
         utility::LogError("Slice cannot be applied to 0-dim Tensor");
     }

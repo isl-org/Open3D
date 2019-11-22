@@ -72,9 +72,10 @@ public:
             const std::vector<Tensor>& index_tensors,
             const SizeVector& indexed_out_shape,
             func_t element_kernel) {
-        std::vector<const int*> index_tensor_data_ptrs;
+        std::vector<const int64_t*> index_tensor_data_ptrs;
         for (auto& index : index_tensors) {
-            auto index_tensor_ptr = static_cast<const int*>(index.GetDataPtr());
+            auto index_tensor_ptr =
+                    static_cast<const int64_t*>(index.GetDataPtr());
             index_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 
@@ -125,9 +126,10 @@ public:
             const std::vector<Tensor>& index_tensors,
             const SizeVector& indexed_out_shape,
             func_t element_kernel) {
-        std::vector<const int*> index_tensor_data_ptrs;
+        std::vector<const int64_t*> index_tensor_data_ptrs;
         for (auto& index : index_tensors) {
-            auto index_tensor_ptr = static_cast<const int*>(index.GetDataPtr());
+            auto index_tensor_ptr =
+                    static_cast<const int64_t*>(index.GetDataPtr());
             index_tensor_data_ptrs.push_back(index_tensor_ptr);
         }
 

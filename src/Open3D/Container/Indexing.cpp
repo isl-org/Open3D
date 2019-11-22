@@ -34,6 +34,15 @@ namespace open3d {
 
 std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
         const Tensor& tensor, const std::vector<Tensor>& index_tensors) {
+    // Index tensors must be using int64_t
+    for (const Tensor& index_tensor : index_tensors) {
+        if (index_tensor.GetDtype() != Dtype::Int64) {
+            utility::LogError(
+                    "Indexing Tensor must have Int64 dtype, but {} was used.",
+                    DtypeUtil::ToString(index_tensor.GetDtype()));
+        }
+    }
+
     // Fill implied 0-d indexing tensors at the tail dimensions.
     Tensor empty_index_tensor =
             Tensor(SizeVector(), Dtype::Int32, tensor.GetDevice());
@@ -93,7 +102,7 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
     }
 
     SizeVector output_shape;
-    std::vector<int> slice_map;
+    std::vector<int64_t> slice_map;
     bool filled_non_trivial_dims = false;
     const auto& tensor_shape = tensor.GetShape();
     for (int64_t dim = 0; dim < tensor_shape.size(); ++dim) {

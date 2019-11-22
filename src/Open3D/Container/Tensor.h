@@ -169,10 +169,13 @@ public:
                          const std::string& indent = "") const;
 
     /// Extract the i-th Tensor along the first axis, creating a new view
-    Tensor operator[](int i) const;
+    Tensor operator[](int64_t i) const;
 
     /// Slice Tensor
-    Tensor Slice(int64_t dim, int start, int stop, int step = 1) const;
+    Tensor Slice(int64_t dim,
+                 int64_t start,
+                 int64_t stop,
+                 int64_t step = 1) const;
 
     /// \brief Advanced indexing getter
     ///
