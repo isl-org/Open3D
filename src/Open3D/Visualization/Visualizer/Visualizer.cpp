@@ -296,7 +296,6 @@ bool Visualizer::PollEvents() {
 bool Visualizer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
-
     if (is_initialized_ == false) {
         return false;
     }
@@ -385,7 +384,6 @@ bool Visualizer::AddGeometry(
 bool Visualizer::RemoveGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
-
     if (is_initialized_ == false) {
         return false;
     }

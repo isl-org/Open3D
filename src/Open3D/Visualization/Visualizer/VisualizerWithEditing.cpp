@@ -49,7 +49,6 @@ namespace visualization {
 bool VisualizerWithEditing::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
-
     if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
         return false;
     }
