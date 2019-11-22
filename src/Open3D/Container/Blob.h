@@ -37,7 +37,7 @@ namespace open3d {
 
 class Blob : public std::enable_shared_from_this<Blob> {
 public:
-    Blob(size_t byte_size, const Device& device)
+    Blob(int64_t byte_size, const Device& device)
         : byte_size_(byte_size), device_(device) {
         v_ = MemoryManager::Malloc(byte_size_, device_);
     }
@@ -54,7 +54,7 @@ public:
     void* v_ = nullptr;
 
     /// Size of Blob in bytes
-    size_t byte_size_ = 0;
+    int64_t byte_size_ = 0;
 
     /// Device context for the blob
     Device device_;

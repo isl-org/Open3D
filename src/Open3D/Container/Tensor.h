@@ -62,7 +62,7 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
-        if (init_vals.size() != shape_.NumElements()) {
+        if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
                     "Tensor initialization values' size {} does not match the "
                     "shape {}",
@@ -169,10 +169,13 @@ public:
                          const std::string& indent = "") const;
 
     /// Extract the i-th Tensor along the first axis, creating a new view
-    Tensor operator[](int i) const;
+    Tensor operator[](int64_t i) const;
 
     /// Slice Tensor
-    Tensor Slice(size_t dim, int start, int stop, int step = 1) const;
+    Tensor Slice(int64_t dim,
+                 int64_t start,
+                 int64_t stop,
+                 int64_t step = 1) const;
 
     /// \brief Advanced indexing getter
     ///
@@ -248,9 +251,9 @@ public:
 
     std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
-    size_t NumElements() const { return shape_.NumElements(); }
+    int64_t NumElements() const { return shape_.NumElements(); }
 
-    size_t NumDims() const { return shape_.size(); }
+    int64_t NumDims() const { return shape_.size(); }
 
     template <typename T>
     void AssertTemplateDtype() const {

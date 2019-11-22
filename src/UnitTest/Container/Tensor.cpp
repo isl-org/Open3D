@@ -117,9 +117,9 @@ TEST_P(TensorPermuteDevices, FillFancy) {
 
     // t[:, [1, 2], [1, 2]]
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device)};
 
     t.IndexSet(indices, v);  // We cannot use T.Fill() here
     EXPECT_EQ(t.ToFlatVector<float>(),
@@ -475,9 +475,9 @@ TEST_P(TensorPermuteDevices, IndexGet) {
 
     // t[:, [1, 2], [1, 2]]
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device)};
 
     Tensor t_1 = t.IndexGet(indices);
     EXPECT_TRUE(t_1.IsContiguous());
@@ -494,9 +494,9 @@ TEST_P(TensorPermuteDevices, IndexGetNegative) {
 
     // t[:, [1, -1], [1, -2]]
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1, -1}), {2}, Dtype::Int32, device),
-            Tensor(std::vector<int>({1, -2}), {2}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, -1}), {2}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, -2}), {2}, Dtype::Int64, device)};
 
     Tensor t_1 = t.IndexGet(indices);
     EXPECT_TRUE(t_1.IsContiguous());
@@ -513,9 +513,9 @@ TEST_P(TensorPermuteDevices, IndexGetBroadcast) {
 
     // t[:, [1, 2], [1, 2]] to shape {2, 2}
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device)};
 
     // Broadcast to shape {3, 2, 2}
     SizeVector dst_shape{3, 2, 2};
@@ -538,9 +538,9 @@ TEST_P(TensorPermuteDevices, IndexGetActualBroadcast) {
 
     // t[:, [1, 2], [1, 2]] to shape {2, 2}
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device),
-            Tensor(std::vector<int>({1, 2}), {2}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1, 2}), {2}, Dtype::Int64, device)};
 
     // Broadcast to shape {3, 2, 2}
     SizeVector dst_shape{3, 2, 2};
@@ -569,9 +569,9 @@ TEST_P(TensorPermuteDevices, DISABLED_IndexGetSeparateBySlice) {
 
     // t[[0, 1], :, [0, 1]]
     std::vector<Tensor> indices = {
-            Tensor(std::vector<int>{0, 1}, {2}, Dtype::Int32, device),
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>{0, 1}, {2}, Dtype::Int32, device)};
+            Tensor(std::vector<int64_t>{0, 1}, {2}, Dtype::Int64, device),
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>{0, 1}, {2}, Dtype::Int64, device)};
 
     Tensor t_fancy = t.IndexGet(indices);
     EXPECT_EQ(t_fancy.GetShape(), SizeVector({2, 3}));
@@ -590,9 +590,9 @@ TEST_P(TensorPermuteDevices, IndexSet) {
 
     // t[:, [1], [0, 2, 1]]
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1}), {1}, Dtype::Int32, device),
-            Tensor(std::vector<int>({0, 2, 1}), {3}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1}), {1}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({0, 2, 1}), {3}, Dtype::Int64, device)};
 
     t.IndexSet(indices, rhs);
     EXPECT_EQ(t.ToFlatVector<float>(),
@@ -611,9 +611,9 @@ TEST_P(TensorPermuteDevices, IndexSetBroadcast) {
 
     // t[:, [1], [0, 2, 1]] -> slice {2, 3, 4} to {2, 3}
     std::vector<Tensor> indices = {
-            Tensor(SizeVector(), Dtype::Int32, device),
-            Tensor(std::vector<int>({1}), {1}, Dtype::Int32, device),
-            Tensor(std::vector<int>({0, 2, 1}), {3}, Dtype::Int32, device)};
+            Tensor(SizeVector(), Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({1}), {1}, Dtype::Int64, device),
+            Tensor(std::vector<int64_t>({0, 2, 1}), {3}, Dtype::Int64, device)};
 
     dst_t.IndexSet(indices, src_t);
     EXPECT_EQ(dst_t.ToFlatVector<float>(),

@@ -33,8 +33,8 @@ namespace open3d {
 
 bool IsCompatibleBroadcastShape(const SizeVector& left_shape,
                                 const SizeVector& right_shape) {
-    size_t left_ndim = left_shape.size();
-    size_t right_ndim = right_shape.size();
+    int64_t left_ndim = left_shape.size();
+    int64_t right_ndim = right_shape.size();
 
     if (left_ndim == 0 || right_ndim == 0) {
         return true;
@@ -44,10 +44,10 @@ bool IsCompatibleBroadcastShape(const SizeVector& left_shape,
     // E.g. LHS: [100, 200, 2, 3, 4]
     //      RHS:           [2, 1, 4] <- only last 3 dims need to be checked
     // Checked from right to left
-    size_t shorter_ndim = std::min(left_ndim, right_ndim);
-    for (size_t ind = 0; ind < shorter_ndim; ++ind) {
-        size_t left_dim = left_shape[left_ndim - 1 - ind];
-        size_t right_dim = right_shape[right_ndim - 1 - ind];
+    int64_t shorter_ndim = std::min(left_ndim, right_ndim);
+    for (int64_t ind = 0; ind < shorter_ndim; ++ind) {
+        int64_t left_dim = left_shape[left_ndim - 1 - ind];
+        int64_t right_dim = right_shape[right_ndim - 1 - ind];
         if (!(left_dim == right_dim || left_dim == 1 || right_dim == 1)) {
             return false;
         }
@@ -62,10 +62,10 @@ SizeVector BroadcastedShape(const SizeVector& left_shape,
                           left_shape, right_shape);
     }
 
-    int left_ndim = left_shape.size();
-    int right_ndim = right_shape.size();
-    int shorter_ndim = std::min(left_ndim, right_ndim);
-    int longer_ndim = std::max(left_ndim, right_ndim);
+    int64_t left_ndim = left_shape.size();
+    int64_t right_ndim = right_shape.size();
+    int64_t shorter_ndim = std::min(left_ndim, right_ndim);
+    int64_t longer_ndim = std::max(left_ndim, right_ndim);
 
     if (left_ndim == 0) {
         return right_shape;
@@ -76,11 +76,11 @@ SizeVector BroadcastedShape(const SizeVector& left_shape,
 
     SizeVector broadcasted_shape(longer_ndim, 0);
     // Checked from right to left
-    for (int ind = 0; ind < longer_ndim; ind++) {
-        int left_ind = left_ndim - longer_ndim + ind;
-        int right_ind = right_ndim - longer_ndim + ind;
-        int left_dim = left_ind >= 0 ? left_shape[left_ind] : 0;
-        int right_dim = right_ind >= 0 ? right_shape[right_ind] : 0;
+    for (int64_t ind = 0; ind < longer_ndim; ind++) {
+        int64_t left_ind = left_ndim - longer_ndim + ind;
+        int64_t right_ind = right_ndim - longer_ndim + ind;
+        int64_t left_dim = left_ind >= 0 ? left_shape[left_ind] : 0;
+        int64_t right_dim = right_ind >= 0 ? right_shape[right_ind] : 0;
         broadcasted_shape[ind] = std::max(left_dim, right_dim);
     }
     return broadcasted_shape;

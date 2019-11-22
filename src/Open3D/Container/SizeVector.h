@@ -35,44 +35,43 @@
 
 namespace open3d {
 
-/// SizeVector is a vector of size_t, typically used in Tensor shape and strides
-/// Similar design from
-/// https://github.com/NervanaSystems/ngraph/blob/master/src/ngraph/shape.hpp
-class SizeVector : public std::vector<size_t> {
+/// SizeVector is a vector of int64_t, typically used in Tensor shape and
+/// strides. A signed int64_t type is chosen to allow negative strides.
+class SizeVector : public std::vector<int64_t> {
 public:
-    SizeVector(const std::initializer_list<size_t>& dim_sizes)
-        : std::vector<size_t>(dim_sizes) {}
+    SizeVector(const std::initializer_list<int64_t>& dim_sizes)
+        : std::vector<int64_t>(dim_sizes) {}
 
-    SizeVector(const std::vector<size_t>& dim_sizes)
-        : std::vector<size_t>(dim_sizes) {}
+    SizeVector(const std::vector<int64_t>& dim_sizes)
+        : std::vector<int64_t>(dim_sizes) {}
 
-    SizeVector(const SizeVector& other) : std::vector<size_t>(other) {}
+    SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
 
-    explicit SizeVector(size_t n, size_t initial_value = 0)
-        : std::vector<size_t>(n, initial_value) {}
+    explicit SizeVector(int64_t n, int64_t initial_value = 0)
+        : std::vector<int64_t>(n, initial_value) {}
 
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
-        : std::vector<size_t>(first, last) {}
+        : std::vector<int64_t>(first, last) {}
 
     SizeVector() {}
 
     SizeVector& operator=(const SizeVector& v) {
-        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        static_cast<std::vector<int64_t>*>(this)->operator=(v);
         return *this;
     }
 
     SizeVector& operator=(SizeVector&& v) {
-        static_cast<std::vector<size_t>*>(this)->operator=(v);
+        static_cast<std::vector<int64_t>*>(this)->operator=(v);
         return *this;
     }
 
-    size_t NumElements() const {
+    int64_t NumElements() const {
         if (this->size() == 0) {
             return 1;
         }
         return std::accumulate(this->begin(), this->end(), 1,
-                               std::multiplies<size_t>());
+                               std::multiplies<int64_t>());
     }
 
     std::string ToString() const { return fmt::format("{}", *this); }

@@ -34,7 +34,7 @@
 namespace open3d {
 namespace kernel {
 
-static constexpr int MAX_DIMS = 10;
+static constexpr int64_t MAX_DIMS = 10;
 
 /// \brief Compute offset of the target Tensor \p tar_tensor, given the offset
 /// of the reference Tensor \p ref_tensor.
@@ -69,8 +69,8 @@ public:
                               tar_shape, ref_shape);
         }
 
-        int tar_ndims = static_cast<int>(tar_strides.size());
-        int ref_ndims = static_cast<int>(ref_strides.size());
+        int64_t tar_ndims = static_cast<int64_t>(tar_strides.size());
+        int64_t ref_ndims = static_cast<int64_t>(ref_strides.size());
         ndims_ = ref_ndims;
 
         // Fill tar_shape_ and tar_strides_.
@@ -86,11 +86,11 @@ public:
         // tar_strides: [ 0,  3,  0,  1] <- if shape is "1", stride set to "0"
         // ref_shape:   [ 2,  2,  2,  3]
         // ref_strides: [12,  6,  3,  1]
-        for (int i = 0; i < ndims_ - tar_ndims; ++i) {
+        for (int64_t i = 0; i < ndims_ - tar_ndims; ++i) {
             tar_shape_[i] = 1;
             tar_strides_[i] = 0;
         }
-        for (int i = 0; i < tar_ndims; ++i) {
+        for (int64_t i = 0; i < tar_ndims; ++i) {
             tar_shape_[ndims_ - tar_ndims + i] = tar_shape[i];
             if (tar_shape[i] == 1) {
                 tar_strides_[ndims_ - tar_ndims + i] = 0;
@@ -100,36 +100,36 @@ public:
         }
 
         // Fill ref_shape_ and ref_strides_
-        for (int i = 0; i < ndims_; ++i) {
+        for (int64_t i = 0; i < ndims_; ++i) {
             ref_shape_[i] = ref_shape[i];
             ref_strides_[i] = ref_strides[i];
         }
     }
 
-    OPEN3D_HOST_DEVICE int GetOffset(int ref_offset) const {
-        int tar_offset = 0;
+    OPEN3D_HOST_DEVICE int64_t GetOffset(int64_t ref_offset) const {
+        int64_t tar_offset = 0;
 #pragma unroll
-        for (int dim = 0; dim < ndims_; dim++) {
+        for (int64_t dim = 0; dim < ndims_; dim++) {
             tar_offset += ref_offset / ref_strides_[dim] * tar_strides_[dim];
             ref_offset = ref_offset % ref_strides_[dim];
         }
         return tar_offset;
     }
 
-    static void PrintArray(const int* array, int size) {
+    static void PrintArray(const int64_t* array, int64_t size) {
         std::string s;
-        for (int i = 0; i < size; ++i) {
+        for (int64_t i = 0; i < size; ++i) {
             s += std::to_string(array[i]) + ", ";
         }
         utility::LogInfo("{}", s);
     }
 
 protected:
-    int ndims_;
-    int tar_shape_[MAX_DIMS];
-    int tar_strides_[MAX_DIMS];
-    int ref_shape_[MAX_DIMS];
-    int ref_strides_[MAX_DIMS];
+    int64_t ndims_;
+    int64_t tar_shape_[MAX_DIMS];
+    int64_t tar_strides_[MAX_DIMS];
+    int64_t ref_shape_[MAX_DIMS];
+    int64_t ref_strides_[MAX_DIMS];
 };
 
 // Broadcast tar_shape to ref_shape.
@@ -142,15 +142,15 @@ public:
             const SizeVector& ref_shape,
             const SizeVector& ref_strides,
             const std::vector<bool>& is_trivial_dims,
-            const std::vector<const int*>& indexing_tensor_data_ptrs) {
+            const std::vector<const int64_t*>& indexing_tensor_data_ptrs) {
         tar_ndims_ = tar_strides.size();
         ref_ndims_ = ref_strides.size();
 
         bool fancy_index_visited = false;
-        int size_map_next_idx = 0;
-        for (int i = 0; i < tar_ndims_; i++) {
-            tar_strides_[i] = static_cast<int>(tar_strides[i]);
-            tar_shape_[i] = static_cast<int>(tar_shape[i]);
+        int64_t size_map_next_idx = 0;
+        for (int64_t i = 0; i < tar_ndims_; i++) {
+            tar_strides_[i] = static_cast<int64_t>(tar_strides[i]);
+            tar_shape_[i] = static_cast<int64_t>(tar_shape[i]);
             is_trivial_dims_[i] = is_trivial_dims[i];
             indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
 
@@ -163,15 +163,15 @@ public:
             }
         }
 
-        for (int i = 0; i < ref_ndims_; i++) {
-            ref_strides_[i] = static_cast<int>(ref_strides[i]);
+        for (int64_t i = 0; i < ref_ndims_; i++) {
+            ref_strides_[i] = static_cast<int64_t>(ref_strides[i]);
         }
     }
 
-    OPEN3D_HOST_DEVICE int GetOffset(size_t ref_offset) const {
-        size_t tar_offset = 0;
+    OPEN3D_HOST_DEVICE int64_t GetOffset(int64_t ref_offset) const {
+        int64_t tar_offset = 0;
 #pragma unroll
-        for (size_t dim = 0; dim < ref_ndims_; dim++) {
+        for (int64_t dim = 0; dim < ref_ndims_; dim++) {
             int64_t dim_idx = ref_offset / ref_strides_[dim];
 
             if (slice_map_[dim] != -1) {
@@ -179,7 +179,7 @@ public:
                 tar_offset += dim_idx * tar_strides_[slice_map_[dim]];
             } else {
                 // This dim is mapped to one or more fancy indexed input dim(s)
-                for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
+                for (int64_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
                     if (!is_trivial_dims_[tar_dim]) {
                         tar_offset +=
                                 indexing_tensor_data_ptrs_[tar_dim][dim_idx] *
@@ -193,17 +193,17 @@ public:
     }
 
 protected:
-    int tar_ndims_;
-    int ref_ndims_;
+    int64_t tar_ndims_;
+    int64_t ref_ndims_;
 
-    int tar_shape_[MAX_DIMS];
-    int tar_strides_[MAX_DIMS];
-    int ref_shape_[MAX_DIMS];
-    int ref_strides_[MAX_DIMS];
+    int64_t tar_shape_[MAX_DIMS];
+    int64_t tar_strides_[MAX_DIMS];
+    int64_t ref_shape_[MAX_DIMS];
+    int64_t ref_strides_[MAX_DIMS];
 
     bool is_trivial_dims_[MAX_DIMS];
-    int slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
-    const int* indexing_tensor_data_ptrs_[MAX_DIMS];
+    int64_t slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
+    const int64_t* indexing_tensor_data_ptrs_[MAX_DIMS];
 };
 
 /// # result.ndim == M
@@ -236,15 +236,15 @@ public:
             const SizeVector& tar_strides,
             const SizeVector& ref_strides,
             const std::vector<bool>& is_trivial_dims,
-            const std::vector<const int*>& indexing_tensor_data_ptrs) {
+            const std::vector<const int64_t*>& indexing_tensor_data_ptrs) {
         tar_ndims_ = tar_strides.size();
         ref_ndims_ = ref_strides.size();
 
         bool fancy_index_visited = false;
-        int size_map_next_idx = 0;
-        for (int i = 0; i < tar_ndims_; i++) {
-            tar_strides_[i] = static_cast<int>(tar_strides[i]);
-            tar_shape_[i] = static_cast<int>(tar_shape[i]);
+        int64_t size_map_next_idx = 0;
+        for (int64_t i = 0; i < tar_ndims_; i++) {
+            tar_strides_[i] = static_cast<int64_t>(tar_strides[i]);
+            tar_shape_[i] = static_cast<int64_t>(tar_shape[i]);
             is_trivial_dims_[i] = is_trivial_dims[i];
             indexing_tensor_data_ptrs_[i] = indexing_tensor_data_ptrs[i];
 
@@ -257,15 +257,15 @@ public:
             }
         }
 
-        for (int i = 0; i < ref_ndims_; i++) {
-            ref_strides_[i] = static_cast<int>(ref_strides[i]);
+        for (int64_t i = 0; i < ref_ndims_; i++) {
+            ref_strides_[i] = static_cast<int64_t>(ref_strides[i]);
         }
     }
 
-    OPEN3D_HOST_DEVICE int GetOffset(size_t ref_offset) const {
-        size_t tar_offset = 0;
+    OPEN3D_HOST_DEVICE int64_t GetOffset(int64_t ref_offset) const {
+        int64_t tar_offset = 0;
 #pragma unroll
-        for (size_t dim = 0; dim < ref_ndims_; dim++) {
+        for (int64_t dim = 0; dim < ref_ndims_; dim++) {
             int64_t dim_idx = ref_offset / ref_strides_[dim];
 
             if (slice_map_[dim] != -1) {
@@ -273,7 +273,7 @@ public:
                 tar_offset += dim_idx * tar_strides_[slice_map_[dim]];
             } else {
                 // This dim is mapped to one or more fancy indexed input dim(s)
-                for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
+                for (int64_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
                     if (!is_trivial_dims_[tar_dim]) {
                         int64_t tar_dim_idx =
                                 indexing_tensor_data_ptrs_[tar_dim][dim_idx];
@@ -293,17 +293,17 @@ public:
     }
 
 protected:
-    int tar_ndims_;
-    int ref_ndims_;
+    int64_t tar_ndims_;
+    int64_t ref_ndims_;
 
-    int tar_shape_[MAX_DIMS];
-    int tar_strides_[MAX_DIMS];
-    int ref_shape_[MAX_DIMS];
-    int ref_strides_[MAX_DIMS];
+    int64_t tar_shape_[MAX_DIMS];
+    int64_t tar_strides_[MAX_DIMS];
+    int64_t ref_shape_[MAX_DIMS];
+    int64_t ref_strides_[MAX_DIMS];
 
     bool is_trivial_dims_[MAX_DIMS];
-    int slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
-    const int* indexing_tensor_data_ptrs_[MAX_DIMS];
+    int64_t slice_map_[MAX_DIMS];  // -1 for if that dim is fancy indexed
+    const int64_t* indexing_tensor_data_ptrs_[MAX_DIMS];
 };
 
 }  // namespace kernel
