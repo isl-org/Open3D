@@ -77,4 +77,23 @@ public:
     std::string ToString() const { return fmt::format("{}", *this); }
 };
 
+/// \brief Wrap around negative \p dim.
+///
+/// This funciton can only be called from host.
+static inline int64_t MaybeWrapDim(int64_t dim, int64_t max_dim) {
+    if (max_dim <= 0) {
+        utility::LogError("max_dim {} must be >= 0");
+    }
+    if (dim < -max_dim || dim > max_dim - 1) {
+        utility::LogError(
+                "Index out-of-range: dim == {}, but it must satisfy {} <= dim "
+                "<= {}",
+                dim, 0, max_dim - 1);
+    }
+    if (dim < 0) {
+        dim += max_dim;
+    }
+    return dim;
+}
+
 }  // namespace open3d
