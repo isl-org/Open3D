@@ -117,7 +117,7 @@ public:
     }
 
     template <typename... Args>
-    void Error(const char *format, const Args &... args) const {
+    void Error[[noreturn]](const char *format, const Args &... args) const {
         VError(format, fmt::make_format_args(args...));
     }
 
@@ -137,13 +137,11 @@ public:
     }
 
     template <typename... Args>
-    void Errorf(const char *format, const Args &... args) const {
-        if (verbosity_level_ >= VerbosityLevel::Error) {
-            std::string err_msg = fmt::sprintf(format, args...);
-            err_msg = fmt::format("[Open3D Error] {}", err_msg);
-            err_msg = ColorString(err_msg, TextColor::Red, 1);
-            throw std::runtime_error(err_msg);
-        }
+    void Errorf[[noreturn]](const char *format, const Args &... args) const {
+        std::string err_msg = fmt::sprintf(format, args...);
+        err_msg = fmt::format("[Open3D Error] {}", err_msg);
+        err_msg = ColorString(err_msg, TextColor::Red, 1);
+        throw std::runtime_error(err_msg);
     }
 
     template <typename... Args>
@@ -220,7 +218,7 @@ inline void LogDebug(const char *format, const Args &... args) {
 }
 
 template <typename... Args>
-inline void LogErrorf(const char *format, const Args &... args) {
+inline void LogErrorf[[noreturn]](const char *format, const Args &... args) {
     Logger::i().Errorf(format, args...);
 }
 

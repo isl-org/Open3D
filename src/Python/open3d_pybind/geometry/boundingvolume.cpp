@@ -77,7 +77,9 @@ void pybind_boundingvolume(py::module &m) {
             axis_aligned_bounding_box(m, "AxisAlignedBoundingBox",
                                       "Class that defines an axis_aligned box "
                                       "that can be computed from 3D "
-                                      "geometries.");
+                                      "geometries, The axis aligned bounding "
+                                      "box uses the cooridnate axes for "
+                                      "bounding box generation.");
     py::detail::bind_default_constructor<geometry::AxisAlignedBoundingBox>(
             axis_aligned_bounding_box);
     py::detail::bind_copy_functions<geometry::AxisAlignedBoundingBox>(
@@ -97,7 +99,7 @@ void pybind_boundingvolume(py::module &m) {
                  &geometry::AxisAlignedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
             .def("get_extent", &geometry::AxisAlignedBoundingBox::GetExtent,
-                 "get the extent/length of the bounding box in x, y, and z "
+                 "Get the extent/length of the bounding box in x, y, and z "
                  "dimension.")
             .def_readwrite("min_bound",
                            &geometry::AxisAlignedBoundingBox::min_bound_,

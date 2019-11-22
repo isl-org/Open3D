@@ -464,6 +464,7 @@ bool WritePointCloudToPLY(const std::string &filename,
             static_cast<size_t>(pointcloud.points_.size()),
             "Writing PLY: ", print_progress);
 
+    bool printed_color_warning = false;
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const Eigen::Vector3d &point = pointcloud.points_[i];
         ply_write(ply_file, point(0));
@@ -477,6 +478,13 @@ bool WritePointCloudToPLY(const std::string &filename,
         }
         if (pointcloud.HasColors()) {
             const Eigen::Vector3d &color = pointcloud.colors_[i];
+            if (!printed_color_warning &&
+                (color(0) < 0 || color(0) > 1 || color(1) < 0 || color(1) > 1 ||
+                 color(2) < 0 || color(2) > 1)) {
+                utility::LogWarning(
+                        "Write Ply clamped color value to valid range");
+                printed_color_warning = true;
+            }
             ply_write(ply_file,
                       std::min(255.0, std::max(0.0, color(0) * 255.0)));
             ply_write(ply_file,
@@ -622,6 +630,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
     utility::ConsoleProgressBar progress_bar(
             static_cast<size_t>(mesh.vertices_.size() + mesh.triangles_.size()),
             "Writing PLY: ", print_progress);
+    bool printed_color_warning = false;
     for (size_t i = 0; i < mesh.vertices_.size(); i++) {
         const auto &vertex = mesh.vertices_[i];
         ply_write(ply_file, vertex(0));
@@ -635,9 +644,19 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
         }
         if (write_vertex_colors) {
             const auto &color = mesh.vertex_colors_[i];
-            ply_write(ply_file, color(0) * 255.0);
-            ply_write(ply_file, color(1) * 255.0);
-            ply_write(ply_file, color(2) * 255.0);
+            if (!printed_color_warning &&
+                (color(0) < 0 || color(0) > 1 || color(1) < 0 || color(1) > 1 ||
+                 color(2) < 0 || color(2) > 1)) {
+                utility::LogWarning(
+                        "Write Ply clamped color value to valid range");
+                printed_color_warning = true;
+            }
+            ply_write(ply_file,
+                      std::min(255.0, std::max(0.0, color(0) * 255.0)));
+            ply_write(ply_file,
+                      std::min(255.0, std::max(0.0, color(1) * 255.0)));
+            ply_write(ply_file,
+                      std::min(255.0, std::max(0.0, color(2) * 255.0)));
         }
         ++progress_bar;
     }
@@ -776,12 +795,20 @@ bool WriteLineSetToPLY(const std::string &filename,
         ply_write(ply_file, point(2));
         ++progress_bar;
     }
+    bool printed_color_warning = false;
     for (size_t i = 0; i < lineset.lines_.size(); i++) {
         const Eigen::Vector2i &line = lineset.lines_[i];
         ply_write(ply_file, line(0));
         ply_write(ply_file, line(1));
         if (lineset.HasColors()) {
             const Eigen::Vector3d &color = lineset.colors_[i];
+            if (!printed_color_warning &&
+                (color(0) < 0 || color(0) > 1 || color(1) < 0 || color(1) > 1 ||
+                 color(2) < 0 || color(2) > 1)) {
+                utility::LogWarning(
+                        "Write Ply clamped color value to valid range");
+                printed_color_warning = true;
+            }
             ply_write(ply_file,
                       std::min(255.0, std::max(0.0, color(0) * 255.0)));
             ply_write(ply_file,
