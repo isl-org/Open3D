@@ -168,10 +168,10 @@ public:
         }
     }
 
-    OPEN3D_HOST_DEVICE int GetOffset(size_t ref_offset) const {
-        size_t tar_offset = 0;
+    OPEN3D_HOST_DEVICE int GetOffset(int64_t ref_offset) const {
+        int64_t tar_offset = 0;
 #pragma unroll
-        for (size_t dim = 0; dim < ref_ndims_; dim++) {
+        for (int64_t dim = 0; dim < ref_ndims_; dim++) {
             int64_t dim_idx = ref_offset / ref_strides_[dim];
 
             if (slice_map_[dim] != -1) {
@@ -179,7 +179,7 @@ public:
                 tar_offset += dim_idx * tar_strides_[slice_map_[dim]];
             } else {
                 // This dim is mapped to one or more fancy indexed input dim(s)
-                for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
+                for (int64_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
                     if (!is_trivial_dims_[tar_dim]) {
                         tar_offset +=
                                 indexing_tensor_data_ptrs_[tar_dim][dim_idx] *
@@ -262,10 +262,10 @@ public:
         }
     }
 
-    OPEN3D_HOST_DEVICE int GetOffset(size_t ref_offset) const {
-        size_t tar_offset = 0;
+    OPEN3D_HOST_DEVICE int GetOffset(int64_t ref_offset) const {
+        int64_t tar_offset = 0;
 #pragma unroll
-        for (size_t dim = 0; dim < ref_ndims_; dim++) {
+        for (int64_t dim = 0; dim < ref_ndims_; dim++) {
             int64_t dim_idx = ref_offset / ref_strides_[dim];
 
             if (slice_map_[dim] != -1) {
@@ -273,7 +273,7 @@ public:
                 tar_offset += dim_idx * tar_strides_[slice_map_[dim]];
             } else {
                 // This dim is mapped to one or more fancy indexed input dim(s)
-                for (size_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
+                for (int64_t tar_dim = 0; tar_dim < tar_ndims_; tar_dim++) {
                     if (!is_trivial_dims_[tar_dim]) {
                         int64_t tar_dim_idx =
                                 indexing_tensor_data_ptrs_[tar_dim][dim_idx];

@@ -135,9 +135,9 @@ public:
         int element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
         auto f = [=] OPEN3D_HOST_DEVICE(int thread_idx) {
-            size_t fancied_idx =
+            int64_t fancied_idx =
                     broadcast_offset_calculator.GetOffset(thread_idx);
-            size_t src_idx = fancy_offset_calculator.GetOffset(fancied_idx);
+            int64_t src_idx = fancy_offset_calculator.GetOffset(fancied_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
             int dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;

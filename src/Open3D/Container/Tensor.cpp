@@ -106,7 +106,7 @@ void Tensor::CopyFrom(const Tensor& other) { kernel::Copy(other, *this); }
 Tensor Tensor::Clone(const Device& device) const {
     auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);
     MemoryManager::MemcpyBlob(new_blob, blob_);
-    size_t data_offset =
+    int64_t data_offset =
             static_cast<char*>(data_ptr_) - static_cast<char*>(blob_->v_);
     void* new_data_ptr = static_cast<char*>(new_blob->v_) + data_offset;
     return Tensor(shape_, strides_, new_data_ptr, dtype_, device, new_blob);
@@ -124,11 +124,11 @@ Tensor Tensor::Contiguous() const {
 
 SizeVector Tensor::DefaultStrides(const SizeVector& shape) {
     SizeVector strides(shape.size());
-    size_t stride_size = 1;
-    for (size_t i = shape.size(); i > 0; --i) {
+    int64_t stride_size = 1;
+    for (int64_t i = shape.size(); i > 0; --i) {
         strides[i - 1] = stride_size;
         // Handles 0-sized dimensions
-        stride_size *= std::max<size_t>(shape[i - 1], 1);
+        stride_size *= std::max<int64_t>(shape[i - 1], 1);
     }
     return strides;
 }
@@ -148,8 +148,8 @@ std::string Tensor::ToString(bool with_suffix,
             const char* ptr = static_cast<const char*>(data_ptr_);
             rc << "[";
             std::string delim = "";
-            size_t element_byte_size = DtypeUtil::ByteSize(dtype_);
-            for (size_t i = 0; i < shape_.NumElements(); ++i) {
+            int64_t element_byte_size = DtypeUtil::ByteSize(dtype_);
+            for (int64_t i = 0; i < shape_.NumElements(); ++i) {
                 rc << delim << ScalarPtrToString(ptr);
                 delim = " ";
                 ptr += element_byte_size;
@@ -159,7 +159,7 @@ std::string Tensor::ToString(bool with_suffix,
             rc << "[";
             std::string delim = "";
             std::string child_indent = "";
-            for (size_t i = 0; i < shape_[0]; ++i) {
+            for (int64_t i = 0; i < shape_[0]; ++i) {
                 rc << delim << child_indent
                    << this->operator[](i).ToString(false, indent + " ");
                 delim = ",\n";
@@ -210,7 +210,7 @@ Tensor Tensor::operator[](int i) const {
     return Tensor(new_shape, new_stride, new_data_ptr, dtype_, device_, blob_);
 }
 
-Tensor Tensor::Slice(size_t dim, int start, int stop, int step) const {
+Tensor Tensor::Slice(int64_t dim, int start, int stop, int step) const {
     if (shape_.size() == 0) {
         utility::LogError("Slice cannot be applied to 0-dim Tensor");
     }

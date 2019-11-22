@@ -55,8 +55,8 @@ enum class Dtype {
 
 class DtypeUtil {
 public:
-    static size_t ByteSize(const Dtype &dtype) {
-        size_t byte_size = 0;
+    static int64_t ByteSize(const Dtype &dtype) {
+        int64_t byte_size = 0;
         switch (dtype) {
             case Dtype::Float32:
                 byte_size = 4;

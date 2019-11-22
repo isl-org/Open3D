@@ -38,15 +38,15 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
     Tensor empty_index_tensor =
             Tensor(SizeVector(), Dtype::Int32, tensor.GetDevice());
     std::vector<Tensor> full_index_tensors = index_tensors;
-    for (size_t i = 0; i < tensor.NumDims() - index_tensors.size(); ++i) {
+    for (int64_t i = 0; i < tensor.NumDims() - index_tensors.size(); ++i) {
         full_index_tensors.push_back(empty_index_tensor);
     }
 
     // Find all trivial and non-trivial index_tensors
-    std::vector<size_t> trivial_dims;
-    std::vector<size_t> non_trivial_dims;
+    std::vector<int64_t> trivial_dims;
+    std::vector<int64_t> non_trivial_dims;
     std::vector<SizeVector> non_trivial_shapes;
-    for (size_t dim = 0; dim < full_index_tensors.size(); ++dim) {
+    for (int64_t dim = 0; dim < full_index_tensors.size(); ++dim) {
         if (full_index_tensors[dim].NumDims() == 0) {
             trivial_dims.push_back(dim);
         } else {
@@ -75,14 +75,14 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
     }
 
     // Now, broadcast non-trivial index tensors
-    for (size_t i = 0; i < full_index_tensors.size(); ++i) {
+    for (int64_t i = 0; i < full_index_tensors.size(); ++i) {
         if (full_index_tensors[i].NumDims() != 0) {
             full_index_tensors[i].Assign(full_index_tensors[i].Broadcast(
                     broadcasted_non_trivial_shape));
         }
     }
 
-    for (size_t i = 1; i < non_trivial_dims.size(); ++i) {
+    for (int64_t i = 1; i < non_trivial_dims.size(); ++i) {
         if (non_trivial_dims[i - 1] + 1 != non_trivial_dims[i]) {
             utility::LogError(
                     "Only supporting the case where advanced indices are all"
@@ -96,7 +96,7 @@ std::tuple<std::vector<Tensor>, SizeVector> PreprocessIndexTensors(
     std::vector<int> slice_map;
     bool filled_non_trivial_dims = false;
     const auto& tensor_shape = tensor.GetShape();
-    for (size_t dim = 0; dim < tensor_shape.size(); ++dim) {
+    for (int64_t dim = 0; dim < tensor_shape.size(); ++dim) {
         if (full_index_tensors[dim].NumDims() == 0) {
             output_shape.emplace_back(tensor_shape[dim]);
             slice_map.emplace_back(dim);

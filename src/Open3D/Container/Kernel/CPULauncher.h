@@ -40,7 +40,7 @@ public:
                                     func_t element_kernel) {
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
         // src - (broadcast) -> mid -> dst
         SizeVector mid_shape = dst.GetShape();
@@ -56,9 +56,9 @@ public:
         for (int64_t thread_idx = 0;
              thread_idx < static_cast<int64_t>(dst.NumElements());
              thread_idx++) {
-            size_t src_idx = src_offset_calculator.GetOffset(thread_idx);
+            int64_t src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            size_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         }
@@ -101,17 +101,17 @@ public:
         int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
         for (int64_t thread_idx = 0; thread_idx < num_elems; thread_idx++) {
             // [thread_idx] --un-broadcast--> [mid_idx] --un-fancy--> [src_idx]
-            size_t mid_idx = broadcast_offset_calculator.GetOffset(thread_idx);
-            size_t src_idx = fancy_offset_calculator.GetOffset(mid_idx);
+            int64_t mid_idx = broadcast_offset_calculator.GetOffset(thread_idx);
+            int64_t src_idx = fancy_offset_calculator.GetOffset(mid_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            size_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         }
@@ -148,15 +148,15 @@ public:
         int64_t num_elems = static_cast<int64_t>(mid_shape.NumElements());
         const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
         char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        size_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
+        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
         for (int64_t thread_idx = 0; thread_idx < num_elems; thread_idx++) {
-            size_t src_idx = src_offset_calculator.GetOffset(thread_idx);
+            int64_t src_idx = src_offset_calculator.GetOffset(thread_idx);
             const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            size_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
+            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
             void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
             element_kernel(src_ptr, dst_ptr);
         }

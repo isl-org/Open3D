@@ -172,7 +172,7 @@ public:
     Tensor operator[](int i) const;
 
     /// Slice Tensor
-    Tensor Slice(size_t dim, int start, int stop, int step = 1) const;
+    Tensor Slice(int64_t dim, int start, int stop, int step = 1) const;
 
     /// \brief Advanced indexing getter
     ///
@@ -248,9 +248,9 @@ public:
 
     std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
-    size_t NumElements() const { return shape_.NumElements(); }
+    int64_t NumElements() const { return shape_.NumElements(); }
 
-    size_t NumDims() const { return shape_.size(); }
+    int64_t NumDims() const { return shape_.size(); }
 
     template <typename T>
     void AssertTemplateDtype() const {
