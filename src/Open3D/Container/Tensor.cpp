@@ -311,12 +311,12 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
         utility::LogError("Permute dims must be a permuntation from 0 to {}",
                           dims.size() - 1);
     }
+
     // Map to new shape and strides
     const SizeVector& old_shape = GetShape();
     const SizeVector& old_stides = GetStrides();
     SizeVector new_shape(n_dims);
     SizeVector new_strides(n_dims);
-
     for (int64_t i = 0; i < n_dims; ++i) {
         int64_t old_dim = WrapDim(dims[i], n_dims);
         new_shape[i] = old_shape[old_dim];
