@@ -6,6 +6,7 @@
 
 import open3d as o3d
 
+
 def custom_key_action_without_kb_repeat_delay(pcd):
     rotating = False
 
@@ -36,5 +37,7 @@ def custom_key_action_without_kb_repeat_delay(pcd):
 if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud("../../TestData/fragment.ply")
 
-    print("7. Customized visualization with smooth key action (without keyboard repeat delay)")
+    print(
+        "7. Customized visualization with smooth key action (without keyboard repeat delay)"
+    )
     custom_key_action_without_kb_repeat_delay(pcd)
