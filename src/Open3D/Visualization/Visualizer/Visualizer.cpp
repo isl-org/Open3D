@@ -399,6 +399,16 @@ bool Visualizer::RemoveGeometry(
     return UpdateGeometry();
 }
 
+bool Visualizer::ClearGeometries() {
+    if (is_initialized_ == false) {
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+    geometry_renderer_ptrs_.clear();
+    geometry_ptrs_.clear();
+    return UpdateGeometry();
+}
+
 bool Visualizer::UpdateGeometry() {
     glfwMakeContextCurrent(window_);
     bool success = true;
