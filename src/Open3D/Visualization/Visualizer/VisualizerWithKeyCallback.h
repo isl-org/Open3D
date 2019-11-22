@@ -48,8 +48,8 @@ public:
     void PrintVisualizerHelp() override;
     void RegisterKeyCallback(int key,
                              std::function<bool(Visualizer *)> callback);
-    void RegisterKeyActionCallback(int key,
-                                   std::function<bool(Visualizer *, int, int)> callback);
+    void RegisterKeyActionCallback(
+            int key, std::function<bool(Visualizer *, int, int)> callback);
 
 protected:
     void KeyPressCallback(GLFWwindow *window,
@@ -61,7 +61,8 @@ protected:
 
 protected:
     std::map<int, std::function<bool(Visualizer *)>> key_to_callback_;
-    std::map<int, std::function<bool(Visualizer *, int, int)>> key_action_to_callback_;
+    std::map<int, std::function<bool(Visualizer *, int, int)>>
+            key_action_to_callback_;
 };
 
 }  // namespace visualization

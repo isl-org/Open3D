@@ -145,7 +145,8 @@ void pybind_visualizer(py::module &m) {
                  "key"_a, "callback_func"_a)
 
             .def("register_key_action_callback",
-                 &visualization::VisualizerWithKeyCallback::RegisterKeyActionCallback,
+                 &visualization::VisualizerWithKeyCallback::
+                         RegisterKeyActionCallback,
                  "Function to register a callback function for a key action "
                  "event",
                  "key"_a, "callback_func"_a);
