@@ -51,7 +51,9 @@ static const std::unordered_map<std::string, std::string>
                 {"width", "Width of the window."},
                 {"window_name", "Window title name."},
                 {"convert_to_world_coordinate",
-                 "Set to ``True`` to convert to world coordinates"}};
+                 "Set to ``True`` to convert to world coordinates"},
+                {"reset_bounding_box",
+                 "Set to ``False`` to keep current viewpoint"}};
 
 void pybind_visualizer(py::module &m) {
     py::class_<visualization::Visualizer, PyVisualizer<>,
