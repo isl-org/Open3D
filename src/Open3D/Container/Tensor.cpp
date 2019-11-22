@@ -304,7 +304,7 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
     // Check dims are permuntation of [0, 1, 2, ..., n-1]
     std::vector<bool> seen_dims(n_dims, false);
     for (const int64_t& dim : dims) {
-        seen_dims[dim] = true;
+        seen_dims[WrapDim(dim, n_dims)] = true;
     }
     if (!std::all_of(seen_dims.begin(), seen_dims.end(),
                      [](bool seen) { return seen; })) {
