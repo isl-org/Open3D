@@ -79,8 +79,8 @@ public:
 
 /// \brief Wrap around negative \p dim.
 ///
-/// This funciton can only be called from host.
-static inline int64_t MaybeWrapDim(int64_t dim, int64_t max_dim) {
+/// E.g. If max_dim == 5, dim -1 will be converted to 4.
+static inline int64_t WrapDim(int64_t dim, int64_t max_dim) {
     if (max_dim <= 0) {
         utility::LogError("max_dim {} must be >= 0");
     }

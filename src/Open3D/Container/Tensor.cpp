@@ -318,7 +318,7 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
     SizeVector new_strides(n_dims);
 
     for (int64_t i = 0; i < n_dims; ++i) {
-        int64_t old_dim = MaybeWrapDim(dims[i], n_dims);
+        int64_t old_dim = WrapDim(dims[i], n_dims);
         new_shape[i] = old_shape[old_dim];
         new_strides[i] = old_stides[old_dim];
     }
@@ -335,8 +335,8 @@ Tensor Tensor::AsStrided(const SizeVector& new_shape,
 
 Tensor Tensor::Transpose(int64_t dim0, int64_t dim1) const {
     int64_t n_dims = NumDims();
-    dim0 = MaybeWrapDim(dim0, n_dims);
-    dim1 = MaybeWrapDim(dim1, n_dims);
+    dim0 = WrapDim(dim0, n_dims);
+    dim1 = WrapDim(dim1, n_dims);
     SizeVector dims(n_dims);
     std::iota(dims.begin(), dims.end(), 0);
     dims[dim0] = dim1;
