@@ -9,9 +9,6 @@ The Open3D project was started by `Qianyi Zhou <http://qianyi.info>`_ and `Jaesi
 * Know basic development rules such as coding style, issues, and pull requests;
 * Be willing to follow the guidelines in this page.
 
-.. Tip:: Check ``./util/scripts`` for scripts to install dependencies, generate the code, build documentation or install open3d from source.
-
-
 Issues and pull requests
 ===========================
 
