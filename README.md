@@ -28,9 +28,9 @@ Open3D is an open-source library that supports rapid development of software tha
 
 ## Supported OSes and compilers
 
-* Ubuntu 16.04 or later: GCC 4.9 or later [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/Open3D)
-* macOS: XCode 8.0 or later [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/Open3D)
-* Windows: Visual Studio 2015 update 3 or later [![Build status](https://ci.appveyor.com/api/projects/status/3hasjo041lv6srsi/branch/master?svg=true)](https://ci.appveyor.com/project/yxlao/open3d/branch/master)
+* Ubuntu 16.04 or newer: GCC 5.x or newer [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/Open3D)
+* macOS: XCode 8.0 or newer [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/Open3D)
+* Windows: Visual Studio 2017 or newer [![Build status](https://ci.appveyor.com/api/projects/status/3hasjo041lv6srsi/branch/master?svg=true)](https://ci.appveyor.com/project/yxlao/open3d/branch/master)
 
 ## Citation
 Please cite [our work](https://arxiv.org/abs/1801.09847) if you use Open3D.
@@ -43,8 +43,3 @@ Please cite [our work](https://arxiv.org/abs/1801.09847) if you use Open3D.
 	year      = {2018},
 }
 ```
-
-## Ecosystem
-
-* [Open3D-PointNet:](https://github.com/intel-isl/Open3D-PointNet) A fork of PyTorch PointNet for point cloud classification and semantic segmentation compatible with Open3D.
-* [Open3D-PointNet++:](https://github.com/intel-isl/Open3D-PointNet2-Semantic3D) A re-implementation of PointNet++ using Open3D to enable real-time semantic segmentation of LIDAR point clouds.

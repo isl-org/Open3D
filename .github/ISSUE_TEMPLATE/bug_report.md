@@ -30,7 +30,7 @@ If applicable, add screenshots to help explain your problem.
  - Python version:
  - Open3D version:
  - Is this remote workstation?: yes or no
- - How did you install Open3D?: pip or conda or build_from_source (provide build method, such as gcc, xcode, visual studio, and so on)
+ - How did you install Open3D?: pip or conda or build_from_source (provide build method, such as GCC, Xcode, Visual Studio, and so on)
 
 **Additional context**
 Add any other context about the problem here.
