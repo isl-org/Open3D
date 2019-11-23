@@ -21,6 +21,8 @@ Download source code from the `repository <https://github.com/intel-isl/Open3D>`
 
 .. _compilation_ubuntu:
 
+.. tip:: After setting up your build environment check out ``./utils/scripts`` which contains bash scripts to build, install & verify the code. These pre compiled scripts will help in subsequent builds when contributing to Open3D. 
+
 Ubuntu
 ------
 
