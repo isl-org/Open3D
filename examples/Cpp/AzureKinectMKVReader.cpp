@@ -36,7 +36,7 @@ using namespace open3d;
 void WriteJsonToFile(const std::string &filename, const Json::Value &value) {
     std::ofstream out(filename);
     if (!out.is_open()) {
-        utility::LogFatal("Cannot write to {}", filename);
+        utility::LogError("Cannot write to {}", filename);
     }
 
     Json::StreamWriterBuilder builder;

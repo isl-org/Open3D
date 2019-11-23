@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
-
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
@@ -43,9 +42,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-    int num_of_pts = 0, num_of_fields = 0;
+    size_t num_of_pts = 0;
+    int num_of_fields = 0;
     if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-        sscanf(line_buffer, "%d", &num_of_pts);
+        sscanf(line_buffer, "%zu", &num_of_pts);
     }
     if (num_of_pts <= 0) {
         utility::LogWarning("Read PTS failed: unable to read header.");
@@ -54,7 +54,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
     }
     utility::ConsoleProgressBar progress_bar(num_of_pts,
                                              "Reading PTS: ", print_progress);
-    int idx = 0;
+    size_t idx = 0;
     while (idx < num_of_pts &&
            fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         if (num_of_fields == 0) {
@@ -103,7 +103,7 @@ bool WritePointCloudToPTS(const std::string &filename,
         utility::LogWarning("Write PTS failed: unable to open file.");
         return false;
     }
-    fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
+    fprintf(file, "%zu\r\n", (size_t)pointcloud.points_.size());
     utility::ConsoleProgressBar progress_bar(
             static_cast<size_t>(pointcloud.points_.size()),
             "Writing PTS: ", print_progress);
