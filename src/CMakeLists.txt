@@ -1,7 +1,7 @@
 function(ShowAndAbortOnWarning trgt)
   if(MSVC)
     # target_compile_options(${trgt} PRIVATE /W4 /WX)
-    target_compile_options(${trgt} PRIVATE /W3 /WX)
+    target_compile_options(${trgt} PRIVATE /W3)
   else()
     # target_compile_options(${trgt} PRIVATE -Wall -Wextra -Werror)
     target_compile_options(${trgt} PRIVATE -Wall -Werror)
