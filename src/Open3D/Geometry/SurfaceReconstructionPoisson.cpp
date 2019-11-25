@@ -505,7 +505,9 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 
     int kernelDepth = depth - 2;
     if (kernelDepth < 0) {
-        utility::LogError("[CreateFromPointCloudPoisson] depth (={}) has to be >= 2", depth);
+        utility::LogError(
+                "[CreateFromPointCloudPoisson] depth (={}) has to be >= 2",
+                depth);
     }
 
     DenseNodeData<Real, Sigs> solution;
@@ -731,7 +733,8 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           bool linear_fit) {
     static const BoundaryType BType = poisson::DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
-            poisson::DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
+            poisson::DIMENSION,
+            FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
             FEMSigs;
 
     if (!pcd.HasNormals()) {

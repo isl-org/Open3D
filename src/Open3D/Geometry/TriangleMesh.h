@@ -385,6 +385,22 @@ public:
     /// Should have same size as \ref triangles_.
     void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
 
+    /// \brief This function removes the vertices with index in
+    /// \p vertex_indices. Note that also all triangles associated with the
+    /// vertices are removeds.
+    ///
+    /// \param triangle_indices Indices of the triangles that should be
+    /// removed.
+    void RemoveVerticesByIndex(const std::vector<size_t> &vertex_indices);
+
+    /// \brief This function removes the vertices that are masked in
+    /// \p vertex_mask. Note that also all triangles associated with the
+    /// vertices are removed..
+    ///
+    /// \param vertex_mask Mask of vertices that should be removed.
+    /// Should have same size as \ref vertices_.
+    void RemoveVerticesByMask(const std::vector<bool> &vertex_mask);
+
     /// \brief This function deforms the mesh using the method by
     /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
     ///

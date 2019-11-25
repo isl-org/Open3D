@@ -293,6 +293,18 @@ void pybind_trianglemesh(py::module &m) {
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
+            .def("remove_vertices_by_index",
+                 &geometry::TriangleMesh::RemoveVerticesByIndex,
+                 "This function removes the vertices with index in "
+                 "vertex_indices. Note that also all triangles associated with "
+                 "the vertices are removed.",
+                 "vertex_indices"_a)
+            .def("remove_vertices_by_mask",
+                 &geometry::TriangleMesh::RemoveVerticesByMask,
+                 "This function removes the vertices that are masked in "
+                 "vertex_mask. Note that also all triangles associated with "
+                 "the vertices are removed.",
+                 "vertex_mask"_a)
             .def("deform_as_rigid_as_possible",
                  &geometry::TriangleMesh::DeformAsRigidAsPossible,
                  "This function deforms the mesh using the method by Sorkine "
@@ -578,6 +590,16 @@ void pybind_trianglemesh(py::module &m) {
                                     {{"triangle_mask",
                                       "1D bool array, True values indicate "
                                       "triangles that should be removed."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "remove_vertices_by_index",
+            {{"vertex_indices",
+              "1D array of vertex indices that should be removed from the "
+              "TriangleMesh."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_vertices_by_mask",
+                                    {{"vertex_mask",
+                                      "1D bool array, True values indicate "
+                                      "vertices that should be removed."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "deform_as_rigid_as_possible",
             {{"constraint_vertex_indices",
