@@ -45,6 +45,10 @@
 #include "PoissonRecon/Src/PointStreamData.h"
 // clang-format on
 
+namespace open3d {
+namespace geometry {
+namespace poisson {
+
 // The order of the B-Spline used to splat in data for color interpolation
 static const int DATA_DEGREE = 0;
 // The order of the B-Spline used to splat in the weights for density estimation
@@ -58,10 +62,6 @@ static const int DEFAULT_FEM_DEGREE = 1;
 static const BoundaryType DEFAULT_FEM_BOUNDARY = BOUNDARY_NEUMANN;
 // The dimension of the system
 static const int DIMENSION = 3;
-
-namespace open3d {
-namespace geometry {
-namespace poisson {
 
 class Open3DData {
 public:
@@ -503,12 +503,10 @@ void Execute(const open3d::geometry::PointCloud& pcd,
                           samples.size());
     }
 
-    // int kernelDepth = KernelDepth.set ? KernelDepth.value : Depth.value - 2;
     int kernelDepth = depth - 2;
-    // if (kernelDepth > depth) {
-    //     // TODO warning
-    //     kernelDepth = depth;
-    // }
+    if (kernelDepth < 0) {
+        utility::LogError("[CreateFromPointCloudPoisson] depth (={}) has to be >= 2", depth);
+    }
 
     DenseNodeData<Real, Sigs> solution;
     {
@@ -731,9 +729,9 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           size_t width,
                                           float scale,
                                           bool linear_fit) {
-    static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
+    static const BoundaryType BType = poisson::DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
-            DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
+            poisson::DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
             FEMSigs;
 
     if (!pcd.HasNormals()) {
