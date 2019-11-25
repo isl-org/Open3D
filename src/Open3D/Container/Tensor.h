@@ -204,6 +204,28 @@ public:
     void IndexSet(const std::vector<Tensor>& index_tensors,
                   const Tensor& src_tensor);
 
+    /// \brief Permute (dimension shuffle) the Tensor, returns a view.
+    ///
+    /// \param dims The desired ordering of dimensions.
+    /// \return A Tensor with the desired ordering of the dimensions.
+    Tensor Permute(const SizeVector& dims) const;
+
+    /// \brief Create a Tensor view of specified shape and strides. The
+    /// underlying buffer and data_ptr offsets remain the same.
+    Tensor AsStrided(const SizeVector& new_shape,
+                     const SizeVector& new_strides) const;
+
+    /// \brief Transpose a Tensor by swapping dimension \p dim0 and \p dim1
+    ///
+    /// \param dim0 The first dimension to be transposed.
+    /// \param dim1 The second dimension to be transposed.
+    Tensor Transpose(int64_t dim0, int64_t dim1) const;
+
+    /// \brief Expects input to be <= 2-D Tensor by swapping dimension 0 and 1.
+    ///
+    /// 0-D and 1-D Tensor remains the same.
+    Tensor T() const;
+
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// mush have empty shape ()
     template <typename T>

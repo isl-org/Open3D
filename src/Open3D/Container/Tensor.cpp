@@ -291,4 +291,70 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                        indexed_out_shape);
 }
 
+Tensor Tensor::Permute(const SizeVector& dims) const {
+    // Check dimension size
+    if (static_cast<int64_t>(dims.size()) != NumDims()) {
+        utility::LogError(
+                "Tensor has {} dimensions, but permuntation have {} "
+                "dimensions.",
+                NumDims(), dims.size());
+    }
+    int64_t n_dims = NumDims();
+
+    // Check dims are permuntation of [0, 1, 2, ..., n-1]
+    std::vector<bool> seen_dims(n_dims, false);
+    for (const int64_t& dim : dims) {
+        seen_dims[WrapDim(dim, n_dims)] = true;
+    }
+    if (!std::all_of(seen_dims.begin(), seen_dims.end(),
+                     [](bool seen) { return seen; })) {
+        utility::LogError("Permute dims must be a permuntation from 0 to {}",
+                          dims.size() - 1);
+    }
+
+    // Map to new shape and strides
+    const SizeVector& old_shape = GetShape();
+    const SizeVector& old_stides = GetStrides();
+    SizeVector new_shape(n_dims);
+    SizeVector new_strides(n_dims);
+    for (int64_t i = 0; i < n_dims; ++i) {
+        int64_t old_dim = WrapDim(dims[i], n_dims);
+        new_shape[i] = old_shape[old_dim];
+        new_strides[i] = old_stides[old_dim];
+    }
+
+    return AsStrided(new_shape, new_strides);
+}
+
+Tensor Tensor::AsStrided(const SizeVector& new_shape,
+                         const SizeVector& new_strides) const {
+    Tensor result(new_shape, new_strides, const_cast<void*>(GetDataPtr()),
+                  GetDtype(), GetDevice(), GetBlob());
+    return result;
+}
+
+Tensor Tensor::Transpose(int64_t dim0, int64_t dim1) const {
+    int64_t n_dims = NumDims();
+    dim0 = WrapDim(dim0, n_dims);
+    dim1 = WrapDim(dim1, n_dims);
+    SizeVector dims(n_dims);
+    std::iota(dims.begin(), dims.end(), 0);
+    dims[dim0] = dim1;
+    dims[dim1] = dim0;
+    return Permute(dims);
+}
+
+Tensor Tensor::T() const {
+    int64_t n_dims = NumDims();
+    if (n_dims <= 1) {
+        return *this;
+    } else if (n_dims == 2) {
+        return Transpose(0, 1);
+    } else {
+        utility::LogError(
+                "Tensor::T() expects a Tensor with <= 2 dimensions, but the "
+                "Tensor as {} dimensions.");
+    }
+}
+
 }  // namespace open3d

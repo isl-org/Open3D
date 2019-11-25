@@ -620,3 +620,69 @@ TEST_P(TensorPermuteDevices, IndexSetBroadcast) {
               std::vector<float>({0, 0, 0, 0, 10, 10, 10, 0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 20, 20, 20, 0, 0, 0, 0, 0}));
 }
+
+TEST_P(TensorPermuteDevices, Permute) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    Tensor t_1 = t.Permute({2, 1, 0});
+    EXPECT_EQ(t_1.GetBlob(), t.GetBlob());
+    EXPECT_EQ(t_1.GetDataPtr(), t.GetDataPtr());
+    EXPECT_EQ(t_1.GetShape(), SizeVector({4, 3, 2}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({1, 4, 12}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({0, 12, 4, 16, 8,  20, 1, 13, 5, 17, 9,  21,
+                                  2, 14, 6, 18, 10, 22, 3, 15, 7, 19, 11, 23}));
+
+    Tensor t_2 = t.Permute({0, 2, 1});
+    EXPECT_EQ(t_2.GetBlob(), t.GetBlob());
+    EXPECT_EQ(t_2.GetDataPtr(), t.GetDataPtr());
+    EXPECT_EQ(t_2.GetShape(), SizeVector({2, 4, 3}));
+    EXPECT_EQ(t_2.GetStrides(), SizeVector({12, 1, 4}));
+    EXPECT_EQ(t_2.ToFlatVector<float>(),
+              std::vector<float>({0,  4,  8,  1,  5,  9,  2,  6,
+                                  10, 3,  7,  11, 12, 16, 20, 13,
+                                  17, 21, 14, 18, 22, 15, 19, 23}));
+}
+
+TEST_P(TensorPermuteDevices, Transpose) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    Tensor t_t = t.Transpose(1, 2);
+    EXPECT_EQ(t_t.GetBlob(), t.GetBlob());
+    EXPECT_EQ(t_t.GetDataPtr(), t.GetDataPtr());
+    EXPECT_EQ(t_t.GetShape(), SizeVector({2, 4, 3}));
+    EXPECT_EQ(t_t.GetStrides(), SizeVector({12, 1, 4}));
+    EXPECT_EQ(t_t.ToFlatVector<float>(),
+              std::vector<float>({0,  4,  8,  1,  5,  9,  2,  6,
+                                  10, 3,  7,  11, 12, 16, 20, 13,
+                                  17, 21, 14, 18, 22, 15, 19, 23}));
+    EXPECT_THROW(t.Transpose(3, 5), std::runtime_error);
+}
+
+TEST_P(TensorPermuteDevices, T) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {6, 4}, Dtype::Float32, device);
+
+    Tensor t_t = t.T();
+    EXPECT_EQ(t_t.GetBlob(), t.GetBlob());
+    EXPECT_EQ(t_t.GetDataPtr(), t.GetDataPtr());
+    EXPECT_EQ(t_t.GetShape(), SizeVector({4, 6}));
+    EXPECT_EQ(t_t.GetStrides(), SizeVector({1, 4}));
+    EXPECT_EQ(t_t.ToFlatVector<float>(),
+              std::vector<float>({0, 4, 8,  12, 16, 20, 1, 5, 9,  13, 17, 21,
+                                  2, 6, 10, 14, 18, 22, 3, 7, 11, 15, 19, 23}));
+
+    Tensor t_3d(vals, {2, 3, 4}, Dtype::Float32, device);
+    EXPECT_THROW(t_3d.T(), std::runtime_error);
+}
