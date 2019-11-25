@@ -1,17 +1,13 @@
 # References:
-# https://cmake.org/cmake/help/v3.0/
+# https://cmake.org/cmake/help/v3.1/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.1)
+set (CMAKE_CXX_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
-
-if (NOT CMAKE_VERSION VERSION_LESS "3.1")
-    cmake_policy(SET CMP0054 NEW)
-    set(OpenGL_GL_PREFERENCE LEGACY)
-endif()
 
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No CMAKE_BUILD_TYPE specified, default to Debug")
