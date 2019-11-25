@@ -63,7 +63,8 @@ public:
     KDTreeFlann(const Geometry &geometry);
     /// \brief Parameterized Constructor.
     ///
-    /// \param feature Provides a set of features from which the KDTree is constructed.
+    /// \param feature Provides a set of features from which the KDTree is
+    /// constructed.
     KDTreeFlann(const registration::Feature &feature);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
@@ -109,8 +110,6 @@ public:
                      std::vector<double> &distance2) const;
 
 private:
-    /// \fn SetRawData
-    ///
     /// \brief Sets the KDTree data from the data provided by the other methods.
     ///
     /// Internal method that sets all the members of KDTree by data provided by

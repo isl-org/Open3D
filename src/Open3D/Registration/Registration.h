@@ -48,15 +48,17 @@ class Feature;
 /// \brief Class that defines the convergence criteria of ICP.
 ///
 /// ICP algorithm stops if the relative change of fitness and rmse hit
-/// \p relative_fitness_ and \p relative_rmse_ individually, or the iteration number
-/// exceeds \p max_iteration_.
+/// \p relative_fitness_ and \p relative_rmse_ individually, or the iteration
+/// number exceeds \p max_iteration_.
 class ICPConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
     ///
-    /// \param relative_fitness If relative change (difference) of fitness score is lower than relative_fitness, the iteration stops.
-    /// \param relative_rmse If relative change (difference) of inliner RMSE score is lower than relative_rmse, the iteration stops.
-    /// \param max_iteration Maximum iteration before iteration stops.
+    /// \param relative_fitness If relative change (difference) of fitness score
+    /// is lower than relative_fitness, the iteration stops. \param
+    /// relative_rmse If relative change (difference) of inliner RMSE score is
+    /// lower than relative_rmse, the iteration stops. \param max_iteration
+    /// Maximum iteration before iteration stops.
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
                            double relative_rmse = 1e-6,
                            int max_iteration = 30)
@@ -66,9 +68,11 @@ public:
     ~ICPConvergenceCriteria() {}
 
 public:
-    /// If relative change (difference) of fitness score is lower than `relative_fitness`, the iteration stops.
+    /// If relative change (difference) of fitness score is lower than
+    /// `relative_fitness`, the iteration stops.
     double relative_fitness_;
-    /// If relative change (difference) of inliner RMSE score is lower than `relative_rmse`, the iteration stops.
+    /// If relative change (difference) of inliner RMSE score is lower than
+    /// `relative_rmse`, the iteration stops.
     double relative_rmse_;
     /// Maximum iteration before iteration stops.
     int max_iteration_;
@@ -88,7 +92,8 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param max_iteration Maximum iteration before iteration stops.
-    /// \param max_validation Maximum times the validation has been run before the iteration stops.
+    /// \param max_validation Maximum times the validation has been run before
+    /// the iteration stops.
     RANSACConvergenceCriteria(int max_iteration = 1000,
                               int max_validation = 1000)
         : max_iteration_(max_iteration), max_validation_(max_validation) {}
@@ -121,34 +126,33 @@ public:
     CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
-    /// The overlapping area (# of inlier correspondences / # of points in target). Higher is better.
+    /// The overlapping area (# of inlier correspondences / # of points in
+    /// target). Higher is better.
     double fitness_;
 };
 
-/// \fn EvaluateRegistration
-///
 /// \brief Function for evaluating registration between point clouds.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param max_correspondence_distance Maximum correspondence points-pair distance.
-/// \param transformation The 4x4 transformation matrix to transform source to target.
-/// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]).
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance. \param transformation The 4x4 transformation matrix to transform
+/// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
+/// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
- 
-/// \fn RegistrationICP
-///
+
 /// \brief Functions for ICP registration.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param max_correspondence_distance Maximum correspondence points-pair distance.
-/// \param init Initial transformation estimation.
-///  Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]])
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance. \param init Initial transformation estimation.
+///  Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
+///  [0., 0., 0., 1.]])
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
 RegistrationResult RegistrationICP(
@@ -160,18 +164,15 @@ RegistrationResult RegistrationICP(
                 TransformationEstimationPointToPoint(false),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
-/// \fn RegistrationRANSACBasedOnCorrespondence
-///
 /// \brief Function for global RANSAC registration based on a given set of
 /// correspondences.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param corres Checker class to check if two point clouds can be aligned.
-/// \param max_correspondence_distance Maximum correspondence points-pair distance.
-/// \param estimation Estimation method.
-/// \param ransac_n Fit ransac with `ransac_n` correspondences.
-/// \param criteria Convergence criteria.
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance. \param estimation Estimation method. \param ransac_n Fit ransac
+/// with `ransac_n` correspondences. \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -183,18 +184,15 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const RANSACConvergenceCriteria &criteria =
                 RANSACConvergenceCriteria());
 
-/// \fn RegistrationRANSACBasedOnFeatureMatching
-///
 /// \brief Function for global RANSAC registration based on feature matching.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param source_feature Source point cloud feature.
 /// \param target_feature Target point cloud feature.
-/// \param max_correspondence_distance Maximum correspondence points-pair distance.
-/// \param ransac_n Fit ransac with `ransac_n` correspondences.
-/// \param checkers Correspondence checker.
-/// \param criteria Convergence criteria.
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance. \param ransac_n Fit ransac with `ransac_n` correspondences. \param
+/// checkers Correspondence checker. \param criteria Convergence criteria.
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -209,12 +207,11 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const RANSACConvergenceCriteria &criteria =
                 RANSACConvergenceCriteria());
 
-/// \fn Function for computing information matrix from transformation matrix.
-///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param max_correspondence_distance Maximum correspondence points-pair distance.
-/// \param transformation The 4x4 transformation matrix to transform `source` to `target`.
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance. \param transformation The 4x4 transformation matrix to transform
+/// `source` to `target`.
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

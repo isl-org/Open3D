@@ -62,7 +62,8 @@ public:
 public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
-    /// Compute RMSE between source and target points cloud given correspondences.
+    /// Compute RMSE between source and target points cloud given
+    /// correspondences.
     ///
     /// \param source Source point cloud.
     /// \param target Target point cloud.
@@ -70,7 +71,8 @@ public:
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
                                const CorrespondenceSet &corres) const = 0;
-    /// Compute transformation from source to target point cloud given correspondences.
+    /// Compute transformation from source to target point cloud given
+    /// correspondences.
     ///
     /// \param source Source point cloud.
     /// \param target Target point cloud.
@@ -88,7 +90,8 @@ class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
     /// \brief Parameterized Constructor.
     ///
-    /// \param with_scaling Set to True to estimate scaling, False to force scaling to be 1.
+    /// \param with_scaling Set to True to estimate scaling, False to force
+    /// scaling to be 1.
     TransformationEstimationPointToPoint(bool with_scaling = false)
         : with_scaling_(with_scaling) {}
     ~TransformationEstimationPointToPoint() override {}

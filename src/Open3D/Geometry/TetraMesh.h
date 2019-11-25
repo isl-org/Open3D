@@ -43,7 +43,8 @@ class TriangleMesh;
 
 /// \class TetraMesh
 ///
-/// \brief Tetra mesh contains vertices and tetrahedra represented by the indices to the vertices.
+/// \brief Tetra mesh contains vertices and tetrahedra represented by the
+/// indices to the vertices.
 class TetraMesh : public MeshBase {
 public:
     /// \brief Default Constructor.
@@ -51,7 +52,8 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param vertices Vertex coordinates.
-    /// \param tetras List of tetras denoted by the index of points forming the tetra.
+    /// \param tetras List of tetras denoted by the index of points forming the
+    /// tetra.
     TetraMesh(const std::vector<Eigen::Vector3d> &vertices,
               const std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
                       &tetras)
@@ -66,28 +68,21 @@ public:
     TetraMesh &operator+=(const TetraMesh &mesh);
     TetraMesh operator+(const TetraMesh &mesh) const;
 
-    /// \fn RemoveDuplicatedVertices
-    ///
-    /// \brief Function that removes duplicated verties, i.e., vertices that have
-    /// identical coordinates.
+    /// \brief Function that removes duplicated verties, i.e., vertices that
+    /// have identical coordinates.
     TetraMesh &RemoveDuplicatedVertices();
 
-    /// \fn RemoveDuplicatedTetras
-    ///
-    /// \brief Function that removes duplicated tetrahedra, i.e., removes tetrahedra
-    /// that reference the same four vertices, independent of their order.
+    /// \brief Function that removes duplicated tetrahedra, i.e., removes
+    /// tetrahedra that reference the same four vertices, independent of their
+    /// order.
     TetraMesh &RemoveDuplicatedTetras();
 
-    /// \fn RemoveUnreferencedVertices
-    ///
     /// \brief This function removes vertices from the tetra mesh that are not
     /// referenced in any tetrahedron of the mesh.
     TetraMesh &RemoveUnreferencedVertices();
 
-    /// \fn RemoveDegenerateTetras
-    ///
-    /// \brief Function that removes degenerate tetrahedra, i.e., tetrahedra that
-    /// reference a single vertex multiple times in a single tetrahedron.
+    /// \brief Function that removes degenerate tetrahedra, i.e., tetrahedra
+    /// that reference a single vertex multiple times in a single tetrahedron.
     /// They are usually the product of removing duplicated vertices.
     TetraMesh &RemoveDegenerateTetras();
 
@@ -96,19 +91,15 @@ public:
         return vertices_.size() > 0 && tetras_.size() > 0;
     }
 
-    /// \fn ExtractTriangleMesh
-    ///
-    /// \brief Function to extract a triangle mesh of the specified iso-surface at a level
-    /// This method applies primal contouring and generates triangles for each
-    /// tetrahedron.
+    /// \brief Function to extract a triangle mesh of the specified iso-surface
+    /// at a level This method applies primal contouring and generates triangles
+    /// for each tetrahedron.
     ///
     /// \param level specifies the level.
     /// \param values specifies values per-vertex.
     std::shared_ptr<TriangleMesh> ExtractTriangleMesh(
             const std::vector<double> &values, double level);
 
-    /// \fn CreateFromPointCloud
-    ///
     /// \brief Function that creates a tetrahedral mesh (TetraMeshFactory.cpp).
     /// from a point cloud.
     ///

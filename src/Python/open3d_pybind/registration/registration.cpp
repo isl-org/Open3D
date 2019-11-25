@@ -257,9 +257,10 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
            "point clouds must have exact the same number of points.");
     cc.def_readwrite(
             "require_pointcloud_alignment_",
-            &registration::CorrespondenceChecker::
-                    require_pointcloud_alignment_,
-            "Some checkers do not require point clouds to be aligned, e.g., the edge length checker. Some checkers do, e.g., the distance checker.");
+            &registration::CorrespondenceChecker::require_pointcloud_alignment_,
+            "Some checkers do not require point clouds to be aligned, e.g., "
+            "the edge length checker. Some checkers do, e.g., the distance "
+            "checker.");
     docstring::ClassMethodDocInject(
             m, "CorrespondenceChecker", "Check",
             {{"source", "Source point cloud."},

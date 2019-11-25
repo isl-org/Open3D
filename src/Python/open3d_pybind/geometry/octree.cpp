@@ -236,12 +236,12 @@ void pybind_octree(py::module &m) {
                            "OctreeNode: The root octree node.")
             .def_readwrite("origin", &geometry::Octree::origin_,
                            "(3, 1) float numpy array: Global min bound "
-                           "(include). A point is within bound iff origin_ <= "
-                           "point < origin_ + size_.")
+                           "(include). A point is within bound iff origin <= "
+                           "point < origin + size.")
             .def_readwrite("size", &geometry::Octree::size_,
                            "float: Outer bounding box edge size for the whole "
-                           "octree. A point is within bound iff origin_ <= "
-                           "point < origin_ + size_.")
+                           "octree. A point is within bound iff origin <= "
+                           "point < origin + size.")
             .def_readwrite("max_depth", &geometry::Octree::max_depth_,
                            "int: Maximum depth of the octree. The depth is "
                            "defined as the distance from the deepest leaf node "

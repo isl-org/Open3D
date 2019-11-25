@@ -159,17 +159,23 @@ public:
     double GetZNear() const { return z_near_; }
     double GetZFar() const { return z_far_; }
 
-    /// Function to change the near z-plane of the visualizer to a constant value, i.e., independent of zoom and bounding box size.
+    /// Function to change the near z-plane of the visualizer to a constant
+    /// value, i.e., independent of zoom and bounding box size.
     ///
     /// \param z_near The depth of the near z-plane of the visualizer.
     void SetConstantZNear(double z_near) { constant_z_near_ = z_near; }
-    /// Function to change the far z-plane of the visualizer to a constant value, i.e., independent of zoom and bounding box size.
+    /// Function to change the far z-plane of the visualizer to a constant
+    /// value, i.e., independent of zoom and bounding box size.
     ///
     /// \param z_far The depth of the far z-plane of the visualizer.
     void SetConstantZFar(double z_far) { constant_z_far_ = z_far; }
-    /// Function to remove a previously set constant z near value, i.e., near z-plane of the visualizer is dynamically set dependent on zoom and bounding box size.
+    /// Function to remove a previously set constant z near value, i.e., near
+    /// z-plane of the visualizer is dynamically set dependent on zoom and
+    /// bounding box size.
     void UnsetConstantZNear() { constant_z_near_ = -1; }
-    /// Function to remove a previously set constant z far value, i.e., far z-plane of the visualizer is dynamically set dependent on zoom and bounding box size.
+    /// Function to remove a previously set constant z far value, i.e., far
+    /// z-plane of the visualizer is dynamically set dependent on zoom and
+    /// bounding box size.
     void UnsetConstantZFar() { constant_z_far_ = -1; }
 
 protected:

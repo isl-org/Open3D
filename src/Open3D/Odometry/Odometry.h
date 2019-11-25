@@ -45,8 +45,6 @@ class RGBDImage;
 
 namespace odometry {
 
-/// \fn ComputeRGBDOdometry
-///
 /// \brief Function to estimate 6D rigid motion from two RGBD image pairs.
 ///
 /// \param source Source RGBD image.

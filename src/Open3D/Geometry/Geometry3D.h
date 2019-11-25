@@ -130,8 +130,6 @@ protected:
     Eigen::Vector3d ComputeCenter(
             const std::vector<Eigen::Vector3d>& points) const;
 
-    /// \fn ResizeAndPaintUniformColor
-    ///
     /// \brief Resizes the colors vector and paints a uniform color.
     ///
     /// \param colors An array of eigen vectors specifies colors in RGB.

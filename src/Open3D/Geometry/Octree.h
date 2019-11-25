@@ -228,8 +228,6 @@ public:
     bool ConvertFromJsonValue(const Json::Value& value) override;
 
 public:
-    /// \fn ConvertFromPointCloud
-    ///
     /// \brief Convert octree from point cloud.
     ///
     /// \param point_cloud  Input point cloud.
@@ -254,8 +252,6 @@ public:
     /// deepest leaf node to root. A tree with only the root node has depth 0.
     size_t max_depth_;
 
-    /// \fn Insert point
-    ///
     /// \brief Insert a point to the octree.
     ///
     /// \param point Coordinates of the point.
@@ -265,8 +261,6 @@ public:
             const std::function<void(std::shared_ptr<OctreeLeafNode>)>&
                     f_update);
 
-    /// \fn Traverse
-    ///
     /// \brief DFS traversal of Octree from the root, with callback function
     /// called for each node.
     void Traverse(
@@ -274,8 +268,6 @@ public:
                                      const std::shared_ptr<OctreeNodeInfo>&)>&
                     f);
 
-    /// \fn Traverse
-    ///
     /// \brief Const version of Traverse. DFS traversal of Octree from the root,
     /// with callback function called for each node.
     void Traverse(
@@ -285,16 +277,12 @@ public:
 
     std::pair<std::shared_ptr<OctreeLeafNode>, std::shared_ptr<OctreeNodeInfo>>
 
-    /// \fn LocateLeafNode
-    ///
     /// \brief Returns leaf OctreeNode and OctreeNodeInfo where the querypoint
     /// should reside.
     ///
     /// \param point Coordinates of the point.
     LocateLeafNode(const Eigen::Vector3d& point) const;
 
-    /// \fn IsPointInBound
-    ///
     /// \brief Return true if point within bound, that is,
     /// origin <= point < origin + size.
     ///

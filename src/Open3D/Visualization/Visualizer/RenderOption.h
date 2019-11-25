@@ -200,7 +200,7 @@ public:
     MeshColorOption mesh_color_option_ = MeshColorOption::Color;
     /// Whether to show back faces for TriangleMesh.
     bool mesh_show_back_face_ = false;
-    
+
     bool mesh_show_wireframe_ = false;
     Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(0.7, 0.7, 0.7);
 

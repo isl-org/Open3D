@@ -59,7 +59,8 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int height = 480,
                     int left = 50,
                     int top = 50);
-/// \brief Function to draw a list of geometry.Geometry objects with a GUI that supports animation.
+/// \brief Function to draw a list of geometry.Geometry objects with a GUI that
+/// supports animation.
 ///
 /// \param geometry_list List of geometries to be visualized.
 /// \param window_name The displayed title of the visualization window.
@@ -67,7 +68,8 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
-/// \param optional_view_trajectory_json_file Camera trajectory json file path for custom animation.
+/// \param optional_view_trajectory_json_file Camera trajectory json file path
+/// for custom animation.
 bool DrawGeometriesWithCustomAnimation(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
                 &geometry_ptrs,
@@ -78,11 +80,12 @@ bool DrawGeometriesWithCustomAnimation(
         int top = 50,
         const std::string &json_filename = "");
 
-/// \brief Function to draw a list of geometry.Geometry objects with a customized animation callback function.
+/// \brief Function to draw a list of geometry.Geometry objects with a
+/// customized animation callback function.
 ///
 /// \param geometry_ptrs List of geometries to be visualized.
-/// \param callback_function Call back function to be triggered at a key press event.
-/// \param window_name The displayed title of the visualization window.
+/// \param callback_function Call back function to be triggered at a key press
+/// event. \param window_name The displayed title of the visualization window.
 /// \param width The width of the visualization window.
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.

@@ -39,8 +39,6 @@ class PointCloud;
 namespace registration {
 class RegistrationResult;
 
-/// \fn RegistrationColoredICP
-///
 /// \brief Function for Colored ICP registration.
 ///
 /// This is implementation of following paper
@@ -51,9 +49,9 @@ class RegistrationResult;
 /// \param target The target point cloud.
 /// \param max_distance Maximum correspondence points-pair distance.
 /// \param init Initial transformation estimation.
-/// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 1.]]).
-/// \param criteria  Convergence criteria.
-/// \param lambda_geometric  lambda_geometric value.
+/// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
+/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// lambda_geometric  lambda_geometric value.
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

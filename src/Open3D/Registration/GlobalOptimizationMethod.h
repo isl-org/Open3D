@@ -49,13 +49,11 @@ public:
     virtual ~GlobalOptimizationMethod() {}
 
 public:
-/// \fn OptimizePoseGraph
-///
-/// \brief Run pose graph optimization method.
-///
-/// \param pose_graph The pose graph to be optimized (in-place).
-/// \param criteria Convergence criteria.
-/// \param option Global optimization options.
+    /// \brief Run pose graph optimization method.
+    ///
+    /// \param pose_graph The pose graph to be optimized (in-place).
+    /// \param criteria Convergence criteria.
+    /// \param option Global optimization options.
     virtual void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,
@@ -82,7 +80,8 @@ public:
 ///
 /// \brief Global optimization with Levenberg-Marquardt algorithm.
 ///
-/// Recommended over the Gauss-Newton method since the LM has better convergence characteristics.
+/// Recommended over the Gauss-Newton method since the LM has better convergence
+/// characteristics.
 class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
 public:
     /// \brief Default Constructor.

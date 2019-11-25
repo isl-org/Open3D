@@ -52,7 +52,8 @@ namespace integration {
 
 /// \class UniformTSDFVolume
 ///
-/// \brief UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996).
+/// \brief UniformTSDFVolume implements the classic TSDF volume with uniform
+/// voxel grid (Curless and Levoy 1996).
 class UniformTSDFVolume : public TSDFVolume {
 public:
     UniformTSDFVolume(double length,
@@ -96,7 +97,8 @@ public:
     Eigen::Vector3d origin_;
     /// Total length, where voxel_length = length / resolution.
     double length_;
-    /// Resolution over the total length, where voxel_length = length / resolution.
+    /// Resolution over the total length, where voxel_length = length /
+    /// resolution.
     int resolution_;
     /// Number of voxels present.
     int voxel_num_;

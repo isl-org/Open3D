@@ -90,8 +90,6 @@ public:
         return HasLines() && colors_.size() == lines_.size();
     }
 
-    /// \fn GetLineCoordinate
-    ///
     /// \brief Returns the coordinates of the line at the given index.
     ///
     /// \param line_index Index of the line.
@@ -101,8 +99,6 @@ public:
                               points_[lines_[line_index][1]]);
     }
 
-    /// \fn PaintUniformColor
-    ///
     /// \brief Assigns each line in the LineSet the same color.
     ///
     /// \param color Specifies the color to be applied.
@@ -111,8 +107,6 @@ public:
         return *this;
     }
 
-    /// \fn CreateFromPointCloudCorrespondences
-    ///
     /// \brief Factory function to create a LineSet from two PointClouds
     /// (\p cloud0, \p cloud1) and a correspondence set.
     ///
@@ -124,16 +118,12 @@ public:
             const PointCloud &cloud1,
             const std::vector<std::pair<int, int>> &correspondences);
 
-    /// \fn CreateFromOrientedBoundingBox
-    ///
     /// \brief Factory function to create a LineSet from an OrientedBoundingBox.
     ///
     /// \param box The input bounding box.
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
             const OrientedBoundingBox &box);
 
-    /// \fn CreateFromAxisAlignedBoundingBox
-    ///
     /// \brief Factory function to create a LineSet from an
     /// AxisAlignedBoundingBox.
     ///
@@ -141,16 +131,12 @@ public:
     static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox &box);
 
-    /// \fn CreateFromTriangleMesh
-    ///
     /// Factory function to create a LineSet from edges of a triangle mesh.
     ///
     /// \param mesh The input triangle  mesh.
     static std::shared_ptr<LineSet> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
 
-    /// \fn CreateFromTetraMesh
-    ///
     /// Factory function to create a LineSet from edges of a tetra mesh.
     ///
     /// \param mesh The input tetra mesh.

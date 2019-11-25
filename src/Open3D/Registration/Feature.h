@@ -63,8 +63,6 @@ public:
     Eigen::MatrixXd data_;
 };
 
-/// \fn ComputeFPFHFeature
-///
 /// Function to compute FPFH feature for a point cloud.
 ///
 /// \param input The Input point cloud.

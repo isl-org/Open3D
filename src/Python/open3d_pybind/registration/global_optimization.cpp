@@ -110,7 +110,7 @@ void pybind_global_optimization(py::module &m) {
             .def_readwrite(
                     "confidence", &registration::PoseGraphEdge::confidence_,
                     "float from 0 to 1: Confidence value of the edge. if "
-                    "uncertain_ is true, it has confidence bounded in [0,1].   "
+                    "uncertain is true, it has confidence bounded in [0,1].   "
                     "1 means reliable, and 0 means "
                     "unreliable edge. This correspondence to "
                     "line process value in [Choi et al 2015] See "
@@ -265,7 +265,7 @@ void pybind_global_optimization(py::module &m) {
                     &registration::GlobalOptimizationConvergenceCriteria::
                             max_iteration_lm_,
                     "int: Maximum iteration number for Levenberg Marquardt "
-                    "method. max_iteration_lm_ is used for additional "
+                    "method. max_iteration_lm is used for additional "
                     "Levenberg-Marquardt inner loop that automatically changes "
                     "steepest gradient gain.")
             .def_readwrite(

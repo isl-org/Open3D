@@ -59,8 +59,6 @@ public:
     virtual ~CorrespondenceChecker() {}
 
 public:
-    /// \fn Check
-    ///
     /// \brief Function to check if two points can be aligned.
     ///
     /// The two input point

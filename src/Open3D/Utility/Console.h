@@ -191,7 +191,8 @@ public:
 
 /// Set global verbosity level of Open3D
 ///
-/// \param level Messages with equal or less than verbosity_level verbosity will be printed.
+/// \param level Messages with equal or less than verbosity_level verbosity will
+/// be printed.
 inline void SetVerbosityLevel(VerbosityLevel level) {
     Logger::i().verbosity_level_ = level;
 }

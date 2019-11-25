@@ -37,8 +37,8 @@ namespace integration {
 
 class UniformTSDFVolume;
 
-/// The ScalableTSDFVolume implements a more memory efficient data structure for volumetric
-/// integration.
+/// The ScalableTSDFVolume implements a more memory efficient data structure for
+/// volumetric integration.
 ///
 /// This implementation is based on the following repository:
 /// https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate

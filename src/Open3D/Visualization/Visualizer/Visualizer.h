@@ -116,7 +116,8 @@ public:
     /// Function to to notify the window to be closed
     void Close();
 
-    /// \brief Function to process the event queue and return if the window is closed.
+    /// \brief Function to process the event queue and return if the window is
+    /// closed.
     ///
     /// Use this function if you want to manage the while loop yourself. This
     /// function will block the thread.
@@ -129,9 +130,8 @@ public:
     /// heavy task behind the scene.
     bool PollEvents();
 
-    /// \fn AddGeometry
-    ///
-    /// \brief Function to add geometry to the scene and create corresponding shaders.
+    /// \brief Function to add geometry to the scene and create corresponding
+    /// shaders.
     ///
     /// 1. After calling this function, the Visualizer owns the geometry object.
     /// 2. This function MUST be called after CreateVisualizerWindow().
@@ -204,7 +204,8 @@ public:
     ///
     /// \param filename Path to file.
     /// \param do_render Set to `true` to do render.
-    /// \param convert_to_world_coordinate Set to `true` to convert to world coordinates
+    /// \param convert_to_world_coordinate Set to `true` to convert to world
+    /// coordinates
     void CaptureDepthPointCloud(const std::string &filename = "",
                                 bool do_render = true,
                                 bool convert_to_world_coordinate = false);

@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Geometry/Image.h"
 #include "Open3D/Visualization/Visualizer/Visualizer.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
 

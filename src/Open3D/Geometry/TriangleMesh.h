@@ -110,61 +110,43 @@ public:
         return *this;
     }
 
-    /// \fn ComputeTriangleNormals
-    ///
     /// \brief Function to compute triangle normals, usually called before
     /// rendering.
     TriangleMesh &ComputeTriangleNormals(bool normalized = true);
 
-    /// \fn ComputeVertexNormals
-    ///
     /// \brief Function to compute vertex normals, usually called before
     /// rendering.
     TriangleMesh &ComputeVertexNormals(bool normalized = true);
 
-    /// \fn ComputeAdjacencyList
-    ///
     /// \brief Function to compute adjacency list, call before adjacency list is
     /// needed.
     TriangleMesh &ComputeAdjacencyList();
 
-    /// \fn RemoveDuplicatedVertices
-    ///
     /// \brief Function that removes duplicated verties, i.e., vertices that
     /// have identical coordinates.
     TriangleMesh &RemoveDuplicatedVertices();
 
-    /// \fn RemoveDuplicatedTriangles
-    ///
     /// \brief Function that removes duplicated triangles, i.e., removes
     /// triangles that reference the same three vertices, independent of their
     /// order.
     TriangleMesh &RemoveDuplicatedTriangles();
 
-    /// \fn RemoveUnreferencedVertices
-    ///
     /// \brief This function removes vertices from the triangle mesh that are
     /// not referenced in any triangle of the mesh.
     TriangleMesh &RemoveUnreferencedVertices();
 
-    /// \fn RemoveDegenerateTriangles
-    ///
     /// \brief Function that removes degenerate triangles, i.e., triangles that
     /// reference a single vertex multiple times in a single triangle.
     ///
     /// They are usually the product of removing duplicated vertices.
     TriangleMesh &RemoveDegenerateTriangles();
 
-    /// \fn RemoveNonManifoldEdges
-    ///
     /// \brief Function that removes all non-manifold edges, by successively
     /// deleting triangles with the smallest surface area adjacent to the
     /// non-manifold edge until the number of adjacent triangles to the edge is
     /// `<= 2`.
     TriangleMesh &RemoveNonManifoldEdges();
 
-    /// \fn MergeCloseVertices
-    ///
     /// \brief Function that will merge close by vertices to a single one.
     /// The vertex position, normal and color will be the average of the
     /// vertices.
@@ -173,8 +155,6 @@ public:
     /// This function might help to close triangle soups.
     TriangleMesh &MergeCloseVertices(double eps);
 
-    /// \fn FilterSharpen
-    ///
     /// \brief Function to sharpen triangle mesh.
     ///
     /// The output value ($v_o$) is the input value ($v_i$) plus strength times
@@ -189,8 +169,6 @@ public:
             double strength,
             FilterScope scope = FilterScope::All) const;
 
-    /// \fn FilterSmoothSimple
-    ///
     /// \brief Function to smooth triangle mesh with simple neighbour average.
     ///
     /// $v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}$, with $v_i$
@@ -203,8 +181,6 @@ public:
             int number_of_iterations,
             FilterScope scope = FilterScope::All) const;
 
-    /// \fn FilterSmoothLaplacian
-    ///
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
     /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
@@ -220,8 +196,6 @@ public:
             double lambda,
             FilterScope scope = FilterScope::All) const;
 
-    /// \fn FilterSmoothTaubin
-    ///
     /// \brief Function to smooth triangle mesh using method of Taubin,
     /// "Curve and Surface Smoothing Without Shrinkage", 1995.
     /// Applies in each iteration two times FilterSmoothLaplacian, first
@@ -238,89 +212,64 @@ public:
             double mu = -0.53,
             FilterScope scope = FilterScope::All) const;
 
-    /// \fn EulerPoincareCharacteristic
-    ///
     /// Function that computes the Euler-Poincaré characteristic, i.e.,
     /// V + F - E, where V is the number of vertices, F is the number
     /// of triangles, and E is the number of edges.
     int EulerPoincareCharacteristic() const;
 
-    /// \fn GetNonManifoldEdges
-    ///
     /// Function that returns the non-manifold edges of the triangle mesh.
     /// If \param allow_boundary_edges is set to false, than also boundary
     /// edges are returned
     std::vector<Eigen::Vector2i> GetNonManifoldEdges(
             bool allow_boundary_edges = true) const;
 
-    /// \fn IsEdgeManifold
-    ///
     /// Function that checks if the given triangle mesh is edge-manifold.
     /// A mesh is edge­-manifold if each edge is bounding either one or two
     /// triangles. If allow_boundary_edges is set to false, then this function
     /// returns false if there exists boundary edges.
     bool IsEdgeManifold(bool allow_boundary_edges = true) const;
 
-    /// \fn GetNonManifoldVertices
-    ///
     /// Function that returns a list of non-manifold vertex indices.
     /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
     /// (Two or more faces connected only by a vertex and not by an edge.)
     std::vector<int> GetNonManifoldVertices() const;
 
-    /// \fn IsVertexManifold
-    ///
     /// Function that checks if all vertices in the triangle mesh are manifold.
     /// A vertex is manifold if its star is edge‐manifold and edge‐connected.
     /// (Two or more faces connected only by a vertex and not by an edge.)
     bool IsVertexManifold() const;
 
-    /// \fn GetSelfIntersectingTriangles
-    ///
     /// Function that returns a list of triangles that are intersecting the
     /// mesh.
     std::vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
 
-    /// \fn IsSelfIntersecting
-    ///
     /// Function that tests if the triangle mesh is self-intersecting.
     /// Tests each triangle pair for intersection.
     bool IsSelfIntersecting() const;
 
-    /// \fn IsBoundingBoxIntersecting
-    ///
     /// Function that tests if the bounding boxes of the triangle meshes are
     /// intersecting.
     bool IsBoundingBoxIntersecting(const TriangleMesh &other) const;
 
-    /// \fn IsIntersecting
-    ///
     /// Function that tests if the triangle mesh intersects another triangle
     /// mesh. Tests each triangle against each other triangle.
     bool IsIntersecting(const TriangleMesh &other) const;
 
-    /// \fn IsOrientable
     /// Function that tests if the given triangle mesh is orientable, i.e.
     /// the triangles can oriented in such a way that all normals point
     /// towards the outside.
     bool IsOrientable() const;
 
-    /// \fn IsWatertight
-    ///
     /// Function that tests if the given triangle mesh is watertight by
     /// checking if it is vertex manifold and edge-manifold with no boundary
     /// edges, but not self-intersecting.
     bool IsWatertight() const;
 
-    /// \fn OrientTriangles
-    ///
     /// If the mesh is orientable then this function rearranges the
     /// triangles such that all normals point towards the
     /// outside/inside.
     bool OrientTriangles();
 
-    /// \fn GetEdgeToTrianglesMap
-    ///
     /// Function that returns a map from edges (vertex0, vertex1) to the
     /// triangle indices the given edge belongs to.
     std::unordered_map<Eigen::Vector2i,
@@ -335,15 +284,11 @@ public:
                        utility::hash_eigen::hash<Eigen::Vector2i>>
     GetEdgeToVerticesMap() const;
 
-    /// \fn ComputeTriangleArea
-    ///
     /// Function that computes the area of a mesh triangle
     static double ComputeTriangleArea(const Eigen::Vector3d &p0,
                                       const Eigen::Vector3d &p1,
                                       const Eigen::Vector3d &p2);
 
-    /// \fn GetTriangleArea
-    ///
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index
     double GetTriangleArea(size_t triangle_idx) const;
@@ -363,20 +308,14 @@ public:
         return Eigen::Vector3i(vidx0, vidx1, vidx2);
     }
 
-    /// \fn GetSurfaceArea
-    ///
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
     double GetSurfaceArea() const;
 
-    /// \fn GetSurfaceArea
-    ///
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
     double GetSurfaceArea(std::vector<double> &triangle_areas) const;
 
-    /// \fn ComputeTrianglePlane
-    ///
     /// Function that computes the plane equation from the three points.
     /// If the three points are co-linear, then this function returns the
     /// invalid plane (0, 0, 0, 0).
@@ -384,8 +323,6 @@ public:
                                                 const Eigen::Vector3d &p1,
                                                 const Eigen::Vector3d &p2);
 
-    /// \fn GetTrianglePlane
-    ///
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
@@ -395,8 +332,6 @@ public:
         return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
     }
 
-    /// \fn SamplePointsUniformlyImpl
-    ///
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh.
     std::shared_ptr<PointCloud> SamplePointsUniformlyImpl(
@@ -404,15 +339,11 @@ public:
             std::vector<double> &triangle_areas,
             double surface_area) const;
 
-    /// \fn SamplePointsUniformly
-    ///
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
             size_t number_of_points) const;
 
-    /// \fn SamplePointsPoissonDisk
-    ///
     /// Function to sample number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
     /// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The PointCloud
@@ -429,8 +360,6 @@ public:
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr) const;
 
-    /// \fn SubdivideMidpoint
-    ///
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
     /// new vertices lie on the midpoint of the triangle edges.
@@ -439,8 +368,6 @@ public:
     std::shared_ptr<TriangleMesh> SubdivideMidpoint(
             int number_of_iterations) const;
 
-    /// \fn SubdivideLoop
-    ///
     /// Function to subdivide triangle mesh using Loop's scheme.
     /// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles",
     /// 1987. Each triangle is subdivided into four triangles per iteration.
@@ -448,8 +375,6 @@ public:
     /// triangle into four triangles that cover the same surface.
     std::shared_ptr<TriangleMesh> SubdivideLoop(int number_of_iterations) const;
 
-    /// \fn SimplifyVertexClustering
-    ///
     /// Function to simplify mesh using Vertex Clustering.
     /// The result can be a non-manifold mesh.
     /// \param voxel_size - The size of the voxel within vertices are pooled.
@@ -461,8 +386,6 @@ public:
             SimplificationContraction contraction =
                     SimplificationContraction::Average) const;
 
-    /// \fn SimplifyQuadricDecimation
-    ///
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
     /// \param target_number_of_triangles defines the number of triangles that
@@ -471,8 +394,6 @@ public:
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles) const;
 
-    /// \fn SelectDownSample
-    ///
     /// Function to select points from \param input TriangleMesh into
     /// output TriangleMesh
     /// Vertices with indices in \param indices are selected.
@@ -480,8 +401,6 @@ public:
     std::shared_ptr<TriangleMesh> SelectDownSample(
             const std::vector<size_t> &indices) const;
 
-    /// \fn Crop
-    ///
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
@@ -489,16 +408,12 @@ public:
     std::shared_ptr<TriangleMesh> Crop(
             const AxisAlignedBoundingBox &bbox) const;
 
-    /// \fn Crop
-    ///
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
     /// \param bbox defines the input Oriented Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(const OrientedBoundingBox &bbox) const;
 
-    /// \fn ClusterConnectedTriangles
-    ///
     /// \brief Function that clusters connected triangles, i.e., triangles that
     /// are connected via edges are assigned the same cluster index.
     ///
@@ -508,8 +423,6 @@ public:
     std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
     ClusterConnectedTriangles() const;
 
-    /// \fn RemoveTrianglesByIndex
-    ///
     /// \brief This function removes the triangles with index in
     /// \p triangle_indices. Call \ref RemoveUnreferencedVertices to clean up
     /// vertices afterwards.
@@ -518,8 +431,6 @@ public:
     /// removed.
     void RemoveTrianglesByIndex(const std::vector<size_t> &triangle_indices);
 
-    /// \fn RemoveTrianglesByMask
-    ///
     /// \brief This function removes the triangles that are masked in
     /// \p triangle_mask. Call \ref RemoveUnreferencedVertices to clean up
     /// vertices afterwards.
@@ -560,8 +471,6 @@ public:
             std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
             std::vector<size_t> *pt_map = nullptr);
 
-    /// \fn CreateFromPointCloudBallPivoting
-    ///
     /// Function that computes a triangle mesh from a oriented PointCloud \param
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface
@@ -577,31 +486,23 @@ public:
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
 
-    /// \fn CreateTetrahedron
-    ///
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
     static std::shared_ptr<TriangleMesh> CreateTetrahedron(double radius = 1.0);
 
-    /// \fn CreateOctahedron
-    ///
     /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
     static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
 
-    /// \fn CreateIcosahedron
-    ///
     /// Factory function to create an icosahedron mesh
     /// (trianglemeshfactory.cpp). the mesh centroid will be at (0,0,0) and
     /// \param radius defines the distance from the center to the mesh vertices.
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
 
-    /// \fn CreateBox
-    ///
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length
@@ -611,8 +512,6 @@ public:
                                                    double height = 1.0,
                                                    double depth = 1.0);
 
-    /// \fn CreateSphere
-    ///
     /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
     /// The sphere with radius will be centered at (0, 0, 0).
     /// Its axis is aligned with z-axis.
@@ -625,8 +524,6 @@ public:
     static std::shared_ptr<TriangleMesh> CreateSphere(double radius = 1.0,
                                                       int resolution = 20);
 
-    /// \fn CreateCylinder
-    ///
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
     /// height/2). The circle with  radius will be split into
@@ -642,8 +539,6 @@ public:
                                                         int resolution = 20,
                                                         int split = 4);
 
-    /// \fn CreateCone
-    ///
     /// Factory function to create a cone mesh (TriangleMeshFactory.cpp)
     /// The axis of the cone will be from (0, 0, 0) to (0, 0, height).
     /// The circle with radius will be split into resolution
@@ -658,8 +553,6 @@ public:
                                                     int resolution = 20,
                                                     int split = 1);
 
-    /// \fn CreateTorus
-    ///
     /// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
     /// The torus will be centered at (0, 0, 0) and a radius of
     /// torus_radius. The tube of the torus will have a radius of
@@ -676,8 +569,6 @@ public:
             int radial_resolution = 30,
             int tubular_resolution = 20);
 
-    /// \fn CreateArrow
-    ///
     /// Factory function to create an arrow mesh (TriangleMeshFactory.cpp)
     /// The axis of the cone with cone_radius will be along the z-axis.
     /// The cylinder with cylinder_radius is from
@@ -707,8 +598,6 @@ public:
             int cylinder_split = 4,
             int cone_split = 1);
 
-    /// \fn CreateCoordinateFrame
-    ///
     /// Factory function to create a coordinate frame mesh
     /// (TriangleMeshFactory.cpp).
     /// arrows respectively. \param size is the length of the axes.
@@ -718,8 +607,6 @@ public:
             double size = 1.0,
             const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
-    /// \fn CreateMoebius
-    ///
     /// Factory function to create a Moebius strip.
     /// \param length_split defines the number of segments along the Moebius
     /// strip. \param width_split defines the number of segments along the width
