@@ -293,6 +293,20 @@ void pybind_trianglemesh(py::module &m) {
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
+            .def("deform_as_rigid_as_possible",
+                 &geometry::TriangleMesh::DeformAsRigidAsPossible,
+                 "This function deforms the mesh using the method by Sorkine "
+                 "and Alexa, "
+                 "'As-Rigid-As-Possible Surface Modeling', 2007",
+                 "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
+                 "max_iter"_a)
+            .def_static("create_from_point_cloud_alpha_shape",
+                        &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
+                        "Alpha shapes are a generalization of the convex hull. "
+                        "With decreasing alpha value the shape schrinks and "
+                        "creates cavities. See Edelsbrunner and Muecke, "
+                        "\"Three-Dimensional Alpha Shapes\", 1994.",
+                        "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a)
             .def_static(
                     "create_from_point_cloud_ball_pivoting",
                     &geometry::TriangleMesh::CreateFromPointCloudBallPivoting,
@@ -554,6 +568,29 @@ void pybind_trianglemesh(py::module &m) {
                                     {{"triangle_mask",
                                       "1D bool array, True values indicate "
                                       "triangles that should be removed."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "deform_as_rigid_as_possible",
+            {{"constraint_vertex_indices",
+              "Indices of the triangle vertices that should be constrained by "
+              "the vertex positions "
+              "in constraint_vertex_positions."},
+             {"constraint_vertex_positions",
+              "Vertex positions used for the constraints."},
+             {"max_iter",
+              "Maximum number of iterations to minimize energy functional."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
+            {{"pcd",
+              "PointCloud from whicht the TriangleMesh surface is "
+              "reconstructed."},
+             {"alpha",
+              "Parameter to controll the shape. A very big value will give a "
+              "shape close to the convex hull."},
+             {"tetra_mesh",
+              "If not None, than uses this to construct the alpha shape. "
+              "Otherwise, TetraMesh is computed from pcd."},
+             {"pt_map",
+              "Optional map from tetra_mesh vertex indices to pcd points."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_ball_pivoting",
             {{"pcd",

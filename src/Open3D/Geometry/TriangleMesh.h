@@ -41,12 +41,15 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class TetraMesh;
 
 /// \class TriangleMesh
 ///
-/// \brief Triangle mesh contains vertices and triangles represented by the indices to the vertices.
+/// \brief Triangle mesh contains vertices and triangles represented by the
+/// indices to the vertices.
 ///
-/// Optionally, the mesh may also contain triangle normals, vertex normals and vertex colors.
+/// Optionally, the mesh may also contain triangle normals, vertex normals and
+/// vertex colors.
 class TriangleMesh : public MeshBase {
 public:
     /// \brief Default Constructor.
@@ -109,35 +112,39 @@ public:
 
     /// \fn ComputeTriangleNormals
     ///
-    /// \brief Function to compute triangle normals, usually called before rendering.
+    /// \brief Function to compute triangle normals, usually called before
+    /// rendering.
     TriangleMesh &ComputeTriangleNormals(bool normalized = true);
 
     /// \fn ComputeVertexNormals
     ///
-    /// \brief Function to compute vertex normals, usually called before rendering.
+    /// \brief Function to compute vertex normals, usually called before
+    /// rendering.
     TriangleMesh &ComputeVertexNormals(bool normalized = true);
 
     /// \fn ComputeAdjacencyList
     ///
-    /// \brief Function to compute adjacency list, call before adjacency list is needed.
+    /// \brief Function to compute adjacency list, call before adjacency list is
+    /// needed.
     TriangleMesh &ComputeAdjacencyList();
 
     /// \fn RemoveDuplicatedVertices
     ///
-    /// \brief Function that removes duplicated verties, i.e., vertices that have
-    /// identical coordinates.
+    /// \brief Function that removes duplicated verties, i.e., vertices that
+    /// have identical coordinates.
     TriangleMesh &RemoveDuplicatedVertices();
 
     /// \fn RemoveDuplicatedTriangles
     ///
-    /// \brief Function that removes duplicated triangles, i.e., removes triangles
-    /// that reference the same three vertices, independent of their order.
+    /// \brief Function that removes duplicated triangles, i.e., removes
+    /// triangles that reference the same three vertices, independent of their
+    /// order.
     TriangleMesh &RemoveDuplicatedTriangles();
 
     /// \fn RemoveUnreferencedVertices
     ///
-    /// \brief This function removes vertices from the triangle mesh that are not
-    /// referenced in any triangle of the mesh.
+    /// \brief This function removes vertices from the triangle mesh that are
+    /// not referenced in any triangle of the mesh.
     TriangleMesh &RemoveUnreferencedVertices();
 
     /// \fn RemoveDegenerateTriangles
@@ -150,15 +157,17 @@ public:
 
     /// \fn RemoveNonManifoldEdges
     ///
-    /// \brief Function that removes all non-manifold edges, by successively deleting
-    /// triangles with the smallest surface area adjacent to the non-manifold
-    /// edge until the number of adjacent triangles to the edge is `<= 2`.
+    /// \brief Function that removes all non-manifold edges, by successively
+    /// deleting triangles with the smallest surface area adjacent to the
+    /// non-manifold edge until the number of adjacent triangles to the edge is
+    /// `<= 2`.
     TriangleMesh &RemoveNonManifoldEdges();
 
     /// \fn MergeCloseVertices
     ///
     /// \brief Function that will merge close by vertices to a single one.
-    /// The vertex position, normal and color will be the average of the vertices.
+    /// The vertex position, normal and color will be the average of the
+    /// vertices.
     ///
     /// \param eps defines the maximum distance of close by vertices.
     /// This function might help to close triangle soups.
@@ -168,8 +177,9 @@ public:
     ///
     /// \brief Function to sharpen triangle mesh.
     ///
-    /// The output value ($v_o$) is the input value ($v_i$) plus strength times the input value minus the sum of he adjacent values.
-    /// $v_o = v_i x strength (v_i * |N| - \sum_{n \in N} v_n)$.
+    /// The output value ($v_o$) is the input value ($v_i$) plus strength times
+    /// the input value minus the sum of he adjacent values. $v_o = v_i x
+    /// strength (v_i * |N| - \sum_{n \in N} v_n)$.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -318,6 +328,13 @@ public:
                        utility::hash_eigen::hash<Eigen::Vector2i>>
     GetEdgeToTrianglesMap() const;
 
+    /// Function that returns a map from edges (vertex0, vertex1) to the
+    /// vertex (vertex2) indices the given edge belongs to.
+    std::unordered_map<Eigen::Vector2i,
+                       std::vector<int>,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    GetEdgeToVerticesMap() const;
+
     /// \fn ComputeTriangleArea
     ///
     /// Function that computes the area of a mesh triangle
@@ -330,6 +347,21 @@ public:
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index
     double GetTriangleArea(size_t triangle_idx) const;
+
+    static inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
+                                                     int vidx1,
+                                                     int vidx2) {
+        if (vidx0 > vidx2) {
+            std::swap(vidx0, vidx2);
+        }
+        if (vidx0 > vidx1) {
+            std::swap(vidx0, vidx1);
+        }
+        if (vidx1 > vidx2) {
+            std::swap(vidx1, vidx2);
+        }
+        return Eigen::Vector3i(vidx0, vidx1, vidx2);
+    }
 
     /// \fn GetSurfaceArea
     ///
@@ -358,6 +390,11 @@ public:
     /// by the triangle index.
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
 
+    /// Helper function to get an edge with ordered vertex indices.
+    static inline Eigen::Vector2i GetOrderedEdge(int vidx0, int vidx1) {
+        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+    }
+
     /// \fn SamplePointsUniformlyImpl
     ///
     /// Function to sample \param number_of_points points uniformly from the
@@ -383,8 +420,10 @@ public:
     /// PointCloud is first uniformly sampled with init_number_of_points
     /// x number_of_points number of points.
     /// \param number_of_points defines Number of points that should be sampled.
-    /// \param init_factor defines the factor for the initial uniformly sampled PointCloud. This init PointCloud is used for sample elimination.
-    /// \param pcl defines the Initial PointCloud that is used for sample elimination. If this parameter is provided the init_factor is ignored.
+    /// \param init_factor defines the factor for the initial uniformly sampled
+    /// PointCloud. This init PointCloud is used for sample elimination. \param
+    /// pcl defines the Initial PointCloud that is used for sample elimination.
+    /// If this parameter is provided the init_factor is ignored.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
@@ -395,7 +434,8 @@ public:
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
     /// new vertices lie on the midpoint of the triangle edges.
-    /// \param number_of_iterations defines a single iteration splits each triangle into four triangles that cover the same surface.
+    /// \param number_of_iterations defines a single iteration splits each
+    /// triangle into four triangles that cover the same surface.
     std::shared_ptr<TriangleMesh> SubdivideMidpoint(
             int number_of_iterations) const;
 
@@ -404,7 +444,8 @@ public:
     /// Function to subdivide triangle mesh using Loop's scheme.
     /// Cf. Charles T. Loop, "Smooth subdivision surfaces based on triangles",
     /// 1987. Each triangle is subdivided into four triangles per iteration.
-    /// \param number_of_iterations defines a single iteration splits each triangle into four triangles that cover the same surface.
+    /// \param number_of_iterations defines a single iteration splits each
+    /// triangle into four triangles that cover the same surface.
     std::shared_ptr<TriangleMesh> SubdivideLoop(int number_of_iterations) const;
 
     /// \fn SimplifyVertexClustering
@@ -412,7 +453,9 @@ public:
     /// Function to simplify mesh using Vertex Clustering.
     /// The result can be a non-manifold mesh.
     /// \param voxel_size - The size of the voxel within vertices are pooled.
-    /// \param contraction - Method to aggregate vertex information. Average computes a simple average, Quadric minimizes the distance to the adjacent planes.
+    /// \param contraction - Method to aggregate vertex information. Average
+    /// computes a simple average, Quadric minimizes the distance to the
+    /// adjacent planes.
     std::shared_ptr<TriangleMesh> SimplifyVertexClustering(
             double voxel_size,
             SimplificationContraction contraction =
@@ -422,7 +465,9 @@ public:
     ///
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
-    /// \param target_number_of_triangles defines the number of triangles that the simplified mesh should have. It is not guranteed that this number will be reached.
+    /// \param target_number_of_triangles defines the number of triangles that
+    /// the simplified mesh should have. It is not guranteed that this number
+    /// will be reached.
     std::shared_ptr<TriangleMesh> SimplifyQuadricDecimation(
             int target_number_of_triangles) const;
 
@@ -451,7 +496,7 @@ public:
     /// clipped.
     /// \param bbox defines the input Oriented Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(const OrientedBoundingBox &bbox) const;
-    
+
     /// \fn ClusterConnectedTriangles
     ///
     /// \brief Function that clusters connected triangles, i.e., triangles that
@@ -462,7 +507,7 @@ public:
     /// cluster, and a third vector contains the surface area per cluster.
     std::tuple<std::vector<int>, std::vector<size_t>, std::vector<double>>
     ClusterConnectedTriangles() const;
-    
+
     /// \fn RemoveTrianglesByIndex
     ///
     /// \brief This function removes the triangles with index in
@@ -472,7 +517,7 @@ public:
     /// \param triangle_indices Indices of the triangles that should be
     /// removed.
     void RemoveTrianglesByIndex(const std::vector<size_t> &triangle_indices);
-    
+
     /// \fn RemoveTrianglesByMask
     ///
     /// \brief This function removes the triangles that are masked in
@@ -482,6 +527,38 @@ public:
     /// \param triangle_mask Mask of triangles that should be removed.
     /// Should have same size as \ref triangles_.
     void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
+
+    /// \brief This function deforms the mesh using the method by
+    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
+    ///
+    /// \param constraint_vertex_indices Indices of the triangle vertices that
+    /// should be constrained by the vertex positions in
+    /// constraint_vertex_positions.
+    /// \param constraint_vertex_positions Vertex positions used for the
+    /// constraints.
+    /// \param max_iter maximum number of iterations to minimize energy
+    /// functional. \return The deformed TriangleMesh
+    std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
+            const std::vector<int> &constraint_vertex_indices,
+            const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
+            size_t max_iter) const;
+
+    /// \brief Alpha shapes are a generalization of the convex hull. With
+    /// decreasing alpha value the shape schrinks and creates cavities.
+    /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
+    /// \param pcd PointCloud for what the alpha shape should be computed.
+    /// \param alpha parameter to controll the shape. A very big value will
+    /// give a shape close to the convex hull.
+    /// \param tetra_mesh If not a nullptr, than uses this to construct the
+    /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
+    /// \param pt_map Optional map from tetra_mesh vertex indices to pcd
+    /// points.
+    /// \return TriangleMesh of the alpha shape.
+    static std::shared_ptr<TriangleMesh> CreateFromPointCloudAlphaShape(
+            const PointCloud &pcd,
+            double alpha,
+            std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
+            std::vector<size_t> *pt_map = nullptr);
 
     /// \fn CreateFromPointCloudBallPivoting
     ///
@@ -494,8 +571,9 @@ public:
     /// done by rolling a ball with a given radius (cf. \param radii) over the
     /// point cloud, whenever the ball touches three points a triangle is
     /// created.
-    /// \param pcd defines the PointCloud from which the TriangleMesh surface is reconstructed. Has to contain normals.
-    /// \param radii defines the radii of the ball that are used for the surface reconstruction.
+    /// \param pcd defines the PointCloud from which the TriangleMesh surface is
+    /// reconstructed. Has to contain normals. \param radii defines the radii of
+    /// the ball that are used for the surface reconstruction.
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
 
@@ -539,7 +617,11 @@ public:
     /// The sphere with radius will be centered at (0, 0, 0).
     /// Its axis is aligned with z-axis.
     /// \param radius defines radius of the sphere.
-    /// \param resolution defines the resolution of the sphere. The longitues will be split into resolution segments (i.e. there are resolution + 1 latitude lines including the north and south pole). The latitudes will be split into `2 * resolution segments (i.e. there are 2 * resolution longitude lines.)
+    /// \param resolution defines the resolution of the sphere. The longitues
+    /// will be split into resolution segments (i.e. there are resolution + 1
+    /// latitude lines including the north and south pole). The latitudes will
+    /// be split into `2 * resolution segments (i.e. there are 2 * resolution
+    /// longitude lines.)
     static std::shared_ptr<TriangleMesh> CreateSphere(double radius = 1.0,
                                                       int resolution = 20);
 
@@ -552,8 +634,9 @@ public:
     /// segments.
     /// \param radius defines the radius of the cylinder.
     /// \param height defines the height of the cylinder.
-    /// \param resolution defines that the circle will be split into resolution segments
-    /// \param split defines that the height will be split into split segments.
+    /// \param resolution defines that the circle will be split into resolution
+    /// segments \param split defines that the height will be split into split
+    /// segments.
     static std::shared_ptr<TriangleMesh> CreateCylinder(double radius = 1.0,
                                                         double height = 2.0,
                                                         int resolution = 20,
@@ -567,8 +650,9 @@ public:
     /// segments. The height will be split into split segments.
     /// \param radius defines the radius of the cone.
     /// \param height defines the height of the cone.
-    /// \param resolution defines that the circle will be split into resolution segments
-    /// \param split defines that the height will be split into split segments.
+    /// \param resolution defines that the circle will be split into resolution
+    /// segments \param split defines that the height will be split into split
+    /// segments.
     static std::shared_ptr<TriangleMesh> CreateCone(double radius = 1.0,
                                                     double height = 2.0,
                                                     int resolution = 20,
@@ -581,10 +665,11 @@ public:
     /// torus_radius. The tube of the torus will have a radius of
     /// tube_radius. The number of segments in radial and tubular direction are
     /// radial_resolution and tubular_resolution respectively.
-    /// \param torus_radius defines the radius from the center of the torus to the center of the tube.
-    /// \param tube_radius defines the radius of the torus tube.
-    /// \param radial_resolution defines the he number of segments along the radial direction.
-    /// \param tubular_resolution defines the number of segments along the tubular direction.
+    /// \param torus_radius defines the radius from the center of the torus to
+    /// the center of the tube. \param tube_radius defines the radius of the
+    /// torus tube. \param radial_resolution defines the he number of segments
+    /// along the radial direction. \param tubular_resolution defines the number
+    /// of segments along the tubular direction.
     static std::shared_ptr<TriangleMesh> CreateTorus(
             double torus_radius = 1.0,
             double tube_radius = 0.5,
@@ -605,11 +690,14 @@ public:
     /// segments.
     /// \param cylinder_radius defines the radius of the cylinder.
     /// \param cone_radius defines the radius of the cone.
-    /// \param cylinder_height defines the height of the cylinder. The cylinder is from (0, 0, 0) to (0, 0, cylinder_height)
-    /// \param cone_height defines the height of the cone. The axis of the cone will be from (0, 0, cylinder_height) to (0, 0, cylinder_height + cone_height).
-    /// \param resolution defines the cone will be split into resolution segments.
-    /// \param cylinder_split defines the cylinder_height will be split into cylinder_split segments.
-    /// \param cone_split defines the cone_height will be split into cone_split segments.
+    /// \param cylinder_height defines the height of the cylinder. The cylinder
+    /// is from (0, 0, 0) to (0, 0, cylinder_height) \param cone_height defines
+    /// the height of the cone. The axis of the cone will be from (0, 0,
+    /// cylinder_height) to (0, 0, cylinder_height + cone_height). \param
+    /// resolution defines the cone will be split into resolution segments.
+    /// \param cylinder_split defines the cylinder_height will be split into
+    /// cylinder_split segments. \param cone_split defines the cone_height will
+    /// be split into cone_split segments.
     static std::shared_ptr<TriangleMesh> CreateArrow(
             double cylinder_radius = 1.0,
             double cone_radius = 1.5,
@@ -633,10 +721,9 @@ public:
     /// \fn CreateMoebius
     ///
     /// Factory function to create a Moebius strip.
-    /// \param length_split defines the number of segments along the Moebius strip.
-    /// \param width_split defines the number of segments along the width of
-    /// the Moebius strip.
-    /// \param twists defines the number of twists of the
+    /// \param length_split defines the number of segments along the Moebius
+    /// strip. \param width_split defines the number of segments along the width
+    /// of the Moebius strip. \param twists defines the number of twists of the
     /// strip.
     /// \param radius defines the radius of the Moebius strip.
     /// \param flatness controls the height of the strip.
@@ -665,12 +752,31 @@ protected:
             bool filter_normal,
             bool filter_color) const;
 
+    /// \brief Function that computes for each edge in the triangle mesh and
+    /// passed as parameter edges_to_vertices the cot weight.
+    ///
+    /// \param edges_to_vertices map from edge to vector of neighbouring
+    /// vertices.
+    /// \param min_weight minimum weight returned. Weights smaller than this
+    /// get clamped.
+    /// \return cot weight per edge.
+    std::unordered_map<Eigen::Vector2i,
+                       double,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    ComputeEdgeWeightsCot(
+            const std::unordered_map<Eigen::Vector2i,
+                                     std::vector<int>,
+                                     utility::hash_eigen::hash<Eigen::Vector2i>>
+                    &edges_to_vertices,
+            double min_weight = std::numeric_limits<double>::lowest()) const;
+
 public:
     /// List of triangles denoted by the index of points forming the triangle.
     std::vector<Eigen::Vector3i> triangles_;
     /// Triangle normals.
     std::vector<Eigen::Vector3d> triangle_normals_;
-    /// The set adjacency_list[i] contains the indices of adjacent vertices of vertex i.
+    /// The set adjacency_list[i] contains the indices of adjacent vertices of
+    /// vertex i.
     std::vector<std::unordered_set<int>> adjacency_list_;
     std::vector<Eigen::Vector2d> triangle_uvs_;
     /// Texture of the image

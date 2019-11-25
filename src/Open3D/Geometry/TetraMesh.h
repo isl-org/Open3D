@@ -114,8 +114,8 @@ public:
     ///
     /// The method creates the Delaunay triangulation
     /// using the implementation from Qhull.
-    static std::shared_ptr<TetraMesh> CreateFromPointCloud(
-            const PointCloud &point_cloud);
+    static std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
+    CreateFromPointCloud(const PointCloud &point_cloud);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
