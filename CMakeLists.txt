@@ -98,6 +98,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+# headless rendering
+if (ENABLE_HEADLESS_RENDERING)
+    add_definitions(-DHEADLESS_RENDERING)
+endif()
+
 # Set OS-specific things here
 if (WIN32)
     # can't hide the unit testing option on Windows only
