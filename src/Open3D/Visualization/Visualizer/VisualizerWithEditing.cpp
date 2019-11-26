@@ -108,7 +108,9 @@ bool VisualizerWithEditing::AddGeometry(
     }
     geometry_ptrs_.insert(editing_geometry_ptr_);
     geometry_renderer_ptrs_.insert(editing_geometry_renderer_ptr_);
-    ResetViewPoint(true);
+    if (reset_bounding_box) {
+        ResetViewPoint(true);
+    }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
