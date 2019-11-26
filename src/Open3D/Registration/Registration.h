@@ -63,7 +63,12 @@ public:
     int max_iteration_;
 };
 
-/// Class that defines the convergence criteria of RANSAC. RANSAC algorithm stops if the iteration number hits max_iteration_, or the validation has been run for max_validation_ times. Note that the validation is the most computational expensive operator in an iteration. Most iterations do not do full validation. It is crucial to control max_validation_ so that the computation time is acceptable.
+/// Class that defines the convergence criteria of RANSAC. RANSAC algorithm
+/// stops if the iteration number hits max_iteration_, or the validation has
+/// been run for max_validation_ times. Note that the validation is the most
+/// computational expensive operator in an iteration. Most iterations do not
+/// do full validation. It is crucial to control max_validation_ so that the 
+/// computation time is acceptable.
 class RANSACConvergenceCriteria {
 public:
     RANSACConvergenceCriteria(int max_iteration = 1000,

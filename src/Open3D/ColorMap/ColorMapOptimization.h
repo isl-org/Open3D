@@ -46,7 +46,9 @@ class PinholeCameraTrajectory;
 
 namespace color_map {
 
-/// Consider color mapping to the geometry reconstructed from depth cameras. As color and depth frames are not perfectly aligned, the texture mapping using color images is subject to results in blurred color map.
+/// Consider color mapping to the geometry reconstructed from depth cameras.
+/// As color and depth frames are not perfectly aligned, the texture mapping
+/// using color images is subject to results in blurred color map.
 class ColorMapOptimizationOption {
 public:
     ColorMapOptimizationOption(

@@ -48,7 +48,8 @@ enum class TransformationEstimationType {
     ColoredICP = 3,
 };
 
-/// Base class that estimates a transformation between two point clouds. The virtual function ComputeTransformation() must be implemented in the subclasses.
+/// Base class that estimates a transformation between two point clouds. The
+/// virtual function ComputeTransformation() must be implemented in the subclasses.
 
 class TransformationEstimation {
 public:

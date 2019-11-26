@@ -51,7 +51,7 @@ private:
 };
 
 /// Signals the scope.
-class ScopeTimer : public Timer {ls
+class ScopeTimer : public Timer {
 
 public:
     ScopeTimer(const std::string &scope_timer_info = "");

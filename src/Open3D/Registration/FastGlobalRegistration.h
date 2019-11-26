@@ -42,7 +42,9 @@ namespace registration {
 class Feature;
 class RegistrationResult;
 
-/// This is an algorithm for fast global registration of partially overlapping 3D surface. More info here - http://vladlen.info/publications/fast-global-registration/
+/// This is an algorithm for fast global registration of partially overlapping
+/// 3D surface.
+/// More info here - http://vladlen.info/publications/fast-global-registration/
 class FastGlobalRegistrationOption {
 public:
     FastGlobalRegistrationOption(double division_factor = 1.4,

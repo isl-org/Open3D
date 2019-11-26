@@ -46,7 +46,8 @@ class Image;
 /// Typedef and functions for ImagePyramid
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
-/// 2D image means that the object at has only two dimensions i.e. length and breadth and can be drawn on a plane sheet of paper.
+/// 2D image means that the object at has only two dimensions i.e. length and
+/// breadth and can be drawn on a plane sheet of paper.
 class Image : public Geometry2D {
 public:
     enum class ColorToIntensityConversionType {

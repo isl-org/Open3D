@@ -41,7 +41,9 @@ class AxisAlignedBoundingBox;
 class TriangleMesh;
 class TetraMesh;
 
-/// In 3D, lines can be described using vector equations or parametric equations. They are similar to lines in 2D with the addition of perpendicular, parallel and skew lines.
+/// In 3D, lines can be described using vector equations or parametric equations.
+/// They are similar to lines in 2D with the addition of perpendicular, parallel
+///  and skew lines.
 class LineSet : public Geometry3D {
 public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}

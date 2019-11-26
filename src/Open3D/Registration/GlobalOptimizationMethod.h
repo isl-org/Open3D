@@ -51,7 +51,10 @@ public:
             const GlobalOptimizationOption &option) const = 0;
 };
 
-/// Here, we use a concurrent implementation in which simulation results are shared among different minimization tasks whenever these results are helping to converge to the global minimum of a specific minimization task. For more info -  https://www.onepetro.org/journal-paper/SPE-182639-PA
+/// Here, we use a concurrent implementation in which simulation results are
+/// shared among different minimization tasks whenever these results are helping
+/// to converge to the global minimum of a specific minimization task.
+/// For more info -  https://www.onepetro.org/journal-paper/SPE-182639-PA
 class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
 public:
     GlobalOptimizationGaussNewton() {}
