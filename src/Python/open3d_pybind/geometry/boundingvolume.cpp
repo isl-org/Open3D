@@ -55,6 +55,22 @@ void pybind_boundingvolume(py::module &m) {
                  [](const geometry::OrientedBoundingBox &box) {
                      return std::string("geometry::OrientedBoundingBox");
                  })
+            .def("get_point_indices_within_bounding_box",
+                 &geometry::OrientedBoundingBox::
+                         GetPointIndicesWithinBoundingBox,
+                 "Return indices to points that are within the bounding box.",
+                 "points"_a)
+            .def_static("create_from_axis_aligned_bounding_box",
+                        &geometry::OrientedBoundingBox::
+                                CreateFromAxisAlignedBoundingBox,
+                        "Returns an oriented bounding box from the "
+                        "AxisAlignedBoundingBox.",
+                        "aabox"_a)
+            .def_static(
+                    "create_from_points",
+                    &geometry::OrientedBoundingBox::CreateFromPoints,
+                    "Creates the bounding box that encloses the set of points.",
+                    "points"_a)
             .def("volume", &geometry::OrientedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
             .def("get_box_points", &geometry::OrientedBoundingBox::GetBoxPoints,
@@ -69,6 +85,17 @@ void pybind_boundingvolume(py::module &m) {
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_box_points");
+    docstring::ClassMethodDocInject(m, "OrientedBoundingBox",
+                                    "get_point_indices_within_bounding_box",
+                                    {{"points", "A list of points."}});
+    docstring::ClassMethodDocInject(
+            m, "OrientedBoundingBox", "create_from_axis_aligned_bounding_box",
+            {{"aabox",
+              "AxisAlignedBoundingBox object from which OrientedBoundingBox is "
+              "created."}});
+    docstring::ClassMethodDocInject(m, "OrientedBoundingBox",
+                                    "create_from_points",
+                                    {{"points", "A list of points."}});
 
     py::class_<geometry::AxisAlignedBoundingBox,
                PyGeometry3D<geometry::AxisAlignedBoundingBox>,
@@ -101,6 +128,27 @@ void pybind_boundingvolume(py::module &m) {
             .def("get_extent", &geometry::AxisAlignedBoundingBox::GetExtent,
                  "Get the extent/length of the bounding box in x, y, and z "
                  "dimension.")
+            .def("get_half_extent",
+                 &geometry::AxisAlignedBoundingBox::GetHalfExtent,
+                 "Returns the half extent of the bounding box.")
+            .def("get_max_extent",
+                 &geometry::AxisAlignedBoundingBox::GetMaxExtent,
+                 "Returns the maximum extent, i.e. the maximum of X, Y and Z "
+                 "axis")
+            .def("get_point_indices_within_bounding_box",
+                 &geometry::AxisAlignedBoundingBox::
+                         GetPointIndicesWithinBoundingBox,
+                 "Return indices to points that are within the bounding box.",
+                 "points"_a)
+            .def("get_print_info",
+                 &geometry::AxisAlignedBoundingBox::GetPrintInfo,
+                 "Returns the 3D dimensions of the bounding box in string "
+                 "format.")
+            .def_static(
+                    "create_from_points",
+                    &geometry::AxisAlignedBoundingBox::CreateFromPoints,
+                    "Creates the bounding box that encloses the set of points.",
+                    "points"_a)
             .def_readwrite("min_bound",
                            &geometry::AxisAlignedBoundingBox::min_bound_,
                            "``float64`` array of shape ``(3, )``")
@@ -113,4 +161,16 @@ void pybind_boundingvolume(py::module &m) {
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
                                     "get_box_points");
     docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox", "get_extent");
+    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
+                                    "get_half_extent");
+    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
+                                    "get_max_extent");
+    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
+                                    "get_point_indices_within_bounding_box",
+                                    {{"points", "A list of points."}});
+    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
+                                    "get_print_info");
+    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
+                                    "create_from_points",
+                                    {{"points", "A list of points."}});
 }
