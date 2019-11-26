@@ -135,18 +135,26 @@ void ExpectEQ(const int* const v0, const int* const v1, const size_t& size);
 void ExpectEQ(const std::vector<int>& v0, const std::vector<int>& v1);
 
 // Test equality of two arrays of float.
-void ExpectEQ(const float* const v0, const float* const v1, const size_t& size);
+void ExpectEQ(const float* const v0,
+              const float* const v1,
+              const size_t& size,
+              float threshold = THRESHOLD_1E_6);
 
 // Test equality of two vectors of float.
-void ExpectEQ(const std::vector<float>& v0, const std::vector<float>& v1);
+void ExpectEQ(const std::vector<float>& v0,
+              const std::vector<float>& v1,
+              float threshold = THRESHOLD_1E_6);
 
 // Test equality of two arrays of double.
 void ExpectEQ(const double* const v0,
               const double* const v1,
-              const size_t& size);
+              const size_t& size,
+              double threshold = THRESHOLD_1E_6);
 
 // Test equality of two vectors of double.
-void ExpectEQ(const std::vector<double>& v0, const std::vector<double>& v1);
+void ExpectEQ(const std::vector<double>& v0,
+              const std::vector<double>& v1,
+              double threshold = THRESHOLD_1E_6);
 
 // Reinterpret cast from uint8_t* to float*.
 template <class T>
