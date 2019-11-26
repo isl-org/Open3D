@@ -131,7 +131,7 @@ public:
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
-    /// Function to remove all geometries from the scene
+    /// Function to remove all geometries from the scene.
     /// After calling this function, the Visualizer releases the pointer of
     /// all geometry objects.
     virtual bool ClearGeometries();
