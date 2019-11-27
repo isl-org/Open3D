@@ -26,6 +26,7 @@
 
 #include "Application.h"
 
+#include "Theme.h"
 #include "Window.h"
 
 #include <SDL.h>
@@ -46,9 +47,9 @@
 #define getcwd _getcwd
 #endif // WIN32
 
-#include <iostream> // debugging
-
 namespace {
+
+const int RUNLOOP_DELAY_MSEC = 10;
 
 bool isDirectory(const std::string& path) {
     struct stat statbuf;
@@ -104,6 +105,7 @@ namespace gui {
 struct Application::Impl {
     std::string resourcePath;
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
+    Theme theme;
 };
 
 Application& Application::GetInstance() {
@@ -112,7 +114,14 @@ Application& Application::GetInstance() {
 }
 
 Application::Application()
-    : impl_(new Application::Impl()) {
+: impl_(new Application::Impl()) {
+    impl_->theme.backgroundColor = Color(0.25, 0.25, 0.25);
+    impl_->theme.fontPath = "Roboto-Medium.ttf";  // full path will be added in Initialize()
+    impl_->theme.fontSize = 16;
+    impl_->theme.textColor = Color(0.9, 0.9, 0.9);
+    impl_->theme.borderWidth = 1;
+    impl_->theme.borderRadius = 3;
+    impl_->theme.borderColor = Color(0.5, 0.5, 0.5);
 }
 
 Application::~Application() {
@@ -120,9 +129,11 @@ Application::~Application() {
 
 void Application::Initialize(int argc, const char *argv[]) {
     impl_->resourcePath = findResourcePath(argc, argv);
+    impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
+    window->OnResize();  // so we get an initial resize
     impl_->windows[window->GetID()] = window;
 }
 
@@ -178,9 +189,6 @@ void Application::Run() {
 //            mEngine->execute();
 //        }
 
-        // Loop over fresh events twice: first stash them and let ImGui process them, then allow
-        // the app to process the stashed events. This is done because ImGui might wish to block
-        // certain events from the app (e.g., when dragging the mouse over an obscuring window).
         constexpr int kMaxEvents = 16;
         SDL_Event events[kMaxEvents];
         int nevents = 0;
@@ -188,84 +196,89 @@ void Application::Run() {
 //            ImGuiIO& io = ImGui::GetIO();
             SDL_Event* event = &events[nevents];
             switch (event->type) {
-                case SDL_MOUSEWHEEL: {
-//                    if (event->wheel.x > 0) io.MouseWheelH += 1;
-//                    if (event->wheel.x < 0) io.MouseWheelH -= 1;
-//                    if (event->wheel.y > 0) io.MouseWheel += 1;
-//                    if (event->wheel.y < 0) io.MouseWheel -= 1;
+                case SDL_QUIT:   // sent after last window closed
+                    done = true;
+                    break;
+                case SDL_MOUSEMOTION: {
+                    auto &e = event->motion;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        auto scaling = win->GetScaling();
+                        win->OnMouseMove(MouseMoveEvent{ int(std::ceil(float(e.x) * scaling)),
+                                                         int(std::ceil(float(e.y) * scaling)) });
+                    }
                     break;
                 }
-                case SDL_MOUSEBUTTONDOWN: {
-//                    if (event->button.button == SDL_BUTTON_LEFT) mousePressed[0] = true;
-//                    if (event->button.button == SDL_BUTTON_RIGHT) mousePressed[1] = true;
-//                    if (event->button.button == SDL_BUTTON_MIDDLE) mousePressed[2] = true;
+                case SDL_MOUSEWHEEL: {
+                    auto &e = event->wheel;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        auto scaling = win->GetScaling();
+                        win->OnMouseWheel(MouseWheelEvent{ int(std::ceil(float(e.x) * scaling)),
+                                                           int(std::ceil(float(e.y) * scaling)) });
+                    }
+                    break;
+                }
+                case SDL_MOUSEBUTTONDOWN:
+                case SDL_MOUSEBUTTONUP:
+                {
+                    auto &e = event->button;
+                    MouseButton button = MouseButton::NONE;
+                    switch (e.button) {
+                        case SDL_BUTTON_LEFT: button = MouseButton::LEFT; break;
+                        case SDL_BUTTON_RIGHT: button = MouseButton::RIGHT; break;
+                        case SDL_BUTTON_MIDDLE: button = MouseButton::MIDDLE; break;
+                        case SDL_BUTTON_X1: button = MouseButton::BUTTON4; break;
+                        case SDL_BUTTON_X2: button = MouseButton::BUTTON5; break;
+                    }
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto type = (event->type == SDL_MOUSEBUTTONDOWN
+                                         ? MouseButtonEvent::DOWN
+                                         : MouseButtonEvent::UP);
+                        auto &win = it->second;
+                        auto scaling = win->GetScaling();
+                        win->OnMouseButton(MouseButtonEvent{
+                                                type,
+                                                int(std::ceil(float(e.x) * scaling)),
+                                                int(std::ceil(float(e.y) * scaling)),
+                                                button, });
+                    }
                     break;
                 }
                 case SDL_TEXTINPUT: {
-//                    io.AddInputCharactersUTF8(event->text.text);
+                    auto &e = event->text;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        win->OnTextInput(TextInputEvent{ e.text });
+                    }
                     break;
                 }
                 case SDL_KEYDOWN:
                 case SDL_KEYUP: {
 //                    int key = event->key.keysym.scancode;
 //                    IM_ASSERT(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown));
-//                    io.KeysDown[key] = (event->type == SDL_KEYDOWN);
-//                    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-//                    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-//                    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-//                    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
                     break;
                 }
-            }
-            nevents++;
-        }
-
-        // Now, loop over the events a second time for app-side processing.
-        for (int i = 0; i < nevents; i++) {
-            const SDL_Event& event = events[i];
-//            ImGuiIO* io = mImGuiHelper ? &ImGui::GetIO() : nullptr;
-            switch (event.type) {
-                case SDL_QUIT:   // sent after last window closed
-                    done = true;
+                case SDL_DROPFILE: {
+                    SDL_free(event->drop.file);
                     break;
-                case SDL_KEYDOWN:
-                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-//                        mClosed = true;
-                    }
-                    break;
-                case SDL_MOUSEWHEEL:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseWheel(event.wheel.y);
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseDown(event.button.button, event.button.x, event.button.y);
-                    break;
-                case SDL_MOUSEBUTTONUP:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseUp(event.button.x, event.button.y);
-                    break;
-                case SDL_MOUSEMOTION:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseMoved(event.motion.x, event.motion.y);
-                    break;
-                case SDL_DROPFILE:
-//                    if (mDropHandler) {
-//                        mDropHandler(event.drop.file);
-//                    }
-                    SDL_free(event.drop.file);
-                    break;
+                }
                 case SDL_WINDOWEVENT: {
-                    auto wIt = impl_->windows.find(event.window.windowID);
+                    auto &e = event->window;
+                    auto wIt = impl_->windows.find(e.windowID);
                     if (wIt == impl_->windows.end()) {
                         break;
                     }
                     auto window = wIt->second;
-                    switch (event.window.event) {
+                    switch (e.event) {
                         case SDL_WINDOWEVENT_RESIZED:
                             window->OnResize();
                             break;
-                        case SDL_WINDOWEVENT_CLOSE:  // sent if not last window
+                        case SDL_WINDOWEVENT_CLOSE:
                             CloseWindow(window);
                             break;
                         default:
@@ -276,13 +289,17 @@ void Application::Run() {
                 default:
                     break;
             }
+            nevents++;
         }
 
         for (auto &kv : impl_->windows) {
-            kv.second->OnDraw();
+            auto w = kv.second;
+            if (w->IsVisible()) {
+                w->OnDraw(float(RUNLOOP_DELAY_MSEC) / 1000.0);
+            }
         }
 
-        SDL_Delay(10); // millisec
+        SDL_Delay(RUNLOOP_DELAY_MSEC);
     }
 
     SDL_Quit();
@@ -294,6 +311,10 @@ void Application::CloseWindow(std::shared_ptr<Window> window) {
 
 const char* Application::GetResourcePath() const {
     return impl_->resourcePath.c_str();
+}
+
+const Theme& Application::GetTheme() const {
+    return impl_->theme;
 }
 
 } // gui

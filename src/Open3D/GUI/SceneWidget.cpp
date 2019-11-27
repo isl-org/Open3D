@@ -50,6 +50,10 @@ void SceneWidget::SetFrame(const Rect& f) {
     impl_->view.SetViewport(f);
 }
 
+bool SceneWidget::Is3D() const {
+    return true;
+}
+
 void SceneWidget::SetBackgroundColor(const Color& color) {
     impl_->view.SetClearColor(color);
 }

@@ -43,6 +43,8 @@ public:
 
     void SetFrame(const Rect& f) override;
 
+    bool Is3D() const override;
+
     void SetBackgroundColor(const Color& color);
 
     RendererCamera& GetCamera();

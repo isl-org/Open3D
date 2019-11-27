@@ -24,56 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Button.h"
 
-#include <memory>
+#include "Theme.h"
+
+#include <imgui.h>
+
+#include <cmath>
 #include <string>
-
-#include "Gui.h"
-#include "Events.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-struct Theme;
-class Widget;
-
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
-
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-    float GetScaling() const;
-
-    bool IsVisible() const;
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout(const Theme& theme);
-
-private:
-    void OnDraw(float dtSec);
-    void OnResize();
-    void OnMouseMove(const MouseMoveEvent& e);
-    void OnMouseButton(const MouseButtonEvent& e);
-    void OnMouseWheel(const MouseWheelEvent& e);
-    void OnTextInput(const TextInputEvent& e);
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+struct Button::Impl {
+    std::string title;
 };
 
+Button::Button(const char *title)
+: impl_(new Button::Impl()) {
+    impl_->title = title;
 }
+
+Button::~Button() {
 }
+
+Size Button::CalcPreferredSize(const Theme& theme) const {
+    auto font = ImGui::GetFont();
+    auto em = std::ceil(font->CalcTextSizeA(theme.fontSize, 10000, 10000, "Ag").y);
+    auto size = font->CalcTextSizeA(theme.fontSize, 10000, 10000, impl_->title.c_str());
+    return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
+}
+
+Widget::DrawResult Button::Draw(const DrawContext& context) {
+    ImGui::SetCursorPosX(GetFrame().x);
+    ImGui::SetCursorPosY(GetFrame().y);
+    if (ImGui::Button(impl_->title.c_str(), ImVec2(GetFrame().width, GetFrame().height))) {
+        if (this->OnClicked) {
+            this->OnClicked();
+        }
+        return Widget::DrawResult::CLICKED;
+    } else {
+        return Widget::DrawResult::NONE;
+    }
+}
+
+} // gui
+} // open3d

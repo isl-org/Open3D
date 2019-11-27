@@ -32,6 +32,7 @@
 namespace open3d {
 namespace gui {
 
+struct Theme;
 class Window;
 
 class Application
@@ -47,6 +48,7 @@ public:
     void AddWindow(std::shared_ptr<Window> window);
 
     const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
+    const Theme& GetTheme() const;
 
 private:
     Application();

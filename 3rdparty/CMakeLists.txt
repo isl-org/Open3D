@@ -204,8 +204,9 @@ else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
 endif ()
 
-# tinygltf
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/tinygltf" tinygltf_INCLUDE_DIRS)
+# tinygltf (don't use Directories(), as the examples/common/ directory includes
+# imgui.h, which we don't want coming before the real imgui path)
+set(tinygltf_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinygltf")
 
 # tinyobjloader
 message(STATUS "Building tinyobjloader from source")
