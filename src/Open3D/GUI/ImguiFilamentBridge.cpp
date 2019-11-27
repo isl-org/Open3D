@@ -227,7 +227,7 @@ void ImguiFilamentBridge::createIndexBuffer(size_t bufferIndex, size_t capacity)
             .build(*impl_->engine);
 }
 
-void ImguiFilamentBridge::createBuffers(int numRequiredBuffers) {
+void ImguiFilamentBridge::createBuffers(size_t numRequiredBuffers) {
     if (numRequiredBuffers > impl_->vertexBuffers.size()) {
         size_t previousSize = impl_->vertexBuffers.size();
         impl_->vertexBuffers.resize(numRequiredBuffers, nullptr);

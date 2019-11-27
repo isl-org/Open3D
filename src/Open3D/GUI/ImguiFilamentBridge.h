@@ -61,7 +61,7 @@ public:
     void update(ImDrawData *imguiData);
 
 private:
-    void createBuffers(int numRequiredBuffers);
+    void createBuffers(size_t numRequiredBuffers);
     void populateVertexData(size_t bufferIndex, size_t vbSizeInBytes, void* vbData,
                             size_t ibSizeInBytes, void* ibData);
     void createVertexBuffer(size_t bufferIndex, size_t capacity);
