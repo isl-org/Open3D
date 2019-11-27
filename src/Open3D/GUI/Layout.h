@@ -25,50 +25,31 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-
-#include <memory>
-#include <string>
-
-#include "Gui.h"
-#include "Events.h"
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
 
-class Renderer;
-struct Theme;
-class Widget;
+struct Margins {
+    int left;
+    int top;
+    int right;
+    int bottom;
 
-class Window {
-    friend class Application;
-    friend class Renderer;
+    Margins();  // all values zero
+    Margins(int px);
+    Margins(int horizPx, int vertPx);
+    Margins(int leftPx, int topPx, int rightPx, int bottomPx);
+};
+
+class VGrid : public Widget {
+    using Super = Widget;
 public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
+    VGrid(int nCols, int spacing = 0, const Margins& margins = Margins());
+    virtual ~VGrid();
 
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-    float GetScaling() const;
-
-    bool IsVisible() const;
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout(const Theme& theme);
-
-private:
-    void OnDraw(float dtSec);
-    void OnResize();
-    void OnMouseMove(const MouseMoveEvent& e);
-    void OnMouseButton(const MouseButtonEvent& e);
-    void OnMouseWheel(const MouseWheelEvent& e);
-    void OnTextInput(const TextInputEvent& e);
-    void* GetNativeDrawable() const;
+    Size CalcPreferredSize(const Theme& theme) const override;
+    void Layout(const Theme& theme) override;
 
 private:
     struct Impl;

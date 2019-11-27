@@ -97,8 +97,19 @@ gui::Renderer::GeometryId createSphereGeometry(gui::Renderer& renderer,
 }
 
 class DemoWindow : public gui::Window {
+    using Super = Window;
 public:
     DemoWindow() : gui::Window("GuiDemo", 640, 480) {
+        toolGrid_ = std::make_shared<gui::VGrid>(2, 2);
+        AddChild(toolGrid_);
+
+        MakeToolButton(toolGrid_, "B1", []() { std::cout << "B1 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B2", []() { std::cout << "B2 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B3", []() { std::cout << "B3 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B4", []() { std::cout << "B4 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B5", []() { std::cout << "B5 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B6", []() { std::cout << "B6 clicked" << std::endl; });
+
         // Create materials
         auto redPlastic = GetRenderer().CreateNonMetal(gui::Color(0.8, 0.0, 0.0),
                                                        0.5f, // roughness
@@ -147,13 +158,30 @@ public:
     }
 
 protected:
-    void Layout() override {
+    void Layout(const gui::Theme& theme) override {
         auto windowSize = GetSize();
-        scene_->SetFrame(gui::Rect(0, 0, windowSize.width, windowSize.height));
+
+        gui::Rect leftRect(0, 0, toolGrid_->CalcPreferredSize(theme).width, windowSize.height);
+        toolGrid_->SetFrame(leftRect);
+
+        scene_->SetFrame(gui::Rect(leftRect.GetRight(), 0,
+                                   windowSize.width - leftRect.GetRight(), windowSize.height));
+
+        Super::Layout(theme);
+    }
+
+private:
+    void MakeToolButton(std::shared_ptr<gui::Widget> parent,
+                        const char *name, std::function<void()> onClicked) {
+        std::shared_ptr<gui::Button> b;
+        b = std::make_shared<gui::Button>(name);
+        b->OnClicked = onClicked;
+        parent->AddChild(b);
     }
 
 private:
     std::shared_ptr<gui::SceneWidget> scene_;
+    std::shared_ptr<gui::VGrid> toolGrid_;
 };
 
 int main(int argc, const char *argv[]) {

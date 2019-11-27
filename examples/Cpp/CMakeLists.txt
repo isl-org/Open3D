@@ -22,26 +22,15 @@ EXAMPLE_CPP(FileSystem                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Flann                     ${CMAKE_PROJECT_NAME})
 if (ENABLE_GUI)
     EXAMPLE_CPP(GuiDemo                   ${CMAKE_PROJECT_NAME})
-
-    # Compile .mat files and copy to resources directory in output directory
-    if (IOS OR ANDROID)
-        set(GUIDEMO_MATC_ARGS --platform mobile)
+    set(GUIDEMO_RSRC_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
+    if (WIN32)
+        add_custom_target(GuiDemoResources
+                          ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
     else ()
-        set(GUIDEMO_MATC_ARGS --platform desktop)
+        add_custom_target(GuiDemoResources
+                          rm -f ${GUIDEMO_RSRC_DIR}
+                          COMMAND ln -s ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
     endif()
-    set(GUIDEMO_MATC ${3RDPARTY_INSTALL_PREFIX}/bin/matc)
-    set(GUIDEMO_RSRCDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
-
-    file(MAKE_DIRECTORY ${GUIDEMO_RSRCDIR})
-    add_custom_command(OUTPUT ${GUIDEMO_RSRCDIR}/metal.filamat
-                       COMMAND ${GUIDEMO_MATC} ${GUIDEMO_MATC_ARGS} -o ${GUIDEMO_RSRCDIR}/metal.filamat ${CMAKE_CURRENT_SOURCE_DIR}/metal.mat)
-    add_custom_command(OUTPUT ${GUIDEMO_RSRCDIR}/nonmetal.filamat
-                       COMMAND ${GUIDEMO_MATC} ${GUIDEMO_MATC_ARGS} -o ${GUIDEMO_RSRCDIR}/nonmetal.filamat ${CMAKE_CURRENT_SOURCE_DIR}/nonmetal.mat)
-    add_custom_target(GuiDemoResources
-                      DEPENDS ${GUIDEMO_RSRCDIR}/metal.filamat
-                              ${GUIDEMO_RSRCDIR}/nonmetal.filamat
-                     )
-    add_dependencies(GuiDemoResources filament_copy)
     add_dependencies(GuiDemo GuiDemoResources)
 endif (ENABLE_GUI)
 EXAMPLE_CPP(Image                     ${CMAKE_PROJECT_NAME})

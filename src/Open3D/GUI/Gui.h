@@ -45,5 +45,11 @@ struct Rect {
     int GetRight() const;
 };
 
+enum class BorderShape {
+    NONE = 0,
+    RECT,
+    ROUNDED_RECT
+};
+
 } // gui
 } // open3d

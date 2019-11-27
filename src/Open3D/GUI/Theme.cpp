@@ -24,56 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-#include "Gui.h"
-#include "Events.h"
+#include "Theme.h"
 
 namespace open3d {
 namespace gui {
-
-class Renderer;
-struct Theme;
-class Widget;
-
-class Window {
-    friend class Application;
-    friend class Renderer;
-public:
-    Window(const std::string& title, int width, int height);
-    virtual ~Window();
-
-    uint32_t GetID() const;
-
-    Renderer& GetRenderer();
-
-    Size GetSize() const;
-    float GetScaling() const;
-
-    bool IsVisible() const;
-    void Show(bool vis = true);
-
-    void AddChild(std::shared_ptr<Widget> w);
-
-protected:
-    virtual void Layout(const Theme& theme);
-
-private:
-    void OnDraw(float dtSec);
-    void OnResize();
-    void OnMouseMove(const MouseMoveEvent& e);
-    void OnMouseButton(const MouseButtonEvent& e);
-    void OnMouseWheel(const MouseWheelEvent& e);
-    void OnTextInput(const TextInputEvent& e);
-    void* GetNativeDrawable() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
 
 }
 }

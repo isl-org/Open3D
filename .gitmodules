@@ -31,3 +31,6 @@
 [submodule "3rdparty/filament/filament"]
 	path = 3rdparty/filament/filament
 	url = https://github.com/google/filament.git
+[submodule "3rdparty/imgui"]
+	path = 3rdparty/imgui
+	url = https://github.com/ocornut/imgui.git
