@@ -179,6 +179,7 @@ void Application::Run() {
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
     bool done = false;
+    std::unordered_map<Window*, int> eventCounts;
     while (!done) {
 //        SDL_Window* sdlWindow = window->getSDLWindow();
 //        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
@@ -189,6 +190,7 @@ void Application::Run() {
 //            mEngine->execute();
 //        }
 
+        eventCounts.clear();
         constexpr int kMaxEvents = 16;
         SDL_Event events[kMaxEvents];
         int nevents = 0;
@@ -207,6 +209,7 @@ void Application::Run() {
                         auto scaling = win->GetScaling();
                         win->OnMouseMove(MouseMoveEvent{ int(std::ceil(float(e.x) * scaling)),
                                                          int(std::ceil(float(e.y) * scaling)) });
+                        eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -218,6 +221,7 @@ void Application::Run() {
                         auto scaling = win->GetScaling();
                         win->OnMouseWheel(MouseWheelEvent{ int(std::ceil(float(e.x) * scaling)),
                                                            int(std::ceil(float(e.y) * scaling)) });
+                        eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -245,6 +249,7 @@ void Application::Run() {
                                                 int(std::ceil(float(e.x) * scaling)),
                                                 int(std::ceil(float(e.y) * scaling)),
                                                 button, });
+                        eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -254,13 +259,20 @@ void Application::Run() {
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
                         win->OnTextInput(TextInputEvent{ e.text });
+                        eventCounts[win.get()] += 1;
                     }
                     break;
                 }
                 case SDL_KEYDOWN:
                 case SDL_KEYUP: {
+                    auto &e = event->text;
 //                    int key = event->key.keysym.scancode;
 //                    IM_ASSERT(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown));
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        eventCounts[win.get()] += 1;
+                    }
                     break;
                 }
                 case SDL_DROPFILE: {
@@ -284,6 +296,7 @@ void Application::Run() {
                         default:
                             break;
                     }
+                    eventCounts[window.get()] += 1;
                     break;
                 }
                 default:
@@ -294,7 +307,8 @@ void Application::Run() {
 
         for (auto &kv : impl_->windows) {
             auto w = kv.second;
-            if (w->IsVisible()) {
+            bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
+            if (w->IsVisible() && gotEvents) {
                 w->OnDraw(float(RUNLOOP_DELAY_MSEC) / 1000.0);
             }
         }
