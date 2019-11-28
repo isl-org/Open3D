@@ -38,6 +38,6 @@ if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud("../../TestData/fragment.ply")
 
     print(
-        "7. Customized visualization with smooth key action (without keyboard repeat delay)"
+        "Customized visualization with smooth key action (without keyboard repeat delay)"
     )
     custom_key_action_without_kb_repeat_delay(pcd)
