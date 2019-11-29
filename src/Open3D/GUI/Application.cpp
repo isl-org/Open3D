@@ -43,7 +43,11 @@
 #if !defined(WIN32)
 #    include <unistd.h>
 #else
-#    include <io.h>
+    #include <io.h>
+    #include <direct.h>
+
+    // Copy-paste from UNIX <sys/stat.h> sources
+    #define S_ISDIR(mask) ((mask & S_IFMT) == S_IFDIR)
 #endif
 
 #ifdef WIN32
@@ -120,6 +124,7 @@ bool isDirectory(const std::string& path) {
     struct stat statbuf;
     if (stat(path.c_str(), &statbuf) != 0)
         return false;
+
     return S_ISDIR(statbuf.st_mode);
 }
 
