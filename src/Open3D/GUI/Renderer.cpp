@@ -42,12 +42,13 @@
 #include <filament/View.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
-#include <sys/errno.h>
 #include <fcntl.h>
 #if !defined(WIN32)
-#    include <unistd.h>
+    #include <unistd.h>
+    #include <sys/errno.h>
 #else
-#    include <io.h>
+    #include <io.h>
+    #include <errno.h>
 #endif
 
 #include <sstream>
@@ -74,7 +75,9 @@ std::string getIOErrorString(int errnoVal) {
         case EPERM:   return "Operation not permitted";
         case EACCES:  return "Access denied";
         case EAGAIN:  return "EAGAIN";
+#if !defined(WIN32)
         case EDQUOT:  return "Over quota";
+#endif
         case EEXIST:  return "File already exists";
         case EFAULT:  return "Bad filename pointer";
         case EINTR:   return "open() interrupted by a signal";

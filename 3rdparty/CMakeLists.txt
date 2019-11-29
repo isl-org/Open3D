@@ -362,13 +362,13 @@ int main(int argc, char *argv[]) { return 0; }"
 endif()
 
 if (ENABLE_GUI)
-    if (SDL2_FOUND)
-        message(STATUS "Using installed SDL2 ${SDL2_VERSION}")
-    else ()
+    #if (SDL2_FOUND)
+    #    message(STATUS "Using installed SDL2 ${SDL2_VERSION}")
+    #else ()
         message(STATUS "Building SDL2 from source")
-        add_subdirectory(SDL2-2.0.10)
-        INSTALL_HEADERS(SDL2-2.0.10)
-    endif ()
+        include(SDL2/sdl2.cmake)
+        set(SDL2_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/SDL2)
+    #endif ()
 endif()
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS

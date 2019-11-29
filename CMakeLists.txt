@@ -89,6 +89,7 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_GUI                "Builds Filament, requires Clang >= 7"     ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
+option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 
 # default built type
