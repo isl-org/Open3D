@@ -19,6 +19,9 @@ def custom_key_action_without_kb_repeat_delay(pcd):
             rotating = True
         elif action == 0:  # key up
             rotating = False
+		elif action == 2: # key repeat
+		    pass
+		return True
 
     def animation_callback(vis):
         nonlocal rotating
@@ -26,7 +29,10 @@ def custom_key_action_without_kb_repeat_delay(pcd):
             ctr = vis.get_view_control()
             ctr.rotate(10.0, 0.0)
 
-    vis.register_key_action_callback(32, key_action_callback)  # space
+    # key_action_callback will be triggered when there's a keyboard press, release or repeat event
+	vis.register_key_action_callback(32, key_action_callback)  # space
+
+	# animation_callback is always repeatedly called by the visualizer
     vis.register_animation_callback(animation_callback)
 
     vis.create_window()
