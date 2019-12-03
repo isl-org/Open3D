@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/IndexingEngine.h"
+#include "Open3D/Container/Indexer.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/SizeVector.h"
 
@@ -34,28 +34,28 @@
 using namespace std;
 using namespace open3d;
 
-class IndexingEnginePermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(IndexingEngine,
-                         IndexingEnginePermuteDevices,
+class IndexerPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(Indexer,
+                         IndexerPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class IndexingEnginePermuteDevicePairs : public PermuteDevicePairs {};
+class IndexerPermuteDevicePairs : public PermuteDevicePairs {};
 INSTANTIATE_TEST_SUITE_P(
-        IndexingEngine,
-        IndexingEnginePermuteDevicePairs,
-        testing::ValuesIn(IndexingEnginePermuteDevicePairs::TestCases()));
+        Indexer,
+        IndexerPermuteDevicePairs,
+        testing::ValuesIn(IndexerPermuteDevicePairs::TestCases()));
 
-class IndexingEnginePermuteSizesDefaultStridesAndDevices
+class IndexerPermuteSizesDefaultStridesAndDevices
     : public testing::TestWithParam<
               std::tuple<std::pair<SizeVector, SizeVector>, Device>> {};
 INSTANTIATE_TEST_SUITE_P(
-        IndexingEngine,
-        IndexingEnginePermuteSizesDefaultStridesAndDevices,
+        Indexer,
+        IndexerPermuteSizesDefaultStridesAndDevices,
         testing::Combine(
                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
                 testing::ValuesIn(PermuteDevices::TestCases())));
 
-TEST_P(IndexingEnginePermuteDevices, TensorRef) {
+TEST_P(IndexerPermuteDevices, TensorRef) {
     Device device = GetParam();
 
     Tensor t({2, 1, 3}, Dtype::Float32, device);
@@ -68,13 +68,13 @@ TEST_P(IndexingEnginePermuteDevices, TensorRef) {
     EXPECT_EQ(SizeVector(tr.strides_, tr.strides_ + 3), SizeVector({3, 3, 1}));
 }
 
-TEST_P(IndexingEnginePermuteDevices, BroadcastRestride) {
+TEST_P(IndexerPermuteDevices, BroadcastRestride) {
     Device device = GetParam();
 
     Tensor input0({2, 1, 1, 3}, Dtype::Float32, device);
     Tensor input1({1, 3}, Dtype::Float32, device);
     Tensor output({2, 2, 2, 1, 3}, Dtype::Float32, device);
-    IndexingEngine indexer({input0, input1}, output);
+    Indexer indexer({input0, input1}, output);
 
     TensorRef input0_tr = indexer.GetInput(0);
     TensorRef input1_tr = indexer.GetInput(1);
@@ -114,13 +114,13 @@ TEST_P(IndexingEnginePermuteDevices, BroadcastRestride) {
               SizeVector({12, 6, 3, 3, 1}));
 }
 
-TEST_P(IndexingEnginePermuteDevices, GetPointers) {
+TEST_P(IndexerPermuteDevices, GetPointers) {
     Device device = GetParam();
 
     Tensor input0({3, 1, 1}, Dtype::Float32, device);
     Tensor input1({2, 1}, Dtype::Float32, device);
     Tensor output({3, 2, 1}, Dtype::Float32, device);
-    IndexingEngine indexer({input0, input1}, output);
+    Indexer indexer({input0, input1}, output);
 
     char* input0_base_ptr = static_cast<char*>(input0.GetDataPtr());
     char* input1_base_ptr = static_cast<char*>(input1.GetDataPtr());

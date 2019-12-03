@@ -81,17 +81,17 @@ struct TensorRef {
 ///
 /// Fancy indexing is supported by restriding input tensor and treating the
 /// operation as elementwise op. Reduction op will be supported by
-/// IndexingEngine in the future.
+/// Indexer in the future.
 ///
-/// After constructing IndexingEngine on the host, the indexing methods can be
+/// After constructing Indexer on the host, the indexing methods can be
 /// used from both host and device.
-class IndexingEngine {
+class Indexer {
 public:
     /// Only single output is supported for simplicity. To extend this function
     /// to support multiple outputs, one may check for shape compatibility of
     /// all outputs.
-    IndexingEngine(const std::vector<Tensor>& input_tensors,
-                   const Tensor& output_tensor) {
+    Indexer(const std::vector<Tensor>& input_tensors,
+            const Tensor& output_tensor) {
         // Conver to TensorRef.
         for (int64_t i = 0; i < input_tensors.size(); ++i) {
             inputs_[i] = TensorRef(input_tensors[i]);
@@ -235,8 +235,8 @@ protected:
     /// Output TensorRef.
     TensorRef output_;
 
-    /// IndexingEngine's global shape. The shape's number of elements is the
-    /// same as GetNumWorkloads() for the IndexingEngine.
+    /// Indexer's global shape. The shape's number of elements is the
+    /// same as GetNumWorkloads() for the Indexer.
     /// For broadcasting, the shape is the same as the output shape. For
     /// reduction, the shape is the same as the input shape.
     int64_t master_shape_[MAX_DIMS];
@@ -244,7 +244,7 @@ protected:
     /// The default strides for master_shape_.
     int64_t master_strides_[MAX_DIMS];
 
-    /// IndexingEngine's global number of dimensions.
+    /// Indexer's global number of dimensions.
     int64_t ndims_;
 };
 

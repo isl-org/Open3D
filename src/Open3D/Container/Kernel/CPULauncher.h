@@ -29,7 +29,7 @@
 #include <cassert>
 #include <vector>
 
-#include "Open3D/Container/IndexingEngine.h"
+#include "Open3D/Container/Indexer.h"
 #include "Open3D/Container/Kernel/Scheduler.h"
 #include "Open3D/Container/Tensor.h"
 
@@ -42,7 +42,7 @@ public:
     static void LaunchUnaryEWKernel(const Tensor& src,
                                     Tensor& dst,
                                     func_t element_kernel) {
-        IndexingEngine indexer({src}, dst);
+        Indexer indexer({src}, dst);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif

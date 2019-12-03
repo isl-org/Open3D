@@ -30,7 +30,7 @@
 #include <cuda_runtime.h>
 
 #include "Open3D/Container/CudaUtils.cuh"
-#include "Open3D/Container/IndexingEngine.h"
+#include "Open3D/Container/Indexer.h"
 #include "Open3D/Container/Kernel/Scheduler.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"
@@ -69,7 +69,7 @@ public:
                                     Tensor& dst,
                                     func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-        IndexingEngine indexer({src}, dst);
+        Indexer indexer({src}, dst);
 
         int64_t num_elems = indexer.NumWorkloads();
         int64_t items_per_block = threads_per_block * items_per_thread;
