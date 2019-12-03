@@ -86,6 +86,12 @@ option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
+if (WIN32)
+    option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
+else ()
+    option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 ON)
+endif ()
+
 
 # Build CUDA module by defalt if CUDA is available
 # Compatible with CMake 3.8+
@@ -96,7 +102,8 @@ if (BUILD_CUDA_MODULE)
         message(STATUS "Building CUDA enabled")
         add_definitions(-DBUILD_CUDA_MODULE)
         enable_language(CUDA)
-        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++11 --expt-extended-lambda")
+        set( CMAKE_CUDA_STANDARD 11 )
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")

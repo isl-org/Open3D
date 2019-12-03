@@ -3,13 +3,7 @@
 #           virtual environment.
 # Option 2: You can also define `cmake -DPYTHON_EXECUTABLE` to specify a python
 #           executable.
-if (NOT PYTHON_EXECUTABLE)
-    # find_program will returns the python executable in current PATH, which
-    # works with virtualenv
-    find_program(PYTHON_IN_PATH "python")
-    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
-endif()
-message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
+find_package( PythonExecutable REQUIRED ) # invokes the module in 3rdparty/CMake
 
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
@@ -96,12 +90,21 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
+
+# add the open3d python module first
+set( COMPILED_MODULE_PATH_LIST $<TARGET_FILE:${PACKAGE_NAME}> )
+
+# add additional optional compiled modules 
+if ( BUILD_TENSORFLOW_OPS )
+    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+endif ()
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
-            -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
+            "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             -DENABLE_JUPYTER=${ENABLE_JUPYTER}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
@@ -112,6 +115,7 @@ add_custom_target(python-package
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
+    VERBATIM
 )
 
 # Use `make pip-package` to create the pip package in the build directory
