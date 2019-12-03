@@ -50,20 +50,20 @@ set_target_properties( open3d_tf_ops PROPERTIES
                        )
 
 target_include_directories( open3d_tf_ops PRIVATE
-    ${nanoflann_INCLUDE_DIR}
     ${TBB_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
+    #${nanoflann_INCLUDE_DIR}
+    #${parallelstl_INCLUDE_DIR}
     )
 # silence warnings caused by tensorflow's Eigen
 target_include_directories( open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
     )
-if ( CUDA_ENABLED )
-    target_include_directories( open3d_tf_ops PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-        )
-endif ()
+#if ( CUDA_ENABLED )
+    #target_include_directories( open3d_tf_ops PRIVATE
+        #${CUB_INCLUDE_DIR}
+        #${CUTLASS_INCLUDE_DIR}
+        #)
+#endif ()
 
 target_link_libraries( open3d_tf_ops PRIVATE
     ${TBB_LIBRARY} 

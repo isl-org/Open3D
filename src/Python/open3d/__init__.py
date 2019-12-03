@@ -46,3 +46,7 @@ if "@ENABLE_JUPYTER@" == "ON":
             'dest': 'open3d',
             'require': 'open3d/extension'
         }]
+
+_build_config = {
+        "BUILD_TENSORFLOW_OPS" : "@BUILD_TENSORFLOW_OPS@" == "ON",
+        }
