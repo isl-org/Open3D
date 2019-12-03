@@ -21,7 +21,8 @@ EXAMPLE_CPP(FileDialog                ${CMAKE_PROJECT_NAME} tinyfiledialogs)
 EXAMPLE_CPP(FileSystem                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Flann                     ${CMAKE_PROJECT_NAME})
 if (ENABLE_GUI)
-    EXAMPLE_CPP(GuiDemo                   ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(FilamentDemo          ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(GuiDemo               ${CMAKE_PROJECT_NAME})
 
     # Compile .mat files and copy to resources directory in output directory
     if (IOS OR ANDROID)
