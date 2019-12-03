@@ -28,12 +28,12 @@
 
 #include <sstream>
 
+#include "Open3D/Container/AdvancedIndexing.h"
 #include "Open3D/Container/Blob.h"
 #include "Open3D/Container/Broadcast.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/Dispatch.h"
 #include "Open3D/Container/Dtype.h"
-#include "Open3D/Container/Indexing.h"
 #include "Open3D/Container/Kernel/Kernel.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Utility/Console.h"
