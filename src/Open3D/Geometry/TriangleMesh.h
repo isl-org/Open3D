@@ -385,6 +385,22 @@ public:
     /// Should have same size as \ref triangles_.
     void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
 
+    /// \brief This function removes the vertices with index in
+    /// \p vertex_indices. Note that also all triangles associated with the
+    /// vertices are removeds.
+    ///
+    /// \param triangle_indices Indices of the triangles that should be
+    /// removed.
+    void RemoveVerticesByIndex(const std::vector<size_t> &vertex_indices);
+
+    /// \brief This function removes the vertices that are masked in
+    /// \p vertex_mask. Note that also all triangles associated with the
+    /// vertices are removed..
+    ///
+    /// \param vertex_mask Mask of vertices that should be removed.
+    /// Should have same size as \ref vertices_.
+    void RemoveVerticesByMask(const std::vector<bool> &vertex_mask);
+
     /// \brief This function deforms the mesh using the method by
     /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
     ///
@@ -428,6 +444,34 @@ public:
     /// created.
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
+
+    /// \brief Function that computes a triangle mesh from a oriented PointCloud
+    /// pcd. This implements the Screened Poisson Reconstruction proposed in
+    /// Kazhdan and Hoppe, "Screened Poisson Surface Reconstruction", 2013.
+    /// This function uses the original implementation by Kazhdan. See
+    /// https://github.com/mkazhdan/PoissonRecon
+    ///
+    /// \param pcd PointCloud with normals and optionally colors.
+    /// \param depth Maximum depth of the tree that will be used for surface
+    /// reconstruction. Running at depth d corresponds to solving on a grid
+    /// whose resolution is no larger than 2^d x 2^d x 2^d. Note that since the
+    /// reconstructor adapts the octree to the sampling density, the specified
+    /// reconstruction depth is only an upper bound.
+    /// \param width Specifies the
+    /// target width of the finest level octree cells. This parameter is ignored
+    /// if depth is specified.
+    /// \param scale Specifies the ratio between the
+    /// diameter of the cube used for reconstruction and the diameter of the
+    /// samples' bounding cube. \param linear_fit If true, the reconstructor use
+    /// linear interpolation to estimate the positions of iso-vertices.
+    /// \return The estimated TriangleMesh, and per vertex densitie values that
+    /// can be used to to trim the mesh.
+    static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
+    CreateFromPointCloudPoisson(const PointCloud &pcd,
+                                size_t depth = 8,
+                                size_t width = 0,
+                                float scale = 1.1f,
+                                bool linear_fit = false);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the

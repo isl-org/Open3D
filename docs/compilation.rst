@@ -200,11 +200,16 @@ To Install/uninstall the Open3D as a C++ library (headers and binaries):
     ...
     make uninstall
 
-.. tip:: ``sudo`` may be needed to install Open3D to a system location.
+Note taht ``sudo`` may be needed to install Open3D to a system location.
 
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`create_cplusplus_project`, starting from
 `this example CMake file <https://github.com/intel-isl/Open3D/tree/master/docs/_static/C%2B%2B>`_.
+
+
+.. tip:: You may also check out ``utils/scripts`` which contains scripts
+    to build, install and verify the code. These scripts may help in subsequent
+    builds when contributing to Open3D.
 
 .. _compilation_osx:
 
