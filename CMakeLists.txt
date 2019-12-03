@@ -86,11 +86,7 @@ option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
-if (WIN32)
-    option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
-else ()
-    option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 ON)
-endif ()
+option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 
 
 # Build CUDA module by defalt if CUDA is available
