@@ -31,11 +31,15 @@
 #include "Open3D/Container/Dtype.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 
-static constexpr int64_t MAX_DIMS = 10;
-static constexpr int64_t MAX_OPERANDS = 10;
+// Maximum number of dimensions of Tensor.
+static constexpr int64_t MAX_DIMS = 16;
+
+// Maximum number of operands (inputs) of an op.
+static constexpr int64_t MAX_OPERANDS = 8;
 
 /// A minimalistic class that reference a Tensor. This class can be used in both
 /// host and device code after construction.
@@ -51,6 +55,10 @@ struct TensorRef {
     TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
 
     TensorRef(const Tensor& t) {
+        if (t.NumDims() > MAX_DIMS) {
+            utility::LogError("Tenor has too many dimensions {} > {}.",
+                              t.NumDims(), MAX_DIMS);
+        }
         data_ptr_ = static_cast<char*>(const_cast<void*>(t.GetDataPtr()));
         ndims_ = t.NumDims();
         dtype_byte_size_ = DtypeUtil::ByteSize(t.GetDtype());
@@ -94,6 +102,10 @@ public:
             const Tensor& output_tensor) {
         // Conver to TensorRef.
         num_inputs_ = static_cast<int64_t>(input_tensors.size());
+        if (num_inputs_ > MAX_OPERANDS) {
+            utility::LogError("Operation has too many inputs {} > {}",
+                              num_inputs_, MAX_OPERANDS);
+        }
         for (int64_t i = 0; i < num_inputs_; ++i) {
             inputs_[i] = TensorRef(input_tensors[i]);
         }
