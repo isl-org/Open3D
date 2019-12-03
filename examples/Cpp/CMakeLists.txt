@@ -21,11 +21,18 @@ EXAMPLE_CPP(FileDialog                ${CMAKE_PROJECT_NAME} tinyfiledialogs)
 EXAMPLE_CPP(FileSystem                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Flann                     ${CMAKE_PROJECT_NAME})
 if (ENABLE_GUI)
-    EXAMPLE_CPP(GuiDemo                   ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(FilamentDemo          ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(GuiDemo               ${CMAKE_PROJECT_NAME})
+
+    # Compile .mat files and copy to resources directory in output directory
     set(GUIDEMO_RSRC_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
+    if (IOS OR ANDROID)
+        set(GUIDEMO_MATC_ARGS --platform mobile)
+    endif()
     if (WIN32)
         add_custom_target(GuiDemoResources
                           ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
+
     else ()
         add_custom_target(GuiDemoResources
                           rm -f ${GUIDEMO_RSRC_DIR}
