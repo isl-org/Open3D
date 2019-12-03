@@ -93,11 +93,11 @@ public:
     Indexer(const std::vector<Tensor>& input_tensors,
             const Tensor& output_tensor) {
         // Conver to TensorRef.
-        for (int64_t i = 0; i < input_tensors.size(); ++i) {
+        num_inputs_ = static_cast<int64_t>(input_tensors.size());
+        for (int64_t i = 0; i < num_inputs_; ++i) {
             inputs_[i] = TensorRef(input_tensors[i]);
         }
         output_ = TensorRef(output_tensor);
-        num_inputs_ = static_cast<int64_t>(input_tensors.size());
 
         // Broadcast inputs to match output shape.
         for (int64_t i = 0; i < num_inputs_; ++i) {
@@ -236,7 +236,6 @@ protected:
             return nullptr;
         }
         int64_t offset = 0;
-#pragma unroll
         for (int64_t i = 0; i < ndims_; ++i) {
             offset += workload_idx / master_strides_[i] * tr.strides_[i];
             workload_idx = workload_idx % master_strides_[i];
