@@ -166,12 +166,17 @@ public:
         }
     }
 
+    /// Returns number of dimensions of the Indexer.
     OPEN3D_HOST_DEVICE int64_t NumDims() const { return ndims_; }
 
+    /// Returns Indexer's master shape, one can iterate the Indexer with this
+    /// shape.
     OPEN3D_HOST_DEVICE const int64_t* GetMasterShape() const {
         return master_shape_;
     }
 
+    /// Returns Indexer's master strides, one can iterate the Indexer with this
+    /// strides. It is always set to be the default strides from master_shape_.
     OPEN3D_HOST_DEVICE const int64_t* GetMasterStrides() const {
         return master_strides_;
     }
@@ -190,6 +195,11 @@ public:
         return num_workloads;
     }
 
+    /// Get input Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param input_idx Input tensor index.
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
     OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t input_idx,
                                          int64_t workload_idx) const {
         if (input_idx < 0 || input_idx >= num_inputs_) {
@@ -198,10 +208,26 @@ public:
         return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
     }
 
+    // Get output Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
     OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
         return GetWorkloadDataPtr(output_, workload_idx);
     }
 
+    /// Number of input Tensors.
+    OPEN3D_HOST_DEVICE int64_t NumInputs() const { return num_inputs_; }
+
+    /// Returns input TensorRef.
+    /// Note: no out-of-range checks for in OPEN3D_HOST_DEVICE
+    OPEN3D_HOST_DEVICE TensorRef GetInput(int64_t i) { return inputs_[i]; }
+
+    /// Returns output TensorRef.
+    OPEN3D_HOST_DEVICE TensorRef GetOutput() { return output_; }
+
+protected:
+    /// Get data pointer from a TensorRef with \p workload_idx.
     /// Note: can be optimized by computing all input ptrs and output ptr
     /// together.
     OPEN3D_HOST_DEVICE char* GetWorkloadDataPtr(const TensorRef& tr,
@@ -218,14 +244,6 @@ public:
         return tr.data_ptr_ + offset * tr.dtype_byte_size_;
     }
 
-    OPEN3D_HOST_DEVICE int64_t NumInputs() const { return num_inputs_; }
-
-    /// Note: no out-of-range checks for in OPEN3D_HOST_DEVICE
-    OPEN3D_HOST_DEVICE TensorRef GetInput(int64_t i) { return inputs_[i]; }
-
-    OPEN3D_HOST_DEVICE TensorRef GetOutput() { return output_; }
-
-protected:
     /// Number of input Tensors.
     int64_t num_inputs_ = 0;
 
