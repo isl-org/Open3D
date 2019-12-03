@@ -15,7 +15,7 @@ else
     brew update
 fi
 
-for pkg in libusb glew glfw3 libpng pkg-config jsoncpp eigen; do
+for pkg in libusb glew glfw3 libpng pkg-config jsoncpp eigen tbb; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         echo "Package '$pkg' has already been installed and is being upgraded ..."
         brew upgrade $pkg || true # Upgrade might cause error when already installed
@@ -24,3 +24,6 @@ for pkg in libusb glew glfw3 libpng pkg-config jsoncpp eigen; do
         brew install $pkg
     fi
 done
+
+pip install --upgrade pip
+pip install tensorflow==2.0.0

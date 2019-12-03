@@ -27,4 +27,5 @@ else
     sudo apt-get install libtbb-dev || true
 fi
 
+pip install --upgrade pip
 pip install tensorflow==2.0.0
