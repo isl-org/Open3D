@@ -51,7 +51,9 @@ static const std::unordered_map<std::string, std::string>
                 {"width", "Width of the window."},
                 {"window_name", "Window title name."},
                 {"convert_to_world_coordinate",
-                 "Set to ``True`` to convert to world coordinates"}};
+                 "Set to ``True`` to convert to world coordinates"},
+                {"reset_bounding_box",
+                 "Set to ``False`` to keep current viewpoint"}};
 
 void pybind_visualizer(py::module &m) {
     py::class_<visualization::Visualizer, PyVisualizer<>,
@@ -92,9 +94,10 @@ void pybind_visualizer(py::module &m) {
             .def("add_geometry", &visualization::Visualizer::AddGeometry,
                  "Function to add geometry to the scene and create "
                  "corresponding shaders",
-                 "geometry"_a)
+                 "geometry"_a, "reset_bounding_box"_a = true)
             .def("remove_geometry", &visualization::Visualizer::RemoveGeometry,
-                 "Function to remove geometry", "geometry"_a)
+                 "Function to remove geometry", "geometry"_a,
+                 "reset_bounding_box"_a = true)
             .def("get_view_control", &visualization::Visualizer::GetViewControl,
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)

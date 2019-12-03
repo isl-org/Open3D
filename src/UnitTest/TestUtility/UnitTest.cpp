@@ -85,16 +85,19 @@ void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1) {
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const float* const v0,
                          const float* const v1,
-                         const size_t& size) {
-    for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
+                         const size_t& size,
+                         float threshold) {
+    for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], threshold);
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of float.
 // ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const vector<float>& v0, const vector<float>& v1) {
+void unit_test::ExpectEQ(const vector<float>& v0,
+                         const vector<float>& v1,
+                         float threshold) {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(v0.data(), v1.data(), v0.size());
+    ExpectEQ(v0.data(), v1.data(), v0.size(), threshold);
 }
 
 // ----------------------------------------------------------------------------
@@ -102,14 +105,17 @@ void unit_test::ExpectEQ(const vector<float>& v0, const vector<float>& v1) {
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const double* const v0,
                          const double* const v1,
-                         const size_t& size) {
-    for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
+                         const size_t& size,
+                         double threshold) {
+    for (size_t i = 0; i < size; i++) EXPECT_NEAR(v0[i], v1[i], threshold);
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of double.
 // ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const vector<double>& v0, const vector<double>& v1) {
+void unit_test::ExpectEQ(const vector<double>& v0,
+                         const vector<double>& v1,
+                         double threshold) {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(v0.data(), v1.data(), v0.size());
+    ExpectEQ(v0.data(), v1.data(), v0.size(), threshold);
 }
