@@ -19,7 +19,7 @@ def custom_key_action_without_kb_repeat_delay(pcd):
             rotating = True
         elif action == 0:  # key up
             rotating = False
-        elif action == 2: # key repeat
+        elif action == 2:  # key repeat
             pass
         return True
 
