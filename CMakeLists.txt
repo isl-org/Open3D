@@ -100,7 +100,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # headless rendering
 if (ENABLE_HEADLESS_RENDERING)
-    add_definitions(-DHEADLESS_RENDERING)
+    if (APPLE)
+        message(FATAL_ERROR "Headless rendering is not supported on Mac OS")
+        set(ENABLE_HEADLESS_RENDERING OFF)
+    else()
+        add_definitions(-DHEADLESS_RENDERING)
+    endif()
 endif()
 
 # Set OS-specific things here
