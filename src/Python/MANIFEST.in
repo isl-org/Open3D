@@ -43,5 +43,5 @@ recursive-include open3d/static *.*
 # Exclude
 global-exclude *.py[co]
 
-# ml Module
+# ml module
 recursive-include open3d/ml *.py

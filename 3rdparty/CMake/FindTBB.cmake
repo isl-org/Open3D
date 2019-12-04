@@ -2,17 +2,15 @@
 # Once done this will define
 #
 # TBB_FOUND           - true if TBB has been found
-# TBB_INCLUDE_DIR     - where the tbb/tbb.h can be found
+# TBB_INCLUDE_DIR     - where the tbb/parallel_for.h can be found
 # TBB_LIBRARY         - TBB library
 # TBB_MALLOC_LIBRARY  - TBB malloc library
 
 
 if( NOT TBB_INCLUDE_DIR )
-
     # try to find the header inside a conda environment first
     find_path( TBB_INCLUDE_DIR tbb/parallel_for.h
                HINTS $ENV{CONDA_PREFIX}/include )
-
 endif()
 
 if( NOT TBB_LIBRARY )

@@ -22,15 +22,15 @@ if ( CUDA_ENABLED )
                 "*.cc" 
                 "*.cpp" 
                 "*.cu" 
-                "../Open3D/ML/*/detail/*.cc" 
-                "../Open3D/ML/*/detail/*.cpp" 
-                "../Open3D/ML/*/detail/*.cu" )
+                "../Open3D/ML/*/Detail/*.cc" 
+                "../Open3D/ML/*/Detail/*.cpp" 
+                "../Open3D/ML/*/Detail/*.cu" )
 else ()
     file(GLOB_RECURSE open3d_tf_ops_SOURCES 
             "*.cc" 
             "*.cpp" 
-            "../Open3D/ML/*/detail/*.cc" 
-            "../Open3D/ML/*/detail/*.cpp" )
+            "../Open3D/ML/*/Detail/*.cc" 
+            "../Open3D/ML/*/Detail/*.cpp" )
 endif ()
 
 add_library( open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES} )
@@ -47,6 +47,7 @@ set_target_properties( open3d_tf_ops PROPERTIES
                        CXX_STANDARD 11 
                        CXX_STANDARD_REQUIRED ON 
                        CXX_EXTENSIONS OFF
+                       CUDA_STANDARD 11
                        )
 
 target_include_directories( open3d_tf_ops PRIVATE
