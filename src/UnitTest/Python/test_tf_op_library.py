@@ -46,10 +46,9 @@ def test_execute_tf_op():
 
     import open3d.ml.tf as ml3d
 
-    values = np.arange(0,10)
-    prefix_sum = np.array([0,3,4,4])
-    
+    values = np.arange(0, 10)
+    prefix_sum = np.array([0, 3, 4, 4])
+
     ans = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
     # test was a success if we reach this line but check correctness anyway
-    assert np.all(ans.numpy() == [3,  3,  0, 39])
-
+    assert np.all(ans.numpy() == [3, 3, 0, 39])
