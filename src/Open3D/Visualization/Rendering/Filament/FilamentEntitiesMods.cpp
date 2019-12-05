@@ -72,10 +72,12 @@ MaterialModifier& FilamentMaterialModifier::SetColor(const char* parameter, cons
 
 MaterialInstanceHandle FilamentMaterialModifier::Finish()
 {
+    auto res = currentHandle;
+
     materialInstance = nullptr;
     currentHandle = MaterialInstanceHandle::kBad;
 
-    return currentHandle;
+    return res;
 }
 
 }
