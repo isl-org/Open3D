@@ -41,11 +41,33 @@ struct Theme {
 
     std::string fontPath;
     int fontSize;
+    int defaultLayoutSpacing;
+    int defaultMargin;
     Color textColor;
 
     int borderWidth;
     int borderRadius;
     Color borderColor;
+
+    Color buttonColor;
+    Color buttonHoverColor;
+    Color buttonActiveColor;
+
+    Color checkboxBackgroundOffColor;
+    Color checkboxBackgroundOnColor;
+    Color checkboxBackgroundHoverOffColor;
+    Color checkboxBackgroundHoverOnColor;
+    Color checkboxCheckColor;
+
+    Color comboboxBackgroundColor;
+    Color comboboxHoverColor;
+    Color comboboxArrowBackgroundColor;
+
+    Color textEditBackgroundColor;
+
+    Color tabInactiveColor;
+    Color tabHoverColor;
+    Color tabActiveColor;
 };
 
 }

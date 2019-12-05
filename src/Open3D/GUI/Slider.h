@@ -26,33 +26,32 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
+class Slider : public Widget {
 public:
-    static Application& GetInstance();
+    enum Type { INT, DOUBLE };
+    // The only difference between INT and DOUBLE is that INT increments by
+    // 1.0 and coerces value to whole numbers.
+    explicit Slider(Type type);
+    ~Slider();
 
-    virtual ~Application();
+    int GetIntValue() const;
+    double GetDoubleValue() const;
+    void SetValue(double val);
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    double GetMinimumValue() const;
+    double GetMaximumValue() const;
+    void SetLimits(double minValue, double maxValue);
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    DrawResult Draw(const DrawContext& context) override;
 
-private:
-    Application();
+    std::function<void(double)> OnValueChanged;
 
 private:
     struct Impl;

@@ -27,32 +27,40 @@
 #pragma once
 
 #include <memory>
-#include <string>
 
 namespace open3d {
 namespace gui {
 
+struct DrawContext;
 struct Theme;
-class Window;
 
-class Application
-{
+class Menu {
 public:
-    static Application& GetInstance();
+    using ItemId = int;
+    static constexpr ItemId NO_ITEM = -1;
 
-    virtual ~Application();
+    Menu();
+    virtual ~Menu();
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    void AddItem(const char *name, const char *shortcut, ItemId itemId = NO_ITEM);
+    void AddMenu(const char *name, std::shared_ptr<Menu> submenu);
+    void AddSeparator();
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    // Searches the menu hierarchy down from this menu to find the item
+    bool IsEnabled(ItemId itemId) const;
+    void SetEnabled(ItemId itemId, bool enabled);
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    bool IsChecked(ItemId itemId) const;
+    void SetChecked(ItemId itemId, bool checked);
 
-private:
-    Application();
+    int CalcHeight(const Theme& theme) const;
+
+    ItemId DrawMenuBar(const DrawContext& context);
+    ItemId Draw(const DrawContext& context, const char *name);
+
+protected:
+    struct MenuItem;
+    MenuItem* FindMenuItem(ItemId itemId) const;
 
 private:
     struct Impl;

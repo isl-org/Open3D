@@ -46,5 +46,12 @@ float Color::GetAlpha() const { return rgba_[3]; }
 
 const float* Color::GetPointer() const { return rgba_; }
 
+Color Color::Lightened(float amount) {
+    return Color((1.0f - amount) * GetRed() + amount * 1.0f,
+                 (1.0f - amount) * GetGreen() + amount * 1.0f,
+                 (1.0f - amount) * GetBlue() + amount * 1.0f,
+                 GetAlpha());
+}
+
 } // gui
 } // open3d

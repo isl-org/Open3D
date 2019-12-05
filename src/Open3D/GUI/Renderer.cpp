@@ -417,6 +417,10 @@ void Renderer::UpdateFromDrawable()
     impl_->uiView->GetCamera().Set2D(size.width, size.height);
 }
 
+Size Renderer::GetSize() const {
+    return impl_->window.GetSize();
+}
+
 bool Renderer::BeginFrame() {
     return impl_->renderer->beginFrame(impl_->swapChain);
 }
@@ -732,7 +736,9 @@ void RendererView::SetClearColor(const Color &c) {
 
 void RendererView::SetViewport(const Rect &r) {
     if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
-        view->setViewport(Viewport(r.x, r.y, r.width, r.height));
+        // Note that y=0 is bottom in GPU's coordinate system
+        float bottom = impl_->renderer.GetSize().height - (r.y + r.height);
+        view->setViewport(Viewport(r.x, bottom, r.width, r.height));
         GetCamera().ResizeProjection(float(r.width) / float(r.height));
     }
 }

@@ -25,39 +25,20 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+// These are internal helper functions
 
-#include <memory>
-#include <string>
+#include <imgui.h>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
+class Color;
 
-class Application
-{
-public:
-    static Application& GetInstance();
+namespace util {
 
-    virtual ~Application();
+ImVec4 colorToImgui(const Color& color);
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+} // util
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
-
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
-}
-}
+} // gui
+} // open3d

@@ -38,13 +38,18 @@ struct Theme;
 
 struct DrawContext {
     const Theme& theme;
+    int uiOffsetX;
+    int uiOffsetY;
+    int emPx;
 };
 
 class Widget {
+    friend class Window;
 public:
     enum class DrawResult { NONE, CLICKED };
 
     Widget();
+    explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Widget();
 
     void AddChild(std::shared_ptr<Widget> child);
@@ -55,6 +60,7 @@ public:
 
     virtual bool Is3D() const;
 
+    static constexpr int DIM_GROW = 10000;
     virtual Size CalcPreferredSize(const Theme& theme) const;
 
     virtual void Layout(const Theme& theme);

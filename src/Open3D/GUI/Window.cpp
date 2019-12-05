@@ -27,25 +27,26 @@
 #include "Window.h"
 
 #include "Application.h"
+#include "Menu.h"
 #include "Native.h"
 #include "Renderer.h"
 #include "Theme.h"
+#include "Util.h"
 #include "Widget.h"
 
 #include <imgui.h>
 #include <SDL.h>
 
+#include <cmath>
 #include <vector>
+
+using namespace open3d::gui::util;
 
 // ----------------------------------------------------------------------------
 namespace open3d {
 namespace gui {
 
 namespace {
-ImVec4 colorToImgui(const Color& color) {
-    return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
-                  color.GetAlpha());
-}
 
 // Assumes the correct ImGuiContext is current
 void updateImGuiForScaling(float newScaling) {
@@ -66,6 +67,7 @@ struct Window::Impl
         ImFont *systemFont;  // is a reference; owned by imguiContext
         float scaling = 1.0;
     } imgui;
+    std::shared_ptr<Menu> menubar;
     std::vector<std::shared_ptr<Widget>> children;
     bool needsLayout = true;
     int nSkippedFrames = 0;
@@ -97,11 +99,22 @@ Window::Window(const std::string& title, int width, int height)
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowPadding = ImVec2(0, 0);
     style.WindowRounding = 0;
-    style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.backgroundColor);
-    style.Colors[ImGuiCol_Text] = colorToImgui(theme.textColor);
+    style.WindowBorderSize = 0;
     style.FrameBorderSize = theme.borderWidth;
     style.FrameRounding = theme.borderRadius;
+    style.Colors[ImGuiCol_WindowBg] = colorToImgui(theme.backgroundColor);
+    style.Colors[ImGuiCol_Text] = colorToImgui(theme.textColor);
     style.Colors[ImGuiCol_Border] = colorToImgui(theme.borderColor);
+    style.Colors[ImGuiCol_Button] = colorToImgui(theme.buttonColor);
+    style.Colors[ImGuiCol_ButtonHovered] = colorToImgui(theme.buttonHoverColor);
+    style.Colors[ImGuiCol_ButtonActive] = colorToImgui(theme.buttonActiveColor);
+    style.Colors[ImGuiCol_CheckMark] = colorToImgui(theme.checkboxCheckColor);
+    style.Colors[ImGuiCol_FrameBg] = colorToImgui(theme.comboboxBackgroundColor);
+    style.Colors[ImGuiCol_FrameBgHovered] = colorToImgui(theme.comboboxHoverColor);
+    style.Colors[ImGuiCol_FrameBgActive] = style.Colors[ImGuiCol_FrameBgHovered];
+    style.Colors[ImGuiCol_Tab] = colorToImgui(theme.tabInactiveColor);
+    style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
+    style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
 
     // If the given font path is invalid, ImGui will silently fall back to proggy, which is a
     // tiny "pixel art" texture that is compiled into the library.
@@ -113,6 +126,45 @@ Window::Window(const std::string& title, int width, int height)
         io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height, &bytesPerPx);
         impl_->renderer->AddFontTextureAtlasAlpha8(pixels, width, height, bytesPerPx);
     }
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+#ifdef WIN32
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    SDL_GetWindowWMInfo(window->getSDLWindow(), &wmInfo);
+    io.ImeWindowHandle = wmInfo.info.win.window;
+#endif
+    // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
+    // io.KeyMap to map from our code to ImGui's code.
+    io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
+    io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT;
+    io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT;
+    io.KeyMap[ImGuiKey_UpArrow] = KEY_UP;
+    io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN;
+    io.KeyMap[ImGuiKey_PageUp] = KEY_PAGEUP;
+    io.KeyMap[ImGuiKey_PageDown] = KEY_PAGEDOWN;
+    io.KeyMap[ImGuiKey_Home] = KEY_HOME;
+    io.KeyMap[ImGuiKey_End] = KEY_END;
+    io.KeyMap[ImGuiKey_Insert] = KEY_INSERT;
+    io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
+    io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
+    io.KeyMap[ImGuiKey_Space] = ' ';
+    io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
+    io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
+    io.KeyMap[ImGuiKey_A] = 'a';
+    io.KeyMap[ImGuiKey_C] = 'c';
+    io.KeyMap[ImGuiKey_V] = 'v';
+    io.KeyMap[ImGuiKey_X] = 'x';
+    io.KeyMap[ImGuiKey_Y] = 'y';
+    io.KeyMap[ImGuiKey_Z] = 'z';
+    io.SetClipboardTextFn = [](void*, const char* text) {
+        SDL_SetClipboardText(text);
+    };
+    io.GetClipboardTextFn = [](void*) -> const char* {
+        return SDL_GetClipboardText();
+    };
+    io.ClipboardUserData = nullptr;
 }
 
 Window::~Window() {
@@ -131,6 +183,10 @@ uint32_t Window::GetID() const {
     return SDL_GetWindowID(impl_->window);
 }
 
+const Theme& Window::GetTheme() const {
+    return impl_->theme;
+}
+
 Renderer& Window::GetRenderer() {
     return *impl_->renderer;
 }
@@ -139,6 +195,17 @@ Size Window::GetSize() const {
     uint32_t w, h;
     SDL_GL_GetDrawableSize(impl_->window, (int*) &w, (int*) &h);
     return Size(w, h);
+}
+
+Rect Window::GetContentRect() const {
+    auto size = GetSize();
+    int menuHeight = 0;
+    ImGui::SetCurrentContext(impl_->imgui.context);
+    if (impl_->menubar) {
+        menuHeight = impl_->menubar->CalcHeight(GetTheme());
+    }
+
+    return Rect(0, menuHeight, size.width, size.height - menuHeight);
 }
 
 float Window::GetScaling() const {
@@ -161,18 +228,36 @@ void Window::Show(bool vis /*= true*/) {
     }
 }
 
+void Window::Close() {
+    Application::GetInstance().RemoveWindow(this);
+}
+
+std::shared_ptr<Menu> Window::GetMenubar() const {
+    return impl_->menubar;
+}
+
+void Window::SetMenubar(std::shared_ptr<Menu> menu) {
+    impl_->menubar = menu;
+    impl_->needsLayout = true;  // in case wasn't a menu before
+}
+
 void Window::AddChild(std::shared_ptr<Widget> w) {
     impl_->children.push_back(w);
     impl_->needsLayout = true;
 }
 
 void Window::Layout(const Theme& theme) {
-    for (auto &child : impl_->children) {
-        child->Layout(theme);
+    if (impl_->children.size() == 1) {
+        auto r = GetContentRect();
+        impl_->children[0]->SetFrame(r);
+    } else {
+        for (auto &child : impl_->children) {
+            child->Layout(theme);
+        }
     }
 }
 
-void Window::OnDraw(float dtSec) {
+Window::DrawResult Window::OnDraw(float dtSec) {
     // These are here to provide fast unique window names. If you find yourself
     // needing more than a handful, you should probably be using a container
     // of some sort (see Layout.h).
@@ -189,14 +274,15 @@ void Window::OnDraw(float dtSec) {
     io.DeltaTime = dtSec;
 
     // Set mouse information
-    int mx, my;
-    Uint32 buttons = SDL_GetMouseState(&mx, &my);
+    int mx, my, wx, wy;
+    Uint32 buttons = SDL_GetGlobalMouseState(&mx, &my);
+    SDL_GetWindowPosition(impl_->window, &wx, &wy);
+    mx -= wx;
+    my -= wy;
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     io.MouseDown[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     io.MouseDown[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
     io.MouseDown[2] = (buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
-    // TODO: use SDL_CaptureMouse() to retrieve mouse coordinates
-    // outside of the client area; see the imgui SDL example.
     if ((SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS) != 0) {
         auto scaling = GetScaling();
         io.MousePos = ImVec2((float)mx * scaling, (float)my * scaling);
@@ -217,18 +303,22 @@ void Window::OnDraw(float dtSec) {
     auto &theme = this->impl_->theme;
     if (this->impl_->needsLayout) {
         this->Layout(theme);
-        this->impl_->needsLayout = false;
+        // Clear needsLayout below
     }
 
-    DrawContext dc{ theme };
+    int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
+    DrawContext dc{ theme, 0, 0, em };
 
     // Draw the 3D widgets first (in case the UI wants to be transparent
     // on top). These will actually get drawn now. Since these are not
     // ImGui objects, nothing will happen as far as ImGui is concerned,
     // but Filament will issue the appropriate rendering commands.
+    bool needsRedraw = false;
     for (auto &child : this->impl_->children) {
         if (child->Is3D()) {
-            child->Draw(dc);
+            if (child->Draw(dc) != Widget::DrawResult::NONE) {
+                needsRedraw = true;
+            }
         }
     }
 
@@ -242,13 +332,32 @@ void Window::OnDraw(float dtSec) {
             auto frame = child->GetFrame();
             auto isContainer = !child->GetChildren().empty();
             if (isContainer) {
+                dc.uiOffsetX = frame.x;
+                dc.uiOffsetY = frame.y;
                 ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
                 ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
                 ImGui::Begin(winNames[winIdx++], nullptr, flags);
+            } else {
+                dc.uiOffsetX = 0;
+                dc.uiOffsetY = 0;
             }
-            child->Draw(dc);
+            if (child->Draw(dc) != Widget::DrawResult::NONE) {
+                needsRedraw = true;
+            }
             if (isContainer) {
                 ImGui::End();
+            }
+        }
+    }
+
+    // Draw menubar last, so it is always on top (although it shouldn't matter,
+    // as there shouldn't be anything under it)
+    if (impl_->menubar) {
+        auto id = impl_->menubar->DrawMenuBar(dc);
+        if (id != Menu::NO_ITEM) {
+            if (OnMenuItemSelected) {
+                OnMenuItemSelected(id);
+                needsRedraw = true;
             }
         }
     }
@@ -262,10 +371,22 @@ void Window::OnDraw(float dtSec) {
     impl_->renderer->RenderImgui(ImGui::GetDrawData());
 
     impl_->renderer->EndFrame();
+
+    // ImGUI can take two frames to do its layout, so if we did a layout
+    // redraw a second time. This helps prevent a brief red flash when the
+    // window first appears, as well as corrupted images if the
+    // window appears underneath the mouse.
+    if (impl_->needsLayout) {
+        impl_->needsLayout = false;
+        OnDraw(0.001);
+    }
+
+    return (needsRedraw ? REDRAW : NONE);
 }
 
 void Window::OnResize() {
     impl_->needsLayout = true;
+    impl_->renderer->UpdateFromDrawable();
 
     auto size = GetSize();
     auto scaling = GetScaling();
@@ -295,6 +416,13 @@ void Window::OnMouseWheel(const MouseWheelEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     io.MouseWheelH += (e.x > 0 ? 1 : -1);
     io.MouseWheel  += (e.y > 0 ? 1 : -1);
+}
+
+void Window::OnKey(const KeyEvent& e) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
+        io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
+    }
 }
 
 void Window::OnTextInput(const TextInputEvent& e) {

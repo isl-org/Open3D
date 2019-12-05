@@ -39,6 +39,12 @@ Widget::Widget()
 {
 }
 
+Widget::Widget(const std::vector<std::shared_ptr<Widget>>& children)
+: impl_(new Widget::Impl())
+{
+    impl_->children = children;
+}
+
 Widget::~Widget() {
 }
 
@@ -63,7 +69,7 @@ bool Widget::Is3D() const {
 }
 
 Size Widget::CalcPreferredSize(const Theme&) const {
-    return Size(100000, 100000);
+    return Size(DIM_GROW, DIM_GROW);
 }
 
 void Widget::Layout(const Theme& theme) {

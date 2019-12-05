@@ -94,6 +94,7 @@ public:
     virtual ~Renderer();
 
     void UpdateFromDrawable();
+    Size GetSize() const;
 
     bool BeginFrame();
     void Render(ViewId viewId);
