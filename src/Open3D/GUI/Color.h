@@ -40,6 +40,8 @@ public:
     float GetAlpha() const;
     const float* GetPointer() const;
 
+    Color Lightened(float amount); // amount is between 0 and 1
+
 private:
     float rgba_[4];
 };

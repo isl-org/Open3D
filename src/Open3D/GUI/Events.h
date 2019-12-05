@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace open3d {
 namespace gui {
 
@@ -55,6 +57,40 @@ struct MouseButtonEvent {
 struct MouseWheelEvent {
     int x;
     int y;
+};
+
+enum {
+    KEY_BACKSPACE = 8,
+    KEY_TAB = 9,
+    KEY_ENTER = 10,
+    KEY_ESCAPE = 27,
+    KEY_DELETE = 127,
+    KEY_LSHIFT = 256,
+    KEY_RSHIFT,
+    KEY_CAPSLOCK,
+    KEY_CTRL,
+    KEY_OPTION,
+    KEY_META,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_UP,
+    KEY_DOWN,
+    KEY_INSERT,
+    KEY_HOME,
+    KEY_END,
+    KEY_PAGEUP,
+    KEY_PAGEDOWN,
+    KEY_UNKNOWN = 1000
+};
+
+struct KeyEvent {
+    enum Type { DOWN, UP };
+    Type type;
+    // This is the actual key that was pressed, not the character that
+    // was generated (use TextInputEvent for that). Values correspond
+    // to ASCII values where applicable.
+    uint32_t key;
+    bool isRepeat;
 };
 
 struct TextInputEvent {

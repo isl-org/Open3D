@@ -26,33 +26,29 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
+class Combobox : public Widget {
 public:
-    static Application& GetInstance();
+    Combobox();
+    explicit Combobox(const std::vector<const char*>& items);
+    ~Combobox();
 
-    virtual ~Application();
+    void AddItem(const char *name);
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    int GetSelectedIndex() const;
+    // Returns "" if nothing is selected
+    const char* GetSelectedValue() const;
+    void SetSelectedIndex(int index);
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    DrawResult Draw(const DrawContext& context) override;
 
-private:
-    Application();
+    std::function<void(const char *)> OnValueChanged;
 
 private:
     struct Impl;

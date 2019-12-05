@@ -40,6 +40,63 @@ struct Margins {
     Margins(int px);
     Margins(int horizPx, int vertPx);
     Margins(int leftPx, int topPx, int rightPx, int bottomPx);
+
+    int GetHoriz() const;
+    int GetVert() const;
+};
+
+class Layout1D : public Widget {
+    using Super = Widget;
+public:
+    enum Dir { VERT, HORIZ };
+
+    Layout1D(Dir dir, int spacing, const Margins& margins,
+             const std::vector<std::shared_ptr<Widget>>& children);
+    virtual ~Layout1D();
+
+    Size CalcPreferredSize(const Theme& theme) const override;
+    void Layout(const Theme& theme) override;
+
+public:
+    class Fixed : public Widget {
+    public:
+        explicit Fixed(int size);
+        Size CalcPreferredSize(const Theme& theme) const override;
+    private:
+        int size_;
+    };
+
+    class Stretch : public Widget {
+        Size CalcPreferredSize(const Theme& theme) const override;
+    };
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+class Vert : public Layout1D {
+public:
+    static std::shared_ptr<Layout1D::Fixed> MakeFixed(int size);
+    static std::shared_ptr<Layout1D::Stretch> MakeStretch();
+
+    Vert();
+    Vert(int spacing = 0, const Margins& margins = Margins());
+    Vert(int spacing, const Margins& margins,
+         const std::vector<std::shared_ptr<Widget>>& children);
+    virtual ~Vert();
+};
+
+class Horiz : public Layout1D {
+public:
+    static std::shared_ptr<Layout1D::Fixed> MakeFixed(int size);
+    static std::shared_ptr<Layout1D::Stretch> MakeStretch();
+
+    Horiz();
+    Horiz(int spacing = 0, const Margins& margins = Margins());
+    Horiz(int spacing, const Margins& margins,
+          const std::vector<std::shared_ptr<Widget>>& children);
+    ~Horiz();
 };
 
 class VGrid : public Widget {

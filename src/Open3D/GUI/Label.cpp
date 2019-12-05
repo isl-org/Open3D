@@ -24,40 +24,51 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Label.h"
 
-#include <memory>
+#include "Theme.h"
+
+#include <imgui.h>
+
+#include <cmath>
 #include <string>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
-public:
-    static Application& GetInstance();
-
-    virtual ~Application();
-
-    void Initialize(int argc, const char *argv[]);
-    void Run();
-
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
-
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+struct Label::Impl {
+    std::string text;
 };
 
+Label::Label(const char *text /*= nullptr*/)
+: impl_(new Label::Impl()) {
+    if (text) {
+        impl_->text = text;
+    }
 }
+
+Label::~Label() {
 }
+
+const char* Label::GetText() const {
+    return impl_->text.c_str();
+}
+
+Size Label::CalcPreferredSize(const Theme& theme) const {
+    auto em = std::ceil(ImGui::GetTextLineHeight());
+    auto padding = ImGui::GetStyle().FramePadding;
+    auto size = ImGui::GetFont()->CalcTextSizeA(theme.fontSize, 10000, 10000, impl_->text.c_str());
+    return Size(std::ceil(size.x + 2.0f * padding.x),
+                std::ceil(em + 2.0f * padding.y));
+}
+
+Widget::DrawResult Label::Draw(const DrawContext& context) {
+    auto &frame = GetFrame();
+    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
+                               frame.y - context.uiOffsetY));
+    ImGui::Text("%s", impl_->text.c_str());
+    return Widget::DrawResult::NONE;
+}
+
+} // gui
+} // open3d

@@ -50,14 +50,15 @@ Button::~Button() {
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
     auto font = ImGui::GetFont();
-    auto em = std::ceil(font->CalcTextSizeA(theme.fontSize, 10000, 10000, "Ag").y);
+    auto em = std::ceil(ImGui::GetTextLineHeight());
     auto size = font->CalcTextSizeA(theme.fontSize, 10000, 10000, impl_->title.c_str());
     return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
 }
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {
-    ImGui::SetCursorPosX(GetFrame().x);
-    ImGui::SetCursorPosY(GetFrame().y);
+    auto &frame = GetFrame();
+    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
+                               frame.y - context.uiOffsetY));
     if (ImGui::Button(impl_->title.c_str(), ImVec2(GetFrame().width, GetFrame().height))) {
         if (this->OnClicked) {
             this->OnClicked();

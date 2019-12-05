@@ -31,10 +31,12 @@
 
 #include "Gui.h"
 #include "Events.h"
+#include "Menu.h"
 
 namespace open3d {
 namespace gui {
 
+class Menu;
 class Renderer;
 struct Theme;
 class Widget;
@@ -48,25 +50,35 @@ public:
 
     uint32_t GetID() const;
 
+    const Theme& GetTheme() const;
     Renderer& GetRenderer();
 
-    Size GetSize() const;
+    Size GetSize() const; // total interior size of window, including menubar
+    Rect GetContentRect() const; // size available to widgets
     float GetScaling() const;
 
     bool IsVisible() const;
     void Show(bool vis = true);
+    void Close();  // same as calling Application::RemoveWindow()
+
+    std::shared_ptr<Menu> GetMenubar() const;
+    void SetMenubar(std::shared_ptr<Menu> menu);
 
     void AddChild(std::shared_ptr<Widget> w);
+
+    std::function<void(Menu::ItemId)> OnMenuItemSelected;
 
 protected:
     virtual void Layout(const Theme& theme);
 
 private:
-    void OnDraw(float dtSec);
+    enum DrawResult { NONE, REDRAW };
+    DrawResult OnDraw(float dtSec);
     void OnResize();
     void OnMouseMove(const MouseMoveEvent& e);
     void OnMouseButton(const MouseButtonEvent& e);
     void OnMouseWheel(const MouseWheelEvent& e);
+    void OnKey(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
     void* GetNativeDrawable() const;
 
