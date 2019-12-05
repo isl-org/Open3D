@@ -63,19 +63,21 @@ public:
     explicit FilamentRenderer(void* nativeDrawable);
     ~FilamentRenderer() override;
 
+    void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
+    void SetClearColor(const Eigen::Vector3f& color) override;
+
     void Draw() override;
 
+    Camera* GetCamera() const override;
+
     GeometryHandle AddGeometry(const geometry::Geometry3D& geometry, const MaterialInstanceHandle& materialId) override;
-    void UpdateGeometry(const GeometryHandle& id, const geometry::Geometry3D& geometry) override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
     //virtual LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) = 0;
     void RemoveLight(const LightHandle& id) override ;
 
-    CameraHandle AddCamera(const CameraDescription& descr) override;
     //virtual CameraFluentInterface ModifyCamera(const ruid<eEntityType::Camera>& id) = 0;
-    void RemoveCamera(const CameraHandle& id) override;
 
     MaterialHandle AddMaterial(const void* materialData, size_t dataSize) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
@@ -88,6 +90,8 @@ private:
 
     filament::MaterialInstance* GetMaterialInstance(const MaterialInstanceHandle& materialId) const;
 
+    void RemoveEntity(REHandle_abstract id);
+
     filament::Engine* engine = nullptr;
     filament::Renderer* renderer = nullptr;
     filament::SwapChain* swapChain = nullptr;
@@ -95,7 +99,10 @@ private:
 
     std::unique_ptr<FilamentView> view;
     std::unordered_map<REHandle_abstract, utils::Entity> entities;
-    std::unordered_map<REHandle_abstract, filament::FilamentAPI*> utilites;
+    std::unordered_map<REHandle_abstract, filament::MaterialInstance*> materialInstances;
+    std::unordered_map<REHandle_abstract, filament::Material*> materials;
+    std::unordered_map<REHandle_abstract, filament::VertexBuffer*> vertexBuffers;
+    std::unordered_map<REHandle_abstract, filament::IndexBuffer*> indexBuffers;
 
     std::unique_ptr<FilamentMaterialModifier> materialsModifier;
 };

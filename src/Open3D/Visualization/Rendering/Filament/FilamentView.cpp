@@ -47,8 +47,7 @@ FilamentView::FilamentView(filament::Engine& aEngine, filament::Scene& aScene)
     camera = std::make_unique<FilamentCamera>(engine);
     view->setCamera(camera->GetNativeCamera());
 
-    view->setClearColor(filament::LinearColorA{ 0.0f, 0.0f, 0.0f, 1.0f });
-    camera->SetProjection(0.01, 50, 90.0);
+    camera->SetProjection(90, 4.f/3.f, 0.01, 1000, Camera::eFovType::HORIZONTAL_FOV);
 }
 
 FilamentView::~FilamentView()

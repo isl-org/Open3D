@@ -76,23 +76,21 @@ FilamentRenderer::FilamentRenderer(void* nativeDrawable)
 
     materialsModifier = std::make_unique<FilamentMaterialModifier>();
 
-    // TODO: remove after tests
-    auto sun = utils::EntityManager::get().create();
-    filament::LightManager::Builder(filament::LightManager::Type::SUN)
-            .direction(filament::math::float3{ -0.707, -.707, 0.0 })
-            .intensity(100000)
-            .castShadows(true)
-            .build(*engine, sun);
-
-    scene->addEntity(sun);
-
     view->SetViewport({0,0,1280,720});
-    view->GetCamera()->LookAt(0, 0, 0,   80, 80, 80,   0, 1, 0);
+    view->GetCamera()->LookAt({0, 0, 0},   {80, 80, 80},   {0, 1, 0});
     view->SetClearColor(filament::LinearColorA(0.5f,0.5f,1.f,1.f));
 }
 
 FilamentRenderer::~FilamentRenderer()
 {
+#define BATCH_DESTROY(batch) for (const auto& pair : (batch)) {engine->destroy(pair.second);}
+    BATCH_DESTROY(entities)
+    BATCH_DESTROY(materialInstances)
+    BATCH_DESTROY(materials)
+    BATCH_DESTROY(vertexBuffers)
+    BATCH_DESTROY(indexBuffers)
+#undef BATCH_DESTROY
+
     view.reset();
 
     engine->destroy(scene);
@@ -102,13 +100,27 @@ FilamentRenderer::~FilamentRenderer()
     filament::Engine::destroy(engine);
 }
 
+void FilamentRenderer::SetViewport(const std::int32_t x, const std::int32_t y, const std::uint32_t w, const std::uint32_t h)
+{
+    view->SetViewport({ x, y, w, h });
+}
+
+void FilamentRenderer::SetClearColor(const Eigen::Vector3f& color)
+{
+    view->SetClearColor({ color.x(), color.y(), color.z(), 1.f });
+}
+
 void FilamentRenderer::Draw()
 {
     if (renderer->beginFrame(swapChain)) {
-        // for each View
         renderer->render(view->GetNativeView());
         renderer->endFrame();
     }
+}
+
+Camera* FilamentRenderer::GetCamera() const
+{
+    return view->GetCamera();
 }
 
 GeometryHandle FilamentRenderer::AddGeometry(const geometry::Geometry3D& geometry, const MaterialInstanceHandle& materialId)
@@ -177,12 +189,21 @@ GeometryHandle FilamentRenderer::AddGeometry(const geometry::Geometry3D& geometr
     indicesDescriptor.setCallback(freeBufferDescriptor);
     ibuf->setBuffer(*engine, std::move(indicesDescriptor));
 
-    const auto bboxMax = triangleMesh.GetMaxBound();
-    const auto bboxMin = triangleMesh.GetMinBound();
+    Box aabb;
+    if (indexStride == sizeof(std::uint16_t)) {
+        aabb = RenderableManager::computeAABB((math::float3*)float3VCoord,
+                                              (std::uint16_t*)uint3Indices,
+                                              nVertices);
+    } else {
+        aabb = RenderableManager::computeAABB((math::float3*)float3VCoord,
+                                              (std::uint32_t*)uint3Indices,
+                                              nVertices);
+    }
 
     utils::Entity renderable = utils::EntityManager::get().create();
     RenderableManager::Builder builder(1);
-    builder.boundingBox({{ bboxMin.x(), bboxMin.y(), bboxMin.z() }, { bboxMax.x(), bboxMax.y(), bboxMax.z() }})
+    builder
+        .boundingBox(aabb)
         .geometry(0, RenderableManager::PrimitiveType::TRIANGLES, vbuf, ibuf)
         .culling(false);
 
@@ -201,27 +222,52 @@ GeometryHandle FilamentRenderer::AddGeometry(const geometry::Geometry3D& geometr
     return handle;
 }
 
-void FilamentRenderer::UpdateGeometry(const GeometryHandle& id, const geometry::Geometry3D& geometry)
-{}
-
 void FilamentRenderer::RemoveGeometry(const GeometryHandle& geometryId)
-{}
+{
+    RemoveEntity(geometryId);
+}
 
 LightHandle FilamentRenderer::AddLight(const LightDescription& descr)
 {
-    return LightHandle::Next();
+    filament::LightManager::Type lightType = filament::LightManager::Type::POINT;
+    if (descr.customAttributes["custom_type"].isString()) {
+        auto customType = descr.customAttributes["custom_type"];
+        if (customType == "SUN") {
+            lightType = filament::LightManager::Type::SUN;
+        }
+    } else {
+        switch (descr.type) {
+            case LightDescription::POINT:
+                lightType = filament::LightManager::Type::POINT;
+            case LightDescription::SPOT:
+                lightType = filament::LightManager::Type::SPOT;
+            case LightDescription::DIRECTIONAL:
+                lightType = filament::LightManager::Type::DIRECTIONAL;
+        }
+    }
+
+    auto light = utils::EntityManager::get().create();
+    filament::LightManager::Builder(lightType)
+            .direction({ descr.direction.x(), descr.direction.y(), descr.direction.z() })
+            .intensity(descr.intensity)
+            .falloff(descr.falloff)
+            .castShadows(descr.castShadows)
+            .color({descr.color.x(), descr.color.y(), descr.color.z()})
+            .spotLightCone(descr.lightConeInner, descr.lightConeOuter)
+            .build(*engine, light);
+
+    auto handle = LightHandle ::Next();
+    entities[handle] = light;
+
+    scene->addEntity(light);
+
+    return handle;
 }
 
 void FilamentRenderer::RemoveLight(const LightHandle& id)
-{}
-
-CameraHandle FilamentRenderer::AddCamera(const CameraDescription& descr)
 {
-    return CameraHandle::Next();
+    RemoveEntity(id);
 }
-
-void FilamentRenderer::RemoveCamera(const CameraHandle& id)
-{}
 
 MaterialHandle FilamentRenderer::AddMaterial(const void* materialData, const size_t dataSize)
 {
@@ -234,7 +280,7 @@ MaterialHandle FilamentRenderer::AddMaterial(const void* materialData, const siz
     MaterialHandle handle;
     if (mat) {
         handle = MaterialHandle::Next();
-        utilites[handle] = mat;
+        materials[handle] = mat;
     }
 
     return handle;
@@ -244,13 +290,13 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id)
 {
     materialsModifier->Reset();
 
-    auto found = utilites.find(id);
-    if (found != utilites.end()) {
+    auto found = materials.find(id);
+    if (found != materials.end()) {
         auto material = static_cast<filament::Material*>(found->second);
         auto matInstance = material->createInstance();
 
         auto instanceId = MaterialInstanceHandle::Next();
-        utilites[instanceId] = matInstance;
+        materialInstances[instanceId] = matInstance;
 
         materialsModifier->InitWithMaterialInstance(matInstance, instanceId);
     }
@@ -295,7 +341,7 @@ filament::VertexBuffer* FilamentRenderer::AllocateVertexBuffer(const size_t vert
             .build(*engine);
 
     if (vbuf) {
-        utilites[VertexBufferHandle::Next()] = vbuf;
+        vertexBuffers[VertexBufferHandle::Next()] = vbuf;
     }
 
     return vbuf;
@@ -311,7 +357,7 @@ filament::IndexBuffer* FilamentRenderer::AllocateIndexBuffer(const size_t indice
             .build(*engine);
 
     if (ibuf) {
-        utilites[IndexBufferHandle::Next()] = ibuf;
+        indexBuffers[IndexBufferHandle::Next()] = ibuf;
     }
 
     return ibuf;
@@ -321,12 +367,23 @@ filament::MaterialInstance* FilamentRenderer::GetMaterialInstance(const Material
 {
     filament::MaterialInstance* matInstance = nullptr;
 
-    auto found = utilites.find(materialId);
-    if (found != utilites.end()) {
+    auto found = materialInstances.find(materialId);
+    if (found != materialInstances.end()) {
         matInstance = static_cast<filament::MaterialInstance*>(found->second);
     }
 
     return matInstance;
+}
+
+void FilamentRenderer::RemoveEntity(REHandle_abstract id)
+{
+    auto found = entities.find(id);
+    if (found != entities.end()) {
+        scene->remove(found->second);
+        engine->destroy(found->second);
+
+        entities.erase(found);
+    }
 }
 
 }

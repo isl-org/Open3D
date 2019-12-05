@@ -28,6 +28,7 @@
 
 #include "Open3D/Open3D.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 #include "Open3D/GUI/Native.h"
 
@@ -86,87 +87,123 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    std::shared_ptr<geometry::TriangleMesh> mesh;
+    int materialPathIndex = 2;
+
     std::string option(argv[1]);
     if (option == "sphere") {
-        // auto mesh = geometry::TriangleMesh::CreateSphere(1);
-        // mesh->ComputeVertexNormals();
-
-        auto mesh = std::make_shared<geometry::TriangleMesh>();
-        if (io::ReadTriangleMesh(
-                    "/home/maks/Work/code/Open3D/examples/TestData/knot.ply",
-                    *mesh)) {
-        } else {
-            return 1;
-        }
+        mesh = geometry::TriangleMesh::CreateSphere(42);
         mesh->ComputeVertexNormals();
-
-        std::string pathToMaterial;
-        if (argc > 2) {
-            pathToMaterial = argv[2];
+    } else if (option == "mesh") {
+        if (argc < 3) {
+            std::cout << "ERROR: You need to provide path to mesh file" << std::endl;
+            return 2;
         }
 
-        std::vector<char> bytes;
+        mesh = std::make_shared<geometry::TriangleMesh>();
+        if (!io::ReadTriangleMesh(argv[2], *mesh)) {
+            std::cout << "ERROR: Failed to load mesh from " << argv[2] << std::endl;
+            return 2;
+        }
+
+        materialPathIndex = 3;
+    } else {
+        std::cout << "ERROR: Unknown option \'" << option << "\'" << std::endl;
+        PrintHelp();
+        return 1;
+    }
+
+    mesh->ComputeVertexNormals();
+
+    bool materialDataLoaded = false;
+    std::vector<char> materialData;
+
+    if (argc > materialPathIndex) {
+        const std::string pathToMaterial = argv[materialPathIndex];
+
         std::string errorStr;
-        if (!readBinaryFile(pathToMaterial, &bytes, &errorStr)) {
-            std::cout << "[WARNING] Could not read " << pathToMaterial << "(" << errorStr << ")."
-                      << "Will use default material instead" << std::endl;
+        materialDataLoaded = readBinaryFile(pathToMaterial, &materialData, &errorStr);
+        if (!materialDataLoaded) {
+            std::cout << "WARNING: Could not read " << pathToMaterial << "(" << errorStr << ")."
+                      << "Will use default material instead." << std::endl;
         }
+    } else {
+        std::cout << "WARNING: No path to material provided, using default material..." << std::endl;
+    }
 
-        visualization::MaterialHandle matId = visualization::TheRenderer->AddMaterial(bytes.data(), bytes.size());
-        auto matInstance = visualization::TheRenderer->ModifyMaterial(matId)
-            .SetParameter("metallic", 1.0f)
-            .SetParameter("roughness", 1.0f)
-            .SetParameter("anisotropy", 1.0f)
-            .SetColor("baseColor", {1.f, 0.f, 0.f})
-            .Finish();
+    const int x = SDL_WINDOWPOS_CENTERED;
+    const int y = SDL_WINDOWPOS_CENTERED;
+    const int w = 1280;
+    const int h = 720;
+    uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE |
+                     SDL_WINDOW_ALLOW_HIGHDPI;
+    auto* window = SDL_CreateWindow("triangle mesh filament", x, y, w,
+                                    h, flags);
 
-        const int x = SDL_WINDOWPOS_CENTERED;
-        const int y = SDL_WINDOWPOS_CENTERED;
-        uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE |
-                         SDL_WINDOW_ALLOW_HIGHDPI;
-        auto* window = SDL_CreateWindow("triangle mesh filament", x, y, 1280,
-                                        720, flags);
+    visualization::FilamentRenderer::InitGlobal(
+            (void*)open3d::gui::GetNativeDrawable(window));
 
-        visualization::FilamentRenderer::InitGlobal(
-                (void*)open3d::gui::GetNativeDrawable(window));
+    SDL_ShowWindow(window);
 
-        SDL_ShowWindow(window);
+    SDL_Init(SDL_INIT_EVENTS);
 
-        SDL_Init(SDL_INIT_EVENTS);
+    visualization::TheRenderer->SetViewport(0, 0, w, h);
+    visualization::TheRenderer->SetClearColor({ 0.5f,0.5f,1.f });
+    visualization::TheRenderer->GetCamera()->LookAt({0, 0, 0},
+            {80, 80, 80},
+             {0, 1, 0});
 
-        visualization::TheRenderer->AddGeometry(*mesh, matInstance);
+    visualization::MaterialInstanceHandle matInstance;
+    if (materialDataLoaded) {
+        visualization::MaterialHandle matId = visualization::TheRenderer->AddMaterial(materialData.data(), materialData.size());
 
-        SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-        while (true) {
-            bool isDone = false;
+        matInstance = visualization::TheRenderer->ModifyMaterial(matId)
+                .SetParameter("roughness", 0.5f)
+                .SetParameter("clearCoat", 1.0f)
+                .SetParameter("clearCoatRoughness", 0.3f)
+                .SetColor("baseColor", {1.f, 0.f, 0.f})
+                .Finish();
+    }
 
-            constexpr int kMaxEvents = 16;
-            SDL_Event events[kMaxEvents];
-            int nevents = 0;
-            while (nevents < kMaxEvents &&
-                   SDL_PollEvent(&events[nevents]) != 0) {
-                const SDL_Event& event = events[nevents];
-                switch (event.type) {
-                    case SDL_QUIT:  // sent after last window closed
-                        isDone = true;
-                        break;
-                }
+    visualization::LightDescription lightDescription;
+    lightDescription.intensity = 100000;
+    lightDescription.direction = { -0.707, -.707, 0.0 };
+    lightDescription.customAttributes["custom_type"] = "SUN";
 
-                ++nevents;
+    visualization::TheRenderer->AddLight(lightDescription);
+
+    visualization::TheRenderer->AddGeometry(*mesh, matInstance);
+
+    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+    while (true) {
+        bool isDone = false;
+
+        constexpr int kMaxEvents = 16;
+        SDL_Event events[kMaxEvents];
+        int nevents = 0;
+        while (nevents < kMaxEvents &&
+               SDL_PollEvent(&events[nevents]) != 0) {
+            const SDL_Event& event = events[nevents];
+            switch (event.type) {
+                case SDL_QUIT:  // sent after last window closed
+                    isDone = true;
+                    break;
             }
 
-            visualization::TheRenderer->Draw();
-
-            SDL_Delay(10);  // millisec
-
-            if (isDone) break;
+            ++nevents;
         }
 
-        visualization::FilamentRenderer::ShutdownGlobal();
+        visualization::TheRenderer->Draw();
 
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        SDL_Delay(10);  // millisec
+
+        if (isDone) break;
     }
+
+    visualization::FilamentRenderer::ShutdownGlobal();
+
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }

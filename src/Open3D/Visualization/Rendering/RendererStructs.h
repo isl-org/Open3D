@@ -28,6 +28,9 @@
 
 #include "RendererHandle.h"
 
+#include <Eigen/Geometry>
+#include <jsoncpp/json/json.h>
+
 namespace open3d
 {
 
@@ -47,7 +50,35 @@ struct GeometryDescription
 
 struct LightDescription
 {
+    enum eLightType {
+        POINT,
+        SPOT,
+        DIRECTIONAL
+    };
 
+    eLightType type;
+    float intensity;
+    float falloff;
+    // Spot lights only
+    float lightConeInner;
+    // Spot lights only
+    float lightConeOuter;
+    Eigen::Vector3f color;
+    Eigen::Vector3f direction;
+    bool castShadows;
+
+    Json::Value customAttributes;
+
+    LightDescription()
+        : type(POINT)
+        , intensity(10000)
+        , falloff(10)
+        , lightConeInner(M_PI/4)
+        , lightConeOuter(M_PI/2)
+        , color(1.f, 1.f, 1.f)
+        , direction(0.f, 0.f, -1.f)
+        , castShadows(true)
+    {}
 };
 
 struct CameraDescription

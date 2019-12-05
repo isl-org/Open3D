@@ -26,48 +26,37 @@
 
 #pragma once
 
-#include "RendererHandle.h"
-#include "RendererStructs.h"
-#include "RendererEntitiesMods.h"
+#include <Eigen/Geometry>
 
-namespace open3d {
-
-namespace geometry
+namespace open3d
 {
-    class Geometry3D;
-}
+namespace visualization
+{
 
-namespace visualization {
-
-class Camera;
-
-class AbstractRenderInterface {
+class Camera
+{
 public:
-    virtual ~AbstractRenderInterface() = default;
+    enum eFovType {
+        VERTICAL_FOV,
+        HORIZONTAL_FOV
+    };
 
-    virtual void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) = 0;
-    virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
+    virtual void SetProjection(double fov, double aspect, double near, double far, eFovType fovType) = 0;
 
-    virtual void Draw() = 0;
+    virtual void LookAt(const Eigen::Vector3f& center,
+                        const Eigen::Vector3f& eye,
+                        const Eigen::Vector3f& up) = 0;
 
-    virtual Camera* GetCamera() const = 0;
+    virtual double GetNear() const = 0;
+    virtual double GetFar() const = 0;
+    virtual double GetFoV() const = 0;
+    virtual double GetAspect() const = 0;
 
-    // If MaterialInstanceHandle::kBad passed, then default material is used
-    virtual GeometryHandle AddGeometry(const geometry::Geometry3D& geometry, const MaterialInstanceHandle& materialId) = 0;
-    virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
-
-    virtual LightHandle AddLight(const LightDescription& descr) = 0;
-    //virtual LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) = 0;
-    virtual void RemoveLight(const LightHandle& id) = 0;
-
-    // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData, size_t dataSize) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) = 0;
-    virtual void AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId) = 0;
+    virtual Eigen::Vector3f GetPosition() = 0;
+    virtual Eigen::Vector3f GetForwardVector() = 0;
+    virtual Eigen::Vector3f GetLeftVector() = 0;
+    virtual Eigen::Vector3f GetUpVector() = 0;
 };
-
-extern AbstractRenderInterface* TheRenderer;
 
 }
 }

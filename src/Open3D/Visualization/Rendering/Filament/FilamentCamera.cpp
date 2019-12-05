@@ -51,26 +51,57 @@ void FilamentCamera::ChangeAspectRatio(const float aAspectRatio)
 {
     aspectRatio = aAspectRatio;
 
-    camera->setProjection(verticalFoV, aspectRatio, near, far);
+    SetProjection(fov, aspectRatio, near, far, direction);
 }
 
-void FilamentCamera::SetProjection(const float aNear, const float aFar, const float aVerticalFoV)
+void FilamentCamera::SetProjection(double aFov, double aspect, double aNear, double aFar, eFovType fovType)
 {
     near = aNear;
     far = aFar;
-    verticalFoV = aVerticalFoV;
+    fov = aFov;
+    aspectRatio = aspect;
+    direction = fovType;
 
     if (aspectRatio > 0.0) {
-        camera->setProjection(verticalFoV, aspectRatio, near, far);
+        filament::Camera::Fov dir = (fovType == eFovType::HORIZONTAL_FOV)
+                ? filament::Camera::Fov::HORIZONTAL
+                : filament::Camera::Fov::VERTICAL;
+
+        camera->setProjection(fov, aspectRatio, near, far, dir);
     }
 }
 
-void FilamentCamera::LookAt(const float centerX, const float centerY, const float centerZ, const float eyeX, const float eyeY, const float eyeZ, const float upX, const float upY, const float upZ)
+void FilamentCamera::LookAt(const Eigen::Vector3f& center, const Eigen::Vector3f& eye, const Eigen::Vector3f& up)
 {
-    camera->lookAt(filament::math::float3{ eyeX, eyeY, eyeZ },
-                   filament::math::float3{ centerX, centerY, centerZ},
-                   filament::math::float3{ upX, upY, upZ });
+    camera->lookAt({ eye.x(), eye.y(), eye.z() },
+                   { center.x(), center.y(), center.z()},
+                   { up.x(), up.y(), up.z() });
 }
+
+Eigen::Vector3f FilamentCamera::GetPosition()
+{
+    auto camPos = camera->getPosition();
+    return {camPos.x, camPos.y, camPos.z};
+}
+
+Eigen::Vector3f FilamentCamera::GetForwardVector()
+{
+    auto forward = camera->getForwardVector();
+    return {forward.x, forward.y, forward.z};
+}
+
+Eigen::Vector3f FilamentCamera::GetLeftVector()
+{
+    auto left = camera->getLeftVector();
+    return {left.x, left.y, left.z};
+}
+
+Eigen::Vector3f FilamentCamera::GetUpVector()
+{
+    auto up = camera->getUpVector();
+    return {up.x, up.y, up.z};
+}
+
 
 }
 }
