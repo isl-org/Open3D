@@ -71,7 +71,7 @@ public:
     /// Expand all tensors to the broadcasted shape, 0-dim tensors are ignored.
     /// Thorws exception if the common broadcasted shape does not exist.
     static std::pair<std::vector<Tensor>, SizeVector>
-    ExpandToCommonShapeExcpetZeroDim(const std::vector<Tensor>& index_tensors);
+    ExpandToCommonShapeExceptZeroDim(const std::vector<Tensor>& index_tensors);
 
     // Replace indexed dimensions with stride 0 and the size of the result
     // tensor.
@@ -181,19 +181,17 @@ public:
     }
 
     OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t workload_idx) const {
-        char* input_ptr = indexer_.GetInputPtr(0, workload_idx);
-        if (mode_ == AdvancedIndexerMode::GET) {
-            input_ptr += GetIndexedOffset(workload_idx) * element_byte_size_;
-        }
-        return input_ptr;
+        char* ptr = indexer_.GetInputPtr(0, workload_idx);
+        ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
+               (mode_ == AdvancedIndexerMode::GET);
+        return ptr;
     }
 
     OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
-        char* output_ptr = indexer_.GetOutputPtr(workload_idx);
-        if (mode_ == AdvancedIndexerMode::SET) {
-            output_ptr += GetIndexedOffset(workload_idx) * element_byte_size_;
-        }
-        return output_ptr;
+        char* ptr = indexer_.GetOutputPtr(workload_idx);
+        ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
+               (mode_ == AdvancedIndexerMode::SET);
+        return ptr;
     }
 
     OPEN3D_HOST_DEVICE int64_t GetIndexedOffset(int64_t workload_idx) const {
@@ -203,9 +201,7 @@ public:
                     indexer_.GetInputPtr(i + 1, workload_idx)));
             assert(index >= -indexed_shape_[i] && index < indexed_shape_[i] &&
                    "Index out of bounds");
-            if (index < 0) {
-                index += indexed_shape_[i];
-            }
+            index += indexed_shape_[i] * (index < 0);
             offset += index * indexed_strides_[i];
         }
         return offset;

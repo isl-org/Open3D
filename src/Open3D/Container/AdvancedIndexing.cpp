@@ -78,7 +78,7 @@ AdvancedIndexPreprocessor::ShuffleIndexedDimsToFront(
 }
 
 std::pair<std::vector<Tensor>, SizeVector>
-AdvancedIndexPreprocessor::ExpandToCommonShapeExcpetZeroDim(
+AdvancedIndexPreprocessor::ExpandToCommonShapeExceptZeroDim(
         const std::vector<Tensor>& index_tensors) {
     SizeVector replacement_shape({});  // {} can be broadcasted to any shape.
     for (const Tensor& index_tensor : index_tensors) {
@@ -194,7 +194,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // ignoring 0-d index_tensors_.
     SizeVector replacement_shape;
     std::tie(index_tensors_, replacement_shape) =
-            ExpandToCommonShapeExcpetZeroDim(index_tensors_);
+            ExpandToCommonShapeExceptZeroDim(index_tensors_);
 
     int64_t dims_before = 0;
     int64_t dims_after = 0;
