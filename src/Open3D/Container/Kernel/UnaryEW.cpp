@@ -66,40 +66,5 @@ void Copy(const Tensor& src, Tensor& dst) {
     }
 }
 
-void IndexedGet(const Tensor& src,
-                Tensor& dst,
-                const std::vector<Tensor>& index_tensors,
-                const SizeVector& indexed_out_shape) {
-    if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
-        dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
-        IndexedGetCPU(src, dst, index_tensors, indexed_out_shape);
-    } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
-               dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        IndexedGetCUDA(src, dst, index_tensors, indexed_out_shape);
-#endif
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-}
-
-void IndexedSet(const Tensor& src,
-                Tensor& dst,
-                const std::vector<Tensor>& index_tensors,
-                const SizeVector& indexed_out_shape) {
-    if (src.GetDevice().device_type_ == Device::DeviceType::CPU &&
-        dst.GetDevice().device_type_ == Device::DeviceType::CPU) {
-        IndexedSetCPU(src, dst, index_tensors, indexed_out_shape);
-
-    } else if (src.GetDevice().device_type_ == Device::DeviceType::CUDA &&
-               dst.GetDevice().device_type_ == Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        IndexedSetCUDA(src, dst, index_tensors, indexed_out_shape);
-#endif
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-}  // namespace kernel
-
 }  // namespace kernel
 }  // namespace open3d

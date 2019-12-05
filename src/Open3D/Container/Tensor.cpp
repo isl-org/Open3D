@@ -42,13 +42,23 @@ namespace open3d {
 
 /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
 Tensor& Tensor::operator=(const Tensor& other) & {
-    kernel::Copy(other, *this);
+    shape_ = other.shape_;
+    strides_ = other.strides_;
+    dtype_ = other.dtype_;
+    device_ = other.device_;
+    blob_ = other.blob_;
+    data_ptr_ = other.data_ptr_;
     return *this;
 }
 
 /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`
 Tensor& Tensor::operator=(Tensor&& other) & {
-    kernel::Copy(other, *this);
+    shape_ = other.shape_;
+    strides_ = other.strides_;
+    dtype_ = other.dtype_;
+    device_ = other.device_;
+    blob_ = other.blob_;
+    data_ptr_ = other.data_ptr_;
     return *this;
 }
 
@@ -78,9 +88,76 @@ void Tensor::Assign(const Tensor& other) {
 
 /// Broadcast Tensor to a new broadcastable shape
 Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
-    Tensor dst_tensor(dst_shape, GetDtype(), GetDevice());
-    dst_tensor = *this;
+    if (!CanBeBrocastedToShape(shape_, dst_shape)) {
+        utility::LogError("Cannot broadcast shape {} to shape {}.",
+                          shape_.ToString(), dst_shape);
+    }
+    Tensor dst_tensor(dst_shape, dtype_, device_);
+    dst_tensor.ToRvalue() = *this;
     return dst_tensor;
+}
+
+Tensor Tensor::Expand(const SizeVector& dst_shape) const {
+    if (!CanBeBrocastedToShape(shape_, dst_shape)) {
+        utility::LogError("Cannot expand shape {} to shape {}.",
+                          shape_.ToString(), dst_shape);
+    }
+    int64_t src_ndims = NumDims();
+    int64_t dst_ndims = dst_shape.size();
+    int64_t omitted_ndims = dst_ndims - src_ndims;
+
+    // Fill 1 in shape for omitted dimensions in front.
+    // Noe that unexpanded_new_shape is not the expanded shape. The expanded
+    // shape is the dst_shape.
+    SizeVector unexpanded_new_shape(dst_ndims, 1);
+    for (int64_t i = 0; i < src_ndims; ++i) {
+        unexpanded_new_shape[i + omitted_ndims] = shape_[i];
+    }
+
+    // Fill 0 in strides for omitted dimensions in front.
+    SizeVector new_strides(dst_ndims, 0);
+    for (int64_t i = 0; i < src_ndims; ++i) {
+        new_strides[i + omitted_ndims] = strides_[i];
+    }
+
+    // Set stride to 0 if the dimension is expanded.
+    for (int64_t i = 0; i < dst_ndims; ++i) {
+        if (unexpanded_new_shape[i] == 1 && dst_shape[i] != 1) {
+            new_strides[i] = 0;
+        }
+    }
+
+    return AsStrided(dst_shape, new_strides);
+}
+
+Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
+    SizeVector inferred_dst_shape = InferShape(dst_shape, NumElements());
+    bool can_restride;
+    SizeVector new_strides;
+    std::tie(can_restride, new_strides) =
+            ComputeNewStrides(shape_, strides_, inferred_dst_shape);
+    if (can_restride) {
+        return AsStrided(inferred_dst_shape, new_strides);
+    } else {
+        return Contiguous().View(inferred_dst_shape);
+    }
+}
+
+Tensor Tensor::View(const SizeVector& dst_shape) const {
+    SizeVector inferred_dst_shape = InferShape(dst_shape, NumElements());
+    bool can_restride;
+    SizeVector new_strides;
+    std::tie(can_restride, new_strides) =
+            ComputeNewStrides(shape_, strides_, inferred_dst_shape);
+    if (can_restride) {
+        return AsStrided(inferred_dst_shape, new_strides);
+    } else {
+        utility::LogError(
+                "View shape {} is not compatible with Tensor's size {} and "
+                "sride {}, at least one dimension spacs across two contiguous "
+                "subspaces. Use Reshape() instead.",
+                dst_shape, shape_, strides_);
+    }
 }
 
 Tensor Tensor::Copy(const Device& device) const {
@@ -119,6 +196,72 @@ SizeVector Tensor::DefaultStrides(const SizeVector& shape) {
         stride_size *= std::max<int64_t>(shape[i - 1], 1);
     }
     return strides;
+}
+
+std::pair<bool, SizeVector> Tensor::ComputeNewStrides(
+        const SizeVector& old_shape,
+        const SizeVector& old_strides,
+        const SizeVector& new_shape) {
+    if (old_shape.empty()) {
+        return std::make_pair(true, SizeVector(new_shape.size(), 1));
+    }
+
+    // NOTE: stride is arbitrary in the numel() == 0 case;
+    // to match NumPy behavior we copy the strides if the size matches,
+    // otherwise we use the stride as if it were computed via resize. This could
+    // perhaps be combined with the below code, but the complexity didn't seem
+    // worth it.
+    int64_t numel = old_shape.NumElements();
+    if (numel == 0 && old_shape == new_shape) {
+        return std::make_pair(true, old_strides);
+    }
+
+    SizeVector new_strides(new_shape.size());
+    if (numel == 0) {
+        for (int64_t view_d = new_shape.size() - 1; view_d >= 0; view_d--) {
+            if (view_d == (int64_t)(new_shape.size() - 1)) {
+                new_strides[view_d] = 1;
+            } else {
+                new_strides[view_d] =
+                        std::max<int64_t>(new_shape[view_d + 1], 1) *
+                        new_strides[view_d + 1];
+            }
+        }
+        return std::make_pair(true, new_strides);
+    }
+
+    int64_t view_d = new_shape.size() - 1;
+    // stride for each subspace in the chunk
+    int64_t chunk_base_stride = old_strides.back();
+    // numel in current chunk
+    int64_t tensor_numel = 1;
+    int64_t view_numel = 1;
+    for (int64_t tensor_d = old_shape.size() - 1; tensor_d >= 0; tensor_d--) {
+        tensor_numel *= old_shape[tensor_d];
+        // if end of tensor size chunk, check view
+        if ((tensor_d == 0) ||
+            (old_shape[tensor_d - 1] != 1 &&
+             old_strides[tensor_d - 1] != tensor_numel * chunk_base_stride)) {
+            while (view_d >= 0 &&
+                   (view_numel < tensor_numel || new_shape[view_d] == 1)) {
+                new_strides[view_d] = view_numel * chunk_base_stride;
+                view_numel *= new_shape[view_d];
+                view_d--;
+            }
+            if (view_numel != tensor_numel) {
+                return std::make_pair(false, SizeVector());
+            }
+            if (tensor_d > 0) {
+                chunk_base_stride = old_strides[tensor_d - 1];
+                tensor_numel = 1;
+                view_numel = 1;
+            }
+        }
+    }
+    if (view_d != -1) {
+        return std::make_pair(false, SizeVector());
+    }
+    return std::make_pair(true, new_strides);
 }
 
 std::string Tensor::ToString(bool with_suffix,
@@ -237,46 +380,20 @@ Tensor Tensor::Slice(int64_t dim,
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
-    // Dimension check
-    if (index_tensors.size() > shape_.size()) {
-        utility::LogError(
-                "Number of index_tensors {} exceeds tensor dimension {}.",
-                index_tensors.size(), shape_.size());
-    }
-
-    std::vector<Tensor> full_index_tensors;
-    SizeVector indexed_out_shape;
-    std::tie(full_index_tensors, indexed_out_shape) =
-            PreprocessIndexTensors(*this, index_tensors);
-
-    Tensor dst = Tensor(indexed_out_shape, dtype_, device_);
-    kernel::IndexedGet(*this, dst, full_index_tensors, indexed_out_shape);
+    AdvancedIndexPreprocessor aip(*this, index_tensors);
+    Tensor dst = Tensor(aip.GetOutputShape(), dtype_, device_);
+    kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
+                     aip.GetIndexedShape(), aip.GetIndexedStrides());
 
     return dst;
 }
 
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
-    // Dimension check
-    if (index_tensors.size() > shape_.size()) {
-        utility::LogError(
-                "Number of index_tensors {} exceeds tensor dimension {}.",
-                index_tensors.size(), shape_.size());
-    }
-
-    std::vector<Tensor> full_index_tensors;
-    SizeVector indexed_out_shape;
-    std::tie(full_index_tensors, indexed_out_shape) =
-            PreprocessIndexTensors(*this, index_tensors);
-
-    // Broadcast src_tensor.GetShape() to indexed_out_shape
-    if (!CanBeBrocastedToShape(src_tensor.GetShape(), indexed_out_shape)) {
-        utility::LogError("IndexSet: cannot broadcast {} to {}.",
-                          src_tensor.GetShape(), indexed_out_shape);
-    }
-
-    kernel::IndexedSet(src_tensor, *this, full_index_tensors,
-                       indexed_out_shape);
+    AdvancedIndexPreprocessor aip(*this, index_tensors);
+    Tensor pre_processed_dst = aip.GetTensor();
+    kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
+                     aip.GetIndexedShape(), aip.GetIndexedStrides());
 }
 
 Tensor Tensor::Permute(const SizeVector& dims) const {
@@ -301,8 +418,8 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
     }
 
     // Map to new shape and strides
-    const SizeVector& old_shape = GetShape();
-    const SizeVector& old_stides = GetStrides();
+    const SizeVector& old_shape = shape_;
+    const SizeVector& old_stides = strides_;
     SizeVector new_shape(n_dims);
     SizeVector new_strides(n_dims);
     for (int64_t i = 0; i < n_dims; ++i) {
@@ -316,8 +433,8 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
 
 Tensor Tensor::AsStrided(const SizeVector& new_shape,
                          const SizeVector& new_strides) const {
-    Tensor result(new_shape, new_strides, const_cast<void*>(GetDataPtr()),
-                  GetDtype(), GetDevice(), GetBlob());
+    Tensor result(new_shape, new_strides, const_cast<void*>(data_ptr_), dtype_,
+                  device_, blob_);
     return result;
 }
 

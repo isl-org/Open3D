@@ -31,57 +31,73 @@
 
 namespace open3d {
 
-bool IsCompatibleBroadcastShape(const SizeVector& left_shape,
-                                const SizeVector& right_shape) {
-    int64_t left_ndim = left_shape.size();
-    int64_t right_ndim = right_shape.size();
+/// Expand a shape with ones in front. Returning a shape with size of ndims.
+/// E.g. ExpandFrontDims({2, 3}, 5) == {1, 1, 1, 2, 3}
+const SizeVector ExpandFrontDims(const SizeVector& shape, int64_t ndims) {
+    if (ndims < shape.size()) {
+        utility::LogError("Cannot expand a shape with ndims {} to ndims {}.",
+                          shape.size(), ndims);
+    }
+    SizeVector expanded_shape(ndims, 1);
+    std::copy(shape.begin(), shape.end(),
+              expanded_shape.begin() + ndims - shape.size());
+    return std::move(expanded_shape);
+}
 
-    if (left_ndim == 0 || right_ndim == 0) {
+bool IsCompatibleBroadcastShape(const SizeVector& l_shape,
+                                const SizeVector& r_shape) {
+    int64_t l_ndims = l_shape.size();
+    int64_t r_ndims = r_shape.size();
+
+    if (l_ndims == 0 || r_ndims == 0) {
         return true;
     }
 
-    // Only need to check the last `shorter_ndim` dims
+    // Only need to check the last `shorter_ndims` dims
     // E.g. LHS: [100, 200, 2, 3, 4]
     //      RHS:           [2, 1, 4] <- only last 3 dims need to be checked
     // Checked from right to left
-    int64_t shorter_ndim = std::min(left_ndim, right_ndim);
-    for (int64_t ind = 0; ind < shorter_ndim; ++ind) {
-        int64_t left_dim = left_shape[left_ndim - 1 - ind];
-        int64_t right_dim = right_shape[right_ndim - 1 - ind];
-        if (!(left_dim == right_dim || left_dim == 1 || right_dim == 1)) {
+    int64_t shorter_ndims = std::min(l_ndims, r_ndims);
+    for (int64_t i = 0; i < shorter_ndims; ++i) {
+        int64_t l_dim = l_shape[l_ndims - 1 - i];
+        int64_t r_dim = r_shape[r_ndims - 1 - i];
+        if (!(l_dim == r_dim || l_dim == 1 || r_dim == 1)) {
             return false;
         }
     }
     return true;
 }
 
-SizeVector BroadcastedShape(const SizeVector& left_shape,
-                            const SizeVector& right_shape) {
-    if (!IsCompatibleBroadcastShape(left_shape, right_shape)) {
+SizeVector BroadcastedShape(const SizeVector& l_shape,
+                            const SizeVector& r_shape) {
+    if (!IsCompatibleBroadcastShape(l_shape, r_shape)) {
         utility::LogError("Shape {} and {} are not broadcast-compatible",
-                          left_shape, right_shape);
+                          l_shape, r_shape);
     }
 
-    int64_t left_ndim = left_shape.size();
-    int64_t right_ndim = right_shape.size();
-    int64_t shorter_ndim = std::min(left_ndim, right_ndim);
-    int64_t longer_ndim = std::max(left_ndim, right_ndim);
+    int64_t l_ndims = l_shape.size();
+    int64_t r_ndims = r_shape.size();
+    int64_t out_ndims = std::max(l_ndims, r_ndims);
 
-    if (left_ndim == 0) {
-        return right_shape;
-    }
-    if (right_ndim == 0) {
-        return left_shape;
-    }
+    // Fill omitted dimensions with shape 1.
+    SizeVector l_shape_filled = ExpandFrontDims(l_shape, out_ndims);
+    SizeVector r_shape_filled = ExpandFrontDims(r_shape, out_ndims);
 
-    SizeVector broadcasted_shape(longer_ndim, 0);
-    // Checked from right to left
-    for (int64_t ind = 0; ind < longer_ndim; ind++) {
-        int64_t left_ind = left_ndim - longer_ndim + ind;
-        int64_t right_ind = right_ndim - longer_ndim + ind;
-        int64_t left_dim = left_ind >= 0 ? left_shape[left_ind] : 0;
-        int64_t right_dim = right_ind >= 0 ? right_shape[right_ind] : 0;
-        broadcasted_shape[ind] = std::max(left_dim, right_dim);
+    SizeVector broadcasted_shape(out_ndims);
+    for (int64_t i = 0; i < out_ndims; i++) {
+        if (l_shape_filled[i] == 1) {
+            broadcasted_shape[i] = r_shape_filled[i];
+        } else if (r_shape_filled[i] == 1) {
+            broadcasted_shape[i] = l_shape_filled[i];
+        } else if (l_shape_filled[i] == r_shape_filled[i]) {
+            broadcasted_shape[i] = l_shape_filled[i];
+        } else {
+            utility::LogError(
+                    "Internal error: dimension size {} is not compatible with "
+                    "{}, however, this error shall have been captured by "
+                    "IsCompatibleBroadcastShape already.",
+                    l_shape_filled[i], r_shape_filled[i]);
+        }
     }
     return broadcasted_shape;
 }

@@ -24,21 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/Container/Kernel/IndexGetSet.h"
 
+#include "Open3D/Container/AdvancedIndexing.h"
+#include "Open3D/Container/Dispatch.h"
+#include "Open3D/Container/Kernel/CPULauncher.h"
 #include "Open3D/Container/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace kernel {
 
-void Copy(const Tensor& src, Tensor& dst);
+template <typename scalar_t>
+static void CPUCopyElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
+}
 
-void CopyCPU(const Tensor& src, Tensor& dst);
+void IndexGetCPU(const Tensor& src,
+                 Tensor& dst,
+                 const std::vector<Tensor>& index_tensors,
+                 const SizeVector& indexed_shape,
+                 const SizeVector& indexed_strides) {
+    Dtype dtype = src.GetDtype();
+    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
+                       AdvancedIndexer::AdvancedIndexerMode::GET);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        CPULauncher::LaunchAdvancedIndexerKernel<scalar_t>(
+                ai, CPUCopyElementKernel<scalar_t>);
+    });
+}
 
-#ifdef BUILD_CUDA_MODULE
-void CopyCUDA(const Tensor& src, Tensor& dst);
-#endif
+void IndexSetCPU(const Tensor& src,
+                 Tensor& dst,
+                 const std::vector<Tensor>& index_tensors,
+                 const SizeVector& indexed_shape,
+                 const SizeVector& indexed_strides) {
+    Dtype dtype = src.GetDtype();
+    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
+                       AdvancedIndexer::AdvancedIndexerMode::SET);
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        CPULauncher::LaunchAdvancedIndexerKernel<scalar_t>(
+                ai, CPUCopyElementKernel<scalar_t>);
+    });
+}
 
 }  // namespace kernel
 }  // namespace open3d

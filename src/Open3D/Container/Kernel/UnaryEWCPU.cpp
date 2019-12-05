@@ -52,35 +52,13 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                               src.GetDataPtr(), src.GetDevice(),
                               DtypeUtil::ByteSize(dtype) * shape.NumElements());
     } else {
+        Indexer indexer({src}, dst);
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    src, dst, CPUCopyElementKernel<scalar_t>);
+                    indexer, CPUCopyElementKernel<scalar_t>);
         });
     }
 }
 
-void IndexedGetCPU(const Tensor& src,
-                   Tensor& dst,
-                   const std::vector<Tensor>& index_tensors,
-                   const SizeVector& indexed_out_shape) {
-    Dtype dtype = src.GetDtype();
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchRhsIndexedUnaryEWKernel<scalar_t>(
-                src, dst, index_tensors, indexed_out_shape,
-                CPUCopyElementKernel<scalar_t>);
-    });
-}
-
-void IndexedSetCPU(const Tensor& src,
-                   Tensor& dst,
-                   const std::vector<Tensor>& index_tensors,
-                   const SizeVector& indexed_out_shape) {
-    Dtype dtype = src.GetDtype();
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchLhsIndexedUnaryEWKernel<scalar_t>(
-                src, dst, index_tensors, indexed_out_shape,
-                CPUCopyElementKernel<scalar_t>);
-    });
-}
 }  // namespace kernel
 }  // namespace open3d

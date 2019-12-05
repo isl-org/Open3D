@@ -85,7 +85,7 @@ struct TensorRef {
     int64_t strides_[MAX_DIMS];
 };
 
-/// Indexing Engine for elementwise ops with broadcasting support.
+/// Indexing engine for elementwise ops with broadcasting support.
 ///
 /// Fancy indexing is supported by restriding input tensor and treating the
 /// operation as elementwise op. Reduction op will be supported by
@@ -95,6 +95,8 @@ struct TensorRef {
 /// used from both host and device.
 class Indexer {
 public:
+    Indexer() {}
+
     /// Only single output is supported for simplicity. To extend this function
     /// to support multiple outputs, one may check for shape compatibility of
     /// all outputs.

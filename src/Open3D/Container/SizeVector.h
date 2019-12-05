@@ -96,4 +96,58 @@ static inline int64_t WrapDim(int64_t dim, int64_t max_dim) {
     return dim;
 }
 
+// Infers the size of a dim with size -1, if it exists. Also checks that new
+// shape is compatible with the number of elements.
+//
+// E.g. Shape({2, -1, 4}) with num_elemnts 24, will be inferred as {2, 3, 4}.
+//
+// Ref: PyTorch's aten/src/ATen/InferSize.h
+inline SizeVector InferShape(SizeVector shape, int64_t num_elements) {
+    SizeVector inferred_shape = shape;
+    int64_t new_size = 1;
+    bool has_inferred_dim = false;
+    int64_t inferred_dim;
+    for (int64_t dim = 0, ndim = shape.size(); dim != ndim; dim++) {
+        if (shape[dim] == -1) {
+            if (has_inferred_dim) {
+                utility::LogError(
+                        "Proposed shape {}, but at most one dimension can be "
+                        "-1 (inferred).",
+                        shape.ToString());
+            }
+            inferred_dim = dim;
+        } else if (shape[dim] >= 0) {
+            new_size *= shape[dim];
+        } else {
+            utility::LogError("Invalid shape dimension {}", shape[dim]);
+        }
+    }
+
+    if (num_elements == new_size ||
+        (has_inferred_dim && new_size > 0 && num_elements % new_size == 0)) {
+        if (has_inferred_dim) {
+            // We have a degree of freedom here to select the dimension size;
+            // follow NumPy semantics and just bail.  However, a nice error
+            // message is needed because users often use `view` as a way to
+            // flatten & unflatten dimensions and will otherwise be confused why
+            //   empty_tensor.view( 0, 0)
+            // works yet
+            //   empty_tensor.view(-1, 0)
+            // doesn't.
+            if (new_size == 0) {
+                utility::LogError(
+                        "Cannot reshape tensor of 0 elements into shape {}, "
+                        "because the unspecified dimension size -1 can be any "
+                        "value and is ambiguous.",
+                        shape.ToString());
+            }
+            inferred_shape[inferred_dim] = num_elements / new_size;
+        }
+        return inferred_shape;
+    }
+
+    utility::LogError("Shape {} is invalid for {} number of elements.", shape,
+                      num_elements);
+}
+
 }  // namespace open3d
