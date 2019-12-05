@@ -25,10 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
 #include <cassert>
 #include <vector>
+
+#include "Open3D/Container/Indexer.h"
 #include "Open3D/Container/Kernel/Scheduler.h"
 #include "Open3D/Container/Tensor.h"
+
 namespace open3d {
 namespace kernel {
 
@@ -38,29 +42,14 @@ public:
     static void LaunchUnaryEWKernel(const Tensor& src,
                                     Tensor& dst,
                                     func_t element_kernel) {
-        const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
-        char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
-
-        // src - (broadcast) -> mid -> dst
-        SizeVector mid_shape = dst.GetShape();
-        SizeVector mid_stride = Tensor::DefaultStrides(dst.GetShape());
-        OffsetBroadcastCalculator src_offset_calculator(
-                src.GetShape(), src.GetStrides(), mid_shape, mid_stride);
-        OffsetBroadcastCalculator dst_offset_calculator(
-                dst.GetShape(), dst.GetStrides(), mid_shape, mid_stride);
-
+        Indexer indexer({src}, dst);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int64_t thread_idx = 0;
-             thread_idx < static_cast<int64_t>(dst.NumElements());
-             thread_idx++) {
-            int64_t src_idx = src_offset_calculator.GetOffset(thread_idx);
-            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
-            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
-            element_kernel(src_ptr, dst_ptr);
+        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
+             ++workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
         }
     }
 

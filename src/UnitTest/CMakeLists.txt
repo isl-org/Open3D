@@ -28,3 +28,7 @@ endif()
 
 target_link_libraries(unitTests pthread ${CMAKE_PROJECT_NAME})
 ShowAndAbortOnWarning(unitTests)
+
+if (BUILD_CUDA_MODULE)
+    target_include_directories(unitTests PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+endif()

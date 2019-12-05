@@ -95,11 +95,23 @@ public:
         }
     }
 
-    /// Copy constructor with lvalue input, e.g. `Tensor dst(src)`
-    Tensor(const Tensor& other);
+    /// Shallow copy constructor with lvalue input, e.g. `Tensor dst(src)`.
+    Tensor(const Tensor& other)
+        : Tensor(other.GetShape(),
+                 other.GetStrides(),
+                 const_cast<void*>(other.GetDataPtr()),
+                 other.GetDtype(),
+                 other.GetDevice(),
+                 other.GetBlob()) {}
 
-    /// Copy constructor with rvalue input, e.g. `Tensor dst(src[0])`
-    Tensor(Tensor&& other);
+    /// Shallow copy constructor with rvalue input, e.g. `Tensor dst(src[0])`.
+    Tensor(Tensor&& other)
+        : Tensor(other.GetShape(),
+                 other.GetStrides(),
+                 other.GetDataPtr(),
+                 other.GetDtype(),
+                 other.GetDevice(),
+                 other.GetBlob()) {}
 
     /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
     Tensor& operator=(const Tensor& other) &;
@@ -252,30 +264,40 @@ public:
 
     /// Returns True if the underlying memory buffer is contiguous. A contiguous
     /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
-    bool IsContiguous() const { return DefaultStrides(shape_) == strides_; };
+    inline bool IsContiguous() const {
+        return DefaultStrides(shape_) == strides_;
+    };
 
     /// Returns a contiguous Tensor containing the same data in the same device.
     /// If self tensor is already contiguous, the same underlying memory will be
     /// used.
     Tensor Contiguous() const;
 
-    SizeVector GetShape() const { return shape_; }
+    inline SizeVector GetShape() const { return shape_; }
 
-    SizeVector GetStrides() const { return strides_; }
+    inline int64_t GetShape(int64_t dim) const {
+        return shape_[WrapDim(dim, NumDims())];
+    }
 
-    void* GetDataPtr() { return data_ptr_; }
+    inline SizeVector GetStrides() const { return strides_; }
 
-    const void* GetDataPtr() const { return data_ptr_; }
+    inline int64_t GetStride(int64_t dim) const {
+        return strides_[WrapDim(dim, NumDims())];
+    }
 
-    Dtype GetDtype() const { return dtype_; }
+    inline void* GetDataPtr() { return data_ptr_; }
 
-    Device GetDevice() const { return device_; }
+    inline const void* GetDataPtr() const { return data_ptr_; }
 
-    std::shared_ptr<Blob> GetBlob() const { return blob_; }
+    inline Dtype GetDtype() const { return dtype_; }
 
-    int64_t NumElements() const { return shape_.NumElements(); }
+    inline Device GetDevice() const { return device_; }
 
-    int64_t NumDims() const { return shape_.size(); }
+    inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
+
+    inline int64_t NumElements() const { return shape_.NumElements(); }
+
+    inline int64_t NumDims() const { return shape_.size(); }
 
     template <typename T>
     void AssertTemplateDtype() const {

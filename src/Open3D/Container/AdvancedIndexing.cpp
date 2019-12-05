@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Indexing.h"
+#include "Open3D/Container/AdvancedIndexing.h"
 
 #include "Open3D/Container/Broadcast.h"
 #include "Open3D/Container/SizeVector.h"

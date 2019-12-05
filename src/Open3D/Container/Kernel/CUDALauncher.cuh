@@ -30,6 +30,7 @@
 #include <cuda_runtime.h>
 
 #include "Open3D/Container/CudaUtils.cuh"
+#include "Open3D/Container/Indexer.h"
 #include "Open3D/Container/Kernel/Scheduler.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"
@@ -68,27 +69,15 @@ public:
                                     Tensor& dst,
                                     func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-        int64_t num_elems = static_cast<int64_t>(dst.GetShape().NumElements());
+        Indexer indexer({src}, dst);
+
+        int64_t num_elems = indexer.NumWorkloads();
         int64_t items_per_block = threads_per_block * items_per_thread;
         int64_t grid_size = (num_elems + items_per_block - 1) / items_per_block;
 
-        const char* src_data_ptr = static_cast<const char*>(src.GetDataPtr());
-        char* dst_data_ptr = static_cast<char*>(dst.GetDataPtr());
-        int64_t element_byte_size = DtypeUtil::ByteSize(src.GetDtype());
-
-        OffsetBroadcastCalculator src_offset_calculator(
-                src.GetShape(), src.GetStrides(), dst.GetShape(),
-                Tensor::DefaultStrides(dst.GetShape()));
-        OffsetBroadcastCalculator dst_offset_calculator(
-                dst.GetShape(), dst.GetStrides(), dst.GetShape(),
-                Tensor::DefaultStrides(dst.GetShape()));
-
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t thread_idx) {
-            int64_t src_idx = src_offset_calculator.GetOffset(thread_idx);
-            const void* src_ptr = src_data_ptr + src_idx * element_byte_size;
-            int64_t dst_idx = dst_offset_calculator.GetOffset(thread_idx);
-            void* dst_ptr = dst_data_ptr + dst_idx * element_byte_size;
-            element_kernel(src_ptr, dst_ptr);
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
         };
 
         ElementWiseKernel<threads_per_block, items_per_thread>

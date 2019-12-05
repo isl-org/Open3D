@@ -25,8 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Container/Tensor.h"
+#include "Open3D/Container/AdvancedIndexing.h"
 #include "Open3D/Container/Dtype.h"
-#include "Open3D/Container/Indexing.h"
 #include "Open3D/Container/Kernel/Kernel.h"
 #include "Open3D/Container/MemoryManager.h"
 #include "Open3D/Container/SizeVector.h"
@@ -685,4 +685,26 @@ TEST_P(TensorPermuteDevices, T) {
 
     Tensor t_3d(vals, {2, 3, 4}, Dtype::Float32, device);
     EXPECT_THROW(t_3d.T(), std::runtime_error);
+}
+
+TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
+    Device device = GetParam();
+    Tensor t({2, 3}, Dtype::Float32, device);
+
+    // Copy constructor.
+    Tensor t_copy(t);
+    EXPECT_EQ(t.GetDataPtr(), t_copy.GetDataPtr());
+
+    // Vector initialization.
+    std::vector<Tensor> t_vec0{t};
+    EXPECT_EQ(t.GetDataPtr(), t_vec0[0].GetDataPtr());
+
+    std::vector<Tensor> t_vec1({t});
+    EXPECT_EQ(t.GetDataPtr(), t_vec1[0].GetDataPtr());
+
+    // Vector initialization list passed to function.
+    auto FirstTensorDataPtr = [](const std::vector<Tensor> &tensors) -> void * {
+        return const_cast<void *>(tensors[0].GetDataPtr());
+    };
+    EXPECT_EQ(t.GetDataPtr(), FirstTensorDataPtr({t}));
 }

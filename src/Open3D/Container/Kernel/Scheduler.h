@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include <vector>
 
 #include "Open3D/Container/Broadcast.h"
