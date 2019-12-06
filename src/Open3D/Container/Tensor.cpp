@@ -93,7 +93,7 @@ Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
                           shape_.ToString(), dst_shape);
     }
     Tensor dst_tensor(dst_shape, dtype_, device_);
-    dst_tensor.ToRvalue() = *this;
+    dst_tensor.AsRvalue() = *this;
     return dst_tensor;
 }
 
@@ -166,7 +166,7 @@ Tensor Tensor::Copy(const Device& device) const {
     return dst_tensor;
 }
 
-void Tensor::CopyFrom(const Tensor& other) { kernel::Copy(other, *this); }
+void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 
 Tensor Tensor::Clone(const Device& device) const {
     auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);

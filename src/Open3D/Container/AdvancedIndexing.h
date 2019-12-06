@@ -180,21 +180,22 @@ public:
         element_byte_size_ = DtypeUtil::ByteSize(src.GetDtype());
     }
 
-    OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t workload_idx) const {
+    inline OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t workload_idx) const {
         char* ptr = indexer_.GetInputPtr(0, workload_idx);
         ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
                (mode_ == AdvancedIndexerMode::GET);
         return ptr;
     }
 
-    OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
+    inline OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
         char* ptr = indexer_.GetOutputPtr(workload_idx);
         ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
                (mode_ == AdvancedIndexerMode::SET);
         return ptr;
     }
 
-    OPEN3D_HOST_DEVICE int64_t GetIndexedOffset(int64_t workload_idx) const {
+    inline OPEN3D_HOST_DEVICE int64_t
+    GetIndexedOffset(int64_t workload_idx) const {
         int64_t offset = 0;
         for (int64_t i = 0; i < num_indices_; ++i) {
             int64_t index = *(reinterpret_cast<int64_t*>(

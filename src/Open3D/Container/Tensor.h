@@ -160,7 +160,7 @@ public:
             scalar_t casted_v = static_cast<scalar_t>(v);
             Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
                        GetDtype(), GetDevice());
-            ToRvalue() = tmp;
+            AsRvalue() = tmp;
         });
     }
 
@@ -236,7 +236,7 @@ public:
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
-    Tensor ToRvalue() const { return *this; }
+    Tensor AsRvalue() const { return *this; }
 
     /// \brief Advanced indexing getter
     ///

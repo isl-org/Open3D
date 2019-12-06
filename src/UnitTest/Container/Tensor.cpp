@@ -162,7 +162,7 @@ TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
                                 0, 1, 2, 0, 1, 2, 3, 4, 5, 3, 4, 5};
     Tensor src_t(src_vals, src_shape, dtype, src_device);
     Tensor dst_t(dst_shape, dtype, dst_device);
-    dst_t.CopyFrom(src_t);  // Equivalently, dst_t.ToRvalue() = src_t;
+    dst_t.CopyFrom(src_t);  // Equivalently, dst_t.AsRvalue() = src_t;
 
     EXPECT_EQ(dst_t.GetShape(), dst_shape);
     EXPECT_EQ(dst_t.ToFlatVector<float>(), dst_vals);
@@ -415,7 +415,7 @@ TEST_P(TensorPermuteDevices, SliceAssign) {
     Tensor src_0(std::vector<float>({120, 140, 200, 220}), {2, 2},
                  Dtype::Float32, device);
     Tensor dst_slice = dst[1].Slice(0, 0, 3, 2).Slice(1, 0, 4, 2);
-    dst_slice.ToRvalue() = src_0;
+    dst_slice.AsRvalue() = src_0;
     EXPECT_EQ(dst.ToFlatVector<float>(),
               std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
                                   8,  9,  10, 11, 120, 13, 140, 15,
@@ -436,7 +436,7 @@ TEST_P(TensorPermuteDevices, SliceAssign) {
     Tensor src_2_tmp(std::vector<float>({122, 142, -1, -1, 202, 222}), {3, 2},
                      Dtype::Float32, device);    // Shape (3, 2)
     Tensor src_2 = src_2_tmp.Slice(0, 0, 3, 2);  // Shape (2, 2)
-    dst_slice.ToRvalue() = src_2;
+    dst_slice.AsRvalue() = src_2;
     EXPECT_EQ(dst.ToFlatVector<float>(),
               std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
                                   8,  9,  10, 11, 122, 13, 142, 15,
@@ -597,7 +597,7 @@ TEST_P(TensorPermuteDevices, IndexGetAssignToBroadcast) {
     // Broadcast to shape {3, 2, 2}
     SizeVector dst_shape{3, 2, 2};
     Tensor dst_t(dst_shape, Dtype::Float32, device);
-    dst_t.ToRvalue() =
+    dst_t.AsRvalue() =
             src_t.IndexGet(indices);  // Intermediate tensor copied internally
 
     EXPECT_TRUE(dst_t.IsContiguous());
