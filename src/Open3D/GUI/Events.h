@@ -26,38 +26,76 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include <cstdint>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
-public:
-    static Application& GetInstance();
-
-    virtual ~Application();
-
-    void Initialize(int argc, const char *argv[]);
-    void Run();
-
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
-
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+enum class MouseButton {
+    NONE = 0,
+    LEFT = (1 << 0),
+    MIDDLE = (1 << 1),
+    RIGHT = (1 << 2),
+    BUTTON4 = (1 << 3),
+    BUTTON5 = (1 << 4)
 };
 
-}
-}
+struct MouseMoveEvent {
+    int x;
+    int y;
+    int buttons;  // MouseButtons ORed together
+};
+
+struct MouseButtonEvent {
+    enum Type { DOWN, UP };
+    Type type;
+    int x;
+    int y;
+    MouseButton button;
+};
+
+struct MouseWheelEvent {
+    int x;
+    int y;
+};
+
+enum {
+    KEY_BACKSPACE = 8,
+    KEY_TAB = 9,
+    KEY_ENTER = 10,
+    KEY_ESCAPE = 27,
+    KEY_DELETE = 127,
+    KEY_LSHIFT = 256,
+    KEY_RSHIFT,
+    KEY_CAPSLOCK,
+    KEY_CTRL,
+    KEY_OPTION,
+    KEY_META,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_UP,
+    KEY_DOWN,
+    KEY_INSERT,
+    KEY_HOME,
+    KEY_END,
+    KEY_PAGEUP,
+    KEY_PAGEDOWN,
+    KEY_UNKNOWN = 1000
+};
+
+struct KeyEvent {
+    enum Type { DOWN, UP };
+    Type type;
+    // This is the actual key that was pressed, not the character that
+    // was generated (use TextInputEvent for that). Values correspond
+    // to ASCII values where applicable.
+    uint32_t key;
+    bool isRepeat;
+};
+
+struct TextInputEvent {
+    const char *utf8;
+};
+
+} // gui
+} // open3d

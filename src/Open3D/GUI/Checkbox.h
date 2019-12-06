@@ -26,33 +26,26 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "Widget.h"
+
+#include <functional>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
+class Checkbox : public Widget {
 public:
-    static Application& GetInstance();
+    explicit Checkbox(const char *name);
+    ~Checkbox();
 
-    virtual ~Application();
+    bool IsChecked() const;
+    void SetChecked(bool checked);
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    DrawResult Draw(const DrawContext& context) override;
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
+    std::function<void(bool)> OnChecked;
 
 private:
     struct Impl;

@@ -29,25 +29,42 @@
 #include "Gui.h"
 
 #include <memory>
+#include <vector>
 
 namespace open3d {
 namespace gui {
 
-struct DrawContext;
+struct Theme;
+
+struct DrawContext {
+    const Theme& theme;
+    int uiOffsetX;
+    int uiOffsetY;
+    int emPx;
+};
 
 class Widget {
+    friend class Window;
 public:
-    enum DrawResult { NONE, CLICKED };
+    enum class DrawResult { NONE, CLICKED };
 
     Widget();
+    explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Widget();
+
+    void AddChild(std::shared_ptr<Widget> child);
+    const std::vector<std::shared_ptr<Widget>> GetChildren() const;
 
     const Rect& GetFrame() const;
     virtual void SetFrame(const Rect& f);
 
-    virtual Size CalcPreferredSize() const;
+    virtual bool Is3D() const;
 
-    virtual DrawResult Draw(const DrawContext& context) = 0;
+    static constexpr int DIM_GROW = 10000;
+    virtual Size CalcPreferredSize(const Theme& theme) const;
+
+    virtual void Layout(const Theme& theme);
+    virtual DrawResult Draw(const DrawContext& context);
 
 private:
     struct Impl;

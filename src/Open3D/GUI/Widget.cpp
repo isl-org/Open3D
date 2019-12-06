@@ -31,6 +31,7 @@ namespace gui {
 
 struct Widget::Impl {
     Rect frame;
+    std::vector<std::shared_ptr<Widget>> children;
 };
 
 Widget::Widget()
@@ -38,7 +39,21 @@ Widget::Widget()
 {
 }
 
+Widget::Widget(const std::vector<std::shared_ptr<Widget>>& children)
+: impl_(new Widget::Impl())
+{
+    impl_->children = children;
+}
+
 Widget::~Widget() {
+}
+
+void Widget::AddChild(std::shared_ptr<Widget> child) {
+    impl_->children.push_back(child);
+}
+
+const std::vector<std::shared_ptr<Widget>> Widget::GetChildren() const {
+    return impl_->children;
 }
 
 const Rect& Widget::GetFrame() const {
@@ -49,8 +64,31 @@ void Widget::SetFrame(const Rect& f) {
     impl_->frame = f;
 }
 
-Size Widget::CalcPreferredSize() const {
-    return Size(100000, 100000);
+bool Widget::Is3D() const {
+    return false;
+}
+
+Size Widget::CalcPreferredSize(const Theme&) const {
+    return Size(DIM_GROW, DIM_GROW);
+}
+
+void Widget::Layout(const Theme& theme) {
+    for (auto &child : impl_->children) {
+        child->Layout(theme);
+    }
+}
+
+Widget::DrawResult Widget::Draw(const DrawContext& context) {
+    DrawResult result = DrawResult::NONE;
+    for (auto &child : impl_->children) {
+        auto r = child->Draw(context);
+        // The mouse can only be over one item, so there should never
+        // be multiple items returning non-NONE.
+        if (r != DrawResult::NONE) {
+            result = r;
+        }
+    }
+    return result;
 }
 
 } // gui

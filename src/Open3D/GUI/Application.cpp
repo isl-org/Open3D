@@ -26,6 +26,8 @@
 
 #include "Application.h"
 
+#include "Events.h"
+#include "Theme.h"
 #include "Window.h"
 
 #include <SDL.h>
@@ -46,9 +48,71 @@
 #define getcwd _getcwd
 #endif // WIN32
 
-#include <iostream> // debugging
-
 namespace {
+
+const int RUNLOOP_DELAY_MSEC = 10;
+
+std::unordered_map<int, uint32_t> SCANCODE2KEY = {
+    { SDL_SCANCODE_BACKSPACE, open3d::gui::KEY_BACKSPACE },
+    { SDL_SCANCODE_TAB,       open3d::gui::KEY_TAB },
+    { SDL_SCANCODE_RETURN,    open3d::gui::KEY_ENTER },
+    { SDL_SCANCODE_ESCAPE,    open3d::gui::KEY_ESCAPE },
+    { SDL_SCANCODE_DELETE,    open3d::gui::KEY_DELETE },
+    { SDL_SCANCODE_SPACE, ' ' },
+    { SDL_SCANCODE_0, '0' },
+    { SDL_SCANCODE_1, '1' },
+    { SDL_SCANCODE_2, '2' },
+    { SDL_SCANCODE_3, '3' },
+    { SDL_SCANCODE_4, '4' },
+    { SDL_SCANCODE_5, '5' },
+    { SDL_SCANCODE_6, '6' },
+    { SDL_SCANCODE_7, '7' },
+    { SDL_SCANCODE_8, '8' },
+    { SDL_SCANCODE_9, '9' },
+    { SDL_SCANCODE_A, 'a' },
+    { SDL_SCANCODE_B, 'b' },
+    { SDL_SCANCODE_C, 'c' },
+    { SDL_SCANCODE_D, 'd' },
+    { SDL_SCANCODE_E, 'e' },
+    { SDL_SCANCODE_F, 'f' },
+    { SDL_SCANCODE_G, 'g' },
+    { SDL_SCANCODE_H, 'h' },
+    { SDL_SCANCODE_I, 'i' },
+    { SDL_SCANCODE_J, 'j' },
+    { SDL_SCANCODE_K, 'k' },
+    { SDL_SCANCODE_L, 'l' },
+    { SDL_SCANCODE_M, 'm' },
+    { SDL_SCANCODE_N, 'n' },
+    { SDL_SCANCODE_O, 'o' },
+    { SDL_SCANCODE_P, 'p' },
+    { SDL_SCANCODE_Q, 'q' },
+    { SDL_SCANCODE_R, 'r' },
+    { SDL_SCANCODE_S, 's' },
+    { SDL_SCANCODE_T, 't' },
+    { SDL_SCANCODE_U, 'u' },
+    { SDL_SCANCODE_V, 'v' },
+    { SDL_SCANCODE_W, 'w' },
+    { SDL_SCANCODE_X, 'x' },
+    { SDL_SCANCODE_Y, 'y' },
+    { SDL_SCANCODE_Z, 'z' },
+    { SDL_SCANCODE_LEFTBRACKET, '[' },
+    { SDL_SCANCODE_RIGHTBRACKET, ']' },
+    { SDL_SCANCODE_BACKSLASH, '\\' },
+    { SDL_SCANCODE_SEMICOLON, ';' },
+    { SDL_SCANCODE_APOSTROPHE, '\'' },
+    { SDL_SCANCODE_COMMA, ',' },
+    { SDL_SCANCODE_PERIOD, '.' },
+    { SDL_SCANCODE_SLASH, '/' },
+    { SDL_SCANCODE_LEFT,     open3d::gui::KEY_LEFT },
+    { SDL_SCANCODE_RIGHT,    open3d::gui::KEY_RIGHT },
+    { SDL_SCANCODE_UP,       open3d::gui::KEY_UP },
+    { SDL_SCANCODE_DOWN,     open3d::gui::KEY_DOWN },
+    { SDL_SCANCODE_INSERT,   open3d::gui::KEY_INSERT },
+    { SDL_SCANCODE_HOME,     open3d::gui::KEY_HOME },
+    { SDL_SCANCODE_END,      open3d::gui::KEY_END },
+    { SDL_SCANCODE_PAGEUP,   open3d::gui::KEY_PAGEUP },
+    { SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN }
+};
 
 bool isDirectory(const std::string& path) {
     struct stat statbuf;
@@ -104,6 +168,7 @@ namespace gui {
 struct Application::Impl {
     std::string resourcePath;
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
+    Theme theme;
 };
 
 Application& Application::GetInstance() {
@@ -112,7 +177,33 @@ Application& Application::GetInstance() {
 }
 
 Application::Application()
-    : impl_(new Application::Impl()) {
+: impl_(new Application::Impl()) {
+    Color highlightColor(0.17, 0.4, .82);
+
+    impl_->theme.backgroundColor = Color(0.175, 0.175, 0.175);
+    impl_->theme.fontPath = "Roboto-Medium.ttf";  // full path will be added in Initialize()
+    impl_->theme.fontSize = 16; // 1 em (font size is em in digital type)
+    impl_->theme.defaultLayoutSpacing = 8; // 0.5 * em
+    impl_->theme.defaultMargin = 12; // 0.75 * em
+    impl_->theme.textColor = Color(0.875, 0.875, 0.875);
+    impl_->theme.borderWidth = 1;
+    impl_->theme.borderRadius = 3;
+    impl_->theme.borderColor = Color(0.5, 0.5, 0.5);
+    impl_->theme.buttonColor = Color(0.4, 0.4, 0.4);
+    impl_->theme.buttonHoverColor = Color(0.6, 0.6, 0.6);
+    impl_->theme.buttonActiveColor = Color(0.5, 0.5, 0.5);
+    impl_->theme.checkboxBackgroundOffColor = Color(0.333, 0.333, .333);
+    impl_->theme.checkboxBackgroundOnColor = highlightColor;
+    impl_->theme.checkboxBackgroundHoverOffColor = Color(0.5, 0.5, 0.5);
+    impl_->theme.checkboxBackgroundHoverOnColor = highlightColor.Lightened(0.15);
+    impl_->theme.checkboxCheckColor = Color(1, 1, 1);
+    impl_->theme.comboboxBackgroundColor = Color(0.4, 0.4, 0.4);
+    impl_->theme.comboboxHoverColor = Color(0.5, 0.5, 0.5);
+    impl_->theme.comboboxArrowBackgroundColor = highlightColor;
+    impl_->theme.textEditBackgroundColor = Color(0.25, 0.25, 0.25);
+    impl_->theme.tabInactiveColor = impl_->theme.buttonColor;
+    impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
+    impl_->theme.tabActiveColor = impl_->theme.buttonActiveColor;
 }
 
 Application::~Application() {
@@ -120,54 +211,39 @@ Application::~Application() {
 
 void Application::Initialize(int argc, const char *argv[]) {
     impl_->resourcePath = findResourcePath(argc, argv);
+    impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
+    window->OnResize();  // so we get an initial resize
     impl_->windows[window->GetID()] = window;
+}
+
+void Application::RemoveWindow(Window *window) {
+    // SDL_DestroyWindow doesn't send SDL_WINDOWEVENT_CLOSED or SDL_QUIT
+    // messages, so we have to do them ourselves.
+    int nWindows = impl_->windows.size();
+
+    SDL_Event e;
+    e.type = SDL_WINDOWEVENT;
+    e.window.windowID = window->GetID();
+    e.window.event = SDL_WINDOWEVENT_CLOSE;
+    SDL_PushEvent(&e);
+
+    if (nWindows == 1) {
+        SDL_Event quit;
+        quit.type = SDL_QUIT;
+        SDL_PushEvent(&quit);
+    }
 }
 
 void Application::Run() {
     SDL_Init(SDL_INIT_EVENTS);
 
-/*    ImGuiIO& io = ImGui::GetIO();
-#ifdef WIN32
-    SDL_SysWMinfo wmInfo;
-    SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(window->getSDLWindow(), &wmInfo);
-    io.ImeWindowHandle = wmInfo.info.win.window;
-#endif
-    io.KeyMap[ImGuiKey_Tab] = SDL_SCANCODE_TAB;
-    io.KeyMap[ImGuiKey_LeftArrow] = SDL_SCANCODE_LEFT;
-    io.KeyMap[ImGuiKey_RightArrow] = SDL_SCANCODE_RIGHT;
-    io.KeyMap[ImGuiKey_UpArrow] = SDL_SCANCODE_UP;
-    io.KeyMap[ImGuiKey_DownArrow] = SDL_SCANCODE_DOWN;
-    io.KeyMap[ImGuiKey_PageUp] = SDL_SCANCODE_PAGEUP;
-    io.KeyMap[ImGuiKey_PageDown] = SDL_SCANCODE_PAGEDOWN;
-    io.KeyMap[ImGuiKey_Home] = SDL_SCANCODE_HOME;
-    io.KeyMap[ImGuiKey_End] = SDL_SCANCODE_END;
-    io.KeyMap[ImGuiKey_Insert] = SDL_SCANCODE_INSERT;
-    io.KeyMap[ImGuiKey_Delete] = SDL_SCANCODE_DELETE;
-    io.KeyMap[ImGuiKey_Backspace] = SDL_SCANCODE_BACKSPACE;
-    io.KeyMap[ImGuiKey_Space] = SDL_SCANCODE_SPACE;
-    io.KeyMap[ImGuiKey_Enter] = SDL_SCANCODE_RETURN;
-    io.KeyMap[ImGuiKey_Escape] = SDL_SCANCODE_ESCAPE;
-    io.KeyMap[ImGuiKey_A] = SDL_SCANCODE_A;
-    io.KeyMap[ImGuiKey_C] = SDL_SCANCODE_C;
-    io.KeyMap[ImGuiKey_V] = SDL_SCANCODE_V;
-    io.KeyMap[ImGuiKey_X] = SDL_SCANCODE_X;
-    io.KeyMap[ImGuiKey_Y] = SDL_SCANCODE_Y;
-    io.KeyMap[ImGuiKey_Z] = SDL_SCANCODE_Z;
-    io.SetClipboardTextFn = [](void*, const char* text) {
-        SDL_SetClipboardText(text);
-    };
-    io.GetClipboardTextFn = [](void*) -> const char* {
-        return SDL_GetClipboardText();
-    };
-    io.ClipboardUserData = nullptr;
-*/
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
     bool done = false;
+    std::unordered_map<Window*, int> eventCounts;
     while (!done) {
 //        SDL_Window* sdlWindow = window->getSDLWindow();
 //        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
@@ -178,9 +254,7 @@ void Application::Run() {
 //            mEngine->execute();
 //        }
 
-        // Loop over fresh events twice: first stash them and let ImGui process them, then allow
-        // the app to process the stashed events. This is done because ImGui might wish to block
-        // certain events from the app (e.g., when dragging the mouse over an obscuring window).
+        eventCounts.clear();
         constexpr int kMaxEvents = 16;
         SDL_Event events[kMaxEvents];
         int nevents = 0;
@@ -188,112 +262,145 @@ void Application::Run() {
 //            ImGuiIO& io = ImGui::GetIO();
             SDL_Event* event = &events[nevents];
             switch (event->type) {
-                case SDL_MOUSEWHEEL: {
-//                    if (event->wheel.x > 0) io.MouseWheelH += 1;
-//                    if (event->wheel.x < 0) io.MouseWheelH -= 1;
-//                    if (event->wheel.y > 0) io.MouseWheel += 1;
-//                    if (event->wheel.y < 0) io.MouseWheel -= 1;
+                case SDL_QUIT:   // sent after last window closed
+                    done = true;
+                    break;
+                case SDL_MOUSEMOTION: {
+                    auto &e = event->motion;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        auto scaling = win->GetScaling();
+                        win->OnMouseMove(MouseMoveEvent{ int(std::ceil(float(e.x) * scaling)),
+                                                         int(std::ceil(float(e.y) * scaling)) });
+                        eventCounts[win.get()] += 1;
+                    }
                     break;
                 }
-                case SDL_MOUSEBUTTONDOWN: {
-//                    if (event->button.button == SDL_BUTTON_LEFT) mousePressed[0] = true;
-//                    if (event->button.button == SDL_BUTTON_RIGHT) mousePressed[1] = true;
-//                    if (event->button.button == SDL_BUTTON_MIDDLE) mousePressed[2] = true;
+                case SDL_MOUSEWHEEL: {
+                    auto &e = event->wheel;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        auto scaling = win->GetScaling();
+                        win->OnMouseWheel(MouseWheelEvent{ int(std::ceil(float(e.x) * scaling)),
+                                                           int(std::ceil(float(e.y) * scaling)) });
+                        eventCounts[win.get()] += 1;
+                    }
+                    break;
+                }
+                case SDL_MOUSEBUTTONDOWN:
+                case SDL_MOUSEBUTTONUP:
+                {
+                    auto &e = event->button;
+                    MouseButton button = MouseButton::NONE;
+                    switch (e.button) {
+                        case SDL_BUTTON_LEFT: button = MouseButton::LEFT; break;
+                        case SDL_BUTTON_RIGHT: button = MouseButton::RIGHT; break;
+                        case SDL_BUTTON_MIDDLE: button = MouseButton::MIDDLE; break;
+                        case SDL_BUTTON_X1: button = MouseButton::BUTTON4; break;
+                        case SDL_BUTTON_X2: button = MouseButton::BUTTON5; break;
+                    }
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto type = (event->type == SDL_MOUSEBUTTONDOWN
+                                         ? MouseButtonEvent::DOWN
+                                         : MouseButtonEvent::UP);
+                        auto &win = it->second;
+                        auto scaling = win->GetScaling();
+                        win->OnMouseButton(MouseButtonEvent{
+                                                type,
+                                                int(std::ceil(float(e.x) * scaling)),
+                                                int(std::ceil(float(e.y) * scaling)),
+                                                button, });
+                        eventCounts[win.get()] += 1;
+                    }
                     break;
                 }
                 case SDL_TEXTINPUT: {
-//                    io.AddInputCharactersUTF8(event->text.text);
+                    auto &e = event->text;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        win->OnTextInput(TextInputEvent{ e.text });
+                        eventCounts[win.get()] += 1;
+                    }
                     break;
                 }
                 case SDL_KEYDOWN:
                 case SDL_KEYUP: {
-//                    int key = event->key.keysym.scancode;
-//                    IM_ASSERT(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown));
-//                    io.KeysDown[key] = (event->type == SDL_KEYDOWN);
-//                    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-//                    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-//                    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-//                    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
-                    break;
-                }
-            }
-            nevents++;
-        }
-
-        // Now, loop over the events a second time for app-side processing.
-        for (int i = 0; i < nevents; i++) {
-            const SDL_Event& event = events[i];
-//            ImGuiIO* io = mImGuiHelper ? &ImGui::GetIO() : nullptr;
-            switch (event.type) {
-                case SDL_QUIT:   // sent after last window closed
-                    done = true;
-                    break;
-                case SDL_KEYDOWN:
-                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-//                        mClosed = true;
+                    auto &e = event->key;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        auto type = (event->type == SDL_KEYDOWN ? KeyEvent::DOWN
+                                                                : KeyEvent::UP);
+                        uint32_t key = KEY_UNKNOWN;
+                        auto it = SCANCODE2KEY.find(e.keysym.scancode);
+                        if (it != SCANCODE2KEY.end()) {
+                            key = it->second;
+                        }
+                        win->OnKey(KeyEvent{ type, key, (e.repeat != 0) });
+                        eventCounts[win.get()] += 1;
                     }
                     break;
-                case SDL_MOUSEWHEEL:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseWheel(event.wheel.y);
+                }
+                case SDL_DROPFILE: {
+                    SDL_free(event->drop.file);
                     break;
-                case SDL_MOUSEBUTTONDOWN:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseDown(event.button.button, event.button.x, event.button.y);
-                    break;
-                case SDL_MOUSEBUTTONUP:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseUp(event.button.x, event.button.y);
-                    break;
-                case SDL_MOUSEMOTION:
-//                    if (!io || !io->WantCaptureMouse)
-//                        window->mouseMoved(event.motion.x, event.motion.y);
-                    break;
-                case SDL_DROPFILE:
-//                    if (mDropHandler) {
-//                        mDropHandler(event.drop.file);
-//                    }
-                    SDL_free(event.drop.file);
-                    break;
+                }
                 case SDL_WINDOWEVENT: {
-                    auto wIt = impl_->windows.find(event.window.windowID);
+                    auto &e = event->window;
+                    auto wIt = impl_->windows.find(e.windowID);
                     if (wIt == impl_->windows.end()) {
                         break;
                     }
                     auto window = wIt->second;
-                    switch (event.window.event) {
+                    switch (e.event) {
                         case SDL_WINDOWEVENT_RESIZED:
                             window->OnResize();
                             break;
-                        case SDL_WINDOWEVENT_CLOSE:  // sent if not last window
-                            CloseWindow(window);
+                        case SDL_WINDOWEVENT_CLOSE:
+                            impl_->windows.erase(window->GetID());
                             break;
                         default:
                             break;
                     }
+                    eventCounts[window.get()] += 1;
                     break;
                 }
                 default:
                     break;
             }
+            nevents++;
         }
 
         for (auto &kv : impl_->windows) {
-            kv.second->OnDraw();
+            auto w = kv.second;
+            bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
+            if (w->IsVisible() && gotEvents) {
+                if (w->OnDraw(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
+                    SDL_Event expose;
+                    expose.type = SDL_WINDOWEVENT;
+                    expose.window.windowID = w->GetID();
+                    expose.window.event = SDL_WINDOWEVENT_EXPOSED;
+                    SDL_PushEvent(&expose);
+                }
+            }
         }
 
-        SDL_Delay(10); // millisec
+        SDL_Delay(RUNLOOP_DELAY_MSEC);
     }
 
     SDL_Quit();
 }
 
-void Application::CloseWindow(std::shared_ptr<Window> window) {
-    impl_->windows.erase(window->GetID());
-}
-
 const char* Application::GetResourcePath() const {
     return impl_->resourcePath.c_str();
+}
+
+const Theme& Application::GetTheme() const {
+    return impl_->theme;
 }
 
 } // gui

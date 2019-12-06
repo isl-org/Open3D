@@ -26,33 +26,23 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
+class TabControl : public Widget {
+    using Super = Widget;
 public:
-    static Application& GetInstance();
+    TabControl();
+    ~TabControl();
 
-    virtual ~Application();
+    void AddTab(const char *name, std::shared_ptr<Widget> panel);
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    Size CalcPreferredSize(const Theme& theme) const override;
+    void Layout(const Theme& theme) override;
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
-
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
+    DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;

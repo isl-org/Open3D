@@ -1,4 +1,5 @@
 # build
+file(GLOB IMGUI_SOURCE_FILES ${CMAKE_SOURCE_DIR}/3rdparty/imgui/*.cpp)
 file(GLOB_RECURSE GUI_SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE GUI_HEADER_FILES "*.h")
 
@@ -16,9 +17,42 @@ else ()
 endif()
 
 # create object library
-add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES})
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/3rdparty/imgui)
+add_library(GUI OBJECT ${GUI_HEADER_FILES} ${GUI_SOURCE_FILES} ${IMGUI_SOURCE_FILES})
 set_property(TARGET GUI PROPERTY CXX_STANDARD 14)
 ShowAndAbortOnWarning(GUI)
 
-# Enforce 3rd party dependencies
+# enforce 3rd party dependencies
 add_dependencies(GUI build_all_3rd_party_libs)
+
+# --- build resources ----
+file(GLOB GUI_RESOURCE_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Resources/*)
+file(GLOB GUI_MATERIAL_SOURCE_FILES "Materials/*.mat")
+
+# copy GUI/Resources -> <output>/resources
+set(GUI_RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
+file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
+file(COPY ${GUI_RESOURCE_SOURCE_FILES}
+     DESTINATION ${GUI_RESOURCE_DIR})
+
+# Compile .mat files and copy to resources directory in output directory
+if (IOS OR ANDROID)
+    set(GUI_MATC_ARGS --platform mobile)
+else ()
+    set(GUI_MATC_ARGS --platform desktop)
+endif()
+set(FILAMENT_MATC ${3RDPARTY_INSTALL_PREFIX}/bin/matc)
+
+set(GUI_MATERIAL_COMPILED_FILES "")
+foreach(matsrc IN ITEMS ${GUI_MATERIAL_SOURCE_FILES})
+    string(REGEX REPLACE "\\.[^.]*$" ".filamat" matdest ${matsrc})
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/Materials/" "${GUI_RESOURCE_DIR}/" matdest ${matdest})
+    list(APPEND GUI_MATERIAL_COMPILED_FILES ${matdest})
+    add_custom_command(OUTPUT ${matdest}
+                       COMMAND ${FILAMENT_MATC} ${GUI_MATC_ARGS} -o ${matdest} ${matsrc})
+endforeach()
+
+add_custom_target(GuiResources
+                  DEPENDS ${GUI_MATERIAL_COMPILED_FILES})
+add_dependencies(GuiResources filament_copy)
+add_dependencies(GUI GuiResources)

@@ -26,33 +26,30 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "Widget.h"
+
+#include <functional>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
+class TextEdit : public Widget {
 public:
-    static Application& GetInstance();
+    TextEdit();
+    ~TextEdit();
 
-    virtual ~Application();
+    const char* GetText() const;
+    void SetText(const char *text);
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    const char* GetPlaceholderText() const;
+    void SetPlaceholderText(const char *text);
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    DrawResult Draw(const DrawContext& context) override;
 
-private:
-    Application();
+    std::function<void(const char*)> OnTextChanged;
+    std::function<void(const char*)> OnValueChanged;
 
 private:
     struct Impl;

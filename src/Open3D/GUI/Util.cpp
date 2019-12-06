@@ -24,40 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Util.h"
 
-#include <memory>
-#include <string>
+#include "Color.h"
 
 namespace open3d {
 namespace gui {
+namespace util {
 
-struct Theme;
-class Window;
-
-class Application
-{
-public:
-    static Application& GetInstance();
-
-    virtual ~Application();
-
-    void Initialize(int argc, const char *argv[]);
-    void Run();
-
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
-
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
+ImVec4 colorToImgui(const Color& color) {
+    return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
+                  color.GetAlpha());
 }
-}
+
+} // util
+} // gui
+} // open3d
+

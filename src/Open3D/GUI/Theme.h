@@ -26,37 +26,48 @@
 
 #pragma once
 
-#include <memory>
+#include "Widget.h"
+
+#include "Color.h"
+#include "Gui.h"
+
 #include <string>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
+struct Theme {
+    Color backgroundColor;
 
-class Application
-{
-public:
-    static Application& GetInstance();
+    std::string fontPath;
+    int fontSize;
+    int defaultLayoutSpacing;
+    int defaultMargin;
+    Color textColor;
 
-    virtual ~Application();
+    int borderWidth;
+    int borderRadius;
+    Color borderColor;
 
-    void Initialize(int argc, const char *argv[]);
-    void Run();
+    Color buttonColor;
+    Color buttonHoverColor;
+    Color buttonActiveColor;
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    Color checkboxBackgroundOffColor;
+    Color checkboxBackgroundOnColor;
+    Color checkboxBackgroundHoverOffColor;
+    Color checkboxBackgroundHoverOnColor;
+    Color checkboxCheckColor;
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    Color comboboxBackgroundColor;
+    Color comboboxHoverColor;
+    Color comboboxArrowBackgroundColor;
 
-private:
-    Application();
+    Color textEditBackgroundColor;
 
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    Color tabInactiveColor;
+    Color tabHoverColor;
+    Color tabActiveColor;
 };
 
 }

@@ -24,40 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Button.h"
 
-#include <memory>
+#include "Theme.h"
+
+#include <imgui.h>
+
+#include <cmath>
 #include <string>
 
 namespace open3d {
 namespace gui {
 
-struct Theme;
-class Window;
-
-class Application
-{
-public:
-    static Application& GetInstance();
-
-    virtual ~Application();
-
-    void Initialize(int argc, const char *argv[]);
-    void Run();
-
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
-
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
-
-private:
-    Application();
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+struct Button::Impl {
+    std::string title;
 };
 
+Button::Button(const char *title)
+: impl_(new Button::Impl()) {
+    impl_->title = title;
 }
+
+Button::~Button() {
 }
+
+Size Button::CalcPreferredSize(const Theme& theme) const {
+    auto font = ImGui::GetFont();
+    auto em = std::ceil(ImGui::GetTextLineHeight());
+    auto size = font->CalcTextSizeA(theme.fontSize, 10000, 10000, impl_->title.c_str());
+    return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
+}
+
+Widget::DrawResult Button::Draw(const DrawContext& context) {
+    auto &frame = GetFrame();
+    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
+                               frame.y - context.uiOffsetY));
+    if (ImGui::Button(impl_->title.c_str(), ImVec2(GetFrame().width, GetFrame().height))) {
+        if (this->OnClicked) {
+            this->OnClicked();
+        }
+        return Widget::DrawResult::CLICKED;
+    } else {
+        return Widget::DrawResult::NONE;
+    }
+}
+
+} // gui
+} // open3d

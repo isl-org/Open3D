@@ -28,6 +28,8 @@
 
 #include "Application.h"
 #include "Color.h"
+#include "ImguiFilamentBridge.h"
+#include "Theme.h"
 #include "Window.h"
 
 #include <filament/Box.h>
@@ -319,6 +321,7 @@ struct Renderer::Impl
     filament::SwapChain *swapChain = nullptr;
     filament::Material *metalTemplate = nullptr;
     filament::Material *nonMetalTemplate = nullptr;
+    filament::Material *uiTemplate = nullptr;
     struct Alloc {
         EngineObjectPool<filament::View*> views;
         EngineObjectPool<filament::Scene*> scenes;
@@ -340,24 +343,42 @@ struct Renderer::Impl
     // Alloc needs to be freed before engine, since the pointers it stores
     // must be destroyed by the engine with engine->destroy(ptr);
     Alloc *alloc;
+    RendererView *uiView;
+    ImguiFilamentBridge *imguiFilament = nullptr;
 
     Impl(const Window& w) : window(w) {}
 };
 
 // On single-threaded platforms, Filament's OpenGL context must be current,
 // not SDL's context.
-Renderer::Renderer(const Window& window)
+Renderer::Renderer(const Window& window, const Theme& theme)
     : impl_(new Impl(window))
 {
     impl_->engine = Engine::create(filament::Engine::Backend::OPENGL);
     impl_->alloc = new Impl::Alloc(impl_->engine);
     impl_->renderer = impl_->engine->createRenderer();
 
+    // The UI needs a special material (just a pass-through blit)
+    std::string resourcePath = Application::GetInstance().GetResourcePath();
+    impl_->uiTemplate = loadMaterialTemplate(resourcePath + "/ui_blit.filamat", impl_->engine);
+
+    impl_->uiView = new RendererView(*this, CreateView());
+    auto imguiView = (filament::View*)GetViewPointer(impl_->uiView->GetId());
+    imguiView->setClearTargets(false, false, false);
+    imguiView->setRenderTarget(View::TargetBufferFlags::DEPTH_AND_STENCIL);
+    imguiView->setPostProcessingEnabled(false);
+    imguiView->setShadowsEnabled(false);
+    auto imguiScene = (filament::Scene*)GetScenePointer(impl_->uiView->GetScene().GetId());
+    impl_->imguiFilament = new ImguiFilamentBridge(impl_->engine, imguiScene,
+                                                   impl_->uiTemplate);
+
     UpdateFromDrawable();
 }
 
 Renderer::~Renderer()
 {
+    delete impl_->imguiFilament;
+    delete impl_->uiView;
     delete impl_->alloc;
     impl_->engine->destroy(impl_->metalTemplate);
     impl_->engine->destroy(impl_->nonMetalTemplate);
@@ -390,6 +411,14 @@ void Renderer::UpdateFromDrawable()
 */
 
     impl_->swapChain = impl_->engine->createSwapChain(nativeDrawable);
+
+    auto size = impl_->window.GetSize();
+    impl_->uiView->SetViewport(Rect(0, 0, size.width, size.height));
+    impl_->uiView->GetCamera().Set2D(size.width, size.height);
+}
+
+Size Renderer::GetSize() const {
+    return impl_->window.GetSize();
 }
 
 bool Renderer::BeginFrame() {
@@ -402,8 +431,18 @@ void Renderer::Render(Renderer::ViewId viewId) {
     }
 }
 
+void Renderer::RenderImgui(ImDrawData *cmds) {
+    impl_->imguiFilament->update(cmds);
+    Render(impl_->uiView->GetId());
+}
+
 void Renderer::EndFrame() {
     impl_->renderer->endFrame();
+}
+
+void Renderer::AddFontTextureAtlasAlpha8(unsigned char* pixels, int width,
+                                         int height, int bytesPerPx) {
+    impl_->imguiFilament->createAtlasTextureAlpha8(pixels, width, height, bytesPerPx);
 }
 
 Renderer::ViewId Renderer::CreateView() {
@@ -597,6 +636,10 @@ void Renderer::SetMeshTransform(MeshId meshId, const Transform& t) {
     // but that is really unlike Filament.  Makes me nervous.
 }
 
+filament::Engine* Renderer::GetEngine() {
+    return impl_->engine;
+}
+
 void* Renderer::GetViewPointer(ViewId id) {
     if (impl_->alloc->views.Has(id)) {
         return impl_->alloc->views.Get(id);
@@ -673,6 +716,10 @@ RendererView::~RendererView() {
     impl_->renderer.DestroyView(impl_->viewId);
 }
 
+Renderer::ViewId RendererView::GetId() const {
+    return impl_->viewId;
+}
+
 RendererScene& RendererView::GetScene() {
     return *impl_->scene;
 }
@@ -689,7 +736,9 @@ void RendererView::SetClearColor(const Color &c) {
 
 void RendererView::SetViewport(const Rect &r) {
     if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
-        view->setViewport(Viewport(r.x, r.y, r.width, r.height));
+        // Note that y=0 is bottom in GPU's coordinate system
+        float bottom = impl_->renderer.GetSize().height - (r.y + r.height);
+        view->setViewport(Viewport(r.x, bottom, r.width, r.height));
         GetCamera().ResizeProjection(float(r.width) / float(r.height));
     }
 }
@@ -750,6 +799,15 @@ void RendererCamera::LookAt(float eyeX, float eyeY, float eyeZ,
         camera->lookAt(math::float3{ eyeX, eyeY, eyeZ },
                        math::float3{ centerX, centerY, centerZ},
                        math::float3{ upX, upY, upZ });
+    }
+}
+
+void RendererCamera::Set2D(int width, int height) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
+        camera->setProjection(Camera::Projection::ORTHO,
+                              0.0, width,
+                              height, 0.0,
+                              0.0, 1.0);
     }
 }
 // ----------------------------------------------------------------------------

@@ -31,10 +31,19 @@
 
 #include "Color.h"
 
+struct ImDrawData;
+
+namespace filament {
+class Engine;
+}
+
 namespace open3d {
 namespace gui {
 
+class ImguiFilamentBridge;
 struct Rect;
+struct Size;
+struct Theme;
 class Window;
 
 struct BoundingBox {
@@ -68,6 +77,7 @@ class Renderer {
     friend class RendererView;
     friend class RendererCamera;
     friend class SceneWidget;
+    friend class ImGuiHelper;
 public:
     using SceneId = int;
     using ViewId = int;
@@ -80,14 +90,19 @@ public:
     using GeometryId = int;
     using MeshId = int;
 
-    explicit Renderer(const Window& window);
+    explicit Renderer(const Window& window, const Theme& theme);
     virtual ~Renderer();
 
     void UpdateFromDrawable();
+    Size GetSize() const;
 
     bool BeginFrame();
-    void Render(Renderer::ViewId viewId);
+    void Render(ViewId viewId);
+    void RenderImgui(ImDrawData *cmds);
     void EndFrame();
+
+    void AddFontTextureAtlasAlpha8(unsigned char* pixels, int width, int height,
+                                   int bytesPerPx);
 
     ViewId CreateView();
     void DestroyView(ViewId viewId);
@@ -125,6 +140,7 @@ public:
     void SetMeshTransform(MeshId meshId, const Transform& t);
 
 private:
+    filament::Engine* GetEngine();
     void* GetViewPointer(ViewId id);
     void* GetScenePointer(SceneId id);
     void* GetCameraPointer(CameraId id);
@@ -145,6 +161,7 @@ public:
     RendererView(Renderer& renderer, Renderer::ViewId id);
     ~RendererView();
 
+    Renderer::ViewId GetId() const;
     RendererScene& GetScene();
     RendererCamera& GetCamera();
     void SetClearColor(const Color& c);
@@ -175,6 +192,8 @@ public:
     void LookAt(float centerX, float centerY, float centerZ,
                 float eyeX, float eyeY, float eyeZ,
                 float upX, float upY, float upZ);
+
+    void Set2D(int width, int height);
 
 private:
     struct Impl;
