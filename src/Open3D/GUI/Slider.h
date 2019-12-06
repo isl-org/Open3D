@@ -28,6 +28,8 @@
 
 #include "Widget.h"
 
+#include <functional>
+
 namespace open3d {
 namespace gui {
 

@@ -81,7 +81,8 @@ int Combobox::GetSelectedIndex() const {
 }
 
 const char* Combobox::GetSelectedValue() const {
-    if (impl_->currentIndex >= 0 && impl_->currentIndex < impl_->items.size()) {
+    if (impl_->currentIndex >= 0
+        && impl_->currentIndex < int(impl_->items.size())) {
         return impl_->items[impl_->currentIndex].c_str();
     } else {
         return "";
@@ -89,7 +90,7 @@ const char* Combobox::GetSelectedValue() const {
 }
 
 void Combobox::SetSelectedIndex(int index) {
-    if (index >= 0 && index < impl_->items.size()) {
+    if (index >= 0 && index < int(impl_->items.size())) {
         impl_->currentIndex = index;
     }
 }
@@ -125,7 +126,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
             didOpen = true;
         }
         for (size_t i = 0;  i < impl_->items.size();  ++i) {
-            bool isSelected = (impl_->selectedIndex == i);
+            bool isSelected = (impl_->selectedIndex == int(i));
             if (ImGui::Selectable(impl_->items[i].c_str(), &isSelected, 0)) {
                 impl_->currentIndex = i;
                 impl_->selectedIndex = -1;
