@@ -39,11 +39,15 @@ namespace geometry
 
 namespace visualization {
 
+class Scene;
 class Camera;
 
 class AbstractRenderInterface {
 public:
     virtual ~AbstractRenderInterface() = default;
+
+    //virtual SceneHandle CreateScene() = 0;
+    //virtual Scene* GetScene(const SceneHandle& id) const = 0;
 
     virtual void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) = 0;
     virtual void SetClearColor(const Eigen::Vector3f& color) = 0;

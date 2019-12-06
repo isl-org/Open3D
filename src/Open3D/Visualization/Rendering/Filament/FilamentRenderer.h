@@ -36,7 +36,6 @@
 namespace filament
 {
     class Engine;
-    class FilamentAPI;
     class IndexBuffer;
     class Material;
     class MaterialInstance;
@@ -52,6 +51,7 @@ namespace visualization
 {
 
 class FilamentMaterialModifier;
+class FilamentResourceManager;
 class FilamentView;
 
 class FilamentRenderer : public AbstractRenderInterface
@@ -85,10 +85,15 @@ public:
     void AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId) override;
 
 private:
-    filament::VertexBuffer* AllocateVertexBuffer(size_t verticesCount);
-    filament::IndexBuffer* AllocateIndexBuffer(size_t indicesCount, size_t indexStride);
+    struct AllocatedEntity
+    {
+        utils::Entity self;
+        VertexBufferHandle vb;
+        IndexBufferHandle  ib;
+    };
 
-    filament::MaterialInstance* GetMaterialInstance(const MaterialInstanceHandle& materialId) const;
+    filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner, size_t verticesCount);
+    filament::IndexBuffer* AllocateIndexBuffer(AllocatedEntity& owner, size_t indicesCount, size_t indexStride);
 
     void RemoveEntity(REHandle_abstract id);
 
@@ -98,13 +103,11 @@ private:
     filament::Scene* scene = nullptr;
 
     std::unique_ptr<FilamentView> view;
-    std::unordered_map<REHandle_abstract, utils::Entity> entities;
-    std::unordered_map<REHandle_abstract, filament::MaterialInstance*> materialInstances;
-    std::unordered_map<REHandle_abstract, filament::Material*> materials;
-    std::unordered_map<REHandle_abstract, filament::VertexBuffer*> vertexBuffers;
-    std::unordered_map<REHandle_abstract, filament::IndexBuffer*> indexBuffers;
+    std::unordered_map<REHandle_abstract, AllocatedEntity> entities;
 
+    // FIXME: Can't handle concurrent ModifyMaterial(...)
     std::unique_ptr<FilamentMaterialModifier> materialsModifier;
+    std::unique_ptr<FilamentResourceManager> resourcesManager;
 };
 
 }

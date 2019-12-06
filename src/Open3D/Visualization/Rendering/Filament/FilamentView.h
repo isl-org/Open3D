@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "Open3D/Visualization/Rendering/View.h"
+
 #include <memory>
 
 #include <filament/Color.h>
@@ -45,14 +47,15 @@ namespace visualization
 
 class FilamentCamera;
 
-class FilamentView {
+class FilamentView : public View {
 public:
     FilamentView(filament::Engine& engine, filament::Scene& scene);
     ~FilamentView();
 
-    FilamentCamera* GetCamera() const { return camera.get(); };
-    void SetClearColor(const filament::LinearColorA& color);
-    void SetViewport(const filament::Viewport& viewport);
+    void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
+    void SetClearColor(const Eigen::Vector3f& color) override;
+
+    Camera* GetCamera() const override;
 
     filament::View* GetNativeView() const { return view; }
 

@@ -36,11 +36,16 @@ namespace visualization {
 
 enum class eEntityType : std::uint16_t {
     None = 0,
+
+    View,
+    Scene,
+
     Geometry,
     Light,
     Camera,
     Material,
     MaterialInstance,
+    Texture,
 
     VertexBuffer,
     IndexBuffer,
@@ -125,11 +130,16 @@ private:
 template <eEntityType entityType>
 const REHandle<entityType> REHandle<entityType>::kBad;
 
+typedef REHandle<eEntityType::View> ViewHandle;
+typedef REHandle<eEntityType::Scene> SceneHandle;
 typedef REHandle<eEntityType::Geometry> GeometryHandle;
 typedef REHandle<eEntityType::Light> LightHandle;
 typedef REHandle<eEntityType::Camera> CameraHandle;
 typedef REHandle<eEntityType::Material> MaterialHandle;
 typedef REHandle<eEntityType::MaterialInstance> MaterialInstanceHandle;
+typedef REHandle<eEntityType::Texture> TextureHandle;
+typedef REHandle<eEntityType::VertexBuffer> VertexBufferHandle;
+typedef REHandle<eEntityType::IndexBuffer> IndexBufferHandle;
 
 }
 }

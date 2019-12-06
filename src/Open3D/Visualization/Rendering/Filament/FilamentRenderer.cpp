@@ -33,19 +33,17 @@
 #include <filament/Scene.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
+#include "FilamentCamera.h"
+#include "FilamentEntitiesMods.h"
+#include "FilamentResourceManager.h"
+#include "FilamentView.h"
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
 namespace open3d
 {
 namespace visualization
 {
-
-typedef REHandle<eEntityType::VertexBuffer> VertexBufferHandle;
-typedef REHandle<eEntityType::IndexBuffer> IndexBufferHandle;
 
 AbstractRenderInterface* TheRenderer;
 
@@ -75,20 +73,15 @@ FilamentRenderer::FilamentRenderer(void* nativeDrawable)
     view = std::make_unique<FilamentView>(*engine, *scene);
 
     materialsModifier = std::make_unique<FilamentMaterialModifier>();
-
-    view->SetViewport({0,0,1280,720});
-    view->GetCamera()->LookAt({0, 0, 0},   {80, 80, 80},   {0, 1, 0});
-    view->SetClearColor(filament::LinearColorA(0.5f,0.5f,1.f,1.f));
+    resourcesManager = std::make_unique<FilamentResourceManager>(*engine);
 }
 
 FilamentRenderer::~FilamentRenderer()
 {
-#define BATCH_DESTROY(batch) for (const auto& pair : (batch)) {engine->destroy(pair.second);}
+    resourcesManager.reset();
+
+#define BATCH_DESTROY(batch) for (const auto& pair : (batch)) {engine->destroy(pair.second.self);}
     BATCH_DESTROY(entities)
-    BATCH_DESTROY(materialInstances)
-    BATCH_DESTROY(materials)
-    BATCH_DESTROY(vertexBuffers)
-    BATCH_DESTROY(indexBuffers)
 #undef BATCH_DESTROY
 
     view.reset();
@@ -102,12 +95,12 @@ FilamentRenderer::~FilamentRenderer()
 
 void FilamentRenderer::SetViewport(const std::int32_t x, const std::int32_t y, const std::uint32_t w, const std::uint32_t h)
 {
-    view->SetViewport({ x, y, w, h });
+    view->SetViewport(x, y, w, h);
 }
 
 void FilamentRenderer::SetClearColor(const Eigen::Vector3f& color)
 {
-    view->SetClearColor({ color.x(), color.y(), color.z(), 1.f });
+    view->SetClearColor({ color.x(), color.y(), color.z() });
 }
 
 void FilamentRenderer::Draw()
@@ -133,10 +126,12 @@ GeometryHandle FilamentRenderer::AddGeometry(const geometry::Geometry3D& geometr
         return GeometryHandle::kBad;
     }
 
+    AllocatedEntity entityEntry;
+
     auto triangleMesh = static_cast<const TriangleMesh&>(geometry);
     const size_t nVertices = triangleMesh.vertices_.size();
 
-    VertexBuffer* vbuf = AllocateVertexBuffer(nVertices);
+    VertexBuffer* vbuf = AllocateVertexBuffer(entityEntry, nVertices);
 
     // Copying vertex coordinates
     size_t coordsBytesCount = nVertices*3*sizeof(float);
@@ -174,7 +169,7 @@ GeometryHandle FilamentRenderer::AddGeometry(const geometry::Geometry3D& geometr
     vbuf->setBufferAt(*engine, 1, std::move(tangentsDescriptor));
 
     auto indexStride = sizeof(triangleMesh.triangles_[0][0]);
-    IndexBuffer* ibuf = AllocateIndexBuffer(triangleMesh.triangles_.size() * 3, indexStride);
+    IndexBuffer* ibuf = AllocateIndexBuffer(entityEntry, triangleMesh.triangles_.size() * 3, indexStride);
 
     // Copying indices data
     size_t indicesCount = triangleMesh.triangles_.size()*3*indexStride;
@@ -200,24 +195,26 @@ GeometryHandle FilamentRenderer::AddGeometry(const geometry::Geometry3D& geometr
                                               nVertices);
     }
 
-    utils::Entity renderable = utils::EntityManager::get().create();
+    entityEntry.self = utils::EntityManager::get().create();
     RenderableManager::Builder builder(1);
     builder
         .boundingBox(aabb)
         .geometry(0, RenderableManager::PrimitiveType::TRIANGLES, vbuf, ibuf)
         .culling(false);
 
-    auto matInstance = GetMaterialInstance(materialId);
-    if (matInstance) {
-        builder.material(0, matInstance);
+    auto wMatInstance = resourcesManager->GetMaterialInstance(materialId);
+    if (!wMatInstance.expired()) {
+        builder.material(0, wMatInstance.lock().get());
     }
 
-    builder.build(*engine, renderable);
+    auto result = builder.build(*engine, entityEntry.self);
 
-    auto handle = GeometryHandle::Next();
-    entities[handle] = renderable;
-
-    scene->addEntity(renderable);
+    GeometryHandle handle;
+    if (result == RenderableManager::Builder::Success) {
+        handle = GeometryHandle::Next();
+        entities[handle] = entityEntry;
+        scene->addEntity(entityEntry.self);
+    }
 
     return handle;
 }
@@ -239,15 +236,18 @@ LightHandle FilamentRenderer::AddLight(const LightDescription& descr)
         switch (descr.type) {
             case LightDescription::POINT:
                 lightType = filament::LightManager::Type::POINT;
+            break;
             case LightDescription::SPOT:
                 lightType = filament::LightManager::Type::SPOT;
+            break;
             case LightDescription::DIRECTIONAL:
                 lightType = filament::LightManager::Type::DIRECTIONAL;
+            break;
         }
     }
 
     auto light = utils::EntityManager::get().create();
-    filament::LightManager::Builder(lightType)
+    auto result = filament::LightManager::Builder(lightType)
             .direction({ descr.direction.x(), descr.direction.y(), descr.direction.z() })
             .intensity(descr.intensity)
             .falloff(descr.falloff)
@@ -256,10 +256,12 @@ LightHandle FilamentRenderer::AddLight(const LightDescription& descr)
             .spotLightCone(descr.lightConeInner, descr.lightConeOuter)
             .build(*engine, light);
 
-    auto handle = LightHandle ::Next();
-    entities[handle] = light;
-
-    scene->addEntity(light);
+    LightHandle handle;
+    if (result == filament::LightManager::Builder::Success) {
+        handle = LightHandle::Next();
+        entities[handle] = {light};
+        scene->addEntity(light);
+    }
 
     return handle;
 }
@@ -279,8 +281,7 @@ MaterialHandle FilamentRenderer::AddMaterial(const void* materialData, const siz
 
     MaterialHandle handle;
     if (mat) {
-        handle = MaterialHandle::Next();
-        materials[handle] = mat;
+        handle = resourcesManager->AddMaterial(mat);
     }
 
     return handle;
@@ -290,15 +291,14 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id)
 {
     materialsModifier->Reset();
 
-    auto found = materials.find(id);
-    if (found != materials.end()) {
-        auto material = static_cast<filament::Material*>(found->second);
-        auto matInstance = material->createInstance();
+    auto wMaterial = resourcesManager->GetMaterial(id);
+    if (!wMaterial.expired()) {
+        auto matInstance = wMaterial.lock()->createInstance();
 
-        auto instanceId = MaterialInstanceHandle::Next();
-        materialInstances[instanceId] = matInstance;
+        auto instanceId = resourcesManager->AddMaterialInstance(matInstance);
+        auto wMaterialInstance = resourcesManager->GetMaterialInstance(instanceId);
 
-        materialsModifier->InitWithMaterialInstance(matInstance, instanceId);
+        materialsModifier->InitWithMaterialInstance(wMaterialInstance.lock(), instanceId);
     }
 
     return *materialsModifier;
@@ -308,9 +308,9 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialInstanceHandle&
 {
     materialsModifier->Reset();
 
-    auto matInstance = GetMaterialInstance(id);
-    if (matInstance) {
-        materialsModifier->InitWithMaterialInstance(matInstance, id);
+    auto wMaterialInstance = resourcesManager->GetMaterialInstance(id);
+    if (!wMaterialInstance.expired()) {
+        materialsModifier->InitWithMaterialInstance(wMaterialInstance.lock(), id);
     }
 
     return *materialsModifier;
@@ -318,17 +318,17 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialInstanceHandle&
 
 void FilamentRenderer::AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId)
 {
-    auto matInstance = GetMaterialInstance(materialId);
+    auto wMaterialInstance = resourcesManager->GetMaterialInstance(materialId);
     auto found = entities.find(geometryId);
-    if (found != entities.end() && matInstance) {
+    if (found != entities.end() && false == wMaterialInstance.expired()) {
         auto& renderableManger = engine->getRenderableManager();
-        filament::RenderableManager::Instance inst = renderableManger.getInstance(found->second);
-        renderableManger.setMaterialInstanceAt(inst, 0, matInstance);
+        filament::RenderableManager::Instance inst = renderableManger.getInstance(found->second.self);
+        renderableManger.setMaterialInstanceAt(inst, 0, wMaterialInstance.lock().get());
     }
     // TODO: Log if failed
 }
 
-filament::VertexBuffer* FilamentRenderer::AllocateVertexBuffer(const size_t verticesCount)
+filament::VertexBuffer* FilamentRenderer::AllocateVertexBuffer(FilamentRenderer::AllocatedEntity& owner, const size_t verticesCount)
 {
     using namespace filament;
 
@@ -341,13 +341,13 @@ filament::VertexBuffer* FilamentRenderer::AllocateVertexBuffer(const size_t vert
             .build(*engine);
 
     if (vbuf) {
-        vertexBuffers[VertexBufferHandle::Next()] = vbuf;
+        owner.vb = resourcesManager->AddVertexBuffer(vbuf);
     }
 
     return vbuf;
 }
 
-filament::IndexBuffer* FilamentRenderer::AllocateIndexBuffer(const size_t indicesCount, const size_t indexStride)
+filament::IndexBuffer* FilamentRenderer::AllocateIndexBuffer(FilamentRenderer::AllocatedEntity& owner, const size_t indicesCount, const size_t indexStride)
 {
     using namespace filament;
 
@@ -357,30 +357,22 @@ filament::IndexBuffer* FilamentRenderer::AllocateIndexBuffer(const size_t indice
             .build(*engine);
 
     if (ibuf) {
-        indexBuffers[IndexBufferHandle::Next()] = ibuf;
+        owner.ib = resourcesManager->AddIndexBuffer(ibuf);
     }
 
     return ibuf;
-}
-
-filament::MaterialInstance* FilamentRenderer::GetMaterialInstance(const MaterialInstanceHandle& materialId) const
-{
-    filament::MaterialInstance* matInstance = nullptr;
-
-    auto found = materialInstances.find(materialId);
-    if (found != materialInstances.end()) {
-        matInstance = static_cast<filament::MaterialInstance*>(found->second);
-    }
-
-    return matInstance;
 }
 
 void FilamentRenderer::RemoveEntity(REHandle_abstract id)
 {
     auto found = entities.find(id);
     if (found != entities.end()) {
-        scene->remove(found->second);
-        engine->destroy(found->second);
+        const auto& data = found->second;
+        scene->remove(data.self);
+
+        resourcesManager->Destroy(data.vb);
+        resourcesManager->Destroy(data.ib);
+        engine->destroy(data.self);
 
         entities.erase(found);
     }
