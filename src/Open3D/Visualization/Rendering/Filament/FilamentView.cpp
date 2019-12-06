@@ -59,15 +59,20 @@ FilamentView::~FilamentView()
     engine.destroy(view);
 }
 
-void FilamentView::SetClearColor(const filament::LinearColorA& color)
+void FilamentView::SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h)
 {
-    view->setClearColor(color);
+    view->setViewport({x, y, w, h});
+    camera->ChangeAspectRatio(float(w) / float(h));
 }
 
-void FilamentView::SetViewport(const filament::Viewport& viewport)
+void FilamentView::SetClearColor(const Eigen::Vector3f& color)
 {
-    view->setViewport(viewport);
-    camera->ChangeAspectRatio(float(viewport.width) / float(viewport.height));
+    view->setClearColor({color.x(), color.y(), color.z(), 1.f});
+}
+
+Camera* FilamentView::GetCamera() const
+{
+    return camera.get();
 }
 
 }

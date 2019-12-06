@@ -42,7 +42,7 @@ void FilamentMaterialModifier::Reset()
     currentHandle = MaterialInstanceHandle::kBad;
 }
 
-void FilamentMaterialModifier::InitWithMaterialInstance(filament::MaterialInstance* aMaterialInstance, const MaterialInstanceHandle& id)
+void FilamentMaterialModifier::InitWithMaterialInstance(std::shared_ptr<filament::MaterialInstance> aMaterialInstance, const MaterialInstanceHandle& id)
 {
     // TODO: Print log or assert
     // assert(materialInstance == nullptr, "Previous material instance modifications are not finished!");

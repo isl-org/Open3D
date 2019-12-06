@@ -26,36 +26,39 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RendererEntitiesMods.h"
-
-#include <memory>
-
-namespace filament
-{
-    class MaterialInstance;
-}
+#include "RendererHandle.h"
+#include "RendererStructs.h"
 
 namespace open3d
 {
+
+namespace geometry
+{
+    class Geometry3D;
+}
+
 namespace visualization
 {
 
-class FilamentMaterialModifier : public MaterialModifier
+class View;
+
+// Contains renderable objects like geometry and lights
+// Can have multiple views
+class Scene
 {
 public:
-    FilamentMaterialModifier() = default;
+    virtual ViewHandle CreateView(std::int32_t x, std::int32_t y,
+                                  std::uint32_t w, std::uint32_t h) = 0;
+    virtual View* GetView(const ViewHandle& viewId) const = 0;
 
-    void Reset();
-    void InitWithMaterialInstance(std::shared_ptr<filament::MaterialInstance> materialInstance, const MaterialInstanceHandle& id);
+    virtual GeometryHandle AddGeometry(
+            const geometry::Geometry3D& geometry,
+            const MaterialInstanceHandle& materialId) = 0;
+    virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
 
-    MaterialModifier& SetParameter(const char* parameter, const float& value) override;
-    MaterialModifier& SetColor(const char* parameter, const Eigen::Vector3f& value) override;
-
-    MaterialInstanceHandle Finish() override;
-
-private:
-    MaterialInstanceHandle currentHandle;
-    std::shared_ptr<filament::MaterialInstance> materialInstance;
+    virtual LightHandle AddLight(const LightDescription& descr) = 0;
+    // virtual LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) = 0;
+    virtual void RemoveLight(const LightHandle& id) = 0;
 };
 
 }

@@ -26,36 +26,23 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RendererEntitiesMods.h"
-
-#include <memory>
-
-namespace filament
-{
-    class MaterialInstance;
-}
+#include <Eigen/Geometry>
 
 namespace open3d
 {
 namespace visualization
 {
 
-class FilamentMaterialModifier : public MaterialModifier
+class Scene;
+class Camera;
+
+class View
 {
 public:
-    FilamentMaterialModifier() = default;
+    virtual void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) = 0;
+    virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
 
-    void Reset();
-    void InitWithMaterialInstance(std::shared_ptr<filament::MaterialInstance> materialInstance, const MaterialInstanceHandle& id);
-
-    MaterialModifier& SetParameter(const char* parameter, const float& value) override;
-    MaterialModifier& SetColor(const char* parameter, const Eigen::Vector3f& value) override;
-
-    MaterialInstanceHandle Finish() override;
-
-private:
-    MaterialInstanceHandle currentHandle;
-    std::shared_ptr<filament::MaterialInstance> materialInstance;
+    virtual Camera* GetCamera() const = 0;
 };
 
 }
