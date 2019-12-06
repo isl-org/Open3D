@@ -87,8 +87,11 @@ Window::Window(const std::string& title, int width, int height)
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
     // reloading the whole thing (expensive).
+    float scaling = GetScaling();
     impl_->theme = Application::GetInstance().GetTheme();
-    impl_->theme.fontSize *= GetScaling();
+    impl_->theme.fontSize *= scaling;
+    impl_->theme.defaultMargin *= scaling;
+    impl_->theme.defaultLayoutSpacing *= scaling;
 
     impl_->renderer = new Renderer(*this, impl_->theme);
 
