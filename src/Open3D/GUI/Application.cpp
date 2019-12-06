@@ -180,15 +180,18 @@ Application::Application()
 : impl_(new Application::Impl()) {
     Color highlightColor(0.17, 0.4, .82);
 
-    impl_->theme.backgroundColor = Color(0.175, 0.175, 0.175);
+    // Note that any values here need to be scaled by the scale factor in Window
     impl_->theme.fontPath = "Roboto-Medium.ttf";  // full path will be added in Initialize()
     impl_->theme.fontSize = 16; // 1 em (font size is em in digital type)
-    impl_->theme.defaultLayoutSpacing = 8; // 0.5 * em
-    impl_->theme.defaultMargin = 12; // 0.75 * em
+    impl_->theme.defaultMargin = 8; // 0.5 * em
+    impl_->theme.defaultLayoutSpacing = 6; // 0.333 * em
+
+    impl_->theme.backgroundColor = Color(0.175, 0.175, 0.175);
     impl_->theme.textColor = Color(0.875, 0.875, 0.875);
     impl_->theme.borderWidth = 1;
     impl_->theme.borderRadius = 3;
     impl_->theme.borderColor = Color(0.5, 0.5, 0.5);
+    impl_->theme.menubarBorderColor = Color(0.25, 0.25, 0.25);
     impl_->theme.buttonColor = Color(0.4, 0.4, 0.4);
     impl_->theme.buttonHoverColor = Color(0.6, 0.6, 0.6);
     impl_->theme.buttonActiveColor = Color(0.5, 0.5, 0.5);

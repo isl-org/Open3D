@@ -26,6 +26,8 @@
 
 #include "Color.h"
 
+#include <cmath>
+
 namespace open3d {
 namespace gui {
 
@@ -51,6 +53,14 @@ Color Color::Lightened(float amount) {
                  (1.0f - amount) * GetGreen() + amount * 1.0f,
                  (1.0f - amount) * GetBlue() + amount * 1.0f,
                  GetAlpha());
+}
+
+unsigned int Color::ToABGR32() const {
+    unsigned int a = (unsigned int)std::round(GetAlpha() * 255.0f);
+    unsigned int b = (unsigned int)std::round(GetBlue() * 255.0f);
+    unsigned int g = (unsigned int)std::round(GetGreen() * 255.0f);
+    unsigned int r = (unsigned int)std::round(GetRed() * 255.0f);
+    return ((a << 24) | (b << 16) | (g << 8) | r);
 }
 
 } // gui

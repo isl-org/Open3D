@@ -41,13 +41,15 @@ struct Theme {
 
     std::string fontPath;
     int fontSize;
-    int defaultLayoutSpacing;
     int defaultMargin;
+    int defaultLayoutSpacing;
     Color textColor;
 
     int borderWidth;
     int borderRadius;
     Color borderColor;
+
+    Color menubarBorderColor;
 
     Color buttonColor;
     Color buttonHoverColor;

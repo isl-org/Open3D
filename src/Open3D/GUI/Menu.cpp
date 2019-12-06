@@ -39,6 +39,8 @@
 namespace open3d {
 namespace gui {
 
+static const float EXTRA_PADDING_Y = 1.0f;
+
 struct Menu::MenuItem {
     Menu::ItemId id;
     std::string name;
@@ -123,15 +125,18 @@ Menu::MenuItem* Menu::FindMenuItem(ItemId itemId) const {
 int Menu::CalcHeight(const Theme& theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
-    return std::ceil(em + 2.0f * padding.y);
+    return std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y));
 }
 
 Menu::ItemId Menu::DrawMenuBar(const DrawContext& context) {
     ItemId activatedId = NO_ITEM;
 
-//    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(context.theme.defaultMargin,
-//                                                            context.theme.defaultMargin));
-//    ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, context.theme.defaultMargin);
+    ImVec2 size;
+    size.x = ImGui::GetIO().DisplaySize.x;
+    size.y = CalcHeight(context.theme);
+    auto padding = ImGui::GetStyle().FramePadding;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(padding.x, padding.y + EXTRA_PADDING_Y));
 
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items) {
@@ -142,9 +147,19 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext& context) {
             }
         }
     }
+
+    // Before we end the menu bar, draw a one pixel line at the bottom.
+    // This gives a little definition to the end of the menu, otherwise
+    // it just ends and looks a bit odd. This should probably be a pretty
+    // subtle difference from the menubar background.
+    auto y = size.y - 1;
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    drawList->AddLine(ImVec2(0, y), ImVec2(size.x, y),
+                      context.theme.menubarBorderColor.ToABGR32(), 1.0f);
+
     ImGui::EndMainMenuBar();
 
-//    ImGui::PopStyleVar();
+    ImGui::PopStyleVar();
 
     return activatedId;
 }
