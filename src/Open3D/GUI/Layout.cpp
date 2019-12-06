@@ -220,13 +220,13 @@ void Layout1D::Layout(const Theme& theme) {
     int y = frame.GetTop() + impl_->margins.top;
     if (impl_->dir == VERT) {
         int minor = frame.width - impl_->margins.GetHoriz();
-        for (int i = 0;  i < children.size();  ++i) {
+        for (size_t i = 0;  i < children.size();  ++i) {
             children[i]->SetFrame(Rect(x, y, minor, major[i]));
             y += major[i] + impl_->spacing;
         }
     } else {
         int minor = frame.height - impl_->margins.GetVert();
-        for (int i = 0;  i < children.size();  ++i) {
+        for (size_t i = 0;  i < children.size();  ++i) {
             children[i]->SetFrame(Rect(x, y, major[i], minor));
             x += major[i] + impl_->spacing;
         }
