@@ -93,19 +93,37 @@ FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
 FilamentResourceManager::~FilamentResourceManager()
 {}
 
-MaterialHandle FilamentResourceManager::AddMaterial(filament::Material* material)
+MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData, const size_t dataSize)
 {
-    return RegisterResource<MaterialHandle>(engine, material, materials);
+    using namespace filament;
+
+    Material* material = Material::Builder()
+            .package(materialData, dataSize)
+            .build(engine);
+
+    MaterialHandle handle;
+    if (material) {
+        handle = RegisterResource<MaterialHandle>(engine, material, materials);
+    }
+
+    return handle;
 }
 
-MaterialInstanceHandle FilamentResourceManager::AddMaterialInstance(filament::MaterialInstance* materialInstance)
+MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(const MaterialHandle& id)
 {
-    return RegisterResource<MaterialInstanceHandle>(engine, materialInstance, materialInstances);
+    auto found = materials.find(id);
+    if (found != materials.end()) {
+        auto materialInstance = found->second->createInstance();
+        return RegisterResource<MaterialInstanceHandle>(engine, materialInstance, materialInstances);
+    }
+
+    // TODO: assert
+    return {};
 }
 
-TextureHandle FilamentResourceManager::AddTexture(filament::Texture* texture)
+TextureHandle FilamentResourceManager::CreateTexture()
 {
-    return RegisterResource<TextureHandle>(engine, texture, textures);
+    return {};
 }
 
 VertexBufferHandle FilamentResourceManager::AddVertexBuffer(filament::VertexBuffer* vertexBuffer)
@@ -113,9 +131,21 @@ VertexBufferHandle FilamentResourceManager::AddVertexBuffer(filament::VertexBuff
     return RegisterResource<VertexBufferHandle>(engine, vertexBuffer, vertexBuffers);
 }
 
-IndexBufferHandle FilamentResourceManager::AddIndexBuffer(filament::IndexBuffer* indexBuffer)
+IndexBufferHandle FilamentResourceManager::CreateIndexBuffer(size_t indicesCount, size_t indexStride)
 {
-    return RegisterResource<IndexBufferHandle>(engine, indexBuffer, indexBuffers);
+    using namespace filament;
+
+    IndexBuffer* ibuf = IndexBuffer::Builder()
+            .bufferType(indexStride == 2 ? IndexBuffer::IndexType::USHORT : IndexBuffer::IndexType::UINT)
+            .indexCount(indicesCount)
+            .build(engine);
+
+    IndexBufferHandle handle;
+    if (ibuf) {
+        handle = RegisterResource<IndexBufferHandle>(engine, ibuf, indexBuffers);
+    }
+
+    return handle;
 }
 
 std::weak_ptr<filament::Material> FilamentResourceManager::GetMaterial(const MaterialHandle& id)

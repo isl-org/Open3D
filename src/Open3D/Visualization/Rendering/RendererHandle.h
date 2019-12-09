@@ -71,6 +71,10 @@ struct REHandle_abstract {
         return Hash() < other.Hash();
     }
 
+    explicit operator bool() const {
+        return id != kBadId;
+    }
+
     REHandle_abstract() : type(eEntityType::None), id(kBadId) {}
 
     std::uint16_t GetId() const { return id; }

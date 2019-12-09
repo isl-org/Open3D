@@ -39,6 +39,8 @@ class Camera;
 class View
 {
 public:
+    virtual ~View() {}
+
     virtual void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) = 0;
     virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
 

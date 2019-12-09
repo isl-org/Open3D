@@ -30,6 +30,8 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "Open3D/Visualization/Rendering/Scene.h"
+#include "Open3D/Visualization/Rendering/View.h"
 #include "Open3D/GUI/Native.h"
 
 #include <SDL.h>
@@ -147,11 +149,15 @@ int main(int argc, char *argv[]) {
 
     SDL_Init(SDL_INIT_EVENTS);
 
-    visualization::TheRenderer->SetViewport(0, 0, w, h);
-    visualization::TheRenderer->SetClearColor({ 0.5f,0.5f,1.f });
-    visualization::TheRenderer->GetCamera()->LookAt({0, 0, 0},
-            {80, 80, 80},
-             {0, 1, 0});
+    auto sceneId = visualization::TheRenderer->CreateScene();
+    auto scene = visualization::TheRenderer->GetScene(sceneId);
+
+    auto viewId = scene->AddView(0, 0, w, h);
+    auto view = scene->GetView(viewId);
+    view->SetClearColor({ 0.5f, 0.5f, 1.f });
+    view->GetCamera()->LookAt({0, 0, 0},
+                              {80, 80, 80},
+                              {0, 1, 0});
 
     visualization::MaterialInstanceHandle matInstance;
     if (materialDataLoaded) {
@@ -170,9 +176,9 @@ int main(int argc, char *argv[]) {
     lightDescription.direction = { -0.707, -.707, 0.0 };
     lightDescription.customAttributes["custom_type"] = "SUN";
 
-    visualization::TheRenderer->AddLight(lightDescription);
+    scene->AddLight(lightDescription);
 
-    visualization::TheRenderer->AddGeometry(*mesh, matInstance);
+    scene->AddGeometry(*mesh, matInstance);
 
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
     while (true) {
