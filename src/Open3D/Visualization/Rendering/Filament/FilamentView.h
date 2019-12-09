@@ -50,7 +50,7 @@ class FilamentCamera;
 class FilamentView : public View {
 public:
     FilamentView(filament::Engine& engine, filament::Scene& scene);
-    ~FilamentView();
+    ~FilamentView() override;
 
     void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
     void SetClearColor(const Eigen::Vector3f& color) override;

@@ -27,16 +27,9 @@
 #pragma once
 
 #include "RendererHandle.h"
-#include "RendererStructs.h"
 #include "RendererEntitiesMods.h"
 
 namespace open3d {
-
-namespace geometry
-{
-    class Geometry3D;
-}
-
 namespace visualization {
 
 class Scene;
@@ -46,29 +39,16 @@ class AbstractRenderInterface {
 public:
     virtual ~AbstractRenderInterface() = default;
 
-    //virtual SceneHandle CreateScene() = 0;
-    //virtual Scene* GetScene(const SceneHandle& id) const = 0;
-
-    virtual void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) = 0;
-    virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
+    virtual SceneHandle CreateScene() = 0;
+    virtual Scene* GetScene(const SceneHandle& id) const = 0;
+    virtual void DestroyScene(const SceneHandle& id) = 0;
 
     virtual void Draw() = 0;
-
-    virtual Camera* GetCamera() const = 0;
-
-    // If MaterialInstanceHandle::kBad passed, then default material is used
-    virtual GeometryHandle AddGeometry(const geometry::Geometry3D& geometry, const MaterialInstanceHandle& materialId) = 0;
-    virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
-
-    virtual LightHandle AddLight(const LightDescription& descr) = 0;
-    //virtual LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) = 0;
-    virtual void RemoveLight(const LightHandle& id) = 0;
 
     // Loads material from its data
     virtual MaterialHandle AddMaterial(const void* materialData, size_t dataSize) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) = 0;
-    virtual void AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId) = 0;
 };
 
 extern AbstractRenderInterface* TheRenderer;

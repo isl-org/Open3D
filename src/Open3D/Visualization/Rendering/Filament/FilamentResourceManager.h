@@ -55,11 +55,11 @@ public:
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
 
-    MaterialHandle AddMaterial(filament::Material* material);
-    MaterialInstanceHandle AddMaterialInstance(filament::MaterialInstance* materialInstance);
-    TextureHandle AddTexture(filament::Texture* texture);
+    MaterialHandle CreateMaterial(const void* materialData, const size_t dataSize);
+    MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
+    TextureHandle CreateTexture(/*TBD*/);
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
-    IndexBufferHandle AddIndexBuffer(filament::IndexBuffer* indexBuffer);
+    IndexBufferHandle CreateIndexBuffer(size_t indicesCount, size_t indexStride);
 
     std::weak_ptr<filament::Material> GetMaterial(const MaterialHandle& id);
     std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(const MaterialInstanceHandle& id);

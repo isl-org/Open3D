@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
+#include "Open3D/Visualization/Rendering/Scene.h"
 
 #include <memory>
 #include <unordered_map>
@@ -38,7 +38,6 @@ namespace filament
     class Engine;
     class Renderer;
     class Scene;
-    class SwapChain;
     class VertexBuffer;
 }
 
@@ -47,40 +46,50 @@ namespace open3d
 namespace visualization
 {
 
-class FilamentMaterialModifier;
 class FilamentResourceManager;
-class FilamentScene;
 class FilamentView;
 
-class FilamentRenderer : public AbstractRenderInterface
+class FilamentScene : public Scene
 {
 public:
-    static void InitGlobal(void* nativeDrawable);
-    static void ShutdownGlobal();
+    FilamentScene(filament::Engine& engine, FilamentResourceManager& resourceManager);
+    ~FilamentScene() override;
 
-    explicit FilamentRenderer(void* nativeDrawable);
-    ~FilamentRenderer() override;
+    ViewHandle AddView(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
+    View* GetView(const ViewHandle& viewId) const override;
+    void RemoveView(const ViewHandle& viewId) override;
 
-    SceneHandle CreateScene() override;
-    Scene* GetScene(const SceneHandle& id) const override;
-    void DestroyScene(const SceneHandle& id) override;
+    GeometryHandle AddGeometry(
+            const geometry::Geometry3D& geometry,
+            const MaterialInstanceHandle& materialId) override;
+    void AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId);
+    void RemoveGeometry(const GeometryHandle& geometryId) override;
 
-    void Draw() override;
+    LightHandle AddLight(const LightDescription& descr) override;
+    //LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) override;
+    void RemoveLight(const LightHandle& id) override;
 
-    MaterialHandle AddMaterial(const void* materialData, size_t dataSize) override;
-    MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
-    MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
+    void Draw(filament::Renderer& renderer);
 
 private:
-    filament::Engine* engine = nullptr;
-    filament::Renderer* renderer = nullptr;
-    filament::SwapChain* swapChain = nullptr;
+    struct AllocatedEntity
+    {
+        utils::Entity self;
+        VertexBufferHandle vb;
+        IndexBufferHandle  ib;
+    };
 
-    std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>> scenes;
+    filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner, size_t verticesCount);
 
-    // FIXME: Can't handle concurrent ModifyMaterial(...)
-    std::unique_ptr<FilamentMaterialModifier> materialsModifier;
-    std::unique_ptr<FilamentResourceManager> resourcesManager;
+    void RemoveEntity(REHandle_abstract id);
+
+    filament::Scene* scene = nullptr;
+
+    filament::Engine& engine;
+    FilamentResourceManager& resourceManager;
+
+    std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentView>> views;
+    std::unordered_map<REHandle_abstract, AllocatedEntity> entities;
 };
 
 }
