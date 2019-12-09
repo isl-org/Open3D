@@ -120,7 +120,8 @@ public:
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
     virtual bool AddGeometry(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr);
+            std::shared_ptr<const geometry::Geometry> geometry_ptr,
+            bool reset_bounding_box = true);
 
     /// Function to remove geometry from the scene
     /// 1. After calling this function, the Visualizer releases the pointer of
@@ -129,7 +130,13 @@ public:
     /// 3. This function returns FALSE if the geometry to be removed is not
     /// added by AddGeometry
     virtual bool RemoveGeometry(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr);
+            std::shared_ptr<const geometry::Geometry> geometry_ptr,
+            bool reset_bounding_box = true);
+
+    /// Function to remove all geometries from the scene.
+    /// After calling this function, the Visualizer releases the pointer of
+    /// all geometry objects.
+    virtual bool ClearGeometries();
 
     /// Function to update geometry
     /// This function must be called when geometry has been changed. Otherwise

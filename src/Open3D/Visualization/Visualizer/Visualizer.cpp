@@ -103,7 +103,9 @@ bool Visualizer::CreateVisualizerWindow(
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+#ifndef HEADLESS_RENDERING
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
@@ -294,7 +296,8 @@ bool Visualizer::PollEvents() {
 }
 
 bool Visualizer::AddGeometry(
-        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr,
+        bool reset_bounding_box) {
     if (is_initialized_ == false) {
         return false;
     }
@@ -370,8 +373,10 @@ bool Visualizer::AddGeometry(
     }
     geometry_renderer_ptrs_.insert(renderer_ptr);
     geometry_ptrs_.insert(geometry_ptr);
-    view_control_ptr_->FitInGeometry(*geometry_ptr);
-    ResetViewPoint();
+    if (reset_bounding_box) {
+        view_control_ptr_->FitInGeometry(*geometry_ptr);
+        ResetViewPoint();
+    }
     utility::LogDebug(
             "Add geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
@@ -379,7 +384,8 @@ bool Visualizer::AddGeometry(
 }
 
 bool Visualizer::RemoveGeometry(
-        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr,
+        bool reset_bounding_box) {
     if (is_initialized_ == false) {
         return false;
     }
@@ -392,10 +398,22 @@ bool Visualizer::RemoveGeometry(
     if (geometry_renderer_delete == NULL) return false;
     geometry_renderer_ptrs_.erase(geometry_renderer_delete);
     geometry_ptrs_.erase(geometry_ptr);
-    ResetViewPoint(true);
+    if (reset_bounding_box) {
+        ResetViewPoint(true);
+    }
     utility::LogDebug(
             "Remove geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    return UpdateGeometry();
+}
+
+bool Visualizer::ClearGeometries() {
+    if (is_initialized_ == false) {
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+    geometry_renderer_ptrs_.clear();
+    geometry_ptrs_.clear();
     return UpdateGeometry();
 }
 
