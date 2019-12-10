@@ -81,7 +81,12 @@ void Visualizer::Render() {
         renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
     }
     for (const auto &renderer_ptr : utility_renderer_ptrs_) {
-        renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
+        RenderOption *opt = render_option_ptr_.get();
+        auto optIt = utility_renderer_opts_.find(renderer_ptr.get());
+        if (optIt != utility_renderer_opts_.end()) {
+            opt = &optIt->second;
+        }
+        renderer_ptr->Render(*opt, *view_control_ptr_);
     }
 
     glfwSwapBuffers(window_);

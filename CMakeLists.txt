@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.1)
 set (CMAKE_CXX_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
-    COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
+    COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
 
 if (NOT CMAKE_BUILD_TYPE)

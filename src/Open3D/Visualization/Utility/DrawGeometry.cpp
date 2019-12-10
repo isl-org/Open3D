@@ -26,12 +26,15 @@
 
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
 #include "Open3D/Visualization/Visualizer/Visualizer.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithVertexSelection.h"
 
 namespace open3d {
 namespace visualization {
@@ -203,6 +206,37 @@ bool DrawGeometriesWithEditing(
             utility::LogWarning(
                     "[DrawGeometriesWithEditing] Possibly due to bad geometry "
                     "or wrong geometry type.");
+            return false;
+        }
+    }
+    visualizer.Run();
+    visualizer.DestroyVisualizerWindow();
+    return true;
+}
+
+bool DrawGeometriesWithVertexSelection(
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometry_ptrs,
+        const std::string &window_name /* = "Open3D"*/,
+        int width /* = 640*/,
+        int height /* = 480*/,
+        int left /* = 50*/,
+        int top /* = 50*/) {
+    VisualizerWithVertexSelection visualizer;
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                          top) == false) {
+        utility::LogWarning(
+                "[DrawGeometriesWithVertexSelection] Failed creating OpenGL "
+                "window.");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            utility::LogWarning(
+                    "[DrawGeometriesWithVertexSelection] Failed adding geometry.");
+            utility::LogWarning(
+                    "[DrawGeometriesWithVertexSelection] Possibly due to bad "
+                    "geometry or wrong geometry type.");
             return false;
         }
     }
