@@ -84,6 +84,9 @@ void pybind_renderoption(py::module &m) {
                     "mesh_show_back_face",
                     &visualization::RenderOption::mesh_show_back_face_,
                     "bool: Whether to show back faces for ``TriangleMesh``.")
+            .def_readwrite("mesh_show_wireframe",
+                           &visualization::RenderOption::mesh_show_wireframe_,
+                           "bool: Whether to show wireframe for ``TriangleMesh``.")
             .def_readwrite("point_color_option",
                            &visualization::RenderOption::point_color_option_,
                            "``PointColorOption``: Point color option for "
