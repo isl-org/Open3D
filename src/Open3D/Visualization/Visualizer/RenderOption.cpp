@@ -263,6 +263,7 @@ int RenderOption::GetGLDepthFunc() const {
         case DepthFunc::GEqual:   return GL_GEQUAL;
         case DepthFunc::Always:   return GL_ALWAYS;
     }
+    return GL_LESS;  // never hit, makes GCC happy
 }
 
 }  // namespace visualization
