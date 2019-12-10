@@ -178,7 +178,7 @@ Application& Application::GetInstance() {
 
 Application::Application()
 : impl_(new Application::Impl()) {
-    Color highlightColor(0.17, 0.4, .82);
+    Color highlightColor(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
     impl_->theme.fontPath = "Roboto-Medium.ttf";  // full path will be added in Initialize()
@@ -203,6 +203,7 @@ Application::Application()
     impl_->theme.comboboxBackgroundColor = Color(0.4, 0.4, 0.4);
     impl_->theme.comboboxHoverColor = Color(0.5, 0.5, 0.5);
     impl_->theme.comboboxArrowBackgroundColor = highlightColor;
+    impl_->theme.sliderGrabColor = Color(0.666, 0.666, 0.666);
     impl_->theme.textEditBackgroundColor = Color(0.25, 0.25, 0.25);
     impl_->theme.tabInactiveColor = impl_->theme.buttonColor;
     impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
