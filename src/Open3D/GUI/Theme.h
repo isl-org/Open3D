@@ -65,6 +65,8 @@ struct Theme {
     Color comboboxHoverColor;
     Color comboboxArrowBackgroundColor;
 
+    Color sliderGrabColor;
+
     Color textEditBackgroundColor;
 
     Color tabInactiveColor;

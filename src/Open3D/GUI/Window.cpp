@@ -115,6 +115,8 @@ Window::Window(const std::string& title, int width, int height)
     style.Colors[ImGuiCol_FrameBg] = colorToImgui(theme.comboboxBackgroundColor);
     style.Colors[ImGuiCol_FrameBgHovered] = colorToImgui(theme.comboboxHoverColor);
     style.Colors[ImGuiCol_FrameBgActive] = style.Colors[ImGuiCol_FrameBgHovered];
+    style.Colors[ImGuiCol_SliderGrab] = colorToImgui(theme.sliderGrabColor);
+    style.Colors[ImGuiCol_SliderGrabActive] = colorToImgui(theme.sliderGrabColor);
     style.Colors[ImGuiCol_Tab] = colorToImgui(theme.tabInactiveColor);
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
