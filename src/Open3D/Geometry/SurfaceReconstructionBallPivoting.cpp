@@ -42,7 +42,7 @@ class BallPivotingVertex;
 class BallPivotingEdge;
 class BallPivotingTriangle;
 
-typedef std::shared_ptr<BallPivotingVertex> BallPivotingVertexPtr;
+typedef BallPivotingVertex* BallPivotingVertexPtr;
 typedef std::shared_ptr<BallPivotingEdge> BallPivotingEdgePtr;
 typedef std::shared_ptr<BallPivotingTriangle> BallPivotingTrianglePtr;
 
@@ -166,8 +166,14 @@ public:
         mesh_->vertex_normals_ = pcd.normals_;
         mesh_->vertex_colors_ = pcd.colors_;
         for (size_t vidx = 0; vidx < pcd.points_.size(); ++vidx) {
-            vertices.emplace_back(std::make_shared<BallPivotingVertex>(
+            vertices.emplace_back(new BallPivotingVertex(
                     vidx, pcd.points_[vidx], pcd.normals_[vidx]));
+        }
+    }
+
+    virtual ~BallPivoting() {
+        for (auto vert : vertices) {
+            delete vert;
         }
     }
 

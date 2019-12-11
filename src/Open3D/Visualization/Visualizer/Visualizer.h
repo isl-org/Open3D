@@ -133,6 +133,11 @@ public:
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
 
+    /// Function to remove all geometries from the scene.
+    /// After calling this function, the Visualizer releases the pointer of
+    /// all geometry objects.
+    virtual bool ClearGeometries();
+
     /// Function to update geometry
     /// This function must be called when geometry has been changed. Otherwise
     /// the behavior of Visualizer is undefined.

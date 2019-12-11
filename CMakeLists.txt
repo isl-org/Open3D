@@ -115,6 +115,16 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+# headless rendering
+if (ENABLE_HEADLESS_RENDERING)
+    if (APPLE)
+        message(FATAL_ERROR "Headless rendering is not supported on Mac OS")
+        set(ENABLE_HEADLESS_RENDERING OFF)
+    else()
+        add_definitions(-DHEADLESS_RENDERING)
+    endif()
+endif()
+
 # Set OS-specific things here
 if (WIN32)
     # can't hide the unit testing option on Windows only

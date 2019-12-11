@@ -103,7 +103,9 @@ bool Visualizer::CreateVisualizerWindow(
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+#ifndef HEADLESS_RENDERING
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
@@ -402,6 +404,16 @@ bool Visualizer::RemoveGeometry(
     utility::LogDebug(
             "Remove geometry and update bounding box to {}",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    return UpdateGeometry();
+}
+
+bool Visualizer::ClearGeometries() {
+    if (is_initialized_ == false) {
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+    geometry_renderer_ptrs_.clear();
+    geometry_ptrs_.clear();
     return UpdateGeometry();
 }
 

@@ -98,6 +98,9 @@ void pybind_visualizer(py::module &m) {
             .def("remove_geometry", &visualization::Visualizer::RemoveGeometry,
                  "Function to remove geometry", "geometry"_a,
                  "reset_bounding_box"_a = true)
+            .def("clear_geometries",
+                 &visualization::Visualizer::ClearGeometries,
+                 "Function to clear geometries from the visualizer")
             .def("get_view_control", &visualization::Visualizer::GetViewControl,
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
