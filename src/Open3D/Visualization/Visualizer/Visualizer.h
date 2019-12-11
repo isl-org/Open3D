@@ -141,7 +141,10 @@ public:
     /// Function to update geometry
     /// This function must be called when geometry has been changed. Otherwise
     /// the behavior of Visualizer is undefined.
-    virtual bool UpdateGeometry();
+    /// If called without an argument, updates all geometries, otherwise only
+    /// updates the geometry specified.
+    virtual bool UpdateGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr = nullptr);
     virtual bool HasGeometry() const;
 
     /// Function to set the redraw flag as dirty
