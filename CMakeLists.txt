@@ -3,7 +3,7 @@
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
 cmake_minimum_required(VERSION 3.1)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."

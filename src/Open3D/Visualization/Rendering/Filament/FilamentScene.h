@@ -57,6 +57,7 @@ public:
 
     ViewHandle AddView(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
     View* GetView(const ViewHandle& viewId) const override;
+    void SetViewActive(const ViewHandle& viewId, bool isActive) override;
     void RemoveView(const ViewHandle& viewId) override;
 
     GeometryHandle AddGeometry(
@@ -71,12 +72,20 @@ public:
 
     void Draw(filament::Renderer& renderer);
 
+    filament::Scene* GetNativeScene() const { return scene; }
+
 private:
     struct AllocatedEntity
     {
         utils::Entity self;
         VertexBufferHandle vb;
         IndexBufferHandle  ib;
+    };
+
+    struct ViewContainer
+    {
+        std::unique_ptr<FilamentView> view;
+        bool isActive = true;
     };
 
     filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner, size_t verticesCount);
@@ -88,7 +97,7 @@ private:
     filament::Engine& engine;
     FilamentResourceManager& resourceManager;
 
-    std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentView>> views;
+    std::unordered_map<REHandle_abstract, ViewContainer> views;
     std::unordered_map<REHandle_abstract, AllocatedEntity> entities;
 };
 

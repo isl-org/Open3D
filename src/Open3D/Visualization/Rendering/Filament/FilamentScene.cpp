@@ -79,7 +79,9 @@ ViewHandle FilamentScene::AddView(std::int32_t x, std::int32_t y, std::uint32_t 
     auto view = std::make_unique<FilamentView>(engine, *scene);
 
     view->SetViewport(x, y, w, h);
-    views[handle] = std::move(view);
+    ViewContainer c;
+    c.view = std::move(view);
+    views.emplace(handle, std::move(c));
 
     return handle;
 }
@@ -88,10 +90,18 @@ View* FilamentScene::GetView(const ViewHandle& viewId) const
 {
     auto found = views.find(viewId);
     if (found != views.end()) {
-        return found->second.get();
+        return found->second.view.get();
     }
 
     return nullptr;
+}
+
+void FilamentScene::SetViewActive(const ViewHandle& viewId, bool isActive)
+{
+    auto found = views.find(viewId);
+    if (found != views.end()) {
+        found->second.isActive = isActive;
+    }
 }
 
 void FilamentScene::RemoveView(const ViewHandle& viewId)
@@ -272,7 +282,10 @@ void FilamentScene::RemoveLight(const LightHandle& id)
 void FilamentScene::Draw(filament::Renderer& renderer)
 {
     for (const auto& pair : views) {
-        renderer.render(pair.second.get()->GetNativeView());
+        auto& container = pair.second;
+        if (container.isActive) {
+            renderer.render(container.view->GetNativeView());
+        }
     }
 }
 

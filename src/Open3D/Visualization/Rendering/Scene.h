@@ -52,6 +52,7 @@ public:
     virtual ViewHandle AddView(std::int32_t x, std::int32_t y,
                                   std::uint32_t w, std::uint32_t h) = 0;
     virtual View* GetView(const ViewHandle& viewId) const = 0;
+    virtual void SetViewActive(const ViewHandle& viewId, bool isActive) = 0;
     virtual void RemoveView(const ViewHandle& viewId) = 0;
 
     virtual GeometryHandle AddGeometry(

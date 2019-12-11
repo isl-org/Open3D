@@ -27,7 +27,9 @@
 
 
 #include "Open3D/Open3D.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
@@ -40,7 +42,6 @@
 #else
 #    include <io.h>
 #endif
-#include <sys/errno.h>
 #include <fcntl.h>
 
 static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::string *errorStr)
@@ -142,28 +143,34 @@ int main(int argc, char *argv[]) {
     auto* window = SDL_CreateWindow("triangle mesh filament", x, y, w,
                                     h, flags);
 
-    visualization::FilamentRenderer::InitGlobal(
-            (void*)open3d::gui::GetNativeDrawable(window));
+    auto& engineInstance = visualization::EngineInstance::GetInstance();
+    auto& resourceManager = visualization::EngineInstance::GetResourceManager();
+    auto renderer = new visualization::FilamentRenderer(engineInstance,
+            (void*)open3d::gui::GetNativeDrawable(window), resourceManager);
 
     SDL_ShowWindow(window);
 
     SDL_Init(SDL_INIT_EVENTS);
 
-    auto sceneId = visualization::TheRenderer->CreateScene();
-    auto scene = visualization::TheRenderer->GetScene(sceneId);
+    auto sceneId = renderer->CreateScene();
+    auto scene = renderer->GetScene(sceneId);
 
     auto viewId = scene->AddView(0, 0, w, h);
     auto view = scene->GetView(viewId);
     view->SetClearColor({ 0.5f, 0.5f, 1.f });
-    view->GetCamera()->LookAt({0, 0, 0},
+
+    auto camera = view->GetCamera();
+    camera->SetProjection(90, float(w)/float(h), 0.01, 1000,
+            visualization::Camera::eFovType::HORIZONTAL_FOV);
+    camera->LookAt({0, 0, 0},
                               {80, 80, 80},
                               {0, 1, 0});
 
     visualization::MaterialInstanceHandle matInstance;
     if (materialDataLoaded) {
-        visualization::MaterialHandle matId = visualization::TheRenderer->AddMaterial(materialData.data(), materialData.size());
+        visualization::MaterialHandle matId = renderer->AddMaterial(materialData.data(), materialData.size());
 
-        matInstance = visualization::TheRenderer->ModifyMaterial(matId)
+        matInstance = renderer->ModifyMaterial(matId)
                 .SetParameter("roughness", 0.5f)
                 .SetParameter("clearCoat", 1.0f)
                 .SetParameter("clearCoatRoughness", 0.3f)
@@ -199,14 +206,17 @@ int main(int argc, char *argv[]) {
             ++nevents;
         }
 
-        visualization::TheRenderer->Draw();
+        renderer->BeginFrame();
+        renderer->Draw();
+        renderer->EndFrame();
 
         SDL_Delay(10);  // millisec
 
         if (isDone) break;
     }
 
-    visualization::FilamentRenderer::ShutdownGlobal();
+    delete renderer;
+    resourceManager.DestroyAll();
 
     SDL_DestroyWindow(window);
     SDL_Quit();

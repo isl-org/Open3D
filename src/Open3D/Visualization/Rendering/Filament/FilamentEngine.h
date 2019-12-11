@@ -26,31 +26,33 @@
 
 #pragma once
 
-#include "RendererHandle.h"
-#include "RendererEntitiesMods.h"
+#include <filament/Engine.h>
 
 namespace open3d {
 namespace visualization {
 
-class Scene;
-class Camera;
+class FilamentResourceManager;
 
-class AbstractRenderInterface {
+class EngineInstance {
 public:
-    virtual ~AbstractRenderInterface() = default;
+    // Selects backend to use.
+    // Should be called before instance usage.
+    // If not called, platform available default backend will be used.
+    static void SelectBackend(filament::backend::Backend backend);
 
-    virtual SceneHandle CreateScene() = 0;
-    virtual Scene* GetScene(const SceneHandle& id) const = 0;
-    virtual void DestroyScene(const SceneHandle& id) = 0;
+    static filament::Engine& GetInstance();
+    static FilamentResourceManager& GetResourceManager();
 
-    virtual void BeginFrame() = 0;
-    virtual void Draw() = 0;
-    virtual void EndFrame() = 0;
+    ~EngineInstance();
 
-    // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData, size_t dataSize) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) = 0;
+private:
+    static EngineInstance& Get();
+
+    EngineInstance();
+
+    static filament::backend::Backend backend;
+    filament::Engine* engine;
+    FilamentResourceManager* resourceManager;
 };
 
 }

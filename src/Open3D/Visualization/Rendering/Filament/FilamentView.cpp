@@ -62,7 +62,6 @@ FilamentView::~FilamentView()
 void FilamentView::SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h)
 {
     view->setViewport({x, y, w, h});
-    camera->ChangeAspectRatio(float(w) / float(h));
 }
 
 void FilamentView::SetClearColor(const Eigen::Vector3f& color)

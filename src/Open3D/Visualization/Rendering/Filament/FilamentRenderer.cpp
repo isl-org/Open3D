@@ -31,60 +31,40 @@
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
-#include <filament/geometry/SurfaceOrientation.h>
 
 #include "FilamentCamera.h"
 #include "FilamentEntitiesMods.h"
 #include "FilamentResourceManager.h"
 #include "FilamentScene.h"
 #include "FilamentView.h"
-#include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d
 {
 namespace visualization
 {
 
-AbstractRenderInterface* TheRenderer;
-
-void FilamentRenderer::InitGlobal(void* nativeDrawable)
+FilamentRenderer::FilamentRenderer(filament::Engine& aEngine, void* nativeDrawable, FilamentResourceManager& aResourceManager)
+    : engine(aEngine)
+    , resourceManager(aResourceManager)
 {
-    TheRenderer = new FilamentRenderer(nativeDrawable);
-}
-
-void FilamentRenderer::ShutdownGlobal()
-{
-    delete TheRenderer;
-    TheRenderer = nullptr;
-}
-
-FilamentRenderer::FilamentRenderer(void* nativeDrawable)
-{
-    engine = filament::Engine::create(filament::Engine::Backend::OPENGL);
-    swapChain = engine->createSwapChain(nativeDrawable);
-    renderer = engine->createRenderer();
+    swapChain = engine.createSwapChain(nativeDrawable);
+    renderer = engine.createRenderer();
 
     materialsModifier = std::make_unique<FilamentMaterialModifier>();
-    resourcesManager = std::make_unique<FilamentResourceManager>(*engine);
 }
 
 FilamentRenderer::~FilamentRenderer()
 {
     scenes.clear();
 
-    resourcesManager.reset();
-
-    engine->destroy(renderer);
-    engine->destroy(swapChain);
-
-    filament::Engine::destroy(engine);
+    engine.destroy(renderer);
+    engine.destroy(swapChain);
 }
 
 SceneHandle FilamentRenderer::CreateScene()
 {
     auto handle = SceneHandle::Next();
-    scenes[handle] = std::make_unique<FilamentScene>(*engine, *resourcesManager);
+    scenes[handle] = std::make_unique<FilamentScene>(engine, resourceManager);
 
     return handle;
 }
@@ -104,29 +84,44 @@ void FilamentRenderer::DestroyScene(const SceneHandle& id)
     scenes.erase(id);
 }
 
+void FilamentRenderer::BeginFrame()
+{
+    frameStarted = renderer->beginFrame(swapChain);
+}
+
 void FilamentRenderer::Draw()
 {
-    if (renderer->beginFrame(swapChain)) {
+    if (frameStarted) {
         for (const auto& pair : scenes) {
             pair.second->Draw(*renderer);
         }
+
+        if (guiScene) {
+            guiScene->Draw(*renderer);
+        }
+    }
+}
+
+void FilamentRenderer::EndFrame()
+{
+    if (frameStarted) {
         renderer->endFrame();
     }
 }
 
 MaterialHandle FilamentRenderer::AddMaterial(const void* materialData, const size_t dataSize)
 {
-    return resourcesManager->CreateMaterial(materialData, dataSize);
+    return resourceManager.CreateMaterial(materialData, dataSize);
 }
 
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id)
 {
     materialsModifier->Reset();
 
-    auto instanceId = resourcesManager->CreateMaterialInstance(id);
+    auto instanceId = resourceManager.CreateMaterialInstance(id);
 
     if (instanceId) {
-        auto wMaterialInstance = resourcesManager->GetMaterialInstance(instanceId);
+        auto wMaterialInstance = resourceManager.GetMaterialInstance(instanceId);
         materialsModifier->InitWithMaterialInstance(wMaterialInstance.lock(), instanceId);
     }
 
@@ -137,12 +132,25 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialInstanceHandle&
 {
     materialsModifier->Reset();
 
-    auto wMaterialInstance = resourcesManager->GetMaterialInstance(id);
+    auto wMaterialInstance = resourceManager.GetMaterialInstance(id);
     if (!wMaterialInstance.expired()) {
         materialsModifier->InitWithMaterialInstance(wMaterialInstance.lock(), id);
     }
 
     return *materialsModifier;
+}
+
+void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id)
+{
+    auto found = scenes.find(id);
+    if (found != scenes.end()) {
+        //TODO: Warning on guiScene != nullptr
+
+        guiScene = std::move(found->second);
+        scenes.erase(found);
+    }
+
+    // TODO: assert
 }
 
 }

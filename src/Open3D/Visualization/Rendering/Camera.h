@@ -41,16 +41,41 @@ public:
         HORIZONTAL_FOV
     };
 
+    enum eProjection {
+        PERSPECTIVE,
+        ORTHO
+    };
+
     virtual void SetProjection(double fov, double aspect, double near, double far, eFovType fovType) = 0;
+
+    /** Sets the projection matrix from a frustum defined by six planes.
+     *
+     * @param projection    type of #Projection to use.
+     *
+     * @param left      distance in world units from the camera to the left plane,
+     *                  at the near plane.
+     *
+     * @param right     distance in world units from the camera to the right plane,
+     *                  at the near plane.
+     *
+     * @param bottom    distance in world units from the camera to the bottom plane,
+     *                  at the near plane.
+     *
+     * @param top       distance in world units from the camera to the top plane,
+     *                  at the near plane.
+     *
+     * @param near      distance in world units from the camera to the near plane. The near plane's
+     *
+     * @param far       distance in world units from the camera to the far plane. The far plane's
+     */
+    virtual void SetProjection(eProjection projection,
+                       double left, double right,
+                       double bottom, double top,
+                       double near, double far) = 0;
 
     virtual void LookAt(const Eigen::Vector3f& center,
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
-
-    virtual double GetNear() const = 0;
-    virtual double GetFar() const = 0;
-    virtual double GetFoV() const = 0;
-    virtual double GetAspect() const = 0;
 
     virtual Eigen::Vector3f GetPosition() = 0;
     virtual Eigen::Vector3f GetForwardVector() = 0;
