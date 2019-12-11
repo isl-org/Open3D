@@ -321,18 +321,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
     DrawContext dc{ theme, 0, 0, em };
 
-    // Draw the 3D widgets first (in case the UI wants to be transparent
-    // on top). These will actually get drawn now. Since these are not
-    // ImGui objects, nothing will happen as far as ImGui is concerned,
-    // but Filament will issue the appropriate rendering commands.
     bool needsRedraw = false;
-    for (auto &child : this->impl_->children) {
-        if (child->Is3D()) {
-            if (child->Draw(dc) != Widget::DrawResult::NONE) {
-                needsRedraw = true;
-            }
-        }
-    }
 
     // Now draw all the 2D widgets. These will get recorded by ImGui.
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
@@ -340,25 +329,23 @@ Window::DrawResult Window::OnDraw(float dtSec) {
                              ImGuiWindowFlags_NoCollapse;
     int winIdx = 0;
     for (auto &child : this->impl_->children) {
-        if (!child->Is3D()) {
-            auto frame = child->GetFrame();
-            auto isContainer = !child->GetChildren().empty();
-            if (isContainer) {
-                dc.uiOffsetX = frame.x;
-                dc.uiOffsetY = frame.y;
-                ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
-                ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
-                ImGui::Begin(winNames[winIdx++], nullptr, flags);
-            } else {
-                dc.uiOffsetX = 0;
-                dc.uiOffsetY = 0;
-            }
-            if (child->Draw(dc) != Widget::DrawResult::NONE) {
-                needsRedraw = true;
-            }
-            if (isContainer) {
-                ImGui::End();
-            }
+        auto frame = child->GetFrame();
+        auto isContainer = !child->GetChildren().empty();
+        if (isContainer) {
+            dc.uiOffsetX = frame.x;
+            dc.uiOffsetY = frame.y;
+            ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
+            ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
+            ImGui::Begin(winNames[winIdx++], nullptr, flags);
+        } else {
+            dc.uiOffsetX = 0;
+            dc.uiOffsetY = 0;
+        }
+        if (child->Draw(dc) != Widget::DrawResult::NONE) {
+            needsRedraw = true;
+        }
+        if (isContainer) {
+            ImGui::End();
         }
     }
 

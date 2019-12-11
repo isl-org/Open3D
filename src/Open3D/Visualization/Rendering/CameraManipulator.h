@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2019 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,44 +26,49 @@
 
 #pragma once
 
-#include "Widget.h"
+#include <Eigen/Geometry>
 
-#include "Renderer.h"
-
-namespace open3d {
-
+namespace open3d
+{
 namespace visualization
 {
-    class Scene;
-    class Camera;
-    class CameraManipulator;
-}
 
-namespace gui {
+class Camera;
 
-class Color;
-
-class SceneWidget : public Widget {
-    using Super = Widget;
+class CameraManipulator
+{
 public:
-    explicit SceneWidget(visualization::Scene& scene);
-    ~SceneWidget() override;
+    CameraManipulator(Camera& camera, float viewportW, float viewportH);
 
-    void SetFrame(const Rect& f) override;
+    void SetViewport(float w, float h);
+    void SetFov(float fov);
+    void SetNearPlane(float near);
+    void SetFarPlane(float far);
 
-    bool Is3D() const override;
+    float GetFov() const { return fov; }
+    float GetNearPlane() const { return near; }
+    float GetFarPlane() const { return far; }
 
-    void SetBackgroundColor(const Color& color);
+    Eigen::Vector3f GetPosition();
+    Eigen::Vector3f GetForwardVector();
+    Eigen::Vector3f GetLeftVector();
+    Eigen::Vector3f GetUpVector();
 
-    visualization::Scene* GetScene() const;
-    visualization::CameraManipulator* GetCameraManipulator() const;
-
-    Widget::DrawResult Draw(const DrawContext& context) override;
+    void LookAt(const Eigen::Vector3f& center,
+                const Eigen::Vector3f& eye,
+                const Eigen::Vector3f& up = {0, 1.f, 0.f});
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    void UpdateCameraProjection();
+
+    Camera& camera;
+
+    float viewportW;
+    float viewportH;
+    float fov;
+    float near;
+    float far;
 };
 
-} // gui
-} // open3d
+}
+}

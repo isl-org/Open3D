@@ -26,6 +26,7 @@
 
 #include "SceneWidget.h"
 
+#include "Open3D/Visualization/Rendering/CameraManipulator.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 #include "Open3D/Visualization/Rendering/View.h"
 
@@ -35,6 +36,7 @@ namespace gui {
 struct SceneWidget::Impl {
     visualization::Scene& scene;
     visualization::ViewHandle viewId;
+    std::unique_ptr<visualization::CameraManipulator> cameraManipulator;
 
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
@@ -42,6 +44,9 @@ struct SceneWidget::Impl {
 SceneWidget::SceneWidget(visualization::Scene& scene)
     : impl_(new Impl(scene)) {
     impl_->viewId = scene.AddView(0,0,1,1);
+
+    auto view = impl_->scene.GetView(impl_->viewId);
+    impl_->cameraManipulator = std::make_unique<visualization::CameraManipulator>(*view->GetCamera(), 1, 1);
 }
 
 SceneWidget::~SceneWidget() {
@@ -53,6 +58,8 @@ void SceneWidget::SetFrame(const Rect& f) {
 
     auto view = impl_->scene.GetView(impl_->viewId);
     view->SetViewport(f.x, f.y, f.width, f.height);
+
+    impl_->cameraManipulator->SetViewport(f.width, f.height);
 }
 
 bool SceneWidget::Is3D() const {
@@ -68,9 +75,8 @@ visualization::Scene* SceneWidget::GetScene() const {
     return &impl_->scene;
 }
 
-visualization::Camera* SceneWidget::GetCamera() const {
-    auto view = impl_->scene.GetView(impl_->viewId);
-    return view->GetCamera();
+visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {
+    return impl_->cameraManipulator.get();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
