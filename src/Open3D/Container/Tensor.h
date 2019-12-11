@@ -113,10 +113,12 @@ public:
                  other.GetDevice(),
                  other.GetBlob()) {}
 
-    /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`
+    /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`, resulting
+    /// in a "shallow" copy.
     Tensor& operator=(const Tensor& other) &;
 
-    /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`
+    /// Tensor assignment lvalue = rvalue, e.g. `tensor_a = tensor_b[0]`,
+    /// resulting in a "shallow" copy.
     Tensor& operator=(Tensor&& other) &;
 
     /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
@@ -158,12 +160,50 @@ public:
             scalar_t casted_v = static_cast<scalar_t>(v);
             Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
                        GetDtype(), GetDevice());
-            *this = tmp;
+            AsRvalue() = tmp;
         });
     }
 
-    /// Broadcast Tensor to a new broadcastable shape
+    /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
+
+    /// Expand Tensor to a new broadcastable shape, returns a new view.
+    ///
+    /// Tensors can be expanded to broadcastable shape by setting dimension of
+    /// size 1 to have stride 0, without allocating new memory.
+    Tensor Expand(const SizeVector& dst_shape) const;
+
+    /// Returns a tensor with the same data and number of elements as input, but
+    /// with the specified shape. When possible, the returned tensor will be a
+    /// view of input. Otherwise, it will be a copy.
+    ///
+    /// Contiguous inputs and inputs with compatible strides can be reshaped
+    /// without copying, but you should not depend on the copying vs. viewing
+    /// behavior.
+    ///
+    /// Ref: https://pytorch.org/docs/stable/tensors.html
+    ///      aten/src/ATen/native/TensorShape.cpp
+    ///      aten/src/ATen/TensorUtils.cpp
+    Tensor Reshape(const SizeVector& dst_shape) const;
+
+    /// Returns a new tensor view with the same data but of a different shape.
+    ///
+    /// The returned tensor shares the same data and must have the same number
+    /// of elements, but may have a different size. For a tensor to be viewed,
+    /// the new view size must be compatible with its original size and stride,
+    /// i.e., each new view dimension must either be a subspace of an original
+    /// dimension, or only span across original dimensions d, d+1, ...,
+    /// d+kd,d+1,…,d+k that satisfy the following contiguity-like condition that
+    /// for all i = 0, ..., k-1, strides[i] = stride[i + 1] * shape[i + 1].
+    ///
+    /// Otherwise, contiguous() needs to be called before the tensor can be
+    /// viewed. See also: reshape(), which returns a view if the shapes are
+    /// compatible, and copies (equivalent to calling contiguous()) otherwise.
+    ///
+    /// Ref: https://pytorch.org/docs/stable/tensors.html
+    ///      aten/src/ATen/native/TensorShape.cpp
+    ///      aten/src/ATen/TensorUtils.cpp
+    Tensor View(const SizeVector& dst_shape) const;
 
     /// Copy Tensor to a specified device
     /// The resulting Tensor will be compacted and contiguous
@@ -188,6 +228,15 @@ public:
                  int64_t start,
                  int64_t stop,
                  int64_t step = 1) const;
+
+    /// Convert to rvalue such that the Tensor can be assigned.
+    /// E.g. in numpy
+    /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
+    ///                         # now referecne tensor_b, that is, tensor_a
+    ///                         # and tensor_b share exactly the same memory.
+    /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
+    ///                         # assigned to tensor_a's memory.
+    Tensor AsRvalue() const { return *this; }
 
     /// \brief Advanced indexing getter
     ///
@@ -315,12 +364,28 @@ public:
 
     static SizeVector DefaultStrides(const SizeVector& shape);
 
+    /// On a high level,
+    /// 1. separate `oldshape` into chunks of dimensions, where the dimensions
+    /// are
+    ///    ``contiguous'' in each chunk, i.e., oldstride[i] = oldshape[i+1] *
+    ///     oldstride[i+1]
+    /// 2. `newshape` must be able to be separated into same number of chunks as
+    ///    `oldshape` was separated into, where each chunk of newshape has
+    ///    matching
+    ///    ``numel'', i.e., number of subspaces, as the corresponding chunk of
+    ///    `oldshape`.
+    /// Ref: aten/src/ATen/TensorUtils.cpp
+    static std::pair<bool, SizeVector> ComputeNewStrides(
+            const SizeVector& old_shape,
+            const SizeVector& old_strides,
+            const SizeVector& new_shape);
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
 protected:
     /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension i.
-    SizeVector shape_;
+    SizeVector shape_ = {};
 
     /// Stride of a Tensor.
     /// The stride of a n-dimensional tensor is also n-dimensional. Stride(i) is
@@ -328,10 +393,10 @@ protected:
     /// before eaching the next element in dimension i. For example, a 2x3x4
     /// float32 dense tensor has shape(2, 3, 4) and stride(12, 4, 1). A slicing
     /// operation performed on the tensor can change the shape and stride.
-    SizeVector strides_;
+    SizeVector strides_ = {};
 
     /// Data pointer points to the starting memory address in the blob
-    void* data_ptr_;
+    void* data_ptr_ = nullptr;
 
     /// Data type
     Dtype dtype_;
@@ -341,7 +406,7 @@ protected:
     Device device_;
 
     /// Underlying memory buffer for Tensor.
-    std::shared_ptr<Blob> blob_;
+    std::shared_ptr<Blob> blob_ = nullptr;
 };
 
 }  // namespace open3d

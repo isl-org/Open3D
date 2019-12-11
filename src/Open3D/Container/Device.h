@@ -57,6 +57,8 @@ public:
                this->device_id_ == other.device_id_;
     }
 
+    bool operator!=(const Device& other) const { return !operator==(other); }
+
     std::string ToString() const {
         std::string str = "";
         switch (device_type_) {
