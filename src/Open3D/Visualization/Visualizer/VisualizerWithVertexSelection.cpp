@@ -235,19 +235,8 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(
     points_in_rect_.clear();
 
     auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
-    if (renderer_ptr->AddGeometry(geometry_ptr_) == false) {
-        if (geometry_ptr_->GetGeometryType() == geometry::Geometry::GeometryType::TriangleMesh) {
-            auto *mesh = (geometry::TriangleMesh*)geometry_ptr_.get();
-            auto pointcloud = std::make_shared<geometry::PointCloud>();
-            pointcloud->points_ = mesh->vertices_;
-            pointcloud->normals_ = mesh->vertex_normals_;
-            pointcloud->colors_ = mesh->vertex_colors_;
-            if (renderer_ptr->AddGeometry(pointcloud) == false) {
-                return {};
-            }
-        } else {
-            return {};
-        }
+    if (renderer_ptr->AddGeometry(ui_points_geometry_ptr_) == false) {
+        return {};
     }
     const auto &view = GetViewControl();
     // Render to FBO and disable anti-aliasing
