@@ -29,7 +29,7 @@
 #include "RendererHandle.h"
 
 #include <Eigen/Geometry>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 
 namespace open3d {
 
