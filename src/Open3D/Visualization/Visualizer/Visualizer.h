@@ -34,6 +34,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <array>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -147,6 +148,10 @@ public:
     /// Function to set the redraw flag as dirty
     virtual void UpdateRender();
 
+    /// Functions to change between fullscreen and windowed modes
+    virtual void SetFullScreen(bool fullscreen);
+    virtual bool IsFullScreen();
+
     virtual void PrintVisualizerHelp();
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
@@ -206,6 +211,8 @@ protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
+    std::array<int, 2> saved_window_size_{0, 0};
+    std::array<int, 2> saved_window_pos_{0, 0};
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()

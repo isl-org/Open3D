@@ -89,6 +89,10 @@ void pybind_visualizer(py::module &m) {
                  "Function to update geometry")
             .def("update_renderer", &visualization::Visualizer::UpdateRender,
                  "Function to inform render needed to be updated")
+            .def("set_full_screen", &visualization::Visualizer::SetFullScreen,
+                 "Function to change between fullscreen and windowed")
+            .def("is_full_screen", &visualization::Visualizer::IsFullScreen,
+                 "Function to query whether in fullscreen mode")
             .def("poll_events", &visualization::Visualizer::PollEvents,
                  "Function to poll events")
             .def("add_geometry", &visualization::Visualizer::AddGeometry,
@@ -207,6 +211,10 @@ void pybind_visualizer(py::module &m) {
     docstring::ClassMethodDocInject(m, "Visualizer", "update_geometry",
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer", "update_renderer",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "set_full_screen",
+                                    map_visualizer_docstrings);
+    docstring::ClassMethodDocInject(m, "Visualizer", "is_full_screen",
                                     map_visualizer_docstrings);
 }
 

@@ -117,6 +117,15 @@ void Visualizer::KeyPressCallback(
     }
 
     switch (key) {
+        case GLFW_KEY_ENTER:
+            if (mods & GLFW_MOD_ALT) {
+                if (IsFullScreen()) {
+                    SetFullScreen(0);
+                } else {
+                    SetFullScreen(1);
+                };
+            }
+            break;
         case GLFW_KEY_LEFT_BRACKET:
             view_control_ptr_->ChangeFieldOfView(-1.0);
             utility::LogDebug("[Visualizer] Field of view set to {:.2f}.",
