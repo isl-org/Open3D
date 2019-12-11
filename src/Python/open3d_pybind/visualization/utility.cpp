@@ -205,6 +205,21 @@ void pybind_visualization_utility_methods(py::module &m) {
     docstring::FunctionDocInject(m, "draw_geometries_with_editing",
                                  map_shared_argument_docstrings);
 
+    m.def("draw_geometries_with_vertex_selection",
+          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                     &geometry_ptrs,
+             const std::string &window_name, int width, int height, int left,
+             int top) {
+              visualization::DrawGeometriesWithVertexSelection(
+                      geometry_ptrs, window_name, width, height, left, top);
+          },
+          "Function to draw a list of geometry::Geometry providing ability "
+          "for user to select points",
+          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+          "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    docstring::FunctionDocInject(m, "draw_geometries_with_vertex_selection",
+                                 map_shared_argument_docstrings);
+
     m.def("read_selection_polygon_volume",
           [](const std::string &filename) {
               visualization::SelectionPolygonVolume vol;

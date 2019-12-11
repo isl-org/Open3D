@@ -107,7 +107,7 @@ protected:
     std::shared_ptr<glsl::GeometryRenderer> ui_points_renderer_ptr_;
 
     std::unordered_map<int, Eigen::Vector3d> selected_points_;
-    std::shared_ptr<geometry::PointCloud> ui_selected_points_geometry_ptr;
+    std::shared_ptr<geometry::PointCloud> ui_selected_points_geometry_ptr_;
     std::shared_ptr<glsl::GeometryRenderer> ui_selected_points_renderer_ptr_;
 };
 

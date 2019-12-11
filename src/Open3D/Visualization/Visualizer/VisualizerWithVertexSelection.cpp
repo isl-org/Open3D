@@ -104,9 +104,9 @@ bool VisualizerWithVertexSelection::AddGeometry(
     ui_points_geometry_ptr_ = std::make_shared<geometry::PointCloud>();
     ui_points_renderer_ptr_ = std::make_shared<glsl::PointCloudRenderer>();
     ui_points_renderer_ptr_->AddGeometry(ui_points_geometry_ptr_);
-    ui_selected_points_geometry_ptr = std::make_shared<geometry::PointCloud>();
+    ui_selected_points_geometry_ptr_ = std::make_shared<geometry::PointCloud>();
     ui_selected_points_renderer_ptr_ = std::make_shared<glsl::PointCloudRenderer>();
-    ui_selected_points_renderer_ptr_->AddGeometry(ui_selected_points_geometry_ptr);
+    ui_selected_points_renderer_ptr_->AddGeometry(ui_selected_points_geometry_ptr_);
     utility_renderer_ptrs_.push_back(ui_selected_points_renderer_ptr_);
 
     utility_renderer_opts_[ui_points_renderer_ptr_].depthFunc_
@@ -407,8 +407,8 @@ void VisualizerWithVertexSelection::KeyPressCallback(
             break;
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
-                ui_selected_points_geometry_ptr->points_.clear();
-                ui_selected_points_geometry_ptr->PaintUniformColor(SELECTED_POINTS_COLOR);
+                ui_selected_points_geometry_ptr_->points_.clear();
+                ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
                 ui_selected_points_renderer_ptr_->UpdateGeometry();
                 is_redraw_required_ = true;
             } else {
@@ -571,8 +571,10 @@ void VisualizerWithVertexSelection::InvalidatePicking() {
 
 void VisualizerWithVertexSelection::ClearPickedPoints() {
     utility::LogInfo("Clearing all points from selection.");
-    ui_selected_points_geometry_ptr->points_.clear();
-    ui_selected_points_renderer_ptr_->UpdateGeometry();
+    if (ui_selected_points_geometry_ptr_) {
+        ui_selected_points_geometry_ptr_->points_.clear();
+        ui_selected_points_renderer_ptr_->UpdateGeometry();
+    }
 }
 
 void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indices) {
@@ -614,9 +616,9 @@ void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indic
         utility::LogInfo("Adding point #{:d} ({:.2}, {:.2}, {:.2}) to selection.",
                          index, point(0), point(1), point(2));
         selected_points_[index] = point;
-        ui_selected_points_geometry_ptr->points_.push_back(point);
+        ui_selected_points_geometry_ptr_->points_.push_back(point);
     }
-    ui_selected_points_geometry_ptr->PaintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 }
 
@@ -625,11 +627,11 @@ void VisualizerWithVertexSelection::RemovePickedPoints(const std::vector<int> in
         utility::LogInfo("Removing point #{:d} from selection.", index);
         selected_points_.erase(index);
     }
-    ui_selected_points_geometry_ptr->points_.clear();
+    ui_selected_points_geometry_ptr_->points_.clear();
     for (auto &kv : selected_points_) {
-        ui_selected_points_geometry_ptr->points_.push_back(kv.second);
+        ui_selected_points_geometry_ptr_->points_.push_back(kv.second);
     }
-    ui_selected_points_geometry_ptr->PaintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 }
 
