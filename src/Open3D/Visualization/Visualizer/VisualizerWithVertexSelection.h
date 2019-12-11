@@ -51,8 +51,10 @@ public:
 public:
     VisualizerWithVertexSelection() {}
     ~VisualizerWithVertexSelection() override {}
-    VisualizerWithVertexSelection(const VisualizerWithVertexSelection &) = delete;
-    VisualizerWithVertexSelection &operator=(const VisualizerWithVertexSelection &) = delete;
+    VisualizerWithVertexSelection(const VisualizerWithVertexSelection &) =
+            delete;
+    VisualizerWithVertexSelection &operator=(
+            const VisualizerWithVertexSelection &) = delete;
 
 public:
     bool AddGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr,
@@ -113,4 +115,3 @@ protected:
 
 }  // namespace visualization
 }  // namespace open3d
-
