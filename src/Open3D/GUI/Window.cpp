@@ -45,6 +45,10 @@
 #include <cmath>
 #include <vector>
 
+#ifdef WIN32
+    #include <SDL_syswm.h>
+#endif
+
 using namespace open3d::gui::util;
 
 // ----------------------------------------------------------------------------
@@ -144,7 +148,7 @@ Window::Window(const std::string& title, int width, int height)
 #ifdef WIN32
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(window->getSDLWindow(), &wmInfo);
+    SDL_GetWindowWMInfo(impl_->window, &wmInfo);
     io.ImeWindowHandle = wmInfo.info.win.window;
 #endif
     // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out

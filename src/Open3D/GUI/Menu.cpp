@@ -31,6 +31,7 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <unordered_map>

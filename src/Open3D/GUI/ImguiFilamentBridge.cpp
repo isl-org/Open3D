@@ -66,7 +66,9 @@ static std::string getIOErrorString(int errnoVal) {
         case EPERM:   return "Operation not permitted";
         case EACCES:  return "Access denied";
         case EAGAIN:  return "EAGAIN";
+#ifndef WIN32
         case EDQUOT:  return "Over quota";
+#endif
         case EEXIST:  return "File already exists";
         case EFAULT:  return "Bad filename pointer";
         case EINTR:   return "open() interrupted by a signal";
