@@ -82,7 +82,7 @@ void Visualizer::Render() {
     }
     for (const auto &renderer_ptr : utility_renderer_ptrs_) {
         RenderOption *opt = render_option_ptr_.get();
-        auto optIt = utility_renderer_opts_.find(renderer_ptr.get());
+        auto optIt = utility_renderer_opts_.find(renderer_ptr);
         if (optIt != utility_renderer_opts_.end()) {
             opt = &optIt->second;
         }

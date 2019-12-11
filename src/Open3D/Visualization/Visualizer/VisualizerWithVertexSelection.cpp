@@ -58,6 +58,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_in_ptr,
         bool reset_bounding_box) {
     if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
+        utility::LogInfo("VisualizerWithVertexSelection only supports one geometry");
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -77,7 +78,8 @@ bool VisualizerWithVertexSelection::AddGeometry(
                     std::make_shared<glsl::TriangleMeshRenderer>();
             break;
         case geometry::Geometry::GeometryType::TetraMesh:
-            return false;  // not sure how to render this
+            geometry_renderer_ptr_ = std::make_shared<glsl::TetraMeshRenderer>();
+            break;
         case geometry::Geometry::GeometryType::Image:
             geometry_renderer_ptr_ = std::make_shared<glsl::ImageRenderer>();
             break;
@@ -107,9 +109,9 @@ bool VisualizerWithVertexSelection::AddGeometry(
     ui_selected_points_renderer_ptr_->AddGeometry(ui_selected_points_geometry_ptr);
     utility_renderer_ptrs_.push_back(ui_selected_points_renderer_ptr_);
 
-    utility_renderer_opts_[ui_points_renderer_ptr_.get()].depthFunc_
+    utility_renderer_opts_[ui_points_renderer_ptr_].depthFunc_
         = RenderOption::DepthFunc::Less;
-    utility_renderer_opts_[ui_selected_points_renderer_ptr_.get()].depthFunc_
+    utility_renderer_opts_[ui_selected_points_renderer_ptr_].depthFunc_
         = RenderOption::DepthFunc::LEqual;
     SetPointSize(POINT_SIZE);
 
@@ -128,14 +130,14 @@ bool VisualizerWithVertexSelection::UpdateGeometry() {
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud:
         {
-            auto *points = (geometry::PointCloud*)geometry_ptr_.get();
-            ui_points_geometry_ptr_->points_ = points->points_;
-            ui_points_geometry_ptr_->normals_ = points->normals_;
+            auto cloud = std::static_pointer_cast<const geometry::PointCloud>(geometry_ptr_);
+            ui_points_geometry_ptr_->points_ = cloud->points_;
+            ui_points_geometry_ptr_->normals_ = cloud->normals_;
             break;
         }
         case geometry::Geometry::GeometryType::LineSet:
         {
-            auto *lines = (geometry::LineSet*)geometry_ptr_.get();
+            auto lines = std::static_pointer_cast<const geometry::LineSet>(geometry_ptr_);
             ui_points_geometry_ptr_->points_ = lines->points_;
             break;
         }
@@ -144,7 +146,7 @@ bool VisualizerWithVertexSelection::UpdateGeometry() {
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
         case geometry::Geometry::GeometryType::TetraMesh:
         {
-            auto *mesh = (geometry::MeshBase*)geometry_ptr_.get();
+            auto mesh = std::static_pointer_cast<const geometry::MeshBase>(geometry_ptr_);
             ui_points_geometry_ptr_->points_ = mesh->vertices_;
             ui_points_geometry_ptr_->normals_ = mesh->vertex_normals_;
             break;
@@ -186,9 +188,8 @@ void VisualizerWithVertexSelection::PrintVisualizerHelp() {
 void VisualizerWithVertexSelection::UpdateWindowTitle() {
     if (window_ != NULL) {
         auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
-        std::string new_window_title =
-                window_name_ + " - " + view_control.GetStatusString();
-        glfwSetWindowTitle(window_, new_window_title.c_str());
+        auto title = window_name_ + " - " + view_control.GetStatusString();
+        glfwSetWindowTitle(window_, title.c_str());
     }
 }
 
@@ -334,7 +335,7 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(
     return indices;
 }
 
-std::vector<int> VisualizerWithVertexSelection::GetPickedPoints() {
+std::vector<int> VisualizerWithVertexSelection::GetPickedPoints() const {
     std::vector<int> points;
     points.reserve(selected_points_.size());
     for (auto &kv : selected_points_) {
@@ -579,13 +580,13 @@ void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indic
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud:
         {
-            auto *cloud = (geometry::PointCloud*)geometry_ptr_.get();
+            auto cloud = std::static_pointer_cast<const geometry::PointCloud>(geometry_ptr_);
             points = &cloud->points_;
             break;
         }
         case geometry::Geometry::GeometryType::LineSet:
         {
-            auto *lines = (geometry::LineSet*)geometry_ptr_.get();
+            auto lines = std::static_pointer_cast<const geometry::LineSet>(geometry_ptr_);
             points = &lines->points_;
             break;
         }
@@ -594,7 +595,7 @@ void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indic
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
         case geometry::Geometry::GeometryType::TetraMesh:
         {
-            auto *mesh = (geometry::MeshBase*)geometry_ptr_.get();
+            auto mesh = std::static_pointer_cast<const geometry::MeshBase>(geometry_ptr_);
             points = &mesh->vertices_;
             break;
         }
@@ -635,9 +636,9 @@ void VisualizerWithVertexSelection::RemovePickedPoints(const std::vector<int> in
 void VisualizerWithVertexSelection::SetPointSize(double size) {
     size = std::max(size, MIN_POINT_SIZE);
     pick_point_opts_.SetPointSize(size);
-    auto *opt = &utility_renderer_opts_[ui_points_renderer_ptr_.get()];
+    auto *opt = &utility_renderer_opts_[ui_points_renderer_ptr_];
     opt->SetPointSize(size);
-    opt = &utility_renderer_opts_[ui_selected_points_renderer_ptr_.get()];
+    opt = &utility_renderer_opts_[ui_selected_points_renderer_ptr_];
     opt->SetPointSize(size);
 }
 

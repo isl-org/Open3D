@@ -240,7 +240,9 @@ protected:
 
     // utility renderers
     std::vector<std::shared_ptr<glsl::GeometryRenderer>> utility_renderer_ptrs_;
-    std::unordered_map<void*, RenderOption> utility_renderer_opts_;
+    // map's key is the renderer for which the RenderOption applies
+    // (should be something in utility_renderer_ptrs_)
+    std::unordered_map<std::shared_ptr<glsl::GeometryRenderer>, RenderOption> utility_renderer_opts_;
 
     // coordinate frame
     std::shared_ptr<geometry::TriangleMesh> coordinate_frame_mesh_ptr_;

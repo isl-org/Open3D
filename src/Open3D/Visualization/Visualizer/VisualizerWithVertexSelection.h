@@ -62,7 +62,7 @@ public:
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
     std::vector<int> PickPoints(double x, double y, double w, double h);
-    std::vector<int> GetPickedPoints();
+    std::vector<int> GetPickedPoints() const;
     void ClearPickedPoints();
     void SetPointSize(double size);
 
