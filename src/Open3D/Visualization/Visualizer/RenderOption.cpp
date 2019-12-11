@@ -254,14 +254,22 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
 
 int RenderOption::GetGLDepthFunc() const {
     switch (depthFunc_) {
-        case DepthFunc::Never:    return GL_NEVER;
-        case DepthFunc::Less:     return GL_LESS;
-        case DepthFunc::Equal:    return GL_EQUAL;
-        case DepthFunc::LEqual:   return GL_LEQUAL;
-        case DepthFunc::Greater:  return GL_GREATER;
-        case DepthFunc::NotEqual: return GL_NOTEQUAL;
-        case DepthFunc::GEqual:   return GL_GEQUAL;
-        case DepthFunc::Always:   return GL_ALWAYS;
+        case DepthFunc::Never:
+            return GL_NEVER;
+        case DepthFunc::Less:
+            return GL_LESS;
+        case DepthFunc::Equal:
+            return GL_EQUAL;
+        case DepthFunc::LEqual:
+            return GL_LEQUAL;
+        case DepthFunc::Greater:
+            return GL_GREATER;
+        case DepthFunc::NotEqual:
+            return GL_NOTEQUAL;
+        case DepthFunc::GEqual:
+            return GL_GEQUAL;
+        case DepthFunc::Always:
+            return GL_ALWAYS;
     }
 }
 

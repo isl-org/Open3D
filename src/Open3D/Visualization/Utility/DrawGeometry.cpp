@@ -233,7 +233,8 @@ bool DrawGeometriesWithVertexSelection(
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
             utility::LogWarning(
-                    "[DrawGeometriesWithVertexSelection] Failed adding geometry.");
+                    "[DrawGeometriesWithVertexSelection] Failed adding "
+                    "geometry.");
             utility::LogWarning(
                     "[DrawGeometriesWithVertexSelection] Possibly due to bad "
                     "geometry or wrong geometry type.");

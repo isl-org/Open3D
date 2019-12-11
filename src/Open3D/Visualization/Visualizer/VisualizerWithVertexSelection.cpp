@@ -47,12 +47,12 @@ namespace open3d {
 namespace visualization {
 
 namespace {
-    static const double POINT_SIZE = 9.0;
-    static const double MIN_POINT_SIZE = 3.0;
-    static const Eigen::Vector3d CHOOSE_POINTS_COLOR(1, 0, 1);
-    static const Eigen::Vector3d SELECTED_POINTS_COLOR(0, 1, 0);
-    static const int START_RECT_DIST = 3;
-}
+static const double POINT_SIZE = 9.0;
+static const double MIN_POINT_SIZE = 3.0;
+static const Eigen::Vector3d CHOOSE_POINTS_COLOR(1, 0, 1);
+static const Eigen::Vector3d SELECTED_POINTS_COLOR(0, 1, 0);
+static const int START_RECT_DIST = 3;
+}  // namespace
 
 bool VisualizerWithVertexSelection::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_in_ptr,
@@ -66,7 +66,8 @@ bool VisualizerWithVertexSelection::AddGeometry(
     geometry_ptr_ = geometry_in_ptr;
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud:
-            geometry_renderer_ptr_ = std::make_shared<glsl::PointCloudRenderer>();
+            geometry_renderer_ptr_ =
+                    std::make_shared<glsl::PointCloudRenderer>();
             break;
         case geometry::Geometry::GeometryType::LineSet:
             geometry_renderer_ptr_ = std::make_shared<glsl::LineSetRenderer>();
@@ -103,14 +104,16 @@ bool VisualizerWithVertexSelection::AddGeometry(
     ui_points_renderer_ptr_ = std::make_shared<glsl::PointCloudRenderer>();
     ui_points_renderer_ptr_->AddGeometry(ui_points_geometry_ptr_);
     ui_selected_points_geometry_ptr = std::make_shared<geometry::PointCloud>();
-    ui_selected_points_renderer_ptr_ = std::make_shared<glsl::PointCloudRenderer>();
-    ui_selected_points_renderer_ptr_->AddGeometry(ui_selected_points_geometry_ptr);
+    ui_selected_points_renderer_ptr_ =
+            std::make_shared<glsl::PointCloudRenderer>();
+    ui_selected_points_renderer_ptr_->AddGeometry(
+            ui_selected_points_geometry_ptr);
     utility_renderer_ptrs_.push_back(ui_selected_points_renderer_ptr_);
 
-    utility_renderer_opts_[ui_points_renderer_ptr_.get()].depthFunc_
-        = RenderOption::DepthFunc::Less;
-    utility_renderer_opts_[ui_selected_points_renderer_ptr_.get()].depthFunc_
-        = RenderOption::DepthFunc::LEqual;
+    utility_renderer_opts_[ui_points_renderer_ptr_.get()].depthFunc_ =
+            RenderOption::DepthFunc::Less;
+    utility_renderer_opts_[ui_selected_points_renderer_ptr_.get()].depthFunc_ =
+            RenderOption::DepthFunc::LEqual;
     SetPointSize(POINT_SIZE);
 
     if (reset_bounding_box) {
@@ -126,25 +129,22 @@ bool VisualizerWithVertexSelection::UpdateGeometry() {
     bool result = Visualizer::UpdateGeometry();
 
     switch (geometry_ptr_->GetGeometryType()) {
-        case geometry::Geometry::GeometryType::PointCloud:
-        {
-            auto *points = (geometry::PointCloud*)geometry_ptr_.get();
+        case geometry::Geometry::GeometryType::PointCloud: {
+            auto *points = (geometry::PointCloud *)geometry_ptr_.get();
             ui_points_geometry_ptr_->points_ = points->points_;
             ui_points_geometry_ptr_->normals_ = points->normals_;
             break;
         }
-        case geometry::Geometry::GeometryType::LineSet:
-        {
-            auto *lines = (geometry::LineSet*)geometry_ptr_.get();
+        case geometry::Geometry::GeometryType::LineSet: {
+            auto *lines = (geometry::LineSet *)geometry_ptr_.get();
             ui_points_geometry_ptr_->points_ = lines->points_;
             break;
         }
         case geometry::Geometry::GeometryType::MeshBase:
         case geometry::Geometry::GeometryType::TriangleMesh:
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
-        case geometry::Geometry::GeometryType::TetraMesh:
-        {
-            auto *mesh = (geometry::MeshBase*)geometry_ptr_.get();
+        case geometry::Geometry::GeometryType::TetraMesh: {
+            auto *mesh = (geometry::MeshBase *)geometry_ptr_.get();
             ui_points_geometry_ptr_->points_ = mesh->vertices_;
             ui_points_geometry_ptr_->normals_ = mesh->vertex_normals_;
             break;
@@ -229,15 +229,17 @@ void VisualizerWithVertexSelection::BuildUtilities() {
     }
 }
 
-std::vector<int> VisualizerWithVertexSelection::PickPoints(
-                                                double winX, double winY,
-                                                double w, double h) {
+std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
+                                                           double winY,
+                                                           double w,
+                                                           double h) {
     points_in_rect_.clear();
 
     auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
     if (renderer_ptr->AddGeometry(geometry_ptr_) == false) {
-        if (geometry_ptr_->GetGeometryType() == geometry::Geometry::GeometryType::TriangleMesh) {
-            auto *mesh = (geometry::TriangleMesh*)geometry_ptr_.get();
+        if (geometry_ptr_->GetGeometryType() ==
+            geometry::Geometry::GeometryType::TriangleMesh) {
+            auto *mesh = (geometry::TriangleMesh *)geometry_ptr_.get();
             auto pointcloud = std::make_shared<geometry::PointCloud>();
             pointcloud->points_ = mesh->vertices_;
             pointcloud->normals_ = mesh->vertex_normals_;
@@ -302,7 +304,8 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(
     // prevents points that are behind them being drawn for selection)
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     for (auto &renderer : geometry_renderer_ptrs_) {
-        if (renderer->GetGeometry()->GetGeometryType() == geometry::Geometry::GeometryType::TriangleMesh) {
+        if (renderer->GetGeometry()->GetGeometryType() ==
+            geometry::Geometry::GeometryType::TriangleMesh) {
             renderer->Render(GetRenderOption(), GetViewControl());
         }
     }
@@ -320,17 +323,17 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(
     int lowerLeftY = int(view.GetWindowHeight() - winY - height + 0.5);
     std::vector<uint8_t> rgba(4 * width * height, 0);
 
-    glReadPixels(lowerLeftX, lowerLeftY, width, height,
-                 GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+    glReadPixels(lowerLeftX, lowerLeftY, width, height, GL_RGBA,
+                 GL_UNSIGNED_BYTE, rgba.data());
     // Recover rendering state
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_MULTISAMPLE);
 
     std::unordered_set<int> indexSet;
-    for (int i = 0;  i < width * height;  ++i) {
+    for (int i = 0; i < width * height; ++i) {
         const uint8_t *rgbaPtr = rgba.data() + 4 * i;
-        int index = GLHelper::ColorCodeToPickIndex(
-                Eigen::Vector4i(rgbaPtr[0], rgbaPtr[1], rgbaPtr[2], rgbaPtr[3]));
+        int index = GLHelper::ColorCodeToPickIndex(Eigen::Vector4i(
+                rgbaPtr[0], rgbaPtr[1], rgbaPtr[2], rgbaPtr[3]));
         if (index >= 0) {
             indexSet.insert(index);
         }
@@ -367,7 +370,6 @@ bool VisualizerWithVertexSelection::InitRenderOption() {
     return true;
 }
 
-
 void VisualizerWithVertexSelection::WindowResizeCallback(GLFWwindow *window,
                                                          int w,
                                                          int h) {
@@ -386,17 +388,18 @@ void VisualizerWithVertexSelection::KeyPressCallback(
             is_redraw_required_ = true;
         } else if (action == GLFW_RELEASE) {
             InvalidateSelectionPolygon();
-            for (size_t i = 0;  i < utility_renderer_ptrs_.size();  ) {
+            for (size_t i = 0; i < utility_renderer_ptrs_.size();) {
                 if (utility_renderer_ptrs_[i] == ui_points_renderer_ptr_) {
-                    utility_renderer_ptrs_.erase(utility_renderer_ptrs_.begin() + i);
+                    utility_renderer_ptrs_.erase(
+                            utility_renderer_ptrs_.begin() + i);
                     is_redraw_required_ = true;
                 } else {
                     ++i;
                 }
             }
         }
-    } else if ((key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE)
-               && action == GLFW_RELEASE) {
+    } else if ((key == GLFW_KEY_DELETE || key == GLFW_KEY_BACKSPACE) &&
+               action == GLFW_RELEASE) {
         RemovePickedPoints(points_in_rect_);
         InvalidateSelectionPolygon();
         is_redraw_required_ = true;
@@ -418,7 +421,8 @@ void VisualizerWithVertexSelection::KeyPressCallback(
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
                 ui_selected_points_geometry_ptr->points_.clear();
-                ui_selected_points_geometry_ptr->PaintUniformColor(SELECTED_POINTS_COLOR);
+                ui_selected_points_geometry_ptr->PaintUniformColor(
+                        SELECTED_POINTS_COLOR);
                 ui_selected_points_renderer_ptr_->UpdateGeometry();
                 is_redraw_required_ = true;
             } else {
@@ -426,8 +430,7 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                                              mods);
             }
             break;
-        case GLFW_KEY_MINUS:
-        {
+        case GLFW_KEY_MINUS: {
             if (action == GLFW_PRESS) {
                 SetPointSize(pick_point_opts_.point_size_ - 1.0);
                 is_redraw_required_ = true;
@@ -437,8 +440,7 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                                              mods);
             }
         }
-        case GLFW_KEY_EQUAL:
-        {
+        case GLFW_KEY_EQUAL: {
             if (action == GLFW_PRESS) {
                 SetPointSize(pick_point_opts_.point_size_ + 1.0);
                 is_redraw_required_ = true;
@@ -466,9 +468,9 @@ void VisualizerWithVertexSelection::MouseMoveCallback(GLFWwindow *window,
         y /= pixel_to_screen_coordinate_;
 #endif
         double y_inv = view_control.GetWindowHeight() - y;
-        if (selection_mode_ == SelectionMode::Point
-            && std::abs(x - mouse_down_pos_.x()) > START_RECT_DIST
-            && std::abs(y - mouse_down_pos_.y()) > START_RECT_DIST) {
+        if (selection_mode_ == SelectionMode::Point &&
+            std::abs(x - mouse_down_pos_.x()) > START_RECT_DIST &&
+            std::abs(y - mouse_down_pos_.y()) > START_RECT_DIST) {
             InvalidateSelectionPolygon();
             selection_mode_ = SelectionMode::Rectangle;
             selection_polygon_ptr_->is_closed_ = true;
@@ -511,7 +513,7 @@ void VisualizerWithVertexSelection::MouseButtonCallback(GLFWwindow *window,
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         if (mods & GLFW_MOD_SHIFT) {
             selection_mode_ = SelectionMode::Point;
-            mouse_down_pos_= { x, y };
+            mouse_down_pos_ = {x, y};
         } else {
             Visualizer::MouseButtonCallback(window, button, action, mods);
         }
@@ -585,27 +587,25 @@ void VisualizerWithVertexSelection::ClearPickedPoints() {
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 }
 
-void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indices) {
+void VisualizerWithVertexSelection::AddPickedPoints(
+        const std::vector<int> indices) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry_ptr_->GetGeometryType()) {
-        case geometry::Geometry::GeometryType::PointCloud:
-        {
-            auto *cloud = (geometry::PointCloud*)geometry_ptr_.get();
+        case geometry::Geometry::GeometryType::PointCloud: {
+            auto *cloud = (geometry::PointCloud *)geometry_ptr_.get();
             points = &cloud->points_;
             break;
         }
-        case geometry::Geometry::GeometryType::LineSet:
-        {
-            auto *lines = (geometry::LineSet*)geometry_ptr_.get();
+        case geometry::Geometry::GeometryType::LineSet: {
+            auto *lines = (geometry::LineSet *)geometry_ptr_.get();
             points = &lines->points_;
             break;
         }
         case geometry::Geometry::GeometryType::MeshBase:
         case geometry::Geometry::GeometryType::TriangleMesh:
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
-        case geometry::Geometry::GeometryType::TetraMesh:
-        {
-            auto *mesh = (geometry::MeshBase*)geometry_ptr_.get();
+        case geometry::Geometry::GeometryType::TetraMesh: {
+            auto *mesh = (geometry::MeshBase *)geometry_ptr_.get();
             points = &mesh->vertices_;
             break;
         }
@@ -621,8 +621,9 @@ void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indic
 
     for (auto &index : indices) {
         const auto &point = (*points)[index];
-        utility::LogInfo("Adding point #{:d} ({:.2}, {:.2}, {:.2}) to selection.",
-                         index, point(0), point(1), point(2));
+        utility::LogInfo(
+                "Adding point #{:d} ({:.2}, {:.2}, {:.2}) to selection.", index,
+                point(0), point(1), point(2));
         selected_points_[index] = point;
         ui_selected_points_geometry_ptr->points_.push_back(point);
     }
@@ -630,7 +631,8 @@ void VisualizerWithVertexSelection::AddPickedPoints(const std::vector<int> indic
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 }
 
-void VisualizerWithVertexSelection::RemovePickedPoints(const std::vector<int> indices) {
+void VisualizerWithVertexSelection::RemovePickedPoints(
+        const std::vector<int> indices) {
     for (auto &index : indices) {
         utility::LogInfo("Removing point #{:d} from selection.", index);
         selected_points_.erase(index);
@@ -654,4 +656,3 @@ void VisualizerWithVertexSelection::SetPointSize(double size) {
 
 }  // namespace visualization
 }  // namespace open3d
-
