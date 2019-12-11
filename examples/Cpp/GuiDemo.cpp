@@ -28,6 +28,7 @@
 
 #include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
+#include "Open3D/Visualization/Rendering/CameraManipulator.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
@@ -246,10 +247,10 @@ public:
         const float near = 0.1f;
         const float far = 50.0f;
         const float fov = 90.0f;
-        sceneWidget_->GetCamera()->SetProjection(fov,
-                4.f/3.f, near, far,
-                visualization::Camera::HORIZONTAL_FOV);
-        sceneWidget_->GetCamera()->LookAt({0, 0, 5},   {10, 10, 10},   {0, 1, 0});
+        sceneWidget_->GetCameraManipulator()->SetFov(fov);
+        sceneWidget_->GetCameraManipulator()->SetNearPlane(near);
+        sceneWidget_->GetCameraManipulator()->SetFarPlane(far);
+        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 5},   {10, 10, 10});
 
         // Create light
         visualization::LightDescription lightDescription;
