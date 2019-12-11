@@ -30,6 +30,8 @@
 #include "Theme.h"
 #include "Window.h"
 
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+
 #include <SDL.h>
 
 #include <chrono>
@@ -204,6 +206,8 @@ Application::Application()
     impl_->theme.tabInactiveColor = impl_->theme.buttonColor;
     impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
     impl_->theme.tabActiveColor = impl_->theme.buttonActiveColor;
+
+    visualization::EngineInstance::SelectBackend(filament::backend::Backend::OPENGL);
 }
 
 Application::~Application() {

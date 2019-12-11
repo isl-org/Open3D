@@ -91,7 +91,9 @@ FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
 }
 
 FilamentResourceManager::~FilamentResourceManager()
-{}
+{
+    DestroyAll();
+}
 
 MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData, const size_t dataSize)
 {
@@ -175,13 +177,11 @@ std::weak_ptr<filament::IndexBuffer> FilamentResourceManager::GetIndexBuffer(con
 
 void FilamentResourceManager::DestroyAll()
 {
-#define DESTROY_BATCH(container) {for (const auto& pair : (container)) {engine.destroy(pair.second.get());} container.clear();}
-    DESTROY_BATCH(materials)
-    DESTROY_BATCH(materialInstances)
-    DESTROY_BATCH(textures)
-    DESTROY_BATCH(vertexBuffers)
-    DESTROY_BATCH(indexBuffers)
-#undef DESTROY_BATCH
+    materialInstances.clear();
+    materials.clear();
+    textures.clear();
+    vertexBuffers.clear();
+    indexBuffers.clear();
 }
 
 void FilamentResourceManager::Destroy(const REHandle_abstract& id)

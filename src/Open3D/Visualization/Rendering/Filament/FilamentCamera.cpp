@@ -47,28 +47,24 @@ FilamentCamera::~FilamentCamera()
     engine.destroy(camera);
 }
 
-void FilamentCamera::ChangeAspectRatio(const float aAspectRatio)
+void FilamentCamera::SetProjection(double fov, double aspect, double near, double far, eFovType fovType)
 {
-    aspectRatio = aAspectRatio;
-
-    SetProjection(fov, aspectRatio, near, far, direction);
-}
-
-void FilamentCamera::SetProjection(double aFov, double aspect, double aNear, double aFar, eFovType fovType)
-{
-    near = aNear;
-    far = aFar;
-    fov = aFov;
-    aspectRatio = aspect;
-    direction = fovType;
-
-    if (aspectRatio > 0.0) {
+    if (aspect > 0.0) {
         filament::Camera::Fov dir = (fovType == eFovType::HORIZONTAL_FOV)
                 ? filament::Camera::Fov::HORIZONTAL
                 : filament::Camera::Fov::VERTICAL;
 
-        camera->setProjection(fov, aspectRatio, near, far, dir);
+        camera->setProjection(fov, aspect, near, far, dir);
     }
+}
+
+void FilamentCamera::SetProjection(eProjection projection, double left, double right, double bottom, double top, double near, double far)
+{
+    filament::Camera::Projection proj = (projection == eProjection::ORTHO)
+            ? filament::Camera::Projection::ORTHO
+            : filament::Camera::Projection::PERSPECTIVE;
+
+    camera->setProjection(proj, left, right, bottom, top, near, far);
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center, const Eigen::Vector3f& eye, const Eigen::Vector3f& up)

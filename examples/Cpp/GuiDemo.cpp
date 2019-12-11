@@ -26,72 +26,49 @@
 
 #include "Open3D/Open3D.h"
 
+#include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
+#include "Open3D/Visualization/Rendering/RendererStructs.h"
+#include "Open3D/Visualization/Rendering/Scene.h"
+
+#if !defined(WIN32)
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+#include <fcntl.h>
+
 using namespace open3d;
 
 namespace {
 
-struct Geometry {
-    std::vector<float> vertices;
-    std::vector<float> normals;
-    std::vector<float> indices;
-
-    void AddVertex(float x, float y, float z) {
-        vertices.push_back(x);
-        vertices.push_back(y);
-        vertices.push_back(z);
-    }
-    void AddNormal(float x, float y, float z) {
-        normals.push_back(x);
-        normals.push_back(y);
-        normals.push_back(z);
-    }
-};
-
-enum SphereDetail { NORMAL = 40, MILLION = 1000, TEN_MILLION = 3162 };
-gui::Renderer::GeometryId createSphereGeometry(gui::Renderer& renderer,
-                                               SphereDetail detail = NORMAL) {
-    int N = int(detail);
-    float R = 1.0;
-    // We could use fewer vertices by reusing the north and south poles to
-    // be triangle fans, and reusing the vertices where the strips join at
-    // longitude 0, but that would make the code more complex, and this is
-    // just exploration code.
-    int nVerts = (N + 1) * (N + 1);
-    int nTris = 2 * N * N;
-
-    Geometry g;
-    g.vertices.reserve(3 * nVerts);
-    g.normals.reserve(3 * nVerts);
-    for (int y = 0;  y <= N;  ++y) {
-        for (int i = 0;  i <= N;  ++i) {
-            float lat = -M_PI / 2.0 + M_PI * (float(y) / float(N));
-            float lng = 2.0 * M_PI * (float(i) / float(N));
-            float x = std::cos(lng) * std::cos(lat);
-            float y = std::sin(lat);
-            float z = std::sin(lng) * std::cos(lat);
-            g.AddVertex(R * x, R * y, R * z);
-            g.AddNormal(x, y, z);
-        }
+static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::string *errorStr)
+{
+    bytes->clear();
+    if (errorStr) {
+        *errorStr = "";
     }
 
-    std::vector<uint32_t> indices;
-    indices.reserve(3 * nTris);
-    for (int y = 0;  y < N;  ++y) {
-        int latStartVIdx = y * (N + 1);
-        int nextLatStartVIdx = (y + 1) * (N + 1);
-        for (int i = 0;  i < N;  ++i) {
-            indices.push_back(latStartVIdx + i);
-            indices.push_back(nextLatStartVIdx + i);
-            indices.push_back(latStartVIdx + i + 1);
-
-            indices.push_back(latStartVIdx + i + 1);
-            indices.push_back(nextLatStartVIdx + i);
-            indices.push_back(nextLatStartVIdx + i + 1);
-        }
+    // Open file
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1) {
+//        if (errorStr) {
+//            *errorStr = getIOErrorString(errno);
+//        }
+        return false;
     }
 
-    return renderer.CreateGeometry(g.vertices, g.normals, indices,
-                                   gui::BoundingBox(0, 0, 0, R));
+    // Get file size
+    size_t filesize = (size_t)lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
+
+    // Read data
+    bytes->resize(filesize);
+    read(fd, bytes->data(), filesize);
+
+    // We're done, close and return
+    close(fd);
+    return true;
 }
 
 }
@@ -220,50 +197,81 @@ public:
         AddChild(rightPanel_);
 
         // Create materials
-        auto redPlastic = GetRenderer().CreateNonMetal(gui::Color(0.8, 0.0, 0.0),
-                                                       0.5f, // roughness
-                                                       1.0f, // clear coat
-                                                       0.3f);// clear coat roughness
+        visualization::MaterialHandle nonmetal;
 
-        auto blueCeramic = GetRenderer().CreateNonMetal(gui::Color(0.537, 0.812, 0.941),
-                                                        0.5f, 1.0f, 0.01f);
+        std::string errorStr;
+        std::vector<char> materialData;
+        std::string resourcePath = gui::Application::GetInstance().GetResourcePath();
 
-        auto green = GetRenderer().CreateNonMetal(gui::Color(0.537, 0.941, 0.6),
-                                                  0.25f, 0.0f, 0.01f);
+        if (!readBinaryFile(resourcePath + "/nonmetal.filamat", &materialData, &errorStr)) {
+            std::cout << "WARNING: Could not read non metal material" << "(" << errorStr << ")."
+                      << "Will use default material instead." << std::endl;
+        } else {
+            nonmetal = GetRenderer().AddMaterial(materialData.data(), materialData.size());
+        }
 
-        auto white = GetRenderer().CreateNonMetal(gui::Color(1.0, 1.0, 1.0),
-                                                       0.5f, // roughness
-                                                       1.0f, // clear coat
-                                                       0.3f);// clear coat roughness
+        auto redPlastic = GetRenderer().ModifyMaterial(nonmetal)
+                .SetColor("baseColor", {0.8, 0.0, 0.0})
+                .SetParameter("roughness", 0.5f)
+                .SetParameter("clearCoat", 1.f)
+                .SetParameter("clearCoatRoughness", 0.3f)
+                .Finish();
+
+        auto blueCeramic = GetRenderer().ModifyMaterial(nonmetal)
+                .SetColor("baseColor", {0.537, 0.812, 0.941})
+                .SetParameter("roughness", 0.5f)
+                .SetParameter("clearCoat", 1.f)
+                .SetParameter("clearCoatRoughness", 0.01f)
+                .Finish();
+
+        auto green = GetRenderer().ModifyMaterial(nonmetal)
+                .SetColor("baseColor", {0.537, 0.941, 0.6})
+                .SetParameter("roughness", 0.25f)
+                .SetParameter("clearCoat", 0.f)
+                .SetParameter("clearCoatRoughness", 0.01f)
+                .Finish();
+
+        auto white = GetRenderer().ModifyMaterial(nonmetal)
+                .SetColor("baseColor", {1.0, 1.0, 1.0})
+                .SetParameter("roughness", 0.5f)
+                .SetParameter("clearCoat", 1.f)
+                .SetParameter("clearCoatRoughness", 0.3f)
+                .Finish();
 
         // Create scene
-        scene_ = std::make_shared<gui::SceneWidget>(GetRenderer());
-        scene_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
+        auto sceneId = GetRenderer().CreateScene();
+        sceneWidget_ = std::make_shared<gui::SceneWidget>(*GetRenderer().GetScene(sceneId));
+        sceneWidget_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
 
         const float near = 0.1f;
         const float far = 50.0f;
         const float fov = 90.0f;
-        scene_->GetCamera().SetProjection(near, far, fov);
-        scene_->GetCamera().LookAt(0, 0, 5,   0, 0, 0,   0, 1, 0);
+        sceneWidget_->GetCamera()->SetProjection(fov,
+                4.f/3.f, near, far,
+                visualization::Camera::HORIZONTAL_FOV);
+        sceneWidget_->GetCamera()->LookAt({0, 0, 5},   {10, 10, 10},   {0, 1, 0});
 
-        auto sun = GetRenderer().CreateSunLight(-0.707, -.707, 0.0);
-        scene_->AddLight(sun);
+        // Create light
+        visualization::LightDescription lightDescription;
+        lightDescription.intensity = 100000;
+        lightDescription.direction = { -0.707, -.707, 0.0 };
+        lightDescription.customAttributes["custom_type"] = "SUN";
+
+        sceneWidget_->GetScene()->AddLight(lightDescription);
+
+        auto sphere = geometry::TriangleMesh::CreateSphere(2);
+        sphere->ComputeVertexNormals();
 
         // Add geometry
-        auto geometry = createSphereGeometry(GetRenderer(), NORMAL);
-        auto mesh = GetRenderer().CreateMesh(geometry, white);
-        scene_->AddMesh(mesh);
+        sceneWidget_->GetScene()->AddGeometry(*sphere, white);
+        sceneWidget_->GetScene()->AddGeometry(*sphere, redPlastic);
+        //sceneWidget_->AddMesh(mesh, 2, 0, 0);
+        sceneWidget_->GetScene()->AddGeometry(*sphere, green);
+        //sceneWidget_->AddMesh(mesh, 0, 2, 0);
+        sceneWidget_->GetScene()->AddGeometry(*sphere, blueCeramic);
+        //sceneWidget_->AddMesh(mesh, 0, 0, 2);
 
-        mesh = GetRenderer().CreateMesh(geometry, redPlastic);
-        scene_->AddMesh(mesh, 2, 0, 0);
-
-        mesh = GetRenderer().CreateMesh(geometry, green);
-        scene_->AddMesh(mesh, 0, 2, 0);
-
-        mesh = GetRenderer().CreateMesh(geometry, blueCeramic);
-        scene_->AddMesh(mesh, 0, 0, 2);
-
-        AddChild(scene_);
+        AddChild(sceneWidget_);
     }
 
     void OnMenuItem(gui::Menu::ItemId id) {
@@ -298,7 +306,7 @@ protected:
                             contentRect.height);
         rightPanel_->SetFrame(rightRect);
 
-        scene_->SetFrame(gui::Rect(leftRect.GetRight(), contentRect.y,
+        sceneWidget_->SetFrame(gui::Rect(leftRect.GetRight(), contentRect.y,
                                    rightRect.x - leftRect.GetRight(),
                                    contentRect.height));
 
@@ -316,7 +324,7 @@ private:
 
 private:
     std::shared_ptr<gui::Menu> menubar_;
-    std::shared_ptr<gui::SceneWidget> scene_;
+    std::shared_ptr<gui::SceneWidget> sceneWidget_;
     std::shared_ptr<gui::VGrid> toolGrid_;
     std::shared_ptr<gui::Vert> rightPanel_;
 };

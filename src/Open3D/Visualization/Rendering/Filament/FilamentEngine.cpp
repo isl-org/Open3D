@@ -24,34 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <cstddef> // <filament/Engine> recursive includes needs this, std::size_t especially
 
-#include "RendererHandle.h"
-#include "RendererEntitiesMods.h"
+#include "FilamentEngine.h"
+
+#include "FilamentResourceManager.h"
 
 namespace open3d {
 namespace visualization {
 
-class Scene;
-class Camera;
+filament::backend::Backend EngineInstance::backend = filament::backend::Backend::DEFAULT;
 
-class AbstractRenderInterface {
-public:
-    virtual ~AbstractRenderInterface() = default;
+void EngineInstance::SelectBackend(const filament::backend::Backend aBackend)
+{
+    backend = aBackend;
+}
 
-    virtual SceneHandle CreateScene() = 0;
-    virtual Scene* GetScene(const SceneHandle& id) const = 0;
-    virtual void DestroyScene(const SceneHandle& id) = 0;
+filament::Engine& EngineInstance::GetInstance()
+{
+    return *Get().engine;
+}
 
-    virtual void BeginFrame() = 0;
-    virtual void Draw() = 0;
-    virtual void EndFrame() = 0;
+FilamentResourceManager& EngineInstance::GetResourceManager()
+{
+    return *Get().resourceManager;
+}
 
-    // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData, size_t dataSize) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) = 0;
-};
+EngineInstance::~EngineInstance()
+{
+    resourceManager->DestroyAll();
+    delete resourceManager;
+    resourceManager = nullptr;
+
+    filament::Engine::destroy(engine);
+    engine = nullptr;
+}
+
+EngineInstance& EngineInstance::Get()
+{
+    static EngineInstance instance;
+    return instance;
+}
+
+EngineInstance::EngineInstance()
+{
+    engine = filament::Engine::create(backend);
+    resourceManager = new FilamentResourceManager(*engine);
+}
 
 }
 }

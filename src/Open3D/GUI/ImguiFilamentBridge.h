@@ -18,9 +18,7 @@
 
 #pragma once
 
-#include <vector>
-#include <functional>
-
+#include <cstddef>
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
 #include <filament/Material.h>
@@ -32,19 +30,23 @@
 struct ImDrawData;
 
 namespace open3d {
+
+namespace visualization
+{
+    class FilamentRenderer;
+}
+
 namespace gui {
 
 struct Size;
+class Window;
 
 // Translates ImGui's draw commands into Filament primitives, textures, vertex buffers, etc.
 // Creates a UI-specific Scene object and populates it with a Renderable. Does not handle
 // event processing; clients can simply call ImGui::GetIO() directly and set the mouse state.
 class ImguiFilamentBridge {
 public:
-    // Using std::function instead of a vanilla C callback to make it easy for clients to pass in
-    // lambdas that have captures.
-    using Callback = std::function<void(filament::Engine*)>;
-
+    ImguiFilamentBridge(visualization::FilamentRenderer* renderer, const Size& windowSize);
     // The constructor creates its own Scene and places it in the given View.
     ImguiFilamentBridge(filament::Engine* engine, filament::Scene* scene,
                         filament::Material *uiblitMaterial);
@@ -59,6 +61,8 @@ public:
     // rendering the View. This should be called on every frame, regardless of
     // whether the Renderer wants to skip or not.
     void update(ImDrawData *imguiData);
+
+    void onWindowResized(const Window& window);
 
 private:
     void createBuffers(size_t numRequiredBuffers);

@@ -26,28 +26,33 @@
 
 #include "SceneWidget.h"
 
+#include "Open3D/Visualization/Rendering/Scene.h"
+#include "Open3D/Visualization/Rendering/View.h"
+
 namespace open3d {
 namespace gui {
 
 struct SceneWidget::Impl {
-    RendererView view;
+    visualization::Scene& scene;
+    visualization::ViewHandle viewId;
 
-    Impl(Renderer& r, Renderer::ViewId viewId)
-        : view(r, viewId)
-    {}
+    explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
 
-SceneWidget::SceneWidget(Renderer& r)
-    : impl_(new SceneWidget::Impl(r, r.CreateView()))
-{
+SceneWidget::SceneWidget(visualization::Scene& scene)
+    : impl_(new Impl(scene)) {
+    impl_->viewId = scene.AddView(0,0,1,1);
 }
 
 SceneWidget::~SceneWidget() {
+    impl_->scene.RemoveView(impl_->viewId);
 }
 
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
-    impl_->view.SetViewport(f);
+
+    auto view = impl_->scene.GetView(impl_->viewId);
+    view->SetViewport(f.x, f.y, f.width, f.height);
 }
 
 bool SceneWidget::Is3D() const {
@@ -55,34 +60,20 @@ bool SceneWidget::Is3D() const {
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
-    impl_->view.SetClearColor(color);
+    auto view = impl_->scene.GetView(impl_->viewId);
+    view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
-RendererCamera& SceneWidget::GetCamera() {
-    return impl_->view.GetCamera();
+visualization::Scene* SceneWidget::GetScene() const {
+    return &impl_->scene;
 }
 
-void SceneWidget::AddLight(Renderer::LightId lightId) {
-    impl_->view.GetScene().AddLight(lightId);
-}
-
-void SceneWidget::RemoveLight(Renderer::LightId lightId) {
-    impl_->view.GetScene().RemoveLight(lightId);
-}
-
-void SceneWidget::AddMesh(Renderer::MeshId meshId,
-                          float x /*=0*/, float y /*=0*/, float z /*=0*/) {
-    Transform t;
-    t.Translate(x, y, z);
-    impl_->view.GetScene().AddMesh(meshId, t);
-}
-
-void SceneWidget::RemoveMesh(Renderer::MeshId meshId) {
-    impl_->view.GetScene().RemoveMesh(meshId);
+visualization::Camera* SceneWidget::GetCamera() const {
+    auto view = impl_->scene.GetView(impl_->viewId);
+    return view->GetCamera();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
-    impl_->view.Draw();
     return Widget::DrawResult::NONE;
 }
 

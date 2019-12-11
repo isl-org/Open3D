@@ -55,32 +55,38 @@ class FilamentView;
 class FilamentRenderer : public AbstractRenderInterface
 {
 public:
-    static void InitGlobal(void* nativeDrawable);
-    static void ShutdownGlobal();
-
-    explicit FilamentRenderer(void* nativeDrawable);
+    FilamentRenderer(filament::Engine& engine, void* nativeDrawable, FilamentResourceManager& resourceManager);
     ~FilamentRenderer() override;
 
     SceneHandle CreateScene() override;
     Scene* GetScene(const SceneHandle& id) const override;
     void DestroyScene(const SceneHandle& id) override;
 
+    void BeginFrame() override;
     void Draw() override;
+    void EndFrame() override;
 
     MaterialHandle AddMaterial(const void* materialData, size_t dataSize) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
 
+    // Removes scene from scenes list and draws it last
+    // WARNING: will destroy previous gui scene if there was any
+    void ConvertToGuiScene(const SceneHandle& id);
+    FilamentScene* GetGuiScene() const { return guiScene.get(); }
+
 private:
-    filament::Engine* engine = nullptr;
+    filament::Engine& engine;
     filament::Renderer* renderer = nullptr;
     filament::SwapChain* swapChain = nullptr;
 
     std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>> scenes;
+    std::unique_ptr<FilamentScene> guiScene;
 
-    // FIXME: Can't handle concurrent ModifyMaterial(...)
     std::unique_ptr<FilamentMaterialModifier> materialsModifier;
-    std::unique_ptr<FilamentResourceManager> resourcesManager;
+    FilamentResourceManager& resourceManager;
+
+    bool frameStarted = false;
 };
 
 }

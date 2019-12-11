@@ -27,6 +27,7 @@
 #include "Window.h"
 
 #include "Application.h"
+#include "ImguiFilamentBridge.h"
 #include "Menu.h"
 #include "Native.h"
 #include "Renderer.h"
@@ -34,8 +35,12 @@
 #include "Util.h"
 #include "Widget.h"
 
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+
 #include <imgui.h>
 #include <SDL.h>
+#include <filament/Engine.h>
 
 #include <cmath>
 #include <vector>
@@ -61,8 +66,9 @@ struct Window::Impl
 {
     SDL_Window *window = nullptr;
     Theme theme;  // so that the font size can be different based on scaling
-    Renderer *renderer;
+    visualization::FilamentRenderer *renderer;
     struct {
+        std::unique_ptr<ImguiFilamentBridge> imguiBridge = nullptr;
         ImGuiContext *context;
         ImFont *systemFont;  // is a reference; owned by imguiContext
         float scaling = 1.0;
@@ -90,11 +96,17 @@ Window::Window(const std::string& title, int width, int height)
     impl_->theme = Application::GetInstance().GetTheme();
     impl_->theme.fontSize *= GetScaling();
 
-    impl_->renderer = new Renderer(*this, impl_->theme);
+    auto& engineInstance = visualization::EngineInstance::GetInstance();
+    auto& resourceManager = visualization::EngineInstance::GetResourceManager();
+
+    impl_->renderer = new visualization::FilamentRenderer(engineInstance, GetNativeDrawable(), resourceManager);
 
     auto &theme = impl_->theme;  // shorter alias
     impl_->imgui.context = ImGui::CreateContext();
     ImGui::SetCurrentContext(impl_->imgui.context);
+
+    impl_->imgui.imguiBridge = std::make_unique<ImguiFilamentBridge>(impl_->renderer, GetSize());
+
     ImGui::StyleColorsDark();
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowPadding = ImVec2(0, 0);
@@ -122,9 +134,9 @@ Window::Window(const std::string& title, int width, int height)
         ImGuiIO &io = ImGui::GetIO();
         impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(theme.fontPath.c_str(), theme.fontSize);
         /*static*/ unsigned char* pixels;
-        int width, height, bytesPerPx;
-        io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height, &bytesPerPx);
-        impl_->renderer->AddFontTextureAtlasAlpha8(pixels, width, height, bytesPerPx);
+        int textureW, textureH, bytesPerPx;
+        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH, &bytesPerPx);
+        impl_->imgui.imguiBridge->createAtlasTextureAlpha8(pixels, textureW, textureH, bytesPerPx);
     }
 
     ImGuiIO& io = ImGui::GetIO();
@@ -187,7 +199,7 @@ const Theme& Window::GetTheme() const {
     return impl_->theme;
 }
 
-Renderer& Window::GetRenderer() {
+visualization::AbstractRenderInterface& Window::GetRenderer() const {
     return *impl_->renderer;
 }
 
@@ -368,7 +380,9 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     ImGui::Render(); // creates the draw data (i.e. Render()s to data)
 
     // Draw the ImGui commands
-    impl_->renderer->RenderImgui(ImGui::GetDrawData());
+    impl_->imgui.imguiBridge->update(ImGui::GetDrawData());
+
+    impl_->renderer->Draw();
 
     impl_->renderer->EndFrame();
 
@@ -376,6 +390,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     // redraw a second time. This helps prevent a brief red flash when the
     // window first appears, as well as corrupted images if the
     // window appears underneath the mouse.
+    // FIXME: Looks like hack
     if (impl_->needsLayout) {
         impl_->needsLayout = false;
         OnDraw(0.001);
@@ -386,7 +401,8 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
 void Window::OnResize() {
     impl_->needsLayout = true;
-    impl_->renderer->UpdateFromDrawable();
+
+    impl_->imgui.imguiBridge->onWindowResized(*this);
 
     auto size = GetSize();
     auto scaling = GetScaling();

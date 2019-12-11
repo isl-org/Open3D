@@ -31,6 +31,13 @@
 #include "Renderer.h"
 
 namespace open3d {
+
+namespace visualization
+{
+    class Scene;
+    class Camera;
+}
+
 namespace gui {
 
 class Color;
@@ -38,8 +45,8 @@ class Color;
 class SceneWidget : public Widget {
     using Super = Widget;
 public:
-    SceneWidget(Renderer& r);
-    virtual ~SceneWidget();
+    explicit SceneWidget(visualization::Scene& scene);
+    ~SceneWidget() override;
 
     void SetFrame(const Rect& f) override;
 
@@ -47,14 +54,8 @@ public:
 
     void SetBackgroundColor(const Color& color);
 
-    RendererCamera& GetCamera();
-
-    void AddLight(Renderer::LightId lightId);
-    void RemoveLight(Renderer::LightId lightId);
-
-    void AddMesh(Renderer::MeshId meshId,
-                 float x = 0, float y = 0, float z = 0);
-    void RemoveMesh(Renderer::MeshId meshId);
+    visualization::Scene* GetScene() const;
+    visualization::Camera* GetCamera() const;
 
     Widget::DrawResult Draw(const DrawContext& context) override;
 

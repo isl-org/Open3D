@@ -44,23 +44,15 @@ public:
     explicit FilamentCamera(filament::Engine& engine);
     ~FilamentCamera();
 
-    // Updates the projection.
-    void ChangeAspectRatio(float aspectRatio);
-
-    // Sets projection parameters.  If ResizeProjection() has been called
-    // before (that is, we know the size of our drawable), this will take
-    // effect immediately, otherwise it will be at the next (i.e. first)
-    // resize.
     void SetProjection(double fov, double aspect, double near, double far, eFovType fovType) override;
+
+    void SetProjection(eProjection projection, double left, double right,
+               double bottom, double top,
+               double near, double far) override;
 
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up) override;
-
-    double GetNear() const override { return near; }
-    double GetFar() const override { return far; }
-    double GetFoV() const override { return fov; }
-    double GetAspect() const override  { return aspectRatio; }
 
     Eigen::Vector3f GetPosition() override;
     Eigen::Vector3f GetForwardVector() override;
@@ -72,12 +64,6 @@ public:
 private:
     filament::Camera* camera = nullptr;
     filament::Engine& engine;
-
-    double near = 0.01f;
-    double far = 50.f;
-    double fov = -0.0; // Invalid
-    double aspectRatio = 90.f;
-    eFovType direction = eFovType::HORIZONTAL_FOV;
 };
 
 }
