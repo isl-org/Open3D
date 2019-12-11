@@ -171,21 +171,25 @@ void pybind_visualizer(py::module &m) {
     py::class_<visualization::VisualizerWithVertexSelection,
                PyVisualizer<visualization::VisualizerWithVertexSelection>,
                std::shared_ptr<visualization::VisualizerWithVertexSelection>>
-            visualizer_vselect(m, "VisualizerWithVertexSelection", visualizer,
-                               "Visualizer with vertex selection capabilities.");
-    py::detail::bind_default_constructor<visualization::VisualizerWithVertexSelection>(
-            visualizer_vselect);
+            visualizer_vselect(
+                    m, "VisualizerWithVertexSelection", visualizer,
+                    "Visualizer with vertex selection capabilities.");
+    py::detail::bind_default_constructor<
+            visualization::VisualizerWithVertexSelection>(visualizer_vselect);
     visualizer_vselect.def(py::init<>())
             .def("__repr__",
                  [](const visualization::VisualizerWithVertexSelection &vis) {
-                     return std::string("VisualizerWithVertexSelection with name ") +
+                     return std::string(
+                                    "VisualizerWithVertexSelection with "
+                                    "name ") +
                             vis.GetWindowName();
                  })
             .def("get_picked_points",
                  &visualization::VisualizerWithVertexSelection::GetPickedPoints,
                  "Function to get picked points")
             .def("clear_picked_points",
-                 &visualization::VisualizerWithVertexSelection::ClearPickedPoints,
+                 &visualization::VisualizerWithVertexSelection::
+                         ClearPickedPoints,
                  "Function to clear picked points");
 
     docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",

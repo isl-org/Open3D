@@ -58,7 +58,8 @@ bool VisualizerWithVertexSelection::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_in_ptr,
         bool reset_bounding_box) {
     if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
-        utility::LogInfo("VisualizerWithVertexSelection only supports one geometry");
+        utility::LogInfo(
+                "VisualizerWithVertexSelection only supports one geometry");
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -79,7 +80,8 @@ bool VisualizerWithVertexSelection::AddGeometry(
                     std::make_shared<glsl::TriangleMeshRenderer>();
             break;
         case geometry::Geometry::GeometryType::TetraMesh:
-            geometry_renderer_ptr_ = std::make_shared<glsl::TetraMeshRenderer>();
+            geometry_renderer_ptr_ =
+                    std::make_shared<glsl::TetraMeshRenderer>();
             break;
         case geometry::Geometry::GeometryType::Image:
             geometry_renderer_ptr_ = std::make_shared<glsl::ImageRenderer>();
@@ -131,25 +133,25 @@ bool VisualizerWithVertexSelection::UpdateGeometry() {
     bool result = Visualizer::UpdateGeometry();
 
     switch (geometry_ptr_->GetGeometryType()) {
-        case geometry::Geometry::GeometryType::PointCloud:
-        {
-            auto cloud = std::static_pointer_cast<const geometry::PointCloud>(geometry_ptr_);
+        case geometry::Geometry::GeometryType::PointCloud: {
+            auto cloud = std::static_pointer_cast<const geometry::PointCloud>(
+                    geometry_ptr_);
             ui_points_geometry_ptr_->points_ = cloud->points_;
             ui_points_geometry_ptr_->normals_ = cloud->normals_;
             break;
         }
-        case geometry::Geometry::GeometryType::LineSet:
-        {
-            auto lines = std::static_pointer_cast<const geometry::LineSet>(geometry_ptr_);
+        case geometry::Geometry::GeometryType::LineSet: {
+            auto lines = std::static_pointer_cast<const geometry::LineSet>(
+                    geometry_ptr_);
             ui_points_geometry_ptr_->points_ = lines->points_;
             break;
         }
         case geometry::Geometry::GeometryType::MeshBase:
         case geometry::Geometry::GeometryType::TriangleMesh:
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
-        case geometry::Geometry::GeometryType::TetraMesh:
-        {
-            auto mesh = std::static_pointer_cast<const geometry::MeshBase>(geometry_ptr_);
+        case geometry::Geometry::GeometryType::TetraMesh: {
+            auto mesh = std::static_pointer_cast<const geometry::MeshBase>(
+                    geometry_ptr_);
             ui_points_geometry_ptr_->points_ = mesh->vertices_;
             ui_points_geometry_ptr_->normals_ = mesh->vertex_normals_;
             break;
@@ -585,24 +587,24 @@ void VisualizerWithVertexSelection::AddPickedPoints(
         const std::vector<int> indices) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry_ptr_->GetGeometryType()) {
-        case geometry::Geometry::GeometryType::PointCloud:
-        {
-            auto cloud = std::static_pointer_cast<const geometry::PointCloud>(geometry_ptr_);
+        case geometry::Geometry::GeometryType::PointCloud: {
+            auto cloud = std::static_pointer_cast<const geometry::PointCloud>(
+                    geometry_ptr_);
             points = &cloud->points_;
             break;
         }
-        case geometry::Geometry::GeometryType::LineSet:
-        {
-            auto lines = std::static_pointer_cast<const geometry::LineSet>(geometry_ptr_);
+        case geometry::Geometry::GeometryType::LineSet: {
+            auto lines = std::static_pointer_cast<const geometry::LineSet>(
+                    geometry_ptr_);
             points = &lines->points_;
             break;
         }
         case geometry::Geometry::GeometryType::MeshBase:
         case geometry::Geometry::GeometryType::TriangleMesh:
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
-        case geometry::Geometry::GeometryType::TetraMesh:
-        {
-            auto mesh = std::static_pointer_cast<const geometry::MeshBase>(geometry_ptr_);
+        case geometry::Geometry::GeometryType::TetraMesh: {
+            auto mesh = std::static_pointer_cast<const geometry::MeshBase>(
+                    geometry_ptr_);
             points = &mesh->vertices_;
             break;
         }
