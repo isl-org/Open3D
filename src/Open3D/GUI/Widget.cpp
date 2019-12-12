@@ -64,10 +64,6 @@ void Widget::SetFrame(const Rect& f) {
     impl_->frame = f;
 }
 
-bool Widget::Is3D() const {
-    return false;
-}
-
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
 }

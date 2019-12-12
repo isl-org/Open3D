@@ -37,6 +37,7 @@ struct SceneWidget::Impl {
     visualization::Scene& scene;
     visualization::ViewHandle viewId;
     std::unique_ptr<visualization::CameraManipulator> cameraManipulator;
+    bool frameChanged = false;
 
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
@@ -56,14 +57,7 @@ SceneWidget::~SceneWidget() {
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
 
-    auto view = impl_->scene.GetView(impl_->viewId);
-    view->SetViewport(f.x, f.y, f.width, f.height);
-
-    impl_->cameraManipulator->SetViewport(f.width, f.height);
-}
-
-bool SceneWidget::Is3D() const {
-    return true;
+    impl_->frameChanged = true;
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
@@ -80,6 +74,21 @@ visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
+    if (impl_->frameChanged) {
+        impl_->frameChanged = false;
+
+        auto f = GetFrame();
+
+        // GUI have null of Y axis at top, but renderer have it at bottom
+        // so we need to convert coordinates
+        int y = context.screenHeight - (f.height + f.y);
+
+        auto view = impl_->scene.GetView(impl_->viewId);
+        view->SetViewport(f.x, y, f.width, f.height);
+
+        impl_->cameraManipulator->SetViewport(f.width, f.height);
+    }
+
     return Widget::DrawResult::NONE;
 }
 

@@ -40,6 +40,8 @@ struct DrawContext {
     const Theme& theme;
     int uiOffsetX;
     int uiOffsetY;
+    int screenWidth;
+    int screenHeight;
     int emPx;
 };
 
@@ -57,8 +59,6 @@ public:
 
     const Rect& GetFrame() const;
     virtual void SetFrame(const Rect& f);
-
-    virtual bool Is3D() const;
 
     static constexpr int DIM_GROW = 10000;
     virtual Size CalcPreferredSize(const Theme& theme) const;
