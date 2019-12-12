@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Visualizer/Visualizer.h"
-
 #include <unordered_map>
+
+#include "Open3D/Visualization/Visualizer/Visualizer.h"
 
 namespace open3d {
 
@@ -59,7 +59,8 @@ public:
 public:
     bool AddGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr,
                      bool reset_bounding_box = true) override;
-    bool UpdateGeometry() override;
+    bool UpdateGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr =
+                                nullptr) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;

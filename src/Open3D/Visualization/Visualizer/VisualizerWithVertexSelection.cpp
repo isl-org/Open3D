@@ -129,8 +129,9 @@ bool VisualizerWithVertexSelection::AddGeometry(
     return UpdateGeometry();
 }
 
-bool VisualizerWithVertexSelection::UpdateGeometry() {
-    bool result = Visualizer::UpdateGeometry();
+bool VisualizerWithVertexSelection::UpdateGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr /*= nullptr*/) {
+    bool result = Visualizer::UpdateGeometry(geometry_ptr);
 
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
