@@ -27,12 +27,16 @@ ExternalProject_Add(
 
 
 add_library(sdl2_combined INTERFACE)
-target_link_libraries(sdl2_combined INTERFACE SDL2$<$<CONFIG:Debug>:d>) #SDL2main$<$<CONFIG:Debug>:d>)
+if (WIN32)
+    target_link_libraries(sdl2_combined INTERFACE SDL2$<$<CONFIG:Debug>:d>) #SDL2main$<$<CONFIG:Debug>:d>)
+else ()
+    target_link_libraries(sdl2_combined INTERFACE SDL2) #SDL2main)
+endif()
 
 #target_include_directories(sdl2 SYSTEM INTERFACE
 #    ${3RDPARTY_INSTALL_PREFIX}/include/sdl2
 #)
 
-set(SDL2_LIBRARIES sdl2_combined)# SDL2$<$<CONFIG:Debug>:d>) #SDL2main$<$<CONFIG:Debug>:d>)
+set(SDL2_LIBRARIES sdl2_combined)
 
 add_dependencies(build_all_3rd_party_libs sdl2_combined)
