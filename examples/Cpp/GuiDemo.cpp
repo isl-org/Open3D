@@ -244,12 +244,9 @@ public:
         sceneWidget_ = std::make_shared<gui::SceneWidget>(*GetRenderer().GetScene(sceneId));
         sceneWidget_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
 
-        const float near = 0.1f;
-        const float far = 50.0f;
-        const float fov = 90.0f;
-        sceneWidget_->GetCameraManipulator()->SetFov(fov);
-        sceneWidget_->GetCameraManipulator()->SetNearPlane(near);
-        sceneWidget_->GetCameraManipulator()->SetFarPlane(far);
+        sceneWidget_->GetCameraManipulator()->SetFov(90.0f);
+        sceneWidget_->GetCameraManipulator()->SetNearPlane(0.1f);
+        sceneWidget_->GetCameraManipulator()->SetFarPlane(50.0f);
         sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 5},   {10, 10, 10});
 
         // Create light
