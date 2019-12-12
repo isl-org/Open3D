@@ -40,10 +40,8 @@ namespace filament
     class Viewport;
 }
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 class FilamentCamera;
 
@@ -52,19 +50,22 @@ public:
     FilamentView(filament::Engine& engine, filament::Scene& scene);
     ~FilamentView() override;
 
-    void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
+    void SetViewport(std::int32_t x,
+                     std::int32_t y,
+                     std::uint32_t w,
+                     std::uint32_t h) override;
     void SetClearColor(const Eigen::Vector3f& color) override;
 
     Camera* GetCamera() const override;
 
-    filament::View* GetNativeView() const { return view; }
+    filament::View* GetNativeView() const { return view_; }
 
 private:
-    std::unique_ptr<FilamentCamera> camera;
+    std::unique_ptr<FilamentCamera> camera_;
 
-    filament::Engine& engine;
-    filament::Scene& scene;
-    filament::View* view = nullptr;
+    filament::Engine& engine_;
+    filament::Scene& scene_;
+    filament::View* view_ = nullptr;
 };
 
 }

@@ -35,27 +35,28 @@ namespace filament
     class MaterialInstance;
 }
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
-class FilamentMaterialModifier : public MaterialModifier
-{
+class FilamentMaterialModifier : public MaterialModifier {
 public:
     FilamentMaterialModifier() = default;
 
     void Reset();
-    void InitWithMaterialInstance(std::shared_ptr<filament::MaterialInstance> materialInstance, const MaterialInstanceHandle& id);
+    void InitWithMaterialInstance(
+            std::shared_ptr<filament::MaterialInstance> materialInstance,
+            const MaterialInstanceHandle& id);
 
-    MaterialModifier& SetParameter(const char* parameter, const float& value) override;
-    MaterialModifier& SetColor(const char* parameter, const Eigen::Vector3f& value) override;
+    MaterialModifier& SetParameter(const char* parameter,
+                                   float value) override;
+    MaterialModifier& SetColor(const char* parameter,
+                               const Eigen::Vector3f& value) override;
 
     MaterialInstanceHandle Finish() override;
 
 private:
-    MaterialInstanceHandle currentHandle;
-    std::shared_ptr<filament::MaterialInstance> materialInstance;
+    MaterialInstanceHandle currentHandle_;
+    std::shared_ptr<filament::MaterialInstance> materialInstance_;
 };
 
 }

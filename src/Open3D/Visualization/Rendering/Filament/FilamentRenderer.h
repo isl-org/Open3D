@@ -42,20 +42,19 @@ namespace filament
     class VertexBuffer;
 }
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 class FilamentMaterialModifier;
 class FilamentResourceManager;
 class FilamentScene;
 class FilamentView;
 
-class FilamentRenderer : public AbstractRenderInterface
-{
+class FilamentRenderer : public AbstractRenderInterface {
 public:
-    FilamentRenderer(filament::Engine& engine, void* nativeDrawable, FilamentResourceManager& resourceManager);
+    FilamentRenderer(filament::Engine& engine,
+                     void* nativeDrawable,
+                     FilamentResourceManager& resourceManager);
     ~FilamentRenderer() override;
 
     SceneHandle CreateScene() override;
@@ -66,27 +65,29 @@ public:
     void Draw() override;
     void EndFrame() override;
 
-    MaterialHandle AddMaterial(const void* materialData, size_t dataSize) override;
+    MaterialHandle AddMaterial(const void* materialData,
+                               size_t dataSize) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
 
     // Removes scene from scenes list and draws it last
     // WARNING: will destroy previous gui scene if there was any
     void ConvertToGuiScene(const SceneHandle& id);
-    FilamentScene* GetGuiScene() const { return guiScene.get(); }
+    FilamentScene* GetGuiScene() const { return guiScene_.get(); }
 
 private:
-    filament::Engine& engine;
-    filament::Renderer* renderer = nullptr;
-    filament::SwapChain* swapChain = nullptr;
+    filament::Engine& engine_;
+    filament::Renderer* renderer_ = nullptr;
+    filament::SwapChain* swapChain_ = nullptr;
 
-    std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>> scenes;
-    std::unique_ptr<FilamentScene> guiScene;
+    std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>>
+            scenes_;
+    std::unique_ptr<FilamentScene> guiScene_;
 
-    std::unique_ptr<FilamentMaterialModifier> materialsModifier;
-    FilamentResourceManager& resourceManager;
+    std::unique_ptr<FilamentMaterialModifier> materialsModifier_;
+    FilamentResourceManager& resourceManager_;
 
-    bool frameStarted = false;
+    bool frameStarted_ = false;
 };
 
 }

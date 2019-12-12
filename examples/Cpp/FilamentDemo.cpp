@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     auto camera = view->GetCamera();
     camera->SetProjection(90, float(w)/float(h), 0.01, 1000,
-            visualization::Camera::eFovType::HORIZONTAL_FOV);
+            visualization::Camera::FovType::Horizontal);
     camera->LookAt({0, 0, 0},
                               {80, 80, 80},
                               {0, 1, 0});

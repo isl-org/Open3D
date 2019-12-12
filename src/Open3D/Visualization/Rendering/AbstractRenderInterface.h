@@ -48,9 +48,11 @@ public:
     virtual void EndFrame() = 0;
 
     // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData, size_t dataSize) = 0;
+    virtual MaterialHandle AddMaterial(const void* materialData,
+                                       size_t dataSize) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) = 0;
+    virtual MaterialModifier& ModifyMaterial(
+            const MaterialInstanceHandle& id) = 0;
 };
 
 }

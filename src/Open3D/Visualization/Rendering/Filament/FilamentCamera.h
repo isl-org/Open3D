@@ -34,21 +34,27 @@ namespace filament
     class Engine;
 }
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 class FilamentCamera : public Camera {
 public:
     explicit FilamentCamera(filament::Engine& engine);
     ~FilamentCamera();
 
-    void SetProjection(double fov, double aspect, double near, double far, eFovType fovType) override;
+    void SetProjection(double fov,
+                       double aspect,
+                       double near,
+                       double far,
+                       FovType fovType) override;
 
-    void SetProjection(eProjection projection, double left, double right,
-               double bottom, double top,
-               double near, double far) override;
+    void SetProjection(Projection projection,
+                       double left,
+                       double right,
+                       double bottom,
+                       double top,
+                       double near,
+                       double far) override;
 
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
@@ -59,11 +65,11 @@ public:
     Eigen::Vector3f GetLeftVector() override;
     Eigen::Vector3f GetUpVector() override;
 
-    filament::Camera* GetNativeCamera() const { return camera; }
+    filament::Camera* GetNativeCamera() const { return camera_; }
 
 private:
-    filament::Camera* camera = nullptr;
-    filament::Engine& engine;
+    filament::Camera* camera_ = nullptr;
+    filament::Engine& engine_;
 };
 
 }

@@ -34,7 +34,7 @@ namespace open3d {
 
 namespace visualization {
 
-enum class eEntityType : std::uint16_t {
+enum class EntityType : std::uint16_t {
     None = 0,
 
     View,
@@ -57,7 +57,7 @@ enum class eEntityType : std::uint16_t {
 // Can be used in STL containers as key
 struct REHandle_abstract {
     static const std::uint16_t kBadId = 0;
-    const eEntityType type = eEntityType::None;
+    const EntityType type = EntityType::None;
 
     inline size_t Hash() const {
         return static_cast<std::uint16_t>(type) << 16 | id;
@@ -71,19 +71,18 @@ struct REHandle_abstract {
         return Hash() < other.Hash();
     }
 
-    explicit operator bool() const {
-        return id != kBadId;
-    }
+    explicit operator bool() const { return id != kBadId; }
 
-    REHandle_abstract() : type(eEntityType::None), id(kBadId) {}
+    REHandle_abstract() : type(EntityType::None), id(kBadId) {}
 
     std::uint16_t GetId() const { return id; }
 
 protected:
-    REHandle_abstract(const eEntityType aType, const std::uint16_t aId)
+    REHandle_abstract(const EntityType aType, const std::uint16_t aId)
         : type(aType), id(aId) {}
 
-    static std::array<std::uint16_t, static_cast<size_t>(eEntityType::Count)> uid_table;
+    static std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
+            uid_table;
 
     std::uint16_t id = kBadId;
 };
@@ -92,7 +91,7 @@ std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid);
 
 // REHandle is used for specification of handle types to prevent
 // errors with passing, assigning or comparison of different kinds of handles
-template <eEntityType entityType>
+template <EntityType entityType>
 struct REHandle : public REHandle_abstract {
     static const REHandle kBad;
 
@@ -117,11 +116,9 @@ struct REHandle : public REHandle_abstract {
     }
 
     REHandle() : REHandle_abstract(entityType, REHandle_abstract::kBadId) {}
-    REHandle(const REHandle& other)
-        : REHandle_abstract(entityType, other.id)
-    {}
+    REHandle(const REHandle& other) : REHandle_abstract(entityType, other.id) {}
 
-    REHandle& operator=(const REHandle& other){
+    REHandle& operator=(const REHandle& other) {
         id = other.id;
         return *this;
     }
@@ -131,30 +128,29 @@ private:
         : REHandle_abstract(entityType, aId) {}
 };
 
-template <eEntityType entityType>
+template <EntityType entityType>
 const REHandle<entityType> REHandle<entityType>::kBad;
 
-typedef REHandle<eEntityType::View> ViewHandle;
-typedef REHandle<eEntityType::Scene> SceneHandle;
-typedef REHandle<eEntityType::Geometry> GeometryHandle;
-typedef REHandle<eEntityType::Light> LightHandle;
-typedef REHandle<eEntityType::Camera> CameraHandle;
-typedef REHandle<eEntityType::Material> MaterialHandle;
-typedef REHandle<eEntityType::MaterialInstance> MaterialInstanceHandle;
-typedef REHandle<eEntityType::Texture> TextureHandle;
-typedef REHandle<eEntityType::VertexBuffer> VertexBufferHandle;
-typedef REHandle<eEntityType::IndexBuffer> IndexBufferHandle;
+typedef REHandle<EntityType::View> ViewHandle;
+typedef REHandle<EntityType::Scene> SceneHandle;
+typedef REHandle<EntityType::Geometry> GeometryHandle;
+typedef REHandle<EntityType::Light> LightHandle;
+typedef REHandle<EntityType::Camera> CameraHandle;
+typedef REHandle<EntityType::Material> MaterialHandle;
+typedef REHandle<EntityType::MaterialInstance> MaterialInstanceHandle;
+typedef REHandle<EntityType::Texture> TextureHandle;
+typedef REHandle<EntityType::VertexBuffer> VertexBufferHandle;
+typedef REHandle<EntityType::IndexBuffer> IndexBufferHandle;
 
 }
 }
 
-namespace std
-{
-template<>
+namespace std {
+template <>
 class hash<open3d::visualization::REHandle_abstract> {
 public:
-    size_t operator()(const open3d::visualization::REHandle_abstract &uid) const
-    {
+    size_t operator()(
+            const open3d::visualization::REHandle_abstract& uid) const {
         return uid.Hash();
     }
 };

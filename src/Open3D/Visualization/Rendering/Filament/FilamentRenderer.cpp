@@ -38,116 +38,106 @@
 #include "FilamentScene.h"
 #include "FilamentView.h"
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
-FilamentRenderer::FilamentRenderer(filament::Engine& aEngine, void* nativeDrawable, FilamentResourceManager& aResourceManager)
-    : engine(aEngine)
-    , resourceManager(aResourceManager)
-{
-    swapChain = engine.createSwapChain(nativeDrawable);
-    renderer = engine.createRenderer();
+FilamentRenderer::FilamentRenderer(filament::Engine& aEngine,
+                                   void* nativeDrawable,
+                                   FilamentResourceManager& aResourceManager)
+    : engine_(aEngine), resourceManager_(aResourceManager) {
+    swapChain_ = engine_.createSwapChain(nativeDrawable);
+    renderer_ = engine_.createRenderer();
 
-    materialsModifier = std::make_unique<FilamentMaterialModifier>();
+    materialsModifier_ = std::make_unique<FilamentMaterialModifier>();
 }
 
-FilamentRenderer::~FilamentRenderer()
-{
-    scenes.clear();
+FilamentRenderer::~FilamentRenderer() {
+    scenes_.clear();
 
-    engine.destroy(renderer);
-    engine.destroy(swapChain);
+    engine_.destroy(renderer_);
+    engine_.destroy(swapChain_);
 }
 
-SceneHandle FilamentRenderer::CreateScene()
-{
+SceneHandle FilamentRenderer::CreateScene() {
     auto handle = SceneHandle::Next();
-    scenes[handle] = std::make_unique<FilamentScene>(engine, resourceManager);
+    scenes_[handle] = std::make_unique<FilamentScene>(engine_, resourceManager_);
 
     return handle;
 }
 
-Scene* FilamentRenderer::GetScene(const SceneHandle& id) const
-{
-    auto found = scenes.find(id);
-    if (found != scenes.end()) {
+Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
+    auto found = scenes_.find(id);
+    if (found != scenes_.end()) {
         return found->second.get();
     }
 
     return nullptr;
 }
 
-void FilamentRenderer::DestroyScene(const SceneHandle& id)
-{
-    scenes.erase(id);
+void FilamentRenderer::DestroyScene(const SceneHandle& id) { scenes_.erase(id); }
+
+void FilamentRenderer::BeginFrame() {
+    frameStarted_ = renderer_->beginFrame(swapChain_);
 }
 
-void FilamentRenderer::BeginFrame()
-{
-    frameStarted = renderer->beginFrame(swapChain);
-}
-
-void FilamentRenderer::Draw()
-{
-    if (frameStarted) {
-        for (const auto& pair : scenes) {
-            pair.second->Draw(*renderer);
+void FilamentRenderer::Draw() {
+    if (frameStarted_) {
+        for (const auto& pair : scenes_) {
+            pair.second->Draw(*renderer_);
         }
 
-        if (guiScene) {
-            guiScene->Draw(*renderer);
+        if (guiScene_) {
+            guiScene_->Draw(*renderer_);
         }
     }
 }
 
-void FilamentRenderer::EndFrame()
-{
-    if (frameStarted) {
-        renderer->endFrame();
+void FilamentRenderer::EndFrame() {
+    if (frameStarted_) {
+        renderer_->endFrame();
     }
 }
 
-MaterialHandle FilamentRenderer::AddMaterial(const void* materialData, const size_t dataSize)
-{
-    return resourceManager.CreateMaterial(materialData, dataSize);
+MaterialHandle FilamentRenderer::AddMaterial(const void* materialData,
+                                             const size_t dataSize) {
+    return resourceManager_.CreateMaterial(materialData, dataSize);
 }
 
-MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id)
-{
-    materialsModifier->Reset();
+MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
+    materialsModifier_->Reset();
 
-    auto instanceId = resourceManager.CreateMaterialInstance(id);
+    auto instanceId = resourceManager_.CreateMaterialInstance(id);
 
     if (instanceId) {
-        auto wMaterialInstance = resourceManager.GetMaterialInstance(instanceId);
-        materialsModifier->InitWithMaterialInstance(wMaterialInstance.lock(), instanceId);
+        auto wMaterialInstance =
+                resourceManager_.GetMaterialInstance(instanceId);
+        materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
+                                                    instanceId);
     }
 
-    return *materialsModifier;
+    return *materialsModifier_;
 }
 
-MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialInstanceHandle& id)
-{
-    materialsModifier->Reset();
+MaterialModifier& FilamentRenderer::ModifyMaterial(
+        const MaterialInstanceHandle& id) {
+    materialsModifier_->Reset();
 
-    auto wMaterialInstance = resourceManager.GetMaterialInstance(id);
+    auto wMaterialInstance = resourceManager_.GetMaterialInstance(id);
     if (!wMaterialInstance.expired()) {
-        materialsModifier->InitWithMaterialInstance(wMaterialInstance.lock(), id);
+        materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
+                                                    id);
     }
 
-    return *materialsModifier;
+    return *materialsModifier_;
 }
 
-void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id)
-{
-    auto found = scenes.find(id);
-    if (found != scenes.end()) {
-        //TODO: Warning on guiScene != nullptr
+void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
+    auto found = scenes_.find(id);
+    if (found != scenes_.end()) {
+        // TODO: Warning on guiScene != nullptr
 
-        guiScene = std::move(found->second);
-        scenes.erase(found);
+        guiScene_ = std::move(found->second);
+        scenes_.erase(found);
     }
 
     // TODO: assert

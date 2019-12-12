@@ -28,20 +28,20 @@
 
 #include <Eigen/Geometry>
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 class Scene;
 class Camera;
 
-class View
-{
+class View {
 public:
     virtual ~View() {}
 
-    virtual void SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) = 0;
+    virtual void SetViewport(std::int32_t x,
+                             std::int32_t y,
+                             std::uint32_t w,
+                             std::uint32_t h) = 0;
     virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
 
     virtual Camera* GetCamera() const = 0;

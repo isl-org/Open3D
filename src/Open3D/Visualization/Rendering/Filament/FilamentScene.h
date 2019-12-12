@@ -41,21 +41,23 @@ namespace filament
     class VertexBuffer;
 }
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 class FilamentResourceManager;
 class FilamentView;
 
-class FilamentScene : public Scene
-{
+class FilamentScene : public Scene {
 public:
-    FilamentScene(filament::Engine& engine, FilamentResourceManager& resourceManager);
+    FilamentScene(filament::Engine& engine,
+                  FilamentResourceManager& resourceManager);
     ~FilamentScene() override;
 
-    ViewHandle AddView(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h) override;
+    ViewHandle AddView(std::int32_t x,
+                       std::int32_t y,
+                       std::uint32_t w,
+                       std::uint32_t h) override;
+
     View* GetView(const ViewHandle& viewId) const override;
     void SetViewActive(const ViewHandle& viewId, bool isActive) override;
     void RemoveView(const ViewHandle& viewId) override;
@@ -63,42 +65,41 @@ public:
     GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) override;
-    void AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId);
+    void AssignMaterial(const GeometryHandle& geometryId,
+                        const MaterialInstanceHandle& materialId);
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
-    //LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) override;
     void RemoveLight(const LightHandle& id) override;
 
     void Draw(filament::Renderer& renderer);
 
-    filament::Scene* GetNativeScene() const { return scene; }
+    filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
-    struct AllocatedEntity
-    {
+    struct AllocatedEntity {
         utils::Entity self;
         VertexBufferHandle vb;
-        IndexBufferHandle  ib;
+        IndexBufferHandle ib;
     };
 
-    struct ViewContainer
-    {
+    struct ViewContainer {
         std::unique_ptr<FilamentView> view;
         bool isActive = true;
     };
 
-    filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner, size_t verticesCount);
+    filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner,
+                                                 size_t verticesCount);
 
     void RemoveEntity(REHandle_abstract id);
 
-    filament::Scene* scene = nullptr;
+    filament::Scene* scene_ = nullptr;
 
-    filament::Engine& engine;
-    FilamentResourceManager& resourceManager;
+    filament::Engine& engine_;
+    FilamentResourceManager& resourceManager_;
 
-    std::unordered_map<REHandle_abstract, ViewContainer> views;
-    std::unordered_map<REHandle_abstract, AllocatedEntity> entities;
+    std::unordered_map<REHandle_abstract, ViewContainer> views_;
+    std::unordered_map<REHandle_abstract, AllocatedEntity> entities_;
 };
 
 }

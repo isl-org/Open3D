@@ -28,15 +28,12 @@
 
 #include <Eigen/Geometry>
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 class Camera;
 
-class CameraManipulator
-{
+class CameraManipulator {
 public:
     CameraManipulator(Camera& camera, float viewportW, float viewportH);
 
@@ -45,9 +42,9 @@ public:
     void SetNearPlane(float near);
     void SetFarPlane(float far);
 
-    float GetFov() const { return fov; }
-    float GetNearPlane() const { return near; }
-    float GetFarPlane() const { return far; }
+    float GetFov() const { return fov_; }
+    float GetNearPlane() const { return near_; }
+    float GetFarPlane() const { return far_; }
 
     Eigen::Vector3f GetPosition();
     Eigen::Vector3f GetForwardVector();
@@ -61,13 +58,13 @@ public:
 private:
     void UpdateCameraProjection();
 
-    Camera& camera;
+    Camera& camera_;
 
-    float viewportW;
-    float viewportH;
-    float fov;
-    float near;
-    float far;
+    float viewportW_;
+    float viewportH_;
+    float fov_;
+    float near_;
+    float far_;
 };
 
 }

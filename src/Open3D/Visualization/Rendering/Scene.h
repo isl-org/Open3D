@@ -29,28 +29,26 @@
 #include "RendererHandle.h"
 #include "RendererStructs.h"
 
-namespace open3d
-{
+namespace open3d {
 
-namespace geometry
-{
-    class Geometry3D;
+namespace geometry {
+class Geometry3D;
 }
 
-namespace visualization
-{
+namespace visualization {
 
 class View;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
-class Scene
-{
+class Scene {
 public:
     virtual ~Scene() {}
 
-    virtual ViewHandle AddView(std::int32_t x, std::int32_t y,
-                                  std::uint32_t w, std::uint32_t h) = 0;
+    virtual ViewHandle AddView(std::int32_t x,
+                               std::int32_t y,
+                               std::uint32_t w,
+                               std::uint32_t h) = 0;
     virtual View* GetView(const ViewHandle& viewId) const = 0;
     virtual void SetViewActive(const ViewHandle& viewId, bool isActive) = 0;
     virtual void RemoveView(const ViewHandle& viewId) = 0;
@@ -61,7 +59,7 @@ public:
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
 
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
-    // virtual LightFluentInterface ModifyLight(const REHandle<eEntityType::Light>& id) = 0;
+    // virtual LightFluentInterface ModifyLight(const REHandle<EntityType::Light>& id) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
 };
 

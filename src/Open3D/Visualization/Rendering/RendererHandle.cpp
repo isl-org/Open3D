@@ -28,19 +28,20 @@
 
 #include <iostream>
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
-std::array<std::uint16_t, static_cast<size_t>(eEntityType::Count)> REHandle_abstract::uid_table;
+std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
+        REHandle_abstract::uid_table;
 
-std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid)
-{
-    static const std::array<std::string, static_cast<size_t>(eEntityType::Count)> types_mapping = {"None","Geometry","Light","Camera"};
+std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {
+    static const std::array<std::string,
+                            static_cast<size_t>(EntityType::Count)>
+            types_mapping = {"None", "Geometry", "Light", "Camera"};
     static std::hash<REHandle_abstract> hasher;
 
-    os << "["<< types_mapping[static_cast<size_t>(uid.type)] << ", " << uid.GetId() << ", hash: " << hasher(uid) << "]";
+    os << "[" << types_mapping[static_cast<size_t>(uid.type)] << ", "
+       << uid.GetId() << ", hash: " << hasher(uid) << "]";
     return os;
 }
 
