@@ -38,40 +38,40 @@ namespace visualization
 {
 
 FilamentView::FilamentView(filament::Engine& aEngine, filament::Scene& aScene)
-    : engine(aEngine)
-    , scene(aScene)
+    : engine_(aEngine)
+    , scene_(aScene)
 {
-    view = engine.createView();
-    view->setScene(&scene);
+    view_ = engine_.createView();
+    view_->setScene(&scene_);
 
-    camera = std::make_unique<FilamentCamera>(engine);
-    view->setCamera(camera->GetNativeCamera());
+    camera_ = std::make_unique<FilamentCamera>(engine_);
+    view_->setCamera(camera_->GetNativeCamera());
 
-    camera->SetProjection(90, 4.f/3.f, 0.01, 1000, Camera::eFovType::HORIZONTAL_FOV);
+    camera_->SetProjection(90, 4.f/3.f, 0.01, 1000, Camera::FovType::Horizontal);
 }
 
 FilamentView::~FilamentView()
 {
-    view->setCamera(nullptr);
-    view->setScene(nullptr);
+    view_->setCamera(nullptr);
+    view_->setScene(nullptr);
 
-    camera.reset();
-    engine.destroy(view);
+    camera_.reset();
+    engine_.destroy(view_);
 }
 
 void FilamentView::SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h)
 {
-    view->setViewport({x, y, w, h});
+    view_->setViewport({x, y, w, h});
 }
 
 void FilamentView::SetClearColor(const Eigen::Vector3f& color)
 {
-    view->setClearColor({color.x(), color.y(), color.z(), 1.f});
+    view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
 }
 
 Camera* FilamentView::GetCamera() const
 {
-    return camera.get();
+    return camera_.get();
 }
 
 }

@@ -37,85 +37,78 @@
 #include <filament/Scene.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
-static void freeBufferDescriptor(void* buffer, size_t, void*) {
-    free(buffer);
+static void freeBufferDescriptor(void* buffer, size_t, void*) { free(buffer); }
+
+FilamentScene::FilamentScene(filament::Engine& aEngine,
+                             FilamentResourceManager& aResourceManager)
+    : engine_(aEngine), resourceManager_(aResourceManager) {
+    scene_ = engine_.createScene();
 }
 
-FilamentScene::FilamentScene(filament::Engine& aEngine, FilamentResourceManager& aResourceManager)
-    : engine(aEngine)
-    , resourceManager(aResourceManager)
-{
-    scene = engine.createScene();
-}
-
-FilamentScene::~FilamentScene()
-{
-    for (const auto& pair : entities) {
+FilamentScene::~FilamentScene() {
+    for (const auto& pair : entities_) {
         const auto& allocatedEntity = pair.second;
 
         if (allocatedEntity.ib) {
-            resourceManager.Destroy(allocatedEntity.ib);
+            resourceManager_.Destroy(allocatedEntity.ib);
         }
         if (allocatedEntity.vb) {
-            resourceManager.Destroy(allocatedEntity.vb);
+            resourceManager_.Destroy(allocatedEntity.vb);
         }
 
-        engine.destroy(allocatedEntity.self);
+        engine_.destroy(allocatedEntity.self);
     }
 
-    views.clear();
+    views_.clear();
 
-    engine.destroy(scene);
+    engine_.destroy(scene_);
 }
 
-ViewHandle FilamentScene::AddView(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h)
-{
+ViewHandle FilamentScene::AddView(std::int32_t x,
+                                  std::int32_t y,
+                                  std::uint32_t w,
+                                  std::uint32_t h) {
     auto handle = ViewHandle::Next();
-    auto view = std::make_unique<FilamentView>(engine, *scene);
+    auto view = std::make_unique<FilamentView>(engine_, *scene_);
 
     view->SetViewport(x, y, w, h);
     ViewContainer c;
     c.view = std::move(view);
-    views.emplace(handle, std::move(c));
+    views_.emplace(handle, std::move(c));
 
     return handle;
 }
 
-View* FilamentScene::GetView(const ViewHandle& viewId) const
-{
-    auto found = views.find(viewId);
-    if (found != views.end()) {
+View* FilamentScene::GetView(const ViewHandle& viewId) const {
+    auto found = views_.find(viewId);
+    if (found != views_.end()) {
         return found->second.view.get();
     }
 
     return nullptr;
 }
 
-void FilamentScene::SetViewActive(const ViewHandle& viewId, bool isActive)
-{
-    auto found = views.find(viewId);
-    if (found != views.end()) {
+void FilamentScene::SetViewActive(const ViewHandle& viewId, bool isActive) {
+    auto found = views_.find(viewId);
+    if (found != views_.end()) {
         found->second.isActive = isActive;
     }
 }
 
-void FilamentScene::RemoveView(const ViewHandle& viewId)
-{
-    views.erase(viewId);
+void FilamentScene::RemoveView(const ViewHandle& viewId) {
+    views_.erase(viewId);
 }
 
-GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry, const MaterialInstanceHandle& materialId)
-{
+GeometryHandle FilamentScene::AddGeometry(
+        const geometry::Geometry3D& geometry,
+        const MaterialInstanceHandle& materialId) {
     using namespace geometry;
     using namespace filament;
 
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh)
-    {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         return GeometryHandle::kBad;
     }
 
@@ -127,17 +120,18 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry, 
     VertexBuffer* vbuf = AllocateVertexBuffer(entityEntry, nVertices);
 
     // Copying vertex coordinates
-    size_t coordsBytesCount = nVertices*3*sizeof(float);
-    auto *float3VCoord = (Eigen::Vector3f*)malloc(coordsBytesCount);
+    const size_t coordsBytesCount = nVertices * 3 * sizeof(float);
+    auto* float3VCoord = (Eigen::Vector3f*)malloc(coordsBytesCount);
     for (size_t i = 0; i < nVertices; ++i) {
         float3VCoord[i] = triangleMesh.vertices_[i].cast<float>();
     }
 
     // Moving copied vertex coordinates to VertexBuffer
     // malloc'ed memory will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor coordsDescriptor(float3VCoord, coordsBytesCount);
+    VertexBuffer::BufferDescriptor coordsDescriptor(float3VCoord,
+                                                    coordsBytesCount);
     coordsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine, 0, std::move(coordsDescriptor));
+    vbuf->setBufferAt(engine_, 0, std::move(coordsDescriptor));
 
     // Converting vertex normals to float base
     std::vector<Eigen::Vector3f> normals;
@@ -147,29 +141,31 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry, 
     }
 
     // Converting normals to Filament type - quaternions
-    size_t tangentsBytesCount = nVertices*4*sizeof(float);
-    auto *float4VTangents = (math::quatf*)malloc(tangentsBytesCount);
+    const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
+    auto* float4VTangents = (math::quatf*)malloc(tangentsBytesCount);
     auto orientation = filament::geometry::SurfaceOrientation::Builder()
-            .vertexCount(nVertices)
-            .normals((math::float3*)normals.data())
-            .build();
+                               .vertexCount(nVertices)
+                               .normals((math::float3*)normals.data())
+                               .build();
     orientation.getQuats(float4VTangents, nVertices);
 
     // Moving allocated tangents to VertexBuffer
     // they will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor tangentsDescriptor(float4VTangents, tangentsBytesCount);
+    VertexBuffer::BufferDescriptor tangentsDescriptor(float4VTangents,
+                                                      tangentsBytesCount);
     tangentsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine, 1, std::move(tangentsDescriptor));
+    vbuf->setBufferAt(engine_, 1, std::move(tangentsDescriptor));
 
     auto indexStride = sizeof(triangleMesh.triangles_[0][0]);
-    auto ibHandle = resourceManager.CreateIndexBuffer(triangleMesh.triangles_.size() * 3, indexStride);
+    auto ibHandle = resourceManager_.CreateIndexBuffer(
+            triangleMesh.triangles_.size() * 3, indexStride);
     entityEntry.ib = ibHandle;
 
-    auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
+    auto ibuf = resourceManager_.GetIndexBuffer(ibHandle).lock();
 
     // Copying indices data
-    size_t indicesCount = triangleMesh.triangles_.size()*3*indexStride;
-    auto *uint3Indices = (Eigen::Vector3i*)malloc(indicesCount);
+    const size_t indicesCount = triangleMesh.triangles_.size() * 3 * indexStride;
+    auto* uint3Indices = (Eigen::Vector3i*)malloc(indicesCount);
     for (size_t i = 0; i < triangleMesh.triangles_.size(); ++i) {
         uint3Indices[i] = triangleMesh.triangles_[i];
     }
@@ -178,7 +174,7 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry, 
     // they will be freed later with freeBufferDescriptor
     IndexBuffer::BufferDescriptor indicesDescriptor(uint3Indices, indicesCount);
     indicesDescriptor.setCallback(freeBufferDescriptor);
-    ibuf->setBuffer(engine, std::move(indicesDescriptor));
+    ibuf->setBuffer(engine_, std::move(indicesDescriptor));
 
     Box aabb;
     if (indexStride == sizeof(std::uint16_t)) {
@@ -193,48 +189,49 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry, 
 
     entityEntry.self = utils::EntityManager::get().create();
     RenderableManager::Builder builder(1);
-    builder
-            .boundingBox(aabb)
-            .geometry(0, RenderableManager::PrimitiveType::TRIANGLES, vbuf, ibuf.get())
+    builder.boundingBox(aabb)
+            .geometry(0, RenderableManager::PrimitiveType::TRIANGLES, vbuf,
+                      ibuf.get())
             .culling(false);
 
-    auto wMatInstance = resourceManager.GetMaterialInstance(materialId);
+    auto wMatInstance = resourceManager_.GetMaterialInstance(materialId);
     if (!wMatInstance.expired()) {
         builder.material(0, wMatInstance.lock().get());
     }
 
-    auto result = builder.build(engine, entityEntry.self);
+    auto result = builder.build(engine_, entityEntry.self);
 
     GeometryHandle handle;
     if (result == RenderableManager::Builder::Success) {
         handle = GeometryHandle::Next();
-        entities[handle] = entityEntry;
-        scene->addEntity(entityEntry.self);
+        entities_[handle] = entityEntry;
+        scene_->addEntity(entityEntry.self);
     }
 
     return handle;
 }
 
-void FilamentScene::AssignMaterial(const GeometryHandle& geometryId, const MaterialInstanceHandle& materialId)
-{
-    auto wMaterialInstance = resourceManager.GetMaterialInstance(materialId);
-    auto found = entities.find(geometryId);
-    if (found != entities.end() && false == wMaterialInstance.expired()) {
-        auto& renderableManger = engine.getRenderableManager();
-        filament::RenderableManager::Instance inst = renderableManger.getInstance(found->second.self);
-        renderableManger.setMaterialInstanceAt(inst, 0, wMaterialInstance.lock().get());
+void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
+                                   const MaterialInstanceHandle& materialId) {
+    auto wMaterialInstance = resourceManager_.GetMaterialInstance(materialId);
+    auto found = entities_.find(geometryId);
+    if (found != entities_.end() && false == wMaterialInstance.expired()) {
+        auto& renderableManger = engine_.getRenderableManager();
+        filament::RenderableManager::Instance inst =
+                renderableManger.getInstance(found->second.self);
+        renderableManger.setMaterialInstanceAt(inst, 0,
+                                               wMaterialInstance.lock().get());
     }
     // TODO: Log if failed
 }
 
-void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId)
-{
+void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
     RemoveEntity(geometryId);
 }
 
-LightHandle FilamentScene::AddLight(const LightDescription& descr)
-{
-    filament::LightManager::Type lightType = filament::LightManager::Type::POINT;
+LightHandle FilamentScene::AddLight(const LightDescription& descr) {
+    filament::LightManager::Type lightType =
+            filament::LightManager::Type::POINT;
     if (descr.customAttributes["custom_type"].isString()) {
         auto customType = descr.customAttributes["custom_type"];
         if (customType == "SUN") {
@@ -255,33 +252,31 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr)
     }
 
     auto light = utils::EntityManager::get().create();
-    auto result = filament::LightManager::Builder(lightType)
-            .direction({ descr.direction.x(), descr.direction.y(), descr.direction.z() })
-            .intensity(descr.intensity)
-            .falloff(descr.falloff)
-            .castShadows(descr.castShadows)
-            .color({descr.color.x(), descr.color.y(), descr.color.z()})
-            .spotLightCone(descr.lightConeInner, descr.lightConeOuter)
-            .build(engine, light);
+    auto result =
+            filament::LightManager::Builder(lightType)
+                    .direction({descr.direction.x(), descr.direction.y(),
+                                descr.direction.z()})
+                    .intensity(descr.intensity)
+                    .falloff(descr.falloff)
+                    .castShadows(descr.castShadows)
+                    .color({descr.color.x(), descr.color.y(), descr.color.z()})
+                    .spotLightCone(descr.lightConeInner, descr.lightConeOuter)
+                    .build(engine_, light);
 
     LightHandle handle;
     if (result == filament::LightManager::Builder::Success) {
         handle = LightHandle::Next();
-        entities[handle] = {light};
-        scene->addEntity(light);
+        entities_[handle] = {light};
+        scene_->addEntity(light);
     }
 
     return handle;
 }
 
-void FilamentScene::RemoveLight(const LightHandle& id)
-{
-    RemoveEntity(id);
-}
+void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
-void FilamentScene::Draw(filament::Renderer& renderer)
-{
-    for (const auto& pair : views) {
+void FilamentScene::Draw(filament::Renderer& renderer) {
+    for (const auto& pair : views_) {
         auto& container = pair.second;
         if (container.isActive) {
             renderer.render(container.view->GetNativeView());
@@ -289,37 +284,43 @@ void FilamentScene::Draw(filament::Renderer& renderer)
     }
 }
 
-filament::VertexBuffer* FilamentScene::AllocateVertexBuffer(FilamentScene::AllocatedEntity& owner, const size_t verticesCount)
-{
+filament::VertexBuffer* FilamentScene::AllocateVertexBuffer(
+        FilamentScene::AllocatedEntity& owner, const size_t verticesCount) {
     using namespace filament;
 
-    VertexBuffer* vbuf = VertexBuffer::Builder()
-            .bufferCount(2)
-            .vertexCount(verticesCount)
-            .normalized(VertexAttribute::TANGENTS)
-            .attribute(VertexAttribute::POSITION, 0, VertexBuffer::AttributeType::FLOAT3, 0)
-            .attribute(VertexAttribute::TANGENTS, 1, VertexBuffer::AttributeType::FLOAT4, 0)
-            .build(engine);
+    VertexBuffer* vbuf =
+            VertexBuffer::Builder()
+                    .bufferCount(2)
+                    .vertexCount(verticesCount)
+                    .normalized(VertexAttribute::TANGENTS)
+                    .attribute(VertexAttribute::POSITION, 0,
+                               VertexBuffer::AttributeType::FLOAT3, 0)
+                    .attribute(VertexAttribute::TANGENTS, 1,
+                               VertexBuffer::AttributeType::FLOAT4, 0)
+                    .build(engine_);
 
     if (vbuf) {
-        owner.vb = resourceManager.AddVertexBuffer(vbuf);
+        owner.vb = resourceManager_.AddVertexBuffer(vbuf);
     }
 
     return vbuf;
 }
 
-void FilamentScene::RemoveEntity(REHandle_abstract id)
-{
-    auto found = entities.find(id);
-    if (found != entities.end()) {
+void FilamentScene::RemoveEntity(REHandle_abstract id) {
+    auto found = entities_.find(id);
+    if (found != entities_.end()) {
         const auto& data = found->second;
-        scene->remove(data.self);
+        scene_->remove(data.self);
 
-        if (data.vb) { resourceManager.Destroy(data.vb); }
-        if (data.ib) { resourceManager.Destroy(data.ib); }
-        engine.destroy(data.self);
+        if (data.vb) {
+            resourceManager_.Destroy(data.vb);
+        }
+        if (data.ib) {
+            resourceManager_.Destroy(data.ib);
+        }
+        engine_.destroy(data.self);
 
-        entities.erase(found);
+        entities_.erase(found);
     }
 }
 

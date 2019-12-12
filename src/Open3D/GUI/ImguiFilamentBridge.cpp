@@ -328,7 +328,7 @@ void ImguiFilamentBridge::onWindowResized(const Window& window)
     impl_->view->SetViewport(0, 0, size.width, size.height);
 
     auto camera = impl_->view->GetCamera();
-    camera->SetProjection(visualization::Camera::ORTHO, 0.0, size.width,
+    camera->SetProjection(visualization::Camera::Projection::Ortho, 0.0, size.width,
                           size.height, 0.0, 0.0, 1.0);
 }
 

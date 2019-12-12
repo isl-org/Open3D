@@ -33,11 +33,12 @@
 namespace open3d {
 namespace visualization {
 
-class MaterialModifier
-{
+class MaterialModifier {
 public:
-    virtual MaterialModifier& SetParameter(const char* parameter, const float& value) = 0;
-    virtual MaterialModifier& SetColor(const char* parameter, const Eigen::Vector3f& value) = 0;
+    virtual MaterialModifier& SetParameter(const char* parameter,
+                                           float value) = 0;
+    virtual MaterialModifier& SetColor(const char* parameter,
+                                       const Eigen::Vector3f& value) = 0;
     virtual MaterialInstanceHandle Finish() = 0;
 };
 

@@ -28,82 +28,71 @@
 
 #include "Camera.h"
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
-CameraManipulator::CameraManipulator(Camera& aCamera, const float w, const float h)
-    : camera(aCamera)
-    , viewportW(w)
-    , viewportH(h)
-    , fov(90.f)
-    , near(0.01f)
-    , far(100.f)
-{
+CameraManipulator::CameraManipulator(Camera& aCamera,
+                                     const float w,
+                                     const float h)
+    : camera_(aCamera),
+      viewportW_(w),
+      viewportH_(h),
+      fov_(90.f),
+      near_(0.01f),
+      far_(100.f) {
     UpdateCameraProjection();
 }
 
-void CameraManipulator::SetViewport(const float w, const float h)
-{
-    viewportW = w;
-    viewportH = h;
-
-    UpdateCameraProjection();
-}
-
-void CameraManipulator::SetFov(const float aFov)
-{
-    fov = aFov;
+void CameraManipulator::SetViewport(const float w, const float h) {
+    viewportW_ = w;
+    viewportH_ = h;
 
     UpdateCameraProjection();
 }
 
-void CameraManipulator::SetNearPlane(const float aNear)
-{
-    near = aNear;
+void CameraManipulator::SetFov(const float aFov) {
+    fov_ = aFov;
 
     UpdateCameraProjection();
 }
 
-void CameraManipulator::SetFarPlane(const float aFar)
-{
-    far = aFar;
+void CameraManipulator::SetNearPlane(const float aNear) {
+    near_ = aNear;
 
     UpdateCameraProjection();
 }
 
-Eigen::Vector3f CameraManipulator::GetPosition()
-{
-    return camera.GetPosition();
+void CameraManipulator::SetFarPlane(const float aFar) {
+    far_ = aFar;
+
+    UpdateCameraProjection();
 }
 
-Eigen::Vector3f CameraManipulator::GetForwardVector()
-{
-    return camera.GetForwardVector();
+Eigen::Vector3f CameraManipulator::GetPosition() {
+    return camera_.GetPosition();
 }
 
-Eigen::Vector3f CameraManipulator::GetLeftVector()
-{
-    return camera.GetLeftVector();
+Eigen::Vector3f CameraManipulator::GetForwardVector() {
+    return camera_.GetForwardVector();
 }
 
-Eigen::Vector3f CameraManipulator::GetUpVector()
-{
-    return camera.GetUpVector();
+Eigen::Vector3f CameraManipulator::GetLeftVector() {
+    return camera_.GetLeftVector();
+}
+
+Eigen::Vector3f CameraManipulator::GetUpVector() {
+    return camera_.GetUpVector();
 }
 
 void CameraManipulator::LookAt(const Eigen::Vector3f& center,
-            const Eigen::Vector3f& eye,
-            const Eigen::Vector3f& up /*= {0, 1.f, 0.f}*/)
-{
-    camera.LookAt(center, eye, up);
+                               const Eigen::Vector3f& eye,
+                               const Eigen::Vector3f& up /*= {0, 1.f, 0.f}*/) {
+    camera_.LookAt(center, eye, up);
 }
 
-void CameraManipulator::UpdateCameraProjection()
-{
-    float aspect = viewportW/viewportH;
-    camera.SetProjection(fov, aspect, near, far, Camera::VERTICAL_FOV);
+void CameraManipulator::UpdateCameraProjection() {
+    const float aspect = viewportW_ / viewportH_;
+    camera_.SetProjection(fov_, aspect, near_, far_, Camera::FovType::Vertical);
 }
 
 }

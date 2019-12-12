@@ -33,43 +33,36 @@
 namespace open3d {
 namespace visualization {
 
-filament::backend::Backend EngineInstance::backend = filament::backend::Backend::DEFAULT;
+filament::backend::Backend EngineInstance::backend_ =
+        filament::backend::Backend::DEFAULT;
 
-void EngineInstance::SelectBackend(const filament::backend::Backend aBackend)
-{
-    backend = aBackend;
+void EngineInstance::SelectBackend(const filament::backend::Backend aBackend) {
+    backend_ = aBackend;
 }
 
-filament::Engine& EngineInstance::GetInstance()
-{
-    return *Get().engine;
+filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
+
+FilamentResourceManager& EngineInstance::GetResourceManager() {
+    return *Get().resourceManager_;
 }
 
-FilamentResourceManager& EngineInstance::GetResourceManager()
-{
-    return *Get().resourceManager;
+EngineInstance::~EngineInstance() {
+    resourceManager_->DestroyAll();
+    delete resourceManager_;
+    resourceManager_ = nullptr;
+
+    filament::Engine::destroy(engine_);
+    engine_ = nullptr;
 }
 
-EngineInstance::~EngineInstance()
-{
-    resourceManager->DestroyAll();
-    delete resourceManager;
-    resourceManager = nullptr;
-
-    filament::Engine::destroy(engine);
-    engine = nullptr;
-}
-
-EngineInstance& EngineInstance::Get()
-{
+EngineInstance& EngineInstance::Get() {
     static EngineInstance instance;
     return instance;
 }
 
-EngineInstance::EngineInstance()
-{
-    engine = filament::Engine::create(backend);
-    resourceManager = new FilamentResourceManager(*engine);
+EngineInstance::EngineInstance() {
+    engine_ = filament::Engine::create(backend_);
+    resourceManager_ = new FilamentResourceManager(*engine_);
 }
 
 }

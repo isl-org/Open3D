@@ -41,49 +41,50 @@ namespace filament
     class VertexBuffer;
 }
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 // Centralized storage of allocated resources.
 // Used for convenient access from various components of render.
 // Owns all added resources.
-class FilamentResourceManager
-{
+class FilamentResourceManager {
 public:
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
 
-    MaterialHandle CreateMaterial(const void* materialData, const size_t dataSize);
+    MaterialHandle CreateMaterial(const void* materialData, size_t dataSize);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
     TextureHandle CreateTexture(/*TBD*/);
-    // Since rendering uses not all Open3D geometry/filament features, I'm not sure
-    // which arguments should CreateVB(...) function have. Thus creation of VB is
-    // managed by FilamentScene class
+    // Since rendering uses not all Open3D geometry/filament features, I'm not sure which arguments should CreateVB(...) function have. Thus creation of VB is managed by FilamentScene class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
-    IndexBufferHandle CreateIndexBuffer(size_t indicesCount, size_t indexStride);
+    IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
+                                        size_t indexStride);
 
     std::weak_ptr<filament::Material> GetMaterial(const MaterialHandle& id);
-    std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(const MaterialInstanceHandle& id);
+    std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(
+            const MaterialInstanceHandle& id);
     std::weak_ptr<filament::Texture> GetTexture(const TextureHandle& id);
-    std::weak_ptr<filament::VertexBuffer> GetVertexBuffer(const VertexBufferHandle& id);
-    std::weak_ptr<filament::IndexBuffer> GetIndexBuffer(const IndexBufferHandle& id);
+    std::weak_ptr<filament::VertexBuffer> GetVertexBuffer(
+            const VertexBufferHandle& id);
+    std::weak_ptr<filament::IndexBuffer> GetIndexBuffer(
+            const IndexBufferHandle& id);
 
     void DestroyAll();
     void Destroy(const REHandle_abstract& id);
 
 private:
-    filament::Engine& engine;
+    filament::Engine& engine_;
 
     template <class ResourceType>
-    using ResourcesContainer = std::unordered_map<REHandle_abstract, std::shared_ptr<ResourceType>>;
+    using ResourcesContainer =
+            std::unordered_map<REHandle_abstract,
+                               std::shared_ptr<ResourceType>>;
 
-    ResourcesContainer<filament::MaterialInstance> materialInstances;
-    ResourcesContainer<filament::Material> materials;
-    ResourcesContainer<filament::Texture> textures;
-    ResourcesContainer<filament::VertexBuffer> vertexBuffers;
-    ResourcesContainer<filament::IndexBuffer> indexBuffers;
+    ResourcesContainer<filament::MaterialInstance> materialInstances_;
+    ResourcesContainer<filament::Material> materials_;
+    ResourcesContainer<filament::Texture> textures_;
+    ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
+    ResourcesContainer<filament::IndexBuffer> indexBuffers_;
 };
 
 }

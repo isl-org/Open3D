@@ -50,9 +50,9 @@ private:
 
     EngineInstance();
 
-    static filament::backend::Backend backend;
-    filament::Engine* engine;
-    FilamentResourceManager* resourceManager;
+    static filament::backend::Backend backend_;
+    filament::Engine* engine_;
+    FilamentResourceManager* resourceManager_;
 };
 
 }

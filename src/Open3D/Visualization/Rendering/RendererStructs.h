@@ -31,30 +31,16 @@
 #include <Eigen/Geometry>
 #include <jsoncpp/json/json.h>
 
-namespace open3d
-{
+namespace open3d {
 
-namespace geometry
-{
+namespace geometry {
     class Geometry3D;
 }
 
-namespace visualization
-{
+namespace visualization {
 
-struct GeometryDescription
-{
-    const geometry::Geometry3D& geometry;
-    const REHandle<eEntityType::Material> materialId;
-};
-
-struct LightDescription
-{
-    enum eLightType {
-        POINT,
-        SPOT,
-        DIRECTIONAL
-    };
+struct LightDescription {
+    enum eLightType { POINT, SPOT, DIRECTIONAL };
 
     eLightType type;
     float intensity;
@@ -70,20 +56,14 @@ struct LightDescription
     Json::Value customAttributes;
 
     LightDescription()
-        : type(POINT)
-        , intensity(10000)
-        , falloff(10)
-        , lightConeInner(M_PI/4)
-        , lightConeOuter(M_PI/2)
-        , color(1.f, 1.f, 1.f)
-        , direction(0.f, 0.f, -1.f)
-        , castShadows(true)
-    {}
-};
-
-struct CameraDescription
-{
-
+        : type(POINT),
+          intensity(10000),
+          falloff(10),
+          lightConeInner(M_PI / 4),
+          lightConeOuter(M_PI / 2),
+          color(1.f, 1.f, 1.f),
+          direction(0.f, 0.f, -1.f),
+          castShadows(true) {}
 };
 
 }

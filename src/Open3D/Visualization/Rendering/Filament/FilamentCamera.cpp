@@ -31,73 +31,68 @@
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
-FilamentCamera::FilamentCamera(filament::Engine& aEngine)
-    : engine(aEngine)
-{
-    camera = engine.createCamera();
+FilamentCamera::FilamentCamera(filament::Engine& aEngine) : engine_(aEngine) {
+    camera_ = engine_.createCamera();
 }
 
-FilamentCamera::~FilamentCamera()
-{
-    engine.destroy(camera);
-}
+FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
 
-void FilamentCamera::SetProjection(double fov, double aspect, double near, double far, eFovType fovType)
-{
+void FilamentCamera::SetProjection(
+        double fov, double aspect, double near, double far, FovType fovType) {
     if (aspect > 0.0) {
-        filament::Camera::Fov dir = (fovType == eFovType::HORIZONTAL_FOV)
-                ? filament::Camera::Fov::HORIZONTAL
-                : filament::Camera::Fov::VERTICAL;
+        filament::Camera::Fov dir = (fovType == FovType::Horizontal)
+                                            ? filament::Camera::Fov::HORIZONTAL
+                                            : filament::Camera::Fov::VERTICAL;
 
-        camera->setProjection(fov, aspect, near, far, dir);
+        camera_->setProjection(fov, aspect, near, far, dir);
     }
 }
 
-void FilamentCamera::SetProjection(eProjection projection, double left, double right, double bottom, double top, double near, double far)
-{
-    filament::Camera::Projection proj = (projection == eProjection::ORTHO)
-            ? filament::Camera::Projection::ORTHO
-            : filament::Camera::Projection::PERSPECTIVE;
+void FilamentCamera::SetProjection(Projection projection,
+                                   double left,
+                                   double right,
+                                   double bottom,
+                                   double top,
+                                   double near,
+                                   double far) {
+    filament::Camera::Projection proj =
+            (projection == Projection::Ortho)
+                    ? filament::Camera::Projection::ORTHO
+                    : filament::Camera::Projection::PERSPECTIVE;
 
-    camera->setProjection(proj, left, right, bottom, top, near, far);
+    camera_->setProjection(proj, left, right, bottom, top, near, far);
 }
 
-void FilamentCamera::LookAt(const Eigen::Vector3f& center, const Eigen::Vector3f& eye, const Eigen::Vector3f& up)
-{
-    camera->lookAt({ eye.x(), eye.y(), eye.z() },
-                   { center.x(), center.y(), center.z()},
-                   { up.x(), up.y(), up.z() });
+void FilamentCamera::LookAt(const Eigen::Vector3f& center,
+                            const Eigen::Vector3f& eye,
+                            const Eigen::Vector3f& up) {
+    camera_->lookAt({eye.x(), eye.y(), eye.z()},
+                   {center.x(), center.y(), center.z()},
+                   {up.x(), up.y(), up.z()});
 }
 
-Eigen::Vector3f FilamentCamera::GetPosition()
-{
-    auto camPos = camera->getPosition();
+Eigen::Vector3f FilamentCamera::GetPosition() {
+    auto camPos = camera_->getPosition();
     return {camPos.x, camPos.y, camPos.z};
 }
 
-Eigen::Vector3f FilamentCamera::GetForwardVector()
-{
-    auto forward = camera->getForwardVector();
+Eigen::Vector3f FilamentCamera::GetForwardVector() {
+    auto forward = camera_->getForwardVector();
     return {forward.x, forward.y, forward.z};
 }
 
-Eigen::Vector3f FilamentCamera::GetLeftVector()
-{
-    auto left = camera->getLeftVector();
+Eigen::Vector3f FilamentCamera::GetLeftVector() {
+    auto left = camera_->getLeftVector();
     return {left.x, left.y, left.z};
 }
 
-Eigen::Vector3f FilamentCamera::GetUpVector()
-{
-    auto up = camera->getUpVector();
+Eigen::Vector3f FilamentCamera::GetUpVector() {
+    auto up = camera_->getUpVector();
     return {up.x, up.y, up.z};
 }
-
 
 }
 }
