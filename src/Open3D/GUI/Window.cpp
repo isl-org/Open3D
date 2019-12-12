@@ -318,8 +318,9 @@ Window::DrawResult Window::OnDraw(float dtSec) {
         // Clear needsLayout below
     }
 
+    auto size = GetSize();
     int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
-    DrawContext dc{ theme, 0, 0, em };
+    DrawContext dc{ theme, 0, 0, size.width, size.height, em };
 
     bool needsRedraw = false;
 
@@ -373,17 +374,23 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     impl_->renderer->EndFrame();
 
+    return (needsRedraw ? REDRAW : NONE);
+}
+
+Window::DrawResult Window::DrawOnce(float dtSec)
+{
+    auto needsRedraw = OnDraw(dtSec);
+
     // ImGUI can take two frames to do its layout, so if we did a layout
     // redraw a second time. This helps prevent a brief red flash when the
     // window first appears, as well as corrupted images if the
     // window appears underneath the mouse.
-    // FIXME: Looks like hack
     if (impl_->needsLayout) {
         impl_->needsLayout = false;
         OnDraw(0.001);
     }
 
-    return (needsRedraw ? REDRAW : NONE);
+    return needsRedraw;
 }
 
 void Window::OnResize() {

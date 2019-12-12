@@ -77,6 +77,7 @@ protected:
 private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw(float dtSec);
+    DrawResult DrawOnce(float dtSec);
     void OnResize();
     void OnMouseMove(const MouseMoveEvent& e);
     void OnMouseButton(const MouseButtonEvent& e);

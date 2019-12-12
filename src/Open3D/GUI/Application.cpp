@@ -383,7 +383,7 @@ void Application::Run() {
             auto w = kv.second;
             bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
             if (w->IsVisible() && gotEvents) {
-                if (w->OnDraw(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
+                if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
                     SDL_Event expose;
                     expose.type = SDL_WINDOWEVENT;
                     expose.window.windowID = w->GetID();
