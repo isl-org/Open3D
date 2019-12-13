@@ -1,0 +1,78 @@
+set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament)
+
+set(ARCHIVE_FILE ${CMAKE_BINARY_DIR}/downloads/filament.tgz)
+set(UNPACKED_TEST ${FILAMENT_ROOT}/README.md)
+
+set(DOWNLOAD_PATH ${CMAKE_BINARY_DIR}/downloads)
+set(TAR_PWD ${DOWNLOAD_PATH})
+
+set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-linux.tgz")
+set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-linux.tgz")
+
+if (WIN32)
+    set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-windows.tgz")
+    set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-windows.tgz")
+    file(MAKE_DIRECTORY ${FILAMENT_ROOT})
+    set(TAR_PWD ${FILAMENT_ROOT})
+elseif (APPLE)
+    set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-mac.tgz")
+    set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-mac.tgz")
+endif()
+
+set(filament_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/filament)
+set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl bluevk ibl image meshoptimizer smol-v utils)
+
+if (NOT EXISTS ${UNPACKED_TEST})
+    if (NOT EXISTS ${ARCHIVE_FILE})
+        file(DOWNLOAD ${DOWNLOAD_URL_PRIMARY} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
+        if (NOT DOWNLOAD_RESULT EQUAL 0)
+            file(DOWNLOAD ${DOWNLOAD_URL_FALLBACK} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
+        endif()
+    endif()
+
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf ${ARCHIVE_FILE} WORKING_DIRECTORY ${TAR_PWD})
+
+    file(MAKE_DIRECTORY ${filament_INCLUDE_DIRS})
+    file(MAKE_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}/bin)
+    file(MAKE_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}/lib)
+
+    if (WIN32)
+        if (STATIC_WINDOWS_RUNTIME)
+            set(CRT_CONFIG mt)
+        else()
+            set(CRT_CONFIG md)
+        endif()
+
+        add_custom_target(filament_copy
+                COMMAND xcopy /s /i /y /q \"include\" \"${filament_INCLUDE_DIRS}\"
+                COMMAND xcopy /s /i /y /q \"lib/x86_64/${CRT_CONFIG}\" \"${3RDPARTY_INSTALL_PREFIX}/lib\"
+                COMMAND xcopy /s /i /y /q \"bin\" \"${3RDPARTY_INSTALL_PREFIX}/bin\"
+                WORKING_DIRECTORY ${FILAMENT_ROOT})
+    else()
+        add_custom_target(filament_copy
+                COMMAND cp -a include/* ${filament_INCLUDE_DIRS}
+                COMMAND cp -a lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
+                COMMAND cp -a bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
+                WORKING_DIRECTORY ${FILAMENT_ROOT})
+    endif()
+
+else()
+    add_custom_target(filament_copy)
+endif()
+
+add_dependencies(build_all_3rd_party_libs filament_copy)
+
+if (WIN32)
+elseif (APPLE)
+    find_library(CORE_VIDEO CoreVideo)
+    find_library(QUARTZ_CORE QuartzCore)
+    find_library(OPENGL_LIBRARY OpenGL)
+    find_library(METAL_LIBRARY Metal)
+    find_library(APPKIT_LIBRARY AppKit)
+    list(APPEND filament_LIBRARIES ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
+
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fobjc-link-runtime")
+else ()
+    # These are needed by Clang on Linux
+    list(APPEND filament_LIBRARIES pthread dl c++)
+endif()
