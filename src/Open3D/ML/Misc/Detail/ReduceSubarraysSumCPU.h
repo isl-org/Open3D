@@ -36,9 +36,9 @@ namespace detail {
 /// The sum for empty subarrays is 0.
 ///
 /// \param values          The linear array with all values
-/// \param values_size     Number of elements of values
-/// \param prefix_sum      The prefix sum of the number of elements for each
-///                        array
+/// \param values_size     Number of elements of \p values
+/// \param prefix_sum      The exclusive prefix sum of the number of elements
+///                        for each array
 /// \param prefix_sum_size The number of subarrays
 /// \param out_sums        The preallocated output array with size
 ///                        \p prefix_sum_size
@@ -53,6 +53,8 @@ void ReduceSubarraysSumCPU(const T* const values,
 
                           for (size_t i = r.begin(); i != r.end(); ++i) {
                               size_t begin_idx = prefix_sum[i];
+                              // use values_size as end_idx for the last
+                              // subarray
                               size_t end_idx = (i + 1 < prefix_sum_size
                                                         ? prefix_sum[i + 1]
                                                         : values_size);
