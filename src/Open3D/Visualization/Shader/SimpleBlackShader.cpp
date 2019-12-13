@@ -114,7 +114,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
         return false;
     }
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 

@@ -417,11 +417,15 @@ bool Visualizer::ClearGeometries() {
     return UpdateGeometry();
 }
 
-bool Visualizer::UpdateGeometry() {
+bool Visualizer::UpdateGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     glfwMakeContextCurrent(window_);
     bool success = true;
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
-        success = (success && renderer_ptr->UpdateGeometry());
+        if (geometry_ptr == nullptr ||
+            renderer_ptr->HasGeometry(geometry_ptr)) {
+            success = (success && renderer_ptr->UpdateGeometry());
+        }
     }
     UpdateRender();
     return success;
