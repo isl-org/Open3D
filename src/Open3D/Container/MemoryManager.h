@@ -104,8 +104,6 @@ public:
 
 protected:
     bool IsCUDAPointer(const void* ptr);
-    void EnableP2P();
-    void SetDevice(int device_id);
 };
 #endif
 

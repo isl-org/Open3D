@@ -27,7 +27,7 @@
 #pragma once
 
 #include "Open3D/Container/Broadcast.h"
-#include "Open3D/Container/CudaUtils.cuh"
+#include "Open3D/Container/CUDAUtils.h"
 #include "Open3D/Container/Dtype.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"

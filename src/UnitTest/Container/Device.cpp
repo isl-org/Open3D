@@ -33,24 +33,29 @@ using namespace open3d;
 
 TEST(Device, DefaultConstructor) {
     Device ctx;
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.device_id_, 0);
+    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
+    EXPECT_EQ(ctx.GetID(), 0);
+}
+
+TEST(Device, CPUMustBeID0) {
+    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
+    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
 }
 
 TEST(Device, SpecifiedConstructor) {
     Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.device_id_, 1);
+    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
+    EXPECT_EQ(ctx.GetID(), 1);
 }
 
 TEST(Device, StringConstructor) {
     Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.device_id_, 1);
+    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
+    EXPECT_EQ(ctx.GetID(), 1);
 }
 
 TEST(Device, StringConstructorLower) {
     Device ctx("cuda:1");
-    EXPECT_EQ(ctx.device_type_, Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.device_id_, 1);
+    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
+    EXPECT_EQ(ctx.GetID(), 1);
 }

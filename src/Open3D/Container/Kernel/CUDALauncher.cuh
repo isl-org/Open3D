@@ -30,7 +30,7 @@
 #include <cuda_runtime.h>
 
 #include "Open3D/Container/AdvancedIndexing.h"
-#include "Open3D/Container/CudaUtils.cuh"
+#include "Open3D/Container/CUDAUtils.h"
 #include "Open3D/Container/Indexer.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"

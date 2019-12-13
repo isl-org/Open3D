@@ -24,48 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Kernel/UnaryEW.h"
+/// \file CUDAUtils.h
+/// \brief Common CUDA utilities
+///
+/// CUDAUtils.h may be included from CPU-only code.
+/// Use #ifdef __CUDACC__ to mark conitional compilation
 
-#include "Open3D/Container/Broadcast.h"
-#include "Open3D/Container/Tensor.h"
+#pragma once
+
 #include "Open3D/Utility/Console.h"
 
-namespace open3d {
-namespace kernel {
-
-void Copy(const Tensor& src, Tensor& dst) {
-    // Check shape
-    if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
-        utility::LogError("Shape {} can not be broadcasted to {}.",
-                          src.GetShape(), dst.GetShape());
-    }
-
-    // Check dtype
-    // TODO: in the future, we may want to allow automatic casting
-    if (src.GetDtype() != dst.GetDtype()) {
-        utility::LogError("src and dst tensor dtype mismatch {} != {}",
-                          DtypeUtil::ToString(src.GetDtype()),
-                          DtypeUtil::ToString(dst.GetDtype()));
-    }
-
-    // Disbatch to device
-    Device::DeviceType src_device_type = src.GetDevice().GetType();
-    Device::DeviceType dst_device_type = dst.GetDevice().GetType();
-    if ((src_device_type != Device::DeviceType::CPU &&
-         src_device_type != Device::DeviceType::CUDA) ||
-        (dst_device_type != Device::DeviceType::CPU &&
-         dst_device_type != Device::DeviceType::CUDA)) {
-        utility::LogError("Unimplemented device");
-    }
-    if (src_device_type == Device::DeviceType::CPU &&
-        dst_device_type == Device::DeviceType::CPU) {
-        CopyCPU(src, dst);
-    } else {
 #ifdef BUILD_CUDA_MODULE
-        CopyCUDA(src, dst);
-#endif
+
+#include <cuda.h>
+#include <cuda_runtime.h>
+
+#define OPEN3D_HOST_DEVICE __host__ __device__
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
+    static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
+                  #type " must be a __host__ __device__ lambda")
+#define OPEN3D_CUDA_CHECK(err) \
+    open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
+
+#else  // #ifdef BUILD_CUDA_MODULE
+
+#define OPEN3D_HOST_DEVICE
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
+#define OPEN3D_CUDA_CHECK(err)
+
+#endif  // #ifdef BUILD_CUDA_MODULE
+
+namespace open3d {
+
+#ifdef BUILD_CUDA_MODULE
+inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
+                                const char *file,
+                                const int line) {
+    if (err != cudaSuccess) {
+        utility::LogError("{}:{} CUDA runtime error: {}", file, line,
+                          cudaGetErrorString(err));
     }
 }
+#endif
 
-}  // namespace kernel
 }  // namespace open3d
