@@ -26,6 +26,3 @@ else
     sudo apt-get install python3-dev python3-tk || true
     sudo apt-get install libtbb-dev || true
 fi
-
-pip install --upgrade pip
-pip install tensorflow==2.0.0

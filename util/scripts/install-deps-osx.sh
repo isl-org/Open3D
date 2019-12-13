@@ -24,6 +24,3 @@ for pkg in libusb glew glfw3 libpng pkg-config jsoncpp eigen tbb; do
         brew install $pkg
     fi
 done
-
-pip install --upgrade pip
-pip install tensorflow==2.0.0
