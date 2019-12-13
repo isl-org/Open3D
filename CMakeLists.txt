@@ -4,6 +4,7 @@
 
 cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CUDA_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
@@ -98,7 +99,6 @@ if (BUILD_CUDA_MODULE)
         message(STATUS "Building CUDA enabled")
         add_definitions(-DBUILD_CUDA_MODULE)
         enable_language(CUDA)
-        set( CMAKE_CUDA_STANDARD 11 )
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
     else()
         set(BUILD_CUDA_MODULE OFF)
