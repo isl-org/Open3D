@@ -211,8 +211,8 @@ protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
-    std::array<int, 2> saved_window_size_{0, 0};
-    std::array<int, 2> saved_window_pos_{0, 0};
+    std::array<int, 2> saved_window_size_ = {0, 0};
+    std::array<int, 2> saved_window_pos_ = {0, 0};
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()
