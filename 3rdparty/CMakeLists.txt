@@ -357,8 +357,7 @@ int main(int argc, char *argv[]) { return 0; }"
     endif()
     if (ENABLE_GUI)
         message(STATUS "Building Filament from source")
-        include(filament/filament.cmake)
-        INSTALL_HEADERS(filament)
+        include(filament/filament_download.cmake)
     endif ()
 endif()
 
