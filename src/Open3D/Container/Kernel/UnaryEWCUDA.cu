@@ -63,7 +63,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             // For more optimized version, one can check if P2P from src to dst
             // is enabled, then put synchronization with streams on both src and
             // dst to wait for copy kernel to complete.
-            CUDASwitchDevice switcher(src_device);
+            CUDADeviceSwitcher switcher(src_device);
             DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
                 Indexer indexer({src}, dst);
                 CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
