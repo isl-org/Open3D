@@ -49,7 +49,7 @@ void IndexGetCUDA(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
-    CUDASwitchDevice switcher(src.GetDevice());
+    CUDADeviceSwitcher switcher(src.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         CUDALauncher::LaunchAdvancedIndexerKernel<scalar_t>(
                 ai,
@@ -68,7 +68,7 @@ void IndexSetCUDA(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
-    CUDASwitchDevice switcher(dst.GetDevice());
+    CUDADeviceSwitcher switcher(dst.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         CUDALauncher::LaunchAdvancedIndexerKernel<scalar_t>(
                 ai,
