@@ -75,6 +75,7 @@
 #include "Open3D/Visualization/Visualizer/VisualizerWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithVertexSelection.h"
 
 // clang-format off
 @BUILD_AZURE_KINECT_COMMENT@#include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"

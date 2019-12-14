@@ -155,7 +155,7 @@ bool SimpleShaderForPointCloud::PrepareRendering(
     }
     glPointSize(GLfloat(option.point_size_));
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -225,7 +225,7 @@ bool SimpleShaderForLineSet::PrepareRendering(
     }
     glLineWidth(GLfloat(option.line_width_));
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -275,7 +275,7 @@ bool SimpleShaderForTetraMesh::PrepareRendering(
     }
     glLineWidth(GLfloat(option.line_width_));
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -341,7 +341,7 @@ bool SimpleShaderForOrientedBoundingBox::PrepareRendering(
     }
     glLineWidth(GLfloat(option.line_width_));
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -390,7 +390,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
     }
     glLineWidth(GLfloat(option.line_width_));
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -444,7 +444,7 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(
         glEnable(GL_CULL_FACE);
     }
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if (option.mesh_show_wireframe_) {
         glEnable(GL_POLYGON_OFFSET_FILL);
@@ -529,7 +529,7 @@ bool SimpleShaderForVoxelGridLine::PrepareRendering(
     }
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -619,7 +619,7 @@ bool SimpleShaderForVoxelGridFace::PrepareRendering(
     }
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -712,7 +712,7 @@ bool SimpleShaderForOctreeFace::PrepareRendering(
     }
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
@@ -811,7 +811,7 @@ bool SimpleShaderForOctreeLine::PrepareRendering(
     }
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 

@@ -41,7 +41,8 @@ public:
                      bool reset_bounding_box = true) override {
         PYBIND11_OVERLOAD(bool, VisualizerBase, AddGeometry, geometry_ptr);
     }
-    bool UpdateGeometry() override {
+    bool UpdateGeometry(std::shared_ptr<const geometry::Geometry> geometry_ptr =
+                                nullptr) override {
         PYBIND11_OVERLOAD(bool, VisualizerBase, UpdateGeometry, );
     }
     bool HasGeometry() const override {
