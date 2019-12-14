@@ -41,7 +41,7 @@
 /// Returns true if --disable_p2p flag is used.
 bool ShallDisableP2P(int argc, char** argv) {
     bool shall_disable_p2p = false;
-    for (int i = 0; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--disable_p2p") == 0) {
             shall_disable_p2p = true;
             break;
