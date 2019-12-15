@@ -201,7 +201,7 @@ TEST_P(TensorListPermuteDevices, Slice) {
               std::vector<float>({0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2}));
 }
 
-TEST_P(TensorListPermuteDevices, Select) {
+TEST_P(TensorListPermuteDevices, IndexGet) {
     Device device = GetParam();
 
     Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
@@ -213,7 +213,7 @@ TEST_P(TensorListPermuteDevices, Select) {
     TensorList tensor_list(tensors, device);
 
     std::vector<int64_t> indices = {0, -1, 2};
-    TensorList new_tensor_list = tensor_list.Select(indices);
+    TensorList new_tensor_list = tensor_list.IndexGet(indices);
     EXPECT_EQ(new_tensor_list.GetSize(), 3);
     EXPECT_EQ(new_tensor_list.GetReservedSize(), 8);
     EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),

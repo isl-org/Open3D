@@ -235,7 +235,7 @@ TensorList TensorList::Slice(int64_t start,
     return TensorList(internal_tensor_.Slice(0 /* dim */, start, stop, step));
 }
 
-TensorList TensorList::Select(std::vector<int64_t>& indices) const {
+TensorList TensorList::IndexGet(std::vector<int64_t>& indices) const {
     std::vector<Tensor> tensors;
     for (auto& index : indices) {
         check_index(index);
