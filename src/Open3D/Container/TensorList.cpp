@@ -39,7 +39,7 @@ TensorList::TensorList(const SizeVector& shape,
       size_(0),
       reserved_size_(1),
       /// Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device_) {
+      internal_tensor_(SizeVector(), Dtype::Int64, device) {
     if (shape_.size() == 0) {
         utility::LogError(
                 "Empty tensor shapes are not supported in TensorList.");
@@ -53,7 +53,7 @@ TensorList::TensorList(const SizeVector& shape,
 TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
     : device_(device),
       /// Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device_) {
+      internal_tensor_(SizeVector(), Dtype::Int64, device) {
     if (tensors.size() == 0) {
         utility::LogError(
                 "Empty input tensors cannot initialize a TensorList.");
@@ -99,15 +99,10 @@ TensorList::TensorList(const Tensor& tensor)
     : dtype_(tensor.GetDtype()),
       device_(tensor.GetDevice()),
       /// Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device_) {
+      internal_tensor_(SizeVector(), Dtype::Int64, tensor.GetDevice()) {
     if (tensor.GetShape().size() <= 1) {
         utility::LogError(
                 "Unable to construct TensorList from a Tensor with dim <= 1");
-    }
-
-    if (!tensor.IsContiguous()) {
-        utility::LogError(
-                "Unable to construct TensorList from a non-contiguous Tensor.");
     }
 
     SizeVector shape = tensor.GetShape();
@@ -128,7 +123,7 @@ TensorList::TensorList(const TensorList& other)
       size_(other.GetSize()),
       reserved_size_(other.GetReservedSize()),
       /// Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device_) {
+      internal_tensor_(SizeVector(), Dtype::Int64, other.GetDevice()) {
     internal_tensor_.Assign(other.GetInternalTensor());
 }
 
@@ -177,7 +172,7 @@ void TensorList::PushBack(const Tensor& tensor) {
     }
 
     /// Copy tensor
-    internal_tensor_[size_].Assign(tensor);
+    internal_tensor_[size_].AsRvalue() = tensor;
     ++size_;
 }
 

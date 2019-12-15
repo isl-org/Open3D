@@ -81,7 +81,7 @@ public:
     /// Concatenate two TensorLists
     /// Return a new TensorList with copy of data
     TensorList operator+(const TensorList& other) const;
-    TensorList Concatenate(const TensorList& a, const TensorList& b);
+    static TensorList Concatenate(const TensorList& a, const TensorList& b);
 
     /// Concatenate two TensorLists and append the other to the end of *this
     void operator+=(const TensorList& other);
@@ -125,12 +125,34 @@ protected:
     }
 
     int64_t reserve_size(int64_t n) {
+        if (n < 0) {
+            utility::LogError("Negative tensor list size {} is unsupported.",
+                              n);
+        }
+
+        int64_t base = 1;
+        if (n > (base << 61)) {
+            utility::LogError("Too large tensor list size {} is unsupported.",
+                              n);
+        }
+
         for (int i = 63; i >= 0; --i) {
-            if (((1 << i) & n) > 0) {
-                return 1 << (i + 1);
+            /// First nnz bit
+            if (((base << i) & n) > 0) {
+                if (n == (base << i)) {
+                    /// Power of 2: 2 * n. For instance, 8 tensors will be
+                    /// reserved for size=4
+                    return (base << (i + 1));
+                } else {
+                    /// Non-power of 2: ceil(log(2)) * 2. For instance, 16
+                    /// tensors will be reserved for size=5
+                    return (base << (i + 2));
+                }
             }
         }
-        return 0;
+
+        /// No nnz bit: by default reserve 1 element.
+        return 1;
     }
 
     void check_index(int64_t index) const {
