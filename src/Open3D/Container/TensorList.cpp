@@ -46,7 +46,7 @@ TensorList::TensorList(const SizeVector& shape,
     }
 
     /// Construct internal tensor
-    SizeVector expanded_shape = expand_shape(shape_, reserved_size_);
+    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
     internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
 }
 
@@ -61,7 +61,7 @@ TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
 
     /// Infer size and reserved_size
     size_ = tensors.size();
-    reserved_size_ = reserve_size(size_);
+    reserved_size_ = ReserveSize(size_);
 
     /// Infer shape
     shape_ = tensors[0].GetShape();
@@ -86,7 +86,7 @@ TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
     }
 
     /// Construct internal tensor
-    SizeVector expanded_shape = expand_shape(shape_, reserved_size_);
+    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
     internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
 
     /// Assign tensors
@@ -107,11 +107,11 @@ TensorList::TensorList(const Tensor& tensor)
 
     SizeVector shape = tensor.GetShape();
     size_ = shape[0];
-    reserved_size_ = reserve_size(size_);
+    reserved_size_ = ReserveSize(size_);
     shape_ = SizeVector(shape.begin() + 1, shape.end());
 
     /// Construct the internal tensor
-    SizeVector expanded_shape = expand_shape(shape_, reserved_size_);
+    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
     internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
     internal_tensor_.Slice(0 /* dim */, 0, size_).AsRvalue() = tensor;
 }
@@ -150,7 +150,7 @@ void TensorList::Resize(int64_t n) {
     }
 
     /// Increase internal tensor size
-    int64_t new_reserved_size = reserve_size(n);
+    int64_t new_reserved_size = ReserveSize(n);
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
@@ -166,7 +166,7 @@ void TensorList::PushBack(const Tensor& tensor) {
                           tensor.GetShape());
     }
 
-    int64_t new_reserved_size = reserve_size(size_ + 1);
+    int64_t new_reserved_size = ReserveSize(size_ + 1);
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
@@ -210,7 +210,7 @@ void TensorList::operator+=(const TensorList& other) {
         return;
     }
 
-    int64_t new_reserved_size = reserve_size(size_ + other.GetSize());
+    int64_t new_reserved_size = ReserveSize(size_ + other.GetSize());
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
@@ -220,7 +220,7 @@ void TensorList::operator+=(const TensorList& other) {
 }
 
 Tensor TensorList::operator[](int64_t index) {
-    check_index(index);
+    CheckIndex(index);
     if (index < 0) {
         index += size_;
     }
@@ -230,15 +230,15 @@ Tensor TensorList::operator[](int64_t index) {
 TensorList TensorList::Slice(int64_t start,
                              int64_t stop,
                              int64_t step /* = 1 */) {
-    check_index(start);
-    check_index(stop);
+    CheckIndex(start);
+    CheckIndex(stop);
     return TensorList(internal_tensor_.Slice(0 /* dim */, start, stop, step));
 }
 
 TensorList TensorList::IndexGet(std::vector<int64_t>& indices) const {
     std::vector<Tensor> tensors;
     for (auto& index : indices) {
-        check_index(index);
+        CheckIndex(index);
         if (index < 0) {
             index += size_;
         }
@@ -249,4 +249,60 @@ TensorList TensorList::IndexGet(std::vector<int64_t>& indices) const {
 }
 
 void TensorList::Clear() { *this = TensorList(shape_, dtype_, device_); }
+
+/// Protected
+void TensorList::ExpandTensor(int64_t new_reserved_size) {
+    SizeVector new_expanded_shape = ExpandShape(shape_, new_reserved_size);
+    Tensor new_internal_tensor = Tensor(new_expanded_shape, dtype_, device_);
+
+    /// Copy data
+    new_internal_tensor.Slice(0 /* dim */, 0, size_).AsRvalue() =
+            internal_tensor_.Slice(0 /* dim */, 0, size_);
+    internal_tensor_ = new_internal_tensor;
+    reserved_size_ = new_reserved_size;
+}
+
+SizeVector TensorList::ExpandShape(const SizeVector& shape,
+                                   int64_t new_dim_size /* = 0 */) {
+    SizeVector expanded_shape = {new_dim_size};
+    expanded_shape.insert(expanded_shape.end(), shape.begin(), shape.end());
+    return expanded_shape;
+}
+
+int64_t TensorList::ReserveSize(int64_t n) {
+    if (n < 0) {
+        utility::LogError("Negative tensor list size {} is unsupported.", n);
+    }
+
+    int64_t base = 1;
+    if (n > (base << 61)) {
+        utility::LogError("Too large tensor list size {} is unsupported.", n);
+    }
+
+    for (int i = 63; i >= 0; --i) {
+        /// First nnz bit
+        if (((base << i) & n) > 0) {
+            if (n == (base << i)) {
+                /// Power of 2: 2 * n. For instance, 8 tensors will be
+                /// reserved for size=4
+                return (base << (i + 1));
+            } else {
+                /// Non-power of 2: ceil(log(2)) * 2. For instance, 16
+                /// tensors will be reserved for size=5
+                return (base << (i + 2));
+            }
+        }
+    }
+
+    /// No nnz bit: by default reserve 1 element.
+    return 1;
+}
+
+void TensorList::CheckIndex(int64_t index) const {
+    if (index < -size_ || index > size_ - 1) {
+        utility::LogError("Index {} out of bound ({}, {})", index, -size_,
+                          size_ - 1);
+    }
+}
+
 }  // namespace open3d

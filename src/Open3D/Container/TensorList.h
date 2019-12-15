@@ -106,61 +106,10 @@ public:
     const Tensor& GetInternalTensor() const { return internal_tensor_; }
 
 protected:
-    void ExpandTensor(int64_t new_reserved_size) {
-        SizeVector new_expanded_shape = expand_shape(shape_, new_reserved_size);
-        Tensor new_internal_tensor =
-                Tensor(new_expanded_shape, dtype_, device_);
-
-        /// Copy data
-        new_internal_tensor.Slice(0 /* dim */, 0, size_).AsRvalue() =
-                internal_tensor_.Slice(0 /* dim */, 0, size_);
-        internal_tensor_ = new_internal_tensor;
-        reserved_size_ = new_reserved_size;
-    }
-
-    SizeVector expand_shape(const SizeVector& shape, int64_t new_dim_size = 0) {
-        SizeVector expanded_shape = {new_dim_size};
-        expanded_shape.insert(expanded_shape.end(), shape.begin(), shape.end());
-        return expanded_shape;
-    }
-
-    int64_t reserve_size(int64_t n) {
-        if (n < 0) {
-            utility::LogError("Negative tensor list size {} is unsupported.",
-                              n);
-        }
-
-        int64_t base = 1;
-        if (n > (base << 61)) {
-            utility::LogError("Too large tensor list size {} is unsupported.",
-                              n);
-        }
-
-        for (int i = 63; i >= 0; --i) {
-            /// First nnz bit
-            if (((base << i) & n) > 0) {
-                if (n == (base << i)) {
-                    /// Power of 2: 2 * n. For instance, 8 tensors will be
-                    /// reserved for size=4
-                    return (base << (i + 1));
-                } else {
-                    /// Non-power of 2: ceil(log(2)) * 2. For instance, 16
-                    /// tensors will be reserved for size=5
-                    return (base << (i + 2));
-                }
-            }
-        }
-
-        /// No nnz bit: by default reserve 1 element.
-        return 1;
-    }
-
-    void check_index(int64_t index) const {
-        if (index < -size_ || index > size_ - 1) {
-            utility::LogError("Index {} out of bound ({}, {})", index, -size_,
-                              size_ - 1);
-        }
-    }
+    void ExpandTensor(int64_t new_reserved_size);
+    SizeVector ExpandShape(const SizeVector& shape, int64_t new_dim_size = 0);
+    int64_t ReserveSize(int64_t n);
+    void CheckIndex(int64_t index) const;
 
 protected:
     /// We always maintain an internal Tensor of (reserved_size_, shape_).
