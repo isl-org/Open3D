@@ -60,7 +60,6 @@ public:
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
-    std::shared_ptr<const geometry::Geometry> GetCurrentGeometry();
     std::vector<int> PickPoints(double x, double y, double w, double h);
     std::vector<int> GetPickedPoints() const;
     void ClearPickedPoints();

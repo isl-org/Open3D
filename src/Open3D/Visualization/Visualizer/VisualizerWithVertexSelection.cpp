@@ -741,11 +741,6 @@ const std::vector<Eigen::Vector3d>
     return points;
 }
 
-std::shared_ptr<const geometry::Geometry>
-VisualizerWithVertexSelection::GetCurrentGeometry() {
-    return geometry_ptr_;
-}
-
 Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(int winX,
                                                              int winY) {
     auto &view = (ViewControlWithEditing &)(*view_control_ptr_);
