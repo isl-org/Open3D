@@ -28,9 +28,11 @@
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 
+#include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TetraMesh.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/IO/ClassIO/IJsonConvertibleIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
@@ -52,6 +54,45 @@ static const double MIN_POINT_SIZE = 3.0;
 static const Eigen::Vector3d CHOOSE_POINTS_COLOR(1, 0, 1);
 static const Eigen::Vector3d SELECTED_POINTS_COLOR(0, 1, 0);
 static const int START_RECT_DIST = 3;
+
+bool BindFramebuffer(int width, int height) {
+    GLuint frame_buffer_name = 0;
+    glGenFramebuffers(1, &frame_buffer_name);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
+    GLuint fbo_texture;
+    glGenTextures(1, &fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, fbo_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width,
+                 height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if (!GLEW_ARB_framebuffer_object) {
+        // OpenGL 2.1 doesn't require this, 3.1+ does
+        utility::LogWarning(
+                "[BindFramebuffwer] Your GPU does not provide framebuffer objects. "
+                "Use a texture instead.");
+        return false;
+    }
+    GLuint depth_render_buffer;
+    glGenRenderbuffers(1, &depth_render_buffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+                          width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                              GL_RENDERBUFFER, depth_render_buffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           fbo_texture, 0);
+    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, DrawBuffers);  // "1" is the size of DrawBuffers
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        utility::LogWarning("[BindFramebuffer] Something is wrong with FBO.");
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 bool VisualizerWithVertexSelection::AddGeometry(
@@ -185,6 +226,7 @@ void VisualizerWithVertexSelection::PrintVisualizerHelp() {
     utility::LogInfo("                                  already in the selection it will be removed.");
     utility::LogInfo("    Shift + mouse left drag     : Defines a rectangle, which will add all the ");
     utility::LogInfo("                                  points in it to the selection.");
+    utility::LogInfo("    mouse right drag            : Moves selected points.");
     utility::LogInfo("    Delete / Backspace          : Removes all points in the rectangle from the");
     utility::LogInfo("                                  selection.");
     utility::LogInfo("");
@@ -236,6 +278,46 @@ void VisualizerWithVertexSelection::BuildUtilities() {
     }
 }
 
+float VisualizerWithVertexSelection::GetDepth(int winX, int winY) {
+    const auto &view = GetViewControl();
+
+    // Render to FBO
+    if (!BindFramebuffer(view.GetWindowWidth(), view.GetWindowHeight())) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        return {};
+    }
+
+    view_control_ptr_->SetViewMatrices();
+    // We only need the depth information, so reduce time rendering colors
+    glDisable(GL_MULTISAMPLE);
+    glDisable(GL_BLEND);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    glClearDepth(1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    for (auto &renderer : geometry_renderer_ptrs_) {
+        renderer->Render(GetRenderOption(), GetViewControl());
+    }
+    glFinish();
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glEnable(GL_MULTISAMPLE);
+
+    // glReadPixels uses GL coordinates: (x, y) is lower left and +y is up
+    int width = 1;
+    int height = 1;
+    int lowerLeftX = int(winX + 0.5);
+    int lowerLeftY = int(view.GetWindowHeight() - winY - height + 0.5);
+
+    float depth;
+    glReadPixels(lowerLeftX, lowerLeftY, width, height, GL_DEPTH_COMPONENT,
+                 GL_FLOAT, &depth);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return depth;
+}
+
 std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
                                                            double winY,
                                                            double w,
@@ -247,48 +329,14 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
         return {};
     }
     const auto &view = GetViewControl();
-    // Render to FBO and disable anti-aliasing
-    glDisable(GL_MULTISAMPLE);
-    GLuint frame_buffer_name = 0;
-    glGenFramebuffers(1, &frame_buffer_name);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
-    GLuint fbo_texture;
-    glGenTextures(1, &fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, fbo_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, view.GetWindowWidth(),
-                 view.GetWindowHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (!GLEW_ARB_framebuffer_object) {
-        // OpenGL 2.1 doesn't require this, 3.1+ does
-        utility::LogWarning(
-                "[PickPoint] Your GPU does not provide framebuffer objects. "
-                "Use a texture instead.");
+    // Render to FBO
+    if (!BindFramebuffer(view.GetWindowWidth(), view.GetWindowHeight())) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glEnable(GL_MULTISAMPLE);
         return {};
     }
-    GLuint depth_render_buffer;
-    glGenRenderbuffers(1, &depth_render_buffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                          view.GetWindowWidth(), view.GetWindowHeight());
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                              GL_RENDERBUFFER, depth_render_buffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           fbo_texture, 0);
-    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, DrawBuffers);  // "1" is the size of DrawBuffers
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        utility::LogWarning("[PickPoint] Something is wrong with FBO.");
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glEnable(GL_MULTISAMPLE);
-        return {};
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
+
     view_control_ptr_->SetViewMatrices();
+    glDisable(GL_MULTISAMPLE);  // we need pixelation for correct pick colors
     glDisable(GL_BLEND);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -481,6 +529,8 @@ void VisualizerWithVertexSelection::MouseMoveCallback(GLFWwindow *window,
             selection_polygon_ptr_->polygon_[2](1) = y_inv;
             selection_polygon_ptr_->polygon_[3](1) = y_inv;
             selection_polygon_renderer_ptr_->UpdateGeometry();
+        } else if (selection_mode_ == SelectionMode::Moving) {
+            DragSelectedPoints(CalcDragDelta(x, y), DRAG_MOVING);
         }
         is_redraw_required_ = true;
     } else {
@@ -557,6 +607,27 @@ void VisualizerWithVertexSelection::MouseButtonCallback(GLFWwindow *window,
             InvalidateSelectionPolygon();
         }
         selection_mode_ = SelectionMode::None;
+    } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        mouse_down_pos_ = { x, y };
+        selection_mode_ = SelectionMode::Moving;
+        // The mouse moves on the viewing plane, but we want it to look like
+        // we are moving the point we clicked on. One pixel on the viewing
+        // plane is a larger distance than one pixel projected onto the
+        // viewing plane because perspective shrinks things as they get
+        // farther away.
+        auto depth = GetDepth(x, y);
+        // If we clicked on something, set the depth, otherwise keep it what
+        // it was last time, which should be about right (as good as we're
+        // going to get)
+        if (depth < 1.0) {
+            drag_depth_ = depth;
+        }
+    } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+        DragSelectedPoints(CalcDragDelta(x, y), DRAG_END);
+        selection_mode_ = SelectionMode::None;
+        is_redraw_required_ = true;
+    } else {
+        Visualizer::MouseButtonCallback(window, button, action, mods);
     }
 }
 
@@ -586,6 +657,52 @@ void VisualizerWithVertexSelection::ClearPickedPoints() {
 
 void VisualizerWithVertexSelection::AddPickedPoints(
         const std::vector<int> indices) {
+    auto points = GetGeometryPoints();
+    if (!points) {
+        return;  // can't get points info, so can't add them
+    }
+
+    for (auto &index : indices) {
+        const auto &point = (*points)[index];
+        utility::LogInfo(
+                "Adding point #{:d} ({:.2}, {:.2}, {:.2}) to selection.", index,
+                point(0), point(1), point(2));
+        selected_points_[index] = point;
+        ui_selected_points_geometry_ptr_->points_.push_back(point);
+    }
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_renderer_ptr_->UpdateGeometry();
+}
+
+void VisualizerWithVertexSelection::RemovePickedPoints(
+        const std::vector<int> indices) {
+    for (auto &index : indices) {
+        utility::LogInfo("Removing point #{:d} from selection.", index);
+        selected_points_.erase(index);
+    }
+    ui_selected_points_geometry_ptr_->points_.clear();
+    for (auto &kv : selected_points_) {
+        ui_selected_points_geometry_ptr_->points_.push_back(kv.second);
+    }
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_renderer_ptr_->UpdateGeometry();
+}
+
+void VisualizerWithVertexSelection::DragSelectedPoints(const Eigen::Vector3d& delta, DragType type) {
+    ui_selected_points_geometry_ptr_->points_.clear();
+    for (auto &kv : selected_points_) {
+        auto &orig_coord = kv.second;
+        auto new_coord = orig_coord + delta;
+        ui_selected_points_geometry_ptr_->points_.push_back(new_coord);
+        if (type == DRAG_END) {
+            orig_coord = new_coord;
+        }
+    }
+    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
+    ui_selected_points_renderer_ptr_->UpdateGeometry();
+}
+
+const std::vector<Eigen::Vector3d>* VisualizerWithVertexSelection::GetGeometryPoints() {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
@@ -616,33 +733,29 @@ void VisualizerWithVertexSelection::AddPickedPoints(
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
         case geometry::Geometry::GeometryType::Unspecified:
-            return;  // can't get points info, so can't add them
+            points = nullptr;
+            break;
     }
-
-    for (auto &index : indices) {
-        const auto &point = (*points)[index];
-        utility::LogInfo(
-                "Adding point #{:d} ({:.2}, {:.2}, {:.2}) to selection.", index,
-                point(0), point(1), point(2));
-        selected_points_[index] = point;
-        ui_selected_points_geometry_ptr_->points_.push_back(point);
-    }
-    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
-    ui_selected_points_renderer_ptr_->UpdateGeometry();
+    return points;
 }
 
-void VisualizerWithVertexSelection::RemovePickedPoints(
-        const std::vector<int> indices) {
-    for (auto &index : indices) {
-        utility::LogInfo("Removing point #{:d} from selection.", index);
-        selected_points_.erase(index);
-    }
-    ui_selected_points_geometry_ptr_->points_.clear();
-    for (auto &kv : selected_points_) {
-        ui_selected_points_geometry_ptr_->points_.push_back(kv.second);
-    }
-    ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
-    ui_selected_points_renderer_ptr_->UpdateGeometry();
+std::shared_ptr<const geometry::Geometry> VisualizerWithVertexSelection::GetCurrentGeometry() {
+    return geometry_ptr_;
+}
+
+Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(int winX, int winY) {
+    auto &view = (ViewControlWithEditing &)(*view_control_ptr_);
+    auto start = GLHelper::Unproject(Eigen::Vector3d(mouse_down_pos_.x(),
+                                                     view.GetWindowHeight() - mouse_down_pos_.y(),
+                                                     drag_depth_),
+                                     view.GetMVPMatrix(),
+                                     view.GetWindowWidth(),
+                                     view.GetWindowHeight());
+    auto end = GLHelper::Unproject(Eigen::Vector3d(winX, view.GetWindowHeight() - winY, drag_depth_),
+                                     view.GetMVPMatrix(),
+                                     view.GetWindowWidth(),
+                                     view.GetWindowHeight());
+    return end - start;
 }
 
 void VisualizerWithVertexSelection::SetPointSize(double size) {

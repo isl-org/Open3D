@@ -46,6 +46,7 @@ public:
         None = 0,
         Point = 1,
         Rectangle = 2,
+        Moving = 3
     };
 
 public:
@@ -64,6 +65,7 @@ public:
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
+    std::shared_ptr<const geometry::Geometry> GetCurrentGeometry();
     std::vector<int> PickPoints(double x, double y, double w, double h);
     std::vector<int> GetPickedPoints() const;
     void ClearPickedPoints();
@@ -88,6 +90,11 @@ protected:
     void InvalidatePicking();
     void AddPickedPoints(const std::vector<int> indices);
     void RemovePickedPoints(const std::vector<int> indices);
+    float GetDepth(int winX, int winY);
+    Eigen::Vector3d CalcDragDelta(int winX, int winY);
+    enum DragType { DRAG_MOVING, DRAG_END };
+    void DragSelectedPoints(const Eigen::Vector3d& delta, DragType type);
+    const std::vector<Eigen::Vector3d>* GetGeometryPoints();
 
 protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
@@ -96,6 +103,7 @@ protected:
     SelectionMode selection_mode_ = SelectionMode::None;
     Eigen::Vector2d mouse_down_pos_;
     std::vector<int> points_in_rect_;
+    float drag_depth_;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>
