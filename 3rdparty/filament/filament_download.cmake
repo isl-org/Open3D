@@ -3,7 +3,7 @@ if ("${PATH_TO_FILAMENT}" STREQUAL "")
     set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament)
 
     if (USE_VUKLAN AND (ANDROID OR WIN32 OR WEBGL OR IOS))
-        MESSAGE(FATAL_ERROR "Downloadable version of Filament supports vulkan only on Linux")
+        MESSAGE(FATAL_ERROR "Downloadable version of Filament supports vulkan only on Linux and Apple")
     endif()
 
     if (NOT EXISTS ${FILAMENT_ROOT}/README.md)
@@ -45,7 +45,7 @@ message(STATUS "${FILAMENT_ROOT} - here filament should located")
 
 set(filament_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/filament)
 set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
-if (USE_VUKLAN)
+if (UNIX)
     set(filament_LIBRARIES ${filament_LIBRARIES} bluevk)
 endif()
 
