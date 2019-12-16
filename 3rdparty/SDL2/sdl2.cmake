@@ -25,7 +25,6 @@ ExternalProject_Add(
 #       -DVIDEO_VULKAN=${USE_VULKAN}
 )
 
-
 add_library(sdl2_combined INTERFACE)
 if (WIN32)
     target_link_libraries(sdl2_combined INTERFACE SDL2$<$<CONFIG:Debug>:d>) #SDL2main$<$<CONFIG:Debug>:d>)

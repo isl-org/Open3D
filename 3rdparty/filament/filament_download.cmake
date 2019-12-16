@@ -1,63 +1,80 @@
-set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament)
+# If user not provided path to filament
+if ("${PATH_TO_FILAMENT}" STREQUAL "")
+    set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament)
 
-set(ARCHIVE_FILE ${CMAKE_BINARY_DIR}/downloads/filament.tgz)
-set(UNPACKED_TEST ${FILAMENT_ROOT}/README.md)
+    if (USE_VUKLAN AND (ANDROID OR WIN32 OR WEBGL OR IOS))
+        MESSAGE(FATAL_ERROR "Downloadable version of Filament supports vulkan only on Linux")
+    endif()
 
-set(DOWNLOAD_PATH ${CMAKE_BINARY_DIR}/downloads)
-set(TAR_PWD ${DOWNLOAD_PATH})
+    if (NOT EXISTS ${FILAMENT_ROOT}/README.md)
+        set(DOWNLOAD_PATH ${CMAKE_BINARY_DIR}/downloads)
+        set(TAR_PWD ${DOWNLOAD_PATH})
 
-set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-linux.tgz")
-set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-linux.tgz")
+        if (NOT EXISTS ${ARCHIVE_FILE})
+            set(ARCHIVE_FILE ${CMAKE_BINARY_DIR}/downloads/filament.tgz)
 
-if (WIN32)
-    set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-windows.tgz")
-    set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-windows.tgz")
-    file(MAKE_DIRECTORY ${FILAMENT_ROOT})
-    set(TAR_PWD ${FILAMENT_ROOT})
-elseif (APPLE)
-    set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-mac.tgz")
-    set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-mac.tgz")
+            # Setup download links ============================================================================
+            set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-linux.tgz")
+            set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-linux.tgz")
+
+            if (WIN32)
+                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-windows.tgz")
+                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-windows.tgz")
+                
+                file(MAKE_DIRECTORY ${FILAMENT_ROOT})
+                set(TAR_PWD ${FILAMENT_ROOT})
+            elseif (APPLE)
+                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-mac.tgz")
+                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-mac.tgz")
+            endif()
+            # =================================================================================================
+
+            file(DOWNLOAD ${DOWNLOAD_URL_PRIMARY} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
+            if (NOT DOWNLOAD_RESULT EQUAL 0)
+                file(DOWNLOAD ${DOWNLOAD_URL_FALLBACK} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
+            endif()
+        endif()
+
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf ${ARCHIVE_FILE} WORKING_DIRECTORY ${TAR_PWD})
+    endif()
+else()
+    set(FILAMENT_ROOT ${PATH_TO_FILAMENT})
 endif()
 
+message(STATUS "${FILAMENT_ROOT} - here filament should located")
+
 set(filament_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/filament)
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl bluevk ibl image meshoptimizer smol-v utils)
+set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
+if (USE_VUKLAN)
+    set(filament_LIBRARIES ${filament_LIBRARIES} bluevk)
+endif()
 
-if (NOT EXISTS ${UNPACKED_TEST})
-    if (NOT EXISTS ${ARCHIVE_FILE})
-        file(DOWNLOAD ${DOWNLOAD_URL_PRIMARY} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
-        if (NOT DOWNLOAD_RESULT EQUAL 0)
-            file(DOWNLOAD ${DOWNLOAD_URL_FALLBACK} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
-        endif()
-    endif()
+file(MAKE_DIRECTORY ${filament_INCLUDE_DIRS})
+file(MAKE_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}/bin)
+file(MAKE_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}/lib)
 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar -xf ${ARCHIVE_FILE} WORKING_DIRECTORY ${TAR_PWD})
-
-    file(MAKE_DIRECTORY ${filament_INCLUDE_DIRS})
-    file(MAKE_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}/bin)
-    file(MAKE_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}/lib)
-
-    if (WIN32)
-        if (STATIC_WINDOWS_RUNTIME)
-            set(CRT_CONFIG mt)
-        else()
-            set(CRT_CONFIG md)
-        endif()
-
-        add_custom_target(filament_copy
-                COMMAND xcopy /s /i /y /q \"include\" \"${filament_INCLUDE_DIRS}\"
-                COMMAND xcopy /s /i /y /q \"lib/x86_64/${CRT_CONFIG}\" \"${3RDPARTY_INSTALL_PREFIX}/lib\"
-                COMMAND xcopy /s /i /y /q \"bin\" \"${3RDPARTY_INSTALL_PREFIX}/bin\"
-                WORKING_DIRECTORY ${FILAMENT_ROOT})
+# Copy necessary files to our 3rdparty install folder
+if (WIN32)
+    if (STATIC_WINDOWS_RUNTIME)
+        set(CRT_CONFIG mt)
     else()
-        add_custom_target(filament_copy
-                COMMAND cp -a include/* ${filament_INCLUDE_DIRS}
-                COMMAND cp -a lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
-                COMMAND cp -a bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
-                WORKING_DIRECTORY ${FILAMENT_ROOT})
+        set(CRT_CONFIG md)
     endif()
 
+    link_directories("${3RDPARTY_INSTALL_PREFIX}/lib/$(Configuration)")
+
+    add_custom_target(filament_copy
+            COMMAND xcopy /d /s /i /y /q \"include\" \"${filament_INCLUDE_DIRS}\"
+            COMMAND xcopy /d /s /i /y /q \"lib/x86_64/${CRT_CONFIG}\" \"${3RDPARTY_INSTALL_PREFIX}/lib/Release\"
+            COMMAND xcopy /d /s /i /y /q \"lib/x86_64/${CRT_CONFIG}d\" \"${3RDPARTY_INSTALL_PREFIX}/lib/Debug\"
+            COMMAND xcopy /d /s /i /y /q \"bin\" \"${3RDPARTY_INSTALL_PREFIX}/bin\"
+            WORKING_DIRECTORY ${FILAMENT_ROOT})
 else()
-    add_custom_target(filament_copy)
+    add_custom_target(filament_copy
+            COMMAND cp -a -u include/* ${filament_INCLUDE_DIRS}
+            COMMAND cp -a -u lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
+            COMMAND cp -a -u bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
+            WORKING_DIRECTORY ${FILAMENT_ROOT})
 endif()
 
 add_dependencies(build_all_3rd_party_libs filament_copy)
