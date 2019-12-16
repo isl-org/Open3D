@@ -53,12 +53,18 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
         const Image &depth,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
-        int stride) {
+        int stride,
+        bool keep_organized) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    int num_valid_pixels = CountValidDepthPixels(depth, stride);
+    int num_valid_pixels;
+    if (keep_organized) {
+      num_valid_pixels = int(depth.height_ / stride) * int(depth.width_ / stride);
+    } else {
+      num_valid_pixels = CountValidDepthPixels(depth, stride);
+    }
     pointcloud->points_.resize(num_valid_pixels);
     int cnt = 0;
     for (int i = 0; i < depth.height_; i += stride) {
@@ -82,13 +88,19 @@ template <typename TC, int NC>
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic) {
+        const Eigen::Matrix4d &extrinsic,
+        bool keep_organized=false) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
-    int num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+    int num_valid_pixels;
+    if (keep_organized) {
+      num_valid_pixels = image.depth_.height_ * image.depth_.width_;
+    } else {
+      num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+    }
     pointcloud->points_.resize(num_valid_pixels);
     pointcloud->colors_.resize(num_valid_pixels);
     int cnt = 0;
@@ -124,16 +136,19 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
         const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
         double depth_scale /* = 1000.0*/,
         double depth_trunc /* = 1000.0*/,
-        int stride /* = 1*/) {
+        int stride /* = 1*/,
+        bool keep_organized) {
     if (depth.num_of_channels_ == 1) {
         if (depth.bytes_per_channel_ == 2) {
             auto float_depth =
                     depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
             return CreatePointCloudFromFloatDepthImage(*float_depth, intrinsic,
-                                                       extrinsic, stride);
+                                                       extrinsic, stride,
+                                                       keep_organized);
         } else if (depth.bytes_per_channel_ == 4) {
             return CreatePointCloudFromFloatDepthImage(depth, intrinsic,
-                                                       extrinsic, stride);
+                                                       extrinsic, stride,
+                                                       keep_organized);
         }
     }
     utility::LogError(
@@ -144,17 +159,20 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
 std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/) {
+        const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
+        bool keep_organized) {
     if (image.depth_.num_of_channels_ == 1 &&
         image.depth_.bytes_per_channel_ == 4) {
         if (image.color_.bytes_per_channel_ == 1 &&
             image.color_.num_of_channels_ == 3) {
             return CreatePointCloudFromRGBDImageT<uint8_t, 3>(image, intrinsic,
-                                                              extrinsic);
+                                                              extrinsic,
+                                                              keep_organized);
         } else if (image.color_.bytes_per_channel_ == 4 &&
                    image.color_.num_of_channels_ == 1) {
             return CreatePointCloudFromRGBDImageT<float, 1>(image, intrinsic,
-                                                            extrinsic);
+                                                            extrinsic,
+                                                            keep_organized);
         }
     }
     utility::LogError(
