@@ -52,7 +52,11 @@ EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 
 if (ENABLE_GUI)
-    EXAMPLE_CPP(FilamentDemo          ${CMAKE_PROJECT_NAME})
+    if (WIN32)
+        EXAMPLE_CPP(FilamentDemo      ${CMAKE_PROJECT_NAME} SDL2main$<$<CONFIG:Debug>:d>)
+    else()
+        EXAMPLE_CPP(FilamentDemo      ${CMAKE_PROJECT_NAME})
+    endif()
     EXAMPLE_CPP(GuiDemo               ${CMAKE_PROJECT_NAME})
 
     set(GUIDEMO_RSRC_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)

@@ -316,48 +316,55 @@ INSTALL_HEADERS(fmt)
 
 # Filament library
 if (ENABLE_GUI)
-    set(FILAMENT_CC_PATH ${CMAKE_C_COMPILER})
-    set(FILAMENT_CXX_PATH ${CMAKE_CXX_COMPILER})
-    # Filament can only be compiled with Clang and Visual Studio, not GCC
-    if (UNIX AND NOT APPLE AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        unset(FILAMENT_CC_PATH)
-        unset(FILAMENT_CXX_PATH)
-        # Find if a clang binary exists
-        find_program(FILAMENT_CC_PATH NAMES clang-7 clang)
-        find_program(FILAMENT_CXX_PATH NAMES clang++-7 clang++)
+    if (BUILD_FILAMENT)
+        set(FILAMENT_CC_PATH ${CMAKE_C_COMPILER})
+        set(FILAMENT_CXX_PATH ${CMAKE_CXX_COMPILER})
+        # Filament can only be compiled with Clang and Visual Studio, not GCC
+        if (UNIX AND NOT APPLE AND NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+            unset(FILAMENT_CC_PATH)
+            unset(FILAMENT_CXX_PATH)
+            # Find if a clang binary exists
+            find_program(FILAMENT_CC_PATH NAMES clang-7 clang)
+            find_program(FILAMENT_CXX_PATH NAMES clang++-7 clang++)
 
-        # If it does, check that it is at least version 7 (required by Filament)
-        if (FILAMENT_CXX_PATH)
-            # Can't use check_c_source_compiles() because it uses the current
-            # compiler. Also, CMake appears to have no way to make a temporary
-            # file, so we have to do it ourselves. Since we are guaranteed to
-            # be on Unix here, using /tmp is safe.
-            set(CHKVER_C /tmp/open3d.checkclang.c)
-            file(WRITE ${CHKVER_C} 
+            # If it does, check that it is at least version 7 (required by Filament)
+            if (FILAMENT_CXX_PATH)
+                # Can't use check_c_source_compiles() because it uses the current
+                # compiler. Also, CMake appears to have no way to make a temporary
+                # file, so we have to do it ourselves. Since we are guaranteed to
+                # be on Unix here, using /tmp is safe.
+                set(CHKVER_C /tmp/open3d.checkclang.c)
+                file(WRITE ${CHKVER_C} 
 "#if __clang_major__ < 7
 #error Need clang >= 7
 #endif
 int main(int argc, char *argv[]) { return 0; }"
-                )
-            execute_process(COMMAND ${FILAMENT_CXX_PATH} -c -o /dev/null ${CHKVER_C}
-                            ERROR_VARIABLE CLANG_NOT_USABLE)
-            if (CLANG_NOT_USABLE)
-                unset(FILAMENT_CC_PATH)
-                unset(FILAMENT_CXX_PATH)
+                    )
+                execute_process(COMMAND ${FILAMENT_CXX_PATH} -c -o /dev/null ${CHKVER_C}
+                                ERROR_VARIABLE CLANG_NOT_USABLE)
+                if (CLANG_NOT_USABLE)
+                    unset(FILAMENT_CC_PATH)
+                    unset(FILAMENT_CXX_PATH)
+                endif()
+                file(REMOVE ${CHKVER_C})
             endif()
-            file(REMOVE ${CHKVER_C})
-        endif()
 
-        # If the version is not >= 7, then disable GUI
-        if (NOT FILAMENT_CXX_PATH)
-            message(STATUS "Filament requires Clang >= 7, it cannot be built with GCC.")
-            message(STATUS "ENABLE_GUI is set to OFF")
-            set(ENABLE_GUI OFF)
+            # If the version is not >= 7, then disable GUI
+            if (NOT FILAMENT_CXX_PATH)
+                message(STATUS "Filament requires Clang >= 7, it cannot be built with GCC.")
+                message(STATUS "ENABLE_GUI is set to OFF")
+                set(ENABLE_GUI OFF)
+            endif()
         endif()
     endif()
     if (ENABLE_GUI)
-        message(STATUS "Building Filament from source")
-        include(filament/filament_download.cmake)
+        if (BUILD_FILAMENT)
+            message(STATUS "Building Filament from source")
+            include(filament/filament_build.cmake)
+        else()
+            message(STATUS "Using prebuilt Filament libraries")
+            include(filament/filament_download.cmake)
+        endif()
     endif ()
 endif()
 
