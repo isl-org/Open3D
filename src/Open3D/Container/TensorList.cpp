@@ -100,12 +100,12 @@ TensorList::TensorList(const Tensor& tensor)
       device_(tensor.GetDevice()),
       /// Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, tensor.GetDevice()) {
-    if (tensor.GetShape().size() <= 1) {
+    SizeVector shape = tensor.GetShape();
+    if (shape.size() <= 1) {
         utility::LogError(
                 "Unable to construct TensorList from a Tensor with dim <= 1");
     }
 
-    SizeVector shape = tensor.GetShape();
     size_ = shape[0];
     reserved_size_ = ReserveSize(size_);
     shape_ = SizeVector(shape.begin() + 1, shape.end());
@@ -142,21 +142,16 @@ Tensor TensorList::AsTensor() const {
 }
 
 void TensorList::Resize(int64_t n) {
-    if (n < size_) {
-        utility::LogError(
-                "Resizing TensorList of {} to a less equal size {} will "
-                "cause the loss of data.",
-                size_, n);
-    }
-
     /// Increase internal tensor size
     int64_t new_reserved_size = ReserveSize(n);
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
 
-    /// Now new_reserved_size <= reserved_size, safe to fill in data
-    internal_tensor_.Slice(0 /* dim */, size_, n).Fill(0);
+    if (n > size_) {
+        /// Now new_reserved_size <= reserved_size, safe to fill in data
+        internal_tensor_.Slice(0 /* dim */, size_, n).Fill(0);
+    }
     size_ = n;
 }
 
@@ -252,6 +247,10 @@ void TensorList::Clear() { *this = TensorList(shape_, dtype_, device_); }
 
 /// Protected
 void TensorList::ExpandTensor(int64_t new_reserved_size) {
+    if (new_reserved_size <= reserved_size_) {
+        utility::LogError("New size {} is smaller than current size {}.",
+                          new_reserved_size, reserved_size_);
+    }
     SizeVector new_expanded_shape = ExpandShape(shape_, new_reserved_size);
     Tensor new_internal_tensor = Tensor(new_expanded_shape, dtype_, device_);
 
@@ -263,7 +262,7 @@ void TensorList::ExpandTensor(int64_t new_reserved_size) {
 }
 
 SizeVector TensorList::ExpandShape(const SizeVector& shape,
-                                   int64_t new_dim_size /* = 0 */) {
+                                   int64_t new_dim_size /* = 1 */) {
     SizeVector expanded_shape = {new_dim_size};
     expanded_shape.insert(expanded_shape.end(), shape.begin(), shape.end());
     return expanded_shape;

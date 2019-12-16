@@ -42,16 +42,23 @@ namespace open3d {
 /// It is similar to std::vector<Tensor>,
 /// but uses open3d's tensor memory management system.
 /// Typical use cases:
-/// - Pointcloud: N x 1 x 3
+/// - Pointcloud: N x 3
 /// - Sparse Voxel Grid: N x 8 x 8 x 8
 class TensorList {
 public:
     /// Constructor for creating an empty TensorList
+    /// \param shape: shape for the contained tensors. e.g. (3) for a list of
+    /// points, (8, 8, 8) for a list of voxel blocks
+    /// \param dtype: type for the contained tensors. e.g. Dtype::Int64
+    /// \param device: device to store the contained tensors. e.g. "CPU:0"
     TensorList(const SizeVector& shape,
                const Dtype& dtype,
                const Device& device = Device("CPU:0"));
 
     /// Constructor from a vector with broadcastable tensors
+    /// \param tensors: a vector of tensors with compatible shapes for
+    /// broadcasting
+    /// \param device: device to store the contained tensors. e.g. "CPU:0"
     TensorList(std::vector<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
 
@@ -63,19 +70,20 @@ public:
     /// Create a new TensorList with copy of data
     TensorList(const TensorList& other);
 
-    /// Return the reference of the target TensorList, discarding original data
+    /// Return the reference of the target TensorList with shared memory,
+    /// discarding original data
     /// The behavior is the same as '=' for python lists
-    /// Note: this operation is the only one in TensorList that does not copy
-    /// data
     TensorList& operator=(const TensorList& other);
 
-    /// Return to reference of tensor with [0, size_-1]
+    /// Return the reference of the contained tensors with shared memory
     Tensor AsTensor() const;
 
     /// Resize an existing TensorList.
+    /// If the size increases, the increased part will be assigned 0
+    /// If the size decreases, the decreased part's value will be undefined
     void Resize(int64_t n);
 
-    /// Push back a tensor to the list
+    /// Push back the copy of a tensor to the list
     void PushBack(const Tensor& tensor);
 
     /// Concatenate two TensorLists
@@ -86,7 +94,7 @@ public:
     /// Concatenate two TensorLists and append the other to the end of *this
     void operator+=(const TensorList& other);
 
-    /// Return the reference of one tensor
+    /// Return the reference of one tensor with shared memory
     Tensor operator[](int64_t index);
 
     /// Return a new TensorList with copy of data
@@ -96,6 +104,7 @@ public:
     /// Return a new TensorList with copy of data
     TensorList IndexGet(std::vector<int64_t>& indices) const;
 
+    /// Clear the TensorList by discarding all data and creating a empty one
     void Clear();
 
     const SizeVector& GetShape() const { return shape_; }
@@ -106,17 +115,26 @@ public:
     const Tensor& GetInternalTensor() const { return internal_tensor_; }
 
 protected:
+    /// Expand the size of the internal tensor
     void ExpandTensor(int64_t new_reserved_size);
-    SizeVector ExpandShape(const SizeVector& shape, int64_t new_dim_size = 0);
+
+    /// Expand the shape in the first indexing dimension.
+    /// e.g. (8, 8, 8) -> (1, 8, 8, 8)
+    SizeVector ExpandShape(const SizeVector& shape, int64_t new_dim_size = 1);
+
+    /// Compute the reserved size for the desired number of tensors
+    /// with reserved_size_ = (1 << (ceil(log2(size_)) + 1))
     int64_t ReserveSize(int64_t n);
+
+    /// Check if index is out of bound (0, size_ - 1)
     void CheckIndex(int64_t index) const;
 
 protected:
     /// We always maintain an internal Tensor of (reserved_size_, shape_).
     /// However, we only allow accessing the Tensor of (size_, shape_).
-    /// In general, we guarantee reserved_size_ = (1 << (ceil(log2(size_)) +
-    /// 1)), as conventionally used in std::vector.
-    /// Exampls: (size_, reserved_size_) = (3, 8), (4, 8), (5, 16).
+    /// In general, reserved_size_ >= (1 << (ceil(log2(size_)) + 1))
+    /// as conventionally done in std::vector.
+    /// Examples: (size_, reserved_size_) = (3, 8), (4, 8), (5, 16).
     Tensor internal_tensor_;
 
     int64_t reserved_size_ = 0;

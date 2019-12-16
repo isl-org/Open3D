@@ -134,6 +134,12 @@ TEST_P(TensorListPermuteDevices, Resize) {
             tensor_list.AsTensor().ToFlatVector<float>(),
             std::vector<float>({0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2,
                                 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+
+    tensor_list.Resize(2);
+    EXPECT_EQ(tensor_list.GetSize(), 2);
+    EXPECT_EQ(tensor_list.GetReservedSize(), 16);
+    EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
+              std::vector<float>({0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1}));
 }
 
 TEST_P(TensorListPermuteDevices, PushBack) {
