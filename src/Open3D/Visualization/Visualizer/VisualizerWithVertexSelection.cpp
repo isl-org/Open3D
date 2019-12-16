@@ -62,8 +62,8 @@ bool BindFramebuffer(int width, int height) {
     GLuint fbo_texture;
     glGenTextures(1, &fbo_texture);
     glBindTexture(GL_TEXTURE_2D, fbo_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width,
-                 height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -71,15 +71,15 @@ bool BindFramebuffer(int width, int height) {
     if (!GLEW_ARB_framebuffer_object) {
         // OpenGL 2.1 doesn't require this, 3.1+ does
         utility::LogWarning(
-                "[BindFramebuffwer] Your GPU does not provide framebuffer objects. "
+                "[BindFramebuffwer] Your GPU does not provide framebuffer "
+                "objects. "
                 "Use a texture instead.");
         return false;
     }
     GLuint depth_render_buffer;
     glGenRenderbuffers(1, &depth_render_buffer);
     glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                          width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                               GL_RENDERBUFFER, depth_render_buffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
@@ -608,7 +608,7 @@ void VisualizerWithVertexSelection::MouseButtonCallback(GLFWwindow *window,
         }
         selection_mode_ = SelectionMode::None;
     } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        mouse_down_pos_ = { x, y };
+        mouse_down_pos_ = {x, y};
         selection_mode_ = SelectionMode::Moving;
         // The mouse moves on the viewing plane, but we want it to look like
         // we are moving the point we clicked on. One pixel on the viewing
@@ -688,7 +688,8 @@ void VisualizerWithVertexSelection::RemovePickedPoints(
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 }
 
-void VisualizerWithVertexSelection::DragSelectedPoints(const Eigen::Vector3d& delta, DragType type) {
+void VisualizerWithVertexSelection::DragSelectedPoints(
+        const Eigen::Vector3d &delta, DragType type) {
     ui_selected_points_geometry_ptr_->points_.clear();
     for (auto &kv : selected_points_) {
         auto &orig_coord = kv.second;
@@ -702,7 +703,8 @@ void VisualizerWithVertexSelection::DragSelectedPoints(const Eigen::Vector3d& de
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 }
 
-const std::vector<Eigen::Vector3d>* VisualizerWithVertexSelection::GetGeometryPoints() {
+const std::vector<Eigen::Vector3d>
+        *VisualizerWithVertexSelection::GetGeometryPoints() {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
@@ -739,22 +741,22 @@ const std::vector<Eigen::Vector3d>* VisualizerWithVertexSelection::GetGeometryPo
     return points;
 }
 
-std::shared_ptr<const geometry::Geometry> VisualizerWithVertexSelection::GetCurrentGeometry() {
+std::shared_ptr<const geometry::Geometry>
+VisualizerWithVertexSelection::GetCurrentGeometry() {
     return geometry_ptr_;
 }
 
-Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(int winX, int winY) {
+Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(int winX,
+                                                             int winY) {
     auto &view = (ViewControlWithEditing &)(*view_control_ptr_);
-    auto start = GLHelper::Unproject(Eigen::Vector3d(mouse_down_pos_.x(),
-                                                     view.GetWindowHeight() - mouse_down_pos_.y(),
-                                                     drag_depth_),
-                                     view.GetMVPMatrix(),
-                                     view.GetWindowWidth(),
-                                     view.GetWindowHeight());
-    auto end = GLHelper::Unproject(Eigen::Vector3d(winX, view.GetWindowHeight() - winY, drag_depth_),
-                                     view.GetMVPMatrix(),
-                                     view.GetWindowWidth(),
-                                     view.GetWindowHeight());
+    auto start = GLHelper::Unproject(
+            Eigen::Vector3d(mouse_down_pos_.x(),
+                            view.GetWindowHeight() - mouse_down_pos_.y(),
+                            drag_depth_),
+            view.GetMVPMatrix(), view.GetWindowWidth(), view.GetWindowHeight());
+    auto end = GLHelper::Unproject(
+            Eigen::Vector3d(winX, view.GetWindowHeight() - winY, drag_depth_),
+            view.GetMVPMatrix(), view.GetWindowWidth(), view.GetWindowHeight());
     return end - start;
 }
 
