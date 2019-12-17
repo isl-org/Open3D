@@ -391,11 +391,11 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
     return indices;
 }
 
-std::vector<int> VisualizerWithVertexSelection::GetPickedPoints() const {
-    std::vector<int> points;
+std::vector<VisualizerWithVertexSelection::PickedPoint> VisualizerWithVertexSelection::GetPickedPoints() const {
+    std::vector<PickedPoint> points;
     points.reserve(selected_points_.size());
     for (auto &kv : selected_points_) {
-        points.push_back(kv.first);
+        points.push_back({ kv.first, kv.second });
     }
     return points;
 }
@@ -672,6 +672,10 @@ void VisualizerWithVertexSelection::AddPickedPoints(
     }
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
+
+    if (OnSelectionChanged) {
+        OnSelectionChanged();
+    }
 }
 
 void VisualizerWithVertexSelection::RemovePickedPoints(
@@ -686,6 +690,10 @@ void VisualizerWithVertexSelection::RemovePickedPoints(
     }
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
+
+    if (OnSelectionChanged) {
+        OnSelectionChanged();
+    }
 }
 
 void VisualizerWithVertexSelection::DragSelectedPoints(
@@ -701,6 +709,10 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     }
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
+
+    if (type == DRAG_END && OnSelectionMoved) {
+        OnSelectionMoved();
+    }
 }
 
 const std::vector<Eigen::Vector3d>

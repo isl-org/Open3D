@@ -60,10 +60,18 @@ public:
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
-    std::vector<int> PickPoints(double x, double y, double w, double h);
-    std::vector<int> GetPickedPoints() const;
-    void ClearPickedPoints();
     void SetPointSize(double size);
+    std::vector<int> PickPoints(double x, double y, double w, double h);
+
+    struct PickedPoint {
+        int index;
+        Eigen::Vector3d coord;
+    };
+    std::vector<PickedPoint> GetPickedPoints() const;
+    void ClearPickedPoints();
+
+    std::function<void()> OnSelectionChanged;
+    std::function<void()> OnSelectionMoved;
 
 protected:
     bool InitViewControl() override;
