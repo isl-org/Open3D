@@ -32,12 +32,14 @@
 #include <unordered_map>
 
 #include <filament/utils/Entity.h>
+#include <filament/utils/EntityInstance.h>
 
 namespace filament
 {
     class Engine;
     class Renderer;
     class Scene;
+    class TransformManager;
     class VertexBuffer;
 }
 
@@ -74,6 +76,9 @@ public:
     LightHandle AddLight(const LightDescription& descr) override;
     void RemoveLight(const LightHandle& id) override;
 
+    void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) override;
+    Transform GetEntityTransform(const REHandle_abstract& entityId) const override;
+
     void Draw(filament::Renderer& renderer);
 
     filament::Scene* GetNativeScene() const { return scene_; }
@@ -93,6 +98,7 @@ private:
     filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner,
                                                  size_t verticesCount);
 
+    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id) const;
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;

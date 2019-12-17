@@ -247,7 +247,7 @@ public:
         sceneWidget_->GetCameraManipulator()->SetFov(90.0f);
         sceneWidget_->GetCameraManipulator()->SetNearPlane(0.1f);
         sceneWidget_->GetCameraManipulator()->SetFarPlane(50.0f);
-        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 5},   {10, 10, 10});
+        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 0},   {-2, 10, 10});
 
         // Create light
         visualization::LightDescription lightDescription;
@@ -257,17 +257,32 @@ public:
 
         sceneWidget_->GetScene()->AddLight(lightDescription);
 
-        auto sphere = geometry::TriangleMesh::CreateSphere(2);
+        auto sphere = geometry::TriangleMesh::CreateBox(2,2,2);
         sphere->ComputeVertexNormals();
 
         // Add geometry
-        sceneWidget_->GetScene()->AddGeometry(*sphere, white);
-        sceneWidget_->GetScene()->AddGeometry(*sphere, redPlastic);
-        //sceneWidget_->AddMesh(mesh, 2, 0, 0);
-        sceneWidget_->GetScene()->AddGeometry(*sphere, green);
-        //sceneWidget_->AddMesh(mesh, 0, 2, 0);
-        sceneWidget_->GetScene()->AddGeometry(*sphere, blueCeramic);
-        //sceneWidget_->AddMesh(mesh, 0, 0, 2);
+        {
+            using Transform = visualization::Scene::Transform;
+
+            Transform t = Transform::Identity();
+            auto whiteSphere = sceneWidget_->GetScene()->AddGeometry(*sphere, white);
+            sceneWidget_->GetScene()->SetEntityTransform(whiteSphere, t);
+
+            t = Transform::Identity();
+            t.translate(Eigen::Vector3f(2.f, 0, 0));
+            auto redSphere = sceneWidget_->GetScene()->AddGeometry(*sphere, redPlastic);
+            sceneWidget_->GetScene()->SetEntityTransform(redSphere, t);
+
+            t = Transform::Identity();
+            t.translate(Eigen::Vector3f(0, 2.f, 0));
+            auto greenSphere = sceneWidget_->GetScene()->AddGeometry(*sphere, green);
+            sceneWidget_->GetScene()->SetEntityTransform(greenSphere, t);
+
+            t = Transform::Identity();
+            t.translate(Eigen::Vector3f(0, 0, 2.f));
+            auto blueSphere = sceneWidget_->GetScene()->AddGeometry(*sphere, blueCeramic);
+            sceneWidget_->GetScene()->SetEntityTransform(blueSphere, t);
+        }
 
         AddChild(sceneWidget_);
     }

@@ -35,6 +35,7 @@
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
+#include <filament/TransformManager.h>
 #include <filament/View.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
@@ -230,6 +231,39 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
     // TODO: Log if failed
 }
 
+//void FilamentScene::SetGeometryTransform(const GeometryHandle& geometryId, const Transform& transform) {
+//    auto found = entities_.find(geometryId);
+//    if (found != entities_.end()) {
+//        auto& transformMgr = engine_.getTransformManager();
+//        auto iTransform = transformMgr.getInstance(found->second.self);
+//        if (!iTransform.isValid()) {
+//            transformMgr.create(found->second.self);
+//            iTransform = transformMgr.getInstance(found->second.self);
+//        }
+//
+//        auto eMatrix = transform.matrix();
+//        filament::math::mat4f fTransform(eMatrix(0,0), eMatrix(0,1), eMatrix(0,2), eMatrix(0,3),
+//                                         eMatrix(1,0), eMatrix(1,1), eMatrix(1,2), eMatrix(1,3),
+//                                         eMatrix(2,0), eMatrix(2,1), eMatrix(2,2), eMatrix(2,3),
+//                                         eMatrix(3,0), eMatrix(3,1), eMatrix(3,2), eMatrix(3,3)
+//                );
+//        transformMgr.setTransform(iTransform, fTransform);
+//    }
+//}
+//
+//FilamentScene::Transform FilamentScene::GetGeometryTransform(const GeometryHandle& geometryId) const {
+//    auto found = entities_.find(geometryId);
+//    if (found != entities_.end()) {
+//        auto& transformMgr = engine_.getTransformManager();
+//        auto iTransform = transformMgr.getInstance(found->second.self);
+//        if (!iTransform.isValid()) {
+//            transformMgr.create(found->second.self);
+//            iTransform = transformMgr.getInstance(found->second.self);
+//        }
+//    }
+//    return FilamentScene::Transform();
+//}
+
 void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
     RemoveEntity(geometryId);
 }
@@ -280,6 +314,42 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
 
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
+void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) {
+    auto iTransform = GetEntityTransformInstance(entityId);
+    if (iTransform.isValid()) {
+        auto eMatrix = transform.matrix();
+        // FIXME: Need to find proper handling for different matrix storage approaches
+        filament::math::mat4f fTransform(eMatrix(0,0), eMatrix(1,0), eMatrix(2,0), eMatrix(3,0),
+                                         eMatrix(0,1), eMatrix(1,1), eMatrix(2,1), eMatrix(3,1),
+                                         eMatrix(0,2), eMatrix(1,2), eMatrix(2,2), eMatrix(3,2),
+                                         eMatrix(0,3), eMatrix(1,3), eMatrix(2,3), eMatrix(3,3)
+                );
+
+        auto& transformMgr = engine_.getTransformManager();
+        transformMgr.setTransform(iTransform, fTransform);
+    }
+}
+
+FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstract& entityId) const {
+    auto iTransform = GetEntityTransformInstance(entityId);
+
+    Transform eTransform;
+    if (iTransform.isValid()) {
+        auto& transformMgr = engine_.getTransformManager();
+        auto fTransform = transformMgr.getTransform(iTransform);
+
+        Transform::MatrixType matrix;
+
+        matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
+                fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
+                fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
+                fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+
+        eTransform = matrix;
+    }
+    return eTransform;
+}
+
 void FilamentScene::Draw(filament::Renderer& renderer) {
     for (const auto& pair : views_) {
         auto& container = pair.second;
@@ -309,6 +379,22 @@ filament::VertexBuffer* FilamentScene::AllocateVertexBuffer(
     }
 
     return vbuf;
+}
+
+utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) const {
+    auto found = entities_.find(id);
+
+    filament::TransformManager::Instance iTransform;
+    if (found != entities_.end()) {
+        auto& transformMgr = engine_.getTransformManager();
+        iTransform = transformMgr.getInstance(found->second.self);
+        if (!iTransform.isValid()) {
+            transformMgr.create(found->second.self);
+            iTransform = transformMgr.getInstance(found->second.self);
+        }
+    }
+
+    return iTransform;
 }
 
 void FilamentScene::RemoveEntity(REHandle_abstract id) {
