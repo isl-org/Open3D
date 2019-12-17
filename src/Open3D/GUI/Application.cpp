@@ -30,6 +30,8 @@
 #include "Theme.h"
 #include "Window.h"
 
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+
 #include <SDL.h>
 
 #include <chrono>
@@ -41,7 +43,11 @@
 #if !defined(WIN32)
 #    include <unistd.h>
 #else
-#    include <io.h>
+    #include <io.h>
+    #include <direct.h>
+
+    // Copy-paste from UNIX <sys/stat.h> sources
+    #define S_ISDIR(mask) ((mask & S_IFMT) == S_IFDIR)
 #endif
 
 #ifdef WIN32
@@ -118,6 +124,7 @@ bool isDirectory(const std::string& path) {
     struct stat statbuf;
     if (stat(path.c_str(), &statbuf) != 0)
         return false;
+
     return S_ISDIR(statbuf.st_mode);
 }
 
@@ -208,6 +215,8 @@ Application::Application()
     impl_->theme.tabInactiveColor = impl_->theme.buttonColor;
     impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
     impl_->theme.tabActiveColor = impl_->theme.buttonActiveColor;
+
+    visualization::EngineInstance::SelectBackend(filament::backend::Backend::OPENGL);
 }
 
 Application::~Application() {
@@ -383,7 +392,7 @@ void Application::Run() {
             auto w = kv.second;
             bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
             if (w->IsVisible() && gotEvents) {
-                if (w->OnDraw(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
+                if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
                     SDL_Event expose;
                     expose.type = SDL_WINDOWEVENT;
                     expose.window.windowID = w->GetID();

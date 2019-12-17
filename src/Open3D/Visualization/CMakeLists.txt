@@ -23,6 +23,7 @@ add_custom_target(ShaderFileTarget ALL
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 # build
+
 file(GLOB_RECURSE VISUALIZATION_ALL_HEADER_FILES "*.h")
 file(GLOB_RECURSE VISUALIZATION_ALL_SOURCE_FILES "*.cpp")
 
@@ -31,6 +32,7 @@ add_library(Visualization OBJECT
             ${SHADER_FILES}
             ${VISUALIZATION_ALL_HEADER_FILES}
             ${VISUALIZATION_ALL_SOURCE_FILES})
+set_property(TARGET Visualization PROPERTY CXX_STANDARD 14)
 
 source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 

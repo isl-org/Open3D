@@ -20,19 +20,6 @@ EXAMPLE_CPP(EvaluatePCDMatch          ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(FileDialog                ${CMAKE_PROJECT_NAME} tinyfiledialogs)
 EXAMPLE_CPP(FileSystem                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Flann                     ${CMAKE_PROJECT_NAME})
-if (ENABLE_GUI)
-    EXAMPLE_CPP(GuiDemo                   ${CMAKE_PROJECT_NAME})
-    set(GUIDEMO_RSRC_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
-    if (WIN32)
-        add_custom_target(GuiDemoResources
-                          ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
-    else ()
-        add_custom_target(GuiDemoResources
-                          rm -f ${GUIDEMO_RSRC_DIR}
-                          COMMAND ln -s ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
-    endif()
-    add_dependencies(GuiDemo GuiDemoResources)
-endif (ENABLE_GUI)
 EXAMPLE_CPP(Image                     ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(IntegrateRGBD             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(LineSet                   ${CMAKE_PROJECT_NAME})
@@ -63,3 +50,33 @@ EXAMPLE_CPP(ViewDistances             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
+
+if (ENABLE_GUI)
+    if (WIN32)
+        EXAMPLE_CPP(FilamentDemo      ${CMAKE_PROJECT_NAME} SDL2main$<$<CONFIG:Debug>:d>)
+    else()
+        EXAMPLE_CPP(FilamentDemo      ${CMAKE_PROJECT_NAME})
+    endif()
+    EXAMPLE_CPP(GuiDemo               ${CMAKE_PROJECT_NAME})
+
+    set(GUIDEMO_RSRC_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
+    if (WIN32)
+        add_custom_target(GuiDemoResources
+                          ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
+    else ()
+        add_custom_target(GuiDemoResources
+                          rm -f ${GUIDEMO_RSRC_DIR}
+                          COMMAND ln -s ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
+    endif()
+    add_dependencies(GuiDemo GuiDemoResources)
+
+    # Copy .dll files on Windows
+    if (WIN32)
+        add_custom_target(copy_dll
+            COMMAND xcopy /s /i /y /f \"bin/*.dll\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\"
+            WORKING_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}
+            DEPENDS ext_sdl2)
+
+        add_dependencies(GuiDemo copy_dll)
+    endif()
+endif (ENABLE_GUI)

@@ -1,17 +1,13 @@
 # References:
-# https://cmake.org/cmake/help/v3.0/
+# https://cmake.org/cmake/help/v3.1/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.1)
+set (CMAKE_CXX_STANDARD 14)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
-
-if (NOT CMAKE_VERSION VERSION_LESS "3.1")
-    cmake_policy(SET CMP0054 NEW)
-    set(OpenGL_GL_PREFERENCE LEGACY)
-endif()
 
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No CMAKE_BUILD_TYPE specified, default to Debug")
@@ -87,9 +83,20 @@ option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
+option(BUILD_FILAMENT            "Build filament from source"               OFF)
 option(ENABLE_GUI                "Builds Filament, requires Clang >= 7"     ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
+option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+
+# This should be a folder with next hierarchy:
+# root
+# |-bin <- Here filament tools are located
+# |-include
+# |-lib
+# | |-<platform_type> <- For precompiled libs
+# For Windows we need even more specific folders struct, check 'filament_download.cmake' for details
+set(PATH_TO_FILAMENT "" CACHE STRING "Path to prebuilt filament libraries")
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -132,6 +139,11 @@ if (WIN32)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
     endif (MSVC)
 
+    # Filament links normally only against static runtime
+    if (ENABLE_GUI)
+        set(STATIC_WINDOWS_RUNTIME ON)
+    endif()
+
     if (STATIC_WINDOWS_RUNTIME)
         # by default, "/MD" and "/MDd" is set by CMake automatically
         string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
@@ -170,7 +182,6 @@ elseif (APPLE)
     endif()
 elseif (UNIX)
     add_definitions(-DUNIX)
-    # enable c++14, specify libc++ instead of libstdc++ because Clang uses it
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
     add_compile_options(-Wno-deprecated-declarations)

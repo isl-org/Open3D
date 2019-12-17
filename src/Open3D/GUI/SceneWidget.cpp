@@ -26,63 +26,69 @@
 
 #include "SceneWidget.h"
 
+#include "Open3D/Visualization/Rendering/CameraManipulator.h"
+#include "Open3D/Visualization/Rendering/Scene.h"
+#include "Open3D/Visualization/Rendering/View.h"
+
 namespace open3d {
 namespace gui {
 
 struct SceneWidget::Impl {
-    RendererView view;
+    visualization::Scene& scene;
+    visualization::ViewHandle viewId;
+    std::unique_ptr<visualization::CameraManipulator> cameraManipulator;
+    bool frameChanged = false;
 
-    Impl(Renderer& r, Renderer::ViewId viewId)
-        : view(r, viewId)
-    {}
+    explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
 
-SceneWidget::SceneWidget(Renderer& r)
-    : impl_(new SceneWidget::Impl(r, r.CreateView()))
-{
+SceneWidget::SceneWidget(visualization::Scene& scene)
+    : impl_(new Impl(scene)) {
+    impl_->viewId = scene.AddView(0,0,1,1);
+
+    auto view = impl_->scene.GetView(impl_->viewId);
+    impl_->cameraManipulator = std::make_unique<visualization::CameraManipulator>(*view->GetCamera(), 1, 1);
 }
 
 SceneWidget::~SceneWidget() {
+    impl_->scene.RemoveView(impl_->viewId);
 }
 
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
-    impl_->view.SetViewport(f);
-}
 
-bool SceneWidget::Is3D() const {
-    return true;
+    impl_->frameChanged = true;
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
-    impl_->view.SetClearColor(color);
+    auto view = impl_->scene.GetView(impl_->viewId);
+    view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
-RendererCamera& SceneWidget::GetCamera() {
-    return impl_->view.GetCamera();
+visualization::Scene* SceneWidget::GetScene() const {
+    return &impl_->scene;
 }
 
-void SceneWidget::AddLight(Renderer::LightId lightId) {
-    impl_->view.GetScene().AddLight(lightId);
-}
-
-void SceneWidget::RemoveLight(Renderer::LightId lightId) {
-    impl_->view.GetScene().RemoveLight(lightId);
-}
-
-void SceneWidget::AddMesh(Renderer::MeshId meshId,
-                          float x /*=0*/, float y /*=0*/, float z /*=0*/) {
-    Transform t;
-    t.Translate(x, y, z);
-    impl_->view.GetScene().AddMesh(meshId, t);
-}
-
-void SceneWidget::RemoveMesh(Renderer::MeshId meshId) {
-    impl_->view.GetScene().RemoveMesh(meshId);
+visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {
+    return impl_->cameraManipulator.get();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
-    impl_->view.Draw();
+    if (impl_->frameChanged) {
+        impl_->frameChanged = false;
+
+        auto f = GetFrame();
+
+        // GUI have null of Y axis at top, but renderer have it at bottom
+        // so we need to convert coordinates
+        int y = context.screenHeight - (f.height + f.y);
+
+        auto view = impl_->scene.GetView(impl_->viewId);
+        view->SetViewport(f.x, y, f.width, f.height);
+
+        impl_->cameraManipulator->SetViewport(f.width, f.height);
+    }
+
     return Widget::DrawResult::NONE;
 }
 
