@@ -35,28 +35,68 @@
 
 namespace open3d {
 
-class Blob : public std::enable_shared_from_this<Blob> {
+/// Blob class refers to a blob of memory in device or host.
+///
+/// Usually a Blob is constructed by specifying the blob size and device, memory
+/// allocation happens during the Blob's construction.
+///
+/// A Blob's buffer can also be managed by an external memory manager. In this
+/// case, a deleter function is needed to notify the external memory manager
+/// that the memory is no longer needed. It does not make sense to infer the
+/// total buffer size. For example, if a Tensor has a negative stride size, it
+/// is necessary to access memory addresses smaller than Blob's beginning memory
+/// address. The only responsibility for Blob is to hold the beginning
+/// memory address and it's up to the user to access any addresses around it.
+///
+/// In summary:
+/// - A Blob does not know about its memory size after construction.
+/// - A Blob cannot be deep-copied. However, the Tensor which owns the blob can
+/// be copied.
+class Blob {
 public:
+    /// Construct Blob on a specified device.
+    ///
+    /// \param byte_size Size of the blob in bytes.
+    /// \param device Device where the blob resides.
     Blob(int64_t byte_size, const Device& device)
-        : byte_size_(byte_size), device_(device) {
-        v_ = MemoryManager::Malloc(byte_size_, device_);
-    }
+        : deleter_(nullptr),
+          data_ptr_(MemoryManager::Malloc(byte_size, device)),
+          device_(device) {}
 
-    ~Blob() { MemoryManager::Free(v_, device_); };
+    /// Construct Blob with externally managed memory.
+    ///
+    /// \param device Device where the blob resides.
+    /// \param data_ptr Pointer the blob's beginning.
+    /// \param deleter The deleter function is called at Blob's destruction to
+    /// notify the external memory manager that the memory is no longer needed.
+    /// It's up to the external manager to free the memory.
+    Blob(const Device& device,
+         void* data_ptr,
+         const std::function<void(void*)>& deleter)
+        : deleter_(deleter), data_ptr_(data_ptr), device_(device) {}
 
-    /// Returns true if ptr is within the memory range of Blob
-    bool IsPtrInBlob(const void* ptr) const {
-        return (ptr >= v_) && (ptr < static_cast<const char*>(v_) + byte_size_);
-    }
+    ~Blob() {
+        if (deleter_ && data_ptr_) {
+            deleter_(data_ptr_);
+        } else {
+            MemoryManager::Free(data_ptr_, device_);
+        }
+    };
 
-public:
-    /// Device data pointer
-    void* v_ = nullptr;
+    Device GetDevice() const { return device_; }
 
-    /// Size of Blob in bytes
-    int64_t byte_size_ = 0;
+    void* GetDataPtr() { return data_ptr_; }
 
-    /// Device context for the blob
+    const void* GetDataPtr() const { return data_ptr_; }
+
+protected:
+    /// For externally managed memory, deleter != nullptr.
+    std::function<void(void*)> deleter_ = nullptr;
+
+    /// Device data pointer.
+    void* data_ptr_ = nullptr;
+
+    /// Device context for the blob.
     Device device_;
 };
 

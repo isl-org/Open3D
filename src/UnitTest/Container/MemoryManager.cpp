@@ -76,23 +76,3 @@ TEST_P(MemoryManagerPermuteDevicePairs, Memcpy) {
     MemoryManager::Free(dst_ptr, dst_device);
     MemoryManager::Free(src_ptr, src_device);
 }
-
-TEST_P(MemoryManagerPermuteDevicePairs, MemcpyBlob) {
-    Device dst_device;
-    Device src_device;
-    std::tie(dst_device, src_device) = GetParam();
-
-    char dst_vals[6] = "xxxxx";
-    char src_vals[6] = "hello";
-    size_t num_bytes = strlen(src_vals) + 1;
-
-    auto dst_blob = std::make_shared<Blob>(num_bytes, dst_device);
-    auto src_blob = std::make_shared<Blob>(num_bytes, src_device);
-    MemoryManager::MemcpyFromHost(src_blob->v_, src_device, (void*)src_vals,
-                                  num_bytes);
-
-    MemoryManager::MemcpyBlob(dst_blob, src_blob);
-    MemoryManager::MemcpyToHost((void*)dst_vals, dst_blob->v_, dst_device,
-                                num_bytes);
-    ASSERT_STREQ(dst_vals, src_vals);
-}

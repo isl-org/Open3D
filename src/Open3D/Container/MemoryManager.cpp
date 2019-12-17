@@ -44,23 +44,6 @@ void MemoryManager::Free(void* ptr, const Device& device) {
     return GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
-void MemoryManager::MemcpyBlob(const std::shared_ptr<Blob>& dst_blob,
-                               const std::shared_ptr<Blob>& src_blob) {
-    if (dst_blob == nullptr || src_blob == nullptr) {
-        utility::LogError("Either dst_blob or src_blob is null");
-    }
-    if (dst_blob->v_ == src_blob->v_) {
-        utility::LogError("dst and src have same buffer address");
-    }
-    if (dst_blob->byte_size_ != src_blob->byte_size_) {
-        utility::LogError(
-                "dst and src do not have the same byte_size, {} != {}",
-                dst_blob->byte_size_, src_blob->byte_size_);
-    }
-    Memcpy(dst_blob->v_, dst_blob->device_, src_blob->v_, src_blob->device_,
-           src_blob->byte_size_);
-}
-
 void MemoryManager::Memcpy(void* dst_ptr,
                            const Device& dst_device,
                            const void* src_ptr,
@@ -77,7 +60,7 @@ void MemoryManager::Memcpy(void* dst_ptr,
          dst_device.GetType() != Device::DeviceType::CUDA) ||
         (src_device.GetType() != Device::DeviceType::CPU &&
          src_device.GetType() != Device::DeviceType::CUDA)) {
-        utility::LogError("Unimplemented device for Memcpy.");
+        utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
     }
 
     std::shared_ptr<DeviceMemoryManager> device_mm;
@@ -124,7 +107,8 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
             };
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
-        utility::LogError("Unimplemented device");
+        utility::LogError(
+                "MemoryManager::GetDeviceMemoryManager: Unimplemented device");
     }
     return map_device_type_to_memory_manager.at(device.GetType());
 }

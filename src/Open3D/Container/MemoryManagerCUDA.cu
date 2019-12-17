@@ -42,7 +42,7 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
     if (device.GetType() == Device::DeviceType::CUDA) {
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
     } else {
-        utility::LogError("Unimplemented device");
+        utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device");
     }
     return ptr;
 }
@@ -54,7 +54,7 @@ void CUDAMemoryManager::Free(void* ptr, const Device& device) {
             OPEN3D_CUDA_CHECK(cudaFree(ptr));
         }
     } else {
-        utility::LogError("Unimplemented device");
+        utility::LogError("CUDAMemoryManager::Free: Unimplemented device");
     }
 }
 

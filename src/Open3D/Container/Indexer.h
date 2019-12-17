@@ -41,16 +41,7 @@ static constexpr int64_t MAX_DIMS = 16;
 // Maximum number of operands (inputs) of an op.
 static constexpr int64_t MAX_OPERANDS = 8;
 
-/// A minimalistic class that reference a Tensor. This class can be used in both
-/// host and device code after construction.
-///
-/// TensorRef is similar to dlpack's DLTensor, with the following differences:
-/// - DLTensor stores the full blob's data ptr and init byte_offsets, while
-///   TensorRef stores the offsetted initial data ptr directly.
-/// - TensorRef does not store the device contexts.
-/// - TensorRef uses fix-sized array e.g. int64_t shape_[MAX_DIMS], instead of
-///   int64_t*.
-/// - In the future, we may revisit this part when we enable dlpack support.
+/// A minimalistic class that reference a Tensor.
 struct TensorRef {
     TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
 
@@ -59,7 +50,7 @@ struct TensorRef {
             utility::LogError("Tenor has too many dimensions {} > {}.",
                               t.NumDims(), MAX_DIMS);
         }
-        data_ptr_ = static_cast<char*>(const_cast<void*>(t.GetDataPtr()));
+        data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
         dtype_byte_size_ = DtypeUtil::ByteSize(t.GetDtype());
         for (int64_t i = 0; i < ndims_; ++i) {
@@ -78,7 +69,7 @@ struct TensorRef {
         }
     }
 
-    char* data_ptr_;
+    void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
@@ -254,7 +245,7 @@ protected:
             offset += workload_idx / master_strides_[i] * tr.strides_[i];
             workload_idx = workload_idx % master_strides_[i];
         }
-        return tr.data_ptr_ + offset * tr.dtype_byte_size_;
+        return static_cast<char*>(tr.data_ptr_) + offset * tr.dtype_byte_size_;
     }
 
     /// Number of input Tensors.
