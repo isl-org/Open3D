@@ -89,7 +89,8 @@ void pybind_pointcloud(py::module &m) {
             .def("voxel_down_sample_keep_indices",
                  &geometry::PointCloud::VoxelDownSampleKeepIndices,
                  "Function to downsample using "
-                 "geometry::PointCloud::VoxelDownSample also records whole point "
+                 "geometry::PointCloud::VoxelDownSample also records whole "
+                 "point "
                  "cloud indices before downsampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)

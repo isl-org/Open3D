@@ -122,7 +122,8 @@ public:
 
     /// Function to downsample using VoxelDownSample, but keep
     /// original pointcloud's indices.
-    std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi,
+    std::tuple<std::shared_ptr<PointCloud>,
+               Eigen::MatrixXi,
                std::vector<std::vector<int>>>
     VoxelDownSampleKeepIndices(double voxel_size,
                                const Eigen::Vector3d &min_bound,
