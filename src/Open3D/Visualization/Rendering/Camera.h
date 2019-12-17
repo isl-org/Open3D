@@ -37,6 +37,8 @@ public:
 
     enum class Projection { Perspective, Ortho };
 
+    virtual ~Camera() = default;
+
     virtual void SetProjection(double fov,
                                double aspect,
                                double near,
