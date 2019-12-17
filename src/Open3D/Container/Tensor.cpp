@@ -169,6 +169,7 @@ Tensor Tensor::Copy(const Device& device) const {
 void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 
 Tensor Tensor::Clone(const Device& device) const {
+    // Clone should not use kernel::Copy to avoid infinite recursions.
     auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);
     MemoryManager::MemcpyBlob(new_blob, blob_);
     int64_t data_offset =
@@ -268,7 +269,7 @@ std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
 
-    if (device_.device_type_ == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (device_.GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
         Tensor host_contiguous_tensor = Copy(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {

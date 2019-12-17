@@ -73,18 +73,18 @@ void MemoryManager::Memcpy(void* dst_ptr,
         utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
     }
 
-    if ((dst_device.device_type_ != Device::DeviceType::CPU &&
-         dst_device.device_type_ != Device::DeviceType::CUDA) ||
-        (src_device.device_type_ != Device::DeviceType::CPU &&
-         src_device.device_type_ != Device::DeviceType::CUDA)) {
+    if ((dst_device.GetType() != Device::DeviceType::CPU &&
+         dst_device.GetType() != Device::DeviceType::CUDA) ||
+        (src_device.GetType() != Device::DeviceType::CPU &&
+         src_device.GetType() != Device::DeviceType::CUDA)) {
         utility::LogError("Unimplemented device for Memcpy.");
     }
 
     std::shared_ptr<DeviceMemoryManager> device_mm;
-    if (dst_device.device_type_ == Device::DeviceType::CPU &&
-        src_device.device_type_ == Device::DeviceType::CPU) {
+    if (dst_device.GetType() == Device::DeviceType::CPU &&
+        src_device.GetType() == Device::DeviceType::CPU) {
         device_mm = GetDeviceMemoryManager(src_device);
-    } else if (src_device.device_type_ == Device::DeviceType::CUDA) {
+    } else if (src_device.GetType() == Device::DeviceType::CUDA) {
         device_mm = GetDeviceMemoryManager(src_device);
     } else {
         device_mm = GetDeviceMemoryManager(dst_device);
@@ -122,11 +122,11 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
                      std::make_shared<CUDAMemoryManager>()},
 #endif
             };
-    if (map_device_type_to_memory_manager.find(device.device_type_) ==
+    if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
         utility::LogError("Unimplemented device");
     }
-    return map_device_type_to_memory_manager.at(device.device_type_);
+    return map_device_type_to_memory_manager.at(device.GetType());
 }
 
 }  // namespace open3d

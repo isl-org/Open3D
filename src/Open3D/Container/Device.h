@@ -41,16 +41,22 @@ public:
     enum class DeviceType { CPU = 0, CUDA = 1 };
 
     /// Defalut constructor
-    Device() : device_type_(DeviceType::CPU), device_id_(0) {}
+    Device() : device_type_(DeviceType::CPU), device_id_(0) {
+        AssertCPUDeviceIDIsZero();
+    }
 
     /// Constructor with device specified
     Device(const DeviceType& device_type, int device_id)
-        : device_type_(device_type), device_id_(device_id) {}
+        : device_type_(device_type), device_id_(device_id) {
+        AssertCPUDeviceIDIsZero();
+    }
 
     /// Constructor from string, e.g. "CUDA:0"
     Device(const std::string& type_colon_id)
         : device_type_(StringToDeviceType(type_colon_id)),
-          device_id_(StringToDeviceId(type_colon_id)) {}
+          device_id_(StringToDeviceId(type_colon_id)) {
+        AssertCPUDeviceIDIsZero();
+    }
 
     bool operator==(const Device& other) const {
         return this->device_type_ == other.device_type_ &&
@@ -75,7 +81,18 @@ public:
         return str;
     }
 
+    DeviceType GetType() const { return device_type_; }
+
+    int GetID() const { return device_id_; }
+
 protected:
+    void AssertCPUDeviceIDIsZero() {
+        if (device_type_ == DeviceType::CPU && device_id_ != 0) {
+            utility::LogError("CPU has device_id {}, but it must be 0.",
+                              device_id_);
+        }
+    }
+
     static DeviceType StringToDeviceType(const std::string& type_colon_id) {
         std::vector<std::string> tokens;
         utility::SplitString(tokens, type_colon_id, ":", true);
@@ -103,7 +120,7 @@ protected:
         }
     }
 
-public:
+protected:
     DeviceType device_type_;
     int device_id_;
 };

@@ -243,19 +243,6 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
                                                       dims_before, dims_after);
         }
     }
-
-    utility::LogDebug("tensor_.GetShape().ToString(): {}",
-                      tensor_.GetShape().ToString());
-    for (const auto& index_tensor : index_tensors_) {
-        utility::LogDebug("index_tensor.GetShape().ToString(): {}",
-                          index_tensor.GetShape().ToString());
-    }
-    utility::LogDebug("dims_before {}, dims_after {}, dims_indexed {}",
-                      dims_before, dims_after, dims_indexed);
-    utility::LogDebug("indexed_shape_ {}", indexed_shape_.ToString());
-    utility::LogDebug("indexed_strides_ {}", indexed_strides_.ToString());
-    utility::LogDebug("replacement_shape {}", replacement_shape.ToString());
-    utility::LogDebug("output_shape_ {}", output_shape_.ToString());
 }
 
 }  // namespace open3d

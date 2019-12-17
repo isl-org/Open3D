@@ -34,6 +34,7 @@ namespace open3d {
 namespace kernel {
 
 void Copy(const Tensor& src, Tensor& dst) {
+    // Check shape
     if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
         utility::LogError("Shape {} can not be broadcasted to {}.",
                           src.GetShape(), dst.GetShape());
@@ -48,8 +49,8 @@ void Copy(const Tensor& src, Tensor& dst) {
     }
 
     // Disbatch to device
-    Device::DeviceType src_device_type = src.GetDevice().device_type_;
-    Device::DeviceType dst_device_type = dst.GetDevice().device_type_;
+    Device::DeviceType src_device_type = src.GetDevice().GetType();
+    Device::DeviceType dst_device_type = dst.GetDevice().GetType();
     if ((src_device_type != Device::DeviceType::CPU &&
          src_device_type != Device::DeviceType::CUDA) ||
         (dst_device_type != Device::DeviceType::CPU &&
