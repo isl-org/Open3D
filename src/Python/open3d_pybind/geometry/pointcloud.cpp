@@ -186,7 +186,7 @@ void pybind_pointcloud(py::module &m) {
                     "depth"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4d::Identity(),
                     "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
-                    "stride"_a = 1, "keep_organized"_a = false)
+                    "stride"_a = 1, "project_valid_depth_only"_a = true)
             .def_static(
                     "create_from_rgbd_image",
                     &geometry::PointCloud::CreateFromRGBDImage,
@@ -200,7 +200,7 @@ void pybind_pointcloud(py::module &m) {
         )",
                     "image"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4d::Identity(),
-                    "keep_organized"_a = false)
+                    "project_valid_depth_only"_a = true)
             .def_readwrite("points", &geometry::PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "

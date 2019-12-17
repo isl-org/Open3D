@@ -225,7 +225,7 @@ public:
             double depth_scale = 1000.0,
             double depth_trunc = 1000.0,
             int stride = 1,
-            bool keep_organized = false);
+            bool project_valid_depth_only = true);
 
     /// Factory function to create a pointcloud from an RGB-D image and a camera
     /// model (PointCloudFactory.cpp)
@@ -234,7 +234,7 @@ public:
             const RGBDImage &image,
             const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
-            bool keep_organized = false);
+            bool project_valid_depth_only = true);
 
     /// Function to create a PointCloud from a VoxelGrid.
     /// It transforms the voxel centers to 3D points using the original point
