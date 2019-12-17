@@ -232,6 +232,10 @@ public:
     /// truncated at depth_trunc distance. The depth image is also sampled with
     /// stride, in order to support (fast) coarse point cloud extraction. Return
     /// an empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// whole points.
     static std::shared_ptr<PointCloud> CreateFromDepthImage(
             const Image &depth,
             const camera::PinholeCameraIntrinsic &intrinsic,
@@ -244,6 +248,10 @@ public:
     /// Factory function to create a pointcloud from an RGB-D image and a camera
     /// model (PointCloudFactory.cpp)
     /// Return an empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// whole points.
     static std::shared_ptr<PointCloud> CreateFromRGBDImage(
             const RGBDImage &image,
             const camera::PinholeCameraIntrinsic &intrinsic,

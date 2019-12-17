@@ -308,8 +308,22 @@ void pybind_pointcloud(py::module &m) {
               "Number of initial points to be considered inliers in each "
               "iteration."},
              {"num_iterations", "Number of iterations."}});
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "create_from_depth_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "create_from_rgbd_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
 }
 
 void pybind_pointcloud_methods(py::module &m) {}
