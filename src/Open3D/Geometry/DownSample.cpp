@@ -361,8 +361,9 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     return std::make_tuple(output, cubic_id);
 }
 
-
-std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi, std::vector<std::vector<int>>>
+std::tuple<std::shared_ptr<PointCloud>,
+           Eigen::MatrixXi,
+           std::vector<std::vector<int>>>
 PointCloud::VoxelDownSampleKeepIndices(double voxel_size,
                                        const Eigen::Vector3d &min_bound,
                                        const Eigen::Vector3d &max_bound,
@@ -403,7 +404,8 @@ PointCloud::VoxelDownSampleKeepIndices(double voxel_size,
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
-    std::vector<std::vector<int>> original_indices(voxelindex_to_accpoint.size());
+    std::vector<std::vector<int>> original_indices(
+            voxelindex_to_accpoint.size());
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
