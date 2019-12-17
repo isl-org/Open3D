@@ -50,6 +50,8 @@ public:
     FilamentView(filament::Engine& engine, filament::Scene& scene);
     ~FilamentView() override;
 
+    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+
     void SetViewport(std::int32_t x,
                      std::int32_t y,
                      std::uint32_t w,

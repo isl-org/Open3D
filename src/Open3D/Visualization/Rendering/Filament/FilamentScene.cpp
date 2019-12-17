@@ -35,6 +35,7 @@
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
+#include <filament/View.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
 namespace open3d {
@@ -75,6 +76,10 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
     auto view = std::make_unique<FilamentView>(engine_, *scene_);
 
     view->SetViewport(x, y, w, h);
+    if (!views_.empty()) {
+        view->SetDiscardBuffers(View::TargetBuffers::DepthAndStencil);
+    }
+
     ViewContainer c;
     c.view = std::move(view);
     views_.emplace(handle, std::move(c));

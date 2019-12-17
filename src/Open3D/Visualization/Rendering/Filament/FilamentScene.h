@@ -53,6 +53,8 @@ public:
                   FilamentResourceManager& resourceManager);
     ~FilamentScene() override;
 
+    // All views above first will discard
+    // only depth and stencil buffers by default
     ViewHandle AddView(std::int32_t x,
                        std::int32_t y,
                        std::uint32_t w,
