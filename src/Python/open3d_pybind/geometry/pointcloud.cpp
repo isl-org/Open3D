@@ -86,6 +86,13 @@ void pybind_pointcloud(py::module &m) {
                  "cloud index before downsampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)
+            .def("voxel_down_sample_keep_indices",
+                 &geometry::PointCloud::VoxelDownSampleKeepIndices,
+                 "Function to downsample using "
+                 "geometry::PointCloud::VoxelDownSample also records whole point "
+                 "cloud indices before downsampling",
+                 "voxel_size"_a, "min_bound"_a, "max_bound"_a,
+                 "approximate_class"_a = false)
             .def("uniform_down_sample",
                  &geometry::PointCloud::UniformDownSample,
                  "Function to downsample input pointcloud into output "
@@ -231,6 +238,11 @@ void pybind_pointcloud(py::module &m) {
              {"invert", "set to ``True`` to invert the selection of indices"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "voxel_down_sample_and_trace",
+            {{"voxel_size", "Voxel size to downsample into."},
+             {"min_bound", "Minimum coordinate of voxel boundaries"},
+             {"max_bound", "Maximum coordinate of voxel boundaries"}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample_keep_indices",
             {{"voxel_size", "Voxel size to downsample into."},
              {"min_bound", "Minimum coordinate of voxel boundaries"},
              {"max_bound", "Maximum coordinate of voxel boundaries"}});

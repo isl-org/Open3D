@@ -120,6 +120,15 @@ public:
                             const Eigen::Vector3d &max_bound,
                             bool approximate_class = false) const;
 
+    /// Function to downsample using VoxelDownSample, but keep
+    /// original pointcloud's indices.
+    std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi,
+               std::vector<std::vector<int>>>
+    VoxelDownSampleKeepIndices(double voxel_size,
+                               const Eigen::Vector3d &min_bound,
+                               const Eigen::Vector3d &max_bound,
+                               bool approximate_class) const;
+
     /// Function to downsample \param input pointcloud into output pointcloud
     /// uniformly \param every_k_points indicates the sample rate.
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
