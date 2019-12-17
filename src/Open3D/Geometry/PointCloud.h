@@ -114,7 +114,10 @@ public:
 
     /// Function to downsample using VoxelDownSample, but specialized for
     /// Surface convolution project. Experimental function.
-    std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
+    /// Return reference indices of input point cloud.
+    std::tuple<std::shared_ptr<PointCloud>,
+               Eigen::MatrixXi,
+               std::vector<std::vector<int>>>
     VoxelDownSampleAndTrace(double voxel_size,
                             const Eigen::Vector3d &min_bound,
                             const Eigen::Vector3d &max_bound,
