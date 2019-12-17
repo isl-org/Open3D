@@ -62,9 +62,10 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     auto principal_point = intrinsic.GetPrincipalPoint();
     int num_valid_pixels;
     if (keep_organized) {
-      num_valid_pixels = int(depth.height_ / stride) * int(depth.width_ / stride);
+        num_valid_pixels =
+                int(depth.height_ / stride) * int(depth.width_ / stride);
     } else {
-      num_valid_pixels = CountValidDepthPixels(depth, stride);
+        num_valid_pixels = CountValidDepthPixels(depth, stride);
     }
     pointcloud->points_.resize(num_valid_pixels);
     int cnt = 0;
@@ -80,11 +81,11 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
                         camera_pose * Eigen::Vector4d(x, y, z, 1.0);
                 pointcloud->points_[cnt++] = point.block<3, 1>(0, 0);
             } else {
-              double z = std::numeric_limits<float>::quiet_NaN();
-              double x = std::numeric_limits<float>::quiet_NaN();
-              double y = std::numeric_limits<float>::quiet_NaN();
-              Eigen::Vector4d point = Eigen::Vector4d(x, y, z, 1.0);
-              pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
+                double z = std::numeric_limits<float>::quiet_NaN();
+                double x = std::numeric_limits<float>::quiet_NaN();
+                double y = std::numeric_limits<float>::quiet_NaN();
+                Eigen::Vector4d point = Eigen::Vector4d(x, y, z, 1.0);
+                pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
             }
         }
     }
@@ -96,7 +97,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
-        bool keep_organized=false) {
+        bool keep_organized = false) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
@@ -104,9 +105,9 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
     double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
     int num_valid_pixels;
     if (keep_organized) {
-      num_valid_pixels = image.depth_.height_ * image.depth_.width_;
+        num_valid_pixels = image.depth_.height_ * image.depth_.width_;
     } else {
-      num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+        num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
     }
     pointcloud->points_.resize(num_valid_pixels);
     pointcloud->colors_.resize(num_valid_pixels);
@@ -129,15 +130,15 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
                         Eigen::Vector3d(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) /
                         scale;
             } else {
-              double z = std::numeric_limits<float>::quiet_NaN();
-              double x = std::numeric_limits<float>::quiet_NaN();
-              double y = std::numeric_limits<float>::quiet_NaN();
-              Eigen::Vector4d point = Eigen::Vector4d(x, y, z, 1.0);
-              pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
-              pointcloud->colors_[cnt++] =
-                Eigen::Vector3d(std::numeric_limits<TC>::quiet_NaN(),
-                                std::numeric_limits<TC>::quiet_NaN(),
-                                std::numeric_limits<TC>::quiet_NaN());
+                double z = std::numeric_limits<float>::quiet_NaN();
+                double x = std::numeric_limits<float>::quiet_NaN();
+                double y = std::numeric_limits<float>::quiet_NaN();
+                Eigen::Vector4d point = Eigen::Vector4d(x, y, z, 1.0);
+                pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
+                pointcloud->colors_[cnt++] =
+                        Eigen::Vector3d(std::numeric_limits<TC>::quiet_NaN(),
+                                        std::numeric_limits<TC>::quiet_NaN(),
+                                        std::numeric_limits<TC>::quiet_NaN());
             }
         }
     }
@@ -159,13 +160,11 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
         if (depth.bytes_per_channel_ == 2) {
             auto float_depth =
                     depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
-            return CreatePointCloudFromFloatDepthImage(*float_depth, intrinsic,
-                                                       extrinsic, stride,
-                                                       keep_organized);
+            return CreatePointCloudFromFloatDepthImage(
+                    *float_depth, intrinsic, extrinsic, stride, keep_organized);
         } else if (depth.bytes_per_channel_ == 4) {
-            return CreatePointCloudFromFloatDepthImage(depth, intrinsic,
-                                                       extrinsic, stride,
-                                                       keep_organized);
+            return CreatePointCloudFromFloatDepthImage(
+                    depth, intrinsic, extrinsic, stride, keep_organized);
         }
     }
     utility::LogError(
@@ -182,14 +181,12 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         image.depth_.bytes_per_channel_ == 4) {
         if (image.color_.bytes_per_channel_ == 1 &&
             image.color_.num_of_channels_ == 3) {
-            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(image, intrinsic,
-                                                              extrinsic,
-                                                              keep_organized);
+            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
+                    image, intrinsic, extrinsic, keep_organized);
         } else if (image.color_.bytes_per_channel_ == 4 &&
                    image.color_.num_of_channels_ == 1) {
-            return CreatePointCloudFromRGBDImageT<float, 1>(image, intrinsic,
-                                                            extrinsic,
-                                                            keep_organized);
+            return CreatePointCloudFromRGBDImageT<float, 1>(
+                    image, intrinsic, extrinsic, keep_organized);
         }
     }
     utility::LogError(
