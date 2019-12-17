@@ -295,8 +295,22 @@ void pybind_pointcloud(py::module &m) {
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "create_from_depth_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "create_from_rgbd_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
 }
 
 void pybind_pointcloud_methods(py::module &m) {}
