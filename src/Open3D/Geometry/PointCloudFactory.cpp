@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <Eigen/Dense>
+#include <limits>
 
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Geometry/Image.h"
@@ -78,6 +79,12 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
                 Eigen::Vector4d point =
                         camera_pose * Eigen::Vector4d(x, y, z, 1.0);
                 pointcloud->points_[cnt++] = point.block<3, 1>(0, 0);
+            } else {
+              double z = std::numeric_limits<float>::quiet_NaN();
+              double x = std::numeric_limits<float>::quiet_NaN();
+              double y = std::numeric_limits<float>::quiet_NaN();
+              Eigen::Vector4d point = Eigen::Vector4d(x, y, z, 1.0);
+              pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
             }
         }
     }
@@ -121,6 +128,16 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
                 pointcloud->colors_[cnt++] =
                         Eigen::Vector3d(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) /
                         scale;
+            } else {
+              double z = std::numeric_limits<float>::quiet_NaN();
+              double x = std::numeric_limits<float>::quiet_NaN();
+              double y = std::numeric_limits<float>::quiet_NaN();
+              Eigen::Vector4d point = Eigen::Vector4d(x, y, z, 1.0);
+              pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
+              pointcloud->colors_[cnt++] =
+                Eigen::Vector3d(std::numeric_limits<TC>::quiet_NaN(),
+                                std::numeric_limits<TC>::quiet_NaN(),
+                                std::numeric_limits<TC>::quiet_NaN());
             }
         }
     }
