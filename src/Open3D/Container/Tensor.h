@@ -401,8 +401,19 @@ protected:
     /// operation performed on the tensor can change the shape and stride.
     SizeVector strides_ = {};
 
-    /// Data pointer points to the starting memory address of the Tensor. Note
-    /// that this is not necessarily the same as blob_.GetDataPtr().
+    /// Data pointer pointing to the beginning element of the Tensor.
+    ///
+    /// Note that this is not necessarily the same as blob_.GetDataPtr(). When
+    /// this happens, it means that the beginning element of the Tensor is not
+    /// located a the beginning of the underlying blob. This could happen, for
+    /// instance, at slicing:
+    ///
+    /// ```cpp
+    /// // a.GetDataPtr() == a.GetBlob().GetDataPtr()
+    /// Tensor a({2, 3}, dtype, "CPU:0");
+    /// // b.GetDataPtr() != b.GetBlob().GetDataPtr()
+    /// b = a[1];
+    /// ```
     void* data_ptr_ = nullptr;
 
     /// Data type
