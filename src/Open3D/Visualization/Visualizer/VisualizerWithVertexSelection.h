@@ -70,8 +70,8 @@ public:
     std::vector<PickedPoint> GetPickedPoints() const;
     void ClearPickedPoints();
 
-    std::function<void()> OnSelectionChanged;
-    std::function<void()> OnSelectionMoved;
+    void RegisterSelectionChangedCallback(std::function<void()> f);
+    void RegisterSelectionMovedCallback(std::function<void()> f);
 
 protected:
     bool InitViewControl() override;
@@ -122,6 +122,9 @@ protected:
     std::unordered_map<int, Eigen::Vector3d> selected_points_;
     std::shared_ptr<geometry::PointCloud> ui_selected_points_geometry_ptr_;
     std::shared_ptr<glsl::GeometryRenderer> ui_selected_points_renderer_ptr_;
+
+    std::function<void()> on_selection_changed_;
+    std::function<void()> on_selection_moved_;
 };
 
 }  // namespace visualization

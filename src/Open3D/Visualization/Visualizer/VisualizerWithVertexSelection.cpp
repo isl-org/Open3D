@@ -413,6 +413,14 @@ bool VisualizerWithVertexSelection::InitRenderOption() {
     return true;
 }
 
+void VisualizerWithVertexSelection::RegisterSelectionChangedCallback(std::function<void()> f) {
+    on_selection_changed_ = f;
+}
+
+void VisualizerWithVertexSelection::RegisterSelectionMovedCallback(std::function<void()> f) {
+    on_selection_moved_ = f;
+}
+
 void VisualizerWithVertexSelection::WindowResizeCallback(GLFWwindow *window,
                                                          int w,
                                                          int h) {
@@ -673,8 +681,8 @@ void VisualizerWithVertexSelection::AddPickedPoints(
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
-    if (OnSelectionChanged) {
-        OnSelectionChanged();
+    if (on_selection_changed_) {
+        on_selection_changed_();
     }
 }
 
@@ -691,8 +699,8 @@ void VisualizerWithVertexSelection::RemovePickedPoints(
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
-    if (OnSelectionChanged) {
-        OnSelectionChanged();
+    if (on_selection_changed_) {
+        on_selection_changed_();
     }
 }
 
@@ -710,8 +718,8 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
-    if (type == DRAG_END && OnSelectionMoved) {
-        OnSelectionMoved();
+    if (type == DRAG_END && on_selection_moved_) {
+        on_selection_moved_();
     }
 }
 

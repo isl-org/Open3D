@@ -190,7 +190,15 @@ void pybind_visualizer(py::module &m) {
             .def("clear_picked_points",
                  &visualization::VisualizerWithVertexSelection::
                          ClearPickedPoints,
-                 "Function to clear picked points");
+                 "Function to clear picked points")
+            .def("register_selection_changed_callback",
+                 &visualization::VisualizerWithVertexSelection::
+                    RegisterSelectionChangedCallback,
+                 "Registers a function to be called when selection changes")
+            .def("register_selection_moved_callback",
+                 &visualization::VisualizerWithVertexSelection::
+                    RegisterSelectionMovedCallback,
+                 "Registers a function to be called after selection moves");
 
     docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",
                                     map_visualizer_docstrings);
