@@ -55,7 +55,7 @@ void Copy(const Tensor& src, Tensor& dst) {
          src_device_type != Device::DeviceType::CUDA) ||
         (dst_device_type != Device::DeviceType::CPU &&
          dst_device_type != Device::DeviceType::CUDA)) {
-        utility::LogError("Unimplemented device");
+        utility::LogError("Copy: Unimplemented device");
     }
     if (src_device_type == Device::DeviceType::CPU &&
         dst_device_type == Device::DeviceType::CPU) {

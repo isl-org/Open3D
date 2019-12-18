@@ -51,6 +51,10 @@ public:
         AssertCPUDeviceIDIsZero();
     }
 
+    /// Constructor from device type string and device id
+    Device(const std::string& device_type, int device_id)
+        : Device(device_type + ":" + std::to_string(device_id)) {}
+
     /// Constructor from string, e.g. "CUDA:0"
     Device(const std::string& type_colon_id)
         : device_type_(StringToDeviceType(type_colon_id)),

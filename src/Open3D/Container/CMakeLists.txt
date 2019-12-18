@@ -11,6 +11,7 @@ set (KERNEL_CUDA_SRC
 )
 
 set (CONTAINER_SRC
+    DLPack/DLPackConverter.cpp
     AdvancedIndexing.cpp
     Broadcast.cpp
     MemoryManager.cpp

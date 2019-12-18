@@ -31,6 +31,8 @@
 #include <string>
 
 #include "Open3D/Container/Blob.h"
+#include "Open3D/Container/DLPack/DLPackConverter.h"
+#include "Open3D/Container/DLPack/dlpack.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/Dtype.h"
 #include "Open3D/Container/SizeVector.h"
@@ -41,6 +43,8 @@ namespace open3d {
 /// Tensor can also be used to perform numerical operations.
 class Tensor {
 public:
+    Tensor(){};
+
     /// Constructor for creating a contiguous Tensor
     Tensor(const SizeVector& shape,
            const Dtype& dtype,
@@ -51,7 +55,7 @@ public:
           device_(device),
           blob_(std::make_shared<Blob>(
                   shape.NumElements() * DtypeUtil::ByteSize(dtype), device)) {
-        data_ptr_ = blob_->v_;
+        data_ptr_ = blob_->GetDataPtr();
     }
 
     /// Constructor for creating a contiguous Tensor with initial values
@@ -73,7 +77,8 @@ public:
         AssertTemplateDtype<T>();
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(blob_->v_, device_, init_vals.data(),
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), device_,
+                                      init_vals.data(),
                                       init_vals.size() * sizeof(T));
     }
 
@@ -89,11 +94,7 @@ public:
           data_ptr_(data_ptr),
           dtype_(dtype),
           device_(device),
-          blob_(blob) {
-        if (!blob->IsPtrInBlob(data_ptr)) {
-            utility::LogError("data_ptr not in the memory range of blob");
-        }
-    }
+          blob_(blob) {}
 
     /// Shallow copy constructor with lvalue input, e.g. `Tensor dst(src)`.
     Tensor(const Tensor& other)
@@ -145,6 +146,12 @@ public:
                                           sizeof(scalar_t));
         });
         return *this;
+    }
+
+    DLManagedTensor* ToDLPack() const { return dlpack::ToDLPack(*this); }
+
+    static Tensor FromDLPack(DLManagedTensor* src) {
+        return dlpack::FromDLPack(src);
     }
 
     /// Assign (copy) values from another Tensor, shape, dtype, device may
@@ -211,11 +218,6 @@ public:
 
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);
-
-    /// Clone Tensor to a specified device
-    /// The resulting Tensor have the exact shape, stride and data_ptr to blob_
-    /// beginning offset.
-    Tensor Clone(const Device& device) const;
 
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
@@ -324,11 +326,15 @@ public:
 
     inline SizeVector GetShape() const { return shape_; }
 
+    inline const SizeVector& GetShapeRef() const { return shape_; }
+
     inline int64_t GetShape(int64_t dim) const {
         return shape_[WrapDim(dim, NumDims())];
     }
 
     inline SizeVector GetStrides() const { return strides_; }
+
+    inline const SizeVector& GetStridesRef() const { return strides_; }
 
     inline int64_t GetStride(int64_t dim) const {
         return strides_[WrapDim(dim, NumDims())];
@@ -395,7 +401,19 @@ protected:
     /// operation performed on the tensor can change the shape and stride.
     SizeVector strides_ = {};
 
-    /// Data pointer points to the starting memory address in the blob
+    /// Data pointer pointing to the beginning element of the Tensor.
+    ///
+    /// Note that this is not necessarily the same as blob_.GetDataPtr(). When
+    /// this happens, it means that the beginning element of the Tensor is not
+    /// located a the beginning of the underlying blob. This could happen, for
+    /// instance, at slicing:
+    ///
+    /// ```cpp
+    /// // a.GetDataPtr() == a.GetBlob().GetDataPtr()
+    /// Tensor a({2, 3}, dtype, "CPU:0");
+    /// // b.GetDataPtr() != b.GetBlob().GetDataPtr()
+    /// b = a[1];
+    /// ```
     void* data_ptr_ = nullptr;
 
     /// Data type

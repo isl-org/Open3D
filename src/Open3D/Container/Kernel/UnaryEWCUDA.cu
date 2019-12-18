@@ -74,7 +74,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                         });
             });
         } else {
-            dst.CopyFrom(src.Clone(dst_device));
+            dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }
     } else if (src_device.GetType() == Device::DeviceType::CPU &&
                        dst_device.GetType() == Device::DeviceType::CUDA ||
@@ -87,7 +87,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                     src_conti.GetDevice(),
                     DtypeUtil::ByteSize(dtype) * shape.NumElements());
         } else {
-            dst.CopyFrom(src.Clone(dst_device));
+            dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }
     } else {
         utility::LogError("Wrong device type {} -> {}", src_device.ToString(),

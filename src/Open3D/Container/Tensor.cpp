@@ -82,7 +82,7 @@ void Tensor::Assign(const Tensor& other) {
     device_ = other.device_;
     blob_ = std::make_shared<Blob>(
             shape_.NumElements() * DtypeUtil::ByteSize(dtype_), device_);
-    data_ptr_ = blob_->v_;
+    data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
 
@@ -167,16 +167,6 @@ Tensor Tensor::Copy(const Device& device) const {
 }
 
 void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
-
-Tensor Tensor::Clone(const Device& device) const {
-    // Clone should not use kernel::Copy to avoid infinite recursions.
-    auto new_blob = std::make_shared<Blob>(blob_->byte_size_, device);
-    MemoryManager::MemcpyBlob(new_blob, blob_);
-    int64_t data_offset =
-            static_cast<char*>(data_ptr_) - static_cast<char*>(blob_->v_);
-    void* new_data_ptr = static_cast<char*>(new_blob->v_) + data_offset;
-    return Tensor(shape_, strides_, new_data_ptr, dtype_, device, new_blob);
-}
 
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {

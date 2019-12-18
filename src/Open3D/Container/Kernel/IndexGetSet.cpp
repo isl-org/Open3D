@@ -58,7 +58,7 @@ void IndexGet(const Tensor& src,
         IndexGetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
     } else {
-        utility::LogError("Unimplemented device");
+        utility::LogError("IndexGet: Unimplemented device");
     }
 }
 
@@ -83,7 +83,7 @@ void IndexSet(const Tensor& src,
         IndexSetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
     } else {
-        utility::LogError("Unimplemented device");
+        utility::LogError("IndexSet: Unimplemented device");
     }
 }
 
