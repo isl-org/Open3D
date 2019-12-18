@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <functional>
 #include <string>
 #include <tuple>
@@ -143,6 +144,12 @@ std::string& StripString(std::string& str,
 std::string ToLower(const std::string& s);
 
 void Sleep(int milliseconds);
+
+/// Computes the quotient of x/y with rounding up
+inline int DivUp(int x, int y) {
+    div_t tmp = std::div(x, y);
+    return tmp.quot + (tmp.rem != 0 ? 1 : 0);
+}
 
 }  // namespace utility
 }  // namespace open3d

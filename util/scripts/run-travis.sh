@@ -9,16 +9,22 @@ OPEN3D_INSTALL_DIR=~/open3d_install
 
 echo "cmake configure the Open3D project..."
 date
+if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
+    pip install --upgrade pip
+    pip install tensorflow==2.0.0
+fi
 mkdir build
 cd build
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
+        -DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
         -DBUILD_UNIT_TESTS=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python) \
         ..
 else
     cmake -DBUILD_SHARED_LIBS=$SHARED \
+        -DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_EIGEN3=ON \
         -DBUILD_GLEW=ON \

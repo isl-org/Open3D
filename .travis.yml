@@ -3,6 +3,7 @@ env:
   global:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
+    - BUILD_TENSORFLOW_OPS=ON
     - NPROC=2
 
 notifications:
@@ -133,7 +134,7 @@ matrix:
 
     - os: osx
       osx_image: xcode10.1
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+      env: BUILD_DEPENDENCY_FROM_SOURCE=ON BUILD_TENSORFLOW_OPS=OFF
       script: travis_wait 30 ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC

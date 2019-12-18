@@ -13,6 +13,7 @@ if [ "$1" == "assume-yes" ]; then
     sudo apt-get --yes install libpng16-dev || true
     sudo apt-get --yes install python-dev python-tk || true
     sudo apt-get --yes install python3-dev python3-tk || true
+    sudo apt-get --yes install libtbb-dev || true
 else
     sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx || true
     sudo apt-get install libglew-dev || true
@@ -23,4 +24,5 @@ else
     sudo apt-get install libpng16-dev || true
     sudo apt-get install python-dev python-tk || true
     sudo apt-get install python3-dev python3-tk || true
+    sudo apt-get install libtbb-dev || true
 fi

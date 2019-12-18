@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.open3d.org
+# Copyright (c) 2019 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,24 +24,31 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Misc
-include README.rst
-include LICENSE.txt
-include requirements.txt
+import open3d as o3d
+import numpy as np
+import pytest
+import os
 
-# Compiled module
-include open3d/open3d*.pyd
-include open3d/open3d*.so
-include open3d/open3d*.dylib
-include open3d/*depthengine*
-include open3d/*k4a*
-include open3d/*libstdc*
 
-# JS
-recursive-include open3d/static *.*
+def test_load_tf_op_library():
 
-# Exclude
-global-exclude *.py[co]
+    if not o3d._build_config['BUILD_TENSORFLOW_OPS']:
+        return
 
-# ml module
-recursive-include open3d/ml *.py
+    import open3d.ml.tf as ml3d
+    assert hasattr(ml3d.python.ops.lib._lib, 'OP_LIST')
+
+
+def test_execute_tf_op():
+
+    if not o3d._build_config['BUILD_TENSORFLOW_OPS']:
+        return
+
+    import open3d.ml.tf as ml3d
+
+    values = np.arange(0, 10)
+    prefix_sum = np.array([0, 3, 4, 4])
+
+    ans = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
+    # test was a success if we reach this line but check correctness anyway
+    assert np.all(ans.numpy() == [3, 3, 0, 39])

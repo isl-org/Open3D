@@ -44,6 +44,7 @@ set(DIRECTORIES_OF_INTEREST_PYTHON
     examples/Python
     src/UnitTest/Python
     docs
+    src/Python/open3d/ml
 )
 
 message(STATUS "Python check-style...")

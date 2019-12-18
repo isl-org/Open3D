@@ -4,6 +4,7 @@
 
 cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CUDA_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
@@ -86,6 +87,8 @@ option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
+option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
+
 
 # Build CUDA module by defalt if CUDA is available
 # Compatible with CMake 3.8+
@@ -96,7 +99,7 @@ if (BUILD_CUDA_MODULE)
         message(STATUS "Building CUDA enabled")
         add_definitions(-DBUILD_CUDA_MODULE)
         enable_language(CUDA)
-        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++11 --expt-extended-lambda")
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
