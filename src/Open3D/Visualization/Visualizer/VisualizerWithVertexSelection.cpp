@@ -391,11 +391,12 @@ std::vector<int> VisualizerWithVertexSelection::PickPoints(double winX,
     return indices;
 }
 
-std::vector<VisualizerWithVertexSelection::PickedPoint> VisualizerWithVertexSelection::GetPickedPoints() const {
+std::vector<VisualizerWithVertexSelection::PickedPoint>
+VisualizerWithVertexSelection::GetPickedPoints() const {
     std::vector<PickedPoint> points;
     points.reserve(selected_points_.size());
     for (auto &kv : selected_points_) {
-        points.push_back({ kv.first, kv.second });
+        points.push_back({kv.first, kv.second});
     }
     return points;
 }
@@ -413,11 +414,13 @@ bool VisualizerWithVertexSelection::InitRenderOption() {
     return true;
 }
 
-void VisualizerWithVertexSelection::RegisterSelectionChangedCallback(std::function<void()> f) {
+void VisualizerWithVertexSelection::RegisterSelectionChangedCallback(
+        std::function<void()> f) {
     on_selection_changed_ = f;
 }
 
-void VisualizerWithVertexSelection::RegisterSelectionMovedCallback(std::function<void()> f) {
+void VisualizerWithVertexSelection::RegisterSelectionMovedCallback(
+        std::function<void()> f) {
     on_selection_moved_ = f;
 }
 
