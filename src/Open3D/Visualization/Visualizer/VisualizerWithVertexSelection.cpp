@@ -172,12 +172,24 @@ bool VisualizerWithVertexSelection::AddGeometry(
 
 bool VisualizerWithVertexSelection::UpdateGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr /*= nullptr*/) {
+    if (geometry_ptr) {
+        utility::LogDebug(
+            "VisualizerWithVertexSelection::UpdateGeometry() does not support "
+            "passing a new geometry. However, you may update the geometry you"
+            "passed to AddGeometry() and call UpdateGeometry().");
+        return false;
+    }
+    geometry_ptr = geometry_ptr_;
+
     bool result = Visualizer::UpdateGeometry(geometry_ptr);
 
     switch (geometry_ptr_->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
             auto cloud = std::static_pointer_cast<const geometry::PointCloud>(
                     geometry_ptr_);
+            if (cloud->points_.size() != GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+                ClearPickedPoints();
+            }
             ui_points_geometry_ptr_->points_ = cloud->points_;
             ui_points_geometry_ptr_->normals_ = cloud->normals_;
             break;
@@ -185,6 +197,9 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::LineSet: {
             auto lines = std::static_pointer_cast<const geometry::LineSet>(
                     geometry_ptr_);
+            if (lines->points_.size() != GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+                ClearPickedPoints();
+            }
             ui_points_geometry_ptr_->points_ = lines->points_;
             break;
         }
@@ -194,6 +209,9 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::TetraMesh: {
             auto mesh = std::static_pointer_cast<const geometry::MeshBase>(
                     geometry_ptr_);
+            if (mesh->vertices_.size() != GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+                ClearPickedPoints();
+            }
             ui_points_geometry_ptr_->points_ = mesh->vertices_;
             ui_points_geometry_ptr_->normals_ = mesh->vertex_normals_;
             break;
@@ -209,6 +227,9 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
     }
 
     ui_points_geometry_ptr_->PaintUniformColor(CHOOSE_POINTS_COLOR);
+    ui_points_renderer_ptr_->UpdateGeometry();
+
+    geometry_renderer_ptr_->UpdateGeometry();
 
     return result;
 }
@@ -419,6 +440,11 @@ void VisualizerWithVertexSelection::RegisterSelectionChangedCallback(
     on_selection_changed_ = f;
 }
 
+void VisualizerWithVertexSelection::RegisterSelectionMovingCallback(
+        std::function<void()> f) {
+    on_selection_moving_ = f;
+}
+
 void VisualizerWithVertexSelection::RegisterSelectionMovedCallback(
         std::function<void()> f) {
     on_selection_moved_ = f;
@@ -621,6 +647,7 @@ void VisualizerWithVertexSelection::MouseButtonCallback(GLFWwindow *window,
     } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         mouse_down_pos_ = {x, y};
         selection_mode_ = SelectionMode::Moving;
+        selected_points_before_drag_ = selected_points_;
         // The mouse moves on the viewing plane, but we want it to look like
         // we are moving the point we clicked on. One pixel on the viewing
         // plane is a larger distance than one pixel projected onto the
@@ -660,6 +687,9 @@ void VisualizerWithVertexSelection::InvalidatePicking() {
 
 void VisualizerWithVertexSelection::ClearPickedPoints() {
     utility::LogInfo("Clearing all points from selection.");
+    selection_mode_ = SelectionMode::None;
+    selected_points_.clear();
+    selected_points_before_drag_.clear();
     if (ui_selected_points_geometry_ptr_) {
         ui_selected_points_geometry_ptr_->points_.clear();
         ui_selected_points_renderer_ptr_->UpdateGeometry();
@@ -668,7 +698,7 @@ void VisualizerWithVertexSelection::ClearPickedPoints() {
 
 void VisualizerWithVertexSelection::AddPickedPoints(
         const std::vector<int> indices) {
-    auto points = GetGeometryPoints();
+    auto points = GetGeometryPoints(geometry_ptr_);
     if (!points) {
         return;  // can't get points info, so can't add them
     }
@@ -676,8 +706,8 @@ void VisualizerWithVertexSelection::AddPickedPoints(
     for (auto &index : indices) {
         const auto &point = (*points)[index];
         utility::LogInfo(
-                "Adding point #{:d} ({:.2}, {:.2}, {:.2}) to selection.", index,
-                point(0), point(1), point(2));
+                "Adding point #{:d} ({:.2f}, {:.2f}, {:.2f}) to selection.", index,
+                point.x(), point.y(), point.z());
         selected_points_[index] = point;
         ui_selected_points_geometry_ptr_->points_.push_back(point);
     }
@@ -710,35 +740,35 @@ void VisualizerWithVertexSelection::RemovePickedPoints(
 void VisualizerWithVertexSelection::DragSelectedPoints(
         const Eigen::Vector3d &delta, DragType type) {
     ui_selected_points_geometry_ptr_->points_.clear();
-    for (auto &kv : selected_points_) {
-        auto &orig_coord = kv.second;
-        auto new_coord = orig_coord + delta;
+    for (auto &kv : selected_points_before_drag_) {
+        auto index = kv.first;
+        auto new_coord = kv.second + delta;
+        selected_points_[index] = new_coord;
         ui_selected_points_geometry_ptr_->points_.push_back(new_coord);
-        if (type == DRAG_END) {
-            orig_coord = new_coord;
-        }
     }
     ui_selected_points_geometry_ptr_->PaintUniformColor(SELECTED_POINTS_COLOR);
     ui_selected_points_renderer_ptr_->UpdateGeometry();
 
-    if (type == DRAG_END && on_selection_moved_) {
+    if (type == DRAG_MOVING && on_selection_moving_) {
+        on_selection_moving_();
+    } else if (type == DRAG_END && on_selection_moved_) {
         on_selection_moved_();
     }
 }
 
 const std::vector<Eigen::Vector3d>
-        *VisualizerWithVertexSelection::GetGeometryPoints() {
+        *VisualizerWithVertexSelection::GetGeometryPoints(std::shared_ptr<const geometry::Geometry> geometry) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
-    switch (geometry_ptr_->GetGeometryType()) {
+    switch (geometry->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
             auto cloud = std::static_pointer_cast<const geometry::PointCloud>(
-                    geometry_ptr_);
+                    geometry);
             points = &cloud->points_;
             break;
         }
         case geometry::Geometry::GeometryType::LineSet: {
             auto lines = std::static_pointer_cast<const geometry::LineSet>(
-                    geometry_ptr_);
+                    geometry);
             points = &lines->points_;
             break;
         }
@@ -747,7 +777,7 @@ const std::vector<Eigen::Vector3d>
         case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
         case geometry::Geometry::GeometryType::TetraMesh: {
             auto mesh = std::static_pointer_cast<const geometry::MeshBase>(
-                    geometry_ptr_);
+                    geometry);
             points = &mesh->vertices_;
             break;
         }

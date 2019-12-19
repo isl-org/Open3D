@@ -71,6 +71,9 @@ public:
     void ClearPickedPoints();
 
     void RegisterSelectionChangedCallback(std::function<void()> f);
+    /// Do not change the number of vertices in geometry, but can change the
+    /// vertex values and call UpdateGeometry().
+    void RegisterSelectionMovingCallback(std::function<void()> f);
     void RegisterSelectionMovedCallback(std::function<void()> f);
 
 protected:
@@ -96,7 +99,7 @@ protected:
     Eigen::Vector3d CalcDragDelta(int winX, int winY);
     enum DragType { DRAG_MOVING, DRAG_END };
     void DragSelectedPoints(const Eigen::Vector3d &delta, DragType type);
-    const std::vector<Eigen::Vector3d> *GetGeometryPoints();
+    const std::vector<Eigen::Vector3d> *GetGeometryPoints(std::shared_ptr<const geometry::Geometry> geometry);
 
 protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
@@ -120,10 +123,12 @@ protected:
     std::shared_ptr<glsl::GeometryRenderer> ui_points_renderer_ptr_;
 
     std::unordered_map<int, Eigen::Vector3d> selected_points_;
+    std::unordered_map<int, Eigen::Vector3d> selected_points_before_drag_;
     std::shared_ptr<geometry::PointCloud> ui_selected_points_geometry_ptr_;
     std::shared_ptr<glsl::GeometryRenderer> ui_selected_points_renderer_ptr_;
 
     std::function<void()> on_selection_changed_;
+    std::function<void()> on_selection_moving_;
     std::function<void()> on_selection_moved_;
 };
 
