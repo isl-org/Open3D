@@ -34,6 +34,8 @@
 namespace open3d {
 namespace gui {
 
+class Color;
+struct MouseEvent;
 struct Theme;
 
 struct DrawContext {
@@ -60,11 +62,20 @@ public:
     const Rect& GetFrame() const;
     virtual void SetFrame(const Rect& f);
 
+    const Color& GetBackgroundColor() const;
+    bool IsDefaultBackgroundColor() const;
+    void SetBackgroundColor(const Color& color);
+
     static constexpr int DIM_GROW = 10000;
     virtual Size CalcPreferredSize(const Theme& theme) const;
 
     virtual void Layout(const Theme& theme);
     virtual DrawResult Draw(const DrawContext& context);
+
+    /// Widgets that use Dear ImGUI should not need to override this,
+    /// as Dear ImGUI will take care of all the mouse handling during
+    /// the Draw().
+    virtual void Mouse(const MouseEvent& e);
 
 private:
     struct Impl;

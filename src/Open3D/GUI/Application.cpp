@@ -222,6 +222,15 @@ Application::Application()
 Application::~Application() {
 }
 
+void Application::Initialize() {
+    // We don't have a great way of getting the process name, so let's hope that
+    // the current directory is where the resources are located. This is a
+    // safe assumption when running on macOS and Windows normally.
+    char *path = getcwd(NULL, 4096 /* ignored, but make it large just in case */);
+    Initialize(1, (const char **)&path);
+    free(path);
+}
+
 void Application::Initialize(int argc, const char *argv[]) {
     impl_->resourcePath = findResourcePath(argc, argv);
     impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
@@ -272,7 +281,6 @@ void Application::Run() {
         SDL_Event events[kMaxEvents];
         int nevents = 0;
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
-//            ImGuiIO& io = ImGui::GetIO();
             SDL_Event* event = &events[nevents];
             switch (event->type) {
                 case SDL_QUIT:   // sent after last window closed
@@ -284,8 +292,30 @@ void Application::Run() {
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
                         auto scaling = win->GetScaling();
-                        win->OnMouseMove(MouseMoveEvent{ int(std::ceil(float(e.x) * scaling)),
-                                                         int(std::ceil(float(e.y) * scaling)) });
+                        auto type = (e.state == 0 ? MouseEvent::MOVE
+                                                  : MouseEvent::DRAG);
+                        int x = int(std::ceil(float(e.x) * scaling));
+                        int y = int(std::ceil(float(e.y) * scaling));
+                        int buttons = 0;
+                        if (e.state & SDL_BUTTON_LEFT) {
+                            buttons |= int(MouseButton::LEFT);
+                        }
+                        if (e.state & SDL_BUTTON_RIGHT) {
+                            buttons |= int(MouseButton::RIGHT);
+                        }
+                        if (e.state & SDL_BUTTON_MIDDLE) {
+                            buttons |= int(MouseButton::MIDDLE);
+                        }
+                        if (e.state & SDL_BUTTON_X1) {
+                            buttons |= int(MouseButton::BUTTON4);
+                        }
+                        if (e.state & SDL_BUTTON_X2) {
+                            buttons |= int(MouseButton::BUTTON5);
+                        }
+                        MouseEvent me = { type, x, y,
+                                          .move = { buttons }
+                                        };
+                        win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
                     }
                     break;
@@ -296,8 +326,15 @@ void Application::Run() {
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
                         auto scaling = win->GetScaling();
-                        win->OnMouseWheel(MouseWheelEvent{ int(std::ceil(float(e.x) * scaling)),
-                                                           int(std::ceil(float(e.y) * scaling)) });
+                        int mx, my;
+                        SDL_GetGlobalMouseState(&mx, &my);
+                        auto pos = win->GlobalToWindowCoord(mx, my);
+                        int dx = int(std::ceil(float(e.x) * scaling));
+                        int dy = int(std::ceil(float(e.y) * scaling));
+                        MouseEvent me = { MouseEvent::WHEEL, pos.x, pos.y,
+                                          .wheel = { dx, dy }
+                                        };
+                        win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
                     }
                     break;
@@ -317,15 +354,16 @@ void Application::Run() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto type = (event->type == SDL_MOUSEBUTTONDOWN
-                                         ? MouseButtonEvent::DOWN
-                                         : MouseButtonEvent::UP);
+                                         ? MouseEvent::BUTTON_DOWN
+                                         : MouseEvent::BUTTON_UP);
                         auto &win = it->second;
                         auto scaling = win->GetScaling();
-                        win->OnMouseButton(MouseButtonEvent{
-                                                type,
-                                                int(std::ceil(float(e.x) * scaling)),
-                                                int(std::ceil(float(e.y) * scaling)),
-                                                button, });
+                        int x = int(std::ceil(float(e.x) * scaling));
+                        int y = int(std::ceil(float(e.y) * scaling));
+                        MouseEvent me = { type, x, y,
+                                          .button = { button }
+                                        };
+                        win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
                     }
                     break;
@@ -353,7 +391,7 @@ void Application::Run() {
                         if (it != SCANCODE2KEY.end()) {
                             key = it->second;
                         }
-                        win->OnKey(KeyEvent{ type, key, (e.repeat != 0) });
+                        win->OnKeyEvent(KeyEvent{ type, key, (e.repeat != 0) });
                         eventCounts[win.get()] += 1;
                     }
                     break;

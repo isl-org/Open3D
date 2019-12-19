@@ -26,11 +26,17 @@
 
 #include "Widget.h"
 
+#include "Color.h"
+#include "Events.h"
+
 namespace open3d {
 namespace gui {
 
+static const Color DEFAULT_BGCOLOR(0, 0, 0, 0);
+
 struct Widget::Impl {
     Rect frame;
+    Color bgColor = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children;
 };
 
@@ -64,6 +70,18 @@ void Widget::SetFrame(const Rect& f) {
     impl_->frame = f;
 }
 
+const Color& Widget::GetBackgroundColor() const {
+    return impl_->bgColor;
+}
+
+bool Widget::IsDefaultBackgroundColor() const {
+    return (impl_->bgColor == DEFAULT_BGCOLOR);
+}
+
+void Widget::SetBackgroundColor(const Color& color) {
+    impl_->bgColor = color;
+}
+
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
 }
@@ -85,6 +103,18 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
         }
     }
     return result;
+}
+
+void Widget::Mouse(const MouseEvent& e) {
+    // Iterate backwards so that we send mouse events from the top down.
+    for (auto it = impl_->children.rbegin();
+         it != impl_->children.rend();  ++it) {
+        if ((*it)->GetFrame().Contains(e.x, e.y)) {
+            (*it)->Mouse(e);
+            break;
+        }
+    }
+
 }
 
 } // gui

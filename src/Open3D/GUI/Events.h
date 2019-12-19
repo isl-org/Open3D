@@ -40,23 +40,23 @@ enum class MouseButton {
     BUTTON5 = (1 << 4)
 };
 
-struct MouseMoveEvent {
-    int x;
-    int y;
-    int buttons;  // MouseButtons ORed together
-};
-
-struct MouseButtonEvent {
-    enum Type { DOWN, UP };
+struct MouseEvent {
+    enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
     Type type;
     int x;
     int y;
-    MouseButton button;
-};
-
-struct MouseWheelEvent {
-    int x;
-    int y;
+    union {
+        struct {
+            int buttons; // MouseButtons ORed together
+        } move;  // includes drag
+        struct {
+            MouseButton button;
+        } button;
+        struct {
+            int dx;
+            int dy;
+        } wheel;
+    };
 };
 
 enum {
