@@ -39,10 +39,10 @@ public:
     ~TextEdit();
 
     const char* GetText() const;
-    void SetText(const char *text);
+    void SetText(const char* text);
 
     const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char *text);
+    void SetPlaceholderText(const char* text);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
@@ -56,5 +56,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

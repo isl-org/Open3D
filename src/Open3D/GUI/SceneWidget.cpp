@@ -42,17 +42,16 @@ struct SceneWidget::Impl {
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
 
-SceneWidget::SceneWidget(visualization::Scene& scene)
-    : impl_(new Impl(scene)) {
-    impl_->viewId = scene.AddView(0,0,1,1);
+SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
+    impl_->viewId = scene.AddView(0, 0, 1, 1);
 
     auto view = impl_->scene.GetView(impl_->viewId);
-    impl_->cameraManipulator = std::make_unique<visualization::CameraManipulator>(*view->GetCamera(), 1, 1);
+    impl_->cameraManipulator =
+            std::make_unique<visualization::CameraManipulator>(
+                    *view->GetCamera(), 1, 1);
 }
 
-SceneWidget::~SceneWidget() {
-    impl_->scene.RemoveView(impl_->viewId);
-}
+SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
 
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
@@ -65,9 +64,7 @@ void SceneWidget::SetBackgroundColor(const Color& color) {
     view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
-visualization::Scene* SceneWidget::GetScene() const {
-    return &impl_->scene;
-}
+visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene; }
 
 visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {
     return impl_->cameraManipulator.get();
@@ -92,5 +89,5 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     return Widget::DrawResult::NONE;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

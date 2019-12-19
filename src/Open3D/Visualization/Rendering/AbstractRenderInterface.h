@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "RendererHandle.h"
 #include "RendererEntitiesMods.h"
+#include "RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
@@ -55,5 +55,5 @@ public:
             const MaterialInstanceHandle& id) = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

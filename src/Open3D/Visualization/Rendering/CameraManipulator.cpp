@@ -95,5 +95,5 @@ void CameraManipulator::UpdateCameraProjection() {
     camera_.SetProjection(fov_, aspect, near_, far_, Camera::FovType::Vertical);
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

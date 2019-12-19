@@ -55,24 +55,23 @@ struct Menu::Impl {
     std::unordered_map<int, size_t> id2idx;
 };
 
-Menu::Menu()
-: impl_(new Menu::Impl()) {
-}
+Menu::Menu() : impl_(new Menu::Impl()) {}
 
-Menu::~Menu() {
-}
+Menu::~Menu() {}
 
-void Menu::AddItem(const char *name, const char *shortcut, ItemId itemId /*= NO_ITEM*/) {
+void Menu::AddItem(const char *name,
+                   const char *shortcut,
+                   ItemId itemId /*= NO_ITEM*/) {
     impl_->id2idx[itemId] = impl_->items.size();
-    impl_->items.push_back({ itemId, name, shortcut, nullptr });
+    impl_->items.push_back({itemId, name, shortcut, nullptr});
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items.push_back({ NO_ITEM, name, "", submenu });
+    impl_->items.push_back({NO_ITEM, name, "", submenu});
 }
 
 void Menu::AddSeparator() {
-    impl_->items.push_back({ NO_ITEM, "", "", nullptr, false, false, true });
+    impl_->items.push_back({NO_ITEM, "", "", nullptr, false, false, true});
 }
 
 bool Menu::IsEnabled(ItemId itemId) const {
@@ -105,7 +104,7 @@ void Menu::SetChecked(ItemId itemId, bool checked) {
     }
 }
 
-Menu::MenuItem* Menu::FindMenuItem(ItemId itemId) const {
+Menu::MenuItem *Menu::FindMenuItem(ItemId itemId) const {
     auto it = impl_->id2idx.find(itemId);
     if (it != impl_->id2idx.end()) {
         return &impl_->items[it->second];
@@ -121,18 +120,20 @@ Menu::MenuItem* Menu::FindMenuItem(ItemId itemId) const {
     return nullptr;
 }
 
-int Menu::CalcHeight(const Theme& theme) const {
+int Menu::CalcHeight(const Theme &theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
     return std::ceil(em + 2.0f * padding.y);
 }
 
-Menu::ItemId Menu::DrawMenuBar(const DrawContext& context) {
+Menu::ItemId Menu::DrawMenuBar(const DrawContext &context) {
     ItemId activatedId = NO_ITEM;
 
-//    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(context.theme.defaultMargin,
-//                                                            context.theme.defaultMargin));
-//    ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, context.theme.defaultMargin);
+    //    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+    //    ImVec2(context.theme.defaultMargin,
+    //                                                            context.theme.defaultMargin));
+    //    ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing,
+    //    context.theme.defaultMargin);
 
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items) {
@@ -145,21 +146,21 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext& context) {
     }
     ImGui::EndMainMenuBar();
 
-//    ImGui::PopStyleVar();
+    //    ImGui::PopStyleVar();
 
     return activatedId;
 }
 
-Menu::ItemId Menu::Draw(const DrawContext& context, const char *name) {
+Menu::ItemId Menu::Draw(const DrawContext &context, const char *name) {
     ItemId activatedId = NO_ITEM;
 
     // The default ImGUI menus are hideous:  there is no margin and the items
     // are spaced way too tightly. However, you can't just add WindowPadding
     // because then the highlight doesn't extend to the window edge. So we need
-    // to draw the menu item in pieces. First to get the highlight (if necessary),
-    // then draw the actual item inset to the left and right to get the text
-    // and checkbox. Unfortunately, there is no way to get a right margin
-    // without the window padding.
+    // to draw the menu item in pieces. First to get the highlight (if
+    // necessary), then draw the actual item inset to the left and right to get
+    // the text and checkbox. Unfortunately, there is no way to get a right
+    // margin without the window padding.
 
     auto *font = ImGui::GetFont();
     int em = std::ceil(ImGui::GetTextLineHeight());
@@ -173,25 +174,27 @@ Menu::ItemId Menu::Draw(const DrawContext& context, const char *name) {
         nameWidth = std::max(nameWidth, int(std::ceil(size1.x)));
         shortcutWidth = std::max(shortcutWidth, int(std::ceil(size2.x)));
     }
-    int width = padding +
-                nameWidth + 2 * em +
-                shortcutWidth + 2 * em +
+    int width = padding + nameWidth + 2 * em + shortcutWidth + 2 * em +
                 std::ceil(1.5 * em) + padding;  // checkbox
 
     ImGui::SetNextWindowContentWidth(width);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, context.theme.defaultMargin));
-    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, context.theme.fontSize / 3);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(context.theme.defaultMargin,
-                                                          context.theme.defaultMargin));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
+                        ImVec2(0, context.theme.defaultMargin));
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,
+                        context.theme.fontSize / 3);
+    ImGui::PushStyleVar(
+            ImGuiStyleVar_ItemSpacing,
+            ImVec2(context.theme.defaultMargin, context.theme.defaultMargin));
 
     if (ImGui::BeginMenu(name)) {
-        for (size_t i = 0;  i < impl_->items.size();  ++i) {
+        for (size_t i = 0; i < impl_->items.size(); ++i) {
             auto &item = impl_->items[i];
             if (item.isSeparator) {
                 ImGui::Separator();
             } else if (item.submenu) {
                 ImGui::SetCursorPosX(padding);
-                auto possibility = item.submenu->Draw(context, item.name.c_str());
+                auto possibility =
+                        item.submenu->Draw(context, item.name.c_str());
                 if (possibility != NO_ITEM) {
                     activatedId = possibility;
                 }
@@ -219,5 +222,5 @@ Menu::ItemId Menu::Draw(const DrawContext& context, const char *name) {
     return activatedId;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

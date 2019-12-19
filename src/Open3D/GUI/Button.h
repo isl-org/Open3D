@@ -33,10 +33,9 @@
 namespace open3d {
 namespace gui {
 
-class Button : public Widget
-{
+class Button : public Widget {
 public:
-    Button(const char *title);
+    Button(const char* title);
     ~Button();
 
     Size CalcPreferredSize(const Theme& theme) const override;
@@ -50,5 +49,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

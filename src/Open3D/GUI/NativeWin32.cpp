@@ -24,12 +24,12 @@
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(SDL_Window *window) {
+void* GetNativeDrawable(SDL_Window* window) {
     SDL_SysWMinfo wmi;
     SDL_VERSION(&wmi.version);
     SDL_GetWindowWMInfo(window, &wmi);
     return (void*)wmi.info.win.window;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

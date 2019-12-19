@@ -33,9 +33,9 @@
 #include "Open3D/Visualization/Rendering/Scene.h"
 
 #if !defined(WIN32)
-#    include <unistd.h>
+#include <unistd.h>
 #else
-#    include <io.h>
+#include <io.h>
 #endif
 #include <fcntl.h>
 
@@ -43,8 +43,9 @@ using namespace open3d;
 
 namespace {
 
-static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::string *errorStr)
-{
+static bool readBinaryFile(const std::string &path,
+                           std::vector<char> *bytes,
+                           std::string *errorStr) {
     bytes->clear();
     if (errorStr) {
         *errorStr = "";
@@ -53,9 +54,9 @@ static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, st
     // Open file
     int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1) {
-//        if (errorStr) {
-//            *errorStr = getIOErrorString(errno);
-//        }
+        //        if (errorStr) {
+        //            *errorStr = getIOErrorString(errno);
+        //        }
         return false;
     }
 
@@ -72,16 +73,22 @@ static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, st
     return true;
 }
 
-}
+}  // namespace
 
 class DemoWindow : public gui::Window {
     using Super = Window;
 
     enum MenuIds {
-        FILE_OPEN, FILE_SAVE, FILE_CLOSE,
-        VIEW_POINTS, VIEW_WIREFRAME, VIEW_MESH,
-        DEBUG_VOXINATED, DEBUG_SELUNA,
-        HELP_ABOUT, HELP_CONTACT
+        FILE_OPEN,
+        FILE_SAVE,
+        FILE_CLOSE,
+        VIEW_POINTS,
+        VIEW_WIREFRAME,
+        VIEW_MESH,
+        DEBUG_VOXINATED,
+        DEBUG_SELUNA,
+        HELP_ABOUT,
+        HELP_CONTACT
     };
 
 public:
@@ -113,18 +120,26 @@ public:
         helpMenu->AddItem("Contact", "", HELP_CONTACT);
         menubar_->AddMenu("Help", helpMenu);
         SetMenubar(menubar_);
-        this->OnMenuItemSelected = [this](gui::Menu::ItemId id) { this->OnMenuItem(id); };
+        this->OnMenuItemSelected = [this](gui::Menu::ItemId id) {
+            this->OnMenuItem(id);
+        };
 
         // Button grid (left panel)
         toolGrid_ = std::make_shared<gui::VGrid>(2, spacing, margins);
         AddChild(toolGrid_);
 
-        MakeToolButton(toolGrid_, "B1", []() { std::cout << "B1 clicked" << std::endl; });
-        MakeToolButton(toolGrid_, "B2", []() { std::cout << "B2 clicked" << std::endl; });
-        MakeToolButton(toolGrid_, "B3", []() { std::cout << "B3 clicked" << std::endl; });
-        MakeToolButton(toolGrid_, "B4", []() { std::cout << "B4 clicked" << std::endl; });
-        MakeToolButton(toolGrid_, "B5", []() { std::cout << "B5 clicked" << std::endl; });
-        MakeToolButton(toolGrid_, "B6", []() { std::cout << "B6 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B1",
+                       []() { std::cout << "B1 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B2",
+                       []() { std::cout << "B2 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B3",
+                       []() { std::cout << "B3 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B4",
+                       []() { std::cout << "B4 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B5",
+                       []() { std::cout << "B5 clicked" << std::endl; });
+        MakeToolButton(toolGrid_, "B6",
+                       []() { std::cout << "B6 clicked" << std::endl; });
 
         // Right panel's tab control
         auto tabs = std::make_shared<gui::TabControl>();
@@ -136,39 +151,41 @@ public:
         auto angle2 = std::make_shared<gui::Slider>(gui::Slider::INT);
         angle2->SetLimits(0, 360);
         angle2->SetValue(0);
-        auto aaCombo = std::shared_ptr<gui::Combobox>(new gui::Combobox({"FSAA", "Quincuz", "None"}));
-        useShadows->OnChecked =  [](bool isChecked) { std::cout << "Shadows: " << isChecked << std::endl; };
-        auto viewPanel = std::make_shared<gui::Vert>(spacing, margins,
-                                                     std::vector<std::shared_ptr<gui::Widget>>({
-            aaCombo,
-            showBG,
-            useShadows,
-            angle,
-            angle2
-        }));
-        auto models = std::shared_ptr<gui::Combobox>(new gui::Combobox({"Teapot", "Sphere", "Cube"}));
+        auto aaCombo = std::shared_ptr<gui::Combobox>(
+                new gui::Combobox({"FSAA", "Quincuz", "None"}));
+        useShadows->OnChecked = [](bool isChecked) {
+            std::cout << "Shadows: " << isChecked << std::endl;
+        };
+        auto viewPanel = std::make_shared<gui::Vert>(
+                spacing, margins,
+                std::vector<std::shared_ptr<gui::Widget>>(
+                        {aaCombo, showBG, useShadows, angle, angle2}));
+        auto models = std::shared_ptr<gui::Combobox>(
+                new gui::Combobox({"Teapot", "Sphere", "Cube"}));
         models->SetSelectedIndex(1);
-        auto modelsPanel = std::make_shared<gui::Vert>(spacing, margins,
-                                                       std::vector<std::shared_ptr<gui::Widget>>({
-            models
-        }));
-/*        auto materials = std::make_shared<gui::Combobox>();
-        materials->AddItem("Spiffy");
-        materials->AddItem("Gold");
-        materials->AddItem("Red plastic");
-        materials->AddItem("Blue ceramic"); */
-        auto materials = std::shared_ptr<gui::Combobox>(new gui::Combobox({"Gold", "Red plastic", "Blue ceramic"}));
+        auto modelsPanel = std::make_shared<gui::Vert>(
+                spacing, margins,
+                std::vector<std::shared_ptr<gui::Widget>>({models}));
+        /*        auto materials = std::make_shared<gui::Combobox>();
+                materials->AddItem("Spiffy");
+                materials->AddItem("Gold");
+                materials->AddItem("Red plastic");
+                materials->AddItem("Blue ceramic"); */
+        auto materials = std::shared_ptr<gui::Combobox>(
+                new gui::Combobox({"Gold", "Red plastic", "Blue ceramic"}));
         materials->OnValueChanged = [](const char *newValue) {
             std::cout << "New material: " << newValue << std::endl;
         };
-        auto materials2 = std::shared_ptr<gui::Combobox>(new gui::Combobox({"One", "Two", "Three"}));
-//        auto materials3 = std::shared_ptr<gui::Combobox>(new gui::Combobox({"一", "二", "三"}));
-        auto matPanel = std::make_shared<gui::Vert>(spacing, margins,
-                                                    std::vector<std::shared_ptr<gui::Widget>>({
-            materials,
-            materials2,
-//            materials3
-        }));
+        auto materials2 = std::shared_ptr<gui::Combobox>(
+                new gui::Combobox({"One", "Two", "Three"}));
+        //        auto materials3 = std::shared_ptr<gui::Combobox>(new
+        //        gui::Combobox({"一", "二", "三"}));
+        auto matPanel = std::make_shared<gui::Vert>(
+                spacing, margins,
+                std::vector<std::shared_ptr<gui::Widget>>({
+                        materials, materials2,
+                        //            materials3
+                }));
         tabs->AddTab("View", viewPanel);
         tabs->AddTab("Models", modelsPanel);
         tabs->AddTab("Materials", matPanel);
@@ -178,23 +195,30 @@ public:
         auto nVerts = std::make_shared<gui::Label>("248572 vertices");
         auto textEdit = std::make_shared<gui::TextEdit>();
         textEdit->SetPlaceholderText("Edit some text");
-        textEdit->OnTextChanged = [](const char *text) { std::cout << "Text changed: '" << text << "'" << std::endl; };
-        textEdit->OnValueChanged = [](const char *newValue) { std::cout << "Text value changed: '" << newValue << "'" << std::endl; };
-        rightPanel_ = std::make_shared<gui::Vert>(0, noMargins,
-                                                  std::vector<std::shared_ptr<gui::Widget>>(
-        {
-            std::make_shared<gui::Vert>(spacing, margins,
-                                        std::vector<std::shared_ptr<gui::Widget>>(
-            {
-                std::make_shared<gui::Horiz>(0, gui::Margins(0),
-                                             std::vector<std::shared_ptr<gui::Widget>>(
-                   { gui::Horiz::MakeStretch(), title, gui::Horiz::MakeStretch() })),
-                nVerts,
-                textEdit
-            })),
-            gui::Vert::MakeStretch(),
-            tabs
-        }));
+        textEdit->OnTextChanged = [](const char *text) {
+            std::cout << "Text changed: '" << text << "'" << std::endl;
+        };
+        textEdit->OnValueChanged = [](const char *newValue) {
+            std::cout << "Text value changed: '" << newValue << "'"
+                      << std::endl;
+        };
+        rightPanel_ = std::make_shared<gui::Vert>(
+                0, noMargins,
+                std::vector<std::shared_ptr<gui::Widget>>(
+                        {std::make_shared<gui::Vert>(
+                                 spacing, margins,
+                                 std::vector<std::shared_ptr<gui::Widget>>(
+                                         {std::make_shared<gui::Horiz>(
+                                                  0, gui::Margins(0),
+                                                  std::vector<std::shared_ptr<
+                                                          gui::Widget>>(
+                                                          {gui::Horiz::
+                                                                   MakeStretch(),
+                                                           title,
+                                                           gui::Horiz::
+                                                                   MakeStretch()})),
+                                          nVerts, textEdit})),
+                         gui::Vert::MakeStretch(), tabs}));
         AddChild(rightPanel_);
 
         // Create materials
@@ -202,57 +226,66 @@ public:
 
         std::string errorStr;
         std::vector<char> materialData;
-        std::string resourcePath = gui::Application::GetInstance().GetResourcePath();
+        std::string resourcePath =
+                gui::Application::GetInstance().GetResourcePath();
 
-        if (!readBinaryFile(resourcePath + "/nonmetal.filamat", &materialData, &errorStr)) {
-            std::cout << "WARNING: Could not read non metal material" << "(" << errorStr << ")."
+        if (!readBinaryFile(resourcePath + "/nonmetal.filamat", &materialData,
+                            &errorStr)) {
+            std::cout << "WARNING: Could not read non metal material"
+                      << "(" << errorStr << ")."
                       << "Will use default material instead." << std::endl;
         } else {
-            nonmetal = GetRenderer().AddMaterial(materialData.data(), materialData.size());
+            nonmetal = GetRenderer().AddMaterial(materialData.data(),
+                                                 materialData.size());
         }
 
-        auto redPlastic = GetRenderer().ModifyMaterial(nonmetal)
-                .SetColor("baseColor", {0.8, 0.0, 0.0})
-                .SetParameter("roughness", 0.5f)
-                .SetParameter("clearCoat", 1.f)
-                .SetParameter("clearCoatRoughness", 0.3f)
-                .Finish();
+        auto redPlastic = GetRenderer()
+                                  .ModifyMaterial(nonmetal)
+                                  .SetColor("baseColor", {0.8, 0.0, 0.0})
+                                  .SetParameter("roughness", 0.5f)
+                                  .SetParameter("clearCoat", 1.f)
+                                  .SetParameter("clearCoatRoughness", 0.3f)
+                                  .Finish();
 
-        auto blueCeramic = GetRenderer().ModifyMaterial(nonmetal)
-                .SetColor("baseColor", {0.537, 0.812, 0.941})
-                .SetParameter("roughness", 0.5f)
-                .SetParameter("clearCoat", 1.f)
-                .SetParameter("clearCoatRoughness", 0.01f)
-                .Finish();
+        auto blueCeramic = GetRenderer()
+                                   .ModifyMaterial(nonmetal)
+                                   .SetColor("baseColor", {0.537, 0.812, 0.941})
+                                   .SetParameter("roughness", 0.5f)
+                                   .SetParameter("clearCoat", 1.f)
+                                   .SetParameter("clearCoatRoughness", 0.01f)
+                                   .Finish();
 
-        auto green = GetRenderer().ModifyMaterial(nonmetal)
-                .SetColor("baseColor", {0.537, 0.941, 0.6})
-                .SetParameter("roughness", 0.25f)
-                .SetParameter("clearCoat", 0.f)
-                .SetParameter("clearCoatRoughness", 0.01f)
-                .Finish();
+        auto green = GetRenderer()
+                             .ModifyMaterial(nonmetal)
+                             .SetColor("baseColor", {0.537, 0.941, 0.6})
+                             .SetParameter("roughness", 0.25f)
+                             .SetParameter("clearCoat", 0.f)
+                             .SetParameter("clearCoatRoughness", 0.01f)
+                             .Finish();
 
-        auto white = GetRenderer().ModifyMaterial(nonmetal)
-                .SetColor("baseColor", {1.0, 1.0, 1.0})
-                .SetParameter("roughness", 0.5f)
-                .SetParameter("clearCoat", 1.f)
-                .SetParameter("clearCoatRoughness", 0.3f)
-                .Finish();
+        auto white = GetRenderer()
+                             .ModifyMaterial(nonmetal)
+                             .SetColor("baseColor", {1.0, 1.0, 1.0})
+                             .SetParameter("roughness", 0.5f)
+                             .SetParameter("clearCoat", 1.f)
+                             .SetParameter("clearCoatRoughness", 0.3f)
+                             .Finish();
 
         // Create scene
         auto sceneId = GetRenderer().CreateScene();
-        sceneWidget_ = std::make_shared<gui::SceneWidget>(*GetRenderer().GetScene(sceneId));
+        sceneWidget_ = std::make_shared<gui::SceneWidget>(
+                *GetRenderer().GetScene(sceneId));
         sceneWidget_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
 
         sceneWidget_->GetCameraManipulator()->SetFov(90.0f);
         sceneWidget_->GetCameraManipulator()->SetNearPlane(0.1f);
         sceneWidget_->GetCameraManipulator()->SetFarPlane(50.0f);
-        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 5},   {10, 10, 10});
+        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 5}, {10, 10, 10});
 
         // Create light
         visualization::LightDescription lightDescription;
         lightDescription.intensity = 100000;
-        lightDescription.direction = { -0.707, -.707, 0.0 };
+        lightDescription.direction = {-0.707, -.707, 0.0};
         lightDescription.customAttributes["custom_type"] = "SUN";
 
         sceneWidget_->GetScene()->AddLight(lightDescription);
@@ -263,11 +296,11 @@ public:
         // Add geometry
         sceneWidget_->GetScene()->AddGeometry(*sphere, white);
         sceneWidget_->GetScene()->AddGeometry(*sphere, redPlastic);
-        //sceneWidget_->AddMesh(mesh, 2, 0, 0);
+        // sceneWidget_->AddMesh(mesh, 2, 0, 0);
         sceneWidget_->GetScene()->AddGeometry(*sphere, green);
-        //sceneWidget_->AddMesh(mesh, 0, 2, 0);
+        // sceneWidget_->AddMesh(mesh, 0, 2, 0);
         sceneWidget_->GetScene()->AddGeometry(*sphere, blueCeramic);
-        //sceneWidget_->AddMesh(mesh, 0, 0, 2);
+        // sceneWidget_->AddMesh(mesh, 0, 0, 2);
 
         AddChild(sceneWidget_);
     }
@@ -275,10 +308,10 @@ public:
     void OnMenuItem(gui::Menu::ItemId id) {
         switch (id) {
             case FILE_CLOSE:
-                this->Close(); break;
+                this->Close();
+                break;
             case DEBUG_VOXINATED:
-            case DEBUG_SELUNA:
-            {
+            case DEBUG_SELUNA: {
                 bool checked = menubar_->IsChecked(id);
                 menubar_->SetChecked(id, !checked);
                 break;
@@ -289,7 +322,7 @@ public:
     }
 
 protected:
-    void Layout(const gui::Theme& theme) override {
+    void Layout(const gui::Theme &theme) override {
         auto contentRect = GetContentRect();
 
         gui::Rect leftRect(contentRect.x, contentRect.y,
@@ -298,22 +331,21 @@ protected:
         toolGrid_->SetFrame(leftRect);
 
         auto rightSize = rightPanel_->CalcPreferredSize(theme);
-        gui::Rect rightRect(contentRect.width - rightSize.width,
-                            contentRect.y,
-                            rightSize.width,
-                            contentRect.height);
+        gui::Rect rightRect(contentRect.width - rightSize.width, contentRect.y,
+                            rightSize.width, contentRect.height);
         rightPanel_->SetFrame(rightRect);
 
         sceneWidget_->SetFrame(gui::Rect(leftRect.GetRight(), contentRect.y,
-                                   rightRect.x - leftRect.GetRight(),
-                                   contentRect.height));
+                                         rightRect.x - leftRect.GetRight(),
+                                         contentRect.height));
 
         Super::Layout(theme);
     }
 
 private:
     void MakeToolButton(std::shared_ptr<gui::Widget> parent,
-                        const char *name, std::function<void()> onClicked) {
+                        const char *name,
+                        std::function<void()> onClicked) {
         std::shared_ptr<gui::Button> b;
         b = std::make_shared<gui::Button>(name);
         b->OnClicked = onClicked;
@@ -335,6 +367,6 @@ int main(int argc, const char *argv[]) {
     app.AddWindow(w);
     w->Show();
 
-    app.Run();    
+    app.Run();
     return 0;
 }

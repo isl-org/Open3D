@@ -60,7 +60,8 @@ FilamentRenderer::~FilamentRenderer() {
 
 SceneHandle FilamentRenderer::CreateScene() {
     auto handle = SceneHandle::Next();
-    scenes_[handle] = std::make_unique<FilamentScene>(engine_, resourceManager_);
+    scenes_[handle] =
+            std::make_unique<FilamentScene>(engine_, resourceManager_);
 
     return handle;
 }
@@ -74,7 +75,9 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
     return nullptr;
 }
 
-void FilamentRenderer::DestroyScene(const SceneHandle& id) { scenes_.erase(id); }
+void FilamentRenderer::DestroyScene(const SceneHandle& id) {
+    scenes_.erase(id);
+}
 
 void FilamentRenderer::BeginFrame() {
     frameStarted_ = renderer_->beginFrame(swapChain_);
@@ -112,7 +115,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
         auto wMaterialInstance =
                 resourceManager_.GetMaterialInstance(instanceId);
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                    instanceId);
+                                                     instanceId);
     }
 
     return *materialsModifier_;
@@ -125,7 +128,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     auto wMaterialInstance = resourceManager_.GetMaterialInstance(id);
     if (!wMaterialInstance.expired()) {
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                    id);
+                                                     id);
     }
 
     return *materialsModifier_;
@@ -143,5 +146,5 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

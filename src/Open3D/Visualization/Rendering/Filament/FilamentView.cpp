@@ -32,26 +32,22 @@
 #include <filament/Scene.h>
 #include <filament/View.h>
 
-namespace open3d
-{
-namespace visualization
-{
+namespace open3d {
+namespace visualization {
 
 FilamentView::FilamentView(filament::Engine& aEngine, filament::Scene& aScene)
-    : engine_(aEngine)
-    , scene_(aScene)
-{
+    : engine_(aEngine), scene_(aScene) {
     view_ = engine_.createView();
     view_->setScene(&scene_);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
 
-    camera_->SetProjection(90, 4.f/3.f, 0.01, 1000, Camera::FovType::Horizontal);
+    camera_->SetProjection(90, 4.f / 3.f, 0.01, 1000,
+                           Camera::FovType::Horizontal);
 }
 
-FilamentView::~FilamentView()
-{
+FilamentView::~FilamentView() {
     view_->setCamera(nullptr);
     view_->setScene(nullptr);
 
@@ -59,20 +55,18 @@ FilamentView::~FilamentView()
     engine_.destroy(view_);
 }
 
-void FilamentView::SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h)
-{
+void FilamentView::SetViewport(std::int32_t x,
+                               std::int32_t y,
+                               std::uint32_t w,
+                               std::uint32_t h) {
     view_->setViewport({x, y, w, h});
 }
 
-void FilamentView::SetClearColor(const Eigen::Vector3f& color)
-{
+void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
 }
 
-Camera* FilamentView::GetCamera() const
-{
-    return camera_.get();
-}
+Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

@@ -33,13 +33,12 @@
 
 #include <filament/utils/Entity.h>
 
-namespace filament
-{
-    class Engine;
-    class Renderer;
-    class Scene;
-    class VertexBuffer;
-}
+namespace filament {
+class Engine;
+class Renderer;
+class Scene;
+class VertexBuffer;
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
@@ -102,5 +101,5 @@ private:
     std::unordered_map<REHandle_abstract, AllocatedEntity> entities_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

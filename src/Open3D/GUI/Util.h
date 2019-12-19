@@ -38,7 +38,7 @@ namespace util {
 
 ImVec4 colorToImgui(const Color& color);
 
-} // util
+}  // namespace util
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

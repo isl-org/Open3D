@@ -40,26 +40,26 @@ struct Button::Impl {
     std::string title;
 };
 
-Button::Button(const char *title)
-: impl_(new Button::Impl()) {
+Button::Button(const char* title) : impl_(new Button::Impl()) {
     impl_->title = title;
 }
 
-Button::~Button() {
-}
+Button::~Button() {}
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
     auto font = ImGui::GetFont();
     auto em = std::ceil(ImGui::GetTextLineHeight());
-    auto size = font->CalcTextSizeA(theme.fontSize, 10000, 10000, impl_->title.c_str());
+    auto size = font->CalcTextSizeA(theme.fontSize, 10000, 10000,
+                                    impl_->title.c_str());
     return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
 }
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {
-    auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
-    if (ImGui::Button(impl_->title.c_str(), ImVec2(GetFrame().width, GetFrame().height))) {
+    auto& frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    if (ImGui::Button(impl_->title.c_str(),
+                      ImVec2(GetFrame().width, GetFrame().height))) {
         if (this->OnClicked) {
             this->OnClicked();
         }
@@ -69,5 +69,5 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     }
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

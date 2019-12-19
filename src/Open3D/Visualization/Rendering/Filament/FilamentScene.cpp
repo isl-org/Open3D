@@ -164,7 +164,8 @@ GeometryHandle FilamentScene::AddGeometry(
     auto ibuf = resourceManager_.GetIndexBuffer(ibHandle).lock();
 
     // Copying indices data
-    const size_t indicesCount = triangleMesh.triangles_.size() * 3 * indexStride;
+    const size_t indicesCount =
+            triangleMesh.triangles_.size() * 3 * indexStride;
     auto* uint3Indices = (Eigen::Vector3i*)malloc(indicesCount);
     for (size_t i = 0; i < triangleMesh.triangles_.size(); ++i) {
         uint3Indices[i] = triangleMesh.triangles_[i];
@@ -324,5 +325,5 @@ void FilamentScene::RemoveEntity(REHandle_abstract id) {
     }
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

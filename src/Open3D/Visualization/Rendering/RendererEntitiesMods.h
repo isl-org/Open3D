@@ -43,5 +43,5 @@ public:
     virtual MaterialInstanceHandle Finish() = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

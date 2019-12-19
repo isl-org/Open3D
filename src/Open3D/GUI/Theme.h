@@ -70,5 +70,5 @@ struct Theme {
     Color tabActiveColor;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

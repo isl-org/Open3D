@@ -70,8 +70,8 @@ void FilamentCamera::LookAt(const Eigen::Vector3f& center,
                             const Eigen::Vector3f& eye,
                             const Eigen::Vector3f& up) {
     camera_->lookAt({eye.x(), eye.y(), eye.z()},
-                   {center.x(), center.y(), center.z()},
-                   {up.x(), up.y(), up.z()});
+                    {center.x(), center.y(), center.z()},
+                    {up.x(), up.y(), up.z()});
 }
 
 Eigen::Vector3f FilamentCamera::GetPosition() {
@@ -94,5 +94,5 @@ Eigen::Vector3f FilamentCamera::GetUpVector() {
     return {up.x, up.y, up.z};
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

@@ -35,7 +35,7 @@ namespace gui {
 
 class Checkbox : public Widget {
 public:
-    explicit Checkbox(const char *name);
+    explicit Checkbox(const char* name);
     ~Checkbox();
 
     bool IsChecked() const;
@@ -52,5 +52,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

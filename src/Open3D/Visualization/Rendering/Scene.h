@@ -59,9 +59,10 @@ public:
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
 
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
-    // virtual LightFluentInterface ModifyLight(const REHandle<EntityType::Light>& id) = 0;
+    // virtual LightFluentInterface ModifyLight(const
+    // REHandle<EntityType::Light>& id) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d
