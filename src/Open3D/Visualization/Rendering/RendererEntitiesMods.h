@@ -35,6 +35,7 @@ namespace visualization {
 
 class MaterialModifier {
 public:
+    virtual ~MaterialModifier() = default;
     virtual MaterialModifier& SetParameter(const char* parameter,
                                            float value) = 0;
     virtual MaterialModifier& SetColor(const char* parameter,

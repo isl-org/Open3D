@@ -71,9 +71,9 @@ if (WIN32)
             WORKING_DIRECTORY ${FILAMENT_ROOT})
 else()
     add_custom_target(filament_copy
-            COMMAND cp -a -u include/* ${filament_INCLUDE_DIRS}
-            COMMAND cp -a -u lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
-            COMMAND cp -a -u bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
+            COMMAND cp -a include/* ${filament_INCLUDE_DIRS}
+            COMMAND cp -a lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
+            COMMAND cp -a bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
             WORKING_DIRECTORY ${FILAMENT_ROOT})
 endif()
 

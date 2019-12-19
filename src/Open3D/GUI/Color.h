@@ -44,6 +44,9 @@ public:
 
     unsigned int ToABGR32() const;
 
+    bool operator==(const Color& rhs) const;
+    bool operator!=(const Color& rhs) const;
+
 private:
     float rgba_[4];
 };
