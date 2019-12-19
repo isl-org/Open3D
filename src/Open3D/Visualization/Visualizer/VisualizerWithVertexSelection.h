@@ -99,7 +99,8 @@ protected:
     Eigen::Vector3d CalcDragDelta(int winX, int winY);
     enum DragType { DRAG_MOVING, DRAG_END };
     void DragSelectedPoints(const Eigen::Vector3d &delta, DragType type);
-    const std::vector<Eigen::Vector3d> *GetGeometryPoints(std::shared_ptr<const geometry::Geometry> geometry);
+    const std::vector<Eigen::Vector3d> *GetGeometryPoints(
+            std::shared_ptr<const geometry::Geometry> geometry);
 
 protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;

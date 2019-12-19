@@ -209,8 +209,12 @@ void pybind_visualizer(py::module &m) {
     py::class_<visualization::VisualizerWithVertexSelection::PickedPoint>
             visualizer_vselect_pickedpoint(m, "PickedPoint");
     visualizer_vselect_pickedpoint.def(py::init<>())
-            .def_readwrite("index", &visualization::VisualizerWithVertexSelection::PickedPoint::index)
-            .def_readwrite("coord", &visualization::VisualizerWithVertexSelection::PickedPoint::coord);
+            .def_readwrite("index",
+                           &visualization::VisualizerWithVertexSelection::
+                                   PickedPoint::index)
+            .def_readwrite("coord",
+                           &visualization::VisualizerWithVertexSelection::
+                                   PickedPoint::coord);
 
     docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",
                                     map_visualizer_docstrings);
