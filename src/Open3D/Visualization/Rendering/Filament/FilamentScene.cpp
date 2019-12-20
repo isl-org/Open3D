@@ -26,10 +26,10 @@
 
 #include "FilamentScene.h"
 
+#include "FilamentGeometryBuffersBuilder.h"
 #include "FilamentResourceManager.h"
 #include "FilamentView.h"
 #include "Open3D/Geometry/Geometry3D.h"
-#include "Open3D/Geometry/TriangleMesh.h"
 
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
@@ -37,12 +37,9 @@
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
-#include <filament/geometry/SurfaceOrientation.h>
 
 namespace open3d {
 namespace visualization {
-
-static void freeBufferDescriptor(void* buffer, size_t, void*) { free(buffer); }
 
 FilamentScene::FilamentScene(filament::Engine& aEngine,
                              FilamentResourceManager& aResourceManager)
@@ -114,89 +111,26 @@ GeometryHandle FilamentScene::AddGeometry(
     using namespace geometry;
     using namespace filament;
 
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        return GeometryHandle::kBad;
-    }
-
     AllocatedEntity entityEntry;
 
-    auto triangleMesh = static_cast<const TriangleMesh&>(geometry);
-    const size_t nVertices = triangleMesh.vertices_.size();
-
-    VertexBuffer* vbuf = AllocateVertexBuffer(entityEntry, nVertices);
-
-    // Copying vertex coordinates
-    const size_t coordsBytesCount = nVertices * 3 * sizeof(float);
-    auto* float3VCoord = (Eigen::Vector3f*)malloc(coordsBytesCount);
-    for (size_t i = 0; i < nVertices; ++i) {
-        float3VCoord[i] = triangleMesh.vertices_[i].cast<float>();
+    auto geometryBuffersBuilder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!geometryBuffersBuilder) {
+        // FIXME: Log unsupported geometry
+        return {};
     }
 
-    // Moving copied vertex coordinates to VertexBuffer
-    // malloc'ed memory will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor coordsDescriptor(float3VCoord,
-                                                    coordsBytesCount);
-    coordsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine_, 0, std::move(coordsDescriptor));
+    entityEntry.vb = geometryBuffersBuilder->ConstructVertexBuffer();
+    entityEntry.ib = geometryBuffersBuilder->ConstructIndexBuffer();
 
-    // Converting vertex normals to float base
-    std::vector<Eigen::Vector3f> normals;
-    normals.resize(nVertices);
-    for (size_t i = 0; i < nVertices; ++i) {
-        normals[i] = triangleMesh.vertex_normals_[i].cast<float>();
-    }
+    Box aabb = geometryBuffersBuilder->ComputeAABB();
 
-    // Converting normals to Filament type - quaternions
-    const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4VTangents = (math::quatf*)malloc(tangentsBytesCount);
-    auto orientation = filament::geometry::SurfaceOrientation::Builder()
-                               .vertexCount(nVertices)
-                               .normals((math::float3*)normals.data())
-                               .build();
-    orientation.getQuats(float4VTangents, nVertices);
-
-    // Moving allocated tangents to VertexBuffer
-    // they will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor tangentsDescriptor(float4VTangents,
-                                                      tangentsBytesCount);
-    tangentsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine_, 1, std::move(tangentsDescriptor));
-
-    auto indexStride = sizeof(triangleMesh.triangles_[0][0]);
-    auto ibHandle = resourceManager_.CreateIndexBuffer(
-            triangleMesh.triangles_.size() * 3, indexStride);
-    entityEntry.ib = ibHandle;
-
-    auto ibuf = resourceManager_.GetIndexBuffer(ibHandle).lock();
-
-    // Copying indices data
-    const size_t indicesCount = triangleMesh.triangles_.size() * 3 * indexStride;
-    auto* uint3Indices = (Eigen::Vector3i*)malloc(indicesCount);
-    for (size_t i = 0; i < triangleMesh.triangles_.size(); ++i) {
-        uint3Indices[i] = triangleMesh.triangles_[i];
-    }
-
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(uint3Indices, indicesCount);
-    indicesDescriptor.setCallback(freeBufferDescriptor);
-    ibuf->setBuffer(engine_, std::move(indicesDescriptor));
-
-    Box aabb;
-    if (indexStride == sizeof(std::uint16_t)) {
-        aabb = RenderableManager::computeAABB((math::float3*)float3VCoord,
-                                              (std::uint16_t*)uint3Indices,
-                                              nVertices);
-    } else {
-        aabb = RenderableManager::computeAABB((math::float3*)float3VCoord,
-                                              (std::uint32_t*)uint3Indices,
-                                              nVertices);
-    }
+    auto vbuf = resourceManager_.GetVertexBuffer(entityEntry.vb).lock();
+    auto ibuf = resourceManager_.GetIndexBuffer(entityEntry.ib).lock();
 
     entityEntry.self = utils::EntityManager::get().create();
     RenderableManager::Builder builder(1);
     builder.boundingBox(aabb)
-            .geometry(0, RenderableManager::PrimitiveType::TRIANGLES, vbuf,
+            .geometry(0, geometryBuffersBuilder->GetPrimitiveType(), vbuf.get(),
                       ibuf.get())
             .culling(false);
 
@@ -230,39 +164,6 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
     }
     // TODO: Log if failed
 }
-
-//void FilamentScene::SetGeometryTransform(const GeometryHandle& geometryId, const Transform& transform) {
-//    auto found = entities_.find(geometryId);
-//    if (found != entities_.end()) {
-//        auto& transformMgr = engine_.getTransformManager();
-//        auto iTransform = transformMgr.getInstance(found->second.self);
-//        if (!iTransform.isValid()) {
-//            transformMgr.create(found->second.self);
-//            iTransform = transformMgr.getInstance(found->second.self);
-//        }
-//
-//        auto eMatrix = transform.matrix();
-//        filament::math::mat4f fTransform(eMatrix(0,0), eMatrix(0,1), eMatrix(0,2), eMatrix(0,3),
-//                                         eMatrix(1,0), eMatrix(1,1), eMatrix(1,2), eMatrix(1,3),
-//                                         eMatrix(2,0), eMatrix(2,1), eMatrix(2,2), eMatrix(2,3),
-//                                         eMatrix(3,0), eMatrix(3,1), eMatrix(3,2), eMatrix(3,3)
-//                );
-//        transformMgr.setTransform(iTransform, fTransform);
-//    }
-//}
-//
-//FilamentScene::Transform FilamentScene::GetGeometryTransform(const GeometryHandle& geometryId) const {
-//    auto found = entities_.find(geometryId);
-//    if (found != entities_.end()) {
-//        auto& transformMgr = engine_.getTransformManager();
-//        auto iTransform = transformMgr.getInstance(found->second.self);
-//        if (!iTransform.isValid()) {
-//            transformMgr.create(found->second.self);
-//            iTransform = transformMgr.getInstance(found->second.self);
-//        }
-//    }
-//    return FilamentScene::Transform();
-//}
 
 void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
     RemoveEntity(geometryId);
@@ -317,20 +218,22 @@ void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) {
     auto iTransform = GetEntityTransformInstance(entityId);
     if (iTransform.isValid()) {
+        using namespace filament::math;
+
+        // Filament matrices is column major and Eigen's - row major
         auto eMatrix = transform.matrix();
-        // FIXME: Need to find proper handling for different matrix storage approaches
-        filament::math::mat4f fTransform(eMatrix(0,0), eMatrix(1,0), eMatrix(2,0), eMatrix(3,0),
-                                         eMatrix(0,1), eMatrix(1,1), eMatrix(2,1), eMatrix(3,1),
-                                         eMatrix(0,2), eMatrix(1,2), eMatrix(2,2), eMatrix(3,2),
-                                         eMatrix(0,3), eMatrix(1,3), eMatrix(2,3), eMatrix(3,3)
-                );
+        mat4f fTransform(mat4f::row_major_init{
+                eMatrix(0, 0), eMatrix(0, 1), eMatrix(0, 2), eMatrix(0, 3),
+                eMatrix(1, 0), eMatrix(1, 1), eMatrix(1, 2), eMatrix(1, 3),
+                eMatrix(2, 0), eMatrix(2, 1), eMatrix(2, 2), eMatrix(2, 3),
+                eMatrix(3, 0), eMatrix(3, 1), eMatrix(3, 2), eMatrix(3, 3)});
 
         auto& transformMgr = engine_.getTransformManager();
         transformMgr.setTransform(iTransform, fTransform);
     }
 }
 
-FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstract& entityId) const {
+FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstract& entityId) {
     auto iTransform = GetEntityTransformInstance(entityId);
 
     Transform eTransform;
@@ -347,7 +250,42 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstra
 
         eTransform = matrix;
     }
+
     return eTransform;
+}
+
+std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(const REHandle_abstract& entityId)
+{
+    std::pair<Eigen::Vector3f, Eigen::Vector3f> result;
+
+    auto found = entities_.find(entityId);
+    if (found != entities_.end()) {
+        auto& renderableManager = engine_.getRenderableManager();
+        auto inst = renderableManager.getInstance(found->second.self);
+        auto box = renderableManager.getAxisAlignedBoundingBox(inst);
+
+        result.first = {box.center.x, box.center.y, box.center.z};
+        result.second = {box.halfExtent.x, box.halfExtent.y, box.halfExtent.z};
+    }
+
+    return result;
+}
+
+std::pair<Eigen::Vector3f, float> FilamentScene::GetEntityBoundingSphere(const REHandle_abstract& entityId) {
+    std::pair<Eigen::Vector3f, float> result;
+
+    auto found = entities_.find(entityId);
+    if (found != entities_.end()) {
+        auto& renderableManager = engine_.getRenderableManager();
+        auto inst = renderableManager.getInstance(found->second.self);
+        auto sphere = renderableManager.getAxisAlignedBoundingBox(inst)
+                              .getBoundingSphere();
+
+        result.first = {sphere.x, sphere.y, sphere.z};
+        result.second = sphere.w;
+    }
+
+    return result;
 }
 
 void FilamentScene::Draw(filament::Renderer& renderer) {
@@ -359,38 +297,27 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     }
 }
 
-filament::VertexBuffer* FilamentScene::AllocateVertexBuffer(
-        FilamentScene::AllocatedEntity& owner, const size_t verticesCount) {
-    using namespace filament;
-
-    VertexBuffer* vbuf =
-            VertexBuffer::Builder()
-                    .bufferCount(2)
-                    .vertexCount(verticesCount)
-                    .normalized(VertexAttribute::TANGENTS)
-                    .attribute(VertexAttribute::POSITION, 0,
-                               VertexBuffer::AttributeType::FLOAT3, 0)
-                    .attribute(VertexAttribute::TANGENTS, 1,
-                               VertexBuffer::AttributeType::FLOAT4, 0)
-                    .build(engine_);
-
-    if (vbuf) {
-        owner.vb = resourceManager_.AddVertexBuffer(vbuf);
-    }
-
-    return vbuf;
-}
-
-utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) const {
+utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
     auto found = entities_.find(id);
 
     filament::TransformManager::Instance iTransform;
     if (found != entities_.end()) {
         auto& transformMgr = engine_.getTransformManager();
-        iTransform = transformMgr.getInstance(found->second.self);
+        iTransform = transformMgr.getInstance(found->second.parent);
         if (!iTransform.isValid()) {
+            using namespace filament::math;
+            // Forcing user to manipulate transform located in center of entity
+            auto parent = utils::EntityManager::get().create();
+            found->second.parent = parent;
+
+            transformMgr.create(found->second.parent);
             transformMgr.create(found->second.self);
+
             iTransform = transformMgr.getInstance(found->second.self);
+            iTransform = transformMgr.getInstance(found->second.parent);
+
+            auto center = GetEntityBoundingSphere(id).first;
+            transformMgr.create(found->second.self, iTransform, mat4f::translation(float3 {-center.x(),-center.y(),-center.z()}));
         }
     }
 
@@ -410,6 +337,7 @@ void FilamentScene::RemoveEntity(REHandle_abstract id) {
             resourceManager_.Destroy(data.ib);
         }
         engine_.destroy(data.self);
+        engine_.destroy(data.parent);
 
         entities_.erase(found);
     }

@@ -77,7 +77,10 @@ public:
     void RemoveLight(const LightHandle& id) override;
 
     void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) override;
-    Transform GetEntityTransform(const REHandle_abstract& entityId) const override;
+    Transform GetEntityTransform(const REHandle_abstract& entityId) override;
+
+    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) override;
 
     void Draw(filament::Renderer& renderer);
 
@@ -88,6 +91,8 @@ private:
         utils::Entity self;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
+        // Used for relocating transform to center of mass
+        utils::Entity parent;
     };
 
     struct ViewContainer {
@@ -95,10 +100,7 @@ private:
         bool isActive = true;
     };
 
-    filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner,
-                                                 size_t verticesCount);
-
-    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id) const;
+    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id);
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;

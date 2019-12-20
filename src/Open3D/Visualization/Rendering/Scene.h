@@ -67,7 +67,11 @@ public:
     virtual void RemoveLight(const LightHandle& id) = 0;
 
     virtual void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) = 0;
-    virtual Transform GetEntityTransform(const REHandle_abstract& entityId) const = 0;
+    virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;
+
+    //               <     center        half extent  >
+    virtual std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) = 0;
+    virtual std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) = 0;
 };
 
 }
