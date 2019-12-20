@@ -43,6 +43,9 @@ FilamentView::FilamentView(filament::Engine& aEngine, filament::Scene& aScene)
 {
     view_ = engine_.createView();
     view_->setScene(&scene_);
+    view_->setSampleCount(8);
+    view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
+    view_->setPostProcessingEnabled(true);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
