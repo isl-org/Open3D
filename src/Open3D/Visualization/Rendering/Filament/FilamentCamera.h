@@ -56,6 +56,11 @@ public:
                        double near,
                        double far) override;
 
+    void SetModelMatrix(const Transform& view) override;
+    void SetModelMatrix(const Eigen::Vector3f& forward,
+                        const Eigen::Vector3f& left,
+                        const Eigen::Vector3f& up) override;
+
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up) override;
@@ -64,6 +69,7 @@ public:
     Eigen::Vector3f GetForwardVector() override;
     Eigen::Vector3f GetLeftVector() override;
     Eigen::Vector3f GetUpVector() override;
+    Transform GetModelMatrix() override;
 
     filament::Camera* GetNativeCamera() const { return camera_; }
 
