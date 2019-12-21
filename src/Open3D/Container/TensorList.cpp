@@ -36,12 +36,8 @@ TensorList::TensorList(const SizeVector& shape,
       device_(device),
       size_(0),
       reserved_size_(1),
-      /// Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device) {
-    /// Construct internal tensor
-    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
-    internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
-}
+      internal_tensor_(
+              ExpandFrontDim(shape_, reserved_size_), dtype_, device_) {}
 
 TensorList::TensorList(const std::vector<Tensor>& tensors, const Device& device)
     : device_(device),
@@ -74,7 +70,7 @@ TensorList::TensorList(const Tensor& tensor)
     shape_ = SizeVector(std::next(shape.begin()), shape.end());
 
     /// Construct the internal tensor
-    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
+    SizeVector expanded_shape = ExpandFrontDim(shape_, reserved_size_);
     internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
     internal_tensor_.Slice(0 /* dim */, 0, size_).AsRvalue() = tensor;
 }
@@ -216,7 +212,7 @@ void TensorList::ExpandTensor(int64_t new_reserved_size) {
         utility::LogError("New size {} is smaller than current size {}.",
                           new_reserved_size, reserved_size_);
     }
-    SizeVector new_expanded_shape = ExpandShape(shape_, new_reserved_size);
+    SizeVector new_expanded_shape = ExpandFrontDim(shape_, new_reserved_size);
     Tensor new_internal_tensor = Tensor(new_expanded_shape, dtype_, device_);
 
     /// Copy data
@@ -226,8 +222,8 @@ void TensorList::ExpandTensor(int64_t new_reserved_size) {
     reserved_size_ = new_reserved_size;
 }
 
-SizeVector TensorList::ExpandShape(const SizeVector& shape,
-                                   int64_t new_dim_size /* = 1 */) {
+SizeVector TensorList::ExpandFrontDim(const SizeVector& shape,
+                                      int64_t new_dim_size /* = 1 */) {
     SizeVector expanded_shape = {new_dim_size};
     expanded_shape.insert(expanded_shape.end(), shape.begin(), shape.end());
     return expanded_shape;
