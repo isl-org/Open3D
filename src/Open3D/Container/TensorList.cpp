@@ -27,7 +27,7 @@
 #include "Open3D/Container/TensorList.h"
 
 namespace open3d {
-/// Public
+// Public
 TensorList::TensorList(const SizeVector& shape,
                        const Dtype& dtype,
                        const Device& device /*= Device("CPU:0") */)
@@ -38,11 +38,6 @@ TensorList::TensorList(const SizeVector& shape,
       reserved_size_(1),
       /// Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, device) {
-    if (shape_.size() == 0) {
-        utility::LogError(
-                "Empty tensor shapes are not supported in TensorList.");
-    }
-
     /// Construct internal tensor
     SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
     internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
@@ -124,7 +119,7 @@ void TensorList::Resize(int64_t n) {
 }
 
 void TensorList::PushBack(const Tensor& tensor) {
-    if (!IsCompatibleBroadcastShape(shape_, tensor.GetShape())) {
+    if (!CanBeBrocastedToShape(tensor.GetShape(), shape_)) {
         utility::LogError("Incompatible shape {} and {}", shape_,
                           tensor.GetShape());
     }
@@ -135,7 +130,7 @@ void TensorList::PushBack(const Tensor& tensor) {
     }
 
     /// Copy tensor
-    internal_tensor_[size_].AsRvalue() = tensor;
+    internal_tensor_[size_] = tensor;
     ++size_;
 }
 
@@ -177,10 +172,12 @@ void TensorList::operator+=(const TensorList& other) {
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
-    internal_tensor_.Slice(0 /* dim */, size_, size_ + other.GetSize())
-            .AsRvalue() = other.AsTensor();
+    internal_tensor_.Slice(0 /* dim */, size_, size_ + other.GetSize()) =
+            other.AsTensor();
     size_ = size_ + other.GetSize();
 }
+
+void TensorList::Extend(const TensorList& b) { *this += b; }
 
 Tensor TensorList::operator[](int64_t index) {
     CheckIndex(index);
@@ -213,7 +210,7 @@ TensorList TensorList::IndexGet(std::vector<int64_t>& indices) const {
 
 void TensorList::Clear() { *this = TensorList(shape_, dtype_, device_); }
 
-/// Protected
+// Protected
 void TensorList::ExpandTensor(int64_t new_reserved_size) {
     if (new_reserved_size <= reserved_size_) {
         utility::LogError("New size {} is smaller than current size {}.",
@@ -223,7 +220,7 @@ void TensorList::ExpandTensor(int64_t new_reserved_size) {
     Tensor new_internal_tensor = Tensor(new_expanded_shape, dtype_, device_);
 
     /// Copy data
-    new_internal_tensor.Slice(0 /* dim */, 0, size_).AsRvalue() =
+    new_internal_tensor.Slice(0 /* dim */, 0, size_) =
             internal_tensor_.Slice(0 /* dim */, 0, size_);
     internal_tensor_ = new_internal_tensor;
     reserved_size_ = new_reserved_size;

@@ -59,6 +59,9 @@ public:
     /// \param tensors: a vector of tensors with compatible shapes for
     /// broadcasting
     /// \param device: device to store the contained tensors. e.g. "CPU:0"
+    /// The tensors are allowed to have different shapes, as long as they are
+    /// compatible in broadcasting
+    /// The tensors must have the same device
     TensorList(const std::vector<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
 
@@ -66,11 +69,17 @@ public:
     /// \param tensors: a list of tensors contained in {},
     /// with compatible shapes for broadcasting
     /// \param device: device to store the contained tensors. e.g. "CPU:0"
+    /// The tensors are allowed to have different shapes, as long as they are
+    /// compatible in broadcasting
+    /// The tensors must have the same device
     TensorList(const std::initializer_list<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
 
     /// Constructor from iterators of tensors, an abstract wrapper for vectors
     /// and init lists.
+    /// The tensors pointed by the iterators are allowed to have different
+    /// shapes, as long as they are compatible in broadcasting
+    /// The tensors must have the same device
     template <class InputIterator>
     TensorList(InputIterator first,
                InputIterator last,
@@ -103,15 +112,22 @@ public:
     void Resize(int64_t n);
 
     /// Push back the copy of a tensor to the list
+    /// The tensor must have the shape that can be broadcasted to the tensor
+    /// list's shape
+    /// The tensor must have the same device
     void PushBack(const Tensor& tensor);
 
     /// Concatenate two TensorLists
     /// Return a new TensorList with copy of data
+    /// Two TensorLists must have the same shape, type, and device
     TensorList operator+(const TensorList& other) const;
     static TensorList Concatenate(const TensorList& a, const TensorList& b);
 
-    /// Concatenate two TensorLists and append the other to the end of *this
+    /// Concatenate two TensorLists and append the copy of the other tensor list
+    /// to the end of *this
+    /// Two TensorLists must have the same shape, type, and device
     void operator+=(const TensorList& other);
+    void Extend(const TensorList& b);
 
     /// Return the reference of one tensor with shared memory
     Tensor operator[](int64_t index);
@@ -155,12 +171,6 @@ protected:
                                             tensor.GetShape());
                 });
 
-        if (shape_.size() == 0) {
-            utility::LogError(
-                    "Empty input tensor shapes are not supported in "
-                    "TensorList.");
-        }
-
         /// Infer dtype
         dtype_ = first->GetDtype();
         bool dtype_consistent = std::accumulate(
@@ -181,7 +191,7 @@ protected:
         /// Assign tensors
         size_t i = 0;
         for (auto iter = first; iter != last; ++iter, ++i) {
-            internal_tensor_[i].AsRvalue() = *iter;
+            internal_tensor_[i] = *iter;
         }
     }
 
@@ -196,12 +206,12 @@ protected:
     /// with reserved_size_ = (1 << (ceil(log2(size_)) + 1))
     int64_t ReserveSize(int64_t n);
 
-    /// Check if index is out of bound (0, size_ - 1)
+    /// Check if index is out of bound [0, size_)
     void CheckIndex(int64_t index) const;
 
 protected:
-    /// We always maintain an internal Tensor of (reserved_size_, shape_).
-    /// However, we only allow accessing the Tensor of (size_, shape_).
+    /// We always maintain an internal Tensor of (reserved_size_, **shape_).
+    /// However, we only allow accessing the Tensor of (size_, **shape_).
     /// In general, reserved_size_ >= (1 << (ceil(log2(size_)) + 1))
     /// as conventionally done in std::vector.
     /// Examples: (size_, reserved_size_) = (3, 8), (4, 8), (5, 16).
