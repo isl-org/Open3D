@@ -31,11 +31,11 @@
 #include <string>
 
 #include "Open3D/Container/Blob.h"
+#include "Open3D/Container/Broadcast.h"
 #include "Open3D/Container/Device.h"
 #include "Open3D/Container/Dtype.h"
 #include "Open3D/Container/SizeVector.h"
 #include "Open3D/Container/Tensor.h"
-
 namespace open3d {
 
 /// A TensorList is an extendable tensor in the 0-th dimension.
@@ -68,6 +68,18 @@ public:
     /// \param device: device to store the contained tensors. e.g. "CPU:0"
     TensorList(const std::initializer_list<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
+
+    /// Constructor from iterators of tensors, an abstract wrapper for vectors
+    /// and init lists.
+    template <class InputIterator>
+    TensorList(InputIterator first,
+               InputIterator last,
+               const Device& device = Device("CPU:0"))
+        : device_(device),
+          /// Default empty tensor
+          internal_tensor_(SizeVector(), Dtype::Int64, device) {
+        ConstructFromIterators(first, last);
+    }
 
     /// Directly construct from the copy of a raw internal tensor
     /// The inverse of AsTensor()
@@ -122,6 +134,57 @@ public:
     const Tensor& GetInternalTensor() const { return internal_tensor_; }
 
 protected:
+    /// Shared constructor for iterators
+    template <class InputIterator>
+    void ConstructFromIterators(InputIterator first, InputIterator last) {
+        int64_t size = std::distance(first, last);
+        if (size == 0) {
+            utility::LogError(
+                    "Empty input tensors cannot initialize a TensorList.");
+        }
+
+        /// Infer size and reserved_size
+        size_ = size;
+        reserved_size_ = ReserveSize(size_);
+
+        /// Infer shape
+        shape_ = std::accumulate(
+                std::next(first), last, first->GetShape(),
+                [](const SizeVector shape, const Tensor& tensor) {
+                    return BroadcastedShape(std::move(shape),
+                                            tensor.GetShape());
+                });
+
+        if (shape_.size() == 0) {
+            utility::LogError(
+                    "Empty input tensor shapes are not supported in "
+                    "TensorList.");
+        }
+
+        /// Infer dtype
+        dtype_ = first->GetDtype();
+        bool dtype_consistent = std::accumulate(
+                std::next(first), last, true,
+                [&](bool same_type, const Tensor& tensor) {
+                    return same_type && (dtype_ == tensor.GetDtype());
+                });
+        if (!dtype_consistent) {
+            utility::LogError(
+                    "Inconsistent tensor dtypes in tensors are not supported "
+                    "in TensorList.");
+        }
+
+        /// Construct internal tensor
+        SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
+        internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
+
+        /// Assign tensors
+        size_t i = 0;
+        for (auto iter = first; iter != last; ++iter, ++i) {
+            internal_tensor_[i].AsRvalue() = *iter;
+        }
+    }
+
     /// Expand the size of the internal tensor
     void ExpandTensor(int64_t new_reserved_size);
 
@@ -142,13 +205,13 @@ protected:
     /// In general, reserved_size_ >= (1 << (ceil(log2(size_)) + 1))
     /// as conventionally done in std::vector.
     /// Examples: (size_, reserved_size_) = (3, 8), (4, 8), (5, 16).
-    Tensor internal_tensor_;
-
-    int64_t reserved_size_ = 0;
-    int64_t size_ = 0;
-
     SizeVector shape_;
     Dtype dtype_;
     Device device_;
+
+    int64_t size_ = 0;
+    int64_t reserved_size_ = 0;
+
+    Tensor internal_tensor_;
 };
 }  // namespace open3d

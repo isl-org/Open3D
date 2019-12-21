@@ -26,8 +26,6 @@
 
 #include "Open3D/Container/TensorList.h"
 
-#include "Open3D/Container/Broadcast.h"
-
 namespace open3d {
 /// Public
 TensorList::TensorList(const SizeVector& shape,
@@ -54,48 +52,7 @@ TensorList::TensorList(const std::vector<Tensor>& tensors, const Device& device)
     : device_(device),
       /// Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, device) {
-    if (tensors.size() == 0) {
-        utility::LogError(
-                "Empty input tensors cannot initialize a TensorList.");
-    }
-
-    /// Infer size and reserved_size
-    size_ = tensors.size();
-    reserved_size_ = ReserveSize(size_);
-
-    /// Infer shape
-    shape_ = std::accumulate(
-            std::next(tensors.begin()), tensors.end(), tensors[0].GetShape(),
-            [](const SizeVector shape, const Tensor& tensor) {
-                return BroadcastedShape(std::move(shape), tensor.GetShape());
-            });
-
-    if (shape_.size() == 0) {
-        utility::LogError(
-                "Empty input tensor shapes are not supported in TensorList.");
-    }
-
-    /// Infer dtype
-    dtype_ = tensors[0].GetDtype();
-    bool dtype_consistent = std::accumulate(
-            std::next(tensors.begin()), tensors.end(), true,
-            [&](bool same_type, const Tensor& tensor) {
-                return same_type && (dtype_ == tensor.GetDtype());
-            });
-    if (!dtype_consistent) {
-        utility::LogError(
-                "Inconsistent tensor dtypes in tensors are not supported "
-                "in TensorList.");
-    }
-
-    /// Construct internal tensor
-    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
-    internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
-
-    /// Assign tensors
-    for (size_t i = 0; i < size_; ++i) {
-        internal_tensor_[i].AsRvalue() = tensors[i];
-    }
+    ConstructFromIterators(tensors.begin(), tensors.end());
 }
 
 TensorList::TensorList(const std::initializer_list<Tensor>& tensors,
@@ -103,51 +60,7 @@ TensorList::TensorList(const std::initializer_list<Tensor>& tensors,
     : device_(device),
       /// Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, device) {
-    if (tensors.size() == 0) {
-        utility::LogError(
-                "Empty input tensors cannot initialize a TensorList.");
-    }
-
-    /// Infer size and reserved_size
-    size_ = tensors.size();
-    reserved_size_ = ReserveSize(size_);
-
-    /// Infer shape
-    shape_ = std::accumulate(std::next(tensors.begin()), tensors.end(),
-                             tensors.begin()->GetShape(),
-                             [](const SizeVector shape, const Tensor& tensor) {
-                                 return BroadcastedShape(std::move(shape),
-                                                         tensor.GetShape());
-                             });
-
-    if (shape_.size() == 0) {
-        utility::LogError(
-                "Empty input tensor shapes are not supported in TensorList.");
-    }
-
-    /// Infer dtype
-    dtype_ = tensors.begin()->GetDtype();
-    bool dtype_consistent = std::accumulate(
-            std::next(tensors.begin()), tensors.end(), true,
-            [&](bool same_type, const Tensor& tensor) {
-                return same_type && (dtype_ == tensor.GetDtype());
-            });
-    if (!dtype_consistent) {
-        utility::LogError(
-                "Inconsistent tensor dtypes in tensors are not supported "
-                "in TensorList.");
-    }
-
-    /// Construct internal tensor
-    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
-    internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
-
-    /// Assign tensors
-    auto iter = tensors.begin();
-    for (size_t i = 0; i < size_; ++i) {
-        internal_tensor_[i].AsRvalue() = *iter;
-        ++iter;
-    }
+    ConstructFromIterators(tensors.begin(), tensors.end());
 }
 
 TensorList::TensorList(const Tensor& tensor)
@@ -163,7 +76,7 @@ TensorList::TensorList(const Tensor& tensor)
 
     size_ = shape[0];
     reserved_size_ = ReserveSize(size_);
-    shape_ = SizeVector(shape.begin() + 1, shape.end());
+    shape_ = SizeVector(std::next(shape.begin()), shape.end());
 
     /// Construct the internal tensor
     SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
