@@ -38,9 +38,9 @@
 
 namespace open3d {
 
-/// A TensorList is an extendable tensor in the 1st dimension.
+/// A TensorList is an extendable tensor in the 0-th dimension.
 /// It is similar to std::vector<Tensor>,
-/// but uses open3d's tensor memory management system.
+/// but uses Open3D's tensor memory management system.
 /// Typical use cases:
 /// - Pointcloud: N x 3
 /// - Sparse Voxel Grid: N x 8 x 8 x 8
@@ -59,7 +59,14 @@ public:
     /// \param tensors: a vector of tensors with compatible shapes for
     /// broadcasting
     /// \param device: device to store the contained tensors. e.g. "CPU:0"
-    TensorList(std::vector<Tensor>& tensors,
+    TensorList(const std::vector<Tensor>& tensors,
+               const Device& device = Device("CPU:0"));
+
+    /// Constructor from a list of broadcastable tensors
+    /// \param tensors: a list of tensors contained in {},
+    /// with compatible shapes for broadcasting
+    /// \param device: device to store the contained tensors. e.g. "CPU:0"
+    TensorList(const std::initializer_list<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
 
     /// Directly construct from the copy of a raw internal tensor

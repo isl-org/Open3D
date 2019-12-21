@@ -50,7 +50,7 @@ TensorList::TensorList(const SizeVector& shape,
     internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
 }
 
-TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
+TensorList::TensorList(const std::vector<Tensor>& tensors, const Device& device)
     : device_(device),
       /// Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, device) {
@@ -64,11 +64,12 @@ TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
     reserved_size_ = ReserveSize(size_);
 
     /// Infer shape
-    shape_ = tensors[0].GetShape();
-    /// Can be optimized by accumulate
-    for (size_t i = 1; i < size_; ++i) {
-        shape_ = BroadcastedShape(shape_, tensors[i].GetShape());
-    }
+    shape_ = std::accumulate(
+            std::next(tensors.begin()), tensors.end(), tensors[0].GetShape(),
+            [](const SizeVector shape, const Tensor& tensor) {
+                return BroadcastedShape(std::move(shape), tensor.GetShape());
+            });
+
     if (shape_.size() == 0) {
         utility::LogError(
                 "Empty input tensor shapes are not supported in TensorList.");
@@ -76,13 +77,15 @@ TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
 
     /// Infer dtype
     dtype_ = tensors[0].GetDtype();
-    /// Can be optimized by accumulate
-    for (size_t i = 1; i < size_; ++i) {
-        if (dtype_ != tensors[i].GetDtype()) {
-            utility::LogError(
-                    "Inconsistent tensor dtypes in tensors are not supported "
-                    "in TensorList.");
-        }
+    bool dtype_consistent = std::accumulate(
+            std::next(tensors.begin()), tensors.end(), true,
+            [&](bool same_type, const Tensor& tensor) {
+                return same_type && (dtype_ == tensor.GetDtype());
+            });
+    if (!dtype_consistent) {
+        utility::LogError(
+                "Inconsistent tensor dtypes in tensors are not supported "
+                "in TensorList.");
     }
 
     /// Construct internal tensor
@@ -92,6 +95,58 @@ TensorList::TensorList(std::vector<Tensor>& tensors, const Device& device)
     /// Assign tensors
     for (size_t i = 0; i < size_; ++i) {
         internal_tensor_[i].AsRvalue() = tensors[i];
+    }
+}
+
+TensorList::TensorList(const std::initializer_list<Tensor>& tensors,
+                       const Device& device)
+    : device_(device),
+      /// Default empty tensor
+      internal_tensor_(SizeVector(), Dtype::Int64, device) {
+    if (tensors.size() == 0) {
+        utility::LogError(
+                "Empty input tensors cannot initialize a TensorList.");
+    }
+
+    /// Infer size and reserved_size
+    size_ = tensors.size();
+    reserved_size_ = ReserveSize(size_);
+
+    /// Infer shape
+    shape_ = std::accumulate(std::next(tensors.begin()), tensors.end(),
+                             tensors.begin()->GetShape(),
+                             [](const SizeVector shape, const Tensor& tensor) {
+                                 return BroadcastedShape(std::move(shape),
+                                                         tensor.GetShape());
+                             });
+
+    if (shape_.size() == 0) {
+        utility::LogError(
+                "Empty input tensor shapes are not supported in TensorList.");
+    }
+
+    /// Infer dtype
+    dtype_ = tensors.begin()->GetDtype();
+    bool dtype_consistent = std::accumulate(
+            std::next(tensors.begin()), tensors.end(), true,
+            [&](bool same_type, const Tensor& tensor) {
+                return same_type && (dtype_ == tensor.GetDtype());
+            });
+    if (!dtype_consistent) {
+        utility::LogError(
+                "Inconsistent tensor dtypes in tensors are not supported "
+                "in TensorList.");
+    }
+
+    /// Construct internal tensor
+    SizeVector expanded_shape = ExpandShape(shape_, reserved_size_);
+    internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
+
+    /// Assign tensors
+    auto iter = tensors.begin();
+    for (size_t i = 0; i < size_; ++i) {
+        internal_tensor_[i].AsRvalue() = *iter;
+        ++iter;
     }
 }
 

@@ -39,7 +39,7 @@ INSTANTIATE_TEST_SUITE_P(TensorList,
                          TensorListPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(TensorListPermuteDevices, Construct) {
+TEST_P(TensorListPermuteDevices, ConstructFromVector) {
     Device device = GetParam();
 
     Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
@@ -55,7 +55,22 @@ TEST_P(TensorListPermuteDevices, Construct) {
     EXPECT_EQ(tensor_list.GetReservedSize(), 8);
 }
 
-TEST_P(TensorListPermuteDevices, TensorConstruct) {
+TEST_P(TensorListPermuteDevices, ConstructFromInitList) {
+    Device device = GetParam();
+
+    Tensor t0(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
+    Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
+    Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
+
+    TensorList tensor_list({t0, t1, t2}, device);
+
+    SizeVector shape({3, 2, 3});
+    EXPECT_EQ(tensor_list.AsTensor().GetShape(), shape);
+    EXPECT_EQ(tensor_list.GetSize(), 3);
+    EXPECT_EQ(tensor_list.GetReservedSize(), 8);
+}
+
+TEST_P(TensorListPermuteDevices, TensorConstructFromTensor) {
     Device device = GetParam();
 
     Tensor t(std::vector<float>(3 * 2 * 3, 1), {3, 2, 3}, Dtype::Float32,
