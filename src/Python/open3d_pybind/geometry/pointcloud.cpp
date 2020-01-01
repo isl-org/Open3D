@@ -172,6 +172,10 @@ void pybind_pointcloud(py::module &m) {
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
                  "eps"_a, "min_points"_a, "print_progress"_a = false)
+            .def("segment_plane", &geometry::PointCloud::SegmentPlane,
+                 "Segments a plane in the point cloud using the RANSAC "
+                 "algorithm.",
+                 "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a)
             .def_static(
                     "create_from_depth_image",
                     &geometry::PointCloud::CreateFromDepthImage,
@@ -294,6 +298,15 @@ void pybind_pointcloud(py::module &m) {
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "segment_plane",
+            {{"distance_threshold",
+              "Max distance a point can be from the plane model, and still be "
+              "considered an inlier."},
+             {"ransac_n",
+              "Number of initial points to be considered inliers in each "
+              "iteration."},
+             {"num_iterations", "Number of iterations."}});
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
 }

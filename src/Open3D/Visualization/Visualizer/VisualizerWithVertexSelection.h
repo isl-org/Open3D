@@ -42,11 +42,7 @@ class PointCloudPicker;
 
 class VisualizerWithVertexSelection : public Visualizer {
 public:
-    enum class SelectionMode {
-        None = 0,
-        Point = 1,
-        Rectangle = 2,
-    };
+    enum class SelectionMode { None = 0, Point = 1, Rectangle = 2, Moving = 3 };
 
 public:
     VisualizerWithVertexSelection() {}
@@ -64,10 +60,21 @@ public:
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
-    std::vector<int> PickPoints(double x, double y, double w, double h);
-    std::vector<int> GetPickedPoints() const;
-    void ClearPickedPoints();
     void SetPointSize(double size);
+    std::vector<int> PickPoints(double x, double y, double w, double h);
+
+    struct PickedPoint {
+        int index;
+        Eigen::Vector3d coord;
+    };
+    std::vector<PickedPoint> GetPickedPoints() const;
+    void ClearPickedPoints();
+
+    void RegisterSelectionChangedCallback(std::function<void()> f);
+    /// Do not change the number of vertices in geometry, but can change the
+    /// vertex values and call UpdateGeometry().
+    void RegisterSelectionMovingCallback(std::function<void()> f);
+    void RegisterSelectionMovedCallback(std::function<void()> f);
 
 protected:
     bool InitViewControl() override;
@@ -88,6 +95,12 @@ protected:
     void InvalidatePicking();
     void AddPickedPoints(const std::vector<int> indices);
     void RemovePickedPoints(const std::vector<int> indices);
+    float GetDepth(int winX, int winY);
+    Eigen::Vector3d CalcDragDelta(int winX, int winY);
+    enum DragType { DRAG_MOVING, DRAG_END };
+    void DragSelectedPoints(const Eigen::Vector3d &delta, DragType type);
+    const std::vector<Eigen::Vector3d> *GetGeometryPoints(
+            std::shared_ptr<const geometry::Geometry> geometry);
 
 protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
@@ -96,6 +109,7 @@ protected:
     SelectionMode selection_mode_ = SelectionMode::None;
     Eigen::Vector2d mouse_down_pos_;
     std::vector<int> points_in_rect_;
+    float drag_depth_;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>
@@ -110,8 +124,13 @@ protected:
     std::shared_ptr<glsl::GeometryRenderer> ui_points_renderer_ptr_;
 
     std::unordered_map<int, Eigen::Vector3d> selected_points_;
+    std::unordered_map<int, Eigen::Vector3d> selected_points_before_drag_;
     std::shared_ptr<geometry::PointCloud> ui_selected_points_geometry_ptr_;
     std::shared_ptr<glsl::GeometryRenderer> ui_selected_points_renderer_ptr_;
+
+    std::function<void()> on_selection_changed_;
+    std::function<void()> on_selection_moving_;
+    std::function<void()> on_selection_moved_;
 };
 
 }  // namespace visualization
