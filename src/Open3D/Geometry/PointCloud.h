@@ -235,7 +235,7 @@ public:
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has
-    /// whole points.
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromDepthImage(
             const Image &depth,
             const camera::PinholeCameraIntrinsic &intrinsic,
@@ -251,7 +251,7 @@ public:
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has
-    /// whole points.
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromRGBDImage(
             const RGBDImage &image,
             const camera::PinholeCameraIntrinsic &intrinsic,
