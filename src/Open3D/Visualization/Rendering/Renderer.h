@@ -35,9 +35,28 @@ namespace visualization {
 class Scene;
 class Camera;
 
-class AbstractRenderInterface {
+class MaterialLoadRequest {
 public:
-    virtual ~AbstractRenderInterface() = default;
+    using ErrorCallback = std::function<void(
+            const MaterialLoadRequest&, const uint8_t, const std::string&)>;
+    static ErrorCallback defaultErrorHandler;
+
+    MaterialLoadRequest(const void* materialData,
+                        size_t dataSize,
+                        ErrorCallback errorCallback = defaultErrorHandler);
+    explicit MaterialLoadRequest(
+            const char* path,
+            ErrorCallback errorCallback = defaultErrorHandler);
+
+    const void* materialData;
+    const size_t dataSize;
+    const std::string path;
+    ErrorCallback errorCallback;
+};
+
+class Renderer {
+public:
+    virtual ~Renderer() = default;
 
     virtual SceneHandle CreateScene() = 0;
     virtual Scene* GetScene(const SceneHandle& id) const = 0;
@@ -50,6 +69,7 @@ public:
     // Loads material from its data
     virtual MaterialHandle AddMaterial(const void* materialData,
                                        size_t dataSize) = 0;
+    virtual MaterialHandle AddMaterial(const MaterialLoadRequest& request) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(
             const MaterialInstanceHandle& id) = 0;

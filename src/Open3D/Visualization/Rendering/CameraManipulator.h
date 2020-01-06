@@ -26,12 +26,11 @@
 
 #pragma once
 
+#include "Camera.h"
 #include <Eigen/Geometry>
 
 namespace open3d {
 namespace visualization {
-
-class Camera;
 
 class CameraManipulator {
 public:
@@ -46,10 +45,16 @@ public:
     float GetNearPlane() const { return near_; }
     float GetFarPlane() const { return far_; }
 
+    void SetPosition(const Eigen::Vector3f& pos);
     Eigen::Vector3f GetPosition();
+
+    void SetForwardVector(const Eigen::Vector3f& pos);
     Eigen::Vector3f GetForwardVector();
+
     Eigen::Vector3f GetLeftVector();
     Eigen::Vector3f GetUpVector();
+
+    void SetCameraTransform(const Camera::Transform& transform);
 
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,

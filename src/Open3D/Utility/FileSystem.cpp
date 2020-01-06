@@ -29,9 +29,12 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fcntl.h>
+#include <sstream>
 #ifdef WINDOWS
 #include <direct.h>
 #include <dirent/dirent.h>
+#include <io.h>
 #include <windows.h>
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
@@ -42,6 +45,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+
 
 namespace open3d {
 namespace utility {
@@ -215,6 +219,86 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
     fp = _wfopen(filename_w.c_str(), mode_w.c_str());
 #endif
     return fp;
+}
+
+static std::string getIOErrorString(const int errnoVal) {
+    switch (errnoVal) {
+        case EPERM:   return "Operation not permitted";
+        case EACCES:  return "Access denied";
+        // Error below could be EWOULDBLOCK on Linux
+        case EAGAIN:  return "Resource unavailable, try again";
+#if !defined(WIN32)
+        case EDQUOT:  return "Over quota";
+#endif
+        case EEXIST:  return "File already exists";
+        case EFAULT:  return "Bad filename pointer";
+        case EINTR:   return "open() interrupted by a signal";
+        case EIO:     return "I/O error";
+        case ELOOP:   return "Too many symlinks, could be a loop";
+        case EMFILE:  return "Process is out of file descriptors";
+        case ENAMETOOLONG: return "Filename is too long";
+        case ENFILE:  return "File system table is full";
+        case ENOENT:  return "No such file or directory";
+        case ENOSPC:  return "No space available to create file";
+        case ENOTDIR: return "Bad path";
+        case EOVERFLOW: return "File is too big";
+        case EROFS:   return "Can't modify file on read-only filesystem";
+#if EWOULDBLOCK != EAGAIN
+        case EWOULDBLOCK: return "Operation would block calling process";
+#endif
+        default: {
+            std::stringstream s;
+            s << "IO error " << errnoVal << " (see sys/errno.h)";
+            return s.str();
+        }
+    }
+}
+
+bool FReadToBuffer(const std::string &path,
+                   std::vector<char> &bytes,
+                   std::string *errorStr) {
+    bytes.clear();
+    if (errorStr) {
+        errorStr->clear();
+    }
+
+    FILE* file = FOpen(path.c_str(), "rb");
+    if (!file) {
+        if (errorStr) {
+            *errorStr = getIOErrorString(ferror(file));
+        }
+
+        return false;
+    }
+
+    fseek(file , 0 , SEEK_END);
+    // We ignoring that fseek will block our process
+    if (errno && errno != EWOULDBLOCK) {
+        if (errorStr) {
+            *errorStr = getIOErrorString(errno);
+        }
+
+        fclose(file);
+        return false;
+    }
+
+    const size_t filesize = ftell(file);
+    rewind(file); // reset file pointer back to beginning
+
+    bytes.resize(filesize);
+    const size_t result = fread(bytes.data(), 1, filesize, file);
+
+    if (result != filesize){
+        if (errorStr) {
+            *errorStr = getIOErrorString(errno);
+        }
+
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return true;
 }
 
 }  // namespace filesystem

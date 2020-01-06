@@ -32,12 +32,14 @@
 #include <unordered_map>
 
 #include <filament/utils/Entity.h>
+#include <filament/utils/EntityInstance.h>
 
 namespace filament
 {
     class Engine;
     class Renderer;
     class Scene;
+    class TransformManager;
     class VertexBuffer;
 }
 
@@ -53,6 +55,8 @@ public:
                   FilamentResourceManager& resourceManager);
     ~FilamentScene() override;
 
+    // All views above first will discard
+    // only depth and stencil buffers by default
     ViewHandle AddView(std::int32_t x,
                        std::int32_t y,
                        std::uint32_t w,
@@ -72,6 +76,12 @@ public:
     LightHandle AddLight(const LightDescription& descr) override;
     void RemoveLight(const LightHandle& id) override;
 
+    void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) override;
+    Transform GetEntityTransform(const REHandle_abstract& entityId) override;
+
+    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) override;
+
     void Draw(filament::Renderer& renderer);
 
     filament::Scene* GetNativeScene() const { return scene_; }
@@ -81,6 +91,8 @@ private:
         utils::Entity self;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
+        // Used for relocating transform to center of mass
+        utils::Entity parent;
     };
 
     struct ViewContainer {
@@ -88,9 +100,7 @@ private:
         bool isActive = true;
     };
 
-    filament::VertexBuffer* AllocateVertexBuffer(AllocatedEntity& owner,
-                                                 size_t verticesCount);
-
+    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id);
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;

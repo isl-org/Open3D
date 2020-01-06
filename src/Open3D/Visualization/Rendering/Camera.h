@@ -34,8 +34,8 @@ namespace visualization {
 class Camera {
 public:
     enum class FovType { Vertical, Horizontal };
-
     enum class Projection { Perspective, Ortho };
+    using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
     virtual ~Camera() = default;
 
@@ -69,6 +69,11 @@ public:
                                double near,
                                double far) = 0;
 
+    virtual void SetModelMatrix(const Transform& view) = 0;
+    virtual void SetModelMatrix(const Eigen::Vector3f& forward,
+                                const Eigen::Vector3f& left,
+                                const Eigen::Vector3f& up) = 0;
+
     virtual void LookAt(const Eigen::Vector3f& center,
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
@@ -77,6 +82,7 @@ public:
     virtual Eigen::Vector3f GetForwardVector() = 0;
     virtual Eigen::Vector3f GetLeftVector() = 0;
     virtual Eigen::Vector3f GetUpVector() = 0;
+    virtual Transform GetModelMatrix() = 0;
 };
 
 }

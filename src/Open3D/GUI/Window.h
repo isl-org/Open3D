@@ -30,11 +30,10 @@
 #include <memory>
 #include <string>
 
-#include "Gui.h"
 #include "Events.h"
+#include "Gui.h"
 #include "Menu.h"
-
-#include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
+#include "Open3D/Visualization/Rendering/Renderer.h"
 
 namespace open3d {
 namespace gui {
@@ -55,7 +54,7 @@ public:
     uint32_t GetID() const;
 
     const Theme& GetTheme() const;
-    visualization::AbstractRenderInterface& GetRenderer() const;
+    visualization::Renderer& GetRenderer() const;
 
     Size GetSize() const; // total interior size of window, including menubar
     Rect GetContentRect() const; // size available to widgets

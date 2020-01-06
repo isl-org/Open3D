@@ -68,8 +68,27 @@ void CameraManipulator::SetFarPlane(const float aFar) {
     UpdateCameraProjection();
 }
 
+void CameraManipulator::SetPosition(const Eigen::Vector3f& pos) {
+    auto transform = camera_.GetModelMatrix();
+    transform.matrix().col(3) = Eigen::Vector4f(pos.x(), pos.y(), pos.z(), 1.f);
+    camera_.SetModelMatrix(transform);
+}
+
 Eigen::Vector3f CameraManipulator::GetPosition() {
     return camera_.GetPosition();
+}
+
+void CameraManipulator::SetForwardVector(const Eigen::Vector3f& forward) {
+    auto newForward = -forward;
+    auto newLeft = -(newForward.cross(Eigen::Vector3f{0,1.f,0.f}));
+    auto newUp = newLeft.cross(-newForward);
+
+    auto transform = camera_.GetModelMatrix();
+    transform.matrix().col(0) = Eigen::Vector4f(newLeft.x(), newLeft.y(), newLeft.z(), 0.f).normalized();
+    transform.matrix().col(1) = Eigen::Vector4f(newUp.x(), newUp.y(), newUp.z(), 0.f).normalized();
+    transform.matrix().col(2) = Eigen::Vector4f(newForward.x(), newForward.y(), newForward.z(), 0.f).normalized();
+
+    camera_.SetModelMatrix(transform);
 }
 
 Eigen::Vector3f CameraManipulator::GetForwardVector() {
@@ -82,6 +101,10 @@ Eigen::Vector3f CameraManipulator::GetLeftVector() {
 
 Eigen::Vector3f CameraManipulator::GetUpVector() {
     return camera_.GetUpVector();
+}
+
+void CameraManipulator::SetCameraTransform(const Camera::Transform& transform) {
+    camera_.SetModelMatrix(transform);
 }
 
 void CameraManipulator::LookAt(const Eigen::Vector3f& center,
