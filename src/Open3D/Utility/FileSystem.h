@@ -68,6 +68,7 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
+bool FReadToBuffer(const std::string& path, std::vector<char> &bytes, std::string *errorStr);
 
 }  // namespace filesystem
 }  // namespace utility

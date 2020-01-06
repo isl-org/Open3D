@@ -67,6 +67,7 @@ public:
 
     MaterialHandle AddMaterial(const void* materialData,
                                size_t dataSize) override;
+    MaterialHandle AddMaterial(const MaterialLoadRequest& request) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
 

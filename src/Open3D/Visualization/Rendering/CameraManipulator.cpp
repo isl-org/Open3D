@@ -28,8 +28,6 @@
 
 #include "Camera.h"
 
-#include <iostream>
-
 namespace open3d {
 namespace visualization {
 

@@ -24,56 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Renderer.h"
 
-#include "RendererHandle.h"
-#include "RendererEntitiesMods.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace visualization {
 
-class Scene;
-class Camera;
+MaterialLoadRequest::ErrorCallback MaterialLoadRequest::defaultErrorHandler =
+        [](const MaterialLoadRequest& request, const uint8_t code, const std::string& details) {
+            if (!request.path.empty()) {
+                utility::LogError("Material request for path {} failed:\n* Code: {}\n* Error: {}", request.path.data(), code, details.data());
+            } else if (request.dataSize > 0){
+                utility::LogError("Material request failed:\n* Code: {}\n * Error: {}", code, details.data());
+            } else {
+                utility::LogError("Material request failed: Malformed request");
+            }
+        };
 
-class MaterialLoadRequest {
-public:
-    using ErrorCallback = std::function<void(
-            const MaterialLoadRequest&, const uint8_t, const std::string&)>;
-    static ErrorCallback defaultErrorHandler;
+MaterialLoadRequest::MaterialLoadRequest(const void* aMaterialData,
+                                         size_t aDataSize,
+                                         ErrorCallback aErrorCallback)
+    : materialData(aMaterialData),
+      dataSize(aDataSize),
+      path(""),
+      errorCallback(std::move(aErrorCallback)) {}
 
-    MaterialLoadRequest(const void* materialData,
-                        size_t dataSize,
-                        ErrorCallback errorCallback = defaultErrorHandler);
-    explicit MaterialLoadRequest(
-            const char* path,
-            ErrorCallback errorCallback = defaultErrorHandler);
-
-    const void* materialData;
-    const size_t dataSize;
-    const std::string path;
-    ErrorCallback errorCallback;
-};
-
-class Renderer {
-public:
-    virtual ~Renderer() = default;
-
-    virtual SceneHandle CreateScene() = 0;
-    virtual Scene* GetScene(const SceneHandle& id) const = 0;
-    virtual void DestroyScene(const SceneHandle& id) = 0;
-
-    virtual void BeginFrame() = 0;
-    virtual void Draw() = 0;
-    virtual void EndFrame() = 0;
-
-    // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData,
-                                       size_t dataSize) = 0;
-    virtual MaterialHandle AddMaterial(const MaterialLoadRequest& request) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(
-            const MaterialInstanceHandle& id) = 0;
-};
+MaterialLoadRequest::MaterialLoadRequest(const char* aPath,
+                                         ErrorCallback aErrorCallback)
+    : materialData(nullptr),
+      dataSize(0u),
+      path(aPath),
+      errorCallback(std::move(aErrorCallback)) {}
 
 }
 }

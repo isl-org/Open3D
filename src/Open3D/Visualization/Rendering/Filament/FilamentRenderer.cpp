@@ -103,6 +103,10 @@ MaterialHandle FilamentRenderer::AddMaterial(const void* materialData,
     return resourceManager_.CreateMaterial(materialData, dataSize);
 }
 
+MaterialHandle FilamentRenderer::AddMaterial(const MaterialLoadRequest& request) {
+    return resourceManager_.CreateMaterial(request);
+}
+
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     materialsModifier_->Reset();
 

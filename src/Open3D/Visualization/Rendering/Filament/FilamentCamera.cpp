@@ -29,8 +29,6 @@
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 
-#include <iostream>
-
 namespace open3d {
 namespace visualization {
 
