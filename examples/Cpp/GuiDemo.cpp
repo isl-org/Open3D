@@ -25,10 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Open3D.h"
-
-#include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/CameraManipulator.h"
+#include "Open3D/Visualization/Rendering/Renderer.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 

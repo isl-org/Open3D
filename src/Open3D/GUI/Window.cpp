@@ -203,7 +203,7 @@ const Theme& Window::GetTheme() const {
     return impl_->theme;
 }
 
-visualization::AbstractRenderInterface& Window::GetRenderer() const {
+visualization::Renderer& Window::GetRenderer() const {
     return *impl_->renderer;
 }
 

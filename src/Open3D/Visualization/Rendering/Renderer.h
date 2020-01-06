@@ -35,9 +35,9 @@ namespace visualization {
 class Scene;
 class Camera;
 
-class AbstractRenderInterface {
+class Renderer {
 public:
-    virtual ~AbstractRenderInterface() = default;
+    virtual ~Renderer() = default;
 
     virtual SceneHandle CreateScene() = 0;
     virtual Scene* GetScene(const SceneHandle& id) const = 0;

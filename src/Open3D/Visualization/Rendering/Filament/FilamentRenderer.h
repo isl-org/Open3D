@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
+#include <filament/utils/Entity.h>
 
 #include <memory>
 #include <unordered_map>
 
-#include <filament/utils/Entity.h>
+#include "Open3D/Visualization/Rendering/Renderer.h"
 
 namespace filament
 {
@@ -50,7 +50,7 @@ class FilamentResourceManager;
 class FilamentScene;
 class FilamentView;
 
-class FilamentRenderer : public AbstractRenderInterface {
+class FilamentRenderer : public Renderer {
 public:
     FilamentRenderer(filament::Engine& engine,
                      void* nativeDrawable,
