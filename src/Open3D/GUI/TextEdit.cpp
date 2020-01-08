@@ -57,6 +57,8 @@ struct TextEdit::Impl {
     std::string id;
     std::string text;
     std::string placeholder;
+    std::function<void(const char*)> onTextChanged;
+    std::function<void(const char*)> onValueChanged;
 };
 
 TextEdit::TextEdit()
@@ -86,6 +88,14 @@ void TextEdit::SetPlaceholderText(const char *text) {
     impl_->placeholder = text;
 }
 
+void TextEdit::SetOnTextChanged(std::function<void(const char*)> onTextChanged) {
+    impl_->onTextChanged = onTextChanged;
+}
+
+void TextEdit::SetOnValueChanged(std::function<void(const char*)> onValueChanged) {
+    impl_->onValueChanged = onValueChanged;
+}
+
 Size TextEdit::CalcPreferredSize(const Theme& theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
@@ -109,8 +119,8 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
                                  (char*)impl_->text.c_str(), impl_->text.capacity(),
                                  ImGuiInputTextFlags_CallbackResize,
                                  InputTextCallback, &impl_->text)) {
-        if (OnTextChanged) {
-            OnTextChanged(impl_->text.c_str());
+        if (impl_->onTextChanged) {
+            impl_->onTextChanged(impl_->text.c_str());
         }
         result = Widget::DrawResult::CLICKED;
     }
@@ -120,8 +130,8 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (OnValueChanged) {
-            OnValueChanged(impl_->text.c_str());
+        if (impl_->onValueChanged) {
+            impl_->onValueChanged(impl_->text.c_str());
         }
     }
 

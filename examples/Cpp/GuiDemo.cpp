@@ -78,9 +78,6 @@ public:
         helpMenu->AddItem("Contact", "", HELP_CONTACT);
         menubar_->AddMenu("Help", helpMenu);
         SetMenubar(menubar_);
-        this->OnMenuItemSelected = [this](gui::Menu::ItemId id) {
-            this->OnMenuItem(id);
-        };
 
         // Button grid (left panel)
         toolGrid_ = std::make_shared<gui::VGrid>(2, spacing, margins);
@@ -111,9 +108,9 @@ public:
         angle2->SetValue(0);
         auto aaCombo = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"FSAA", "Quincuz", "None"}));
-        useShadows->OnChecked = [](bool isChecked) {
+        useShadows->SetOnChecked([](bool isChecked) {
             std::cout << "Shadows: " << isChecked << std::endl;
-        };
+        });
         auto viewPanel = std::make_shared<gui::Vert>(
                 spacing, margins,
                 std::vector<std::shared_ptr<gui::Widget>>(
@@ -131,9 +128,9 @@ public:
                 materials->AddItem("Blue ceramic"); */
         auto materials = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"Gold", "Red plastic", "Blue ceramic"}));
-        materials->OnValueChanged = [](const char *newValue) {
+        materials->SetOnValueChanged([](const char *newValue) {
             std::cout << "New material: " << newValue << std::endl;
-        };
+        });
         auto materials2 = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"One", "Two", "Three"}));
         //        auto materials3 = std::shared_ptr<gui::Combobox>(new gui::Combobox({"一", "二", "三"}));
@@ -152,13 +149,13 @@ public:
         auto nVerts = std::make_shared<gui::Label>("248572 vertices");
         auto textEdit = std::make_shared<gui::TextEdit>();
         textEdit->SetPlaceholderText("Edit some text");
-        textEdit->OnTextChanged = [](const char *text) {
+        textEdit->SetOnTextChanged([](const char *text) {
             std::cout << "Text changed: '" << text << "'" << std::endl;
-        };
-        textEdit->OnValueChanged = [](const char *newValue) {
+        });
+        textEdit->SetOnValueChanged([](const char *newValue) {
             std::cout << "Text value changed: '" << newValue << "'"
                       << std::endl;
-        };
+        });
         rightPanel_ = std::make_shared<gui::Vert>(
                 0, noMargins,
                 std::vector<std::shared_ptr<gui::Widget>>(
@@ -270,7 +267,7 @@ public:
         AddChild(sceneWidget_);
     }
 
-    void OnMenuItem(gui::Menu::ItemId id) {
+    void OnMenuItemSelected(gui::Menu::ItemId id) override {
         switch (id) {
             case FILE_CLOSE:
                 this->Close();
@@ -313,7 +310,7 @@ private:
                         std::function<void()> onClicked) {
         std::shared_ptr<gui::Button> b;
         b = std::make_shared<gui::Button>(name);
-        b->OnClicked = onClicked;
+        b->SetOnClicked(onClicked);
         parent->AddChild(b);
     }
 

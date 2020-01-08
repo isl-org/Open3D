@@ -66,6 +66,9 @@ public:
     bool IsDefaultBackgroundColor() const;
     void SetBackgroundColor(const Color& color);
 
+    bool IsVisible() const;
+    virtual void SetVisible(bool vis);
+
     static constexpr int DIM_GROW = 10000;
     virtual Size CalcPreferredSize(const Theme& theme) const;
 

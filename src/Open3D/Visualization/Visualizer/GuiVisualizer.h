@@ -46,6 +46,7 @@ public:
     virtual ~GuiVisualizer();
 
     void Layout(const gui::Theme& theme) override;
+    void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
 
 private:
     struct Impl;

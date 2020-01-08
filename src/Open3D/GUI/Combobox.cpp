@@ -53,6 +53,7 @@ struct Combobox::Impl {
     std::vector<std::string> items;
     int currentIndex = 0;
     int selectedIndex = -1;
+    std::function<void(const char *)> onValueChanged;
 };
 
 Combobox::Combobox()
@@ -95,6 +96,10 @@ void Combobox::SetSelectedIndex(int index) {
     }
 }
 
+void Combobox::SetOnValueChanged(std::function<void(const char *)> onValueChanged) {
+    impl_->onValueChanged = onValueChanged;
+}
+
 Size Combobox::CalcPreferredSize(const Theme& theme) const {
     auto em = ImGui::GetTextLineHeight();
     int width = 0;
@@ -131,8 +136,8 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
                 impl_->currentIndex = i;
                 impl_->selectedIndex = -1;
                 valueChanged = true;
-                if (OnValueChanged) {
-                    OnValueChanged(impl_->items[i].c_str());
+                if (impl_->onValueChanged) {
+                    impl_->onValueChanged(impl_->items[i].c_str());
                 }
             }
             if (isSelected) {

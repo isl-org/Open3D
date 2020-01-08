@@ -24,32 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
 #include "Widget.h"
-
-#include <functional>
 
 namespace open3d {
 namespace gui {
 
-class TextEdit : public Widget {
+class Window;
+
+class Dialog : public Widget
+{
+    using Super = Widget;
 public:
-    TextEdit();
-    ~TextEdit();
+    explicit Dialog(const char *title);
+    virtual ~Dialog();
 
-    const char* GetText() const;
-    void SetText(const char *text);
-
-    const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char *text);
-
-    Size CalcPreferredSize(const Theme& theme) const override;
-
+    Size CalcPreferredSize(const Theme &theme) const override;
+    void Layout(const Theme& theme) override;
     DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
 
 private:
     struct Impl;

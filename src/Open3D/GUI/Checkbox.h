@@ -45,7 +45,7 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    std::function<void(bool)> OnChecked;
+    void SetOnChecked(std::function<void(bool)> onChecked);
 
 private:
     struct Impl;

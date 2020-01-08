@@ -269,6 +269,13 @@ std::shared_ptr<Layout1D::Stretch> Horiz::MakeStretch() {
     return std::make_shared<Layout1D::Stretch>();
 }
 
+std::shared_ptr<Horiz> Horiz::MakeCentered(std::shared_ptr<Widget> w) {
+    return std::make_shared<Horiz>(0, Margins(),
+            std::vector<std::shared_ptr<Widget>>({ Horiz::MakeStretch(),
+                                                   w,
+                                                   Horiz::MakeStretch() }));
+}
+
 Horiz::Horiz()
 : Layout1D(HORIZ, 0, Margins(), {}) {
 }

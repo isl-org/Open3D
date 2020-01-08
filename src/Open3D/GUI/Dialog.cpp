@@ -24,37 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Dialog.h"
 
-#include "Widget.h"
+#include "Window.h"
 
-#include <functional>
+#include <string>
 
 namespace open3d {
 namespace gui {
 
-class TextEdit : public Widget {
-public:
-    TextEdit();
-    ~TextEdit();
-
-    const char* GetText() const;
-    void SetText(const char *text);
-
-    const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char *text);
-
-    Size CalcPreferredSize(const Theme& theme) const override;
-
-    DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+struct Dialog::Impl {
+    std::string title;
+    Window *parent = nullptr;
 };
 
+Dialog::Dialog(const char *title)
+: impl_(std::make_unique<Dialog::Impl>()) {
 }
+
+Dialog::~Dialog() {
 }
+
+Size Dialog::CalcPreferredSize(const Theme &theme) const {
+    if (GetChildren().size() == 1) {
+        auto &child = GetChildren()[0];
+        return child->CalcPreferredSize(theme);
+    } else {
+        return Super::CalcPreferredSize(theme);
+    }
+}
+
+void Dialog::Layout(const Theme& theme) {
+    if (GetChildren().size() == 1) {
+        auto &child = GetChildren()[0];
+        child->SetFrame(GetFrame());
+//        child->SetFrame(Rect(0, 0, GetFrame().width, GetFrame().height));
+        child->Layout(theme);
+    } else {
+        Super::Layout(theme);
+    }
+}
+
+Widget::DrawResult Dialog::Draw(const DrawContext& context) {
+    return Super::Draw(context);
+}
+
+} // gui
+} // open3d

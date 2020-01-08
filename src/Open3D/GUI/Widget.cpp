@@ -38,6 +38,7 @@ struct Widget::Impl {
     Rect frame;
     Color bgColor = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children;
+    bool isVisible = true;
 };
 
 Widget::Widget()
@@ -82,6 +83,14 @@ void Widget::SetBackgroundColor(const Color& color) {
     impl_->bgColor = color;
 }
 
+bool Widget::IsVisible() const {
+    return impl_->isVisible;
+}
+
+void Widget::SetVisible(bool vis) {
+    impl_->isVisible = vis;
+}
+
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
 }
@@ -93,6 +102,10 @@ void Widget::Layout(const Theme& theme) {
 }
 
 Widget::DrawResult Widget::Draw(const DrawContext& context) {
+    if (!impl_->isVisible) {
+        return DrawResult::NONE;
+    }
+
     DrawResult result = DrawResult::NONE;
     for (auto &child : impl_->children) {
         auto r = child->Draw(context);
@@ -106,6 +119,10 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
 }
 
 void Widget::Mouse(const MouseEvent& e) {
+    if (!impl_->isVisible) {
+        return;
+    }
+
     // Iterate backwards so that we send mouse events from the top down.
     for (auto it = impl_->children.rbegin();
          it != impl_->children.rend();  ++it) {

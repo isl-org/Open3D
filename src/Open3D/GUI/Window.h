@@ -38,6 +38,7 @@
 namespace open3d {
 namespace gui {
 
+class Dialog;
 class Menu;
 class Renderer;
 struct Theme;
@@ -70,10 +71,14 @@ public:
 
     void AddChild(std::shared_ptr<Widget> w);
 
-    std::function<void(Menu::ItemId)> OnMenuItemSelected;
+    void ShowDialog(std::shared_ptr<Dialog> dlg);
+    void CloseDialog();
 
 protected:
     virtual void Layout(const Theme& theme);
+
+    // Override to handle menu items
+    virtual void OnMenuItemSelected(Menu::ItemId itemId);
 
 private:
     enum DrawResult { NONE, REDRAW };

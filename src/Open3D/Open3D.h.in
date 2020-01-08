@@ -48,6 +48,7 @@
 #include "Open3D/GUI/Checkbox.h"
 #include "Open3D/GUI/Color.h"
 #include "Open3D/GUI/Combobox.h"
+#include "Open3D/GUI/Dialog.h"
 #include "Open3D/GUI/Gui.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"

@@ -91,6 +91,7 @@ class Horiz : public Layout1D {
 public:
     static std::shared_ptr<Layout1D::Fixed> MakeFixed(int size);
     static std::shared_ptr<Layout1D::Stretch> MakeStretch();
+    static std::shared_ptr<Horiz> MakeCentered(std::shared_ptr<Widget> w);
 
     Horiz();
     Horiz(int spacing = 0, const Margins& margins = Margins());

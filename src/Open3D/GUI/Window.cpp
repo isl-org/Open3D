@@ -27,6 +27,7 @@
 #include "Window.h"
 
 #include "Application.h"
+#include "Dialog.h"
 #include "ImguiFilamentBridge.h"
 #include "Menu.h"
 #include "Native.h"
@@ -79,6 +80,13 @@ struct Window::Impl
     } imgui;
     std::shared_ptr<Menu> menubar;
     std::vector<std::shared_ptr<Widget>> children;
+    // Active dialog is owned here. It is not put in the children because
+    // we are going to add it and take it out during draw (since that's
+    // how an immediate mode GUI works) and that involves changing the
+    // children while iterating over it. Also, conceptually it is not a
+    // child, it is a child window, and needs to be on top, which we cannot
+    // guarantee if it is a child widget.
+    std::shared_ptr<Dialog> activeDialog;
     bool needsLayout = true;
     int nSkippedFrames = 0;
 };
@@ -281,6 +289,27 @@ void Window::AddChild(std::shared_ptr<Widget> w) {
     impl_->needsLayout = true;
 }
 
+void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
+    if (impl_->activeDialog) {
+        CloseDialog();
+    }
+    impl_->activeDialog = dlg;
+
+    auto winSize = GetSize();
+    auto pref = dlg->CalcPreferredSize(GetTheme());
+    int w = std::min(pref.width,
+                     int(std::round(0.8 * winSize.width)));
+    int h = std::min(pref.height,
+                     int(std::round(0.8 * winSize.height)));
+    dlg->SetFrame(gui::Rect((winSize.width - w) / 2, (winSize.height - h) / 2,
+                            w,  h));
+    dlg->Layout(GetTheme());
+}
+
+void Window::CloseDialog() {
+    impl_->activeDialog.reset();
+}
+
 void Window::Layout(const Theme& theme) {
     if (impl_->children.size() == 1) {
         auto r = GetContentRect();
@@ -291,6 +320,59 @@ void Window::Layout(const Theme& theme) {
         }
     }
 }
+
+void Window::OnMenuItemSelected(Menu::ItemId itemId)
+{
+}
+
+namespace {
+enum Mode { NORMAL, DIALOG, NO_INPUT };
+
+Widget::DrawResult DrawChild(DrawContext& dc, const char *name,
+                             std::shared_ptr<Widget> child, Mode mode) {
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
+                             ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoCollapse;
+    // Q: Why not use ImGui::BeginPopupModal(), which takes care of
+    //    blocking input for us?
+    // A: It animates an overlay, which would require us to constantly
+    //    redraw, otherwise it only animates when the mouse moves. But
+    //    we don't need constant animation for anything else, so that would
+    //    be a waste of CPU and battery (and really annoys people like me).
+    if (mode == NO_INPUT) {
+        flags |= ImGuiWindowFlags_NoInputs;
+    }
+    auto frame = child->GetFrame();
+    bool bgColorNotDefault = !child->IsDefaultBackgroundColor();
+    auto isContainer = !child->GetChildren().empty();
+    if (isContainer) {
+        dc.uiOffsetX = frame.x;
+        dc.uiOffsetY = frame.y;
+        ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
+        ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
+        if (bgColorNotDefault) {
+            auto &bgColor = child->GetBackgroundColor();
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, util::colorToImgui(bgColor));
+        }
+        ImGui::Begin(name, nullptr, flags);
+    } else {
+        dc.uiOffsetX = 0;
+        dc.uiOffsetY = 0;
+    }
+
+    Widget::DrawResult result;
+    result = child->Draw(dc);
+
+    if (isContainer) {
+        ImGui::End();
+        if (bgColorNotDefault) {
+            ImGui::PopStyleColor();
+        }
+    }
+
+    return result;
+}
+} // namespace
 
 Window::DrawResult Window::OnDraw(float dtSec) {
     // These are here to provide fast unique window names. If you find yourself
@@ -337,7 +419,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     auto &theme = this->impl_->theme;
     if (this->impl_->needsLayout) {
         this->Layout(theme);
-        // Clear needsLayout below
+        // needsLayout is cleared by the caller, DrawOnce()
     }
 
     auto size = GetSize();
@@ -346,52 +428,36 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     bool needsRedraw = false;
 
-    // Now draw all the 2D widgets. These will get recorded by ImGui.
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
-                             ImGuiWindowFlags_NoResize |
-                             ImGuiWindowFlags_NoCollapse;
+    // Draw all the widgets. These will get recorded by ImGui.
     int winIdx = 0;
+    Mode drawMode = (impl_->activeDialog ? NO_INPUT : NORMAL);
     for (auto &child : this->impl_->children) {
-        auto frame = child->GetFrame();
-        bool bgColorNotDefault = !child->IsDefaultBackgroundColor();
-        auto isContainer = !child->GetChildren().empty();
-        if (isContainer) {
-            dc.uiOffsetX = frame.x;
-            dc.uiOffsetY = frame.y;
-            ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
-            ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
-            if (bgColorNotDefault) {
-                auto &bgColor = child->GetBackgroundColor();
-                ImGui::PushStyleColor(ImGuiCol_WindowBg, util::colorToImgui(bgColor));
-            }
-            ImGui::Begin(winNames[winIdx++], nullptr, flags);
-        } else {
-            dc.uiOffsetX = 0;
-            dc.uiOffsetY = 0;
+        if (!child->IsVisible()) {
+            continue;
         }
-
-        if (child->Draw(dc) != Widget::DrawResult::NONE) {
+        if (DrawChild(dc, winNames[winIdx++], child, drawMode) != Widget::DrawResult::NONE) {
             needsRedraw = true;
-        }
-
-        if (isContainer) {
-            ImGui::End();
-            if (bgColorNotDefault) {
-                ImGui::PopStyleColor();
-            }
         }
     }
 
-    // Draw menubar last, so it is always on top (although it shouldn't matter,
-    // as there shouldn't be anything under it)
+    // Draw menubar after the children so it is always on top (although it
+    // shouldn't matter, as there shouldn't be anything under it)
     if (impl_->menubar) {
-        auto id = impl_->menubar->DrawMenuBar(dc);
+        auto id = impl_->menubar->DrawMenuBar(dc, !impl_->activeDialog);
         if (id != Menu::NO_ITEM) {
-            if (OnMenuItemSelected) {
-                OnMenuItemSelected(id);
-                needsRedraw = true;
-            }
+            OnMenuItemSelected(id);
+            needsRedraw = true;
         }
+    }
+
+    // Draw any active dialog
+    if (impl_->activeDialog) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, theme.dialogBorderWidth);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, theme.dialogBorderRadius);
+        if (DrawChild(dc, "dialog", impl_->activeDialog, DIALOG) != Widget::DrawResult::NONE) {
+            needsRedraw = true;
+        }
+        ImGui::PopStyleVar(2);
     }
 
     // Finish frame and generate the commands
@@ -416,7 +482,7 @@ Window::DrawResult Window::DrawOnce(float dtSec)
     // ImGUI can take two frames to do its layout, so if we did a layout
     // redraw a second time. This helps prevent a brief red flash when the
     // window first appears, as well as corrupted images if the
-    // window appears underneath the mouse.
+    // window initially appears underneath the mouse.
     if (impl_->needsLayout) {
         impl_->needsLayout = false;
         OnDraw(0.001);

@@ -26,11 +26,14 @@
 
 #include "GuiVisualizer.h"
 
+#include "Open3D/Open3DConfig.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/GUI/Application.h"
 #include "Open3D/GUI/Button.h"
 #include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Dialog.h"
+#include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Theme.h"
@@ -51,7 +54,7 @@ namespace open3d {
 namespace visualization {
 
 namespace {
-static std::string getIOErrorString(errno_t errnoVal) {
+std::string getIOErrorString(errno_t errnoVal) {
     switch (errnoVal) {
         case EACCES:
             return "Permission denied";
@@ -78,8 +81,8 @@ static std::string getIOErrorString(errno_t errnoVal) {
     }
 }
 
-static bool readBinaryFile(const std::string& path, std::vector<char> *bytes,
-                           std::string *errorStr)
+bool readBinaryFile(const std::string& path, std::vector<char> *bytes,
+                    std::string *errorStr)
 {
     bytes->clear();
     if (errorStr) {
@@ -108,7 +111,94 @@ static bool readBinaryFile(const std::string& path, std::vector<char> *bytes,
     return true;
 }
 
+std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window)
+{
+    auto &theme = window->GetTheme();
+    auto dlg = std::make_shared<gui::Dialog>("About");
+
+    auto title = std::make_shared<gui::Label>((std::string("Open3D ") + OPEN3D_VERSION).c_str());
+    auto text = std::make_shared<gui::Label>(
+        "The MIT License (MIT)\n"
+        "Copyright (c) 2018 www.open3d.org\n\n"
+
+        "Permission is hereby granted, free of charge, to any person obtaining "
+        "a copy of this software and associated documentation files (the "
+        "\"Software\"), to deal in the Software without restriction, including "
+        "without limitation the rights to use, copy, modify, merge, publish, "
+        "distribute, sublicense, and/or sell copies of the Software, and to "
+        "permit persons to whom the Software is furnished to do so, subject to "
+        "the following conditions:\n\n"
+
+        "The above copyright notice and this permission notice shall be "
+        "included in all copies or substantial portions of the Software.\n\n"
+
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
+        "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF "
+        "MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. "
+        "IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY "
+        "CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, "
+        "TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
+        "SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
+    auto ok = std::make_shared<gui::Button>("OK");
+    ok->SetOnClicked([window]() {
+        window->CloseDialog();
+    });
+
+    gui::Margins margins(theme.fontSize);
+    auto layout = std::make_shared<gui::Vert>(0, margins);
+    layout->AddChild(gui::Horiz::MakeCentered(title));
+    layout->AddChild(gui::Horiz::MakeFixed(theme.fontSize));
+    layout->AddChild(text);
+    layout->AddChild(gui::Horiz::MakeFixed(theme.fontSize));
+    layout->AddChild(gui::Horiz::MakeCentered(ok));
+    dlg->AddChild(layout);
+
+    return dlg;
 }
+
+std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window)
+{
+    auto &theme = window->GetTheme();
+    auto em = theme.fontSize;
+    auto dlg = std::make_shared<gui::Dialog>("Contact Us");
+
+    auto title = std::make_shared<gui::Label>("Contact Us");
+    auto leftCol = std::make_shared<gui::Label>("Web site:\n"
+                                                "Code:\n"
+                                                "Mailing list:\n"
+                                                "Discord channel:");
+    auto rightCol = std::make_shared<gui::Label>(
+                            "http://www.open3d.org\n"
+                            "http://github.org/intel-isl/Open3D\n"
+                            "http://www.open3d.org/index.php/subscribe/\n"
+                            "https://discord.gg/D35BGvn");
+    auto ok = std::make_shared<gui::Button>("OK");
+    ok->SetOnClicked([window]() {
+        window->CloseDialog();
+    });
+
+    gui::Margins margins(em);
+    auto layout = std::make_shared<gui::Vert>(0, margins);
+    layout->AddChild(gui::Horiz::MakeCentered(title));
+    layout->AddChild(gui::Horiz::MakeFixed(em));
+
+    auto columns = std::make_shared<gui::Horiz>(em, gui::Margins());
+    columns->AddChild(leftCol);
+    columns->AddChild(rightCol);
+    layout->AddChild(columns);
+
+    layout->AddChild(gui::Horiz::MakeFixed(em));
+    layout->AddChild(gui::Horiz::MakeCentered(ok));
+    dlg->AddChild(layout);
+
+    return dlg;
+}
+
+}
+
+enum MenuId { FILE_OPEN, FILE_SAVE, FILE_CLOSE,
+              VIEW_POINTS, VIEW_WIREFRAME, VIEW_MESH,
+              HELP_ABOUT, HELP_CONTACT };
 
 struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene;
@@ -203,21 +293,21 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
 
     auto buttonRegular = std::make_shared<gui::Button>("Default camera");
     auto buttonTop = std::make_shared<gui::Button>("Top");
-    buttonTop->OnClicked = [scene, boundsMid, boundsMax]() {
+    buttonTop->SetOnClicked([scene, boundsMid, boundsMax]() {
         Eigen::Vector3f eye(boundsMid.x(), 1.5 * boundsMax.y(), boundsMid.z());
         Eigen::Vector3f up(1, 0, 0);
         scene->GetCameraManipulator()->LookAt(boundsMid, eye, up);
-    };
+    });
     auto buttonFront = std::make_shared<gui::Button>("Front");
-    buttonFront->OnClicked = [scene, boundsMid, boundsMax]() {
+    buttonFront->SetOnClicked([scene, boundsMid, boundsMax]() {
         Eigen::Vector3f eye(1.5 * boundsMax.x(), boundsMid.y(), boundsMid.z());
         scene->GetCameraManipulator()->LookAt(boundsMid, eye);
-    };
+    });
     auto buttonSide = std::make_shared<gui::Button>("Side");
-    buttonSide->OnClicked = [scene, boundsMid, boundsMax]() {
+    buttonSide->SetOnClicked([scene, boundsMid, boundsMax]() {
         Eigen::Vector3f eye(boundsMid.x(), boundsMid.y(), 1.5 * boundsMax.z());
         scene->GetCameraManipulator()->LookAt(boundsMid, eye);
-    };
+    });
     auto bottomBar = std::make_shared<gui::Horiz>(spacing,
                                                   gui::Margins(0, spacing));
     impl_->bottomBar = bottomBar;
@@ -231,6 +321,25 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
 
     AddChild(scene);
     AddChild(bottomBar);
+
+    // Create menu
+    auto fileMenu = std::make_shared<gui::Menu>();
+    fileMenu->AddItem("Open", "Ctrl-O", FILE_OPEN);
+    fileMenu->AddItem("Save", "Ctrl-S", FILE_SAVE);
+    fileMenu->AddSeparator();
+    fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
+    auto viewMenu = std::make_shared<gui::Menu>();
+    viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
+    viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
+    viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
+    auto helpMenu = std::make_shared<gui::Menu>();
+    helpMenu->AddItem("About", nullptr, HELP_ABOUT);
+    helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
+    auto menu = std::make_shared<gui::Menu>();
+    menu->AddMenu("File", fileMenu);
+    menu->AddMenu("View", viewMenu);
+    menu->AddMenu("Help", helpMenu);
+    this->SetMenubar(menu);
 }
 
 GuiVisualizer::~GuiVisualizer() {
@@ -246,6 +355,34 @@ void GuiVisualizer::Layout(const gui::Theme& theme) {
     impl_->bottomBar->SetFrame(bottomRect);
 
     Super::Layout(theme);
+}
+
+void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
+    switch (MenuId(itemId)) {
+        case FILE_OPEN:
+            break;
+        case FILE_SAVE:
+            break;
+        case FILE_CLOSE:
+            this->Close();
+            break;
+        case VIEW_POINTS:
+            break;
+        case VIEW_WIREFRAME:
+            break;
+        case VIEW_MESH:
+            break;
+        case HELP_ABOUT: {
+            auto dlg = createAboutDialog(this);
+            ShowDialog(dlg);
+            break;
+        }
+        case HELP_CONTACT: {
+            auto dlg = createContactDialog(this);
+            ShowDialog(dlg);
+            break;
+        }
+    }
 }
 
 } // visualizer

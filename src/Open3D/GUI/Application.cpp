@@ -215,6 +215,8 @@ Application::Application()
     impl_->theme.tabInactiveColor = impl_->theme.buttonColor;
     impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
     impl_->theme.tabActiveColor = impl_->theme.buttonActiveColor;
+    impl_->theme.dialogBorderWidth = 1;
+    impl_->theme.dialogBorderRadius = 10;
 
     visualization::EngineInstance::SelectBackend(filament::backend::Backend::OPENGL);
 }
