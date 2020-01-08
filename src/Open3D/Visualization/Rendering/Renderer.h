@@ -26,8 +26,8 @@
 
 #pragma once
 
+#include "MaterialModifier.h"
 #include "RendererHandle.h"
-#include "RendererEntitiesMods.h"
 
 namespace open3d {
 namespace visualization {
@@ -35,20 +35,20 @@ namespace visualization {
 class Scene;
 class Camera;
 
-class MaterialLoadRequest {
+class ResourceLoadRequest {
 public:
     using ErrorCallback = std::function<void(
-            const MaterialLoadRequest&, const uint8_t, const std::string&)>;
+            const ResourceLoadRequest&, const uint8_t, const std::string&)>;
     static ErrorCallback defaultErrorHandler;
 
-    MaterialLoadRequest(const void* materialData,
+    ResourceLoadRequest(const void* data,
                         size_t dataSize,
                         ErrorCallback errorCallback = defaultErrorHandler);
-    explicit MaterialLoadRequest(
+    explicit ResourceLoadRequest(
             const char* path,
             ErrorCallback errorCallback = defaultErrorHandler);
 
-    const void* materialData;
+    const void* data;
     const size_t dataSize;
     const std::string path;
     ErrorCallback errorCallback;
@@ -66,13 +66,13 @@ public:
     virtual void Draw() = 0;
     virtual void EndFrame() = 0;
 
-    // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData,
-                                       size_t dataSize) = 0;
-    virtual MaterialHandle AddMaterial(const MaterialLoadRequest& request) = 0;
+    virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(
             const MaterialInstanceHandle& id) = 0;
+
+    virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
+    virtual void RemoveTexture(const TextureHandle& id) = 0;
 };
 
 }

@@ -67,6 +67,7 @@ public:
     filament::Box ComputeAABB() override;
 
 private:
+    // FIXME: Get rid of it, as we should not rely on Eigen types here
     size_t GetIndexStride() const;
 
     const geometry::TriangleMesh& geometry_;

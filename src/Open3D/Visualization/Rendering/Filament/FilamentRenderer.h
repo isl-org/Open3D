@@ -65,11 +65,12 @@ public:
     void Draw() override;
     void EndFrame() override;
 
-    MaterialHandle AddMaterial(const void* materialData,
-                               size_t dataSize) override;
-    MaterialHandle AddMaterial(const MaterialLoadRequest& request) override;
+    MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
+
+    TextureHandle AddTexture(const ResourceLoadRequest& request) override;
+    void RemoveTexture(const TextureHandle& id) override;
 
     // Removes scene from scenes list and draws it last
     // WARNING: will destroy previous gui scene if there was any

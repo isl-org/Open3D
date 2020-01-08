@@ -31,28 +31,28 @@
 namespace open3d {
 namespace visualization {
 
-MaterialLoadRequest::ErrorCallback MaterialLoadRequest::defaultErrorHandler =
-        [](const MaterialLoadRequest& request, const uint8_t code, const std::string& details) {
+ResourceLoadRequest::ErrorCallback ResourceLoadRequest::defaultErrorHandler =
+        [](const ResourceLoadRequest& request, const uint8_t code, const std::string& details) {
             if (!request.path.empty()) {
-                utility::LogError("Material request for path {} failed:\n* Code: {}\n* Error: {}", request.path.data(), code, details.data());
+                utility::LogError("Resource request for path {} failed:\n* Code: {}\n* Error: {}", request.path.data(), code, details.data());
             } else if (request.dataSize > 0){
-                utility::LogError("Material request failed:\n* Code: {}\n * Error: {}", code, details.data());
+                utility::LogError("Resource request failed:\n* Code: {}\n * Error: {}", code, details.data());
             } else {
-                utility::LogError("Material request failed: Malformed request");
+                utility::LogError("Resource request failed: Malformed request");
             }
         };
 
-MaterialLoadRequest::MaterialLoadRequest(const void* aMaterialData,
+ResourceLoadRequest::ResourceLoadRequest(const void* aData,
                                          size_t aDataSize,
                                          ErrorCallback aErrorCallback)
-    : materialData(aMaterialData),
+    : data(aData),
       dataSize(aDataSize),
       path(""),
       errorCallback(std::move(aErrorCallback)) {}
 
-MaterialLoadRequest::MaterialLoadRequest(const char* aPath,
+ResourceLoadRequest::ResourceLoadRequest(const char* aPath,
                                          ErrorCallback aErrorCallback)
-    : materialData(nullptr),
+    : data(nullptr),
       dataSize(0u),
       path(aPath),
       errorCallback(std::move(aErrorCallback)) {}

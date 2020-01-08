@@ -183,7 +183,7 @@ public:
                 gui::Application::GetInstance().GetResourcePath();
         auto nonmetalPath = resourcePath + "/nonmetal.filamat";
         visualization::MaterialHandle nonmetal = GetRenderer().AddMaterial(
-                visualization::MaterialLoadRequest(nonmetalPath.data()));
+                visualization::ResourceLoadRequest(nonmetalPath.data()));
 
         auto redPlastic = GetRenderer()
                                   .ModifyMaterial(nonmetal)
@@ -226,7 +226,7 @@ public:
         sceneWidget_->GetCameraManipulator()->SetFov(90.0f);
         sceneWidget_->GetCameraManipulator()->SetNearPlane(0.1f);
         sceneWidget_->GetCameraManipulator()->SetFarPlane(50.0f);
-        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 0}, {-2, 10, 10});
+        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 0}, {2, 4, -4});
 
         // Create light
         visualization::LightDescription lightDescription;
