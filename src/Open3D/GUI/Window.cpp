@@ -39,6 +39,7 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <SDL.h>
 #include <filament/Engine.h>
 
@@ -79,6 +80,7 @@ struct Window::Impl
     } imgui;
     std::shared_ptr<Menu> menubar;
     std::vector<std::shared_ptr<Widget>> children;
+    Widget *focusWidget = nullptr; // only used if ImGUI isn't taking keystrokes
     bool needsLayout = true;
     int nSkippedFrames = 0;
 };
@@ -145,8 +147,9 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
 
-    // If the given font path is invalid, ImGui will silently fall back to proggy, which is a
-    // tiny "pixel art" texture that is compiled into the library.
+    // If the given font path is invalid, ImGui will silently fall back to
+    // proggy, which is a tiny "pixel art" texture that is compiled into the
+    // library.
     if (!theme.fontPath.empty()) {
         ImGuiIO &io = ImGui::GetIO();
         impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(theme.fontPath.c_str(), theme.fontSize);
@@ -464,6 +467,11 @@ void Window::OnMouseEvent(const MouseEvent &e) {
     for (auto it = impl_->children.rbegin();
          it != impl_->children.rend();  ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
+            if (e.type == MouseEvent::BUTTON_DOWN &&
+                e.button.button == MouseButton::LEFT)
+            {
+                impl_->focusWidget = it->get();
+            }
             (*it)->Mouse(e);
             break;
         }
@@ -474,6 +482,12 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
         io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
+    }
+
+    // If an ImGUI widget is not getting keystrokes, we can send them to
+    // non-ImGUI widgets
+    if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focusWidget) {
+        impl_->focusWidget->Key(e);
     }
 }
 
