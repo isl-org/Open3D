@@ -142,8 +142,8 @@ typedef REHandle<EntityType::Texture> TextureHandle;
 typedef REHandle<EntityType::VertexBuffer> VertexBufferHandle;
 typedef REHandle<EntityType::IndexBuffer> IndexBufferHandle;
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d
 
 namespace std {
 template <>
@@ -154,4 +154,4 @@ public:
         return uid.Hash();
     }
 };
-}
+}  // namespace std

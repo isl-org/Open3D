@@ -61,5 +61,5 @@ public:
     virtual Camera* GetCamera() const = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

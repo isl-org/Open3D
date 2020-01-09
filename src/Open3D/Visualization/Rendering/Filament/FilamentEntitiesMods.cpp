@@ -33,7 +33,8 @@ namespace visualization {
 
 void FilamentMaterialModifier::Reset() {
     // TODO: Print log or assert
-    // assert(materialInstance == nullptr, "Previous material instance modifications are not finished!");
+    // assert(materialInstance == nullptr, "Previous material instance
+    // modifications are not finished!");
 
     materialInstance_ = nullptr;
     currentHandle_ = MaterialInstanceHandle::kBad;
@@ -43,7 +44,8 @@ void FilamentMaterialModifier::InitWithMaterialInstance(
         std::shared_ptr<filament::MaterialInstance> aMaterialInstance,
         const MaterialInstanceHandle& id) {
     // TODO: Print log or assert
-    // assert(materialInstance == nullptr, "Previous material instance modifications are not finished!");
+    // assert(materialInstance == nullptr, "Previous material instance
+    // modifications are not finished!");
 
     materialInstance_ = aMaterialInstance;
     currentHandle_ = id;
@@ -64,7 +66,7 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
         const auto color =
                 filament::math::float3{value.x(), value.y(), value.z()};
         materialInstance_->setParameter(parameter, filament::RgbType::sRGB,
-                                       color);
+                                        color);
     }
 
     return *this;
@@ -79,5 +81,5 @@ MaterialInstanceHandle FilamentMaterialModifier::Finish() {
     return res;
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

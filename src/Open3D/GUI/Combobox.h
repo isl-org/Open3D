@@ -39,7 +39,7 @@ public:
     explicit Combobox(const std::vector<const char*>& items);
     ~Combobox();
 
-    void AddItem(const char *name);
+    void AddItem(const char* name);
 
     int GetSelectedIndex() const;
     // Returns "" if nothing is selected
@@ -50,12 +50,12 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    std::function<void(const char *)> OnValueChanged;
+    std::function<void(const char*)> OnValueChanged;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

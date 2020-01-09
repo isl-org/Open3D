@@ -28,13 +28,13 @@
 
 #include "RendererHandle.h"
 
-#include <Eigen/Geometry>
 #include <json/json.h>
+#include <Eigen/Geometry>
 
 namespace open3d {
 
 namespace geometry {
-    class Geometry3D;
+class Geometry3D;
 }
 
 namespace visualization {
@@ -66,5 +66,5 @@ struct LightDescription {
           castShadows(true) {}
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

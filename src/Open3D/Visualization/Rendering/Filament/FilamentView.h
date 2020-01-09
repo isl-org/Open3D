@@ -32,13 +32,12 @@
 
 #include <filament/Color.h>
 
-namespace filament
-{
-    class Engine;
-    class Scene;
-    class View;
-    class Viewport;
-}
+namespace filament {
+class Engine;
+class Scene;
+class View;
+class Viewport;
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
@@ -70,5 +69,5 @@ private:
     filament::View* view_ = nullptr;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

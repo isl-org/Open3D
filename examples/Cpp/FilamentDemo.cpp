@@ -24,28 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
-
+#include "Open3D/GUI/Native.h"
 #include "Open3D/Open3D.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
-#include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 #include "Open3D/Visualization/Rendering/View.h"
-#include "Open3D/GUI/Native.h"
 
 #include <SDL.h>
 #if !defined(WIN32)
-#    include <unistd.h>
+#include <unistd.h>
 #else
-#    include <io.h>
+#include <io.h>
 #endif
 #include <fcntl.h>
 
-static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::string *errorStr)
-{
+static bool readBinaryFile(const std::string& path,
+                           std::vector<char>* bytes,
+                           std::string* errorStr) {
     bytes->clear();
     if (errorStr) {
         *errorStr = "";
@@ -54,9 +53,9 @@ static bool readBinaryFile(const std::string& path, std::vector<char> *bytes, st
     // Open file
     int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1) {
-//        if (errorStr) {
-//            *errorStr = getIOErrorString(errno);
-//        }
+        //        if (errorStr) {
+        //            *errorStr = getIOErrorString(errno);
+        //        }
         return false;
     }
 
@@ -80,7 +79,7 @@ void PrintHelp() {
     utility::LogInfo("    > FilamentDemo mesh <mesh file> <material file>");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
@@ -99,13 +98,15 @@ int main(int argc, char *argv[]) {
         mesh->ComputeVertexNormals();
     } else if (option == "mesh") {
         if (argc < 3) {
-            std::cout << "ERROR: You need to provide path to mesh file" << std::endl;
+            std::cout << "ERROR: You need to provide path to mesh file"
+                      << std::endl;
             return 2;
         }
 
         mesh = std::make_shared<geometry::TriangleMesh>();
         if (!io::ReadTriangleMesh(argv[2], *mesh)) {
-            std::cout << "ERROR: Failed to load mesh from " << argv[2] << std::endl;
+            std::cout << "ERROR: Failed to load mesh from " << argv[2]
+                      << std::endl;
             return 2;
         }
 
@@ -125,28 +126,33 @@ int main(int argc, char *argv[]) {
         const std::string pathToMaterial = argv[materialPathIndex];
 
         std::string errorStr;
-        materialDataLoaded = readBinaryFile(pathToMaterial, &materialData, &errorStr);
+        materialDataLoaded =
+                readBinaryFile(pathToMaterial, &materialData, &errorStr);
         if (!materialDataLoaded) {
-            std::cout << "WARNING: Could not read " << pathToMaterial << "(" << errorStr << ")."
+            std::cout << "WARNING: Could not read " << pathToMaterial << "("
+                      << errorStr << ")."
                       << "Will use default material instead." << std::endl;
         }
     } else {
-        std::cout << "WARNING: No path to material provided, using default material..." << std::endl;
+        std::cout << "WARNING: No path to material provided, using default "
+                     "material..."
+                  << std::endl;
     }
 
     const int x = SDL_WINDOWPOS_CENTERED;
     const int y = SDL_WINDOWPOS_CENTERED;
     const int w = 1280;
     const int h = 720;
-    uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE |
-                     SDL_WINDOW_ALLOW_HIGHDPI;
-    auto* window = SDL_CreateWindow("triangle mesh filament", x, y, w,
-                                    h, flags);
+    uint32_t flags =
+            SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    auto* window =
+            SDL_CreateWindow("triangle mesh filament", x, y, w, h, flags);
 
     auto& engineInstance = visualization::EngineInstance::GetInstance();
     auto& resourceManager = visualization::EngineInstance::GetResourceManager();
-    auto renderer = new visualization::FilamentRenderer(engineInstance,
-            (void*)open3d::gui::GetNativeDrawable(window), resourceManager);
+    auto renderer = new visualization::FilamentRenderer(
+            engineInstance, (void*)open3d::gui::GetNativeDrawable(window),
+            resourceManager);
 
     SDL_ShowWindow(window);
 
@@ -157,30 +163,29 @@ int main(int argc, char *argv[]) {
 
     auto viewId = scene->AddView(0, 0, w, h);
     auto view = scene->GetView(viewId);
-    view->SetClearColor({ 0.5f, 0.5f, 1.f });
+    view->SetClearColor({0.5f, 0.5f, 1.f});
 
     auto camera = view->GetCamera();
-    camera->SetProjection(90, float(w)/float(h), 0.01, 1000,
-            visualization::Camera::FovType::Horizontal);
-    camera->LookAt({0, 0, 0},
-                              {80, 80, 80},
-                              {0, 1, 0});
+    camera->SetProjection(90, float(w) / float(h), 0.01, 1000,
+                          visualization::Camera::FovType::Horizontal);
+    camera->LookAt({0, 0, 0}, {80, 80, 80}, {0, 1, 0});
 
     visualization::MaterialInstanceHandle matInstance;
     if (materialDataLoaded) {
-        visualization::MaterialHandle matId = renderer->AddMaterial(materialData.data(), materialData.size());
+        visualization::MaterialHandle matId =
+                renderer->AddMaterial(materialData.data(), materialData.size());
 
         matInstance = renderer->ModifyMaterial(matId)
-                .SetParameter("roughness", 0.5f)
-                .SetParameter("clearCoat", 1.0f)
-                .SetParameter("clearCoatRoughness", 0.3f)
-                .SetColor("baseColor", {1.f, 0.f, 0.f})
-                .Finish();
+                              .SetParameter("roughness", 0.5f)
+                              .SetParameter("clearCoat", 1.0f)
+                              .SetParameter("clearCoatRoughness", 0.3f)
+                              .SetColor("baseColor", {1.f, 0.f, 0.f})
+                              .Finish();
     }
 
     visualization::LightDescription lightDescription;
     lightDescription.intensity = 100000;
-    lightDescription.direction = { -0.707, -.707, 0.0 };
+    lightDescription.direction = {-0.707, -.707, 0.0};
     lightDescription.customAttributes["custom_type"] = "SUN";
 
     scene->AddLight(lightDescription);
@@ -194,8 +199,7 @@ int main(int argc, char *argv[]) {
         constexpr int kMaxEvents = 16;
         SDL_Event events[kMaxEvents];
         int nevents = 0;
-        while (nevents < kMaxEvents &&
-               SDL_PollEvent(&events[nevents]) != 0) {
+        while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
             const SDL_Event& event = events[nevents];
             switch (event.type) {
                 case SDL_QUIT:  // sent after last window closed

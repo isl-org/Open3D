@@ -29,18 +29,17 @@
 #include "Open3D/Visualization/Rendering/Renderer.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
-namespace filament
-{
-    class Engine;
-    class IndexBuffer;
-    class Material;
-    class MaterialInstance;
-    class Texture;
-    class VertexBuffer;
-}
+namespace filament {
+class Engine;
+class IndexBuffer;
+class Material;
+class MaterialInstance;
+class Texture;
+class VertexBuffer;
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
@@ -57,7 +56,9 @@ public:
     MaterialHandle CreateMaterial(const MaterialLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
     TextureHandle CreateTexture(/*TBD*/);
-    // Since rendering uses not all Open3D geometry/filament features, I'm not sure which arguments should CreateVB(...) function have. Thus creation of VB is managed by FilamentScene class
+    // Since rendering uses not all Open3D geometry/filament features, I'm not
+    // sure which arguments should CreateVB(...) function have. Thus creation of
+    // VB is managed by FilamentScene class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
     IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
                                         size_t indexStride);
@@ -89,5 +90,5 @@ private:
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d
