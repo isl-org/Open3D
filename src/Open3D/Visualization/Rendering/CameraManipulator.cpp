@@ -28,6 +28,8 @@
 
 #include "Camera.h"
 
+#include "Open3D/Utility/Eigen.h"
+
 namespace open3d {
 namespace visualization {
 
@@ -80,13 +82,18 @@ Eigen::Vector3f CameraManipulator::GetPosition() {
 
 void CameraManipulator::SetForwardVector(const Eigen::Vector3f& forward) {
     auto newForward = -forward;
-    auto newLeft = -(newForward.cross(Eigen::Vector3f{0,1.f,0.f}));
+    auto newLeft = -(newForward.cross(Eigen::Vector3f{0, 1.f, 0.f}));
     auto newUp = newLeft.cross(-newForward);
 
     auto transform = camera_.GetModelMatrix();
-    transform.matrix().col(0) = Eigen::Vector4f(newLeft.x(), newLeft.y(), newLeft.z(), 0.f).normalized();
-    transform.matrix().col(1) = Eigen::Vector4f(newUp.x(), newUp.y(), newUp.z(), 0.f).normalized();
-    transform.matrix().col(2) = Eigen::Vector4f(newForward.x(), newForward.y(), newForward.z(), 0.f).normalized();
+    transform.matrix().col(0) =
+            Eigen::Vector4f(newLeft.x(), newLeft.y(), newLeft.z(), 0.f)
+                    .normalized();
+    transform.matrix().col(1) =
+            Eigen::Vector4f(newUp.x(), newUp.y(), newUp.z(), 0.f).normalized();
+    transform.matrix().col(2) =
+            Eigen::Vector4f(newForward.x(), newForward.y(), newForward.z(), 0.f)
+                    .normalized();
 
     camera_.SetModelMatrix(transform);
 }
@@ -111,6 +118,58 @@ void CameraManipulator::LookAt(const Eigen::Vector3f& center,
                                const Eigen::Vector3f& eye,
                                const Eigen::Vector3f& up /*= {0, 1.f, 0.f}*/) {
     camera_.LookAt(center, eye, up);
+}
+
+void CameraManipulator::Orbit(const Eigen::Vector3f& center,
+                              const float radius,
+                              const float deltaPhi,
+                              const float deltaTheta,
+                              const float rotationSpeed) {
+    auto transform = camera_.GetModelMatrix();
+    auto pos = transform.translation();
+
+    Eigen::Vector2f delta = {deltaPhi*rotationSpeed, deltaTheta*rotationSpeed};
+
+    Eigen::Vector3f direction = center - pos;
+    direction.normalize();
+
+    Eigen::Vector3f leftVector;
+
+    auto facing = direction.dot(Eigen::Vector3f::UnitY());
+    if ((1.f - fabsf(facing)) < 0.001f) {
+        auto up = camera_.GetUpVector();
+        direction = std::copysignf(1.f, facing) * Eigen::Vector3f::UnitY();
+
+        auto rotY = Eigen::AngleAxis<float>(delta.x(), Eigen::Vector3f::UnitY());
+        up = rotY * up;
+
+        leftVector = direction.cross(up);
+        leftVector.normalize();
+
+        direction = up.cross(leftVector);
+        direction.normalize();
+
+        if ((facing > 0.f && deltaTheta < 0.f) ||
+            (facing < 0.f && deltaTheta > 0.f)) {
+            auto rotR = Eigen::AngleAxis<float>(delta.y(), leftVector);
+            direction = rotR * direction;
+        }
+
+        pos = center - direction * radius;
+        camera_.LookAt(center, pos, up);
+    } else {
+        auto rotY = Eigen::AngleAxis<float>(delta.x(), Eigen::Vector3f::UnitY());
+        direction = rotY * direction;
+
+        leftVector = direction.cross(Eigen::Vector3f::UnitY());
+        leftVector.normalize();
+
+        auto rotR = Eigen::AngleAxis<float>(delta.y(), leftVector);
+        direction = rotR * direction;
+
+        pos = center - direction * radius;
+        camera_.LookAt(center, pos, leftVector.cross(direction).normalized());
+    }
 }
 
 void CameraManipulator::UpdateCameraProjection() {

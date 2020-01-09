@@ -60,6 +60,12 @@ public:
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up = {0, 1.f, 0.f});
 
+    void Orbit(const Eigen::Vector3f& center,
+               float radius,
+               float deltaPhi,
+               float deltaTheta,
+               float rotationSpeed = M_PI / 2.f);
+
 private:
     void UpdateCameraProjection();
 
