@@ -467,9 +467,7 @@ void Window::OnMouseEvent(const MouseEvent &e) {
     for (auto it = impl_->children.rbegin();
          it != impl_->children.rend();  ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
-            if (e.type == MouseEvent::BUTTON_DOWN &&
-                e.button.button == MouseButton::LEFT)
-            {
+            if (e.type == MouseEvent::BUTTON_DOWN) {
                 impl_->focusWidget = it->get();
             }
             (*it)->Mouse(e);
