@@ -343,5 +343,5 @@ void FilamentScene::RemoveEntity(REHandle_abstract id) {
     }
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

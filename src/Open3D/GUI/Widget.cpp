@@ -34,19 +34,14 @@ struct Widget::Impl {
     std::vector<std::shared_ptr<Widget>> children;
 };
 
-Widget::Widget()
-: impl_(new Widget::Impl())
-{
-}
+Widget::Widget() : impl_(new Widget::Impl()) {}
 
 Widget::Widget(const std::vector<std::shared_ptr<Widget>>& children)
-: impl_(new Widget::Impl())
-{
+    : impl_(new Widget::Impl()) {
     impl_->children = children;
 }
 
-Widget::~Widget() {
-}
+Widget::~Widget() {}
 
 void Widget::AddChild(std::shared_ptr<Widget> child) {
     impl_->children.push_back(child);
@@ -56,27 +51,23 @@ const std::vector<std::shared_ptr<Widget>> Widget::GetChildren() const {
     return impl_->children;
 }
 
-const Rect& Widget::GetFrame() const {
-    return impl_->frame;
-}
+const Rect& Widget::GetFrame() const { return impl_->frame; }
 
-void Widget::SetFrame(const Rect& f) {
-    impl_->frame = f;
-}
+void Widget::SetFrame(const Rect& f) { impl_->frame = f; }
 
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
 }
 
 void Widget::Layout(const Theme& theme) {
-    for (auto &child : impl_->children) {
+    for (auto& child : impl_->children) {
         child->Layout(theme);
     }
 }
 
 Widget::DrawResult Widget::Draw(const DrawContext& context) {
     DrawResult result = DrawResult::NONE;
-    for (auto &child : impl_->children) {
+    for (auto& child : impl_->children) {
         auto r = child->Draw(context);
         // The mouse can only be over one item, so there should never
         // be multiple items returning non-NONE.
@@ -87,5 +78,5 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
     return result;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

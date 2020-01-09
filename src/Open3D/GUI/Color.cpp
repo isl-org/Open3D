@@ -29,15 +29,10 @@
 namespace open3d {
 namespace gui {
 
-Color::Color()
-    : rgba_{ 0.0f, 0.0f, 0.0f, 1.0f }
-{
-}
+Color::Color() : rgba_{0.0f, 0.0f, 0.0f, 1.0f} {}
 
 Color::Color(float r, float g, float b, float a /*= 1.0*/)
-    : rgba_{ r, g, b, a }
-{
-}
+    : rgba_{r, g, b, a} {}
 
 float Color::GetRed() const { return rgba_[0]; }
 float Color::GetGreen() const { return rgba_[1]; }
@@ -49,9 +44,8 @@ const float* Color::GetPointer() const { return rgba_; }
 Color Color::Lightened(float amount) {
     return Color((1.0f - amount) * GetRed() + amount * 1.0f,
                  (1.0f - amount) * GetGreen() + amount * 1.0f,
-                 (1.0f - amount) * GetBlue() + amount * 1.0f,
-                 GetAlpha());
+                 (1.0f - amount) * GetBlue() + amount * 1.0f, GetAlpha());
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

@@ -72,5 +72,5 @@ private:
     float far_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d
