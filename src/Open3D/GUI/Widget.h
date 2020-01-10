@@ -35,6 +35,7 @@ namespace open3d {
 namespace gui {
 
 class Color;
+struct KeyEvent;
 struct MouseEvent;
 struct Theme;
 
@@ -76,6 +77,11 @@ public:
     /// as Dear ImGUI will take care of all the mouse handling during
     /// the Draw().
     virtual void Mouse(const MouseEvent& e);
+
+    /// Widgets that use Dear ImGUI should not need to override this,
+    /// as Dear ImGUI will take care of all the mouse handling during
+    /// the Draw().
+    virtual void Key(const KeyEvent& e);
 
 private:
     struct Impl;
