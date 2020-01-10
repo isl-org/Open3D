@@ -107,5 +107,8 @@ void SceneWidget::Mouse(const MouseEvent& e) {
     }
 }
 
+void SceneWidget::Key(const KeyEvent& e) {
+}
+
 } // gui
 } // open3d

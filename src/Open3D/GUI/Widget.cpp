@@ -108,13 +108,15 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
 void Widget::Mouse(const MouseEvent& e) {
     // Iterate backwards so that we send mouse events from the top down.
     for (auto it = impl_->children.rbegin();
-         it != impl_->children.rend();  ++it) {
+        it != impl_->children.rend();  ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
             (*it)->Mouse(e);
             break;
         }
     }
+}
 
+void Widget::Key(const KeyEvent& e) {
 }
 
 } // gui
