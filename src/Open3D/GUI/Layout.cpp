@@ -182,11 +182,14 @@ void Layout1D::Layout(const Theme& theme) {
     auto frame = GetFrame();
     auto &children = GetChildren();
     std::vector<int> major = calcMajor(theme, impl_->dir, children, nullptr);
-    int total = 0, nStretch = 0;
+    int total = 0, nStretch = 0, nGrow = 0;
     for (auto &mj : major) {
         total += mj;
         if (mj <= 0) {
             nStretch += 1;
+        }
+        if (mj >= Widget::DIM_GROW) {
+            nGrow += 1;
         }
     }
     int frameSize = (impl_->dir == VERT ? frame.height : frame.width);
@@ -200,6 +203,20 @@ void Layout1D::Layout(const Theme& theme) {
                 if (leftoverStretch > 0) {
                     major[i] += 1;
                     leftoverStretch -= 1;
+                }
+            }
+        }
+    } else if (nGrow > 0 && frameSize < total) {
+        auto totalExcess = total - (frameSize - impl_->margins.GetVert() -
+                                    impl_->spacing * (major.size() - 1));
+        auto excess = totalExcess / nGrow;
+        auto leftover = totalExcess - excess * nStretch;
+        for (size_t i = 0;  i < major.size();  ++i) {
+            if (major[i] >= Widget::DIM_GROW) {
+                major[i] -= excess;
+                if (leftover > 0) {
+                    major[i] -= 1;
+                    leftover -= 1;
                 }
             }
         }

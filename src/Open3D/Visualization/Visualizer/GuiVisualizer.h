@@ -45,6 +45,10 @@ public:
                   int left, int top);
     virtual ~GuiVisualizer();
 
+    void LoadGeometry(const std::string& path);
+    void ExportRGB(const std::string& path);
+    void ExportDepth(const std::string& path);
+
     void Layout(const gui::Theme& theme) override;
     void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
 

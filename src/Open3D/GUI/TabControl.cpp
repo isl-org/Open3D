@@ -96,6 +96,7 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
                                frame.y - context.uiOffsetY));
 
     auto result = Widget::DrawResult::NONE;
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (ImGui::BeginTabBar(impl_->imguiId.c_str())) {
         for (size_t i = 0;  i < impl_->tabNames.size();  ++i) {
@@ -110,6 +111,8 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
         ImGui::EndTabBar();
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
+
     return result;
 }
 

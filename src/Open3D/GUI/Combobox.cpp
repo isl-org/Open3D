@@ -73,8 +73,18 @@ Combobox::Combobox(const std::vector<const char*>& items)
 Combobox::~Combobox() {
 }
 
+void Combobox::ClearItems() {
+    impl_->items.clear();
+    impl_->currentIndex = 0;
+    impl_->selectedIndex = -1;
+}
+
 void Combobox::AddItem(const char *name) {
     impl_->items.push_back(name);
+}
+
+const char* Combobox::GetItem(int index) const {
+    return impl_->items[index].c_str();
 }
 
 int Combobox::GetSelectedIndex() const {
@@ -101,7 +111,8 @@ void Combobox::SetOnValueChanged(std::function<void(const char *)> onValueChange
 }
 
 Size Combobox::CalcPreferredSize(const Theme& theme) const {
-    auto em = ImGui::GetTextLineHeight();
+    auto buttonWidth = ImGui::GetFrameHeight();  // button is square
+    auto padding = ImGui::GetStyle().FramePadding;
     int width = 0;
     for (auto &item : impl_->items) {
         auto size = ImGui::GetFont()->CalcTextSizeA(theme.fontSize,
@@ -109,7 +120,8 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
                                                     item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
-    return Size(width + em, CalcItemHeight(theme));
+    return Size(width + buttonWidth + 2.0 * padding.x,
+                CalcItemHeight(theme));
 }
 
 Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
@@ -125,6 +137,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
 
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(frame.width);
     if (ImGui::BeginCombo(impl_->imguiId.c_str(), GetSelectedValue())) {
         if (!wasOpen) {
@@ -147,6 +160,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
         ImGui::EndCombo();
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
 
     ImGui::PopStyleColor(3);
 

@@ -29,6 +29,9 @@
 
 #include <imgui.h>
 
+#include <string>
+#include <vector>
+
 namespace open3d {
 namespace gui {
 
@@ -37,6 +40,8 @@ class Color;
 namespace util {
 
 ImVec4 colorToImgui(const Color& color);
+
+std::vector<std::string> PathToComponents(const char *path);
 
 } // util
 

@@ -29,6 +29,9 @@
 #include "Color.h"
 #include "Events.h"
 
+#include <imgui.h>
+#include <imgui_internal.h>
+
 namespace open3d {
 namespace gui {
 
@@ -39,6 +42,7 @@ struct Widget::Impl {
     Color bgColor = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children;
     bool isVisible = true;
+    bool isEnabled = true;
 };
 
 Widget::Widget()
@@ -91,6 +95,14 @@ void Widget::SetVisible(bool vis) {
     impl_->isVisible = vis;
 }
 
+bool Widget::IsEnabled() const {
+    return impl_->isEnabled;
+}
+
+void Widget::SetEnabled(bool enabled) {
+    impl_->isEnabled = enabled;
+}
+
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
 }
@@ -116,6 +128,21 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
         }
     }
     return result;
+}
+
+void Widget::DrawImGuiPushEnabledState() {
+    if (!IsEnabled()) {
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
+                            ImGui::GetStyle().Alpha * 0.5f);
+    }
+}
+
+void Widget::DrawImGuiPopEnabledState() {
+    if (!IsEnabled()) {
+        ImGui::PopStyleVar();
+        ImGui::PopItemFlag();
+    }
 }
 
 void Widget::Mouse(const MouseEvent& e) {

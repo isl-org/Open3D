@@ -39,7 +39,9 @@ public:
     explicit Combobox(const std::vector<const char*>& items);
     ~Combobox();
 
+    void ClearItems();
     void AddItem(const char *name);
+    const char* GetItem(int index) const;
 
     int GetSelectedIndex() const;
     // Returns "" if nothing is selected

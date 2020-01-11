@@ -24,38 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Util.h"
+#pragma once
 
-#include "Color.h"
+#include "Dialog.h"
 
 namespace open3d {
 namespace gui {
-namespace util {
 
-ImVec4 colorToImgui(const Color& color) {
-    return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
-                  color.GetAlpha());
+struct Theme;
+
+class FileDialog : public Dialog {
+    using Super = Dialog;
+public:
+    enum class Type { OPEN, SAVE };
+
+    FileDialog(Type type, const char *title, const Theme& theme);
+    virtual ~FileDialog();
+
+    /// May either be a directory or a file. If path is a file, it will be
+    /// selected if it exists. Defaults to current working directory if
+    /// no path is specified.
+    void SetPath(const char *path);
+
+    /// 'filter' is a string of extensions separated by a space or comma.
+    /// An empty filter string matches all extensions.
+    ///    AddFilter(".jpg .png .gif", "Image file (.jpg, .png, .gif)")
+    ///    AddFilter(".jpg", "JPEG image (.jpg)")
+    ///    AddFilter("", "All files")
+    void AddFilter(const char *filter, const char *description);
+
+    /// The OnCancel and OnDone callbacks *must* be specified.
+    void SetOnCancel(std::function<void()> onCancel);
+    void SetOnDone(std::function<void(const char *)> onDone);
+
+    Size CalcPreferredSize(const Theme &theme) const override;
+
+protected:
+    void OnDone();
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 }
-
-std::vector<std::string> PathToComponents(const char *path) {
-    std::vector<std::string> components;
-    const char *end = path;
-    while (*end != '\0') {
-        const char *start = end;
-        while (*end != '\0' && *end != '\\' && *end != '/') {
-            end++;
-        }
-        if (end > start) {
-            components.push_back(std::string(start, end - start));
-        }
-        if (*end != '\0') {
-            end++;
-        }
-    }
-    return components;
 }
-
-} // util
-} // gui
-} // open3d
-

@@ -33,83 +33,22 @@
 #include "Open3D/GUI/Button.h"
 #include "Open3D/GUI/Color.h"
 #include "Open3D/GUI/Dialog.h"
+#include "Open3D/GUI/FileDialog.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Theme.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/CameraManipulator.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
-#if !defined(WIN32)
-#    include <unistd.h>
-#else
-#    include <io.h>
-#endif
-#include <fcntl.h>
-
 namespace open3d {
 namespace visualization {
 
 namespace {
-std::string getIOErrorString(errno_t errnoVal) {
-    switch (errnoVal) {
-        case EACCES:
-            return "Permission denied";
-        case EDQUOT:
-            return "Disk quota exceeded";
-        case EEXIST:
-            return "File already exists";
-        case ELOOP:
-            return "Too many symlinks in path";
-        case EMFILE:
-            return "Process has no more file descriptors available";
-        case ENAMETOOLONG:
-            return "Filename is too long";
-        case ENFILE:
-        case ENOSPC:
-            return "File system is full";
-        case ENOENT:
-            return "File does not exist";
-        default: {
-            std::stringstream s;
-            s << "Error " << errnoVal << " while opening file";
-            return s.str();
-        }
-    }
-}
-
-bool readBinaryFile(const std::string& path, std::vector<char> *bytes,
-                    std::string *errorStr)
-{
-    bytes->clear();
-    if (errorStr) {
-        *errorStr = "";
-    }
-
-    // Open file
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd == -1) {
-        if (errorStr) {
-            *errorStr = getIOErrorString(errno);
-        }
-        return false;
-    }
-
-    // Get file size
-    size_t filesize = (size_t)lseek(fd, 0, SEEK_END);
-    lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
-
-    // Read data
-    bytes->resize(filesize);
-    read(fd, bytes->data(), filesize);
-
-    // We're done, close and return
-    close(fd);
-    return true;
-}
 
 std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window)
 {
@@ -196,7 +135,7 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window)
 
 }
 
-enum MenuId { FILE_OPEN, FILE_SAVE, FILE_CLOSE,
+enum MenuId { FILE_OPEN, FILE_EXPORT_RGB, FILE_EXPORT_DEPTH, FILE_CLOSE,
               VIEW_POINTS, VIEW_WIREFRAME, VIEW_MESH,
               HELP_ABOUT, HELP_CONTACT };
 
@@ -220,7 +159,7 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
     std::vector<char> bytes;
-    if (readBinaryFile(path, &bytes, &err)) {
+    if (open3d::utility::filesystem::FReadToBuffer(path, bytes, &err)) {
         nonmetal = GetRenderer().AddMaterial(bytes.data(), bytes.size());
     } else {
         utility::LogWarning((std::string("Error opening ") + path + ":" + err).c_str());
@@ -324,8 +263,9 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
 
     // Create menu
     auto fileMenu = std::make_shared<gui::Menu>();
-    fileMenu->AddItem("Open", "Ctrl-O", FILE_OPEN);
-    fileMenu->AddItem("Save", "Ctrl-S", FILE_SAVE);
+    fileMenu->AddItem("Open Geometry...", "Ctrl-O", FILE_OPEN);
+    fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
+    fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
     fileMenu->AddSeparator();
     fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
     auto viewMenu = std::make_shared<gui::Menu>();
@@ -357,12 +297,67 @@ void GuiVisualizer::Layout(const gui::Theme& theme) {
     Super::Layout(theme);
 }
 
+void GuiVisualizer::LoadGeometry(const std::string& path) {
+    ShowMessageBox("Not implemented", "LoadGeometry() is not implemented yet");
+}
+
+void GuiVisualizer::ExportRGB(const std::string& path) {
+    ShowMessageBox("Not implemented", "ExportRGB() is not implemented yet");
+}
+
+void GuiVisualizer::ExportDepth(const std::string& path) {
+    ShowMessageBox("Not implemented", "ExportDepth() is not implemented yet");
+}
+
 void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
-    switch (MenuId(itemId)) {
-        case FILE_OPEN:
+    auto menuId = MenuId(itemId);
+    switch (menuId) {
+        case FILE_OPEN: {
+            auto dlg = std::make_shared<gui::FileDialog>(gui::FileDialog::Type::OPEN,
+                                                         "Open Geometry", GetTheme());
+            dlg->AddFilter(".ply .stl .obj .off .gltf .glb",
+                           "Triangle mesh files (.ply, .stl, .obj, .off, .gltf, .glb)");
+            dlg->AddFilter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
+                           "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, .pcd, .pts)");
+            dlg->AddFilter(".ply", "Polygon files (.ply)");
+            dlg->AddFilter(".stl", "Stereolithography files (.stl)");
+            dlg->AddFilter(".obj", "Wavefront OBJ files (.obj)");
+            dlg->AddFilter(".off", "Object file format (.off)");
+            dlg->AddFilter(".gltf", "OpenGL transfer files (.gltf)");
+            dlg->AddFilter(".glb", "OpenGL binary transfer files (.glb)");
+            dlg->AddFilter(".xyz", "ASCII point cloud files (.xyz)");
+            dlg->AddFilter(".xyzn", "ASCII point cloud with normals (.xyzn)");
+            dlg->AddFilter(".xyzrgb", "ASCII point cloud files with colors (.xyzrgb)");
+            dlg->AddFilter(".pcd", "Point Cloud Data files (.pcd)");
+            dlg->AddFilter(".pts", "3D Points files (.pts)");
+            dlg->AddFilter("", "All files");
+            dlg->SetOnCancel([this]() { this->CloseDialog(); });
+            dlg->SetOnDone([this](const char *path) {
+                this->CloseDialog();
+                this->LoadGeometry(path);
+            });
+            ShowDialog(dlg);
             break;
-        case FILE_SAVE:
+        }
+        case FILE_EXPORT_RGB: // fall through
+        case FILE_EXPORT_DEPTH:
+        {
+            auto dlg = std::make_shared<gui::FileDialog>(gui::FileDialog::Type::SAVE,
+                                                         "Save File", GetTheme());
+            dlg->AddFilter(".png", "PNG images (.png)");
+            dlg->AddFilter("", "All files");
+            dlg->SetOnCancel([this]() { this->CloseDialog(); });
+            dlg->SetOnDone([this, menuId](const char *path) {
+                this->CloseDialog();
+                if (menuId == FILE_EXPORT_RGB) {
+                    this->ExportRGB(path);
+                } else {
+                    this->ExportDepth(path);
+                }
+            });
+            ShowDialog(dlg);
             break;
+        }
         case FILE_CLOSE:
             this->Close();
             break;

@@ -109,6 +109,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
                                frame.y - context.uiOffsetY));
 
     float newValue = impl_->value;
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (impl_->type == INT) {
         int iNewValue = newValue;
@@ -120,6 +121,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
                            impl_->minValue, impl_->maxValue);
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
 
     if (impl_->value != newValue) {
         impl_->value = newValue;

@@ -58,7 +58,6 @@ void Dialog::Layout(const Theme& theme) {
     if (GetChildren().size() == 1) {
         auto &child = GetChildren()[0];
         child->SetFrame(GetFrame());
-//        child->SetFrame(Rect(0, 0, GetFrame().width, GetFrame().height));
         child->Layout(theme);
     } else {
         Super::Layout(theme);

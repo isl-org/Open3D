@@ -69,6 +69,9 @@ public:
     bool IsVisible() const;
     virtual void SetVisible(bool vis);
 
+    bool IsEnabled() const;
+    virtual void SetEnabled(bool enabled);
+
     static constexpr int DIM_GROW = 10000;
     virtual Size CalcPreferredSize(const Theme& theme) const;
 
@@ -79,6 +82,10 @@ public:
     /// as Dear ImGUI will take care of all the mouse handling during
     /// the Draw().
     virtual void Mouse(const MouseEvent& e);
+
+protected:
+    void DrawImGuiPushEnabledState();
+    void DrawImGuiPopEnabledState();
 
 private:
     struct Impl;

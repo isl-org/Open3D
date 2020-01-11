@@ -160,8 +160,9 @@ bool RemoveFile(const std::string &filename) {
     return (std::remove(filename.c_str()) == 0);
 }
 
-bool ListFilesInDirectory(const std::string &directory,
-                          std::vector<std::string> &filenames) {
+bool ListDirectory(const std::string &directory,
+                   std::vector<std::string> &subdirs,
+                   std::vector<std::string> &filenames) {
     if (directory.empty()) {
         return false;
     }
@@ -179,10 +180,17 @@ bool ListFilesInDirectory(const std::string &directory,
         std::string full_file_name =
                 GetRegularizedDirectoryName(directory) + file_name;
         if (stat(full_file_name.c_str(), &st) == -1) continue;
-        if (S_ISREG(st.st_mode)) filenames.push_back(full_file_name);
+        if (S_ISDIR(st.st_mode)) subdirs.push_back(full_file_name);
+        else if (S_ISREG(st.st_mode)) filenames.push_back(full_file_name);
     }
     closedir(dir);
     return true;
+}
+
+bool ListFilesInDirectory(const std::string &directory,
+                          std::vector<std::string> &filenames) {
+    std::vector<std::string> subdirs;
+    return ListDirectory(directory, subdirs, filenames);
 }
 
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
@@ -221,7 +229,7 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
     return fp;
 }
 
-static std::string getIOErrorString(const int errnoVal) {
+static std::string GetIOErrorString(const int errnoVal) {
     switch (errnoVal) {
         case EPERM:   return "Operation not permitted";
         case EACCES:  return "Access denied";
@@ -265,21 +273,22 @@ bool FReadToBuffer(const std::string &path,
     FILE* file = FOpen(path.c_str(), "rb");
     if (!file) {
         if (errorStr) {
-            *errorStr = getIOErrorString(ferror(file));
+            *errorStr = GetIOErrorString(ferror(file));
         }
 
         return false;
     }
 
-    fseek(file , 0 , SEEK_END);
-    // We ignoring that fseek will block our process
-    if (errno && errno != EWOULDBLOCK) {
-        if (errorStr) {
-            *errorStr = getIOErrorString(errno);
-        }
+    if (fseek(file, 0, SEEK_END) != 0) {
+        // We ignore that fseek will block our process
+        if (errno && errno != EWOULDBLOCK) {
+            if (errorStr) {
+                *errorStr = GetIOErrorString(errno);
+            }
 
-        fclose(file);
-        return false;
+            fclose(file);
+            return false;
+        }
     }
 
     const size_t filesize = ftell(file);
@@ -288,9 +297,9 @@ bool FReadToBuffer(const std::string &path,
     bytes.resize(filesize);
     const size_t result = fread(bytes.data(), 1, filesize, file);
 
-    if (result != filesize){
+    if (result != filesize) {
         if (errorStr) {
-            *errorStr = getIOErrorString(errno);
+            *errorStr = GetIOErrorString(errno);
         }
 
         fclose(file);

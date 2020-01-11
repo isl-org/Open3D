@@ -24,38 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Util.h"
+#pragma once
 
-#include "Color.h"
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
-namespace util {
 
-ImVec4 colorToImgui(const Color& color) {
-    return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
-                  color.GetAlpha());
+class ListView : public Widget {
+    using Super = Widget;
+public:
+    ListView();
+    virtual ~ListView();
+
+    void SetItems(const std::vector<std::string>& items);
+
+    int GetSelectedIndex() const;
+    const char* GetSelectedValue() const;
+    void SetSelectedIndex(int index);
+
+    Size CalcPreferredSize(const Theme& theme) const override;
+
+    DrawResult Draw(const DrawContext& context) override;
+
+    /// calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    void SetOnValueChanged(std::function<void(const char *, bool)> onValueChanged);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 }
-
-std::vector<std::string> PathToComponents(const char *path) {
-    std::vector<std::string> components;
-    const char *end = path;
-    while (*end != '\0') {
-        const char *start = end;
-        while (*end != '\0' && *end != '\\' && *end != '/') {
-            end++;
-        }
-        if (end > start) {
-            components.push_back(std::string(start, end - start));
-        }
-        if (*end != '\0') {
-            end++;
-        }
-    }
-    return components;
 }
-
-} // util
-} // gui
-} // open3d
-

@@ -113,11 +113,16 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
     ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, util::colorToImgui(context.theme.textEditBackgroundColor));
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive, util::colorToImgui(context.theme.textEditBackgroundColor));
 
+    int textFlags = ImGuiInputTextFlags_CallbackResize;
+    if (!IsEnabled()) {
+        textFlags = ImGuiInputTextFlags_ReadOnly;
+    }
     auto result = Widget::DrawResult::NONE;
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (ImGui::InputTextWithHint(impl_->id.c_str(), impl_->placeholder.c_str(),
                                  (char*)impl_->text.c_str(), impl_->text.capacity(),
-                                 ImGuiInputTextFlags_CallbackResize,
+                                 textFlags,
                                  InputTextCallback, &impl_->text)) {
         if (impl_->onTextChanged) {
             impl_->onTextChanged(impl_->text.c_str());
@@ -125,6 +130,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
         result = Widget::DrawResult::CLICKED;
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
 
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();

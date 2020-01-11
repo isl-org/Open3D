@@ -62,16 +62,20 @@ Size Button::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto &frame = GetFrame();
+    auto result = Widget::DrawResult::NONE;
+
+    DrawImGuiPushEnabledState();
     ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
                                frame.y - context.uiOffsetY));
     if (ImGui::Button(impl_->title.c_str(), ImVec2(GetFrame().width, GetFrame().height))) {
         if (impl_->onClicked) {
             impl_->onClicked();
         }
-        return Widget::DrawResult::CLICKED;
-    } else {
-        return Widget::DrawResult::NONE;
+        result = Widget::DrawResult::CLICKED;
     }
+    DrawImGuiPopEnabledState();
+
+    return result;
 }
 
 } // gui

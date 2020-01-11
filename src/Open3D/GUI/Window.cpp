@@ -27,8 +27,11 @@
 #include "Window.h"
 
 #include "Application.h"
+#include "Button.h"
 #include "Dialog.h"
 #include "ImguiFilamentBridge.h"
+#include "Label.h"
+#include "Layout.h"
 #include "Menu.h"
 #include "Native.h"
 #include "Renderer.h"
@@ -297,10 +300,16 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
 
     auto winSize = GetSize();
     auto pref = dlg->CalcPreferredSize(GetTheme());
-    int w = std::min(pref.width,
-                     int(std::round(0.8 * winSize.width)));
-    int h = std::min(pref.height,
-                     int(std::round(0.8 * winSize.height)));
+    int w = dlg->GetFrame().width;
+    int h = dlg->GetFrame().height;
+    if (w == 0) {
+        w = pref.width;
+    }
+    if (h == 0) {
+        h = pref.height;
+    }
+    w = std::min(w, int(std::round(0.8 * winSize.width)));
+    h = std::min(h, int(std::round(0.8 * winSize.height)));
     dlg->SetFrame(gui::Rect((winSize.width - w) / 2, (winSize.height - h) / 2,
                             w,  h));
     dlg->Layout(GetTheme());
@@ -308,6 +317,19 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
 
 void Window::CloseDialog() {
     impl_->activeDialog.reset();
+}
+
+void Window::ShowMessageBox(const char *title, const char *message) {
+    auto em = GetTheme().fontSize;
+    auto margins = Margins(GetTheme().defaultMargin);
+    auto dlg = std::make_shared<Dialog>(title);
+    auto layout = std::make_shared<Vert>(em, margins);
+    layout->AddChild(std::make_shared<Label>(message));
+    auto ok = std::make_shared<Button>("Ok");
+    ok->SetOnClicked([this]() { this->CloseDialog(); });
+    layout->AddChild(Horiz::MakeCentered(ok));
+    dlg->AddChild(layout);
+    ShowDialog(dlg);
 }
 
 void Window::Layout(const Theme& theme) {

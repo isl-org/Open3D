@@ -59,6 +59,10 @@ bool FileExists(const std::string &filename);
 
 bool RemoveFile(const std::string &filename);
 
+bool ListDirectory(const std::string &directory,
+                   std::vector<std::string> &subdirs,
+                   std::vector<std::string> &filenames);
+
 bool ListFilesInDirectory(const std::string &directory,
                           std::vector<std::string> &filenames);
 

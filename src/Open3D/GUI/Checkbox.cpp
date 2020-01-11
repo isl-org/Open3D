@@ -98,6 +98,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
         ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colorToImgui(context.theme.checkboxBackgroundHoverOffColor));
     }
 
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (ImGui::Checkbox(impl_->name.c_str(), &impl_->isChecked)) {
         if (impl_->onChecked) {
@@ -106,6 +107,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
         result = Widget::DrawResult::CLICKED;
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
 
     ImGui::PopStyleColor(2);
 

@@ -30,6 +30,7 @@
 #include "Theme.h"
 #include "Window.h"
 
+#include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 #include <SDL.h>
@@ -37,22 +38,6 @@
 #include <chrono>
 #include <thread>
 #include <unordered_map>
-
-#include <sys/stat.h>
-#include <sys/types.h>
-#if !defined(WIN32)
-#    include <unistd.h>
-#else
-    #include <io.h>
-    #include <direct.h>
-
-    // Copy-paste from UNIX <sys/stat.h> sources
-    #define S_ISDIR(mask) ((mask & S_IFMT) == S_IFDIR)
-#endif
-
-#ifdef WIN32
-#define getcwd _getcwd
-#endif // WIN32
 
 namespace {
 
@@ -120,14 +105,6 @@ std::unordered_map<int, uint32_t> SCANCODE2KEY = {
     { SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN }
 };
 
-bool isDirectory(const std::string& path) {
-    struct stat statbuf;
-    if (stat(path.c_str(), &statbuf) != 0)
-        return false;
-
-    return S_ISDIR(statbuf.st_mode);
-}
-
 std::string findResourcePath(int argc, const char *argv[]) {
     std::string argv0;
     if (argc != 0 && argv) {
@@ -149,9 +126,8 @@ std::string findResourcePath(int argc, const char *argv[]) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        char *cwd = getcwd(nullptr, 0); // will malloc()
-        path = std::string(cwd) + "/" + path;
-        free(cwd);
+        auto cwd = open3d::utility::filesystem::GetWorkingDirectory();
+        path = cwd + "/" + path;
     }
 
 #ifdef __APPLE__
@@ -161,7 +137,7 @@ std::string findResourcePath(int argc, const char *argv[]) {
 #endif // __APPLE__
 
     auto rsrcPath = path + "/resources";
-    if (!isDirectory(rsrcPath)) {
+    if (!open3d::utility::filesystem::DirectoryExists(rsrcPath)) {
         return path + "/../resources";  // building with Xcode
     }
     return rsrcPath;
@@ -228,9 +204,12 @@ void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
     // the current directory is where the resources are located. This is a
     // safe assumption when running on macOS and Windows normally.
-    char *path = getcwd(NULL, 4096 /* ignored, but make it large just in case */);
-    Initialize(1, (const char **)&path);
-    free(path);
+    auto path = open3d::utility::filesystem::GetWorkingDirectory();
+    // Copy to C string, as some implementations of std::string::c_str()
+    // return a very temporary pointer.
+    char *argv = strdup(path.c_str());
+    Initialize(1, (const char **)&argv);
+    free(argv);
 }
 
 void Application::Initialize(int argc, const char *argv[]) {
