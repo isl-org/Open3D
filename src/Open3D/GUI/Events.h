@@ -57,6 +57,21 @@ struct MouseEvent {
             int dy;
         } wheel;
     };
+
+    MouseEvent()
+        : type(BUTTON_DOWN)
+        , x(0)
+        , y(0)
+    {
+        wheel.dx = 0;
+        wheel.dy = 0;
+    }
+
+    MouseEvent(const Type aType, const int aX, const int aY)
+        : type(aType)
+        , x(aX)
+        , y(aY) {
+    }
 };
 
 enum {

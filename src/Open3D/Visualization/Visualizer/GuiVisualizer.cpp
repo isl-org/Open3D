@@ -50,66 +50,6 @@
 namespace open3d {
 namespace visualization {
 
-namespace {
-static std::string getIOErrorString(errno_t errnoVal) {
-    switch (errnoVal) {
-        case EACCES:
-            return "Permission denied";
-        case EDQUOT:
-            return "Disk quota exceeded";
-        case EEXIST:
-            return "File already exists";
-        case ELOOP:
-            return "Too many symlinks in path";
-        case EMFILE:
-            return "Process has no more file descriptors available";
-        case ENAMETOOLONG:
-            return "Filename is too long";
-        case ENFILE:
-        case ENOSPC:
-            return "File system is full";
-        case ENOENT:
-            return "File does not exist";
-        default: {
-            std::stringstream s;
-            s << "Error " << errnoVal << " while opening file";
-            return s.str();
-        }
-    }
-}
-
-static bool readBinaryFile(const std::string& path, std::vector<char> *bytes,
-                           std::string *errorStr)
-{
-    bytes->clear();
-    if (errorStr) {
-        *errorStr = "";
-    }
-
-    // Open file
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd == -1) {
-        if (errorStr) {
-            *errorStr = getIOErrorString(errno);
-        }
-        return false;
-    }
-
-    // Get file size
-    size_t filesize = (size_t)lseek(fd, 0, SEEK_END);
-    lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
-
-    // Read data
-    bytes->resize(filesize);
-    read(fd, bytes->data(), filesize);
-
-    // We're done, close and return
-    close(fd);
-    return true;
-}
-
-}
-
 struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> bottomBar;
@@ -129,12 +69,7 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     std::string err;
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
-    std::vector<char> bytes;
-    if (readBinaryFile(path, &bytes, &err)) {
-        nonmetal = GetRenderer().AddMaterial(bytes.data(), bytes.size());
-    } else {
-        utility::LogWarning((std::string("Error opening ") + path + ":" + err).c_str());
-    }
+    nonmetal = GetRenderer().AddMaterial(MaterialLoadRequest(path.data()));
     auto white = GetRenderer().ModifyMaterial(nonmetal)
             .SetColor("baseColor", {1.0, 1.0, 1.0})
             .SetParameter("roughness", 0.5f)
