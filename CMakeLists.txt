@@ -61,7 +61,7 @@ endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
     "Installation directory for CMake files")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake ${PROJECT_SOURCE_DIR}/cmake/modules )
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -225,6 +225,14 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
     source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
 endmacro(ADD_SOURCE_GROUP)
 
+# Use system FLANN (Not 3rd party)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LZ4 REQUIRED liblz4)
+
+find_package(FLANN 1.9.1 REQUIRED)
+include_directories(${FLANN_INCLUDE_DIRS})
+
+
 # 3rd-party projects that are added with external_project_add will be installed
 # with this prefix. E.g.
 # - 3RDPARTY_INSTALL_PREFIX: Open3D/build/3rdparty_install
@@ -237,6 +245,7 @@ set(3RDPARTY_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/3rdparty_install")
 # directory by putting it in front, to avoid mistakenly including other header
 # files of the same name.
 include_directories(${3RDPARTY_INSTALL_PREFIX}/include)
+
 
 # 3rd-party libraries using the ExternalProject_Add approach will install
 # libs in Open3D/build/3rdparty_install/lib.

@@ -8,6 +8,8 @@ macro(TOOL TOOL_NAME)
         target_link_libraries(${TOOL_NAME} ${DEPENDENCY})
     endforeach()
 
+    target_link_libraries(${TOOL_NAME} lz4)
+
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
     ShowAndAbortOnWarning(${TOOL_NAME})
 endmacro(TOOL)

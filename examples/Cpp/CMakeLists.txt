@@ -7,6 +7,8 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
         target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
     endforeach()
 
+    target_link_libraries(${EXAMPLE_CPP_NAME} lz4)
+
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/Cpp/"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")

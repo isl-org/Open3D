@@ -6,6 +6,6 @@ include_directories(".")
 add_executable(ManuallyAlignPointCloud ${HEADER_FILES} ${SOURCE_FILES})
 ShowAndAbortOnWarning(ManuallyAlignPointCloud)
 
-target_link_libraries(ManuallyAlignPointCloud ${CMAKE_PROJECT_NAME})
+target_link_libraries(ManuallyAlignPointCloud ${CMAKE_PROJECT_NAME} lz4)
 
 set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
