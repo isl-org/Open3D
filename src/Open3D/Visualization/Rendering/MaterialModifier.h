@@ -34,26 +34,6 @@ namespace open3d {
 namespace visualization {
 
 struct TextureSamplerParameters {
-    enum PrebuiltSampler {
-        /* filterMag = MagFilter::Nearest
-         * filterMin = MinFilter::Nearest
-         * wrapU = WrapMode::ClampToEdge
-         * wrapV = WrapMode::ClampToEdge
-         * wrapW = WrapMode::ClampToEdge
-         * anisotropy = 0
-         */
-        Simple,
-
-        /* filterMag = MagFilter::Linear
-         * filterMin = MinFilter::Linear
-         * wrapU = WrapMode::ClampToEdge
-         * wrapV = WrapMode::ClampToEdge
-         * wrapW = WrapMode::ClampToEdge
-         * anisotropy = 4
-         */
-        Pretty
-    };
-
     enum class MinFilter : uint8_t {
         Nearest = 0,  //!< No filtering. Nearest neighbor is used.
         Linear =
@@ -77,7 +57,23 @@ struct TextureSamplerParameters {
         MirroredRepeat,  //!< mirrored-repeat. The texture infinitely repeats and mirrors in the wrap direction.
     };
 
-    static TextureSamplerParameters MakePrebuilt(PrebuiltSampler type);
+    /* filterMag = MagFilter::Nearest
+         * filterMin = MinFilter::Nearest
+         * wrapU = WrapMode::ClampToEdge
+         * wrapV = WrapMode::ClampToEdge
+         * wrapW = WrapMode::ClampToEdge
+         * anisotropy = 0
+         */
+    static TextureSamplerParameters Simple();
+
+    /* filterMag = MagFilter::Linear
+         * filterMin = MinFilter::Linear
+         * wrapU = WrapMode::ClampToEdge
+         * wrapV = WrapMode::ClampToEdge
+         * wrapW = WrapMode::ClampToEdge
+         * anisotropy = 4
+         */
+    static TextureSamplerParameters Pretty();
 
     TextureSamplerParameters() = default;
 

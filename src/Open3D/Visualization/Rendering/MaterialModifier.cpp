@@ -29,19 +29,16 @@
 namespace open3d {
 namespace visualization {
 
-TextureSamplerParameters TextureSamplerParameters::MakePrebuilt(
-        PrebuiltSampler type) {
+TextureSamplerParameters TextureSamplerParameters::Simple() {
+    return TextureSamplerParameters();
+}
+
+TextureSamplerParameters TextureSamplerParameters::Pretty() {
     TextureSamplerParameters parameters;
 
-    switch (type) {
-        case PrebuiltSampler::Simple:
-            break;
-        case PrebuiltSampler::Pretty:
-            parameters.filterMin = TextureSamplerParameters::MinFilter::Linear;
-            parameters.filterMag = TextureSamplerParameters::MagFilter::Linear;
-            parameters.SetAnisotropy(4);
-            break;
-    }
+    parameters.filterMin = TextureSamplerParameters::MinFilter::Linear;
+    parameters.filterMag = TextureSamplerParameters::MagFilter::Linear;
+    parameters.SetAnisotropy(4);
 
     return parameters;
 }

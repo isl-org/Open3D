@@ -26,6 +26,7 @@
 
 #include "FilamentGeometryBuffersBuilder.h"
 
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
@@ -36,12 +37,12 @@
 #include <filament/TransformManager.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
+#include <map>
+
 using namespace filament;
 
 namespace open3d {
 namespace visualization {
-
-static void freeBufferDescriptor(void* buffer, size_t, void*) { free(buffer); }
 
 std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(const geometry::Geometry3D& geometry) {
     using GT = geometry::Geometry::GeometryType;
@@ -61,296 +62,77 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(const
     return nullptr;
 }
 
-TriangleMeshBuffersBuilder::TriangleMeshBuffersBuilder(const geometry::TriangleMesh& geometry)
-    : geometry_(geometry) {
-    const size_t nVertices = geometry_.vertices_.size();
-
-    // Copying vertex coordinates
-    verticesBytesCount_ = nVertices * 3 * sizeof(float);
-    auto* float3VCoordtmp = (Eigen::Vector3f*)malloc(verticesBytesCount_);
-    for (size_t i = 0; i < nVertices; ++i) {
-        float3VCoordtmp[i] = geometry_.vertices_[i].cast<float>();
-    }
-
-    vertices_ = (math::float3*)float3VCoordtmp;
-
-    indicesBytesCount_ = geometry_.triangles_.size() * 3 * GetIndexStride();
-    auto* uint3Indices = (Eigen::Vector3i*)malloc(indicesBytesCount_);
-    for (size_t i = 0; i < geometry_.triangles_.size(); ++i) {
-        uint3Indices[i] = {int(3*i), int(3*i + 1), int(3*i + 2)};
-    }
-
-    indices_ = (std::uint16_t*)uint3Indices;
-}
-
-TriangleMeshBuffersBuilder::~TriangleMeshBuffersBuilder() {
-    if (freeVertices_) {
-        free(vertices_);
-        vertices_ = nullptr;
-    }
-
-    if (freeIndices_) {
-        free(indices_);
-        indices_ = nullptr;
-    }
-}
-
-RenderableManager::PrimitiveType TriangleMeshBuffersBuilder::GetPrimitiveType() const {
-    return RenderableManager::PrimitiveType::TRIANGLES;
-}
-
-VertexBufferHandle TriangleMeshBuffersBuilder::ConstructVertexBuffer() {
-    auto& engine = EngineInstance::GetInstance();
-    auto& resourceManager = EngineInstance::GetResourceManager();
-
-    const size_t nVertices = geometry_.vertices_.size();
-
-    // Converting vertex normals to float base
-    std::vector<Eigen::Vector3f> normals;
-    normals.resize(nVertices);
-    for (size_t i = 0; i < nVertices; ++i) {
-        normals[i] = geometry_.vertex_normals_[i].cast<float>();
-    }
-
-    // Converting normals to Filament type - quaternions
-    const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4VTangents = (math::quatf*)malloc(tangentsBytesCount);
-    auto orientation = filament::geometry::SurfaceOrientation::Builder()
-                               .vertexCount(nVertices)
-                               .normals((math::float3*)normals.data())
-                               .build();
-    orientation.getQuats(float4VTangents, nVertices);
-
-    // TODO: Possibly we should have two different structs
-    // and two generators for textured and non textured meshes
-    struct BufferStruct {
-        math::float3 position = {0.f, 0.f, 0.f};
-        math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
-        math::float4 color = {1.f, 1.f, 1.f, 1.f};
-        math::float2 uv = {0.f, 0.f};
-
-        void SetPosition(const Eigen::Vector3d& pos) {
-            auto floatPos = pos.cast<float>();
-            position.x = floatPos(0);
-            position.y = floatPos(1);
-            position.z = floatPos(2);
-        }
-        void SetColor(const Eigen::Vector3d& c) {
-            auto floatColor = c.cast<float>();
-            color.x = floatColor(0);
-            color.y = floatColor(1);
-            color.z = floatColor(2);
-            color.w = 1.f;
-        }
-        void SetUV(const Eigen::Vector2d& UV) {
-            auto floatUV = UV.cast<float>();
-            uv.x = floatUV(0);
-            uv.y = floatUV(1);
-        }
-
-#define SIZEOF_MEMBER(member) sizeof(decltype(BufferStruct::member))
-        static size_t GetPositionOffset() { return 0; }
-        static size_t GetTangentOffset() { return SIZEOF_MEMBER(position); }
-        static size_t GetColorOffset() {
-            return GetTangentOffset() + SIZEOF_MEMBER(tangent);
-        }
-        static size_t GetUVOffset() {
-            return GetColorOffset() + SIZEOF_MEMBER(color);
-        }
-
-        static size_t GetStride() { return sizeof(BufferStruct); }
-#undef SIZEOF_MEMBER
-    };
-
-    const size_t nTriangles = geometry_.triangles_.size();
-    const bool haveColors = geometry_.HasVertexColors();
-    const bool haveUVs = geometry_.HasTriangleUvs();
-
-    const auto stride = BufferStruct::GetStride();
-    auto builder = VertexBuffer::Builder()
-                           .bufferCount(1)
-                           .vertexCount(nTriangles * 3)
-                           .attribute(VertexAttribute::POSITION, 0,
-                                      VertexBuffer::AttributeType::FLOAT3,
-                                      BufferStruct::GetPositionOffset(), stride)
-                           .normalized(VertexAttribute::TANGENTS)
-                           .attribute(VertexAttribute::TANGENTS, 0,
-                                      VertexBuffer::AttributeType::FLOAT4,
-                                      BufferStruct::GetTangentOffset(), stride);
-
-    if (geometry_.HasVertexColors()) {
-        builder.normalized(VertexAttribute::COLOR)
-                .attribute(VertexAttribute::COLOR, 0,
-                           VertexBuffer::AttributeType::FLOAT4,
-                           BufferStruct::GetColorOffset(), stride);
-    }
-
-    if (geometry_.HasTriangleUvs()) {
-        builder.attribute(VertexAttribute::UV0, 0,
-                          VertexBuffer::AttributeType::FLOAT2,
-                          BufferStruct::GetUVOffset(), stride);
-    }
-
-    VertexBuffer* vbuf = builder.build(engine);
-
-    const size_t bufferBytesCount = nTriangles * 3 * sizeof(BufferStruct);
-    auto* buffer = (BufferStruct*)malloc(bufferBytesCount);
-    size_t bufferIndex = 0;
-
-    for (const auto& triangle : geometry_.triangles_) {
-        for (size_t i = 0; i < 3; ++i) {
-            const auto index = triangle(i);
-            BufferStruct& element = buffer[bufferIndex];
-
-            element.SetPosition(geometry_.vertices_[index]);
-            element.tangent = float4VTangents[index];
-
-            if (haveColors) {
-                element.SetColor(geometry_.vertex_colors_[index]);
-            }
-
-            if (haveUVs) {
-                element.SetUV(geometry_.triangle_uvs_[bufferIndex]);
-            }
-
-            ++bufferIndex;
-        }
-    }
-
-    free(float4VTangents);
-
-    VertexBufferHandle handle;
-    if (vbuf) {
-        handle = resourceManager.AddVertexBuffer(vbuf);
-    } else {
-        free(buffer);
-        buffer = nullptr;
-
-        return handle;
-    }
-
-    VertexBuffer::BufferDescriptor bufferDescriptor(buffer, bufferBytesCount);
-    bufferDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine, 0, std::move(bufferDescriptor));
-
-    return handle;
-}
-
-IndexBufferHandle TriangleMeshBuffersBuilder::ConstructIndexBuffer() {
-    auto& engine = EngineInstance::GetInstance();
-    auto& resourceManager = EngineInstance::GetResourceManager();
-
-    auto handle = resourceManager.CreateIndexBuffer(
-            geometry_.triangles_.size() * 3, GetIndexStride());
-
-    auto ibuf = resourceManager.GetIndexBuffer(handle).lock();
-
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(indices_, indicesBytesCount_);
-    indicesDescriptor.setCallback(freeBufferDescriptor);
-    ibuf->setBuffer(engine, std::move(indicesDescriptor));
-    freeIndices_ = false;
-
-    return handle;
-}
-
-filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
-    const size_t nVertices = geometry_.vertices_.size();
-
-    Box aabb;
-    if (GetIndexStride() == sizeof(std::uint16_t)) {
-        aabb = RenderableManager::computeAABB(vertices_,
-                                              indices_,
-                                              nVertices);
-    } else {
-        aabb = RenderableManager::computeAABB(vertices_,
-                                              (std::uint32_t*)indices_,
-                                              nVertices);
-    }
-
-    return aabb;
-}
-
-size_t TriangleMeshBuffersBuilder::GetIndexStride() const {
-    return sizeof(geometry_.triangles_[0][0]);
+void GeometryBuffersBuilder::DeallocateBuffer(void* buffer, size_t size, void* userPtr) {
+    free(buffer);
 }
 
 // ===
 
-PointCloudBuffersBuilder::PointCloudBuffersBuilder(const geometry::PointCloud& geometry)
-    : geometry_(geometry) {
-    const size_t nVertices = geometry_.points_.size();
+namespace {
+struct ColoredVertex {
+    math::float3 position = {0.f, 0.f, 0.f};
+    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
+    math::float4 color = {1.f, 1.f, 1.f, 1.f};
 
-    // Copying vertex coordinates
-    verticesBytesCount_ = nVertices * 3 * sizeof(float);
-    auto* float3VCoordtmp = (Eigen::Vector3f*)malloc(verticesBytesCount_);
-    for (size_t i = 0; i < nVertices; ++i) {
-        float3VCoordtmp[i] = geometry_.points_[i].cast<float>();
+    static size_t GetPositionOffset() { return offsetof(ColoredVertex, position); }
+    static size_t GetTangentOffset() { return offsetof(ColoredVertex, tangent); }
+    static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
+
+    void SetVertexPosition(const Eigen::Vector3d& pos) {
+        auto floatPos = pos.cast<float>();
+        position.x = floatPos(0);
+        position.y = floatPos(1);
+        position.z = floatPos(2);
     }
 
-    vertices_ = (math::float3*)float3VCoordtmp;
-
-    // Creating indices data
-    indicesBytesCount_ = nVertices*sizeof(IndexType);
-    auto *uintIndices = (IndexType*)malloc(indicesBytesCount_);
-    for (IndexType i = 0; i < nVertices; ++i) {
-        uintIndices[i] = i;
+    void SetVertexColor(const Eigen::Vector3d& c) {
+        auto floatColor = c.cast<float>();
+        color.x = floatColor(0);
+        color.y = floatColor(1);
+        color.z = floatColor(2);
     }
-
-    indices_ = uintIndices;
+};
 }
 
-PointCloudBuffersBuilder::~PointCloudBuffersBuilder() {
-    if (freeVertices_) {
-        free(vertices_);
-        vertices_ = nullptr;
-    }
-
-    if (freeIndices_) {
-        free(indices_);
-        indices_ = nullptr;
-    }
+PointCloudBuffersBuilder::PointCloudBuffersBuilder(const geometry::PointCloud& geometry)
+    : geometry_(geometry) {
 }
 
 RenderableManager::PrimitiveType PointCloudBuffersBuilder::GetPrimitiveType() const {
     return RenderableManager::PrimitiveType::POINTS;
 }
 
-VertexBufferHandle PointCloudBuffersBuilder::ConstructVertexBuffer() {
+std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resourceManager = EngineInstance::GetResourceManager();
 
     const size_t nVertices = geometry_.points_.size();
 
-    VertexBuffer* vbuf =
-            VertexBuffer::Builder()
-                    .bufferCount(3)
-                    .vertexCount(nVertices)
-                    .normalized(VertexAttribute::TANGENTS)
-                    .normalized(VertexAttribute::COLOR)
-                    .attribute(VertexAttribute::POSITION, 0,
-                               VertexBuffer::AttributeType::FLOAT3, 0)
-                    .attribute(VertexAttribute::TANGENTS, 1,
-                               VertexBuffer::AttributeType::FLOAT4, 0)
-                    .attribute(VertexAttribute::COLOR, 2,
-                               VertexBuffer::AttributeType::FLOAT4, 0)
-                    .build(engine);
+    VertexBuffer* vbuf = VertexBuffer::Builder()
+                                 .bufferCount(1)
+                                 .vertexCount(nVertices)
+                                 .attribute(VertexAttribute::POSITION, 0,
+                                            VertexBuffer::AttributeType::FLOAT3,
+                                            ColoredVertex::GetPositionOffset(),
+                                            sizeof(ColoredVertex))
+                                 .normalized(VertexAttribute::TANGENTS)
+                                 .attribute(VertexAttribute::TANGENTS, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetTangentOffset(),
+                                            sizeof(ColoredVertex))
+                                 .normalized(VertexAttribute::COLOR)
+                                 .attribute(VertexAttribute::COLOR, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetColorOffset(),
+                                            sizeof(ColoredVertex))
+                                 .build(engine);
 
-    VertexBufferHandle handle;
+    VertexBufferHandle vbHandle;
     if (vbuf) {
-        handle = resourceManager.AddVertexBuffer(vbuf);
+        vbHandle = resourceManager.AddVertexBuffer(vbuf);
     } else {
-        return handle;
+        return {};
     }
-
-    // Moving copied vertex coordinates to VertexBuffer
-    // malloc'ed memory will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor coordsDescriptor(vertices_,
-                                                    verticesBytesCount_);
-    coordsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine, 0, std::move(coordsDescriptor));
-    freeVertices_ = false;
 
     // Converting vertex normals to float base
     std::vector<Eigen::Vector3f> normals;
@@ -361,68 +143,61 @@ VertexBufferHandle PointCloudBuffersBuilder::ConstructVertexBuffer() {
 
     // Converting normals to Filament type - quaternions
     size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4VTangents = (math::quatf*)malloc(tangentsBytesCount);
+    auto float4VTangents = static_cast<math::quatf*>(malloc(tangentsBytesCount));
     auto orientation = filament::geometry::SurfaceOrientation::Builder()
-                               .vertexCount(nVertices)
-                               .normals((math::float3*)normals.data())
-                               .build();
+            .vertexCount(nVertices)
+            .normals(reinterpret_cast<math::float3*>(normals.data()))
+            .build();
     orientation.getQuats(float4VTangents, nVertices);
 
-    // Moving allocated tangents to VertexBuffer
-    // they will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor tangentsDescriptor(float4VTangents,
-                                                      tangentsBytesCount);
-    tangentsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine, 1, std::move(tangentsDescriptor));
-
-    // Copying colors
-    size_t colorsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4Colors = (math::float4*)malloc(colorsBytesCount);
-    for (size_t i = 0; i < nVertices; ++i) {
-        auto c = geometry_.colors_[i];
-        float4Colors[i].r = c.x();
-        float4Colors[i].g = c.y();
-        float4Colors[i].b = c.z();
-        float4Colors[i].a = 1.f;
+    size_t verticesBytesCount = nVertices * sizeof(ColoredVertex);
+    auto* vertices = static_cast<ColoredVertex*>(malloc(verticesBytesCount));
+    for (size_t i = 0; i < geometry_.points_.size(); ++i) {
+        ColoredVertex& element = vertices[i];
+        element.SetVertexPosition(geometry_.points_[i]);
+        element.tangent = float4VTangents[i];
+        element.SetVertexColor(geometry_.colors_[i]);
     }
 
-    // Moving colors to VertexBuffer
-    // malloc'ed memory will be freed later with freeBufferDescriptor
-    VertexBuffer::BufferDescriptor colorsDescriptor(float4Colors,
-                                                    colorsBytesCount);
-    colorsDescriptor.setCallback(freeBufferDescriptor);
-    vbuf->setBufferAt(engine, 2, std::move(colorsDescriptor));
+    free(float4VTangents);
 
-    return handle;
-}
+    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vertices, verticesBytesCount);
+    vertexbufferDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
 
-IndexBufferHandle PointCloudBuffersBuilder::ConstructIndexBuffer() {
-    auto& engine = EngineInstance::GetInstance();
-    auto& resourceManager = EngineInstance::GetResourceManager();
-
-    const size_t nVertices = geometry_.points_.size();
-
-    auto handle = resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
-    if (!handle) {
-        return handle;
+    size_t indicesBytesCount = nVertices*sizeof(IndexType);
+    auto *uintIndices = static_cast<IndexType*>(malloc(indicesBytesCount));
+    for (std::uint32_t i = 0; i < nVertices; ++i) {
+        uintIndices[i] = i;
     }
 
-    auto ibuf = resourceManager.GetIndexBuffer(handle).lock();
+    auto ibHandle = resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
+    if (!ibHandle) {
+        free(uintIndices);
+        return {};
+    }
+
+    auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
 
     // Moving copied indices to IndexBuffer
     // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(indices_, indicesBytesCount_);
-    indicesDescriptor.setCallback(freeBufferDescriptor);
+    IndexBuffer::BufferDescriptor indicesDescriptor(uintIndices, indicesBytesCount);
+    indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     ibuf->setBuffer(engine, std::move(indicesDescriptor));
-    freeIndices_ = false;
 
-    return handle;
+    return std::make_tuple(vbHandle, ibHandle);
 }
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
-    const size_t nVertices = geometry_.points_.size();
+    auto geometryAABB = geometry_.GetAxisAlignedBoundingBox();
 
-    return RenderableManager::computeAABB(vertices_, (IndexType*)indices_, nVertices);
+    const filament::math::float3 min(geometryAABB.min_bound_.x(), geometryAABB.min_bound_.y() ,geometryAABB.min_bound_.z());
+    const filament::math::float3 max(geometryAABB.max_bound_.x(), geometryAABB.max_bound_.y() ,geometryAABB.max_bound_.z());
+
+    filament::Box aabb;
+    aabb.set(min, max);
+
+    return aabb;
 }
 
 }

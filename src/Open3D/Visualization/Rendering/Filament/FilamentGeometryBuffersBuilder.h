@@ -29,6 +29,7 @@
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 #include <memory>
+#include <tuple>
 
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>
@@ -45,65 +46,44 @@ namespace visualization {
 
 class GeometryBuffersBuilder {
 public:
+    using IndexType = std::uint32_t;
+
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(const geometry::Geometry3D& geometry);
     virtual ~GeometryBuffersBuilder() {}
 
     virtual filament::RenderableManager::PrimitiveType GetPrimitiveType() const = 0;
 
-    virtual VertexBufferHandle ConstructVertexBuffer() = 0;
-    virtual IndexBufferHandle ConstructIndexBuffer() = 0;
+    virtual std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() = 0;
     virtual filament::Box ComputeAABB() = 0;
+
+protected:
+    static void DeallocateBuffer(void* buffer, size_t size, void* userPtr);
 };
 
 class TriangleMeshBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit TriangleMeshBuffersBuilder(const geometry::TriangleMesh& geometry);
-    ~TriangleMeshBuffersBuilder() override;
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
 
-    VertexBufferHandle ConstructVertexBuffer() override;
-    IndexBufferHandle ConstructIndexBuffer() override;
+    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() override;
     filament::Box ComputeAABB() override;
 
 private:
-    // FIXME: Get rid of it, as we should not rely on Eigen types here
-    size_t GetIndexStride() const;
-
     const geometry::TriangleMesh& geometry_;
-
-    filament::math::float3* vertices_ = nullptr;
-    size_t verticesBytesCount_ = 0;
-    bool freeVertices_ = true;
-
-    std::uint16_t* indices_ = nullptr;
-    size_t indicesBytesCount_ = 0;
-    bool freeIndices_ = true;
 };
 
 class PointCloudBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit PointCloudBuffersBuilder(const geometry::PointCloud& geometry);
-    ~PointCloudBuffersBuilder() override;
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
 
-    VertexBufferHandle ConstructVertexBuffer() override;
-    IndexBufferHandle ConstructIndexBuffer() override;
+    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() override;
     filament::Box ComputeAABB() override;
 
 private:
-    using IndexType = std::uint32_t;
-
     const geometry::PointCloud& geometry_;
-
-    filament::math::float3* vertices_ = nullptr;
-    size_t verticesBytesCount_ = 0;
-    bool freeVertices_ = true;
-
-    IndexType* indices_ = nullptr;
-    size_t indicesBytesCount_ = 0;
-    bool freeIndices_ = true;
 };
 
 }
