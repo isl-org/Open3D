@@ -12,7 +12,8 @@
     <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python API</a> |
     <a href="http://www.open3d.org/docs/release/cpp_api/index.html">C++ API</a> |
     <a href="http://www.open3d.org/docs/release/contribute.html">Contribute</a> |
-    <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a>
+    <a href="https://www.youtube.com/watch?v=I3UjXlA4IsU">Demo</a> |
+    <a href="https://forum.open3d.org">Forum</a>
 </h4>
 
 Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.

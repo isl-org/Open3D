@@ -236,7 +236,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             result = this_result;
         }
     }
-    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}", result.fitness_,
+    utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
                       result.inlier_rmse_);
     return result;
 }
@@ -368,7 +368,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     }
 #endif
     utility::LogDebug("total_validation : {:d}", total_validation);
-    utility::LogDebug("RANSAC: Fitness {:.4f}, RMSE {:.4f}", result.fitness_,
+    utility::LogDebug("RANSAC: Fitness {:e}, RMSE {:e}", result.fitness_,
                       result.inlier_rmse_);
     return result;
 }
