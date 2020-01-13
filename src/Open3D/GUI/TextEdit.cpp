@@ -92,7 +92,7 @@ Size TextEdit::CalcPreferredSize(const Theme& theme) const {
     return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
 }
 
-Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
+Widget::DrawResult TextEdit::Draw(const DrawContext& context, const float) {
     auto &frame = GetFrame();
     ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
                                frame.y - context.uiOffsetY));

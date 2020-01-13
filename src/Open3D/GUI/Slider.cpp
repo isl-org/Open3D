@@ -103,7 +103,7 @@ Size Slider::CalcPreferredSize(const Theme& theme) const {
     return Size(Widget::DIM_GROW, std::ceil(height));
 }
 
-Widget::DrawResult Slider::Draw(const DrawContext& context) {
+Widget::DrawResult Slider::Draw(const DrawContext& context, const float) {
     auto &frame = GetFrame();
     ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
                                frame.y - context.uiOffsetY));

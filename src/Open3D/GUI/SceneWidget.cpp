@@ -26,6 +26,7 @@
 
 #include "SceneWidget.h"
 
+#include "Color.h"
 #include "Events.h"
 
 #include "Open3D/Visualization/Rendering/CameraManipulator.h"
@@ -44,17 +45,16 @@ struct SceneWidget::Impl {
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
 
-SceneWidget::SceneWidget(visualization::Scene& scene)
-    : impl_(new Impl(scene)) {
-    impl_->viewId = scene.AddView(0,0,1,1);
+SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
+    impl_->viewId = scene.AddView(0, 0, 1, 1);
 
     auto view = impl_->scene.GetView(impl_->viewId);
-    impl_->cameraManipulator = std::make_unique<visualization::CameraManipulator>(*view->GetCamera(), 1, 1);
+    impl_->cameraManipulator =
+            std::make_unique<visualization::CameraManipulator>(
+                    *view->GetCamera(), 1, 1);
 }
 
-SceneWidget::~SceneWidget() {
-    impl_->scene.RemoveView(impl_->viewId);
-}
+SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
 
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
@@ -67,20 +67,35 @@ void SceneWidget::SetBackgroundColor(const Color& color) {
     view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
-void SceneWidget::SetDiscardBuffers(const visualization::View::TargetBuffers& buffers) {
+void SceneWidget::SetDiscardBuffers(
+        const visualization::View::TargetBuffers& buffers) {
     auto view = impl_->scene.GetView(impl_->viewId);
     view->SetDiscardBuffers(buffers);
 }
 
-visualization::Scene* SceneWidget::GetScene() const {
-    return &impl_->scene;
-}
+visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene; }
 
 visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {
     return impl_->cameraManipulator.get();
 }
 
-Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
+void SceneWidget::SetSelectedGeometry(const visualization::GeometryHandle& geometry, const bool switchCamera) {
+    if (switchCamera) {
+        auto boundingSphere = impl_->scene.GetEntityBoundingSphere(geometry);
+        SetCameraPOI(boundingSphere.first);
+
+        // TODO: Rotate camera to entity?
+    }
+}
+
+void SceneWidget::SetCameraPOI(const Eigen::Vector3f& location) {
+    cameraControlsState_.poi = location;
+
+    auto cameraman = GetCameraManipulator();
+    cameraControlsState_.orbitHeight = (cameraman->GetPosition() - location).norm();
+}
+
+Widget::DrawResult SceneWidget::Draw(const DrawContext& context, const float frameDelta) {
     if (impl_->frameChanged) {
         impl_->frameChanged = false;
 
@@ -96,23 +111,77 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         impl_->cameraManipulator->SetViewport(f.width, f.height);
     }
 
+    if (cameraControlsState_.orbiting) {
+        // Maybe poi isn't initialized
+        if (cameraControlsState_.orbitHeight <= 0.1f) {
+            SetCameraPOI({0.f, 0.f, 0.f});
+        }
+
+        auto cameraman = GetCameraManipulator();
+
+        float orbit = cameraControlsState_.orbitHeight +
+                      cameraControlsState_.frameWheelDelta;
+        if (orbit < 0.1f) {
+            orbit = 0.1f;
+        }
+        cameraControlsState_.orbitHeight = orbit;
+
+        cameraman->Orbit(cameraControlsState_.poi,
+                         cameraControlsState_.orbitHeight,
+                         -cameraControlsState_.frameDx * frameDelta,
+                         -cameraControlsState_.frameDy * frameDelta,
+                         cameraControlsState_.rotationSpeed);
+    }
+
+    cameraControlsState_.Reset();
+
     return Widget::DrawResult::NONE;
 }
 
 void SceneWidget::Mouse(const MouseEvent& e) {
     switch (e.type) {
         case MouseEvent::BUTTON_DOWN:
+            if (e.button.button == MouseButton::LEFT) {
+                cameraControlsState_.orbiting = true;
+                cameraControlsState_.lastMouseX = e.x;
+                cameraControlsState_.lastMouseY = e.y;
+            }
             break;
         case MouseEvent::DRAG:
+            if (cameraControlsState_.orbiting) {
+                float fX = e.x;
+                float fY = e.y;
+
+                cameraControlsState_.frameDx +=
+                        fX - cameraControlsState_.lastMouseX;
+                cameraControlsState_.frameDy +=
+                        fY - cameraControlsState_.lastMouseY;
+
+                cameraControlsState_.lastMouseX = fX;
+                cameraControlsState_.lastMouseY = fY;
+            }
+            break;
+        case MouseEvent::WHEEL:
+            if (cameraControlsState_.orbiting) {
+                cameraControlsState_.frameWheelDelta += e.wheel.dy;
+            }
             break;
         case MouseEvent::BUTTON_UP:
+            if (e.button.button == MouseButton::LEFT) {
+                cameraControlsState_.orbiting = false;
+            }
             break;
         default:
             break;
     }
 }
 
-void SceneWidget::Key(const KeyEvent& e) {
+void SceneWidget::Key(const KeyEvent& e) {}
+
+void SceneWidget::CameraControlsState::Reset() {
+    frameDx = 0.f;
+    frameDy = 0.f;
+    frameWheelDelta = 0.f;
 }
 
 } // gui

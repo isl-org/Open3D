@@ -46,7 +46,7 @@ public:
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
-    DrawResult Draw(const DrawContext& context) override;
+    DrawResult Draw(const DrawContext& context, float frameDelta) override;
 
     std::function<void(const char*)> OnTextChanged;
     std::function<void(const char*)> OnValueChanged;

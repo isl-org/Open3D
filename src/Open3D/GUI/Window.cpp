@@ -373,7 +373,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
             dc.uiOffsetY = 0;
         }
 
-        if (child->Draw(dc) != Widget::DrawResult::NONE) {
+        if (child->Draw(dc, dtSec) != Widget::DrawResult::NONE) {
             needsRedraw = true;
         }
 

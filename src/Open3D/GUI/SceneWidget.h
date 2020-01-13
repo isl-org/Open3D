@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include <Open3D/Visualization/Rendering/View.h>
+#include "Open3D/Visualization/Rendering/View.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
-#include "Renderer.h"
 #include "Widget.h"
 
 namespace open3d {
@@ -58,7 +58,11 @@ public:
     visualization::Scene* GetScene() const;
     visualization::CameraManipulator* GetCameraManipulator() const;
 
-    Widget::DrawResult Draw(const DrawContext& context) override;
+    // switchCamera flag make center of geometry become camera's POI;
+    void SetSelectedGeometry(const visualization::GeometryHandle& geometry, bool switchCamera);
+    void SetCameraPOI(const Eigen::Vector3f& location);
+
+    Widget::DrawResult Draw(const DrawContext& context, float frameDelta) override;
 
     void Mouse(const MouseEvent& e) override;
     void Key(const KeyEvent& e) override;
@@ -66,6 +70,25 @@ public:
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
+
+    struct CameraControlsState {
+        Eigen::Vector3f poi;
+        float orbitHeight = 0.f;
+        float rotationSpeed = M_PI;
+
+        bool orbiting = false;
+
+        // use |mousePos - frameDelta| to get
+        // mouse position at start of frame
+        float lastMouseX = 0.f;
+        float lastMouseY = 0.f;
+
+        float frameDx = 0.f;
+        float frameDy = 0.f;
+        float frameWheelDelta = 0.f;
+
+        void Reset();
+    } cameraControlsState_;
 };
 
 } // gui

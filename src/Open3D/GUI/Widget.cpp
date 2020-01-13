@@ -92,10 +92,10 @@ void Widget::Layout(const Theme& theme) {
     }
 }
 
-Widget::DrawResult Widget::Draw(const DrawContext& context) {
+Widget::DrawResult Widget::Draw(const DrawContext& context, const float frameDelta) {
     DrawResult result = DrawResult::NONE;
     for (auto &child : impl_->children) {
-        auto r = child->Draw(context);
+        auto r = child->Draw(context, frameDelta);
         // The mouse can only be over one item, so there should never
         // be multiple items returning non-NONE.
         if (r != DrawResult::NONE) {
