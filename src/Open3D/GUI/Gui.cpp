@@ -22,6 +22,15 @@
 namespace open3d {
 namespace gui {
 
+Point::Point()
+    : x(0), y(0)
+{}
+
+Point::Point(int x_, int y_)
+    : x(x_), y(y_)
+{}
+
+// ----------------------------------------------------------------------------
 Size::Size()
     : width(0), height(0)
 {}
@@ -53,6 +62,15 @@ int Rect::GetLeft() const {
 
 int Rect::GetRight() const {
     return this->x + this->width;
+}
+
+bool Rect::Contains(int x, int y) const {
+    return (x >= this->x && x <= GetRight() &&
+            y >= this->y && y <= GetBottom());
+}
+
+bool Rect::Contains(const Point& pt) const {
+    return Contains(pt.x, pt.y);
 }
 
 } // gui

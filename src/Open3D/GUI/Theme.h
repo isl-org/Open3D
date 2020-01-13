@@ -41,13 +41,15 @@ struct Theme {
 
     std::string fontPath;
     int fontSize;
-    int defaultLayoutSpacing;
     int defaultMargin;
+    int defaultLayoutSpacing;
     Color textColor;
 
     int borderWidth;
     int borderRadius;
     Color borderColor;
+
+    Color menubarBorderColor;
 
     Color buttonColor;
     Color buttonHoverColor;
@@ -62,6 +64,8 @@ struct Theme {
     Color comboboxBackgroundColor;
     Color comboboxHoverColor;
     Color comboboxArrowBackgroundColor;
+
+    Color sliderGrabColor;
 
     Color textEditBackgroundColor;
 

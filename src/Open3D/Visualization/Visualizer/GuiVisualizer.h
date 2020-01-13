@@ -24,55 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Color.h"
-
-#include <cmath>
+#include "Open3D/GUI/Window.h"
 
 namespace open3d {
+
+namespace geometry {
+class Geometry;
+}  // namespace geometry
+
 namespace gui {
-
-Color::Color()
-    : rgba_{ 0.0f, 0.0f, 0.0f, 1.0f }
-{
+struct Theme;
 }
 
-Color::Color(float r, float g, float b, float a /*= 1.0*/)
-    : rgba_{ r, g, b, a }
-{
+namespace visualization {
+class GuiVisualizer : public gui::Window {
+    using Super = gui::Window;
+public:
+    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries,
+                  const std::string &title, int width, int height,
+                  int left, int top);
+    virtual ~GuiVisualizer();
+
+    void Layout(const gui::Theme& theme) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 }
-
-bool Color::operator==(const Color& rhs) const {
-    return (this->rgba_[0] == rhs.rgba_[0] &&
-            this->rgba_[1] == rhs.rgba_[1] &&
-            this->rgba_[2] == rhs.rgba_[2] &&
-            this->rgba_[3] == rhs.rgba_[3]);
 }
-
-bool Color::operator!=(const Color& rhs) const {
-    return !this->operator==(rhs);
-}
-
-float Color::GetRed() const { return rgba_[0]; }
-float Color::GetGreen() const { return rgba_[1]; }
-float Color::GetBlue() const { return rgba_[2]; }
-float Color::GetAlpha() const { return rgba_[3]; }
-
-const float* Color::GetPointer() const { return rgba_; }
-
-Color Color::Lightened(float amount) {
-    return Color((1.0f - amount) * GetRed() + amount * 1.0f,
-                 (1.0f - amount) * GetGreen() + amount * 1.0f,
-                 (1.0f - amount) * GetBlue() + amount * 1.0f,
-                 GetAlpha());
-}
-
-unsigned int Color::ToABGR32() const {
-    unsigned int a = (unsigned int)std::round(GetAlpha() * 255.0f);
-    unsigned int b = (unsigned int)std::round(GetBlue() * 255.0f);
-    unsigned int g = (unsigned int)std::round(GetGreen() * 255.0f);
-    unsigned int r = (unsigned int)std::round(GetRed() * 255.0f);
-    return ((a << 24) | (b << 16) | (g << 8) | r);
-}
-
-} // gui
-} // open3d

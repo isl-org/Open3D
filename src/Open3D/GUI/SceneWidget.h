@@ -60,6 +60,9 @@ public:
 
     Widget::DrawResult Draw(const DrawContext& context) override;
 
+    void Mouse(const MouseEvent& e) override;
+    void Key(const KeyEvent& e) override;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

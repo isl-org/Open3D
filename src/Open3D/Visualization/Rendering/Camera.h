@@ -37,6 +37,8 @@ public:
     enum class Projection { Perspective, Ortho };
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
+    virtual ~Camera() = default;
+
     virtual void SetProjection(double fov,
                                double aspect,
                                double near,

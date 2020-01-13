@@ -39,6 +39,7 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <SDL.h>
 #include <filament/Engine.h>
 
@@ -79,14 +80,23 @@ struct Window::Impl
     } imgui;
     std::shared_ptr<Menu> menubar;
     std::vector<std::shared_ptr<Widget>> children;
+    Widget *focusWidget = nullptr; // only used if ImGUI isn't taking keystrokes
     bool needsLayout = true;
     int nSkippedFrames = 0;
 };
 
 Window::Window(const std::string& title, int width, int height)
+: Window(title, -1, -1, width, height) {
+}
+
+Window::Window(const std::string& title, int x, int y, int width, int height)
 : impl_(new Window::Impl()) {
-    const int x = SDL_WINDOWPOS_CENTERED;
-    const int y = SDL_WINDOWPOS_CENTERED;
+    if (x < 0) {
+        x = SDL_WINDOWPOS_CENTERED;
+    }
+    if (y < 0) {
+        y = SDL_WINDOWPOS_CENTERED;
+    }
     uint32_t flags = SDL_WINDOW_SHOWN |  // so SDL's context gets created
                      SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
     impl_->window = SDL_CreateWindow(title.c_str(), x, y, width, height, flags);
@@ -97,8 +107,11 @@ Window::Window(const std::string& title, int width, int height)
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
     // reloading the whole thing (expensive).
+    float scaling = GetScaling();
     impl_->theme = Application::GetInstance().GetTheme();
-    impl_->theme.fontSize *= GetScaling();
+    impl_->theme.fontSize *= scaling;
+    impl_->theme.defaultMargin *= scaling;
+    impl_->theme.defaultLayoutSpacing *= scaling;
 
     auto& engineInstance = visualization::EngineInstance::GetInstance();
     auto& resourceManager = visualization::EngineInstance::GetResourceManager();
@@ -128,12 +141,15 @@ Window::Window(const std::string& title, int width, int height)
     style.Colors[ImGuiCol_FrameBg] = colorToImgui(theme.comboboxBackgroundColor);
     style.Colors[ImGuiCol_FrameBgHovered] = colorToImgui(theme.comboboxHoverColor);
     style.Colors[ImGuiCol_FrameBgActive] = style.Colors[ImGuiCol_FrameBgHovered];
+    style.Colors[ImGuiCol_SliderGrab] = colorToImgui(theme.sliderGrabColor);
+    style.Colors[ImGuiCol_SliderGrabActive] = colorToImgui(theme.sliderGrabColor);
     style.Colors[ImGuiCol_Tab] = colorToImgui(theme.tabInactiveColor);
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
 
-    // If the given font path is invalid, ImGui will silently fall back to proggy, which is a
-    // tiny "pixel art" texture that is compiled into the library.
+    // If the given font path is invalid, ImGui will silently fall back to
+    // proggy, which is a tiny "pixel art" texture that is compiled into the
+    // library.
     if (!theme.fontPath.empty()) {
         ImGuiIO &io = ImGui::GetIO();
         impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(theme.fontPath.c_str(), theme.fontSize);
@@ -232,6 +248,12 @@ float Window::GetScaling() const {
     return (float(wPx) / float(wVpx));
 }
 
+Point Window::GlobalToWindowCoord(int globalX, int globalY) {
+    int wx, wy;
+    SDL_GetWindowPosition(impl_->window, &wx, &wy);
+    return Point(globalX - wx, globalY - wy);
+}
+
 bool Window::IsVisible() const {
     return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_SHOWN);
 }
@@ -290,18 +312,17 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     io.DeltaTime = dtSec;
 
     // Set mouse information
-    int mx, my, wx, wy;
+    int mx, my;
     Uint32 buttons = SDL_GetGlobalMouseState(&mx, &my);
-    SDL_GetWindowPosition(impl_->window, &wx, &wy);
-    mx -= wx;
-    my -= wy;
+    auto mousePos = GlobalToWindowCoord(mx, my);
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     io.MouseDown[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
     io.MouseDown[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
     io.MouseDown[2] = (buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
     if ((SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS) != 0) {
         auto scaling = GetScaling();
-        io.MousePos = ImVec2((float)mx * scaling, (float)my * scaling);
+        io.MousePos = ImVec2((float)mousePos.x * scaling,
+                             (float)mousePos.y * scaling);
     }
 
     // Set key information
@@ -335,22 +356,32 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     int winIdx = 0;
     for (auto &child : this->impl_->children) {
         auto frame = child->GetFrame();
+        bool bgColorNotDefault = !child->IsDefaultBackgroundColor();
         auto isContainer = !child->GetChildren().empty();
         if (isContainer) {
             dc.uiOffsetX = frame.x;
             dc.uiOffsetY = frame.y;
             ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
             ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
+            if (bgColorNotDefault) {
+                auto &bgColor = child->GetBackgroundColor();
+                ImGui::PushStyleColor(ImGuiCol_WindowBg, util::colorToImgui(bgColor));
+            }
             ImGui::Begin(winNames[winIdx++], nullptr, flags);
         } else {
             dc.uiOffsetX = 0;
             dc.uiOffsetY = 0;
         }
+
         if (child->Draw(dc) != Widget::DrawResult::NONE) {
             needsRedraw = true;
         }
+
         if (isContainer) {
             ImGui::End();
+            if (bgColorNotDefault) {
+                ImGui::PopStyleColor();
+            }
         }
     }
 
@@ -417,25 +448,44 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.y = 1.0f;
 }
 
-void Window::OnMouseMove(const MouseMoveEvent& e) {
+void Window::OnMouseEvent(const MouseEvent &e) {
     ImGui::SetCurrentContext(impl_->imgui.context);
+    switch (e.type) {
+        case MouseEvent::MOVE:
+        case MouseEvent::BUTTON_DOWN:
+        case MouseEvent::DRAG:
+        case MouseEvent::BUTTON_UP:
+            break;
+        case MouseEvent::WHEEL: {
+            ImGuiIO& io = ImGui::GetIO();
+            io.MouseWheelH += (e.wheel.dx > 0 ? 1 : -1);
+            io.MouseWheel  += (e.wheel.dy > 0 ? 1 : -1);
+            break;
+        }
+    }
+    // Iterate backwards so that we send mouse events from the top down.
+    for (auto it = impl_->children.rbegin();
+         it != impl_->children.rend();  ++it) {
+        if ((*it)->GetFrame().Contains(e.x, e.y)) {
+            if (e.type == MouseEvent::BUTTON_DOWN) {
+                impl_->focusWidget = it->get();
+            }
+            (*it)->Mouse(e);
+            break;
+        }
+    }
 }
 
-void Window::OnMouseButton(const MouseButtonEvent& e) {
-    ImGui::SetCurrentContext(impl_->imgui.context);
-}
-
-void Window::OnMouseWheel(const MouseWheelEvent& e) {
-    ImGui::SetCurrentContext(impl_->imgui.context);
-    ImGuiIO& io = ImGui::GetIO();
-    io.MouseWheelH += (e.x > 0 ? 1 : -1);
-    io.MouseWheel  += (e.y > 0 ? 1 : -1);
-}
-
-void Window::OnKey(const KeyEvent& e) {
+void Window::OnKeyEvent(const KeyEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
         io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
+    }
+
+    // If an ImGUI widget is not getting keystrokes, we can send them to
+    // non-ImGUI widgets
+    if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focusWidget) {
+        impl_->focusWidget->Key(e);
     }
 }
 

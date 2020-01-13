@@ -26,6 +26,8 @@
 
 #include "SceneWidget.h"
 
+#include "Events.h"
+
 #include "Open3D/Visualization/Rendering/CameraManipulator.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 #include "Open3D/Visualization/Rendering/View.h"
@@ -95,6 +97,22 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     }
 
     return Widget::DrawResult::NONE;
+}
+
+void SceneWidget::Mouse(const MouseEvent& e) {
+    switch (e.type) {
+        case MouseEvent::BUTTON_DOWN:
+            break;
+        case MouseEvent::DRAG:
+            break;
+        case MouseEvent::BUTTON_UP:
+            break;
+        default:
+            break;
+    }
+}
+
+void SceneWidget::Key(const KeyEvent& e) {
 }
 
 } // gui

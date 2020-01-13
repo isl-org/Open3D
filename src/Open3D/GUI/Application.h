@@ -42,7 +42,12 @@ public:
 
     virtual ~Application();
 
+    // Initializes the application, and in particular, finds the path for
+    // the resources. If you can provide the argc/argv arguments it is more
+    // reliable.
+    void Initialize();
     void Initialize(int argc, const char *argv[]);
+
     void Run();
 
     void AddWindow(std::shared_ptr<Window> window);
