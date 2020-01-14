@@ -26,6 +26,8 @@
 
 #include "FilamentRenderer.h"
 
+#include "Open3D/Utility/Console.h"
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
@@ -111,7 +113,11 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
         auto wMaterialInstance =
                 resourceManager_.GetMaterialInstance(instanceId);
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                    instanceId);
+                                                     instanceId);
+    } else {
+        utility::LogError(
+                "Failed to create material instance for material handle {}.",
+                id);
     }
 
     return *materialsModifier_;
@@ -124,7 +130,11 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     auto wMaterialInstance = resourceManager_.GetMaterialInstance(id);
     if (!wMaterialInstance.expired()) {
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                    id);
+                                                     id);
+    } else {
+        utility::LogError(
+                "Failed to modify material instance: unknown instance handle {}.",
+                id);
     }
 
     return *materialsModifier_;

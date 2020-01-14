@@ -30,10 +30,13 @@
 #include <cstdint>
 #include <functional>
 
+#include <fmt/format.h>
+
 namespace open3d {
 
 namespace visualization {
 
+// If you add entry here, don't forget to update TypeToString!
 enum class EntityType : std::uint16_t {
     None = 0,
 
@@ -56,6 +59,8 @@ enum class EntityType : std::uint16_t {
 // RenderEntityHandle - handle type for entities inside Renderer
 // Can be used in STL containers as key
 struct REHandle_abstract {
+    static const char* TypeToString(EntityType type);
+
     static const std::uint16_t kBadId = 0;
     const EntityType type = EntityType::None;
 
@@ -152,6 +157,21 @@ public:
     size_t operator()(
             const open3d::visualization::REHandle_abstract& uid) const {
         return uid.Hash();
+    }
+};
+}
+
+namespace fmt {
+using namespace open3d::visualization;
+template <>
+struct formatter<open3d::visualization::REHandle_abstract> {
+    template <typename FormatContext>
+    auto format(const open3d::visualization::REHandle_abstract& uid,
+                FormatContext& ctx) {
+        return format_to(ctx.out(), "[{}, {}, hash: {}]",
+                         open3d::visualization::REHandle_abstract::TypeToString(
+                                 uid.type),
+                         uid.GetId(), uid.Hash());
     }
 };
 }

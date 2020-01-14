@@ -29,6 +29,8 @@
 #include "FilamentEngine.h"
 #include "FilamentResourceManager.h"
 
+#include "Open3D/Utility/Console.h"
+
 #include <filament/MaterialInstance.h>
 
 namespace open3d {
@@ -100,8 +102,9 @@ TextureSampler SamplerFromSamplerParameters(
 }
 
 void FilamentMaterialModifier::Reset() {
-    // TODO: Print log or assert
-    // assert(materialInstance == nullptr, "Previous material instance modifications are not finished!");
+    if (materialInstance_ != nullptr) {
+        utility::LogWarning("Previous material instance modifications are not finished!");
+    }
 
     materialInstance_ = nullptr;
     currentHandle_ = MaterialInstanceHandle::kBad;
@@ -110,8 +113,9 @@ void FilamentMaterialModifier::Reset() {
 void FilamentMaterialModifier::InitWithMaterialInstance(
         const std::shared_ptr<filament::MaterialInstance>& aMaterialInstance,
         const MaterialInstanceHandle& id) {
-    // TODO: Print log or assert
-    // assert(materialInstance == nullptr, "Previous material instance modifications are not finished!");
+    if (materialInstance_ != nullptr) {
+        utility::LogWarning("Previous material instance modifications are not finished!");
+    }
 
     materialInstance_ = aMaterialInstance;
     currentHandle_ = id;
@@ -154,7 +158,9 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
                     parameter, texturePtr.get(),
                     SamplerFromSamplerParameters(samplerConfig));
         } else {
-            // TODO: report error
+            utility::LogWarning(
+                    "Failed to set texture for material.\n\tMaterial handle: {}\n\tTexture handle: {}\n\tParameter name: {}",
+                    currentHandle_, textureHandle, parameter);
         }
     }
 

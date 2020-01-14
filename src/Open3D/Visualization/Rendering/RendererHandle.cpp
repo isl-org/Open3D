@@ -35,14 +35,23 @@ std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
         REHandle_abstract::uid_table;
 
 std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {
-    static const std::array<std::string,
-                            static_cast<size_t>(EntityType::Count)>
-            types_mapping = {"None", "Geometry", "Light", "Camera"};
-    static std::hash<REHandle_abstract> hasher;
-
-    os << "[" << types_mapping[static_cast<size_t>(uid.type)] << ", "
-       << uid.GetId() << ", hash: " << hasher(uid) << "]";
+    os << "[" << REHandle_abstract::TypeToString(uid.type) << ", "
+       << uid.GetId() << ", hash: " << uid.Hash() << "]";
     return os;
+}
+
+const char* REHandle_abstract::TypeToString(EntityType type) {
+    static const size_t kTypesCount = static_cast<size_t>(EntityType::Count);
+    static const size_t kTypesMapped = 11;
+
+    static_assert(kTypesCount == kTypesMapped, "You forgot to add string value for new handle type.");
+
+    static const char* kTypesMapping[kTypesMapped] = {
+            "None",    "View",         "Scene",      "Geometry",
+            "Light",   "Camera",       "Material",   "MaterialInstance",
+            "Texture", "VertexBuffer", "IndexBuffer"};
+
+    return kTypesMapping[static_cast<size_t>(type)];
 }
 
 }
