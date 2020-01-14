@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2019 www.open3d.org
+# Copyright (c) 2020 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -38,20 +38,57 @@ pytestmark = [
         'ignore::DeprecationWarning:.*(tensorflow|protobuf).*'),
 ]
 
-
-def test_load_tf_op_library():
-    import open3d.ml.tf as ml3d
-    assert hasattr(ml3d.python.ops.lib._lib, 'OP_LIST')
-
-
-def test_execute_tf_op():
+# check for GPUs and set memory growth to prevent tf from allocating all memory
+gpu_devices = []
+try:
     import tensorflow as tf
+    gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+    for dev in gpu_devices:
+        tf.config.experimental.set_memory_growth(dev, True)
+except:
+    pass
+
+# define the list of devices for running the ops
+device_names = ['CPU:0']
+if gpu_devices:
+    device_names.append('GPU:0')
+devices = pytest.mark.parametrize('device_name', device_names)
+
+# the supported input dtypes
+value_dtypes = pytest.mark.parametrize(
+    'dtype', [np.int32, np.int64, np.float32, np.float64])
+
+
+@devices
+@value_dtypes
+@pytest.mark.parametrize('seed', range(3))
+def test_reduce_subarray_sum_random(seed, dtype, device_name):
     import open3d.ml.tf as ml3d
 
-    values = np.arange(0, 10)
-    prefix_sum = np.array([0, 3, 4, 4])
+    rng = np.random.RandomState(seed)
 
-    with tf.device('CPU:0'):
-        ans = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
-    # test was a success if we reach this line but check correctness anyway
-    assert np.all(ans.numpy() == [3, 3, 0, 39])
+    values_shape = [rng.randint(100, 200)]
+    values = rng.uniform(0, 10, size=values_shape).astype(dtype)
+
+    prefix_sum = [0]
+    for i in range(rng.randint(1, 10)):
+        prefix_sum.append(
+            rng.randint(0, values_shape[0] - prefix_sum[-1]) + prefix_sum[-1])
+
+    expected_result = []
+    for start, stop in zip(prefix_sum, prefix_sum[1:] + values_shape):
+        # np.sum correctly handles zero length arrays and returns 0
+        expected_result.append(np.sum(values[start:stop]))
+    np.array(expected_result, dtype=dtype)
+
+    prefix_sum = np.array(prefix_sum, dtype=np.int64)
+
+    with tf.device(device_name):
+        result = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
+        assert device_name in result.device
+    result = result.numpy()
+
+    if np.issubdtype(dtype, np.integer):
+        assert np.all(result == expected_result)
+    else:  # floating point types
+        assert np.allclose(result, expected_result)
