@@ -112,7 +112,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
         if (OnTextChanged) {
             OnTextChanged(impl_->text.c_str());
         }
-        result = Widget::DrawResult::CLICKED;
+        result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
 

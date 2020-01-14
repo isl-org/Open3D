@@ -51,7 +51,7 @@ struct DrawContext {
 class Widget {
     friend class Window;
 public:
-    enum class DrawResult { NONE, CLICKED };
+    enum class DrawResult { NONE, REDRAW };
 
     Widget();
     explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);

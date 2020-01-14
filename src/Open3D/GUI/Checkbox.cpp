@@ -98,7 +98,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
         if (OnChecked) {
             OnChecked(impl_->isChecked);
         }
-        result = Widget::DrawResult::CLICKED;
+        result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
 
