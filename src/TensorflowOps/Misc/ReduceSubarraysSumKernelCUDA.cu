@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#define EIGEN_USE_GPU
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
 
-#include "Open3D/ML/Misc/Detail/ReduceSubarraysSumCPU.h"
+#include "Open3D/ML/Misc/Detail/ReduceSubarraysSumCUDA.cuh"
 
 using namespace open3d::ml::detail;
 using namespace tensorflow;
 
 template <class T>
-class ReduceSubarraysSumOpKernelCPU : public OpKernel {
+class ReduceSubarraysSumOpKernelCUDA : public OpKernel {
 public:
-    explicit ReduceSubarraysSumOpKernelCPU(OpKernelConstruction* construction)
+    explicit ReduceSubarraysSumOpKernelCUDA(OpKernelConstruction* construction)
         : OpKernel(construction) {}
 
     void Compute(OpKernelContext* context) override {
@@ -72,9 +73,12 @@ public:
                        context->allocate_output(0, sums_shape, &sums_tensor));
         auto sums = sums_tensor->flat<T>();
 
-        ReduceSubarraysSumCPU(values.data(), values_shape.dim_size(0),
-                              (int64_t*)prefix_sum.data(),
-                              prefix_sum_shape.dim_size(0), sums.data());
+        auto device = context->eigen_gpu_device();
+
+        ReduceSubarraysSumCUDA(device.stream(), values.data(),
+                               values_shape.dim_size(0),
+                               (int64_t*)prefix_sum.data(),
+                               prefix_sum_shape.dim_size(0), sums.data());
     }
 
 private:
@@ -82,9 +86,9 @@ private:
 
 #define REG_KB(type)                                            \
     REGISTER_KERNEL_BUILDER(Name("Open3DReduceSubarraysSum")    \
-                                    .Device(DEVICE_CPU)         \
+                                    .Device(DEVICE_GPU)         \
                                     .TypeConstraint<type>("T"), \
-                            ReduceSubarraysSumOpKernelCPU<type>);
+                            ReduceSubarraysSumOpKernelCUDA<type>);
 REG_KB(int32_t)
 REG_KB(int64)
 REG_KB(float)
