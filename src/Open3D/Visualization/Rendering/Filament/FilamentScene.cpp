@@ -30,6 +30,7 @@
 #include "FilamentResourceManager.h"
 #include "FilamentView.h"
 #include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Utility/Console.h"
 
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
@@ -108,14 +109,21 @@ void FilamentScene::RemoveView(const ViewHandle& viewId) {
 GeometryHandle FilamentScene::AddGeometry(
         const geometry::Geometry3D& geometry,
         const MaterialInstanceHandle& materialId) {
+    return AddGeometry(geometry, materialId, geometry.GetName());
+}
+
+GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
+        const MaterialInstanceHandle& materialId,
+        const std::string& name) {
     using namespace geometry;
     using namespace filament;
 
     AllocatedEntity entityEntry;
+    entityEntry.name = name;
 
     auto geometryBuffersBuilder = GeometryBuffersBuilder::GetBuilder(geometry);
     if (!geometryBuffersBuilder) {
-        // FIXME: Log unsupported geometry
+        utility::LogWarning("Geometry type {} is not supported yet!", static_cast<size_t>(geometry.GetGeometryType()));
         return {};
     }
 
@@ -149,6 +157,17 @@ GeometryHandle FilamentScene::AddGeometry(
     }
 
     return handle;
+}
+
+std::vector<GeometryHandle> FilamentScene::FindGeometryByName(const std::string& name) {
+    std::vector<GeometryHandle> found;
+    for (const auto& e : entities_) {
+        if (e.first.type == EntityType::Geometry && e.second.name == name) {
+            found.push_back(GeometryHandle::Concretize(e.first));
+        }
+    }
+
+    return found;
 }
 
 void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
