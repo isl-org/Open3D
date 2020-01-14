@@ -126,7 +126,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
         if (OnValueChanged) {
             OnValueChanged(newValue);
         }
-        return Widget::DrawResult::CLICKED;
+        return Widget::DrawResult::REDRAW;
     }
     return Widget::DrawResult::NONE;
 }
