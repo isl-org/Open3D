@@ -345,7 +345,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     auto size = GetSize();
     int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
-    DrawContext dc{ theme, 0, 0, size.width, size.height, em };
+    DrawContext dc{ theme, 0, 0, size.width, size.height, em, dtSec };
 
     bool needsRedraw = false;
 
@@ -373,7 +373,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
             dc.uiOffsetY = 0;
         }
 
-        if (child->Draw(dc, dtSec) != Widget::DrawResult::NONE) {
+        if (child->Draw(dc) != Widget::DrawResult::NONE) {
             needsRedraw = true;
         }
 

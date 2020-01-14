@@ -55,7 +55,7 @@ Size Button::CalcPreferredSize(const Theme& theme) const {
     return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
 }
 
-Widget::DrawResult Button::Draw(const DrawContext& context, const float) {
+Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto &frame = GetFrame();
     ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
                                frame.y - context.uiOffsetY));

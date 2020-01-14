@@ -46,6 +46,7 @@ struct DrawContext {
     int screenWidth;
     int screenHeight;
     int emPx;
+    float frameDelta; // in seconds
 };
 
 class Widget {
@@ -71,7 +72,7 @@ public:
     virtual Size CalcPreferredSize(const Theme& theme) const;
 
     virtual void Layout(const Theme& theme);
-    virtual DrawResult Draw(const DrawContext& context, float frameDelta);
+    virtual DrawResult Draw(const DrawContext& context);
 
     /// Widgets that use Dear ImGUI should not need to override this,
     /// as Dear ImGUI will take care of all the mouse handling during

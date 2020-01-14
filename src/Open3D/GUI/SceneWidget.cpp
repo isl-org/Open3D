@@ -95,7 +95,7 @@ void SceneWidget::SetCameraPOI(const Eigen::Vector3f& location) {
     cameraControlsState_.orbitHeight = (cameraman->GetPosition() - location).norm();
 }
 
-Widget::DrawResult SceneWidget::Draw(const DrawContext& context, const float frameDelta) {
+Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     if (impl_->frameChanged) {
         impl_->frameChanged = false;
 
@@ -126,6 +126,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context, const float fra
         }
         cameraControlsState_.orbitHeight = orbit;
 
+        const auto frameDelta = context.frameDelta;
         cameraman->Orbit(cameraControlsState_.poi,
                          cameraControlsState_.orbitHeight,
                          -cameraControlsState_.frameDx * frameDelta,

@@ -107,7 +107,7 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
     return Size(width + em, CalcItemHeight(theme));
 }
 
-Combobox::DrawResult Combobox::Draw(const DrawContext& context, const float) {
+Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     bool valueChanged = false;
     bool wasOpen = ImGui::IsPopupOpen(impl_->imguiId.c_str());
     bool didOpen = false;

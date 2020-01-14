@@ -62,7 +62,7 @@ public:
     void SetSelectedGeometry(const visualization::GeometryHandle& geometry, bool switchCamera);
     void SetCameraPOI(const Eigen::Vector3f& location);
 
-    Widget::DrawResult Draw(const DrawContext& context, float frameDelta) override;
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
     void Mouse(const MouseEvent& e) override;
     void Key(const KeyEvent& e) override;

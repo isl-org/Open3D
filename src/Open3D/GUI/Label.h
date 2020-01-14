@@ -41,7 +41,7 @@ public:
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
-    DrawResult Draw(const DrawContext& context, float frameDelta) override;
+    DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;

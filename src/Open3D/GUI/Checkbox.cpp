@@ -77,7 +77,7 @@ Size Checkbox::CalcPreferredSize(const Theme& theme) const {
 
 }
 
-Widget::DrawResult Checkbox::Draw(const DrawContext& context, const float) {
+Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     auto &frame = GetFrame();
     ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
                                frame.y - context.uiOffsetY));

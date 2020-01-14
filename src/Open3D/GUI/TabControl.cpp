@@ -90,7 +90,7 @@ void TabControl::Layout(const Theme& theme) {
     Super::Layout(theme);
 }
 
-TabControl::DrawResult TabControl::Draw(const DrawContext& context, const float frameDelta) {
+TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto &frame = GetFrame();
     ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
                                frame.y - context.uiOffsetY));
@@ -100,7 +100,7 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context, const float 
     if (ImGui::BeginTabBar(impl_->imguiId.c_str())) {
         for (size_t i = 0;  i < impl_->tabNames.size();  ++i) {
             if (ImGui::BeginTabItem(impl_->tabNames[i].c_str())) {
-                auto r = GetChildren()[i]->Draw(context, frameDelta);
+                auto r = GetChildren()[i]->Draw(context);
                 if (r != Widget::DrawResult::NONE) {
                     result = r;
                 }
