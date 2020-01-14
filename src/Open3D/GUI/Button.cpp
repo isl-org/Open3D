@@ -63,7 +63,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         if (this->OnClicked) {
             this->OnClicked();
         }
-        return Widget::DrawResult::CLICKED;
+        return Widget::DrawResult::REDRAW;
     } else {
         return Widget::DrawResult::NONE;
     }

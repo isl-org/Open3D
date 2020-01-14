@@ -145,7 +145,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
 
     ImGui::PopStyleColor(3);
 
-    return ((valueChanged || didOpen) ? Widget::DrawResult::CLICKED
+    return ((valueChanged || didOpen) ? Widget::DrawResult::REDRAW
                                       : Widget::DrawResult::NONE);
 }
 
