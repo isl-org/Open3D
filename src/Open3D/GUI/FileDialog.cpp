@@ -161,6 +161,21 @@ struct FileDialog::Impl {
         }
         std::sort(this->entries.begin(), this->entries.end());
 
+        // Include an entry for ".." for convenience on Linux.
+        // Don't do this on macOS because the native dialog has neither
+        // a back button nor a "..".  Non-technical users aren't going to
+        // have any idea what ".." means, so its unclear if this should
+        // go in Windows, too, or just Linux (which is pretty much all
+        // technical people). Windows' file dialog does have some sense
+        // of "previous directory", though, so maybe it's okay if we
+        // include an up icon.
+#ifndef __APPLE__
+        if (path != "/") {
+            this->entries.insert(this->entries.begin(),
+                                 DirEntry("..", DirEntry::Type::DIR));
+        }
+#endif // __APPLE__
+
         std::vector<std::string> display;
         display.reserve(this->entries.size());
         for (auto &e : this->entries) {
