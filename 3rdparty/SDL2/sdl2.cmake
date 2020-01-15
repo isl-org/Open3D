@@ -38,7 +38,7 @@ if (WIN32)
         )
 else()
     add_custom_target(sdl_copy
-        COMMAND cp -a include ${3RDPARTY_INSTALL_PREFIX}/include
+        COMMAND cp -a include/* ${3RDPARTY_INSTALL_PREFIX}/include
         COMMAND cp -a lib/* ${3RDPARTY_INSTALL_PREFIX}/lib
         WORKING_DIRECTORY ${SDL_TMP_INSTALL_DIR}
         DEPENDS ext_sdl2
