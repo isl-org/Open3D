@@ -26,6 +26,8 @@
 
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 
+#include "Open3D/GUI/Application.h"
+#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
 #include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
 #include "Open3D/Visualization/Visualizer/Visualizer.h"
@@ -43,7 +45,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int height /* = 480*/,
                     int left /* = 50*/,
                     int top /* = 50*/) {
-    Visualizer visualizer;
+/*    Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
         utility::LogWarning("[DrawGeometries] Failed creating OpenGL window.");
@@ -60,6 +62,15 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     }
     visualizer.Run();
     visualizer.DestroyVisualizerWindow();
+    return true;
+*/
+    auto &app = gui::Application::GetInstance();
+    app.Initialize();
+    auto vis = std::make_shared<GuiVisualizer>(geometry_ptrs, window_name,
+                                               width, height, left, top);
+    app.AddWindow(vis);
+    app.Run();
+
     return true;
 }
 

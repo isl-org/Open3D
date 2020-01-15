@@ -42,6 +42,11 @@ public:
 
     Color Lightened(float amount);  // amount is between 0 and 1
 
+    unsigned int ToABGR32() const;
+
+    bool operator==(const Color& rhs) const;
+    bool operator!=(const Color& rhs) const;
+
 private:
     float rgba_[4];
 };

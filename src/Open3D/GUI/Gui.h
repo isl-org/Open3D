@@ -22,6 +22,14 @@
 namespace open3d {
 namespace gui {
 
+struct Point {
+    int x;
+    int y;
+
+    Point();
+    Point(int x_, int y_);
+};
+
 struct Size {
     int width;
     int height;
@@ -43,6 +51,9 @@ struct Rect {
     int GetBottom() const;
     int GetLeft() const;
     int GetRight() const;
+
+    bool Contains(int x, int y) const;
+    bool Contains(const Point& pt) const;
 };
 
 enum class BorderShape { NONE = 0, RECT, ROUNDED_RECT };

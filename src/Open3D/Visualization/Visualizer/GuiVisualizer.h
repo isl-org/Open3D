@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -17,48 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Gui.h"
+#include "Open3D/GUI/Window.h"
+
+#include <vector>
 
 namespace open3d {
+
+namespace geometry {
+class Geometry;
+}  // namespace geometry
+
 namespace gui {
-
-Point::Point()
-    : x(0), y(0)
-{}
-
-Point::Point(int x_, int y_)
-    : x(x_), y(y_)
-{}
-
-// ----------------------------------------------------------------------------
-Size::Size()
-    : width(0), height(0)
-{}
-
-Size::Size(int w, int h) : width(w), height(h) {}
-
-// ----------------------------------------------------------------------------
-Rect::Rect() : x(0), y(0), width(0), height(0) {}
-
-Rect::Rect(int x_, int y_, int w_, int h_)
-    : x(x_), y(y_), width(w_), height(h_) {}
-
-int Rect::GetTop() const { return this->y; }
-
-int Rect::GetBottom() const { return this->y + this->height; }
-
-int Rect::GetLeft() const { return this->x; }
-
-int Rect::GetRight() const { return this->x + this->width; }
-
-bool Rect::Contains(int x, int y) const {
-    return (x >= this->x && x <= GetRight() &&
-            y >= this->y && y <= GetBottom());
+struct Theme;
 }
 
-bool Rect::Contains(const Point& pt) const {
-    return Contains(pt.x, pt.y);
-}
+namespace visualization {
+class GuiVisualizer : public gui::Window {
+    using Super = gui::Window;
+public:
+    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries,
+                  const std::string &title, int width, int height,
+                  int left, int top);
+    virtual ~GuiVisualizer();
 
-} // namespace gui
-} // namespacce open3d
+    void Layout(const gui::Theme& theme) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}
+}
