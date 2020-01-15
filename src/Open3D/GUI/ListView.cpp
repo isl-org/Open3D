@@ -69,7 +69,7 @@ int ListView::GetSelectedIndex() const {
 
 const char* ListView::GetSelectedValue() const {
     if (impl_->selectedIndex < 0
-        || impl_->selectedIndex >= impl_->items.size()) {
+        || impl_->selectedIndex >= int(impl_->items.size())) {
         return "";
     } else {
         return impl_->items[impl_->selectedIndex].c_str();
@@ -114,7 +114,7 @@ Widget::DrawResult ListView::Draw(const DrawContext& context) {
     if (ImGui::ListBoxHeader(impl_->imguiId.c_str(), impl_->items.size(),
                              heightNItems)) {
         for (size_t i = 0;  i < impl_->items.size();  ++i) {
-            bool isSelected = (i == impl_->selectedIndex);
+            bool isSelected = (int(i) == impl_->selectedIndex);
             if (ImGui::Selectable(impl_->items[i].c_str(), &isSelected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
                 if (isSelected) {

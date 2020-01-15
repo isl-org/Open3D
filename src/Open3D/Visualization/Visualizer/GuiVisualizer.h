@@ -24,7 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "Open3D/GUI/Window.h"
+
+#include <vector>
 
 namespace open3d {
 

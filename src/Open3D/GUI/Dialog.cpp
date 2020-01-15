@@ -47,7 +47,7 @@ Dialog::~Dialog() {
 
 Size Dialog::CalcPreferredSize(const Theme &theme) const {
     if (GetChildren().size() == 1) {
-        auto &child = GetChildren()[0];
+        auto child = GetChildren()[0];
         return child->CalcPreferredSize(theme);
     } else {
         return Super::CalcPreferredSize(theme);
@@ -56,7 +56,7 @@ Size Dialog::CalcPreferredSize(const Theme &theme) const {
 
 void Dialog::Layout(const Theme& theme) {
     if (GetChildren().size() == 1) {
-        auto &child = GetChildren()[0];
+        auto child = GetChildren()[0];
         child->SetFrame(GetFrame());
         child->Layout(theme);
     } else {

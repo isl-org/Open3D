@@ -293,9 +293,11 @@ void Application::Run() {
                         if (e.state & SDL_BUTTON_X2) {
                             buttons |= int(MouseButton::BUTTON5);
                         }
-                        MouseEvent me = { type, x, y,
-                                          .move = { buttons }
-                                        };
+
+                        MouseEvent me = { type, x, y };
+                        // GCC complains when trying to initialize inline above
+                        me.move.buttons = buttons;
+
                         win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
                     }
@@ -312,9 +314,11 @@ void Application::Run() {
                         auto pos = win->GlobalToWindowCoord(mx, my);
                         int dx = int(std::ceil(float(e.x) * scaling));
                         int dy = int(std::ceil(float(e.y) * scaling));
-                        MouseEvent me = { MouseEvent::WHEEL, pos.x, pos.y,
-                                          .wheel = { dx, dy }
-                                        };
+
+                        MouseEvent me = { MouseEvent::WHEEL, pos.x, pos.y };
+                        me.wheel.dx = dx;
+                        me.wheel.dy = dy;
+
                         win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
                     }
@@ -341,9 +345,10 @@ void Application::Run() {
                         auto scaling = win->GetScaling();
                         int x = int(std::ceil(float(e.x) * scaling));
                         int y = int(std::ceil(float(e.y) * scaling));
-                        MouseEvent me = { type, x, y,
-                                          .button = { button }
-                                        };
+
+                        MouseEvent me = { type, x, y };
+                        me.button.button = button;
+
                         win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
                     }

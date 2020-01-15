@@ -28,6 +28,8 @@
 
 #include "Dialog.h"
 
+#include <functional>
+
 namespace open3d {
 namespace gui {
 
