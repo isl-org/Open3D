@@ -51,7 +51,7 @@ struct ListView::Impl {
 ListView::ListView()
 : impl_(std::make_unique<ListView::Impl>()) {
     std::stringstream s;
-    s << "##combobox_" << gNextListBoxId++;
+    s << "##listview_" << gNextListBoxId++;
     impl_->imguiId = s.str();
 }
 
