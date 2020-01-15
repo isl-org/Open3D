@@ -38,37 +38,35 @@ namespace open3d {
 namespace gui {
 
 namespace {
-    static int gNextTabControlId = 1;
+static int gNextTabControlId = 1;
 
-    int CalcTabHeight(const Theme& theme) {
-        auto em = std::ceil(ImGui::GetTextLineHeight());
-        return std::ceil(em + 2.0f * ImGui::GetStyle().FramePadding.y);
-    }
+int CalcTabHeight(const Theme& theme) {
+    auto em = std::ceil(ImGui::GetTextLineHeight());
+    return std::ceil(em + 2.0f * ImGui::GetStyle().FramePadding.y);
 }
+}  // namespace
 
 struct TabControl::Impl {
     std::vector<std::string> tabNames;
     std::string imguiId;
 };
 
-TabControl::TabControl()
-: impl_(new TabControl::Impl()) {
+TabControl::TabControl() : impl_(new TabControl::Impl()) {
     std::stringstream s;
     s << "tabcontrol_" << gNextTabControlId++;
     impl_->imguiId = s.str();
 }
 
-TabControl::~TabControl() {
-}
+TabControl::~TabControl() {}
 
-void TabControl::AddTab(const char *name, std::shared_ptr<Widget> panel) {
+void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
     AddChild(panel);
     impl_->tabNames.push_back(name);
 }
 
 Size TabControl::CalcPreferredSize(const Theme& theme) const {
     int width = 0, height = 0;
-    for (auto &child : GetChildren()) {
+    for (auto& child : GetChildren()) {
         auto size = child->CalcPreferredSize(theme);
         width = std::max(width, size.width);
         height = std::max(height, size.height);
@@ -80,10 +78,10 @@ Size TabControl::CalcPreferredSize(const Theme& theme) const {
 void TabControl::Layout(const Theme& theme) {
     auto tabHeight = CalcTabHeight(theme);
     auto frame = GetFrame();
-    auto childRect = Rect(frame.x, frame.y + tabHeight,
-                          frame.width, frame.height - tabHeight);
+    auto childRect = Rect(frame.x, frame.y + tabHeight, frame.width,
+                          frame.height - tabHeight);
 
-    for (auto &child : GetChildren()) {
+    for (auto& child : GetChildren()) {
         child->SetFrame(childRect);
     }
 
@@ -91,14 +89,14 @@ void TabControl::Layout(const Theme& theme) {
 }
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
-    auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
+    auto& frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
     auto result = Widget::DrawResult::NONE;
     ImGui::PushItemWidth(GetFrame().width);
     if (ImGui::BeginTabBar(impl_->imguiId.c_str())) {
-        for (size_t i = 0;  i < impl_->tabNames.size();  ++i) {
+        for (size_t i = 0; i < impl_->tabNames.size(); ++i) {
             if (ImGui::BeginTabItem(impl_->tabNames[i].c_str())) {
                 auto r = GetChildren()[i]->Draw(context);
                 if (r != Widget::DrawResult::NONE) {
@@ -113,5 +111,5 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     return result;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

@@ -35,8 +35,7 @@ namespace gui {
 struct Theme;
 class Window;
 
-class Application
-{
+class Application {
 public:
     static Application& GetInstance();
 
@@ -51,9 +50,10 @@ public:
     void Run();
 
     void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window *window);
+    void RemoveWindow(Window* window);
 
-    const char* GetResourcePath() const;  // std::string not good in interfaces for ABI reasons
+    const char* GetResourcePath()
+            const;  // std::string not good in interfaces for ABI reasons
     const Theme& GetTheme() const;
 
 private:
@@ -64,5 +64,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

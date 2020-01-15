@@ -33,12 +33,11 @@
 
 namespace open3d {
 
-namespace visualization
-{
-    class Scene;
-    class Camera;
-    class CameraManipulator;
-}
+namespace visualization {
+class Scene;
+class Camera;
+class CameraManipulator;
+}  // namespace visualization
 
 namespace gui {
 
@@ -46,6 +45,7 @@ class Color;
 
 class SceneWidget : public Widget {
     using Super = Widget;
+
 public:
     explicit SceneWidget(visualization::Scene& scene);
     ~SceneWidget() override;
@@ -91,5 +91,5 @@ private:
     } cameraControlsState_;
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

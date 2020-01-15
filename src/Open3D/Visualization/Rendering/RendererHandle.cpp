@@ -35,8 +35,7 @@ std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
         REHandle_abstract::uid_table;
 
 std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {
-    static const std::array<std::string,
-                            static_cast<size_t>(EntityType::Count)>
+    static const std::array<std::string, static_cast<size_t>(EntityType::Count)>
             types_mapping = {"None", "Geometry", "Light", "Camera"};
     static std::hash<REHandle_abstract> hasher;
 
@@ -45,5 +44,5 @@ std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {
     return os;
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

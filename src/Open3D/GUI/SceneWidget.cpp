@@ -185,5 +185,5 @@ void SceneWidget::CameraControlsState::Reset() {
     frameWheelDelta = 0.f;
 }
 
-} // gui
-} // open3d
+} // namespace gui
+} // namespace open3d

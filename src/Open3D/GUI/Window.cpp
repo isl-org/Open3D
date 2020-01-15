@@ -35,19 +35,19 @@
 #include "Util.h"
 #include "Widget.h"
 
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <SDL.h>
 #include <filament/Engine.h>
+#include <SDL.h>
 
 #include <cmath>
 #include <vector>
 
 #ifdef WIN32
-    #include <SDL_syswm.h>
+#include <SDL_syswm.h>
 #endif
 
 using namespace open3d::gui::util;
@@ -60,22 +60,21 @@ namespace {
 
 // Assumes the correct ImGuiContext is current
 void updateImGuiForScaling(float newScaling) {
-    ImGuiStyle &style = ImGui::GetStyle();
+    ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
     style.FrameRounding *= newScaling;
 }
 
-} // (anonymous)
+}  // namespace
 
-struct Window::Impl
-{
-    SDL_Window *window = nullptr;
+struct Window::Impl {
+    SDL_Window* window = nullptr;
     Theme theme;  // so that the font size can be different based on scaling
-    visualization::FilamentRenderer *renderer;
+    visualization::FilamentRenderer* renderer;
     struct {
         std::unique_ptr<ImguiFilamentBridge> imguiBridge = nullptr;
-        ImGuiContext *context;
-        ImFont *systemFont;  // is a reference; owned by imguiContext
+        ImGuiContext* context;
+        ImFont* systemFont;  // is a reference; owned by imguiContext
         float scaling = 1.0;
     } imgui;
     std::shared_ptr<Menu> menubar;
@@ -116,16 +115,18 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
     auto& engineInstance = visualization::EngineInstance::GetInstance();
     auto& resourceManager = visualization::EngineInstance::GetResourceManager();
 
-    impl_->renderer = new visualization::FilamentRenderer(engineInstance, GetNativeDrawable(), resourceManager);
+    impl_->renderer = new visualization::FilamentRenderer(
+            engineInstance, GetNativeDrawable(), resourceManager);
 
-    auto &theme = impl_->theme;  // shorter alias
+    auto& theme = impl_->theme;  // shorter alias
     impl_->imgui.context = ImGui::CreateContext();
     ImGui::SetCurrentContext(impl_->imgui.context);
 
-    impl_->imgui.imguiBridge = std::make_unique<ImguiFilamentBridge>(impl_->renderer, GetSize());
+    impl_->imgui.imguiBridge =
+            std::make_unique<ImguiFilamentBridge>(impl_->renderer, GetSize());
 
     ImGui::StyleColorsDark();
-    ImGuiStyle &style = ImGui::GetStyle();
+    ImGuiStyle& style = ImGui::GetStyle();
     style.WindowPadding = ImVec2(0, 0);
     style.WindowRounding = 0;
     style.WindowBorderSize = 0;
@@ -151,12 +152,15 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
     // proggy, which is a tiny "pixel art" texture that is compiled into the
     // library.
     if (!theme.fontPath.empty()) {
-        ImGuiIO &io = ImGui::GetIO();
-        impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(theme.fontPath.c_str(), theme.fontSize);
+        ImGuiIO& io = ImGui::GetIO();
+        impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(
+                theme.fontPath.c_str(), theme.fontSize);
         /*static*/ unsigned char* pixels;
         int textureW, textureH, bytesPerPx;
-        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH, &bytesPerPx);
-        impl_->imgui.imguiBridge->createAtlasTextureAlpha8(pixels, textureW, textureH, bytesPerPx);
+        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
+                                     &bytesPerPx);
+        impl_->imgui.imguiBridge->createAtlasTextureAlpha8(
+                pixels, textureW, textureH, bytesPerPx);
     }
 
     ImGuiIO& io = ImGui::GetIO();
@@ -211,13 +215,9 @@ void* Window::GetNativeDrawable() const {
     return open3d::gui::GetNativeDrawable(impl_->window);
 }
 
-uint32_t Window::GetID() const {
-    return SDL_GetWindowID(impl_->window);
-}
+uint32_t Window::GetID() const { return SDL_GetWindowID(impl_->window); }
 
-const Theme& Window::GetTheme() const {
-    return impl_->theme;
-}
+const Theme& Window::GetTheme() const { return impl_->theme; }
 
 visualization::Renderer& Window::GetRenderer() const {
     return *impl_->renderer;
@@ -225,7 +225,7 @@ visualization::Renderer& Window::GetRenderer() const {
 
 Size Window::GetSize() const {
     uint32_t w, h;
-    SDL_GL_GetDrawableSize(impl_->window, (int*) &w, (int*) &h);
+    SDL_GL_GetDrawableSize(impl_->window, (int*)&w, (int*)&h);
     return Size(w, h);
 }
 
@@ -266,13 +266,9 @@ void Window::Show(bool vis /*= true*/) {
     }
 }
 
-void Window::Close() {
-    Application::GetInstance().RemoveWindow(this);
-}
+void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
-std::shared_ptr<Menu> Window::GetMenubar() const {
-    return impl_->menubar;
-}
+std::shared_ptr<Menu> Window::GetMenubar() const { return impl_->menubar; }
 
 void Window::SetMenubar(std::shared_ptr<Menu> menu) {
     impl_->menubar = menu;
@@ -289,7 +285,7 @@ void Window::Layout(const Theme& theme) {
         auto r = GetContentRect();
         impl_->children[0]->SetFrame(r);
     } else {
-        for (auto &child : impl_->children) {
+        for (auto& child : impl_->children) {
             child->Layout(theme);
         }
     }
@@ -299,12 +295,13 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     // These are here to provide fast unique window names. If you find yourself
     // needing more than a handful, you should probably be using a container
     // of some sort (see Layout.h).
-    static const char* winNames[] = { "win1", "win2", "win3", "win4", "win5",
-                                      "win6", "win7", "win8", "win9", "win10",
-                                      "win11", "win12", "win13", "win14", "win15",
-                                      "win16", "win17", "win18", "win19", "win20" };
+    static const char* winNames[] = {
+            "win1",  "win2",  "win3",  "win4",  "win5",  "win6",  "win7",
+            "win8",  "win9",  "win10", "win11", "win12", "win13", "win14",
+            "win15", "win16", "win17", "win18", "win19", "win20"};
 
-    impl_->renderer->BeginFrame();  // this can return false if Filament wants to skip a frame
+    impl_->renderer->BeginFrame();  // this can return false if Filament wants
+                                    // to skip a frame
 
     // Set current context
     ImGui::SetCurrentContext(impl_->imgui.context);
@@ -337,7 +334,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     // Layout if necessary.  This must happen within ImGui setup so that widgets
     // can query font information.
-    auto &theme = this->impl_->theme;
+    auto& theme = this->impl_->theme;
     if (this->impl_->needsLayout) {
         this->Layout(theme);
         // Clear needsLayout below
@@ -354,7 +351,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
                              ImGuiWindowFlags_NoResize |
                              ImGuiWindowFlags_NoCollapse;
     int winIdx = 0;
-    for (auto &child : this->impl_->children) {
+    for (auto& child : this->impl_->children) {
         auto frame = child->GetFrame();
         bool bgColorNotDefault = !child->IsDefaultBackgroundColor();
         auto isContainer = !child->GetChildren().empty();
@@ -400,7 +397,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     // Finish frame and generate the commands
     ImGui::PopFont();
     ImGui::EndFrame();
-    ImGui::Render(); // creates the draw data (i.e. Render()s to data)
+    ImGui::Render();  // creates the draw data (i.e. Render()s to data)
 
     // Draw the ImGui commands
     impl_->imgui.imguiBridge->update(ImGui::GetDrawData());
@@ -412,8 +409,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     return (needsRedraw ? REDRAW : NONE);
 }
 
-Window::DrawResult Window::DrawOnce(float dtSec)
-{
+Window::DrawResult Window::DrawOnce(float dtSec) {
     auto needsRedraw = OnDraw(dtSec);
 
     // ImGUI can take two frames to do its layout, so if we did a layout
@@ -495,5 +491,5 @@ void Window::OnTextInput(const TextInputEvent& e) {
     io.AddInputCharactersUTF8(e.utf8);
 }
 
-} // gui
-} // opend3d
+}  // namespace gui
+}  // namespace open3d

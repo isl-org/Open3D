@@ -51,6 +51,7 @@ struct DrawContext {
 
 class Widget {
     friend class Window;
+
 public:
     enum class DrawResult { NONE, CLICKED };
 
@@ -89,5 +90,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

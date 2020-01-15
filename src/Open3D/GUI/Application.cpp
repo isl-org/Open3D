@@ -41,89 +41,87 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #if !defined(WIN32)
-#    include <unistd.h>
+#include <unistd.h>
 #else
-    #include <io.h>
-    #include <direct.h>
+#include <direct.h>
+#include <io.h>
 
-    // Copy-paste from UNIX <sys/stat.h> sources
-    #define S_ISDIR(mask) ((mask & S_IFMT) == S_IFDIR)
+// Copy-paste from UNIX <sys/stat.h> sources
+#define S_ISDIR(mask) ((mask & S_IFMT) == S_IFDIR)
 #endif
 
 #ifdef WIN32
 #define getcwd _getcwd
-#endif // WIN32
+#endif  // WIN32
 
 namespace {
 
 const int RUNLOOP_DELAY_MSEC = 10;
 
 std::unordered_map<int, uint32_t> SCANCODE2KEY = {
-    { SDL_SCANCODE_BACKSPACE, open3d::gui::KEY_BACKSPACE },
-    { SDL_SCANCODE_TAB,       open3d::gui::KEY_TAB },
-    { SDL_SCANCODE_RETURN,    open3d::gui::KEY_ENTER },
-    { SDL_SCANCODE_ESCAPE,    open3d::gui::KEY_ESCAPE },
-    { SDL_SCANCODE_DELETE,    open3d::gui::KEY_DELETE },
-    { SDL_SCANCODE_SPACE, ' ' },
-    { SDL_SCANCODE_0, '0' },
-    { SDL_SCANCODE_1, '1' },
-    { SDL_SCANCODE_2, '2' },
-    { SDL_SCANCODE_3, '3' },
-    { SDL_SCANCODE_4, '4' },
-    { SDL_SCANCODE_5, '5' },
-    { SDL_SCANCODE_6, '6' },
-    { SDL_SCANCODE_7, '7' },
-    { SDL_SCANCODE_8, '8' },
-    { SDL_SCANCODE_9, '9' },
-    { SDL_SCANCODE_A, 'a' },
-    { SDL_SCANCODE_B, 'b' },
-    { SDL_SCANCODE_C, 'c' },
-    { SDL_SCANCODE_D, 'd' },
-    { SDL_SCANCODE_E, 'e' },
-    { SDL_SCANCODE_F, 'f' },
-    { SDL_SCANCODE_G, 'g' },
-    { SDL_SCANCODE_H, 'h' },
-    { SDL_SCANCODE_I, 'i' },
-    { SDL_SCANCODE_J, 'j' },
-    { SDL_SCANCODE_K, 'k' },
-    { SDL_SCANCODE_L, 'l' },
-    { SDL_SCANCODE_M, 'm' },
-    { SDL_SCANCODE_N, 'n' },
-    { SDL_SCANCODE_O, 'o' },
-    { SDL_SCANCODE_P, 'p' },
-    { SDL_SCANCODE_Q, 'q' },
-    { SDL_SCANCODE_R, 'r' },
-    { SDL_SCANCODE_S, 's' },
-    { SDL_SCANCODE_T, 't' },
-    { SDL_SCANCODE_U, 'u' },
-    { SDL_SCANCODE_V, 'v' },
-    { SDL_SCANCODE_W, 'w' },
-    { SDL_SCANCODE_X, 'x' },
-    { SDL_SCANCODE_Y, 'y' },
-    { SDL_SCANCODE_Z, 'z' },
-    { SDL_SCANCODE_LEFTBRACKET, '[' },
-    { SDL_SCANCODE_RIGHTBRACKET, ']' },
-    { SDL_SCANCODE_BACKSLASH, '\\' },
-    { SDL_SCANCODE_SEMICOLON, ';' },
-    { SDL_SCANCODE_APOSTROPHE, '\'' },
-    { SDL_SCANCODE_COMMA, ',' },
-    { SDL_SCANCODE_PERIOD, '.' },
-    { SDL_SCANCODE_SLASH, '/' },
-    { SDL_SCANCODE_LEFT,     open3d::gui::KEY_LEFT },
-    { SDL_SCANCODE_RIGHT,    open3d::gui::KEY_RIGHT },
-    { SDL_SCANCODE_UP,       open3d::gui::KEY_UP },
-    { SDL_SCANCODE_DOWN,     open3d::gui::KEY_DOWN },
-    { SDL_SCANCODE_INSERT,   open3d::gui::KEY_INSERT },
-    { SDL_SCANCODE_HOME,     open3d::gui::KEY_HOME },
-    { SDL_SCANCODE_END,      open3d::gui::KEY_END },
-    { SDL_SCANCODE_PAGEUP,   open3d::gui::KEY_PAGEUP },
-    { SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN }
-};
+        {SDL_SCANCODE_BACKSPACE, open3d::gui::KEY_BACKSPACE},
+        {SDL_SCANCODE_TAB, open3d::gui::KEY_TAB},
+        {SDL_SCANCODE_RETURN, open3d::gui::KEY_ENTER},
+        {SDL_SCANCODE_ESCAPE, open3d::gui::KEY_ESCAPE},
+        {SDL_SCANCODE_DELETE, open3d::gui::KEY_DELETE},
+        {SDL_SCANCODE_SPACE, ' '},
+        {SDL_SCANCODE_0, '0'},
+        {SDL_SCANCODE_1, '1'},
+        {SDL_SCANCODE_2, '2'},
+        {SDL_SCANCODE_3, '3'},
+        {SDL_SCANCODE_4, '4'},
+        {SDL_SCANCODE_5, '5'},
+        {SDL_SCANCODE_6, '6'},
+        {SDL_SCANCODE_7, '7'},
+        {SDL_SCANCODE_8, '8'},
+        {SDL_SCANCODE_9, '9'},
+        {SDL_SCANCODE_A, 'a'},
+        {SDL_SCANCODE_B, 'b'},
+        {SDL_SCANCODE_C, 'c'},
+        {SDL_SCANCODE_D, 'd'},
+        {SDL_SCANCODE_E, 'e'},
+        {SDL_SCANCODE_F, 'f'},
+        {SDL_SCANCODE_G, 'g'},
+        {SDL_SCANCODE_H, 'h'},
+        {SDL_SCANCODE_I, 'i'},
+        {SDL_SCANCODE_J, 'j'},
+        {SDL_SCANCODE_K, 'k'},
+        {SDL_SCANCODE_L, 'l'},
+        {SDL_SCANCODE_M, 'm'},
+        {SDL_SCANCODE_N, 'n'},
+        {SDL_SCANCODE_O, 'o'},
+        {SDL_SCANCODE_P, 'p'},
+        {SDL_SCANCODE_Q, 'q'},
+        {SDL_SCANCODE_R, 'r'},
+        {SDL_SCANCODE_S, 's'},
+        {SDL_SCANCODE_T, 't'},
+        {SDL_SCANCODE_U, 'u'},
+        {SDL_SCANCODE_V, 'v'},
+        {SDL_SCANCODE_W, 'w'},
+        {SDL_SCANCODE_X, 'x'},
+        {SDL_SCANCODE_Y, 'y'},
+        {SDL_SCANCODE_Z, 'z'},
+        {SDL_SCANCODE_LEFTBRACKET, '['},
+        {SDL_SCANCODE_RIGHTBRACKET, ']'},
+        {SDL_SCANCODE_BACKSLASH, '\\'},
+        {SDL_SCANCODE_SEMICOLON, ';'},
+        {SDL_SCANCODE_APOSTROPHE, '\''},
+        {SDL_SCANCODE_COMMA, ','},
+        {SDL_SCANCODE_PERIOD, '.'},
+        {SDL_SCANCODE_SLASH, '/'},
+        {SDL_SCANCODE_LEFT, open3d::gui::KEY_LEFT},
+        {SDL_SCANCODE_RIGHT, open3d::gui::KEY_RIGHT},
+        {SDL_SCANCODE_UP, open3d::gui::KEY_UP},
+        {SDL_SCANCODE_DOWN, open3d::gui::KEY_DOWN},
+        {SDL_SCANCODE_INSERT, open3d::gui::KEY_INSERT},
+        {SDL_SCANCODE_HOME, open3d::gui::KEY_HOME},
+        {SDL_SCANCODE_END, open3d::gui::KEY_END},
+        {SDL_SCANCODE_PAGEUP, open3d::gui::KEY_PAGEUP},
+        {SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN}};
 
-bool isDirectory(const std::string& path) {
+bool isDirectory(const std::string &path) {
     struct stat statbuf;
-    if (stat(path.c_str(), &statbuf) != 0)
-        return false;
+    if (stat(path.c_str(), &statbuf) != 0) return false;
 
     return S_ISDIR(statbuf.st_mode);
 }
@@ -145,11 +143,12 @@ std::string findResourcePath(int argc, const char *argv[]) {
     auto lastSlash = argv0.rfind("/");
     auto path = argv0.substr(0, lastSlash);
 
-    if (argv0[0] == '/' || (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
+    if (argv0[0] == '/' ||
+        (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        char *cwd = getcwd(nullptr, 0); // will malloc()
+        char *cwd = getcwd(nullptr, 0);  // will malloc()
         path = std::string(cwd) + "/" + path;
         free(cwd);
     }
@@ -158,7 +157,7 @@ std::string findResourcePath(int argc, const char *argv[]) {
     if (path.rfind("MacOS") == path.size() - 5) {  // path is in a bundle
         return path.substr(0, path.size() - 5) + "Resources";
     }
-#endif // __APPLE__
+#endif  // __APPLE__
 
     auto rsrcPath = path + "/resources";
     if (!isDirectory(rsrcPath)) {
@@ -167,7 +166,7 @@ std::string findResourcePath(int argc, const char *argv[]) {
     return rsrcPath;
 }
 
-}
+}  // namespace
 
 namespace open3d {
 namespace gui {
@@ -178,7 +177,7 @@ struct Application::Impl {
     Theme theme;
 };
 
-Application& Application::GetInstance() {
+Application &Application::GetInstance() {
     static Application gApp;
     return gApp;
 }
@@ -205,7 +204,8 @@ Application::Application()
     impl_->theme.checkboxBackgroundOffColor = Color(0.333, 0.333, .333);
     impl_->theme.checkboxBackgroundOnColor = highlightColor;
     impl_->theme.checkboxBackgroundHoverOffColor = Color(0.5, 0.5, 0.5);
-    impl_->theme.checkboxBackgroundHoverOnColor = highlightColor.Lightened(0.15);
+    impl_->theme.checkboxBackgroundHoverOnColor =
+            highlightColor.Lightened(0.15);
     impl_->theme.checkboxCheckColor = Color(1, 1, 1);
     impl_->theme.comboboxBackgroundColor = Color(0.4, 0.4, 0.4);
     impl_->theme.comboboxHoverColor = Color(0.5, 0.5, 0.5);
@@ -216,11 +216,11 @@ Application::Application()
     impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
     impl_->theme.tabActiveColor = impl_->theme.buttonActiveColor;
 
-    visualization::EngineInstance::SelectBackend(filament::backend::Backend::OPENGL);
+    visualization::EngineInstance::SelectBackend(
+            filament::backend::Backend::OPENGL);
 }
 
-Application::~Application() {
-}
+Application::~Application() {}
 
 void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
@@ -265,16 +265,16 @@ void Application::Run() {
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
     bool done = false;
-    std::unordered_map<Window*, int> eventCounts;
+    std::unordered_map<Window *, int> eventCounts;
     while (!done) {
-//        SDL_Window* sdlWindow = window->getSDLWindow();
-//        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
-//            SDL_SetWindowTitle(sdlWindow, mWindowTitle.c_str());
-//        }
+        //        SDL_Window* sdlWindow = window->getSDLWindow();
+        //        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
+        //            SDL_SetWindowTitle(sdlWindow, mWindowTitle.c_str());
+        //        }
 
-//        if (!UTILS_HAS_THREADING) {
-//            mEngine->execute();
-//        }
+        //        if (!UTILS_HAS_THREADING) {
+        //            mEngine->execute();
+        //        }
 
         eventCounts.clear();
         constexpr int kMaxEvents = 16;
@@ -283,7 +283,7 @@ void Application::Run() {
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
             SDL_Event* event = &events[nevents];
             switch (event->type) {
-                case SDL_QUIT:   // sent after last window closed
+                case SDL_QUIT:  // sent after last window closed
                     done = true;
                     break;
                 case SDL_MOUSEMOTION: {
@@ -340,16 +340,25 @@ void Application::Run() {
                     break;
                 }
                 case SDL_MOUSEBUTTONDOWN:
-                case SDL_MOUSEBUTTONUP:
-                {
+                case SDL_MOUSEBUTTONUP: {
                     auto &e = event->button;
                     MouseButton button = MouseButton::NONE;
                     switch (e.button) {
-                        case SDL_BUTTON_LEFT: button = MouseButton::LEFT; break;
-                        case SDL_BUTTON_RIGHT: button = MouseButton::RIGHT; break;
-                        case SDL_BUTTON_MIDDLE: button = MouseButton::MIDDLE; break;
-                        case SDL_BUTTON_X1: button = MouseButton::BUTTON4; break;
-                        case SDL_BUTTON_X2: button = MouseButton::BUTTON5; break;
+                        case SDL_BUTTON_LEFT:
+                            button = MouseButton::LEFT;
+                            break;
+                        case SDL_BUTTON_RIGHT:
+                            button = MouseButton::RIGHT;
+                            break;
+                        case SDL_BUTTON_MIDDLE:
+                            button = MouseButton::MIDDLE;
+                            break;
+                        case SDL_BUTTON_X1:
+                            button = MouseButton::BUTTON4;
+                            break;
+                        case SDL_BUTTON_X2:
+                            button = MouseButton::BUTTON5;
+                            break;
                     }
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
@@ -373,7 +382,7 @@ void Application::Run() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
-                        win->OnTextInput(TextInputEvent{ e.text });
+                        win->OnTextInput(TextInputEvent{e.text});
                         eventCounts[win.get()] += 1;
                     }
                     break;
@@ -430,7 +439,8 @@ void Application::Run() {
             auto w = kv.second;
             bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
             if (w->IsVisible() && gotEvents) {
-                if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
+                if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
+                    Window::REDRAW) {
                     SDL_Event expose;
                     expose.type = SDL_WINDOWEVENT;
                     expose.window.windowID = w->GetID();
@@ -446,13 +456,11 @@ void Application::Run() {
     SDL_Quit();
 }
 
-const char* Application::GetResourcePath() const {
+const char *Application::GetResourcePath() const {
     return impl_->resourcePath.c_str();
 }
 
-const Theme& Application::GetTheme() const {
-    return impl_->theme;
-}
+const Theme &Application::GetTheme() const { return impl_->theme; }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

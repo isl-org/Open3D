@@ -55,5 +55,5 @@ private:
     FilamentResourceManager* resourceManager_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

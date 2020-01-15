@@ -37,7 +37,6 @@ ImVec4 colorToImgui(const Color& color) {
                   color.GetAlpha());
 }
 
-} // util
-} // gui
-} // open3d
-
+}  // namespace util
+}  // namespace gui
+}  // namespace open3d
