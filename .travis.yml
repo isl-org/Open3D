@@ -129,6 +129,8 @@ matrix:
     - os: osx
       osx_image: xcode10.1
       before_install:
+        - brew update
+        - brew upgrade python || true
         - ./util/scripts/install-deps-osx.sh
       script: travis_wait 30 ./util/scripts/run-travis.sh
 
