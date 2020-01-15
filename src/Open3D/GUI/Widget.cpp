@@ -120,11 +120,13 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
 
     DrawResult result = DrawResult::NONE;
     for (auto &child : impl_->children) {
-        auto r = child->Draw(context);
-        // The mouse can only be over one item, so there should never
-        // be multiple items returning non-NONE.
-        if (r != DrawResult::NONE) {
-            result = r;
+        if (child->IsVisible()) {
+            auto r = child->Draw(context);
+            // The mouse can only be over one item, so there should never
+            // be multiple items returning non-NONE.
+            if (r != DrawResult::NONE) {
+                result = r;
+            }
         }
     }
     return result;
