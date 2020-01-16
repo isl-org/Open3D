@@ -25,13 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #define EIGEN_USE_GPU
-#include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/lib/core/errors.h"
-
 #include "Open3D/ML/Misc/Detail/ReduceSubarraysSumCUDA.cuh"
+#include "ReduceSubarraysSumOpKernelCommon.h"
 
 using namespace open3d::ml::detail;
+using namespace reduce_subarrays_sum_opkernel_common;
 using namespace tensorflow;
 
 template <class T>
@@ -44,41 +42,30 @@ public:
         static_assert(sizeof(int64) == sizeof(int64_t),
                       "int64 type is not compatible");
 
-        const Tensor& values_tensor = context->input(0);
-        auto values = values_tensor.flat<T>();
-        const TensorShape values_shape(values_tensor.shape());
-        const int values_rank = values_shape.dims();
-        OP_REQUIRES(context, values_rank == 1,
-                    errors::InvalidArgument("values must be a rank 1 tensor"));
-
-        const Tensor& prefix_sum_tensor = context->input(1);
-        auto prefix_sum = prefix_sum_tensor.flat<int64>();
-        const TensorShape prefix_sum_shape(prefix_sum_tensor.shape());
-        const int prefix_sum_rank = prefix_sum_shape.dims();
-        OP_REQUIRES(
-                context, prefix_sum_rank == 1,
-                errors::InvalidArgument("prefix_sum must be a rank 1 tensor"));
+        auto args = TensorArguments(context);
 
         // special treatment for empty values vector
-        if (values_shape.dim_size(0) == 0) {
+        if (args.values.shape().dim_size(0) == 0) {
             Tensor* sums_tensor = 0;
-            OP_REQUIRES_OK(context, context->allocate_output(0, values_shape,
-                                                             &sums_tensor));
+            OP_REQUIRES_OK(context,
+                           context->allocate_output(0, args.values.shape(),
+                                                    &sums_tensor));
             return;
         }
 
         Tensor* sums_tensor = 0;
-        TensorShape sums_shape(prefix_sum_shape);
+        TensorShape sums_shape(args.prefix_sum.shape());
         OP_REQUIRES_OK(context,
                        context->allocate_output(0, sums_shape, &sums_tensor));
         auto sums = sums_tensor->flat<T>();
 
         auto device = context->eigen_gpu_device();
 
-        ReduceSubarraysSumCUDA(device.stream(), values.data(),
-                               values_shape.dim_size(0),
-                               (int64_t*)prefix_sum.data(),
-                               prefix_sum_shape.dim_size(0), sums.data());
+        ReduceSubarraysSumCUDA(device.stream(), args.values.flat<T>().data(),
+                               args.values.shape().dim_size(0),
+                               (int64_t*)args.prefix_sum.flat<int64>().data(),
+                               args.prefix_sum.shape().dim_size(0),
+                               sums.data());
     }
 
 private:
