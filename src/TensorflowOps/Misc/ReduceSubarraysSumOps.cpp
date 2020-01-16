@@ -49,7 +49,8 @@ REGISTER_OP("Open3DReduceSubarraysSum")
             return Status::OK();
         })
         .Doc(R"doc(
-Computes the sum for each subarray. The start and end of the subarrays are defined by a prefix sum.
+Computes the sum for each subarray. The start and end of the subarrays are 
+defined by an exclusive prefix sum.
 
 
 values:
