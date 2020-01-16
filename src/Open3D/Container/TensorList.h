@@ -46,14 +46,16 @@ namespace open3d {
 /// - Sparse Voxel Grid: N x 8 x 8 x 8
 class TensorList {
 public:
-    /// Constructor for creating an empty tensor list.
-    /// \param shape: shape for the contained tensors. e.g. (3) for a list of
-    /// points, (8, 8, 8) for a list of voxel blocks.
+    /// Constructor for creating an (empty by default) tensor list.
+    /// \param shape: shape for the contained tensors. e.g.
+    /// (3) for a list points,
+    /// (8, 8, 8) for a list of voxel blocks.
     /// \param dtype: type for the contained tensors. e.g. Dtype::Int64.
     /// \param device: device to store the contained tensors. e.g. "CPU:0".
     TensorList(const SizeVector& shape,
                const Dtype& dtype,
-               const Device& device = Device("CPU:0"));
+               const Device& device = Device("CPU:0"),
+               const int64_t& size = 0);
 
     /// Constructor from a vector with broadcastable tensors.
     /// \param tensors: a vector of tensors with compatible shapes for
@@ -88,18 +90,36 @@ public:
         ConstructFromIterators(first, last);
     }
 
-    /// Directly construct from the copy of a raw internal tensor.
+    /// Directly construct from a raw internal tensor.
     /// The inverse of AsTensor().
-    TensorList(const Tensor& internal_tensor);
+    /// \param Copy:
+    /// if false, use the raw internal tensor (could be non-contiguous),
+    /// typically only used for Slice() assignment
+    /// if true, create a new contiguous internal tensor with precomputed
+    /// reserved size.
+    TensorList(const Tensor& internal_tensor, bool copy = true);
 
     /// Copy constructor from a tensor list.
     /// Create a new tensor list with copy of data.
     TensorList(const TensorList& other);
 
-    /// Return the reference of the target tensor list with shared memory,
-    /// discarding original data.
-    /// The behavior is the same as '=' for python lists.
-    TensorList& operator=(const TensorList& other);
+    /// Tensor assignment lvalue = lvalue, e.g.
+    /// `tensorlist_a = tensorlist_b`,
+    /// resulting in a "shallow" copy.
+    TensorList& operator=(const TensorList& other) &;
+
+    /// Tensor assignment lvalue = rvalue, e.g.
+    /// `tensorlist_a = tensorlist_b[0]`,
+    /// resulting in a "shallow" copy.
+    TensorList& operator=(TensorList&& other) &;
+
+    /// Tensor assignment rvalue = lvalue, e.g.
+    /// `tensorlist_a.Slice(x, x, x) = tensorlist_b`
+    TensorList& operator=(const TensorList& other) &&;
+
+    /// Tensor assignment rvalue = rvalue, e.g.
+    /// `tensorlist_a.Slice(x, x, x) = tensor_b.Slice(y, y, y)`
+    TensorList& operator=(TensorList&& other) &&;
 
     /// Return the reference of the contained tensors with shared memory.
     Tensor AsTensor() const;
@@ -129,8 +149,10 @@ public:
     /// Return the reference of one tensor with shared memory.
     Tensor operator[](int64_t index);
 
-    /// Return a new tensor list with copy of data.
-    /// The behavior is the same as [Slice()] for python lists.
+    /// Return the reference of the sliced tensor with shared memory
+    /// Note: this shared memory can only be used for temporary assignment.
+    /// We have to ensure that the internal tensor is contiguous when we want
+    /// use PushBack and IndexGet.
     TensorList Slice(int64_t start, int64_t stop, int64_t step = 1);
 
     /// Return a new tensor list with copy of data.

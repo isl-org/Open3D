@@ -128,19 +128,14 @@ TEST_P(TensorListPermuteDevices, AssignOperator) {
     Tensor t1(std::vector<float>(2 * 3, 1), {2, 3}, Dtype::Float32, device);
     Tensor t2(std::vector<float>(2 * 3, 2), {2, 3}, Dtype::Float32, device);
 
-    std::vector<Tensor> tensors = {t0, t1, t2};
-    TensorList tensor_list(tensors, device);
+    /// Right value assignment
+    TensorList tensor_list_gt = {t0, t1, t2};
+    TensorList tensor_list_a = {t2, t2, t2};
+    TensorList tensor_list_b = {t0, t1};
 
-    TensorList tensor_list_new({2, 3}, Dtype::Float32, device);
-    tensor_list_new = tensor_list;
-
-    EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
-              tensor_list_new.AsTensor().ToFlatVector<float>());
-
-    /// Change of the reference should AFFECT the origin
-    tensor_list.AsTensor()[0][0][0] = 1;
-    EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
-              tensor_list_new.AsTensor().ToFlatVector<float>());
+    tensor_list_a.Slice(0, 2) = tensor_list_b;
+    EXPECT_EQ(tensor_list_a.AsTensor().ToFlatVector<float>(),
+              tensor_list_gt.AsTensor().ToFlatVector<float>());
 }
 
 TEST_P(TensorListPermuteDevices, Resize) {
@@ -233,7 +228,7 @@ TEST_P(TensorListPermuteDevices, Slice) {
 
     TensorList new_tensor_list = tensor_list.Slice(0, 3, 2);
     EXPECT_EQ(new_tensor_list.GetSize(), 2);
-    EXPECT_EQ(new_tensor_list.GetReservedSize(), 4);
+    EXPECT_EQ(new_tensor_list.GetReservedSize(), 2);
     EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2}));
 }
