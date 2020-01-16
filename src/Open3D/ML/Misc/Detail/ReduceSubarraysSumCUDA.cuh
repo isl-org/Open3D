@@ -55,6 +55,17 @@ __global__ void ReduceSubarraysSumKernel(
     out_sums[i] = sum;
 }
 
+
+/// Reduces subarrays in linear memory with the sum operation.
+/// The sum for empty subarrays is 0.
+///
+/// \param values          The linear array with all values
+/// \param values_size     Number of elements of \p values
+/// \param prefix_sum      The exclusive prefix sum of the number of elements
+///                        for each array
+/// \param prefix_sum_size The number of subarrays
+/// \param out_sums        The preallocated output array with size
+///                        \p prefix_sum_size
 template <class T>
 void ReduceSubarraysSumCUDA(const cudaStream_t& stream,
                             const T* const values,
