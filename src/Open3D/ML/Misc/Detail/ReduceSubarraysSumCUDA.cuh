@@ -33,13 +33,14 @@ namespace open3d {
 namespace ml {
 namespace detail {
 
+/// Kernel for ReduceSubarraysSumCUDA
 template <class T>
-__global__ void ReduceSubarraysSumKernel(
-        T* __restrict__ out_sums,
+__global__ void ReduceSubarraysSumCUDAKernel(
         const T* const __restrict__ values,
-        size_t values_size,
+        const size_t values_size,
         const int64_t* const __restrict__ prefix_sum,
-        size_t prefix_sum_size) {
+        const size_t prefix_sum_size,
+        T* __restrict__ out_sums) {
     const int i = blockDim.x * blockIdx.x + threadIdx.x;
     if (i >= prefix_sum_size) return;
 
@@ -78,8 +79,8 @@ void ReduceSubarraysSumCUDA(const cudaStream_t& stream,
     dim3 grid(DivUp(prefix_sum_size, block.x));
 
     if (grid.x) {
-        ReduceSubarraysSumKernel<T><<<grid, block, 0, stream>>>(
-                out_sums, values, values_size, prefix_sum, prefix_sum_size);
+        ReduceSubarraysSumCUDAKernel<T><<<grid, block, 0, stream>>>(
+                values, values_size, prefix_sum, prefix_sum_size, out_sums);
     }
 }
 
