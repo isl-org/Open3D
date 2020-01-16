@@ -231,6 +231,13 @@ TEST_P(TensorListPermuteDevices, Slice) {
     EXPECT_EQ(new_tensor_list.GetReservedSize(), 2);
     EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2}));
+
+    new_tensor_list.PushBack(t1);
+    EXPECT_EQ(new_tensor_list.GetSize(), 3);
+    EXPECT_EQ(new_tensor_list.GetReservedSize(), 8);
+    EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
+              std::vector<float>(
+                      {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1}));
 }
 
 TEST_P(TensorListPermuteDevices, IndexGet) {

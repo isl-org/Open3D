@@ -90,12 +90,12 @@ public:
         ConstructFromIterators(first, last);
     }
 
-    /// Directly construct from a raw internal tensor.
+    /// Constructor from a raw internal tensor.
     /// The inverse of AsTensor().
-    /// \param Copy:
-    /// if false, use the raw internal tensor (could be non-contiguous),
+    /// \param copy:
+    /// - if false, use the raw internal tensor (could be non-contiguous),
     /// typically only used for Slice() assignment
-    /// if true, create a new contiguous internal tensor with precomputed
+    /// - if true, create a new contiguous internal tensor with precomputed
     /// reserved size.
     TensorList(const Tensor& internal_tensor, bool copy = true);
 
@@ -103,25 +103,25 @@ public:
     /// Create a new tensor list with copy of data.
     TensorList(const TensorList& other);
 
-    /// Tensor assignment lvalue = lvalue, e.g.
+    /// TensorList assignment lvalue = lvalue, e.g.
     /// `tensorlist_a = tensorlist_b`,
     /// resulting in a "shallow" copy.
     TensorList& operator=(const TensorList& other) &;
 
-    /// Tensor assignment lvalue = rvalue, e.g.
+    /// TensorList assignment lvalue = rvalue, e.g.
     /// `tensorlist_a = tensorlist_b[0]`,
     /// resulting in a "shallow" copy.
     TensorList& operator=(TensorList&& other) &;
 
-    /// Tensor assignment rvalue = lvalue, e.g.
+    /// TensorList assignment rvalue = lvalue, e.g.
     /// `tensorlist_a.Slice(x, x, x) = tensorlist_b`
     TensorList& operator=(const TensorList& other) &&;
 
-    /// Tensor assignment rvalue = rvalue, e.g.
+    /// TensorLIst assignment rvalue = rvalue, e.g.
     /// `tensorlist_a.Slice(x, x, x) = tensor_b.Slice(y, y, y)`
     TensorList& operator=(TensorList&& other) &&;
 
-    /// Return the reference of the contained tensors with shared memory.
+    /// Return the reference of the contained valid tensors with shared memory.
     Tensor AsTensor() const;
 
     /// Resize an existing tensor list.
@@ -150,9 +150,9 @@ public:
     Tensor operator[](int64_t index);
 
     /// Return the reference of the sliced tensor with shared memory
-    /// Note: this shared memory can only be used for temporary assignment.
-    /// We have to ensure that the internal tensor is contiguous when we want
-    /// use PushBack and IndexGet.
+    /// Note: this shared memory could be non-contiguous
+    /// without reserved space. The new created TensorList's internal tensor
+    /// will be copied to an internal contiguous tensor for PushBack operations
     TensorList Slice(int64_t start, int64_t stop, int64_t step = 1);
 
     /// Return a new tensor list with copy of data.

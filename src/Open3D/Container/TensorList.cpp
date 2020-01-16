@@ -64,21 +64,18 @@ TensorList::TensorList(const Tensor& internal_tensor, bool copy)
       internal_tensor_(
               SizeVector(), Dtype::Int64, internal_tensor.GetDevice()) {
     SizeVector shape = internal_tensor.GetShape();
-    if (shape.size() <= 1) {
-        utility::LogError(
-                "Unable to construct TensorList from a Tensor with dim <= 1");
-    }
 
     size_ = shape[0];
     shape_ = SizeVector(std::next(shape.begin()), shape.end());
 
     if (copy) {
-        reserved_size_ = ReserveSize(size_);
         /// Construct the internal tensor with copy
+        reserved_size_ = ReserveSize(size_);
         SizeVector expanded_shape = ExpandFrontDim(shape_, reserved_size_);
         internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
         internal_tensor_.Slice(0 /* dim */, 0, size_) = internal_tensor;
     } else {
+        /// Directly reuse the slices
         reserved_size_ = size_;
         internal_tensor_ = internal_tensor;
     }
