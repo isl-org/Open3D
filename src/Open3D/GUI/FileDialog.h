@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,48 +26,47 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
+#include "Dialog.h"
 
-#include <memory>
-
-#include <filament/Color.h>
-
-namespace filament
-{
-    class Engine;
-    class Scene;
-    class View;
-    class Viewport;
-}
+#include <functional>
 
 namespace open3d {
-namespace visualization {
+namespace gui {
 
-class FilamentCamera;
+struct Theme;
 
-class FilamentView : public View {
+class FileDialog : public Dialog {
+    using Super = Dialog;
 public:
-    FilamentView(filament::Engine& engine, filament::Scene& scene);
-    ~FilamentView() override;
+    enum class Type { OPEN, SAVE };
 
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+    FileDialog(Type type, const char *title, const Theme& theme);
+    virtual ~FileDialog();
 
-    void SetViewport(std::int32_t x,
-                     std::int32_t y,
-                     std::uint32_t w,
-                     std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
+    /// May either be a directory or a file. If path is a file, it will be
+    /// selected if it exists. Defaults to current working directory if
+    /// no path is specified.
+    void SetPath(const char *path);
 
-    Camera* GetCamera() const override;
+    /// 'filter' is a string of extensions separated by a space or comma.
+    /// An empty filter string matches all extensions.
+    ///    AddFilter(".jpg .png .gif", "Image file (.jpg, .png, .gif)")
+    ///    AddFilter(".jpg", "JPEG image (.jpg)")
+    ///    AddFilter("", "All files")
+    void AddFilter(const char *filter, const char *description);
 
-    filament::View* GetNativeView() const { return view_; }
+    /// The OnCancel and OnDone callbacks *must* be specified.
+    void SetOnCancel(std::function<void()> onCancel);
+    void SetOnDone(std::function<void(const char *)> onDone);
+
+    Size CalcPreferredSize(const Theme &theme) const override;
+
+protected:
+    void OnDone();
 
 private:
-    std::unique_ptr<FilamentCamera> camera_;
-
-    filament::Engine& engine_;
-    filament::Scene& scene_;
-    filament::View* view_ = nullptr;
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 }

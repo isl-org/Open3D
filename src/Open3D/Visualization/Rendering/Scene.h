@@ -29,6 +29,8 @@
 #include "RendererHandle.h"
 #include "RendererStructs.h"
 
+#include <Eigen/Geometry>
+
 namespace open3d {
 
 namespace geometry {
@@ -43,6 +45,8 @@ class View;
 // Can have multiple views
 class Scene {
 public:
+    using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
+
     virtual ~Scene() {}
 
     virtual ViewHandle AddView(std::int32_t x,
@@ -61,6 +65,13 @@ public:
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
     // virtual LightFluentInterface ModifyLight(const REHandle<EntityType::Light>& id) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
+
+    virtual void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) = 0;
+    virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;
+
+    //               <     center        half extent  >
+    virtual std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) = 0;
+    virtual std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) = 0;
 };
 
 }

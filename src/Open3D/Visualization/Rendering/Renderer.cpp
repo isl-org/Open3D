@@ -24,51 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Renderer.h"
 
-#include "Open3D/Visualization/Rendering/View.h"
-
-#include <memory>
-
-#include <filament/Color.h>
-
-namespace filament
-{
-    class Engine;
-    class Scene;
-    class View;
-    class Viewport;
-}
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace visualization {
 
-class FilamentCamera;
+MaterialLoadRequest::ErrorCallback MaterialLoadRequest::defaultErrorHandler =
+        [](const MaterialLoadRequest& request, const uint8_t code, const std::string& details) {
+            if (!request.path.empty()) {
+                utility::LogError("Material request for path {} failed:\n* Code: {}\n* Error: {}", request.path.data(), code, details.data());
+            } else if (request.dataSize > 0){
+                utility::LogError("Material request failed:\n* Code: {}\n * Error: {}", code, details.data());
+            } else {
+                utility::LogError("Material request failed: Malformed request");
+            }
+        };
 
-class FilamentView : public View {
-public:
-    FilamentView(filament::Engine& engine, filament::Scene& scene);
-    ~FilamentView() override;
+MaterialLoadRequest::MaterialLoadRequest(const void* aMaterialData,
+                                         size_t aDataSize,
+                                         ErrorCallback aErrorCallback)
+    : materialData(aMaterialData),
+      dataSize(aDataSize),
+      path(""),
+      errorCallback(std::move(aErrorCallback)) {}
 
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
-
-    void SetViewport(std::int32_t x,
-                     std::int32_t y,
-                     std::uint32_t w,
-                     std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
-
-    Camera* GetCamera() const override;
-
-    filament::View* GetNativeView() const { return view_; }
-
-private:
-    std::unique_ptr<FilamentCamera> camera_;
-
-    filament::Engine& engine_;
-    filament::Scene& scene_;
-    filament::View* view_ = nullptr;
-};
+MaterialLoadRequest::MaterialLoadRequest(const char* aPath,
+                                         ErrorCallback aErrorCallback)
+    : materialData(nullptr),
+      dataSize(0u),
+      path(aPath),
+      errorCallback(std::move(aErrorCallback)) {}
 
 }
 }

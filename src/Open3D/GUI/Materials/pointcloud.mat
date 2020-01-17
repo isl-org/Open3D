@@ -1,0 +1,26 @@
+material {
+    name : pointcloud,
+    parameters : [
+        {
+            type : float,
+            name : pointSize
+        }
+    ],
+    requires : [
+        color
+    ],
+    shadingModel : unlit
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor = getColor();
+    }
+}

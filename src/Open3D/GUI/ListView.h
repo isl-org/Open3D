@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,48 +26,35 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
+#include "Widget.h"
 
-#include <memory>
-
-#include <filament/Color.h>
-
-namespace filament
-{
-    class Engine;
-    class Scene;
-    class View;
-    class Viewport;
-}
+#include <functional>
 
 namespace open3d {
-namespace visualization {
+namespace gui {
 
-class FilamentCamera;
-
-class FilamentView : public View {
+class ListView : public Widget {
+    using Super = Widget;
 public:
-    FilamentView(filament::Engine& engine, filament::Scene& scene);
-    ~FilamentView() override;
+    ListView();
+    virtual ~ListView();
 
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+    void SetItems(const std::vector<std::string>& items);
 
-    void SetViewport(std::int32_t x,
-                     std::int32_t y,
-                     std::uint32_t w,
-                     std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
+    int GetSelectedIndex() const;
+    const char* GetSelectedValue() const;
+    void SetSelectedIndex(int index);
 
-    Camera* GetCamera() const override;
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    filament::View* GetNativeView() const { return view_; }
+    DrawResult Draw(const DrawContext& context) override;
+
+    /// calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    void SetOnValueChanged(std::function<void(const char *, bool)> onValueChanged);
 
 private:
-    std::unique_ptr<FilamentCamera> camera_;
-
-    filament::Engine& engine_;
-    filament::Scene& scene_;
-    filament::View* view_ = nullptr;
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 }

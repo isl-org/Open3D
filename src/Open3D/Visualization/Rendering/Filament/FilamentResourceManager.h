@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "Open3D/Visualization/Rendering/Renderer.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 #include <unordered_map>
@@ -53,6 +54,7 @@ public:
     ~FilamentResourceManager();
 
     MaterialHandle CreateMaterial(const void* materialData, size_t dataSize);
+    MaterialHandle CreateMaterial(const MaterialLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
     TextureHandle CreateTexture(/*TBD*/);
     // Since rendering uses not all Open3D geometry/filament features, I'm not sure which arguments should CreateVB(...) function have. Thus creation of VB is managed by FilamentScene class

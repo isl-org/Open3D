@@ -43,6 +43,9 @@ FilamentView::FilamentView(filament::Engine& aEngine, filament::Scene& aScene)
 {
     view_ = engine_.createView();
     view_->setScene(&scene_);
+    view_->setSampleCount(8);
+    view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
+    view_->setPostProcessingEnabled(true);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
@@ -57,6 +60,25 @@ FilamentView::~FilamentView()
 
     camera_.reset();
     engine_.destroy(view_);
+}
+
+void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers)
+{
+    using namespace std;
+
+    auto rawBuffers = static_cast<uint8_t>(buffers);
+    uint8_t rawFilamentBuffers = 0;
+    if (rawBuffers | (uint8_t)TargetBuffers::Color) {
+        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::COLOR;
+    }
+    if (rawBuffers | (uint8_t)TargetBuffers::Depth) {
+        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::DEPTH;
+    }
+    if (rawBuffers | (uint8_t)TargetBuffers::Stencil) {
+        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::STENCIL;
+    }
+
+    view_->setRenderTarget(nullptr, static_cast<filament::View::TargetBufferFlags>(rawFilamentBuffers));
 }
 
 void FilamentView::SetViewport(std::int32_t x, std::int32_t y, std::uint32_t w, std::uint32_t h)

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,36 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Dialog.h"
 
-#include "RendererHandle.h"
-#include "RendererEntitiesMods.h"
+#include "Window.h"
+
+#include <string>
 
 namespace open3d {
-namespace visualization {
+namespace gui {
 
-class Scene;
-class Camera;
-
-class AbstractRenderInterface {
-public:
-    virtual ~AbstractRenderInterface() = default;
-
-    virtual SceneHandle CreateScene() = 0;
-    virtual Scene* GetScene(const SceneHandle& id) const = 0;
-    virtual void DestroyScene(const SceneHandle& id) = 0;
-
-    virtual void BeginFrame() = 0;
-    virtual void Draw() = 0;
-    virtual void EndFrame() = 0;
-
-    // Loads material from its data
-    virtual MaterialHandle AddMaterial(const void* materialData,
-                                       size_t dataSize) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(
-            const MaterialInstanceHandle& id) = 0;
+struct Dialog::Impl {
+    std::string title;
+    Window *parent = nullptr;
 };
 
+Dialog::Dialog(const char *title)
+: impl_(std::make_unique<Dialog::Impl>()) {
 }
+
+Dialog::~Dialog() {
 }
+
+Size Dialog::CalcPreferredSize(const Theme &theme) const {
+    if (GetChildren().size() == 1) {
+        auto child = GetChildren()[0];
+        return child->CalcPreferredSize(theme);
+    } else {
+        return Super::CalcPreferredSize(theme);
+    }
+}
+
+void Dialog::Layout(const Theme& theme) {
+    if (GetChildren().size() == 1) {
+        auto child = GetChildren()[0];
+        child->SetFrame(GetFrame());
+        child->Layout(theme);
+    } else {
+        Super::Layout(theme);
+    }
+}
+
+Widget::DrawResult Dialog::Draw(const DrawContext& context) {
+    return Super::Draw(context);
+}
+
+} // gui
+} // open3d
