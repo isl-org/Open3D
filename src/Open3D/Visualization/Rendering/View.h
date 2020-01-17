@@ -36,7 +36,7 @@ class Camera;
 
 class View {
 public:
-    enum class TargetBuffers : uint8_t {
+    enum class TargetBuffers : std::uint8_t {
         None = 0u,
         Color = 1u,
         Depth = 2u,
@@ -48,9 +48,16 @@ public:
         All = Color | Depth | Stencil
     };
 
+    enum class Mode : std::uint8_t {
+        Color = 0u,
+        Depth,
+        Normal
+    };
+
     virtual ~View() {}
 
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
+    virtual void SetMode(Mode mode) = 0;
 
     virtual void SetViewport(std::int32_t x,
                              std::int32_t y,

@@ -292,7 +292,9 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     for (const auto& pair : views_) {
         auto& container = pair.second;
         if (container.isActive) {
+            container.view->PreRender();
             renderer.render(container.view->GetNativeView());
+            container.view->PostRender();
         }
     }
 }

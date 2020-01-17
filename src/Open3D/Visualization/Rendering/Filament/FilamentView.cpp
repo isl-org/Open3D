@@ -27,6 +27,7 @@
 #include "FilamentView.h"
 
 #include "FilamentCamera.h"
+#include "FilamentScene.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
@@ -35,10 +36,14 @@
 namespace open3d {
 namespace visualization {
 
-FilamentView::FilamentView(filament::Engine& aEngine, filament::Scene& aScene)
+namespace {
+const filament::LinearColorA kDepthClearColor = {0,0,0,0};
+}
+
+FilamentView::FilamentView(filament::Engine& aEngine, FilamentScene& aScene)
     : engine_(aEngine), scene_(aScene) {
     view_ = engine_.createView();
-    view_->setScene(&scene_);
+    view_->setScene(scene_.GetNativeScene());
     view_->setSampleCount(8);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
@@ -56,6 +61,20 @@ FilamentView::~FilamentView() {
 
     camera_.reset();
     engine_.destroy(view_);
+}
+
+void FilamentView::SetMode(Mode mode) {
+    switch (mode) {
+        case Mode::Color:
+            view_->setClearColor({clearColor_.x(), clearColor_.y(), clearColor_.z(), 1.f});
+            break;
+        case Mode::Depth:
+            view_->setClearColor(kDepthClearColor);
+            break;
+        case Mode::Normal: break;
+    }
+
+    mode_ = mode;
 }
 
 void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers)
@@ -85,10 +104,24 @@ void FilamentView::SetViewport(std::int32_t x,
 }
 
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
-    view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
+    clearColor_ = color;
+
+    // We apply changes immediately only in color mode
+    // In other cases color will be setted on mode switch
+    if (mode_ == Mode::Color) {
+        view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
+    }
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
+
+void FilamentView::PreRender() {
+
+}
+
+void FilamentView::PostRender() {
+
+}
 
 }  // namespace visualization
 }  // namespace open3d

@@ -87,10 +87,13 @@ public:
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
+    friend class FilamentView;
+
     struct AllocatedEntity {
         utils::Entity self;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
+        MaterialInstanceHandle material;
         // Used for relocating transform to center of mass
         utils::Entity parent;
     };
