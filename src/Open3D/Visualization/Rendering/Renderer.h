@@ -26,48 +26,53 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
-
-#include <memory>
-
-#include <filament/Color.h>
-
-namespace filament
-{
-    class Engine;
-    class Scene;
-    class View;
-    class Viewport;
-}
+#include "RendererHandle.h"
+#include "RendererEntitiesMods.h"
 
 namespace open3d {
 namespace visualization {
 
-class FilamentCamera;
+class Scene;
+class Camera;
 
-class FilamentView : public View {
+class MaterialLoadRequest {
 public:
-    FilamentView(filament::Engine& engine, filament::Scene& scene);
-    ~FilamentView() override;
+    using ErrorCallback = std::function<void(
+            const MaterialLoadRequest&, const uint8_t, const std::string&)>;
+    static ErrorCallback defaultErrorHandler;
 
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+    MaterialLoadRequest(const void* materialData,
+                        size_t dataSize,
+                        ErrorCallback errorCallback = defaultErrorHandler);
+    explicit MaterialLoadRequest(
+            const char* path,
+            ErrorCallback errorCallback = defaultErrorHandler);
 
-    void SetViewport(std::int32_t x,
-                     std::int32_t y,
-                     std::uint32_t w,
-                     std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
+    const void* materialData;
+    const size_t dataSize;
+    const std::string path;
+    ErrorCallback errorCallback;
+};
 
-    Camera* GetCamera() const override;
+class Renderer {
+public:
+    virtual ~Renderer() = default;
 
-    filament::View* GetNativeView() const { return view_; }
+    virtual SceneHandle CreateScene() = 0;
+    virtual Scene* GetScene(const SceneHandle& id) const = 0;
+    virtual void DestroyScene(const SceneHandle& id) = 0;
 
-private:
-    std::unique_ptr<FilamentCamera> camera_;
+    virtual void BeginFrame() = 0;
+    virtual void Draw() = 0;
+    virtual void EndFrame() = 0;
 
-    filament::Engine& engine_;
-    filament::Scene& scene_;
-    filament::View* view_ = nullptr;
+    // Loads material from its data
+    virtual MaterialHandle AddMaterial(const void* materialData,
+                                       size_t dataSize) = 0;
+    virtual MaterialHandle AddMaterial(const MaterialLoadRequest& request) = 0;
+    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
+    virtual MaterialModifier& ModifyMaterial(
+            const MaterialInstanceHandle& id) = 0;
 };
 
 }

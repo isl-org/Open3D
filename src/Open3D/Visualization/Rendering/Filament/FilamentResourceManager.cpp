@@ -26,6 +26,8 @@
 
 #include "FilamentResourceManager.h"
 
+#include "Open3D/Utility/FileSystem.h"
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
@@ -103,6 +105,27 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData,
     MaterialHandle handle;
     if (material) {
         handle = RegisterResource<MaterialHandle>(engine_, material, materials_);
+    }
+
+    return handle;
+}
+
+MaterialHandle FilamentResourceManager::CreateMaterial(const MaterialLoadRequest& request) {
+    MaterialHandle handle;
+
+    if (false == request.path.empty()) {
+        std::vector<char> materialData;
+        std::string errorStr;
+
+        if (utility::filesystem::FReadToBuffer(request.path, materialData, &errorStr)) {
+            handle = CreateMaterial(materialData.data(), materialData.size());
+        } else {
+            request.errorCallback(request, errno, errorStr);
+        }
+    } else if (request.dataSize > 0) {
+        handle = CreateMaterial(request.materialData, request.dataSize);
+    } else {
+        request.errorCallback(request, -1, "");
     }
 
     return handle;

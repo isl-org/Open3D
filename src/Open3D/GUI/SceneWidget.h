@@ -26,9 +26,10 @@
 
 #pragma once
 
-#include "Widget.h"
+#include <Open3D/Visualization/Rendering/View.h>
 
 #include "Renderer.h"
+#include "Widget.h"
 
 namespace open3d {
 
@@ -52,6 +53,7 @@ public:
     void SetFrame(const Rect& f) override;
 
     void SetBackgroundColor(const Color& color);
+    void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
     visualization::Scene* GetScene() const;
     visualization::CameraManipulator* GetCameraManipulator() const;

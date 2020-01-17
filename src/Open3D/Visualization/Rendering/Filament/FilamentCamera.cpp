@@ -26,8 +26,6 @@
 
 #include "FilamentCamera.h"
 
-#include <cstddef>
-
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 
@@ -66,12 +64,38 @@ void FilamentCamera::SetProjection(Projection projection,
     camera_->setProjection(proj, left, right, bottom, top, near, far);
 }
 
+void FilamentCamera::SetModelMatrix(const Transform& view) {
+    using namespace filament::math;
+
+    auto eMatrix = view.matrix();
+    mat4f fTransform(mat4f::row_major_init{
+            eMatrix(0, 0), eMatrix(0, 1), eMatrix(0, 2), eMatrix(0, 3),
+            eMatrix(1, 0), eMatrix(1, 1), eMatrix(1, 2), eMatrix(1, 3),
+            eMatrix(2, 0), eMatrix(2, 1), eMatrix(2, 2), eMatrix(2, 3),
+            eMatrix(3, 0), eMatrix(3, 1), eMatrix(3, 2), eMatrix(3, 3)});
+
+    camera_->setModelMatrix(fTransform);
+}
+
+void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
+                                    const Eigen::Vector3f& left,
+                                    const Eigen::Vector3f& up) {
+    using namespace filament;
+
+    math::mat4f fTransform = camera_->getModelMatrix();
+    fTransform[0].xyz = math::float3(left.x(),left.y(),left.z());
+    fTransform[1].xyz = math::float3(up.x(),up.y(),up.z());
+    fTransform[2].xyz = math::float3(forward.x(),forward.y(),forward.z());
+
+    camera_->setModelMatrix(fTransform);
+}
+
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,
                             const Eigen::Vector3f& eye,
                             const Eigen::Vector3f& up) {
     camera_->lookAt({eye.x(), eye.y(), eye.z()},
-                   {center.x(), center.y(), center.z()},
-                   {up.x(), up.y(), up.z()});
+                    {center.x(), center.y(), center.z()},
+                    {up.x(), up.y(), up.z()});
 }
 
 Eigen::Vector3f FilamentCamera::GetPosition() {
@@ -92,6 +116,19 @@ Eigen::Vector3f FilamentCamera::GetLeftVector() {
 Eigen::Vector3f FilamentCamera::GetUpVector() {
     auto up = camera_->getUpVector();
     return {up.x, up.y, up.z};
+}
+
+FilamentCamera::Transform FilamentCamera::GetModelMatrix() {
+    auto fTransform = camera_->getModelMatrix();
+
+    Transform::MatrixType matrix;
+
+    matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
+            fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
+            fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
+            fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+
+    return Transform(matrix);
 }
 
 }

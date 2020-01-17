@@ -42,6 +42,7 @@ namespace gui {
 struct Checkbox::Impl {
     std::string name;
     bool isChecked = false;
+    std::function<void(bool)> onChecked;
 };
 
 Checkbox::Checkbox(const char *name)
@@ -58,6 +59,10 @@ bool Checkbox::IsChecked() const {
 
 void Checkbox::SetChecked(bool checked) {
     impl_->isChecked = checked;
+}
+
+void Checkbox::SetOnChecked(std::function<void(bool)> onChecked) {
+    impl_->onChecked = onChecked;
 }
 
 Size Checkbox::CalcPreferredSize(const Theme& theme) const {
@@ -93,14 +98,16 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
         ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colorToImgui(context.theme.checkboxBackgroundHoverOffColor));
     }
 
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (ImGui::Checkbox(impl_->name.c_str(), &impl_->isChecked)) {
-        if (OnChecked) {
-            OnChecked(impl_->isChecked);
+        if (impl_->onChecked) {
+            impl_->onChecked(impl_->isChecked);
         }
         result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
 
     ImGui::PopStyleColor(2);
 

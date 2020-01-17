@@ -55,8 +55,8 @@ public:
 
     int CalcHeight(const Theme& theme) const;
 
-    ItemId DrawMenuBar(const DrawContext& context);
-    ItemId Draw(const DrawContext& context, const char *name);
+    ItemId DrawMenuBar(const DrawContext& context, bool isEnabled);
+    ItemId Draw(const DrawContext& context, const char *name, bool isEnabled);
 
 protected:
     struct MenuItem;

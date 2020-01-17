@@ -48,8 +48,8 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    std::function<void(const char*)> OnTextChanged;
-    std::function<void(const char*)> OnValueChanged;
+    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
+    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
 
 private:
     struct Impl;

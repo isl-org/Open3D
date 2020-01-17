@@ -29,6 +29,9 @@
 #include "Color.h"
 #include "Events.h"
 
+#include <imgui.h>
+#include <imgui_internal.h>
+
 namespace open3d {
 namespace gui {
 
@@ -38,6 +41,8 @@ struct Widget::Impl {
     Rect frame;
     Color bgColor = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children;
+    bool isVisible = true;
+    bool isEnabled = true;
 };
 
 Widget::Widget()
@@ -82,6 +87,22 @@ void Widget::SetBackgroundColor(const Color& color) {
     impl_->bgColor = color;
 }
 
+bool Widget::IsVisible() const {
+    return impl_->isVisible;
+}
+
+void Widget::SetVisible(bool vis) {
+    impl_->isVisible = vis;
+}
+
+bool Widget::IsEnabled() const {
+    return impl_->isEnabled;
+}
+
+void Widget::SetEnabled(bool enabled) {
+    impl_->isEnabled = enabled;
+}
+
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
 }
@@ -93,19 +114,44 @@ void Widget::Layout(const Theme& theme) {
 }
 
 Widget::DrawResult Widget::Draw(const DrawContext& context) {
+    if (!impl_->isVisible) {
+        return DrawResult::NONE;
+    }
+
     DrawResult result = DrawResult::NONE;
     for (auto &child : impl_->children) {
-        auto r = child->Draw(context);
-        // The mouse can only be over one item, so there should never
-        // be multiple items returning non-NONE.
-        if (r != DrawResult::NONE) {
-            result = r;
+        if (child->IsVisible()) {
+            auto r = child->Draw(context);
+            // The mouse can only be over one item, so there should never
+            // be multiple items returning non-NONE.
+            if (r != DrawResult::NONE) {
+                result = r;
+            }
         }
     }
     return result;
 }
 
+void Widget::DrawImGuiPushEnabledState() {
+    if (!IsEnabled()) {
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
+                            ImGui::GetStyle().Alpha * 0.5f);
+    }
+}
+
+void Widget::DrawImGuiPopEnabledState() {
+    if (!IsEnabled()) {
+        ImGui::PopStyleVar();
+        ImGui::PopItemFlag();
+    }
+}
+
 void Widget::Mouse(const MouseEvent& e) {
+    if (!impl_->isVisible) {
+        return;
+    }
+
     // Iterate backwards so that we send mouse events from the top down.
     for (auto it = impl_->children.rbegin();
         it != impl_->children.rend();  ++it) {

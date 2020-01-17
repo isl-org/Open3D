@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,48 +26,27 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
-
-#include <memory>
-
-#include <filament/Color.h>
-
-namespace filament
-{
-    class Engine;
-    class Scene;
-    class View;
-    class Viewport;
-}
+#include "Widget.h"
 
 namespace open3d {
-namespace visualization {
+namespace gui {
 
-class FilamentCamera;
+class Window;
 
-class FilamentView : public View {
+class Dialog : public Widget
+{
+    using Super = Widget;
 public:
-    FilamentView(filament::Engine& engine, filament::Scene& scene);
-    ~FilamentView() override;
+    explicit Dialog(const char *title);
+    virtual ~Dialog();
 
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
-
-    void SetViewport(std::int32_t x,
-                     std::int32_t y,
-                     std::uint32_t w,
-                     std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
-
-    Camera* GetCamera() const override;
-
-    filament::View* GetNativeView() const { return view_; }
+    Size CalcPreferredSize(const Theme &theme) const override;
+    void Layout(const Theme& theme) override;
+    DrawResult Draw(const DrawContext& context) override;
 
 private:
-    std::unique_ptr<FilamentCamera> camera_;
-
-    filament::Engine& engine_;
-    filament::Scene& scene_;
-    filament::View* view_ = nullptr;
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 }

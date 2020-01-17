@@ -30,15 +30,15 @@
 #include <memory>
 #include <string>
 
-#include "Gui.h"
 #include "Events.h"
+#include "Gui.h"
 #include "Menu.h"
-
-#include "Open3D/Visualization/Rendering/AbstractRenderInterface.h"
+#include "Open3D/Visualization/Rendering/Renderer.h"
 
 namespace open3d {
 namespace gui {
 
+class Dialog;
 class Menu;
 class Renderer;
 struct Theme;
@@ -55,7 +55,7 @@ public:
     uint32_t GetID() const;
 
     const Theme& GetTheme() const;
-    visualization::AbstractRenderInterface& GetRenderer() const;
+    visualization::Renderer& GetRenderer() const;
 
     Size GetSize() const; // total interior size of window, including menubar
     Rect GetContentRect() const; // size available to widgets
@@ -71,10 +71,16 @@ public:
 
     void AddChild(std::shared_ptr<Widget> w);
 
-    std::function<void(Menu::ItemId)> OnMenuItemSelected;
+    void ShowDialog(std::shared_ptr<Dialog> dlg);
+    void CloseDialog();
+
+    void ShowMessageBox(const char *title, const char *message);
 
 protected:
     virtual void Layout(const Theme& theme);
+
+    // Override to handle menu items
+    virtual void OnMenuItemSelected(Menu::ItemId itemId);
 
 private:
     enum DrawResult { NONE, REDRAW };

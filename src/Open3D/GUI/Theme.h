@@ -72,6 +72,9 @@ struct Theme {
     Color tabInactiveColor;
     Color tabHoverColor;
     Color tabActiveColor;
+
+    int dialogBorderWidth;
+    int dialogBorderRadius;
 };
 
 }
