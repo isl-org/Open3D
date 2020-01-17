@@ -28,7 +28,6 @@ import open3d as o3d
 import numpy as np
 import torch
 import torch.utils.dlpack
-import time
 import pytest
 
 
@@ -36,7 +35,7 @@ def list_devices():
     devices = [o3d.Device("CPU:" + str(0))]
     if (o3d.cuda.device_count() != torch.cuda.device_count()):
         raise RuntimeError(
-            "o3d.cuda.device_count() != torch.cuda.device_count(), "
+            f"o3d.cuda.device_count() != torch.cuda.device_count(), "
             f"{o3d.cuda.device_count()} != {torch.cuda.device_count()}")
     for i in range(o3d.cuda.device_count()):
         devices.append(o3d.Device("CUDA:" + str(i)))
