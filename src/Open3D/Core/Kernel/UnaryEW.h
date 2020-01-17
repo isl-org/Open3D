@@ -24,38 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#pragma once
 
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace kernel {
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+void Copy(const Tensor& src, Tensor& dst);
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
+void CopyCPU(const Tensor& src, Tensor& dst);
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+#ifdef BUILD_CUDA_MODULE
+void CopyCUDA(const Tensor& src, Tensor& dst);
+#endif
 
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace kernel
+}  // namespace open3d

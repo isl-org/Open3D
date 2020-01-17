@@ -24,38 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "open3d_pybind/core/container.h"
 
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/CUDAUtils.h"
 
-using namespace std;
 using namespace open3d;
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+void pybind_cuda_utils(py::module &m) {
+    py::module m_cuda = m.def_submodule("cuda");
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
-
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
+    m_cuda.def("device_count", cuda::DeviceCount);
+    m_cuda.def("is_available", cuda::IsAvailable);
 }

@@ -24,38 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#pragma once
 
-#include "TestUtility/UnitTest.h"
+#include <string>
 
-using namespace std;
-using namespace open3d;
+#include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/Tensor.h"
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+#include "open3d_pybind/open3d_pybind.h"
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
+namespace open3d {
+namespace pybind_utils {
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+Dtype ArrayFormatToDtype(const std::string& format);
 
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+std::string DtypeToArrayFormat(const Dtype& dtype);
 
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace pybind_utils
+}  // namespace open3d

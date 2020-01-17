@@ -24,43 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <cstring>
-#include <string>
+#include "Open3D/Core/Kernel/UnaryEW.h"
 
-#ifdef BUILD_CUDA_MODULE
-#include "Open3D/Core/CUDAState.cuh"
-#endif
-
+#include "Open3D/Core/Broadcast.h"
+#include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
-#include "TestUtility/Print.h"
-#include "TestUtility/Rand.h"
-#include "TestUtility/Raw.h"
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
+namespace open3d {
+namespace kernel {
 
-int main(int argc, char** argv) {
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::CUDAState> cuda_state =
-                open3d::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
+void Copy(const Tensor& src, Tensor& dst) {
+    // Check shape
+    if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
+        utility::LogError("Shape {} can not be broadcasted to {}.",
+                          src.GetShape(), dst.GetShape());
     }
+
+    // Check dtype
+    // TODO: in the future, we may want to allow automatic casting
+    if (src.GetDtype() != dst.GetDtype()) {
+        utility::LogError("src and dst tensor dtype mismatch {} != {}",
+                          DtypeUtil::ToString(src.GetDtype()),
+                          DtypeUtil::ToString(dst.GetDtype()));
+    }
+
+    // Disbatch to device
+    Device::DeviceType src_device_type = src.GetDevice().GetType();
+    Device::DeviceType dst_device_type = dst.GetDevice().GetType();
+    if ((src_device_type != Device::DeviceType::CPU &&
+         src_device_type != Device::DeviceType::CUDA) ||
+        (dst_device_type != Device::DeviceType::CPU &&
+         dst_device_type != Device::DeviceType::CUDA)) {
+        utility::LogError("Copy: Unimplemented device");
+    }
+    if (src_device_type == Device::DeviceType::CPU &&
+        dst_device_type == Device::DeviceType::CPU) {
+        CopyCPU(src, dst);
+    } else {
+#ifdef BUILD_CUDA_MODULE
+        CopyCUDA(src, dst);
 #endif
-    testing::InitGoogleTest(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
+    }
 }
+
+}  // namespace kernel
+}  // namespace open3d

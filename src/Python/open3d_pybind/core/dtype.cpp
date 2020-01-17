@@ -24,38 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "open3d_pybind/core/container.h"
+#include "open3d_pybind/docstring.h"
+#include "open3d_pybind/open3d_pybind.h"
 
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/Dtype.h"
 
-using namespace std;
 using namespace open3d;
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+void pybind_core_dtype(py::module &m) {
+    py::enum_<Dtype>(m, "Dtype")
+            .value("Undefined", Dtype::Undefined)
+            .value("Float32", Dtype::Float32)
+            .value("Float64", Dtype::Float64)
+            .value("Int32", Dtype::Int32)
+            .value("Int64", Dtype::Int64)
+            .value("UInt8", Dtype::UInt8)
+            .export_values();
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
-
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
+    py::class_<DtypeUtil> dtype_util(m, "DtypeUtil");
+    dtype_util.def(py::init<>())
+            .def("byte_size", &DtypeUtil::ByteSize)
+            .def("to_string", &DtypeUtil::ToString);
 }

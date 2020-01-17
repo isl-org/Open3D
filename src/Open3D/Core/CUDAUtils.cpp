@@ -24,38 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "Open3D/Core/CUDAUtils.h"
 
-#include "TestUtility/UnitTest.h"
+#ifdef BUILD_CUDA_MODULE
+#include "Open3D/Core/CUDAState.cuh"
+#endif
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace cuda {
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
+int DeviceCount() {
+#ifdef BUILD_CUDA_MODULE
+    std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
+    return cuda_state->GetNumDevices();
+#else
+    return 0;
+#endif
 }
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
+bool IsAvailable() { return cuda::DeviceCount() > 0; }
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace cuda
+}  // namespace open3d

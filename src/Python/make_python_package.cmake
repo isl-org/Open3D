@@ -11,6 +11,8 @@ file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 # 1) Pure-python code and misc files, copied from src/Python/package
 file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}
+     # Excludes ${PYTHON_PACKAGE_SRC_DIR}/open3d_pybind/*
+     PATTERN "open3d_pybind" EXCLUDE
 )
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)

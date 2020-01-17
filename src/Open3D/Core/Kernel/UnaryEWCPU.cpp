@@ -24,38 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "Open3D/Core/Kernel/UnaryEW.h"
 
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/Dispatch.h"
+#include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/Kernel/CPULauncher.h"
+#include "Open3D/Core/MemoryManager.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace kernel {
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
+template <typename scalar_t>
+static void CPUCopyElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
 }
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
+void CopyCPU(const Tensor& src, Tensor& dst) {
+    // src and dst have been checked to have the same shape, dtype, device
+    SizeVector shape = src.GetShape();
+    Dtype dtype = src.GetDtype();
+    if (src.IsContiguous() && dst.IsContiguous() &&
+        src.GetShape() == dst.GetShape()) {
+        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
+                              src.GetDataPtr(), src.GetDevice(),
+                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
+    } else {
+        Indexer indexer({src}, dst);
+        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
+                    indexer, CPUCopyElementKernel<scalar_t>);
+        });
+    }
 }
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace kernel
+}  // namespace open3d

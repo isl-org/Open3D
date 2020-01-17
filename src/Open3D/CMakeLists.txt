@@ -7,7 +7,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
 # Subdirectories
 add_subdirectory(Camera)
 add_subdirectory(ColorMap)
-add_subdirectory(Container)
+add_subdirectory(Core)
 add_subdirectory(Geometry)
 add_subdirectory(Integration)
 add_subdirectory(Odometry)
@@ -19,7 +19,7 @@ add_subdirectory(Visualization)
 # Source group for Visual Studio
 ADD_SOURCE_GROUP(Camera)
 ADD_SOURCE_GROUP(ColorMap)
-ADD_SOURCE_GROUP(Container)
+ADD_SOURCE_GROUP(Core)
 ADD_SOURCE_GROUP(Geometry)
 ADD_SOURCE_GROUP(Integration)
 ADD_SOURCE_GROUP(Odometry)
@@ -42,7 +42,7 @@ add_library(${CMAKE_PROJECT_NAME}
     Open3DConfig.cpp
     $<TARGET_OBJECTS:Camera>
     $<TARGET_OBJECTS:ColorMap>
-    $<TARGET_OBJECTS:Container>
+    $<TARGET_OBJECTS:Core>
     $<TARGET_OBJECTS:Geometry>
     $<TARGET_OBJECTS:Integration>
     $<TARGET_OBJECTS:Odometry>

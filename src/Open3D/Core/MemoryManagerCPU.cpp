@@ -24,38 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "Open3D/Core/MemoryManager.h"
 
-#include "TestUtility/UnitTest.h"
+#include <cstdlib>
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
+CPUMemoryManager::CPUMemoryManager() {}
+
+void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
+    void* ptr;
+    ptr = std::malloc(byte_size);
+    if (byte_size != 0 && !ptr) {
+        utility::LogError("CPU malloc failed");
+    }
+    return ptr;
 }
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
+void CPUMemoryManager::Free(void* ptr, const Device& device) {
+    if (ptr) {
+        std::free(ptr);
+    }
 }
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
+void CPUMemoryManager::Memcpy(void* dst_ptr,
+                              const Device& dst_device,
+                              const void* src_ptr,
+                              const Device& src_device,
+                              size_t num_bytes) {
+    std::memcpy(dst_ptr, src_ptr, num_bytes);
 }
 
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace open3d

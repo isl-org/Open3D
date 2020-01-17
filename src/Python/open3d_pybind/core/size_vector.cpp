@@ -24,38 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "open3d_pybind/core/container.h"
+#include "open3d_pybind/docstring.h"
+#include "open3d_pybind/open3d_pybind.h"
 
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/SizeVector.h"
 
-using namespace std;
 using namespace open3d;
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+void pybind_core_size_vector(py::module &m) {
+    py::class_<SizeVector> size_vector(m, "SizeVector",
+                                       "SizeVector is a vector of int64_t for "
+                                       "specifying shape, strides and etc.");
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
-
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
+    size_vector
+            .def(py::init([](py::array_t<int64_t, py::array::c_style |
+                                                          py::array::forcecast>
+                                     np_array) {
+                py::buffer_info info = np_array.request();
+                if (info.ndim != 1) {
+                    utility::LogError("SizeVector must be 1-D array.");
+                }
+                // The buffer is copied to avoid corruption.
+                int64_t *start = static_cast<int64_t *>(info.ptr);
+                return new SizeVector(start, start + info.shape[0]);
+            }))
+            .def("to_string", &SizeVector::ToString)
+            .def("__repr__", [](const SizeVector &size_vector) {
+                return size_vector.ToString();
+            });
 }

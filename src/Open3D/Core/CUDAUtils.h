@@ -24,38 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+/// \file CUDAUtils.h
+/// \brief Common CUDA utilities
+///
+/// CUDAUtils.h may be included from CPU-only code.
+/// Use #ifdef __CUDACC__ to mark conitional compilation
 
-#include "TestUtility/UnitTest.h"
+#pragma once
 
-using namespace std;
-using namespace open3d;
+#include "Open3D/Utility/Console.h"
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
+#ifdef BUILD_CUDA_MODULE
+
+#include <cuda.h>
+#include <cuda_runtime.h>
+
+#define OPEN3D_HOST_DEVICE __host__ __device__
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
+    static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
+                  #type " must be a __host__ __device__ lambda")
+#define OPEN3D_CUDA_CHECK(err) \
+    open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
+
+#else  // #ifdef BUILD_CUDA_MODULE
+
+#define OPEN3D_HOST_DEVICE
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
+#define OPEN3D_CUDA_CHECK(err)
+
+#endif  // #ifdef BUILD_CUDA_MODULE
+
+namespace open3d {
+
+#ifdef BUILD_CUDA_MODULE
+inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
+                                const char *file,
+                                const int line) {
+    if (err != cudaSuccess) {
+        utility::LogError("{}:{} CUDA runtime error: {}", file, line,
+                          cudaGetErrorString(err));
+    }
 }
+#endif
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
+namespace cuda {
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+int DeviceCount();
+bool IsAvailable();
 
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace cuda
+}  // namespace open3d

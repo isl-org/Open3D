@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Blob.h"
-#include "Open3D/Container/Device.h"
-#include "Open3D/Container/MemoryManager.h"
+#include "Open3D/Core/Blob.h"
+#include "Open3D/Core/Device.h"
+#include "Open3D/Core/MemoryManager.h"
 #include "TestUtility/UnitTest.h"
 
 #include "Container/ContainerTest.h"
@@ -51,8 +51,8 @@ TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
     void* data_ptr = MemoryManager::Malloc(8, device);
     bool deleter_called = false;
 
-    auto deleter = [&device, &deleter_called](void* ptr) -> void {
-        MemoryManager::Free(ptr, device);
+    auto deleter = [&device, &deleter_called, data_ptr](void* dummy) -> void {
+        MemoryManager::Free(data_ptr, device);
         deleter_called = true;
     };
 

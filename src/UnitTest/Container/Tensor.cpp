@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Tensor.h"
-#include "Open3D/Container/AdvancedIndexing.h"
-#include "Open3D/Container/Dtype.h"
-#include "Open3D/Container/Kernel/Kernel.h"
-#include "Open3D/Container/MemoryManager.h"
-#include "Open3D/Container/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Core/AdvancedIndexing.h"
+#include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/Kernel/Kernel.h"
+#include "Open3D/Core/MemoryManager.h"
+#include "Open3D/Core/SizeVector.h"
 
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"

@@ -24,38 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#pragma once
 
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/Dispatch.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+/// \brief Returns true if two shapes are compatible for broadcasting.
+/// \param l_shape Shape of the left-hand-side Tensor.
+/// \param r_shape Shape of the left-hand-side Tensor.
+/// \return Returns true if \p l_shape and \p r_shape are compatible for
+/// broadcasting.
+bool IsCompatibleBroadcastShape(const SizeVector& l_shape,
+                                const SizeVector& r_shape);
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
+/// \brief Returns the broadcasted shape of two shapes.
+/// \param l_shape Shape of the left-hand-side Tensor.
+/// \param r_shape Shape of the left-hand-side Tensor.
+/// \return The broadcasted shape.
+SizeVector BroadcastedShape(const SizeVector& l_shape,
+                            const SizeVector& r_shape);
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+/// \brief Returns true if \p src_shape can be brocasted to \p dst_shape.
+/// \param src_shape Source tensor shape.
+/// \param dst_shape Destination tensor shape.
+/// \return Returns true if \p src_shape can be brocasted to \p dst_shape.
+bool CanBeBrocastedToShape(const SizeVector& src_shape,
+                           const SizeVector& dst_shape);
 
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace open3d

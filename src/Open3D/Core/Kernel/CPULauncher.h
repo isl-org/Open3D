@@ -24,38 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#pragma once
 
-#include "TestUtility/UnitTest.h"
+#include <cassert>
+#include <vector>
 
-using namespace std;
-using namespace open3d;
+#include "Open3D/Core/AdvancedIndexing.h"
+#include "Open3D/Core/Indexer.h"
+#include "Open3D/Core/Tensor.h"
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
-}
+namespace open3d {
+namespace kernel {
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
-}
+class CPULauncher {
+public:
+    template <typename scalar_t, typename func_t>
+    static void LaunchUnaryEWKernel(const Indexer& indexer,
+                                    func_t element_kernel) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
+             ++workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
+        }
+    }
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+    template <typename scalar_t, typename func_t>
+    static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                            func_t element_kernel) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
+             ++workload_idx) {
+            element_kernel(indexer.GetInputPtr(workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
+        }
+    }
+};
 
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace kernel
+}  // namespace open3d

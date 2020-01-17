@@ -24,38 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Device.h"
+#include "open3d_pybind/pybind_utils.h"
 
-#include "TestUtility/UnitTest.h"
+#include <string>
 
-using namespace std;
-using namespace open3d;
+#include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/Tensor.h"
 
-TEST(Device, DefaultConstructor) {
-    Device ctx;
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CPU);
-    EXPECT_EQ(ctx.GetID(), 0);
+#include "open3d_pybind/open3d_pybind.h"
+
+namespace open3d {
+namespace pybind_utils {
+
+Dtype ArrayFormatToDtype(const std::string& format) {
+    if (format == py::format_descriptor<float>::format()) {
+        return Dtype::Float32;
+    } else if (format == py::format_descriptor<double>::format()) {
+        return Dtype::Float64;
+    } else if (format == py::format_descriptor<int32_t>::format()) {
+        return Dtype::Int32;
+    } else if (format == py::format_descriptor<int64_t>::format()) {
+        return Dtype::Int64;
+    } else if (format == py::format_descriptor<uint8_t>::format()) {
+        return Dtype::UInt8;
+    } else {
+        utility::LogError("Unsupported data type.");
+    }
 }
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(Device(Device::DeviceType::CPU, 0).GetID(), 0);
-    EXPECT_THROW(Device(Device::DeviceType::CPU, 1), std::runtime_error);
+std::string DtypeToArrayFormat(const Dtype& dtype) {
+    if (dtype == Dtype::Float32) {
+        return py::format_descriptor<float>::format();
+    } else if (dtype == Dtype::Float64) {
+        return py::format_descriptor<double>::format();
+    } else if (dtype == Dtype::Int32) {
+        return py::format_descriptor<int32_t>::format();
+    } else if (dtype == Dtype::Int64) {
+        return py::format_descriptor<int64_t>::format();
+    } else if (dtype == Dtype::UInt8) {
+        return py::format_descriptor<uint8_t>::format();
+    } else {
+        utility::LogError("Unsupported data type.");
+    }
 }
 
-TEST(Device, SpecifiedConstructor) {
-    Device ctx(Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    Device ctx("CUDA:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    Device ctx("cuda:1");
-    EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
-    EXPECT_EQ(ctx.GetID(), 1);
-}
+}  // namespace pybind_utils
+}  // namespace open3d
