@@ -127,7 +127,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
         if (impl_->onTextChanged) {
             impl_->onTextChanged(impl_->text.c_str());
         }
-        result = Widget::DrawResult::CLICKED;
+        result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();

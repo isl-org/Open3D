@@ -71,7 +71,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         if (impl_->onClicked) {
             impl_->onClicked();
         }
-        result = Widget::DrawResult::CLICKED;
+        result = Widget::DrawResult::REDRAW;
     }
     DrawImGuiPopEnabledState();
 

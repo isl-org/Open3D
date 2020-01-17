@@ -104,7 +104,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
         if (impl_->onChecked) {
             impl_->onChecked(impl_->isChecked);
         }
-        result = Widget::DrawResult::CLICKED;
+        result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();

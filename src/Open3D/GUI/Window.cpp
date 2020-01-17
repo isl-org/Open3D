@@ -43,6 +43,7 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <SDL.h>
 #include <filament/Engine.h>
 
@@ -83,6 +84,7 @@ struct Window::Impl
     } imgui;
     std::shared_ptr<Menu> menubar;
     std::vector<std::shared_ptr<Widget>> children;
+
     // Active dialog is owned here. It is not put in the children because
     // we are going to add it and take it out during draw (since that's
     // how an immediate mode GUI works) and that involves changing the
@@ -90,6 +92,8 @@ struct Window::Impl
     // child, it is a child window, and needs to be on top, which we cannot
     // guarantee if it is a child widget.
     std::shared_ptr<Dialog> activeDialog;
+    
+    Widget *focusWidget = nullptr; // only used if ImGUI isn't taking keystrokes
     bool needsLayout = true;
     int nSkippedFrames = 0;
 };
@@ -156,8 +160,9 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
 
-    // If the given font path is invalid, ImGui will silently fall back to proggy, which is a
-    // tiny "pixel art" texture that is compiled into the library.
+    // If the given font path is invalid, ImGui will silently fall back to
+    // proggy, which is a tiny "pixel art" texture that is compiled into the
+    // library.
     if (!theme.fontPath.empty()) {
         ImGuiIO &io = ImGui::GetIO();
         impl_->imgui.systemFont = io.Fonts->AddFontFromFileTTF(theme.fontPath.c_str(), theme.fontSize);
@@ -552,6 +557,9 @@ void Window::OnMouseEvent(const MouseEvent &e) {
     for (auto it = impl_->children.rbegin();
          it != impl_->children.rend();  ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
+            if (e.type == MouseEvent::BUTTON_DOWN) {
+                impl_->focusWidget = it->get();
+            }
             (*it)->Mouse(e);
             break;
         }
@@ -562,6 +570,12 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
         io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
+    }
+
+    // If an ImGUI widget is not getting keystrokes, we can send them to
+    // non-ImGUI widgets
+    if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focusWidget) {
+        impl_->focusWidget->Key(e);
     }
 }
 

@@ -134,7 +134,7 @@ Widget::DrawResult ListView::Draw(const DrawContext& context) {
             impl_->selectedIndex = newSelectedIdx;
             if (impl_->onValueChanged) {
                 impl_->onValueChanged(GetSelectedValue(), isDoubleClick);
-                result = Widget::DrawResult::CLICKED;
+                result = Widget::DrawResult::REDRAW;
             }
         }
     }

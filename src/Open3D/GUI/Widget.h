@@ -35,6 +35,7 @@ namespace open3d {
 namespace gui {
 
 class Color;
+struct KeyEvent;
 struct MouseEvent;
 struct Theme;
 
@@ -50,7 +51,7 @@ struct DrawContext {
 class Widget {
     friend class Window;
 public:
-    enum class DrawResult { NONE, CLICKED };
+    enum class DrawResult { NONE, REDRAW };
 
     Widget();
     explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
@@ -82,6 +83,11 @@ public:
     /// as Dear ImGUI will take care of all the mouse handling during
     /// the Draw().
     virtual void Mouse(const MouseEvent& e);
+
+    /// Widgets that use Dear ImGUI should not need to override this,
+    /// as Dear ImGUI will take care of all the mouse handling during
+    /// the Draw().
+    virtual void Key(const KeyEvent& e);
 
 protected:
     void DrawImGuiPushEnabledState();
