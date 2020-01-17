@@ -30,6 +30,8 @@
 #include <cstdint>
 #include <functional>
 
+#define FMT_HEADER_ONLY 1
+#define FMT_STRING_ALIAS 1
 #include <fmt/format.h>
 
 namespace open3d {
