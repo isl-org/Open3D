@@ -29,22 +29,50 @@
 // namespace for code that is common for all kernels
 namespace reduce_subarrays_sum_opkernel_common {
 
-// struct for providing tensor arguments as member vars with names and shape
-// checks
-struct TensorArguments {
-    TensorArguments(tensorflow::OpKernelContext* context)
-        : values(context->input(0)), prefix_sum(context->input(1)) {
-        using namespace tensorflow;
+// Base class with common code for the OpKernel implementations
+class ReduceSubarraysSumOpKernelCommon : public tensorflow::OpKernel {
+public:
+    explicit ReduceSubarraysSumOpKernelCommon(
+            tensorflow::OpKernelConstruction* construction)
+        : OpKernel(construction) {}
 
+    void Compute(tensorflow::OpKernelContext* context) override {
+        using namespace tensorflow;
+        static_assert(sizeof(int64) == sizeof(int64_t),
+                      "int64 type is not compatible");
+
+        const Tensor& values = context->input(0);
         OP_REQUIRES(context, values.shape().dims() == 1,
                     errors::InvalidArgument("values must be a rank 1 tensor"));
+
+        const Tensor& prefix_sum = context->input(1);
         OP_REQUIRES(
                 context, prefix_sum.shape().dims() == 1,
                 errors::InvalidArgument("prefix_sum must be a rank 1 tensor"));
+
+        // special treatment for empty values vector
+        if (values.shape().dim_size(0) == 0) {
+            Tensor* sums_tensor = 0;
+            OP_REQUIRES_OK(context, context->allocate_output(0, values.shape(),
+                                                             &sums_tensor));
+            return;
+        }
+
+        Tensor* sums_tensor = 0;
+        TensorShape sums_shape(prefix_sum.shape());
+        OP_REQUIRES_OK(context,
+                       context->allocate_output(0, sums_shape, &sums_tensor));
+
+        Kernel(context, values, prefix_sum, *sums_tensor);
     }
 
-    const tensorflow::Tensor& values;
-    const tensorflow::Tensor& prefix_sum;
+    // Function with the device specific code
+    virtual void Kernel(tensorflow::OpKernelContext* context,
+                        const tensorflow::Tensor& values,
+                        const tensorflow::Tensor& prefix_sum,
+                        tensorflow::Tensor& sums) = 0;
+
+private:
 };
 
 }  // namespace reduce_subarrays_sum_opkernel_common

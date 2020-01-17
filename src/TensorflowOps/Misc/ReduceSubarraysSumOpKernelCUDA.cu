@@ -33,42 +33,23 @@ using namespace reduce_subarrays_sum_opkernel_common;
 using namespace tensorflow;
 
 template <class T>
-class ReduceSubarraysSumOpKernelCUDA : public OpKernel {
+class ReduceSubarraysSumOpKernelCUDA : public ReduceSubarraysSumOpKernelCommon {
 public:
     explicit ReduceSubarraysSumOpKernelCUDA(OpKernelConstruction* construction)
-        : OpKernel(construction) {}
+        : ReduceSubarraysSumOpKernelCommon(construction) {}
 
-    void Compute(OpKernelContext* context) override {
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
-
-        auto args = TensorArguments(context);
-
-        // special treatment for empty values vector
-        if (args.values.shape().dim_size(0) == 0) {
-            Tensor* sums_tensor = 0;
-            OP_REQUIRES_OK(context,
-                           context->allocate_output(0, args.values.shape(),
-                                                    &sums_tensor));
-            return;
-        }
-
-        Tensor* sums_tensor = 0;
-        TensorShape sums_shape(args.prefix_sum.shape());
-        OP_REQUIRES_OK(context,
-                       context->allocate_output(0, sums_shape, &sums_tensor));
-        auto sums = sums_tensor->flat<T>();
-
+    void Kernel(OpKernelContext* context,
+                const tensorflow::Tensor& values,
+                const tensorflow::Tensor& prefix_sum,
+                tensorflow::Tensor& sums) {
         auto device = context->eigen_gpu_device();
 
-        ReduceSubarraysSumCUDA(device.stream(), args.values.flat<T>().data(),
-                               args.values.shape().dim_size(0),
-                               (int64_t*)args.prefix_sum.flat<int64>().data(),
-                               args.prefix_sum.shape().dim_size(0),
-                               sums.data());
+        ReduceSubarraysSumCUDA(device.stream(), values.flat<T>().data(),
+                               values.shape().dim_size(0),
+                               (int64_t*)prefix_sum.flat<int64>().data(),
+                               prefix_sum.shape().dim_size(0),
+                               sums.flat<T>().data());
     }
-
-private:
 };
 
 #define REG_KB(type)                                            \
