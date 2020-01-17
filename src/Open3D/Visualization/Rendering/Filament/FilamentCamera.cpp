@@ -131,5 +131,5 @@ FilamentCamera::Transform FilamentCamera::GetModelMatrix() {
     return Transform(matrix);
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

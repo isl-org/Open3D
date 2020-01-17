@@ -136,7 +136,8 @@ public:
         };
         auto materials2 = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"One", "Two", "Three"}));
-        //        auto materials3 = std::shared_ptr<gui::Combobox>(new gui::Combobox({"一", "二", "三"}));
+        //        auto materials3 = std::shared_ptr<gui::Combobox>(new
+        //        gui::Combobox({"一", "二", "三"}));
         auto matPanel = std::make_shared<gui::Vert>(
                 spacing, margins,
                 std::vector<std::shared_ptr<gui::Widget>>({
@@ -332,6 +333,6 @@ int main(int argc, const char *argv[]) {
     app.AddWindow(w);
     w->Show();
 
-    app.Run();    
+    app.Run();
     return 0;
 }

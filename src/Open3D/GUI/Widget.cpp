@@ -26,27 +26,28 @@
 
 #include "Widget.h"
 
+#include "Color.h"
+#include "Events.h"
+
 namespace open3d {
 namespace gui {
 
+static const Color DEFAULT_BGCOLOR(0, 0, 0, 0);
+
 struct Widget::Impl {
     Rect frame;
+    Color bgColor = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children;
 };
 
-Widget::Widget()
-: impl_(new Widget::Impl())
-{
-}
+Widget::Widget() : impl_(new Widget::Impl()) {}
 
 Widget::Widget(const std::vector<std::shared_ptr<Widget>>& children)
-: impl_(new Widget::Impl())
-{
+    : impl_(new Widget::Impl()) {
     impl_->children = children;
 }
 
-Widget::~Widget() {
-}
+Widget::~Widget() {}
 
 void Widget::AddChild(std::shared_ptr<Widget> child) {
     impl_->children.push_back(child);
@@ -56,12 +57,20 @@ const std::vector<std::shared_ptr<Widget>> Widget::GetChildren() const {
     return impl_->children;
 }
 
-const Rect& Widget::GetFrame() const {
-    return impl_->frame;
+const Rect& Widget::GetFrame() const { return impl_->frame; }
+
+void Widget::SetFrame(const Rect& f) { impl_->frame = f; }
+
+const Color& Widget::GetBackgroundColor() const {
+    return impl_->bgColor;
 }
 
-void Widget::SetFrame(const Rect& f) {
-    impl_->frame = f;
+bool Widget::IsDefaultBackgroundColor() const {
+    return (impl_->bgColor == DEFAULT_BGCOLOR);
+}
+
+void Widget::SetBackgroundColor(const Color& color) {
+    impl_->bgColor = color;
 }
 
 Size Widget::CalcPreferredSize(const Theme&) const {
@@ -69,14 +78,14 @@ Size Widget::CalcPreferredSize(const Theme&) const {
 }
 
 void Widget::Layout(const Theme& theme) {
-    for (auto &child : impl_->children) {
+    for (auto& child : impl_->children) {
         child->Layout(theme);
     }
 }
 
 Widget::DrawResult Widget::Draw(const DrawContext& context) {
     DrawResult result = DrawResult::NONE;
-    for (auto &child : impl_->children) {
+    for (auto& child : impl_->children) {
         auto r = child->Draw(context);
         // The mouse can only be over one item, so there should never
         // be multiple items returning non-NONE.
@@ -87,5 +96,19 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
     return result;
 }
 
-} // gui
-} // open3d
+void Widget::Mouse(const MouseEvent& e) {
+    // Iterate backwards so that we send mouse events from the top down.
+    for (auto it = impl_->children.rbegin();
+        it != impl_->children.rend();  ++it) {
+        if ((*it)->GetFrame().Contains(e.x, e.y)) {
+            (*it)->Mouse(e);
+            break;
+        }
+    }
+}
+
+void Widget::Key(const KeyEvent& e) {
+}
+
+} // namespace gui
+} // namespace open3d

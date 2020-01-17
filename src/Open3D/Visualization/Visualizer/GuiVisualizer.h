@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,42 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3D/GUI/Window.h"
 
-#include <Eigen/Geometry>
+#include <vector>
 
 namespace open3d {
+
+namespace geometry {
+class Geometry;
+}  // namespace geometry
+
+namespace gui {
+struct Theme;
+}
+
 namespace visualization {
-
-class Scene;
-class Camera;
-
-class View {
+class GuiVisualizer : public gui::Window {
+    using Super = gui::Window;
 public:
-    enum class TargetBuffers : uint8_t {
-        None = 0u,
-        Color = 1u,
-        Depth = 2u,
-        Stencil = 4u,
+    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries,
+                  const std::string &title, int width, int height,
+                  int left, int top);
+    virtual ~GuiVisualizer();
 
-        ColorAndDepth = Color | Depth,
-        ColorAndStencil = Color | Stencil,
-        DepthAndStencil = Depth | Stencil,
-        All = Color | Depth | Stencil
-    };
+    void Layout(const gui::Theme& theme) override;
 
-    virtual ~View() {}
-
-    virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
-
-    virtual void SetViewport(std::int32_t x,
-                             std::int32_t y,
-                             std::uint32_t w,
-                             std::uint32_t h) = 0;
-    virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
-
-    virtual Camera* GetCamera() const = 0;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace visualization
-}  // namespace open3d
+}
+}

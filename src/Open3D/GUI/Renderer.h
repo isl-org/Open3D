@@ -47,13 +47,21 @@ struct Theme;
 class Window;
 
 struct BoundingBox {
-    float xMin;  float xMax;
-    float yMin;  float yMax;
-    float zMin;  float zMax;
+    float xMin;
+    float xMax;
+    float yMin;
+    float yMax;
+    float zMin;
+    float zMax;
 
     BoundingBox();
     BoundingBox(float centerX, float centerY, float centerZ, float radius);
-    BoundingBox(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
+    BoundingBox(float xmin,
+                float xmax,
+                float ymin,
+                float ymax,
+                float zmin,
+                float zmax);
 };
 
 class Transform {
@@ -63,7 +71,7 @@ public:
     ~Transform();
 
     void Translate(float x, float y, float z);
-    //void Rotate(float axis_x, float axis_y, float axis_z, float degrees);
+    // void Rotate(float axis_x, float axis_y, float axis_z, float degrees);
 
     void* GetNative() const;
 
@@ -78,6 +86,7 @@ class Renderer {
     friend class RendererCamera;
     friend class SceneWidget;
     friend class ImGuiHelper;
+
 public:
     using SceneId = int;
     using ViewId = int;
@@ -98,10 +107,12 @@ public:
 
     bool BeginFrame();
     void Render(ViewId viewId);
-    void RenderImgui(ImDrawData *cmds);
+    void RenderImgui(ImDrawData* cmds);
     void EndFrame();
 
-    void AddFontTextureAtlasAlpha8(unsigned char* pixels, int width, int height,
+    void AddFontTextureAtlasAlpha8(unsigned char* pixels,
+                                   int width,
+                                   int height,
                                    int bytesPerPx);
 
     ViewId CreateView();
@@ -111,22 +122,24 @@ public:
     CameraId CreateCamera();
     void DestroyCamera(CameraId cameraId);
 
-    LightId CreateSunLight(float dirX, float dirY, float dirZ,
+    LightId CreateSunLight(float dirX,
+                           float dirY,
+                           float dirZ,
                            float intensityLux = 100000,
                            const Color& color = Color(1, 1, 1),
                            bool castsShadow = false);
 
     MaterialId CreateMetal(const Color& baseColor,
-                           float metallic,    // 0 (not metal) to 1 (metal)
-                           float roughness,   // [0, 1]
-                           float anisotropy); // [0, 1]
+                           float metallic,     // 0 (not metal) to 1 (metal)
+                           float roughness,    // [0, 1]
+                           float anisotropy);  // [0, 1]
     MaterialId CreateNonMetal(const Color& baseColor,
-                              float roughness,  // [0, 1]
-                              float clearCoat,  // [0, 1]
-                              float clearCoatRoughness); // [0, 1]
+                              float roughness,            // [0, 1]
+                              float clearCoat,            // [0, 1]
+                              float clearCoatRoughness);  // [0, 1]
 
-//    LightId CreateLight(...);
-//    IBLId CreateIBL(...);
+    //    LightId CreateLight(...);
+    //    IBLId CreateIBL(...);
 
     // This is an expensive operation
     // Copies vertices, normals, and indices.
@@ -189,9 +202,15 @@ public:
     // resize.
     void SetProjection(float near, float far, float verticalFoV);
 
-    void LookAt(float centerX, float centerY, float centerZ,
-                float eyeX, float eyeY, float eyeZ,
-                float upX, float upY, float upZ);
+    void LookAt(float centerX,
+                float centerY,
+                float centerZ,
+                float eyeX,
+                float eyeY,
+                float eyeZ,
+                float upX,
+                float upY,
+                float upZ);
 
     void Set2D(int width, int height);
 
@@ -219,5 +238,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

@@ -62,7 +62,8 @@ FilamentRenderer::~FilamentRenderer() {
 
 SceneHandle FilamentRenderer::CreateScene() {
     auto handle = SceneHandle::Next();
-    scenes_[handle] = std::make_unique<FilamentScene>(engine_, resourceManager_);
+    scenes_[handle] =
+            std::make_unique<FilamentScene>(engine_, resourceManager_);
 
     return handle;
 }
@@ -76,7 +77,9 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
     return nullptr;
 }
 
-void FilamentRenderer::DestroyScene(const SceneHandle& id) { scenes_.erase(id); }
+void FilamentRenderer::DestroyScene(const SceneHandle& id) {
+    scenes_.erase(id);
+}
 
 void FilamentRenderer::BeginFrame() {
     frameStarted_ = renderer_->beginFrame(swapChain_);
@@ -165,5 +168,5 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

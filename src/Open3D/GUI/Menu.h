@@ -42,8 +42,10 @@ public:
     Menu();
     virtual ~Menu();
 
-    void AddItem(const char *name, const char *shortcut, ItemId itemId = NO_ITEM);
-    void AddMenu(const char *name, std::shared_ptr<Menu> submenu);
+    void AddItem(const char* name,
+                 const char* shortcut,
+                 ItemId itemId = NO_ITEM);
+    void AddMenu(const char* name, std::shared_ptr<Menu> submenu);
     void AddSeparator();
 
     // Searches the menu hierarchy down from this menu to find the item
@@ -56,7 +58,7 @@ public:
     int CalcHeight(const Theme& theme) const;
 
     ItemId DrawMenuBar(const DrawContext& context);
-    ItemId Draw(const DrawContext& context, const char *name);
+    ItemId Draw(const DrawContext& context, const char* name);
 
 protected:
     struct MenuItem;
@@ -67,5 +69,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

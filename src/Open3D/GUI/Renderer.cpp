@@ -46,18 +46,18 @@
 
 #include <fcntl.h>
 #if !defined(WIN32)
-    #include <unistd.h>
-    #include <sys/errno.h>
+#include <sys/errno.h>
+#include <unistd.h>
 #else
-    #include <io.h>
-    #include <errno.h>
+#include <errno.h>
+#include <io.h>
 #endif
 
 #include <sstream>
 #include <unordered_map>
 #include <vector>
 
-#include <iostream> // debugging; remove
+#include <iostream>  // debugging; remove
 
 using namespace filament;
 
@@ -68,31 +68,46 @@ namespace {
 
 static const int BOGUS_ID = -1;
 
-void freeTempBuffer(void *buffer, size_t, void*) {
-    free(buffer);
-}
+void freeTempBuffer(void* buffer, size_t, void*) { free(buffer); }
 
 std::string getIOErrorString(int errnoVal) {
     switch (errnoVal) {
-        case EPERM:   return "Operation not permitted";
-        case EACCES:  return "Access denied";
-        case EAGAIN:  return "EAGAIN";
+        case EPERM:
+            return "Operation not permitted";
+        case EACCES:
+            return "Access denied";
+        case EAGAIN:
+            return "EAGAIN";
 #if !defined(WIN32)
-        case EDQUOT:  return "Over quota";
+        case EDQUOT:
+            return "Over quota";
 #endif
-        case EEXIST:  return "File already exists";
-        case EFAULT:  return "Bad filename pointer";
-        case EINTR:   return "open() interrupted by a signal";
-        case EIO:     return "I/O error";
-        case ELOOP:   return "Too many symlinks, could be a loop";
-        case EMFILE:  return "Process is out of file descriptors";
-        case ENAMETOOLONG: return "Filename is too long";
-        case ENFILE:  return "File system table is full";
-        case ENOENT:  return "No such file or directory";
-        case ENOSPC:  return "No space available to create file";
-        case ENOTDIR: return "Bad path";
-        case EOVERFLOW: return "File is too big";
-        case EROFS:   return "Can't modify file on read-only filesystem";
+        case EEXIST:
+            return "File already exists";
+        case EFAULT:
+            return "Bad filename pointer";
+        case EINTR:
+            return "open() interrupted by a signal";
+        case EIO:
+            return "I/O error";
+        case ELOOP:
+            return "Too many symlinks, could be a loop";
+        case EMFILE:
+            return "Process is out of file descriptors";
+        case ENAMETOOLONG:
+            return "Filename is too long";
+        case ENFILE:
+            return "File system table is full";
+        case ENOENT:
+            return "No such file or directory";
+        case ENOSPC:
+            return "No space available to create file";
+        case ENOTDIR:
+            return "Bad path";
+        case EOVERFLOW:
+            return "File is too big";
+        case EROFS:
+            return "Can't modify file on read-only filesystem";
         default: {
             std::stringstream s;
             s << "IO error " << errnoVal << " (see sys/errno.h)";
@@ -101,8 +116,9 @@ std::string getIOErrorString(int errnoVal) {
     }
 }
 
-bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::string *errorStr)
-{
+bool readBinaryFile(const std::string& path,
+                    std::vector<char>* bytes,
+                    std::string* errorStr) {
     bytes->clear();
     if (errorStr) {
         *errorStr = "";
@@ -130,19 +146,18 @@ bool readBinaryFile(const std::string& path, std::vector<char> *bytes, std::stri
     return true;
 }
 
-Material* loadMaterialTemplate(const std::string& path,
-                       Engine *engine)
-{
+Material* loadMaterialTemplate(const std::string& path, Engine* engine) {
     std::vector<char> bytes;
     std::string errorStr;
     if (!readBinaryFile(path, &bytes, &errorStr)) {
-        std::cout << "[ERROR] Could not read " << path << ": " << errorStr << std::endl;
+        std::cout << "[ERROR] Could not read " << path << ": " << errorStr
+                  << std::endl;
         return nullptr;
     }
 
     return Material::Builder()
-                    .package(bytes.data(), bytes.size())
-                    .build(*engine);
+            .package(bytes.data(), bytes.size())
+            .build(*engine);
 }
 
 template <typename T>
@@ -161,7 +176,7 @@ public:
     }
 
     void DestroyAll() {
-        for (auto &kv : items_) {
+        for (auto& kv : items_) {
             DestroyItem(kv.second);
         }
         items_.clear();
@@ -175,9 +190,7 @@ public:
         return currId_;
     }
 
-    T& Get(Id id) {
-        return items_[id];
-    }
+    T& Get(Id id) { return items_[id]; }
 
     void Remove(Id id) {
         if (Has(id)) {
@@ -186,9 +199,7 @@ public:
         }
     }
 
-    bool Has(Id id) const {
-        return (items_.find(id) != items_.end());
-    }
+    bool Has(Id id) const { return (items_.find(id) != items_.end()); }
 
 protected:
     int currId_ = 0;
@@ -198,114 +209,96 @@ protected:
 template <typename T>
 class ObjectPool : public PoolBase<T> {
 public:
-    virtual ~ObjectPool() {
-        this->DestroyAll();
-    }
+    virtual ~ObjectPool() { this->DestroyAll(); }
 
     void DestroyItem(T& item) override {}
 };
 
 class LightPool : public PoolBase<utils::Entity> {
 public:
-    LightPool(Engine *engine) {
-        engine_ = engine;
-    }
+    LightPool(Engine* engine) { engine_ = engine; }
 
-    ~LightPool() {
-        this->DestroyAll();
-    }
+    ~LightPool() { this->DestroyAll(); }
 
     void DestroyItem(utils::Entity& item) override {
         engine_->getLightManager().destroy(item);
     }
 
 private:
-    Engine *engine_;
+    Engine* engine_;
 };
 
 class TransformPool : public PoolBase<utils::Entity> {
 public:
-    TransformPool(Engine *engine) {
-        engine_ = engine;
-    }
+    TransformPool(Engine* engine) { engine_ = engine; }
 
-    ~TransformPool() {
-        this->DestroyAll();
-    }
+    ~TransformPool() { this->DestroyAll(); }
 
     void DestroyItem(utils::Entity& item) override {
         engine_->getTransformManager().destroy(item);
     }
 
 private:
-    Engine *engine_;
+    Engine* engine_;
 };
 
 template <typename T>
 class EngineObjectPool : public PoolBase<T> {
 public:
-    EngineObjectPool(Engine *engine) {
-        engine_ = engine;
-    }
+    EngineObjectPool(Engine* engine) { engine_ = engine; }
 
-    ~EngineObjectPool() {
-        this->DestroyAll();
-    }
+    ~EngineObjectPool() { this->DestroyAll(); }
 
-    void DestroyItem(T& item) override {
-        engine_->destroy(item);
-    }
+    void DestroyItem(T& item) override { engine_->destroy(item); }
 
 private:
-    Engine *engine_;
+    Engine* engine_;
 };
 
-}
+}  // namespace
 
 // ----------------------------------------------------------------------------
 BoundingBox::BoundingBox()
-    : xMin(0), xMax(0), yMin(0), yMax(0), zMin(0), zMax(0) {
-}
+    : xMin(0), xMax(0), yMin(0), yMax(0), zMin(0), zMax(0) {}
 
-BoundingBox::BoundingBox(float centerX, float centerY, float centerZ, float radius)
-    : xMin(centerX - radius), xMax(centerX + radius)
-    , yMin(centerY - radius), yMax(centerY + radius)
-    , zMin(centerZ - radius), zMax(centerZ + radius) {
-}
+BoundingBox::BoundingBox(float centerX,
+                         float centerY,
+                         float centerZ,
+                         float radius)
+    : xMin(centerX - radius),
+      xMax(centerX + radius),
+      yMin(centerY - radius),
+      yMax(centerY + radius),
+      zMin(centerZ - radius),
+      zMax(centerZ + radius) {}
 
-BoundingBox::BoundingBox(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
-    : xMin(xmin), xMax(xmax), yMin(ymin), yMax(ymax), zMin(zmin), zMax(zmax) {
-}
+BoundingBox::BoundingBox(
+        float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
+    : xMin(xmin), xMax(xmax), yMin(ymin), yMax(ymax), zMin(zmin), zMax(zmax) {}
 
 // ----------------------------------------------------------------------------
 struct Transform::Impl {
     math::mat4f matrix;
 };
 
-Transform::Transform()
-: impl_(new Transform::Impl()) {
-}
+Transform::Transform() : impl_(new Transform::Impl()) {}
 
-Transform::Transform(const Transform& t)
-: impl_(new Transform::Impl()) {
+Transform::Transform(const Transform& t) : impl_(new Transform::Impl()) {
     impl_->matrix = t.impl_->matrix;
 }
 
-Transform::~Transform() {
-}
+Transform::~Transform() {}
 
 void Transform::Translate(float x, float y, float z) {
-    impl_->matrix = impl_->matrix.translation(math::float3{ x, y, z });
+    impl_->matrix = impl_->matrix.translation(math::float3{x, y, z});
 }
 
-//void Transform::Rotate(float axis_x, float axis_y, float axis_z,
+// void Transform::Rotate(float axis_x, float axis_y, float axis_z,
 //                       float degrees) {
 //    std::cout << "TODO: implement Transform::Rotate()" << std::endl;
 //}
 
-void* Transform::GetNative() const {
-    return &impl_->matrix;
-}
+void* Transform::GetNative() const { return &impl_->matrix; }
 
 // ----------------------------------------------------------------------------
 // This just holds all the information.  The buffers get deallocated by other
@@ -316,15 +309,14 @@ struct Geometry {
     Renderer::IndexBufferId ibufferId = BOGUS_ID;
 };
 
-struct Renderer::Impl
-{
+struct Renderer::Impl {
     const Window& window;
-    filament::Engine *engine;
-    filament::Renderer *renderer;
-    filament::SwapChain *swapChain = nullptr;
-    filament::Material *metalTemplate = nullptr;
-    filament::Material *nonMetalTemplate = nullptr;
-    filament::Material *uiTemplate = nullptr;
+    filament::Engine* engine;
+    filament::Renderer* renderer;
+    filament::SwapChain* swapChain = nullptr;
+    filament::Material* metalTemplate = nullptr;
+    filament::Material* nonMetalTemplate = nullptr;
+    filament::Material* uiTemplate = nullptr;
     struct Alloc {
         EngineObjectPool<filament::View*> views;
         EngineObjectPool<filament::Scene*> scenes;
@@ -337,17 +329,23 @@ struct Renderer::Impl
         EngineObjectPool<filament::MaterialInstance*> materials;
         ObjectPool<Geometry> geometries;
 
-        Alloc(Engine *e)
-            : views(e), scenes(e), cameras(e), lights(e), renderables(e)
-            , transforms(e), vbuffers(e), ibuffers(e), materials(e)
-        {}
+        Alloc(Engine* e)
+            : views(e),
+              scenes(e),
+              cameras(e),
+              lights(e),
+              renderables(e),
+              transforms(e),
+              vbuffers(e),
+              ibuffers(e),
+              materials(e) {}
     };
     // Use naked pointer to indicate we are responsible to manage this:
     // Alloc needs to be freed before engine, since the pointers it stores
     // must be destroyed by the engine with engine->destroy(ptr);
-    Alloc *alloc;
-    RendererView *uiView;
-    ImguiFilamentBridge *imguiFilament = nullptr;
+    Alloc* alloc;
+    RendererView* uiView;
+    ImguiFilamentBridge* imguiFilament = nullptr;
 
     Impl(const Window& w) : window(w) {}
 };
@@ -355,15 +353,15 @@ struct Renderer::Impl
 // On single-threaded platforms, Filament's OpenGL context must be current,
 // not SDL's context.
 Renderer::Renderer(const Window& window, const Theme& theme)
-    : impl_(new Impl(window))
-{
+    : impl_(new Impl(window)) {
     impl_->engine = Engine::create(filament::Engine::Backend::OPENGL);
     impl_->alloc = new Impl::Alloc(impl_->engine);
     impl_->renderer = impl_->engine->createRenderer();
 
     // The UI needs a special material (just a pass-through blit)
     std::string resourcePath = Application::GetInstance().GetResourcePath();
-    impl_->uiTemplate = loadMaterialTemplate(resourcePath + "/ui_blit.filamat", impl_->engine);
+    impl_->uiTemplate = loadMaterialTemplate(resourcePath + "/ui_blit.filamat",
+                                             impl_->engine);
 
     impl_->uiView = new RendererView(*this, CreateView());
     auto imguiView = (filament::View*)GetViewPointer(impl_->uiView->GetId());
@@ -371,15 +369,15 @@ Renderer::Renderer(const Window& window, const Theme& theme)
     imguiView->setRenderTarget(View::TargetBufferFlags::DEPTH_AND_STENCIL);
     imguiView->setPostProcessingEnabled(false);
     imguiView->setShadowsEnabled(false);
-    auto imguiScene = (filament::Scene*)GetScenePointer(impl_->uiView->GetScene().GetId());
+    auto imguiScene = (filament::Scene*)GetScenePointer(
+            impl_->uiView->GetScene().GetId());
     impl_->imguiFilament = new ImguiFilamentBridge(impl_->engine, imguiScene,
                                                    impl_->uiTemplate);
 
     UpdateFromDrawable();
 }
 
-Renderer::~Renderer()
-{
+Renderer::~Renderer() {
     delete impl_->imguiFilament;
     delete impl_->uiView;
     delete impl_->alloc;
@@ -390,28 +388,27 @@ Renderer::~Renderer()
     Engine::destroy(&impl_->engine);
 }
 
-void Renderer::UpdateFromDrawable()
-{
+void Renderer::UpdateFromDrawable() {
     if (impl_->swapChain) {
         impl_->engine->destroy(impl_->swapChain);
     }
 
     void* nativeDrawable = impl_->window.GetNativeDrawable();
-/*
-#if defined(__APPLE__)
-    void* metalLayer = nullptr;
-    if (config.backend == filament::Engine::Backend::METAL) {
-        // The swap chain on Metal is a CAMetalLayer.
-        nativeDrawable = setUpMetalLayer(nativeDrawable);
-    }
-#if defined(FILAMENT_DRIVER_SUPPORTS_VULKAN)
-    if (config.backend == filament::Engine::Backend::VULKAN) {
-        // We request a Metal layer for rendering via MoltenVK.
-        setUpMetalLayer(nativeDrawable);
-    }
-#endif // FILAMENT_DRIVER_SUPPORTS_VULKAN
-#endif // __APPLE__
-*/
+    /*
+    #if defined(__APPLE__)
+        void* metalLayer = nullptr;
+        if (config.backend == filament::Engine::Backend::METAL) {
+            // The swap chain on Metal is a CAMetalLayer.
+            nativeDrawable = setUpMetalLayer(nativeDrawable);
+        }
+    #if defined(FILAMENT_DRIVER_SUPPORTS_VULKAN)
+        if (config.backend == filament::Engine::Backend::VULKAN) {
+            // We request a Metal layer for rendering via MoltenVK.
+            setUpMetalLayer(nativeDrawable);
+        }
+    #endif // FILAMENT_DRIVER_SUPPORTS_VULKAN
+    #endif // __APPLE__
+    */
 
     impl_->swapChain = impl_->engine->createSwapChain(nativeDrawable);
 
@@ -420,9 +417,7 @@ void Renderer::UpdateFromDrawable()
     impl_->uiView->GetCamera().Set2D(size.width, size.height);
 }
 
-Size Renderer::GetSize() const {
-    return impl_->window.GetSize();
-}
+Size Renderer::GetSize() const { return impl_->window.GetSize(); }
 
 bool Renderer::BeginFrame() {
     return impl_->renderer->beginFrame(impl_->swapChain);
@@ -434,18 +429,19 @@ void Renderer::Render(Renderer::ViewId viewId) {
     }
 }
 
-void Renderer::RenderImgui(ImDrawData *cmds) {
+void Renderer::RenderImgui(ImDrawData* cmds) {
     impl_->imguiFilament->update(cmds);
     Render(impl_->uiView->GetId());
 }
 
-void Renderer::EndFrame() {
-    impl_->renderer->endFrame();
-}
+void Renderer::EndFrame() { impl_->renderer->endFrame(); }
 
-void Renderer::AddFontTextureAtlasAlpha8(unsigned char* pixels, int width,
-                                         int height, int bytesPerPx) {
-    impl_->imguiFilament->createAtlasTextureAlpha8(pixels, width, height, bytesPerPx);
+void Renderer::AddFontTextureAtlasAlpha8(unsigned char* pixels,
+                                         int width,
+                                         int height,
+                                         int bytesPerPx) {
+    impl_->imguiFilament->createAtlasTextureAlpha8(pixels, width, height,
+                                                   bytesPerPx);
 }
 
 Renderer::ViewId Renderer::CreateView() {
@@ -473,19 +469,21 @@ void Renderer::DestroyCamera(Renderer::CameraId cameraId) {
 }
 
 Renderer::MaterialId Renderer::CreateMetal(const Color& baseColor,
-                                           float metallic, float roughness,
+                                           float metallic,
+                                           float roughness,
                                            float anisotropy) {
     if (!impl_->metalTemplate) {
         std::string resourcePath = Application::GetInstance().GetResourcePath();
-        impl_->metalTemplate = loadMaterialTemplate(resourcePath + "/metal.filamat", impl_->engine);
+        impl_->metalTemplate = loadMaterialTemplate(
+                resourcePath + "/metal.filamat", impl_->engine);
     }
     if (!impl_->metalTemplate) {
         return BOGUS_ID;
     }
     auto mat = impl_->metalTemplate->createInstance();
     mat->setParameter("baseColor", RgbType::sRGB,
-                      math::float3{ baseColor.GetRed(), baseColor.GetGreen(),
-                                    baseColor.GetBlue() });
+                      math::float3{baseColor.GetRed(), baseColor.GetGreen(),
+                                   baseColor.GetBlue()});
     mat->setParameter("metallic", metallic);
     mat->setParameter("roughness", roughness);
     mat->setParameter("anisotropy", anisotropy);
@@ -493,57 +491,63 @@ Renderer::MaterialId Renderer::CreateMetal(const Color& baseColor,
 }
 
 Renderer::MaterialId Renderer::CreateNonMetal(const Color& baseColor,
-                                              float roughness, float clearCoat,
+                                              float roughness,
+                                              float clearCoat,
                                               float clearCoatRoughness) {
     if (!impl_->nonMetalTemplate) {
         std::string resourcePath = Application::GetInstance().GetResourcePath();
-        impl_->nonMetalTemplate = loadMaterialTemplate(resourcePath + "/nonmetal.filamat", impl_->engine);
+        impl_->nonMetalTemplate = loadMaterialTemplate(
+                resourcePath + "/nonmetal.filamat", impl_->engine);
     }
     if (!impl_->nonMetalTemplate) {
         return BOGUS_ID;
     }
     auto mat = impl_->nonMetalTemplate->createInstance();
     mat->setParameter("baseColor", RgbType::sRGB,
-                      math::float3{ baseColor.GetRed(), baseColor.GetGreen(),
-                                    baseColor.GetBlue() });
+                      math::float3{baseColor.GetRed(), baseColor.GetGreen(),
+                                   baseColor.GetBlue()});
     mat->setParameter("roughness", roughness);
     mat->setParameter("clearCoat", clearCoat);
     mat->setParameter("clearCoatRoughness", clearCoatRoughness);
     return impl_->alloc->materials.Add(mat);
 }
 
-Renderer::LightId Renderer::CreateSunLight(float dirX, float dirY, float dirZ,
-                                           float intensityLux, /*=100000,*/
-                                           const Color& color, /*=Color(1, 1, 1),*/
-                                           bool castsShadow /*=false*/) {
+Renderer::LightId Renderer::CreateSunLight(
+        float dirX,
+        float dirY,
+        float dirZ,
+        float intensityLux, /*=100000,*/
+        const Color& color, /*=Color(1, 1, 1),*/
+        bool castsShadow /*=false*/) {
     auto sun = utils::EntityManager::get().create();
     filament::LightManager::Builder(LightManager::Type::SUN)
-                                .direction(math::float3{ dirX, dirY, dirZ })
-                                .intensity(intensityLux)
-                                .castShadows(castsShadow)
-                                .build(*impl_->engine, sun);
+            .direction(math::float3{dirX, dirY, dirZ})
+            .intensity(intensityLux)
+            .castShadows(castsShadow)
+            .build(*impl_->engine, sun);
     return impl_->alloc->lights.Add(sun);
 }
 
-//IBLId Renderer::CreateIBL(...);
+// IBLId Renderer::CreateIBL(...);
 
-Renderer::GeometryId Renderer::CreateGeometry(const std::vector<float>& vertices,
-                                              const std::vector<float>& normals,
-                                              const std::vector<uint32_t>& indices,
-                                              const BoundingBox& bbox) {
+Renderer::GeometryId Renderer::CreateGeometry(
+        const std::vector<float>& vertices,
+        const std::vector<float>& normals,
+        const std::vector<uint32_t>& indices,
+        const BoundingBox& bbox) {
     auto engine = impl_->engine;
 
     int nVerts = vertices.size() / 3;
 
     std::vector<math::quatf> tangents(nVerts);
     auto orientation = geometry::SurfaceOrientation::Builder()
-                                    .vertexCount(nVerts)
-                                    .normals((math::float3*)normals.data())
-                                    .build();
+                               .vertexCount(nVerts)
+                               .normals((math::float3*)normals.data())
+                               .build();
     orientation.getQuats(tangents.data(), nVerts);
 
     auto geometryId = impl_->alloc->geometries.Add(Geometry());
-    auto &g = impl_->alloc->geometries.Get(geometryId);
+    auto& g = impl_->alloc->geometries.Get(geometryId);
     g.boundingBox = bbox;
 
     // Filament doesn't document whether BufferDescriptor copies the data in
@@ -554,40 +558,36 @@ Renderer::GeometryId Renderer::CreateGeometry(const std::vector<float>& vertices
     int nVertBytes = sizeof(*vertices.data()) * vertices.size();
     int nTanBytes = sizeof(*tangents.data()) * tangents.size();
     int nIdxBytes = sizeof(*indices.data()) * indices.size();
-    auto *v = (float*)malloc(nVertBytes);
+    auto* v = (float*)malloc(nVertBytes);
     memcpy(v, vertices.data(), nVertBytes);
-    auto *t = (math::quatf*)malloc(nTanBytes);
+    auto* t = (math::quatf*)malloc(nTanBytes);
     memcpy(t, tangents.data(), nTanBytes);
-    auto *i = (uint32_t*)malloc(nIdxBytes);
+    auto* i = (uint32_t*)malloc(nIdxBytes);
     memcpy(i, indices.data(), nIdxBytes);
 
     VertexBuffer::Builder vbb;
     vbb.vertexCount(nVerts)
-       .bufferCount(2)
-       .normalized(VertexAttribute::TANGENTS)
-       .attribute(VertexAttribute::POSITION, 0,
-                  VertexBuffer::AttributeType::FLOAT3, 0, 0)
-       .attribute(VertexAttribute::TANGENTS, 1,
-                  VertexBuffer::AttributeType::FLOAT4, 0, 0);
+            .bufferCount(2)
+            .normalized(VertexAttribute::TANGENTS)
+            .attribute(VertexAttribute::POSITION, 0,
+                       VertexBuffer::AttributeType::FLOAT3, 0, 0)
+            .attribute(VertexAttribute::TANGENTS, 1,
+                       VertexBuffer::AttributeType::FLOAT4, 0, 0);
     auto vbuffer = vbb.build(*engine);
     vbuffer->setBufferAt(*engine, 0,
-                         VertexBuffer::BufferDescriptor(v, nVertBytes,
-                                                        freeTempBuffer,
-                                                        nullptr));
+                         VertexBuffer::BufferDescriptor(
+                                 v, nVertBytes, freeTempBuffer, nullptr));
     vbuffer->setBufferAt(*engine, 1,
-                         VertexBuffer::BufferDescriptor(t, nTanBytes,
-                                                        freeTempBuffer,
-                                                        nullptr));
+                         VertexBuffer::BufferDescriptor(
+                                 t, nTanBytes, freeTempBuffer, nullptr));
     auto idxType = ((sizeof(indices[0]) == 2) ? IndexBuffer::IndexType::USHORT
                                               : IndexBuffer::IndexType::UINT);
     auto ibuffer = IndexBuffer::Builder()
-                            .indexCount(indices.size())
-                            .bufferType(idxType)
-                            .build(*engine);
-    ibuffer->setBuffer(*engine,
-                       IndexBuffer::BufferDescriptor(i, nIdxBytes,
-                                                     freeTempBuffer,
-                                                     nullptr));
+                           .indexCount(indices.size())
+                           .bufferType(idxType)
+                           .build(*engine);
+    ibuffer->setBuffer(*engine, IndexBuffer::BufferDescriptor(
+                                        i, nIdxBytes, freeTempBuffer, nullptr));
 
     g.vbufferId = impl_->alloc->vbuffers.Add(vbuffer);
     g.ibufferId = impl_->alloc->ibuffers.Add(ibuffer);
@@ -600,7 +600,7 @@ Renderer::MeshId Renderer::CreateMesh(GeometryId geometryId,
     if (!impl_->alloc->geometries.Has(geometryId)) {
         return BOGUS_ID;
     }
-    auto &g = impl_->alloc->geometries.Get(geometryId);
+    auto& g = impl_->alloc->geometries.Get(geometryId);
     auto verts = impl_->alloc->vbuffers.Get(g.vbufferId);
     auto indices = impl_->alloc->ibuffers.Get(g.ibufferId);
     auto m = impl_->alloc->materials.Get(materialId);
@@ -609,15 +609,14 @@ Renderer::MeshId Renderer::CreateMesh(GeometryId geometryId,
     auto meshId = impl_->alloc->renderables.Add(renderable);
 
     RenderableManager::Builder objBuilder(1);
-    objBuilder.boundingBox(Box().set(math::float3(g.boundingBox.xMin,
-                                                  g.boundingBox.yMin,
-                                                  g.boundingBox.zMin),
-                                     math::float3(g.boundingBox.xMax,
-                                                  g.boundingBox.yMax,
-                                                  g.boundingBox.zMax)));
+    objBuilder.boundingBox(
+            Box().set(math::float3(g.boundingBox.xMin, g.boundingBox.yMin,
+                                   g.boundingBox.zMin),
+                      math::float3(g.boundingBox.xMax, g.boundingBox.yMax,
+                                   g.boundingBox.zMax)));
     objBuilder.material(0, m);
-    objBuilder.geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
-                        verts, indices);
+    objBuilder.geometry(0, RenderableManager::PrimitiveType::TRIANGLES, verts,
+                        indices);
     objBuilder.build(*impl_->engine, renderable);
 
     return meshId;
@@ -631,17 +630,17 @@ void Renderer::SetMeshTransform(MeshId meshId, const Transform& t) {
 
     auto& transformMgr = impl_->engine->getTransformManager();
     transformMgr.create(mesh);  // (re)creates a transform on mesh entity
-    auto transform = transformMgr.getInstance(mesh);  // now we get the transform
-    auto worldMat = *(math::mat4f*)t.GetNative() * transformMgr.getWorldTransform(transform);
+    auto transform =
+            transformMgr.getInstance(mesh);  // now we get the transform
+    auto worldMat = *(math::mat4f*)t.GetNative() *
+                    transformMgr.getWorldTransform(transform);
     transformMgr.setTransform(transform, worldMat);
 
-    // Who owns this transform instance? It seems to be disposed of automatically,
-    // but that is really unlike Filament.  Makes me nervous.
+    // Who owns this transform instance? It seems to be disposed of
+    // automatically, but that is really unlike Filament.  Makes me nervous.
 }
 
-filament::Engine* Renderer::GetEngine() {
-    return impl_->engine;
-}
+filament::Engine* Renderer::GetEngine() { return impl_->engine; }
 
 void* Renderer::GetViewPointer(ViewId id) {
     if (impl_->alloc->views.Has(id)) {
@@ -694,51 +693,51 @@ struct RendererView::Impl {
 };
 
 RendererView::RendererView(Renderer& renderer, Renderer::ViewId id)
-: impl_(new RendererView::Impl(renderer, id))
-{
-    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
+    : impl_(new RendererView::Impl(renderer, id)) {
+    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(
+                impl_->viewId)) {
         impl_->camera = std::make_unique<RendererCamera>(renderer);
-        auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->camera->GetId());
+        auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(
+                impl_->camera->GetId());
         view->setCamera(camera);
 
         impl_->scene = std::make_unique<RendererScene>(renderer);
-        auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(impl_->scene->GetId());
+        auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(
+                impl_->scene->GetId());
         view->setScene(scene);
 
         // Set defaults
-        view->setClearColor(LinearColorA{ 0.0f, 0.0f, 0.0f, 1.0f });
+        view->setClearColor(LinearColorA{0.0f, 0.0f, 0.0f, 1.0f});
         GetCamera().SetProjection(0.01, 50, 90.0);
     }
 }
 
 RendererView::~RendererView() {
-    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
+    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(
+                impl_->viewId)) {
         view->setCamera(nullptr);
         view->setScene(nullptr);
     }
     impl_->renderer.DestroyView(impl_->viewId);
 }
 
-Renderer::ViewId RendererView::GetId() const {
-    return impl_->viewId;
-}
+Renderer::ViewId RendererView::GetId() const { return impl_->viewId; }
 
-RendererScene& RendererView::GetScene() {
-    return *impl_->scene;
-}
+RendererScene& RendererView::GetScene() { return *impl_->scene; }
 
-RendererCamera& RendererView::GetCamera() {
-    return *impl_->camera;
-}
+RendererCamera& RendererView::GetCamera() { return *impl_->camera; }
 
-void RendererView::SetClearColor(const Color &c) {
-    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
-        view->setClearColor(LinearColorA{ c.GetRed(), c.GetGreen(), c.GetBlue(), c.GetAlpha() });
+void RendererView::SetClearColor(const Color& c) {
+    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(
+                impl_->viewId)) {
+        view->setClearColor(LinearColorA{c.GetRed(), c.GetGreen(), c.GetBlue(),
+                                         c.GetAlpha()});
     }
 }
 
-void RendererView::SetViewport(const Rect &r) {
-    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(impl_->viewId)) {
+void RendererView::SetViewport(const Rect& r) {
+    if (auto view = (filament::View*)impl_->renderer.GetViewPointer(
+                impl_->viewId)) {
         // Note that y=0 is bottom in GPU's coordinate system
         float bottom = impl_->renderer.GetSize().height - (r.y + r.height);
         view->setViewport(Viewport(r.x, bottom, r.width, r.height));
@@ -746,9 +745,7 @@ void RendererView::SetViewport(const Rect &r) {
     }
 }
 
-void RendererView::Draw() {
-    impl_->renderer.Render(impl_->viewId);
-}
+void RendererView::Draw() { impl_->renderer.Render(impl_->viewId); }
 
 // ----------------------------------------------------------------------------
 struct RendererCamera::Impl {
@@ -759,12 +756,11 @@ struct RendererCamera::Impl {
     float far = 50.0f;
     float verticalFoV = 90.0f;
 
-    Impl(Renderer& r) : renderer(r) {
-    }
+    Impl(Renderer& r) : renderer(r) {}
 };
 
 RendererCamera::RendererCamera(Renderer& renderer)
-: impl_(new RendererCamera::Impl(renderer)) {
+    : impl_(new RendererCamera::Impl(renderer)) {
     impl_->cameraId = renderer.CreateCamera();
 }
 
@@ -772,45 +768,52 @@ RendererCamera::~RendererCamera() {
     impl_->renderer.DestroyCamera(impl_->cameraId);
 }
 
-Renderer::CameraId RendererCamera::GetId() const {
-    return impl_->cameraId;
-}
+Renderer::CameraId RendererCamera::GetId() const { return impl_->cameraId; }
 
 void RendererCamera::ResizeProjection(float aspectRatio) {
-    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(
+                impl_->cameraId)) {
         impl_->aspectRatio = aspectRatio;
-        camera->setProjection(impl_->verticalFoV, aspectRatio, impl_->near, impl_->far,
-                              Camera::Fov::VERTICAL);
+        camera->setProjection(impl_->verticalFoV, aspectRatio, impl_->near,
+                              impl_->far, Camera::Fov::VERTICAL);
     }
 }
 
 void RendererCamera::SetProjection(float near, float far, float verticalFoV) {
-    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(
+                impl_->cameraId)) {
         impl_->near = near;
         impl_->far = far;
         impl_->verticalFoV = verticalFoV;
         if (impl_->aspectRatio > 0.0) {
-            camera->setProjection(verticalFoV, impl_->aspectRatio, near, far, Camera::Fov::VERTICAL);
+            camera->setProjection(verticalFoV, impl_->aspectRatio, near, far,
+                                  Camera::Fov::VERTICAL);
         }
     }
 }
 
-void RendererCamera::LookAt(float eyeX, float eyeY, float eyeZ,
-                            float centerX, float centerY, float centerZ,
-                            float upX, float upY, float upZ) {
-    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
-        camera->lookAt(math::float3{ eyeX, eyeY, eyeZ },
-                       math::float3{ centerX, centerY, centerZ},
-                       math::float3{ upX, upY, upZ });
+void RendererCamera::LookAt(float eyeX,
+                            float eyeY,
+                            float eyeZ,
+                            float centerX,
+                            float centerY,
+                            float centerZ,
+                            float upX,
+                            float upY,
+                            float upZ) {
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(
+                impl_->cameraId)) {
+        camera->lookAt(math::float3{eyeX, eyeY, eyeZ},
+                       math::float3{centerX, centerY, centerZ},
+                       math::float3{upX, upY, upZ});
     }
 }
 
 void RendererCamera::Set2D(int width, int height) {
-    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(impl_->cameraId)) {
-        camera->setProjection(Camera::Projection::ORTHO,
-                              0.0, width,
-                              height, 0.0,
-                              0.0, 1.0);
+    if (auto camera = (filament::Camera*)impl_->renderer.GetCameraPointer(
+                impl_->cameraId)) {
+        camera->setProjection(Camera::Projection::ORTHO, 0.0, width, height,
+                              0.0, 0.0, 1.0);
     }
 }
 // ----------------------------------------------------------------------------
@@ -818,12 +821,11 @@ struct RendererScene::Impl {
     Renderer& renderer;
     Renderer::SceneId sceneId = BOGUS_ID;
 
-    Impl(Renderer& r) : renderer(r) {
-    }
+    Impl(Renderer& r) : renderer(r) {}
 };
 
 RendererScene::RendererScene(Renderer& renderer)
-: impl_(new RendererScene::Impl(renderer)) {
+    : impl_(new RendererScene::Impl(renderer)) {
     impl_->sceneId = renderer.CreateScene();
 }
 
@@ -831,16 +833,15 @@ RendererScene::~RendererScene() {
     impl_->renderer.DestroyScene(impl_->sceneId);
 }
 
-Renderer::SceneId RendererScene::GetId() const {
-    return impl_->sceneId;
-}
+Renderer::SceneId RendererScene::GetId() const { return impl_->sceneId; }
 
 void RendererScene::AddIBL(Renderer::IBLId iblId) {
     std::cout << "TODO: implement RendererScene::AddIBL()" << std::endl;
 }
 
 void RendererScene::AddLight(Renderer::LightId lightId) {
-    auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(impl_->sceneId);
+    auto scene =
+            (filament::Scene*)impl_->renderer.GetScenePointer(impl_->sceneId);
     if (!scene) {
         return;
     }
@@ -853,8 +854,10 @@ void RendererScene::RemoveLight(Renderer::LightId lightId) {
     std::cout << "TODO: implement RendererScene::RemoveLight()" << std::endl;
 }
 
-void RendererScene::AddMesh(Renderer::MeshId meshId, const Transform& transform) {
-    auto scene = (filament::Scene*)impl_->renderer.GetScenePointer(impl_->sceneId);
+void RendererScene::AddMesh(Renderer::MeshId meshId,
+                            const Transform& transform) {
+    auto scene =
+            (filament::Scene*)impl_->renderer.GetScenePointer(impl_->sceneId);
     if (!scene) {
         return;
     }
@@ -868,5 +871,5 @@ void RendererScene::RemoveMesh(Renderer::MeshId meshId) {
     std::cout << "TODO: implement RendererScene::RemoveMesh()" << std::endl;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

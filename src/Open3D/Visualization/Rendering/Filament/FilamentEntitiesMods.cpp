@@ -136,7 +136,7 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
         const auto color =
                 filament::math::float3{value.x(), value.y(), value.z()};
         materialInstance_->setParameter(parameter, filament::RgbType::sRGB,
-                                       color);
+                                        color);
     }
 
     return *this;
@@ -176,5 +176,5 @@ MaterialInstanceHandle FilamentMaterialModifier::Finish() {
     return res;
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

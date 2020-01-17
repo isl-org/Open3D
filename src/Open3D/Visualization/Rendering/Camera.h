@@ -37,6 +37,8 @@ public:
     enum class Projection { Perspective, Ortho };
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
+    virtual ~Camera() = default;
+
     virtual void SetProjection(double fov,
                                double aspect,
                                double near,
@@ -47,17 +49,23 @@ public:
      *
      * @param projection    type of #Projection to use.
      *
-     * @param left      distance in world units from the camera to the left plane, at the near plane.
+     * @param left      distance in world units from the camera to the left
+     * plane, at the near plane.
      *
-     * @param right     distance in world units from the camera to the right plane, at the near plane.
+     * @param right     distance in world units from the camera to the right
+     * plane, at the near plane.
      *
-     * @param bottom    distance in world units from the camera to the bottom plane, at the near plane.
+     * @param bottom    distance in world units from the camera to the bottom
+     * plane, at the near plane.
      *
-     * @param top       distance in world units from the camera to the top plane, at the near plane.
+     * @param top       distance in world units from the camera to the top
+     * plane, at the near plane.
      *
-     * @param near      distance in world units from the camera to the near plane. The near plane's
+     * @param near      distance in world units from the camera to the near
+     * plane. The near plane's
      *
-     * @param far       distance in world units from the camera to the far plane. The far plane's
+     * @param far       distance in world units from the camera to the far
+     * plane. The far plane's
      */
     virtual void SetProjection(Projection projection,
                                double left,
@@ -83,5 +91,5 @@ public:
     virtual Transform GetModelMatrix() = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

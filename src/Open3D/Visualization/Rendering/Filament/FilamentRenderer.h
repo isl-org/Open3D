@@ -33,14 +33,13 @@
 
 #include "Open3D/Visualization/Rendering/Renderer.h"
 
-namespace filament
-{
-    class Engine;
-    class Renderer;
-    class Scene;
-    class SwapChain;
-    class VertexBuffer;
-}
+namespace filament {
+class Engine;
+class Renderer;
+class Scene;
+class SwapChain;
+class VertexBuffer;
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
@@ -92,5 +91,5 @@ private:
     bool frameStarted_ = false;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

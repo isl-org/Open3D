@@ -30,9 +30,8 @@
 
 #include "Open3D/Visualization/Rendering/MaterialModifier.h"
 
-namespace filament
-{
-    class MaterialInstance;
+namespace filament {
+class MaterialInstance;
 }
 
 namespace open3d {
@@ -63,5 +62,5 @@ private:
     std::shared_ptr<filament::MaterialInstance> materialInstance_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

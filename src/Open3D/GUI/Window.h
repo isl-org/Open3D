@@ -46,8 +46,10 @@ class Widget;
 class Window {
     friend class Application;
     friend class Renderer;
+
 public:
     Window(const std::string& title, int width, int height);
+    Window(const std::string& title, int x, int y, int width, int height);
     virtual ~Window();
 
     uint32_t GetID() const;
@@ -55,9 +57,10 @@ public:
     const Theme& GetTheme() const;
     visualization::Renderer& GetRenderer() const;
 
-    Size GetSize() const; // total interior size of window, including menubar
-    Rect GetContentRect() const; // size available to widgets
+    Size GetSize() const;  // total interior size of window, including menubar
+    Rect GetContentRect() const;  // size available to widgets
     float GetScaling() const;
+    Point GlobalToWindowCoord(int globalX, int globalY);
 
     bool IsVisible() const;
     void Show(bool vis = true);
@@ -78,10 +81,8 @@ private:
     DrawResult OnDraw(float dtSec);
     DrawResult DrawOnce(float dtSec);
     void OnResize();
-    void OnMouseMove(const MouseMoveEvent& e);
-    void OnMouseButton(const MouseButtonEvent& e);
-    void OnMouseWheel(const MouseWheelEvent& e);
-    void OnKey(const KeyEvent& e);
+    void OnMouseEvent(const MouseEvent& e);
+    void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
     void* GetNativeDrawable() const;
 
@@ -90,5 +91,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

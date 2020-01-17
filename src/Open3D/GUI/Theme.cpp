@@ -27,7 +27,5 @@
 #include "Theme.h"
 
 namespace open3d {
-namespace gui {
-
-}
-}
+namespace gui {}
+}  // namespace open3d

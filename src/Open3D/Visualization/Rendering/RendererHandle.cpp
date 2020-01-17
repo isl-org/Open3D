@@ -54,5 +54,5 @@ const char* REHandle_abstract::TypeToString(EntityType type) {
     return kTypesMapping[static_cast<size_t>(type)];
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

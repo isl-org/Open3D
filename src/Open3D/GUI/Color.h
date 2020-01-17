@@ -40,11 +40,16 @@ public:
     float GetAlpha() const;
     const float* GetPointer() const;
 
-    Color Lightened(float amount); // amount is between 0 and 1
+    Color Lightened(float amount);  // amount is between 0 and 1
+
+    unsigned int ToABGR32() const;
+
+    bool operator==(const Color& rhs) const;
+    bool operator!=(const Color& rhs) const;
 
 private:
     float rgba_[4];
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

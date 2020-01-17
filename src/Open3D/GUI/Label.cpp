@@ -40,35 +40,32 @@ struct Label::Impl {
     std::string text;
 };
 
-Label::Label(const char *text /*= nullptr*/)
-: impl_(new Label::Impl()) {
+Label::Label(const char* text /*= nullptr*/) : impl_(new Label::Impl()) {
     if (text) {
         impl_->text = text;
     }
 }
 
-Label::~Label() {
-}
+Label::~Label() {}
 
-const char* Label::GetText() const {
-    return impl_->text.c_str();
-}
+const char* Label::GetText() const { return impl_->text.c_str(); }
 
 Size Label::CalcPreferredSize(const Theme& theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
-    auto size = ImGui::GetFont()->CalcTextSizeA(theme.fontSize, 10000, 10000, impl_->text.c_str());
+    auto size = ImGui::GetFont()->CalcTextSizeA(theme.fontSize, 10000, 10000,
+                                                impl_->text.c_str());
     return Size(std::ceil(size.x + 2.0f * padding.x),
                 std::ceil(em + 2.0f * padding.y));
 }
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
-    auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
+    auto& frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::Text("%s", impl_->text.c_str());
     return Widget::DrawResult::NONE;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

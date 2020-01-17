@@ -31,13 +31,12 @@
 namespace open3d {
 namespace gui {
 
-class Label : public Widget
-{
+class Label : public Widget {
 public:
-    explicit Label(const char *text = nullptr);
+    explicit Label(const char* text = nullptr);
     ~Label();
 
-    const char* GetText() const; // std::string can cause ABI issues
+    const char* GetText() const;  // std::string can cause ABI issues
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
@@ -48,5 +47,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

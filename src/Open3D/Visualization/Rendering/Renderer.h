@@ -75,5 +75,5 @@ public:
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

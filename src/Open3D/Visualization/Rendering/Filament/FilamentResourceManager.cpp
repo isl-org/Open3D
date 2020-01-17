@@ -105,7 +105,8 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData,
 
     MaterialHandle handle;
     if (material) {
-        handle = RegisterResource<MaterialHandle>(engine_, material, materials_);
+        handle =
+                RegisterResource<MaterialHandle>(engine_, material, materials_);
     }
 
     return handle;
@@ -202,8 +203,8 @@ IndexBufferHandle FilamentResourceManager::CreateIndexBuffer(
 
     IndexBufferHandle handle;
     if (ibuf) {
-        handle =
-                RegisterResource<IndexBufferHandle>(engine_, ibuf, indexBuffers_);
+        handle = RegisterResource<IndexBufferHandle>(engine_, ibuf,
+                                                     indexBuffers_);
     }
 
     return handle;
@@ -266,5 +267,5 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     }
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d
