@@ -56,7 +56,6 @@ __global__ void ReduceSubarraysSumCUDAKernel(
     out_sums[i] = sum;
 }
 
-
 /// Reduces subarrays in linear memory with the sum operation.
 /// The sum for empty subarrays is 0.
 ///
