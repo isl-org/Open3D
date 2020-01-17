@@ -119,8 +119,9 @@ GeometryHandle FilamentScene::AddGeometry(
         return {};
     }
 
-    entityEntry.vb = geometryBuffersBuilder->ConstructVertexBuffer();
-    entityEntry.ib = geometryBuffersBuilder->ConstructIndexBuffer();
+    auto buffers = geometryBuffersBuilder->ConstructBuffers();
+    entityEntry.vb = std::get<0>(buffers);
+    entityEntry.ib = std::get<1>(buffers);
 
     Box aabb = geometryBuffersBuilder->ComputeAABB();
 

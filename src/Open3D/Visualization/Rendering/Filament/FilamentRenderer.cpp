@@ -26,6 +26,8 @@
 
 #include "FilamentRenderer.h"
 
+#include "Open3D/Utility/Console.h"
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
@@ -101,12 +103,7 @@ void FilamentRenderer::EndFrame() {
     }
 }
 
-MaterialHandle FilamentRenderer::AddMaterial(const void* materialData,
-                                             const size_t dataSize) {
-    return resourceManager_.CreateMaterial(materialData, dataSize);
-}
-
-MaterialHandle FilamentRenderer::AddMaterial(const MaterialLoadRequest& request) {
+MaterialHandle FilamentRenderer::AddMaterial(const ResourceLoadRequest& request) {
     return resourceManager_.CreateMaterial(request);
 }
 
@@ -120,6 +117,10 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
                 resourceManager_.GetMaterialInstance(instanceId);
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
                                                      instanceId);
+    } else {
+        utility::LogError(
+                "Failed to create material instance for material handle {}.",
+                id);
     }
 
     return *materialsModifier_;
@@ -133,9 +134,26 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     if (!wMaterialInstance.expired()) {
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
                                                      id);
+    } else {
+        utility::LogError(
+                "Failed to modify material instance: unknown instance handle {}.",
+                id);
     }
 
     return *materialsModifier_;
+}
+
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
+    if (request.path.empty()) {
+        request.errorCallback(request, -1, "Texture can be loaded only from file");
+        return {};
+    }
+
+    return resourceManager_.CreateTexture(request.path.data());
+}
+
+void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
+
 }
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
