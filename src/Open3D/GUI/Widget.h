@@ -46,10 +46,12 @@ struct DrawContext {
     int screenWidth;
     int screenHeight;
     int emPx;
+    float frameDelta; // in seconds
 };
 
 class Widget {
     friend class Window;
+
 public:
     enum class DrawResult { NONE, REDRAW };
 
@@ -98,5 +100,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

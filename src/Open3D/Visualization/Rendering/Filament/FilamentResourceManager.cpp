@@ -26,6 +26,7 @@
 
 #include "FilamentResourceManager.h"
 
+#include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/Utility/FileSystem.h"
 
 #include <filament/Engine.h>
@@ -104,13 +105,14 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData,
 
     MaterialHandle handle;
     if (material) {
-        handle = RegisterResource<MaterialHandle>(engine_, material, materials_);
+        handle =
+                RegisterResource<MaterialHandle>(engine_, material, materials_);
     }
 
     return handle;
 }
 
-MaterialHandle FilamentResourceManager::CreateMaterial(const MaterialLoadRequest& request) {
+MaterialHandle FilamentResourceManager::CreateMaterial(const ResourceLoadRequest& request) {
     MaterialHandle handle;
 
     if (false == request.path.empty()) {
@@ -123,7 +125,7 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const MaterialLoadRequest
             request.errorCallback(request, errno, errorStr);
         }
     } else if (request.dataSize > 0) {
-        handle = CreateMaterial(request.materialData, request.dataSize);
+        handle = CreateMaterial(request.data, request.dataSize);
     } else {
         request.errorCallback(request, -1, "");
     }
@@ -144,7 +146,42 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
     return {};
 }
 
-TextureHandle FilamentResourceManager::CreateTexture() { return {}; }
+TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
+    TextureHandle handle;
+
+    std::shared_ptr<geometry::Image> img;
+
+    if (path) {
+        img = io::CreateImageFromFile(path);
+
+        if (!img->HasData()) {
+            // TODO: report an error
+        }
+    } else {
+        // TODO: report an error
+    }
+
+    using namespace filament;
+
+    if (img->HasData()) {
+        Texture::PixelBufferDescriptor pb(img->data_.data(), img->data_.size(),
+                                          Texture::Format::RGB,
+                                          Texture::Type::UBYTE);
+        auto texture = Texture::Builder()
+                               .width((uint32_t)img->width_)
+                               .height((uint32_t)img->height_)
+                               .levels((uint8_t)1)
+                               .format(Texture::InternalFormat::RGB8)
+                               .sampler(Texture::Sampler::SAMPLER_2D)
+                               .build(engine_);
+
+        texture->setImage(engine_, 0, std::move(pb));
+
+        handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    }
+
+    return handle;
+}
 
 VertexBufferHandle FilamentResourceManager::AddVertexBuffer(
         filament::VertexBuffer* vertexBuffer) {
@@ -166,8 +203,8 @@ IndexBufferHandle FilamentResourceManager::CreateIndexBuffer(
 
     IndexBufferHandle handle;
     if (ibuf) {
-        handle =
-                RegisterResource<IndexBufferHandle>(engine_, ibuf, indexBuffers_);
+        handle = RegisterResource<IndexBufferHandle>(engine_, ibuf,
+                                                     indexBuffers_);
     }
 
     return handle;
@@ -230,5 +267,5 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     }
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

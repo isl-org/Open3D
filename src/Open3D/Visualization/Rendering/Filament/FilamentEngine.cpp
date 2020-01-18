@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cstddef> // <filament/Engine> recursive includes needs this, std::size_t especially
+#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
 #include "FilamentEngine.h"
 
@@ -65,5 +65,5 @@ EngineInstance::EngineInstance() {
     resourceManager_ = new FilamentResourceManager(*engine_);
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

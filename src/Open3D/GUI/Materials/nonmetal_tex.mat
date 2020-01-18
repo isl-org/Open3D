@@ -1,0 +1,24 @@
+material {
+    name : Lit,
+    shadingModel : lit,
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : roughness },
+        { type : float,     name : clearCoat },
+        { type : float,     name : clearCoatRoughness },
+        { type : sampler2d, name : texture }
+    ],
+    requires : [
+        uv0
+    ],
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor.rgb = materialParams.baseColor*texture(materialParams_texture, getUV0()).rgb;
+        material.roughness = materialParams.roughness;
+        material.clearCoat = materialParams.clearCoat;
+        material.clearCoatRoughness = materialParams.clearCoatRoughness;
+    }
+}

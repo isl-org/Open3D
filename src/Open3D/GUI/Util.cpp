@@ -55,7 +55,6 @@ std::vector<std::string> PathToComponents(const char *path) {
     return components;
 }
 
-} // util
-} // gui
-} // open3d
-
+}  // namespace util
+}  // namespace gui
+}  // namespace open3d
