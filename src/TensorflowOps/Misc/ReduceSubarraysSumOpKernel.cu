@@ -25,18 +25,18 @@
 // ----------------------------------------------------------------------------
 
 #define EIGEN_USE_GPU
-#include "Open3D/ML/Misc/Detail/ReduceSubarraysSumCUDA.cuh"
-#include "ReduceSubarraysSumOpKernelCommon.h"
+#include "Open3D/ML/Misc/Detail/ReduceSubarraysSum.cuh"
+#include "ReduceSubarraysSumOpKernel.h"
 
 using namespace open3d::ml::detail;
-using namespace reduce_subarrays_sum_opkernel_common;
+using namespace reduce_subarrays_sum_opkernel;
 using namespace tensorflow;
 
 template <class T>
-class ReduceSubarraysSumOpKernelCUDA : public ReduceSubarraysSumOpKernelCommon {
+class ReduceSubarraysSumOpKernelCUDA : public ReduceSubarraysSumOpKernel {
 public:
     explicit ReduceSubarraysSumOpKernelCUDA(OpKernelConstruction* construction)
-        : ReduceSubarraysSumOpKernelCommon(construction) {}
+        : ReduceSubarraysSumOpKernel(construction) {}
 
     void Kernel(OpKernelContext* context,
                 const tensorflow::Tensor& values,

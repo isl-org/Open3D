@@ -27,12 +27,12 @@
 #include "tensorflow/core/lib/core/errors.h"
 
 // namespace for code that is common for all kernels
-namespace reduce_subarrays_sum_opkernel_common {
+namespace reduce_subarrays_sum_opkernel {
 
 // Base class with common code for the OpKernel implementations
-class ReduceSubarraysSumOpKernelCommon : public tensorflow::OpKernel {
+class ReduceSubarraysSumOpKernel: public tensorflow::OpKernel {
 public:
-    explicit ReduceSubarraysSumOpKernelCommon(
+    explicit ReduceSubarraysSumOpKernel(
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {}
 

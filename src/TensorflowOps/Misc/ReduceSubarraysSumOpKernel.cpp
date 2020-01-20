@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ML/Misc/Detail/ReduceSubarraysSumCPU.h"
-#include "ReduceSubarraysSumOpKernelCommon.h"
+#include "Open3D/ML/Misc/Detail/ReduceSubarraysSum.h"
+#include "ReduceSubarraysSumOpKernel.h"
 
 using namespace open3d::ml::detail;
-using namespace reduce_subarrays_sum_opkernel_common;
+using namespace reduce_subarrays_sum_opkernel;
 using namespace tensorflow;
 
 template <class T>
-class ReduceSubarraysSumOpKernelCPU : public ReduceSubarraysSumOpKernelCommon {
+class ReduceSubarraysSumOpKernelCPU : public ReduceSubarraysSumOpKernel {
 public:
     explicit ReduceSubarraysSumOpKernelCPU(OpKernelConstruction* construction)
-        : ReduceSubarraysSumOpKernelCommon(construction) {}
+        : ReduceSubarraysSumOpKernel(construction) {}
 
     void Kernel(OpKernelContext* context,
                 const tensorflow::Tensor& values,
