@@ -30,7 +30,7 @@
 namespace reduce_subarrays_sum_opkernel {
 
 // Base class with common code for the OpKernel implementations
-class ReduceSubarraysSumOpKernel: public tensorflow::OpKernel {
+class ReduceSubarraysSumOpKernel : public tensorflow::OpKernel {
 public:
     explicit ReduceSubarraysSumOpKernel(
             tensorflow::OpKernelConstruction* construction)
@@ -75,4 +75,4 @@ public:
 private:
 };
 
-}  // namespace reduce_subarrays_sum_opkernel_common
+}  // namespace reduce_subarrays_sum_opkernel

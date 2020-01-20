@@ -90,4 +90,7 @@ def test_reduce_subarray_sum_random(seed, dtype, device_name):
     if np.issubdtype(dtype, np.integer):
         np.testing.assert_equal(result, expected_result)
     else:  # floating point types
-        np.testing.assert_allclose(result, expected_result, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(result,
+                                   expected_result,
+                                   rtol=1e-5,
+                                   atol=1e-8)
