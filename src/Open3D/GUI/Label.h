@@ -35,7 +35,7 @@ class Label : public Widget
 {
     using Super = Widget;
 public:
-    explicit Label(const char *text = nullptr);
+    explicit Label(const char* text = nullptr);
     ~Label();
 
     const char* GetText() const; // std::string can cause ABI issues
@@ -50,5 +50,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

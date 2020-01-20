@@ -47,10 +47,13 @@ struct Margins {
 
 class Layout1D : public Widget {
     using Super = Widget;
+
 public:
     enum Dir { VERT, HORIZ };
 
-    Layout1D(Dir dir, int spacing, const Margins& margins,
+    Layout1D(Dir dir,
+             int spacing,
+             const Margins& margins,
              const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Layout1D();
 
@@ -62,6 +65,7 @@ public:
     public:
         explicit Fixed(int size);
         Size CalcPreferredSize(const Theme& theme) const override;
+
     private:
         int size_;
     };
@@ -102,6 +106,7 @@ public:
 
 class VGrid : public Widget {
     using Super = Widget;
+
 public:
     VGrid(int nCols, int spacing = 0, const Margins& margins = Margins());
     virtual ~VGrid();
@@ -114,5 +119,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

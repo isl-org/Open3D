@@ -32,8 +32,8 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace open3d {
 namespace gui {
@@ -44,14 +44,14 @@ static int gNextTextEditId = 1;
 // See 3rdparty/imgui/misc/imgui_stdlib.cpp
 int InputTextCallback(ImGuiInputTextCallbackData *data) {
     if (data && data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        std::string *s = (std::string*)data->UserData;
+        std::string *s = (std::string *)data->UserData;
         s->resize(data->BufTextLen);
-        data->Buf = (char*)s->c_str();
+        data->Buf = (char *)s->c_str();
     }
     return 0;
 }
 
-} // (anonymous)
+}  // namespace
 
 struct TextEdit::Impl {
     std::string id;
@@ -61,26 +61,20 @@ struct TextEdit::Impl {
     std::function<void(const char*)> onValueChanged;
 };
 
-TextEdit::TextEdit()
-: impl_(new TextEdit::Impl()) {
+TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
     std::stringstream s;
     s << "##textedit_" << gNextTextEditId++;
     impl_->id = s.str();
     impl_->text.reserve(1);
 }
 
-TextEdit::~TextEdit() {
-}
+TextEdit::~TextEdit() {}
 
-const char* TextEdit::GetText() const {
-    return impl_->text.c_str();
-}
+const char *TextEdit::GetText() const { return impl_->text.c_str(); }
 
-void TextEdit::SetText(const char *text) {
-    impl_->text = text;
-}
+void TextEdit::SetText(const char *text) { impl_->text = text; }
 
-const char* TextEdit::GetPlaceholderText() const {
+const char *TextEdit::GetPlaceholderText() const {
     return impl_->placeholder.c_str();
 }
 
@@ -102,16 +96,23 @@ Size TextEdit::CalcPreferredSize(const Theme& theme) const {
     return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
 }
 
-Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
+Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0);  // macOS doesn't round text editing
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
+                        0.0);  // macOS doesn't round text editing
 
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, util::colorToImgui(context.theme.textEditBackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, util::colorToImgui(context.theme.textEditBackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, util::colorToImgui(context.theme.textEditBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_FrameBg,
+            util::colorToImgui(context.theme.textEditBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_FrameBgHovered,
+            util::colorToImgui(context.theme.textEditBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_FrameBgActive,
+            util::colorToImgui(context.theme.textEditBackgroundColor));
 
     int textFlags = ImGuiInputTextFlags_CallbackResize;
     if (!IsEnabled()) {
@@ -144,6 +145,5 @@ Widget::DrawResult TextEdit::Draw(const DrawContext& context) {
     return result;
 }
 
-} // gui
-} // open3d
-
+}  // namespace gui
+}  // namespace open3d

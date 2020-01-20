@@ -50,19 +50,15 @@ struct Label::Impl {
     bool isSingleLine = true;
 };
 
-Label::Label(const char *text /*= nullptr*/)
-: impl_(new Label::Impl()) {
+Label::Label(const char* text /*= nullptr*/) : impl_(new Label::Impl()) {
     if (text) {
         SetText(text);
     }
 }
 
-Label::~Label() {
-}
+Label::~Label() {}
 
-const char* Label::GetText() const {
-    return impl_->text.c_str();
-}
+const char* Label::GetText() const { return impl_->text.c_str(); }
 
 void Label::SetText(const char *text) {
     impl_->text = text;
@@ -126,5 +122,5 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     return Widget::DrawResult::NONE;
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

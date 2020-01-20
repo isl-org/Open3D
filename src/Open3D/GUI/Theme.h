@@ -77,5 +77,5 @@ struct Theme {
     int dialogBorderRadius;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

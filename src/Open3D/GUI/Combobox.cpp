@@ -47,7 +47,7 @@ int CalcItemHeight(const Theme& theme) {
     return std::ceil(em + 2.0 * padding);
 }
 
-}
+}  // namespace
 struct Combobox::Impl {
     std::string imguiId;
     std::vector<std::string> items;
@@ -56,22 +56,19 @@ struct Combobox::Impl {
     std::function<void(const char *)> onValueChanged;
 };
 
-Combobox::Combobox()
-: impl_(new Combobox::Impl()) {
+Combobox::Combobox() : impl_(new Combobox::Impl()) {
     std::stringstream s;
     s << "##combobox_" << gNextComboboxId++;
     impl_->imguiId = s.str();
 }
 
-Combobox::Combobox(const std::vector<const char*>& items)
-: Combobox() {
-    for (auto &item : items) {
+Combobox::Combobox(const std::vector<const char*>& items) : Combobox() {
+    for (auto& item : items) {
         AddItem(item);
     }
 }
 
-Combobox::~Combobox() {
-}
+Combobox::~Combobox() {}
 
 void Combobox::ClearItems() {
     impl_->items.clear();
@@ -92,8 +89,8 @@ int Combobox::GetSelectedIndex() const {
 }
 
 const char* Combobox::GetSelectedValue() const {
-    if (impl_->currentIndex >= 0
-        && impl_->currentIndex < int(impl_->items.size())) {
+    if (impl_->currentIndex >= 0 &&
+        impl_->currentIndex < int(impl_->items.size())) {
         return impl_->items[impl_->currentIndex].c_str();
     } else {
         return "";
@@ -114,10 +111,9 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
     auto buttonWidth = ImGui::GetFrameHeight();  // button is square
     auto padding = ImGui::GetStyle().FramePadding;
     int width = 0;
-    for (auto &item : impl_->items) {
-        auto size = ImGui::GetFont()->CalcTextSizeA(theme.fontSize,
-                                                    10000, 10000,
-                                                    item.c_str());
+    for (auto& item : impl_->items) {
+        auto size = ImGui::GetFont()->CalcTextSizeA(theme.fontSize, 10000,
+                                                    10000, item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
     return Size(width + buttonWidth + 2.0 * padding.x,
@@ -129,13 +125,19 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     bool wasOpen = ImGui::IsPopupOpen(impl_->imguiId.c_str());
     bool didOpen = false;
 
-    auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
+    auto& frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    ImGui::PushStyleColor(ImGuiCol_Button, util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_Button,
+            util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_ButtonHovered,
+            util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_ButtonActive,
+            util::colorToImgui(context.theme.comboboxArrowBackgroundColor));
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(frame.width);
@@ -143,7 +145,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
         if (!wasOpen) {
             didOpen = true;
         }
-        for (size_t i = 0;  i < impl_->items.size();  ++i) {
+        for (size_t i = 0; i < impl_->items.size(); ++i) {
             bool isSelected = (impl_->selectedIndex == int(i));
             if (ImGui::Selectable(impl_->items[i].c_str(), &isSelected, 0)) {
                 impl_->currentIndex = i;
@@ -168,5 +170,5 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
                                       : Widget::DrawResult::NONE);
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

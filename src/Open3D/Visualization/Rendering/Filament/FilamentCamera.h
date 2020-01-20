@@ -28,11 +28,10 @@
 
 #include "Open3D/Visualization/Rendering/Camera.h"
 
-namespace filament
-{
-    class Camera;
-    class Engine;
-}
+namespace filament {
+class Camera;
+class Engine;
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
@@ -78,5 +77,5 @@ private:
     filament::Engine& engine_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

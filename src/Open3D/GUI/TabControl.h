@@ -33,11 +33,12 @@ namespace gui {
 
 class TabControl : public Widget {
     using Super = Widget;
+
 public:
     TabControl();
     ~TabControl();
 
-    void AddTab(const char *name, std::shared_ptr<Widget> panel);
+    void AddTab(const char* name, std::shared_ptr<Widget> panel);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
@@ -49,5 +50,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

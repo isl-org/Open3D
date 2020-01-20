@@ -26,19 +26,18 @@
 
 #pragma once
 
-#include <Open3D/Visualization/Rendering/View.h>
+#include "Open3D/Visualization/Rendering/View.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
-#include "Renderer.h"
 #include "Widget.h"
 
 namespace open3d {
 
-namespace visualization
-{
-    class Scene;
-    class Camera;
-    class CameraManipulator;
-}
+namespace visualization {
+class Scene;
+class Camera;
+class CameraManipulator;
+}  // namespace visualization
 
 namespace gui {
 
@@ -46,6 +45,7 @@ class Color;
 
 class SceneWidget : public Widget {
     using Super = Widget;
+
 public:
     explicit SceneWidget(visualization::Scene& scene);
     ~SceneWidget() override;
@@ -58,6 +58,10 @@ public:
     visualization::Scene* GetScene() const;
     visualization::CameraManipulator* GetCameraManipulator() const;
 
+    // switchCamera flag make center of geometry become camera's POI;
+    void SetSelectedGeometry(const visualization::GeometryHandle& geometry, bool switchCamera);
+    void SetCameraPOI(const Eigen::Vector3f& location);
+
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     void Mouse(const MouseEvent& e) override;
@@ -66,7 +70,26 @@ public:
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
+
+    struct CameraControlsState {
+        Eigen::Vector3f poi;
+        float orbitHeight = 0.f;
+        float rotationSpeed = M_PI;
+
+        bool orbiting = false;
+
+        // use |mousePos - frameDelta| to get
+        // mouse position at start of frame
+        float lastMouseX = 0.f;
+        float lastMouseY = 0.f;
+
+        float frameDx = 0.f;
+        float frameDy = 0.f;
+        float frameWheelDelta = 0.f;
+
+        void Reset();
+    } cameraControlsState_;
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d
