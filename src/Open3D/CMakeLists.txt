@@ -15,6 +15,7 @@ add_subdirectory(Registration)
 add_subdirectory(Utility)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
+add_subdirectory(ML)
 
 # Source group for Visual Studio
 ADD_SOURCE_GROUP(Camera)

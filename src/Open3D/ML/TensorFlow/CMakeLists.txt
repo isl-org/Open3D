@@ -22,15 +22,15 @@ if ( CUDA_ENABLED )
                 "*.cc" 
                 "*.cpp" 
                 "*.cu" 
-                "../Open3D/ML/*/Detail/*.cc" 
-                "../Open3D/ML/*/Detail/*.cpp" 
-                "../Open3D/ML/*/Detail/*.cu" )
+                "../*/Detail/*.cc" 
+                "../*/Detail/*.cpp" 
+                "../*/Detail/*.cu" )
 else ()
     file(GLOB_RECURSE open3d_tf_ops_SOURCES 
             "*.cc" 
             "*.cpp" 
-            "../Open3D/ML/*/Detail/*.cc" 
-            "../Open3D/ML/*/Detail/*.cpp" )
+            "../*/Detail/*.cc" 
+            "../*/Detail/*.cpp" )
 endif ()
 
 add_library( open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES} )
