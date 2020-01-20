@@ -27,7 +27,6 @@
 import open3d as o3d
 import numpy as np
 import pytest
-import os
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
@@ -71,7 +70,7 @@ def test_reduce_subarray_sum_random(seed, dtype, device_name):
     values = rng.uniform(0, 10, size=values_shape).astype(dtype)
 
     prefix_sum = [0]
-    for i in range(rng.randint(1, 10)):
+    for _ in range(rng.randint(1, 10)):
         prefix_sum.append(
             rng.randint(0, values_shape[0] - prefix_sum[-1]) + prefix_sum[-1])
 
@@ -89,6 +88,6 @@ def test_reduce_subarray_sum_random(seed, dtype, device_name):
     result = result.numpy()
 
     if np.issubdtype(dtype, np.integer):
-        assert np.all(result == expected_result)
+        np.testing.assert_equal(result, expected_result)
     else:  # floating point types
-        assert np.allclose(result, expected_result)
+        np.testing.assert_allclose(result, expected_result, rtol=1e-5, atol=1e-8)
