@@ -57,9 +57,17 @@ public:
     virtual void SetViewActive(const ViewHandle& viewId, bool isActive) = 0;
     virtual void RemoveView(const ViewHandle& viewId) = 0;
 
+    // Will use geometry name as entity name
     virtual GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) = 0;
+    virtual GeometryHandle AddGeometry(const geometry::Geometry3D& geometry,
+                                       const MaterialInstanceHandle& materialId,
+                                       const std::string& name) = 0;
+    virtual void AssignMaterial(const GeometryHandle& geometryId,
+                                const MaterialInstanceHandle& materialId) = 0;
+    virtual std::vector<GeometryHandle> FindGeometryByName(
+            const std::string& name) = 0;
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
 
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
@@ -67,12 +75,15 @@ public:
     // REHandle<EntityType::Light>& id) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
 
-    virtual void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) = 0;
+    virtual void SetEntityTransform(const REHandle_abstract& entityId,
+                                    const Transform& transform) = 0;
     virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;
 
     //               <     center        half extent  >
-    virtual std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) = 0;
-    virtual std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) = 0;
+    virtual std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(
+            const REHandle_abstract& entityId) = 0;
+    virtual std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(
+            const REHandle_abstract& entityId) = 0;
 };
 
 }  // namespace visualization
