@@ -122,7 +122,8 @@ std::string findResourcePath(int argc, const char *argv[]) {
     auto lastSlash = argv0.rfind("/");
     auto path = argv0.substr(0, lastSlash);
 
-    if (argv0[0] == '/' || (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
+    if (argv0[0] == '/' ||
+        (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
@@ -134,7 +135,7 @@ std::string findResourcePath(int argc, const char *argv[]) {
     if (path.rfind("MacOS") == path.size() - 5) {  // path is in a bundle
         return path.substr(0, path.size() - 5) + "Resources";
     }
-#endif // __APPLE__
+#endif  // __APPLE__
 
     auto rsrcPath = path + "/resources";
     if (!open3d::utility::filesystem::DirectoryExists(rsrcPath)) {
@@ -143,7 +144,7 @@ std::string findResourcePath(int argc, const char *argv[]) {
     return rsrcPath;
 }
 
-}
+}  // namespace
 
 namespace open3d {
 namespace gui {
@@ -154,7 +155,7 @@ struct Application::Impl {
     Theme theme;
 };
 
-Application& Application::GetInstance() {
+Application &Application::GetInstance() {
     static Application gApp;
     return gApp;
 }
@@ -181,7 +182,8 @@ Application::Application()
     impl_->theme.checkboxBackgroundOffColor = Color(0.333, 0.333, .333);
     impl_->theme.checkboxBackgroundOnColor = highlightColor;
     impl_->theme.checkboxBackgroundHoverOffColor = Color(0.5, 0.5, 0.5);
-    impl_->theme.checkboxBackgroundHoverOnColor = highlightColor.Lightened(0.15);
+    impl_->theme.checkboxBackgroundHoverOnColor =
+            highlightColor.Lightened(0.15);
     impl_->theme.checkboxCheckColor = Color(1, 1, 1);
     impl_->theme.comboboxBackgroundColor = Color(0.4, 0.4, 0.4);
     impl_->theme.comboboxHoverColor = Color(0.5, 0.5, 0.5);
@@ -194,11 +196,11 @@ Application::Application()
     impl_->theme.dialogBorderWidth = 1;
     impl_->theme.dialogBorderRadius = 10;
 
-    visualization::EngineInstance::SelectBackend(filament::backend::Backend::OPENGL);
+    visualization::EngineInstance::SelectBackend(
+            filament::backend::Backend::OPENGL);
 }
 
-Application::~Application() {
-}
+Application::~Application() {}
 
 void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
@@ -246,16 +248,16 @@ void Application::Run() {
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
     bool done = false;
-    std::unordered_map<Window*, int> eventCounts;
+    std::unordered_map<Window *, int> eventCounts;
     while (!done) {
-//        SDL_Window* sdlWindow = window->getSDLWindow();
-//        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
-//            SDL_SetWindowTitle(sdlWindow, mWindowTitle.c_str());
-//        }
+        //        SDL_Window* sdlWindow = window->getSDLWindow();
+        //        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
+        //            SDL_SetWindowTitle(sdlWindow, mWindowTitle.c_str());
+        //        }
 
-//        if (!UTILS_HAS_THREADING) {
-//            mEngine->execute();
-//        }
+        //        if (!UTILS_HAS_THREADING) {
+        //            mEngine->execute();
+        //        }
 
         eventCounts.clear();
         constexpr int kMaxEvents = 16;
@@ -264,7 +266,7 @@ void Application::Run() {
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
             SDL_Event* event = &events[nevents];
             switch (event->type) {
-                case SDL_QUIT:   // sent after last window closed
+                case SDL_QUIT:  // sent after last window closed
                     done = true;
                     break;
                 case SDL_MOUSEMOTION: {
@@ -325,16 +327,25 @@ void Application::Run() {
                     break;
                 }
                 case SDL_MOUSEBUTTONDOWN:
-                case SDL_MOUSEBUTTONUP:
-                {
+                case SDL_MOUSEBUTTONUP: {
                     auto &e = event->button;
                     MouseButton button = MouseButton::NONE;
                     switch (e.button) {
-                        case SDL_BUTTON_LEFT: button = MouseButton::LEFT; break;
-                        case SDL_BUTTON_RIGHT: button = MouseButton::RIGHT; break;
-                        case SDL_BUTTON_MIDDLE: button = MouseButton::MIDDLE; break;
-                        case SDL_BUTTON_X1: button = MouseButton::BUTTON4; break;
-                        case SDL_BUTTON_X2: button = MouseButton::BUTTON5; break;
+                        case SDL_BUTTON_LEFT:
+                            button = MouseButton::LEFT;
+                            break;
+                        case SDL_BUTTON_RIGHT:
+                            button = MouseButton::RIGHT;
+                            break;
+                        case SDL_BUTTON_MIDDLE:
+                            button = MouseButton::MIDDLE;
+                            break;
+                        case SDL_BUTTON_X1:
+                            button = MouseButton::BUTTON4;
+                            break;
+                        case SDL_BUTTON_X2:
+                            button = MouseButton::BUTTON5;
+                            break;
                     }
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
@@ -359,7 +370,7 @@ void Application::Run() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
-                        win->OnTextInput(TextInputEvent{ e.text });
+                        win->OnTextInput(TextInputEvent{e.text});
                         eventCounts[win.get()] += 1;
                     }
                     break;
@@ -416,7 +427,8 @@ void Application::Run() {
             auto w = kv.second;
             bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
             if (w->IsVisible() && gotEvents) {
-                if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) == Window::REDRAW) {
+                if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
+                    Window::REDRAW) {
                     SDL_Event expose;
                     expose.type = SDL_WINDOWEVENT;
                     expose.window.windowID = w->GetID();
@@ -432,13 +444,11 @@ void Application::Run() {
     SDL_Quit();
 }
 
-const char* Application::GetResourcePath() const {
+const char *Application::GetResourcePath() const {
     return impl_->resourcePath.c_str();
 }
 
-const Theme& Application::GetTheme() const {
-    return impl_->theme;
-}
+const Theme &Application::GetTheme() const { return impl_->theme; }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

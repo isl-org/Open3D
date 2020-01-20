@@ -158,12 +158,7 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     std::string err;
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
-    std::vector<char> bytes;
-    if (open3d::utility::filesystem::FReadToBuffer(path, bytes, &err)) {
-        nonmetal = GetRenderer().AddMaterial(bytes.data(), bytes.size());
-    } else {
-        utility::LogWarning((std::string("Error opening ") + path + ":" + err).c_str());
-    }
+    nonmetal = GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
     auto white = GetRenderer().ModifyMaterial(nonmetal)
             .SetColor("baseColor", {1.0, 1.0, 1.0})
             .SetParameter("roughness", 0.5f)

@@ -47,6 +47,7 @@ class Widget;
 class Window {
     friend class Application;
     friend class Renderer;
+
 public:
     Window(const std::string& title, int width, int height);
     Window(const std::string& title, int x, int y, int width, int height);
@@ -57,8 +58,8 @@ public:
     const Theme& GetTheme() const;
     visualization::Renderer& GetRenderer() const;
 
-    Size GetSize() const; // total interior size of window, including menubar
-    Rect GetContentRect() const; // size available to widgets
+    Size GetSize() const;  // total interior size of window, including menubar
+    Rect GetContentRect() const;  // size available to widgets
     float GetScaling() const;
     Point GlobalToWindowCoord(int globalX, int globalY);
 
@@ -97,5 +98,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

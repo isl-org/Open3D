@@ -26,6 +26,8 @@
 
 #include "FilamentRenderer.h"
 
+#include "Open3D/Utility/Console.h"
+
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
@@ -60,7 +62,8 @@ FilamentRenderer::~FilamentRenderer() {
 
 SceneHandle FilamentRenderer::CreateScene() {
     auto handle = SceneHandle::Next();
-    scenes_[handle] = std::make_unique<FilamentScene>(engine_, resourceManager_);
+    scenes_[handle] =
+            std::make_unique<FilamentScene>(engine_, resourceManager_);
 
     return handle;
 }
@@ -74,7 +77,9 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
     return nullptr;
 }
 
-void FilamentRenderer::DestroyScene(const SceneHandle& id) { scenes_.erase(id); }
+void FilamentRenderer::DestroyScene(const SceneHandle& id) {
+    scenes_.erase(id);
+}
 
 void FilamentRenderer::BeginFrame() {
     frameStarted_ = renderer_->beginFrame(swapChain_);
@@ -98,12 +103,7 @@ void FilamentRenderer::EndFrame() {
     }
 }
 
-MaterialHandle FilamentRenderer::AddMaterial(const void* materialData,
-                                             const size_t dataSize) {
-    return resourceManager_.CreateMaterial(materialData, dataSize);
-}
-
-MaterialHandle FilamentRenderer::AddMaterial(const MaterialLoadRequest& request) {
+MaterialHandle FilamentRenderer::AddMaterial(const ResourceLoadRequest& request) {
     return resourceManager_.CreateMaterial(request);
 }
 
@@ -116,7 +116,11 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
         auto wMaterialInstance =
                 resourceManager_.GetMaterialInstance(instanceId);
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                    instanceId);
+                                                     instanceId);
+    } else {
+        utility::LogError(
+                "Failed to create material instance for material handle {}.",
+                id);
     }
 
     return *materialsModifier_;
@@ -129,10 +133,27 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     auto wMaterialInstance = resourceManager_.GetMaterialInstance(id);
     if (!wMaterialInstance.expired()) {
         materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                    id);
+                                                     id);
+    } else {
+        utility::LogError(
+                "Failed to modify material instance: unknown instance handle {}.",
+                id);
     }
 
     return *materialsModifier_;
+}
+
+TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
+    if (request.path.empty()) {
+        request.errorCallback(request, -1, "Texture can be loaded only from file");
+        return {};
+    }
+
+    return resourceManager_.CreateTexture(request.path.data());
+}
+
+void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
+
 }
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
@@ -147,5 +168,5 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

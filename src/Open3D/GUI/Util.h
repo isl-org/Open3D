@@ -43,7 +43,7 @@ ImVec4 colorToImgui(const Color& color);
 
 std::vector<std::string> PathToComponents(const char *path);
 
-} // util
+}  // namespace util
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

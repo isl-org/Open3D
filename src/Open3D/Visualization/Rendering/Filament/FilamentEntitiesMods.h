@@ -26,13 +26,12 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RendererEntitiesMods.h"
-
 #include <memory>
 
-namespace filament
-{
-    class MaterialInstance;
+#include "Open3D/Visualization/Rendering/MaterialModifier.h"
+
+namespace filament {
+class MaterialInstance;
 }
 
 namespace open3d {
@@ -44,13 +43,17 @@ public:
 
     void Reset();
     void InitWithMaterialInstance(
-            std::shared_ptr<filament::MaterialInstance> materialInstance,
+            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
             const MaterialInstanceHandle& id);
 
-    MaterialModifier& SetParameter(const char* parameter,
-                                   float value) override;
+    MaterialModifier& SetParameter(const char* parameter, float value) override;
     MaterialModifier& SetColor(const char* parameter,
                                const Eigen::Vector3f& value) override;
+
+    MaterialModifier& SetTexture(
+            const char* parameter,
+            const TextureHandle& texture,
+            const TextureSamplerParameters& sampler) override;
 
     MaterialInstanceHandle Finish() override;
 
@@ -59,5 +62,5 @@ private:
     std::shared_ptr<filament::MaterialInstance> materialInstance_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

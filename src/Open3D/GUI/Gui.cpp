@@ -35,34 +35,21 @@ Size::Size()
     : width(0), height(0)
 {}
 
-Size::Size(int w, int h)
-    : width(w), height(h)
-{}
+Size::Size(int w, int h) : width(w), height(h) {}
 
 // ----------------------------------------------------------------------------
-Rect::Rect()
-    : x(0), y(0), width(0), height(0)
-{}
+Rect::Rect() : x(0), y(0), width(0), height(0) {}
 
 Rect::Rect(int x_, int y_, int w_, int h_)
-    : x(x_), y(y_), width(w_), height(h_)
-{}
+    : x(x_), y(y_), width(w_), height(h_) {}
 
-int Rect::GetTop() const {
-    return this->y;
-}
+int Rect::GetTop() const { return this->y; }
 
-int Rect::GetBottom() const {
-    return this->y + this->height;
-}
+int Rect::GetBottom() const { return this->y + this->height; }
 
-int Rect::GetLeft() const {
-    return this->x;
-}
+int Rect::GetLeft() const { return this->x; }
 
-int Rect::GetRight() const {
-    return this->x + this->width;
-}
+int Rect::GetRight() const { return this->x + this->width; }
 
 bool Rect::Contains(int x, int y) const {
     return (x >= this->x && x <= GetRight() &&
@@ -73,5 +60,5 @@ bool Rect::Contains(const Point& pt) const {
     return Contains(pt.x, pt.y);
 }
 
-} // gui
-} // open3d
+} // namespace gui
+} // namespacce open3d

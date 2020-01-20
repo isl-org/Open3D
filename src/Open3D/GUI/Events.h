@@ -97,5 +97,5 @@ struct TextInputEvent {
     const char *utf8;
 };
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d
