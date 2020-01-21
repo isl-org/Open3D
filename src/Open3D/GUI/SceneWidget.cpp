@@ -73,6 +73,11 @@ void SceneWidget::SetDiscardBuffers(
     view->SetDiscardBuffers(buffers);
 }
 
+void SceneWidget::SetViewMode(visualization::View::Mode mode) {
+    auto view = impl_->scene.GetView(impl_->viewId);
+    view->SetMode(mode);
+}
+
 visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene; }
 
 visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {

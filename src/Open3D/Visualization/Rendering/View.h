@@ -51,7 +51,7 @@ public:
     enum class Mode : std::uint8_t {
         Color = 0u,
         Depth,
-        Normal
+        Normals
     };
 
     virtual ~View() {}

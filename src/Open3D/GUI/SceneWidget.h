@@ -54,6 +54,7 @@ public:
 
     void SetBackgroundColor(const Color& color);
     void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
+    void SetViewMode(visualization::View::Mode mode);
 
     visualization::Scene* GetScene() const;
     visualization::CameraManipulator* GetCameraManipulator() const;

@@ -27,9 +27,11 @@
 #include "FilamentView.h"
 
 #include "FilamentCamera.h"
+#include "FilamentResourceManager.h"
 #include "FilamentScene.h"
 
 #include <filament/Engine.h>
+#include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/View.h>
 
@@ -37,11 +39,13 @@ namespace open3d {
 namespace visualization {
 
 namespace {
-const filament::LinearColorA kDepthClearColor = {0,0,0,0};
+const filament::LinearColorA kDepthClearColor = {0, 0, 0, 0};
 }
 
-FilamentView::FilamentView(filament::Engine& aEngine, FilamentScene& aScene)
-    : engine_(aEngine), scene_(aScene) {
+FilamentView::FilamentView(filament::Engine& aEngine,
+                           FilamentScene& aScene,
+                           FilamentResourceManager& resourceManager)
+    : engine_(aEngine), scene_(aScene), resourceManager_(resourceManager) {
     view_ = engine_.createView();
     view_->setScene(scene_.GetNativeScene());
     view_->setSampleCount(8);
@@ -66,19 +70,20 @@ FilamentView::~FilamentView() {
 void FilamentView::SetMode(Mode mode) {
     switch (mode) {
         case Mode::Color:
-            view_->setClearColor({clearColor_.x(), clearColor_.y(), clearColor_.z(), 1.f});
+            view_->setClearColor(
+                    {clearColor_.x(), clearColor_.y(), clearColor_.z(), 1.f});
             break;
         case Mode::Depth:
             view_->setClearColor(kDepthClearColor);
             break;
-        case Mode::Normal: break;
+        case Mode::Normals:
+            break;
     }
 
     mode_ = mode;
 }
 
-void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers)
-{
+void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     using namespace std;
 
     auto rawBuffers = static_cast<uint8_t>(buffers);
@@ -90,10 +95,13 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers)
         rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::DEPTH;
     }
     if (rawBuffers | (uint8_t)TargetBuffers::Stencil) {
-        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::STENCIL;
+        rawFilamentBuffers |=
+                (uint8_t)filament::View::TargetBufferFlags::STENCIL;
     }
 
-    view_->setRenderTarget(nullptr, static_cast<filament::View::TargetBufferFlags>(rawFilamentBuffers));
+    view_->setRenderTarget(
+            nullptr,
+            static_cast<filament::View::TargetBufferFlags>(rawFilamentBuffers));
 }
 
 void FilamentView::SetViewport(std::int32_t x,
@@ -107,7 +115,7 @@ void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clearColor_ = color;
 
     // We apply changes immediately only in color mode
-    // In other cases color will be setted on mode switch
+    // In other cases color will be set on mode switch
     if (mode_ == Mode::Color) {
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
     }
@@ -116,11 +124,51 @@ void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
 void FilamentView::PreRender() {
+    auto& renderableManager = engine_.getRenderableManager();
 
+    MaterialInstanceHandle materialHandle;
+    if (mode_ == Mode::Depth) {
+        materialHandle = FilamentResourceManager::kDepthMaterial;
+    } else if (mode_ == Mode::Normals) {
+        materialHandle = FilamentResourceManager::kNormalsMaterial;
+    }
+
+    for (const auto& pair : scene_.entities_) {
+        const auto& entity = pair.second;
+        if (entity.type == EntityType::Geometry) {
+            std::weak_ptr<filament::MaterialInstance> matInst;
+            if (materialHandle) {
+                matInst = resourceManager_.GetMaterialInstance(materialHandle);
+            } else {
+                matInst = resourceManager_.GetMaterialInstance(entity.material);
+            }
+
+            filament::RenderableManager::Instance inst =
+                    renderableManager.getInstance(entity.self);
+            renderableManager.setMaterialInstanceAt(
+                    inst, 0, matInst.lock().get());
+        }
+    }
 }
 
 void FilamentView::PostRender() {
+    // For now, we don't need to restore material.
+    // One could easily find assigned material in AllocatedEntity::material
 
+//    auto& renderableManager = engine_.getRenderableManager();
+//
+//    for (const auto& pair : scene_.entities_) {
+//        const auto& entity = pair.second;
+//        if (entity.type == EntityType::Geometry) {
+//            auto wMaterialInstance =
+//                    resourceManager_.GetMaterialInstance(entity.material);
+//
+//            filament::RenderableManager::Instance inst =
+//                    renderableManager.getInstance(entity.self);
+//            renderableManager.setMaterialInstanceAt(
+//                    inst, 0, wMaterialInstance.lock().get());
+//        }
+//    }
 }
 
 }  // namespace visualization

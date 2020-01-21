@@ -26,6 +26,7 @@
 
 #include "FilamentResourceManager.h"
 
+#include "Open3D/GUI/Application.h"
 #include "Open3D/Utility/FileSystem.h"
 
 #include <filament/Engine.h>
@@ -90,8 +91,18 @@ void DestroyResource(const REHandle_abstract& id,
     container.erase(found);
 }
 
+const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial = MaterialInstanceHandle::Next();
+const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial = MaterialInstanceHandle::Next();
+
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
-    : engine_(aEngine) {}
+    : engine_(aEngine) {
+    // FIXME: Move to precompiled resource blobs
+    const std::string resourceRoot = gui::Application::GetInstance().GetResourcePath();
+    const auto depthPath = resourceRoot + "/depth.filamat";
+    const auto hDepth = CreateMaterial(MaterialLoadRequest(depthPath.data()));
+    auto depthMat = materials_[hDepth];
+    materialInstances_[kDepthMaterial] = std::move(MakeShared(depthMat->createInstance(), engine_));
+}
 
 FilamentResourceManager::~FilamentResourceManager() { DestroyAll(); }
 

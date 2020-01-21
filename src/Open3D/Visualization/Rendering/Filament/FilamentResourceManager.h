@@ -49,6 +49,9 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
+    static const MaterialInstanceHandle kDepthMaterial;
+    static const MaterialInstanceHandle kNormalsMaterial;
+
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
 

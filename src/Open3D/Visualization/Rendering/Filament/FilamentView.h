@@ -43,11 +43,12 @@ namespace open3d {
 namespace visualization {
 
 class FilamentCamera;
+class FilamentResourceManager;
 class FilamentScene;
 
 class FilamentView : public View {
 public:
-    FilamentView(filament::Engine& engine, FilamentScene& scene);
+    FilamentView(filament::Engine& engine, FilamentScene& scene, FilamentResourceManager& resourceManager);
     ~FilamentView() override;
 
     void SetMode(Mode mode) override;
@@ -72,6 +73,7 @@ private:
 
     filament::Engine& engine_;
     FilamentScene& scene_;
+    FilamentResourceManager& resourceManager_;
     filament::View* view_ = nullptr;
 };
 

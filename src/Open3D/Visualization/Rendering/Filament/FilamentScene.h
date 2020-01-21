@@ -70,7 +70,7 @@ public:
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) override;
     void AssignMaterial(const GeometryHandle& geometryId,
-                        const MaterialInstanceHandle& materialId);
+                        const MaterialInstanceHandle& materialId) override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
@@ -91,6 +91,7 @@ private:
 
     struct AllocatedEntity {
         utils::Entity self;
+        EntityType type;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
         MaterialInstanceHandle material;
