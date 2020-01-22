@@ -76,3 +76,13 @@ https://github.com/pybind/pybind11
 PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
+--------------------------------------------------------------------------------
+Parallel STL                20190522                            Apache-2 license
+An implementation of the C++ standard library algorithms with support for 
+execution policies
+https://github.com/intel/parallelstl
+--------------------------------------------------------------------------------
+CUB                         1.8.0                                    BSD license
+A flexible library of cooperative threadblock primitives and other utilities for
+CUDA kernel programming
+https://github.com/NVlabs/cub
