@@ -34,8 +34,6 @@
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"
 
-#include <vector>
-
 using namespace std;
 using namespace open3d;
 
