@@ -27,8 +27,7 @@
 #pragma once
 
 #include "Open3D/Utility/Atomic.h"
-#include "pstl/execution"
-#include "pstl/numeric"
+#include "Open3D/Utility/ParallelScan.h"
 #include "tbb/parallel_for.h"
 
 namespace open3d {
@@ -109,10 +108,9 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
                           }
                       });
 
-    // exclusive scan seems to be broken -> use inclusive scan
-    std::inclusive_scan(pstl::execution::par_unseq, tmp_neighbors_count.begin(),
-                        tmp_neighbors_count.end() - 1,
-                        out_neighbors_prefix_sum);
+    InclusivePrefixSum(&tmp_neighbors_count[0],
+                       &tmp_neighbors_count.back(),  // exclude the last element
+                       out_neighbors_prefix_sum);
 
     memset(tmp_neighbors_count.data(), 0,
            sizeof(uint32_t) * tmp_neighbors_count.size());
