@@ -42,10 +42,10 @@ void pybind_core_device(py::module &m) {
             .def(py::init<const std::string &>())
             .def("__eq__", &Device::operator==)
             .def("__ene__", &Device::operator!=)
-            .def("to_string", &Device::ToString)
+            .def("__repr__", &Device::ToString)
+            .def("__str__", &Device::ToString)
             .def("get_type", &Device::GetType)
-            .def("get_id", &Device::GetID)
-            .def("__repr__", &Device::ToString);
+            .def("get_id", &Device::GetID);
 
     py::enum_<Device::DeviceType>(device, "DeviceType")
             .value("CPU", Device::DeviceType::CPU)

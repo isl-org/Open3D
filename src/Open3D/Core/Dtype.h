@@ -45,7 +45,7 @@ static_assert(sizeof(uint8_t) == 1,
 namespace open3d {
 
 enum class Dtype {
-    Undefined,
+    Undefined,  // Dtype for uninitialized Tensor
     Float32,
     Float64,
     Int32,

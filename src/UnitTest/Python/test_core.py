@@ -45,7 +45,7 @@ def list_devices():
 def test_dtype():
     dtype = o3d.Dtype.Int32
     assert o3d.DtypeUtil.byte_size(dtype) == 4
-    assert o3d.DtypeUtil.to_string(dtype) == "Int32"
+    assert f"{dtype}" == "Dtype.Int32"
 
 
 def test_device():
@@ -64,7 +64,7 @@ def test_device():
     assert o3d.Device("CUDA", 1) == o3d.Device("CUDA:1")
     assert o3d.Device("CUDA", 1) != o3d.Device("CUDA:0")
 
-    assert o3d.Device("CUDA", 1).to_string() == "CUDA:1"
+    assert o3d.Device("CUDA", 1).__str__() == "CUDA:1"
 
 
 def test_size_vector():

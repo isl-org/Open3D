@@ -43,7 +43,5 @@ void pybind_core_dtype(py::module &m) {
             .export_values();
 
     py::class_<DtypeUtil> dtype_util(m, "DtypeUtil");
-    dtype_util.def(py::init<>())
-            .def("byte_size", &DtypeUtil::ByteSize)
-            .def("to_string", &DtypeUtil::ToString);
+    dtype_util.def(py::init<>()).def("byte_size", &DtypeUtil::ByteSize);
 }

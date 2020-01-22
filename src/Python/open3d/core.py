@@ -33,6 +33,10 @@ class SizeVector(open3d_pybind.SizeVector):
 
 
 class Tensor(open3d_pybind.Tensor):
+    """
+    Open3D Tensor class. A Tensor is a view of data blob with shape, strides
+    and etc. Tensor can be used to perform numerical operations.
+    """
 
     def __init__(self, data, dtype=None, device=None):
         if isinstance(data, tuple) or isinstance(data, list):
@@ -44,3 +48,54 @@ class Tensor(open3d_pybind.Tensor):
         if device is None:
             device = o3d.Device("CPU:0")
         super(Tensor, self).__init__(data, dtype, device)
+
+    def cuda(self, device_id=0):
+        """
+        Returns a copy of this tensor in CUDA memory.
+
+        Args:
+            device_id: CUDA device id.
+        """
+        return super(Tensor, self).cuda(device_id)
+
+    def cpu(self):
+        """
+        Returns a copy of this tensor in CPU.
+
+        If the Tensor is already in CPU, then no copy is performed.
+        """
+        return super(Tensor, self).cpu()
+
+    def numpy(self):
+        """
+        Returns this tensor as a NumPy array. This tensor must be a CPU tensor,
+        and the returned NumPy array shares the same memory as this tensor.
+        Changes to the NumPy array will be reflected in the original tensor and
+        vice versa.
+        """
+        return super(Tensor, self).numpy()
+
+    @staticmethod
+    def from_numpy(np_array):
+        """
+        Returns a Tensor from NumPy array. The resulting tensor is a CPU tensor
+        that shares the same memory as the NumPy array. Changes to the tensor
+        will be reflected in the original NumPy array and vice versa.
+
+        Args:
+            np_array: The Numpy array to be converted from.
+        """
+        return super(Tensor, Tensor).from_numpy(np_array)
+
+    def to_dlpack(self):
+        """
+        Returns a DLPack PyCapsule representing this tensor.
+        """
+        return super(Tensor, self).to_dlpack()
+
+    @staticmethod
+    def from_dlpack(dlpack):
+        """
+        Returns a tensor converted from DLPack PyCapsule.
+        """
+        return super(Tensor, Tensor).from_dlpack(dlpack)

@@ -41,6 +41,8 @@ endif()
 
 # Create object library
 add_library(Core OBJECT ${ALL_CORE_SRC})
+set_target_properties(Core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 if (BUILD_CUDA_MODULE)
     target_include_directories(Core PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
