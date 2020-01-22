@@ -18,6 +18,7 @@ set (CONTAINER_SRC
     MemoryManagerCPU.cpp
     MemoryManagerCUDA.cu
     Tensor.cpp
+    TensorList.cpp
 )
 
 set (CONTAINER_CUDA_SRC
