@@ -192,7 +192,7 @@ Tensor FromDLPack(const DLManagedTensor* src) {
     return Tensor(shape, strides,
                   reinterpret_cast<char*>(blob->GetDataPtr()) +
                           src->dl_tensor.byte_offset,
-                  dtype, device, blob);
+                  dtype, blob);
 }
 
 }  // namespace dlpack

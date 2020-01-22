@@ -45,7 +45,6 @@ Tensor& Tensor::operator=(const Tensor& other) & {
     shape_ = other.shape_;
     strides_ = other.strides_;
     dtype_ = other.dtype_;
-    device_ = other.device_;
     blob_ = other.blob_;
     data_ptr_ = other.data_ptr_;
     return *this;
@@ -56,7 +55,6 @@ Tensor& Tensor::operator=(Tensor&& other) & {
     shape_ = other.shape_;
     strides_ = other.strides_;
     dtype_ = other.dtype_;
-    device_ = other.device_;
     blob_ = other.blob_;
     data_ptr_ = other.data_ptr_;
     return *this;
@@ -79,9 +77,8 @@ void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
-    device_ = other.device_;
     blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), device_);
+            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
@@ -92,7 +89,7 @@ Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
         utility::LogError("Cannot broadcast shape {} to shape {}.",
                           shape_.ToString(), dst_shape);
     }
-    Tensor dst_tensor(dst_shape, dtype_, device_);
+    Tensor dst_tensor(dst_shape, dtype_, GetDevice());
     dst_tensor.AsRvalue() = *this;
     return dst_tensor;
 }
@@ -171,10 +168,10 @@ void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
         // Returns a shallow copy of the current Tensor
-        return Tensor(shape_, strides_, data_ptr_, dtype_, device_, blob_);
+        return Tensor(shape_, strides_, data_ptr_, dtype_, blob_);
     } else {
         // Compact the tensor to contiguous on the same device
-        return Copy(device_);
+        return Copy(GetDevice());
     }
 }
 
@@ -258,7 +255,7 @@ std::pair<bool, SizeVector> Tensor::ComputeNewStrides(
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (device_.GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
         Tensor host_contiguous_tensor = Copy(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
@@ -295,7 +292,7 @@ std::string Tensor::ToString(bool with_suffix,
     if (with_suffix) {
         rc << fmt::format("\nTensor[shape={}, stride={}, {}, {}, {}]",
                           shape_.ToString(), strides_.ToString(),
-                          DtypeUtil::ToString(dtype_), device_.ToString(),
+                          DtypeUtil::ToString(dtype_), GetDevice().ToString(),
                           data_ptr_);
     }
     return rc.str();
@@ -331,7 +328,7 @@ Tensor Tensor::operator[](int64_t i) const {
     SizeVector new_stride(strides_.begin() + 1, strides_.end());
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
                          strides_[0] * DtypeUtil::ByteSize(dtype_) * i;
-    return Tensor(new_shape, new_stride, new_data_ptr, dtype_, device_, blob_);
+    return Tensor(new_shape, new_stride, new_data_ptr, dtype_, blob_);
 }
 
 Tensor Tensor::Slice(int64_t dim,
@@ -369,12 +366,12 @@ Tensor Tensor::Slice(int64_t dim,
     SizeVector new_strides = strides_;
     new_shape[dim] = (stop - start + step - 1) / step;
     new_strides[dim] = strides_[dim] * step;
-    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, device_, blob_);
+    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     AdvancedIndexPreprocessor aip(*this, index_tensors);
-    Tensor dst = Tensor(aip.GetOutputShape(), dtype_, device_);
+    Tensor dst = Tensor(aip.GetOutputShape(), dtype_, GetDevice());
     kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 
@@ -427,7 +424,7 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
 Tensor Tensor::AsStrided(const SizeVector& new_shape,
                          const SizeVector& new_strides) const {
     Tensor result(new_shape, new_strides, const_cast<void*>(data_ptr_), dtype_,
-                  device_, blob_);
+                  blob_);
     return result;
 }
 

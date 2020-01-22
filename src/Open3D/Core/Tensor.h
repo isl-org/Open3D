@@ -52,7 +52,6 @@ public:
         : shape_(shape),
           strides_(DefaultStrides(shape)),
           dtype_(dtype),
-          device_(device),
           blob_(std::make_shared<Blob>(
                   shape.NumElements() * DtypeUtil::ByteSize(dtype), device)) {
         data_ptr_ = blob_->GetDataPtr();
@@ -77,7 +76,7 @@ public:
         AssertTemplateDtype<T>();
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), device_,
+        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
                                       init_vals.data(),
                                       init_vals.size() * sizeof(T));
     }
@@ -87,13 +86,11 @@ public:
            const SizeVector& strides,
            void* data_ptr,
            const Dtype& dtype,
-           const Device& device,
            const std::shared_ptr<Blob>& blob)
         : shape_(shape),
           strides_(strides),
           data_ptr_(data_ptr),
           dtype_(dtype),
-          device_(device),
           blob_(blob) {}
 
     /// Shallow copy constructor with lvalue input, e.g. `Tensor dst(src)`.
@@ -102,7 +99,6 @@ public:
                  other.GetStrides(),
                  const_cast<void*>(other.GetDataPtr()),
                  other.GetDtype(),
-                 other.GetDevice(),
                  other.GetBlob()) {}
 
     /// Shallow copy constructor with rvalue input, e.g. `Tensor dst(src[0])`.
@@ -111,7 +107,6 @@ public:
                  other.GetStrides(),
                  other.GetDataPtr(),
                  other.GetDtype(),
-                 other.GetDevice(),
                  other.GetBlob()) {}
 
     /// Tensor assignment lvalue = lvalue, e.g. `tensor_a = tensor_b`, resulting
@@ -298,7 +293,7 @@ public:
         }
         AssertTemplateDtype<T>();
         T value;
-        MemoryManager::MemcpyToHost(&value, data_ptr_, device_, sizeof(T));
+        MemoryManager::MemcpyToHost(&value, data_ptr_, GetDevice(), sizeof(T));
         return value;
     }
 
@@ -346,7 +341,7 @@ public:
 
     inline Dtype GetDtype() const { return dtype_; }
 
-    inline Device GetDevice() const { return device_; }
+    inline Device GetDevice() const { return GetBlob()->GetDevice(); }
 
     inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
@@ -418,10 +413,6 @@ protected:
 
     /// Data type
     Dtype dtype_ = Dtype::Undefined;
-
-    /// Device context (device type and id)
-    /// TODO: This infomation is also available in blob_->Device, to remove?
-    Device device_ = Device("CPU:0");
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;

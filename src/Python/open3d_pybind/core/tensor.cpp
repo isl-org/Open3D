@@ -185,8 +185,7 @@ void pybind_core_tensor(py::module& m) {
                         auto blob = std::make_shared<Blob>(device, info.ptr,
                                                            deleter);
 
-                        return Tensor(shape, strides, info.ptr, dtype, device,
-                                      blob);
+                        return Tensor(shape, strides, info.ptr, dtype, blob);
                     })
             .def("to_dlpack",
                  [](const Tensor& tensor) {
