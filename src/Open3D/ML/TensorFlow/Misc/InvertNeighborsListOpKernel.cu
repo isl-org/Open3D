@@ -98,12 +98,12 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, attrtype)                                          \
-    REGISTER_KERNEL_BUILDER(Name("Open3DInvertNeighborsList")           \
-                                    .Device(DEVICE_GPU)                 \
-                                    .TypeConstraint<type>("TIndex")     \
-                                    .TypeConstraint<attrtype>("TAttr")  \
-                                    .HostMemory("num_points"),          \
+#define REG_KB(type, attrtype)                                         \
+    REGISTER_KERNEL_BUILDER(Name("Open3DInvertNeighborsList")          \
+                                    .Device(DEVICE_GPU)                \
+                                    .TypeConstraint<type>("TIndex")    \
+                                    .TypeConstraint<attrtype>("TAttr") \
+                                    .HostMemory("num_points"),         \
                             InvertNeighborsListOpKernelCUDA<type, attrtype>);
 REG_KB(int32_t, int32_t)
 REG_KB(int32_t, int64)

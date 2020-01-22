@@ -25,4 +25,3 @@ device_names = ['CPU:0']
 if gpu_devices:
     device_names.append('GPU:0')
 devices = pytest.mark.parametrize('device_name', device_names)
-

@@ -74,13 +74,12 @@ public:
 
         // compute the number of attributes for each neighbor
         int num_attributes;
-        if ( inp_neighbors_attributes.shape().dim_size(0) == 0 ) {
-          num_attributes = 0;
-        }
-        else {
-          num_attributes = 1; 
-          for (int i = 1; i < inp_neighbors_attributes.shape().dims(); ++i)
-              num_attributes *= inp_neighbors_attributes.shape().dim_size(i);
+        if (inp_neighbors_attributes.shape().dim_size(0) == 0) {
+            num_attributes = 0;
+        } else {
+            num_attributes = 1;
+            for (int i = 1; i < inp_neighbors_attributes.shape().dims(); ++i)
+                num_attributes *= inp_neighbors_attributes.shape().dim_size(i);
         }
 
         Tensor* neighbors_index = 0;

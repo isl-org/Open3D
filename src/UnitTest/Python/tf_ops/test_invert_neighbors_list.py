@@ -37,8 +37,9 @@ pytestmark = mark_helper.tf_marks
 value_dtypes = pytest.mark.parametrize(
     'dtype', [np.int32, np.int64, np.float32, np.float64])
 
-attributes = pytest.mark.parametrize(
-    'attributes', ['scalar', 'none', 'multidim'])
+attributes = pytest.mark.parametrize('attributes',
+                                     ['scalar', 'none', 'multidim'])
+
 
 @value_dtypes
 @attributes
@@ -47,62 +48,62 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
+    # yapf: disable
+
     # define connectivity for 3 query points and 3 input points
     num_points = 3
     edges = np.array(
-            [ 
-                [0, 0], [0, 1], [0, 2], # 3 neighbors
-                [1, 2],                 # 1 neighbors
-                [2, 1], [2, 2],         # 2 neighbors
-            ],
-            dtype = np.int32 )
+        [
+            [0, 0], [0, 1], [0, 2],  # 3 neighbors
+            [1, 2],                  # 1 neighbors
+            [2, 1], [2, 2],          # 2 neighbors
+        ],
+        dtype=np.int32)
 
     # the neighbors_index is the second column
-    neighbors_index = edges[:,1]
+    neighbors_index = edges[:, 1]
 
     # exclusive prefix sum of the number of neighbors
-    neighbors_prefix_sum = np.array([ 0, 3, 4 ], dtype=np.int64)
+    neighbors_prefix_sum = np.array([0, 3, 4], dtype=np.int64)
 
     if attributes == 'scalar':
-        neighbors_attributes = np.array([ 
+        neighbors_attributes = np.array([
             10, 20, 30,
             40,
             50, 60,
-            ],
-            dtype=dtype)
+        ], dtype=dtype)
     elif attributes == 'none':
         neighbors_attributes = np.array([], dtype=dtype)
     elif attributes == 'multidim':
-        neighbors_attributes = np.array([ 
-            [10,1], [20,2], [30,3],
-            [40,4],
-            [50,5], [60,6],
-            ],
-            dtype=dtype)
+        neighbors_attributes = np.array([
+            [10, 1], [20, 2], [30, 3],
+            [40, 4],
+            [50, 5], [60, 6],
+        ], dtype=dtype)
 
+# yapf: enable
 
     with tf.device(device_name):
-        ans = ml3d.ops.invert_neighbors_list(
-                num_points, 
-                neighbors_index, 
-                neighbors_prefix_sum, 
-                neighbors_attributes )
+        ans = ml3d.ops.invert_neighbors_list(num_points, neighbors_index,
+                                             neighbors_prefix_sum,
+                                             neighbors_attributes)
         assert device_name in ans.neighbors_index.device
 
     expected_neighbors_prefix_sum = [0, 1, 3]
-    np.testing.assert_equal(ans.neighbors_prefix_sum.numpy(), expected_neighbors_prefix_sum)
-
+    np.testing.assert_equal(ans.neighbors_prefix_sum.numpy(),
+                            expected_neighbors_prefix_sum)
 
     # checking the neighbors_index is more complicated because the order
-    # of the neighbors for each query point is not defined. 
+    # of the neighbors for each query point is not defined.
     expected_neighbors_index = [
-            set([0]),       
-            set([0, 2]),
-            set([0, 1, 2]),
-            ]
+        set([0]),
+        set([0, 2]),
+        set([0, 1, 2]),
+    ]
     for i, expected_neighbors_i in enumerate(expected_neighbors_index):
         start = ans.neighbors_prefix_sum[i]
-        end = ans.neighbors_prefix_sum[i+1] if i+1 < len(ans.neighbors_prefix_sum) else len(neighbors_index)
+        end = ans.neighbors_prefix_sum[i + 1] if i + 1 < len(
+            ans.neighbors_prefix_sum) else len(neighbors_index)
         neighbors_i = set(ans.neighbors_index[start:end].numpy())
         assert neighbors_i == expected_neighbors_i
 
@@ -112,15 +113,17 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
         assert ans.neighbors_attributes.numpy().shape == (0,)
     else:
         # check if the attributes are still associated with the same edge
-        edge_attr_map = { tuple(k): v for k,v in zip(edges, neighbors_attributes) }
+        edge_attr_map = {
+            tuple(k): v for k, v in zip(edges, neighbors_attributes)
+        }
         for i, _ in enumerate(expected_neighbors_index):
             start = ans.neighbors_prefix_sum[i]
-            end = ans.neighbors_prefix_sum[i+1] if i+1 < len(ans.neighbors_prefix_sum) else len(neighbors_index)
+            end = ans.neighbors_prefix_sum[i + 1] if i + 1 < len(
+                ans.neighbors_prefix_sum) else len(neighbors_index)
 
             # neighbors and attributes for point i
             neighbors_i = ans.neighbors_index[start:end].numpy()
             attributes_i = ans.neighbors_attributes[start:end].numpy()
             for j, attr in zip(neighbors_i, attributes_i):
-                key = (j,i)
+                key = (j, i)
                 np.testing.assert_equal(attr, edge_attr_map[key])
-
