@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Device.h"
+#include "Open3D/Core/Device.h"
 
 #include "TestUtility/UnitTest.h"
 

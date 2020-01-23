@@ -27,6 +27,7 @@
 #include "open3d_pybind/open3d_pybind.h"
 #include "open3d_pybind/camera/camera.h"
 #include "open3d_pybind/color_map/color_map.h"
+#include "open3d_pybind/core/container.h"
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/integration/integration.h"
 #include "open3d_pybind/io/io.h"
@@ -35,11 +36,13 @@
 #include "open3d_pybind/utility/utility.h"
 #include "open3d_pybind/visualization/visualization.h"
 
-PYBIND11_MODULE(open3d, m) {
+PYBIND11_MODULE(open3d_pybind, m) {
     m.doc() = "Python binding of Open3D";
 
     // Register this first, other submodule (e.g. odometry) might depend on this
     pybind_utility(m);
+
+    pybind_core(m);
 
     pybind_camera(m);
     pybind_color_map(m);
