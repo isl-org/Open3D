@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/DLPack/DLPackConverter.h"
-#include "Open3D/Container/DLPack/dlpack.h"
-#include "Open3D/Container/Tensor.h"
+#include "Open3D/Core/DLPack/DLPackConverter.h"
+#include "Open3D/Core/DLPack/dlpack.h"
+#include "Open3D/Core/Tensor.h"
 
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"

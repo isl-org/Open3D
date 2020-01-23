@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/TensorList.h"
+#include "Open3D/Core/TensorList.h"
 
 #include <vector>
 

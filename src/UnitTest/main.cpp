@@ -29,7 +29,7 @@
 #include <string>
 
 #ifdef BUILD_CUDA_MODULE
-#include "Open3D/Container/CUDAState.cuh"
+#include "Open3D/Core/CUDAState.cuh"
 #endif
 
 #include "Open3D/Utility/Console.h"

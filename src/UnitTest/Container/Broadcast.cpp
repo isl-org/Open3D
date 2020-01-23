@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Broadcast.h"
+#include "Open3D/Core/Broadcast.h"
 
 #include "TestUtility/UnitTest.h"
 
