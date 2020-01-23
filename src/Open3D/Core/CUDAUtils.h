@@ -71,13 +71,19 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
     int device = 0;
     cudaError_t err = cudaGetDevice(&device);
     if (err != cudaSuccess) {
-      utility::LogError("GetCUDACurrentDeviceTextureAlignment(): cudaGetDevice failed with {}", cudaGetErrorString(err));
+        utility::LogError(
+                "GetCUDACurrentDeviceTextureAlignment(): cudaGetDevice failed "
+                "with {}",
+                cudaGetErrorString(err));
     }
 
     int value = 0;
     err = cudaDeviceGetAttribute(&value, cudaDevAttrTextureAlignment, device);
     if (err != cudaSuccess) {
-      utility::LogError("GetCUDACurrentDeviceTextureAlignment(): cudaDeviceGetAttribute failed with {}", cudaGetErrorString(err));
+        utility::LogError(
+                "GetCUDACurrentDeviceTextureAlignment(): "
+                "cudaDeviceGetAttribute failed with {}",
+                cudaGetErrorString(err));
     }
     return value;
 }

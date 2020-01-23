@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Open3D/Container/Atomic.h"
+#include "Open3D/Core/Atomic.h"
 #include "Open3D/Utility/ParallelScan.h"
 #include "tbb/parallel_for.h"
 
