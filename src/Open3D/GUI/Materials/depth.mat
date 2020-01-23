@@ -1,14 +1,18 @@
 material {
     name : depth,
-    shadingModel : unlit
+    shadingModel : unlit,
+    parameters : [
+            { type : float,  name : far },
+            { type : float,  name : near }
+        ],
 }
 
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        const float n = 0.1;
-        const float f = 100;
-        float linearZ = (2.0 * n) / (f + n - gl_FragCoord.z * (f - n));
+        float eye_z = near * far / ((gl_FragCoord.z  * (far - near)) - far);
+        float linearZ = (eye_z + near) / (near - far);
+        //float linearZ = (2.0 * n) / (f + n - gl_FragCoord.z * (f - n));
         material.baseColor.rgb = float3(linearZ);
     }
 }
