@@ -30,18 +30,21 @@ import glob
 # Force platform specific wheel
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
     # https://stackoverflow.com/a/45150383/1255535
     class bdist_wheel(_bdist_wheel):
+
         def finalize_options(self):
             _bdist_wheel.finalize_options(self)
             self.root_is_pure = False
 except ImportError:
-    print('Warning: cannot import "wheel" package to build platform-specific wheel')
+    print(
+        'Warning: cannot import "wheel" package to build platform-specific wheel'
+    )
     print('Install the "wheel" package to fix this warning')
     bdist_wheel = None
 
 cmdclass = {'bdist_wheel': bdist_wheel} if bdist_wheel is not None else dict()
-
 
 # Read requirements.txt
 with open('requirements.txt', 'r') as f:
@@ -51,9 +54,7 @@ install_requires = [line.strip() for line in lines if line]
 # Data files for packaging
 data_files = [
     ('share/jupyter/nbextensions/open3d', glob.glob('open3d/static/*')),
-    ('etc/jupyter/nbconfig/notebook.d', [
-        'enable_jupyter_extension.json'
-    ])
+    ('etc/jupyter/nbconfig/notebook.d', ['enable_jupyter_extension.json'])
 ]
 
 setup(

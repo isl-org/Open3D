@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/Indexer.h"
-#include "Open3D/Container/Device.h"
-#include "Open3D/Container/SizeVector.h"
+#include "Open3D/Core/Indexer.h"
+#include "Open3D/Core/Device.h"
+#include "Open3D/Core/SizeVector.h"
 
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"

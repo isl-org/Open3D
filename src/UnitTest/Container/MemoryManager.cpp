@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Container/MemoryManager.h"
-#include "Open3D/Container/Blob.h"
-#include "Open3D/Container/Device.h"
+#include "Open3D/Core/MemoryManager.h"
+#include "Open3D/Core/Blob.h"
+#include "Open3D/Core/Device.h"
 
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"
