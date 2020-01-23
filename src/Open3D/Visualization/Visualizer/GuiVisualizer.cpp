@@ -69,7 +69,7 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     std::string err;
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
-    nonmetal = GetRenderer().AddMaterial(MaterialLoadRequest(path.data()));
+    nonmetal = GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
     auto white = GetRenderer().ModifyMaterial(nonmetal)
             .SetColor("baseColor", {1.0, 1.0, 1.0})
             .SetParameter("roughness", 0.5f)

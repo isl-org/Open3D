@@ -265,7 +265,7 @@ bool FReadToBuffer(const std::string &path,
     FILE* file = FOpen(path.c_str(), "rb");
     if (!file) {
         if (errorStr) {
-            *errorStr = getIOErrorString(ferror(file));
+            *errorStr = getIOErrorString(errno);
         }
 
         return false;

@@ -69,6 +69,11 @@ public:
     GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) override;
+    GeometryHandle AddGeometry(
+            const geometry::Geometry3D& geometry,
+            const MaterialInstanceHandle& materialId,
+            const std::string& name) override;
+    std::vector<GeometryHandle> FindGeometryByName(const std::string& name) override;
     void AssignMaterial(const GeometryHandle& geometryId,
                         const MaterialInstanceHandle& materialId) override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
@@ -97,6 +102,7 @@ private:
         MaterialInstanceHandle material;
         // Used for relocating transform to center of mass
         utils::Entity parent;
+        std::string name;
     };
 
     struct ViewContainer {

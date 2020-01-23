@@ -56,9 +56,12 @@ public:
     ~FilamentResourceManager();
 
     MaterialHandle CreateMaterial(const void* materialData, size_t dataSize);
-    MaterialHandle CreateMaterial(const MaterialLoadRequest& request);
+    MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
-    TextureHandle CreateTexture(/*TBD*/);
+
+    TextureHandle CreateTexture(const char* path);
+
+    // FIXME:
     // Since rendering uses not all Open3D geometry/filament features, I'm not
     // sure which arguments should CreateVB(...) function have. Thus creation of
     // VB is managed by FilamentScene class
