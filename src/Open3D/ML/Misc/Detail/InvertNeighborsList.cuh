@@ -191,7 +191,7 @@ void FillNeighborsIndexAndAttributesCUDA(
 /// neighbors_index is a nested list of indices to the neighbors. Each entry
 /// defines an edge between two indices (points).
 /// The neighbors_prefix_sum defines the start and end of each sublist.
-/// neighbors_attributes is an aptional array of attributes for each entry in
+/// neighbors_attributes is an optional array of attributes for each entry in
 /// neighbors_index.
 ///
 /// Example: The neighbors for point cloud A (3 points) in point cloud B
