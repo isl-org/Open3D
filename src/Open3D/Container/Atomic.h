@@ -26,29 +26,36 @@
 
 #pragma once
 
-/// Returns the texture alignment in bytes for the current device.
-inline int GetCUDACurrentDeviceTextureAlignment() {
-    int device = 0;
-    cudaError_t status = cudaGetDevice(&device);
-    if (status != cudaSuccess) {
-        char str[1024];
-        sprintf(str,
-                "get_cuda_texture_alignment(): cudaGetDevice failed with "
-                "'%s'\n",
-                cudaGetErrorString(status));
-        throw std::runtime_error(str);
-    }
+#include <cstdint>
 
-    int value = 0;
-    status =
-            cudaDeviceGetAttribute(&value, cudaDevAttrTextureAlignment, device);
-    if (status != cudaSuccess) {
-        char str[1024];
-        sprintf(str,
-                "get_cuda_texture_alignment(): cudaDeviceGetAttribute failed "
-                "with '%s'\n",
-                cudaGetErrorString(status));
-        throw std::runtime_error(str);
-    }
-    return value;
+#ifdef MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_InterlockedExchangeAdd)
+#pragma intrinsic(_InterlockedExchangeAdd64)
+#endif
+
+namespace open3d {
+namespace utility {
+
+inline uint32_t AtomicFetchAddRelaxed(uint32_t* address, uint32_t val) {
+#ifdef __GNUC__
+    return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
+#elif _MSC_VER
+    return _InterlockedExchangeAdd(address, val);
+#else
+    static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
+#endif
 }
+
+inline uint64_t AtomicFetchAddRelaxed(uint64_t* address, uint64_t val) {
+#ifdef __GNUC__
+    return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
+#elif _MSC_VER
+    return _InterlockedExchangeAdd64(address, val);
+#else
+    static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
+#endif
+}
+
+}  // namespace utility
+}  // namespace open3d
