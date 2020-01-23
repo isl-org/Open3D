@@ -115,8 +115,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     if (instanceId) {
         auto wMaterialInstance =
                 resourceManager_.GetMaterialInstance(instanceId);
-        materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                     instanceId);
+        materialsModifier_->Init(wMaterialInstance.lock(), instanceId);
     } else {
         utility::LogError(
                 "Failed to create material instance for material handle {}.",
@@ -132,8 +131,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
 
     auto wMaterialInstance = resourceManager_.GetMaterialInstance(id);
     if (!wMaterialInstance.expired()) {
-        materialsModifier_->InitWithMaterialInstance(wMaterialInstance.lock(),
-                                                     id);
+        materialsModifier_->Init(wMaterialInstance.lock(), id);
     } else {
         utility::LogError(
                 "Failed to modify material instance: unknown instance handle {}.",
@@ -153,7 +151,7 @@ TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
 }
 
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
-
+    resourceManager_.Destroy(id);
 }
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {

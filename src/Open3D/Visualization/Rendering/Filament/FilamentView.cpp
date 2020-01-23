@@ -27,6 +27,7 @@
 #include "FilamentView.h"
 
 #include "FilamentCamera.h"
+#include "FilamentEntitiesMods.h"
 #include "FilamentResourceManager.h"
 #include "FilamentScene.h"
 
@@ -129,6 +130,17 @@ void FilamentView::PreRender() {
     MaterialInstanceHandle materialHandle;
     if (mode_ == Mode::Depth) {
         materialHandle = FilamentResourceManager::kDepthMaterial;
+        // FIXME: Refresh parameters only then something ACTUALLY changed
+        auto matInst = resourceManager_.GetMaterialInstance(materialHandle).lock();
+        if (matInst) {
+            const auto f = camera_->GetNativeCamera()->getCullingFar();
+            const auto n = camera_->GetNativeCamera()->getNear();
+
+            FilamentMaterialModifier(matInst, materialHandle)
+                    .SetParameter("cameraNear", n)
+                    .SetParameter("cameraFar", f)
+                    .Finish();
+        }
     } else if (mode_ == Mode::Normals) {
         materialHandle = FilamentResourceManager::kNormalsMaterial;
     }

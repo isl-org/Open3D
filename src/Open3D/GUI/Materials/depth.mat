@@ -2,17 +2,24 @@ material {
     name : depth,
     shadingModel : unlit,
     parameters : [
-            { type : float,  name : far },
-            { type : float,  name : near }
+            { type : float,  name : cameraFar },
+            { type : float,  name : cameraNear }
         ],
 }
 
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        float eye_z = near * far / ((gl_FragCoord.z  * (far - near)) - far);
+
+        const float near = materialParams.cameraNear;
+        const float far = materialParams.cameraFar;
+
+        //float z = depth * 2.0 - 1.0; // back to NDC
+        //float linearZ =  (2.0 * near) / (far + near - z * (far - near));
+
+        float eye_z = near * far / ((gl_FragCoord.z * (far - near)) - far);
         float linearZ = (eye_z + near) / (near - far);
-        //float linearZ = (2.0 * n) / (f + n - gl_FragCoord.z * (f - n));
+
         material.baseColor.rgb = float3(linearZ);
     }
 }

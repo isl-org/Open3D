@@ -100,7 +100,7 @@ FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     // FIXME: Move to precompiled resource blobs
     const std::string resourceRoot = gui::Application::GetInstance().GetResourcePath();
     const auto depthPath = resourceRoot + "/depth.filamat";
-    const auto hDepth = CreateMaterial(MaterialLoadRequest(depthPath.data()));
+    const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
     auto depthMat = materials_[hDepth];
     materialInstances_[kDepthMaterial] = std::move(MakeShared(depthMat->createInstance(), engine_));
 }
