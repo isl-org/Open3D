@@ -19,7 +19,6 @@ endif ()
 
 if ( CUDA_ENABLED )
         file(GLOB_RECURSE open3d_tf_ops_SOURCES 
-                "*.cc" 
                 "*.cpp" 
                 "*.cu" 
                 "../*/Detail/*.cc" 
@@ -27,11 +26,14 @@ if ( CUDA_ENABLED )
                 "../*/Detail/*.cu" )
 else ()
     file(GLOB_RECURSE open3d_tf_ops_SOURCES 
-            "*.cc" 
             "*.cpp" 
             "../*/Detail/*.cc" 
             "../*/Detail/*.cpp" )
 endif ()
+list(APPEND open3d_tf_ops_SOURCES 
+        "../../Utility/Console.cpp"
+        "../../Utility/Helper.cpp"
+        )
 
 add_library( open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES} )
 
