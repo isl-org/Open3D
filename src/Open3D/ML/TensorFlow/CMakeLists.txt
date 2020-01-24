@@ -10,16 +10,15 @@ endif ()
 find_package( Tensorflow REQUIRED )
 find_package( TBB REQUIRED )
 #find_package( nanoflann REQUIRED )
-#find_package( parallelstl REQUIRED )
-#if ( CUDA_ENABLED )
-    #find_package( CUB REQUIRED )
+find_package( parallelstl REQUIRED )
+if ( CUDA_ENABLED )
+    find_package( CUB REQUIRED )
     #find_package( CUTLASS REQUIRED )
-#endif ()
+endif ()
 
 
 if ( CUDA_ENABLED )
         file(GLOB_RECURSE open3d_tf_ops_SOURCES 
-                "*.cc" 
                 "*.cpp" 
                 "*.cu" 
                 "../*/Detail/*.cc" 
@@ -27,11 +26,14 @@ if ( CUDA_ENABLED )
                 "../*/Detail/*.cu" )
 else ()
     file(GLOB_RECURSE open3d_tf_ops_SOURCES 
-            "*.cc" 
             "*.cpp" 
             "../*/Detail/*.cc" 
             "../*/Detail/*.cpp" )
 endif ()
+list(APPEND open3d_tf_ops_SOURCES 
+        "../../Utility/Console.cpp"
+        "../../Utility/Helper.cpp"
+        )
 
 add_library( open3d_tf_ops SHARED ${open3d_tf_ops_SOURCES} )
 
@@ -53,18 +55,18 @@ set_target_properties( open3d_tf_ops PROPERTIES
 target_include_directories( open3d_tf_ops PRIVATE
     ${TBB_INCLUDE_DIR}
     #${nanoflann_INCLUDE_DIR}
-    #${parallelstl_INCLUDE_DIR}
+    ${parallelstl_INCLUDE_DIR}
     )
 # silence warnings caused by tensorflow's Eigen
 target_include_directories( open3d_tf_ops SYSTEM PRIVATE
     ${Tensorflow_INCLUDE_DIR}
     )
-#if ( CUDA_ENABLED )
-    #target_include_directories( open3d_tf_ops PRIVATE
-        #${CUB_INCLUDE_DIR}
+if ( CUDA_ENABLED )
+    target_include_directories( open3d_tf_ops PRIVATE
+        ${CUB_INCLUDE_DIR}
         #${CUTLASS_INCLUDE_DIR}
-        #)
-#endif ()
+        )
+endif ()
 
 target_link_libraries( open3d_tf_ops PRIVATE
     ${TBB_LIBRARY} 

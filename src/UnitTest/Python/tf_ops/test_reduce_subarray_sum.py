@@ -27,41 +27,22 @@
 import open3d as o3d
 import numpy as np
 import pytest
+import mark_helper
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
-pytestmark = [
-    pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
-                       reason='tf ops not built'),
-    pytest.mark.filterwarnings(
-        'ignore::DeprecationWarning:.*(tensorflow|protobuf).*'),
-]
-
-# check for GPUs and set memory growth to prevent tf from allocating all memory
-gpu_devices = []
-try:
-    import tensorflow as tf
-    gpu_devices = tf.config.experimental.list_physical_devices('GPU')
-    for dev in gpu_devices:
-        tf.config.experimental.set_memory_growth(dev, True)
-except:
-    pass
-
-# define the list of devices for running the ops
-device_names = ['CPU:0']
-if gpu_devices:
-    device_names.append('GPU:0')
-devices = pytest.mark.parametrize('device_name', device_names)
+pytestmark = mark_helper.tf_marks
 
 # the supported input dtypes
 value_dtypes = pytest.mark.parametrize(
     'dtype', [np.int32, np.int64, np.float32, np.float64])
 
 
-@devices
+@mark_helper.devices
 @value_dtypes
 @pytest.mark.parametrize('seed', range(3))
 def test_reduce_subarray_sum_random(seed, dtype, device_name):
+    import tensorflow as tf
     import open3d.ml.tf as ml3d
 
     rng = np.random.RandomState(seed)
