@@ -51,8 +51,8 @@ gpu_dtypes = [np.float32]
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
 def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
-                               hash_table_size_factor, metric,
-                               ignore_query_point, return_distances):
+                             hash_table_size_factor, metric, ignore_query_point,
+                             return_distances):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
