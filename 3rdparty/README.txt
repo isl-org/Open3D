@@ -86,3 +86,7 @@ CUB                         1.8.0                                    BSD license
 A flexible library of cooperative threadblock primitives and other utilities for
 CUDA kernel programming
 https://github.com/NVlabs/cub
+--------------------------------------------------------------------------------
+nanoflann                   1.3.1                                    BSD license
+A C++11 header-only library for Nearest Neighbor (NN) search with KD-trees
+https://github.com/jlblancoc/nanoflann
