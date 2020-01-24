@@ -99,3 +99,85 @@ class Tensor(open3d_pybind.Tensor):
         Returns a tensor converted from DLPack PyCapsule.
         """
         return super(Tensor, Tensor).from_dlpack(dlpack)
+
+    def add(self, value):
+        """
+        Adds a tensor and returns the resulting tensor.
+        """
+        return super(Tensor, self).add(value)
+
+    def add_(self, value):
+        """
+        Inplace version of Tensor.add
+        """
+        return super(Tensor, self).add_(value)
+
+    def sub(self, value):
+        """
+        Substracts a tensor and returns the resulting tensor.
+        """
+        return super(Tensor, self).sub(value)
+
+    def sub_(self, value):
+        """
+        Inplace version of Tensor.sub
+        """
+        return super(Tensor, self).sub_(value)
+
+    def mul(self, value):
+        """
+        Multiplies a tensor and returns the resulting tensor.
+        """
+        return super(Tensor, self).mul(value)
+
+    def mul_(self, value):
+        """
+        Inplace version of Tensor.mul
+        """
+        return super(Tensor, self).mul_(value)
+
+    def div(self, value):
+        """
+        Divides a tensor and returns the resulting tensor.
+        """
+        return super(Tensor, self).div(value)
+
+    def div_(self, value):
+        """
+        Inplace version of Tensor.div
+        """
+        return super(Tensor, self).div_(value)
+
+    def __add__(self, value):
+        return self.add(value)
+
+    def __iadd__(self, value):
+        return self.add_(value)
+
+    def __sub__(self, value):
+        return self.sub(value)
+
+    def __isub__(self, value):
+        return self.sub_(value)
+
+    def __mul__(self, value):
+        return self.mul(value)
+
+    def __imul__(self, value):
+        return self.mul_(value)
+
+    def __truediv__(self, value):
+        # True div and floor div are the same for Tensor.
+        return self.div(value)
+
+    def __itruediv__(self, value):
+        # True div and floor div are the same for Tensor.
+        return self.div_(value)
+
+    def __floordiv__(self, value):
+        # True div and floor div are the same for Tensor.
+        return self.div(value)
+
+    def __ifloordiv__(self, value):
+        # True div and floor div are the same for Tensor.
+        return self.div_(value)

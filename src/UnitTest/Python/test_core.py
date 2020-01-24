@@ -251,3 +251,28 @@ def test_tensor_numpy_to_open3d_to_pytorch():
     np.testing.assert_equal(r, a)
     np.testing.assert_equal(r, b.cpu().numpy())
     np.testing.assert_equal(r, c.cpu().numpy())
+
+
+def test_binary_ew_ops():
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    b = o3d.Tensor(np.array([2, 3, 4, 5, 6, 7]))
+    np.testing.assert_equal((a + b).numpy(), np.array([6, 9, 12, 15, 18, 21]))
+    np.testing.assert_equal((a - b).numpy(), np.array([2, 3, 4, 5, 6, 7]))
+    np.testing.assert_equal((a * b).numpy(), np.array([8, 18, 32, 50, 72, 98]))
+    np.testing.assert_equal((a / b).numpy(), np.array([2, 2, 2, 2, 2, 2]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a += b
+    np.testing.assert_equal(a.numpy(), np.array([6, 9, 12, 15, 18, 21]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a -= b
+    np.testing.assert_equal(a.numpy(), np.array([2, 3, 4, 5, 6, 7]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a *= b
+    np.testing.assert_equal(a.numpy(), np.array([8, 18, 32, 50, 72, 98]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a //= b
+    np.testing.assert_equal(a.numpy(), np.array([2, 2, 2, 2, 2, 2]))

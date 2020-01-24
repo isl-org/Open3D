@@ -24,40 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/UnaryEW.h"
+#include "Open3D/Core/Kernel/BinaryEW.h"
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/CPULauncher.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
+#include <vector>
+
+#include "Open3D/Core/Broadcast.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace kernel {
 
-template <typename scalar_t>
-static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
-}
-
-void CopyCPU(const Tensor& src, Tensor& dst) {
-    // src and dst have been checked to have the same shape, dtype, device
-    SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
-    if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
+void BinaryEW(const Tensor& lhs,
+              const Tensor& rhs,
+              Tensor& dst,
+              BinaryEWOpCode op_code) {
+    // TODO: move sanity checking code to Indexer
+    // TODO: dtype automatic casting
+    for (auto device :
+         std::vector<Device>({rhs.GetDevice(), dst.GetDevice()})) {
+        if (lhs.GetDevice() != device) {
+            utility::LogError("Device mismatch {} != {}.",
+                              lhs.GetDevice().ToString(), device.ToString());
+        }
+    }
+    Device::DeviceType device_type = lhs.GetDevice().GetType();
+    if (device_type == Device::DeviceType::CPU) {
+        BinaryEWCPU(lhs, rhs, dst, op_code);
+    } else if (device_type == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        BinaryEWCUDA(lhs, rhs, dst, op_code);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
     } else {
-        // TODO: in the future, we may want to allow automatic casting
-        Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    indexer, CPUCopyElementKernel<scalar_t>);
-        });
+        utility::LogError("Add: Unimplemented device");
     }
 }
 

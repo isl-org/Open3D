@@ -76,6 +76,18 @@ struct TensorRef {
     int64_t strides_[MAX_DIMS];
 };
 
+enum class DtypePolicy {
+    NONE,         // Do not check.
+    ASSERT_SAME,  // Assert same Dtypes for inputs and output
+    CAST,         // Cast to common dtype.
+                  // E.g. Tensor::Add:
+                  // int64   + int32   = float32 (valid)
+                  // float32 + float32 = int32   (invalid)
+                  // float64 + float64 = float32 (valid)
+    CAST_INPUTS   // Cast inputs to common dtypes (e.g. comparison ops have
+                  // boolean output).
+};
+
 /// Indexing engine for elementwise ops with broadcasting support.
 ///
 /// Fancy indexing is supported by restriding input tensor and treating the
@@ -92,7 +104,26 @@ public:
     /// to support multiple outputs, one may check for shape compatibility of
     /// all outputs.
     Indexer(const std::vector<Tensor>& input_tensors,
-            const Tensor& output_tensor) {
+            const Tensor& output_tensor,
+            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME) {
+        // Dtype sanity check and handling.
+        if (dtype_policy == DtypePolicy::CAST ||
+            dtype_policy == DtypePolicy::CAST_INPUTS) {
+            utility::LogError("Unimplemented dtype_policy.");
+        }
+
+        if (dtype_policy == DtypePolicy::ASSERT_SAME) {
+            Dtype output_dtype = output_tensor.GetDtype();
+            for (const auto& input_tensor : input_tensors) {
+                if (input_tensor.GetDtype() != output_dtype) {
+                    utility::LogError(
+                            "Dype mismatch {} != {}.",
+                            DtypeUtil::ToString(input_tensor.GetDtype()),
+                            DtypeUtil::ToString(output_dtype));
+                }
+            }
+        }
+
         // Conver to TensorRef.
         num_inputs_ = static_cast<int64_t>(input_tensors.size());
         if (num_inputs_ > MAX_OPERANDS) {

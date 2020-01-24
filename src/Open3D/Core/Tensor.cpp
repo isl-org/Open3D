@@ -452,4 +452,52 @@ Tensor Tensor::T() const {
     }
 }
 
+Tensor Tensor::Add(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
+                      GetDevice());
+    kernel::Add(*this, value, dst_tensor);
+    return dst_tensor;
+}
+
+Tensor Tensor::Add_(const Tensor& value) {
+    kernel::Add(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Sub(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
+                      GetDevice());
+    kernel::Sub(*this, value, dst_tensor);
+    return dst_tensor;
+}
+
+Tensor Tensor::Sub_(const Tensor& value) {
+    kernel::Sub(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Mul(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
+                      GetDevice());
+    kernel::Mul(*this, value, dst_tensor);
+    return dst_tensor;
+}
+
+Tensor Tensor::Mul_(const Tensor& value) {
+    kernel::Mul(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Div(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
+                      GetDevice());
+    kernel::Div(*this, value, dst_tensor);
+    return dst_tensor;
+}
+
+Tensor Tensor::Div_(const Tensor& value) {
+    kernel::Div(*this, value, *this);
+    return *this;
+}
+
 }  // namespace open3d

@@ -53,7 +53,7 @@ public:
     /// \param dtype: type for the contained tensors. e.g. Dtype::Int64.
     /// \param device: device to store the contained tensors. e.g. "CPU:0".
     TensorList(const SizeVector& shape,
-               const Dtype& dtype,
+               Dtype dtype,
                const Device& device = Device("CPU:0"),
                const int64_t& size = 0);
 
@@ -161,9 +161,9 @@ public:
     /// Clear the tensor list by discarding all data and creating a empty one.
     void Clear();
 
-    const SizeVector& GetShape() const { return shape_; }
-    const Device& GetDevice() const { return device_; }
-    const Dtype& GetDtype() const { return dtype_; }
+    SizeVector GetShape() const { return shape_; }
+    Device GetDevice() const { return device_; }
+    Dtype GetDtype() const { return dtype_; }
     int64_t GetSize() const { return size_; }
     int64_t GetReservedSize() const { return reserved_size_; }
     const Tensor& GetInternalTensor() const { return internal_tensor_; }
