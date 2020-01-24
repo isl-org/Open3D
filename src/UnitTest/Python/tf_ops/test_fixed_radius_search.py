@@ -50,7 +50,7 @@ gpu_dtypes = [np.float32]
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
-def test_invert_neighbors_list(dtype, device_name, num_points_queries, radius,
+def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
                                hash_table_size_factor, metric,
                                ignore_query_point, return_distances):
     import tensorflow as tf
@@ -117,7 +117,7 @@ def test_invert_neighbors_list(dtype, device_name, num_points_queries, radius,
 
 
 @mark_helper.devices
-def test_invert_neighbors_list_empty_point_sets(device_name):
+def test_fixed_radius_search_empty_point_sets(device_name):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
     rng = np.random.RandomState(123)
