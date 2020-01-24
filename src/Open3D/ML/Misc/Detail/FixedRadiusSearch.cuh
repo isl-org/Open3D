@@ -42,44 +42,8 @@ namespace detail {
 
 namespace {
 
-/// Minimal implementation for a templated device 3D vector to avoid including
-/// Eigen.
 template <class T>
-struct Vec3 {
-    T _data[3];
-    inline __device__ const T& operator[](int i) const { return _data[i]; }
-    inline __device__ T& operator[](int i) { return _data[i]; }
-};
-
-template <class T>
-inline __device__ bool operator==(const Vec3<T>& a, const Vec3<T>& b) {
-    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
-}
-
-template <class T>
-inline __device__ Vec3<T> operator+(const Vec3<T>& a, const Vec3<T>& b) {
-    return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
-}
-
-template <class T>
-inline __device__ Vec3<T> operator-(const Vec3<T>& a, const Vec3<T>& b) {
-    return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
-}
-
-template <class T>
-inline __device__ T dot(const Vec3<T>& a, const Vec3<T>& b) {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-template <class T>
-inline __device__ Vec3<T> abs(const Vec3<T>& a) {
-    return {std::abs(a[0]), std::abs(a[1]), std::abs(a[2])};
-}
-
-template <class T>
-inline __device__ Vec3<T> operator*(const T& a, const Vec3<T>& b) {
-    return {a * b[0], a * b[1], a * b[2]};
-}
+using Vec3 = Eigen::Matrix<T, 3, 1>;
 
 /// Computes the distance of two points and tests if the distance is below a
 /// threshold.
@@ -101,15 +65,15 @@ inline __device__ bool NeighborTest(const Vec3<T>& p1,
                                     T threshold) {
     bool result = false;
     if (METRIC == Linf) {
-        Vec3<T> d = abs(p1 - p2);
+        Vec3<T> d = (p1 - p2).cwiseAbs();
         *dist = d[0] > d[1] ? d[0] : d[1];
         *dist = *dist > d[2] ? *dist : d[2];
     } else if (METRIC == L1) {
-        Vec3<T> d = abs(p1 - p2);
+        Vec3<T> d = (p1 - p2).cwiseAbs();
         *dist = (d[0] + d[1] + d[2]);
     } else {
         Vec3<T> d = p1 - p2;
-        *dist = dot(d, d);
+        *dist = d.dot(d);
     }
     result = *dist <= threshold;
     return result;

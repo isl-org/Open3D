@@ -28,6 +28,7 @@
 
 #include <set>
 #include "Open3D/Core/Atomic.h"
+#include "Open3D/Utility/Eigen.h"
 #include "Open3D/Utility/Helper.h"
 #include "Open3D/Utility/ParallelScan.h"
 #include "tbb/parallel_for.h"
