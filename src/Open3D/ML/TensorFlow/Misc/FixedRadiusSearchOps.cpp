@@ -42,13 +42,13 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Input("radius: T")
         .Input("hash_table_size_factor: double")
         .Output("neighbors_index: int32")
-        .Output("neighbors_count_prefix_sum: int64")
-        .Output("neighbors_distances: T")
+        .Output("neighbors_prefix_sum: int64")
+        .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle points_shape, queries_shape, radius_shape,
                     hash_table_size_factor_shape, indices_shape,
-                    neighbors_count_prefix_sum_shape, neighbors_distances_shape;
+                    neighbors_prefix_sum_shape, neighbors_distance_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));
@@ -76,17 +76,17 @@ REGISTER_OP("Open3DFixedRadiusSearch")
             indices_shape = c->MakeShape({c->UnknownDim()});
             c->set_output(0, indices_shape);
 
-            neighbors_count_prefix_sum_shape = c->MakeShape({num_query_points});
-            c->set_output(1, neighbors_count_prefix_sum_shape);
+            neighbors_prefix_sum_shape = c->MakeShape({num_query_points});
+            c->set_output(1, neighbors_prefix_sum_shape);
 
             bool return_distances;
             TF_RETURN_IF_ERROR(
                     c->GetAttr("return_distances", &return_distances));
             if (return_distances)
-                neighbors_distances_shape = c->MakeShape({c->UnknownDim()});
+                neighbors_distance_shape = c->MakeShape({c->UnknownDim()});
             else
-                neighbors_distances_shape = c->MakeShape({0});
-            c->set_output(2, neighbors_distances_shape);
+                neighbors_distance_shape = c->MakeShape({0});
+            c->set_output(2, neighbors_distance_shape);
 
             return Status::OK();
         })
@@ -106,8 +106,8 @@ ignore_query_point:
 
 return_distances:
   If True the distances for each neighbor will be returned in the tensor 
-  'neighbors_distances'.
-  If False a zero length Tensor will be returned for 'neighbors_distances'.
+  'neighbors_distance'.
+  If False a zero length Tensor will be returned for 'neighbors_distance'.
 
 max_hash_table_size:
   The maximum hash table size.
@@ -128,12 +128,12 @@ neighbors_index:
   The compact list of indices of the neighbors. The corresponding query point 
   can be inferred from the 'neighbor_count_prefix_sum' vector.
 
-neighbors_count_prefix_sum:
+neighbors_prefix_sum:
   The exclusive prefix sum of the neighbor count for the query points.
 
-neighbors_distances:
+neighbors_distance:
   Stores the distance to each neighbor if 'return_distances' is True.
-  The distances are squared only if metric is L2.
+  Note that the distances are squared if metric is L2.
   This is a zero length Tensor if 'return_distances' is False. 
 
 )doc");
