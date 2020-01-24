@@ -67,15 +67,8 @@ void SceneWidget::SetBackgroundColor(const Color& color) {
     view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
-void SceneWidget::SetDiscardBuffers(
-        const visualization::View::TargetBuffers& buffers) {
-    auto view = impl_->scene.GetView(impl_->viewId);
-    view->SetDiscardBuffers(buffers);
-}
-
-void SceneWidget::SetViewMode(visualization::View::Mode mode) {
-    auto view = impl_->scene.GetView(impl_->viewId);
-    view->SetMode(mode);
+visualization::View* SceneWidget::GetView() const {
+    return impl_->scene.GetView(impl_->viewId);
 }
 
 visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene; }

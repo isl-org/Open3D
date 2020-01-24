@@ -115,8 +115,6 @@ void FilamentView::SetViewport(std::int32_t x,
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clearColor_ = color;
 
-    // We apply changes immediately only in color mode
-    // In other cases color will be set on mode switch
     if (mode_ == Mode::Color) {
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
     }
