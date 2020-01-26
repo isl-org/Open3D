@@ -39,8 +39,6 @@ void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,
               Tensor& dst,
               BinaryEWOpCode op_code) {
-    // TODO: move sanity checking code to Indexer
-    // TODO: dtype automatic casting
     for (auto device :
          std::vector<Device>({rhs.GetDevice(), dst.GetDevice()})) {
         if (lhs.GetDevice() != device) {

@@ -81,7 +81,7 @@ enum class DtypePolicy {
     ASSERT_SAME,  // Assert same Dtypes for inputs and output
     CAST,         // Cast to common dtype.
                   // E.g. Tensor::Add:
-                  // int64   + int32   = float32 (valid)
+                  // int64   + int32   = int64   (valid)
                   // float32 + float32 = int32   (invalid)
                   // float64 + float64 = float32 (valid)
     CAST_INPUTS   // Cast inputs to common dtypes (e.g. comparison ops have
