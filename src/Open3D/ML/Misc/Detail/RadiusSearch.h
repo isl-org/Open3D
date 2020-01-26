@@ -178,9 +178,7 @@ void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
             });
 
     query_neighbors_prefix_sum[0] = 0;
-    std::inclusive_scan(pstl::execution::par_unseq, neighbors_count.begin(),
-                        neighbors_count.begin() + neighbors_count.size() - 1,
-                        query_neighbors_prefix_sum + 1);
+    InclusivePrefixSum(&neighbors_count[0], &neighbors_count[neighbors_count.size()-1], query_neighbors_prefix_sum+1);
 
     int32_t* neighbors_indices_ptr;
     output_allocator.AllocIndices(&neighbors_indices_ptr, pairs.size());
