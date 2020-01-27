@@ -13,6 +13,8 @@ material {
 
 vertex {
     void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = 3.0;
+
         float4 normalModel = material.color;
         material.normalWorld = getWorldFromModelMatrix()*normalModel;
     }

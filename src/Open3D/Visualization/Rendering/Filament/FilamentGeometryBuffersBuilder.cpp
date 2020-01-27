@@ -71,11 +71,9 @@ void GeometryBuffersBuilder::DeallocateBuffer(void* buffer, size_t size, void* u
 namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
 
     static size_t GetPositionOffset() { return offsetof(ColoredVertex, position); }
-    static size_t GetTangentOffset() { return offsetof(ColoredVertex, tangent); }
     static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
@@ -115,11 +113,6 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
                                             sizeof(ColoredVertex))
-                                 .normalized(VertexAttribute::TANGENTS)
-                                 .attribute(VertexAttribute::TANGENTS, 0,
-                                            VertexBuffer::AttributeType::FLOAT4,
-                                            ColoredVertex::GetTangentOffset(),
-                                            sizeof(ColoredVertex))
                                  .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 0,
                                             VertexBuffer::AttributeType::FLOAT4,
@@ -155,7 +148,6 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     for (size_t i = 0; i < geometry_.points_.size(); ++i) {
         ColoredVertex& element = vertices[i];
         element.SetVertexPosition(geometry_.points_[i]);
-        element.tangent = float4VTangents[i];
         element.SetVertexColor(geometry_.colors_[i]);
     }
 
@@ -189,7 +181,86 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 }
 
 GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::CreateNormalsGhost() {
-    return {};
+    auto& engine = EngineInstance::GetInstance();
+    auto& resourceManager = EngineInstance::GetResourceManager();
+
+    const size_t nVertices = geometry_.points_.size();
+
+    // Converting vertex normals to float base
+    std::vector<Eigen::Vector3f> normals;
+    normals.resize(nVertices);
+    for (size_t i = 0; i < nVertices; ++i) {
+        normals[i] = geometry_.normals_[i].cast<float>();
+    }
+
+    const size_t normalsBytesCount = nVertices * 4 * sizeof(float);
+    auto* float4Normals = static_cast<math::float4*>(malloc(normalsBytesCount));
+    for (size_t i = 0; i < nVertices; ++i) {
+        auto v = normals[i];
+        float4Normals[i] = {v(0), v(1), v(2), 0.f};
+    }
+
+    const auto vBytesCount = nVertices * sizeof(ColoredVertex);
+    auto* vBytes = malloc(vBytesCount);
+
+    auto plainVertices = static_cast<ColoredVertex*>(vBytes);
+    for (size_t i = 0; i < nVertices; ++i) {
+        ColoredVertex& element = plainVertices[i];
+
+        element.SetVertexPosition(geometry_.points_[i]);
+        element.color = float4Normals[i];
+    }
+
+    free(float4Normals);
+
+    size_t stride = sizeof(ColoredVertex);
+
+    VertexBuffer* vbuf =
+            VertexBuffer::Builder()
+                    .bufferCount(1)
+                    .vertexCount(nVertices)
+                    .attribute(VertexAttribute::POSITION, 0,
+                               VertexBuffer::AttributeType::FLOAT3,
+                               0, stride)
+                    .attribute(VertexAttribute::COLOR, 0,
+                               VertexBuffer::AttributeType::FLOAT4,
+                               offsetof(ColoredVertex, color), stride)
+                    .build(engine);
+
+    VertexBufferHandle vbHandle;
+    if (vbuf) {
+        vbHandle = resourceManager.AddVertexBuffer(vbuf);
+    } else {
+        free(vBytes);
+
+        return {};
+    }
+
+    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vBytes, vBytesCount);
+    vertexbufferDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
+
+    const auto iBytesCount = nVertices*sizeof(IndexType);
+    auto *iBytes = static_cast<IndexType*>(malloc(iBytesCount));
+    for (std::uint32_t i = 0; i < nVertices; ++i) {
+        iBytes[i] = i;
+    }
+
+    auto ibHandle = resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
+    if (!ibHandle) {
+        free(iBytes);
+        return {};
+    }
+
+    auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
+
+    // Moving copied indices to IndexBuffer
+    // they will be freed later with freeBufferDescriptor
+    IndexBuffer::BufferDescriptor indicesDescriptor(iBytes, iBytesCount);
+    indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    ibuf->setBuffer(engine, std::move(indicesDescriptor));
+
+    return std::make_tuple(vbHandle, ibHandle);
 }
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {

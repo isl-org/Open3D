@@ -7,6 +7,12 @@ material {
         ],
 }
 
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = 3.0;
+    }
+}
+
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
