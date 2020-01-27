@@ -46,14 +46,17 @@ namespace visualization {
 
 class GeometryBuffersBuilder {
 public:
+    using Buffers = std::tuple<VertexBufferHandle, IndexBufferHandle>;
     using IndexType = std::uint32_t;
 
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(const geometry::Geometry3D& geometry);
-    virtual ~GeometryBuffersBuilder() {}
+    virtual ~GeometryBuffersBuilder() = default;
 
     virtual filament::RenderableManager::PrimitiveType GetPrimitiveType() const = 0;
 
-    virtual std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() = 0;
+    virtual Buffers ConstructBuffers() = 0;
+    // Special kind of buffers for rendering mesh normals as colors
+    virtual Buffers CreateNormalsGhost() = 0;
     virtual filament::Box ComputeAABB() = 0;
 
 protected:
@@ -66,7 +69,8 @@ public:
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
 
-    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() override;
+    Buffers ConstructBuffers() override;
+    Buffers CreateNormalsGhost() override;
     filament::Box ComputeAABB() override;
 
 private:
@@ -79,7 +83,8 @@ public:
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
 
-    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() override;
+    Buffers ConstructBuffers() override;
+    Buffers CreateNormalsGhost() override;
     filament::Box ComputeAABB() override;
 
 private:

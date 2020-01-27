@@ -102,7 +102,7 @@ RenderableManager::PrimitiveType PointCloudBuffersBuilder::GetPrimitiveType() co
     return RenderableManager::PrimitiveType::POINTS;
 }
 
-std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::ConstructBuffers() {
+GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resourceManager = EngineInstance::GetResourceManager();
 
@@ -186,6 +186,10 @@ std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::Cons
     ibuf->setBuffer(engine, std::move(indicesDescriptor));
 
     return std::make_tuple(vbHandle, ibHandle);
+}
+
+GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::CreateNormalsGhost() {
+    return {};
 }
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {

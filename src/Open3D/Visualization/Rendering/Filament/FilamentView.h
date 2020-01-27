@@ -29,6 +29,7 @@
 #include "Open3D/Visualization/Rendering/View.h"
 
 #include <memory>
+#include <numeric>
 
 #include <filament/Color.h>
 
@@ -48,6 +49,10 @@ class FilamentScene;
 
 class FilamentView : public View {
 public:
+    static constexpr std::uint8_t kAllLayersMask = std::numeric_limits<std::uint8_t>::max();
+    static constexpr std::uint8_t kMainLayer = 1; // Default layer for objects
+    static constexpr std::uint8_t kNormalGhostsLayer = 1 << 1; // Layer for visualizing normals
+
     FilamentView(filament::Engine& engine, FilamentScene& scene, FilamentResourceManager& resourceManager);
     ~FilamentView() override;
 
