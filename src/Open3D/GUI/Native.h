@@ -24,6 +24,8 @@ struct SDL_Window;
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(SDL_Window* sdlWindow);
-}
+void* GetNativeDrawable(SDL_Window *sdlWindow);
+void ShowNativeAlert(const char *message);
+
+}  // namespace gui
 }  // namespace open3d

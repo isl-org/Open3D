@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace geometry {
+class AxisAlignedBoundingBox;
 class Geometry;
 }  // namespace geometry
 
@@ -49,7 +50,10 @@ public:
                   int left, int top);
     virtual ~GuiVisualizer();
 
-    void LoadGeometry(const std::string& path);
+    void SetTitle(const std::string& title);
+    void SetGeometry(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries);
+
+    bool LoadGeometry(const std::string& path);
     void ExportRGB(const std::string& path);
     void ExportDepth(const std::string& path);
 

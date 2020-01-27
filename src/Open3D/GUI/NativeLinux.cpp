@@ -19,6 +19,8 @@
 
 #include "Native.h"
 
+#include "Application.h"
+
 #include <SDL_syswm.h>
 
 namespace open3d {
@@ -30,6 +32,11 @@ void* GetNativeDrawable(SDL_Window* window) {
     SDL_GetWindowWMInfo(window, &wmi);
     return (void*)wmi.info.x11.window;
 }
+
+void ShowNativeAlert(const char *message) {
+    // Linux doesn't have a native alert
+    Application::GetInstance().ShowMessageBox("Alert", message);
+}        
 
 }  // namespace gui
 }  // namespace open3d

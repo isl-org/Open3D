@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -17,25 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Native.h"
-
-#include <SDL_syswm.h>
-
-#include <winuser.h>
+#include <memory>
 
 namespace open3d {
-namespace gui {
-
-void* GetNativeDrawable(SDL_Window* window) {
-    SDL_SysWMinfo wmi;
-    SDL_VERSION(&wmi.version);
-    SDL_GetWindowWMInfo(window, &wmi);
-    return (void*)wmi.info.win.window;
+namespace geometry {
+class Geometry;
+}
+namespace visualizer {
+class GuiVisualizer;
+}
 }
 
-void ShowNativeAlert(const char *message) {
-    MessageBox(NULL, "Alert", message, MB_OK | MB_ICONEXCLAMATION);
-}
+#define WIDTH 1280
+#define HEIGHT 960
 
-}  // namespace gui
-}  // namespace open3d
+int Run(int argc, const char *argv[]);
+bool CreateWindow(const char *path);

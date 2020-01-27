@@ -408,6 +408,7 @@ void FileDialog::SetOnDone(std::function<void(const char *)> onDone) {
 void FileDialog::OnDone() {
     if (this->impl_->onDone) {
         auto dir = this->impl_->CalcCurrentDirectory();
+        utility::filesystem::ChangeWorkingDirectory(dir);
         auto name = this->impl_->GetSelectedEntry().GetName();
         this->impl_->onDone((dir + "/" + name).c_str());
     } else {

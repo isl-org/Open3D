@@ -28,7 +28,8 @@
 
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/GUI/Application.h"
 #include "Open3D/GUI/Button.h"
 #include "Open3D/GUI/Color.h"
@@ -38,6 +39,8 @@
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Theme.h"
+#include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
@@ -140,6 +143,13 @@ enum MenuId { FILE_OPEN, FILE_EXPORT_RGB, FILE_EXPORT_DEPTH, FILE_CLOSE,
               HELP_ABOUT, HELP_CONTACT };
 
 struct GuiVisualizer::Impl {
+    visualization::MaterialHandle nonmetal;
+    visualization::MaterialInstanceHandle white;
+    std::vector<visualization::GeometryHandle> geometryHandles;
+    geometry::AxisAlignedBoundingBox bounds;
+    Eigen::Vector3f boundsMid;
+    Eigen::Vector3d boundsMax;
+
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> bottomBar;
 };
@@ -158,13 +168,13 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     std::string err;
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
-    nonmetal = GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
-    auto white = GetRenderer().ModifyMaterial(nonmetal)
-            .SetColor("baseColor", {1.0, 1.0, 1.0})
-            .SetParameter("roughness", 0.5f)
-            .SetParameter("clearCoat", 1.f)
-            .SetParameter("clearCoatRoughness", 0.3f)
-            .Finish();
+    impl_->nonmetal = GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
+    impl_->white = GetRenderer().ModifyMaterial(impl_->nonmetal)
+                                .SetColor("baseColor", {1.0, 1.0, 1.0})
+                                .SetParameter("roughness", 0.5f)
+                                .SetParameter("clearCoat", 1.f)
+                                .SetParameter("clearCoatRoughness", 0.3f)
+                                .Finish();
 
     // Create scene
     auto sceneId = GetRenderer().CreateScene();
@@ -180,67 +190,35 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
 
     scene->GetScene()->AddLight(lightDescription);
 
-    // Add geometries
-    geometry::AxisAlignedBoundingBox bounds;
-    for (auto &g : geometries) {
-        switch (g->GetGeometryType()) {
-            case geometry::Geometry::GeometryType::OrientedBoundingBox:
-            case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
-            case geometry::Geometry::GeometryType::PointCloud:
-            case geometry::Geometry::GeometryType::LineSet:
-            case geometry::Geometry::GeometryType::MeshBase:
-            case geometry::Geometry::GeometryType::TriangleMesh:
-            case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
-            case geometry::Geometry::GeometryType::TetraMesh:
-            case geometry::Geometry::GeometryType::Octree:
-            case geometry::Geometry::GeometryType::VoxelGrid: {
-                auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
-                bounds += g3->GetAxisAlignedBoundingBox();
-                scene->GetScene()->AddGeometry(*g3, white);
-            }
-            case geometry::Geometry::GeometryType::RGBDImage:
-            case geometry::Geometry::GeometryType::Image:
-            case geometry::Geometry::GeometryType::Unspecified:
-                break;
-        }
-    }
-
-    // Setup camera
-    scene->GetCameraManipulator()->SetFov(90.0f);
-    scene->GetCameraManipulator()->SetNearPlane(0.1f);
-    scene->GetCameraManipulator()->SetFarPlane(2.0 * bounds.GetExtent().norm());
-    auto boundsMin = bounds.GetMinBound();
-    auto boundsMax = bounds.GetMaxBound();
-    auto boundsMid = Eigen::Vector3f((boundsMin.x() + boundsMax.x()) / 2.0,
-                                     (boundsMin.y() + boundsMax.y()) / 2.0,
-                                     (boundsMin.z() + boundsMax.z()) / 2.0);
-    Eigen::Vector3f farthest(std::max(std::abs(boundsMin.x()),
-                                      std::abs(boundsMax.x())),
-                             std::max(std::abs(boundsMin.y()),
-                                      std::abs(boundsMax.y())),
-                             std::max(std::abs(boundsMin.z()),
-                                      std::abs(boundsMax.z())));
-    scene->GetCameraManipulator()->LookAt({0, 0, 0}, farthest);
+    SetGeometry(geometries);  // also updates the camera
 
     // Setup UI
     int spacing = std::max(1, int(std::ceil(0.25 * theme.fontSize)));
 
     auto buttonRegular = std::make_shared<gui::Button>("Default camera");
     auto buttonTop = std::make_shared<gui::Button>("Top");
-    buttonTop->SetOnClicked([scene, boundsMid, boundsMax]() {
-        Eigen::Vector3f eye(boundsMid.x(), 1.5 * boundsMax.y(), boundsMid.z());
+    buttonTop->SetOnClicked([this]() {
+        auto &boundsMid = this->impl_->boundsMid;
+        auto &boundsMax = this->impl_->boundsMax;
+        Eigen::Vector3f eye(boundsMid.x(),
+                            1.5 * boundsMax.y(),
+                            boundsMid.z());
         Eigen::Vector3f up(1, 0, 0);
-        scene->GetCameraManipulator()->LookAt(boundsMid, eye, up);
+        this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye, up);
     });
     auto buttonFront = std::make_shared<gui::Button>("Front");
-    buttonFront->SetOnClicked([scene, boundsMid, boundsMax]() {
+    buttonFront->SetOnClicked([this]() {
+        auto &boundsMid = this->impl_->boundsMid;
+        auto &boundsMax = this->impl_->boundsMax;
         Eigen::Vector3f eye(1.5 * boundsMax.x(), boundsMid.y(), boundsMid.z());
-        scene->GetCameraManipulator()->LookAt(boundsMid, eye);
+        this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye);
     });
     auto buttonSide = std::make_shared<gui::Button>("Side");
-    buttonSide->SetOnClicked([scene, boundsMid, boundsMax]() {
+    buttonSide->SetOnClicked([this]() {
+        auto &boundsMid = this->impl_->boundsMid;
+        auto &boundsMax = this->impl_->boundsMax;
         Eigen::Vector3f eye(boundsMid.x(), boundsMid.y(), 1.5 * boundsMax.z());
-        scene->GetCameraManipulator()->LookAt(boundsMid, eye);
+        this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye);
     });
     auto bottomBar = std::make_shared<gui::Horiz>(spacing,
                                                   gui::Margins(0, spacing));
@@ -260,13 +238,18 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     auto fileMenu = std::make_shared<gui::Menu>();
     fileMenu->AddItem("Open Geometry...", "Ctrl-O", FILE_OPEN);
     fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
+    fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
     fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
+    fileMenu->SetEnabled(FILE_EXPORT_DEPTH, false);
     fileMenu->AddSeparator();
     fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
     auto viewMenu = std::make_shared<gui::Menu>();
     viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
+    viewMenu->SetEnabled(VIEW_POINTS, false);
     viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
+    viewMenu->SetEnabled(VIEW_WIREFRAME, false);
     viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
+    viewMenu->SetEnabled(VIEW_MESH, false);
     auto helpMenu = std::make_shared<gui::Menu>();
     helpMenu->AddItem("About", nullptr, HELP_ABOUT);
     helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
@@ -278,6 +261,67 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
 }
 
 GuiVisualizer::~GuiVisualizer() {
+}
+
+void GuiVisualizer::SetTitle(const std::string& title) {
+//    Super::SetTitle(title);
+}
+
+void GuiVisualizer::SetGeometry(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries) {
+
+    auto *scene3d = impl_->scene->GetScene();
+    for (auto &h : impl_->geometryHandles) {
+        scene3d->RemoveGeometry(h);
+    }
+    impl_->geometryHandles.clear();
+
+
+    geometry::AxisAlignedBoundingBox bounds;
+    for (auto &g : geometries) {
+        switch (g->GetGeometryType()) {
+            case geometry::Geometry::GeometryType::OrientedBoundingBox:
+            case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+            case geometry::Geometry::GeometryType::PointCloud:
+            case geometry::Geometry::GeometryType::LineSet:
+            case geometry::Geometry::GeometryType::MeshBase:
+            case geometry::Geometry::GeometryType::TriangleMesh:
+            case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
+            case geometry::Geometry::GeometryType::TetraMesh:
+            case geometry::Geometry::GeometryType::Octree:
+            case geometry::Geometry::GeometryType::VoxelGrid: {
+                auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
+                bounds += g3->GetAxisAlignedBoundingBox();
+                auto handle = scene3d->AddGeometry(*g3, impl_->white);
+                impl_->geometryHandles.push_back(handle);
+            }
+            case geometry::Geometry::GeometryType::RGBDImage:
+            case geometry::Geometry::GeometryType::Image:
+            case geometry::Geometry::GeometryType::Unspecified:
+                break;
+        }
+    }
+
+    auto *camera = impl_->scene->GetCameraManipulator();
+    camera->SetFov(90.0f);
+    camera->SetNearPlane(0.1f);
+    auto far = 2.0 * bounds.GetExtent().norm();
+    camera->SetFarPlane(std::max(100.0, far));
+    auto boundsMin = bounds.GetMinBound();
+    auto boundsMax = bounds.GetMaxBound();
+    auto boundsMid = Eigen::Vector3f((boundsMin.x() + boundsMax.x()) / 2.0,
+                                     (boundsMin.y() + boundsMax.y()) / 2.0,
+                                     (boundsMin.z() + boundsMax.z()) / 2.0);
+    Eigen::Vector3f farthest(std::max(std::abs(boundsMin.x()),
+                                      std::abs(boundsMax.x())),
+                             std::max(std::abs(boundsMin.y()),
+                                      std::abs(boundsMax.y())),
+                             std::max(std::abs(boundsMin.z()),
+                                      std::abs(boundsMax.z())));
+    camera->LookAt({0, 0, 0}, farthest);
+
+    impl_->bounds = bounds;
+    impl_->boundsMid = boundsMid;
+    impl_->boundsMax = boundsMax;
 }
 
 void GuiVisualizer::Layout(const gui::Theme& theme) {
@@ -292,8 +336,53 @@ void GuiVisualizer::Layout(const gui::Theme& theme) {
     Super::Layout(theme);
 }
 
-void GuiVisualizer::LoadGeometry(const std::string& path) {
-    ShowMessageBox("Not implemented", "LoadGeometry() is not implemented yet");
+bool GuiVisualizer::LoadGeometry(const std::string& path) {
+    auto geometry = std::shared_ptr<geometry::Geometry3D>();
+
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    bool meshSuccess = false;
+    try {
+        meshSuccess = io::ReadTriangleMesh(path, *mesh);
+    } catch(...) {
+        meshSuccess = false;
+    }
+    if (meshSuccess) {
+        if (mesh->triangles_.size() == 0) {
+            utility::LogWarning("Contains 0 triangles, will read as point cloud");
+            mesh.reset();
+        } else {
+            mesh->ComputeVertexNormals();
+            geometry = mesh;
+        }
+    } else {
+        // LogError throws an exception, which we don't want, because this might
+        // be a point cloud.
+        utility::LogWarning("Failed to read %s", path.c_str());
+        mesh.reset();
+    }
+
+    if (!geometry) {
+        auto cloud = std::make_shared<geometry::PointCloud>();
+        bool success = false;
+        try {
+            success = io::ReadPointCloud(path, *cloud);
+        } catch(...) {
+            success = false;
+        }
+        if (success) {
+            utility::LogInfof("Successfully read %s", path.c_str());
+            cloud->NormalizeNormals();
+            geometry = cloud;
+        } else {
+            utility::LogWarning("Failed to read points %s", path.c_str());
+            cloud.reset();
+        }
+    }
+
+    if (geometry) {
+        SetGeometry({ geometry });
+    }
+    return (geometry != nullptr);
 }
 
 void GuiVisualizer::ExportRGB(const std::string& path) {
@@ -329,7 +418,20 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                this->LoadGeometry(path);
+                auto frame = this->GetFrame();
+                auto title = std::string("Open3D - ") + path;
+                std::vector<std::shared_ptr<const geometry::Geometry>> nothing;
+                auto vis = std::make_shared<GuiVisualizer>(nothing,
+                                                           title.c_str(),
+                                                           frame.width,
+                                                           frame.height,
+                                                           frame.x + 20,
+                                                           frame.y + 20);
+                gui::Application::GetInstance().AddWindow(vis);
+                if (!vis->LoadGeometry(path)) {
+                    auto err = std::string("Error reading geometry file '") + path + "'";
+                    vis->ShowMessageBox("Error loading geometry", err.c_str());
+                }
             });
             ShowDialog(dlg);
             break;

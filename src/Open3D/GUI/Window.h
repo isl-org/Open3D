@@ -49,8 +49,16 @@ class Window {
     friend class Renderer;
 
 public:
-    Window(const std::string& title, int width, int height);
-    Window(const std::string& title, int x, int y, int width, int height);
+    static const int FLAG_TOPMOST;
+
+    /// Window creation is NOT thread-safe. Window must be created on the
+    /// same thread that calls Application::Run(). Use
+    /// Application::Post() with a lambda that creates the window if you need
+    /// to create one after Application::Run() has been called.
+    explicit Window(const std::string& title, int flags = 0); // auto-sized, centered
+    Window(const std::string& title, int width, int height, int flags = 0); // centered
+    Window(const std::string& title, int x, int y, int width, int height,
+           int flags = 0);
     virtual ~Window();
 
     uint32_t GetID() const;
@@ -58,6 +66,11 @@ public:
     const Theme& GetTheme() const;
     visualization::Renderer& GetRenderer() const;
 
+    Rect GetFrame() const; // in OS pixels; not scaled
+    void SetFrame(const Rect& r); // in OS pixels; not scaled
+
+    void SizeToFit(); // auto size
+    void SetSize(const Size& size);
     Size GetSize() const;  // total interior size of window, including menubar
     Rect GetContentRect() const;  // size available to widgets
     float GetScaling() const;
@@ -66,6 +79,9 @@ public:
     bool IsVisible() const;
     void Show(bool vis = true);
     void Close();  // same as calling Application::RemoveWindow()
+
+    void SetTopmost(bool topmost);
+    void RaiseToTop() const;
 
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menu);
@@ -78,6 +94,7 @@ public:
     void ShowMessageBox(const char *title, const char *message);
 
 protected:
+    virtual Size CalcPreferredSize(/*const Size& maxSize*/);
     virtual void Layout(const Theme& theme);
 
     // Override to handle menu items
@@ -91,6 +108,8 @@ private:
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
+    void* MakeCurrent() const;
+    void RestoreCurrent(void *oldContext) const;
     void* GetNativeDrawable() const;
 
 private:
