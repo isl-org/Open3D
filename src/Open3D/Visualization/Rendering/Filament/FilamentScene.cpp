@@ -72,7 +72,7 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
                                   std::uint32_t w,
                                   std::uint32_t h) {
     auto handle = ViewHandle::Next();
-    auto view = std::make_unique<FilamentView>(engine_, *scene_);
+    auto view = std::make_unique<FilamentView>(engine_, *this, resourceManager_);
 
     view->SetViewport(x, y, w, h);
     if (!views_.empty()) {
@@ -119,6 +119,7 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
     using namespace filament;
 
     AllocatedEntity entityEntry;
+    entityEntry.type = EntityType::Geometry;
     entityEntry.name = name;
 
     auto geometryBuffersBuilder = GeometryBuffersBuilder::GetBuilder(geometry);
@@ -146,6 +147,7 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
     auto wMatInstance = resourceManager_.GetMaterialInstance(materialId);
     if (!wMatInstance.expired()) {
         builder.material(0, wMatInstance.lock().get());
+        entityEntry.material = materialId;
     }
 
     auto result = builder.build(engine_, entityEntry.self);
@@ -176,6 +178,8 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
     auto wMaterialInstance = resourceManager_.GetMaterialInstance(materialId);
     auto found = entities_.find(geometryId);
     if (found != entities_.end() && false == wMaterialInstance.expired()) {
+        found->second.material = materialId;
+
         auto& renderableManger = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
                 renderableManger.getInstance(found->second.self);
@@ -226,7 +230,7 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
     LightHandle handle;
     if (result == filament::LightManager::Builder::Success) {
         handle = LightHandle::Next();
-        entities_[handle] = {light};
+        entities_[handle] = {light, EntityType::Light};
         scene_->addEntity(light);
     }
 
@@ -312,7 +316,9 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     for (const auto& pair : views_) {
         auto& container = pair.second;
         if (container.isActive) {
+            container.view->PreRender();
             renderer.render(container.view->GetNativeView());
+            container.view->PostRender();
         }
     }
 }

@@ -47,7 +47,7 @@ class Scene {
 public:
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
 
-    virtual ~Scene() {}
+    virtual ~Scene() = default;
 
     virtual ViewHandle AddView(std::int32_t x,
                                std::int32_t y,

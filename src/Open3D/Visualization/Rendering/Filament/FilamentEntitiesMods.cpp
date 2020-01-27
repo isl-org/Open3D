@@ -40,7 +40,8 @@ namespace {
 
 using namespace filament;
 
-TextureSampler::WrapMode ConvertWrapMode(TextureSamplerParameters::WrapMode mode) {
+TextureSampler::WrapMode ConvertWrapMode(
+        TextureSamplerParameters::WrapMode mode) {
     switch (mode) {
         case TextureSamplerParameters::WrapMode::ClampToEdge:
             return TextureSampler::WrapMode::CLAMP_TO_EDGE;
@@ -101,23 +102,31 @@ TextureSampler SamplerFromSamplerParameters(
 }
 }
 
+FilamentMaterialModifier::FilamentMaterialModifier(
+        const std::shared_ptr<filament::MaterialInstance>& materialInstance,
+        const MaterialInstanceHandle& id) {
+    Init(materialInstance, id);
+}
+
 void FilamentMaterialModifier::Reset() {
     if (materialInstance_ != nullptr) {
-        utility::LogWarning("Previous material instance modifications are not finished!");
+        utility::LogWarning(
+                "Previous material instance modifications are not finished!");
     }
 
     materialInstance_ = nullptr;
     currentHandle_ = MaterialInstanceHandle::kBad;
 }
 
-void FilamentMaterialModifier::InitWithMaterialInstance(
-        const std::shared_ptr<filament::MaterialInstance>& aMaterialInstance,
+void FilamentMaterialModifier::Init(
+        const std::shared_ptr<filament::MaterialInstance>& materialInstance,
         const MaterialInstanceHandle& id) {
     if (materialInstance_ != nullptr) {
-        utility::LogWarning("Previous material instance modifications are not finished!");
+        utility::LogWarning(
+                "Previous material instance modifications are not finished!");
     }
 
-    materialInstance_ = aMaterialInstance;
+    materialInstance_ = materialInstance;
     currentHandle_ = id;
 }
 

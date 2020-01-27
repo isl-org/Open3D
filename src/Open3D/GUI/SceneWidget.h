@@ -34,9 +34,10 @@
 namespace open3d {
 
 namespace visualization {
-class Scene;
 class Camera;
 class CameraManipulator;
+class Scene;
+class View;
 }  // namespace visualization
 
 namespace gui {
@@ -53,8 +54,8 @@ public:
     void SetFrame(const Rect& f) override;
 
     void SetBackgroundColor(const Color& color);
-    void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
+    visualization::View* GetView() const;
     visualization::Scene* GetScene() const;
     visualization::CameraManipulator* GetCameraManipulator() const;
 
