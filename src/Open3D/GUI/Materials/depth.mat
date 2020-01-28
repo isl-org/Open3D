@@ -20,9 +20,6 @@ fragment {
         const float near = materialParams.cameraNear;
         const float far = materialParams.cameraFar;
 
-        //float z = depth * 2.0 - 1.0; // back to NDC
-        //float linearZ =  (2.0 * near) / (far + near - z * (far - near));
-
         float eye_z = near * far / ((gl_FragCoord.z * (far - near)) - far);
         float linearZ = (eye_z + near) / (near - far);
 
