@@ -47,7 +47,7 @@ namespace {
 ///
 /// \tparam METRIC    The distance metric. One of L1, L2, Linf.
 ///
-/// \tparam T    Floating point type for coordinates and distances.
+/// \tparam TDerived    Eigen Array with shape 3x1.
 /// \tparam VECSIZE    The vector size. Equals the number of points for which
 ///         to compute the distances.
 ///
@@ -59,46 +59,23 @@ namespace {
 /// \return Returns a vector of size \p VECSIZE with the distances to \p p.
 ///         Note that for the metric L2 the result contains the squared
 ///         distances to avoid the sqrt.
-template <int METRIC, class T, int VECSIZE>
-Eigen::Array<T, VECSIZE, 1> NeighborsDist(
-        const Eigen::Array<T, 3, 1>& p,
-        const Eigen::Array<T, VECSIZE, 1>& x,
-        const Eigen::Array<T, VECSIZE, 1>& y,
-        const Eigen::Array<T, VECSIZE, 1>& z) {
-    Eigen::Array<T, VECSIZE, 1> dist;
+template <int METRIC, class TDerived, int VECSIZE>
+Eigen::Array<typename TDerived::Scalar, VECSIZE, 1> NeighborsDist(
+        const Eigen::ArrayBase<TDerived>& p,
+        const Eigen::Array<typename TDerived::Scalar, VECSIZE, 3>& points) {
+    typedef Eigen::Array<typename TDerived::Scalar, VECSIZE, 1> VecN_t;
+    typedef Eigen::Array<typename TDerived::Scalar, VECSIZE, 3> MatNx3_t;
+    VecN_t dist;
+
     dist.setZero();
     if (METRIC == Linf) {
-        Eigen::Array<T, VECSIZE, 1> distx = (x - p.x()).abs();
-        Eigen::Array<T, VECSIZE, 1> disty = (y - p.y()).abs();
-        Eigen::Array<T, VECSIZE, 1> distz = (z - p.z()).abs();
-        dist = distx.max(disty.max(distz));
+        dist = (points.rowwise() - p.transpose()).abs().rowwise().maxCoeff();
     } else if (METRIC == L1) {
-        dist = (x - p.x()).abs() + (y - p.y()).abs() + (z - p.z()).abs();
+        dist = (points.rowwise() - p.transpose()).abs().rowwise().sum();
     } else {
-        dist = (x - p.x()) * (x - p.x()) + (y - p.y()) * (y - p.y()) +
-               (z - p.z()) * (z - p.z());
+        dist = (points.rowwise() - p.transpose()).square().rowwise().sum();
     }
     return dist;
-}
-
-/// Tests if the distances are below a threshold.
-///
-/// \tparam T    Floating point type for the distances.
-/// \tparam VECSIZE    The vector size. Equals the number of distances to test.
-///
-/// \param dist    Vector with distances.
-/// \param threshold    The scalar threshold.
-///
-/// \return Returns a boolean array storing true for the entries where the
-///         distance is <= threshold.
-///
-template <class T, int VECSIZE>
-Eigen::Array<bool, VECSIZE, 1> NeighborsTest(
-        const Eigen::Array<T, VECSIZE, 1>& dist, const T threshold) {
-    Eigen::Array<bool, VECSIZE, 1> result;
-    result.setZero();
-    result = dist <= threshold;
-    return result;
 }
 
 /// Computes an integer voxel index for a 3D position.
@@ -106,14 +83,15 @@ Eigen::Array<bool, VECSIZE, 1> NeighborsTest(
 /// \param pos               A 3D position.
 /// \param inv_voxel_size    The reciprocal of the voxel size
 ///
-template <class T>
-Eigen::Vector3i ComputeVoxelIndex(const Eigen::Array<T, 3, 1>& pos,
-                                  const T& inv_voxel_size) {
-    Eigen::Array<T, 3, 1> ref_coord = pos * inv_voxel_size;
+template <class TDerived>
+Eigen::Vector3i ComputeVoxelIndex(
+        const Eigen::ArrayBase<TDerived>& pos,
+        const typename TDerived::Scalar& inv_voxel_size) {
+    typedef typename TDerived::Scalar Scalar_t;
+    Eigen::Array<Scalar_t, 3, 1> ref_coord = pos * inv_voxel_size;
 
     Eigen::Vector3i voxel_index;
-    voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
-            int(floor(ref_coord(2)));
+    voxel_index = ref_coord.floor().template cast<int>();
     return voxel_index;
 }
 
@@ -172,8 +150,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
     tbb::parallel_for(tbb::blocked_range<size_t>(0, num_points),
                       [&](const tbb::blocked_range<size_t>& r) {
                           for (size_t i = r.begin(); i != r.end(); ++i) {
-                              Vec3_t pos(points[i * 3 + 0], points[i * 3 + 1],
-                                         points[i * 3 + 2]);
+                              Eigen::Map<const Vec3_t> pos(points + i * 3);
 
                               Eigen::Vector3i voxel_index =
                                       ComputeVoxelIndex(pos, inv_voxel_size);
@@ -201,8 +178,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                 tbb::blocked_range<size_t>(0, num_points),
                 [&](const tbb::blocked_range<size_t>& r) {
                     for (size_t i = r.begin(); i != r.end(); ++i) {
-                        Vec3_t pos(points[i * 3 + 0], points[i * 3 + 1],
-                                   points[i * 3 + 2]);
+                        Eigen::Map<const Vec3_t> pos(points + i * 3);
 
                         Eigen::Vector3i voxel_index =
                                 ComputeVoxelIndex(pos, inv_voxel_size);
@@ -235,8 +211,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     size_t neighbors_count = 0;
 
-                    Vec3_t pos(queries[i * 3 + 0], queries[i * 3 + 1],
-                               queries[i * 3 + 2]);
+                    Eigen::Map<const Vec3_t> pos(queries + i * 3);
 
                     std::set<size_t> bins_to_visit;
 
@@ -256,7 +231,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                                 bins_to_visit.insert(hash);
                             }
 
-                    Vec_t x, y, z;
+                    Eigen::Array<T, VECSIZE, 3> xyz;
                     int vec_i = 0;
 
                     for (size_t bin : bins_to_visit) {
@@ -274,15 +249,14 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                                     points[idx * 3 + 2] == pos.z())
                                     continue;
                             }
-                            x(vec_i) = points[idx * 3 + 0];
-                            y(vec_i) = points[idx * 3 + 1];
-                            z(vec_i) = points[idx * 3 + 2];
+                            xyz(vec_i, 0) = points[idx * 3 + 0];
+                            xyz(vec_i, 1) = points[idx * 3 + 1];
+                            xyz(vec_i, 2) = points[idx * 3 + 2];
                             ++vec_i;
                             if (VECSIZE == vec_i) {
-                                Eigen::Array<T, VECSIZE, 1> dist =
-                                        NeighborsDist<METRIC>(pos, x, y, z);
-                                auto test_result =
-                                        NeighborsTest(dist, threshold);
+                                Vec_t dist = NeighborsDist<METRIC>(pos, xyz);
+                                Eigen::Array<bool, VECSIZE, 1> test_result =
+                                        dist <= threshold;
                                 neighbors_count += test_result.count();
                                 vec_i = 0;
                             }
@@ -291,8 +265,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                     // process the tail
                     if (vec_i) {
                         Eigen::Array<T, VECSIZE, 1> dist =
-                                NeighborsDist<METRIC>(pos, x, y, z);
-                        auto test_result = NeighborsTest(dist, threshold);
+                                NeighborsDist<METRIC>(pos, xyz);
+                        Eigen::Array<bool, VECSIZE, 1> test_result =
+                                dist <= threshold;
                         for (int k = 0; k < vec_i; ++k) {
                             neighbors_count += int(test_result(k));
                         }
@@ -355,7 +330,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                                 bins_to_visit.insert(hash);
                             }
 
-                    Vec_t x, y, z;
+                    Eigen::Array<T, VECSIZE, 3> xyz;
                     Veci_t idx_vec;
                     int vec_i = 0;
 
@@ -374,16 +349,16 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                                     points[idx * 3 + 2] == pos.z())
                                     continue;
                             }
-                            x(vec_i) = points[idx * 3 + 0];
-                            y(vec_i) = points[idx * 3 + 1];
-                            z(vec_i) = points[idx * 3 + 2];
+                            xyz(vec_i, 0) = points[idx * 3 + 0];
+                            xyz(vec_i, 1) = points[idx * 3 + 1];
+                            xyz(vec_i, 2) = points[idx * 3 + 2];
                             idx_vec(vec_i) = idx;
                             ++vec_i;
                             if (VECSIZE == vec_i) {
                                 Eigen::Array<T, VECSIZE, 1> dist =
-                                        NeighborsDist<METRIC>(pos, x, y, z);
-                                auto test_result =
-                                        NeighborsTest(dist, threshold);
+                                        NeighborsDist<METRIC>(pos, xyz);
+                                Eigen::Array<bool, VECSIZE, 1> test_result =
+                                        dist <= threshold;
                                 for (int k = 0; k < vec_i; ++k) {
                                     if (test_result(k)) {
                                         indices_ptr[indices_offset +
@@ -404,8 +379,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                     // process the tail
                     if (vec_i) {
                         Eigen::Array<T, VECSIZE, 1> dist =
-                                NeighborsDist<METRIC>(pos, x, y, z);
-                        auto test_result = NeighborsTest(dist, threshold);
+                                NeighborsDist<METRIC>(pos, xyz);
+                        Eigen::Array<bool, VECSIZE, 1> test_result =
+                                dist <= threshold;
                         for (int k = 0; k < vec_i; ++k) {
                             if (test_result(k)) {
                                 indices_ptr[indices_offset + neighbors_count] =
