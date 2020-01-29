@@ -60,20 +60,6 @@ matrix:
         - python -c "from open3d import *; import open3d; print(open3d)"
         - ../util/scripts/make-documentation.sh
 
-    # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=OFF
-    - os: linux
-      dist: bionic
-      sudo: true
-      language: python
-      python: "2.7"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      before_install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
