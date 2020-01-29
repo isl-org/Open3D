@@ -103,12 +103,12 @@ FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     const auto depthPath = resourceRoot + "/depth.filamat";
     const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
     auto depthMat = materials_[hDepth];
-    materialInstances_[kDepthMaterial] = std::move(MakeShared(depthMat->createInstance(), engine_));
+    materialInstances_[kDepthMaterial] = MakeShared(depthMat->createInstance(), engine_);
 
     const auto normalsPath = resourceRoot + "/normals.filamat";
     const auto hNormals = CreateMaterial(ResourceLoadRequest(normalsPath.data()));
     auto normalsMat = materials_[hNormals];
-    materialInstances_[kNormalsMaterial] = std::move(MakeShared(normalsMat->createInstance(), engine_));
+    materialInstances_[kNormalsMaterial] = MakeShared(normalsMat->createInstance(), engine_);
 }
 
 FilamentResourceManager::~FilamentResourceManager() { DestroyAll(); }
