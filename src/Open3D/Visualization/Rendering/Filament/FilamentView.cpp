@@ -82,7 +82,7 @@ void FilamentView::SetMode(Mode mode) {
             view_->setClearColor(kDepthClearColor);
             break;
         case Mode::Normals:
-            view_->setVisibleLayers(kAllLayersMask, kNormalGhostsLayer);
+            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
             view_->setClearColor(kNormalsClearColor);
             break;
     }
@@ -145,26 +145,26 @@ void FilamentView::PreRender() {
                     .SetParameter("cameraFar", f)
                     .Finish();
         }
+    } else if (mode_ == Mode::Normals) {
+        materialHandle = FilamentResourceManager::kNormalsMaterial;
     }
 
-    if (mode_ != Mode::Normals) {
-        for (const auto& pair : scene_.entities_) {
-            const auto& entity = pair.second;
-            if (entity.info.type == EntityType::Geometry) {
-                std::weak_ptr<filament::MaterialInstance> matInst;
-                if (materialHandle) {
-                    matInst = resourceManager_.GetMaterialInstance(
-                            materialHandle);
-                } else {
-                    matInst = resourceManager_.GetMaterialInstance(
-                            entity.material);
-                }
-
-                filament::RenderableManager::Instance inst =
-                        renderableManager.getInstance(entity.info.self);
-                renderableManager.setMaterialInstanceAt(inst, 0,
-                                                        matInst.lock().get());
+    for (const auto& pair : scene_.entities_) {
+        const auto& entity = pair.second;
+        if (entity.info.type == EntityType::Geometry) {
+            std::weak_ptr<filament::MaterialInstance> matInst;
+            if (materialHandle) {
+                matInst = resourceManager_.GetMaterialInstance(
+                        materialHandle);
+            } else {
+                matInst = resourceManager_.GetMaterialInstance(
+                        entity.material);
             }
+
+            filament::RenderableManager::Instance inst =
+                    renderableManager.getInstance(entity.info.self);
+            renderableManager.setMaterialInstanceAt(inst, 0,
+                                                    matInst.lock().get());
         }
     }
 }

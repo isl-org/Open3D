@@ -3,7 +3,7 @@ material {
     shadingModel : unlit,
 
     requires: [
-        color
+        custom0
     ],
 
     variables: [
@@ -15,8 +15,11 @@ vertex {
     void materialVertex(inout MaterialVertexInputs material) {
         gl_PointSize = 3.0;
 
-        float4 normalModel = material.color;
-        material.normalWorld = getViewFromWorldMatrix()*getWorldFromModelMatrix()*normalModel;
+        float4 tangentSpace = getCustom0();
+        float3 normal;
+        toTangentFrame(tangentSpace, normal);
+
+        material.normalWorld = getViewFromWorldMatrix()*getWorldFromModelMatrix()*float4(normal, 0.0);
     }
 }
 

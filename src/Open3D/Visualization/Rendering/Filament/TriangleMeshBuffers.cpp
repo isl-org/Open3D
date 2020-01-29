@@ -25,15 +25,15 @@
 // ----------------------------------------------------------------------------
 
 #include "FilamentGeometryBuffersBuilder.h"
-
-#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
+#include <filament/filament/MaterialEnums.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
 #include <map>
@@ -110,6 +110,9 @@ VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine, const std::uin
                        GetVertexPositionOffset<TexturedVertex>(), stride)
             .normalized(VertexAttribute::TANGENTS)
             .attribute(VertexAttribute::TANGENTS, 0,
+                       VertexBuffer::AttributeType::FLOAT4,
+                       GetVertexTangentOffset<TexturedVertex>(), stride)
+            .attribute(VertexAttribute::CUSTOM0, 0,
                        VertexBuffer::AttributeType::FLOAT4,
                        GetVertexTangentOffset<TexturedVertex>(), stride);
 
@@ -361,103 +364,6 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 
     auto ibHandle = resourceManager.CreateIndexBuffer(
             indexData.bytesCount/ indexData.stride, indexData.stride);
-    auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
-
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(indexData.bytes,
-                                                    indexData.bytesCount);
-    indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    ibuf->setBuffer(engine, std::move(indicesDescriptor));
-
-    return std::make_tuple(vbHandle, ibHandle);
-}
-
-GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::CreateNormalsGhost() {
-    auto& engine = EngineInstance::GetInstance();
-    auto& resourceManager = EngineInstance::GetResourceManager();
-
-    const size_t nVertices = geometry_.vertices_.size();
-
-    // Converting vertex normals to float base
-    std::vector<Eigen::Vector3f> normals;
-    normals.resize(nVertices);
-    for (size_t i = 0; i < nVertices; ++i) {
-        normals[i] = geometry_.vertex_normals_[i].cast<float>();
-    }
-
-    const size_t normalsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4Normals = static_cast<math::float4*>(malloc(normalsBytesCount));
-    for (size_t i = 0; i < nVertices; ++i) {
-        auto v = normals[i];
-        float4Normals[i] = {v(0), v(1), v(2), 0.f};
-    }
-
-    struct Vertex {
-        math::float3 position = {0.f, 0.f, 0.f};
-        math::float4 normal = {0.f, 0.f, 0.f, 0.f};
-    };
-
-    vbdata vertexData;
-    vertexData.verticesCount = geometry_.vertices_.size();
-    vertexData.bytesCount = vertexData.verticesCount * sizeof(Vertex);
-    vertexData.bytesToCopy = vertexData.bytesCount;
-    vertexData.bytes = malloc(vertexData.bytesCount);
-
-    auto plainVertices = static_cast<Vertex*>(vertexData.bytes);
-    for (size_t i = 0; i < vertexData.verticesCount; ++i) {
-        Vertex& element = plainVertices[i];
-
-        SetVertexPosition(element, geometry_.vertices_[i]);
-        element.normal = float4Normals[i];
-    }
-
-    ibdata indexData;
-    indexData.stride = sizeof(GeometryBuffersBuilder::IndexType);
-    indexData.bytesCount = geometry_.triangles_.size() * 3 * indexData.stride;
-    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(
-            malloc(indexData.bytesCount));
-    for (size_t i = 0; i < geometry_.triangles_.size(); ++i) {
-        const auto& triangle = geometry_.triangles_[i];
-        indexData.bytes[3 * i] = triangle(0);
-        indexData.bytes[3 * i + 1] = triangle(1);
-        indexData.bytes[3 * i + 2] = triangle(2);
-    }
-
-    free(float4Normals);
-
-    size_t stride = sizeof(Vertex);
-
-    VertexBuffer* vbuf =
-            VertexBuffer::Builder()
-                    .bufferCount(1)
-                    .vertexCount(nVertices)
-                    .attribute(VertexAttribute::POSITION, 0,
-                               VertexBuffer::AttributeType::FLOAT3,
-                               0, stride)
-                    .attribute(VertexAttribute::COLOR, 0,
-                               VertexBuffer::AttributeType::FLOAT4,
-                               offsetof(Vertex, normal), stride)
-                    .build(engine);
-
-    VertexBufferHandle vbHandle;
-    if (vbuf) {
-        vbHandle = resourceManager.AddVertexBuffer(vbuf);
-    } else {
-        free(vertexData.bytes);
-        free(indexData.bytes);
-
-        return {};
-    }
-
-    VertexBuffer::BufferDescriptor vertexbufferDescriptor(
-            vertexData.bytes, vertexData.bytesToCopy);
-    vertexbufferDescriptor.setCallback(
-            GeometryBuffersBuilder::DeallocateBuffer);
-    vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
-
-    auto ibHandle = resourceManager.CreateIndexBuffer(
-            indexData.bytesCount / indexData.stride, indexData.stride);
     auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
 
     // Moving copied indices to IndexBuffer

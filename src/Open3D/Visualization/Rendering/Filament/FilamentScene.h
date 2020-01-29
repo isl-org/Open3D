@@ -110,8 +110,6 @@ private:
         utils::Entity parent;
         std::string name;
 
-        Details normalsGhost;
-
         bool IsValid() const {return info.IsValid();}
         void ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager);
     };
@@ -122,7 +120,6 @@ private:
     };
 
     utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id);
-    void CreateNormalsGhostPart(SceneEntity& entity, class GeometryBuffersBuilder& builder);
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;

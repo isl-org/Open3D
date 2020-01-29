@@ -157,8 +157,6 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
     if (result == RenderableManager::Builder::Success) {
         scene_->addEntity(entityEntry.info.self);
 
-        CreateNormalsGhostPart(entityEntry, *geometryBuffersBuilder);
-
         handle = GeometryHandle::Next();
         entities_[handle] = entityEntry;
     }
@@ -353,46 +351,10 @@ utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransf
 
             auto center = GetEntityBoundingSphere(id).first;
             transformMgr.create(found->second.info.self, iTransform, mat4f::translation(float3 {-center.x(),-center.y(),-center.z()}));
-
-            if (found->second.normalsGhost.self) {
-                transformMgr.create(found->second.normalsGhost.self);
-
-                transformMgr.create(found->second.normalsGhost.self,
-                                    iTransform, mat4f::translation(float3 {-center.x(),-center.y(),-center.z()}));
-            }
         }
     }
 
     return iTransform;
-}
-
-void FilamentScene::CreateNormalsGhostPart(SceneEntity& entity, GeometryBuffersBuilder& builder) {
-    auto normalsBuffers = builder.CreateNormalsGhost();
-    entity.normalsGhost.vb = std::get<0>(normalsBuffers);
-    entity.normalsGhost.ib = std::get<1>(normalsBuffers);
-
-    auto vbuf = resourceManager_.GetVertexBuffer(entity.normalsGhost.vb).lock();
-    auto ibuf = resourceManager_.GetIndexBuffer(entity.normalsGhost.ib).lock();
-
-    entity.normalsGhost.self = utils::EntityManager::get().create();
-    filament::RenderableManager::Builder ghostBuilder(1);
-    ghostBuilder
-            .geometry(0, builder.GetPrimitiveType(), vbuf.get(), ibuf.get())
-            .culling(false)
-            .receiveShadows(false)
-            .castShadows(false)
-            .layerMask(FilamentView::kAllLayersMask,
-                       FilamentView::kNormalGhostsLayer);
-
-    auto wMatInstance = resourceManager_.GetMaterialInstance(
-            FilamentResourceManager::kNormalsMaterial);
-    if (!wMatInstance.expired()) {
-        ghostBuilder.material(0, wMatInstance.lock().get());
-    }
-
-    // TODO: Log if error
-    ghostBuilder.build(engine_, entity.normalsGhost.self);
-    scene_->addEntity(entity.normalsGhost.self);
 }
 
 void FilamentScene::RemoveEntity(REHandle_abstract id) {
@@ -421,7 +383,6 @@ void FilamentScene::SceneEntity::Details::ReleaseResources(filament::Engine& eng
 
 void FilamentScene::SceneEntity::ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager) {
     info.ReleaseResources(engine, manager);
-    normalsGhost.ReleaseResources(engine, manager);
 
     engine.destroy(parent);
     parent.clear();

@@ -55,8 +55,6 @@ public:
     virtual filament::RenderableManager::PrimitiveType GetPrimitiveType() const = 0;
 
     virtual Buffers ConstructBuffers() = 0;
-    // Special kind of buffers for rendering mesh normals as colors
-    virtual Buffers CreateNormalsGhost() = 0;
     virtual filament::Box ComputeAABB() = 0;
 
 protected:
@@ -70,7 +68,6 @@ public:
     filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
 
     Buffers ConstructBuffers() override;
-    Buffers CreateNormalsGhost() override;
     filament::Box ComputeAABB() override;
 
 private:
@@ -84,7 +81,6 @@ public:
     filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
 
     Buffers ConstructBuffers() override;
-    Buffers CreateNormalsGhost() override;
     filament::Box ComputeAABB() override;
 
 private:

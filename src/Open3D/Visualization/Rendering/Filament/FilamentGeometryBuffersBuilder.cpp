@@ -72,9 +72,11 @@ namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
+    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
 
     static size_t GetPositionOffset() { return offsetof(ColoredVertex, position); }
     static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
+    static size_t GetTangentOffset() { return offsetof(ColoredVertex, tangent); }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto floatPos = pos.cast<float>();
@@ -118,6 +120,10 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetColorOffset(),
                                             sizeof(ColoredVertex))
+                                 .attribute(VertexAttribute::CUSTOM0, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetTangentOffset(),
+                                            sizeof(ColoredVertex))
                                  .build(engine);
 
     VertexBufferHandle vbHandle;
@@ -136,11 +142,13 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     // Converting normals to Filament type - quaternions
     size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto float4VTangents = static_cast<math::quatf*>(malloc(tangentsBytesCount));
-    auto orientation = filament::geometry::SurfaceOrientation::Builder()
-            .vertexCount(nVertices)
-            .normals(reinterpret_cast<math::float3*>(normals.data()))
-            .build();
+    auto float4VTangents =
+            static_cast<math::quatf*>(malloc(tangentsBytesCount));
+    auto orientation =
+            filament::geometry::SurfaceOrientation::Builder()
+                    .vertexCount(nVertices)
+                    .normals(reinterpret_cast<math::float3*>(normals.data()))
+                    .build();
     orientation.getQuats(float4VTangents, nVertices);
 
     size_t verticesBytesCount = nVertices * sizeof(ColoredVertex);
@@ -149,21 +157,25 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
         ColoredVertex& element = vertices[i];
         element.SetVertexPosition(geometry_.points_[i]);
         element.SetVertexColor(geometry_.colors_[i]);
+        element.tangent = float4VTangents[i];
     }
 
     free(float4VTangents);
 
-    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vertices, verticesBytesCount);
-    vertexbufferDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vertices,
+                                                          verticesBytesCount);
+    vertexbufferDescriptor.setCallback(
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
 
-    size_t indicesBytesCount = nVertices*sizeof(IndexType);
-    auto *uintIndices = static_cast<IndexType*>(malloc(indicesBytesCount));
+    size_t indicesBytesCount = nVertices * sizeof(IndexType);
+    auto* uintIndices = static_cast<IndexType*>(malloc(indicesBytesCount));
     for (std::uint32_t i = 0; i < nVertices; ++i) {
         uintIndices[i] = i;
     }
 
-    auto ibHandle = resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
+    auto ibHandle =
+            resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
     if (!ibHandle) {
         free(uintIndices);
         return {};
@@ -173,90 +185,8 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     // Moving copied indices to IndexBuffer
     // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(uintIndices, indicesBytesCount);
-    indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    ibuf->setBuffer(engine, std::move(indicesDescriptor));
-
-    return std::make_tuple(vbHandle, ibHandle);
-}
-
-GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::CreateNormalsGhost() {
-    auto& engine = EngineInstance::GetInstance();
-    auto& resourceManager = EngineInstance::GetResourceManager();
-
-    const size_t nVertices = geometry_.points_.size();
-
-    // Converting vertex normals to float base
-    std::vector<Eigen::Vector3f> normals;
-    normals.resize(nVertices);
-    for (size_t i = 0; i < nVertices; ++i) {
-        normals[i] = geometry_.normals_[i].cast<float>();
-    }
-
-    const size_t normalsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4Normals = static_cast<math::float4*>(malloc(normalsBytesCount));
-    for (size_t i = 0; i < nVertices; ++i) {
-        auto v = normals[i];
-        float4Normals[i] = {v(0), v(1), v(2), 0.f};
-    }
-
-    const auto vBytesCount = nVertices * sizeof(ColoredVertex);
-    auto* vBytes = malloc(vBytesCount);
-
-    auto plainVertices = static_cast<ColoredVertex*>(vBytes);
-    for (size_t i = 0; i < nVertices; ++i) {
-        ColoredVertex& element = plainVertices[i];
-
-        element.SetVertexPosition(geometry_.points_[i]);
-        element.color = float4Normals[i];
-    }
-
-    free(float4Normals);
-
-    size_t stride = sizeof(ColoredVertex);
-
-    VertexBuffer* vbuf =
-            VertexBuffer::Builder()
-                    .bufferCount(1)
-                    .vertexCount(nVertices)
-                    .attribute(VertexAttribute::POSITION, 0,
-                               VertexBuffer::AttributeType::FLOAT3,
-                               0, stride)
-                    .attribute(VertexAttribute::COLOR, 0,
-                               VertexBuffer::AttributeType::FLOAT4,
-                               offsetof(ColoredVertex, color), stride)
-                    .build(engine);
-
-    VertexBufferHandle vbHandle;
-    if (vbuf) {
-        vbHandle = resourceManager.AddVertexBuffer(vbuf);
-    } else {
-        free(vBytes);
-
-        return {};
-    }
-
-    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vBytes, vBytesCount);
-    vertexbufferDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
-
-    const auto iBytesCount = nVertices*sizeof(IndexType);
-    auto *iBytes = static_cast<IndexType*>(malloc(iBytesCount));
-    for (std::uint32_t i = 0; i < nVertices; ++i) {
-        iBytes[i] = i;
-    }
-
-    auto ibHandle = resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
-    if (!ibHandle) {
-        free(iBytes);
-        return {};
-    }
-
-    auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
-
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(iBytes, iBytesCount);
+    IndexBuffer::BufferDescriptor indicesDescriptor(uintIndices,
+                                                    indicesBytesCount);
     indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     ibuf->setBuffer(engine, std::move(indicesDescriptor));
 
