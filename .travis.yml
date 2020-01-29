@@ -15,7 +15,7 @@ matrix:
   include:
     # Style check only
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: true
       language: python
       python: "3.6"
@@ -23,10 +23,9 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-5.0
           packages:
             - cmake
-            - clang-format-5.0
+            - clang-7
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
@@ -37,7 +36,7 @@ matrix:
 
     # Build docs only
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: true
       language: python
       python: "3.6"
@@ -62,7 +61,7 @@ matrix:
 
     # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: true
       language: python
       python: "2.7"
@@ -77,7 +76,7 @@ matrix:
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       language: python
       python: "3.5"
@@ -93,7 +92,7 @@ matrix:
 
     # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       language: python
       python: "3.6"
@@ -109,10 +108,10 @@ matrix:
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
     - os: linux
-      dist: xenial
+      dist: bionic
       sudo: required
       language: python
-      python: "3.7" # Xenial has Python 3.7 on travis
+      python: "3.7" # bionic has Python 3.7 on travis
       addons:
         apt:
           sources:
