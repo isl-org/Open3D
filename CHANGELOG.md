@@ -1,6 +1,6 @@
 ## Master
 
- * Contributors guidelines updated
+* Contributors guidelines updated
 
 ## 0.9.0
 
