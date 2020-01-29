@@ -26,6 +26,7 @@ matrix:
           packages:
             - cmake
             - clang-7
+            - clang-format-5.0
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
