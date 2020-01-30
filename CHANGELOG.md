@@ -1,5 +1,6 @@
 ## Master
 
+* Updated travis.yml to support Ubuntu 18.04, gcc-7, and clang-7.0
 * Contributors guidelines updated
 
 ## 0.9.0
