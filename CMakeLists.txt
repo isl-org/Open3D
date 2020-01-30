@@ -89,17 +89,34 @@ option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
 option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 
+# Cache variables for specifying the GPU architectures
+set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
+one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
+set_property( CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
+set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
 
-# Build CUDA module by defalt if CUDA is available
+# Build CUDA module by default if CUDA is available
 # Compatible with CMake 3.8+
 if (BUILD_CUDA_MODULE)
     include(CheckLanguage)
     check_language(CUDA)
     if(CMAKE_CUDA_COMPILER)
+        find_package( CUDA REQUIRED ) # required for cuda_select_nvcc_arch_flags
         message(STATUS "Building CUDA enabled")
         add_definitions(-DBUILD_CUDA_MODULE)
         enable_language(CUDA)
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+        # get gencode flags
+        if( "${CUDA_ARCH}" STREQUAL "User" )
+            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
+        elseif( "${CUDA_ARCH}" STREQUAL "BasicPTX" )
+            # include oldest and most recent PTX and rely on JIT compilation
+            set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
+        else()
+            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
+        endif()
+        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_GENCODES}")
     else()
         set(BUILD_CUDA_MODULE OFF)
         message(STATUS "No CUDA support")
