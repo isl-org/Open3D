@@ -14,12 +14,6 @@ environment:
   - PYTHON: 36
     CONFIG: Release
     SHARED: ON
-  - PYTHON: 36
-    CONFIG: Release
-    SHARED: OFF
-  - PYTHON: 36
-    CONFIG: Release
-    SHARED: ON
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") {
