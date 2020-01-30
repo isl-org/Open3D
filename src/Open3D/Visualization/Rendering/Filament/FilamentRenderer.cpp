@@ -117,7 +117,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
                 resourceManager_.GetMaterialInstance(instanceId);
         materialsModifier_->Init(wMaterialInstance.lock(), instanceId);
     } else {
-        utility::LogError(
+        utility::LogWarning(
                 "Failed to create material instance for material handle {}.",
                 id);
     }
@@ -133,7 +133,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     if (!wMaterialInstance.expired()) {
         materialsModifier_->Init(wMaterialInstance.lock(), id);
     } else {
-        utility::LogError(
+        utility::LogWarning(
                 "Failed to modify material instance: unknown instance handle {}.",
                 id);
     }

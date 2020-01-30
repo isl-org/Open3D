@@ -40,7 +40,8 @@ namespace open3d {
 namespace visualization {
 
 namespace {
-const filament::LinearColorA kDepthClearColor = {0, 0, 0, 0};
+const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
+const filament::LinearColorA kNormalsClearColor = {0.5f,0.5f,0.5f,1.f};
 }
 
 FilamentView::FilamentView(filament::Engine& aEngine,
@@ -52,6 +53,7 @@ FilamentView::FilamentView(filament::Engine& aEngine,
     view_->setSampleCount(8);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
+    view_->setVisibleLayers(kAllLayersMask, kMainLayer);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
     view_->setCamera(camera_->GetNativeCamera());
@@ -71,13 +73,17 @@ FilamentView::~FilamentView() {
 void FilamentView::SetMode(Mode mode) {
     switch (mode) {
         case Mode::Color:
+            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
             view_->setClearColor(
                     {clearColor_.x(), clearColor_.y(), clearColor_.z(), 1.f});
             break;
         case Mode::Depth:
+            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
             view_->setClearColor(kDepthClearColor);
             break;
         case Mode::Normals:
+            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+            view_->setClearColor(kNormalsClearColor);
             break;
     }
 
@@ -145,25 +151,27 @@ void FilamentView::PreRender() {
 
     for (const auto& pair : scene_.entities_) {
         const auto& entity = pair.second;
-        if (entity.type == EntityType::Geometry) {
+        if (entity.info.type == EntityType::Geometry) {
             std::weak_ptr<filament::MaterialInstance> matInst;
             if (materialHandle) {
-                matInst = resourceManager_.GetMaterialInstance(materialHandle);
+                matInst = resourceManager_.GetMaterialInstance(
+                        materialHandle);
             } else {
-                matInst = resourceManager_.GetMaterialInstance(entity.material);
+                matInst = resourceManager_.GetMaterialInstance(
+                        entity.material);
             }
 
             filament::RenderableManager::Instance inst =
-                    renderableManager.getInstance(entity.self);
-            renderableManager.setMaterialInstanceAt(
-                    inst, 0, matInst.lock().get());
+                    renderableManager.getInstance(entity.info.self);
+            renderableManager.setMaterialInstanceAt(inst, 0,
+                                                    matInst.lock().get());
         }
     }
 }
 
 void FilamentView::PostRender() {
     // For now, we don't need to restore material.
-    // One could easily find assigned material in AllocatedEntity::material
+    // One could easily find assigned material in SceneEntity::material
 
 //    auto& renderableManager = engine_.getRenderableManager();
 //

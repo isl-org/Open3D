@@ -25,15 +25,15 @@
 // ----------------------------------------------------------------------------
 
 #include "FilamentGeometryBuffersBuilder.h"
-
-#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
+#include <filament/filament/MaterialEnums.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
 #include <map>
@@ -102,6 +102,8 @@ template <typename VertexType>
 size_t GetVertexStride() { return sizeof(VertexType); }
 
 VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine, const std::uint32_t verticesCount, const std::uint32_t stride, bool hasUvs, bool hasColors) {
+    // For CUSTOM0 explanation, see FilamentGeometryBuffersBuilder.cpp
+    // Note, that TANGENTS and CUSTOM0 is pointing on same data in buffer
     auto builder = VertexBuffer::Builder()
             .bufferCount(1)
             .vertexCount(verticesCount)
@@ -110,6 +112,9 @@ VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine, const std::uin
                        GetVertexPositionOffset<TexturedVertex>(), stride)
             .normalized(VertexAttribute::TANGENTS)
             .attribute(VertexAttribute::TANGENTS, 0,
+                       VertexBuffer::AttributeType::FLOAT4,
+                       GetVertexTangentOffset<TexturedVertex>(), stride)
+            .attribute(VertexAttribute::CUSTOM0, 0,
                        VertexBuffer::AttributeType::FLOAT4,
                        GetVertexTangentOffset<TexturedVertex>(), stride);
 
@@ -295,7 +300,7 @@ RenderableManager::PrimitiveType TriangleMeshBuffersBuilder::GetPrimitiveType() 
     return RenderableManager::PrimitiveType::TRIANGLES;
 }
 
-std::tuple<VertexBufferHandle, IndexBufferHandle> TriangleMeshBuffersBuilder::ConstructBuffers() {
+GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resourceManager = EngineInstance::GetResourceManager();
 

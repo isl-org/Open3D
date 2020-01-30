@@ -94,15 +94,24 @@ public:
 private:
     friend class FilamentView;
 
-    struct AllocatedEntity {
-        utils::Entity self;
-        EntityType type;
-        VertexBufferHandle vb;
-        IndexBufferHandle ib;
+    struct SceneEntity {
+        struct Details {
+            utils::Entity self;
+            EntityType type;
+            VertexBufferHandle vb;
+            IndexBufferHandle ib;
+
+            bool IsValid() const {return !self.isNull();}
+            void ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager);
+        } info;
+
         MaterialInstanceHandle material;
         // Used for relocating transform to center of mass
         utils::Entity parent;
         std::string name;
+
+        bool IsValid() const {return info.IsValid();}
+        void ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager);
     };
 
     struct ViewContainer {
@@ -119,7 +128,7 @@ private:
     FilamentResourceManager& resourceManager_;
 
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
-    std::unordered_map<REHandle_abstract, AllocatedEntity> entities_;
+    std::unordered_map<REHandle_abstract, SceneEntity> entities_;
 };
 
 }  // namespace visualization
