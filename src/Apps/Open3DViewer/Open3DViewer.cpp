@@ -87,7 +87,7 @@ int Run(int argc, const char *argv[]) {
 
     return 0;
 }
- 
+
 #if __APPLE__
 // Open3DViewer_mac.mm
 #else
