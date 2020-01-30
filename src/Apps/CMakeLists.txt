@@ -29,6 +29,7 @@ macro(APP APP_NAME)
                               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" # disable
                              )
     else()
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}")
         add_executable(${APP_NAME} ${SOURCE_FILES} ${HEADER_FILES})
     endif()
     add_dependencies(${APP_NAME} GuiResources)
@@ -51,19 +52,24 @@ macro(APP APP_NAME)
         set(RESOURCE_DIR_NAME "resources")
     endif()
 
-    add_custom_command(TARGET "${APP_NAME}"
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${APP_NAME}>/${RESOURCE_DIR_NAME}"
-        COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "$<TARGET_BUNDLE_DIR:${APP_NAME}>/${RESOURCE_DIR_NAME}"
-    )
-
-    # If we are on macOS, we need to copy any external libraries (e.g. SDL) into
-    # the bundle and fixup the search paths.
+    # $<TARGET_BUNDLE_DIR> does not exist at config time, so we need to
+    # duplicate the post build step on macOS and non-macOS
     if (APPLE)
         add_custom_command(TARGET "${APP_NAME}"
             POST_BUILD
-            COMMAND echo "[DEBUG] TARGET_BUNDLE_DIR: $<TARGET_BUNDLE_DIR:${APP_NAME}>"
+            # copy the resource files into the bundle
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${APP_NAME}>/${RESOURCE_DIR_NAME}"
+            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "$<TARGET_BUNDLE_DIR:${APP_NAME}>/${RESOURCE_DIR_NAME}"
+            # copy external libraries (e.g. SDL into the bundle and fixup
+            # the search paths
             COMMAND ${APPS_DIR}/fixup_macosx_bundle.sh "$<TARGET_BUNDLE_DIR:${APP_NAME}>"
+        )
+    else ()
+        set(APP_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+        add_custom_command(TARGET "${APP_NAME}"
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
+            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
     endif()
 endmacro(APP)
