@@ -100,8 +100,8 @@ Geometry primitives
    :lines: 16-30
    :linenos:
 
-This script generates a cubic, a sphere, and a cylinder using ``create_mesh_cubic``, ``create_mesh_sphere`` and
-``create_mesh_cylinder``.  The cubic is painted in red, sphere is painted in blue, and the cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh` and :ref:`surface_normal_estimation`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
+This script generates a cube, a sphere, and a cylinder using ``create_mesh_cubic``, ``create_mesh_sphere`` and
+``create_mesh_cylinder``.  The cube is painted in red, sphere is painted in blue, and the cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh` and :ref:`surface_normal_estimation`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
 
 .. _draw_multiple_geometries:
 
@@ -130,7 +130,7 @@ Draw line set
    :lines: 40-71
    :linenos:
 
-To draw lines, it is necessary to define ``LineSet`` and create a set of points and a set of edges. An edge is a pair of point indices. The above example creates custom ``points`` and edges (denoted as ``lines``) to make a cubic. Color is optional - red color ``[1,0,0]`` is assigned to each edge in this example. This script visualizes the following cubic.
+To draw lines, it is necessary to define ``LineSet`` and create a set of points and a set of edges. An edge is a pair of point indices. The above example creates custom ``points`` and edges (denoted as ``lines``) to make a cube. Color is optional - red color ``[1,0,0]`` is assigned to each edge in this example. This script visualizes the following cube.
 
 .. image:: ../../_static/Basic/visualization/lineset.png
     :width: 400px
