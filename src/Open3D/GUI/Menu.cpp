@@ -65,7 +65,7 @@ void Menu::AddItem(const char *name,
                    const char *shortcut,
                    ItemId itemId /*= NO_ITEM*/) {
     impl_->id2idx[itemId] = impl_->items.size();
-    impl_->items.push_back({ itemId, name, (shortcut ? shortcut : ""), nullptr });
+    impl_->items.push_back({itemId, name, (shortcut ? shortcut : ""), nullptr});
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
@@ -128,7 +128,7 @@ int Menu::CalcHeight(const Theme &theme) const {
     return std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y));
 }
 
-Menu::ItemId Menu::DrawMenuBar(const DrawContext& context, bool isEnabled) {
+Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool isEnabled) {
     ItemId activatedId = NO_ITEM;
 
     ImVec2 size;
@@ -141,8 +141,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext& context, bool isEnabled) {
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items) {
         if (item.submenu) {
-            auto id = item.submenu->Draw(context, item.name.c_str(),
-                                         isEnabled);
+            auto id = item.submenu->Draw(context, item.name.c_str(), isEnabled);
             if (id >= 0) {
                 activatedId = id;
             }
@@ -154,7 +153,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext& context, bool isEnabled) {
     // it just ends and looks a bit odd. This should probably be a pretty
     // subtle difference from the menubar background.
     auto y = size.y - 1;
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
     drawList->AddLine(ImVec2(0, y), ImVec2(size.x, y),
                       context.theme.menubarBorderColor.ToABGR32(), 1.0f);
 
@@ -165,7 +164,8 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext& context, bool isEnabled) {
     return activatedId;
 }
 
-Menu::ItemId Menu::Draw(const DrawContext& context, const char *name,
+Menu::ItemId Menu::Draw(const DrawContext &context,
+                        const char *name,
                         bool isEnabled) {
     ItemId activatedId = NO_ITEM;
 
@@ -202,14 +202,14 @@ Menu::ItemId Menu::Draw(const DrawContext& context, const char *name,
             ImVec2(context.theme.defaultMargin, context.theme.defaultMargin));
 
     if (ImGui::BeginMenu(name, isEnabled)) {
-        for (size_t i = 0;  i < impl_->items.size();  ++i) {
+        for (size_t i = 0; i < impl_->items.size(); ++i) {
             auto &item = impl_->items[i];
             if (item.isSeparator) {
                 ImGui::Separator();
             } else if (item.submenu) {
                 ImGui::SetCursorPosX(padding);
-                auto possibility = item.submenu->Draw(context, item.name.c_str(),
-                                                      isEnabled);
+                auto possibility = item.submenu->Draw(
+                        context, item.name.c_str(), isEnabled);
                 if (possibility != NO_ITEM) {
                     activatedId = possibility;
                 }

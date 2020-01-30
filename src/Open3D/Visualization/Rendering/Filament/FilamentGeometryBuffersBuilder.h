@@ -37,10 +37,10 @@
 namespace open3d {
 
 namespace geometry {
-    class Geometry3D;
-    class PointCloud;
-    class TriangleMesh;
-}
+class Geometry3D;
+class PointCloud;
+class TriangleMesh;
+}  // namespace geometry
 
 namespace visualization {
 
@@ -48,12 +48,15 @@ class GeometryBuffersBuilder {
 public:
     using IndexType = std::uint32_t;
 
-    static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(const geometry::Geometry3D& geometry);
+    static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
+            const geometry::Geometry3D& geometry);
     virtual ~GeometryBuffersBuilder() {}
 
-    virtual filament::RenderableManager::PrimitiveType GetPrimitiveType() const = 0;
+    virtual filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const = 0;
 
-    virtual std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() = 0;
+    virtual std::tuple<VertexBufferHandle, IndexBufferHandle>
+    ConstructBuffers() = 0;
     virtual filament::Box ComputeAABB() = 0;
 
 protected:
@@ -64,9 +67,11 @@ class TriangleMeshBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit TriangleMeshBuffersBuilder(const geometry::TriangleMesh& geometry);
 
-    filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
 
-    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() override;
+    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers()
+            override;
     filament::Box ComputeAABB() override;
 
 private:
@@ -77,14 +82,16 @@ class PointCloudBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit PointCloudBuffersBuilder(const geometry::PointCloud& geometry);
 
-    filament::RenderableManager::PrimitiveType GetPrimitiveType() const override;
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
 
-    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers() override;
+    std::tuple<VertexBufferHandle, IndexBufferHandle> ConstructBuffers()
+            override;
     filament::Box ComputeAABB() override;
 
 private:
     const geometry::PointCloud& geometry_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

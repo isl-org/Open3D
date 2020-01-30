@@ -39,7 +39,7 @@ using namespace open3d::visualization;
 
 namespace {
 static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
-} // namespace
+}  // namespace
 
 bool CreateWindow(const char *path) {
     static int x = 50, y = 50;
@@ -52,14 +52,14 @@ bool CreateWindow(const char *path) {
         title += " - ";
         title += path;
     }
-    auto vis = std::make_shared<GuiVisualizer>(empty, title,
-                                               WIDTH, HEIGHT, x, y);
-    x += 20; // so next window (if any) doesn't hide this one
+    auto vis =
+            std::make_shared<GuiVisualizer>(empty, title, WIDTH, HEIGHT, x, y);
+    x += 20;  // so next window (if any) doesn't hide this one
     y += 20;
     if (isPathValid) {
         loaded = vis->LoadGeometry(path);
     }
-    gui::Application::GetInstance().AddWindow(vis); // add even if failed
+    gui::Application::GetInstance().AddWindow(vis);  // add even if failed
 
     if (!loaded && isPathValid) {
         auto err = std::string("Error reading geometry file '") + path + "'";
@@ -91,7 +91,5 @@ int Run(int argc, const char *argv[]) {
 #if __APPLE__
 // Open3DViewer_mac.mm
 #else
-int main(int argc, const char *argv[]) {
-    return Run(argc, argv);
-}
-#endif // __APPLE__
+int main(int argc, const char *argv[]) { return Run(argc, argv); }
+#endif  // __APPLE__

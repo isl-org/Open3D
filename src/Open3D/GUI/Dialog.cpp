@@ -38,12 +38,9 @@ struct Dialog::Impl {
     Window *parent = nullptr;
 };
 
-Dialog::Dialog(const char *title)
-: impl_(std::make_unique<Dialog::Impl>()) {
-}
+Dialog::Dialog(const char *title) : impl_(std::make_unique<Dialog::Impl>()) {}
 
-Dialog::~Dialog() {
-}
+Dialog::~Dialog() {}
 
 Size Dialog::CalcPreferredSize(const Theme &theme) const {
     if (GetChildren().size() == 1) {
@@ -54,7 +51,7 @@ Size Dialog::CalcPreferredSize(const Theme &theme) const {
     }
 }
 
-void Dialog::Layout(const Theme& theme) {
+void Dialog::Layout(const Theme &theme) {
     if (GetChildren().size() == 1) {
         auto child = GetChildren()[0];
         child->SetFrame(GetFrame());
@@ -64,9 +61,9 @@ void Dialog::Layout(const Theme& theme) {
     }
 }
 
-Widget::DrawResult Dialog::Draw(const DrawContext& context) {
+Widget::DrawResult Dialog::Draw(const DrawContext &context) {
     return Super::Draw(context);
 }
 
-} // gui
-} // open3d
+}  // namespace gui
+}  // namespace open3d

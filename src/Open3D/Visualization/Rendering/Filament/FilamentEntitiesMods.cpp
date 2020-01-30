@@ -40,7 +40,8 @@ namespace {
 
 using namespace filament;
 
-TextureSampler::WrapMode ConvertWrapMode(TextureSamplerParameters::WrapMode mode) {
+TextureSampler::WrapMode ConvertWrapMode(
+        TextureSamplerParameters::WrapMode mode) {
     switch (mode) {
         case TextureSamplerParameters::WrapMode::ClampToEdge:
             return TextureSampler::WrapMode::CLAMP_TO_EDGE;
@@ -99,11 +100,12 @@ TextureSampler SamplerFromSamplerParameters(
 
     return sampler;
 }
-}
+}  // namespace
 
 void FilamentMaterialModifier::Reset() {
     if (materialInstance_ != nullptr) {
-        utility::LogWarning("Previous material instance modifications are not finished!");
+        utility::LogWarning(
+                "Previous material instance modifications are not finished!");
     }
 
     materialInstance_ = nullptr;
@@ -114,7 +116,8 @@ void FilamentMaterialModifier::InitWithMaterialInstance(
         const std::shared_ptr<filament::MaterialInstance>& aMaterialInstance,
         const MaterialInstanceHandle& id) {
     if (materialInstance_ != nullptr) {
-        utility::LogWarning("Previous material instance modifications are not finished!");
+        utility::LogWarning(
+                "Previous material instance modifications are not finished!");
     }
 
     materialInstance_ = aMaterialInstance;
@@ -159,7 +162,8 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
                     SamplerFromSamplerParameters(samplerConfig));
         } else {
             utility::LogWarning(
-                    "Failed to set texture for material.\n\tMaterial handle: {}\n\tTexture handle: {}\n\tParameter name: {}",
+                    "Failed to set texture for material.\n\tMaterial handle: "
+                    "{}\n\tTexture handle: {}\n\tParameter name: {}",
                     currentHandle_, textureHandle, parameter);
         }
     }

@@ -55,9 +55,17 @@ public:
     /// same thread that calls Application::Run(). Use
     /// Application::Post() with a lambda that creates the window if you need
     /// to create one after Application::Run() has been called.
-    explicit Window(const std::string& title, int flags = 0); // auto-sized, centered
-    Window(const std::string& title, int width, int height, int flags = 0); // centered
-    Window(const std::string& title, int x, int y, int width, int height,
+    explicit Window(const std::string& title,
+                    int flags = 0);  // auto-sized, centered
+    Window(const std::string& title,
+           int width,
+           int height,
+           int flags = 0);  // centered
+    Window(const std::string& title,
+           int x,
+           int y,
+           int width,
+           int height,
            int flags = 0);
     virtual ~Window();
 
@@ -66,10 +74,10 @@ public:
     const Theme& GetTheme() const;
     visualization::Renderer& GetRenderer() const;
 
-    Rect GetFrame() const; // in OS pixels; not scaled
-    void SetFrame(const Rect& r); // in OS pixels; not scaled
+    Rect GetFrame() const;         // in OS pixels; not scaled
+    void SetFrame(const Rect& r);  // in OS pixels; not scaled
 
-    void SizeToFit(); // auto size
+    void SizeToFit();  // auto size
     void SetSize(const Size& size);
     Size GetSize() const;  // total interior size of window, including menubar
     Rect GetContentRect() const;  // size available to widgets
@@ -91,7 +99,7 @@ public:
     void ShowDialog(std::shared_ptr<Dialog> dlg);
     void CloseDialog();
 
-    void ShowMessageBox(const char *title, const char *message);
+    void ShowMessageBox(const char* title, const char* message);
 
 protected:
     virtual Size CalcPreferredSize(/*const Size& maxSize*/);
@@ -109,7 +117,7 @@ private:
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
     void* MakeCurrent() const;
-    void RestoreCurrent(void *oldContext) const;
+    void RestoreCurrent(void* oldContext) const;
     void* GetNativeDrawable() const;
 
 private:

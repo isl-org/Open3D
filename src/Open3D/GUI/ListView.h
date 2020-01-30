@@ -35,6 +35,7 @@ namespace gui {
 
 class ListView : public Widget {
     using Super = Widget;
+
 public:
     ListView();
     virtual ~ListView();
@@ -50,12 +51,13 @@ public:
     DrawResult Draw(const DrawContext& context) override;
 
     /// calls onValueChanged(const char *selectedText, bool isDoubleClick)
-    void SetOnValueChanged(std::function<void(const char *, bool)> onValueChanged);
+    void SetOnValueChanged(
+            std::function<void(const char*, bool)> onValueChanged);
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

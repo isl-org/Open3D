@@ -86,5 +86,5 @@ void TextureSamplerParameters::SetAnisotropy(const std::uint8_t a) {
     }
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

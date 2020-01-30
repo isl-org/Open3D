@@ -133,7 +133,8 @@ public:
         });
         auto materials2 = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"One", "Two", "Three"}));
-        //        auto materials3 = std::shared_ptr<gui::Combobox>(new gui::Combobox({"一", "二", "三"}));
+        //        auto materials3 = std::shared_ptr<gui::Combobox>(new
+        //        gui::Combobox({"一", "二", "三"}));
         auto matPanel = std::make_shared<gui::Vert>(
                 spacing, margins,
                 std::vector<std::shared_ptr<gui::Widget>>({
@@ -180,7 +181,7 @@ public:
                 gui::Application::GetInstance().GetResourcePath();
         auto nonmetalPath = resourcePath + "/nonmetal.filamat";
         visualization::MaterialHandle nonmetal = GetRenderer().AddMaterial(
-            visualization::ResourceLoadRequest(nonmetalPath.data()));
+                visualization::ResourceLoadRequest(nonmetalPath.data()));
 
         auto redPlastic = GetRenderer()
                                   .ModifyMaterial(nonmetal)

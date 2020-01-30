@@ -75,11 +75,14 @@ public:
     LightHandle AddLight(const LightDescription& descr) override;
     void RemoveLight(const LightHandle& id) override;
 
-    void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) override;
+    void SetEntityTransform(const REHandle_abstract& entityId,
+                            const Transform& transform) override;
     Transform GetEntityTransform(const REHandle_abstract& entityId) override;
 
-    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) override;
-    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(
+            const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(
+            const REHandle_abstract& entityId) override;
 
     void Draw(filament::Renderer& renderer);
 
@@ -99,7 +102,8 @@ private:
         bool isActive = true;
     };
 
-    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id);
+    utils::EntityInstance<filament::TransformManager>
+    GetEntityTransformInstance(const REHandle_abstract& id);
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;

@@ -33,7 +33,7 @@ class Geometry;
 namespace visualizer {
 class GuiVisualizer;
 }
-}
+}  // namespace open3d
 
 #define WIDTH 1280
 #define HEIGHT 960

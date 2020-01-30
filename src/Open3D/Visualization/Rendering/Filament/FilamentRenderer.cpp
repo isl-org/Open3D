@@ -103,7 +103,8 @@ void FilamentRenderer::EndFrame() {
     }
 }
 
-MaterialHandle FilamentRenderer::AddMaterial(const ResourceLoadRequest& request) {
+MaterialHandle FilamentRenderer::AddMaterial(
+        const ResourceLoadRequest& request) {
     return resourceManager_.CreateMaterial(request);
 }
 
@@ -136,7 +137,8 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
                                                      id);
     } else {
         utility::LogError(
-                "Failed to modify material instance: unknown instance handle {}.",
+                "Failed to modify material instance: unknown instance handle "
+                "{}.",
                 id);
     }
 
@@ -145,16 +147,15 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
 
 TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
     if (request.path.empty()) {
-        request.errorCallback(request, -1, "Texture can be loaded only from file");
+        request.errorCallback(request, -1,
+                              "Texture can be loaded only from file");
         return {};
     }
 
     return resourceManager_.CreateTexture(request.path.data());
 }
 
-void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
-
-}
+void FilamentRenderer::RemoveTexture(const TextureHandle& id) {}
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     auto found = scenes_.find(id);

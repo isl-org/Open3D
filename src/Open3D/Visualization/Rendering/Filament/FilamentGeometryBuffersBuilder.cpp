@@ -44,7 +44,8 @@ using namespace filament;
 namespace open3d {
 namespace visualization {
 
-std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(const geometry::Geometry3D& geometry) {
+std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
+        const geometry::Geometry3D& geometry) {
     using GT = geometry::Geometry::GeometryType;
 
     switch (geometry.GetGeometryType()) {
@@ -62,7 +63,9 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(const
     return nullptr;
 }
 
-void GeometryBuffersBuilder::DeallocateBuffer(void* buffer, size_t size, void* userPtr) {
+void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
+                                              size_t size,
+                                              void* userPtr) {
     free(buffer);
 }
 
@@ -74,8 +77,12 @@ struct ColoredVertex {
     math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
 
-    static size_t GetPositionOffset() { return offsetof(ColoredVertex, position); }
-    static size_t GetTangentOffset() { return offsetof(ColoredVertex, tangent); }
+    static size_t GetPositionOffset() {
+        return offsetof(ColoredVertex, position);
+    }
+    static size_t GetTangentOffset() {
+        return offsetof(ColoredVertex, tangent);
+    }
     static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
@@ -92,17 +99,19 @@ struct ColoredVertex {
         color.z = floatColor(2);
     }
 };
-}
+}  // namespace
 
-PointCloudBuffersBuilder::PointCloudBuffersBuilder(const geometry::PointCloud& geometry)
-    : geometry_(geometry) {
-}
+PointCloudBuffersBuilder::PointCloudBuffersBuilder(
+        const geometry::PointCloud& geometry)
+    : geometry_(geometry) {}
 
-RenderableManager::PrimitiveType PointCloudBuffersBuilder::GetPrimitiveType() const {
+RenderableManager::PrimitiveType PointCloudBuffersBuilder::GetPrimitiveType()
+        const {
     return RenderableManager::PrimitiveType::POINTS;
 }
 
-std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::ConstructBuffers() {
+std::tuple<VertexBufferHandle, IndexBufferHandle>
+PointCloudBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resourceManager = EngineInstance::GetResourceManager();
 
@@ -143,11 +152,13 @@ std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::Cons
 
     // Converting normals to Filament type - quaternions
     size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto float4VTangents = static_cast<math::quatf*>(malloc(tangentsBytesCount));
-    auto orientation = filament::geometry::SurfaceOrientation::Builder()
-            .vertexCount(nVertices)
-            .normals(reinterpret_cast<math::float3*>(normals.data()))
-            .build();
+    auto float4VTangents =
+            static_cast<math::quatf*>(malloc(tangentsBytesCount));
+    auto orientation =
+            filament::geometry::SurfaceOrientation::Builder()
+                    .vertexCount(nVertices)
+                    .normals(reinterpret_cast<math::float3*>(normals.data()))
+                    .build();
     orientation.getQuats(float4VTangents, nVertices);
 
     size_t verticesBytesCount = nVertices * sizeof(ColoredVertex);
@@ -161,17 +172,20 @@ std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::Cons
 
     free(float4VTangents);
 
-    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vertices, verticesBytesCount);
-    vertexbufferDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    VertexBuffer::BufferDescriptor vertexbufferDescriptor(vertices,
+                                                          verticesBytesCount);
+    vertexbufferDescriptor.setCallback(
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
 
-    size_t indicesBytesCount = nVertices*sizeof(IndexType);
-    auto *uintIndices = static_cast<IndexType*>(malloc(indicesBytesCount));
+    size_t indicesBytesCount = nVertices * sizeof(IndexType);
+    auto* uintIndices = static_cast<IndexType*>(malloc(indicesBytesCount));
     for (std::uint32_t i = 0; i < nVertices; ++i) {
         uintIndices[i] = i;
     }
 
-    auto ibHandle = resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
+    auto ibHandle =
+            resourceManager.CreateIndexBuffer(nVertices, sizeof(IndexType));
     if (!ibHandle) {
         free(uintIndices);
         return {};
@@ -181,7 +195,8 @@ std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::Cons
 
     // Moving copied indices to IndexBuffer
     // they will be freed later with freeBufferDescriptor
-    IndexBuffer::BufferDescriptor indicesDescriptor(uintIndices, indicesBytesCount);
+    IndexBuffer::BufferDescriptor indicesDescriptor(uintIndices,
+                                                    indicesBytesCount);
     indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     ibuf->setBuffer(engine, std::move(indicesDescriptor));
 
@@ -191,8 +206,12 @@ std::tuple<VertexBufferHandle, IndexBufferHandle> PointCloudBuffersBuilder::Cons
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     auto geometryAABB = geometry_.GetAxisAlignedBoundingBox();
 
-    const filament::math::float3 min(geometryAABB.min_bound_.x(), geometryAABB.min_bound_.y() ,geometryAABB.min_bound_.z());
-    const filament::math::float3 max(geometryAABB.max_bound_.x(), geometryAABB.max_bound_.y() ,geometryAABB.max_bound_.z());
+    const filament::math::float3 min(geometryAABB.min_bound_.x(),
+                                     geometryAABB.min_bound_.y(),
+                                     geometryAABB.min_bound_.z());
+    const filament::math::float3 max(geometryAABB.max_bound_.x(),
+                                     geometryAABB.max_bound_.y(),
+                                     geometryAABB.max_bound_.z());
 
     filament::Box aabb;
     aabb.set(min, max);
@@ -200,5 +219,5 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     return aabb;
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

@@ -161,7 +161,7 @@ public:
         return uid.Hash();
     }
 };
-} // namespace std
+}  // namespace std
 
 namespace fmt {
 using namespace open3d::visualization;
@@ -176,4 +176,4 @@ struct formatter<open3d::visualization::REHandle_abstract> {
                          uid.GetId(), uid.Hash());
     }
 };
-} // namespace fmt
+}  // namespace fmt

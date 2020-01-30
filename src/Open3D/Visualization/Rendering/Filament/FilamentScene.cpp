@@ -216,7 +216,8 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
 
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
-void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) {
+void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId,
+                                       const Transform& transform) {
     auto iTransform = GetEntityTransformInstance(entityId);
     if (iTransform.isValid()) {
         using namespace filament::math;
@@ -234,7 +235,8 @@ void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId, const 
     }
 }
 
-FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstract& entityId) {
+FilamentScene::Transform FilamentScene::GetEntityTransform(
+        const REHandle_abstract& entityId) {
     auto iTransform = GetEntityTransformInstance(entityId);
 
     Transform eTransform;
@@ -244,10 +246,12 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstra
 
         Transform::MatrixType matrix;
 
-        matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
-                fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
-                fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
-                fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+        matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
+                fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
+                fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
+                fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
+                fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
+                fTransform(3, 3);
 
         eTransform = matrix;
     }
@@ -255,8 +259,8 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstra
     return eTransform;
 }
 
-std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(const REHandle_abstract& entityId)
-{
+std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(
+        const REHandle_abstract& entityId) {
     std::pair<Eigen::Vector3f, Eigen::Vector3f> result;
 
     auto found = entities_.find(entityId);
@@ -272,7 +276,8 @@ std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(
     return result;
 }
 
-std::pair<Eigen::Vector3f, float> FilamentScene::GetEntityBoundingSphere(const REHandle_abstract& entityId) {
+std::pair<Eigen::Vector3f, float> FilamentScene::GetEntityBoundingSphere(
+        const REHandle_abstract& entityId) {
     std::pair<Eigen::Vector3f, float> result;
 
     auto found = entities_.find(entityId);
@@ -298,7 +303,8 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     }
 }
 
-utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
+utils::EntityInstance<filament::TransformManager>
+FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
     auto found = entities_.find(id);
 
     filament::TransformManager::Instance iTransform;
@@ -318,7 +324,10 @@ utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransf
             iTransform = transformMgr.getInstance(found->second.parent);
 
             auto center = GetEntityBoundingSphere(id).first;
-            transformMgr.create(found->second.self, iTransform, mat4f::translation(float3 {-center.x(),-center.y(),-center.z()}));
+            transformMgr.create(
+                    found->second.self, iTransform,
+                    mat4f::translation(
+                            float3{-center.x(), -center.y(), -center.z()}));
         }
     }
 

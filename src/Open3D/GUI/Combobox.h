@@ -40,7 +40,7 @@ public:
     ~Combobox();
 
     void ClearItems();
-    void AddItem(const char *name);
+    void AddItem(const char* name);
     const char* GetItem(int index) const;
 
     int GetSelectedIndex() const;
@@ -52,7 +52,7 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    void SetOnValueChanged(std::function<void(const char *)> onValueChanged);
+    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
 
 private:
     struct Impl;

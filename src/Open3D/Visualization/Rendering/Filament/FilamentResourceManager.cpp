@@ -112,14 +112,16 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData,
     return handle;
 }
 
-MaterialHandle FilamentResourceManager::CreateMaterial(const ResourceLoadRequest& request) {
+MaterialHandle FilamentResourceManager::CreateMaterial(
+        const ResourceLoadRequest& request) {
     MaterialHandle handle;
 
     if (false == request.path.empty()) {
         std::vector<char> materialData;
         std::string errorStr;
 
-        if (utility::filesystem::FReadToBuffer(request.path, materialData, &errorStr)) {
+        if (utility::filesystem::FReadToBuffer(request.path, materialData,
+                                               &errorStr)) {
             handle = CreateMaterial(materialData.data(), materialData.size());
         } else {
             request.errorCallback(request, errno, errorStr);

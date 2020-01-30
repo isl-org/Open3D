@@ -38,7 +38,7 @@ class Window;
 
 class Application {
 public:
-    static Application& GetInstance();
+    static Application &GetInstance();
 
     virtual ~Application();
 
@@ -72,9 +72,9 @@ public:
     /// have an alert (like Linux), then this can be used as a last resort.
     void ShowMessageBox(const char *title, const char *message);
 
-    const char* GetResourcePath()
+    const char *GetResourcePath()
             const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    const Theme &GetTheme() const;
 
 private:
     Application();

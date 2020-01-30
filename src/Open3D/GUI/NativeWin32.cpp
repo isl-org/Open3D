@@ -33,7 +33,7 @@ void* GetNativeDrawable(SDL_Window* window) {
     return (void*)wmi.info.win.window;
 }
 
-void ShowNativeAlert(const char *message) {
+void ShowNativeAlert(const char* message) {
     MessageBox(NULL, "Alert", message, MB_OK | MB_ICONEXCLAMATION);
 }
 

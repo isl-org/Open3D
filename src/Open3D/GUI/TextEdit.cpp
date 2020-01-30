@@ -57,8 +57,8 @@ struct TextEdit::Impl {
     std::string id;
     std::string text;
     std::string placeholder;
-    std::function<void(const char*)> onTextChanged;
-    std::function<void(const char*)> onValueChanged;
+    std::function<void(const char *)> onTextChanged;
+    std::function<void(const char *)> onValueChanged;
 };
 
 TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
@@ -82,15 +82,17 @@ void TextEdit::SetPlaceholderText(const char *text) {
     impl_->placeholder = text;
 }
 
-void TextEdit::SetOnTextChanged(std::function<void(const char*)> onTextChanged) {
+void TextEdit::SetOnTextChanged(
+        std::function<void(const char *)> onTextChanged) {
     impl_->onTextChanged = onTextChanged;
 }
 
-void TextEdit::SetOnValueChanged(std::function<void(const char*)> onValueChanged) {
+void TextEdit::SetOnValueChanged(
+        std::function<void(const char *)> onValueChanged) {
     impl_->onValueChanged = onValueChanged;
 }
 
-Size TextEdit::CalcPreferredSize(const Theme& theme) const {
+Size TextEdit::CalcPreferredSize(const Theme &theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
     return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
@@ -122,8 +124,8 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (ImGui::InputTextWithHint(impl_->id.c_str(), impl_->placeholder.c_str(),
-                                 (char*)impl_->text.c_str(), impl_->text.capacity(),
-                                 textFlags,
+                                 (char *)impl_->text.c_str(),
+                                 impl_->text.capacity(), textFlags,
                                  InputTextCallback, &impl_->text)) {
         if (impl_->onTextChanged) {
             impl_->onTextChanged(impl_->text.c_str());

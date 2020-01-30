@@ -49,66 +49,65 @@ namespace {
 const int RUNLOOP_DELAY_MSEC = 10;
 
 std::unordered_map<int, uint32_t> SCANCODE2KEY = {
-    { SDL_SCANCODE_BACKSPACE, open3d::gui::KEY_BACKSPACE },
-    { SDL_SCANCODE_TAB,       open3d::gui::KEY_TAB },
-    { SDL_SCANCODE_RETURN,    open3d::gui::KEY_ENTER },
-    { SDL_SCANCODE_ESCAPE,    open3d::gui::KEY_ESCAPE },
-    { SDL_SCANCODE_DELETE,    open3d::gui::KEY_DELETE },
-    { SDL_SCANCODE_SPACE, ' ' },
-    { SDL_SCANCODE_0, '0' },
-    { SDL_SCANCODE_1, '1' },
-    { SDL_SCANCODE_2, '2' },
-    { SDL_SCANCODE_3, '3' },
-    { SDL_SCANCODE_4, '4' },
-    { SDL_SCANCODE_5, '5' },
-    { SDL_SCANCODE_6, '6' },
-    { SDL_SCANCODE_7, '7' },
-    { SDL_SCANCODE_8, '8' },
-    { SDL_SCANCODE_9, '9' },
-    { SDL_SCANCODE_A, 'a' },
-    { SDL_SCANCODE_B, 'b' },
-    { SDL_SCANCODE_C, 'c' },
-    { SDL_SCANCODE_D, 'd' },
-    { SDL_SCANCODE_E, 'e' },
-    { SDL_SCANCODE_F, 'f' },
-    { SDL_SCANCODE_G, 'g' },
-    { SDL_SCANCODE_H, 'h' },
-    { SDL_SCANCODE_I, 'i' },
-    { SDL_SCANCODE_J, 'j' },
-    { SDL_SCANCODE_K, 'k' },
-    { SDL_SCANCODE_L, 'l' },
-    { SDL_SCANCODE_M, 'm' },
-    { SDL_SCANCODE_N, 'n' },
-    { SDL_SCANCODE_O, 'o' },
-    { SDL_SCANCODE_P, 'p' },
-    { SDL_SCANCODE_Q, 'q' },
-    { SDL_SCANCODE_R, 'r' },
-    { SDL_SCANCODE_S, 's' },
-    { SDL_SCANCODE_T, 't' },
-    { SDL_SCANCODE_U, 'u' },
-    { SDL_SCANCODE_V, 'v' },
-    { SDL_SCANCODE_W, 'w' },
-    { SDL_SCANCODE_X, 'x' },
-    { SDL_SCANCODE_Y, 'y' },
-    { SDL_SCANCODE_Z, 'z' },
-    { SDL_SCANCODE_LEFTBRACKET, '[' },
-    { SDL_SCANCODE_RIGHTBRACKET, ']' },
-    { SDL_SCANCODE_BACKSLASH, '\\' },
-    { SDL_SCANCODE_SEMICOLON, ';' },
-    { SDL_SCANCODE_APOSTROPHE, '\'' },
-    { SDL_SCANCODE_COMMA, ',' },
-    { SDL_SCANCODE_PERIOD, '.' },
-    { SDL_SCANCODE_SLASH, '/' },
-    { SDL_SCANCODE_LEFT,     open3d::gui::KEY_LEFT },
-    { SDL_SCANCODE_RIGHT,    open3d::gui::KEY_RIGHT },
-    { SDL_SCANCODE_UP,       open3d::gui::KEY_UP },
-    { SDL_SCANCODE_DOWN,     open3d::gui::KEY_DOWN },
-    { SDL_SCANCODE_INSERT,   open3d::gui::KEY_INSERT },
-    { SDL_SCANCODE_HOME,     open3d::gui::KEY_HOME },
-    { SDL_SCANCODE_END,      open3d::gui::KEY_END },
-    { SDL_SCANCODE_PAGEUP,   open3d::gui::KEY_PAGEUP },
-    { SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN }
-};
+        {SDL_SCANCODE_BACKSPACE, open3d::gui::KEY_BACKSPACE},
+        {SDL_SCANCODE_TAB, open3d::gui::KEY_TAB},
+        {SDL_SCANCODE_RETURN, open3d::gui::KEY_ENTER},
+        {SDL_SCANCODE_ESCAPE, open3d::gui::KEY_ESCAPE},
+        {SDL_SCANCODE_DELETE, open3d::gui::KEY_DELETE},
+        {SDL_SCANCODE_SPACE, ' '},
+        {SDL_SCANCODE_0, '0'},
+        {SDL_SCANCODE_1, '1'},
+        {SDL_SCANCODE_2, '2'},
+        {SDL_SCANCODE_3, '3'},
+        {SDL_SCANCODE_4, '4'},
+        {SDL_SCANCODE_5, '5'},
+        {SDL_SCANCODE_6, '6'},
+        {SDL_SCANCODE_7, '7'},
+        {SDL_SCANCODE_8, '8'},
+        {SDL_SCANCODE_9, '9'},
+        {SDL_SCANCODE_A, 'a'},
+        {SDL_SCANCODE_B, 'b'},
+        {SDL_SCANCODE_C, 'c'},
+        {SDL_SCANCODE_D, 'd'},
+        {SDL_SCANCODE_E, 'e'},
+        {SDL_SCANCODE_F, 'f'},
+        {SDL_SCANCODE_G, 'g'},
+        {SDL_SCANCODE_H, 'h'},
+        {SDL_SCANCODE_I, 'i'},
+        {SDL_SCANCODE_J, 'j'},
+        {SDL_SCANCODE_K, 'k'},
+        {SDL_SCANCODE_L, 'l'},
+        {SDL_SCANCODE_M, 'm'},
+        {SDL_SCANCODE_N, 'n'},
+        {SDL_SCANCODE_O, 'o'},
+        {SDL_SCANCODE_P, 'p'},
+        {SDL_SCANCODE_Q, 'q'},
+        {SDL_SCANCODE_R, 'r'},
+        {SDL_SCANCODE_S, 's'},
+        {SDL_SCANCODE_T, 't'},
+        {SDL_SCANCODE_U, 'u'},
+        {SDL_SCANCODE_V, 'v'},
+        {SDL_SCANCODE_W, 'w'},
+        {SDL_SCANCODE_X, 'x'},
+        {SDL_SCANCODE_Y, 'y'},
+        {SDL_SCANCODE_Z, 'z'},
+        {SDL_SCANCODE_LEFTBRACKET, '['},
+        {SDL_SCANCODE_RIGHTBRACKET, ']'},
+        {SDL_SCANCODE_BACKSLASH, '\\'},
+        {SDL_SCANCODE_SEMICOLON, ';'},
+        {SDL_SCANCODE_APOSTROPHE, '\''},
+        {SDL_SCANCODE_COMMA, ','},
+        {SDL_SCANCODE_PERIOD, '.'},
+        {SDL_SCANCODE_SLASH, '/'},
+        {SDL_SCANCODE_LEFT, open3d::gui::KEY_LEFT},
+        {SDL_SCANCODE_RIGHT, open3d::gui::KEY_RIGHT},
+        {SDL_SCANCODE_UP, open3d::gui::KEY_UP},
+        {SDL_SCANCODE_DOWN, open3d::gui::KEY_DOWN},
+        {SDL_SCANCODE_INSERT, open3d::gui::KEY_INSERT},
+        {SDL_SCANCODE_HOME, open3d::gui::KEY_HOME},
+        {SDL_SCANCODE_END, open3d::gui::KEY_END},
+        {SDL_SCANCODE_PAGEUP, open3d::gui::KEY_PAGEUP},
+        {SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN}};
 
 std::string findResourcePath(int argc, const char *argv[]) {
     std::string argv0;
@@ -160,7 +159,7 @@ struct Application::Impl {
     bool isRunning = false;
 
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
-    std::unordered_map<Window*, int> eventCounts; // don't recreate each draw
+    std::unordered_map<Window *, int> eventCounts;  // don't recreate each draw
 };
 
 Application &Application::GetInstance() {
@@ -176,7 +175,7 @@ void Application::ShowMessageBox(const char *title, const char *message) {
     auto layout = std::make_shared<Vert>(em, Margins(em));
     auto msg = std::make_shared<Label>(message);
     auto ok = std::make_shared<Button>("Ok");
-    ok->SetOnClicked([alert=alert.get()/*avoid shared_ptr cycle*/]() {
+    ok->SetOnClicked([alert = alert.get() /*avoid shared_ptr cycle*/]() {
         Application::GetInstance().RemoveWindow(alert);
     });
     layout->AddChild(Horiz::MakeCentered(msg));
@@ -185,15 +184,15 @@ void Application::ShowMessageBox(const char *title, const char *message) {
     Application::GetInstance().AddWindow(alert);
 }
 
-Application::Application()
-: impl_(new Application::Impl()) {
+Application::Application() : impl_(new Application::Impl()) {
     Color highlightColor(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
-    impl_->theme.fontPath = "Roboto-Medium.ttf";  // full path will be added in Initialize()
-    impl_->theme.fontSize = 16; // 1 em (font size is em in digital type)
-    impl_->theme.defaultMargin = 8; // 0.5 * em
-    impl_->theme.defaultLayoutSpacing = 6; // 0.333 * em
+    impl_->theme.fontPath =
+            "Roboto-Medium.ttf";     // full path will be added in Initialize()
+    impl_->theme.fontSize = 16;      // 1 em (font size is em in digital type)
+    impl_->theme.defaultMargin = 8;  // 0.5 * em
+    impl_->theme.defaultLayoutSpacing = 6;  // 0.333 * em
 
     impl_->theme.backgroundColor = Color(0.175, 0.175, 0.175);
     impl_->theme.textColor = Color(0.875, 0.875, 0.875);
@@ -277,16 +276,18 @@ void Application::Run() {
 bool Application::RunOneTick() {
     // Initialize if we have not started yet
     if (!impl_->isRunning) {
-        // Verify that the resource path is valid. If it is not, display a message box
-        // (std::cerr may not be visible to the user, if we were run as app).
+        // Verify that the resource path is valid. If it is not, display a
+        // message box (std::cerr may not be visible to the user, if we were run
+        // as app).
         if (impl_->resourcePath.empty()) {
-            ShowNativeAlert("Internal error: Application::Initialize() was not called");
+            ShowNativeAlert(
+                    "Internal error: Application::Initialize() was not called");
             return false;
         }
         if (!utility::filesystem::DirectoryExists(impl_->resourcePath)) {
             std::stringstream err;
-            err << "Could not find resource directory:\n'" << impl_->resourcePath
-                << "' does not exist";
+            err << "Could not find resource directory:\n'"
+                << impl_->resourcePath << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
         }
@@ -324,9 +325,9 @@ Application::RunStatus Application::ProcessQueuedEvents() {
     int nevents = 0;
     {
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
-            SDL_Event* event = &events[nevents];
+            SDL_Event *event = &events[nevents];
             switch (event->type) {
-                case SDL_QUIT:   // sent after last window closed
+                case SDL_QUIT:  // sent after last window closed
                     status = RunStatus::DONE;
                     break;
                 case SDL_MOUSEMOTION: {
@@ -356,7 +357,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                             buttons |= int(MouseButton::BUTTON5);
                         }
 
-                        MouseEvent me = { type, x, y };
+                        MouseEvent me = {type, x, y};
                         // GCC complains when trying to initialize inline above
                         me.move.buttons = buttons;
 
@@ -377,7 +378,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         int dx = int(std::ceil(float(e.x) * scaling));
                         int dy = int(std::ceil(float(e.y) * scaling));
 
-                        MouseEvent me = { MouseEvent::WHEEL, pos.x, pos.y };
+                        MouseEvent me = {MouseEvent::WHEEL, pos.x, pos.y};
                         me.wheel.dx = dx;
                         me.wheel.dy = dy;
 #if __APPLE__
@@ -387,7 +388,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         me.wheel.isTrackpad = true;
 #else
                         me.wheel.isTrackpad = (e.which == SDL_TOUCH_MOUSEID);
-#endif // __APPLE__
+#endif  // __APPLE__
 
                         win->OnMouseEvent(me);
                         impl_->eventCounts[win.get()] += 1;
@@ -418,14 +419,14 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto type = (event->type == SDL_MOUSEBUTTONDOWN
-                                         ? MouseEvent::BUTTON_DOWN
-                                         : MouseEvent::BUTTON_UP);
+                                             ? MouseEvent::BUTTON_DOWN
+                                             : MouseEvent::BUTTON_UP);
                         auto &win = it->second;
                         auto scaling = win->GetScaling();
                         int x = int(std::ceil(float(e.x) * scaling));
                         int y = int(std::ceil(float(e.y) * scaling));
 
-                        MouseEvent me = { type, x, y };
+                        MouseEvent me = {type, x, y};
                         me.button.button = button;
 
                         win->OnMouseEvent(me);
@@ -438,7 +439,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
-                        win->OnTextInput(TextInputEvent{ e.text });
+                        win->OnTextInput(TextInputEvent{e.text});
                         impl_->eventCounts[win.get()] += 1;
                     }
                     break;
@@ -456,7 +457,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         if (it != SCANCODE2KEY.end()) {
                             key = it->second;
                         }
-                        win->OnKeyEvent(KeyEvent{ type, key, (e.repeat != 0) });
+                        win->OnKeyEvent(KeyEvent{type, key, (e.repeat != 0)});
                         impl_->eventCounts[win.get()] += 1;
                     }
                     break;
@@ -493,7 +494,8 @@ Application::RunStatus Application::ProcessQueuedEvents() {
 
         for (auto &kv : impl_->windows) {
             auto w = kv.second;
-            bool gotEvents = (impl_->eventCounts.find(w.get()) != impl_->eventCounts.end());
+            bool gotEvents = (impl_->eventCounts.find(w.get()) !=
+                              impl_->eventCounts.end());
             if (w->IsVisible() && gotEvents) {
                 if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
                     Window::REDRAW) {

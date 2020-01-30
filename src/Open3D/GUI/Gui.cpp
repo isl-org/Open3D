@@ -24,18 +24,12 @@
 namespace open3d {
 namespace gui {
 
-Point::Point()
-    : x(0), y(0)
-{}
+Point::Point() : x(0), y(0) {}
 
-Point::Point(int x_, int y_)
-    : x(x_), y(y_)
-{}
+Point::Point(int x_, int y_) : x(x_), y(y_) {}
 
 // ----------------------------------------------------------------------------
-Size::Size()
-    : width(0), height(0)
-{}
+Size::Size() : width(0), height(0) {}
 
 Size::Size(int w, int h) : width(w), height(h) {}
 
@@ -54,13 +48,11 @@ int Rect::GetLeft() const { return this->x; }
 int Rect::GetRight() const { return this->x + this->width; }
 
 bool Rect::Contains(int x, int y) const {
-    return (x >= this->x && x <= GetRight() &&
-            y >= this->y && y <= GetBottom());
+    return (x >= this->x && x <= GetRight() && y >= this->y &&
+            y <= GetBottom());
 }
 
-bool Rect::Contains(const Point& pt) const {
-    return Contains(pt.x, pt.y);
-}
+bool Rect::Contains(const Point& pt) const { return Contains(pt.x, pt.y); }
 
 Rect Rect::UnionedWith(const Rect& r) const {
     auto newX = std::min(this->x, r.x);
@@ -70,5 +62,5 @@ Rect Rect::UnionedWith(const Rect& r) const {
     return Rect(newX, newY, w, h);
 }
 
-} // namespace gui
-} // namespacce open3d
+}  // namespace gui
+}  // namespace open3d
