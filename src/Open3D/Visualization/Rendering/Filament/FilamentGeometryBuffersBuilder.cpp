@@ -108,6 +108,10 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     const size_t nVertices = geometry_.points_.size();
 
+    // We use CUSTOM0 for tangents instead of TANGENTS attribute
+    // because Filament would optimize out anything about normals and lightning
+    // from unlit materials. But our shader for normals visualizing is unlit, so
+    // we need to use this workaround.
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(1)
                                  .vertexCount(nVertices)

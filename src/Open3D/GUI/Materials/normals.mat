@@ -2,6 +2,9 @@ material {
     name : normals,
     shadingModel : unlit,
 
+    // We use this attribute for acquiring tangents from vertex buffer.
+    // We can't use 'tangents' attribute, because it would be
+    // stripped from unlit material.
     requires: [
         custom0
     ],

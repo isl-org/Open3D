@@ -102,6 +102,8 @@ template <typename VertexType>
 size_t GetVertexStride() { return sizeof(VertexType); }
 
 VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine, const std::uint32_t verticesCount, const std::uint32_t stride, bool hasUvs, bool hasColors) {
+    // For CUSTOM0 explanation, see FilamentGeometryBuffersBuilder.cpp
+    // Note, that TANGENTS and CUSTOM0 is pointing on same data in buffer
     auto builder = VertexBuffer::Builder()
             .bufferCount(1)
             .vertexCount(verticesCount)
