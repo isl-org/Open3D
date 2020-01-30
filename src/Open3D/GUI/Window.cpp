@@ -683,7 +683,8 @@ void Window::OnMouseEvent(const MouseEvent &e) {
             if (e.wheel.dy != 0) {
                 dy = e.wheel.dy / std::abs(e.wheel.dy);
             }
-            // Note: ImGUI's documentation says that 1 unit is about 5 lines
+            // Note: ImGUI's documentation says that 1 unit of wheel movement
+            //       is about 5 lines of text scrolling.
             if (e.wheel.isTrackpad) {
                 io.MouseWheelH += dx * 0.25;
                 io.MouseWheel += dy * 0.25;

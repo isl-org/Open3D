@@ -69,6 +69,12 @@
     }];
 }
 
+// Called by [NSApp run] if the user passes command line arguments (which may
+// be multiple times if multiple files are given), or the app is launched by
+// double-clicking a file in the Finder, or by dropping files onto the app
+// either in the Finder or (more likely) onto the Dock icon. It is also called
+// after launching if the user double-clicks a file in the Finder or drops
+// a file onto the app icon and the application is already launched.
 - (BOOL)application:(NSApplication *)sender openFile:(NSString *)filename {
     mOpenEmptyWindow = false;  // CreateWindow() always opens a window
     return (CreateWindow(filename.UTF8String));
