@@ -46,7 +46,7 @@ struct DrawContext {
     int screenWidth;
     int screenHeight;
     int emPx;
-    float frameDelta; // in seconds
+    float frameDelta;  // in seconds
 };
 
 class Widget {

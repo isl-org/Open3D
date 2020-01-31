@@ -100,7 +100,7 @@ TextureSampler SamplerFromSamplerParameters(
 
     return sampler;
 }
-}
+}  // namespace
 
 FilamentMaterialModifier::FilamentMaterialModifier(
         const std::shared_ptr<filament::MaterialInstance>& materialInstance,
@@ -168,7 +168,8 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
                     SamplerFromSamplerParameters(samplerConfig));
         } else {
             utility::LogWarning(
-                    "Failed to set texture for material.\n\tMaterial handle: {}\n\tTexture handle: {}\n\tParameter name: {}",
+                    "Failed to set texture for material.\n\tMaterial handle: "
+                    "{}\n\tTexture handle: {}\n\tParameter name: {}",
                     currentHandle_, textureHandle, parameter);
         }
     }

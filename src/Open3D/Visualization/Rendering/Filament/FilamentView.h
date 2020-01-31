@@ -49,10 +49,13 @@ class FilamentScene;
 
 class FilamentView : public View {
 public:
-    static constexpr std::uint8_t kAllLayersMask = std::numeric_limits<std::uint8_t>::max();
-    static constexpr std::uint8_t kMainLayer = 1; // Default layer for objects
+    static constexpr std::uint8_t kAllLayersMask =
+            std::numeric_limits<std::uint8_t>::max();
+    static constexpr std::uint8_t kMainLayer = 1;  // Default layer for objects
 
-    FilamentView(filament::Engine& engine, FilamentScene& scene, FilamentResourceManager& resourceManager);
+    FilamentView(filament::Engine& engine,
+                 FilamentScene& scene,
+                 FilamentResourceManager& resourceManager);
     ~FilamentView() override;
 
     void SetMode(Mode mode) override;

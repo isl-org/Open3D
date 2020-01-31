@@ -93,23 +93,29 @@ void DestroyResource(const REHandle_abstract& id,
     container.erase(found);
 }
 
-const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial = MaterialInstanceHandle::Next();
-const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial = MaterialInstanceHandle::Next();
+const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
+        MaterialInstanceHandle::Next();
+const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
+        MaterialInstanceHandle::Next();
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
     // FIXME: Move to precompiled resource blobs
-    const std::string resourceRoot = gui::Application::GetInstance().GetResourcePath();
+    const std::string resourceRoot =
+            gui::Application::GetInstance().GetResourcePath();
 
     const auto depthPath = resourceRoot + "/depth.filamat";
     const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
     auto depthMat = materials_[hDepth];
-    materialInstances_[kDepthMaterial] = MakeShared(depthMat->createInstance(), engine_);
+    materialInstances_[kDepthMaterial] =
+            MakeShared(depthMat->createInstance(), engine_);
 
     const auto normalsPath = resourceRoot + "/normals.filamat";
-    const auto hNormals = CreateMaterial(ResourceLoadRequest(normalsPath.data()));
+    const auto hNormals =
+            CreateMaterial(ResourceLoadRequest(normalsPath.data()));
     auto normalsMat = materials_[hNormals];
-    materialInstances_[kNormalsMaterial] = MakeShared(normalsMat->createInstance(), engine_);
+    materialInstances_[kNormalsMaterial] =
+            MakeShared(normalsMat->createInstance(), engine_);
 }
 
 FilamentResourceManager::~FilamentResourceManager() { DestroyAll(); }
@@ -130,14 +136,16 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData,
     return handle;
 }
 
-MaterialHandle FilamentResourceManager::CreateMaterial(const ResourceLoadRequest& request) {
+MaterialHandle FilamentResourceManager::CreateMaterial(
+        const ResourceLoadRequest& request) {
     MaterialHandle handle;
 
     if (false == request.path.empty()) {
         std::vector<char> materialData;
         std::string errorStr;
 
-        if (utility::filesystem::FReadToBuffer(request.path, materialData, &errorStr)) {
+        if (utility::filesystem::FReadToBuffer(request.path, materialData,
+                                               &errorStr)) {
             handle = CreateMaterial(materialData.data(), materialData.size());
         } else {
             request.errorCallback(request, errno, errorStr);
@@ -275,7 +283,10 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
             DestroyResource(id, indexBuffers_);
             break;
         default:
-            utility::LogWarning("Resource {} is not suited for destruction by ResourceManager", REHandle_abstract::TypeToString(id.type));
+            utility::LogWarning(
+                    "Resource {} is not suited for destruction by "
+                    "ResourceManager",
+                    REHandle_abstract::TypeToString(id.type));
             break;
     }
 }

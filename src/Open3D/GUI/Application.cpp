@@ -182,15 +182,15 @@ Application &Application::GetInstance() {
     return gApp;
 }
 
-Application::Application()
-: impl_(new Application::Impl()) {
+Application::Application() : impl_(new Application::Impl()) {
     Color highlightColor(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
-    impl_->theme.fontPath = "Roboto-Medium.ttf";  // full path will be added in Initialize()
-    impl_->theme.fontSize = 16; // 1 em (font size is em in digital type)
-    impl_->theme.defaultMargin = 8; // 0.5 * em
-    impl_->theme.defaultLayoutSpacing = 6; // 0.333 * em
+    impl_->theme.fontPath =
+            "Roboto-Medium.ttf";     // full path will be added in Initialize()
+    impl_->theme.fontSize = 16;      // 1 em (font size is em in digital type)
+    impl_->theme.defaultMargin = 8;  // 0.5 * em
+    impl_->theme.defaultLayoutSpacing = 6;  // 0.333 * em
 
     impl_->theme.backgroundColor = Color(0.175, 0.175, 0.175);
     impl_->theme.textColor = Color(0.875, 0.875, 0.875);
@@ -226,7 +226,8 @@ void Application::Initialize() {
     // We don't have a great way of getting the process name, so let's hope that
     // the current directory is where the resources are located. This is a
     // safe assumption when running on macOS and Windows normally.
-    char *path = getcwd(NULL, 4096 /* ignored, but make it large just in case */);
+    char *path =
+            getcwd(NULL, 4096 /* ignored, but make it large just in case */);
     Initialize(1, (const char **)&path);
     free(path);
 }
@@ -281,7 +282,7 @@ void Application::Run() {
         SDL_Event events[kMaxEvents];
         int nevents = 0;
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
-            SDL_Event* event = &events[nevents];
+            SDL_Event *event = &events[nevents];
             switch (event->type) {
                 case SDL_QUIT:  // sent after last window closed
                     done = true;
@@ -312,7 +313,7 @@ void Application::Run() {
                         if (e.state & SDL_BUTTON_X2) {
                             buttons |= int(MouseButton::BUTTON5);
                         }
-                        MouseEvent me = { type, x, y };
+                        MouseEvent me = {type, x, y};
                         me.move = {buttons};
 
                         win->OnMouseEvent(me);
@@ -331,7 +332,7 @@ void Application::Run() {
                         auto pos = win->GlobalToWindowCoord(mx, my);
                         int dx = int(std::ceil(float(e.x) * scaling));
                         int dy = int(std::ceil(float(e.y) * scaling));
-                        MouseEvent me = { MouseEvent::WHEEL, pos.x, pos.y };
+                        MouseEvent me = {MouseEvent::WHEEL, pos.x, pos.y};
                         me.wheel = {dx, dy};
 
                         win->OnMouseEvent(me);
@@ -363,14 +364,14 @@ void Application::Run() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto type = (event->type == SDL_MOUSEBUTTONDOWN
-                                         ? MouseEvent::BUTTON_DOWN
-                                         : MouseEvent::BUTTON_UP);
+                                             ? MouseEvent::BUTTON_DOWN
+                                             : MouseEvent::BUTTON_UP);
                         auto &win = it->second;
                         auto scaling = win->GetScaling();
                         int x = int(std::ceil(float(e.x) * scaling));
                         int y = int(std::ceil(float(e.y) * scaling));
-                        MouseEvent me = { type, x, y };
-                        me.button = { button };
+                        MouseEvent me = {type, x, y};
+                        me.button = {button};
 
                         win->OnMouseEvent(me);
                         eventCounts[win.get()] += 1;
@@ -400,7 +401,7 @@ void Application::Run() {
                         if (it != SCANCODE2KEY.end()) {
                             key = it->second;
                         }
-                        win->OnKeyEvent(KeyEvent{ type, key, (e.repeat != 0) });
+                        win->OnKeyEvent(KeyEvent{type, key, (e.repeat != 0)});
                         eventCounts[win.get()] += 1;
                     }
                     break;

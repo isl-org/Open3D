@@ -47,8 +47,8 @@ struct MouseEvent {
     int y;
     union {
         struct {
-            int buttons; // MouseButtons ORed together
-        } move;  // includes drag
+            int buttons;  // MouseButtons ORed together
+        } move;           // includes drag
         struct {
             MouseButton button;
         } button;
@@ -58,20 +58,13 @@ struct MouseEvent {
         } wheel;
     };
 
-    MouseEvent()
-        : type(BUTTON_DOWN)
-        , x(0)
-        , y(0)
-    {
+    MouseEvent() : type(BUTTON_DOWN), x(0), y(0) {
         wheel.dx = 0;
         wheel.dy = 0;
     }
 
     MouseEvent(const Type aType, const int aX, const int aY)
-        : type(aType)
-        , x(aX)
-        , y(aY) {
-    }
+        : type(aType), x(aX), y(aY) {}
 };
 
 enum {

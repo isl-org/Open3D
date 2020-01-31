@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "Open3D/Visualization/Rendering/View.h"
 
 #include "Widget.h"
 
@@ -60,7 +60,8 @@ public:
     visualization::CameraManipulator* GetCameraManipulator() const;
 
     // switchCamera flag make center of geometry become camera's POI;
-    void SetSelectedGeometry(const visualization::GeometryHandle& geometry, bool switchCamera);
+    void SetSelectedGeometry(const visualization::GeometryHandle& geometry,
+                             bool switchCamera);
     void SetCameraPOI(const Eigen::Vector3f& location);
 
     Widget::DrawResult Draw(const DrawContext& context) override;

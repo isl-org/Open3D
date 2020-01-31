@@ -44,7 +44,8 @@ using namespace filament;
 namespace open3d {
 namespace visualization {
 
-std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(const geometry::Geometry3D& geometry) {
+std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
+        const geometry::Geometry3D& geometry) {
     using GT = geometry::Geometry::GeometryType;
 
     switch (geometry.GetGeometryType()) {
@@ -62,7 +63,9 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(const
     return nullptr;
 }
 
-void GeometryBuffersBuilder::DeallocateBuffer(void* buffer, size_t size, void* userPtr) {
+void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,
+                                              size_t size,
+                                              void* userPtr) {
     free(buffer);
 }
 
@@ -74,9 +77,13 @@ struct ColoredVertex {
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
 
-    static size_t GetPositionOffset() { return offsetof(ColoredVertex, position); }
+    static size_t GetPositionOffset() {
+        return offsetof(ColoredVertex, position);
+    }
     static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
-    static size_t GetTangentOffset() { return offsetof(ColoredVertex, tangent); }
+    static size_t GetTangentOffset() {
+        return offsetof(ColoredVertex, tangent);
+    }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto floatPos = pos.cast<float>();
@@ -92,13 +99,14 @@ struct ColoredVertex {
         color.z = floatColor(2);
     }
 };
-}
+}  // namespace
 
-PointCloudBuffersBuilder::PointCloudBuffersBuilder(const geometry::PointCloud& geometry)
-    : geometry_(geometry) {
-}
+PointCloudBuffersBuilder::PointCloudBuffersBuilder(
+        const geometry::PointCloud& geometry)
+    : geometry_(geometry) {}
 
-RenderableManager::PrimitiveType PointCloudBuffersBuilder::GetPrimitiveType() const {
+RenderableManager::PrimitiveType PointCloudBuffersBuilder::GetPrimitiveType()
+        const {
     return RenderableManager::PrimitiveType::POINTS;
 }
 
@@ -200,8 +208,12 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     auto geometryAABB = geometry_.GetAxisAlignedBoundingBox();
 
-    const filament::math::float3 min(geometryAABB.min_bound_.x(), geometryAABB.min_bound_.y() ,geometryAABB.min_bound_.z());
-    const filament::math::float3 max(geometryAABB.max_bound_.x(), geometryAABB.max_bound_.y() ,geometryAABB.max_bound_.z());
+    const filament::math::float3 min(geometryAABB.min_bound_.x(),
+                                     geometryAABB.min_bound_.y(),
+                                     geometryAABB.min_bound_.z());
+    const filament::math::float3 max(geometryAABB.max_bound_.x(),
+                                     geometryAABB.max_bound_.y(),
+                                     geometryAABB.max_bound_.z());
 
     filament::Box aabb;
     aabb.set(min, max);
@@ -209,5 +221,5 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     return aabb;
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

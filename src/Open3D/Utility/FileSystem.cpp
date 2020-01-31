@@ -26,10 +26,10 @@
 
 #include "Open3D/Utility/FileSystem.h"
 
+#include <fcntl.h>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <fcntl.h>
 #include <sstream>
 #ifdef WINDOWS
 #include <direct.h>
@@ -45,7 +45,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
-
 
 namespace open3d {
 namespace utility {
@@ -223,28 +222,46 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
 
 static std::string getIOErrorString(const int errnoVal) {
     switch (errnoVal) {
-        case EPERM:   return "Operation not permitted";
-        case EACCES:  return "Access denied";
+        case EPERM:
+            return "Operation not permitted";
+        case EACCES:
+            return "Access denied";
         // Error below could be EWOULDBLOCK on Linux
-        case EAGAIN:  return "Resource unavailable, try again";
+        case EAGAIN:
+            return "Resource unavailable, try again";
 #if !defined(WIN32)
-        case EDQUOT:  return "Over quota";
+        case EDQUOT:
+            return "Over quota";
 #endif
-        case EEXIST:  return "File already exists";
-        case EFAULT:  return "Bad filename pointer";
-        case EINTR:   return "open() interrupted by a signal";
-        case EIO:     return "I/O error";
-        case ELOOP:   return "Too many symlinks, could be a loop";
-        case EMFILE:  return "Process is out of file descriptors";
-        case ENAMETOOLONG: return "Filename is too long";
-        case ENFILE:  return "File system table is full";
-        case ENOENT:  return "No such file or directory";
-        case ENOSPC:  return "No space available to create file";
-        case ENOTDIR: return "Bad path";
-        case EOVERFLOW: return "File is too big";
-        case EROFS:   return "Can't modify file on read-only filesystem";
+        case EEXIST:
+            return "File already exists";
+        case EFAULT:
+            return "Bad filename pointer";
+        case EINTR:
+            return "open() interrupted by a signal";
+        case EIO:
+            return "I/O error";
+        case ELOOP:
+            return "Too many symlinks, could be a loop";
+        case EMFILE:
+            return "Process is out of file descriptors";
+        case ENAMETOOLONG:
+            return "Filename is too long";
+        case ENFILE:
+            return "File system table is full";
+        case ENOENT:
+            return "No such file or directory";
+        case ENOSPC:
+            return "No space available to create file";
+        case ENOTDIR:
+            return "Bad path";
+        case EOVERFLOW:
+            return "File is too big";
+        case EROFS:
+            return "Can't modify file on read-only filesystem";
 #if EWOULDBLOCK != EAGAIN
-        case EWOULDBLOCK: return "Operation would block calling process";
+        case EWOULDBLOCK:
+            return "Operation would block calling process";
 #endif
         default: {
             std::stringstream s;
@@ -262,7 +279,7 @@ bool FReadToBuffer(const std::string &path,
         errorStr->clear();
     }
 
-    FILE* file = FOpen(path.c_str(), "rb");
+    FILE *file = FOpen(path.c_str(), "rb");
     if (!file) {
         if (errorStr) {
             *errorStr = getIOErrorString(errno);
@@ -271,7 +288,7 @@ bool FReadToBuffer(const std::string &path,
         return false;
     }
 
-    fseek(file , 0 , SEEK_END);
+    fseek(file, 0, SEEK_END);
     // We ignoring that fseek will block our process
     if (errno && errno != EWOULDBLOCK) {
         if (errorStr) {
@@ -283,12 +300,12 @@ bool FReadToBuffer(const std::string &path,
     }
 
     const size_t filesize = ftell(file);
-    rewind(file); // reset file pointer back to beginning
+    rewind(file);  // reset file pointer back to beginning
 
     bytes.resize(filesize);
     const size_t result = fread(bytes.data(), 1, filesize, file);
 
-    if (result != filesize){
+    if (result != filesize) {
         if (errorStr) {
             *errorStr = getIOErrorString(errno);
         }

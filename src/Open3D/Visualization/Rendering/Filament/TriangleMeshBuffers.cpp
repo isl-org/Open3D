@@ -87,36 +87,53 @@ void SetVertexUV(VertexType& vertex, const Eigen::Vector2d& UV) {
 }
 
 template <typename VertexType>
-size_t GetVertexPositionOffset() { return 0; }
+size_t GetVertexPositionOffset() {
+    return 0;
+}
 
 template <typename VertexType>
-size_t GetVertexTangentOffset() { return offsetof(VertexType, tangent); }
+size_t GetVertexTangentOffset() {
+    return offsetof(VertexType, tangent);
+}
 
 template <typename VertexType>
-size_t GetVertexColorOffset() { return offsetof(VertexType, color); }
+size_t GetVertexColorOffset() {
+    return offsetof(VertexType, color);
+}
 
 template <typename VertexType>
-size_t GetVertexUVOffset() { return offsetof(VertexType, uv); }
+size_t GetVertexUVOffset() {
+    return offsetof(VertexType, uv);
+}
 
 template <typename VertexType>
-size_t GetVertexStride() { return sizeof(VertexType); }
+size_t GetVertexStride() {
+    return sizeof(VertexType);
+}
 
-VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine, const std::uint32_t verticesCount, const std::uint32_t stride, bool hasUvs, bool hasColors) {
+VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine,
+                                        const std::uint32_t verticesCount,
+                                        const std::uint32_t stride,
+                                        bool hasUvs,
+                                        bool hasColors) {
     // For CUSTOM0 explanation, see FilamentGeometryBuffersBuilder.cpp
     // Note, that TANGENTS and CUSTOM0 is pointing on same data in buffer
-    auto builder = VertexBuffer::Builder()
-            .bufferCount(1)
-            .vertexCount(verticesCount)
-            .attribute(VertexAttribute::POSITION, 0,
-                       VertexBuffer::AttributeType::FLOAT3,
-                       GetVertexPositionOffset<TexturedVertex>(), stride)
-            .normalized(VertexAttribute::TANGENTS)
-            .attribute(VertexAttribute::TANGENTS, 0,
-                       VertexBuffer::AttributeType::FLOAT4,
-                       GetVertexTangentOffset<TexturedVertex>(), stride)
-            .attribute(VertexAttribute::CUSTOM0, 0,
-                       VertexBuffer::AttributeType::FLOAT4,
-                       GetVertexTangentOffset<TexturedVertex>(), stride);
+    auto builder =
+            VertexBuffer::Builder()
+                    .bufferCount(1)
+                    .vertexCount(verticesCount)
+                    .attribute(VertexAttribute::POSITION, 0,
+                               VertexBuffer::AttributeType::FLOAT3,
+                               GetVertexPositionOffset<TexturedVertex>(),
+                               stride)
+                    .normalized(VertexAttribute::TANGENTS)
+                    .attribute(VertexAttribute::TANGENTS, 0,
+                               VertexBuffer::AttributeType::FLOAT4,
+                               GetVertexTangentOffset<TexturedVertex>(), stride)
+                    .attribute(VertexAttribute::CUSTOM0, 0,
+                               VertexBuffer::AttributeType::FLOAT4,
+                               GetVertexTangentOffset<TexturedVertex>(),
+                               stride);
 
     if (hasColors) {
         builder.normalized(VertexAttribute::COLOR)
@@ -147,7 +164,8 @@ struct ibdata {
     size_t stride = 0;
 };
 
-std::tuple<vbdata, ibdata> CreatePlainBuffers(const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
+std::tuple<vbdata, ibdata> CreatePlainBuffers(
+        const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertexData;
     ibdata indexData;
 
@@ -166,18 +184,20 @@ std::tuple<vbdata, ibdata> CreatePlainBuffers(const math::quatf* tangents, const
 
     indexData.stride = sizeof(GeometryBuffersBuilder::IndexType);
     indexData.bytesCount = geometry.triangles_.size() * 3 * indexData.stride;
-    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(malloc(indexData.bytesCount));
+    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(
+            malloc(indexData.bytesCount));
     for (size_t i = 0; i < geometry.triangles_.size(); ++i) {
         const auto& triangle = geometry.triangles_[i];
-        indexData.bytes[3*i] = triangle(0);
-        indexData.bytes[3*i+1] = triangle(1);
-        indexData.bytes[3*i+2] = triangle(2);
+        indexData.bytes[3 * i] = triangle(0);
+        indexData.bytes[3 * i + 1] = triangle(1);
+        indexData.bytes[3 * i + 2] = triangle(2);
     }
 
     return std::make_tuple(vertexData, indexData);
 }
 
-std::tuple<vbdata, ibdata> CreateColoredBuffers(const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
+std::tuple<vbdata, ibdata> CreateColoredBuffers(
+        const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertexData;
     ibdata indexData;
 
@@ -197,24 +217,27 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(const math::quatf* tangents, con
 
     indexData.stride = sizeof(GeometryBuffersBuilder::IndexType);
     indexData.bytesCount = geometry.triangles_.size() * 3 * indexData.stride;
-    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(malloc(indexData.bytesCount));
+    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(
+            malloc(indexData.bytesCount));
     for (size_t i = 0; i < geometry.triangles_.size(); ++i) {
         const auto& triangle = geometry.triangles_[i];
-        indexData.bytes[3*i] = triangle(0);
-        indexData.bytes[3*i+1] = triangle(1);
-        indexData.bytes[3*i+2] = triangle(2);
+        indexData.bytes[3 * i] = triangle(0);
+        indexData.bytes[3 * i + 1] = triangle(1);
+        indexData.bytes[3 * i + 2] = triangle(2);
     }
 
     return std::make_tuple(vertexData, indexData);
 }
 
-std::tuple<vbdata, ibdata> CreateTexturedBuffers(const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
+std::tuple<vbdata, ibdata> CreateTexturedBuffers(
+        const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertexData;
     ibdata indexData;
 
     struct LookupKey {
         LookupKey() = default;
-        explicit LookupKey(const Eigen::Vector3d& pos, const Eigen::Vector2d& uv) {
+        explicit LookupKey(const Eigen::Vector3d& pos,
+                           const Eigen::Vector2d& uv) {
             values[0] = pos.x();
             values[1] = pos.y();
             values[2] = pos.z();
@@ -237,13 +260,17 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(const math::quatf* tangents, co
         double values[5] = {0};
     };
     //                           < real index  , source index >
-    std::map<LookupKey, std::pair<GeometryBuffersBuilder::IndexType, GeometryBuffersBuilder::IndexType>> indexLookup;
+    std::map<LookupKey, std::pair<GeometryBuffersBuilder::IndexType,
+                                  GeometryBuffersBuilder::IndexType>>
+            indexLookup;
 
     indexData.stride = sizeof(GeometryBuffersBuilder::IndexType);
     indexData.bytesCount = geometry.triangles_.size() * 3 * indexData.stride;
-    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(malloc(indexData.bytesCount));
+    indexData.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(
+            malloc(indexData.bytesCount));
 
-    vertexData.bytesCount = geometry.triangles_.size() * 3 * sizeof(TexturedVertex);
+    vertexData.bytesCount =
+            geometry.triangles_.size() * 3 * sizeof(TexturedVertex);
     vertexData.bytes = malloc(vertexData.bytesCount);
 
     GeometryBuffersBuilder::IndexType freeIndex = 0;
@@ -289,14 +316,14 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(const math::quatf* tangents, co
     return std::make_tuple(vertexData, indexData);
 }
 
-}
+}  // namespace
 
 TriangleMeshBuffersBuilder::TriangleMeshBuffersBuilder(
         const geometry::TriangleMesh& geometry)
-    : geometry_(geometry) {
-}
+    : geometry_(geometry) {}
 
-RenderableManager::PrimitiveType TriangleMeshBuffersBuilder::GetPrimitiveType() const {
+RenderableManager::PrimitiveType TriangleMeshBuffersBuilder::GetPrimitiveType()
+        const {
     return RenderableManager::PrimitiveType::TRIANGLES;
 }
 
@@ -315,11 +342,13 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 
     // Converting normals to Filament type - quaternions
     const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4VTangents = static_cast<math::quatf*>(malloc(tangentsBytesCount));
-    auto orientation = filament::geometry::SurfaceOrientation::Builder()
-            .vertexCount(nVertices)
-            .normals(reinterpret_cast<math::float3*>(normals.data()))
-            .build();
+    auto* float4VTangents =
+            static_cast<math::quatf*>(malloc(tangentsBytesCount));
+    auto orientation =
+            filament::geometry::SurfaceOrientation::Builder()
+                    .vertexCount(nVertices)
+                    .normals(reinterpret_cast<math::float3*>(normals.data()))
+                    .build();
     orientation.getQuats(float4VTangents, nVertices);
 
     const bool hasColors = geometry_.HasVertexColors();
@@ -347,7 +376,8 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
         stride = sizeof(ColoredVertex);
     }
 
-    vbuf = BuildFilamentVertexBuffer(engine, vertexData.verticesCount, stride, hasUVs, hasColors);
+    vbuf = BuildFilamentVertexBuffer(engine, vertexData.verticesCount, stride,
+                                     hasUVs, hasColors);
 
     VertexBufferHandle vbHandle;
     if (vbuf) {
@@ -361,11 +391,12 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 
     VertexBuffer::BufferDescriptor vertexbufferDescriptor(
             vertexData.bytes, vertexData.bytesToCopy);
-    vertexbufferDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    vertexbufferDescriptor.setCallback(
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
 
     auto ibHandle = resourceManager.CreateIndexBuffer(
-            indexData.bytesCount/ indexData.stride, indexData.stride);
+            indexData.bytesCount / indexData.stride, indexData.stride);
     auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
 
     // Moving copied indices to IndexBuffer
@@ -381,8 +412,12 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
     auto geometryAABB = geometry_.GetAxisAlignedBoundingBox();
 
-    const filament::math::float3 min(geometryAABB.min_bound_.x(), geometryAABB.min_bound_.y() ,geometryAABB.min_bound_.z());
-    const filament::math::float3 max(geometryAABB.max_bound_.x(), geometryAABB.max_bound_.y() ,geometryAABB.max_bound_.z());
+    const filament::math::float3 min(geometryAABB.min_bound_.x(),
+                                     geometryAABB.min_bound_.y(),
+                                     geometryAABB.min_bound_.z());
+    const filament::math::float3 max(geometryAABB.max_bound_.x(),
+                                     geometryAABB.max_bound_.y(),
+                                     geometryAABB.max_bound_.z());
 
     filament::Box aabb;
     aabb.set(min, max);
@@ -390,5 +425,5 @@ filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
     return aabb;
 }
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

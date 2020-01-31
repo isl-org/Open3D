@@ -41,8 +41,8 @@ namespace visualization {
 
 namespace {
 const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
-const filament::LinearColorA kNormalsClearColor = {0.5f,0.5f,0.5f,1.f};
-}
+const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
+}  // namespace
 
 FilamentView::FilamentView(filament::Engine& aEngine,
                            FilamentScene& aScene,
@@ -135,7 +135,8 @@ void FilamentView::PreRender() {
     if (mode_ == Mode::Depth) {
         materialHandle = FilamentResourceManager::kDepthMaterial;
         // FIXME: Refresh parameters only then something ACTUALLY changed
-        auto matInst = resourceManager_.GetMaterialInstance(materialHandle).lock();
+        auto matInst =
+                resourceManager_.GetMaterialInstance(materialHandle).lock();
         if (matInst) {
             const auto f = camera_->GetNativeCamera()->getCullingFar();
             const auto n = camera_->GetNativeCamera()->getNear();
@@ -154,11 +155,9 @@ void FilamentView::PreRender() {
         if (entity.info.type == EntityType::Geometry) {
             std::weak_ptr<filament::MaterialInstance> matInst;
             if (materialHandle) {
-                matInst = resourceManager_.GetMaterialInstance(
-                        materialHandle);
+                matInst = resourceManager_.GetMaterialInstance(materialHandle);
             } else {
-                matInst = resourceManager_.GetMaterialInstance(
-                        entity.material);
+                matInst = resourceManager_.GetMaterialInstance(entity.material);
             }
 
             filament::RenderableManager::Instance inst =
@@ -173,20 +172,20 @@ void FilamentView::PostRender() {
     // For now, we don't need to restore material.
     // One could easily find assigned material in SceneEntity::material
 
-//    auto& renderableManager = engine_.getRenderableManager();
-//
-//    for (const auto& pair : scene_.entities_) {
-//        const auto& entity = pair.second;
-//        if (entity.type == EntityType::Geometry) {
-//            auto wMaterialInstance =
-//                    resourceManager_.GetMaterialInstance(entity.material);
-//
-//            filament::RenderableManager::Instance inst =
-//                    renderableManager.getInstance(entity.self);
-//            renderableManager.setMaterialInstanceAt(
-//                    inst, 0, wMaterialInstance.lock().get());
-//        }
-//    }
+    //    auto& renderableManager = engine_.getRenderableManager();
+    //
+    //    for (const auto& pair : scene_.entities_) {
+    //        const auto& entity = pair.second;
+    //        if (entity.type == EntityType::Geometry) {
+    //            auto wMaterialInstance =
+    //                    resourceManager_.GetMaterialInstance(entity.material);
+    //
+    //            filament::RenderableManager::Instance inst =
+    //                    renderableManager.getInstance(entity.self);
+    //            renderableManager.setMaterialInstanceAt(
+    //                    inst, 0, wMaterialInstance.lock().get());
+    //        }
+    //    }
 }
 
 }  // namespace visualization

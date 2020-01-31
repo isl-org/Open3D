@@ -77,7 +77,9 @@ visualization::CameraManipulator* SceneWidget::GetCameraManipulator() const {
     return impl_->cameraManipulator.get();
 }
 
-void SceneWidget::SetSelectedGeometry(const visualization::GeometryHandle& geometry, const bool switchCamera) {
+void SceneWidget::SetSelectedGeometry(
+        const visualization::GeometryHandle& geometry,
+        const bool switchCamera) {
     if (switchCamera) {
         auto boundingSphere = impl_->scene.GetEntityBoundingSphere(geometry);
         SetCameraPOI(boundingSphere.first);
@@ -90,7 +92,8 @@ void SceneWidget::SetCameraPOI(const Eigen::Vector3f& location) {
     cameraControlsState_.poi = location;
 
     auto cameraman = GetCameraManipulator();
-    cameraControlsState_.orbitHeight = (cameraman->GetPosition() - location).norm();
+    cameraControlsState_.orbitHeight =
+            (cameraman->GetPosition() - location).norm();
 }
 
 Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
@@ -183,5 +186,5 @@ void SceneWidget::CameraControlsState::Reset() {
     frameWheelDelta = 0.f;
 }
 
-} // namespace gui
-} // namespace open3d
+}  // namespace gui
+}  // namespace open3d

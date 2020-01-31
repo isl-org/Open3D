@@ -153,7 +153,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context) {
     // it just ends and looks a bit odd. This should probably be a pretty
     // subtle difference from the menubar background.
     auto y = size.y - 1;
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
     drawList->AddLine(ImVec2(0, y), ImVec2(size.x, y),
                       context.theme.menubarBorderColor.ToABGR32(), 1.0f);
 

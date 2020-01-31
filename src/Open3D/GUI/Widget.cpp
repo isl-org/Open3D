@@ -61,17 +61,13 @@ const Rect& Widget::GetFrame() const { return impl_->frame; }
 
 void Widget::SetFrame(const Rect& f) { impl_->frame = f; }
 
-const Color& Widget::GetBackgroundColor() const {
-    return impl_->bgColor;
-}
+const Color& Widget::GetBackgroundColor() const { return impl_->bgColor; }
 
 bool Widget::IsDefaultBackgroundColor() const {
     return (impl_->bgColor == DEFAULT_BGCOLOR);
 }
 
-void Widget::SetBackgroundColor(const Color& color) {
-    impl_->bgColor = color;
-}
+void Widget::SetBackgroundColor(const Color& color) { impl_->bgColor = color; }
 
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
@@ -98,8 +94,8 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
 
 void Widget::Mouse(const MouseEvent& e) {
     // Iterate backwards so that we send mouse events from the top down.
-    for (auto it = impl_->children.rbegin();
-        it != impl_->children.rend();  ++it) {
+    for (auto it = impl_->children.rbegin(); it != impl_->children.rend();
+         ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
             (*it)->Mouse(e);
             break;
@@ -107,8 +103,7 @@ void Widget::Mouse(const MouseEvent& e) {
     }
 }
 
-void Widget::Key(const KeyEvent& e) {
-}
+void Widget::Key(const KeyEvent& e) {}
 
-} // namespace gui
-} // namespace open3d
+}  // namespace gui
+}  // namespace open3d

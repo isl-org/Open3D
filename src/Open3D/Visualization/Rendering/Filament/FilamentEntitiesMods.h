@@ -39,12 +39,14 @@ namespace visualization {
 
 class FilamentMaterialModifier : public MaterialModifier {
 public:
-    FilamentMaterialModifier(const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-                             const MaterialInstanceHandle& id);
+    FilamentMaterialModifier(
+            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
+            const MaterialInstanceHandle& id);
     FilamentMaterialModifier() = default;
 
     void Reset();
-    void Init(const std::shared_ptr<filament::MaterialInstance>& materialInstance,
+    void Init(
+            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
             const MaterialInstanceHandle& id);
 
     MaterialModifier& SetParameter(const char* parameter, float value) override;

@@ -42,7 +42,6 @@ class TransformManager;
 class VertexBuffer;
 }  // namespace filament
 
-
 namespace open3d {
 namespace visualization {
 
@@ -69,11 +68,11 @@ public:
     GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) override;
-    GeometryHandle AddGeometry(
-            const geometry::Geometry3D& geometry,
-            const MaterialInstanceHandle& materialId,
+    GeometryHandle AddGeometry(const geometry::Geometry3D& geometry,
+                               const MaterialInstanceHandle& materialId,
+                               const std::string& name) override;
+    std::vector<GeometryHandle> FindGeometryByName(
             const std::string& name) override;
-    std::vector<GeometryHandle> FindGeometryByName(const std::string& name) override;
     void AssignMaterial(const GeometryHandle& geometryId,
                         const MaterialInstanceHandle& materialId) override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
@@ -81,11 +80,14 @@ public:
     LightHandle AddLight(const LightDescription& descr) override;
     void RemoveLight(const LightHandle& id) override;
 
-    void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) override;
+    void SetEntityTransform(const REHandle_abstract& entityId,
+                            const Transform& transform) override;
     Transform GetEntityTransform(const REHandle_abstract& entityId) override;
 
-    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) override;
-    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(
+            const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(
+            const REHandle_abstract& entityId) override;
 
     void Draw(filament::Renderer& renderer);
 
@@ -101,8 +103,9 @@ private:
             VertexBufferHandle vb;
             IndexBufferHandle ib;
 
-            bool IsValid() const {return !self.isNull();}
-            void ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager);
+            bool IsValid() const { return !self.isNull(); }
+            void ReleaseResources(filament::Engine& engine,
+                                  FilamentResourceManager& manager);
         } info;
 
         MaterialInstanceHandle material;
@@ -110,8 +113,9 @@ private:
         utils::Entity parent;
         std::string name;
 
-        bool IsValid() const {return info.IsValid();}
-        void ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager);
+        bool IsValid() const { return info.IsValid(); }
+        void ReleaseResources(filament::Engine& engine,
+                              FilamentResourceManager& manager);
     };
 
     struct ViewContainer {
@@ -119,7 +123,8 @@ private:
         bool isActive = true;
     };
 
-    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id);
+    utils::EntityInstance<filament::TransformManager>
+    GetEntityTransformInstance(const REHandle_abstract& id);
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;

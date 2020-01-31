@@ -72,7 +72,8 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
                                   std::uint32_t w,
                                   std::uint32_t h) {
     auto handle = ViewHandle::Next();
-    auto view = std::make_unique<FilamentView>(engine_, *this, resourceManager_);
+    auto view =
+            std::make_unique<FilamentView>(engine_, *this, resourceManager_);
 
     view->SetViewport(x, y, w, h);
     if (!views_.empty()) {
@@ -112,7 +113,8 @@ GeometryHandle FilamentScene::AddGeometry(
     return AddGeometry(geometry, materialId, geometry.GetName());
 }
 
-GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
+GeometryHandle FilamentScene::AddGeometry(
+        const geometry::Geometry3D& geometry,
         const MaterialInstanceHandle& materialId,
         const std::string& name) {
     using namespace geometry;
@@ -124,7 +126,8 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
 
     auto geometryBuffersBuilder = GeometryBuffersBuilder::GetBuilder(geometry);
     if (!geometryBuffersBuilder) {
-        utility::LogWarning("Geometry type {} is not supported yet!", static_cast<size_t>(geometry.GetGeometryType()));
+        utility::LogWarning("Geometry type {} is not supported yet!",
+                            static_cast<size_t>(geometry.GetGeometryType()));
         return {};
     }
 
@@ -140,8 +143,7 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
     entityEntry.info.self = utils::EntityManager::get().create();
     RenderableManager::Builder builder(1);
     builder.boundingBox(aabb)
-            .layerMask(FilamentView::kAllLayersMask,
-                       FilamentView::kMainLayer)
+            .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
             .geometry(0, geometryBuffersBuilder->GetPrimitiveType(), vbuf.get(),
                       ibuf.get());
 
@@ -164,7 +166,8 @@ GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry,
     return handle;
 }
 
-std::vector<GeometryHandle> FilamentScene::FindGeometryByName(const std::string& name) {
+std::vector<GeometryHandle> FilamentScene::FindGeometryByName(
+        const std::string& name) {
     std::vector<GeometryHandle> found;
     for (const auto& e : entities_) {
         if (e.first.type == EntityType::Geometry && e.second.name == name) {
@@ -246,7 +249,8 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
 
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
-void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) {
+void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId,
+                                       const Transform& transform) {
     auto iTransform = GetEntityTransformInstance(entityId);
     if (iTransform.isValid()) {
         using namespace filament::math;
@@ -264,7 +268,8 @@ void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId, const 
     }
 }
 
-FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstract& entityId) {
+FilamentScene::Transform FilamentScene::GetEntityTransform(
+        const REHandle_abstract& entityId) {
     auto iTransform = GetEntityTransformInstance(entityId);
 
     Transform eTransform;
@@ -274,10 +279,12 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstra
 
         Transform::MatrixType matrix;
 
-        matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
-                fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
-                fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
-                fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+        matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
+                fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
+                fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
+                fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
+                fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
+                fTransform(3, 3);
 
         eTransform = matrix;
     }
@@ -285,8 +292,8 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(const REHandle_abstra
     return eTransform;
 }
 
-std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(const REHandle_abstract& entityId)
-{
+std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(
+        const REHandle_abstract& entityId) {
     std::pair<Eigen::Vector3f, Eigen::Vector3f> result;
 
     auto found = entities_.find(entityId);
@@ -302,7 +309,8 @@ std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(
     return result;
 }
 
-std::pair<Eigen::Vector3f, float> FilamentScene::GetEntityBoundingSphere(const REHandle_abstract& entityId) {
+std::pair<Eigen::Vector3f, float> FilamentScene::GetEntityBoundingSphere(
+        const REHandle_abstract& entityId) {
     std::pair<Eigen::Vector3f, float> result;
 
     auto found = entities_.find(entityId);
@@ -330,7 +338,8 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     }
 }
 
-utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
+utils::EntityInstance<filament::TransformManager>
+FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
     auto found = entities_.find(id);
 
     filament::TransformManager::Instance iTransform;
@@ -350,7 +359,10 @@ utils::EntityInstance<filament::TransformManager> FilamentScene::GetEntityTransf
             iTransform = transformMgr.getInstance(found->second.parent);
 
             auto center = GetEntityBoundingSphere(id).first;
-            transformMgr.create(found->second.info.self, iTransform, mat4f::translation(float3 {-center.x(),-center.y(),-center.z()}));
+            transformMgr.create(
+                    found->second.info.self, iTransform,
+                    mat4f::translation(
+                            float3{-center.x(), -center.y(), -center.z()}));
         }
     }
 
@@ -369,7 +381,8 @@ void FilamentScene::RemoveEntity(REHandle_abstract id) {
     }
 }
 
-void FilamentScene::SceneEntity::Details::ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager) {
+void FilamentScene::SceneEntity::Details::ReleaseResources(
+        filament::Engine& engine, FilamentResourceManager& manager) {
     if (vb) {
         manager.Destroy(vb);
     }
@@ -381,7 +394,8 @@ void FilamentScene::SceneEntity::Details::ReleaseResources(filament::Engine& eng
     self.clear();
 }
 
-void FilamentScene::SceneEntity::ReleaseResources(filament::Engine& engine, FilamentResourceManager& manager) {
+void FilamentScene::SceneEntity::ReleaseResources(
+        filament::Engine& engine, FilamentResourceManager& manager) {
     info.ReleaseResources(engine, manager);
 
     engine.destroy(parent);

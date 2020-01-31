@@ -48,11 +48,7 @@ public:
         All = Color | Depth | Stencil
     };
 
-    enum class Mode : std::uint8_t {
-        Color = 0u,
-        Depth,
-        Normals
-    };
+    enum class Mode : std::uint8_t { Color = 0u, Depth, Normals };
 
     virtual ~View() {}
 
