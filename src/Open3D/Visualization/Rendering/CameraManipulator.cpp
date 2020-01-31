@@ -128,7 +128,8 @@ void CameraManipulator::Orbit(const Eigen::Vector3f& center,
     auto transform = camera_.GetModelMatrix();
     auto pos = transform.translation();
 
-    Eigen::Vector2f delta = {deltaPhi*rotationSpeed, deltaTheta*rotationSpeed};
+    Eigen::Vector2f delta = {deltaPhi * rotationSpeed,
+                             deltaTheta * rotationSpeed};
 
     Eigen::Vector3f direction = center - pos;
     direction.normalize();
@@ -140,7 +141,8 @@ void CameraManipulator::Orbit(const Eigen::Vector3f& center,
         auto up = camera_.GetUpVector();
         direction = std::copysignf(1.f, facing) * Eigen::Vector3f::UnitY();
 
-        auto rotY = Eigen::AngleAxis<float>(delta.x(), Eigen::Vector3f::UnitY());
+        auto rotY =
+                Eigen::AngleAxis<float>(delta.x(), Eigen::Vector3f::UnitY());
         up = rotY * up;
 
         leftVector = direction.cross(up);
@@ -158,7 +160,8 @@ void CameraManipulator::Orbit(const Eigen::Vector3f& center,
         pos = center - direction * radius;
         camera_.LookAt(center, pos, up);
     } else {
-        auto rotY = Eigen::AngleAxis<float>(delta.x(), Eigen::Vector3f::UnitY());
+        auto rotY =
+                Eigen::AngleAxis<float>(delta.x(), Eigen::Vector3f::UnitY());
         direction = rotY * direction;
 
         leftVector = direction.cross(Eigen::Vector3f::UnitY());

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <cstddef> // <filament/Engine> recursive includes needs this, std::size_t especially
+#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
 #include "ImguiFilamentBridge.h"
 

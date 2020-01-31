@@ -172,7 +172,8 @@ int main(int argc, char* argv[]) {
 
     visualization::MaterialInstanceHandle matInstance;
     if (materialDataLoaded) {
-        visualization::ResourceLoadRequest request(materialData.data(), materialData.size());
+        visualization::ResourceLoadRequest request(materialData.data(),
+                                                   materialData.size());
         visualization::MaterialHandle matId = renderer->AddMaterial(request);
 
         matInstance = renderer->ModifyMaterial(matId)

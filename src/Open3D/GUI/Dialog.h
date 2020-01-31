@@ -33,14 +33,14 @@ namespace gui {
 
 class Window;
 
-class Dialog : public Widget
-{
+class Dialog : public Widget {
     using Super = Widget;
+
 public:
-    explicit Dialog(const char *title);
+    explicit Dialog(const char* title);
     virtual ~Dialog();
 
-    Size CalcPreferredSize(const Theme &theme) const override;
+    Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
     DrawResult Draw(const DrawContext& context) override;
 
@@ -49,5 +49,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

@@ -1,0 +1,28 @@
+material {
+    name : depth,
+    shadingModel : unlit,
+    parameters : [
+            { type : float,  name : cameraFar },
+            { type : float,  name : cameraNear }
+        ],
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = 3.0;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        const float near = materialParams.cameraNear;
+        const float far = materialParams.cameraFar;
+
+        float eye_z = near * far / ((gl_FragCoord.z * (far - near)) - far);
+        float linearZ = (eye_z + near) / (near - far);
+
+        material.baseColor.rgb = float3(linearZ);
+    }
+}

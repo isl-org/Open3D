@@ -47,8 +47,8 @@ struct MouseEvent {
     int y;
     union {
         struct {
-            int buttons; // MouseButtons ORed together
-        } move;  // includes drag
+            int buttons;  // MouseButtons ORed together
+        } move;           // includes drag
         struct {
             MouseButton button;
         } button;

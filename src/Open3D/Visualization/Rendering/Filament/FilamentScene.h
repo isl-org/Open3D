@@ -68,30 +68,54 @@ public:
     GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) override;
+    GeometryHandle AddGeometry(const geometry::Geometry3D& geometry,
+                               const MaterialInstanceHandle& materialId,
+                               const std::string& name) override;
+    std::vector<GeometryHandle> FindGeometryByName(
+            const std::string& name) override;
     void AssignMaterial(const GeometryHandle& geometryId,
-                        const MaterialInstanceHandle& materialId);
+                        const MaterialInstanceHandle& materialId) override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
     void RemoveLight(const LightHandle& id) override;
 
-    void SetEntityTransform(const REHandle_abstract& entityId, const Transform& transform) override;
+    void SetEntityTransform(const REHandle_abstract& entityId,
+                            const Transform& transform) override;
     Transform GetEntityTransform(const REHandle_abstract& entityId) override;
 
-    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(const REHandle_abstract& entityId) override;
-    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(
+            const REHandle_abstract& entityId) override;
+    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(
+            const REHandle_abstract& entityId) override;
 
     void Draw(filament::Renderer& renderer);
 
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
-    struct AllocatedEntity {
-        utils::Entity self;
-        VertexBufferHandle vb;
-        IndexBufferHandle ib;
+    friend class FilamentView;
+
+    struct SceneEntity {
+        struct Details {
+            utils::Entity self;
+            EntityType type;
+            VertexBufferHandle vb;
+            IndexBufferHandle ib;
+
+            bool IsValid() const { return !self.isNull(); }
+            void ReleaseResources(filament::Engine& engine,
+                                  FilamentResourceManager& manager);
+        } info;
+
+        MaterialInstanceHandle material;
         // Used for relocating transform to center of mass
         utils::Entity parent;
+        std::string name;
+
+        bool IsValid() const { return info.IsValid(); }
+        void ReleaseResources(filament::Engine& engine,
+                              FilamentResourceManager& manager);
     };
 
     struct ViewContainer {
@@ -99,7 +123,8 @@ private:
         bool isActive = true;
     };
 
-    utils::EntityInstance<filament::TransformManager> GetEntityTransformInstance(const REHandle_abstract& id);
+    utils::EntityInstance<filament::TransformManager>
+    GetEntityTransformInstance(const REHandle_abstract& id);
     void RemoveEntity(REHandle_abstract id);
 
     filament::Scene* scene_ = nullptr;
@@ -108,7 +133,7 @@ private:
     FilamentResourceManager& resourceManager_;
 
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
-    std::unordered_map<REHandle_abstract, AllocatedEntity> entities_;
+    std::unordered_map<REHandle_abstract, SceneEntity> entities_;
 };
 
 }  // namespace visualization
