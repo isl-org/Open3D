@@ -99,10 +99,22 @@ set(filament_LIBRARIES ${filament_LIB_FILES} ${FREETYPE_LIBRARIES})
 #    ${3RDPARTY_INSTALL_PREFIX}/include/filament
 #)
 
-#if (NOT BUILD_SHARED_LIBS)
-#    install(FILES ${filament_LIB_FILES} libfilament_all.a
-#            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-#endif()
+if (NOT BUILD_SHARED_LIBS)
+    install(TARGETS filament_combined
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+    install(DIRECTORY "${FILAMENT_TMP_INSTALL_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR}/"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+endif()
+
+install(DIRECTORY "${FILAMENT_TMP_INSTALL_DIR}/include"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/3rdparty"
+            PATTERN     "*.c"           EXCLUDE
+            PATTERN     "*.cmake"       EXCLUDE
+            PATTERN     "*.cpp"         EXCLUDE
+            PATTERN     "*.in"          EXCLUDE
+            PATTERN     "*.m"           EXCLUDE
+            PATTERN     "*.txt"         EXCLUDE
+            PATTERN     ".gitignore"    EXCLUDE)
 
 add_dependencies(build_all_3rd_party_libs filament_combined)
 
