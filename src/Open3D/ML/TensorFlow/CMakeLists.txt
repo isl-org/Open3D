@@ -9,7 +9,7 @@ endif ()
 
 find_package( Tensorflow REQUIRED )
 find_package( TBB REQUIRED )
-#find_package( nanoflann REQUIRED )
+find_package( nanoflann REQUIRED )
 find_package( parallelstl REQUIRED )
 if ( CUDA_ENABLED )
     find_package( CUB REQUIRED )
@@ -54,7 +54,7 @@ set_target_properties( open3d_tf_ops PROPERTIES
 
 target_include_directories( open3d_tf_ops PRIVATE
     ${TBB_INCLUDE_DIR}
-    #${nanoflann_INCLUDE_DIR}
+    ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
     )
 # silence warnings caused by tensorflow's Eigen
