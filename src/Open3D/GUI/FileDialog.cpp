@@ -36,8 +36,8 @@
 #include "Util.h"
 
 #include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Helper.h"
 #include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Utility/Helper.h"
 
 #include <string>
 #include <unordered_map>
@@ -49,7 +49,7 @@
 #define INLINE_DIRS 1
 #else
 #define INLINE_DIRS 0
-#endif // __APPLE__
+#endif  // __APPLE__
 
 namespace open3d {
 namespace gui {
@@ -58,7 +58,7 @@ class DirEntry {
 public:
     enum Type { DIR, FILE };
 
-    DirEntry(const std::string& name, Type type) {
+    DirEntry(const std::string &name, Type type) {
         type_ = type;
         name_ = name;
         if (type == DIR) {
@@ -69,15 +69,17 @@ public:
     }
 
     Type GetType() const { return type_; }
-    const std::string& GetName() const { return name_; }
-    const std::string& GetDisplayText() const { return display_; }
+    const std::string &GetName() const { return name_; }
+    const std::string &GetDisplayText() const { return display_; }
 
-    bool operator==(const DirEntry& rhs) const {
+    bool operator==(const DirEntry &rhs) const {
         return (type_ == rhs.type_ && name_ == rhs.name_);
     }
-    bool operator!=(const DirEntry& rhs) const { return !this->operator==(rhs); }
+    bool operator!=(const DirEntry &rhs) const {
+        return !this->operator==(rhs);
+    }
 
-    bool operator<(const DirEntry& rhs) const {
+    bool operator<(const DirEntry &rhs) const {
 #if INLINE_DIRS
         // Sort directories by name; if the OS allows directories and files
         // to have the same name, put directories first.
@@ -98,7 +100,7 @@ public:
         } else {
             return (type_ == DIR);
         }
-#endif // INLINE_DIRS
+#endif  // INLINE_DIRS
     }
 
 private:
@@ -121,7 +123,7 @@ struct FileDialog::Impl {
     std::function<void()> onCancel;
     std::function<void(const char *)> onDone;
 
-    const DirEntry& GetSelectedEntry() {
+    const DirEntry &GetSelectedEntry() {
         static DirEntry gBogus("", DirEntry::Type::FILE);
 
         int idx = this->filelist->GetSelectedIndex();
@@ -174,7 +176,7 @@ struct FileDialog::Impl {
             this->entries.insert(this->entries.begin(),
                                  DirEntry("..", DirEntry::Type::DIR));
         }
-#endif // __APPLE__
+#endif  // __APPLE__
 
         std::vector<std::string> display;
         display.reserve(this->entries.size());
@@ -193,7 +195,7 @@ struct FileDialog::Impl {
     std::string CalcCurrentDirectory() const {
         auto idx = this->dirtree->GetSelectedIndex();
         std::string path;
-        for (int i = 0;  i <= idx;  ++i) {
+        for (int i = 0; i <= idx; ++i) {
             if (i >= 2) {  // 0 is "/", so don't need "/" until 2.
                 path += "/";
             }
@@ -207,9 +209,8 @@ struct FileDialog::Impl {
     }
 };
 
-FileDialog::FileDialog(Type type, const char *title, const Theme& theme)
-: Dialog("File")
-, impl_(std::make_unique<FileDialog::Impl>()) {
+FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
+    : Dialog("File"), impl_(std::make_unique<FileDialog::Impl>()) {
     auto em = theme.fontSize;
     auto layout = std::make_shared<Vert>(0.5 * em, Margins(em));
     impl_->type = type;
@@ -257,36 +258,34 @@ FileDialog::FileDialog(Type type, const char *title, const Theme& theme)
     layout->AddChild(horiz);
     this->AddChild(layout);
 
-    impl_->filename->SetOnTextChanged([this](const char*) {
-        this->impl_->UpdateOk();
-    });
-    impl_->dirtree->SetOnValueChanged([this](const char*) {
-        this->impl_->UpdateDirectoryListing();
-    });
-    impl_->filelist->SetOnValueChanged([this](const char* value,
-                                              bool isDoubleClick) {
-        auto &entry = this->impl_->GetSelectedEntry();
-        if (isDoubleClick) {
-            if (entry.GetType() == DirEntry::Type::FILE) {
-                this->OnDone();
-                return;
-            } else {
-                auto newDir = this->impl_->CalcCurrentDirectory();
-                newDir = newDir + "/" + entry.GetName();
-                this->SetPath(newDir.c_str());
-            }
-        } else {
-            if (entry.GetType() ==  DirEntry::Type::FILE) {
-                this->impl_->filename->SetText(entry.GetName().c_str());
-            } else {
-                if (this->impl_->type == Type::OPEN) {
-                    this->impl_->filename->SetText("");
+    impl_->filename->SetOnTextChanged(
+            [this](const char *) { this->impl_->UpdateOk(); });
+    impl_->dirtree->SetOnValueChanged(
+            [this](const char *) { this->impl_->UpdateDirectoryListing(); });
+    impl_->filelist->SetOnValueChanged(
+            [this](const char *value, bool isDoubleClick) {
+                auto &entry = this->impl_->GetSelectedEntry();
+                if (isDoubleClick) {
+                    if (entry.GetType() == DirEntry::Type::FILE) {
+                        this->OnDone();
+                        return;
+                    } else {
+                        auto newDir = this->impl_->CalcCurrentDirectory();
+                        newDir = newDir + "/" + entry.GetName();
+                        this->SetPath(newDir.c_str());
+                    }
+                } else {
+                    if (entry.GetType() == DirEntry::Type::FILE) {
+                        this->impl_->filename->SetText(entry.GetName().c_str());
+                    } else {
+                        if (this->impl_->type == Type::OPEN) {
+                            this->impl_->filename->SetText("");
+                        }
+                    }
                 }
-            }
-        }
-        this->impl_->UpdateOk();
-    });
-    impl_->filter->SetOnValueChanged([this](const char*) {
+                this->impl_->UpdateOk();
+            });
+    impl_->filter->SetOnValueChanged([this](const char *) {
         this->impl_->UpdateDirectoryListing();  // re-filter directory
     });
     impl_->cancel->SetOnClicked([this]() {
@@ -296,17 +295,14 @@ FileDialog::FileDialog(Type type, const char *title, const Theme& theme)
             utility::LogError("FileDialog: need to call SetOnClicked()");
         }
     });
-    impl_->ok->SetOnClicked([this]() {
-        this->OnDone();
-    });
+    impl_->ok->SetOnClicked([this]() { this->OnDone(); });
 
     SetPath(utility::filesystem::GetWorkingDirectory().c_str());
 
     impl_->UpdateOk();
 }
 
-FileDialog::~FileDialog() {
-}
+FileDialog::~FileDialog() {}
 
 void FileDialog::SetPath(const char *path) {
     // Test cases:
@@ -322,14 +318,14 @@ void FileDialog::SetPath(const char *path) {
         }
     }
 
-    char firstChar = path[0]; // '/' doesn't get stored in components
+    char firstChar = path[0];  // '/' doesn't get stored in components
     bool isRelative = (firstChar != '/');
     bool isWindowsPath = false;
     // Check for Windows full path (e.g. "d:")
-    if (isRelative && pathComponents[0].size() >= 2
-        && ((firstChar >= 'a' && firstChar <= 'z')
-         || (firstChar >= 'A' && firstChar <= 'Z'))
-        && pathComponents[0][1] == ':') {
+    if (isRelative && pathComponents[0].size() >= 2 &&
+        ((firstChar >= 'a' && firstChar <= 'z') ||
+         (firstChar >= 'A' && firstChar <= 'Z')) &&
+        pathComponents[0][1] == ':') {
         isRelative = false;
         isWindowsPath = true;
     }
@@ -341,8 +337,8 @@ void FileDialog::SetPath(const char *path) {
     if (isRelative) {
         auto cwd = utility::filesystem::GetWorkingDirectory();
         auto cwdComponents = util::PathToComponents(cwd.c_str());
-        components.insert(components.end(),
-                          cwdComponents.begin(), cwdComponents.end());
+        components.insert(components.end(), cwdComponents.begin(),
+                          cwdComponents.end());
     } else {
         // absolute path, don't need any prefix
     }
@@ -367,7 +363,7 @@ void FileDialog::SetPath(const char *path) {
 
     impl_->dirtree->ClearItems();
     size_t n = (isDir ? components.size() : components.size() - 1);
-    for (size_t i = 0;  i < n;  ++i) {
+    for (size_t i = 0; i < n; ++i) {
         impl_->dirtree->AddItem(components[i].c_str());
     }
     impl_->dirtree->SetSelectedIndex(n - 1);
@@ -392,7 +388,7 @@ void FileDialog::AddFilter(const char *filter, const char *description) {
     impl_->filter->AddItem(description);
     if (firstFilter) {
         impl_->filter->SetSelectedIndex(0);
-        impl_->UpdateDirectoryListing(); // apply filter
+        impl_->UpdateDirectoryListing();  // apply filter
     }
     impl_->filterRow->SetVisible(true);
 }
@@ -419,8 +415,7 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
     auto em = theme.fontSize;
     auto width = std::max(25 * em, Super::CalcPreferredSize(theme).width);
     return Size(width, 30 * em);
-
 }
 
-} // namespace gui
-} // namespace open3d
+}  // namespace gui
+}  // namespace open3d

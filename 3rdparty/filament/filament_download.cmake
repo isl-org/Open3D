@@ -41,7 +41,7 @@ else()
     set(FILAMENT_ROOT ${PATH_TO_FILAMENT})
 endif()
 
-message(STATUS "${FILAMENT_ROOT} - here filament should located")
+message(STATUS "Filament is located at ${FILAMENT_ROOT}")
 
 set(filament_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/filament)
 set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
@@ -69,15 +69,38 @@ if (WIN32)
             COMMAND xcopy /d /s /i /y /q \"lib/x86_64/${CRT_CONFIG}d\" \"${3RDPARTY_INSTALL_PREFIX}/lib/Debug\"
             COMMAND xcopy /d /s /i /y /q \"bin\" \"${3RDPARTY_INSTALL_PREFIX}/bin\"
             WORKING_DIRECTORY ${FILAMENT_ROOT})
+
+    if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+        set(FILAMENT_LIB_SRC_PATH ${FILAMENT_ROOT}/lib/x86_64/${CRT_CONFIG}d)
+    else ()
+        set(FILAMENT_LIB_SRC_PATH ${FILAMENT_ROOT}/lib/x86_64/${CRT_CONFIG})
+    endif()
 else()
     add_custom_target(filament_copy
             COMMAND cp -a include/* ${filament_INCLUDE_DIRS}
             COMMAND cp -a lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
             COMMAND cp -a bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
             WORKING_DIRECTORY ${FILAMENT_ROOT})
+
+    set(FILAMENT_LIB_SRC_PATH ${FILAMENT_ROOT}/lib/${CMAKE_SYSTEM_PROCESSOR})
 endif()
 
 add_dependencies(build_all_3rd_party_libs filament_copy)
+
+if (NOT BUILD_SHARED_LIBS)
+    install(DIRECTORY "${FILAMENT_LIB_SRC_PATH}/"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+endif()
+
+install(DIRECTORY "${filament_INCLUDE_DIRS}"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/3rdparty"
+            PATTERN     "*.c"           EXCLUDE
+            PATTERN     "*.cmake"       EXCLUDE
+            PATTERN     "*.cpp"         EXCLUDE
+            PATTERN     "*.in"          EXCLUDE
+            PATTERN     "*.m"           EXCLUDE
+            PATTERN     "*.txt"         EXCLUDE
+            PATTERN     ".gitignore"    EXCLUDE)
 
 if (WIN32)
 elseif (APPLE)

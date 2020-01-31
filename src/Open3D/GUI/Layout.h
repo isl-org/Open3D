@@ -86,7 +86,8 @@ public:
 
     Vert();
     Vert(int spacing, const Margins& margins = Margins());
-    Vert(int spacing, const Margins& margins,
+    Vert(int spacing,
+         const Margins& margins,
          const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Vert();
 };
@@ -99,7 +100,8 @@ public:
 
     Horiz();
     Horiz(int spacing, const Margins& margins = Margins());
-    Horiz(int spacing, const Margins& margins,
+    Horiz(int spacing,
+          const Margins& margins,
           const std::vector<std::shared_ptr<Widget>>& children);
     ~Horiz();
 };

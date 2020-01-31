@@ -26,9 +26,6 @@
 
 #include "GuiVisualizer.h"
 
-#include "Open3D/Open3DConfig.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/Geometry3D.h"
 #include "Open3D/GUI/Application.h"
 #include "Open3D/GUI/Button.h"
 #include "Open3D/GUI/Color.h"
@@ -38,6 +35,9 @@
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Theme.h"
+#include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
@@ -50,38 +50,46 @@ namespace visualization {
 
 namespace {
 
-std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window)
-{
+std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
     auto &theme = window->GetTheme();
     auto dlg = std::make_shared<gui::Dialog>("About");
 
-    auto title = std::make_shared<gui::Label>((std::string("Open3D ") + OPEN3D_VERSION).c_str());
+    auto title = std::make_shared<gui::Label>(
+            (std::string("Open3D ") + OPEN3D_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
-        "The MIT License (MIT)\n"
-        "Copyright (c) 2018 www.open3d.org\n\n"
+            "The MIT License (MIT)\n"
+            "Copyright (c) 2018 www.open3d.org\n\n"
 
-        "Permission is hereby granted, free of charge, to any person obtaining "
-        "a copy of this software and associated documentation files (the "
-        "\"Software\"), to deal in the Software without restriction, including "
-        "without limitation the rights to use, copy, modify, merge, publish, "
-        "distribute, sublicense, and/or sell copies of the Software, and to "
-        "permit persons to whom the Software is furnished to do so, subject to "
-        "the following conditions:\n\n"
+            "Permission is hereby granted, free of charge, to any person "
+            "obtaining "
+            "a copy of this software and associated documentation files (the "
+            "\"Software\"), to deal in the Software without restriction, "
+            "including "
+            "without limitation the rights to use, copy, modify, merge, "
+            "publish, "
+            "distribute, sublicense, and/or sell copies of the Software, and "
+            "to "
+            "permit persons to whom the Software is furnished to do so, "
+            "subject to "
+            "the following conditions:\n\n"
 
-        "The above copyright notice and this permission notice shall be "
-        "included in all copies or substantial portions of the Software.\n\n"
+            "The above copyright notice and this permission notice shall be "
+            "included in all copies or substantial portions of the "
+            "Software.\n\n"
 
-        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
-        "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF "
-        "MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. "
-        "IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY "
-        "CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, "
-        "TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
-        "SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
+            "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
+            "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES "
+            "OF "
+            "MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
+            "NONINFRINGEMENT. "
+            "IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR "
+            "ANY "
+            "CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF "
+            "CONTRACT, "
+            "TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
+            "SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
     auto ok = std::make_shared<gui::Button>("OK");
-    ok->SetOnClicked([window]() {
-        window->CloseDialog();
-    });
+    ok->SetOnClicked([window]() { window->CloseDialog(); });
 
     gui::Margins margins(theme.fontSize);
     auto layout = std::make_shared<gui::Vert>(0, margins);
@@ -95,26 +103,24 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window)
     return dlg;
 }
 
-std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window)
-{
+std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     auto &theme = window->GetTheme();
     auto em = theme.fontSize;
     auto dlg = std::make_shared<gui::Dialog>("Contact Us");
 
     auto title = std::make_shared<gui::Label>("Contact Us");
-    auto leftCol = std::make_shared<gui::Label>("Web site:\n"
-                                                "Code:\n"
-                                                "Mailing list:\n"
-                                                "Discord channel:");
+    auto leftCol = std::make_shared<gui::Label>(
+            "Web site:\n"
+            "Code:\n"
+            "Mailing list:\n"
+            "Discord channel:");
     auto rightCol = std::make_shared<gui::Label>(
-                            "http://www.open3d.org\n"
-                            "http://github.org/intel-isl/Open3D\n"
-                            "http://www.open3d.org/index.php/subscribe/\n"
-                            "https://discord.gg/D35BGvn");
+            "http://www.open3d.org\n"
+            "http://github.org/intel-isl/Open3D\n"
+            "http://www.open3d.org/index.php/subscribe/\n"
+            "https://discord.gg/D35BGvn");
     auto ok = std::make_shared<gui::Button>("OK");
-    ok->SetOnClicked([window]() {
-        window->CloseDialog();
-    });
+    ok->SetOnClicked([window]() { window->CloseDialog(); });
 
     gui::Margins margins(em);
     auto layout = std::make_shared<gui::Vert>(0, margins);
@@ -133,23 +139,35 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window)
     return dlg;
 }
 
-}
+}  // namespace
 
-enum MenuId { FILE_OPEN, FILE_EXPORT_RGB, FILE_EXPORT_DEPTH, FILE_CLOSE,
-              VIEW_POINTS, VIEW_WIREFRAME, VIEW_MESH,
-              HELP_ABOUT, HELP_CONTACT };
+enum MenuId {
+    FILE_OPEN,
+    FILE_EXPORT_RGB,
+    FILE_EXPORT_DEPTH,
+    FILE_CLOSE,
+    VIEW_POINTS,
+    VIEW_WIREFRAME,
+    VIEW_MESH,
+    HELP_ABOUT,
+    HELP_CONTACT
+};
 
 struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> bottomBar;
 };
 
-GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries,
-                             const std::string &title,
-                             int width, int height, int left, int top)
-: gui::Window(title, left, top, width, height)
-, impl_(new GuiVisualizer::Impl())
-{
+GuiVisualizer::GuiVisualizer(
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometries,
+        const std::string &title,
+        int width,
+        int height,
+        int left,
+        int top)
+    : gui::Window(title, left, top, width, height),
+      impl_(new GuiVisualizer::Impl()) {
     auto &app = gui::Application::GetInstance();
     auto &theme = GetTheme();
 
@@ -159,23 +177,25 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
     nonmetal = GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
-    auto white = GetRenderer().ModifyMaterial(nonmetal)
-            .SetColor("baseColor", {1.0, 1.0, 1.0})
-            .SetParameter("roughness", 0.5f)
-            .SetParameter("clearCoat", 1.f)
-            .SetParameter("clearCoatRoughness", 0.3f)
-            .Finish();
+    auto white = GetRenderer()
+                         .ModifyMaterial(nonmetal)
+                         .SetColor("baseColor", {1.0, 1.0, 1.0})
+                         .SetParameter("roughness", 0.5f)
+                         .SetParameter("clearCoat", 1.f)
+                         .SetParameter("clearCoatRoughness", 0.3f)
+                         .Finish();
 
     // Create scene
     auto sceneId = GetRenderer().CreateScene();
-    auto scene = std::make_shared<gui::SceneWidget>(*GetRenderer().GetScene(sceneId));
+    auto scene = std::make_shared<gui::SceneWidget>(
+            *GetRenderer().GetScene(sceneId));
     impl_->scene = scene;
     scene->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
 
     // Create light
     visualization::LightDescription lightDescription;
     lightDescription.intensity = 100000;
-    lightDescription.direction = { -0.707, -.707, 0.0 };
+    lightDescription.direction = {-0.707, -.707, 0.0};
     lightDescription.customAttributes["custom_type"] = "SUN";
 
     scene->GetScene()->AddLight(lightDescription);
@@ -194,7 +214,8 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
             case geometry::Geometry::GeometryType::TetraMesh:
             case geometry::Geometry::GeometryType::Octree:
             case geometry::Geometry::GeometryType::VoxelGrid: {
-                auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
+                auto g3 =
+                        std::static_pointer_cast<const geometry::Geometry3D>(g);
                 bounds += g3->GetAxisAlignedBoundingBox();
                 scene->GetScene()->AddGeometry(*g3, white);
             }
@@ -214,12 +235,10 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     auto boundsMid = Eigen::Vector3f((boundsMin.x() + boundsMax.x()) / 2.0,
                                      (boundsMin.y() + boundsMax.y()) / 2.0,
                                      (boundsMin.z() + boundsMax.z()) / 2.0);
-    Eigen::Vector3f farthest(std::max(std::abs(boundsMin.x()),
-                                      std::abs(boundsMax.x())),
-                             std::max(std::abs(boundsMin.y()),
-                                      std::abs(boundsMax.y())),
-                             std::max(std::abs(boundsMin.z()),
-                                      std::abs(boundsMax.z())));
+    Eigen::Vector3f farthest(
+            std::max(std::abs(boundsMin.x()), std::abs(boundsMax.x())),
+            std::max(std::abs(boundsMin.y()), std::abs(boundsMax.y())),
+            std::max(std::abs(boundsMin.z()), std::abs(boundsMax.z())));
     scene->GetCameraManipulator()->LookAt({0, 0, 0}, farthest);
 
     // Setup UI
@@ -242,8 +261,8 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
         Eigen::Vector3f eye(boundsMid.x(), boundsMid.y(), 1.5 * boundsMax.z());
         scene->GetCameraManipulator()->LookAt(boundsMid, eye);
     });
-    auto bottomBar = std::make_shared<gui::Horiz>(spacing,
-                                                  gui::Margins(0, spacing));
+    auto bottomBar =
+            std::make_shared<gui::Horiz>(spacing, gui::Margins(0, spacing));
     impl_->bottomBar = bottomBar;
     bottomBar->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
     bottomBar->AddChild(gui::Horiz::MakeStretch());
@@ -277,30 +296,29 @@ GuiVisualizer::GuiVisualizer(const std::vector<std::shared_ptr<const geometry::G
     this->SetMenubar(menu);
 }
 
-GuiVisualizer::~GuiVisualizer() {
-}
+GuiVisualizer::~GuiVisualizer() {}
 
-void GuiVisualizer::Layout(const gui::Theme& theme) {
+void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
     impl_->scene->SetFrame(r);
 
     auto bottomHeight = impl_->bottomBar->CalcPreferredSize(theme).height;
-    gui::Rect bottomRect(0, r.GetBottom() - bottomHeight,
-                         r.width, bottomHeight);
+    gui::Rect bottomRect(0, r.GetBottom() - bottomHeight, r.width,
+                         bottomHeight);
     impl_->bottomBar->SetFrame(bottomRect);
 
     Super::Layout(theme);
 }
 
-void GuiVisualizer::LoadGeometry(const std::string& path) {
+void GuiVisualizer::LoadGeometry(const std::string &path) {
     ShowMessageBox("Not implemented", "LoadGeometry() is not implemented yet");
 }
 
-void GuiVisualizer::ExportRGB(const std::string& path) {
+void GuiVisualizer::ExportRGB(const std::string &path) {
     ShowMessageBox("Not implemented", "ExportRGB() is not implemented yet");
 }
 
-void GuiVisualizer::ExportDepth(const std::string& path) {
+void GuiVisualizer::ExportDepth(const std::string &path) {
     ShowMessageBox("Not implemented", "ExportDepth() is not implemented yet");
 }
 
@@ -308,12 +326,14 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
     auto menuId = MenuId(itemId);
     switch (menuId) {
         case FILE_OPEN: {
-            auto dlg = std::make_shared<gui::FileDialog>(gui::FileDialog::Type::OPEN,
-                                                         "Open Geometry", GetTheme());
+            auto dlg = std::make_shared<gui::FileDialog>(
+                    gui::FileDialog::Type::OPEN, "Open Geometry", GetTheme());
             dlg->AddFilter(".ply .stl .obj .off .gltf .glb",
-                           "Triangle mesh files (.ply, .stl, .obj, .off, .gltf, .glb)");
+                           "Triangle mesh files (.ply, .stl, .obj, .off, "
+                           ".gltf, .glb)");
             dlg->AddFilter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
-                           "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, .pcd, .pts)");
+                           "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
+                           ".pcd, .pts)");
             dlg->AddFilter(".ply", "Polygon files (.ply)");
             dlg->AddFilter(".stl", "Stereolithography files (.stl)");
             dlg->AddFilter(".obj", "Wavefront OBJ files (.obj)");
@@ -322,7 +342,8 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             dlg->AddFilter(".glb", "OpenGL binary transfer files (.glb)");
             dlg->AddFilter(".xyz", "ASCII point cloud files (.xyz)");
             dlg->AddFilter(".xyzn", "ASCII point cloud with normals (.xyzn)");
-            dlg->AddFilter(".xyzrgb", "ASCII point cloud files with colors (.xyzrgb)");
+            dlg->AddFilter(".xyzrgb",
+                           "ASCII point cloud files with colors (.xyzrgb)");
             dlg->AddFilter(".pcd", "Point Cloud Data files (.pcd)");
             dlg->AddFilter(".pts", "3D Points files (.pts)");
             dlg->AddFilter("", "All files");
@@ -334,11 +355,10 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             ShowDialog(dlg);
             break;
         }
-        case FILE_EXPORT_RGB: // fall through
-        case FILE_EXPORT_DEPTH:
-        {
-            auto dlg = std::make_shared<gui::FileDialog>(gui::FileDialog::Type::SAVE,
-                                                         "Save File", GetTheme());
+        case FILE_EXPORT_RGB:  // fall through
+        case FILE_EXPORT_DEPTH: {
+            auto dlg = std::make_shared<gui::FileDialog>(
+                    gui::FileDialog::Type::SAVE, "Save File", GetTheme());
             dlg->AddFilter(".png", "PNG images (.png)");
             dlg->AddFilter("", "All files");
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
@@ -375,5 +395,5 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
     }
 }
 
-} // visualizer
-} // open3d
+}  // namespace visualization
+}  // namespace open3d

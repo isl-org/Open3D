@@ -60,7 +60,7 @@ Label::~Label() {}
 
 const char* Label::GetText() const { return impl_->text.c_str(); }
 
-void Label::SetText(const char *text) {
+void Label::SetText(const char* text) {
     impl_->text = text;
     impl_->isSingleLine = !(impl_->text.find('\n') != std::string::npos);
 }
@@ -68,7 +68,7 @@ void Label::SetText(const char *text) {
 Size Label::CalcPreferredSize(const Theme& theme) const {
     auto em = theme.fontSize;
     auto padding = ImGui::GetStyle().FramePadding;
-    auto *font = ImGui::GetFont();
+    auto* font = ImGui::GetFont();
 
     if (impl_->isSingleLine) {
         auto size = font->CalcTextSizeA(theme.fontSize, 10000, 0.0,
@@ -105,15 +105,16 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
 }
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
-    auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
+    auto& frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
     if (impl_->isSingleLine) {
         ImGui::TextUnformatted(impl_->text.c_str());
     } else {
         auto padding = ImGui::GetStyle().FramePadding;
-        float wrapX = ImGui::GetCursorPos().x + frame.width - std::ceil(2.0f * padding.x);
+        float wrapX = ImGui::GetCursorPos().x + frame.width -
+                      std::ceil(2.0f * padding.x);
         ImGui::PushTextWrapPos(wrapX);
         ImGui::TextWrapped("%s", impl_->text.c_str());
         ImGui::PopTextWrapPos();

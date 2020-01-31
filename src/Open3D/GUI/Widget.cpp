@@ -66,33 +66,21 @@ const Rect& Widget::GetFrame() const { return impl_->frame; }
 
 void Widget::SetFrame(const Rect& f) { impl_->frame = f; }
 
-const Color& Widget::GetBackgroundColor() const {
-    return impl_->bgColor;
-}
+const Color& Widget::GetBackgroundColor() const { return impl_->bgColor; }
 
 bool Widget::IsDefaultBackgroundColor() const {
     return (impl_->bgColor == DEFAULT_BGCOLOR);
 }
 
-void Widget::SetBackgroundColor(const Color& color) {
-    impl_->bgColor = color;
-}
+void Widget::SetBackgroundColor(const Color& color) { impl_->bgColor = color; }
 
-bool Widget::IsVisible() const {
-    return impl_->isVisible;
-}
+bool Widget::IsVisible() const { return impl_->isVisible; }
 
-void Widget::SetVisible(bool vis) {
-    impl_->isVisible = vis;
-}
+void Widget::SetVisible(bool vis) { impl_->isVisible = vis; }
 
-bool Widget::IsEnabled() const {
-    return impl_->isEnabled;
-}
+bool Widget::IsEnabled() const { return impl_->isEnabled; }
 
-void Widget::SetEnabled(bool enabled) {
-    impl_->isEnabled = enabled;
-}
+void Widget::SetEnabled(bool enabled) { impl_->isEnabled = enabled; }
 
 Size Widget::CalcPreferredSize(const Theme&) const {
     return Size(DIM_GROW, DIM_GROW);
@@ -110,7 +98,7 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
     }
 
     DrawResult result = DrawResult::NONE;
-    for (auto &child : impl_->children) {
+    for (auto& child : impl_->children) {
         if (child->IsVisible()) {
             auto r = child->Draw(context);
             // The mouse can only be over one item, so there should never
@@ -144,8 +132,8 @@ void Widget::Mouse(const MouseEvent& e) {
     }
 
     // Iterate backwards so that we send mouse events from the top down.
-    for (auto it = impl_->children.rbegin();
-        it != impl_->children.rend();  ++it) {
+    for (auto it = impl_->children.rbegin(); it != impl_->children.rend();
+         ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
             (*it)->Mouse(e);
             break;
@@ -153,8 +141,7 @@ void Widget::Mouse(const MouseEvent& e) {
     }
 }
 
-void Widget::Key(const KeyEvent& e) {
-}
+void Widget::Key(const KeyEvent& e) {}
 
-} // namespace gui
-} // namespace open3d
+}  // namespace gui
+}  // namespace open3d

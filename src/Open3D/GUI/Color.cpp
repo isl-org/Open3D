@@ -37,10 +37,8 @@ Color::Color(float r, float g, float b, float a /*= 1.0*/)
     : rgba_{r, g, b, a} {}
 
 bool Color::operator==(const Color& rhs) const {
-    return (this->rgba_[0] == rhs.rgba_[0] &&
-            this->rgba_[1] == rhs.rgba_[1] &&
-            this->rgba_[2] == rhs.rgba_[2] &&
-            this->rgba_[3] == rhs.rgba_[3]);
+    return (this->rgba_[0] == rhs.rgba_[0] && this->rgba_[1] == rhs.rgba_[1] &&
+            this->rgba_[2] == rhs.rgba_[2] && this->rgba_[3] == rhs.rgba_[3]);
 }
 
 bool Color::operator!=(const Color& rhs) const {
@@ -68,5 +66,5 @@ unsigned int Color::ToABGR32() const {
     return ((a << 24) | (b << 16) | (g << 8) | r);
 }
 
-} // namespace gui
-} // namespace open3d
+}  // namespace gui
+}  // namespace open3d

@@ -39,7 +39,7 @@ namespace gui {
 namespace {
 static const int NO_SELECTION = -1;
 static int gNextListBoxId = 1;
-}
+}  // namespace
 
 struct ListView::Impl {
     std::string imguiId;
@@ -48,28 +48,24 @@ struct ListView::Impl {
     std::function<void(const char *, bool)> onValueChanged;
 };
 
-ListView::ListView()
-: impl_(std::make_unique<ListView::Impl>()) {
+ListView::ListView() : impl_(std::make_unique<ListView::Impl>()) {
     std::stringstream s;
     s << "##listview_" << gNextListBoxId++;
     impl_->imguiId = s.str();
 }
 
-ListView::~ListView() {
-}
+ListView::~ListView() {}
 
-void ListView::SetItems(const std::vector<std::string> &items)  {
+void ListView::SetItems(const std::vector<std::string> &items) {
     impl_->items = items;
     impl_->selectedIndex = NO_SELECTION;
 }
 
-int ListView::GetSelectedIndex() const {
-    return impl_->selectedIndex;
-}
+int ListView::GetSelectedIndex() const { return impl_->selectedIndex; }
 
-const char* ListView::GetSelectedValue() const {
-    if (impl_->selectedIndex < 0
-        || impl_->selectedIndex >= int(impl_->items.size())) {
+const char *ListView::GetSelectedValue() const {
+    if (impl_->selectedIndex < 0 ||
+        impl_->selectedIndex >= int(impl_->items.size())) {
         return "";
     } else {
         return impl_->items[impl_->selectedIndex].c_str();
@@ -80,11 +76,12 @@ void ListView::SetSelectedIndex(int index) {
     impl_->selectedIndex = std::min(int(impl_->items.size()), index);
 }
 
-void ListView::SetOnValueChanged(std::function<void(const char *, bool)> onValueChanged) {
+void ListView::SetOnValueChanged(
+        std::function<void(const char *, bool)> onValueChanged) {
     impl_->onValueChanged = onValueChanged;
 }
 
-Size ListView::CalcPreferredSize(const Theme& theme) const {
+Size ListView::CalcPreferredSize(const Theme &theme) const {
     auto padding = ImGui::GetStyle().FramePadding;
     auto *font = ImGui::GetFont();
     ImVec2 size(0, 0);
@@ -95,14 +92,13 @@ Size ListView::CalcPreferredSize(const Theme& theme) const {
         size.x = std::max(size.x, itemSize.x);
         size.y += ImGui::GetFrameHeight();
     }
-    return Size(std::ceil(size.x + 2.0f * padding.x),
-                Widget::DIM_GROW);
+    return Size(std::ceil(size.x + 2.0f * padding.x), Widget::DIM_GROW);
 }
 
-Widget::DrawResult ListView::Draw(const DrawContext& context) {
+Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorPos(ImVec2(frame.x - context.uiOffsetX,
-                               frame.y - context.uiOffsetY));
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
 
     int heightNItems = int(std::floor(frame.height / ImGui::GetFrameHeight()));
@@ -113,7 +109,7 @@ Widget::DrawResult ListView::Draw(const DrawContext& context) {
     DrawImGuiPushEnabledState();
     if (ImGui::ListBoxHeader(impl_->imguiId.c_str(), impl_->items.size(),
                              heightNItems)) {
-        for (size_t i = 0;  i < impl_->items.size();  ++i) {
+        for (size_t i = 0; i < impl_->items.size(); ++i) {
             bool isSelected = (int(i) == impl_->selectedIndex);
             if (ImGui::Selectable(impl_->items[i].c_str(), &isSelected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
@@ -144,5 +140,5 @@ Widget::DrawResult ListView::Draw(const DrawContext& context) {
     return result;
 }
 
-} // namespace gui
-} // namespace open3d
+}  // namespace gui
+}  // namespace open3d

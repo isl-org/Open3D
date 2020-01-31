@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Camera.h"
 #include <Eigen/Geometry>
+#include "Camera.h"
 
 namespace open3d {
 namespace visualization {

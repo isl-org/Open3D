@@ -32,7 +32,7 @@ namespace open3d {
 namespace gui {
 namespace util {
 
-ImVec4 colorToImgui(const Color& color) {
+ImVec4 colorToImgui(const Color &color) {
     return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
                   color.GetAlpha());
 }

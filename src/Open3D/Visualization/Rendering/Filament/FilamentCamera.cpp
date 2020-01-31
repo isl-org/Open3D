@@ -83,9 +83,9 @@ void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
     using namespace filament;
 
     math::mat4f fTransform = camera_->getModelMatrix();
-    fTransform[0].xyz = math::float3(left.x(),left.y(),left.z());
-    fTransform[1].xyz = math::float3(up.x(),up.y(),up.z());
-    fTransform[2].xyz = math::float3(forward.x(),forward.y(),forward.z());
+    fTransform[0].xyz = math::float3(left.x(), left.y(), left.z());
+    fTransform[1].xyz = math::float3(up.x(), up.y(), up.z());
+    fTransform[2].xyz = math::float3(forward.x(), forward.y(), forward.z());
 
     camera_->setModelMatrix(fTransform);
 }
@@ -123,10 +123,12 @@ FilamentCamera::Transform FilamentCamera::GetModelMatrix() {
 
     Transform::MatrixType matrix;
 
-    matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
-            fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
-            fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
-            fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+    matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
+            fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
+            fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
+            fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
+            fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
+            fTransform(3, 3);
 
     return Transform(matrix);
 }

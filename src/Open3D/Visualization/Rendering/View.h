@@ -36,7 +36,7 @@ class Camera;
 
 class View {
 public:
-    enum class TargetBuffers : uint8_t {
+    enum class TargetBuffers : std::uint8_t {
         None = 0u,
         Color = 1u,
         Depth = 2u,
@@ -48,14 +48,21 @@ public:
         All = Color | Depth | Stencil
     };
 
+    enum class Mode : std::uint8_t { Color = 0u, Depth, Normals };
+
     virtual ~View() {}
 
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
+    virtual void SetMode(Mode mode) = 0;
 
     virtual void SetViewport(std::int32_t x,
                              std::int32_t y,
                              std::uint32_t w,
                              std::uint32_t h) = 0;
+
+    // With current renderer implementation,
+    // we apply changes immediately only in color mode.
+    // In other cases color will be set on mode switch
     virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
 
     virtual Camera* GetCamera() const = 0;

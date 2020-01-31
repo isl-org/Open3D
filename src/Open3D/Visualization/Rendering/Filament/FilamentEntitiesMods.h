@@ -39,10 +39,13 @@ namespace visualization {
 
 class FilamentMaterialModifier : public MaterialModifier {
 public:
+    FilamentMaterialModifier(
+            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
+            const MaterialInstanceHandle& id);
     FilamentMaterialModifier() = default;
 
     void Reset();
-    void InitWithMaterialInstance(
+    void Init(
             const std::shared_ptr<filament::MaterialInstance>& materialInstance,
             const MaterialInstanceHandle& id);
 

@@ -42,10 +42,10 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 
+#include <SDL.h>
+#include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <filament/Engine.h>
-#include <SDL.h>
 
 #include <cmath>
 #include <vector>
@@ -91,18 +91,18 @@ struct Window::Impl {
     // child, it is a child window, and needs to be on top, which we cannot
     // guarantee if it is a child widget.
     std::shared_ptr<Dialog> activeDialog;
-    
-    Widget *focusWidget = nullptr; // only used if ImGUI isn't taking keystrokes
+
+    Widget* focusWidget =
+            nullptr;  // only used if ImGUI isn't taking keystrokes
     bool needsLayout = true;
     int nSkippedFrames = 0;
 };
 
 Window::Window(const std::string& title, int width, int height)
-: Window(title, -1, -1, width, height) {
-}
+    : Window(title, -1, -1, width, height) {}
 
 Window::Window(const std::string& title, int x, int y, int width, int height)
-: impl_(new Window::Impl()) {
+    : impl_(new Window::Impl()) {
     if (x < 0) {
         x = SDL_WINDOWPOS_CENTERED;
     }
@@ -152,11 +152,15 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
     style.Colors[ImGuiCol_ButtonHovered] = colorToImgui(theme.buttonHoverColor);
     style.Colors[ImGuiCol_ButtonActive] = colorToImgui(theme.buttonActiveColor);
     style.Colors[ImGuiCol_CheckMark] = colorToImgui(theme.checkboxCheckColor);
-    style.Colors[ImGuiCol_FrameBg] = colorToImgui(theme.comboboxBackgroundColor);
-    style.Colors[ImGuiCol_FrameBgHovered] = colorToImgui(theme.comboboxHoverColor);
-    style.Colors[ImGuiCol_FrameBgActive] = style.Colors[ImGuiCol_FrameBgHovered];
+    style.Colors[ImGuiCol_FrameBg] =
+            colorToImgui(theme.comboboxBackgroundColor);
+    style.Colors[ImGuiCol_FrameBgHovered] =
+            colorToImgui(theme.comboboxHoverColor);
+    style.Colors[ImGuiCol_FrameBgActive] =
+            style.Colors[ImGuiCol_FrameBgHovered];
     style.Colors[ImGuiCol_SliderGrab] = colorToImgui(theme.sliderGrabColor);
-    style.Colors[ImGuiCol_SliderGrabActive] = colorToImgui(theme.sliderGrabColor);
+    style.Colors[ImGuiCol_SliderGrabActive] =
+            colorToImgui(theme.sliderGrabColor);
     style.Colors[ImGuiCol_Tab] = colorToImgui(theme.tabInactiveColor);
     style.Colors[ImGuiCol_TabHovered] = colorToImgui(theme.tabHoverColor);
     style.Colors[ImGuiCol_TabActive] = colorToImgui(theme.tabActiveColor);
@@ -311,16 +315,14 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     }
     w = std::min(w, int(std::round(0.8 * winSize.width)));
     h = std::min(h, int(std::round(0.8 * winSize.height)));
-    dlg->SetFrame(gui::Rect((winSize.width - w) / 2, (winSize.height - h) / 2,
-                            w,  h));
+    dlg->SetFrame(
+            gui::Rect((winSize.width - w) / 2, (winSize.height - h) / 2, w, h));
     dlg->Layout(GetTheme());
 }
 
-void Window::CloseDialog() {
-    impl_->activeDialog.reset();
-}
+void Window::CloseDialog() { impl_->activeDialog.reset(); }
 
-void Window::ShowMessageBox(const char *title, const char *message) {
+void Window::ShowMessageBox(const char* title, const char* message) {
     auto em = GetTheme().fontSize;
     auto margins = Margins(GetTheme().defaultMargin);
     auto dlg = std::make_shared<Dialog>(title);
@@ -344,15 +346,15 @@ void Window::Layout(const Theme& theme) {
     }
 }
 
-void Window::OnMenuItemSelected(Menu::ItemId itemId)
-{
-}
+void Window::OnMenuItemSelected(Menu::ItemId itemId) {}
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
 
-Widget::DrawResult DrawChild(DrawContext& dc, const char *name,
-                             std::shared_ptr<Widget> child, Mode mode) {
+Widget::DrawResult DrawChild(DrawContext& dc,
+                             const char* name,
+                             std::shared_ptr<Widget> child,
+                             Mode mode) {
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
                              ImGuiWindowFlags_NoResize |
                              ImGuiWindowFlags_NoCollapse;
@@ -374,8 +376,9 @@ Widget::DrawResult DrawChild(DrawContext& dc, const char *name,
         ImGui::SetNextWindowPos(ImVec2(frame.x, frame.y));
         ImGui::SetNextWindowSize(ImVec2(frame.width, frame.height));
         if (bgColorNotDefault) {
-            auto &bgColor = child->GetBackgroundColor();
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, util::colorToImgui(bgColor));
+            auto& bgColor = child->GetBackgroundColor();
+            ImGui::PushStyleColor(ImGuiCol_WindowBg,
+                                  util::colorToImgui(bgColor));
         }
         ImGui::Begin(name, nullptr, flags);
     } else {
@@ -395,7 +398,7 @@ Widget::DrawResult DrawChild(DrawContext& dc, const char *name,
 
     return result;
 }
-} // namespace
+}  // namespace
 
 Window::DrawResult Window::OnDraw(float dtSec) {
     // These are here to provide fast unique window names. If you find yourself
@@ -448,18 +451,19 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     auto size = GetSize();
     int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
-    DrawContext dc{ theme, 0, 0, size.width, size.height, em, dtSec };
+    DrawContext dc{theme, 0, 0, size.width, size.height, em, dtSec};
 
     bool needsRedraw = false;
 
     // Draw all the widgets. These will get recorded by ImGui.
     int winIdx = 0;
     Mode drawMode = (impl_->activeDialog ? NO_INPUT : NORMAL);
-    for (auto &child : this->impl_->children) {
+    for (auto& child : this->impl_->children) {
         if (!child->IsVisible()) {
             continue;
         }
-        if (DrawChild(dc, winNames[winIdx++], child, drawMode) != Widget::DrawResult::NONE) {
+        if (DrawChild(dc, winNames[winIdx++], child, drawMode) !=
+            Widget::DrawResult::NONE) {
             needsRedraw = true;
         }
     }
@@ -476,9 +480,12 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     // Draw any active dialog
     if (impl_->activeDialog) {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, theme.dialogBorderWidth);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, theme.dialogBorderRadius);
-        if (DrawChild(dc, "dialog", impl_->activeDialog, DIALOG) != Widget::DrawResult::NONE) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,
+                            theme.dialogBorderWidth);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,
+                            theme.dialogBorderRadius);
+        if (DrawChild(dc, "dialog", impl_->activeDialog, DIALOG) !=
+            Widget::DrawResult::NONE) {
             needsRedraw = true;
         }
         ImGui::PopStyleVar(2);
@@ -534,7 +541,7 @@ void Window::OnResize() {
     io.DisplayFramebufferScale.y = 1.0f;
 }
 
-void Window::OnMouseEvent(const MouseEvent &e) {
+void Window::OnMouseEvent(const MouseEvent& e) {
     ImGui::SetCurrentContext(impl_->imgui.context);
     switch (e.type) {
         case MouseEvent::MOVE:
@@ -545,13 +552,13 @@ void Window::OnMouseEvent(const MouseEvent &e) {
         case MouseEvent::WHEEL: {
             ImGuiIO& io = ImGui::GetIO();
             io.MouseWheelH += (e.wheel.dx > 0 ? 1 : -1);
-            io.MouseWheel  += (e.wheel.dy > 0 ? 1 : -1);
+            io.MouseWheel += (e.wheel.dy > 0 ? 1 : -1);
             break;
         }
     }
     // Iterate backwards so that we send mouse events from the top down.
-    for (auto it = impl_->children.rbegin();
-         it != impl_->children.rend();  ++it) {
+    for (auto it = impl_->children.rbegin(); it != impl_->children.rend();
+         ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
             if (e.type == MouseEvent::BUTTON_DOWN) {
                 impl_->focusWidget = it->get();

@@ -1,0 +1,34 @@
+material {
+    name : normals,
+    shadingModel : unlit,
+
+    // We use this attribute for acquiring tangents from vertex buffer.
+    // We can't use 'tangents' attribute, because it would be
+    // stripped from unlit material.
+    requires: [
+        custom0
+    ],
+
+    variables: [
+        normalWorld
+    ],
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = 3.0;
+
+        float4 tangentSpace = getCustom0();
+        float3 normal;
+        toTangentFrame(tangentSpace, normal);
+
+        material.normalWorld = getViewFromWorldMatrix()*getWorldFromModelMatrix()*float4(normal, 0.0);
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor.rgb = variable_normalWorld.xyz*0.5 + 0.5;
+    }
+}

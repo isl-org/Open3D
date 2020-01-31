@@ -43,10 +43,15 @@ struct Theme;
 namespace visualization {
 class GuiVisualizer : public gui::Window {
     using Super = gui::Window;
+
 public:
-    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries,
-                  const std::string &title, int width, int height,
-                  int left, int top);
+    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>&
+                          geometries,
+                  const std::string& title,
+                  int width,
+                  int height,
+                  int left,
+                  int top);
     virtual ~GuiVisualizer();
 
     void LoadGeometry(const std::string& path);
@@ -61,5 +66,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d
