@@ -33,23 +33,26 @@
 namespace open3d {
 namespace gui {
 
-class TextEdit : public Widget {
+class ListView : public Widget {
+    using Super = Widget;
+
 public:
-    TextEdit();
-    ~TextEdit();
+    ListView();
+    virtual ~ListView();
 
-    const char* GetText() const;
-    void SetText(const char* text);
+    void SetItems(const std::vector<std::string>& items);
 
-    const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char* text);
+    int GetSelectedIndex() const;
+    const char* GetSelectedValue() const;
+    void SetSelectedIndex(int index);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
+    /// calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    void SetOnValueChanged(
+            std::function<void(const char*, bool)> onValueChanged);
 
 private:
     struct Impl;

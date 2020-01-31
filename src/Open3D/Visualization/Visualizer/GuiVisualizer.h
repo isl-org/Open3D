@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include "Open3D/GUI/Window.h"
 
 #include <vector>
@@ -52,7 +54,12 @@ public:
                   int top);
     virtual ~GuiVisualizer();
 
+    void LoadGeometry(const std::string& path);
+    void ExportRGB(const std::string& path);
+    void ExportDepth(const std::string& path);
+
     void Layout(const gui::Theme& theme) override;
+    void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
 
 private:
     struct Impl;

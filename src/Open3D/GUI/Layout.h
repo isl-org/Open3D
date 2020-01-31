@@ -85,7 +85,7 @@ public:
     static std::shared_ptr<Layout1D::Stretch> MakeStretch();
 
     Vert();
-    Vert(int spacing = 0, const Margins& margins = Margins());
+    Vert(int spacing, const Margins& margins = Margins());
     Vert(int spacing,
          const Margins& margins,
          const std::vector<std::shared_ptr<Widget>>& children);
@@ -96,9 +96,10 @@ class Horiz : public Layout1D {
 public:
     static std::shared_ptr<Layout1D::Fixed> MakeFixed(int size);
     static std::shared_ptr<Layout1D::Stretch> MakeStretch();
+    static std::shared_ptr<Horiz> MakeCentered(std::shared_ptr<Widget> w);
 
     Horiz();
-    Horiz(int spacing = 0, const Margins& margins = Margins());
+    Horiz(int spacing, const Margins& margins = Margins());
     Horiz(int spacing,
           const Margins& margins,
           const std::vector<std::shared_ptr<Widget>>& children);

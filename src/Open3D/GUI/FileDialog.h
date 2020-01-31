@@ -26,30 +26,44 @@
 
 #pragma once
 
-#include "Widget.h"
+#include "Dialog.h"
 
 #include <functional>
 
 namespace open3d {
 namespace gui {
 
-class TextEdit : public Widget {
+struct Theme;
+
+class FileDialog : public Dialog {
+    using Super = Dialog;
+
 public:
-    TextEdit();
-    ~TextEdit();
+    enum class Type { OPEN, SAVE };
 
-    const char* GetText() const;
-    void SetText(const char* text);
+    FileDialog(Type type, const char *title, const Theme &theme);
+    virtual ~FileDialog();
 
-    const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char* text);
+    /// May either be a directory or a file. If path is a file, it will be
+    /// selected if it exists. Defaults to current working directory if
+    /// no path is specified.
+    void SetPath(const char *path);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    /// 'filter' is a string of extensions separated by a space or comma.
+    /// An empty filter string matches all extensions.
+    ///    AddFilter(".jpg .png .gif", "Image file (.jpg, .png, .gif)")
+    ///    AddFilter(".jpg", "JPEG image (.jpg)")
+    ///    AddFilter("", "All files")
+    void AddFilter(const char *filter, const char *description);
 
-    DrawResult Draw(const DrawContext& context) override;
+    /// The OnCancel and OnDone callbacks *must* be specified.
+    void SetOnCancel(std::function<void()> onCancel);
+    void SetOnDone(std::function<void(const char *)> onDone);
 
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
+    Size CalcPreferredSize(const Theme &theme) const override;
+
+protected:
+    void OnDone();
 
 private:
     struct Impl;

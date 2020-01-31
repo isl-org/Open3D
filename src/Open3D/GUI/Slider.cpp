@@ -99,6 +99,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
     float newValue = impl_->value;
+    DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (impl_->type == INT) {
         int iNewValue = newValue;
@@ -110,13 +111,14 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
                            impl_->maxValue);
     }
     ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
 
     if (impl_->value != newValue) {
         impl_->value = newValue;
         if (OnValueChanged) {
             OnValueChanged(newValue);
         }
-        return Widget::DrawResult::CLICKED;
+        return Widget::DrawResult::REDRAW;
     }
     return Widget::DrawResult::NONE;
 }

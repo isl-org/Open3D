@@ -42,7 +42,7 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    std::function<void()> OnClicked;
+    void SetOnClicked(std::function<void()> onClicked);
 
 private:
     struct Impl;

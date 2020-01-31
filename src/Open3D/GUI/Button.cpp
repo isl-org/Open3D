@@ -38,6 +38,7 @@ namespace gui {
 
 struct Button::Impl {
     std::string title;
+    std::function<void()> onClicked;
 };
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
@@ -45,6 +46,10 @@ Button::Button(const char* title) : impl_(new Button::Impl()) {
 }
 
 Button::~Button() {}
+
+void Button::SetOnClicked(std::function<void()> onClicked) {
+    impl_->onClicked = onClicked;
+}
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
     auto font = ImGui::GetFont();
@@ -56,17 +61,21 @@ Size Button::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
+    auto result = Widget::DrawResult::NONE;
+
+    DrawImGuiPushEnabledState();
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     if (ImGui::Button(impl_->title.c_str(),
                       ImVec2(GetFrame().width, GetFrame().height))) {
-        if (this->OnClicked) {
-            this->OnClicked();
+        if (impl_->onClicked) {
+            impl_->onClicked();
         }
-        return Widget::DrawResult::CLICKED;
-    } else {
-        return Widget::DrawResult::NONE;
+        result = Widget::DrawResult::REDRAW;
     }
+    DrawImGuiPopEnabledState();
+
+    return result;
 }
 
 }  // namespace gui

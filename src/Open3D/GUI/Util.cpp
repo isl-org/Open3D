@@ -32,9 +32,27 @@ namespace open3d {
 namespace gui {
 namespace util {
 
-ImVec4 colorToImgui(const Color& color) {
+ImVec4 colorToImgui(const Color &color) {
     return ImVec4(color.GetRed(), color.GetGreen(), color.GetBlue(),
                   color.GetAlpha());
+}
+
+std::vector<std::string> PathToComponents(const char *path) {
+    std::vector<std::string> components;
+    const char *end = path;
+    while (*end != '\0') {
+        const char *start = end;
+        while (*end != '\0' && *end != '\\' && *end != '/') {
+            end++;
+        }
+        if (end > start) {
+            components.push_back(std::string(start, end - start));
+        }
+        if (*end != '\0') {
+            end++;
+        }
+    }
+    return components;
 }
 
 }  // namespace util
