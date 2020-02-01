@@ -40,11 +40,20 @@ enum class MouseButton {
     BUTTON5 = (1 << 4)
 };
 
+enum class KeyModifier {
+    NONE = 0,
+    SHIFT = (1 << 0),
+    CTRL = (1 << 1),  // win/linux: ctrl, macOS: command
+    ALT = (1 << 2),   // win/linux: alt, macOS: ctrl
+    META = (1 << 3)   // win/linux: windows key, macOS: option
+};
+
 struct MouseEvent {
     enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
     Type type;
     int x;
     int y;
+    int modifiers; // KeyModifiers ORed together
     union {
         struct {
             int buttons;  // MouseButtons ORed together
@@ -67,10 +76,11 @@ enum {
     KEY_DELETE = 127,
     KEY_LSHIFT = 256,
     KEY_RSHIFT,
-    KEY_CAPSLOCK,
-    KEY_CTRL,
-    KEY_OPTION,
+    KEY_LCTRL,
+    KEY_RCTRL,
+    KEY_ALT,
     KEY_META,
+    KEY_CAPSLOCK,
     KEY_LEFT,
     KEY_RIGHT,
     KEY_UP,

@@ -46,6 +46,8 @@ void FilamentCamera::SetProjection(
                                             : filament::Camera::Fov::VERTICAL;
 
         camera_->setProjection(fov, aspect, near, far, dir);
+        fov_ = fov;
+        fovType_ = fovType;
     }
 }
 
@@ -62,6 +64,26 @@ void FilamentCamera::SetProjection(Projection projection,
                     : filament::Camera::Projection::PERSPECTIVE;
 
     camera_->setProjection(proj, left, right, bottom, top, near, far);
+    // technically orthographic projection is lim(fov->0) as dist->inf,
+    // but it also serves as an obviously wrong value if you call
+    // GetFieldOfView() after setting an orthographic projection
+    fov_ = 0.0;
+}
+
+double FilamentCamera::GetNear() const {
+    return camera_->getNear();
+}
+
+double FilamentCamera::GetFar() const {
+    return camera_->getCullingFar();
+}
+
+double FilamentCamera::GetFieldOfView() const {
+    return fov_;
+}
+
+Camera::FovType FilamentCamera::GetFieldOfViewType() const {
+    return fovType_;
 }
 
 void FilamentCamera::SetModelMatrix(const Transform& view) {
@@ -98,27 +120,27 @@ void FilamentCamera::LookAt(const Eigen::Vector3f& center,
                     {up.x(), up.y(), up.z()});
 }
 
-Eigen::Vector3f FilamentCamera::GetPosition() {
+Eigen::Vector3f FilamentCamera::GetPosition() const {
     auto camPos = camera_->getPosition();
     return {camPos.x, camPos.y, camPos.z};
 }
 
-Eigen::Vector3f FilamentCamera::GetForwardVector() {
+Eigen::Vector3f FilamentCamera::GetForwardVector() const {
     auto forward = camera_->getForwardVector();
     return {forward.x, forward.y, forward.z};
 }
 
-Eigen::Vector3f FilamentCamera::GetLeftVector() {
+Eigen::Vector3f FilamentCamera::GetLeftVector() const {
     auto left = camera_->getLeftVector();
     return {left.x, left.y, left.z};
 }
 
-Eigen::Vector3f FilamentCamera::GetUpVector() {
+Eigen::Vector3f FilamentCamera::GetUpVector() const {
     auto up = camera_->getUpVector();
     return {up.x, up.y, up.z};
 }
 
-FilamentCamera::Transform FilamentCamera::GetModelMatrix() {
+FilamentCamera::Transform FilamentCamera::GetModelMatrix() const {
     auto fTransform = camera_->getModelMatrix();
 
     Transform::MatrixType matrix;
@@ -129,6 +151,32 @@ FilamentCamera::Transform FilamentCamera::GetModelMatrix() {
             fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
             fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
             fTransform(3, 3);
+
+    return Transform(matrix);
+}
+
+FilamentCamera::Transform FilamentCamera::GetViewMatrix() const {
+    auto fTransform = camera_->getViewMatrix();
+
+    Transform::MatrixType matrix;
+
+    matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
+            fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
+            fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
+            fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+
+    return Transform(matrix);
+}
+
+FilamentCamera::Transform FilamentCamera::GetProjectionMatrix() const {
+    auto fTransform = camera_->getProjectionMatrix();
+
+    Transform::MatrixType matrix;
+
+    matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
+            fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
+            fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
+            fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
 
     return Transform(matrix);
 }

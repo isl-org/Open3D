@@ -557,14 +557,25 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         }
     }
     // Iterate backwards so that we send mouse events from the top down.
-    for (auto it = impl_->children.rbegin(); it != impl_->children.rend();
-         ++it) {
-        if ((*it)->GetFrame().Contains(e.x, e.y)) {
+    auto handleMouseForChild = [this](const MouseEvent &e,
+                                      std::shared_ptr<Widget> child) -> bool {
+        if (child->GetFrame().Contains(e.x, e.y)) {
             if (e.type == MouseEvent::BUTTON_DOWN) {
-                impl_->focusWidget = it->get();
+                impl_->focusWidget = child.get();
             }
-            (*it)->Mouse(e);
-            break;
+            child->Mouse(e);
+            return true;
+        }
+        return false;
+    };
+    if (impl_->activeDialog) {
+        handleMouseForChild(e, impl_->activeDialog);
+    } else {
+        std::vector<std::shared_ptr<Widget>> &children = impl_->children;
+        for (auto it = children.rbegin();  it != children.rend();  ++it) {
+            if (handleMouseForChild(e, *it)) {
+                break;
+            }
         }
     }
 }
