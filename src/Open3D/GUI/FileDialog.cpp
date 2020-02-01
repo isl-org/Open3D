@@ -59,7 +59,7 @@ namespace {
 // This is defined here rather than in the class definition because we can't
 // need to be exporting internal details of the class.
 static std::string gFileDialogDir;
-}
+}  // namespace
 
 class DirEntry {
 public:
