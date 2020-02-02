@@ -96,9 +96,18 @@ message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 # add the open3d python module first
 set( COMPILED_MODULE_PATH_LIST $<TARGET_FILE:${PACKAGE_NAME}> )
 
+set(GENERATED_OUTPUTS "")
+
 # add additional optional compiled modules
 if ( BUILD_TENSORFLOW_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
+                        COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input open3d/ml/tf/python/ops/ops.py.in --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops> 
+                        COMMAND 
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        COMMENT "Generating python ops.py" )
+                
+    list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
 endif ()
 
 add_custom_target(python-package
@@ -119,6 +128,7 @@ add_custom_target(python-package
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
     VERBATIM
+    DEPENDS ${GENERATED_OUTPUTS}
 )
 
 # Use `make pip-package` to create the pip package in the build directory
