@@ -22,15 +22,12 @@ def main():
     parser.add_argument("--input",
                         type=str,
                         required=True,
-                        help="The python training script")
-    parser.add_argument("--output",
-                        type=str,
-                        required=True,
-                        help="The checkpoint iteration")
+                        help="input file with header")
+    parser.add_argument("--output", type=str, required=True, help="output file")
     parser.add_argument("--lib",
                         type=str,
                         required=True,
-                        help="The checkpoint iteration")
+                        help="path to open3d_tf_ops.so")
 
     args = parser.parse_args()
     print(args)
