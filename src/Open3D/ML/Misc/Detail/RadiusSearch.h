@@ -78,7 +78,7 @@ struct SelectNanoflannAdaptor<L1, T> {
 /// Implementation of RadiusSearchCPU with template params for metrics
 /// and boolean options
 template <class T, class OUTPUT_ALLOCATOR, int METRIC>
-void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
+void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
                       size_t num_points,
                       const T* const points,
                       size_t num_queries,
@@ -92,8 +92,8 @@ void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 
     // return empty indices array if there are no points
     if (num_points == 0 || num_queries == 0) {
-        std::fill(query_neighbors_prefix_sum,
-                  query_neighbors_prefix_sum + num_queries, 0);
+        std::fill(query_neighbors_row_splits,
+                  query_neighbors_row_splits + num_queries + 1, 0);
         int32_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
@@ -177,10 +177,10 @@ void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                 }
             });
 
-    query_neighbors_prefix_sum[0] = 0;
+    query_neighbors_row_splits[0] = 0;
     InclusivePrefixSum(&neighbors_count[0],
-                       &neighbors_count[neighbors_count.size() - 1],
-                       query_neighbors_prefix_sum + 1);
+                       &neighbors_count[neighbors_count.size()],
+                       query_neighbors_row_splits + 1);
 
     int32_t* neighbors_indices_ptr;
     output_allocator.AllocIndices(&neighbors_indices_ptr, pairs.size());
@@ -200,7 +200,7 @@ void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                               Pair pair = pairs[i];
 
                               int64_t idx =
-                                      query_neighbors_prefix_sum[pair.i] +
+                                      query_neighbors_row_splits[pair.i] +
                                       AtomicFetchAddRelaxed(
                                               &neighbors_count[pair.i], 1);
                               neighbors_indices_ptr[idx] = pair.j;
@@ -234,8 +234,8 @@ void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 ///         \p output_allocator for more information.
 ///
 ///
-/// \param query_neighbors_prefix_sum    This is the output pointer for the
-///        prefix sum. The length of this array is \p num_queries.
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
 ///
 /// \param num_points    The number of points.
 ///
@@ -277,7 +277,7 @@ void _RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 ///         In this case ptr does not need to be set.
 ///
 template <class T, class OUTPUT_ALLOCATOR>
-void RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
+void RadiusSearchCPU(int64_t* query_neighbors_row_splits,
                      size_t num_points,
                      const T* const points,
                      size_t num_queries,
@@ -289,7 +289,7 @@ void RadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                      const bool normalize_distances,
                      OUTPUT_ALLOCATOR& output_allocator) {
 #define FN_PARAMETERS                                                         \
-    query_neighbors_prefix_sum, num_points, points, num_queries, queries,     \
+    query_neighbors_row_splits, num_points, points, num_queries, queries,     \
             radii, ignore_query_point, return_distances, normalize_distances, \
             output_allocator
 

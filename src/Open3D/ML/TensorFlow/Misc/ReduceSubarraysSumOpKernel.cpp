@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ReduceSubarraysSumOpKernel.h"
 #include "Open3D/ML/Misc/Detail/ReduceSubarraysSum.h"
+#include "ReduceSubarraysSumOpKernel.h"
 
 using namespace open3d::ml::detail;
 using namespace reduce_subarrays_sum_opkernel;
@@ -39,12 +39,12 @@ public:
 
     void Kernel(OpKernelContext* context,
                 const tensorflow::Tensor& values,
-                const tensorflow::Tensor& prefix_sum,
+                const tensorflow::Tensor& row_splits,
                 tensorflow::Tensor& sums) {
         ReduceSubarraysSumCPU(
                 values.flat<T>().data(), values.shape().dim_size(0),
-                (int64_t*)prefix_sum.flat<int64>().data(),
-                prefix_sum.shape().dim_size(0), sums.flat<T>().data());
+                (int64_t*)row_splits.flat<int64>().data(),
+                row_splits.shape().dim_size(0) - 1, sums.flat<T>().data());
     }
 };
 

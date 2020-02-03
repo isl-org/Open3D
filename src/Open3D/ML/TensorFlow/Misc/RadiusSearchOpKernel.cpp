@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RadiusSearchOpKernel.h"
 #include "Open3D/ML/Misc/Detail/RadiusSearch.h"
+#include "RadiusSearchOpKernel.h"
 
 using namespace open3d::ml::detail;
 using namespace radius_search_opkernel;
@@ -41,11 +41,11 @@ public:
                 const tensorflow::Tensor& points,
                 const tensorflow::Tensor& queries,
                 const tensorflow::Tensor& radius,
-                tensorflow::Tensor& query_neighbors_prefix_sum) {
+                tensorflow::Tensor& query_neighbors_row_splits) {
         OutputAllocator<T> output_allocator(context);
 
         RadiusSearchCPU(
-                (int64_t*)query_neighbors_prefix_sum.flat<int64>().data(),
+                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
                 radius.flat<T>().data(), metric, ignore_query_point,

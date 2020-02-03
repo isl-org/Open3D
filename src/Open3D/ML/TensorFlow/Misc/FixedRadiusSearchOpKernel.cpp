@@ -43,11 +43,11 @@ public:
                 const tensorflow::Tensor& queries,
                 const tensorflow::Tensor& radius,
                 const size_t hash_table_size,
-                tensorflow::Tensor& query_neighbors_prefix_sum) {
+                tensorflow::Tensor& query_neighbors_row_splits) {
         OutputAllocator<T> output_allocator(context);
 
         FixedRadiusSearchCPU(
-                (int64_t*)query_neighbors_prefix_sum.flat<int64>().data(),
+                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
                 radius.scalar<T>()(), hash_table_size, metric,

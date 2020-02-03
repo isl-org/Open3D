@@ -371,7 +371,7 @@ template <class T, int METRIC, bool IGNORE_QUERY_POINT, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
         int32_t* __restrict__ indices,
         T* __restrict__ distances,
-        const int64_t* const __restrict__ neighbors_prefix_sum,
+        const int64_t* const __restrict__ neighbors_row_splits,
         const uint32_t* const __restrict__ point_index_table,
         const uint32_t* const __restrict__ hash_table_prefix_sum,
         size_t hash_table_size,
@@ -387,7 +387,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 
     int count = 0;  // counts the number of neighbors for this query point
 
-    size_t indices_offset = neighbors_prefix_sum[query_idx];
+    size_t indices_offset = neighbors_row_splits[query_idx];
 
     Vec3<T> query_pos({query_points[query_idx * 3 + 0],
                        query_points[query_idx * 3 + 1],
@@ -455,8 +455,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 /// \param distances    Output array with the neighbors distances. May be null
 ///        if return_distances is false.
 ///
-/// \param neighbors_prefix_sum    This is the prefix sum which describes
-/// theoutput pointer for the
+/// \param neighbors_row_splits    This is the prefix sum which describes
 ///        start and end of the neighbors and distances for each query point.
 ///
 /// \param point_index_table    The array storing the point indices for all
@@ -496,7 +495,7 @@ void WriteNeighborsIndicesAndDistances(
         const cudaStream_t& stream,
         int32_t* indices,
         T* distances,
-        const int64_t* const neighbors_prefix_sum,
+        const int64_t* const neighbors_row_splits,
         const uint32_t* const point_index_table,
         const uint32_t* const hash_table_prefix_sum,
         size_t hash_table_size,
@@ -518,7 +517,7 @@ void WriteNeighborsIndicesAndDistances(
 
     if (grid.x) {
 #define FN_PARAMETERS                                                          \
-    indices, distances, neighbors_prefix_sum, point_index_table,               \
+    indices, distances, neighbors_row_splits, point_index_table,               \
             hash_table_prefix_sum, hash_table_size, query_points, num_queries, \
             points, num_points, inv_voxel_size, radius, threshold
 
@@ -553,7 +552,7 @@ void WriteNeighborsIndicesAndDistances(
 }  // namespace
 
 /// Fixed radius search. This function computes a list of neighbor indices
-/// for each query point.The lists are stored linearly and an exclusive prefix
+/// for each query point. The lists are stored linearly and an exclusive prefix
 /// sum defines the start and end of list in the array.
 /// In addition the function optionally can return the distances for each
 /// neighbor in the same format as the indices to the neighbors.
@@ -576,8 +575,8 @@ void WriteNeighborsIndicesAndDistances(
 /// \param texture_alignment    The texture alignment in bytes. This is used
 ///        for allocating segments within the temporary memory.
 ///
-/// \param query_neighbors_prefix_sum    This is the output pointer for the
-///        prefix sum. The length of this array is \p num_queries.
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
 ///
 /// \param num_points    The number of points.
 ///
@@ -619,7 +618,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                            void* temp,
                            size_t& temp_size,
                            int texture_alignment,
-                           int64_t* query_neighbors_prefix_sum,
+                           int64_t* query_neighbors_row_splits,
                            size_t num_points,
                            const T* const points,
                            size_t num_queries,
@@ -639,8 +638,8 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
     // return empty output arrays if there are no points
     if ((0 == num_points || 0 == num_queries) && !get_temp_size) {
-        cudaMemsetAsync(query_neighbors_prefix_sum, 0,
-                        sizeof(int64_t) * num_queries, stream);
+        cudaMemsetAsync(query_neighbors_row_splits, 0,
+                        sizeof(int64_t) * (num_queries + 1), stream);
         int32_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
@@ -702,45 +701,42 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
             mem_temp.Alloc<uint32_t>(num_queries);
 
     // we need this value to compute the size of the index array
-    uint32_t last_query_point_neighbor_count = 0;
     if (!get_temp_size) {
         CountNeighbors(stream, query_neighbors_count.first, index_table.first,
                        count_prefix_sum.first, hash_table_size, queries,
                        num_queries, points, num_points, inv_voxel_size, radius,
                        metric, ignore_query_point);
-
-        // get the last value
-        cudaMemcpyAsync(&last_query_point_neighbor_count,
-                        query_neighbors_count.first + (num_queries - 1),
-                        sizeof(uint32_t), cudaMemcpyDeviceToHost, stream);
     }
 
     // we need this value to compute the size of the index array
     int64_t last_prefix_sum_entry = 0;
     {
-        std::pair<void*, size_t> exclusive_scan_temp(nullptr, 0);
-        cub::DeviceScan::ExclusiveSum(
-                exclusive_scan_temp.first, exclusive_scan_temp.second,
-                query_neighbors_count.first, query_neighbors_prefix_sum,
+        std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
+        cub::DeviceScan::InclusiveSum(
+                inclusive_scan_temp.first, inclusive_scan_temp.second,
+                query_neighbors_count.first, query_neighbors_row_splits + 1,
                 num_queries, stream);
 
-        exclusive_scan_temp = mem_temp.Alloc(exclusive_scan_temp.second);
+        inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
 
         if (!get_temp_size) {
-            cub::DeviceScan::ExclusiveSum(
-                    exclusive_scan_temp.first, exclusive_scan_temp.second,
-                    query_neighbors_count.first, query_neighbors_prefix_sum,
+            // set first element to zero
+            cudaMemsetAsync(query_neighbors_row_splits, 0, sizeof(int64_t),
+                            stream);
+            cub::DeviceScan::InclusiveSum(
+                    inclusive_scan_temp.first, inclusive_scan_temp.second,
+                    query_neighbors_count.first, query_neighbors_row_splits + 1,
                     num_queries, stream);
 
             // get the last value
             cudaMemcpyAsync(&last_prefix_sum_entry,
-                            query_neighbors_prefix_sum + (num_queries - 1),
+                            query_neighbors_row_splits + num_queries,
                             sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
             // wait for the async copies
             while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
             }
         }
-        mem_temp.Free(exclusive_scan_temp);
+        mem_temp.Free(inclusive_scan_temp);
     }
 
     mem_temp.Free(query_neighbors_count);
@@ -752,8 +748,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
     }
 
     // allocate the output array for the neighbor indices
-    size_t num_indices =
-            last_prefix_sum_entry + last_query_point_neighbor_count;
+    const size_t num_indices = last_prefix_sum_entry;
     int32_t* indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices);
 
@@ -765,7 +760,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
     if (!get_temp_size) {
         WriteNeighborsIndicesAndDistances(
-                stream, indices_ptr, distances_ptr, query_neighbors_prefix_sum,
+                stream, indices_ptr, distances_ptr, query_neighbors_row_splits,
                 index_table.first, count_prefix_sum.first, hash_table_size,
                 queries, num_queries, points, num_points, inv_voxel_size,
                 radius, metric, ignore_query_point, return_distances);

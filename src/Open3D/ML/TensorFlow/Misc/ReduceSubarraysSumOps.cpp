@@ -34,17 +34,23 @@ using namespace tensorflow;
 REGISTER_OP("Open3DReduceSubarraysSum")
         .Attr("T: {int32, int64, float, double}")
         .Input("values: T")
-        .Input("prefix_sum: int64")
+        .Input("row_splits: int64")
         .Output("sums: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
-            ShapeHandle values_shape, prefix_sum_shape, sums_shape;
+            ShapeHandle values_shape, row_splits_shape, sums_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &values_shape));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &prefix_sum_shape));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &row_splits_shape));
 
-            // output will have the same shape as the prefix_sum
-            c->set_output(0, prefix_sum_shape);
+            // output will have one element less than row_splits
+            DimensionHandle sums_size = c->UnknownDim();
+            if (c->RankKnown(row_splits_shape)) {
+                TF_RETURN_IF_ERROR(c->Subtract(c->Dim(row_splits_shape, 0), 1,
+                                               &sums_size));
+            }
+            sums_shape = c->MakeShape({sums_size});
+            c->set_output(0, sums_shape);
 
             return Status::OK();
         })
@@ -56,10 +62,9 @@ defined by an exclusive prefix sum.
 values:
   Linear memory which stores the values for all arrays.
 
-prefix_sum:
-  The prefix sum defines the start of each subarray.
-  The end is defined by the next entry in the prefix_sum or the end of the 
-  values array.
+row_splits:
+  Defines the start and end of each subarray. This is an exclusive prefix with 
+  0 as the first element and the length of values as last element.
 
 sums:
   The sum of each subarray. The sum of an empty subarray is 0.

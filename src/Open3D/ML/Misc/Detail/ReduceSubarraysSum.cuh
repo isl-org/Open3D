@@ -38,15 +38,14 @@ template <class T>
 __global__ void ReduceSubarraysSumCUDAKernel(
         const T* const __restrict__ values,
         const size_t values_size,
-        const int64_t* const __restrict__ prefix_sum,
-        const size_t prefix_sum_size,
+        const int64_t* const __restrict__ row_splits,
+        const size_t num_arrays,
         T* __restrict__ out_sums) {
     const int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i >= prefix_sum_size) return;
+    if (i >= num_arrays) return;
 
-    size_t begin_idx = prefix_sum[i];
-    size_t end_idx =
-            (i + 1 < prefix_sum_size ? prefix_sum[i + 1] : values_size);
+    size_t begin_idx = row_splits[i];
+    size_t end_idx = row_splits[i + 1];
 
     T sum = T(0);
 
@@ -61,25 +60,27 @@ __global__ void ReduceSubarraysSumCUDAKernel(
 ///
 /// \param values          The linear array with all values
 /// \param values_size     Number of elements of \p values
-/// \param prefix_sum      The exclusive prefix sum of the number of elements
-///                        for each array
-/// \param prefix_sum_size The number of subarrays
+/// \param row_splits      Defines the start and end of each subarray. This is
+///                        an exclusive prefix sum with 0 as the first element
+///                        and the length of \p values as last element.
+///                        The size is \p num_arrays + 1
+/// \param num_arrays      The number of subarrays
 /// \param out_sums        The preallocated output array with size
-///                        \p prefix_sum_size
+///                        \p num_arrays
 template <class T>
 void ReduceSubarraysSumCUDA(const cudaStream_t& stream,
                             const T* const values,
                             const size_t values_size,
-                            const int64_t* const prefix_sum,
-                            const size_t prefix_sum_size,
+                            const int64_t* const row_splits,
+                            const size_t num_arrays,
                             T* out_sums) {
     const int BLOCKSIZE = 128;
     dim3 block(BLOCKSIZE, 1, 1);
-    dim3 grid(DivUp(prefix_sum_size, block.x));
+    dim3 grid(DivUp(num_arrays, block.x));
 
     if (grid.x) {
         ReduceSubarraysSumCUDAKernel<T><<<grid, block, 0, stream>>>(
-                values, values_size, prefix_sum, prefix_sum_size, out_sums);
+                values, values_size, row_splits, num_arrays, out_sums);
     }
 }
 

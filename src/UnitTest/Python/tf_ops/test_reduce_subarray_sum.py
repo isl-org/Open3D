@@ -50,21 +50,22 @@ def test_reduce_subarray_sum_random(seed, dtype, device_name):
     values_shape = [rng.randint(100, 200)]
     values = rng.uniform(0, 10, size=values_shape).astype(dtype)
 
-    prefix_sum = [0]
+    row_splits = [0]
     for _ in range(rng.randint(1, 10)):
-        prefix_sum.append(
-            rng.randint(0, values_shape[0] - prefix_sum[-1]) + prefix_sum[-1])
+        row_splits.append(
+            rng.randint(0, values_shape[0] - row_splits[-1]) + row_splits[-1])
+    row_splits.extend(values_shape)
 
     expected_result = []
-    for start, stop in zip(prefix_sum, prefix_sum[1:] + values_shape):
+    for start, stop in zip(row_splits, row_splits[1:]):
         # np.sum correctly handles zero length arrays and returns 0
         expected_result.append(np.sum(values[start:stop]))
     np.array(expected_result, dtype=dtype)
 
-    prefix_sum = np.array(prefix_sum, dtype=np.int64)
+    row_splits = np.array(row_splits, dtype=np.int64)
 
     with tf.device(device_name):
-        result = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
+        result = ml3d.ops.reduce_subarrays_sum(values, row_splits)
         assert device_name in result.device
     result = result.numpy()
 

@@ -44,11 +44,11 @@ public:
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& inp_neighbors_index,
-                const tensorflow::Tensor& inp_neighbors_prefix_sum,
+                const tensorflow::Tensor& inp_neighbors_row_splits,
                 const tensorflow::Tensor& inp_neighbors_attributes,
                 const int num_attributes,
                 tensorflow::Tensor& neighbors_index,
-                tensorflow::Tensor& neighbors_prefix_sum,
+                tensorflow::Tensor& neighbors_row_splits,
                 tensorflow::Tensor& neighbors_attributes) {
         auto device = context->eigen_gpu_device();
 
@@ -62,14 +62,14 @@ public:
                 num_attributes ? inp_neighbors_attributes.flat<TAttr>().data()
                                : nullptr,
                 num_attributes,
-                (int64_t*)inp_neighbors_prefix_sum.flat<int64>().data(),
-                inp_neighbors_prefix_sum.shape().dim_size(0),
+                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                inp_neighbors_row_splits.shape().dim_size(0) - 1,
                 neighbors_index.flat<TIndex>().data(),
                 num_attributes ? neighbors_attributes.flat<TAttr>().data()
                                : nullptr,
                 neighbors_index.shape().dim_size(0),
-                (int64_t*)neighbors_prefix_sum.flat<int64>().data(),
-                neighbors_prefix_sum.shape().dim_size(0));
+                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                neighbors_row_splits.shape().dim_size(0) - 1);
 
         Tensor temp_tensor;
         TensorShape temp_shape({ssize_t(temp_size)});
@@ -85,14 +85,14 @@ public:
                 num_attributes ? inp_neighbors_attributes.flat<TAttr>().data()
                                : nullptr,
                 num_attributes,
-                (int64_t*)inp_neighbors_prefix_sum.flat<int64>().data(),
-                inp_neighbors_prefix_sum.shape().dim_size(0),
+                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                inp_neighbors_row_splits.shape().dim_size(0) - 1,
                 neighbors_index.flat<TIndex>().data(),
                 num_attributes ? neighbors_attributes.flat<TAttr>().data()
                                : nullptr,
                 neighbors_index.shape().dim_size(0),
-                (int64_t*)neighbors_prefix_sum.flat<int64>().data(),
-                neighbors_prefix_sum.shape().dim_size(0));
+                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                neighbors_row_splits.shape().dim_size(0) - 1);
     }
 
 private:

@@ -35,22 +35,22 @@ namespace ml {
 namespace detail {
 
 /// Inverts a neighbors list, which is a tuple of the form
-/// (neighbors_index, neighbors_prefix_sum, neighbors_attributes).
+/// (neighbors_index, neighbors_row_splits, neighbors_attributes).
 /// neighbors_index is a nested list of indices to the neighbors. Each entry
 /// defines an edge between two indices (points).
-/// The neighbors_prefix_sum defines the start and end of each sublist.
+/// The neighbors_row_splits defines the start and end of each sublist.
 /// neighbors_attributes is an optional array of attributes for each entry in
 /// neighbors_index.
 ///
 /// Example: The neighbors for point cloud A (3 points) in point cloud B
 /// (2 points) is defined by:
 /// - neighbors_index [0 1 0 0]
-/// - neighbors_prefix_sum [0 2 3]
+/// - neighbors_row_splits [0 2 3 4]
 /// - optional neighbors_attributes [0.1 0.2 0.3 0.4] (1 scalar attribute)
 ///
 /// The inverted neighbors list is then the neighbors for point cloud B in A
 /// - neighbors_index [0 1 2 0]
-/// - neighbors_prefix_sum [0 3]
+/// - neighbors_row_splits [0 3 4]
 /// - optional neighbors_attributes [0.1 0.3 0.4 0.2]
 ///
 ///
@@ -62,11 +62,13 @@ namespace detail {
 /// \param num_attributes_per_neighbor    The number of scalar attributes for
 ///        each entry in \p inp_neighbors_index.
 ///
-/// \param inp_neighbors_prefix_sum    The prefix sum which defines the start
-///        and end of the sublists in \p inp_neighbors_index.
+/// \param inp_neighbors_row_splits    Defines the start and end of the
+///        sublists in \p inp_neighbors_index. This is an exclusive prefix sum
+///        with 0 as the first element and the length of
+///        \p inp_neighbors_index as last element.
+///        The size is \p inp_num_queries + 1
 ///
-/// \param inp_num_queries    The number of queries. This is the size of the
-///        prefix sum.
+/// \param inp_num_queries    The number of queries.
 ///
 /// \param out_neighbors_index    The inverted neighbors_index list with the
 ///        same size as \p inp_neighbors_index .
@@ -77,7 +79,7 @@ namespace detail {
 /// \param index_size    This is the size of \p inp_neighbors_index and
 ///        \p out_neighbors_index, both have the same size.
 ///
-/// \param out_neighbors_prefix_sum   The prefix sum which defines the start
+/// \param out_neighbors_row_splits   The prefix sum which defines the start
 ///        and end of the sublists in \p out_neighbors_index.
 ///
 /// \param out_num_queries    The number of queries with respect to the
@@ -87,12 +89,12 @@ template <class TIndex, class TAttr>
 void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
                             const TAttr* const inp_neighbors_attributes,
                             const int num_attributes_per_neighbor,
-                            const int64_t* const inp_neighbors_prefix_sum,
+                            const int64_t* const inp_neighbors_row_splits,
                             const size_t inp_num_queries,
                             TIndex* out_neighbors_index,
                             TAttr* out_neighbors_attributes,
                             const size_t index_size,
-                            int64_t* out_neighbors_prefix_sum,
+                            int64_t* out_neighbors_row_splits,
                             const size_t out_num_queries) {
     using namespace open3d::utility;
 
@@ -109,8 +111,8 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
                       });
 
     InclusivePrefixSum(&tmp_neighbors_count[0],
-                       &tmp_neighbors_count.back(),  // exclude the last element
-                       out_neighbors_prefix_sum);
+                       &tmp_neighbors_count[tmp_neighbors_count.size()],
+                       out_neighbors_row_splits);
 
     memset(tmp_neighbors_count.data(), 0,
            sizeof(uint32_t) * tmp_neighbors_count.size());
@@ -122,15 +124,13 @@ void InvertNeighborsListCPU(const TIndex* const inp_neighbors_index,
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     TIndex query_idx = i;
 
-                    size_t begin_idx = inp_neighbors_prefix_sum[i];
-                    size_t end_idx = (i + 1 < inp_num_queries
-                                              ? inp_neighbors_prefix_sum[i + 1]
-                                              : index_size);
+                    size_t begin_idx = inp_neighbors_row_splits[i];
+                    size_t end_idx = inp_neighbors_row_splits[i + 1];
                     for (size_t j = begin_idx; j < end_idx; ++j) {
                         TIndex neighbor_idx = inp_neighbors_index[j];
 
                         size_t list_offset =
-                                out_neighbors_prefix_sum[neighbor_idx];
+                                out_neighbors_row_splits[neighbor_idx];
                         size_t item_offset = AtomicFetchAddRelaxed(
                                 &tmp_neighbors_count[neighbor_idx], 1);
                         out_neighbors_index[list_offset + item_offset] =

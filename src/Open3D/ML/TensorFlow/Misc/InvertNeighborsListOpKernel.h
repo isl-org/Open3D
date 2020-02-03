@@ -54,11 +54,11 @@ public:
                     errors::InvalidArgument(
                             "inp_neighbors_index must be a rank 1 tensor"));
 
-        const Tensor& inp_neighbors_prefix_sum = context->input(2);
+        const Tensor& inp_neighbors_row_splits = context->input(2);
         OP_REQUIRES(
-                context, inp_neighbors_prefix_sum.shape().dims() == 1,
+                context, inp_neighbors_row_splits.shape().dims() == 1,
                 errors::InvalidArgument(
-                        "inp_neighbors_prefix_sum must be a rank 1 tensor"));
+                        "inp_neighbors_row_splits must be a rank 1 tensor"));
 
         const Tensor& inp_neighbors_attributes = context->input(3);
         OP_REQUIRES(context, inp_neighbors_attributes.shape().dims() >= 1,
@@ -88,11 +88,11 @@ public:
                        context->allocate_output(0, neighbors_index_shape,
                                                 &neighbors_index));
 
-        Tensor* neighbors_prefix_sum = 0;
-        TensorShape neighbors_prefix_sum_shape({num_points});
+        Tensor* neighbors_row_splits = 0;
+        TensorShape neighbors_row_splits_shape({num_points + 1});
         OP_REQUIRES_OK(context,
-                       context->allocate_output(1, neighbors_prefix_sum_shape,
-                                                &neighbors_prefix_sum));
+                       context->allocate_output(1, neighbors_row_splits_shape,
+                                                &neighbors_row_splits));
         Tensor* neighbors_attributes = 0;
         TensorShape neighbors_attributes_shape(
                 inp_neighbors_attributes.shape());
@@ -100,19 +100,19 @@ public:
                        context->allocate_output(2, neighbors_attributes_shape,
                                                 &neighbors_attributes));
 
-        Kernel(context, inp_neighbors_index, inp_neighbors_prefix_sum,
+        Kernel(context, inp_neighbors_index, inp_neighbors_row_splits,
                inp_neighbors_attributes, num_attributes, *neighbors_index,
-               *neighbors_prefix_sum, *neighbors_attributes);
+               *neighbors_row_splits, *neighbors_attributes);
     }
 
     // Function with the device specific code
     virtual void Kernel(tensorflow::OpKernelContext* context,
                         const tensorflow::Tensor& inp_neighbors_index,
-                        const tensorflow::Tensor& inp_neighbors_prefix_sum,
+                        const tensorflow::Tensor& inp_neighbors_row_splits,
                         const tensorflow::Tensor& inp_neighbors_attributes,
                         const int num_attributes,
                         tensorflow::Tensor& neighbors_index,
-                        tensorflow::Tensor& neighbors_prefix_sum,
+                        tensorflow::Tensor& neighbors_row_splits,
                         tensorflow::Tensor& neighbors_attributes) = 0;
 
 private:

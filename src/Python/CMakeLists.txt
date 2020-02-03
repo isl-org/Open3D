@@ -103,7 +103,7 @@ if ( BUILD_TENSORFLOW_OPS )
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
                         COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input open3d/ml/tf/python/ops/ops.py.in --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops> 
-                        COMMAND 
+                        DEPENDS open3d_tf_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py" )
                 

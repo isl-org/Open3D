@@ -109,21 +109,21 @@ public:
                     errors::InvalidArgument("number of output points and the "
                                             "length of radii do not match"));
 
-        Tensor* query_neighbors_prefix_sum = 0;
-        TensorShape query_neighbors_prefix_sum_shape(
-                {queries.shape().dim_size(0)});
+        Tensor* query_neighbors_row_splits = 0;
+        TensorShape query_neighbors_row_splits_shape(
+                {queries.shape().dim_size(0) + 1});
         OP_REQUIRES_OK(context, context->allocate_output(
-                                        1, query_neighbors_prefix_sum_shape,
-                                        &query_neighbors_prefix_sum));
+                                        1, query_neighbors_row_splits_shape,
+                                        &query_neighbors_row_splits));
 
-        Kernel(context, points, queries, radii, *query_neighbors_prefix_sum);
+        Kernel(context, points, queries, radii, *query_neighbors_row_splits);
     }
 
     virtual void Kernel(tensorflow::OpKernelContext* context,
                         const tensorflow::Tensor& points,
                         const tensorflow::Tensor& queries,
                         const tensorflow::Tensor& radius,
-                        tensorflow::Tensor& query_neighbors_prefix_sum) = 0;
+                        tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
     open3d::ml::detail::Metric metric;
