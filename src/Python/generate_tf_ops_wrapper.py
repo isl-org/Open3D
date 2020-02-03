@@ -7,9 +7,9 @@ import textwrap
 import tensorflow as tf
 from yapf.yapflib.yapf_api import FormatFile
 
-indent_spaces = '    '
+INDENT_SPACES = '    '
 
-fn_template_str = '''
+FN_TEMPLATE_STR = '''
 def {fn_name_short}({fn_args}):
 {docstring}
     return {fn_name}({args_fwd})
@@ -42,7 +42,7 @@ def main():
 
         docstring = getattr(oplib, fn_name).__doc__
         docstring = '"""' + docstring + '\n"""'
-        docstring = textwrap.indent(docstring, indent_spaces)
+        docstring = textwrap.indent(docstring, INDENT_SPACES)
 
         signature = inspect.signature(value)
 
@@ -60,7 +60,7 @@ def main():
             args_fwd.append('{arg}={arg}'.format(arg=param.name))
         fn_args = ', '.join(fn_args)
         args_fwd = ', '.join(args_fwd)
-        generated_function_strs += fn_template_str.format(
+        generated_function_strs += FN_TEMPLATE_STR.format(
             fn_name_short=fn_name[7:],
             fn_name='_lib.' + fn_name,
             fn_args=fn_args,
