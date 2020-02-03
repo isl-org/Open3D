@@ -26,7 +26,7 @@
 
 #include "Open3D/Registration/FastGlobalRegistration.h"
 
-#include <ctime>
+#include <random>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
@@ -122,17 +122,20 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 
     // STEP 3) TUPLE CONSTRAINT
     utility::LogDebug("\t[tuple constraint] ");
-    std::srand((unsigned int)std::time(0));
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
     double scale = option.tuple_scale_;
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
+
+    std::mt19937 rgen(std::random_device{}());
+    std::uniform_int_distribution<int> uniform_dist(0, ncorr - 1);
+
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = rand() % ncorr;
-        rand1 = rand() % ncorr;
-        rand2 = rand() % ncorr;
+        rand0 = uniform_dist(rgen);
+        rand1 = uniform_dist(rgen);
+        rand2 = uniform_dist(rgen);
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;
