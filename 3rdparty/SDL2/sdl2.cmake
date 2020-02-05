@@ -55,7 +55,7 @@ target_link_libraries(sdl2_combined INTERFACE ${SDL2_LIB_FILES})
 #    ${3RDPARTY_INSTALL_PREFIX}/include/sdl2
 #)
 
-set(SDL2_LIBRARIES sdl2_combined)
+set(SDL2_LIBRARIES ${SDL2_LIB_FILES})
 
 add_dependencies(build_all_3rd_party_libs sdl2_combined)
 
