@@ -1,5 +1,4 @@
-"""This module loads the op library and defines shortcuts for the op functions.
-"""
+"""This module loads the op library."""
 import os as _os
 import sys as _sys
 import tensorflow as _tf
@@ -21,18 +20,3 @@ except Exception as ex:
             'The op library at "{}" was not found. Make sure that BUILD_TENSORFLOW_OPS was enabled.'
             .format(_lib_path))
     raise ex
-
-
-# Add shortcuts without the 'open3d_' prefix to this module.
-# TODO do not create the shortcuts at runtime but generate this file to
-# allow IDEs to lookup the docstring without actually loading the module.
-def _add_function_shortcuts():
-    for x in dir(_lib):
-        if x.startswith('open3d_'):
-            attr = getattr(_lib, x)
-            if hasattr(attr, '__call__'):
-                truncated_fn_name = x[7:]  # removes the 'open3d_' prefix
-                setattr(_sys.modules[__name__], truncated_fn_name, attr)
-
-
-_add_function_shortcuts()
