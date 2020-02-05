@@ -1,6 +1,6 @@
 version: 1.0.{build}
 image:
-- Visual Studio 2019
+- Previous Visual Studio 2019
 test: off
 build:
   parallel: true
