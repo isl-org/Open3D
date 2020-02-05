@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ML/Misc/Detail/VoxelPooling.h"
 #include "VoxelPoolingGradOpKernel.h"
+#include "Open3D/ML/Misc/Detail/VoxelPooling.h"
 
 using namespace open3d::ml::detail;
 using namespace voxel_pooling_opkernel;
