@@ -64,7 +64,7 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
     neighbors_index = edges[:, 1]
 
     # exclusive prefix sum of the number of neighbors
-    neighbors_prefix_sum = np.array([0, 3, 4], dtype=np.int64)
+    neighbors_row_splits = np.array([0, 3, 4, edges.shape[0]], dtype=np.int64)
 
     if attributes == 'scalar':
         neighbors_attributes = np.array([
@@ -85,13 +85,13 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
 
     with tf.device(device_name):
         ans = ml3d.ops.invert_neighbors_list(num_points, neighbors_index,
-                                             neighbors_prefix_sum,
+                                             neighbors_row_splits,
                                              neighbors_attributes)
         assert device_name in ans.neighbors_index.device
 
-    expected_neighbors_prefix_sum = [0, 1, 3]
-    np.testing.assert_equal(ans.neighbors_prefix_sum.numpy(),
-                            expected_neighbors_prefix_sum)
+    expected_neighbors_row_splits = [0, 1, 3, edges.shape[0]]
+    np.testing.assert_equal(ans.neighbors_row_splits.numpy(),
+                            expected_neighbors_row_splits)
 
     # checking the neighbors_index is more complicated because the order
     # of the neighbors for each query point is not defined.
@@ -101,9 +101,8 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
         set([0, 1, 2]),
     ]
     for i, expected_neighbors_i in enumerate(expected_neighbors_index):
-        start = ans.neighbors_prefix_sum[i]
-        end = ans.neighbors_prefix_sum[i + 1] if i + 1 < len(
-            ans.neighbors_prefix_sum) else len(neighbors_index)
+        start = ans.neighbors_row_splits[i]
+        end = ans.neighbors_row_splits[i + 1]
         neighbors_i = set(ans.neighbors_index[start:end].numpy())
         assert neighbors_i == expected_neighbors_i
 
@@ -117,9 +116,8 @@ def test_invert_neighbors_list(dtype, attributes, device_name):
             tuple(k): v for k, v in zip(edges, neighbors_attributes)
         }
         for i, _ in enumerate(expected_neighbors_index):
-            start = ans.neighbors_prefix_sum[i]
-            end = ans.neighbors_prefix_sum[i + 1] if i + 1 < len(
-                ans.neighbors_prefix_sum) else len(neighbors_index)
+            start = ans.neighbors_row_splits[i]
+            end = ans.neighbors_row_splits[i + 1]
 
             # neighbors and attributes for point i
             neighbors_i = ans.neighbors_index[start:end].numpy()

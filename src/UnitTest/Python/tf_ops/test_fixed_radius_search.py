@@ -88,16 +88,14 @@ def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
-    ans_neighbors_prefix_sum = ans.neighbors_prefix_sum.numpy()
+    ans_neighbors_row_splits = ans.neighbors_row_splits.numpy()
     if return_distances:
         ans_neighbors_distance = ans.neighbors_distance.numpy()
 
     for i, q in enumerate(queries):
         # check neighbors
-        start = ans_neighbors_prefix_sum[i]
-        end = ans_neighbors_prefix_sum[
-            i + 1] if i + 1 < ans_neighbors_prefix_sum.shape[
-                0] else ans_neighbors_index.shape[0]
+        start = ans_neighbors_row_splits[i]
+        end = ans_neighbors_row_splits[i + 1]
         q_neighbors_index = ans_neighbors_index[start:end]
 
         gt_set = set(gt_neighbors_index[i])
@@ -139,7 +137,7 @@ def test_fixed_radius_search_empty_point_sets(device_name):
         assert device_name in ans.neighbors_index.device
 
     assert ans.neighbors_index.shape.as_list() == [0]
-    assert ans.neighbors_prefix_sum.shape.as_list() == [0]
+    assert ans.neighbors_row_splits.shape.as_list() == [1]
     assert ans.neighbors_distance.shape.as_list() == [0]
 
     # no input points
@@ -155,7 +153,7 @@ def test_fixed_radius_search_empty_point_sets(device_name):
         assert device_name in ans.neighbors_index.device
 
     assert ans.neighbors_index.shape.as_list() == [0]
-    assert ans.neighbors_prefix_sum.shape.as_list() == [100]
-    np.testing.assert_array_equal(np.zeros_like(ans.neighbors_prefix_sum),
-                                  ans.neighbors_prefix_sum)
+    assert ans.neighbors_row_splits.shape.as_list() == [101]
+    np.testing.assert_array_equal(np.zeros_like(ans.neighbors_row_splits),
+                                  ans.neighbors_row_splits)
     assert ans.neighbors_distance.shape.as_list() == [0]

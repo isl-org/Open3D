@@ -102,7 +102,7 @@ template <class T,
           int METRIC,
           bool IGNORE_QUERY_POINT,
           bool RETURN_DISTANCES>
-void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
+void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                            size_t num_points,
                            const T* const points,
                            size_t num_queries,
@@ -121,8 +121,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 
     // return empty output arrays if there are no points
     if (num_points == 0 || num_queries == 0) {
-        std::fill(query_neighbors_prefix_sum,
-                  query_neighbors_prefix_sum + num_queries, 0);
+        std::fill(query_neighbors_row_splits,
+                  query_neighbors_row_splits + num_queries + 1, 0);
         int32_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
@@ -139,7 +139,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
     // and then compute a prefix sum.
     // +1 for the size because we use the inclusive prefix sum algorithm later
     // and want the first element to be 0.
-    std::vector<Index_t> prefix_sum(hash_table_size + 1, 0);
+    std::vector<Index_t> row_splits(hash_table_size + 1, 0);
 
     open3d::utility::hash_eigen::hash<Eigen::Vector3i> hash_fn;
 
@@ -158,15 +158,15 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                                       hash_fn(voxel_index) % hash_table_size;
 
                               // note the +1
-                              AtomicFetchAddRelaxed(&prefix_sum[hash + 1], 1);
+                              AtomicFetchAddRelaxed(&row_splits[hash + 1], 1);
                           }
                       });
 
-    InclusivePrefixSum(&prefix_sum[0], &prefix_sum[prefix_sum.size()],
-                       &prefix_sum[0]);
+    InclusivePrefixSum(&row_splits[0], &row_splits[row_splits.size()],
+                       &row_splits[0]);
 
     // stores the indices to the points for each hash entry. Start and end of
-    // the hash entries is defined by the prefix_sum.
+    // the hash entries is defined by the row_splits.
     std::vector<Index_t> index_table(num_points);
 
     // now compute the indices for index_table
@@ -184,24 +184,19 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                                 ComputeVoxelIndex(pos, inv_voxel_size);
                         size_t hash = hash_fn(voxel_index) % hash_table_size;
 
-                        index_table[prefix_sum[hash] +
+                        index_table[row_splits[hash] +
                                     AtomicFetchAddRelaxed(&count_tmp[hash],
                                                           1)] = i;
                     }
                 });
     }
 
-    // stores the number of neighbors for each query point. Will be transformed
-    // to a prefix sum later.
-    std::vector<int64_t> tmp_query_neighbors_prefix_sum(num_queries + 1);
-    tmp_query_neighbors_prefix_sum[0] = 0;
-
     // counts the number of indices we have to return. This is the number of all
     // neighbors we find.
     size_t num_indices = 0;
 
     // count the number of neighbors for all query points and update num_indices
-    // and populate tmp_query_neighbors_prefix_sum with the number of neighbors
+    // and populate query_neighbors_row_splits with the number of neighbors
     // for each query point
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
@@ -235,10 +230,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                     int vec_i = 0;
 
                     for (size_t bin : bins_to_visit) {
-                        size_t begin_idx = prefix_sum[bin];
-                        // note that the size of prefix_sum is hash_table_size+1
-                        size_t end_idx = (bin + 1 < prefix_sum.size() - 1
-                                                  ? prefix_sum[bin + 1]
+                        size_t begin_idx = row_splits[bin];
+                        // note that the size of row_splits is hash_table_size+1
+                        size_t end_idx = (bin + 1 < row_splits.size() - 1
+                                                  ? row_splits[bin + 1]
                                                   : num_points);
 
                         for (size_t j = begin_idx; j < end_idx; ++j) {
@@ -275,7 +270,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                     }
                     num_indices_local += neighbors_count;
                     // note the +1
-                    tmp_query_neighbors_prefix_sum[i + 1] = neighbors_count;
+                    query_neighbors_row_splits[i + 1] = neighbors_count;
                 }
 
                 AtomicFetchAddRelaxed((uint64_t*)&num_indices,
@@ -294,10 +289,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
     else
         output_allocator.AllocDistances(&distances_ptr, 0);
 
-    InclusivePrefixSum(&tmp_query_neighbors_prefix_sum[0],
-                       &tmp_query_neighbors_prefix_sum
-                               [tmp_query_neighbors_prefix_sum.size() - 1],
-                       query_neighbors_prefix_sum);
+    query_neighbors_row_splits[0] = 0;
+    InclusivePrefixSum(query_neighbors_row_splits + 1,
+                       query_neighbors_row_splits + num_queries + 1,
+                       query_neighbors_row_splits + 1);
 
     // now populate the indices_ptr and distances_ptr array
     tbb::parallel_for(
@@ -307,7 +302,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     size_t neighbors_count = 0;
 
-                    size_t indices_offset = query_neighbors_prefix_sum[i];
+                    size_t indices_offset = query_neighbors_row_splits[i];
 
                     Vec3_t pos(queries[i * 3 + 0], queries[i * 3 + 1],
                                queries[i * 3 + 2]);
@@ -335,10 +330,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
                     int vec_i = 0;
 
                     for (size_t bin : bins_to_visit) {
-                        size_t begin_idx = prefix_sum[bin];
-                        // note that the size of prefix_sum is hash_table_size+1
-                        size_t end_idx = (bin + 1 < prefix_sum.size() - 1
-                                                  ? prefix_sum[bin + 1]
+                        size_t begin_idx = row_splits[bin];
+                        // note that the size of row_splits is hash_table_size+1
+                        size_t end_idx = (bin + 1 < row_splits.size() - 1
+                                                  ? row_splits[bin + 1]
                                                   : num_points);
 
                         for (size_t j = begin_idx; j < end_idx; ++j) {
@@ -402,7 +397,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 }  // namespace
 
 /// Fixed radius search. This function computes a list of neighbor indices
-/// for each query point.The lists are stored linearly and an exclusive prefix
+/// for each query point. The lists are stored linearly and an exclusive prefix
 /// sum defines the start and end of list in the array.
 /// In addition the function optionally can return the distances for each
 /// neighbor in the same format as the indices to the neighbors.
@@ -413,8 +408,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 ///         \p output_allocator for more information.
 ///
 ///
-/// \param query_neighbors_prefix_sum    This is the output pointer for the
-///        prefix sum. The length of this array is \p num_queries.
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
 ///
 /// \param num_points    The number of points.
 ///
@@ -452,7 +447,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 ///         In this case ptr does not need to be set.
 ///
 template <class T, class OUTPUT_ALLOCATOR>
-void FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
+void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                           size_t num_points,
                           const T* const points,
                           size_t num_queries,
@@ -466,7 +461,7 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_prefix_sum,
 // Dispatch all template parameter combinations
 
 #define FN_PARAMETERS                                                     \
-    query_neighbors_prefix_sum, num_points, points, num_queries, queries, \
+    query_neighbors_row_splits, num_points, points, num_queries, queries, \
             radius, hash_table_size, output_allocator
 
 #define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \

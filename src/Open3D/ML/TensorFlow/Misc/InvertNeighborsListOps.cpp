@@ -36,23 +36,23 @@ REGISTER_OP("Open3DInvertNeighborsList")
         .Attr("TAttr: {int32, int64, float, double}")
         .Input("num_points: int64")
         .Input("inp_neighbors_index: TIndex")
-        .Input("inp_neighbors_prefix_sum: int64")
+        .Input("inp_neighbors_row_splits: int64")
         .Input("inp_neighbors_attributes: TAttr")
         .Output("neighbors_index: TIndex")
-        .Output("neighbors_prefix_sum: int64")
+        .Output("neighbors_row_splits: int64")
         .Output("neighbors_attributes: TAttr")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle num_points_shape, inp_neighbors_index_shape,
-                    inp_neighbors_prefix_sum_shape,
+                    inp_neighbors_row_splits_shape,
                     inp_neighbors_attributes_shape, neighbors_index_shape,
-                    neighbors_count_prefix_sum_shape;
+                    neighbors_row_splits_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &num_points_shape));
             TF_RETURN_IF_ERROR(
                     c->WithRank(c->input(1), 1, &inp_neighbors_index_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 1,
-                                           &inp_neighbors_prefix_sum_shape));
+                                           &inp_neighbors_row_splits_shape));
             TF_RETURN_IF_ERROR(c->WithRankAtLeast(
                     c->input(3), 1, &inp_neighbors_attributes_shape));
 
@@ -61,8 +61,8 @@ REGISTER_OP("Open3DInvertNeighborsList")
 
             // The length of the prefix sum vector will change to num_points
             // which we do not know here
-            neighbors_count_prefix_sum_shape = c->MakeShape({c->UnknownDim()});
-            c->set_output(1, neighbors_count_prefix_sum_shape);
+            neighbors_row_splits_shape = c->MakeShape({c->UnknownDim()});
+            c->set_output(1, neighbors_row_splits_shape);
 
             // the attributes will have the same shape
             c->set_output(2, inp_neighbors_attributes_shape);
@@ -82,8 +82,10 @@ num_points:
 inp_neighbors_index:
   The input neighbor indices stored linearly.
 
-inp_neighbors_prefix_sum:
+inp_neighbors_row_splits:
   The number of neighbors for the input queries as exclusive prefix sum.
+  The prefix sum includes the total number as last element. The size is
+  num_points + 1.
 
 inp_neighbors_attributes:
   Array that stores an attribute for each neighbor. 
@@ -93,9 +95,10 @@ inp_neighbors_attributes:
 neighbors_index: 
   The output neighbor indices stored linearly.
 
-neighbors_prefix_sum:
+neighbors_row_splits:
   Stores the number of neighbors for the new queries (previously the input 
-  points) as exclusive prefix sum.
+  points) as exclusive prefix sum including the total number in the last 
+  element.
 
 neighbors_attributes:
   Array that stores an attribute for each neighbor. 

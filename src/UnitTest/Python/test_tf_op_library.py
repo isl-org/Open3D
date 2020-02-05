@@ -49,9 +49,9 @@ def test_execute_tf_op():
     import open3d.ml.tf as ml3d
 
     values = np.arange(0, 10)
-    prefix_sum = np.array([0, 3, 4, 4])
+    row_splits = np.array([0, 3, 4, 4, 10])
 
     with tf.device('CPU:0'):
-        ans = ml3d.ops.reduce_subarrays_sum(values, prefix_sum)
+        ans = ml3d.ops.reduce_subarrays_sum(values, row_splits)
     # test was a success if we reach this line but check correctness anyway
     assert np.all(ans.numpy() == [3, 3, 0, 39])

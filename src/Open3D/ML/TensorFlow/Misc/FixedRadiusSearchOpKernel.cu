@@ -48,7 +48,7 @@ public:
                 const tensorflow::Tensor& queries,
                 const tensorflow::Tensor& radius,
                 const size_t hash_table_size,
-                tensorflow::Tensor& query_neighbors_prefix_sum) {
+                tensorflow::Tensor& query_neighbors_row_splits) {
         auto device = context->eigen_gpu_device();
 
         OutputAllocator<T> output_allocator(context);
@@ -59,7 +59,7 @@ public:
         // determine temp_size
         FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
-                (int64_t*)query_neighbors_prefix_sum.flat<int64>().data(),
+                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
                 radius.scalar<T>()(), hash_table_size, metric,
@@ -75,7 +75,7 @@ public:
         // actually run the search
         FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
-                (int64_t*)query_neighbors_prefix_sum.flat<int64>().data(),
+                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
                 radius.scalar<T>()(), hash_table_size, metric,

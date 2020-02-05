@@ -123,12 +123,12 @@ public:
                         hash_table_size_factor * points.shape().dim_size(0), 1),
                 max_hash_table_size);
 
-        Tensor* query_neighbors_prefix_sum = 0;
-        TensorShape query_neighbors_prefix_sum_shape(
-                {queries.shape().dim_size(0)});
+        Tensor* query_neighbors_row_splits = 0;
+        TensorShape query_neighbors_row_splits_shape(
+                {queries.shape().dim_size(0) + 1});
         OP_REQUIRES_OK(context, context->allocate_output(
-                                        1, query_neighbors_prefix_sum_shape,
-                                        &query_neighbors_prefix_sum));
+                                        1, query_neighbors_row_splits_shape,
+                                        &query_neighbors_row_splits));
 
         Tensor hash_table;
         TensorShape hash_table_shape({ssize_t(hash_table_size)});
@@ -137,7 +137,7 @@ public:
                                               hash_table_shape, &hash_table));
 
         Kernel(context, points, queries, radius, hash_table_size,
-               *query_neighbors_prefix_sum);
+               *query_neighbors_row_splits);
     }
 
     virtual void Kernel(tensorflow::OpKernelContext* context,
@@ -145,7 +145,7 @@ public:
                         const tensorflow::Tensor& queries,
                         const tensorflow::Tensor& radius,
                         const size_t hash_table_size,
-                        tensorflow::Tensor& query_neighbors_prefix_sum) = 0;
+                        tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
     open3d::ml::detail::Metric metric;

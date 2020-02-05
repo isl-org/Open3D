@@ -41,13 +41,13 @@ REGISTER_OP("Open3DRadiusSearch")
         .Input("queries: T")
         .Input("radii: T")
         .Output("neighbors_index: int32")
-        .Output("neighbors_prefix_sum: int64")
+        .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle points_shape, queries_shape, radii_shape,
                     hash_table_size_factor_shape, indices_shape,
-                    neighbors_prefix_sum_shape, neighbors_distance_shape;
+                    neighbors_row_splits_shape, neighbors_distance_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));
@@ -79,8 +79,12 @@ REGISTER_OP("Open3DRadiusSearch")
             indices_shape = c->MakeShape({c->UnknownDim()});
             c->set_output(0, indices_shape);
 
-            neighbors_prefix_sum_shape = c->MakeShape({num_query_points});
-            c->set_output(1, neighbors_prefix_sum_shape);
+            DimensionHandle neighbors_row_splits_size;
+            TF_RETURN_IF_ERROR(
+                    c->Add(num_query_points, 1, &neighbors_row_splits_size));
+            neighbors_row_splits_shape =
+                    c->MakeShape({neighbors_row_splits_size});
+            c->set_output(1, neighbors_row_splits_shape);
 
             bool return_distances;
             TF_RETURN_IF_ERROR(
@@ -126,9 +130,9 @@ radii:
 
 neighbors_index:
   The compact list of indices of the neighbors. The corresponding query point
-  can be inferred from the 'neighbor_count_prefix_sum' vector.
+  can be inferred from the 'neighbor_count_row_splits' vector.
 
-neighbors_prefix_sum:
+neighbors_row_splits:
   The exclusive prefix sum of the neighbor count for the query points.
 
 neighbors_distance:

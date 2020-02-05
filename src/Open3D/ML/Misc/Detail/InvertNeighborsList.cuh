@@ -92,24 +92,22 @@ __global__ void FillNeighborsIndexAndAttributesCUDAKernel(
         const TAttr* const __restrict__ inp_neighbors_attributes,
         int num_attributes_per_neighbor,
         size_t indices_size,
-        const int64_t* const __restrict__ inp_neighbors_prefix_sum,
-        size_t inp_prefix_sum_size,
-        const int64_t* const __restrict__ out_neighbors_prefix_sum,
-        size_t out_prefix_sum_size) {
+        const int64_t* const __restrict__ inp_neighbors_row_splits,
+        size_t inp_num_queries,
+        const int64_t* const __restrict__ out_neighbors_row_splits,
+        size_t out_num_queries) {
     const int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i >= inp_prefix_sum_size) return;
+    if (i >= inp_num_queries) return;
 
     TIndex query_idx = i;
 
-    size_t begin_idx = inp_neighbors_prefix_sum[i];
-    size_t end_idx =
-            (i + 1 < inp_prefix_sum_size ? inp_neighbors_prefix_sum[i + 1]
-                                         : indices_size);
+    size_t begin_idx = inp_neighbors_row_splits[i];
+    size_t end_idx = inp_neighbors_row_splits[i + 1];
 
     for (size_t j = begin_idx; j < end_idx; ++j) {
         TIndex neighbor_idx = inp_neighbors_index[j];
 
-        size_t list_offset = out_neighbors_prefix_sum[neighbor_idx];
+        size_t list_offset = out_neighbors_row_splits[neighbor_idx];
         size_t item_offset = atomicAdd(&count[neighbor_idx], 1);
         out_neighbors_index[list_offset + item_offset] = query_idx;
 
@@ -148,10 +146,10 @@ void FillNeighborsIndexAndAttributesCUDA(
         const TAttr* const __restrict__ inp_neighbors_attributes,
         const int num_attributes_per_neighbor,
         size_t index_size,
-        const int64_t* const __restrict__ inp_neighbors_prefix_sum,
-        size_t inp_prefix_sum_size,
-        const int64_t* const __restrict__ out_neighbors_prefix_sum,
-        size_t out_prefix_sum_size) {
+        const int64_t* const __restrict__ inp_neighbors_row_splits,
+        size_t inp_num_queries,
+        const int64_t* const __restrict__ out_neighbors_row_splits,
+        size_t out_num_queries) {
     using namespace open3d::utility;
 
     cudaMemsetAsync(count, 0, sizeof(uint32_t) * count_size, stream);
@@ -159,7 +157,7 @@ void FillNeighborsIndexAndAttributesCUDA(
     const int BLOCKSIZE = 128;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
-    grid.x = DivUp(inp_prefix_sum_size, block.x);
+    grid.x = DivUp(inp_num_queries, block.x);
 
     if (grid.x) {
         if (inp_neighbors_attributes) {
@@ -169,8 +167,8 @@ void FillNeighborsIndexAndAttributesCUDA(
                             out_neighbors_attributes, inp_neighbors_index,
                             inp_neighbors_attributes,
                             num_attributes_per_neighbor, index_size,
-                            inp_neighbors_prefix_sum, inp_prefix_sum_size,
-                            out_neighbors_prefix_sum, out_prefix_sum_size);
+                            inp_neighbors_row_splits, inp_num_queries,
+                            out_neighbors_row_splits, out_num_queries);
         } else {
             FillNeighborsIndexAndAttributesCUDAKernel<TIndex, TAttr, false>
                     <<<grid, block, 0, stream>>>(
@@ -178,8 +176,8 @@ void FillNeighborsIndexAndAttributesCUDA(
                             out_neighbors_attributes, inp_neighbors_index,
                             inp_neighbors_attributes,
                             num_attributes_per_neighbor, index_size,
-                            inp_neighbors_prefix_sum, inp_prefix_sum_size,
-                            out_neighbors_prefix_sum, out_prefix_sum_size);
+                            inp_neighbors_row_splits, inp_num_queries,
+                            out_neighbors_row_splits, out_num_queries);
         }
     }
 }
@@ -187,23 +185,24 @@ void FillNeighborsIndexAndAttributesCUDA(
 }  // namespace
 
 /// Inverts a neighbors list, which is a tuple of the form
-/// (neighbors_index, neighbors_prefix_sum, neighbors_attributes).
+/// (neighbors_index, neighbors_row_splits, neighbors_attributes).
 /// neighbors_index is a nested list of indices to the neighbors. Each entry
 /// defines an edge between two indices (points).
-/// The neighbors_prefix_sum defines the start and end of each sublist.
+/// The neighbors_row_splits defines the start and end of each sublist.
 /// neighbors_attributes is an optional array of attributes for each entry in
 /// neighbors_index.
 ///
 /// Example: The neighbors for point cloud A (3 points) in point cloud B
 /// (2 points) is defined by:
 /// - neighbors_index [0 1 0 0]
-/// - neighbors_prefix_sum [0 2 3]
+/// - neighbors_row_splits [0 2 3 4]
 /// - optional neighbors_attributes [0.1 0.2 0.3 0.4] (1 scalar attribute)
 ///
 /// The inverted neighbors list is then the neighbors for point cloud B in A
 /// - neighbors_index [0 1 2 0]
-/// - neighbors_prefix_sum [0 3]
+/// - neighbors_row_splits [0 3 4]
 /// - optional neighbors_attributes [0.1 0.3 0.4 0.2]
+///
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
@@ -225,11 +224,13 @@ void FillNeighborsIndexAndAttributesCUDA(
 /// \param num_attributes_per_neighbor    The number of scalar attributes for
 ///        each entry in \p inp_neighbors_index.
 ///
-/// \param inp_neighbors_prefix_sum    The prefix sum which defines the start
-///        and end of the sublists in \p inp_neighbors_index.
+/// \param inp_neighbors_row_splits    Defines the start and end of the
+///        sublists in \p inp_neighbors_index. This is an exclusive prefix sum
+///        with 0 as the first element and the length of
+///        \p inp_neighbors_index as last element.
+///        The size is \p inp_num_queries + 1
 ///
-/// \param inp_num_queries    The number of queries. This is the size of the
-///        prefix sum.
+/// \param inp_num_queries    The number of queries.
 ///
 /// \param out_neighbors_index    The inverted neighbors_index list with the
 ///        same size as \p inp_neighbors_index .
@@ -240,7 +241,7 @@ void FillNeighborsIndexAndAttributesCUDA(
 /// \param index_size    This is the size of \p inp_neighbors_index and
 ///        \p out_neighbors_index, both have the same size.
 ///
-/// \param out_neighbors_prefix_sum   The prefix sum which defines the start
+/// \param out_neighbors_row_splits   The prefix sum which defines the start
 ///        and end of the sublists in \p out_neighbors_index.
 ///
 /// \param out_num_queries    The number of queries with respect to the
@@ -254,12 +255,12 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
                              const TIndex* const inp_neighbors_index,
                              const TAttr* const inp_neighbors_attributes,
                              const int num_attributes_per_neighbor,
-                             const int64_t* const inp_neighbors_prefix_sum,
+                             const int64_t* const inp_neighbors_row_splits,
                              const size_t inp_num_queries,
                              TIndex* out_neighbors_index,
                              TAttr* out_neighbors_attributes,
                              const size_t index_size,
-                             int64_t* out_neighbors_prefix_sum,
+                             int64_t* out_neighbors_row_splits,
                              const size_t out_num_queries) {
     using namespace open3d::utility;
 
@@ -285,22 +286,25 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
 
     // compute prefix sum
     {
-        std::pair<void*, size_t> exclusive_scan_temp(nullptr, 0);
-        cub::DeviceScan::ExclusiveSum(
-                exclusive_scan_temp.first, exclusive_scan_temp.second,
-                tmp_neighbors_count.first, out_neighbors_prefix_sum,
+        std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
+        cub::DeviceScan::InclusiveSum(
+                inclusive_scan_temp.first, inclusive_scan_temp.second,
+                tmp_neighbors_count.first, out_neighbors_row_splits + 1,
                 out_num_queries, stream);
 
-        exclusive_scan_temp = mem_temp.Alloc(exclusive_scan_temp.second);
+        inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
 
         if (!get_temp_size) {
-            cub::DeviceScan::ExclusiveSum(
-                    exclusive_scan_temp.first, exclusive_scan_temp.second,
-                    tmp_neighbors_count.first, out_neighbors_prefix_sum,
+            // set first element to zero
+            cudaMemsetAsync(out_neighbors_row_splits, 0, sizeof(int64_t),
+                            stream);
+            cub::DeviceScan::InclusiveSum(
+                    inclusive_scan_temp.first, inclusive_scan_temp.second,
+                    tmp_neighbors_count.first, out_neighbors_row_splits + 1,
                     out_num_queries, stream);
         }
 
-        mem_temp.Free(exclusive_scan_temp);
+        mem_temp.Free(inclusive_scan_temp);
     }
     mem_temp.Free(tmp_neighbors_count);
 
@@ -316,8 +320,8 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
                 out_neighbors_index, out_neighbors_attributes,
                 inp_neighbors_index, inp_neighbors_attributes,
                 num_attributes_per_neighbor, index_size,
-                inp_neighbors_prefix_sum, inp_num_queries,
-                out_neighbors_prefix_sum, out_num_queries);
+                inp_neighbors_row_splits, inp_num_queries,
+                out_neighbors_row_splits, out_num_queries);
     }
 }
 
