@@ -49,6 +49,9 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
+    static const MaterialInstanceHandle kDepthMaterial;
+    static const MaterialInstanceHandle kNormalsMaterial;
+
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
 
@@ -58,10 +61,9 @@ public:
 
     TextureHandle CreateTexture(const char* path);
 
-    // FIXME:
-    // Since rendering uses not all Open3D geometry/filament features, I'm not
-    // sure which arguments should CreateVB(...) function have. Thus creation of
-    // VB is managed by FilamentScene class
+    // Since rendering uses not all Open3D geometry/filament features, we don't
+    // know which arguments pass to CreateVB(...). Thus creation of VB is
+    // managed by FilamentScene class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
     IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
                                         size_t indexStride);

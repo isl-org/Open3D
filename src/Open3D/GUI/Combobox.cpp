@@ -53,7 +53,7 @@ struct Combobox::Impl {
     std::vector<std::string> items;
     int currentIndex = 0;
     int selectedIndex = -1;
-    std::function<void(const char *)> onValueChanged;
+    std::function<void(const char*)> onValueChanged;
 };
 
 Combobox::Combobox() : impl_(new Combobox::Impl()) {
@@ -76,17 +76,13 @@ void Combobox::ClearItems() {
     impl_->selectedIndex = -1;
 }
 
-void Combobox::AddItem(const char *name) {
-    impl_->items.push_back(name);
-}
+void Combobox::AddItem(const char* name) { impl_->items.push_back(name); }
 
 const char* Combobox::GetItem(int index) const {
     return impl_->items[index].c_str();
 }
 
-int Combobox::GetSelectedIndex() const {
-    return impl_->currentIndex;
-}
+int Combobox::GetSelectedIndex() const { return impl_->currentIndex; }
 
 const char* Combobox::GetSelectedValue() const {
     if (impl_->currentIndex >= 0 &&
@@ -103,7 +99,8 @@ void Combobox::SetSelectedIndex(int index) {
     }
 }
 
-void Combobox::SetOnValueChanged(std::function<void(const char *)> onValueChanged) {
+void Combobox::SetOnValueChanged(
+        std::function<void(const char*)> onValueChanged) {
     impl_->onValueChanged = onValueChanged;
 }
 
@@ -116,8 +113,7 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
                                                     10000, item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
-    return Size(width + buttonWidth + 2.0 * padding.x,
-                CalcItemHeight(theme));
+    return Size(width + buttonWidth + 2.0 * padding.x, CalcItemHeight(theme));
 }
 
 Combobox::DrawResult Combobox::Draw(const DrawContext& context) {

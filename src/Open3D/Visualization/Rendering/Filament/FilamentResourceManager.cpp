@@ -26,7 +26,9 @@
 
 #include "FilamentResourceManager.h"
 
+#include "Open3D/GUI/Application.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
+#include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 
 #include <filament/Engine.h>
@@ -56,7 +58,7 @@ Handle RegisterResource(filament::Engine& engine,
                         ResourceType* resource,
                         ResourcesContainer<ResourceType>& container) {
     if (!resource) {
-        // TODO: assert
+        utility::LogError("Trying to register empty resource!");
         return Handle::kBad;
     }
 
@@ -75,7 +77,7 @@ std::weak_ptr<ResourceType> FindResource(
         return found->second;
     }
 
-    // TODO: assert
+    utility::LogWarning("Resource {} not found.", id);
     return std::weak_ptr<ResourceType>();
 }
 
@@ -84,15 +86,37 @@ void DestroyResource(const REHandle_abstract& id,
                      ResourcesContainer<ResourceType>& container) {
     auto found = container.find(id);
     if (found == container.end()) {
-        // TODO: assert
+        utility::LogError("Trying to destroy nonexistent resource ({})!", id);
         return;
     }
 
     container.erase(found);
 }
 
+const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
+        MaterialInstanceHandle::Next();
+const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
+        MaterialInstanceHandle::Next();
+
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
-    : engine_(aEngine) {}
+    : engine_(aEngine) {
+    // FIXME: Move to precompiled resource blobs
+    const std::string resourceRoot =
+            gui::Application::GetInstance().GetResourcePath();
+
+    const auto depthPath = resourceRoot + "/depth.filamat";
+    const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
+    auto depthMat = materials_[hDepth];
+    materialInstances_[kDepthMaterial] =
+            MakeShared(depthMat->createInstance(), engine_);
+
+    const auto normalsPath = resourceRoot + "/normals.filamat";
+    const auto hNormals =
+            CreateMaterial(ResourceLoadRequest(normalsPath.data()));
+    auto normalsMat = materials_[hNormals];
+    materialInstances_[kNormalsMaterial] =
+            MakeShared(normalsMat->createInstance(), engine_);
+}
 
 FilamentResourceManager::~FilamentResourceManager() { DestroyAll(); }
 
@@ -112,14 +136,16 @@ MaterialHandle FilamentResourceManager::CreateMaterial(const void* materialData,
     return handle;
 }
 
-MaterialHandle FilamentResourceManager::CreateMaterial(const ResourceLoadRequest& request) {
+MaterialHandle FilamentResourceManager::CreateMaterial(
+        const ResourceLoadRequest& request) {
     MaterialHandle handle;
 
     if (false == request.path.empty()) {
         std::vector<char> materialData;
         std::string errorStr;
 
-        if (utility::filesystem::FReadToBuffer(request.path, materialData, &errorStr)) {
+        if (utility::filesystem::FReadToBuffer(request.path, materialData,
+                                               &errorStr)) {
             handle = CreateMaterial(materialData.data(), materialData.size());
         } else {
             request.errorCallback(request, errno, errorStr);
@@ -142,7 +168,7 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
                 engine_, materialInstance, materialInstances_);
     }
 
-    // TODO: assert
+    utility::LogWarning("Material ({}) for creating instance not found", id);
     return {};
 }
 
@@ -153,12 +179,8 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
 
     if (path) {
         img = io::CreateImageFromFile(path);
-
-        if (!img->HasData()) {
-            // TODO: report an error
-        }
     } else {
-        // TODO: report an error
+        utility::LogWarning("Empty path for texture loading provided");
     }
 
     using namespace filament;
@@ -261,8 +283,10 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
             DestroyResource(id, indexBuffers_);
             break;
         default:
-            // TODO: assert, because user trying to destroy kind of resource
-            //       which not belongs to resources manager
+            utility::LogWarning(
+                    "Resource {} is not suited for destruction by "
+                    "ResourceManager",
+                    REHandle_abstract::TypeToString(id.type));
             break;
     }
 }

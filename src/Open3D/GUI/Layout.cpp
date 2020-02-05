@@ -180,7 +180,7 @@ void Layout1D::Layout(const Theme& theme) {
     auto& children = GetChildren();
     std::vector<int> major = calcMajor(theme, impl_->dir, children, nullptr);
     int total = 0, nStretch = 0, nGrow = 0;
-    for (auto &mj : major) {
+    for (auto& mj : major) {
         total += mj;
         if (mj <= 0) {
             nStretch += 1;
@@ -208,7 +208,7 @@ void Layout1D::Layout(const Theme& theme) {
                                     impl_->spacing * (major.size() - 1));
         auto excess = totalExcess / nGrow;
         auto leftover = totalExcess - excess * nStretch;
-        for (size_t i = 0;  i < major.size();  ++i) {
+        for (size_t i = 0; i < major.size(); ++i) {
             if (major[i] >= Widget::DIM_GROW) {
                 major[i] -= excess;
                 if (leftover > 0) {
@@ -279,15 +279,13 @@ std::shared_ptr<Layout1D::Stretch> Horiz::MakeStretch() {
 }
 
 std::shared_ptr<Horiz> Horiz::MakeCentered(std::shared_ptr<Widget> w) {
-    return std::make_shared<Horiz>(0, Margins(),
-            std::vector<std::shared_ptr<Widget>>({ Horiz::MakeStretch(),
-                                                   w,
-                                                   Horiz::MakeStretch() }));
+    return std::make_shared<Horiz>(
+            0, Margins(),
+            std::vector<std::shared_ptr<Widget>>(
+                    {Horiz::MakeStretch(), w, Horiz::MakeStretch()}));
 }
 
-Horiz::Horiz()
-: Layout1D(HORIZ, 0, Margins(), {}) {
-}
+Horiz::Horiz() : Layout1D(HORIZ, 0, Margins(), {}) {}
 
 Horiz::Horiz(int spacing /*= 0*/, const Margins& margins /*= Margins()*/)
     : Layout1D(HORIZ, spacing, margins, {}) {}

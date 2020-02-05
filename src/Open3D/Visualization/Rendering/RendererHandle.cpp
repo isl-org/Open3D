@@ -44,7 +44,8 @@ const char* REHandle_abstract::TypeToString(EntityType type) {
     static const size_t kTypesCount = static_cast<size_t>(EntityType::Count);
     static const size_t kTypesMapped = 11;
 
-    static_assert(kTypesCount == kTypesMapped, "You forgot to add string value for new handle type.");
+    static_assert(kTypesCount == kTypesMapped,
+                  "You forgot to add string value for new handle type.");
 
     static const char* kTypesMapping[kTypesMapped] = {
             "None",    "View",         "Scene",      "Geometry",

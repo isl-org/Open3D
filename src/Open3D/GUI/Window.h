@@ -91,7 +91,7 @@ public:
     void ShowDialog(std::shared_ptr<Dialog> dlg);
     void CloseDialog();
 
-    void ShowMessageBox(const char *title, const char *message);
+    void ShowMessageBox(const char* title, const char* message);
 
 protected:
     virtual Size CalcPreferredSize(/*const Size& maxSize*/);

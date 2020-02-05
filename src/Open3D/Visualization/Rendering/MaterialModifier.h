@@ -41,8 +41,10 @@ struct TextureSamplerParameters {
         NearestMipmapNearest =
                 2,  //!< Mip-mapping is activated. But no filtering occurs.
         LinearMipmapNearest = 3,  //!< Box filtering within a mip-map level.
-        NearestMipmapLinear = 4,  //!< Mip-map levels are interpolated, but no other filtering occurs.
-        LinearMipmapLinear = 5    //!< Both interpolated Mip-mapping and linear filtering are used.
+        NearestMipmapLinear = 4,  //!< Mip-map levels are interpolated, but no
+                                  //!< other filtering occurs.
+        LinearMipmapLinear = 5    //!< Both interpolated Mip-mapping and linear
+                                  //!< filtering are used.
     };
 
     enum class MagFilter : uint8_t {
@@ -52,36 +54,43 @@ struct TextureSamplerParameters {
     };
 
     enum class WrapMode : uint8_t {
-        ClampToEdge,     //!< clamp-to-edge. The edge of the texture extends to infinity.
-        Repeat,          //!< repeat. The texture infinitely repeats in the wrap direction.
-        MirroredRepeat,  //!< mirrored-repeat. The texture infinitely repeats and mirrors in the wrap direction.
+        ClampToEdge,     //!< clamp-to-edge. The edge of the texture extends to
+                         //!< infinity.
+        Repeat,          //!< repeat. The texture infinitely repeats in the wrap
+                         //!< direction.
+        MirroredRepeat,  //!< mirrored-repeat. The texture infinitely repeats
+                         //!< and mirrors in the wrap direction.
     };
 
     /* filterMag = MagFilter::Nearest
-         * filterMin = MinFilter::Nearest
-         * wrapU = WrapMode::ClampToEdge
-         * wrapV = WrapMode::ClampToEdge
-         * wrapW = WrapMode::ClampToEdge
-         * anisotropy = 0
-         */
+     * filterMin = MinFilter::Nearest
+     * wrapU = WrapMode::ClampToEdge
+     * wrapV = WrapMode::ClampToEdge
+     * wrapW = WrapMode::ClampToEdge
+     * anisotropy = 0
+     */
     static TextureSamplerParameters Simple();
 
     /* filterMag = MagFilter::Linear
-         * filterMin = MinFilter::Linear
-         * wrapU = WrapMode::ClampToEdge
-         * wrapV = WrapMode::ClampToEdge
-         * wrapW = WrapMode::ClampToEdge
-         * anisotropy = 4
-         */
+     * filterMin = MinFilter::Linear
+     * wrapU = WrapMode::ClampToEdge
+     * wrapV = WrapMode::ClampToEdge
+     * wrapW = WrapMode::ClampToEdge
+     * anisotropy = 4
+     */
     static TextureSamplerParameters Pretty();
 
     TextureSamplerParameters() = default;
 
-    // Creates a TextureSampler with the default parameters but setting the filtering and wrap modes. 'minMag' is filtering for both minification and magnification 'uvw' is wrapping mode for all texture coordinate axes
+    // Creates a TextureSampler with the default parameters but setting the
+    // filtering and wrap modes. 'minMag' is filtering for both minification and
+    // magnification 'uvw' is wrapping mode for all texture coordinate axes
     explicit TextureSamplerParameters(MagFilter minMag,
                                       WrapMode uvw = WrapMode::ClampToEdge);
 
-    // Creates a TextureSampler with the default parameters but setting the filtering and wrap modes. 'uvw' is wrapping mode for all texture coordinate axes
+    // Creates a TextureSampler with the default parameters but setting the
+    // filtering and wrap modes. 'uvw' is wrapping mode for all texture
+    // coordinate axes
     TextureSamplerParameters(MinFilter min,
                              MagFilter mag,
                              WrapMode uvw = WrapMode::ClampToEdge);
@@ -120,5 +129,5 @@ public:
     virtual MaterialInstanceHandle Finish() = 0;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace open3d

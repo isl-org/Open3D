@@ -29,6 +29,7 @@
 #include "Open3D/Visualization/Rendering/View.h"
 
 #include <memory>
+#include <numeric>
 
 #include <filament/Color.h>
 
@@ -43,12 +44,21 @@ namespace open3d {
 namespace visualization {
 
 class FilamentCamera;
+class FilamentResourceManager;
+class FilamentScene;
 
 class FilamentView : public View {
 public:
-    FilamentView(filament::Engine& engine, filament::Scene& scene);
+    static constexpr std::uint8_t kAllLayersMask =
+            std::numeric_limits<std::uint8_t>::max();
+    static constexpr std::uint8_t kMainLayer = 1;  // Default layer for objects
+
+    FilamentView(filament::Engine& engine,
+                 FilamentScene& scene,
+                 FilamentResourceManager& resourceManager);
     ~FilamentView() override;
 
+    void SetMode(Mode mode) override;
     void SetDiscardBuffers(const TargetBuffers& buffers) override;
 
     void SetViewport(std::int32_t x,
@@ -60,12 +70,17 @@ public:
     Camera* GetCamera() const override;
 
     filament::View* GetNativeView() const { return view_; }
+    void PreRender();
+    void PostRender();
 
 private:
     std::unique_ptr<FilamentCamera> camera_;
+    Eigen::Vector3f clearColor_;
+    Mode mode_ = Mode::Color;
 
     filament::Engine& engine_;
-    filament::Scene& scene_;
+    FilamentScene& scene_;
+    FilamentResourceManager& resourceManager_;
     filament::View* view_ = nullptr;
 };
 

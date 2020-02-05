@@ -37,10 +37,11 @@ struct Theme;
 
 class FileDialog : public Dialog {
     using Super = Dialog;
+
 public:
     enum class Type { OPEN, SAVE };
 
-    FileDialog(Type type, const char *title, const Theme& theme);
+    FileDialog(Type type, const char *title, const Theme &theme);
     virtual ~FileDialog();
 
     /// May either be a directory or a file. If path is a file, it will be
@@ -69,5 +70,5 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}
-}
+}  // namespace gui
+}  // namespace open3d
