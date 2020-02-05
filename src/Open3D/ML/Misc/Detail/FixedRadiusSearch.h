@@ -27,6 +27,7 @@
 #pragma once
 
 #include <set>
+#include "NeighborSearchCommon.h"
 #include "Open3D/Core/Atomic.h"
 #include "Open3D/Utility/Eigen.h"
 #include "Open3D/Utility/Helper.h"
@@ -36,9 +37,6 @@
 namespace open3d {
 namespace ml {
 namespace detail {
-
-/// Supported metrics
-enum Metric { L1, L2, Linf };
 
 namespace {
 
