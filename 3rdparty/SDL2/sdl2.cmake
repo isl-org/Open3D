@@ -48,11 +48,8 @@ endif()
 add_library(sdl2_combined INTERFACE)
 add_dependencies(sdl2_combined sdl_copy)
 
-if (WIN32)
-    target_link_libraries(sdl2_combined INTERFACE SDL2$<$<CONFIG:Debug>:d>) #SDL2main$<$<CONFIG:Debug>:d>)
-else ()
-    target_link_libraries(sdl2_combined INTERFACE SDL2) #SDL2main)
-endif()
+set(SDL2_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${CMAKE_STATIC_LIBRARY_SUFFIX})
+target_link_libraries(sdl2_combined INTERFACE ${SDL2_LIB_FILES})
 
 #target_include_directories(sdl2 SYSTEM INTERFACE
 #    ${3RDPARTY_INSTALL_PREFIX}/include/sdl2
@@ -61,3 +58,19 @@ endif()
 set(SDL2_LIBRARIES sdl2_combined)
 
 add_dependencies(build_all_3rd_party_libs sdl2_combined)
+
+if (APPLE)
+    find_library(CORE_AUDIO CoreAudio)
+    find_library(AUDIO_TOOLBOX AudioToolbox)
+    find_library(FORCE_FEEDBACK ForceFeedback)
+    find_library(CARBON Carbon)
+    # the system libiconv uses different symbol names than MacPorts or Brew,
+    # so specify the system libiconv. find_library() seems to prefer the
+    # non-system libraries
+    list(APPEND SDL2_LIBRARIES ${CORE_AUDIO} ${AUDIO_TOOLBOX} ${FORCE_FEEDBACK} ${CARBON} /usr/lib/libiconv.dylib)
+endif()
+
+if (NOT BUILD_SHARED_LIBS)
+    install(FILES ${SDL2_LIB_FILES}
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif()
