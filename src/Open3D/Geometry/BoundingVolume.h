@@ -35,14 +35,29 @@ namespace geometry {
 
 class AxisAlignedBoundingBox;
 
+/// \class OrientedBoundingBox
+///
+/// \brief A bounding box oriented along an arbitrary frame of reference.
+///
+/// The oriented bounding box is defined by its center position, rotation
+/// maxtrix and extent.
 class OrientedBoundingBox : public Geometry3D {
 public:
+    /// \brief Default constructor.
+    ///
+    /// Creates an empty Oriented Bounding Box.
     OrientedBoundingBox()
         : Geometry3D(Geometry::GeometryType::OrientedBoundingBox),
           center_(0, 0, 0),
           R_(Eigen::Matrix3d::Identity()),
           extent_(0, 0, 0),
           color_(0, 0, 0) {}
+    /// \brief Parameterized constructor.
+    ///
+    /// \param center Specifies the center position of the bounding box.
+    /// \param R The rotation matrix specifying the orientation of the
+    /// bounding box with the original frame of reference.
+    /// \param extent The extent of the bounding box.
     OrientedBoundingBox(const Eigen::Vector3d& center,
                         const Eigen::Matrix3d& R,
                         const Eigen::Vector3d& extent)
@@ -69,13 +84,19 @@ public:
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
                                         bool center = true) override;
 
+    /// Returns the volume of the bounding box.
     double Volume() const;
+    /// Returns the eight points that define the bounding box.
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
     std::vector<size_t> GetPointIndicesWithinBoundingBox(
             const std::vector<Eigen::Vector3d>& points) const;
 
+    /// Returns an oriented bounding box from the AxisAlignedBoundingBox.
+    ///
+    /// \param aabox AxisAlignedBoundingBox object from which
+    /// OrientedBoundingBox is created.
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox& aabox);
 
@@ -88,19 +109,38 @@ public:
             const std::vector<Eigen::Vector3d>& points);
 
 public:
+    /// The center point of the bounding box.
     Eigen::Vector3d center_;
+    /// The rotation matrix of the bounding box to transform the original frame
+    /// of reference to the frame of this box.
     Eigen::Matrix3d R_;
+    /// The extent of the bounding box in its frame of reference.
     Eigen::Vector3d extent_;
+    /// The color of the bounding box in RGB.
     Eigen::Vector3d color_;
 };
 
+/// \class AxisAlignedBoundingBox
+///
+/// \brief A bounding box that is aligned along the coordinate axes.
+///
+///  The AxisAlignedBoundingBox uses the cooridnate axes for bounding box
+///  generation. This means that the bounding box is oriented along the
+///  coordinate axes.
 class AxisAlignedBoundingBox : public Geometry3D {
 public:
+    /// \brief Default constructor.
+    ///
+    /// Creates an empty Axis Aligned Bounding Box.
     AxisAlignedBoundingBox()
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
           max_bound_(0, 0, 0),
           color_(0, 0, 0) {}
+    /// \brief Parameterized constructor.
+    ///
+    /// \param min_bound Lower bounds of the bounding box for all axes.
+    /// \param max_bound Upper bounds of the bounding box for all axes.
     AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
                            const Eigen::Vector3d& max_bound)
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
@@ -128,10 +168,14 @@ public:
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 
+    /// Get the extent/length of the bounding box in x, y, and z dimension.
     Eigen::Vector3d GetExtent() const { return (max_bound_ - min_bound_); }
 
+    /// Returns the half extent of the bounding box.
     Eigen::Vector3d GetHalfExtent() const { return GetExtent() * 0.5; }
 
+    /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
+    /// extents.
     double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
     double GetXPercentage(double x) const {
@@ -146,21 +190,32 @@ public:
         return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
     }
 
+    /// Returns the volume of the bounding box.
     double Volume() const;
+    /// Returns the eight points that define the bounding box.
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
+    ///
+    /// \param points A list of points.
     std::vector<size_t> GetPointIndicesWithinBoundingBox(
             const std::vector<Eigen::Vector3d>& points) const;
 
+    /// Returns the 3D dimensions of the bounding box in string format.
     std::string GetPrintInfo() const;
 
+    /// Creates the bounding box that encloses the set of points.
+    ///
+    /// \param points A list of points.
     static AxisAlignedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points);
 
 public:
+    /// The lower x, y, z bounds of the bounding box.
     Eigen::Vector3d min_bound_;
+    /// The upper x, y, z bounds of the bounding box.
     Eigen::Vector3d max_bound_;
+    /// The color of the bounding box in RGB.
     Eigen::Vector3d color_;
 };
 

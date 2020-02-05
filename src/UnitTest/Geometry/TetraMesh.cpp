@@ -365,7 +365,9 @@ TEST(TetraMesh, CreateFromPointCloud) {
 
     Rand(pc.points_, dmin, dmax, 0);
 
-    auto tm = geometry::TetraMesh::CreateFromPointCloud(pc);
+    std::shared_ptr<geometry::TetraMesh> tm;
+    std::vector<size_t> pt_map;
+    std::tie(tm, pt_map) = geometry::TetraMesh::CreateFromPointCloud(pc);
 
     EXPECT_EQ(pc.points_.size(), tm->vertices_.size());
 
@@ -435,7 +437,9 @@ TEST(TetraMesh, ExtractTriangleMesh) {
 
     Rand(pc.points_, dmin, dmax, 0);
 
-    auto tm = geometry::TetraMesh::CreateFromPointCloud(pc);
+    std::shared_ptr<geometry::TetraMesh> tm;
+    std::vector<size_t> pt_map;
+    std::tie(tm, pt_map) = geometry::TetraMesh::CreateFromPointCloud(pc);
 
     vector<double> values(tm->vertices_.size());
 

@@ -41,6 +41,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class TetraMesh;
 
 class TriangleMesh : public MeshBase {
 public:
@@ -241,6 +242,13 @@ public:
                        utility::hash_eigen::hash<Eigen::Vector2i>>
     GetEdgeToTrianglesMap() const;
 
+    /// Function that returns a map from edges (vertex0, vertex1) to the
+    /// vertex (vertex2) indices the given edge belongs to.
+    std::unordered_map<Eigen::Vector2i,
+                       std::vector<int>,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    GetEdgeToVerticesMap() const;
+
     /// Function that computes the area of a mesh triangle
     static double ComputeTriangleArea(const Eigen::Vector3d &p0,
                                       const Eigen::Vector3d &p1,
@@ -249,6 +257,21 @@ public:
     /// Function that computes the area of a mesh triangle identified by the
     /// triangle index
     double GetTriangleArea(size_t triangle_idx) const;
+
+    static inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
+                                                     int vidx1,
+                                                     int vidx2) {
+        if (vidx0 > vidx2) {
+            std::swap(vidx0, vidx2);
+        }
+        if (vidx0 > vidx1) {
+            std::swap(vidx0, vidx1);
+        }
+        if (vidx1 > vidx2) {
+            std::swap(vidx1, vidx2);
+        }
+        return Eigen::Vector3i(vidx0, vidx1, vidx2);
+    }
 
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
@@ -268,6 +291,11 @@ public:
     /// Function that computes the plane equation of a mesh triangle identified
     /// by the triangle index.
     Eigen::Vector4d GetTrianglePlane(size_t triangle_idx) const;
+
+    /// Helper function to get an edge with ordered vertex indices.
+    static inline Eigen::Vector2i GetOrderedEdge(int vidx0, int vidx1) {
+        return Eigen::Vector2i(std::min(vidx0, vidx1), std::max(vidx0, vidx1));
+    }
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh
@@ -357,6 +385,54 @@ public:
     /// Should have same size as \ref triangles_.
     void RemoveTrianglesByMask(const std::vector<bool> &triangle_mask);
 
+    /// \brief This function removes the vertices with index in
+    /// \p vertex_indices. Note that also all triangles associated with the
+    /// vertices are removeds.
+    ///
+    /// \param triangle_indices Indices of the triangles that should be
+    /// removed.
+    void RemoveVerticesByIndex(const std::vector<size_t> &vertex_indices);
+
+    /// \brief This function removes the vertices that are masked in
+    /// \p vertex_mask. Note that also all triangles associated with the
+    /// vertices are removed..
+    ///
+    /// \param vertex_mask Mask of vertices that should be removed.
+    /// Should have same size as \ref vertices_.
+    void RemoveVerticesByMask(const std::vector<bool> &vertex_mask);
+
+    /// \brief This function deforms the mesh using the method by
+    /// Sorkine and Alexa, "As-Rigid-As-Possible Surface Modeling", 2007.
+    ///
+    /// \param constraint_vertex_indices Indices of the triangle vertices that
+    /// should be constrained by the vertex positions in
+    /// constraint_vertex_positions.
+    /// \param constraint_vertex_positions Vertex positions used for the
+    /// constraints.
+    /// \param max_iter maximum number of iterations to minimize energy
+    /// functional. \return The deformed TriangleMesh
+    std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
+            const std::vector<int> &constraint_vertex_indices,
+            const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
+            size_t max_iter) const;
+
+    /// \brief Alpha shapes are a generalization of the convex hull. With
+    /// decreasing alpha value the shape schrinks and creates cavities.
+    /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
+    /// \param pcd PointCloud for what the alpha shape should be computed.
+    /// \param alpha parameter to controll the shape. A very big value will
+    /// give a shape close to the convex hull.
+    /// \param tetra_mesh If not a nullptr, than uses this to construct the
+    /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
+    /// \param pt_map Optional map from tetra_mesh vertex indices to pcd
+    /// points.
+    /// \return TriangleMesh of the alpha shape.
+    static std::shared_ptr<TriangleMesh> CreateFromPointCloudAlphaShape(
+            const PointCloud &pcd,
+            double alpha,
+            std::shared_ptr<TetraMesh> tetra_mesh = nullptr,
+            std::vector<size_t> *pt_map = nullptr);
+
     /// Function that computes a triangle mesh from a oriented PointCloud \param
     /// pcd. This implements the Ball Pivoting algorithm proposed in F.
     /// Bernardini et al., "The ball-pivoting algorithm for surface
@@ -368,6 +444,34 @@ public:
     /// created.
     static std::shared_ptr<TriangleMesh> CreateFromPointCloudBallPivoting(
             const PointCloud &pcd, const std::vector<double> &radii);
+
+    /// \brief Function that computes a triangle mesh from a oriented PointCloud
+    /// pcd. This implements the Screened Poisson Reconstruction proposed in
+    /// Kazhdan and Hoppe, "Screened Poisson Surface Reconstruction", 2013.
+    /// This function uses the original implementation by Kazhdan. See
+    /// https://github.com/mkazhdan/PoissonRecon
+    ///
+    /// \param pcd PointCloud with normals and optionally colors.
+    /// \param depth Maximum depth of the tree that will be used for surface
+    /// reconstruction. Running at depth d corresponds to solving on a grid
+    /// whose resolution is no larger than 2^d x 2^d x 2^d. Note that since the
+    /// reconstructor adapts the octree to the sampling density, the specified
+    /// reconstruction depth is only an upper bound.
+    /// \param width Specifies the
+    /// target width of the finest level octree cells. This parameter is ignored
+    /// if depth is specified.
+    /// \param scale Specifies the ratio between the
+    /// diameter of the cube used for reconstruction and the diameter of the
+    /// samples' bounding cube. \param linear_fit If true, the reconstructor use
+    /// linear interpolation to estimate the positions of iso-vertices.
+    /// \return The estimated TriangleMesh, and per vertex densitie values that
+    /// can be used to to trim the mesh.
+    static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
+    CreateFromPointCloudPoisson(const PointCloud &pcd,
+                                size_t depth = 8,
+                                size_t width = 0,
+                                float scale = 1.1f,
+                                bool linear_fit = false);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
@@ -487,6 +591,24 @@ protected:
             bool filter_vertex,
             bool filter_normal,
             bool filter_color) const;
+
+    /// \brief Function that computes for each edge in the triangle mesh and
+    /// passed as parameter edges_to_vertices the cot weight.
+    ///
+    /// \param edges_to_vertices map from edge to vector of neighbouring
+    /// vertices.
+    /// \param min_weight minimum weight returned. Weights smaller than this
+    /// get clamped.
+    /// \return cot weight per edge.
+    std::unordered_map<Eigen::Vector2i,
+                       double,
+                       utility::hash_eigen::hash<Eigen::Vector2i>>
+    ComputeEdgeWeightsCot(
+            const std::unordered_map<Eigen::Vector2i,
+                                     std::vector<int>,
+                                     utility::hash_eigen::hash<Eigen::Vector2i>>
+                    &edges_to_vertices,
+            double min_weight = std::numeric_limits<double>::lowest()) const;
 
 public:
     std::vector<Eigen::Vector3i> triangles_;

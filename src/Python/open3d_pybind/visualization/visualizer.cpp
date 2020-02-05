@@ -28,6 +28,7 @@
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithEditing.h"
 #include "Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "Open3D/Visualization/Visualizer/VisualizerWithVertexSelection.h"
 
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/visualization/visualization.h"
@@ -51,7 +52,9 @@ static const std::unordered_map<std::string, std::string>
                 {"width", "Width of the window."},
                 {"window_name", "Window title name."},
                 {"convert_to_world_coordinate",
-                 "Set to ``True`` to convert to world coordinates"}};
+                 "Set to ``True`` to convert to world coordinates"},
+                {"reset_bounding_box",
+                 "Set to ``False`` to keep current viewpoint"}};
 
 void pybind_visualizer(py::module &m) {
     py::class_<visualization::Visualizer, PyVisualizer<>,
@@ -92,9 +95,13 @@ void pybind_visualizer(py::module &m) {
             .def("add_geometry", &visualization::Visualizer::AddGeometry,
                  "Function to add geometry to the scene and create "
                  "corresponding shaders",
-                 "geometry"_a)
+                 "geometry"_a, "reset_bounding_box"_a = true)
             .def("remove_geometry", &visualization::Visualizer::RemoveGeometry,
-                 "Function to remove geometry", "geometry"_a)
+                 "Function to remove geometry", "geometry"_a,
+                 "reset_bounding_box"_a = true)
+            .def("clear_geometries",
+                 &visualization::Visualizer::ClearGeometries,
+                 "Function to clear geometries from the visualizer")
             .def("get_view_control", &visualization::Visualizer::GetViewControl,
                  "Function to retrieve the associated ``ViewControl``",
                  py::return_value_policy::reference_internal)
@@ -169,6 +176,55 @@ void pybind_visualizer(py::module &m) {
             .def("get_picked_points",
                  &visualization::VisualizerWithEditing::GetPickedPoints,
                  "Function to get picked points");
+
+    py::class_<visualization::VisualizerWithVertexSelection,
+               PyVisualizer<visualization::VisualizerWithVertexSelection>,
+               std::shared_ptr<visualization::VisualizerWithVertexSelection>>
+            visualizer_vselect(
+                    m, "VisualizerWithVertexSelection", visualizer,
+                    "Visualizer with vertex selection capabilities.");
+    py::detail::bind_default_constructor<
+            visualization::VisualizerWithVertexSelection>(visualizer_vselect);
+    visualizer_vselect.def(py::init<>())
+            .def("__repr__",
+                 [](const visualization::VisualizerWithVertexSelection &vis) {
+                     return std::string(
+                                    "VisualizerWithVertexSelection with "
+                                    "name ") +
+                            vis.GetWindowName();
+                 })
+            .def("get_picked_points",
+                 &visualization::VisualizerWithVertexSelection::GetPickedPoints,
+                 "Function to get picked points")
+            .def("clear_picked_points",
+                 &visualization::VisualizerWithVertexSelection::
+                         ClearPickedPoints,
+                 "Function to clear picked points")
+            .def("register_selection_changed_callback",
+                 &visualization::VisualizerWithVertexSelection::
+                         RegisterSelectionChangedCallback,
+                 "Registers a function to be called when selection changes")
+            .def("register_selection_moving_callback",
+                 &visualization::VisualizerWithVertexSelection::
+                         RegisterSelectionMovingCallback,
+                 "Registers a function to be called while selection moves. "
+                 "Geometry's vertex values can be changed, but do not change"
+                 "the number of vertices.")
+            .def("register_selection_moved_callback",
+                 &visualization::VisualizerWithVertexSelection::
+                         RegisterSelectionMovedCallback,
+                 "Registers a function to be called after selection moves");
+
+    py::class_<visualization::VisualizerWithVertexSelection::PickedPoint>
+            visualizer_vselect_pickedpoint(m, "PickedPoint");
+    visualizer_vselect_pickedpoint.def(py::init<>())
+            .def_readwrite("index",
+                           &visualization::VisualizerWithVertexSelection::
+                                   PickedPoint::index)
+            .def_readwrite("coord",
+                           &visualization::VisualizerWithVertexSelection::
+                                   PickedPoint::coord);
+
     docstring::ClassMethodDocInject(m, "Visualizer", "add_geometry",
                                     map_visualizer_docstrings);
     docstring::ClassMethodDocInject(m, "Visualizer", "remove_geometry",
