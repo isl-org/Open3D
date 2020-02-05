@@ -24,40 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ML/Misc/Detail/RadiusSearch.h"
-#include "RadiusSearchOpKernel.h"
+#include "KnnSearchOpKernel.h"
+#include "Open3D/ML/Misc/Detail/KnnSearch.h"
 
 using namespace open3d::ml::detail;
-using namespace radius_search_opkernel;
+using namespace knn_search_opkernel;
 using namespace tensorflow;
 
 template <class T>
-class RadiusSearchOpKernelCPU : public RadiusSearchOpKernel {
+class KnnSearchOpKernelCPU : public KnnSearchOpKernel {
 public:
-    explicit RadiusSearchOpKernelCPU(OpKernelConstruction* construction)
-        : RadiusSearchOpKernel(construction) {}
+    explicit KnnSearchOpKernelCPU(OpKernelConstruction* construction)
+        : KnnSearchOpKernel(construction) {}
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
                 const tensorflow::Tensor& queries,
-                const tensorflow::Tensor& radius,
+                const int k,
                 tensorflow::Tensor& query_neighbors_row_splits) {
         OutputAllocator<T> output_allocator(context);
 
-        RadiusSearchCPU(
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
-                points.shape().dim_size(0), points.flat<T>().data(),
-                queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.flat<T>().data(), metric, ignore_query_point,
-                return_distances, normalize_distances, output_allocator);
+        KnnSearchCPU((int64_t*)query_neighbors_row_splits.flat<int64>().data(),
+                     points.shape().dim_size(0), points.flat<T>().data(),
+                     queries.shape().dim_size(0), queries.flat<T>().data(), k,
+                     metric, ignore_query_point, return_distances,
+                     output_allocator);
     }
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DRadiusSearch")          \
+    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")             \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
-                            RadiusSearchOpKernelCPU<type>);
+                            KnnSearchOpKernelCPU<type>);
 REG_KB(float)
 REG_KB(double)
 #undef REG_KB

@@ -24,40 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/ML/Misc/Detail/RadiusSearch.h"
-#include "RadiusSearchOpKernel.h"
+#pragma once
 
-using namespace open3d::ml::detail;
-using namespace radius_search_opkernel;
-using namespace tensorflow;
+#include "nanoflann.hpp"
 
+namespace open3d {
+namespace ml {
+namespace detail {
+
+/// Supported metrics
+enum Metric { L1, L2, Linf };
+
+/// Adaptor for nanoflann
 template <class T>
-class RadiusSearchOpKernelCPU : public RadiusSearchOpKernel {
+class Adaptor {
 public:
-    explicit RadiusSearchOpKernelCPU(OpKernelConstruction* construction)
-        : RadiusSearchOpKernel(construction) {}
+    Adaptor(size_t num_points, const T* const data)
+        : num_points(num_points), data(data) {}
 
-    void Kernel(tensorflow::OpKernelContext* context,
-                const tensorflow::Tensor& points,
-                const tensorflow::Tensor& queries,
-                const tensorflow::Tensor& radius,
-                tensorflow::Tensor& query_neighbors_row_splits) {
-        OutputAllocator<T> output_allocator(context);
+    inline size_t kdtree_get_point_count() const { return num_points; }
 
-        RadiusSearchCPU(
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
-                points.shape().dim_size(0), points.flat<T>().data(),
-                queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.flat<T>().data(), metric, ignore_query_point,
-                return_distances, normalize_distances, output_allocator);
+    inline T kdtree_get_pt(const size_t idx, int dim) const {
+        return data[3 * idx + dim];
     }
+
+    template <class BBOX>
+    bool kdtree_get_bbox(BBOX&) const {
+        return false;
+    }
+
+private:
+    size_t num_points;
+    const T* const data;
 };
 
-#define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DRadiusSearch")          \
-                                    .Device(DEVICE_CPU)         \
-                                    .TypeConstraint<type>("T"), \
-                            RadiusSearchOpKernelCPU<type>);
-REG_KB(float)
-REG_KB(double)
-#undef REG_KB
+template <int METRIC, class T>
+struct SelectNanoflannAdaptor {};
+
+template <class T>
+struct SelectNanoflannAdaptor<L2, T> {
+    typedef nanoflann::L2_Adaptor<T, Adaptor<T>> Adaptor_t;
+};
+
+template <class T>
+struct SelectNanoflannAdaptor<L1, T> {
+    typedef nanoflann::L1_Adaptor<T, Adaptor<T>> Adaptor_t;
+};
+
+}  // namespace detail
+}  // namespace ml
+}  // namespace open3d
