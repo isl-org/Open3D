@@ -24,79 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <cstdint>
+#include <memory>
 
 namespace open3d {
-namespace gui {
-
-enum class MouseButton {
-    NONE = 0,
-    LEFT = (1 << 0),
-    MIDDLE = (1 << 1),
-    RIGHT = (1 << 2),
-    BUTTON4 = (1 << 3),
-    BUTTON5 = (1 << 4)
-};
-
-struct MouseEvent {
-    enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
-    Type type;
-    int x;
-    int y;
-    union {
-        struct {
-            int buttons;  // MouseButtons ORed together
-        } move;           // includes drag
-        struct {
-            MouseButton button;
-        } button;
-        struct {
-            int dx;
-            int dy;
-            bool isTrackpad;
-        } wheel;
-    };
-};
-
-enum {
-    KEY_BACKSPACE = 8,
-    KEY_TAB = 9,
-    KEY_ENTER = 10,
-    KEY_ESCAPE = 27,
-    KEY_DELETE = 127,
-    KEY_LSHIFT = 256,
-    KEY_RSHIFT,
-    KEY_CAPSLOCK,
-    KEY_CTRL,
-    KEY_OPTION,
-    KEY_META,
-    KEY_LEFT,
-    KEY_RIGHT,
-    KEY_UP,
-    KEY_DOWN,
-    KEY_INSERT,
-    KEY_HOME,
-    KEY_END,
-    KEY_PAGEUP,
-    KEY_PAGEDOWN,
-    KEY_UNKNOWN = 1000
-};
-
-struct KeyEvent {
-    enum Type { DOWN, UP };
-    Type type;
-    // This is the actual key that was pressed, not the character that
-    // was generated (use TextInputEvent for that). Values correspond
-    // to ASCII values where applicable.
-    uint32_t key;
-    bool isRepeat;
-};
-
-struct TextInputEvent {
-    const char *utf8;
-};
-
-}  // namespace gui
+namespace geometry {
+class Geometry;
+}
+namespace visualizer {
+class GuiVisualizer;
+}
 }  // namespace open3d
+
+#define WIDTH 1280
+#define HEIGHT 960
+
+int Run(int argc, const char *argv[]);
+bool CreateWindow(const char *path);

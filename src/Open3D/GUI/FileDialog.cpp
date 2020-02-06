@@ -54,6 +54,13 @@
 namespace open3d {
 namespace gui {
 
+namespace {
+// The current path of the dialog should persist across runs of the dialog.
+// This is defined here rather than in the class definition because we can't
+// need to be exporting internal details of the class.
+static std::string gFileDialogDir;
+}  // namespace
+
 class DirEntry {
 public:
     enum Type { DIR, FILE };
@@ -297,7 +304,10 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
     });
     impl_->ok->SetOnClicked([this]() { this->OnDone(); });
 
-    SetPath(utility::filesystem::GetWorkingDirectory().c_str());
+    if (gFileDialogDir == "") {
+        gFileDialogDir = utility::filesystem::GetWorkingDirectory();
+    }
+    SetPath(gFileDialogDir.c_str());
 
     impl_->UpdateOk();
 }
@@ -368,6 +378,9 @@ void FileDialog::SetPath(const char *path) {
     }
     impl_->dirtree->SetSelectedIndex(n - 1);
     impl_->UpdateDirectoryListing();
+    if (isDir) {
+        gFileDialogDir = dirpath;
+    }
 
     if (!isDir) {
         impl_->filename->SetText(components.back().c_str());
@@ -404,6 +417,7 @@ void FileDialog::SetOnDone(std::function<void(const char *)> onDone) {
 void FileDialog::OnDone() {
     if (this->impl_->onDone) {
         auto dir = this->impl_->CalcCurrentDirectory();
+        utility::filesystem::ChangeWorkingDirectory(dir);
         auto name = this->impl_->GetSelectedEntry().GetName();
         this->impl_->onDone((dir + "/" + name).c_str());
     } else {

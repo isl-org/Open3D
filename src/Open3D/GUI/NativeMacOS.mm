@@ -36,6 +36,12 @@ void* GetNativeDrawable(SDL_Window* sdlWindow) {
     return view;
 }
 
+void ShowNativeAlert(const char *message) {
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:[NSString stringWithUTF8String:message]];
+    [alert runModal];
+}
+
 /*void* SetupMetalLayer(void* nativeView) {
     NSView* view = (NSView*) nativeView;
     [view setWantsLayer:YES];
