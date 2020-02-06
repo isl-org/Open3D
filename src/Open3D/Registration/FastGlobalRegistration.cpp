@@ -26,14 +26,12 @@
 
 #include "Open3D/Registration/FastGlobalRegistration.h"
 
-#include <random>
-
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Registration/Feature.h"
 #include "Open3D/Registration/Registration.h"
 #include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Eigen.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -128,14 +126,11 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
-    std::mt19937 rgen(std::random_device{}());
-    std::uniform_int_distribution<int> uniform_dist(0, ncorr - 1);
-
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = uniform_dist(rgen);
-        rand1 = uniform_dist(rgen);
-        rand2 = uniform_dist(rgen);
+        rand0 = utility::UniformRandInt(0, ncorr - 1);
+        rand1 = utility::UniformRandInt(0, ncorr - 1);
+        rand2 = utility::UniformRandInt(0, ncorr - 1);
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;

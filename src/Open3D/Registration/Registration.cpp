@@ -27,12 +27,12 @@
 #include "Open3D/Registration/Registration.h"
 
 #include <cstdlib>
-#include <random>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Registration/Feature.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -217,14 +217,12 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     CorrespondenceSet ransac_corres(ransac_n);
     RegistrationResult result;
 
-    std::mt19937 rgen(std::random_device{}());
-    std::uniform_int_distribution<int> uniform_dist(0, corres.size() - 1);
-
     for (int itr = 0;
          itr < criteria.max_iteration_ && itr < criteria.max_validation_;
          itr++) {
         for (int j = 0; j < ransac_n; j++) {
-            ransac_corres[j] = corres[uniform_dist(rgen)];
+            ransac_corres[j] =
+                    corres[utility::UniformRandInt(0, corres.size() - 1)];
         }
         transformation =
                 estimation.ComputeTransformation(source, target, ransac_corres);
@@ -276,10 +274,6 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree_feature(target_feature);
         RegistrationResult result_private;
 
-        thread_local static std::mt19937 rgen(std::random_device{}());
-        std::uniform_int_distribution<int> uni_source_pt(
-                0, source.points_.size() - 1);
-
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
@@ -288,7 +282,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 std::vector<double> dists(num_similar_features);
                 Eigen::Matrix4d transformation;
                 for (int j = 0; j < ransac_n; j++) {
-                    int source_sample_id = uni_source_pt(rgen);
+                    int source_sample_id = utility::UniformRandInt(
+                            0, source.points_.size() - 1);
                     if (similar_features[source_sample_id].empty()) {
                         std::vector<int> indices(num_similar_features);
                         kdtree_feature.SearchKNN(
@@ -305,10 +300,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                         ransac_corres[j](1) =
                                 similar_features[source_sample_id][0];
                     else {
-                        std::uniform_int_distribution<int> uni_fts(
-                                0, num_similar_features - 1);
-                        ransac_corres[j](1) = similar_features[source_sample_id]
-                                                              [uni_fts(rgen)];
+                        ransac_corres[j](1) = similar_features
+                                [source_sample_id][utility::UniformRandInt(
+                                        0, num_similar_features - 1)];
                     }
                 }
                 bool check = true;
