@@ -190,7 +190,7 @@ void pybind_pointcloud(py::module &m) {
                     "depth"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4d::Identity(),
                     "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
-                    "stride"_a = 1)
+                    "stride"_a = 1, "project_valid_depth_only"_a = true)
             .def_static(
                     "create_from_rgbd_image",
                     &geometry::PointCloud::CreateFromRGBDImage,
@@ -203,7 +203,8 @@ void pybind_pointcloud(py::module &m) {
               - y = (v - cy) * z / fy
         )",
                     "image"_a, "intrinsic"_a,
-                    "extrinsic"_a = Eigen::Matrix4d::Identity())
+                    "extrinsic"_a = Eigen::Matrix4d::Identity(),
+                    "project_valid_depth_only"_a = true)
             .def_readwrite("points", &geometry::PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
@@ -307,8 +308,22 @@ void pybind_pointcloud(py::module &m) {
               "Number of initial points to be considered inliers in each "
               "iteration."},
              {"num_iterations", "Number of iterations."}});
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "create_from_depth_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "create_from_rgbd_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
 }
 
 void pybind_pointcloud_methods(py::module &m) {}
