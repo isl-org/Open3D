@@ -53,7 +53,7 @@ struct MouseEvent {
     Type type;
     int x;
     int y;
-    int modifiers; // KeyModifiers ORed together
+    int modifiers;  // KeyModifiers ORed together
     union {
         struct {
             int buttons;  // MouseButtons ORed together

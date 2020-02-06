@@ -495,7 +495,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     // Update modifier keys. We compare (type != keyup) rather
                     // than (type == keydown) in case SDL adds SDL_KEYREPEAT
                     // in the future.
-                    auto& keyStates = impl_->keyStates; // helps line lengths
+                    auto &keyStates = impl_->keyStates;  // helps line lengths
                     switch (e.keysym.scancode) {
                         case SDL_SCANCODE_LSHIFT:
                             keyStates.lShift = (event->type != SDL_KEYUP);
@@ -548,7 +548,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     if (keyStates.lMeta || keyStates.rMeta) {
                         keyMods |= int(KeyModifier::META);
                     }
-#endif // __APPLE__
+#endif  // __APPLE__
                     impl_->keyMods = keyMods;
 
                     auto it = impl_->windows.find(e.windowID);

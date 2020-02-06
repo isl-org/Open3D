@@ -302,7 +302,7 @@ void GuiVisualizer::SetGeometry(
         }
     }
 
-    scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
+    impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {

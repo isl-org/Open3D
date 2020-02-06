@@ -36,7 +36,7 @@
 
 #include <Eigen/Geometry>
 
-#define ENABLE_PAN   0
+#define ENABLE_PAN 0
 
 namespace open3d {
 namespace gui {
@@ -46,9 +46,7 @@ static const double MIN_FAR_PLANE = 100.0;
 // ----------------------------------------------------------------------------
 class CameraControls {
 public:
-    CameraControls(visualization::Camera *c)
-    : camera_(c) {
-    }
+    CameraControls(visualization::Camera* c) : camera_(c) {}
 
     void Pan(int dx, int dy) {
         // Calculate the depth to the pixel we clicked on, so that we
@@ -63,7 +61,7 @@ public:
         dist = std::max(near, dist);
 
         // How far is one pixel?
-        auto modelMatrix = matrixAtMouseDown_; // copy
+        auto modelMatrix = matrixAtMouseDown_;  // copy
         float halfFoV = camera_->GetFieldOfView() / 2.0;
         float halfFoVRadians = halfFoV * M_PI / 180.0;
         float unitsAtDist = 2.0f * std::tan(halfFoVRadians) * (near + dist);
@@ -80,7 +78,7 @@ public:
     }
 
     void Rotate(int dx, int dy) {
-        auto matrix = matrixAtMouseDown_; // copy
+        auto matrix = matrixAtMouseDown_;  // copy
         Eigen::AngleAxisf rotMatrix(0, Eigen::Vector3f(1, 0, 0));
 
         // We want to rotate as if we were rotating an imaginary trackball
@@ -97,7 +95,8 @@ public:
         dy = -dy;  // up is negative, but the calculations are easiest to
                    // imagine up is positive.
         Eigen::Vector3f axis(-dy, dx, 0);  // rotate by 90 deg in 2D
-        float theta = 0.5 * M_PI * axis.norm() / (0.5f * float(viewSize_.height));
+        float theta =
+                0.5 * M_PI * axis.norm() / (0.5f * float(viewSize_.height));
         axis = axis.normalized();
 
         axis = matrix.rotation() * axis;  // convert axis to world coords
@@ -160,8 +159,8 @@ public:
 
     void GoToPreset(SceneWidget::CameraPreset preset) {
         auto boundsMax = geometryBounds_.GetMaxBound();
-        auto maxDim = std::max(boundsMax.x(),
-                               std::max(boundsMax.y(), boundsMax.z()));
+        auto maxDim =
+                std::max(boundsMax.x(), std::max(boundsMax.y(), boundsMax.z()));
         maxDim = 1.5f * maxDim;
         auto center = centerOfRotation_;
         Eigen::Vector3f eye, up;
@@ -187,7 +186,7 @@ public:
 
     void SetViewSize(const Size& size) { viewSize_ = size; }
 
-    void SetBoundingBox(const geometry::AxisAlignedBoundingBox &bounds) {
+    void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
         geometryBounds_ = bounds;
         modelSize_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
         centerOfRotation_ = bounds.GetCenter().cast<float>();
@@ -206,21 +205,22 @@ public:
 #if ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::CTRL)) {
                         state_ = State::PAN;
-#endif // ENABLE_PAN
+#endif  // ENABLE_PAN
                     } else {
                         state_ = State::ROTATE_XY;
                     }
 #if ENABLE_PAN
                 } else if (e.button.button == MouseButton::RIGHT) {
                     state_ = State::PAN;
-#endif // ENABLE_PAN
+#endif  // ENABLE_PAN
                 }
                 break;
             case MouseEvent::DRAG: {
                 int dx = e.x - mouseDownX_;
                 int dy = e.y - mouseDownY_;
                 switch (state_) {
-                    case State::NONE: break;
+                    case State::NONE:
+                        break;
                     case State::PAN:
                         Pan(dx, dy);
                         break;
@@ -251,7 +251,7 @@ public:
     void Key(const KeyEvent& e) {}
 
 private:
-    visualization::Camera *camera_;
+    visualization::Camera* camera_;
     Size viewSize_;
     double modelSize_ = 100;
     geometry::AxisAlignedBoundingBox geometryBounds_;
@@ -269,7 +269,7 @@ private:
 struct SceneWidget::Impl {
     visualization::Scene& scene;
     visualization::ViewHandle viewId;
-//    std::unique_ptr<visualization::CameraManipulator> cameraManipulator;
+    //    std::unique_ptr<visualization::CameraManipulator> cameraManipulator;
     std::shared_ptr<CameraControls> controls;
     bool frameChanged = false;
 
@@ -307,7 +307,8 @@ void SceneWidget::SetDiscardBuffers(
     view->SetDiscardBuffers(buffers);
 }
 
-void SceneWidget::SetupCamera(float verticalFoV,
+void SceneWidget::SetupCamera(
+        float verticalFoV,
         const geometry::AxisAlignedBoundingBox& geometryBounds,
         const Eigen::Vector3f& centerOfRotation) {
     impl_->controls->SetBoundingBox(geometryBounds);
@@ -322,7 +323,7 @@ void SceneWidget::SetupCamera(float verticalFoV,
     GetCamera()->SetProjection(verticalFoV, aspect, near, far,
                                visualization::Camera::FovType::Vertical);
 
-    GoToCameraPreset(CameraPreset::PLUS_Z); // default OpenGL view
+    GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 }
 
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
@@ -356,7 +357,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         auto view = impl_->scene.GetView(impl_->viewId);
         view->SetViewport(f.x, y, f.width, f.height);
 
-        auto *camera = GetCamera();
+        auto* camera = GetCamera();
         float aspect = 1.0f;
         if (f.height > 0) {
             aspect = float(f.width) / float(f.height);
@@ -373,13 +374,9 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     return Widget::DrawResult::NONE;
 }
 
-void SceneWidget::Mouse(const MouseEvent& e) {
-    impl_->controls->Mouse(e);
-}
+void SceneWidget::Mouse(const MouseEvent& e) { impl_->controls->Mouse(e); }
 
-void SceneWidget::Key(const KeyEvent& e) {
-    impl_->controls->Key(e);
-}
+void SceneWidget::Key(const KeyEvent& e) { impl_->controls->Key(e); }
 
 }  // namespace gui
 }  // namespace open3d

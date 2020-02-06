@@ -70,21 +70,13 @@ void FilamentCamera::SetProjection(Projection projection,
     fov_ = 0.0;
 }
 
-double FilamentCamera::GetNear() const {
-    return camera_->getNear();
-}
+double FilamentCamera::GetNear() const { return camera_->getNear(); }
 
-double FilamentCamera::GetFar() const {
-    return camera_->getCullingFar();
-}
+double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
-double FilamentCamera::GetFieldOfView() const {
-    return fov_;
-}
+double FilamentCamera::GetFieldOfView() const { return fov_; }
 
-Camera::FovType FilamentCamera::GetFieldOfViewType() const {
-    return fovType_;
-}
+Camera::FovType FilamentCamera::GetFieldOfViewType() const { return fovType_; }
 
 void FilamentCamera::SetModelMatrix(const Transform& view) {
     using namespace filament::math;
@@ -160,10 +152,12 @@ FilamentCamera::Transform FilamentCamera::GetViewMatrix() const {
 
     Transform::MatrixType matrix;
 
-    matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
-            fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
-            fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
-            fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+    matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
+            fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
+            fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
+            fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
+            fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
+            fTransform(3, 3);
 
     return Transform(matrix);
 }
@@ -173,10 +167,12 @@ FilamentCamera::Transform FilamentCamera::GetProjectionMatrix() const {
 
     Transform::MatrixType matrix;
 
-    matrix << fTransform(0,0), fTransform(0,1), fTransform(0,2), fTransform(0,3),
-            fTransform(1,0), fTransform(1,1), fTransform(1,2), fTransform(1,3),
-            fTransform(2,0), fTransform(2,1), fTransform(2,2), fTransform(2,3),
-            fTransform(3,0), fTransform(3,1), fTransform(3,2), fTransform(3,3);
+    matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
+            fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
+            fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
+            fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
+            fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
+            fTransform(3, 3);
 
     return Transform(matrix);
 }

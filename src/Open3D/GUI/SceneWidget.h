@@ -61,13 +61,14 @@ public:
     void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
     void SetupCamera(float verticalFoV,
-                const geometry::AxisAlignedBoundingBox& geometryBounds,
-                const Eigen::Vector3f& centerOfRotation);
+                     const geometry::AxisAlignedBoundingBox& geometryBounds,
+                     const Eigen::Vector3f& centerOfRotation);
 
     enum class CameraPreset {
-        PLUS_X,   // at (X, 0, 0), looking (-1, 0, 0)
-        PLUS_Y,   // at (0, Y, 0), looking (0, -1, 0)
-        PLUS_Z }; // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
+        PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
+        PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
+        PLUS_Z
+    };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
     void GoToCameraPreset(CameraPreset preset);
 
     visualization::View* GetView() const;
