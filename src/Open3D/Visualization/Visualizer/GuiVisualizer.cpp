@@ -26,10 +26,6 @@
 
 #include "GuiVisualizer.h"
 
-#include "Open3D/Open3DConfig.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/PointCloud.h"
-#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/GUI/Application.h"
 #include "Open3D/GUI/Button.h"
 #include "Open3D/GUI/Color.h"
@@ -39,8 +35,12 @@
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Theme.h"
+#include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
+#include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
@@ -185,13 +185,15 @@ GuiVisualizer::GuiVisualizer(
     std::string err;
     std::string rsrcPath = app.GetResourcePath();
     std::string path = rsrcPath + "/nonmetal.filamat";
-    impl_->nonmetal = GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
-    impl_->white = GetRenderer().ModifyMaterial(impl_->nonmetal)
-                         .SetColor("baseColor", {1.0, 1.0, 1.0})
-                         .SetParameter("roughness", 0.5f)
-                         .SetParameter("clearCoat", 1.f)
-                         .SetParameter("clearCoatRoughness", 0.3f)
-                         .Finish();
+    impl_->nonmetal =
+            GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
+    impl_->white = GetRenderer()
+                           .ModifyMaterial(impl_->nonmetal)
+                           .SetColor("baseColor", {1.0, 1.0, 1.0})
+                           .SetParameter("roughness", 0.5f)
+                           .SetParameter("clearCoat", 1.f)
+                           .SetParameter("clearCoatRoughness", 0.3f)
+                           .Finish();
 
     // Create scene
     auto sceneId = GetRenderer().CreateScene();

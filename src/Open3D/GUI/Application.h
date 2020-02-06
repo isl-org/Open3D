@@ -46,7 +46,7 @@ public:
     // the resources. If you can provide the argc/argv arguments it is more
     // reliable.
     void Initialize();
-    void Initialize(int argc, const char* argv[]);
+    void Initialize(int argc, const char *argv[]);
 
     /// Does not return until the UI is completely finished. Use this if you
     /// just need something simple.
