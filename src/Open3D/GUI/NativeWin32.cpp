@@ -21,6 +21,8 @@
 
 #include <SDL_syswm.h>
 
+#include <winuser.h>
+
 namespace open3d {
 namespace gui {
 
@@ -29,6 +31,10 @@ void* GetNativeDrawable(SDL_Window* window) {
     SDL_VERSION(&wmi.version);
     SDL_GetWindowWMInfo(window, &wmi);
     return (void*)wmi.info.win.window;
+}
+
+void ShowNativeAlert(const char* message) {
+    MessageBox(NULL, "Alert", message, MB_OK | MB_ICONEXCLAMATION);
 }
 
 }  // namespace gui

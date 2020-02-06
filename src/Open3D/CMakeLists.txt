@@ -201,3 +201,6 @@ if (NOT TARGET uninstall)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif ()
+
+# Export GUI_RESOURCE_FILES up to parent CMake context (src/)
+set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)

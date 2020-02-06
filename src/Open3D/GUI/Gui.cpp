@@ -19,6 +19,8 @@
 
 #include "Gui.h"
 
+#include <algorithm>
+
 namespace open3d {
 namespace gui {
 
@@ -51,6 +53,14 @@ bool Rect::Contains(int x, int y) const {
 }
 
 bool Rect::Contains(const Point& pt) const { return Contains(pt.x, pt.y); }
+
+Rect Rect::UnionedWith(const Rect& r) const {
+    auto newX = std::min(this->x, r.x);
+    auto newY = std::min(this->y, r.y);
+    auto w = std::max(GetRight() - newX, r.GetRight() - newX);
+    auto h = std::max(GetBottom() - newY, r.GetBottom() - newY);
+    return Rect(newX, newY, w, h);
+}
 
 }  // namespace gui
 }  // namespace open3d

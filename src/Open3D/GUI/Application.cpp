@@ -26,10 +26,15 @@
 
 #include "Application.h"
 
+#include "Button.h"
 #include "Events.h"
+#include "Label.h"
+#include "Layout.h"
+#include "Native.h"
 #include "Theme.h"
 #include "Window.h"
 
+#include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
@@ -150,13 +155,33 @@ namespace gui {
 
 struct Application::Impl {
     std::string resourcePath;
-    std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
     Theme theme;
+    bool isRunning = false;
+
+    std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
+    std::unordered_map<Window *, int> eventCounts;  // don't recreate each draw
 };
 
 Application &Application::GetInstance() {
     static Application gApp;
     return gApp;
+}
+
+void Application::ShowMessageBox(const char *title, const char *message) {
+    utility::LogInfo("%s", message);
+
+    auto alert = std::make_shared<Window>("Alert", Window::FLAG_TOPMOST);
+    auto em = alert->GetTheme().fontSize;
+    auto layout = std::make_shared<Vert>(em, Margins(em));
+    auto msg = std::make_shared<Label>(message);
+    auto ok = std::make_shared<Button>("Ok");
+    ok->SetOnClicked([alert = alert.get() /*avoid shared_ptr cycle*/]() {
+        Application::GetInstance().RemoveWindow(alert);
+    });
+    layout->AddChild(Horiz::MakeCentered(msg));
+    layout->AddChild(Horiz::MakeCentered(ok));
+    alert->AddChild(layout);
+    Application::GetInstance().AddWindow(alert);
 }
 
 Application::Application() : impl_(new Application::Impl()) {
@@ -220,6 +245,7 @@ void Application::Initialize(int argc, const char *argv[]) {
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
     window->OnResize();  // so we get an initial resize
+    window->Show();
     impl_->windows[window->GetID()] = window;
 }
 
@@ -242,31 +268,67 @@ void Application::RemoveWindow(Window *window) {
 }
 
 void Application::Run() {
-    SDL_Init(SDL_INIT_EVENTS);
+    while (RunOneTick()) {
+        SDL_Delay(RUNLOOP_DELAY_MSEC);
+    }
+}
 
-    SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+bool Application::RunOneTick() {
+    // Initialize if we have not started yet
+    if (!impl_->isRunning) {
+        // Verify that the resource path is valid. If it is not, display a
+        // message box (std::cerr may not be visible to the user, if we were run
+        // as app).
+        if (impl_->resourcePath.empty()) {
+            ShowNativeAlert(
+                    "Internal error: Application::Initialize() was not called");
+            return false;
+        }
+        if (!utility::filesystem::DirectoryExists(impl_->resourcePath)) {
+            std::stringstream err;
+            err << "Could not find resource directory:\n'"
+                << impl_->resourcePath << "' does not exist";
+            ShowNativeAlert(err.str().c_str());
+            return false;
+        }
+        if (!utility::filesystem::FileExists(impl_->theme.fontPath)) {
+            std::stringstream err;
+            err << "Could not load UI font:\n'" << impl_->theme.fontPath
+                << "' does not exist";
+            ShowNativeAlert(err.str().c_str());
+            return false;
+        }
 
-    bool done = false;
-    std::unordered_map<Window *, int> eventCounts;
-    while (!done) {
-        //        SDL_Window* sdlWindow = window->getSDLWindow();
-        //        if (mWindowTitle != SDL_GetWindowTitle(sdlWindow)) {
-        //            SDL_SetWindowTitle(sdlWindow, mWindowTitle.c_str());
-        //        }
+        SDL_Init(SDL_INIT_EVENTS);
+        SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+        impl_->isRunning = true;
+    }
 
-        //        if (!UTILS_HAS_THREADING) {
-        //            mEngine->execute();
-        //        }
+    // Process the events that have queued up
+    auto status = ProcessQueuedEvents();
 
-        eventCounts.clear();
-        constexpr int kMaxEvents = 16;
-        SDL_Event events[kMaxEvents];
-        int nevents = 0;
+    // Cleanup if we are done
+    if (status == RunStatus::DONE) {
+        SDL_Quit();
+        impl_->isRunning = false;
+    }
+
+    return impl_->isRunning;
+}
+
+Application::RunStatus Application::ProcessQueuedEvents() {
+    auto status = RunStatus::CONTINUE;
+
+    impl_->eventCounts.clear();
+    constexpr int kMaxEvents = 16;
+    SDL_Event events[kMaxEvents];
+    int nevents = 0;
+    {
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
             SDL_Event *event = &events[nevents];
             switch (event->type) {
                 case SDL_QUIT:  // sent after last window closed
-                    done = true;
+                    status = RunStatus::DONE;
                     break;
                 case SDL_MOUSEMOTION: {
                     auto &e = event->motion;
@@ -300,7 +362,7 @@ void Application::Run() {
                         me.move.buttons = buttons;
 
                         win->OnMouseEvent(me);
-                        eventCounts[win.get()] += 1;
+                        impl_->eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -319,9 +381,17 @@ void Application::Run() {
                         MouseEvent me = {MouseEvent::WHEEL, pos.x, pos.y};
                         me.wheel.dx = dx;
                         me.wheel.dy = dy;
+#if __APPLE__
+                        // SDL is supposed to set e.which to the mouse button or
+                        // to SDL_TOUCH_MOUSEID, but it doesn't, so we have no
+                        // way of knowing which one the user is using.
+                        me.wheel.isTrackpad = true;
+#else
+                        me.wheel.isTrackpad = (e.which == SDL_TOUCH_MOUSEID);
+#endif  // __APPLE__
 
                         win->OnMouseEvent(me);
-                        eventCounts[win.get()] += 1;
+                        impl_->eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -360,7 +430,7 @@ void Application::Run() {
                         me.button.button = button;
 
                         win->OnMouseEvent(me);
-                        eventCounts[win.get()] += 1;
+                        impl_->eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -370,7 +440,7 @@ void Application::Run() {
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
                         win->OnTextInput(TextInputEvent{e.text});
-                        eventCounts[win.get()] += 1;
+                        impl_->eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -388,7 +458,7 @@ void Application::Run() {
                             key = it->second;
                         }
                         win->OnKeyEvent(KeyEvent{type, key, (e.repeat != 0)});
-                        eventCounts[win.get()] += 1;
+                        impl_->eventCounts[win.get()] += 1;
                     }
                     break;
                 }
@@ -413,7 +483,7 @@ void Application::Run() {
                         default:
                             break;
                     }
-                    eventCounts[window.get()] += 1;
+                    impl_->eventCounts[window.get()] += 1;
                     break;
                 }
                 default:
@@ -424,7 +494,8 @@ void Application::Run() {
 
         for (auto &kv : impl_->windows) {
             auto w = kv.second;
-            bool gotEvents = (eventCounts.find(w.get()) != eventCounts.end());
+            bool gotEvents = (impl_->eventCounts.find(w.get()) !=
+                              impl_->eventCounts.end());
             if (w->IsVisible() && gotEvents) {
                 if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
                     Window::REDRAW) {
@@ -436,11 +507,9 @@ void Application::Run() {
                 }
             }
         }
-
-        SDL_Delay(RUNLOOP_DELAY_MSEC);
     }
 
-    SDL_Quit();
+    return status;
 }
 
 const char *Application::GetResourcePath() const {
