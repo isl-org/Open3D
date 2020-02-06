@@ -1,4 +1,7 @@
 version: 1.0.{build}
+branches:
+  only:
+    - master
 image:
 - Visual Studio 2017
 test: off
@@ -8,12 +11,6 @@ platform:
 - x64
 environment:
   matrix:
-  - PYTHON: 36
-    CONFIG: Release
-    SHARED: OFF
-  - PYTHON: 36
-    CONFIG: Release
-    SHARED: ON
   - PYTHON: 36
     CONFIG: Release
     SHARED: OFF
