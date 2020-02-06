@@ -41,6 +41,8 @@
 namespace open3d {
 namespace gui {
 
+static const double MIN_FAR_PLANE = 100.0;
+
 // ----------------------------------------------------------------------------
 class CameraControls {
 public:
@@ -130,7 +132,7 @@ public:
         // Dolly is just moving the camera forward. Filament uses right as +x,
         // up as +y, and forward as -z (standard OpenGL coordinates). So to
         // move forward all we need to do is translate the camera matrix by
-        // dist * (0, 0, -1). (Note that translating by camera_->GetForwardVector()
+        // dist * (0, 0, -1). Note that translating by camera_->GetForwardVector
         // would be incorrect, since GetForwardVector() returns the forward
         // vector in world space, but the translation happens in camera space.)
         // Since we want trackpad down (negative) to go forward ("pulling" the
@@ -139,6 +141,21 @@ public:
         auto forward = dist * Eigen::Vector3f(0, 0, -1);
         auto matrix = camera_->GetModelMatrix().translate(forward);
         camera_->SetModelMatrix(matrix);
+
+        // Update the far plane so that we don't get clipped by it as we dolly
+        // out or lose precision as we dolly in.
+        auto pos = matrix.translation().cast<double>();
+        auto far1 = (geometryBounds_.GetMinBound() - pos).norm();
+        auto far2 = (geometryBounds_.GetMaxBound() - pos).norm();
+        auto modelSize = 2.0 * geometryBounds_.GetExtent().norm();
+        auto far = std::max(MIN_FAR_PLANE, std::max(far1, far2) + modelSize);
+        float aspect = 1.0f;
+        if (viewSize_.height > 0) {
+            aspect = float(viewSize_.width) / float(viewSize_.height);
+        }
+        camera_->SetProjection(camera_->GetFieldOfView(), aspect,
+                               camera_->GetNear(), far,
+                               camera_->GetFieldOfViewType());
     }
 
     void GoToPreset(SceneWidget::CameraPreset preset) {
@@ -301,7 +318,7 @@ void SceneWidget::SetupCamera(float verticalFoV,
         aspect = float(f.width) / float(f.height);
     }
     auto near = 0.1f;
-    auto far = std::max(100.0, 2.0 * geometryBounds.GetExtent().norm());
+    auto far = std::max(MIN_FAR_PLANE, 2.0 * geometryBounds.GetExtent().norm());
     GetCamera()->SetProjection(verticalFoV, aspect, near, far,
                                visualization::Camera::FovType::Vertical);
 
@@ -331,6 +348,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         impl_->frameChanged = false;
 
         auto f = GetFrame();
+        impl_->controls->SetViewSize(Size(f.width, f.height));
         // GUI has origin of Y axis at top, but renderer has it at bottom
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
