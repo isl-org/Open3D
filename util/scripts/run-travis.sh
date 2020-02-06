@@ -21,6 +21,7 @@ else
     cmake -DBUILD_SHARED_LIBS=$SHARED \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_EIGEN3=ON \
+        -DBUILD_FLANN=ON \
         -DBUILD_GLEW=ON \
         -DBUILD_GLFW=ON \
         -DBUILD_JSONCPP=ON \

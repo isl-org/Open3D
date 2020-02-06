@@ -72,6 +72,7 @@ option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
+option(BUILD_FLANN               "Use the flann  that comes with Open3D"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
 option(BUILD_JSONCPP             "Build json from source"                   OFF)
@@ -256,7 +257,6 @@ include_directories(
 # Suppress 3rdparty header warnings with SYSTEM
 include_directories(
     SYSTEM
-    ${PROJECT_SOURCE_DIR}/3rdparty
     ${3RDPARTY_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
 )

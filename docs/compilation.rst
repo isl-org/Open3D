@@ -387,6 +387,7 @@ The following is an example of forcing building dependencies from source code:
 .. code-block:: bash
 
     cmake -DBUILD_EIGEN3=ON  \
+          -DBUILD_FLANN=ON   \
           -DBUILD_GLEW=ON    \
           -DBUILD_GLFW=ON    \
           -DBUILD_JSONCPP=ON \
