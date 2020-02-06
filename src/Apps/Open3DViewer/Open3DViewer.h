@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -17,15 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-struct SDL_Window;
+#include <memory>
 
 namespace open3d {
-namespace gui {
-
-void *GetNativeDrawable(SDL_Window *sdlWindow);
-void ShowNativeAlert(const char *message);
-
-}  // namespace gui
+namespace geometry {
+class Geometry;
+}
+namespace visualizer {
+class GuiVisualizer;
+}
 }  // namespace open3d
+
+#define WIDTH 1280
+#define HEIGHT 960
+
+int Run(int argc, const char *argv[]);
+bool CreateWindow(const char *path);

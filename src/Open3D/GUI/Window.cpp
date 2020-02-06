@@ -48,6 +48,7 @@
 #include <imgui_internal.h>
 
 #include <cmath>
+#include <queue>
 #include <vector>
 
 #ifdef WIN32
@@ -62,6 +63,11 @@ namespace gui {
 
 namespace {
 
+static constexpr int CENTERED_X = -10000;
+static constexpr int CENTERED_Y = -10000;
+static constexpr int AUTOSIZE_WIDTH = 0;
+static constexpr int AUTOSIZE_HEIGHT = 0;
+
 // Assumes the correct ImGuiContext is current
 void updateImGuiForScaling(float newScaling) {
     ImGuiStyle& style = ImGui::GetStyle();
@@ -70,6 +76,8 @@ void updateImGuiForScaling(float newScaling) {
 }
 
 }  // namespace
+
+const int Window::FLAG_TOPMOST = (1 << 0);
 
 struct Window::Impl {
     SDL_Window* window = nullptr;
@@ -92,26 +100,46 @@ struct Window::Impl {
     // guarantee if it is a child widget.
     std::shared_ptr<Dialog> activeDialog;
 
+    std::queue<std::function<void()>> deferredUntilBeforeDraw;
+    std::queue<std::function<void()>> deferredUntilDraw;
     Widget* focusWidget =
             nullptr;  // only used if ImGUI isn't taking keystrokes
-    bool needsLayout = true;
     int nSkippedFrames = 0;
+    bool wantsAutoSizeAndCenter = false;
+    bool needsLayout = true;
 };
 
-Window::Window(const std::string& title, int width, int height)
-    : Window(title, -1, -1, width, height) {}
+Window::Window(const std::string& title, int flags /*= 0*/)
+    : Window(title, CENTERED_X, CENTERED_Y, AUTOSIZE_WIDTH, AUTOSIZE_HEIGHT) {}
 
-Window::Window(const std::string& title, int x, int y, int width, int height)
+Window::Window(const std::string& title,
+               int width,
+               int height,
+               int flags /*= 0*/)
+    : Window(title, CENTERED_X, CENTERED_Y, width, height) {}
+
+Window::Window(const std::string& title,
+               int x,
+               int y,
+               int width,
+               int height,
+               int flags /*= 0*/)
     : impl_(new Window::Impl()) {
-    if (x < 0) {
+    if (x == CENTERED_X) {
         x = SDL_WINDOWPOS_CENTERED;
     }
-    if (y < 0) {
+    if (y == CENTERED_Y) {
         y = SDL_WINDOWPOS_CENTERED;
     }
-    uint32_t flags = SDL_WINDOW_SHOWN |  // so SDL's context gets created
-                     SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
-    impl_->window = SDL_CreateWindow(title.c_str(), x, y, width, height, flags);
+    if (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT) {
+        impl_->wantsAutoSizeAndCenter = true;
+    }
+    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    if (sdlflags & FLAG_TOPMOST) {
+        sdlflags |= SDL_WINDOW_ALWAYS_ON_TOP;
+    }
+    impl_->window =
+            SDL_CreateWindow(title.c_str(), x, y, width, height, sdlflags);
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not SDL's context, so create the renderer after the window.
@@ -133,7 +161,7 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
 
     auto& theme = impl_->theme;  // shorter alias
     impl_->imgui.context = ImGui::CreateContext();
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    auto oldContext = MakeCurrent();
 
     impl_->imgui.imguiBridge =
             std::make_unique<ImguiFilamentBridge>(impl_->renderer, GetSize());
@@ -218,6 +246,12 @@ Window::Window(const std::string& title, int x, int y, int width, int height)
         return SDL_GetClipboardText();
     };
     io.ClipboardUserData = nullptr;
+
+    // Restore the context, in case we are creating a window during a draw.
+    // (This is quite likely, since ImGUI only handles things like button
+    // presses during draw. A file open dialog is likely to create a window
+    // after pressing "Open".)
+    RestoreCurrent(oldContext);
 }
 
 Window::~Window() {
@@ -226,6 +260,16 @@ Window::~Window() {
     ImGui::DestroyContext();
     delete impl_->renderer;
     SDL_DestroyWindow(impl_->window);
+}
+
+void* Window::MakeCurrent() const {
+    auto oldContext = ImGui::GetCurrentContext();
+    ImGui::SetCurrentContext(impl_->imgui.context);
+    return oldContext;
+}
+
+void Window::RestoreCurrent(void* oldContext) const {
+    ImGui::SetCurrentContext((ImGuiContext*)oldContext);
 }
 
 void* Window::GetNativeDrawable() const {
@@ -240,6 +284,57 @@ visualization::Renderer& Window::GetRenderer() const {
     return *impl_->renderer;
 }
 
+Rect Window::GetFrame() const {
+    int x, y, w, h;
+    SDL_GetWindowPosition(impl_->window, &x, &y);
+    SDL_GetWindowSize(impl_->window, &w, &h);
+    return Rect(x, y, w, h);
+}
+
+void Window::SetFrame(const Rect& r) {
+    SDL_SetWindowPosition(impl_->window, r.x, r.y);
+    SDL_SetWindowSize(impl_->window, r.width, r.height);
+}
+
+// Note: this can only be called during draw!
+Size Window::CalcPreferredSize() {
+    Rect bbox(0, 0, 0, 0);
+    for (auto& child : impl_->children) {
+        auto pref = child->CalcPreferredSize(GetTheme());
+        Rect r(child->GetFrame().x, child->GetFrame().y, pref.width,
+               pref.height);
+        bbox = bbox.UnionedWith(r);
+    }
+
+    // Note: we are doing (bbox.GetRight() - 0) NOT (bbox.GetRight() - bbox.x)
+    //       (and likewise for height) because the origin of the window is
+    //       (0, 0) and anything up/left is clipped.
+    return Size(bbox.GetRight(), bbox.GetBottom());
+}
+
+void Window::SizeToFit() {
+    // CalcPreferredSize() can only be called during draw, but we probably
+    // aren't calling this in a draw, we are probably setting up the window.
+    auto autoSize = [this]() {
+        auto pref = CalcPreferredSize();
+        SetSize(Size(pref.width / this->impl_->imgui.scaling,
+                     pref.height / this->impl_->imgui.scaling));
+    };
+    impl_->deferredUntilDraw.push(autoSize);
+}
+
+void Window::SetSize(const Size& size) {
+    // Make sure we do the resize outside of a draw, to avoid unsightly
+    // errors if we happen to do this in the middle of a draw.
+    auto resize = [this, size /*copy*/]() {
+        SDL_SetWindowSize(this->impl_->window, size.width, size.height);
+        // SDL_SetWindowSize() doesn't generate an event, so we need to update
+        // the size ourselves
+        this->OnResize();
+    };
+    impl_->deferredUntilBeforeDraw.push(resize);
+}
+
 Size Window::GetSize() const {
     uint32_t w, h;
     SDL_GL_GetDrawableSize(impl_->window, (int*)&w, (int*)&h);
@@ -249,7 +344,7 @@ Size Window::GetSize() const {
 Rect Window::GetContentRect() const {
     auto size = GetSize();
     int menuHeight = 0;
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    MakeCurrent();
     if (impl_->menubar) {
         menuHeight = impl_->menubar->CalcHeight(GetTheme());
     }
@@ -284,6 +379,8 @@ void Window::Show(bool vis /*= true*/) {
 }
 
 void Window::Close() { Application::GetInstance().RemoveWindow(this); }
+
+void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
 
 std::shared_ptr<Menu> Window::GetMenubar() const { return impl_->menubar; }
 
@@ -339,6 +436,7 @@ void Window::Layout(const Theme& theme) {
     if (impl_->children.size() == 1) {
         auto r = GetContentRect();
         impl_->children[0]->SetFrame(r);
+        impl_->children[0]->Layout(theme);
     } else {
         for (auto& child : impl_->children) {
             child->Layout(theme);
@@ -355,11 +453,18 @@ Widget::DrawResult DrawChild(DrawContext& dc,
                              const char* name,
                              std::shared_ptr<Widget> child,
                              Mode mode) {
+    // Note: ImGUI's concept of a "window" is really a moveable child of the
+    //       OS window. We want a child to act like a child of the OS window,
+    //       like native UI toolkits, Qt, etc. So the top-level widgets of
+    //       a window are drawn using ImGui windows whose frame is specified
+    //       and which have no title bar, resizability, etc.
+
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
                              ImGuiWindowFlags_NoResize |
                              ImGuiWindowFlags_NoCollapse;
-    // Q: Why not use ImGui::BeginPopupModal(), which takes care of
-    //    blocking input for us?
+    // Q: When we want no input, why not use ImGui::BeginPopupModal(),
+    //    which takes care of blocking input for us, since a modal popup
+    //    is the most likely use case for wanting no input?
     // A: It animates an overlay, which would require us to constantly
     //    redraw, otherwise it only animates when the mouse moves. But
     //    we don't need constant animation for anything else, so that would
@@ -409,11 +514,19 @@ Window::DrawResult Window::OnDraw(float dtSec) {
             "win8",  "win9",  "win10", "win11", "win12", "win13", "win14",
             "win15", "win16", "win17", "win18", "win19", "win20"};
 
+    bool needsRedraw = false;
+
+    // Run the deferred callbacks that need to happen outside a draw
+    while (!impl_->deferredUntilBeforeDraw.empty()) {
+        impl_->deferredUntilBeforeDraw.front()();
+        impl_->deferredUntilBeforeDraw.pop();
+    }
+
     impl_->renderer->BeginFrame();  // this can return false if Filament wants
                                     // to skip a frame
 
     // Set current context
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    MakeCurrent();  // make sure our ImGUI context is active
     ImGuiIO& io = ImGui::GetIO();
     io.DeltaTime = dtSec;
 
@@ -441,6 +554,14 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     ImGui::NewFrame();
     ImGui::PushFont(impl_->imgui.systemFont);
 
+    // Run the deferred callbacks that need to happen inside a draw
+    // In particular, text sizing with ImGUI seems to require being
+    // in a frame, otherwise there isn't an GL texture info and we crash.
+    while (!impl_->deferredUntilDraw.empty()) {
+        impl_->deferredUntilDraw.front()();
+        impl_->deferredUntilDraw.pop();
+    }
+
     // Layout if necessary.  This must happen within ImGui setup so that widgets
     // can query font information.
     auto& theme = this->impl_->theme;
@@ -452,8 +573,6 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     auto size = GetSize();
     int em = theme.fontSize;  // em = font size in digital type (from Wikipedia)
     DrawContext dc{theme, 0, 0, size.width, size.height, em, dtSec};
-
-    bool needsRedraw = false;
 
     // Draw all the widgets. These will get recorded by ImGui.
     int winIdx = 0;
@@ -529,7 +648,7 @@ void Window::OnResize() {
     auto size = GetSize();
     auto scaling = GetScaling();
 
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    auto oldContext = MakeCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(size.width, size.height);
     if (impl_->imgui.scaling != scaling) {
@@ -539,10 +658,27 @@ void Window::OnResize() {
     }
     io.DisplayFramebufferScale.x = 1.0f;
     io.DisplayFramebufferScale.y = 1.0f;
+
+    if (impl_->wantsAutoSizeAndCenter) {
+        impl_->wantsAutoSizeAndCenter = false;
+        ImGui::NewFrame();
+        ImGui::PushFont(impl_->imgui.systemFont);
+        auto pref = CalcPreferredSize();
+        Size size(pref.width / this->impl_->imgui.scaling,
+                  pref.height / this->impl_->imgui.scaling);
+        SDL_SetWindowSize(impl_->window, size.width, size.height);
+        SDL_SetWindowPosition(impl_->window, SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED);
+        ImGui::PopFont();
+        ImGui::EndFrame();
+        OnResize();
+    }
+
+    RestoreCurrent(oldContext);
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    MakeCurrent();
     switch (e.type) {
         case MouseEvent::MOVE:
         case MouseEvent::BUTTON_DOWN:
@@ -551,8 +687,22 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             break;
         case MouseEvent::WHEEL: {
             ImGuiIO& io = ImGui::GetIO();
-            io.MouseWheelH += (e.wheel.dx > 0 ? 1 : -1);
-            io.MouseWheel += (e.wheel.dy > 0 ? 1 : -1);
+            float dx = 0.0, dy = 0.0;
+            if (e.wheel.dx != 0) {
+                dx = e.wheel.dx / std::abs(e.wheel.dx);
+            }
+            if (e.wheel.dy != 0) {
+                dy = e.wheel.dy / std::abs(e.wheel.dy);
+            }
+            // Note: ImGUI's documentation says that 1 unit of wheel movement
+            //       is about 5 lines of text scrolling.
+            if (e.wheel.isTrackpad) {
+                io.MouseWheelH += dx * 0.25;
+                io.MouseWheel += dy * 0.25;
+            } else {
+                io.MouseWheelH += dx;
+                io.MouseWheel += dy;
+            }
             break;
         }
     }
@@ -594,7 +744,7 @@ void Window::OnKeyEvent(const KeyEvent& e) {
 }
 
 void Window::OnTextInput(const TextInputEvent& e) {
-    ImGui::SetCurrentContext(impl_->imgui.context);
+    MakeCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
 }

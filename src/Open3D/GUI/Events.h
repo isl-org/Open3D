@@ -64,6 +64,7 @@ struct MouseEvent {
         struct {
             int dx;
             int dy;
+            bool isTrackpad;
         } wheel;
     };
 };

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -37,7 +38,7 @@ class Window;
 
 class Application {
 public:
-    static Application& GetInstance();
+    static Application &GetInstance();
 
     virtual ~Application();
 
@@ -45,19 +46,41 @@ public:
     // the resources. If you can provide the argc/argv arguments it is more
     // reliable.
     void Initialize();
-    void Initialize(int argc, const char* argv[]);
+    void Initialize(int argc, const char *argv[]);
 
+    /// Does not return until the UI is completely finished. Use this if you
+    /// just need something simple.
     void Run();
 
-    void AddWindow(std::shared_ptr<Window> window);
-    void RemoveWindow(Window* window);
+    /// Executes one loop of Run(). Use this if you need to integrate with
+    /// the operating system's run loop:
+    /// while(RunOneTick()) { ... wait ... }
+    bool RunOneTick();
 
-    const char* GetResourcePath()
+    /// Must be called on the same thread that calls Run()
+    void AddWindow(std::shared_ptr<Window> window);
+    /// Must be called on the same thread that calls Run()
+    void RemoveWindow(Window *window);
+
+    /// Creates a message box window the next time the event loop processes.
+    /// This message box will be a separate window and not associated with any
+    /// of the other windows shown with AddWindow().
+    ///     THIS FUNCTION SHOULD BE USED ONLY AS A LAST RESORT!
+    /// If you have a window, you should use Window::ShowMessageBox() so that
+    /// the message box will be modal to that window. If you do not have a
+    /// window it is better to use ShowNativeAlert(). If the platform does not
+    /// have an alert (like Linux), then this can be used as a last resort.
+    void ShowMessageBox(const char *title, const char *message);
+
+    const char *GetResourcePath()
             const;  // std::string not good in interfaces for ABI reasons
-    const Theme& GetTheme() const;
+    const Theme &GetTheme() const;
 
 private:
     Application();
+
+    enum class RunStatus { CONTINUE, DONE };
+    RunStatus ProcessQueuedEvents();
 
 private:
     struct Impl;
