@@ -56,7 +56,9 @@ public:
     virtual ~GuiVisualizer();
 
     void SetTitle(const std::string& title);
-    void SetGeometry(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries);
+    void SetGeometry(
+            const std::vector<std::shared_ptr<const geometry::Geometry>>&
+                    geometries);
 
     bool LoadGeometry(const std::string& path);
     void ExportRGB(const std::string& path);

@@ -159,7 +159,7 @@ struct Application::Impl {
     bool isRunning = false;
 
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
-    std::unordered_map<Window*, int> eventCounts; // don't recreate each draw
+    std::unordered_map<Window *, int> eventCounts;  // don't recreate each draw
 };
 
 Application &Application::GetInstance() {
@@ -175,7 +175,7 @@ void Application::ShowMessageBox(const char *title, const char *message) {
     auto layout = std::make_shared<Vert>(em, Margins(em));
     auto msg = std::make_shared<Label>(message);
     auto ok = std::make_shared<Button>("Ok");
-    ok->SetOnClicked([alert=alert.get()/*avoid shared_ptr cycle*/]() {
+    ok->SetOnClicked([alert = alert.get() /*avoid shared_ptr cycle*/]() {
         Application::GetInstance().RemoveWindow(alert);
     });
     layout->AddChild(Horiz::MakeCentered(msg));
@@ -276,16 +276,18 @@ void Application::Run() {
 bool Application::RunOneTick() {
     // Initialize if we have not started yet
     if (!impl_->isRunning) {
-        // Verify that the resource path is valid. If it is not, display a message box
-        // (std::cerr may not be visible to the user, if we were run as app).
+        // Verify that the resource path is valid. If it is not, display a
+        // message box (std::cerr may not be visible to the user, if we were run
+        // as app).
         if (impl_->resourcePath.empty()) {
-            ShowNativeAlert("Internal error: Application::Initialize() was not called");
+            ShowNativeAlert(
+                    "Internal error: Application::Initialize() was not called");
             return false;
         }
         if (!utility::filesystem::DirectoryExists(impl_->resourcePath)) {
             std::stringstream err;
-            err << "Could not find resource directory:\n'" << impl_->resourcePath
-                << "' does not exist";
+            err << "Could not find resource directory:\n'"
+                << impl_->resourcePath << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
         }
@@ -325,7 +327,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
         while (nevents < kMaxEvents && SDL_PollEvent(&events[nevents]) != 0) {
             SDL_Event *event = &events[nevents];
             switch (event->type) {
-                case SDL_QUIT:   // sent after last window closed
+                case SDL_QUIT:  // sent after last window closed
                     status = RunStatus::DONE;
                     break;
                 case SDL_MOUSEMOTION: {
@@ -386,7 +388,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         me.wheel.isTrackpad = true;
 #else
                         me.wheel.isTrackpad = (e.which == SDL_TOUCH_MOUSEID);
-#endif // __APPLE__
+#endif  // __APPLE__
 
                         win->OnMouseEvent(me);
                         impl_->eventCounts[win.get()] += 1;
@@ -437,7 +439,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
-                        win->OnTextInput(TextInputEvent{ e.text });
+                        win->OnTextInput(TextInputEvent{e.text});
                         impl_->eventCounts[win.get()] += 1;
                     }
                     break;
@@ -492,7 +494,8 @@ Application::RunStatus Application::ProcessQueuedEvents() {
 
         for (auto &kv : impl_->windows) {
             auto w = kv.second;
-            bool gotEvents = (impl_->eventCounts.find(w.get()) != impl_->eventCounts.end());
+            bool gotEvents = (impl_->eventCounts.find(w.get()) !=
+                              impl_->eventCounts.end());
             if (w->IsVisible() && gotEvents) {
                 if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
                     Window::REDRAW) {

@@ -218,9 +218,7 @@ GuiVisualizer::GuiVisualizer(
     buttonTop->SetOnClicked([this]() {
         auto &boundsMid = this->impl_->boundsMid;
         auto &boundsMax = this->impl_->boundsMax;
-        Eigen::Vector3f eye(boundsMid.x(),
-                            1.5 * boundsMax.y(),
-                            boundsMid.z());
+        Eigen::Vector3f eye(boundsMid.x(), 1.5 * boundsMax.y(), boundsMid.z());
         Eigen::Vector3f up(1, 0, 0);
         this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye, up);
     });
@@ -280,18 +278,18 @@ GuiVisualizer::GuiVisualizer(
 
 GuiVisualizer::~GuiVisualizer() {}
 
-void GuiVisualizer::SetTitle(const std::string& title) {
-//    Super::SetTitle(title);
+void GuiVisualizer::SetTitle(const std::string &title) {
+    //    Super::SetTitle(title);
 }
 
-void GuiVisualizer::SetGeometry(const std::vector<std::shared_ptr<const geometry::Geometry>>& geometries) {
-
+void GuiVisualizer::SetGeometry(
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometries) {
     auto *scene3d = impl_->scene->GetScene();
     for (auto &h : impl_->geometryHandles) {
         scene3d->RemoveGeometry(h);
     }
     impl_->geometryHandles.clear();
-
 
     geometry::AxisAlignedBoundingBox bounds;
     for (auto &g : geometries) {
@@ -306,7 +304,8 @@ void GuiVisualizer::SetGeometry(const std::vector<std::shared_ptr<const geometry
             case geometry::Geometry::GeometryType::TetraMesh:
             case geometry::Geometry::GeometryType::Octree:
             case geometry::Geometry::GeometryType::VoxelGrid: {
-                auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
+                auto g3 =
+                        std::static_pointer_cast<const geometry::Geometry3D>(g);
                 bounds += g3->GetAxisAlignedBoundingBox();
                 auto handle = scene3d->AddGeometry(*g3, impl_->white);
                 impl_->geometryHandles.push_back(handle);
@@ -328,12 +327,10 @@ void GuiVisualizer::SetGeometry(const std::vector<std::shared_ptr<const geometry
     auto boundsMid = Eigen::Vector3f((boundsMin.x() + boundsMax.x()) / 2.0,
                                      (boundsMin.y() + boundsMax.y()) / 2.0,
                                      (boundsMin.z() + boundsMax.z()) / 2.0);
-    Eigen::Vector3f farthest(std::max(std::abs(boundsMin.x()),
-                                      std::abs(boundsMax.x())),
-                             std::max(std::abs(boundsMin.y()),
-                                      std::abs(boundsMax.y())),
-                             std::max(std::abs(boundsMin.z()),
-                                      std::abs(boundsMax.z())));
+    Eigen::Vector3f farthest(
+            std::max(std::abs(boundsMin.x()), std::abs(boundsMax.x())),
+            std::max(std::abs(boundsMin.y()), std::abs(boundsMax.y())),
+            std::max(std::abs(boundsMin.z()), std::abs(boundsMax.z())));
     camera->LookAt({0, 0, 0}, farthest);
 
     impl_->bounds = bounds;
@@ -341,7 +338,7 @@ void GuiVisualizer::SetGeometry(const std::vector<std::shared_ptr<const geometry
     impl_->boundsMax = boundsMax;
 }
 
-void GuiVisualizer::Layout(const gui::Theme& theme) {
+void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
     impl_->scene->SetFrame(r);
 
@@ -353,19 +350,20 @@ void GuiVisualizer::Layout(const gui::Theme& theme) {
     Super::Layout(theme);
 }
 
-bool GuiVisualizer::LoadGeometry(const std::string& path) {
+bool GuiVisualizer::LoadGeometry(const std::string &path) {
     auto geometry = std::shared_ptr<geometry::Geometry3D>();
 
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     bool meshSuccess = false;
     try {
         meshSuccess = io::ReadTriangleMesh(path, *mesh);
-    } catch(...) {
+    } catch (...) {
         meshSuccess = false;
     }
     if (meshSuccess) {
         if (mesh->triangles_.size() == 0) {
-            utility::LogWarning("Contains 0 triangles, will read as point cloud");
+            utility::LogWarning(
+                    "Contains 0 triangles, will read as point cloud");
             mesh.reset();
         } else {
             mesh->ComputeVertexNormals();
@@ -383,7 +381,7 @@ bool GuiVisualizer::LoadGeometry(const std::string& path) {
         bool success = false;
         try {
             success = io::ReadPointCloud(path, *cloud);
-        } catch(...) {
+        } catch (...) {
             success = false;
         }
         if (success) {
@@ -397,7 +395,7 @@ bool GuiVisualizer::LoadGeometry(const std::string& path) {
     }
 
     if (geometry) {
-        SetGeometry({ geometry });
+        SetGeometry({geometry});
     }
     return (geometry != nullptr);
 }
@@ -441,15 +439,13 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
                 auto frame = this->GetFrame();
                 auto title = std::string("Open3D - ") + path;
                 std::vector<std::shared_ptr<const geometry::Geometry>> nothing;
-                auto vis = std::make_shared<GuiVisualizer>(nothing,
-                                                           title.c_str(),
-                                                           frame.width,
-                                                           frame.height,
-                                                           frame.x + 20,
-                                                           frame.y + 20);
+                auto vis = std::make_shared<GuiVisualizer>(
+                        nothing, title.c_str(), frame.width, frame.height,
+                        frame.x + 20, frame.y + 20);
                 gui::Application::GetInstance().AddWindow(vis);
                 if (!vis->LoadGeometry(path)) {
-                    auto err = std::string("Error reading geometry file '") + path + "'";
+                    auto err = std::string("Error reading geometry file '") +
+                               path + "'";
                     vis->ShowMessageBox("Error loading geometry", err.c_str());
                 }
             });

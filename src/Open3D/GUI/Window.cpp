@@ -102,24 +102,29 @@ struct Window::Impl {
 
     std::queue<std::function<void()>> deferredUntilBeforeDraw;
     std::queue<std::function<void()>> deferredUntilDraw;
-    Widget *focusWidget = nullptr; // only used if ImGUI isn't taking keystrokes
+    Widget* focusWidget =
+            nullptr;  // only used if ImGUI isn't taking keystrokes
     int nSkippedFrames = 0;
     bool wantsAutoSizeAndCenter = false;
     bool needsLayout = true;
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
-: Window(title, CENTERED_X, CENTERED_Y, AUTOSIZE_WIDTH, AUTOSIZE_HEIGHT) {
-}
+    : Window(title, CENTERED_X, CENTERED_Y, AUTOSIZE_WIDTH, AUTOSIZE_HEIGHT) {}
 
-Window::Window(const std::string& title, int width, int height,
+Window::Window(const std::string& title,
+               int width,
+               int height,
                int flags /*= 0*/)
-: Window(title, CENTERED_X, CENTERED_Y, width, height) {
-}
+    : Window(title, CENTERED_X, CENTERED_Y, width, height) {}
 
-Window::Window(const std::string& title, int x, int y, int width, int height,
+Window::Window(const std::string& title,
+               int x,
+               int y,
+               int width,
+               int height,
                int flags /*= 0*/)
-: impl_(new Window::Impl()) {
+    : impl_(new Window::Impl()) {
     if (x == CENTERED_X) {
         x = SDL_WINDOWPOS_CENTERED;
     }
@@ -133,7 +138,8 @@ Window::Window(const std::string& title, int x, int y, int width, int height,
     if (sdlflags & FLAG_TOPMOST) {
         sdlflags |= SDL_WINDOW_ALWAYS_ON_TOP;
     }
-    impl_->window = SDL_CreateWindow(title.c_str(), x, y, width, height, sdlflags);
+    impl_->window =
+            SDL_CreateWindow(title.c_str(), x, y, width, height, sdlflags);
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
     // not SDL's context, so create the renderer after the window.
@@ -262,7 +268,7 @@ void* Window::MakeCurrent() const {
     return oldContext;
 }
 
-void Window::RestoreCurrent(void *oldContext) const {
+void Window::RestoreCurrent(void* oldContext) const {
     ImGui::SetCurrentContext((ImGuiContext*)oldContext);
 }
 
@@ -295,8 +301,8 @@ Size Window::CalcPreferredSize() {
     Rect bbox(0, 0, 0, 0);
     for (auto& child : impl_->children) {
         auto pref = child->CalcPreferredSize(GetTheme());
-        Rect r(child->GetFrame().x, child->GetFrame().y,
-               pref.width, pref.height);
+        Rect r(child->GetFrame().x, child->GetFrame().y, pref.width,
+               pref.height);
         bbox = bbox.UnionedWith(r);
     }
 
@@ -374,9 +380,7 @@ void Window::Show(bool vis /*= true*/) {
 
 void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
-void Window::RaiseToTop() const {
-    SDL_RaiseWindow(impl_->window);
-}
+void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
 
 std::shared_ptr<Menu> Window::GetMenubar() const { return impl_->menubar; }
 
@@ -557,7 +561,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
         impl_->deferredUntilDraw.front()();
         impl_->deferredUntilDraw.pop();
     }
-    
+
     // Layout if necessary.  This must happen within ImGui setup so that widgets
     // can query font information.
     auto& theme = this->impl_->theme;
@@ -673,7 +677,7 @@ void Window::OnResize() {
     RestoreCurrent(oldContext);
 }
 
-void Window::OnMouseEvent(const MouseEvent &e) {
+void Window::OnMouseEvent(const MouseEvent& e) {
     MakeCurrent();
     switch (e.type) {
         case MouseEvent::MOVE:
