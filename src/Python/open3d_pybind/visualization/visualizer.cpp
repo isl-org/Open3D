@@ -149,6 +149,15 @@ void pybind_visualizer(py::module &m) {
                  &visualization::VisualizerWithKeyCallback::RegisterKeyCallback,
                  "Function to register a callback function for a key press "
                  "event",
+                 "key"_a, "callback_func"_a)
+
+            .def("register_key_action_callback",
+                 &visualization::VisualizerWithKeyCallback::
+                         RegisterKeyActionCallback,
+                 "Function to register a callback function for a key action "
+                 "event. The callback function takes Visualizer, action and "
+                 "mods as input and returns a boolean indicating if "
+                 "UpdateGeometry() needs to be run.",
                  "key"_a, "callback_func"_a);
 
     py::class_<visualization::VisualizerWithEditing,
