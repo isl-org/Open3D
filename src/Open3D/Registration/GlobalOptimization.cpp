@@ -497,7 +497,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
 
     utility::LogDebug(
             "[GlobalOptimizationGaussNewton] Optimizing PoseGraph having {:d} "
-            "nodes and %d edges.",
+            "nodes and {:d} edges.",
             n_nodes, n_edges);
     utility::LogDebug("Line process weight : {:f}", line_process_weight);
 
