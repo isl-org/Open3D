@@ -75,6 +75,13 @@ public:
                                double near,
                                double far) = 0;
 
+    virtual double GetNear() const = 0;
+    virtual double GetFar() const = 0;
+    /// only valid if fov was passed to SetProjection()
+    virtual double GetFieldOfView() const = 0;
+    /// only valid if fov was passed to SetProjection()
+    virtual FovType GetFieldOfViewType() const = 0;
+
     virtual void SetModelMatrix(const Transform& view) = 0;
     virtual void SetModelMatrix(const Eigen::Vector3f& forward,
                                 const Eigen::Vector3f& left,
@@ -84,11 +91,13 @@ public:
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
 
-    virtual Eigen::Vector3f GetPosition() = 0;
-    virtual Eigen::Vector3f GetForwardVector() = 0;
-    virtual Eigen::Vector3f GetLeftVector() = 0;
-    virtual Eigen::Vector3f GetUpVector() = 0;
-    virtual Transform GetModelMatrix() = 0;
+    virtual Eigen::Vector3f GetPosition() const = 0;
+    virtual Eigen::Vector3f GetForwardVector() const = 0;
+    virtual Eigen::Vector3f GetLeftVector() const = 0;
+    virtual Eigen::Vector3f GetUpVector() const = 0;
+    virtual Transform GetModelMatrix() const = 0;
+    virtual Transform GetViewMatrix() const = 0;
+    virtual Transform GetProjectionMatrix() const = 0;
 };
 
 }  // namespace visualization

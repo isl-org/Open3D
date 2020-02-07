@@ -26,7 +26,6 @@
 
 #include "Open3D/Open3D.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
-#include "Open3D/Visualization/Rendering/CameraManipulator.h"
 #include "Open3D/Visualization/Rendering/Renderer.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
@@ -221,10 +220,9 @@ public:
                 *GetRenderer().GetScene(sceneId));
         sceneWidget_->SetBackgroundColor(gui::Color(0.5, 0.5, 1.0));
 
-        sceneWidget_->GetCameraManipulator()->SetFov(90.0f);
-        sceneWidget_->GetCameraManipulator()->SetNearPlane(0.1f);
-        sceneWidget_->GetCameraManipulator()->SetFarPlane(50.0f);
-        sceneWidget_->GetCameraManipulator()->LookAt({0, 0, 0}, {2, 4, -4});
+        geometry::AxisAlignedBoundingBox bounds(Eigen::Vector3d(0.0, 0.0, 0.0),
+                                                Eigen::Vector3d(5.0, 5.0, 5.0));
+        sceneWidget_->SetupCamera(60.0f, bounds, Eigen::Vector3f(0, 0, 0));
 
         // Create light
         visualization::LightDescription lightDescription;

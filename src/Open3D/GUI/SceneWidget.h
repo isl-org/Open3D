@@ -33,6 +33,10 @@
 
 namespace open3d {
 
+namespace geometry {
+class AxisAlignedBoundingBox;
+}  // namespace geometry
+
 namespace visualization {
 class Camera;
 class CameraManipulator;
@@ -56,14 +60,19 @@ public:
     void SetBackgroundColor(const Color& color);
     void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
+    void SetupCamera(float verticalFoV,
+                     const geometry::AxisAlignedBoundingBox& geometryBounds,
+                     const Eigen::Vector3f& centerOfRotation);
+
+    enum class CameraPreset {
+        PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
+        PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
+        PLUS_Z
+    };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
+    void GoToCameraPreset(CameraPreset preset);
+
     visualization::View* GetView() const;
     visualization::Scene* GetScene() const;
-    visualization::CameraManipulator* GetCameraManipulator() const;
-
-    // switchCamera flag make center of geometry become camera's POI;
-    void SetSelectedGeometry(const visualization::GeometryHandle& geometry,
-                             bool switchCamera);
-    void SetCameraPOI(const Eigen::Vector3f& location);
 
     Widget::DrawResult Draw(const DrawContext& context) override;
 
@@ -71,27 +80,11 @@ public:
     void Key(const KeyEvent& e) override;
 
 private:
+    visualization::Camera* GetCamera() const;
+
+private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
-
-    struct CameraControlsState {
-        Eigen::Vector3f poi;
-        float orbitHeight = 0.f;
-        float rotationSpeed = M_PI;
-
-        bool orbiting = false;
-
-        // use |mousePos - frameDelta| to get
-        // mouse position at start of frame
-        float lastMouseX = 0.f;
-        float lastMouseY = 0.f;
-
-        float frameDx = 0.f;
-        float frameDy = 0.f;
-        float frameWheelDelta = 0.f;
-
-        void Reset();
-    } cameraControlsState_;
 };
 
 }  // namespace gui
