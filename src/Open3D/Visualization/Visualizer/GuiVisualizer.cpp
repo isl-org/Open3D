@@ -43,8 +43,6 @@
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Rendering/Camera.h"
-#include "Open3D/Visualization/Rendering/CameraManipulator.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
@@ -160,9 +158,6 @@ struct GuiVisualizer::Impl {
     visualization::MaterialHandle nonmetal;
     visualization::MaterialInstanceHandle white;
     std::vector<visualization::GeometryHandle> geometryHandles;
-    geometry::AxisAlignedBoundingBox bounds;
-    Eigen::Vector3f boundsMid;
-    Eigen::Vector3d boundsMax;
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> bottomBar;
@@ -215,35 +210,23 @@ GuiVisualizer::GuiVisualizer(
     // Setup UI
     int spacing = std::max(1, int(std::ceil(0.25 * theme.fontSize)));
 
-    auto buttonRegular = std::make_shared<gui::Button>("Default camera");
     auto buttonTop = std::make_shared<gui::Button>("Top");
-    buttonTop->SetOnClicked([this]() {
-        auto &boundsMid = this->impl_->boundsMid;
-        auto &boundsMax = this->impl_->boundsMax;
-        Eigen::Vector3f eye(boundsMid.x(), 1.5 * boundsMax.y(), boundsMid.z());
-        Eigen::Vector3f up(1, 0, 0);
-        this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye, up);
+    buttonTop->SetOnClicked([scene]() {
+        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Y);
     });
     auto buttonFront = std::make_shared<gui::Button>("Front");
-    buttonFront->SetOnClicked([this]() {
-        auto &boundsMid = this->impl_->boundsMid;
-        auto &boundsMax = this->impl_->boundsMax;
-        Eigen::Vector3f eye(1.5 * boundsMax.x(), boundsMid.y(), boundsMid.z());
-        this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye);
+    buttonFront->SetOnClicked([scene]() {
+        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Z);
     });
     auto buttonSide = std::make_shared<gui::Button>("Side");
-    buttonSide->SetOnClicked([this]() {
-        auto &boundsMid = this->impl_->boundsMid;
-        auto &boundsMax = this->impl_->boundsMax;
-        Eigen::Vector3f eye(boundsMid.x(), boundsMid.y(), 1.5 * boundsMax.z());
-        this->impl_->scene->GetCameraManipulator()->LookAt(boundsMid, eye);
+    buttonSide->SetOnClicked([scene]() {
+        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_X);
     });
     auto bottomBar =
             std::make_shared<gui::Horiz>(spacing, gui::Margins(0, spacing));
     impl_->bottomBar = bottomBar;
     bottomBar->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
     bottomBar->AddChild(gui::Horiz::MakeStretch());
-    bottomBar->AddChild(buttonRegular);
     bottomBar->AddChild(buttonTop);
     bottomBar->AddChild(buttonFront);
     bottomBar->AddChild(buttonSide);
@@ -319,25 +302,7 @@ void GuiVisualizer::SetGeometry(
         }
     }
 
-    auto *camera = impl_->scene->GetCameraManipulator();
-    camera->SetFov(90.0f);
-    camera->SetNearPlane(0.1f);
-    auto far = 2.0 * bounds.GetExtent().norm();
-    camera->SetFarPlane(std::max(100.0, far));
-    auto boundsMin = bounds.GetMinBound();
-    auto boundsMax = bounds.GetMaxBound();
-    auto boundsMid = Eigen::Vector3f((boundsMin.x() + boundsMax.x()) / 2.0,
-                                     (boundsMin.y() + boundsMax.y()) / 2.0,
-                                     (boundsMin.z() + boundsMax.z()) / 2.0);
-    Eigen::Vector3f farthest(
-            std::max(std::abs(boundsMin.x()), std::abs(boundsMax.x())),
-            std::max(std::abs(boundsMin.y()), std::abs(boundsMax.y())),
-            std::max(std::abs(boundsMin.z()), std::abs(boundsMax.z())));
-    camera->LookAt({0, 0, 0}, farthest);
-
-    impl_->bounds = bounds;
-    impl_->boundsMid = boundsMid;
-    impl_->boundsMax = boundsMax;
+    impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {

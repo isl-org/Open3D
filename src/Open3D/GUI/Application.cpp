@@ -107,7 +107,15 @@ std::unordered_map<int, uint32_t> SCANCODE2KEY = {
         {SDL_SCANCODE_HOME, open3d::gui::KEY_HOME},
         {SDL_SCANCODE_END, open3d::gui::KEY_END},
         {SDL_SCANCODE_PAGEUP, open3d::gui::KEY_PAGEUP},
-        {SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN}};
+        {SDL_SCANCODE_PAGEDOWN, open3d::gui::KEY_PAGEDOWN},
+        {SDL_SCANCODE_LSHIFT, open3d::gui::KEY_LSHIFT},
+        {SDL_SCANCODE_RSHIFT, open3d::gui::KEY_RSHIFT},
+        {SDL_SCANCODE_LCTRL, open3d::gui::KEY_LCTRL},
+        {SDL_SCANCODE_RCTRL, open3d::gui::KEY_RCTRL},
+        {SDL_SCANCODE_LALT, open3d::gui::KEY_ALT},
+        {SDL_SCANCODE_RALT, open3d::gui::KEY_ALT},
+        {SDL_SCANCODE_LGUI, open3d::gui::KEY_META},
+        {SDL_SCANCODE_RGUI, open3d::gui::KEY_META}};
 
 std::string findResourcePath(int argc, const char *argv[]) {
     std::string argv0;
@@ -148,6 +156,24 @@ std::string findResourcePath(int argc, const char *argv[]) {
     return rsrcPath;
 }
 
+int keyModsRightNow() {  // requires SDL is initialized
+    int keyMods = 0;
+    auto sdlMods = SDL_GetModState();
+    if ((sdlMods & KMOD_LSHIFT) || (sdlMods & KMOD_RSHIFT)) {
+        keyMods |= int(open3d::gui::KeyModifier::SHIFT);
+    }
+    if ((sdlMods & KMOD_LCTRL) || (sdlMods & KMOD_RCTRL)) {
+        keyMods |= int(open3d::gui::KeyModifier::CTRL);
+    }
+    if ((sdlMods & KMOD_LALT) || (sdlMods & KMOD_RALT)) {
+        keyMods |= int(open3d::gui::KeyModifier::ALT);
+    }
+    if ((sdlMods & KMOD_LGUI) || (sdlMods & KMOD_RGUI)) {
+        keyMods |= int(open3d::gui::KeyModifier::META);
+    }
+    return keyMods;
+}
+
 }  // namespace
 
 namespace open3d {
@@ -160,6 +186,22 @@ struct Application::Impl {
 
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
     std::unordered_map<Window *, int> eventCounts;  // don't recreate each draw
+
+    // We keep track of our own key states becase SDL_GetModState()
+    // gets the instantaneous state, whereas we need the state at the
+    // time the event happened, which may not be the same, since we
+    // process events in batches.
+    struct {
+        bool lShift = false;
+        bool rShift = false;
+        bool lCtrl = false;
+        bool rCtrl = false;
+        bool lAlt = false;
+        bool rAlt = false;
+        bool lMeta = false;
+        bool rMeta = false;
+    } keyStates;
+    int keyMods = 0;
 };
 
 Application &Application::GetInstance() {
@@ -301,6 +343,7 @@ bool Application::RunOneTick() {
 
         SDL_Init(SDL_INIT_EVENTS);
         SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+        impl_->keyMods = keyModsRightNow();
         impl_->isRunning = true;
     }
 
@@ -357,7 +400,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                             buttons |= int(MouseButton::BUTTON5);
                         }
 
-                        MouseEvent me = {type, x, y};
+                        MouseEvent me = {type, x, y, impl_->keyMods};
                         // GCC complains when trying to initialize inline above
                         me.move.buttons = buttons;
 
@@ -378,7 +421,8 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         int dx = int(std::ceil(float(e.x) * scaling));
                         int dy = int(std::ceil(float(e.y) * scaling));
 
-                        MouseEvent me = {MouseEvent::WHEEL, pos.x, pos.y};
+                        MouseEvent me = {MouseEvent::WHEEL, pos.x, pos.y,
+                                         impl_->keyMods};
                         me.wheel.dx = dx;
                         me.wheel.dy = dy;
 #if __APPLE__
@@ -426,7 +470,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         int x = int(std::ceil(float(e.x) * scaling));
                         int y = int(std::ceil(float(e.y) * scaling));
 
-                        MouseEvent me = {type, x, y};
+                        MouseEvent me = {type, x, y, impl_->keyMods};
                         me.button.button = button;
 
                         win->OnMouseEvent(me);
@@ -447,6 +491,66 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                 case SDL_KEYDOWN:
                 case SDL_KEYUP: {
                     auto &e = event->key;
+
+                    // Update modifier keys. We compare (type != keyup) rather
+                    // than (type == keydown) in case SDL adds SDL_KEYREPEAT
+                    // in the future.
+                    auto &keyStates = impl_->keyStates;  // helps line lengths
+                    switch (e.keysym.scancode) {
+                        case SDL_SCANCODE_LSHIFT:
+                            keyStates.lShift = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_RSHIFT:
+                            keyStates.rShift = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_LCTRL:
+                            keyStates.lCtrl = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_RCTRL:
+                            keyStates.rCtrl = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_LALT:
+                            keyStates.lAlt = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_RALT:
+                            keyStates.rAlt = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_LGUI:
+                            keyStates.lMeta = (event->type != SDL_KEYUP);
+                            break;
+                        case SDL_SCANCODE_RGUI:
+                            keyStates.rMeta = (event->type != SDL_KEYUP);
+                            break;
+                        default:
+                            break;
+                    }
+                    int keyMods = 0;
+                    if (keyStates.lShift || keyStates.rShift) {
+                        keyMods |= int(KeyModifier::SHIFT);
+                    }
+#ifdef __APPLE__
+                    if (keyStates.lCtrl || keyStates.rCtrl) {
+                        keyMods |= int(KeyModifier::ALT);
+                    }
+                    if (keyStates.lAlt || keyStates.rAlt) {
+                        keyMods |= int(KeyModifier::META);
+                    }
+                    if (keyStates.lMeta || keyStates.rMeta) {
+                        keyMods |= int(KeyModifier::CTRL);
+                    }
+#else
+                    if (keyStates.lCtrl || keyStates.rCtrl) {
+                        keyMods |= int(KeyModifier::CTRL);
+                    }
+                    if (keyStates.lAlt || keyStates.rAlt) {
+                        keyMods |= int(KeyModifier::ALT);
+                    }
+                    if (keyStates.lMeta || keyStates.rMeta) {
+                        keyMods |= int(KeyModifier::META);
+                    }
+#endif  // __APPLE__
+                    impl_->keyMods = keyMods;
+
                     auto it = impl_->windows.find(e.windowID);
                     if (it != impl_->windows.end()) {
                         auto &win = it->second;
@@ -479,6 +583,12 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                             break;
                         case SDL_WINDOWEVENT_CLOSE:
                             impl_->windows.erase(window->GetID());
+                            break;
+                        case SDL_WINDOWEVENT_FOCUS_GAINED:
+                            // The user might have pressed or unpressed a key
+                            // while another window was focused, (most notably
+                            // Alt-Tab), so recalc mods.
+                            impl_->keyMods = keyModsRightNow();
                             break;
                         default:
                             break;
