@@ -35,9 +35,11 @@
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
+#include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
+#include <filament/utils/EntityManager.h>
 
 namespace open3d {
 namespace visualization {

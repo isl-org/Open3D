@@ -32,6 +32,9 @@
 
 #define FMT_HEADER_ONLY 1
 #define FMT_STRING_ALIAS 1
+#define FMT_USE_WINDOWS_H 0 // causes all kinds of #defines like "OPAQUE",
+                            // "near", "far", causes compile errors with
+                            // Filament includes, and generally wrecks havoc.
 #include <fmt/format.h>
 
 namespace open3d {

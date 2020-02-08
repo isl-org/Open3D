@@ -31,10 +31,12 @@
 #include "FilamentResourceManager.h"
 #include "FilamentScene.h"
 
+#include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/View.h>
+#include <filament/Viewport.h>
 
 namespace open3d {
 namespace visualization {

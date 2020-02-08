@@ -36,6 +36,8 @@
 
 #include <Eigen/Geometry>
 
+#include <iostream>
+
 #define ENABLE_PAN 0
 
 namespace open3d {

@@ -34,7 +34,6 @@
 #include "Layout.h"
 #include "Menu.h"
 #include "Native.h"
-#include "Renderer.h"
 #include "Theme.h"
 #include "Util.h"
 #include "Widget.h"

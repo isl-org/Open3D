@@ -14,18 +14,18 @@ if ("${PATH_TO_FILAMENT}" STREQUAL "")
             set(ARCHIVE_FILE ${CMAKE_BINARY_DIR}/downloads/filament.tgz)
 
             # Setup download links ============================================================================
-            set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-linux.tgz")
-            set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-linux.tgz")
+            set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-linux.tgz")
+            set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-linux.tgz")
 
             if (WIN32)
-                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-windows.tgz")
-                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-windows.tgz")
+                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-windows.tgz")
+                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-windows.tgz")
                 
                 file(MAKE_DIRECTORY ${FILAMENT_ROOT})
                 set(TAR_PWD ${FILAMENT_ROOT})
             elseif (APPLE)
-                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20191127-mac-10.14.tgz")
-                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.3/filament-20191127-mac.tgz")
+                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-mac-10.14.tgz")
+                set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-mac.tgz")
             endif()
             # =================================================================================================
 
