@@ -74,4 +74,4 @@ macro(APP APP_NAME)
     endif()
 endmacro(APP)
 
-APP(Open3DViewer ${CMAKE_PROJECT_NAME} SDL2)
+APP(Open3DViewer ${CMAKE_PROJECT_NAME})

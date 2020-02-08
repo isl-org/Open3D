@@ -48,7 +48,16 @@ endif()
 add_library(sdl2_combined INTERFACE)
 add_dependencies(sdl2_combined sdl_copy)
 
-set(SDL2_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${CMAKE_STATIC_LIBRARY_SUFFIX})
+if (WIN32)
+    if (CMAKE_BUILD_TYPE MATCHES Debug)
+        set(DEBUG_SUFFIX "d")
+     else()
+        set(DEBUG_SUFFIX "")
+     endif()
+else()
+        set(DEBUG_SUFFIX "")
+endif()
+set(SDL2_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${DEBUG_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX})
 target_link_libraries(sdl2_combined INTERFACE ${SDL2_LIB_FILES})
 
 #target_include_directories(sdl2 SYSTEM INTERFACE

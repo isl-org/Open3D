@@ -139,6 +139,12 @@ if (WIN32)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
     endif (MSVC)
 
+    # GLEW, Open3D make direct OpenGL calls and link to opengl32.lib;
+    # Filament needs to link through bluegl.lib.
+    # See https://github.com/google/filament/issues/652
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
+
     # Filament links normally only against static runtime
     if (ENABLE_GUI)
         set(STATIC_WINDOWS_RUNTIME ON)
