@@ -42,8 +42,8 @@
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
-#include <filament/utils/EntityManager.h>
 #include <filament/filamat/MaterialBuilder.h>
+#include <filament/utils/EntityManager.h>
 
 #include <unordered_map>
 #include <vector>
