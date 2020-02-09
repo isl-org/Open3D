@@ -36,7 +36,7 @@ if __name__ == "__main__":
             o3d.registration.TransformationEstimationPointToPlane(),
             o3d.registration.ICPConvergenceCriteria(max_iteration=1))
         source.transform(reg_p2l.transformation)
-        vis.update_geometry()
+        vis.update_geometry(source)
         vis.poll_events()
         vis.update_renderer()
         if save_image:
