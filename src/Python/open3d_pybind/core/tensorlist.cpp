@@ -77,6 +77,7 @@ void pybind_core_tensorlist(py::module& m) {
                  [](TensorList& tl_a, const TensorList& tl_b) {
                      return tl_a.Extend(tl_b);
                  })
+            .def("size", [](const TensorList& tl) { return tl.GetSize(); })
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("__repr__", [](const TensorList& tl) { return tl.ToString(); })
