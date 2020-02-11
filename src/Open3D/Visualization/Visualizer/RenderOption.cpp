@@ -31,6 +31,8 @@
 
 #include "Open3D/Utility/Console.h"
 
+#include <algorithm>
+
 namespace open3d {
 namespace visualization {
 
@@ -252,26 +254,16 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
-int RenderOption::GetGLDepthFunc() const {
-    switch (depthFunc_) {
-        case DepthFunc::Never:
-            return GL_NEVER;
-        case DepthFunc::Less:
-            return GL_LESS;
-        case DepthFunc::Equal:
-            return GL_EQUAL;
-        case DepthFunc::LEqual:
-            return GL_LEQUAL;
-        case DepthFunc::Greater:
-            return GL_GREATER;
-        case DepthFunc::NotEqual:
-            return GL_NOTEQUAL;
-        case DepthFunc::GEqual:
-            return GL_GEQUAL;
-        case DepthFunc::Always:
-            return GL_ALWAYS;
-    }
-    return GL_LESS;  // never hit, makes GCC happy
+void RenderOption::ChangePointSize(double change) {
+    point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
+                                    POINT_SIZE_MAX),
+                           POINT_SIZE_MIN);
+}
+	
+void RenderOption::ChangeLineWidth(double change) {
+    line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
+                                    LINE_WIDTH_MAX),
+                           LINE_WIDTH_MIN);
 }
 
 }  // namespace visualization
