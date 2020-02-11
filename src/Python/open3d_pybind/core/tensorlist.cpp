@@ -52,15 +52,20 @@ void pybind_core_tensorlist(py::module& m) {
                 TensorList tl = TensorList(shape, dtype, device, size);
                 return tl;
             }))
-            .def(py::init([](const std::vector<Tensor>& tensors,
-                             const Device& device) {
-                TensorList tl = TensorList(tensors, device);
-                return tl;
-            }))
-            .def(py::init([](const Tensor& internal_tensor, bool copy = true) {
-                TensorList tl = TensorList(internal_tensor, copy);
-                return tl;
-            }))
+
+            // Construct from existing tensors with compatible shapes
+            .def("from_tensors",
+                 [](const std::vector<Tensor>& tensors, const Device& device) {
+                     TensorList tl = TensorList(tensors, device);
+                     return tl;
+                 })
+            // Construct from existing internal tensor with at least one valid
+            // dimension
+            .def("from_tensor",
+                 [](const Tensor& internal_tensor, bool inplace = true) {
+                     TensorList tl = TensorList(internal_tensor, inplace);
+                     return tl;
+                 })
             .def("tensor", [](const TensorList& tl) { return tl.AsTensor(); })
             .def("push_back",
                  [](TensorList& tl, const Tensor& tensor) {
@@ -74,6 +79,7 @@ void pybind_core_tensorlist(py::module& m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
+            .def("__repr__", [](const TensorList& tl) { return tl.ToString(); })
             .def_static("concat",
                         [](const TensorList& tl_a, const TensorList& tl_b) {
                             return TensorList::Concatenate(tl_a, tl_b);

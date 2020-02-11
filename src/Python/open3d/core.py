@@ -42,7 +42,7 @@ class Tensor(open3d_pybind.Tensor):
         if isinstance(data, tuple) or isinstance(data, list):
             data = np.array(data)
         if not isinstance(data, np.ndarray):
-            raise ValueError("data must be a list, tuple or Numpy array.")
+            raise ValueError("data must be a list, tuple, or Numpy array.")
         if dtype is None:
             dtype = _numpy_dtype_to_dtype(data.dtype)
         if device is None:
@@ -99,3 +99,62 @@ class Tensor(open3d_pybind.Tensor):
         Returns a tensor converted from DLPack PyCapsule.
         """
         return super(Tensor, Tensor).from_dlpack(dlpack)
+
+class TensorList(open3d_pybind.TensorList):
+    """
+    Open3D TensorList class. A TensorList is an extendable tensor at the 0-th dimension.
+    It is similar to python list, but uses Open3D's tensor memory management system.
+    """
+
+    def __init__(self, shape, dtype=None, device=None, size=None):
+        if isinstance(shape, list) or isinstance(shape, tuple):
+            shape = o3d.SizeVector(shape)
+        elif isinstance(shape, o3d.SizeVector):
+            pass
+        else:
+            raise ValueError('shape must be a list, tuple, or o3d.SizeVector')
+
+        if dtype is None:
+            dtype = _numpy_dtype_to_dtype(data.dtype)
+        if device is None:
+            device = o3d.Device("CPU:0")
+        if size is None:
+            size = 0
+
+        super(TensorList, self).__init__(shape, dtype, device, size)
+
+    @staticmethod
+    def from_tensor(tensor, inplace=False):
+        """
+        Returns a TensorList from an existing tensor.
+        Args:
+            tensor: The internal o3d.Tensor to construct from, whose 0-th dimension
+                    corresponds to the size of the tensorlist.
+            inplace: Reuse tensor memory in place if True, else make a copy.
+        """
+
+        if not isinstance(tensor, o3d.Tensor):
+            raise ValueError('tensor must be a o3d.Tensor')
+
+        return super(TensorList, TensorList).from_tensor(tensor, inplace)
+
+    @staticmethod
+    def from_tensors(tensors, device=None):
+        """
+        Returns a TensorList from a list of existing tensors.
+        Args:
+            tensors: The list of o3d.Tensor to construct from.
+                     The tensors' shapes should be compatible.
+            device: The device where the tensorlist is targeted.
+        """
+
+        if not isinstance(tensors, list) and not isinstance(tensors, tuple):
+            raise ValueError('tensors must be a list or tuple')
+
+        for tensor in tensors:
+            if not isinstance(tensor, o3d.Tensor):
+                raise ValueError('every element of the input list must be a valid tensor')
+        if device is None:
+            device = o3d.Device("CPU:0")
+
+        return super(TensorList, TensorList).from_tensors(tensors, device)

@@ -92,12 +92,12 @@ public:
 
     /// Constructor from a raw internal tensor.
     /// The inverse of AsTensor().
-    /// \param copy:
+    /// \param inplace:
     /// - if false, use the raw internal tensor (could be non-contiguous),
     /// typically only used for Slice() assignment
     /// - if true, create a new contiguous internal tensor with precomputed
     /// reserved size.
-    TensorList(const Tensor& internal_tensor, bool copy = true);
+    TensorList(const Tensor& internal_tensor, bool inplace = true);
 
     /// Copy constructor from a tensor list.
     /// Create a new tensor list with copy of data.
@@ -143,7 +143,7 @@ public:
     /// Concatenate two tensor lists and append the copy of the other tensor
     /// list to the end of *this.
     /// Two TensorLists must have the same shape, dtype, and device.
-    void operator+=(const TensorList& other);
+    TensorList& operator+=(const TensorList& other);
     void Extend(const TensorList& b);
 
     /// Return the reference of one tensor with shared memory.
@@ -160,6 +160,8 @@ public:
 
     /// Clear the tensor list by discarding all data and creating a empty one.
     void Clear();
+
+    std::string ToString() const;
 
     const SizeVector& GetShape() const { return shape_; }
     const Device& GetDevice() const { return device_; }
