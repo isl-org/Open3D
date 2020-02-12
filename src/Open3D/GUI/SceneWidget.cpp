@@ -127,7 +127,14 @@ public:
         camera_->SetModelMatrix(matrix);
     }
 
-    void Dolly(int dy) {
+    void Dolly(int dy, bool isTrackpad) {
+        float dist;
+        if (isTrackpad) {
+            dist = float(-dy) * 0.005f * modelSize_;
+        } else {
+            dist = float(-dy) * 0.1f * modelSize_;
+        }
+
         // Dolly is just moving the camera forward. Filament uses right as +x,
         // up as +y, and forward as -z (standard OpenGL coordinates). So to
         // move forward all we need to do is translate the camera matrix by
@@ -136,8 +143,7 @@ public:
         // vector in world space, but the translation happens in camera space.)
         // Since we want trackpad down (negative) to go forward ("pulling" the
         // model toward the viewer) we need to negate dy.
-        auto dist = -dy * 0.005 * modelSize_;
-        auto forward = dist * Eigen::Vector3f(0, 0, -1);
+        auto forward = Eigen::Vector3f(0, 0, -dist); // dist * (0, 0, -1)
         auto matrix = camera_->GetModelMatrix().translate(forward);
         camera_->SetModelMatrix(matrix);
 
@@ -225,7 +231,7 @@ public:
                         Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        Dolly(dy);
+                        Dolly(dy, true); // mouse movement is similar to trackpad
                         break;
                     case State::ROTATE_XY:
                         Rotate(dx, dy);
@@ -237,7 +243,7 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                Dolly(e.wheel.dy * 0.01 * modelSize_);
+                Dolly(e.wheel.dy, e.wheel.isTrackpad);
                 break;
             }
             case MouseEvent::BUTTON_UP:
