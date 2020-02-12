@@ -32,8 +32,9 @@ if (WIN32)
     add_custom_target(sdl_copy
         COMMAND xcopy /s /i /y /q \"include\" \"${3RDPARTY_INSTALL_PREFIX}/include\"
         COMMAND xcopy /s /i /y /q \"lib\" \"${3RDPARTY_INSTALL_PREFIX}/lib\"
-        # Binaries go to examples directory
-        COMMAND xcopy /s /i /y /q \"bin\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\" 
+        # On Windows the DLLs end up in bin/ rather than lib/. Put them in
+        # lib for consistency with the other platforms
+        COMMAND xcopy /s /i /y /q \"bin\" \"${3RDPARTY_INSTALL_PREFIX}/lib\"
         WORKING_DIRECTORY ${SDL_TMP_INSTALL_DIR}
         DEPENDS ext_sdl2
         )
@@ -80,6 +81,10 @@ if (APPLE)
     # non-system libraries
     list(APPEND SDL2_LIBRARIES ${CORE_AUDIO} ${AUDIO_TOOLBOX} ${FORCE_FEEDBACK} ${CARBON} /usr/lib/libiconv.dylib)
 endif()
+
+if (WIN32)
+    list(APPEND SDL2_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${DEBUG_SUFFIX}.dll)
+endif ()
 
 if (NOT BUILD_SHARED_LIBS)
     install(FILES ${SDL2_LIB_FILES}

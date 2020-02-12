@@ -73,7 +73,7 @@ if (ENABLE_GUI)
     # Copy .dll files on Windows
     if (WIN32)
         add_custom_target(copy_dll
-            COMMAND xcopy /s /i /y /f \"bin/*.dll\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\"
+            COMMAND xcopy /s /i /y /f \"lib/*.dll\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\"
             WORKING_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}
             DEPENDS ext_sdl2)
 
