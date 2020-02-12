@@ -61,6 +61,13 @@ if (Open3D_FOUND)
                                 ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
                                 ${CMAKE_CURRENT_BINARY_DIR}/Release)
     endif()
+    if(WIN32)
+        message("Will copy SDL2.dll to ${CMAKE_CURRENT_BINARY_DIR}/Release")
+        add_custom_command(TARGET TestVisualizer POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy
+                                ${CMAKE_INSTALL_PREFIX}/lib/SDL2.dll
+                                ${CMAKE_CURRENT_BINARY_DIR}/Release)
+    endif()
 
 else ()
     message(SEND_ERROR "Open3D not found")
