@@ -24,41 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/UnaryEW.h"
+#pragma once
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/CPULauncher.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace kernel {
 
-template <typename scalar_t>
-static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
+enum class BinaryEWOpCode { Add, Sub, Mul, Div };
+
+void BinaryEW(const Tensor& lhs,
+              const Tensor& rhs,
+              Tensor& dst,
+              BinaryEWOpCode op_code);
+
+void BinaryEWCPU(const Tensor& lhs,
+                 const Tensor& rhs,
+                 Tensor& dst,
+                 BinaryEWOpCode op_code);
+
+#ifdef BUILD_CUDA_MODULE
+void BinaryEWCUDA(const Tensor& lhs,
+                  const Tensor& rhs,
+                  Tensor& dst,
+                  BinaryEWOpCode op_code);
+#endif
+
+inline void Add(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
+    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Add);
 }
 
-void CopyCPU(const Tensor& src, Tensor& dst) {
-    // src and dst have been checked to have the same shape, dtype, device
-    SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
-    if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
-    } else {
-        // TODO: in the future, we may want to allow automatic casting
-        Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    indexer, CPUCopyElementKernel<scalar_t>);
-        });
-    }
+inline void Sub(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
+    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Sub);
+}
+
+inline void Mul(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
+    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Mul);
+}
+
+inline void Div(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
+    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Div);
 }
 
 }  // namespace kernel

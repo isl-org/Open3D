@@ -834,3 +834,89 @@ TEST_P(TensorPermuteDevices, AdvancedIndexing_IsIndexSplittedBySlice) {
     EXPECT_TRUE(AdvancedIndexPreprocessor::IsIndexSplittedBySlice(
             {idx, slice, slice, idx}));
 }
+
+TEST_P(TensorPermuteDevices, Add) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor b(std::vector<float>({10, 11, 12, 13, 14, 15}), {2, 3},
+             Dtype::Float32, device);
+    Tensor c = a + b;
+    EXPECT_EQ(c.ToFlatVector<float>(),
+              std::vector<float>({10, 12, 14, 16, 18, 20}));
+}
+
+TEST_P(TensorPermuteDevices, Add_) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor b(std::vector<float>({10, 11, 12, 13, 14, 15}), {2, 3},
+             Dtype::Float32, device);
+    a += b;
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>({10, 12, 14, 16, 18, 20}));
+}
+
+TEST_P(TensorPermuteDevices, Sub) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({10, 12, 14, 16, 18, 20}), {2, 3},
+             Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor c = a - b;
+    EXPECT_EQ(c.ToFlatVector<float>(),
+              std::vector<float>({10, 11, 12, 13, 14, 15}));
+}
+
+TEST_P(TensorPermuteDevices, Sub_) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({10, 12, 14, 16, 18, 20}), {2, 3},
+             Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+             device);
+    a -= b;
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>({10, 11, 12, 13, 14, 15}));
+}
+
+TEST_P(TensorPermuteDevices, Mul) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor b(std::vector<float>({6, 7, 8, 9, 10, 11}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor c = a * b;
+    EXPECT_EQ(c.ToFlatVector<float>(),
+              std::vector<float>({0, 7, 16, 27, 40, 55}));
+}
+
+TEST_P(TensorPermuteDevices, Mul_) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor b(std::vector<float>({6, 7, 8, 9, 10, 11}), {2, 3}, Dtype::Float32,
+             device);
+    a *= b;
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>({0, 7, 16, 27, 40, 55}));
+}
+
+TEST_P(TensorPermuteDevices, Div) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 7, 16, 27, 40, 55}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor b(std::vector<float>({6, 7, 8, 9, 10, 11}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor c = a / b;
+    EXPECT_EQ(c.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
+}
+
+TEST_P(TensorPermuteDevices, Div_) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 7, 16, 27, 40, 55}), {2, 3}, Dtype::Float32,
+             device);
+    Tensor b(std::vector<float>({6, 7, 8, 9, 10, 11}), {2, 3}, Dtype::Float32,
+             device);
+    a /= b;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
+}

@@ -47,7 +47,7 @@ public:
 
     /// Constructor for creating a contiguous Tensor
     Tensor(const SizeVector& shape,
-           const Dtype& dtype,
+           Dtype dtype,
            const Device& device = Device("CPU:0"))
         : shape_(shape),
           strides_(DefaultStrides(shape)),
@@ -61,7 +61,7 @@ public:
     template <typename T>
     Tensor(const std::vector<T>& init_vals,
            const SizeVector& shape,
-           const Dtype& dtype,
+           Dtype dtype,
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
@@ -85,7 +85,7 @@ public:
     Tensor(const SizeVector& shape,
            const SizeVector& strides,
            void* data_ptr,
-           const Dtype& dtype,
+           Dtype dtype,
            const std::shared_ptr<Blob>& blob)
         : shape_(shape),
           strides_(strides),
@@ -296,6 +296,42 @@ public:
         MemoryManager::MemcpyToHost(&value, data_ptr_, GetDevice(), sizeof(T));
         return value;
     }
+
+    /// Adds a tensor and returns the resulting tensor.
+    Tensor Add(const Tensor& value) const;
+    Tensor operator+(const Tensor& value) const { return Add(value); }
+
+    /// Inplace version of Tensor::Add. Adds a tensor to the current tensor and
+    /// retunrs the current tensor.
+    Tensor Add_(const Tensor& value);
+    Tensor operator+=(const Tensor& value) { return Add_(value); }
+
+    /// Substracts a tensor and returns the resulting tensor.
+    Tensor Sub(const Tensor& value) const;
+    Tensor operator-(const Tensor& value) const { return Sub(value); }
+
+    /// Inplace version of Tensor::Sub. Substracts a tensor to the current
+    /// tensor and retunrs the current tensor.
+    Tensor Sub_(const Tensor& value);
+    Tensor operator-=(const Tensor& value) { return Sub_(value); }
+
+    /// Multiplies a tensor and returns the resulting tensor.
+    Tensor Mul(const Tensor& value) const;
+    Tensor operator*(const Tensor& value) const { return Mul(value); }
+
+    /// Inplace version of Tensor::Mul. Multiplies a tensor to the current
+    /// tensor and retunrs the current tensor.
+    Tensor Mul_(const Tensor& value);
+    Tensor operator*=(const Tensor& value) { return Mul_(value); }
+
+    /// Divides a tensor and returns the resulting tensor.
+    Tensor Div(const Tensor& value) const;
+    Tensor operator/(const Tensor& value) const { return Div(value); }
+
+    /// Inplace version of Tensor::Div. Divides a tensor to the current
+    /// tensor and retunrs the current tensor.
+    Tensor Div_(const Tensor& value);
+    Tensor operator/=(const Tensor& value) { return Div_(value); }
 
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>

@@ -40,14 +40,6 @@ void Copy(const Tensor& src, Tensor& dst) {
                           src.GetShape(), dst.GetShape());
     }
 
-    // Check dtype
-    // TODO: in the future, we may want to allow automatic casting
-    if (src.GetDtype() != dst.GetDtype()) {
-        utility::LogError("src and dst tensor dtype mismatch {} != {}",
-                          DtypeUtil::ToString(src.GetDtype()),
-                          DtypeUtil::ToString(dst.GetDtype()));
-    }
-
     // Disbatch to device
     Device::DeviceType src_device_type = src.GetDevice().GetType();
     Device::DeviceType dst_device_type = dst.GetDevice().GetType();
@@ -63,6 +55,8 @@ void Copy(const Tensor& src, Tensor& dst) {
     } else {
 #ifdef BUILD_CUDA_MODULE
         CopyCUDA(src, dst);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     }
 }
