@@ -31,7 +31,7 @@
 namespace open3d {
 namespace visualization {
 
-ResourceLoadRequest::ErrorCallback ResourceLoadRequest::defaultErrorHandler =
+static ResourceLoadRequest::ErrorCallback sDefaultErrorHandler =
         [](const ResourceLoadRequest& request,
            const uint8_t code,
            const std::string& details) {
@@ -49,6 +49,19 @@ ResourceLoadRequest::ErrorCallback ResourceLoadRequest::defaultErrorHandler =
                         "Resource request failed: Malformed request");
             }
         };
+
+ResourceLoadRequest::ResourceLoadRequest(const void* aData,
+    size_t aDataSize)
+    : data(aData),
+    dataSize(aDataSize),
+    path(""),
+    errorCallback(sDefaultErrorHandler) {}
+
+ResourceLoadRequest::ResourceLoadRequest(const char* aPath)
+    : data(nullptr),
+    dataSize(0u),
+    path(aPath),
+    errorCallback(sDefaultErrorHandler) {}
 
 ResourceLoadRequest::ResourceLoadRequest(const void* aData,
                                          size_t aDataSize,
