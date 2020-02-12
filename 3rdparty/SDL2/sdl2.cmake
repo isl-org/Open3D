@@ -84,7 +84,7 @@ endif()
 
 if (WIN32)
     set(SDL2_DLL ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${DEBUG_SUFFIX}.dll)
-    list(APPEND SDL2_LIB_FILES SDL2_DLL)
+    list(APPEND SDL2_LIB_FILES ${SDL2_DLL})
     # SDL not links staticly on Windows, so we force install dll's
     install(FILES ${SDL2_DLL}
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
