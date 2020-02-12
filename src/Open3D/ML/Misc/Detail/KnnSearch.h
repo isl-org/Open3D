@@ -37,19 +37,17 @@ namespace detail {
 
 namespace {
 
-/// Implementation of RadiusSearchCPU with template params for metrics
-/// and boolean options
+/// Implementation of KnnSearchCPU with template params for metrics
 template <class T, class OUTPUT_ALLOCATOR, int METRIC>
-void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
-                      size_t num_points,
-                      const T* const points,
-                      size_t num_queries,
-                      const T* const queries,
-                      const T* const radii,
-                      bool ignore_query_point,
-                      bool return_distances,
-                      bool normalize_distances,
-                      OUTPUT_ALLOCATOR& output_allocator) {
+void _KnnSearchCPU(int64_t* query_neighbors_row_splits,
+                   size_t num_points,
+                   const T* const points,
+                   size_t num_queries,
+                   const T* const queries,
+                   const int k,
+                   bool ignore_query_point,
+                   bool return_distances,
+                   OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
 
     // return empty indices array if there are no points
@@ -108,26 +106,22 @@ void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t>& r) {
                 std::vector<Pair> pairs_private;
-                std::vector<std::pair<size_t, T>> search_result;
 
+                std::vector<size_t> result_indices(k);
+                std::vector<T> result_distances(k);
                 for (size_t i = r.begin(); i != r.end(); ++i) {
-                    T radius;
-                    if (METRIC == L2)
-                        radius = radii[i] * radii[i];
-                    else  // L1
-                        radius = radii[i];
-                    index.radiusSearch(&queries[i * 3], radius, search_result,
-                                       search_params);
+                    size_t num_valid = index.knnSearch(&queries[i * 3], k,
+                                                       result_indices.data(),
+                                                       result_distances.data());
 
                     int num_neighbors = 0;
-                    for (const auto& idx_dist : search_result) {
+                    for (size_t valid_i = 0; valid_i < num_valid; ++valid_i) {
+                        size_t idx = result_indices[valid_i];
                         if (ignore_query_point &&
-                            points_equal(&queries[i * 3],
-                                         &points[idx_dist.first * 3])) {
+                            points_equal(&queries[i * 3], &points[idx * 3])) {
                             continue;
                         }
-                        pairs_private.push_back(
-                                Pair{int32_t(i), int32_t(idx_dist.first)});
+                        pairs_private.push_back(Pair{int32_t(i), int32_t(idx)});
                         ++num_neighbors;
                     }
                     neighbors_count[i] = num_neighbors;
@@ -170,12 +164,6 @@ void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
                               if (return_distances) {
                                   T dist = distance_fn(&points[pair.j * 3],
                                                        &queries[pair.i * 3]);
-                                  if (normalize_distances) {
-                                      if (METRIC == L2)
-                                          dist /= radii[pair.i] * radii[pair.i];
-                                      else  // L1
-                                          dist /= radii[pair.i];
-                                  }
                                   distances_ptr[idx] = dist;
                               }
                           }
@@ -184,7 +172,7 @@ void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
 }  // namespace
 
-/// Radius search. This function computes a list of neighbor indices
+/// KNN search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and an exclusive prefix
 /// sum defines the start and end of each list in the array.
 /// In addition the function optionally can return the distances for each
@@ -209,7 +197,7 @@ void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
 /// \param queries    Array with the 3D query positions. This may be the same
 ///                   array as \p points.
 ///
-/// \param radii    A vector of search radii with length \p num_queries.
+/// \param k    The number of neighbors to search.
 ///
 /// \param metric    One of L1, L2, Linf. Defines the distance metric for the
 ///        search.
@@ -222,10 +210,6 @@ void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///        as the indices.
 ///        Note that for the L2 metric the squared distances will be returned!!
 ///
-/// \param normalize_distances    If true then the returned distances are
-///        normalized in the range [0,1]. Note that for L2 the normalized
-///        distance is squared.
-///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
 ///         AllocIndices(int32_t** ptr, size_t size) and
@@ -236,25 +220,23 @@ void _RadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///         In this case ptr does not need to be set.
 ///
 template <class T, class OUTPUT_ALLOCATOR>
-void RadiusSearchCPU(int64_t* query_neighbors_row_splits,
-                     size_t num_points,
-                     const T* const points,
-                     size_t num_queries,
-                     const T* const queries,
-                     const T* radii,
-                     const Metric metric,
-                     const bool ignore_query_point,
-                     const bool return_distances,
-                     const bool normalize_distances,
-                     OUTPUT_ALLOCATOR& output_allocator) {
-#define FN_PARAMETERS                                                         \
-    query_neighbors_row_splits, num_points, points, num_queries, queries,     \
-            radii, ignore_query_point, return_distances, normalize_distances, \
-            output_allocator
+void KnnSearchCPU(int64_t* query_neighbors_row_splits,
+                  size_t num_points,
+                  const T* const points,
+                  size_t num_queries,
+                  const T* const queries,
+                  const int k,
+                  const Metric metric,
+                  const bool ignore_query_point,
+                  const bool return_distances,
+                  OUTPUT_ALLOCATOR& output_allocator) {
+#define FN_PARAMETERS                                                        \
+    query_neighbors_row_splits, num_points, points, num_queries, queries, k, \
+            ignore_query_point, return_distances, output_allocator
 
 #define CALL_TEMPLATE(METRIC) \
     if (METRIC == metric)     \
-        _RadiusSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS);
+        _KnnSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2 \
     CALL_TEMPLATE(L1)  \
