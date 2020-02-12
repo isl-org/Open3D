@@ -50,18 +50,17 @@ static ResourceLoadRequest::ErrorCallback sDefaultErrorHandler =
             }
         };
 
-ResourceLoadRequest::ResourceLoadRequest(const void* aData,
-    size_t aDataSize)
+ResourceLoadRequest::ResourceLoadRequest(const void* aData, size_t aDataSize)
     : data(aData),
-    dataSize(aDataSize),
-    path(""),
-    errorCallback(sDefaultErrorHandler) {}
+      dataSize(aDataSize),
+      path(""),
+      errorCallback(sDefaultErrorHandler) {}
 
 ResourceLoadRequest::ResourceLoadRequest(const char* aPath)
     : data(nullptr),
-    dataSize(0u),
-    path(aPath),
-    errorCallback(sDefaultErrorHandler) {}
+      dataSize(0u),
+      path(aPath),
+      errorCallback(sDefaultErrorHandler) {}
 
 ResourceLoadRequest::ResourceLoadRequest(const void* aData,
                                          size_t aDataSize,

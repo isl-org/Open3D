@@ -255,15 +255,15 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
 }
 
 void RenderOption::ChangePointSize(double change) {
-    point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
-                                    POINT_SIZE_MAX),
-                           POINT_SIZE_MIN);
+    point_size_ = std::max(
+            std::min(point_size_ + change * POINT_SIZE_STEP, POINT_SIZE_MAX),
+            POINT_SIZE_MIN);
 }
-	
+
 void RenderOption::ChangeLineWidth(double change) {
-    line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
-                                    LINE_WIDTH_MAX),
-                           LINE_WIDTH_MIN);
+    line_width_ = std::max(
+            std::min(line_width_ + change * LINE_WIDTH_STEP, LINE_WIDTH_MAX),
+            LINE_WIDTH_MIN);
 }
 
 }  // namespace visualization
