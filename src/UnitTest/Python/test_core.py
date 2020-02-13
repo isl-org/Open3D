@@ -45,7 +45,9 @@ def list_devices():
                 f"o3d.cuda.device_count() != torch.cuda.device_count(), "
                 f"{o3d.cuda.device_count()} != {torch.cuda.device_count()}")
     else:
-        print('Warning: torch is not imported, cannot guarantee the correctness of device_count()')
+        print(
+            'Warning: torch is not imported, cannot guarantee the correctness of device_count()'
+        )
 
     for i in range(o3d.cuda.device_count()):
         devices.append(o3d.Device("CUDA:" + str(i)))
@@ -296,14 +298,17 @@ def test_binary_ew_ops():
     a //= b
     np.testing.assert_equal(a.numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
+
 def test_tensorlist_operations():
     a = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=1)
     assert a.size() == 1
 
-    b = o3d.TensorList.from_tensor(o3d.Tensor(np.ones((2, 3, 4), dtype=np.float32)))
+    b = o3d.TensorList.from_tensor(
+        o3d.Tensor(np.ones((2, 3, 4), dtype=np.float32)))
     assert b.size() == 2
 
-    c = o3d.TensorList.from_tensors([o3d.Tensor(np.zeros((3, 4), dtype=np.float32))])
+    c = o3d.TensorList.from_tensors(
+        [o3d.Tensor(np.zeros((3, 4), dtype=np.float32))])
     assert c.size() == 1
 
     d = a + b
