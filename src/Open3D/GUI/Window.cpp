@@ -297,6 +297,14 @@ void Window::SetFrame(const Rect& r) {
     SDL_SetWindowSize(impl_->window, r.width, r.height);
 }
 
+const char* Window::GetTitle() const {
+    return SDL_GetWindowTitle(impl_->window);
+}
+
+void Window::SetTitle(const char *title) {
+    SDL_SetWindowTitle(impl_->window, title);
+}
+
 // Note: this can only be called during draw!
 Size Window::CalcPreferredSize() {
     Rect bbox(0, 0, 0, 0);

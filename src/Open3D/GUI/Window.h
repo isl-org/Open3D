@@ -77,6 +77,9 @@ public:
     Rect GetFrame() const;         // in OS pixels; not scaled
     void SetFrame(const Rect& r);  // in OS pixels; not scaled
 
+    const char* GetTitle() const;
+    void SetTitle(const char *title);
+
     void SizeToFit();  // auto size
     void SetSize(const Size& size);
     Size GetSize() const;  // total interior size of window, including menubar

@@ -46,6 +46,8 @@
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
+#define LOAD_IN_NEW_WINDOW 0
+
 namespace open3d {
 namespace visualization {
 
@@ -298,7 +300,7 @@ GuiVisualizer::GuiVisualizer(
 GuiVisualizer::~GuiVisualizer() {}
 
 void GuiVisualizer::SetTitle(const std::string &title) {
-    //    Super::SetTitle(title);
+    Super::SetTitle(title.c_str());
 }
 
 void GuiVisualizer::SetGeometry(
@@ -442,13 +444,18 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                auto frame = this->GetFrame();
                 auto title = std::string("Open3D - ") + path;
+#if LOAD_IN_NEW_WINDOW
+                auto frame = this->GetFrame();
                 std::vector<std::shared_ptr<const geometry::Geometry>> nothing;
                 auto vis = std::make_shared<GuiVisualizer>(
                         nothing, title.c_str(), frame.width, frame.height,
                         frame.x + 20, frame.y + 20);
                 gui::Application::GetInstance().AddWindow(vis);
+#else
+                this->SetTitle(title);
+                auto vis = this;
+#endif // LOAD_IN_NEW_WINDOW
                 if (!vis->LoadGeometry(path)) {
                     auto err = std::string("Error reading geometry file '") +
                                path + "'";
