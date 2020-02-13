@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Advanced/customized_visualization2.py
+# examples/Python/Advanced/customized_visualization_key_action.py
 
 import open3d as o3d
 
