@@ -182,7 +182,7 @@ class Tensor(open3d_pybind.Tensor):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
-    
+
 class TensorList(open3d_pybind.TensorList):
     """
     Open3D TensorList class. A TensorList is an extendable tensor at the 0-th dimension.
@@ -236,7 +236,8 @@ class TensorList(open3d_pybind.TensorList):
 
         for tensor in tensors:
             if not isinstance(tensor, o3d.Tensor):
-                raise ValueError('every element of the input list must be a valid tensor')
+                raise ValueError(
+                    'every element of the input list must be a valid tensor')
         if device is None:
             device = o3d.Device("CPU:0")
 
