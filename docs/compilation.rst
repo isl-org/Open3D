@@ -111,7 +111,6 @@ compilation options to ``OFF``:
 
 - ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
-- ``BUILD_PYTHON_TUTORIALS``
 
 .. _compilation_ubuntu_config:
 
