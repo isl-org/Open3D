@@ -768,5 +768,8 @@ void Window::OnTextInput(const TextInputEvent& e) {
     io.AddInputCharactersUTF8(e.utf8);
 }
 
+void Window::OnDragDropped(const char *path) {
+}
+
 }  // namespace gui
 }  // namespace open3d

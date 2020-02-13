@@ -113,6 +113,9 @@ protected:
     // Override to handle menu items
     virtual void OnMenuItemSelected(Menu::ItemId itemId);
 
+    // Override to handle drag and drop on the windowx
+    virtual void OnDragDropped(const char *path);
+
 private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw(float dtSec);

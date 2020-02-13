@@ -584,7 +584,14 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     break;
                 }
                 case SDL_DROPFILE: {
-                    SDL_free(event->drop.file);
+                    auto &e = event->drop;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        win->OnDragDropped(e.file);
+                        impl_->eventCounts[win.get()] += 1;
+                    }
+                    SDL_free(e.file);
                     break;
                 }
                 case SDL_WINDOWEVENT: {
