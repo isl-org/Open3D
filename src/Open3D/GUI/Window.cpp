@@ -104,6 +104,7 @@ struct Window::Impl {
     std::queue<std::function<void()>> deferredUntilDraw;
     Widget* focusWidget =
             nullptr;  // only used if ImGUI isn't taking keystrokes
+    double lastFrameTime = 0.0;
     int nSkippedFrames = 0;
     bool wantsAutoSizeAndCenter = false;
     bool needsLayout = true;
@@ -432,6 +433,10 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
+double Window::GetLastFrameTimeSeconds() const {
+    return impl_->lastFrameTime;
+}
+
 void Window::Layout(const Theme& theme) {
     if (impl_->children.size() == 1) {
         auto r = GetContentRect();
@@ -626,6 +631,8 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 }
 
 Window::DrawResult Window::DrawOnce(float dtSec) {
+    auto t0 = SDL_GetPerformanceCounter();
+
     auto needsRedraw = OnDraw(dtSec);
 
     // ImGUI can take two frames to do its layout, so if we did a layout
@@ -636,6 +643,10 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
         impl_->needsLayout = false;
         OnDraw(0.001);
     }
+
+    auto t1 = SDL_GetPerformanceCounter();
+    double freq = double(SDL_GetPerformanceFrequency());
+    impl_->lastFrameTime = double(t1 - t0) / freq;
 
     return needsRedraw;
 }

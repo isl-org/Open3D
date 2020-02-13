@@ -310,8 +310,25 @@ void Application::RemoveWindow(Window *window) {
 }
 
 void Application::Run() {
-    while (RunOneTick()) {
-        SDL_Delay(RUNLOOP_DELAY_MSEC);
+    const double freq = double(SDL_GetPerformanceFrequency());
+    bool notDone = true;
+    while (notDone) {
+        auto t0 = SDL_GetPerformanceCounter();
+        notDone = RunOneTick();
+        auto t1 = SDL_GetPerformanceCounter();
+
+        // We want to wait a certain amount of time until handling the next
+        // frame so that we don't eat CPU spinning here. But if the frame is
+        // taking a substantial amount of time to draw, we want to wait less
+        // so that interactions are still as smooth as possible.
+        int deltaMSec = int(double(t1 - t0) / freq * 1000.0);
+        if (deltaMSec >= RUNLOOP_DELAY_MSEC) {
+            SDL_Delay(0);
+        } else {
+            // The resolution of the delay may not be good enough
+            // for this to be meaningful, but at least give it a try.
+            SDL_Delay(RUNLOOP_DELAY_MSEC - deltaMSec);
+        }
     }
 }
 

@@ -140,6 +140,33 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
+class DrawTimeLabel : public gui::Label
+{
+    using Super = Label;
+public:
+    DrawTimeLabel(gui::Window *w)
+    : Label("0.0 ms") {
+        window_ = w;
+    }
+
+    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
+        auto h = Super::CalcPreferredSize(theme).height;
+        return gui::Size(theme.fontSize * 5, h);
+    }
+
+    DrawResult Draw(const gui::DrawContext &context) override {
+        char text[64];
+        double ms = window_->GetLastFrameTimeSeconds() * 1000.0;
+        snprintf(text, sizeof(text) - 1, "%.1f ms", ms);
+        SetText(text);
+
+        return Super::Draw(context);
+    }
+    
+private:
+    gui::Window *window_;
+};
+
 }  // namespace
 
 enum MenuId {
@@ -161,6 +188,7 @@ struct GuiVisualizer::Impl {
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> bottomBar;
+    std::shared_ptr<gui::Horiz> drawTime;
 };
 
 GuiVisualizer::GuiVisualizer(
@@ -232,8 +260,14 @@ GuiVisualizer::GuiVisualizer(
     bottomBar->AddChild(buttonSide);
     bottomBar->AddChild(gui::Horiz::MakeStretch());
 
+    auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
+    impl_->drawTime = std::make_shared<gui::Horiz>(0, gui::Margins(spacing, 0));
+    impl_->drawTime->SetBackgroundColor(gui::Color(0, 0, 0, 0));
+    impl_->drawTime->AddChild(drawTimeLabel);
+
     AddChild(scene);
     AddChild(bottomBar);
+    AddChild(impl_->drawTime);
 
     // Create menu
     auto fileMenu = std::make_shared<gui::Menu>();
@@ -313,6 +347,11 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     gui::Rect bottomRect(0, r.GetBottom() - bottomHeight, r.width,
                          bottomHeight);
     impl_->bottomBar->SetFrame(bottomRect);
+
+    const auto pref = impl_->drawTime->CalcPreferredSize(theme);
+    impl_->drawTime->SetFrame(gui::Rect(0, r.GetBottom() - pref.height,
+                                        5 * theme.fontSize, pref.height));
+    impl_->drawTime->Layout(theme);
 
     Super::Layout(theme);
 }

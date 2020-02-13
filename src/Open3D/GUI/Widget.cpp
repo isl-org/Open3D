@@ -35,7 +35,9 @@
 namespace open3d {
 namespace gui {
 
-static const Color DEFAULT_BGCOLOR(0, 0, 0, 0);
+// This should not be Color(0, 0, 0, 0), since transparent is a valid and
+// common background color to want.
+static const Color DEFAULT_BGCOLOR(0.001, 0.001, 0.001, 0);
 
 struct Widget::Impl {
     Rect frame;

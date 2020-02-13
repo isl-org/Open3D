@@ -101,6 +101,8 @@ public:
 
     void ShowMessageBox(const char* title, const char* message);
 
+    double GetLastFrameTimeSeconds() const;
+
 protected:
     virtual Size CalcPreferredSize(/*const Size& maxSize*/);
     virtual void Layout(const Theme& theme);
