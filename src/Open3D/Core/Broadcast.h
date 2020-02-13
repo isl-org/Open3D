@@ -34,6 +34,9 @@
 namespace open3d {
 
 /// \brief Returns true if two shapes are compatible for broadcasting.
+///
+/// E.g. IsCompatibleBroadcastShape({3, 1, 2}, {5, 1}) -> true
+///      IsCompatibleBroadcastShape({3, 1, 2}, {5, 3}) -> false
 /// \param l_shape Shape of the left-hand-side Tensor.
 /// \param r_shape Shape of the left-hand-side Tensor.
 /// \return Returns true if \p l_shape and \p r_shape are compatible for
@@ -42,6 +45,9 @@ bool IsCompatibleBroadcastShape(const SizeVector& l_shape,
                                 const SizeVector& r_shape);
 
 /// \brief Returns the broadcasted shape of two shapes.
+///
+/// E.g. BroadcastedShape({3, 1, 2}, {5, 1}) -> {3, 5, 2}
+///      BroadcastedShape({3, 1, 2}, {5, 3}) -> Exception
 /// \param l_shape Shape of the left-hand-side Tensor.
 /// \param r_shape Shape of the left-hand-side Tensor.
 /// \return The broadcasted shape.
@@ -49,6 +55,9 @@ SizeVector BroadcastedShape(const SizeVector& l_shape,
                             const SizeVector& r_shape);
 
 /// \brief Returns true if \p src_shape can be brocasted to \p dst_shape.
+///
+/// E.g. CanBeBrocastedToShape({1, 2}, {3, 5, 2}) -> true
+///      CanBeBrocastedToShape({1, 2}, {3, 5, 3}) -> false
 /// \param src_shape Source tensor shape.
 /// \param dst_shape Destination tensor shape.
 /// \return Returns true if \p src_shape can be brocasted to \p dst_shape.

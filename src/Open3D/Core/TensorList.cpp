@@ -29,7 +29,7 @@
 namespace open3d {
 // Public
 TensorList::TensorList(const SizeVector& shape,
-                       const Dtype& dtype,
+                       Dtype dtype,
                        const Device& device, /*= Device("CPU:0") */
                        const int64_t& size /* = 0 */)
     : shape_(shape),
