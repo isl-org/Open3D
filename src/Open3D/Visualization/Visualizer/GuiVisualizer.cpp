@@ -189,7 +189,6 @@ struct GuiVisualizer::Impl {
     std::vector<visualization::GeometryHandle> geometryHandles;
 
     std::shared_ptr<gui::SceneWidget> scene;
-    std::shared_ptr<gui::Horiz> bottomBar;
     std::shared_ptr<gui::Horiz> drawTime;
 };
 
@@ -240,40 +239,18 @@ GuiVisualizer::GuiVisualizer(
     // Setup UI
     int spacing = std::max(1, int(std::ceil(0.25 * theme.fontSize)));
 
-    auto buttonTop = std::make_shared<gui::Button>("Top");
-    buttonTop->SetOnClicked([scene]() {
-        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Y);
-    });
-    auto buttonFront = std::make_shared<gui::Button>("Front");
-    buttonFront->SetOnClicked([scene]() {
-        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Z);
-    });
-    auto buttonSide = std::make_shared<gui::Button>("Side");
-    buttonSide->SetOnClicked([scene]() {
-        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_X);
-    });
-    auto bottomBar =
-            std::make_shared<gui::Horiz>(spacing, gui::Margins(0, spacing));
-    impl_->bottomBar = bottomBar;
-    bottomBar->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
-    bottomBar->AddChild(gui::Horiz::MakeStretch());
-    bottomBar->AddChild(buttonTop);
-    bottomBar->AddChild(buttonFront);
-    bottomBar->AddChild(buttonSide);
-    bottomBar->AddChild(gui::Horiz::MakeStretch());
-
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
+    drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
     impl_->drawTime = std::make_shared<gui::Horiz>(0, gui::Margins(spacing, 0));
     impl_->drawTime->SetBackgroundColor(gui::Color(0, 0, 0, 0));
     impl_->drawTime->AddChild(drawTimeLabel);
 
     AddChild(scene);
-    AddChild(bottomBar);
     AddChild(impl_->drawTime);
 
     // Create menu
     auto fileMenu = std::make_shared<gui::Menu>();
-    fileMenu->AddItem("Open Geometry...", "Ctrl-O", FILE_OPEN);
+    fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
     fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
     fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
     fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
@@ -344,11 +321,6 @@ void GuiVisualizer::SetGeometry(
 void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
     impl_->scene->SetFrame(r);
-
-    auto bottomHeight = impl_->bottomBar->CalcPreferredSize(theme).height;
-    gui::Rect bottomRect(0, r.GetBottom() - bottomHeight, r.width,
-                         bottomHeight);
-    impl_->bottomBar->SetFrame(bottomRect);
 
     const auto pref = impl_->drawTime->CalcPreferredSize(theme);
     impl_->drawTime->SetFrame(gui::Rect(0, r.GetBottom() - pref.height,
