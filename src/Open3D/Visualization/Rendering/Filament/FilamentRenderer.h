@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Open3D/Visualization/Rendering/Renderer.h"
 
@@ -45,6 +46,7 @@ namespace open3d {
 namespace visualization {
 
 class FilamentMaterialModifier;
+class FilamentRenderToBuffer;
 class FilamentResourceManager;
 class FilamentScene;
 class FilamentView;
@@ -71,12 +73,16 @@ public:
     TextureHandle AddTexture(const ResourceLoadRequest& request) override;
     void RemoveTexture(const TextureHandle& id) override;
 
+    std::unique_ptr<RenderToBuffer> CreateBufferRenderer() override;
+
     // Removes scene from scenes list and draws it last
     // WARNING: will destroy previous gui scene if there was any
     void ConvertToGuiScene(const SceneHandle& id);
     FilamentScene* GetGuiScene() const { return guiScene_.get(); }
 
 private:
+    friend class FilamentRenderToBuffer;
+
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapChain_ = nullptr;
@@ -88,7 +94,11 @@ private:
     std::unique_ptr<FilamentMaterialModifier> materialsModifier_;
     FilamentResourceManager& resourceManager_;
 
+    std::unordered_set<FilamentRenderToBuffer*> bufferRenderers_;
+
     bool frameStarted_ = false;
+
+    void OnBufferRenderDestroyed(FilamentRenderToBuffer* render);
 };
 
 }  // namespace visualization

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,71 +26,56 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/View.h"
-
-#include <memory>
-#include <numeric>
-
-#include <filament/Color.h>
+#include "Open3D/Visualization/Rendering/RenderToBuffer.h"
 
 namespace filament {
 class Engine;
+class Renderer;
 class Scene;
-class View;
-class Viewport;
+class SwapChain;
 }  // namespace filament
 
 namespace open3d {
 namespace visualization {
 
-class FilamentCamera;
-class FilamentResourceManager;
+class FilamentRenderer;
 class FilamentScene;
+class FilamentView;
 
-class FilamentView : public View {
+class FilamentRenderToBuffer : public RenderToBuffer {
 public:
-    static constexpr std::uint8_t kAllLayersMask =
-            std::numeric_limits<std::uint8_t>::max();
-    static constexpr std::uint8_t kMainLayer = 1;  // Default layer for objects
+    // Never create it alone, if you are using GUI app or another
+    // FilamentRenderer instance. Use Renderer::CreateBufferRenderer instead
+    explicit FilamentRenderToBuffer(filament::Engine& engine);
+    FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
+    ~FilamentRenderToBuffer() override;
 
-    FilamentView(filament::Engine& engine,
-                 FilamentResourceManager& resourceManager);
-    FilamentView(filament::Engine& engine,
-                 FilamentScene& scene,
-                 FilamentResourceManager& resourceManager);
-    ~FilamentView() override;
+    void SetDimensions(std::size_t width, std::size_t height) override;
+    void CopySettings(const View* view) override;
+    View& GetView() override;
 
-    void SetMode(Mode mode) override;
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
-
-    void SetViewport(std::int32_t x,
-                     std::int32_t y,
-                     std::uint32_t w,
-                     std::uint32_t h) override;
-    void SetClearColor(const Eigen::Vector3f& color) override;
-
-    Camera* GetCamera() const override;
-
-    // Copies available settings for view and camera
-    void CopySettingsFrom(const FilamentView& other);
-
-    void SetScene(FilamentScene& scene);
-
-    filament::View* GetNativeView() const { return view_; }
-
-    void PreRender();
-    void PostRender();
+    void RequestFrame(Scene* scene, BufferReadyCallback cb) override;
 
 private:
-    std::unique_ptr<FilamentCamera> camera_;
-    Eigen::Vector3f clearColor_;
-    Mode mode_ = Mode::Color;
-    TargetBuffers discardBuffers_;
+    friend class FilamentRenderer;
 
+    FilamentRenderer* parent_ = nullptr;
     filament::Engine& engine_;
-    FilamentScene* scene_ = nullptr;
-    FilamentResourceManager& resourceManager_;
-    filament::View* view_ = nullptr;
+    filament::Renderer* renderer_ = nullptr;
+    filament::SwapChain* swapchain_ = nullptr;
+    std::unique_ptr<FilamentView> view_;
+
+    std::size_t width_ = 0;
+    std::size_t height_ = 0;
+    std::uint8_t* buffer_ = nullptr;
+    std::size_t bufferSize_ = 0;
+
+    BufferReadyCallback callback_;
+    bool frameDone_ = true;
+    bool pending_ = false;
+
+    static void ReadPixelsCallback(void* buffer, size_t size, void* user);
+    void Render();
 };
 
 }  // namespace visualization
