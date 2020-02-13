@@ -52,11 +52,6 @@ public:
     /// just need something simple.
     void Run();
 
-    /// Executes one loop of Run(). Use this if you need to integrate with
-    /// the operating system's run loop:
-    /// while(RunOneTick()) { ... wait ... }
-    bool RunOneTick();
-
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
     /// Must be called on the same thread that calls Run()
@@ -78,6 +73,8 @@ public:
 
 private:
     Application();
+
+    bool RunOneTick();
 
     enum class RunStatus { CONTINUE, DONE };
     RunStatus ProcessQueuedEvents();

@@ -60,12 +60,12 @@
         CreateWindow("");
     }
 
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.010 repeats:YES
+    // We cannot have the timer repeat and call RunOnce() because on macOS
+    // SDL does not queue up keyboard events unless SDL_Delay() is used.
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.010 repeats:NO
                                         block:^(NSTimer * _Nonnull timer) {
-        if (!open3d::gui::Application::GetInstance().RunOneTick()) {
-            [timer invalidate];
-            exit(0);
-        }
+        open3d::gui::Application::GetInstance().Run();
+        exit(0);
     }];
 }
 
