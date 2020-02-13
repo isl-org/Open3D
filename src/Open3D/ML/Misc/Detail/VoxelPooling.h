@@ -46,9 +46,9 @@ template <class TReal,
 class Accumulator {
 public:
     Accumulator()
-        : _count(0),
-          _sqr_dist_to_center(std::numeric_limits<TReal>::max()),
-          _position(0, 0, 0) {
+        : count_(0),
+          min_sqr_dist_to_center_(std::numeric_limits<TReal>::max()),
+          position_(0, 0, 0) {
         static_assert(POS_FN != MAX, "MAX is not allowed for point positions");
         static_assert(FEAT_FN != CENTER,
                       "CENTER is not allowed for feature vectors");
@@ -62,58 +62,58 @@ public:
         TReal sqr_d = 0;
         if (POS_FN == NEAREST_NEIGHBOR || FEAT_FN == NEAREST_NEIGHBOR) {
             sqr_d = (voxel_center - pos).squaredNorm();
-            if (sqr_d < _sqr_dist_to_center) {
+            if (sqr_d < min_sqr_dist_to_center_) {
                 new_nearest_neighbor = true;
-                _sqr_dist_to_center = sqr_d;
+                min_sqr_dist_to_center_ = sqr_d;
             }
         }
         if (POS_FN == AVERAGE) {
-            _position += pos.array();
+            position_ += pos.array();
         } else if (POS_FN == NEAREST_NEIGHBOR && new_nearest_neighbor) {
-            _position = pos;
+            position_ = pos;
         } else if (POS_FN == CENTER) {
-            if (_count == 0) _position = voxel_center;
+            if (count_ == 0) position_ = voxel_center;
         }
 
-        if (_count == 0) {
-            _features.resizeLike(feat);
-            _features.setZero();
+        if (count_ == 0) {
+            features_.resizeLike(feat);
+            features_.setZero();
         }
         if (FEAT_FN == AVERAGE) {
-            _features += feat;
+            features_ += feat;
         } else if (FEAT_FN == NEAREST_NEIGHBOR && new_nearest_neighbor) {
-            _features = feat;
+            features_ = feat;
         } else if (FEAT_FN == MAX) {
-            _features = _features.max(feat);
+            features_ = features_.max(feat);
         }
-        ++_count;
+        ++count_;
     }
 
     inline Eigen::Array<TReal, 3, 1> Position() const {
         if (POS_FN == AVERAGE) {
-            return _position / _count;
+            return position_ / count_;
         } else  // if( POS_FN == NEAREST_NEIGHBOR || POS_FN == CENTER )
         {
-            return _position;
+            return position_;
         }
     }
 
     inline Eigen::Array<TFeat, Eigen::Dynamic, 1> Features() const {
         if (FEAT_FN == AVERAGE) {
-            return _features / _count;
+            return features_ / count_;
         } else  // if( FEAT_FN == NEAREST_NEIGHBOR || FEAT_FN == MAX )
         {
-            return _features;
+            return features_;
         }
     }
 
-    inline int Count() const { return _count; }
+    inline int Count() const { return count_; }
 
 private:
-    int _count;
-    TReal _sqr_dist_to_center;
-    Eigen::Array<TReal, 3, 1> _position;
-    Eigen::Array<TFeat, Eigen::Dynamic, 1> _features;
+    int count_;
+    TReal min_sqr_dist_to_center_;
+    Eigen::Array<TReal, 3, 1> position_;
+    Eigen::Array<TFeat, Eigen::Dynamic, 1> features_;
 };  // namespace
 
 template <class TReal,
@@ -123,9 +123,9 @@ template <class TReal,
 class AccumulatorBackprop {
 public:
     AccumulatorBackprop()
-        : _count(0),
-          _sqr_dist_to_center(std::numeric_limits<TReal>::max()),
-          _position(0, 0, 0) {
+        : count_(0),
+          min_sqr_dist_to_center_(std::numeric_limits<TReal>::max()),
+          position_(0, 0, 0) {
         static_assert(POS_FN != MAX, "MAX is not allowed for point positions");
         static_assert(FEAT_FN != CENTER,
                       "CENTER is not allowed for feature vectors");
@@ -140,83 +140,83 @@ public:
         TReal sqr_d = 0;
         if (POS_FN == NEAREST_NEIGHBOR || FEAT_FN == NEAREST_NEIGHBOR) {
             sqr_d = (voxel_center - pos).squaredNorm();
-            if (sqr_d < _sqr_dist_to_center) {
+            if (sqr_d < min_sqr_dist_to_center_) {
                 new_nearest_neighbor = true;
-                _sqr_dist_to_center = sqr_d;
+                min_sqr_dist_to_center_ = sqr_d;
             }
         }
 
         if (POS_FN == AVERAGE) {
-            _position += pos.array();
+            position_ += pos.array();
         } else if (POS_FN == NEAREST_NEIGHBOR && new_nearest_neighbor) {
-            _position = pos;
+            position_ = pos;
         } else if (POS_FN == CENTER) {
-            if (_count == 0) _position = voxel_center;
+            if (count_ == 0) position_ = voxel_center;
         }
 
-        if (_count == 0) {
-            _features.resizeLike(feat);
-            _features.setZero();
+        if (count_ == 0) {
+            features_.resizeLike(feat);
+            features_.setZero();
             if (FEAT_FN == NEAREST_NEIGHBOR) {
-                _features = feat;
-                _index.resize(1);
-                _index(0) = idx;
-                ++_count;
+                features_ = feat;
+                index_.resize(1);
+                index_(0) = idx;
+                ++count_;
                 return;
             } else if (FEAT_FN == MAX) {
-                _features = feat;
-                _index.resizeLike(feat);
-                _index = idx;
-                ++_count;
+                features_ = feat;
+                index_.resizeLike(feat);
+                index_ = idx;
+                ++count_;
                 return;
             }
         }
         if (FEAT_FN == AVERAGE) {
-            _features += feat;
+            features_ += feat;
         } else if (FEAT_FN == NEAREST_NEIGHBOR && new_nearest_neighbor) {
-            _features = feat;
-            _index(0) = idx;
+            features_ = feat;
+            index_(0) = idx;
         } else if (FEAT_FN == MAX) {
-            for (int i = 0; i < _features.rows(); ++i) {
-                if (feat(i) > _features(i)) {
-                    _features(i) = feat(i);
-                    _index(i) = idx;
+            for (int i = 0; i < features_.rows(); ++i) {
+                if (feat(i) > features_(i)) {
+                    features_(i) = feat(i);
+                    index_(i) = idx;
                 }
             }
         }
-        ++_count;
+        ++count_;
     }
 
     inline Eigen::Array<TReal, 3, 1> Position() const {
         if (POS_FN == AVERAGE) {
-            return _position / _count;
+            return position_ / count_;
         } else  // if( POS_FN == NEAREST_NEIGHBOR || POS_FN == CENTER )
         {
-            return _position;
+            return position_;
         }
     }
 
     inline Eigen::Array<TFeat, Eigen::Dynamic, 1> Features() const {
         if (FEAT_FN == AVERAGE) {
-            return _features / _count;
+            return features_ / count_;
         } else  // if( FEAT_FN == NEAREST_NEIGHBOR || FEAT_FN == MAX )
         {
-            return _features;
+            return features_;
         }
     }
 
-    inline int Count() const { return _count; }
+    inline int Count() const { return count_; }
 
     inline Eigen::Array<size_t, Eigen::Dynamic, 1> Index() const {
-        return _index;
+        return index_;
     }
 
 private:
-    int _count;
-    TReal _sqr_dist_to_center;
-    Eigen::Array<TReal, 3, 1> _position;
-    Eigen::Array<TFeat, Eigen::Dynamic, 1> _features;
-    Eigen::Array<size_t, Eigen::Dynamic, 1> _index;
+    int count_;
+    TReal min_sqr_dist_to_center_;
+    Eigen::Array<TReal, 3, 1> position_;
+    Eigen::Array<TFeat, Eigen::Dynamic, 1> features_;
+    Eigen::Array<size_t, Eigen::Dynamic, 1> index_;
 };
 
 /// Function for debugging. Checks if the voxel size is too small.

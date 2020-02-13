@@ -126,6 +126,26 @@ def test_voxel_pooling(pos_dtype, feat_dtype, position_fn, feature_fn):
                                expected_features[index])
 
 
+@position_dtypes
+@feature_dtypes
+@position_functions
+@feature_functions
+def test_voxel_pooling_empty_point_set(pos_dtype, feat_dtype, position_fn,
+                                       feature_fn):
+    import tensorflow as tf
+    import open3d.ml.tf as ml3d
+
+    points = np.zeros(shape=[0, 3], dtype=pos_dtype)
+    features = np.zeros(shape=[0, 5], dtype=feat_dtype)
+
+    voxel_size = 1
+    ans = ml3d.ops.voxel_pooling(points, features, voxel_size, position_fn,
+                                 feature_fn)
+
+    np.testing.assert_array_equal(points, ans.pooled_positions.numpy())
+    np.testing.assert_array_equal(features, ans.pooled_features.numpy())
+
+
 # tf does not support gradient computation for integer types
 gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype',
                                                   [np.float32, np.float64])
@@ -135,13 +155,15 @@ gradient_feature_dtypes = pytest.mark.parametrize('feat_dtype',
 @gradient_feature_dtypes
 @position_functions
 @feature_functions
-def test_voxel_pooling_grad(pos_dtype, feat_dtype, position_fn, feature_fn):
+@pytest.mark.parametrize('empty_point_set', [True, False])
+def test_voxel_pooling_grad(pos_dtype, feat_dtype, position_fn, feature_fn,
+                            empty_point_set):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
     rng = np.random.RandomState(123)
 
-    N = 50
+    N = 0 if empty_point_set else 50
     channels = 4
     positions = rng.uniform(0, 1, (N, 3)).astype(pos_dtype)
 
