@@ -84,7 +84,7 @@ option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(BUILD_FILAMENT            "Build filament from source"               OFF)
-option(ENABLE_GUI                "Builds Filament, requires Clang >= 7"     ON)
+option(ENABLE_GUI                "Builds new GUI"                           ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
@@ -112,6 +112,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Set OS-specific things here
 if (WIN32)
+    message("ENABLE_GUI is not currently supported on Windows, setting OFF")
+	 set(ENABLE_GUI OFF)
+
     # can't hide the unit testing option on Windows only
     # as a precaution: disable unit testing on Windows regardless of user input
     message(STATUS "Disable unit tests since this feature is not fully supported on Windows.")
@@ -139,15 +142,15 @@ if (WIN32)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
     endif (MSVC)
 
-    # GLEW, Open3D make direct OpenGL calls and link to opengl32.lib;
-    # Filament needs to link through bluegl.lib.
-    # See https://github.com/google/filament/issues/652
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
-
-    # Filament links normally only against static runtime
     if (ENABLE_GUI)
+        # Filament links normally only against static runtime
         set(STATIC_WINDOWS_RUNTIME ON)
+
+        # GLEW, Open3D make direct OpenGL calls and link to opengl32.lib;
+        # Filament needs to link through bluegl.lib.
+        # See https://github.com/google/filament/issues/652
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
     endif()
 
     if (STATIC_WINDOWS_RUNTIME)

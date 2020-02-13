@@ -23,13 +23,15 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${Open3D_EXE_LINKER_FLAGS}
 
 # Set OS-specific things here
 if(WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
-    # Filament is built with /MT[d], but by default CMake automatically
-    # sets "/MD" and "/MDd". They can't coexist, so we need to replace them.
-    string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
-    string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-    string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
-    string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    if (ENABLE_GUI)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
+        # Filament is built with /MT[d], but by default CMake automatically
+        # sets "/MD" and "/MDd". They can't coexist, so we need to replace them.
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+        string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+        string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
+        string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    endif()
 elseif(CYGWIN)
 elseif(APPLE)
 elseif(UNIX)
@@ -61,7 +63,7 @@ if (Open3D_FOUND)
                                 ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
                                 ${CMAKE_CURRENT_BINARY_DIR}/Release)
     endif()
-    if(WIN32)
+    if(WIN32 AND ENABLE_GUI)
         message("Will copy SDL2.dll to ${CMAKE_CURRENT_BINARY_DIR}/Release")
         add_custom_command(TARGET TestVisualizer POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy
