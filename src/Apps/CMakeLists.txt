@@ -74,4 +74,6 @@ macro(APP APP_NAME)
     endif()
 endmacro(APP)
 
-APP(Open3DViewer ${CMAKE_PROJECT_NAME})
+if (ENABLE_GUI)
+    APP(Open3DViewer ${CMAKE_PROJECT_NAME})
+endif()
