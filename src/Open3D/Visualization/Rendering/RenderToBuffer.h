@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,55 +26,33 @@
 
 #pragma once
 
-#include "MaterialModifier.h"
-#include "RendererHandle.h"
+#include <cstdint>
+#include <functional>
+#include <memory>
 
 namespace open3d {
 namespace visualization {
 
-class RenderToBuffer;
 class Scene;
+class View;
 
-class ResourceLoadRequest {
+class RenderToBuffer {
 public:
-    using ErrorCallback = std::function<void(
-            const ResourceLoadRequest&, const uint8_t, const std::string&)>;
+    struct Buffer {
+        std::size_t width = 0;
+        std::size_t height = 0;
+        const std::uint8_t* bytes = nullptr;
+        std::size_t size = 0;
+    };
 
-    ResourceLoadRequest(const void* data, size_t dataSize);
-    explicit ResourceLoadRequest(const char* path);
+    using BufferReadyCallback = std::function<void(const Buffer&)>;
 
-    ResourceLoadRequest(const void* data,
-                        size_t dataSize,
-                        ErrorCallback errorCallback);
-    ResourceLoadRequest(const char* path, ErrorCallback errorCallback);
+    virtual ~RenderToBuffer() = default;
 
-    const void* data;
-    const size_t dataSize;
-    const std::string path;
-    ErrorCallback errorCallback;
-};
-
-class Renderer {
-public:
-    virtual ~Renderer() = default;
-
-    virtual SceneHandle CreateScene() = 0;
-    virtual Scene* GetScene(const SceneHandle& id) const = 0;
-    virtual void DestroyScene(const SceneHandle& id) = 0;
-
-    virtual void BeginFrame() = 0;
-    virtual void Draw() = 0;
-    virtual void EndFrame() = 0;
-
-    virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
-    virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
-    virtual MaterialModifier& ModifyMaterial(
-            const MaterialInstanceHandle& id) = 0;
-
-    virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
-    virtual void RemoveTexture(const TextureHandle& id) = 0;
-
-    virtual std::unique_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+    virtual void SetDimensions(std::size_t width, std::size_t height) = 0;
+    virtual void CopySettings(const View* view) = 0;
+    virtual View& GetView() = 0;
+    virtual void RequestFrame(Scene* scene, BufferReadyCallback cb) = 0;
 };
 
 }  // namespace visualization
