@@ -1,0 +1,14 @@
+material {
+    name : lines,
+    requires : [
+        color
+    ],
+    shadingModel : unlit
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor = getColor();
+    }
+}
