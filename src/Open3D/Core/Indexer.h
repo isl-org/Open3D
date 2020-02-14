@@ -35,11 +35,13 @@
 
 namespace open3d {
 
+class Indexer;
+
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 12;
+static constexpr int64_t MAX_DIMS = 10;
 
 // Maximum number of operands (inputs) of an op.
-static constexpr int64_t MAX_OPERANDS = 12;
+static constexpr int64_t MAX_OPERANDS = 10;
 
 /// A minimalistic class that reference a Tensor.
 struct TensorRef {
@@ -314,6 +316,65 @@ public:
         return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
     }
 
+    /// Returns the input pointer for the \p ipo_idx -th input element of the
+    /// output element with index \p output_element_idx. In reduction op, for
+    /// each output element, there are IPO (inputs per output) corresponding
+    /// inputs. This function only makes sense for reduction ops.
+    ///
+    /// Note: assume there's only one tensor (inputs_[0]) for reduction op
+    /// \param output_element_idx Element index in flattend output tensor.
+    /// \param ipo_idx IPO == "inputs per output", ipo_idx can take
+    ///        value from [0, IPO)
+    OPEN3D_HOST_DEVICE char* GetReductionInputPtr(int64_t output_element_idx,
+                                                  int64_t ipo_idx) const {
+        int64_t output_default_strides[MAX_OPERANDS];
+        int64_t input_reduced_shape[MAX_OPERANDS];
+        int64_t input_reduced_strides[MAX_OPERANDS];
+        int64_t output_indices[MAX_OPERANDS];
+        int64_t input_indices[MAX_OPERANDS];
+
+        // int64_t original_ipo_idx = ipo_idx;
+        int64_t ipo = NumWorkloads() / NumOutputElements();
+        if (ipo_idx < 0 || ipo_idx >= ipo) {
+            return nullptr;
+        }
+
+        Indexer::SetDefaultStrides(output_.shape_, output_default_strides,
+                                   ndims_);
+
+        for (int64_t i = 0; i < ndims_; ++i) {
+            if (IsReductionDim(i)) {
+                input_reduced_shape[i] = inputs_[0].shape_[i];
+            } else {
+                input_reduced_shape[i] = 1;
+            }
+        }
+
+        Indexer::SetDefaultStrides(input_reduced_shape, input_reduced_strides,
+                                   ndims_);
+
+        for (int64_t i = 0; i < ndims_; ++i) {
+            output_indices[i] = output_element_idx / output_default_strides[i];
+            output_element_idx = output_element_idx % output_default_strides[i];
+        }
+
+        for (int64_t i = 0; i < ndims_; ++i) {
+            if (!IsReductionDim(i)) {
+                input_indices[i] = output_indices[i];
+            } else {
+                input_indices[i] = ipo_idx / input_reduced_strides[i];
+                ipo_idx = ipo_idx % input_reduced_strides[i];
+            }
+        }
+
+        int64_t input_workload_idx = 0;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            input_workload_idx += input_indices[i] * master_strides_[i];
+        }
+
+        return GetInputPtr(0, input_workload_idx);
+    }
+
     /// Get output Tensor data pointer based on \p workload_idx.
     ///
     /// \param workload_idx The index of the compute workload, similar to
@@ -373,6 +434,17 @@ protected:
             master_strides_[i] = stride;
             // Handles 0-sized dimensions
             stride = master_shape_[i] > 1 ? stride * master_shape_[i] : stride;
+        }
+    }
+
+    static OPEN3D_HOST_DEVICE void SetDefaultStrides(const int64_t* shape,
+                                                     int64_t* strides,
+                                                     int64_t ndims) {
+        int64_t stride = 1;
+        for (int64_t i = ndims - 1; i >= 0; --i) {
+            strides[i] = stride;
+            // Handles 0-sized dimensions
+            stride = shape[i] > 1 ? stride * shape[i] : stride;
         }
     }
 

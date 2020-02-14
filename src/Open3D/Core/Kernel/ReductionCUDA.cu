@@ -62,7 +62,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(0);
                 } else {
-                    cuda_launcher::LaunchReductionKernelOneOutput<scalar_t>(
+                    cuda_launcher::LaunchReductionKernel<scalar_t>(
                             indexer, 0,
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDASumReductionKernel<scalar_t>(src, dst);
@@ -73,7 +73,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(1);
                 } else {
-                    cuda_launcher::LaunchReductionKernelOneOutput<scalar_t>(
+                    cuda_launcher::LaunchReductionKernel<scalar_t>(
                             indexer, 1,
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDAProdReductionKernel<scalar_t>(src, dst);
@@ -85,12 +85,6 @@ void ReductionCUDA(const Tensor& src,
                 break;
         }
     });
-
-    if (dims.size() != src.NumDims()) {
-        utility::LogError("Unimplemented case for ReductionCUDA.");
-    }
-
-    // utility::LogError("Unimplemented ReductionCUDA.");
 }
 
 }  // namespace kernel

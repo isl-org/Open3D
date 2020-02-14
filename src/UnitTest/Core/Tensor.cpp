@@ -1032,6 +1032,23 @@ TEST_P(TensorPermuteDevices, ReduceSumDebug) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({60, 92, 124}));
 }
 
+TEST_P(TensorPermuteDevices, DISABLED_ReduceMultiSumLargeArray) {
+    Device device = GetParam();
+    SizeVector shape{3, 7, 8234719};
+    int64_t size = shape.NumElements();
+    std::vector<int> vals(size, 1);
+    Tensor src(vals, shape, Dtype::Int32, device);
+    Tensor dst;
+
+    dst = src.Sum({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({3, 7, 8234719}));
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(3 * 7 * 8234719, 1));
+
+    dst = src.Sum({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({7, 8234719}));
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(7 * 8234719, 3));
+}
+
 TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     Device device = GetParam();
 
