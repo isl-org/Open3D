@@ -24,42 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/UnaryEW.h"
-
-#include "Open3D/Core/ShapeUtil.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#pragma once
 
 namespace open3d {
 namespace kernel {
+namespace parallel_util {
 
-void Copy(const Tensor& src, Tensor& dst) {
-    // Check shape
-    if (!shape_util::CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
-        utility::LogError("Shape {} can not be broadcasted to {}.",
-                          src.GetShape(), dst.GetShape());
-    }
-
-    // Disbatch to device
-    Device::DeviceType src_device_type = src.GetDevice().GetType();
-    Device::DeviceType dst_device_type = dst.GetDevice().GetType();
-    if ((src_device_type != Device::DeviceType::CPU &&
-         src_device_type != Device::DeviceType::CUDA) ||
-        (dst_device_type != Device::DeviceType::CPU &&
-         dst_device_type != Device::DeviceType::CUDA)) {
-        utility::LogError("Copy: Unimplemented device");
-    }
-    if (src_device_type == Device::DeviceType::CPU &&
-        dst_device_type == Device::DeviceType::CPU) {
-        CopyCPU(src, dst);
-    } else {
-#ifdef BUILD_CUDA_MODULE
-        CopyCUDA(src, dst);
+inline int GetMaxThreads() {
+#ifdef _OPENMP
+    return omp_get_max_threads();
 #else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+    return 1;
 #endif
-    }
 }
 
+inline bool InParallel() {
+#ifdef _OPENMP
+    return omp_in_parallel();
+#else
+    return false;
+#endif
+}
+
+}  // namespace parallel_util
 }  // namespace kernel
 }  // namespace open3d

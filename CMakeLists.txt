@@ -235,7 +235,7 @@ if (WITH_OPENMP)
         set(Config_Open3D_CXX_FLAGS        ${OpenMP_CXX_FLAGS})
         set(Config_Open3D_EXE_LINKER_FLAGS ${OpenMP_EXE_LINKER_FLAGS})
     else ()
-        message(STATUS "OpenMP NOT found")
+        message(WARNING "OpenMP enabled but not found.")
     endif ()
   endif ()
 

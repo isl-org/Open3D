@@ -35,6 +35,7 @@
 #include "Open3D/Core/DLPack/dlpack.h"
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 
 namespace open3d {
@@ -157,13 +158,20 @@ public:
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
     template <typename T>
-    void Fill(const T& v) {
+    void Fill(T v) {
+        Tensor v_tensor;
+        Dtype dtype = GetDtype();
+        Device device = GetDevice();
         DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
+            // Currently DISPATCH_DTYPE_TO_TEMPLATE doesn't work with capturing
+            // "this". The workaround is to capture with "&"" and avoid calling
+            // member function or accessing member variables inside the lambda
+            // function.
             scalar_t casted_v = static_cast<scalar_t>(v);
-            Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
-                       GetDtype(), GetDevice());
-            AsRvalue() = tmp;
+            v_tensor = Tensor(std::vector<scalar_t>({casted_v}), SizeVector({}),
+                              dtype, device);
         });
+        AsRvalue() = v_tensor;
     }
 
     /// Broadcast Tensor to a new broadcastable shape.
@@ -333,6 +341,16 @@ public:
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
 
+    /// Returns the sum of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keep_dim If true, the reduced dims will be retained as size 1.
+    Tensor Sum(const SizeVector& dims, bool keep_dim = false) const;
+
+    /// Returns the product of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keep_dim If true, the reduced dims will be retained as size 1.
+    Tensor Prod(const SizeVector& dims, bool keep_dim = false) const;
+
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
@@ -360,7 +378,7 @@ public:
     inline const SizeVector& GetShapeRef() const { return shape_; }
 
     inline int64_t GetShape(int64_t dim) const {
-        return shape_[WrapDim(dim, NumDims())];
+        return shape_[shape_util::WrapDim(dim, NumDims())];
     }
 
     inline SizeVector GetStrides() const { return strides_; }
@@ -368,7 +386,7 @@ public:
     inline const SizeVector& GetStridesRef() const { return strides_; }
 
     inline int64_t GetStride(int64_t dim) const {
-        return strides_[WrapDim(dim, NumDims())];
+        return strides_[shape_util::WrapDim(dim, NumDims())];
     }
 
     inline void* GetDataPtr() { return data_ptr_; }
@@ -377,7 +395,7 @@ public:
 
     inline Dtype GetDtype() const { return dtype_; }
 
-    inline Device GetDevice() const { return GetBlob()->GetDevice(); }
+    Device GetDevice() const;
 
     inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
@@ -401,16 +419,13 @@ public:
 
     static SizeVector DefaultStrides(const SizeVector& shape);
 
-    /// On a high level,
-    /// 1. separate `oldshape` into chunks of dimensions, where the dimensions
-    /// are
-    ///    ``contiguous'' in each chunk, i.e., oldstride[i] = oldshape[i+1] *
-    ///     oldstride[i+1]
+    /// 1. Separate `oldshape` into chunks of dimensions, where the dimensions
+    ///    are ``contiguous'' in each chunk, i.e.,
+    ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
     /// 2. `newshape` must be able to be separated into same number of chunks as
     ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching
-    ///    ``numel'', i.e., number of subspaces, as the corresponding chunk of
-    ///    `oldshape`.
+    ///    matching ``numel'', i.e., number of subspaces, as the corresponding
+    ///    chunk of `oldshape`.
     /// Ref: aten/src/ATen/TensorUtils.cpp
     static std::pair<bool, SizeVector> ComputeNewStrides(
             const SizeVector& old_shape,

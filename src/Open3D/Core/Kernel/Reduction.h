@@ -24,42 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Device.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "TestUtility/UnitTest.h"
+#pragma once
 
-#include "Container/ContainerTest.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace kernel {
 
-class BlobPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Blob,
-                         BlobPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+enum class ReductionOpCode { Sum, Prod };
 
-TEST_P(BlobPermuteDevices, BlobConstructor) {
-    Device device = GetParam();
+void Reduction(const Tensor& src,
+               Tensor& dst,
+               const SizeVector& dims,
+               bool keep_dim,
+               ReductionOpCode op_code);
 
-    Blob b(10, Device(device));
-}
+void ReductionCPU(const Tensor& src,
+                  Tensor& dst,
+                  const SizeVector& dims,
+                  bool keep_dim,
+                  ReductionOpCode op_code);
 
-TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
-    Device device = GetParam();
+#ifdef BUILD_CUDA_MODULE
+void ReductionCUDA(const Tensor& src,
+                   Tensor& dst,
+                   const SizeVector& dims,
+                   bool keep_dim,
+                   ReductionOpCode op_code);
+#endif
 
-    void* data_ptr = MemoryManager::Malloc(8, device);
-    bool deleter_called = false;
-
-    auto deleter = [&device, &deleter_called, data_ptr](void* dummy) -> void {
-        MemoryManager::Free(data_ptr, device);
-        deleter_called = true;
-    };
-
-    {
-        Blob b(device, data_ptr, deleter);
-        EXPECT_EQ(b.GetDataPtr(), data_ptr);
-        EXPECT_FALSE(deleter_called);
-    }
-    EXPECT_TRUE(deleter_called);
-}
+}  // namespace kernel
+}  // namespace open3d

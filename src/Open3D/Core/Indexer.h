@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/Core/Broadcast.h"
 #include "Open3D/Core/CUDAUtils.h"
 #include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
@@ -36,10 +36,10 @@
 namespace open3d {
 
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 16;
+static constexpr int64_t MAX_DIMS = 12;
 
 // Maximum number of operands (inputs) of an op.
-static constexpr int64_t MAX_OPERANDS = 8;
+static constexpr int64_t MAX_OPERANDS = 12;
 
 /// A minimalistic class that reference a Tensor.
 struct TensorRef {
@@ -56,16 +56,6 @@ struct TensorRef {
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             strides_[i] = t.GetStride(i);
-        }
-    }
-
-    OPEN3D_HOST_DEVICE TensorRef(const TensorRef& tr) {
-        data_ptr_ = tr.data_ptr_;
-        ndims_ = tr.ndims_;
-        dtype_byte_size_ = tr.dtype_byte_size_;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            shape_[i] = tr.shape_[i];
-            strides_[i] = tr.strides_[i];
         }
     }
 
@@ -91,8 +81,7 @@ enum class DtypePolicy {
 /// Indexing engine for elementwise ops with broadcasting support.
 ///
 /// Fancy indexing is supported by restriding input tensor and treating the
-/// operation as elementwise op. Reduction op will be supported by
-/// Indexer in the future.
+/// operation as elementwise op.
 ///
 /// After constructing Indexer on the host, the indexing methods can be
 /// used from both host and device.
@@ -105,7 +94,8 @@ public:
     /// all outputs.
     Indexer(const std::vector<Tensor>& input_tensors,
             const Tensor& output_tensor,
-            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME) {
+            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME,
+            const SizeVector& reduction_dims = {}) {
         // Dtype sanity check and handling.
         if (dtype_policy == DtypePolicy::CAST ||
             dtype_policy == DtypePolicy::CAST_INPUTS) {
@@ -124,7 +114,7 @@ public:
             }
         }
 
-        // Conver to TensorRef.
+        // Convert to TensorRef.
         num_inputs_ = static_cast<int64_t>(input_tensors.size());
         if (num_inputs_ > MAX_OPERANDS) {
             utility::LogError("Operation has too many inputs {} > {}",
@@ -135,22 +125,69 @@ public:
         }
         output_ = TensorRef(output_tensor);
 
-        // Broadcast inputs to match output shape.
-        for (int64_t i = 0; i < num_inputs_; ++i) {
-            BroadcastRestride(inputs_[i], output_);
-        }
-        ndims_ = output_.ndims_;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            master_shape_[i] = output_.shape_[i];
+        // Theoretically, reduction can be mixed with broadcasting. For
+        // simplicity, we require explicit broadcasting after reduction.
+        if (reduction_dims.size() > 0) {
+            // Reduce inputs to match output shape, by resetting output's shape
+            // and strides.
+            //
+            // e.g.
+            // [Before]
+            // src.shape_:     [2, 3]
+            // src.strides_:   [3, 1]
+            // reduction_dim:  [0]
+            // dst.shape_:     [1, 3]
+            // dst.strides_:   [3, 1]
+            //
+            // [After]
+            // src.shape_:     [2, 3]
+            // src.strides_:   [3, 1]
+            // dst.shape_:     [1, 3] <- Reduced dimension will have shape 1
+            // dst.strides_:   [0, 1] <- Reduced dimension will have stride 0
+            // master_shape_:  [2, 3] <- master_shape == src.shape for reduction
+            if (num_inputs_ != 1) {
+                utility::LogError(
+                        "Internal error: reduction op can only have 1 inputs.");
+            }
+            // Only handles keep_dim == true in Indexer.
+            if (shape_util::ReductionShape(input_tensors[0].GetShape(),
+                                           reduction_dims,
+                                           true) != output_tensor.GetShape()) {
+                utility::LogError(
+                        "Reduction dimensions mismatch, input's shape {}, "
+                        "reduction dims {}, output's shape {}.",
+                        input_tensors[0].GetShape(), reduction_dims,
+                        output_tensor.GetShape());
+            }
+            ReductionRestride(output_, inputs_[0].ndims_, inputs_[0].shape_,
+                              reduction_dims);
+
+            // Fill global shape
+            ndims_ = inputs_[0].ndims_;
+            for (int64_t i = 0; i < ndims_; ++i) {
+                master_shape_[i] = inputs_[0].shape_[i];
+            }
+
+            // Fill is_reduction_dims_
+            for (const int64_t reduction_dim : reduction_dims) {
+                is_reduction_dims_[reduction_dim] = true;
+            }
+        } else {
+            // Broadcast inputs to match output shape, by resetting input's
+            // shape and strides.
+            for (int64_t i = 0; i < num_inputs_; ++i) {
+                BroadcastRestride(inputs_[i], output_.ndims_, output_.shape_);
+            }
+
+            // Fill global shape
+            ndims_ = output_.ndims_;
+            for (int64_t i = 0; i < ndims_; ++i) {
+                master_shape_[i] = output_.shape_[i];
+            }
         }
 
-        // Fill master_strides_.
-        int64_t stride = 1;
-        for (int64_t i = ndims_ - 1; i >= 0; --i) {
-            master_strides_[i] = stride;
-            // Handles 0-sized dimensions
-            stride *= std::max<int64_t>(master_shape_[i], 1);
-        }
+        // Fill global strides master_strides_.
+        UpdateMasterStrides();
     }
 
     /// Broadcast src to dst by setting shape 1 to omitted dimensions and
@@ -178,12 +215,13 @@ public:
     ///
     /// \param src The source TensorRef to be broadcasted.
     /// \param dst The destination TensorRef to be broadcasted to.
-    static void BroadcastRestride(TensorRef& src, const TensorRef& dst) {
+    static void BroadcastRestride(TensorRef& src,
+                                  int64_t dst_ndims,
+                                  const int64_t* dst_shape) {
         int64_t src_ndims = src.ndims_;
-        int64_t ndims = dst.ndims_;
 
         // Fill omitted dimensions.
-        int64_t ndims_omitted = ndims - src_ndims;
+        int64_t ndims_omitted = dst_ndims - src_ndims;
         for (int64_t i = src_ndims - 1; i >= 0; --i) {
             src.shape_[ndims_omitted + i] = src.shape_[i];
             src.strides_[ndims_omitted + i] = src.strides_[i];
@@ -192,12 +230,31 @@ public:
             src.shape_[i] = 1;
             src.strides_[i] = 0;
         }
-        src.ndims_ = ndims;
+        src.ndims_ = dst_ndims;
 
         // Fill broadcasted dimensions.
-        for (int64_t i = 0; i < ndims; ++i) {
-            if (src.shape_[i] == 1 && dst.shape_[i] != 1) {
+        for (int64_t i = 0; i < dst_ndims; ++i) {
+            // It is okay if src.shape_[i] != 1 && dst.shape[i] == 1 for
+            // reduction.
+            if (src.shape_[i] == 1 && dst_shape[i] != 1) {
                 src.strides_[i] = 0;
+            }
+        }
+    }
+
+    /// Symmetrical to BroadcastRestride. Set the reduced dimensions' stride to
+    /// 0 at output. Currently only support the keep_dim=true case.
+    static void ReductionRestride(TensorRef& dst,
+                                  int64_t src_ndims,
+                                  const int64_t* src_shape,
+                                  const SizeVector& reduction_dims) {
+        if (dst.ndims_ != src_ndims) {
+            utility::LogError("Internal error, src ndims {} != dst ndims {}",
+                              src_ndims, dst.ndims_);
+        }
+        for (int64_t i = 0; i < dst.ndims_; ++i) {
+            if (dst.shape_[i] == 1 && src_shape[i] != 1) {
+                dst.strides_[i] = 0;
             }
         }
     }
@@ -217,18 +274,31 @@ public:
         return master_strides_;
     }
 
-    /// Return the total number of workloads (e.g. computations) needed for
+    /// Returns the total number of workloads (e.g. computations) needed for
     /// the op. The scheduler schedules these workloads to run on parallel
     /// threads.
     ///
-    /// Typically for non-reduction ops, NumWorkloads() is the same as
-    /// number of output elements.
+    /// For non-reduction ops, NumWorkloads() is the same as number of output
+    /// elements (e.g. for broadcasting ops).
+    ///
+    /// For reduction ops, NumWorkLoads() is the same as the number of input
+    /// elements. Currently we don't allow mixing broadcasting and reduction in
+    /// one op kernel.
     OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
         int64_t num_workloads = 1;
         for (int64_t i = 0; i < ndims_; ++i) {
             num_workloads *= master_shape_[i];
         }
         return num_workloads;
+    }
+
+    /// Returns the number of output elements.
+    OPEN3D_HOST_DEVICE int64_t NumOutputElements() const {
+        int64_t num_output_elements = 1;
+        for (int64_t i = 0; i < output_.ndims_; ++i) {
+            num_output_elements *= output_.shape_[i];
+        }
+        return num_output_elements;
     }
 
     /// Get input Tensor data pointer based on \p workload_idx.
@@ -244,7 +314,7 @@ public:
         return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
     }
 
-    // Get output Tensor data pointer based on \p workload_idx.
+    /// Get output Tensor data pointer based on \p workload_idx.
     ///
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
@@ -262,13 +332,58 @@ public:
     /// Returns output TensorRef.
     OPEN3D_HOST_DEVICE TensorRef GetOutput() { return output_; }
 
+    /// Returns true if the \p i -th dimension is reduced.
+    OPEN3D_HOST_DEVICE bool IsReductionDim(int64_t i) const {
+        return is_reduction_dims_[i];
+    }
+
+    /// Narrows iteration to a specific range in a specific dimension.
+    /// \param dim The dimension to be narrowed to.
+    /// \param start Starting index (inclusive) for dimension \p dim. No
+    /// dimension wraping is available.
+    /// \param size The size to iterate in dimension \p dim.
+    OPEN3D_HOST_DEVICE void Narrow(int64_t dim, int64_t start, int64_t size) {
+        assert(dim >= 0 && dim < ndims_ && size > 0);
+        int64_t original_size = master_shape_[dim];
+        master_shape_[dim] = size;
+        UpdateMasterStrides();
+
+        assert(output_.shape_[dim] == original_size);
+        output_.shape_[dim] = size;
+        for (int64_t i = 0; i < num_inputs_; ++i) {
+            assert(inputs_[i].shape_[dim] == original_size);
+            inputs_[i].shape_[dim] = size;
+        }
+
+        output_.data_ptr_ =
+                static_cast<char*>(output_.data_ptr_) +
+                output_.dtype_byte_size_ * output_.strides_[dim] * start;
+        for (int64_t i = 0; i < num_inputs_; ++i) {
+            inputs_[i].data_ptr_ = static_cast<char*>(inputs_[i].data_ptr_) +
+                                   inputs_[i].dtype_byte_size_ *
+                                           inputs_[i].strides_[dim] * start;
+        }
+    }
+
 protected:
+    /// Update master_strides_ based on master_shape_.
+    OPEN3D_HOST_DEVICE void UpdateMasterStrides() {
+        int64_t stride = 1;
+        for (int64_t i = ndims_ - 1; i >= 0; --i) {
+            master_strides_[i] = stride;
+            // Handles 0-sized dimensions
+            stride = master_shape_[i] > 1 ? stride * master_shape_[i] : stride;
+        }
+    }
+
     /// Get data pointer from a TensorRef with \p workload_idx.
     /// Note: can be optimized by computing all input ptrs and output ptr
     /// together.
     OPEN3D_HOST_DEVICE char* GetWorkloadDataPtr(const TensorRef& tr,
                                                 int64_t workload_idx) const {
-        if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
+        // For 0-sized input reduction op, the output Tensor
+        // workload_idx == 1 > NumWorkloads() == 0.
+        if (workload_idx < 0) {
             return nullptr;
         }
         int64_t offset = 0;
@@ -288,17 +403,28 @@ protected:
     /// Output TensorRef.
     TensorRef output_;
 
+    /// is_reduction_dims_[i] == True iff dimension i is reduced.
+    bool is_reduction_dims_[MAX_DIMS] = {false};
+
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.
-    /// For broadcasting, the shape is the same as the output shape. For
-    /// reduction, the shape is the same as the input shape.
+    /// - For broadcasting, master_shape_ is the same as the output shape.
+    /// - For reduction, master_shape_ is the same as the input shape.
+    /// - Currently we don't allow broadcasting mixed with reduction. But if
+    ///   broadcasting mixed with reduction is allowed, master_shape_ is a mix
+    ///   of input shape and output shape. First, fill in all omitted dimensions
+    ///   (in inputs for broadcasting) and reduction dimensions (as if
+    ///   keepdim=true always) with size 1. For each axis, the master dimension
+    ///   is the non-1 dimension (if both are 1, then the master dimension is 1
+    ///   in that axis).
     int64_t master_shape_[MAX_DIMS];
 
-    /// The default strides for master_shape_.
+    /// The default strides for master_shape_ for internal use only. Used to
+    /// compute the actual strides and ultimately the index offsets.
     int64_t master_strides_[MAX_DIMS];
 
     /// Indexer's global number of dimensions.
-    int64_t ndims_;
+    int64_t ndims_ = 0;
 };
 
 }  // namespace open3d

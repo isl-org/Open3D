@@ -55,7 +55,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         // TODO: in the future, we may want to allow automatic casting
         Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
+            cpu_launcher::LaunchUnaryEWKernel<scalar_t>(
                     indexer, CPUCopyElementKernel<scalar_t>);
         });
     }

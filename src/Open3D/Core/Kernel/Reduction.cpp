@@ -24,39 +24,62 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/BinaryEW.h"
-
-#include <vector>
-
-#include "Open3D/Core/ShapeUtil.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "Open3D/Core/Kernel/Reduction.h"
+#include "Open3D/Core/SizeVector.h"
 
 namespace open3d {
 namespace kernel {
 
-void BinaryEW(const Tensor& lhs,
-              const Tensor& rhs,
-              Tensor& dst,
-              BinaryEWOpCode op_code) {
-    for (auto device :
-         std::vector<Device>({rhs.GetDevice(), dst.GetDevice()})) {
-        if (lhs.GetDevice() != device) {
-            utility::LogError("Device mismatch {} != {}.",
-                              lhs.GetDevice().ToString(), device.ToString());
-        }
+void Reduction(const Tensor& src,
+               Tensor& dst,
+               const SizeVector& dims,
+               bool keep_dim,
+               ReductionOpCode op_code) {
+    SizeVector keep_dim_shape =
+            shape_util::ReductionShape(src.GetShape(), dims, true);
+    SizeVector non_keep_dim_shape =
+            shape_util::ReductionShape(src.GetShape(), dims, false);
+    if (keep_dim && keep_dim_shape != dst.GetShape()) {
+        utility::LogError("Expected output shape {} but got {}.",
+                          keep_dim_shape.ToString(), dst.GetShape().ToString());
     }
-    Device::DeviceType device_type = lhs.GetDevice().GetType();
+    if (!keep_dim && non_keep_dim_shape != dst.GetShape()) {
+        utility::LogError("Expected output shape {} but got {}.",
+                          keep_dim_shape.ToString(), dst.GetShape().ToString());
+    }
+
+    // Directly copy for non-reduction.
+    if (dims.size() == 0) {
+        dst.AsRvalue() = src;
+        return;
+    }
+
+    // Always reshape to keep_dim case. This reshaping is copy-free.
+    if (!keep_dim) {
+        dst = dst.Reshape(keep_dim_shape);
+    }
+
+    if (src.GetDevice() != dst.GetDevice()) {
+        utility::LogError("Device mismatch {} != {}.",
+                          src.GetDevice().ToString(),
+                          dst.GetDevice().ToString());
+    }
+
+    Device::DeviceType device_type = src.GetDevice().GetType();
     if (device_type == Device::DeviceType::CPU) {
-        BinaryEWCPU(lhs, rhs, dst, op_code);
+        ReductionCPU(src, dst, dims, keep_dim, op_code);
     } else if (device_type == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        BinaryEWCUDA(lhs, rhs, dst, op_code);
+        ReductionCUDA(src, dst, dims, keep_dim, op_code);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");
+    }
+
+    if (!keep_dim) {
+        dst = dst.Reshape(non_keep_dim_shape);
     }
 }
 

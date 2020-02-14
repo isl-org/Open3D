@@ -67,7 +67,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
                 // TODO: in the future, we may want to allow automatic casting
                 Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
+                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
                         indexer,
                         // Need to wrap as extended CUDA lamba function
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
