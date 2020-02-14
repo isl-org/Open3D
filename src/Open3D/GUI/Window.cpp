@@ -408,6 +408,7 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
         CloseDialog();
     }
     impl_->activeDialog = dlg;
+    dlg->OnWillShow();
 
     auto winSize = GetSize();
     auto pref = dlg->CalcPreferredSize(GetTheme());

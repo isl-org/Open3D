@@ -24,6 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#if defined(__APPLE__)
+    // see FileDialogNative.cpp
+#else
+
 #include "FileDialog.h"
 
 #include "Button.h"
@@ -414,6 +418,8 @@ void FileDialog::SetOnDone(std::function<void(const char *)> onDone) {
     impl_->onDone = onDone;
 }
 
+void FileDialog::OnWillShow() {}
+
 void FileDialog::OnDone() {
     if (this->impl_->onDone) {
         auto dir = this->impl_->CalcCurrentDirectory();
@@ -433,3 +439,5 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
 
 }  // namespace gui
 }  // namespace open3d
+
+#endif // __APPLE__

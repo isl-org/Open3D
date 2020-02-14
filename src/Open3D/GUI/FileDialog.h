@@ -37,7 +37,6 @@ struct Theme;
 
 class FileDialog : public Dialog {
     using Super = Dialog;
-
 public:
     enum class Type { OPEN, SAVE };
 
@@ -61,6 +60,8 @@ public:
     void SetOnDone(std::function<void(const char *)> onDone);
 
     Size CalcPreferredSize(const Theme &theme) const override;
+
+    void OnWillShow() override;
 
 protected:
     void OnDone();

@@ -44,6 +44,8 @@ public:
     void Layout(const Theme& theme) override;
     DrawResult Draw(const DrawContext& context) override;
 
+    virtual void OnWillShow();
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
