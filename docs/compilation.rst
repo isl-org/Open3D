@@ -42,7 +42,7 @@ compilation time. Otherwise, the dependencies can also be build from source, see
 2. Setup Python binding environments
 ````````````````````````````````````
 
-This step is only required Python support for Open3D is needed.
+This step is only required if Python support for Open3D is needed.
 We use `pybind11 <https://github.com/pybind/pybind11>`_ for the Python
 binding. Please refer to
 `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_
@@ -111,7 +111,6 @@ compilation options to ``OFF``:
 
 - ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
-- ``BUILD_PYTHON_TUTORIALS``
 
 .. _compilation_ubuntu_config:
 
