@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "FilamentGeometryBuffersBuilder.h"
+
+#include "FilamentEngine.h"
+#include "FilamentResourceManager.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -250,8 +251,8 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(
         bool operator<(const LookupKey& other) const {
             for (std::uint8_t i = 0; i < 5; ++i) {
                 double diff = abs(values[i] - other.values[i]);
-                if (diff > kEpsilon && values[i] < other.values[i]) {
-                    return true;
+                if (diff > kEpsilon) {
+                    return values[i] < other.values[i];
                 }
             }
 
@@ -302,8 +303,12 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(
                 TexturedVertex& element = texturedVertices[index];
                 SetVertexPosition(element, pos);
                 element.tangent = tangents[sourceIndex];
-                SetVertexColor(element, geometry.vertex_colors_[sourceIndex]);
                 SetVertexUV(element, uv);
+
+                if (geometry.HasVertexColors()) {
+                    SetVertexColor(element,
+                                   geometry.vertex_colors_[sourceIndex]);
+                }
             }
 
             indexData.bytes[3 * i + j] = index;
@@ -421,7 +426,7 @@ filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
                                      geometryAABB.max_bound_.y(),
                                      geometryAABB.max_bound_.z());
 
-    filament::Box aabb;
+    Box aabb;
     aabb.set(min, max);
 
     return aabb;

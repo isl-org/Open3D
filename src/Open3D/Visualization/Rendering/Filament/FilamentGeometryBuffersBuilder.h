@@ -38,6 +38,7 @@ namespace open3d {
 
 namespace geometry {
 class Geometry3D;
+class LineSet;
 class PointCloud;
 class TriangleMesh;
 }  // namespace geometry
@@ -89,6 +90,20 @@ public:
 
 private:
     const geometry::PointCloud& geometry_;
+};
+
+class LineSetBuffersBuilder : public GeometryBuffersBuilder {
+public:
+    explicit LineSetBuffersBuilder(const geometry::LineSet& geometry);
+
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
+
+    Buffers ConstructBuffers() override;
+    filament::Box ComputeAABB() override;
+
+private:
+    const geometry::LineSet& geometry_;
 };
 
 }  // namespace visualization
