@@ -108,7 +108,7 @@ void ShowNativeFileDialog(FileDialog::Type type,
 
     [dlg beginWithCompletionHandler:^(NSModalResponse result) {
         if (result == NSModalResponseOK) {
-            onOk(dlg.URL.absoluteString.UTF8String);
+            onOk(dlg.URL.path.UTF8String);
         } else {
             onCancel();
         }
