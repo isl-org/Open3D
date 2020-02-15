@@ -72,14 +72,19 @@ bool TextureSimpleShader::BindGeometry(const geometry::Geometry &geometry,
     }
 
     // Create buffers and bind the geometry
-    glGenBuffers(1, &vertex_position_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-                 points.data(), GL_STATIC_DRAW);
-    glGenBuffers(1, &vertex_uv_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(Eigen::Vector2f),
-                 uvs.data(), GL_STATIC_DRAW);
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        glGenBuffers(1, &vertex_position_buffers_[mi]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffers_[mi]);
+        glBufferData(GL_ARRAY_BUFFER,
+                     draw_array_sizes_[mi] * sizeof(Eigen::Vector3f),
+                     points.data() + array_offsets_[mi], GL_STATIC_DRAW);
+
+        glGenBuffers(1, &vertex_uv_buffers_[mi]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffers_[mi]);
+        glBufferData(GL_ARRAY_BUFFER,
+                     draw_array_sizes_[mi] * sizeof(Eigen::Vector2f),
+                     uvs.data() + array_offsets_[mi], GL_STATIC_DRAW);
+    }
     bound_ = true;
     return true;
 }
@@ -91,32 +96,50 @@ bool TextureSimpleShader::RenderGeometry(const geometry::Geometry &geometry,
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
+
     glUseProgram(program_);
-    glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
 
-    glUniform1i(texture_, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_buffer_);
+        glUniform1i(texture_, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture_buffers_[mi]);
 
-    glEnableVertexAttribArray(vertex_position_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(vertex_position_);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffers_[mi]);
+        glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    glEnableVertexAttribArray(vertex_uv_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
-    glVertexAttribPointer(vertex_uv_, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(vertex_uv_);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffers_[mi]);
+        glVertexAttribPointer(vertex_uv_, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
-    glDisableVertexAttribArray(vertex_position_);
-    glDisableVertexAttribArray(vertex_uv_);
+        glDrawArrays(draw_arrays_mode_, 0, draw_array_sizes_[mi]);
+
+        glDisableVertexAttribArray(vertex_position_);
+        glDisableVertexAttribArray(vertex_uv_);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
     return true;
 }
 
 void TextureSimpleShader::UnbindGeometry() {
     if (bound_) {
-        glDeleteBuffers(1, &vertex_position_buffer_);
-        glDeleteBuffers(1, &vertex_uv_buffer_);
-        glDeleteTextures(1, &texture_buffer_);
+        for (auto buf : vertex_position_buffers_) {
+            glDeleteBuffers(1, &buf);
+        }
+        for (auto buf : vertex_uv_buffers_) {
+            glDeleteBuffers(1, &buf);
+        }
+        for (auto buf : texture_buffers_) {
+            glDeleteTextures(1, &buf);
+        }
+
+        vertex_position_buffers_.clear();
+        vertex_uv_buffers_.clear();
+        texture_buffers_.clear();
+        draw_array_sizes_.clear();
+        array_offsets_.clear();
+        num_materials_ = 0;
         bound_ = false;
     }
 }
@@ -168,72 +191,83 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    points.resize(mesh.triangles_.size() * 3);
-    uvs.resize(mesh.triangles_.size() * 3);
 
+    std::vector<std::vector<Eigen::Vector3f>> tmp_points;
+    std::vector<std::vector<Eigen::Vector2f>> tmp_uvs;
+
+    num_materials_ = (int)mesh.textures_.size();
+    array_offsets_.resize(num_materials_);
+    draw_array_sizes_.resize(num_materials_);
+    vertex_position_buffers_.resize(num_materials_);
+    vertex_uv_buffers_.resize(num_materials_);
+    texture_buffers_.resize(num_materials_);
+
+    tmp_points.resize(num_materials_);
+    tmp_uvs.resize(num_materials_);
+
+    // Bind vertices and uvs per material
     for (size_t i = 0; i < mesh.triangles_.size(); i++) {
         const auto &triangle = mesh.triangles_[i];
+        int mi = mesh.triangle_material_ids_[i];
+
         for (size_t j = 0; j < 3; j++) {
             size_t idx = i * 3 + j;
             size_t vi = triangle(j);
-            points[idx] = mesh.vertices_[vi].cast<float>();
-            uvs[idx] = mesh.triangle_uvs_[idx].cast<float>();
+            tmp_points[mi].push_back(mesh.vertices_[vi].cast<float>());
+            tmp_uvs[mi].push_back(mesh.triangle_uvs_[idx].cast<float>());
         }
     }
 
-    glGenTextures(1, &texture_);
-    glBindTexture(GL_TEXTURE_2D, texture_buffer_);
+    // Bind textures
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        glGenTextures(1, &texture_buffers_[mi]);
+        glBindTexture(GL_TEXTURE_2D, texture_buffers_[mi]);
 
-    GLenum format;
-    switch (mesh.texture_.num_of_channels_) {
-        case 1: {
-            format = GL_RED;
-            break;
-        }
-        case 3: {
-            format = GL_RGB;
-            break;
-        }
-        case 4: {
-            format = GL_RGBA;
-            break;
-        }
-        default: {
-            utility::LogWarning("Unknown format, abort!");
+        GLenum format, type;
+        auto it = GLHelper::texture_format_map_.find(
+                mesh.textures_[mi].num_of_channels_);
+        if (it == GLHelper::texture_format_map_.end()) {
+            utility::LogWarning("Unknown texture format, abort!");
             return false;
         }
-    }
+        format = it->second;
 
-    GLenum type;
-    switch (mesh.texture_.bytes_per_channel_) {
-        case 1: {
-            type = GL_UNSIGNED_BYTE;
-            break;
-        }
-        case 2: {
-            type = GL_UNSIGNED_SHORT;
-            break;
-        }
-        case 4: {
-            type = GL_FLOAT;
-            break;
-        }
-        default: {
-            utility::LogWarning("Unknown format, abort!");
+        it = GLHelper::texture_type_map_.find(
+                mesh.textures_[mi].bytes_per_channel_);
+        if (it == GLHelper::texture_type_map_.end()) {
+            utility::LogWarning("Unknown texture type, abort!");
             return false;
         }
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.texture_.width_,
-                 mesh.texture_.height_, 0, format, type,
-                 mesh.texture_.data_.data());
+        type = it->second;
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.textures_[mi].width_,
+                     mesh.textures_[mi].height_, 0, format, type,
+                     mesh.textures_[mi].data_.data());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
+    // Point seperations
+    array_offsets_[0] = 0;
+    draw_array_sizes_[0] = tmp_points[0].size();
+    for (int mi = 1; mi < num_materials_; ++mi) {
+        draw_array_sizes_[mi] = tmp_points[mi].size();
+        array_offsets_[mi] = array_offsets_[mi - 1] + draw_array_sizes_[mi - 1];
+    }
+
+    // Prepared chunk of points and uvs
+    points.clear();
+    uvs.clear();
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        points.insert(points.end(), tmp_points[mi].begin(),
+                      tmp_points[mi].end());
+        uvs.insert(uvs.end(), tmp_uvs[mi].begin(), tmp_uvs[mi].end());
+    }
 
     draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
     return true;
 }
 

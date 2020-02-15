@@ -52,7 +52,6 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             utility::filesystem::GetFileParentDirectory(filename);
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
                                 filename.c_str(), mtl_base_path.c_str());
-
     if (!warn.empty()) {
         utility::LogWarning("Read OBJ failed: {}", warn);
     }
@@ -128,6 +127,8 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                 }
             }
             mesh.triangles_.push_back(facet);
+            mesh.triangle_material_ids_.push_back(
+                    shapes[s].mesh.material_ids[f]);
             index_offset += fv;
         }
     }
@@ -149,10 +150,10 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     // diffuse material
     for (auto& material : materials) {
         if (!material.diffuse_texname.empty()) {
-            mesh.texture_ = *(io::CreateImageFromFile(mtl_base_path +
-                                                      material.diffuse_texname)
-                                      ->FlipVertical());
-            break;
+            mesh.textures_.push_back(
+                    *(io::CreateImageFromFile(mtl_base_path +
+                                              material.diffuse_texname)
+                              ->FlipVertical()));
         }
     }
 
@@ -276,7 +277,13 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
 
     if (write_triangle_uvs && mesh.HasTexture()) {
-        if (!io::WriteImage(tex_filename, *mesh.texture_.FlipVertical())) {
+        if (mesh.textures_.size() > 1) {
+            utility::LogWarning(
+                    "Write OBJ only supports one texture, others will be "
+                    "ignored.");
+        }
+
+        if (!io::WriteImage(tex_filename, *mesh.textures_[0].FlipVertical())) {
             utility::LogWarning(
                     "Write OBJ successful, but failed to write texture "
                     "file.");

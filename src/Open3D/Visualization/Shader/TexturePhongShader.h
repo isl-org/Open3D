@@ -72,11 +72,8 @@ protected:
 
 protected:
     GLuint vertex_position_;
-    GLuint vertex_position_buffer_;
     GLuint vertex_uv_;
-    GLuint vertex_uv_buffer_;
     GLuint vertex_normal_;
-    GLuint vertex_normal_buffer_;
     GLuint MVP_;
     GLuint V_;
     GLuint M_;
@@ -88,7 +85,15 @@ protected:
     GLuint light_ambient_;
 
     GLuint diffuse_texture_;
-    GLuint diffuse_texture_buffer_;
+
+    int num_materials_;
+    std::vector<int> array_offsets_;
+    std::vector<GLsizei> draw_array_sizes_;
+
+    std::vector<GLuint> vertex_position_buffers_;
+    std::vector<GLuint> vertex_uv_buffers_;
+    std::vector<GLuint> vertex_normal_buffers_;
+    std::vector<GLuint> diffuse_texture_buffers_;
 
     // At most support 4 lights
     GLHelper::GLMatrix4f light_position_world_data_;

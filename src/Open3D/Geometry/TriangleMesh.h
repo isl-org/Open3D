@@ -28,6 +28,7 @@
 
 #include <Eigen/Core>
 #include <memory>
+#include <numeric>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -80,7 +81,12 @@ public:
         return HasTriangles() && triangle_uvs_.size() == 3 * triangles_.size();
     }
 
-    bool HasTexture() const { return !texture_.IsEmpty(); }
+    bool HasTexture() const {
+        bool is_all_texture_valid = std::accumulate(
+                textures_.begin(), textures_.end(), true,
+                [](bool a, const Image &b) { return a && !b.IsEmpty(); });
+        return !textures_.empty() && is_all_texture_valid;
+    }
 
     TriangleMesh &NormalizeNormals() {
         MeshBase::NormalizeNormals();
@@ -615,7 +621,8 @@ public:
     std::vector<Eigen::Vector3d> triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
     std::vector<Eigen::Vector2d> triangle_uvs_;
-    Image texture_;
+    std::vector<int> triangle_material_ids_;
+    std::vector<Image> textures_;
 };
 
 }  // namespace geometry
