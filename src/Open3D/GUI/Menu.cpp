@@ -46,28 +46,29 @@ namespace gui {
 
 static const float EXTRA_PADDING_Y = 1.0f;
 
-struct Menu::MenuItem {
-    Menu::ItemId id;
-    std::string name;
-    std::string shortcut;
-    std::shared_ptr<Menu> submenu;
-    bool isEnabled = true;
-    bool isChecked = false;
-    bool isSeparator = false;
-};
-
 struct Menu::Impl {
-    std::vector<Menu::MenuItem> items;
+    struct MenuItem {
+        Menu::ItemId id;
+        std::string name;
+        std::string shortcut;
+        std::shared_ptr<Menu> submenu;
+        Menu::Impl *submenuImpl = nullptr; // so FindMenuItem needn't be a friend
+        bool isEnabled = true;
+        bool isChecked = false;
+        bool isSeparator = false;
+    };
+
+    std::vector<MenuItem> items;
     std::unordered_map<int, size_t> id2idx;
 
-    Menu::MenuItem *FindMenuItem(ItemId itemId) const {
+    MenuItem *FindMenuItem(ItemId itemId) {
         auto it = this->id2idx.find(itemId);
         if (it != this->id2idx.end()) {
             return &this->items[it->second];
         }
         for (auto &item : this->items) {
             if (item.submenu) {
-                auto *possibility = item.submenu->FindMenuItem(itemId);
+                auto *possibility = item.submenuImpl->FindMenuItem(itemId);
                 if (possibility) {
                     return possibility;
                 }
@@ -91,11 +92,12 @@ void Menu::AddItem(const char *name,
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items.push_back({NO_ITEM, name, "", submenu});
+    impl_->items.push_back({NO_ITEM, name, "", submenu, submenu->impl_.get()});
 }
 
 void Menu::AddSeparator() {
-    impl_->items.push_back({NO_ITEM, "", "", nullptr, false, false, true});
+    impl_->items.push_back({NO_ITEM, "", "", nullptr, nullptr,
+                            false, false, true});
 }
 
 bool Menu::IsEnabled(ItemId itemId) const {
