@@ -179,11 +179,20 @@ int keyModsRightNow() {  // requires SDL is initialized
 namespace open3d {
 namespace gui {
 
+void PostWindowEvent(Window *w, SDL_WindowEventID type) {
+    SDL_Event e;
+    e.type = SDL_WINDOWEVENT;
+    e.window.windowID = w->GetID();
+    e.window.event = type;
+    SDL_PushEvent(&e);
+}
+
 struct Application::Impl {
     std::string resourcePath;
     Theme theme;
     bool isRunning = false;
 
+    std::shared_ptr<Menu> menubar;
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
     std::unordered_map<Window *, int> eventCounts;  // don't recreate each draw
 
@@ -285,6 +294,29 @@ void Application::Initialize(int argc, const char *argv[]) {
     impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
 }
 
+std::shared_ptr<Menu> Application::GetMenubar() const {
+    return impl_->menubar;
+}
+
+void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
+    auto old = impl_->menubar;
+    impl_->menubar = menubar;
+    // If added or removed menubar, the size of the window's content region
+    // may have changed (in not on macOS), so need to relayout.
+    if ((!old && menubar) || (old && !menubar)) {
+        for (auto &kv : impl_->windows) {
+            kv.second->OnResize();
+        }
+    }
+
+#if defined(__APPLE__)
+    auto *native = menubar->GetNativePointer();
+    if (native) {
+        SetNativeMenubar(native);
+    }
+#endif // __APPLE__
+}
+
 void Application::AddWindow(std::shared_ptr<Window> window) {
     window->OnResize();  // so we get an initial resize
     window->Show();
@@ -296,16 +328,22 @@ void Application::RemoveWindow(Window *window) {
     // messages, so we have to do them ourselves.
     int nWindows = impl_->windows.size();
 
-    SDL_Event e;
-    e.type = SDL_WINDOWEVENT;
-    e.window.windowID = window->GetID();
-    e.window.event = SDL_WINDOWEVENT_CLOSE;
-    SDL_PushEvent(&e);
+    PostWindowEvent(window, SDL_WINDOWEVENT_CLOSE);
 
     if (nWindows == 1) {
         SDL_Event quit;
         quit.type = SDL_QUIT;
         SDL_PushEvent(&quit);
+    }
+}
+
+void Application::OnMenuItemSelected(Menu::ItemId itemId) {
+    for (auto &kv : impl_->windows) {
+        if (kv.second->IsActiveWindow()) {
+            kv.second->OnMenuItemSelected(itemId);
+            PostWindowEvent(kv.second.get(), SDL_WINDOWEVENT_EXPOSED);
+            return;
+        }
     }
 }
 
@@ -633,11 +671,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
             if (w->IsVisible() && gotEvents) {
                 if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
                     Window::REDRAW) {
-                    SDL_Event expose;
-                    expose.type = SDL_WINDOWEVENT;
-                    expose.window.windowID = w->GetID();
-                    expose.window.event = SDL_WINDOWEVENT_EXPOSED;
-                    SDL_PushEvent(&expose);
+                    PostWindowEvent(w.get(), SDL_WINDOWEVENT_EXPOSED);
                 }
             }
         }

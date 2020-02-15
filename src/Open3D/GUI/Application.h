@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "Menu.h"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -52,6 +54,9 @@ public:
     /// just need something simple.
     void Run();
 
+    std::shared_ptr<Menu> GetMenubar() const;
+    void SetMenubar(std::shared_ptr<Menu> menubar);
+
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
     /// Must be called on the same thread that calls Run()
@@ -70,6 +75,9 @@ public:
     const char *GetResourcePath()
             const;  // std::string not good in interfaces for ABI reasons
     const Theme &GetTheme() const;
+
+    /// Delivers the itemId to the active window. Used internally.
+    void OnMenuItemSelected(Menu::ItemId itemId);
 
 private:
     Application();

@@ -35,6 +35,7 @@ struct DrawContext;
 struct Theme;
 
 class Menu {
+    friend class Application;
 public:
     using ItemId = int;
     static constexpr ItemId NO_ITEM = -1;
@@ -61,8 +62,7 @@ public:
     ItemId Draw(const DrawContext& context, const char* name, bool isEnabled);
 
 protected:
-    struct MenuItem;
-    MenuItem* FindMenuItem(ItemId itemId) const;
+    void* GetNativePointer(); // nullptr if not using native menus
 
 private:
     struct Impl;

@@ -32,6 +32,10 @@ namespace gui {
 void *GetNativeDrawable(SDL_Window *sdlWindow);
 void ShowNativeAlert(const char *message);
 
+#ifdef __APPLE__
+void SetNativeMenubar(void* menubar);
+#endif // __APPLE_
+
 #if defined(__APPLE__) || defined(_WIN32)
 void ShowNativeFileDialog(FileDialog::Type type,
                           const std::string& path,

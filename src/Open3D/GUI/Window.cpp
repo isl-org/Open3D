@@ -391,11 +391,8 @@ void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
 void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
 
-std::shared_ptr<Menu> Window::GetMenubar() const { return impl_->menubar; }
-
-void Window::SetMenubar(std::shared_ptr<Menu> menu) {
-    impl_->menubar = menu;
-    impl_->needsLayout = true;  // in case wasn't a menu before
+bool Window::IsActiveWindow() const {
+    return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS);
 }
 
 void Window::AddChild(std::shared_ptr<Widget> w) {
@@ -603,8 +600,9 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     // Draw menubar after the children so it is always on top (although it
     // shouldn't matter, as there shouldn't be anything under it)
-    if (impl_->menubar) {
-        auto id = impl_->menubar->DrawMenuBar(dc, !impl_->activeDialog);
+    auto menubar = Application::GetInstance().GetMenubar();
+    if (menubar) {
+        auto id = menubar->DrawMenuBar(dc, !impl_->activeDialog);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
             needsRedraw = true;

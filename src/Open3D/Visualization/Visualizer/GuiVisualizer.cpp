@@ -205,6 +205,33 @@ GuiVisualizer::GuiVisualizer(
     auto &app = gui::Application::GetInstance();
     auto &theme = GetTheme();
 
+    // Create menu
+    if (!gui::Application::GetInstance().GetMenubar()) {
+        auto fileMenu = std::make_shared<gui::Menu>();
+        fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
+        fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
+        fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
+        fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
+        fileMenu->SetEnabled(FILE_EXPORT_DEPTH, false);
+        fileMenu->AddSeparator();
+        fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
+        auto viewMenu = std::make_shared<gui::Menu>();
+        viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
+        viewMenu->SetEnabled(VIEW_POINTS, false);
+        viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
+        viewMenu->SetEnabled(VIEW_WIREFRAME, false);
+        viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
+        viewMenu->SetEnabled(VIEW_MESH, false);
+        auto helpMenu = std::make_shared<gui::Menu>();
+        helpMenu->AddItem("About", nullptr, HELP_ABOUT);
+        helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
+        auto menu = std::make_shared<gui::Menu>();
+        menu->AddMenu("File", fileMenu);
+        menu->AddMenu("View", viewMenu);
+        menu->AddMenu("Help", helpMenu);
+        gui::Application::GetInstance().SetMenubar(menu);
+    }
+
     // Create material
     std::string err;
     std::string rsrcPath = app.GetResourcePath();
@@ -247,31 +274,6 @@ GuiVisualizer::GuiVisualizer(
 
     AddChild(scene);
     AddChild(impl_->drawTime);
-
-    // Create menu
-    auto fileMenu = std::make_shared<gui::Menu>();
-    fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
-    fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
-    fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
-    fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
-    fileMenu->SetEnabled(FILE_EXPORT_DEPTH, false);
-    fileMenu->AddSeparator();
-    fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
-    auto viewMenu = std::make_shared<gui::Menu>();
-    viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
-    viewMenu->SetEnabled(VIEW_POINTS, false);
-    viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
-    viewMenu->SetEnabled(VIEW_WIREFRAME, false);
-    viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
-    viewMenu->SetEnabled(VIEW_MESH, false);
-    auto helpMenu = std::make_shared<gui::Menu>();
-    helpMenu->AddItem("About", nullptr, HELP_ABOUT);
-    helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
-    auto menu = std::make_shared<gui::Menu>();
-    menu->AddMenu("File", fileMenu);
-    menu->AddMenu("View", viewMenu);
-    menu->AddMenu("Help", helpMenu);
-    this->SetMenubar(menu);
 }
 
 GuiVisualizer::~GuiVisualizer() {}

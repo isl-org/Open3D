@@ -72,6 +72,11 @@ void* ResizeMetalLayer(void* nativeView) {
 }
 */
 
+void SetNativeMenubar(void* menubar) {
+    NSMenu *menu = (NSMenu*)menubar;
+    NSApplication.sharedApplication.mainMenu = menu;
+}
+
 void ShowNativeFileDialog(FileDialog::Type type,
                           const std::string& path,
                           const std::vector<std::pair<std::string, std::string>>& filters,

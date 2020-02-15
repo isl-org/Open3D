@@ -94,8 +94,7 @@ public:
     void SetTopmost(bool topmost);
     void RaiseToTop() const;
 
-    std::shared_ptr<Menu> GetMenubar() const;
-    void SetMenubar(std::shared_ptr<Menu> menu);
+    bool IsActiveWindow() const;
 
     void AddChild(std::shared_ptr<Widget> w);
 
