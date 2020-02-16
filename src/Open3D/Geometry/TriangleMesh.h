@@ -81,14 +81,14 @@ public:
         return HasTriangles() && triangle_uvs_.size() == 3 * triangles_.size();
     }
 
-    bool HasTexture() const {
+    bool HasTextures() const {
         bool is_all_texture_valid = std::accumulate(
                 textures_.begin(), textures_.end(), true,
                 [](bool a, const Image &b) { return a && !b.IsEmpty(); });
         return !textures_.empty() && is_all_texture_valid;
     }
 
-    bool HasTriangleMateriaIds() const {
+    bool HasTriangleMaterialIds() const {
         return HasTriangles() &&
                triangle_material_ids_.size() == triangles_.size();
     }

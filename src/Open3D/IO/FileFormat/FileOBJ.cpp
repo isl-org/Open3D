@@ -228,7 +228,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     // write faces with (possibly multiple) material ids
     // map faces with material ids
     std::map<int, std::vector<size_t>> material_id_faces_map;
-    if (mesh.HasTriangleMateriaIds()) {
+    if (mesh.HasTriangleMaterialIds()) {
         for (size_t i = 0; i < mesh.triangle_material_ids_.size(); ++i) {
             int mi = mesh.triangle_material_ids_[i];
             auto it = material_id_faces_map.find(mi);
@@ -304,7 +304,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
         mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
         mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
         mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
-        if (write_triangle_uvs && mesh.HasTexture()) {
+        if (write_triangle_uvs && mesh.HasTextures()) {
             std::string tex_filename = parent_dir + mtl_name + ".png";
             if (!io::WriteImage(tex_filename,
                                 *mesh.textures_[i].FlipVertical())) {
@@ -318,7 +318,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     }
 
     // write the default material
-    if (!mesh.HasTexture()) {
+    if (!mesh.HasTextures()) {
         std::string mtl_name = object_name + "_0";
         mtl_file << "newmtl " << mtl_name << std::endl;
         mtl_file << "Ka 1.000 1.000 1.000" << std::endl;

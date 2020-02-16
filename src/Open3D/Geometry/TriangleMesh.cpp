@@ -93,7 +93,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() || HasTexture() || HasTriangleMateriaIds()) {
+    if (HasTriangleUvs() || HasTextures() || HasTriangleMaterialIds()) {
         utility::LogError(
                 "[TriangleMesh] copy of uvs and texture and per-triangle "
                 "material ids is not implemented "
