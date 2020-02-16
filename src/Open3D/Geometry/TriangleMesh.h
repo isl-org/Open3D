@@ -88,6 +88,11 @@ public:
         return !textures_.empty() && is_all_texture_valid;
     }
 
+    bool HasTriangleMateriaIds() const {
+        return HasTriangles() &&
+               triangle_material_ids_.size() == triangles_.size();
+    }
+
     TriangleMesh &NormalizeNormals() {
         MeshBase::NormalizeNormals();
         for (size_t i = 0; i < triangle_normals_.size(); i++) {
