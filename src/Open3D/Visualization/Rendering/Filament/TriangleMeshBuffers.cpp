@@ -351,8 +351,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 
         // Converting normals to Filament type - quaternions
         const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-        float4VTangents =
-                static_cast<math::quatf*>(malloc(tangentsBytesCount));
+        float4VTangents = static_cast<math::quatf*>(malloc(tangentsBytesCount));
         auto orientation = filament::geometry::SurfaceOrientation::Builder()
                                    .vertexCount(nVertices)
                                    .normals(reinterpret_cast<math::float3*>(
@@ -360,7 +359,10 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                                    .build();
         orientation.getQuats(float4VTangents, nVertices);
     } else {
-        utility::LogWarning("Trying to create mesh without vertex normals. Shading would not work correctly. Consider to generate vertex normals first.");
+        utility::LogWarning(
+                "Trying to create mesh without vertex normals. Shading would "
+                "not work correctly. Consider to generate vertex normals "
+                "first.");
     }
 
     const bool hasColors = geometry_.HasVertexColors();

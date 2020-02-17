@@ -116,7 +116,8 @@ MaterialHandle FilamentRenderer::AddMaterial(
     return resourceManager_.CreateMaterial(request);
 }
 
-MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(const MaterialHandle& material) {
+MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
+        const MaterialHandle& material) {
     return resourceManager_.CreateMaterialInstance(material);
 }
 
@@ -186,7 +187,8 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 
     // TODO: assert
 }
-TextureHandle FilamentRenderer::AddTexture(const std::shared_ptr<geometry::Image>& image) {
+TextureHandle FilamentRenderer::AddTexture(
+        const std::shared_ptr<geometry::Image>& image) {
     return resourceManager_.CreateTexture(image);
 }
 

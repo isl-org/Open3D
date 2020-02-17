@@ -46,12 +46,11 @@ using GeometryType = open3d::geometry::Geometry::GeometryType;
 using MaterialHandle = open3d::visualization::MaterialHandle;
 using ResourceManager = open3d::visualization::FilamentResourceManager;
 
-const std::unordered_map<GeometryType, MaterialHandle>
-        kDefaultMaterials = {
-                {GeometryType::TriangleMesh, ResourceManager::kDefaultLit},
-                {GeometryType::LineSet, ResourceManager::kDefaultUnlit},
-                {GeometryType::PointCloud, ResourceManager::kDefaultUnlit}};
-}
+const std::unordered_map<GeometryType, MaterialHandle> kDefaultMaterials = {
+        {GeometryType::TriangleMesh, ResourceManager::kDefaultLit},
+        {GeometryType::LineSet, ResourceManager::kDefaultUnlit},
+        {GeometryType::PointCloud, ResourceManager::kDefaultUnlit}};
+}  // namespace defaults_mapping
 
 namespace open3d {
 namespace visualization {
@@ -121,32 +120,42 @@ void FilamentScene::RemoveView(const ViewHandle& viewId) {
     views_.erase(viewId);
 }
 
-GeometryHandle FilamentScene::AddGeometry(const geometry::Geometry3D& geometry) {
+GeometryHandle FilamentScene::AddGeometry(
+        const geometry::Geometry3D& geometry) {
     GeometryHandle handle;
 
     const auto geometryType = geometry.GetGeometryType();
     auto defaults = defaults_mapping::kDefaultMaterials.find(geometryType);
     if (defaults != defaults_mapping::kDefaultMaterials.end()) {
-        MaterialInstanceHandle materialInstance = resourceManager_.CreateMaterialInstance(defaults->second);
+        MaterialInstanceHandle materialInstance =
+                resourceManager_.CreateMaterialInstance(defaults->second);
         handle = AddGeometry(geometry, materialInstance);
 
         if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
-            const auto& mesh = static_cast<const geometry::TriangleMesh&>(geometry);
+            const auto& mesh =
+                    static_cast<const geometry::TriangleMesh&>(geometry);
             if (mesh.texture_.HasData()) {
-                auto hTexture = resourceManager_.CreateTexture(mesh.texture_.FlipVertical());
+                auto hTexture = resourceManager_.CreateTexture(
+                        mesh.texture_.FlipVertical());
 
                 if (hTexture) {
                     auto& entity = entities_[handle];
                     entity.texture = hTexture;
 
-                    auto wMaterial = resourceManager_.GetMaterialInstance(entity.material);
+                    auto wMaterial = resourceManager_.GetMaterialInstance(
+                            entity.material);
                     auto mat = wMaterial.lock();
 
                     auto wTexture = resourceManager_.GetTexture(hTexture);
                     auto tex = wTexture.lock();
                     if (mat && tex) {
-                        static const auto kDefaultSampler = FilamentMaterialModifier::SamplerFromSamplerParameters(TextureSamplerParameters::Pretty());
-                        mat->setParameter("texture", tex.get(), kDefaultSampler);
+                        static const auto kDefaultSampler =
+                                FilamentMaterialModifier::
+                                        SamplerFromSamplerParameters(
+                                                TextureSamplerParameters::
+                                                        Pretty());
+                        mat->setParameter("texture", tex.get(),
+                                          kDefaultSampler);
                     }
                 }
             }
@@ -244,12 +253,14 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
                                                wMaterialInstance.lock().get());
     } else {
         utility::LogWarning(
-                "Failed to assign material ({}) to geometry ({}): material or entity not found",
+                "Failed to assign material ({}) to geometry ({}): material or "
+                "entity not found",
                 materialId, geometryId);
     }
 }
 
-MaterialInstanceHandle FilamentScene::GetMaterial(const GeometryHandle& geometryId) const {
+MaterialInstanceHandle FilamentScene::GetMaterial(
+        const GeometryHandle& geometryId) const {
     const auto found = entities_.find(geometryId);
     if (found != entities_.end()) {
         return found->second.material;

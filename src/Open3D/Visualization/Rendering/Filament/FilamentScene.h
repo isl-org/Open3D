@@ -76,7 +76,8 @@ public:
             const std::string& name) override;
     void AssignMaterial(const GeometryHandle& geometryId,
                         const MaterialInstanceHandle& materialId) override;
-    MaterialInstanceHandle GetMaterial(const GeometryHandle& geometryId) const override;
+    MaterialInstanceHandle GetMaterial(
+            const GeometryHandle& geometryId) const override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
@@ -111,7 +112,7 @@ private:
         } info;
 
         MaterialInstanceHandle material;
-        TextureHandle texture; // if none, default is used
+        TextureHandle texture;  // if none, default is used
         // Used for relocating transform to center of mass
         utils::Entity parent;
         std::string name;

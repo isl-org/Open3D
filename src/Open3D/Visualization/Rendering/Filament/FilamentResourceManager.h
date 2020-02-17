@@ -106,7 +106,8 @@ private:
     ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
 
-    filament::Texture* LoadTextureFromImage(const std::shared_ptr<geometry::Image>& image);
+    filament::Texture* LoadTextureFromImage(
+            const std::shared_ptr<geometry::Image>& image);
 
     void LoadDefaults();
 };

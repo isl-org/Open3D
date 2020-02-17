@@ -67,12 +67,14 @@ public:
     void EndFrame() override;
 
     MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
-    MaterialInstanceHandle AddMaterialInstance(const MaterialHandle& material) override;
+    MaterialInstanceHandle AddMaterialInstance(
+            const MaterialHandle& material) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
 
     TextureHandle AddTexture(const ResourceLoadRequest& request) override;
-    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image) override;
+    TextureHandle AddTexture(
+            const std::shared_ptr<geometry::Image>& image) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     std::unique_ptr<RenderToBuffer> CreateBufferRenderer() override;

@@ -72,13 +72,15 @@ public:
     virtual void EndFrame() = 0;
 
     virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
-    virtual MaterialInstanceHandle AddMaterialInstance(const MaterialHandle& material) = 0;
+    virtual MaterialInstanceHandle AddMaterialInstance(
+            const MaterialHandle& material) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(
             const MaterialInstanceHandle& id) = 0;
 
     virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
-    virtual TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image) = 0;
+    virtual TextureHandle AddTexture(
+            const std::shared_ptr<geometry::Image>& image) = 0;
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 
     virtual std::unique_ptr<RenderToBuffer> CreateBufferRenderer() = 0;

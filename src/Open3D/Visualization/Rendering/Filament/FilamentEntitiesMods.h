@@ -33,14 +33,15 @@
 namespace filament {
 class MaterialInstance;
 class TextureSampler;
-}
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
 
 class FilamentMaterialModifier : public MaterialModifier {
 public:
-    static filament::TextureSampler SamplerFromSamplerParameters(const TextureSamplerParameters& samplerConfig);
+    static filament::TextureSampler SamplerFromSamplerParameters(
+            const TextureSamplerParameters& samplerConfig);
 
     FilamentMaterialModifier(
             const std::shared_ptr<filament::MaterialInstance>& materialInstance,
