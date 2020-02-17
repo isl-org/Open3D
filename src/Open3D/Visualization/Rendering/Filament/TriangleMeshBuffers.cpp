@@ -44,18 +44,18 @@ namespace {
 
 struct BaseVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
+    math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
 };
 
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
+    math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
 };
 
 struct TexturedVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
+    math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float4 color = {1.f, 1.f, 1.f, 1.f};
     math::float2 uv = {0.f, 0.f};
 };
@@ -176,7 +176,9 @@ std::tuple<vbdata, ibdata> CreatePlainBuffers(
         BaseVertex& element = plainVertices[i];
 
         SetVertexPosition(element, geometry.vertices_[i]);
-        element.tangent = tangents[i];
+        if (tangents != nullptr) {
+            element.tangent = tangents[i];
+        }
     }
 
     indexData.stride = sizeof(GeometryBuffersBuilder::IndexType);
@@ -208,7 +210,9 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
         ColoredVertex& element = coloredVertices[i];
 
         SetVertexPosition(element, geometry.vertices_[i]);
-        element.tangent = tangents[i];
+        if (tangents != nullptr) {
+            element.tangent = tangents[i];
+        }
         SetVertexColor(element, geometry.vertex_colors_[i]);
     }
 
@@ -296,7 +300,9 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(
 
                 TexturedVertex& element = texturedVertices[index];
                 SetVertexPosition(element, pos);
-                element.tangent = tangents[sourceIndex];
+                if (tangents != nullptr) {
+                    element.tangent = tangents[sourceIndex];
+                }
                 SetVertexUV(element, uv);
 
                 if (geometry.HasVertexColors()) {
@@ -334,23 +340,28 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
 
     const size_t nVertices = geometry_.vertices_.size();
 
-    // Converting vertex normals to float base
-    std::vector<Eigen::Vector3f> normals;
-    normals.resize(nVertices);
-    for (size_t i = 0; i < nVertices; ++i) {
-        normals[i] = geometry_.vertex_normals_[i].cast<float>();
-    }
+    math::quatf* float4VTangents = nullptr;
+    if (geometry_.HasVertexNormals()) {
+        // Converting vertex normals to float base
+        std::vector<Eigen::Vector3f> normals;
+        normals.resize(nVertices);
+        for (size_t i = 0; i < nVertices; ++i) {
+            normals[i] = geometry_.vertex_normals_[i].cast<float>();
+        }
 
-    // Converting normals to Filament type - quaternions
-    const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto* float4VTangents =
-            static_cast<math::quatf*>(malloc(tangentsBytesCount));
-    auto orientation =
-            filament::geometry::SurfaceOrientation::Builder()
-                    .vertexCount(nVertices)
-                    .normals(reinterpret_cast<math::float3*>(normals.data()))
-                    .build();
-    orientation.getQuats(float4VTangents, nVertices);
+        // Converting normals to Filament type - quaternions
+        const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
+        float4VTangents =
+                static_cast<math::quatf*>(malloc(tangentsBytesCount));
+        auto orientation = filament::geometry::SurfaceOrientation::Builder()
+                                   .vertexCount(nVertices)
+                                   .normals(reinterpret_cast<math::float3*>(
+                                           normals.data()))
+                                   .build();
+        orientation.getQuats(float4VTangents, nVertices);
+    } else {
+        utility::LogWarning("Trying to create mesh without vertex normals. Shading would not work correctly. Consider to generate vertex normals first.");
+    }
 
     const bool hasColors = geometry_.HasVertexColors();
     const bool hasUVs = geometry_.HasTriangleUvs();
