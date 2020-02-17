@@ -71,6 +71,7 @@ public:
                                        const std::string& name) = 0;
     virtual void AssignMaterial(const GeometryHandle& geometryId,
                                 const MaterialInstanceHandle& materialId) = 0;
+    virtual MaterialInstanceHandle GetMaterial(const GeometryHandle& geometryId) const = 0;
     virtual std::vector<GeometryHandle> FindGeometryByName(
             const std::string& name) = 0;
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;

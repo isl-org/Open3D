@@ -178,6 +178,13 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
     return *this;
 }
 
+MaterialModifier& FilamentMaterialModifier::SetDoubleSided(bool doubleSided) {
+    if (materialInstance_) {
+        materialInstance_->setDoubleSided(doubleSided);
+    }
+    return *this;
+}
+
 MaterialInstanceHandle FilamentMaterialModifier::Finish() {
     auto res = currentHandle_;
 

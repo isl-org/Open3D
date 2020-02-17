@@ -242,8 +242,21 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
                 renderableManger.getInstance(found->second.info.self);
         renderableManger.setMaterialInstanceAt(inst, 0,
                                                wMaterialInstance.lock().get());
+    } else {
+        utility::LogWarning(
+                "Failed to assign material ({}) to geometry ({}): material or entity not found",
+                materialId, geometryId);
     }
-    // TODO: Log if failed
+}
+
+MaterialInstanceHandle FilamentScene::GetMaterial(const GeometryHandle& geometryId) const {
+    const auto found = entities_.find(geometryId);
+    if (found != entities_.end()) {
+        return found->second.material;
+    }
+
+    utility::LogWarning("Geometry {} is not registered in scene", geometryId);
+    return {};
 }
 
 void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
@@ -449,6 +462,7 @@ void FilamentScene::SceneEntity::Details::ReleaseResources(
 void FilamentScene::SceneEntity::ReleaseResources(
         filament::Engine& engine, FilamentResourceManager& manager) {
     info.ReleaseResources(engine, manager);
+    manager.Destroy(texture);
 
     engine.destroy(parent);
     parent.clear();

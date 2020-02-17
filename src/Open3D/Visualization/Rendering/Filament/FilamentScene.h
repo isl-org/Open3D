@@ -76,6 +76,7 @@ public:
             const std::string& name) override;
     void AssignMaterial(const GeometryHandle& geometryId,
                         const MaterialInstanceHandle& materialId) override;
+    MaterialInstanceHandle GetMaterial(const GeometryHandle& geometryId) const override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;

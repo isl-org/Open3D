@@ -61,6 +61,8 @@ public:
             const TextureHandle& texture,
             const TextureSamplerParameters& sampler) override;
 
+    MaterialModifier& SetDoubleSided(bool doubleSided) override;
+
     MaterialInstanceHandle Finish() override;
 
 private:

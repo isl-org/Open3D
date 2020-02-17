@@ -126,6 +126,8 @@ public:
             const TextureHandle& texture,
             const TextureSamplerParameters& sampler) = 0;
 
+    virtual MaterialModifier& SetDoubleSided(bool doubleSided) = 0;
+
     virtual MaterialInstanceHandle Finish() = 0;
 };
 
