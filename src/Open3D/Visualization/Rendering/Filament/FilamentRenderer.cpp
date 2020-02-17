@@ -182,6 +182,9 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 
     // TODO: assert
 }
+TextureHandle FilamentRenderer::AddTexture(const std::shared_ptr<geometry::Image>& image) {
+    return resourceManager_.CreateTexture(image);
+}
 
 void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
     bufferRenderers_.erase(render);

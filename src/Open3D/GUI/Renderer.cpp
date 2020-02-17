@@ -540,7 +540,7 @@ Renderer::GeometryId Renderer::CreateGeometry(
     int nVerts = vertices.size() / 3;
 
     std::vector<math::quatf> tangents(nVerts);
-    auto orientation = geometry::SurfaceOrientation::Builder()
+    auto orientation = filament::geometry::SurfaceOrientation::Builder()
                                .vertexCount(nVerts)
                                .normals((math::float3*)normals.data())
                                .build();

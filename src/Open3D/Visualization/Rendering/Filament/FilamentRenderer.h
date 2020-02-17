@@ -71,6 +71,7 @@ public:
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
 
     TextureHandle AddTexture(const ResourceLoadRequest& request) override;
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     std::unique_ptr<RenderToBuffer> CreateBufferRenderer() override;

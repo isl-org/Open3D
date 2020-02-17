@@ -42,6 +42,11 @@ class VertexBuffer;
 }  // namespace filament
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
 
 // Centralized storage of allocated resources.
@@ -60,10 +65,11 @@ public:
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
 
     TextureHandle CreateTexture(const char* path);
+    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
-    // managed by FilamentScene class
+    // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
     IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
                                         size_t indexStride);

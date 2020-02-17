@@ -40,6 +40,7 @@
 namespace open3d {
 namespace visualization {
 
+namespace {
 template <class ResourceType>
 using ResourcesContainer =
         std::unordered_map<REHandle_abstract, std::shared_ptr<ResourceType>>;
@@ -91,6 +92,33 @@ void DestroyResource(const REHandle_abstract& id,
     }
 
     container.erase(found);
+}
+
+// Image data that retained by renderer thread,
+// will be freed on PixelBufferDescriptor callback
+std::unordered_map<std::uint32_t, std::shared_ptr<geometry::Image>>
+        pendingImages;
+
+std::intptr_t RetainImageForLoading(const std::shared_ptr<geometry::Image>& img) {
+    static std::intptr_t imgId = 1;
+
+    const auto id = imgId;
+    pendingImages[imgId] = img;
+    ++imgId;
+
+    return id;
+}
+
+void FreeRetainedImage(void* buffer, size_t size, void* userPtr) {
+    const auto id = reinterpret_cast<std::intptr_t>(userPtr);
+    auto found = pendingImages.find(id);
+    if (found != pendingImages.end()) {
+        pendingImages.erase(found);
+    } else {
+        utility::LogDebug("Trying to release non existent image shared pointer, id: {}", id);
+    }
+}
+
 }
 
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
@@ -173,8 +201,6 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
-    TextureHandle handle;
-
     std::shared_ptr<geometry::Image> img;
 
     if (path) {
@@ -183,19 +209,26 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
         utility::LogWarning("Empty path for texture loading provided");
     }
 
-    using namespace filament;
+    return CreateTexture(img);
+}
 
+TextureHandle FilamentResourceManager::CreateTexture(const std::shared_ptr<geometry::Image>& img) {
+    TextureHandle handle;
     if (img->HasData()) {
+        using namespace filament;
+
+        auto retainedImgId = RetainImageForLoading(img);
+
         Texture::PixelBufferDescriptor pb(img->data_.data(), img->data_.size(),
                                           Texture::Format::RGB,
-                                          Texture::Type::UBYTE);
+                                          Texture::Type::UBYTE, FreeRetainedImage, (void*)retainedImgId);
         auto texture = Texture::Builder()
-                               .width((uint32_t)img->width_)
-                               .height((uint32_t)img->height_)
-                               .levels((uint8_t)1)
-                               .format(Texture::InternalFormat::RGB8)
-                               .sampler(Texture::Sampler::SAMPLER_2D)
-                               .build(engine_);
+                .width((uint32_t)img->width_)
+                .height((uint32_t)img->height_)
+                .levels((uint8_t)1)
+                .format(Texture::InternalFormat::RGB8)
+                .sampler(Texture::Sampler::SAMPLER_2D)
+                .build(engine_);
 
         texture->setImage(engine_, 0, std::move(pb));
 

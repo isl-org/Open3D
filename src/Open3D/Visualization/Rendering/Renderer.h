@@ -30,6 +30,11 @@
 #include "RendererHandle.h"
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
 
 class RenderToBuffer;
@@ -72,6 +77,7 @@ public:
             const MaterialInstanceHandle& id) = 0;
 
     virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
+    virtual TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image) = 0;
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 
     virtual std::unique_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
