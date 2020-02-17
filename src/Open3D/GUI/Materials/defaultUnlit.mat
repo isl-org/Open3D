@@ -1,0 +1,26 @@
+material {
+    name : defaultUnlit,
+    shadingModel : unlit,
+    doubleSided : false,
+
+    parameters : [
+        { type : float3, name : baseColor },
+        { type : float,  name : pointSize }
+    ],
+    requires : [
+        color
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor.rgb =  materialParams.baseColor*getColor().rgb;
+    }
+}

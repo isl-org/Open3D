@@ -54,7 +54,9 @@ TextureSampler::WrapMode ConvertWrapMode(
     return TextureSampler::WrapMode::CLAMP_TO_EDGE;
 }
 
-TextureSampler SamplerFromSamplerParameters(
+}  // namespace
+
+TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
         const TextureSamplerParameters& samplerConfig) {
     TextureSampler sampler;
 
@@ -100,7 +102,6 @@ TextureSampler SamplerFromSamplerParameters(
 
     return sampler;
 }
-}  // namespace
 
 FilamentMaterialModifier::FilamentMaterialModifier(
         const std::shared_ptr<filament::MaterialInstance>& materialInstance,

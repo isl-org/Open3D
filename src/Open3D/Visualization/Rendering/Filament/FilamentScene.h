@@ -65,6 +65,7 @@ public:
     void SetViewActive(const ViewHandle& viewId, bool isActive) override;
     void RemoveView(const ViewHandle& viewId) override;
 
+    GeometryHandle AddGeometry(const geometry::Geometry3D& geometry) override;
     GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& materialId) override;
@@ -109,6 +110,7 @@ private:
         } info;
 
         MaterialInstanceHandle material;
+        TextureHandle texture; // if none, default is used
         // Used for relocating transform to center of mass
         utils::Entity parent;
         std::string name;

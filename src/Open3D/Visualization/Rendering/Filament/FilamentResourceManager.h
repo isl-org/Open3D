@@ -54,8 +54,12 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
+    static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kUbermaterial;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
+    static const TextureHandle kDefaultTexture;
 
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
@@ -66,6 +70,8 @@ public:
 
     TextureHandle CreateTexture(const char* path);
     TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
+    // Slow, will make copy of image data and free it after.
+    TextureHandle CreateTexture(const geometry::Image& image);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
@@ -99,6 +105,10 @@ private:
     ResourcesContainer<filament::Texture> textures_;
     ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
+
+    filament::Texture* LoadTextureFromImage(const std::shared_ptr<geometry::Image>& image);
+
+    void LoadDefaults();
 };
 
 }  // namespace visualization
