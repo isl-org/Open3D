@@ -165,7 +165,8 @@ void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
     resourceManager_.Destroy(id);
 }
 
-IndirectLightHandle FilamentRenderer::AddIndirectLight(const ResourceLoadRequest& request) {
+IndirectLightHandle FilamentRenderer::AddIndirectLight(
+        const ResourceLoadRequest& request) {
     if (request.path.empty()) {
         request.errorCallback(request, -1,
                               "Indirect lights can be loaded only from files");

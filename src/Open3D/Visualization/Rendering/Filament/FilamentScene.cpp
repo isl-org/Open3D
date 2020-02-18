@@ -47,10 +47,9 @@ using FilamentMatrix = filament::math::mat4f;
 EigenMatrix EigenMatrixFromFilamentMatrix(const filament::math::mat4f& fm) {
     EigenMatrix em;
 
-    em << fm(0, 0), fm(0, 1), fm(0, 2), fm(0, 3),
-          fm(1, 0), fm(1, 1), fm(1, 2), fm(1, 3),
-          fm(2, 0), fm(2, 1), fm(2, 2), fm(2, 3),
-          fm(3, 0), fm(3, 1), fm(3, 2), fm(3, 3);
+    em << fm(0, 0), fm(0, 1), fm(0, 2), fm(0, 3), fm(1, 0), fm(1, 1), fm(1, 2),
+            fm(1, 3), fm(2, 0), fm(2, 1), fm(2, 2), fm(2, 3), fm(3, 0),
+            fm(3, 1), fm(3, 2), fm(3, 3);
 
     return em;
 }
@@ -58,12 +57,11 @@ EigenMatrix EigenMatrixFromFilamentMatrix(const filament::math::mat4f& fm) {
 FilamentMatrix FilamentMatrixFromEigenMatrix(const EigenMatrix& em) {
     // Filament matrices is column major and Eigen's - row major
     return FilamentMatrix(FilamentMatrix::row_major_init{
-            em(0, 0), em(0, 1), em(0, 2), em(0, 3),
-            em(1, 0), em(1, 1), em(1, 2), em(1, 3),
-            em(2, 0), em(2, 1), em(2, 2), em(2, 3),
+            em(0, 0), em(0, 1), em(0, 2), em(0, 3), em(1, 0), em(1, 1),
+            em(1, 2), em(1, 3), em(2, 0), em(2, 1), em(2, 2), em(2, 3),
             em(3, 0), em(3, 1), em(3, 2), em(3, 3)});
 }
-}
+}  // namespace converters
 
 namespace open3d {
 namespace visualization {
@@ -341,7 +339,8 @@ void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId,
     if (iTransform.isValid()) {
         const auto& eMatrix = transform.matrix();
         auto& transformMgr = engine_.getTransformManager();
-        transformMgr.setTransform(iTransform, converters::FilamentMatrixFromEigenMatrix(eMatrix));
+        transformMgr.setTransform(
+                iTransform, converters::FilamentMatrixFromEigenMatrix(eMatrix));
     }
 }
 

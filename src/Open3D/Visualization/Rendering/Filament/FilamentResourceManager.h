@@ -78,7 +78,8 @@ public:
     std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(
             const MaterialInstanceHandle& id);
     std::weak_ptr<filament::Texture> GetTexture(const TextureHandle& id);
-    std::weak_ptr<filament::IndirectLight> GetIndirectLight(const IndirectLightHandle& id);
+    std::weak_ptr<filament::IndirectLight> GetIndirectLight(
+            const IndirectLightHandle& id);
     std::weak_ptr<filament::Skybox> GetSkybox(const SkyboxHandle& id);
     std::weak_ptr<filament::VertexBuffer> GetVertexBuffer(
             const VertexBufferHandle& id);
@@ -107,7 +108,8 @@ private:
     // Lists dependent resources, which should be deallocated when
     // resource referred by map key is deallocated.
     // WARNING: Don't put in dependent list resources which available publicly
-    std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>> dependencies_;
+    std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>>
+            dependencies_;
 };
 
 }  // namespace visualization

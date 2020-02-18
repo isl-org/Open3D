@@ -74,7 +74,8 @@ public:
     virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
     virtual void RemoveTexture(const TextureHandle& id) = 0;
 
-    virtual IndirectLightHandle AddIndirectLight(const ResourceLoadRequest& request) = 0;
+    virtual IndirectLightHandle AddIndirectLight(
+            const ResourceLoadRequest& request) = 0;
     virtual void RemoveIndirectLight(const IndirectLightHandle& id) = 0;
 
     virtual SkyboxHandle AddSkybox(const ResourceLoadRequest& request) = 0;

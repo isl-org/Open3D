@@ -73,7 +73,8 @@ public:
     TextureHandle AddTexture(const ResourceLoadRequest& request) override;
     void RemoveTexture(const TextureHandle& id) override;
 
-    IndirectLightHandle AddIndirectLight(const ResourceLoadRequest& request) override;
+    IndirectLightHandle AddIndirectLight(
+            const ResourceLoadRequest& request) override;
     void RemoveIndirectLight(const IndirectLightHandle& id) override;
 
     SkyboxHandle AddSkybox(const ResourceLoadRequest& request) override;

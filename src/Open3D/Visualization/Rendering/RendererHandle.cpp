@@ -48,9 +48,13 @@ const char* REHandle_abstract::TypeToString(EntityType type) {
                   "You forgot to add string value for new handle type.");
 
     static const char* kTypesMapping[kTypesMapped] = {
-            "None", "View", "Scene", "Geometry",
-            "Light", "IndirectLight", "Skybox", "Camera",  "Material",
-            "MaterialInstance", "Texture", "VertexBuffer", "IndexBuffer"};
+            "None",       "View",
+            "Scene",      "Geometry",
+            "Light",      "IndirectLight",
+            "Skybox",     "Camera",
+            "Material",   "MaterialInstance",
+            "Texture",    "VertexBuffer",
+            "IndexBuffer"};
 
     return kTypesMapping[static_cast<size_t>(type)];
 }
