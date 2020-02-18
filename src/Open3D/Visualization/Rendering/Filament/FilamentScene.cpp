@@ -37,6 +37,7 @@
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
+#include <filament/Skybox.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
 
@@ -318,6 +319,20 @@ FilamentScene::Transform FilamentScene::GetIndirectLightRotation() const {
     }
 
     return {};
+}
+
+void FilamentScene::SetSkybox(const SkyboxHandle& id) {
+    if (!id) {
+        wSkybox_.reset();
+        scene_->setSkybox(nullptr);
+        return;
+    }
+
+    auto wSkybox = resourceManager_.GetSkybox(id);
+    if (auto skybox = wSkybox.lock()) {
+        wSkybox_ = wSkybox;
+        scene_->setSkybox(skybox.get());
+    }
 }
 
 void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId,

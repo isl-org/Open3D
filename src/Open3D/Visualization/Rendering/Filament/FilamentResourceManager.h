@@ -39,6 +39,7 @@ class IndexBuffer;
 class IndirectLight;
 class Material;
 class MaterialInstance;
+class Skybox;
 class Texture;
 class VertexBuffer;
 }  // namespace filament
@@ -64,6 +65,7 @@ public:
     TextureHandle CreateTexture(const char* path);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
+    SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
@@ -77,6 +79,7 @@ public:
             const MaterialInstanceHandle& id);
     std::weak_ptr<filament::Texture> GetTexture(const TextureHandle& id);
     std::weak_ptr<filament::IndirectLight> GetIndirectLight(const IndirectLightHandle& id);
+    std::weak_ptr<filament::Skybox> GetSkybox(const SkyboxHandle& id);
     std::weak_ptr<filament::VertexBuffer> GetVertexBuffer(
             const VertexBufferHandle& id);
     std::weak_ptr<filament::IndexBuffer> GetIndexBuffer(
@@ -97,6 +100,7 @@ private:
     ResourcesContainer<filament::Material> materials_;
     ResourcesContainer<filament::Texture> textures_;
     ResourcesContainer<filament::IndirectLight> ibls_;
+    ResourcesContainer<filament::Skybox> skyboxes_;
     ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
 

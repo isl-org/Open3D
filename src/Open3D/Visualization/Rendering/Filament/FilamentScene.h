@@ -39,6 +39,7 @@ class Engine;
 class IndirectLight;
 class Renderer;
 class Scene;
+class Skybox;
 class TransformManager;
 class VertexBuffer;
 }  // namespace filament
@@ -86,6 +87,8 @@ public:
     float GetIndirectLightIntensity() const override;
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() const override;
+
+    void SetSkybox(const SkyboxHandle& id) override;
 
     void SetEntityTransform(const REHandle_abstract& entityId,
                             const Transform& transform) override;
@@ -142,6 +145,7 @@ private:
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
     std::unordered_map<REHandle_abstract, SceneEntity> entities_;
     std::weak_ptr<filament::IndirectLight> wIndirectLight_;
+    std::weak_ptr<filament::Skybox> wSkybox_;
 };
 
 }  // namespace visualization

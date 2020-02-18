@@ -37,6 +37,7 @@
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/Skybox.h>
 #include <filament/image/KtxBundle.h>
 #include <filament/image/KtxUtility.h>
 
@@ -253,6 +254,40 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(const ResourceL
     return handle;
 }
 
+SkyboxHandle FilamentResourceManager::CreateSkybox(const ResourceLoadRequest& request) {
+    SkyboxHandle handle;
+
+    if (false == request.path.empty()) {
+        std::vector<char> skyData;
+        std::string errorStr;
+
+        if (utility::filesystem::FReadToBuffer(request.path, skyData, &errorStr)) {
+            using namespace filament;
+            // will be destroyed later by image::ktx::createTexture
+            auto* skyKtx = new image::KtxBundle(reinterpret_cast<std::uint8_t*>(skyData.data()), skyData.size());
+            auto* skyTexture = image::ktx::createTexture(&engine_, skyKtx, false);
+
+            auto skybox = Skybox::Builder().environment(skyTexture).showSun(true).build(engine_);
+
+            if (skybox) {
+                handle = RegisterResource<SkyboxHandle>(engine_, skybox, skyboxes_);
+
+                auto hTexture = RegisterResource<TextureHandle>(engine_, skyTexture, textures_);
+                dependencies_[handle].insert(hTexture);
+            } else {
+                request.errorCallback(request, 3, "Failed to create indirect light from ktx");
+                engine_.destroy(skyTexture);
+            }
+        } else {
+            request.errorCallback(request, errno, errorStr);
+        }
+    } else {
+        request.errorCallback(request, -1, "");
+    }
+
+    return handle;
+}
+
 VertexBufferHandle FilamentResourceManager::AddVertexBuffer(
         filament::VertexBuffer* vertexBuffer) {
     return RegisterResource<VertexBufferHandle>(engine_, vertexBuffer,
@@ -297,6 +332,10 @@ std::weak_ptr<filament::Texture> FilamentResourceManager::GetTexture(
 
 std::weak_ptr<filament::IndirectLight> FilamentResourceManager::GetIndirectLight(const IndirectLightHandle& id) {
     return FindResource(id, ibls_);
+}
+
+std::weak_ptr<filament::Skybox> FilamentResourceManager::GetSkybox(const SkyboxHandle& id) {
+    return FindResource(id, skyboxes_);
 }
 
 std::weak_ptr<filament::VertexBuffer> FilamentResourceManager::GetVertexBuffer(

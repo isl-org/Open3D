@@ -76,6 +76,9 @@ public:
     IndirectLightHandle AddIndirectLight(const ResourceLoadRequest& request) override;
     void RemoveIndirectLight(const IndirectLightHandle& id) override;
 
+    SkyboxHandle AddSkybox(const ResourceLoadRequest& request) override;
+    void RemoveSkybox(const SkyboxHandle& id) override;
+
     std::unique_ptr<RenderToBuffer> CreateBufferRenderer() override;
 
     // Removes scene from scenes list and draws it last

@@ -80,6 +80,9 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() const = 0;
 
+    // Passing empty id removes skybox
+    virtual void SetSkybox(const SkyboxHandle& id) = 0;
+
     virtual void SetEntityTransform(const REHandle_abstract& entityId,
                                     const Transform& transform) = 0;
     virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;

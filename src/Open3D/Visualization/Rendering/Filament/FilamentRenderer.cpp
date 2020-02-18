@@ -179,6 +179,20 @@ void FilamentRenderer::RemoveIndirectLight(const IndirectLightHandle& id) {
     resourceManager_.Destroy(id);
 }
 
+SkyboxHandle FilamentRenderer::AddSkybox(const ResourceLoadRequest& request) {
+    if (request.path.empty()) {
+        request.errorCallback(request, -1,
+                              "Skyboxes can be loaded only from files");
+        return {};
+    }
+
+    return resourceManager_.CreateSkybox(request);
+}
+
+void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
+    resourceManager_.Destroy(id);
+}
+
 std::unique_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = std::make_unique<FilamentRenderToBuffer>(engine_, *this);
     bufferRenderers_.insert(renderer.get());
