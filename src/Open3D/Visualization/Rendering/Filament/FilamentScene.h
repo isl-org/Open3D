@@ -36,6 +36,7 @@
 
 namespace filament {
 class Engine;
+class IndirectLight;
 class Renderer;
 class Scene;
 class TransformManager;
@@ -79,6 +80,12 @@ public:
 
     LightHandle AddLight(const LightDescription& descr) override;
     void RemoveLight(const LightHandle& id) override;
+
+    void SetIndirectLight(const IndirectLightHandle& id) override;
+    void SetIndirectLightIntensity(float intensity) override;
+    float GetIndirectLightIntensity() const override;
+    void SetIndirectLightRotation(const Transform& rotation) override;
+    Transform GetIndirectLightRotation() const override;
 
     void SetEntityTransform(const REHandle_abstract& entityId,
                             const Transform& transform) override;
@@ -134,6 +141,7 @@ private:
 
     std::unordered_map<REHandle_abstract, ViewContainer> views_;
     std::unordered_map<REHandle_abstract, SceneEntity> entities_;
+    std::weak_ptr<filament::IndirectLight> wIndirectLight_;
 };
 
 }  // namespace visualization

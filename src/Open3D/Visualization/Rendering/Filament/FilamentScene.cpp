@@ -33,11 +33,36 @@
 #include "Open3D/Utility/Console.h"
 
 #include <filament/Engine.h>
+#include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
+
+namespace converters {
+using EigenMatrix = open3d::visualization::FilamentScene::Transform::MatrixType;
+using FilamentMatrix = filament::math::mat4f;
+EigenMatrix EigenMatrixFromFilamentMatrix(const filament::math::mat4f& fm) {
+    EigenMatrix em;
+
+    em << fm(0, 0), fm(0, 1), fm(0, 2), fm(0, 3),
+          fm(1, 0), fm(1, 1), fm(1, 2), fm(1, 3),
+          fm(2, 0), fm(2, 1), fm(2, 2), fm(2, 3),
+          fm(3, 0), fm(3, 1), fm(3, 2), fm(3, 3);
+
+    return em;
+}
+
+FilamentMatrix FilamentMatrixFromEigenMatrix(const EigenMatrix& em) {
+    // Filament matrices is column major and Eigen's - row major
+    return FilamentMatrix(FilamentMatrix::row_major_init{
+            em(0, 0), em(0, 1), em(0, 2), em(0, 3),
+            em(1, 0), em(1, 1), em(1, 2), em(1, 3),
+            em(2, 0), em(2, 1), em(2, 2), em(2, 3),
+            em(3, 0), em(3, 1), em(3, 2), em(3, 3)});
+}
+}
 
 namespace open3d {
 namespace visualization {
@@ -249,22 +274,59 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
 
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
+void FilamentScene::SetIndirectLight(const IndirectLightHandle& id) {
+    if (!id) {
+        wIndirectLight_.reset();
+        scene_->setIndirectLight(nullptr);
+        return;
+    }
+
+    auto wLight = resourceManager_.GetIndirectLight(id);
+    if (auto light = wLight.lock()) {
+        wIndirectLight_ = wLight;
+        scene_->setIndirectLight(light.get());
+    }
+}
+
+void FilamentScene::SetIndirectLightIntensity(float intensity) {
+    if (auto light = wIndirectLight_.lock()) {
+        light->setIntensity(intensity);
+    }
+}
+
+float FilamentScene::GetIndirectLightIntensity() const {
+    if (auto light = wIndirectLight_.lock()) {
+        return light->getIntensity();
+    }
+
+    return 0.f;
+}
+
+void FilamentScene::SetIndirectLightRotation(const Transform& rotation) {
+    if (auto light = wIndirectLight_.lock()) {
+        auto ft = converters::FilamentMatrixFromEigenMatrix(rotation.matrix());
+        light->setRotation(ft.upperLeft());
+    }
+}
+
+FilamentScene::Transform FilamentScene::GetIndirectLightRotation() const {
+    if (auto light = wIndirectLight_.lock()) {
+        converters::FilamentMatrix ft(light->getRotation());
+        auto et = converters::EigenMatrixFromFilamentMatrix(ft);
+
+        return Transform(et);
+    }
+
+    return {};
+}
+
 void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId,
                                        const Transform& transform) {
     auto iTransform = GetEntityTransformInstance(entityId);
     if (iTransform.isValid()) {
-        using namespace filament::math;
-
-        // Filament matrices is column major and Eigen's - row major
-        auto eMatrix = transform.matrix();
-        mat4f fTransform(mat4f::row_major_init{
-                eMatrix(0, 0), eMatrix(0, 1), eMatrix(0, 2), eMatrix(0, 3),
-                eMatrix(1, 0), eMatrix(1, 1), eMatrix(1, 2), eMatrix(1, 3),
-                eMatrix(2, 0), eMatrix(2, 1), eMatrix(2, 2), eMatrix(2, 3),
-                eMatrix(3, 0), eMatrix(3, 1), eMatrix(3, 2), eMatrix(3, 3)});
-
+        const auto& eMatrix = transform.matrix();
         auto& transformMgr = engine_.getTransformManager();
-        transformMgr.setTransform(iTransform, fTransform);
+        transformMgr.setTransform(iTransform, converters::FilamentMatrixFromEigenMatrix(eMatrix));
     }
 }
 
@@ -276,17 +338,7 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(
     if (iTransform.isValid()) {
         auto& transformMgr = engine_.getTransformManager();
         auto fTransform = transformMgr.getTransform(iTransform);
-
-        Transform::MatrixType matrix;
-
-        matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
-                fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
-                fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
-                fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
-                fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
-                fTransform(3, 3);
-
-        eTransform = matrix;
+        eTransform = converters::EigenMatrixFromFilamentMatrix(fTransform);
     }
 
     return eTransform;

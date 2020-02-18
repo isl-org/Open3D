@@ -71,9 +71,14 @@ public:
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
 
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
-    // virtual LightFluentInterface ModifyLight(const
-    // REHandle<EntityType::Light>& id) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
+
+    // Passing empty id disables indirect lightning
+    virtual void SetIndirectLight(const IndirectLightHandle& id) = 0;
+    virtual void SetIndirectLightIntensity(float intensity) = 0;
+    virtual float GetIndirectLightIntensity() const = 0;
+    virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
+    virtual Transform GetIndirectLightRotation() const = 0;
 
     virtual void SetEntityTransform(const REHandle_abstract& entityId,
                                     const Transform& transform) = 0;

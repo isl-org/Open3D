@@ -165,6 +165,20 @@ void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
     resourceManager_.Destroy(id);
 }
 
+IndirectLightHandle FilamentRenderer::AddIndirectLight(const ResourceLoadRequest& request) {
+    if (request.path.empty()) {
+        request.errorCallback(request, -1,
+                              "Indirect lights can be loaded only from files");
+        return {};
+    }
+
+    return resourceManager_.CreateIndirectLight(request);
+}
+
+void FilamentRenderer::RemoveIndirectLight(const IndirectLightHandle& id) {
+    resourceManager_.Destroy(id);
+}
+
 std::unique_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = std::make_unique<FilamentRenderToBuffer>(engine_, *this);
     bufferRenderers_.insert(renderer.get());

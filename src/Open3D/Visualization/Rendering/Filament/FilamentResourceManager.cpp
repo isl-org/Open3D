@@ -32,10 +32,13 @@
 #include "Open3D/Utility/FileSystem.h"
 
 #include <filament/Engine.h>
+#include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/image/KtxBundle.h>
+#include <filament/image/KtxUtility.h>
 
 namespace open3d {
 namespace visualization {
@@ -205,6 +208,51 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
     return handle;
 }
 
+IndirectLightHandle FilamentResourceManager::CreateIndirectLight(const ResourceLoadRequest& request) {
+    IndirectLightHandle handle;
+
+    if (false == request.path.empty()) {
+        std::vector<char> iblData;
+        std::string errorStr;
+
+        if (utility::filesystem::FReadToBuffer(request.path, iblData, &errorStr)) {
+            using namespace filament;
+            // will be destroyed later by image::ktx::createTexture
+            auto* iblKtx = new image::KtxBundle(reinterpret_cast<std::uint8_t*>(iblData.data()), iblData.size());
+            auto* iblTexture = image::ktx::createTexture(&engine_, iblKtx, false);
+
+            filament::math::float3 bands[9] = {};
+            if (!iblKtx->getSphericalHarmonics(bands)) {
+                engine_.destroy(iblTexture);
+                request.errorCallback(request, 2, "Failed to read spherical harmonics from ktx");
+                return handle;
+            }
+
+            auto indirectLight = IndirectLight::Builder()
+                    .reflections(iblTexture)
+                    .irradiance(3, bands)
+                    .intensity(30000.f)
+                    .build(engine_);
+
+            if (indirectLight) {
+                handle = RegisterResource<IndirectLightHandle>(engine_, indirectLight, ibls_);
+
+                auto hTexture = RegisterResource<TextureHandle>(engine_, iblTexture, textures_);
+                dependencies_[handle].insert(hTexture);
+            } else {
+                request.errorCallback(request, 3, "Failed to create indirect light from ktx");
+                engine_.destroy(iblTexture);
+            }
+        } else {
+            request.errorCallback(request, errno, errorStr);
+        }
+    } else {
+        request.errorCallback(request, -1, "");
+    }
+
+    return handle;
+}
+
 VertexBufferHandle FilamentResourceManager::AddVertexBuffer(
         filament::VertexBuffer* vertexBuffer) {
     return RegisterResource<VertexBufferHandle>(engine_, vertexBuffer,
@@ -247,6 +295,10 @@ std::weak_ptr<filament::Texture> FilamentResourceManager::GetTexture(
     return FindResource(id, textures_);
 }
 
+std::weak_ptr<filament::IndirectLight> FilamentResourceManager::GetIndirectLight(const IndirectLightHandle& id) {
+    return FindResource(id, ibls_);
+}
+
 std::weak_ptr<filament::VertexBuffer> FilamentResourceManager::GetVertexBuffer(
         const VertexBufferHandle& id) {
     return FindResource(id, vertexBuffers_);
@@ -287,7 +339,16 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
                     "Resource {} is not suited for destruction by "
                     "ResourceManager",
                     REHandle_abstract::TypeToString(id.type));
-            break;
+            return;
+    }
+
+    auto found = dependencies_.find(id);
+    if (found != dependencies_.end()) {
+        for (const auto& dependent : found->second) {
+            Destroy(dependent);
+        }
+
+        dependencies_.erase(found);
     }
 }
 
