@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,51 +26,33 @@
 
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <memory>
-
-#include "Open3D/Visualization/Rendering/MaterialModifier.h"
-
-namespace filament {
-class MaterialInstance;
-class TextureSampler;
-}  // namespace filament
 
 namespace open3d {
 namespace visualization {
 
-class FilamentMaterialModifier : public MaterialModifier {
+class Scene;
+class View;
+
+class RenderToBuffer {
 public:
-    static filament::TextureSampler SamplerFromSamplerParameters(
-            const TextureSamplerParameters& samplerConfig);
+    struct Buffer {
+        std::size_t width = 0;
+        std::size_t height = 0;
+        const std::uint8_t* bytes = nullptr;
+        std::size_t size = 0;
+    };
 
-    FilamentMaterialModifier(
-            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-            const MaterialInstanceHandle& id);
-    FilamentMaterialModifier() = default;
+    using BufferReadyCallback = std::function<void(const Buffer&)>;
 
-    void Reset();
-    void Init(
-            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-            const MaterialInstanceHandle& id);
+    virtual ~RenderToBuffer() = default;
 
-    MaterialModifier& SetParameter(const char* parameter, float value) override;
-    MaterialModifier& SetColor(const char* parameter,
-                               const Eigen::Vector3f& value) override;
-    MaterialModifier& SetColor(const char* parameter,
-                               const Eigen::Vector4f& value) override;
-
-    MaterialModifier& SetTexture(
-            const char* parameter,
-            const TextureHandle& texture,
-            const TextureSamplerParameters& sampler) override;
-
-    MaterialModifier& SetDoubleSided(bool doubleSided) override;
-
-    MaterialInstanceHandle Finish() override;
-
-private:
-    MaterialInstanceHandle currentHandle_;
-    std::shared_ptr<filament::MaterialInstance> materialInstance_;
+    virtual void SetDimensions(std::size_t width, std::size_t height) = 0;
+    virtual void CopySettings(const View* view) = 0;
+    virtual View& GetView() = 0;
+    virtual void RequestFrame(Scene* scene, BufferReadyCallback cb) = 0;
 };
 
 }  // namespace visualization

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,51 +26,56 @@
 
 #pragma once
 
-#include <memory>
-
-#include "Open3D/Visualization/Rendering/MaterialModifier.h"
+#include "Open3D/Visualization/Rendering/RenderToBuffer.h"
 
 namespace filament {
-class MaterialInstance;
-class TextureSampler;
+class Engine;
+class Renderer;
+class Scene;
+class SwapChain;
 }  // namespace filament
 
 namespace open3d {
 namespace visualization {
 
-class FilamentMaterialModifier : public MaterialModifier {
+class FilamentRenderer;
+class FilamentScene;
+class FilamentView;
+
+class FilamentRenderToBuffer : public RenderToBuffer {
 public:
-    static filament::TextureSampler SamplerFromSamplerParameters(
-            const TextureSamplerParameters& samplerConfig);
+    // Never create it alone, if you are using GUI app or another
+    // FilamentRenderer instance. Use Renderer::CreateBufferRenderer instead
+    explicit FilamentRenderToBuffer(filament::Engine& engine);
+    FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
+    ~FilamentRenderToBuffer() override;
 
-    FilamentMaterialModifier(
-            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-            const MaterialInstanceHandle& id);
-    FilamentMaterialModifier() = default;
+    void SetDimensions(std::size_t width, std::size_t height) override;
+    void CopySettings(const View* view) override;
+    View& GetView() override;
 
-    void Reset();
-    void Init(
-            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-            const MaterialInstanceHandle& id);
-
-    MaterialModifier& SetParameter(const char* parameter, float value) override;
-    MaterialModifier& SetColor(const char* parameter,
-                               const Eigen::Vector3f& value) override;
-    MaterialModifier& SetColor(const char* parameter,
-                               const Eigen::Vector4f& value) override;
-
-    MaterialModifier& SetTexture(
-            const char* parameter,
-            const TextureHandle& texture,
-            const TextureSamplerParameters& sampler) override;
-
-    MaterialModifier& SetDoubleSided(bool doubleSided) override;
-
-    MaterialInstanceHandle Finish() override;
+    void RequestFrame(Scene* scene, BufferReadyCallback cb) override;
 
 private:
-    MaterialInstanceHandle currentHandle_;
-    std::shared_ptr<filament::MaterialInstance> materialInstance_;
+    friend class FilamentRenderer;
+
+    FilamentRenderer* parent_ = nullptr;
+    filament::Engine& engine_;
+    filament::Renderer* renderer_ = nullptr;
+    filament::SwapChain* swapchain_ = nullptr;
+    std::unique_ptr<FilamentView> view_;
+
+    std::size_t width_ = 0;
+    std::size_t height_ = 0;
+    std::uint8_t* buffer_ = nullptr;
+    std::size_t bufferSize_ = 0;
+
+    BufferReadyCallback callback_;
+    bool frameDone_ = true;
+    bool pending_ = false;
+
+    static void ReadPixelsCallback(void* buffer, size_t size, void* user);
+    void Render();
 };
 
 }  // namespace visualization

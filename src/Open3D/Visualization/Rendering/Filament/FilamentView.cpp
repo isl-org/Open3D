@@ -44,14 +44,32 @@ namespace visualization {
 namespace {
 const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
 const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
+
+filament::View::TargetBufferFlags FlagsFromTargetBuffers(
+        const View::TargetBuffers& buffers) {
+    using namespace std;
+
+    auto rawBuffers = static_cast<uint8_t>(buffers);
+    uint8_t rawFilamentBuffers = 0;
+    if (rawBuffers | (uint8_t)View::TargetBuffers::Color) {
+        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::COLOR;
+    }
+    if (rawBuffers | (uint8_t)View::TargetBuffers::Depth) {
+        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::DEPTH;
+    }
+    if (rawBuffers | (uint8_t)View::TargetBuffers::Stencil) {
+        rawFilamentBuffers |=
+                (uint8_t)filament::View::TargetBufferFlags::STENCIL;
+    }
+
+    return static_cast<filament::View::TargetBufferFlags>(rawFilamentBuffers);
+}
 }  // namespace
 
-FilamentView::FilamentView(filament::Engine& aEngine,
-                           FilamentScene& aScene,
+FilamentView::FilamentView(filament::Engine& engine,
                            FilamentResourceManager& resourceManager)
-    : engine_(aEngine), scene_(aScene), resourceManager_(resourceManager) {
+    : engine_(engine), resourceManager_(resourceManager) {
     view_ = engine_.createView();
-    view_->setScene(scene_.GetNativeScene());
     view_->setSampleCount(8);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
@@ -62,6 +80,17 @@ FilamentView::FilamentView(filament::Engine& aEngine,
 
     camera_->SetProjection(90, 4.f / 3.f, 0.01, 1000,
                            Camera::FovType::Horizontal);
+
+    discardBuffers_ = View::TargetBuffers::All;
+}
+
+FilamentView::FilamentView(filament::Engine& engine,
+                           FilamentScene& scene,
+                           FilamentResourceManager& resourceManager)
+    : FilamentView(engine, resourceManager) {
+    scene_ = &scene;
+
+    view_->setScene(scene_->GetNativeScene());
 }
 
 FilamentView::~FilamentView() {
@@ -93,24 +122,8 @@ void FilamentView::SetMode(Mode mode) {
 }
 
 void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
-    using namespace std;
-
-    auto rawBuffers = static_cast<uint8_t>(buffers);
-    uint8_t rawFilamentBuffers = 0;
-    if (rawBuffers | (uint8_t)TargetBuffers::Color) {
-        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::COLOR;
-    }
-    if (rawBuffers | (uint8_t)TargetBuffers::Depth) {
-        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::DEPTH;
-    }
-    if (rawBuffers | (uint8_t)TargetBuffers::Stencil) {
-        rawFilamentBuffers |=
-                (uint8_t)filament::View::TargetBufferFlags::STENCIL;
-    }
-
-    view_->setRenderTarget(
-            nullptr,
-            static_cast<filament::View::TargetBufferFlags>(rawFilamentBuffers));
+    discardBuffers_ = buffers;
+    view_->setRenderTarget(nullptr, FlagsFromTargetBuffers(buffers));
 }
 
 void FilamentView::SetViewport(std::int32_t x,
@@ -129,6 +142,38 @@ void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
+
+void FilamentView::CopySettingsFrom(const FilamentView& other) {
+    SetMode(other.mode_);
+    view_->setRenderTarget(nullptr,
+                           FlagsFromTargetBuffers(other.discardBuffers_));
+
+    auto vp = other.view_->getViewport();
+    SetViewport(0, 0, vp.width, vp.height);
+
+    SetClearColor(other.clearColor_);
+
+    // TODO: Consider moving this code to FilamentCamera
+    auto& camera = view_->getCamera();
+    auto& otherCamera = other.GetNativeView()->getCamera();
+
+    // TODO: Code below could introduce problems with culling,
+    //        because Camera::setCustomProjection method
+    //        assigns both culling projection and projection matrices
+    //        to the same matrix. Which is good for ORTHO but
+    //        makes culling matrix with infinite far plane for PERSPECTIVE
+    //        See FCamera::setCustomProjection and FCamera::setProjection
+    //        There is no easy way to fix it currently (Filament 1.4.3)
+    camera.setCustomProjection(otherCamera.getProjectionMatrix(),
+                               otherCamera.getNear(),
+                               otherCamera.getCullingFar());
+    camera.setModelMatrix(otherCamera.getModelMatrix());
+}
+
+void FilamentView::SetScene(FilamentScene& scene) {
+    scene_ = &scene;
+    view_->setScene(scene_->GetNativeScene());
+}
 
 void FilamentView::PreRender() {
     auto& renderableManager = engine_.getRenderableManager();
@@ -152,20 +197,24 @@ void FilamentView::PreRender() {
         materialHandle = FilamentResourceManager::kNormalsMaterial;
     }
 
-    for (const auto& pair : scene_.entities_) {
-        const auto& entity = pair.second;
-        if (entity.info.type == EntityType::Geometry) {
-            std::weak_ptr<filament::MaterialInstance> matInst;
-            if (materialHandle) {
-                matInst = resourceManager_.GetMaterialInstance(materialHandle);
-            } else {
-                matInst = resourceManager_.GetMaterialInstance(entity.material);
-            }
+    if (scene_) {
+        for (const auto& pair : scene_->entities_) {
+            const auto& entity = pair.second;
+            if (entity.info.type == EntityType::Geometry) {
+                std::weak_ptr<filament::MaterialInstance> matInst;
+                if (materialHandle) {
+                    matInst = resourceManager_.GetMaterialInstance(
+                            materialHandle);
+                } else {
+                    matInst = resourceManager_.GetMaterialInstance(
+                            entity.material);
+                }
 
-            filament::RenderableManager::Instance inst =
-                    renderableManager.getInstance(entity.info.self);
-            renderableManager.setMaterialInstanceAt(inst, 0,
-                                                    matInst.lock().get());
+                filament::RenderableManager::Instance inst =
+                        renderableManager.getInstance(entity.info.self);
+                renderableManager.setMaterialInstanceAt(inst, 0,
+                                                        matInst.lock().get());
+            }
         }
     }
 }

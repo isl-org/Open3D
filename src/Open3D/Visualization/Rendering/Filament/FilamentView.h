@@ -54,6 +54,8 @@ public:
     static constexpr std::uint8_t kMainLayer = 1;  // Default layer for objects
 
     FilamentView(filament::Engine& engine,
+                 FilamentResourceManager& resourceManager);
+    FilamentView(filament::Engine& engine,
                  FilamentScene& scene,
                  FilamentResourceManager& resourceManager);
     ~FilamentView() override;
@@ -69,7 +71,13 @@ public:
 
     Camera* GetCamera() const override;
 
+    // Copies available settings for view and camera
+    void CopySettingsFrom(const FilamentView& other);
+
+    void SetScene(FilamentScene& scene);
+
     filament::View* GetNativeView() const { return view_; }
+
     void PreRender();
     void PostRender();
 
@@ -77,9 +85,10 @@ private:
     std::unique_ptr<FilamentCamera> camera_;
     Eigen::Vector3f clearColor_;
     Mode mode_ = Mode::Color;
+    TargetBuffers discardBuffers_;
 
     filament::Engine& engine_;
-    FilamentScene& scene_;
+    FilamentScene* scene_ = nullptr;
     FilamentResourceManager& resourceManager_;
     filament::View* view_ = nullptr;
 };
