@@ -182,13 +182,14 @@ GuiVisualizer::GuiVisualizer(
     std::string path = rsrcPath + "/nonmetal.filamat";
     impl_->nonmetal =
             GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
-    impl_->white = GetRenderer()
-                           .ModifyMaterial(impl_->nonmetal)
-                           .SetColor("baseColor", {1.0, 1.0, 1.0})
-                           .SetParameter("roughness", 0.5f)
-                           .SetParameter("clearCoat", 1.f)
-                           .SetParameter("clearCoatRoughness", 0.3f)
-                           .Finish();
+    impl_->white =
+            GetRenderer()
+                    .ModifyMaterial(impl_->nonmetal)
+                    .SetColor("baseColor", Eigen::Vector3f{1.0, 1.0, 1.0})
+                    .SetParameter("roughness", 0.5f)
+                    .SetParameter("clearCoat", 1.f)
+                    .SetParameter("clearCoatRoughness", 0.3f)
+                    .Finish();
 
     // Create scene
     auto sceneId = GetRenderer().CreateScene();

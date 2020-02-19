@@ -42,6 +42,11 @@ class VertexBuffer;
 }  // namespace filament
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
 
 // Centralized storage of allocated resources.
@@ -49,8 +54,12 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
+    static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kUbermaterial;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
+    static const TextureHandle kDefaultTexture;
 
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
@@ -60,10 +69,13 @@ public:
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
 
     TextureHandle CreateTexture(const char* path);
+    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
+    // Slow, will make copy of image data and free it after.
+    TextureHandle CreateTexture(const geometry::Image& image);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
-    // managed by FilamentScene class
+    // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
     IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
                                         size_t indexStride);
@@ -93,6 +105,11 @@ private:
     ResourcesContainer<filament::Texture> textures_;
     ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
+
+    filament::Texture* LoadTextureFromImage(
+            const std::shared_ptr<geometry::Image>& image);
+
+    void LoadDefaults();
 };
 
 }  // namespace visualization
