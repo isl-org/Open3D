@@ -121,6 +121,8 @@ public:
                                            float value) = 0;
     virtual MaterialModifier& SetColor(const char* parameter,
                                        const Eigen::Vector3f& value) = 0;
+    virtual MaterialModifier& SetColor(const char* parameter,
+                                       const Eigen::Vector4f& value) = 0;
     virtual MaterialModifier& SetTexture(
             const char* parameter,
             const TextureHandle& texture,

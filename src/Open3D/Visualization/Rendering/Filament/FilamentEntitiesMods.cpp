@@ -145,7 +145,19 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
     if (materialInstance_) {
         const auto color =
                 filament::math::float3{value.x(), value.y(), value.z()};
-        materialInstance_->setParameter(parameter, filament::RgbType::sRGB,
+        materialInstance_->setParameter(parameter, filament::RgbType::LINEAR,
+                                        color);
+    }
+
+    return *this;
+}
+
+MaterialModifier& FilamentMaterialModifier::SetColor(
+        const char* parameter, const Eigen::Vector4f& value) {
+    if (materialInstance_) {
+        auto color =
+                filament::math::float4{value(0), value(1), value(2), value(3)};
+        materialInstance_->setParameter(parameter, filament::RgbaType::LINEAR,
                                         color);
     }
 

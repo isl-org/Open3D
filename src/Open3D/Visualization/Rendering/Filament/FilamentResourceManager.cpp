@@ -145,7 +145,8 @@ namespace texture_loading {
 struct TextureSettings {
     filament::Texture::Format imageFormat = filament::Texture::Format::RGB;
     filament::Texture::Type imageType = filament::Texture::Type::UBYTE;
-    filament::Texture::InternalFormat format = filament::Texture::InternalFormat::RGB8;
+    filament::Texture::InternalFormat format =
+            filament::Texture::InternalFormat::RGB8;
     std::uint32_t texelWidth = 0;
     std::uint32_t texelHeight = 0;
 };
@@ -166,7 +167,8 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
             settings.format = filament::Texture::InternalFormat::RGB8;
             break;
         default:
-            utility::LogError("Unsupported image number of channels: {}", image.num_of_channels_);
+            utility::LogError("Unsupported image number of channels: {}",
+                              image.num_of_channels_);
             break;
     }
 
@@ -175,13 +177,14 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
             settings.imageType = filament::Texture::Type::UBYTE;
             break;
         default:
-            utility::LogError("Unsupported image bytes per channel: {}", image.bytes_per_channel_);
+            utility::LogError("Unsupported image bytes per channel: {}",
+                              image.bytes_per_channel_);
             break;
     }
 
     return settings;
 }
-}
+}  // namespace texture_loading
 
 }  // namespace
 
@@ -388,9 +391,10 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto retainedImgId = RetainImageForLoading(image);
     auto textureSettings = texture_loading::GetSettingsFromImage(*image);
 
-    Texture::PixelBufferDescriptor pb(
-            image->data_.data(), image->data_.size(), textureSettings.imageFormat,
-            textureSettings.imageType, FreeRetainedImage, (void*)retainedImgId);
+    Texture::PixelBufferDescriptor pb(image->data_.data(), image->data_.size(),
+                                      textureSettings.imageFormat,
+                                      textureSettings.imageType,
+                                      FreeRetainedImage, (void*)retainedImgId);
     auto texture = Texture::Builder()
                            .width(textureSettings.texelWidth)
                            .height(textureSettings.texelHeight)
