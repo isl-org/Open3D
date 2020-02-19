@@ -33,10 +33,13 @@
 #include "Open3D/Utility/FileSystem.h"
 
 #include <filament/Engine.h>
+#include <filament/IndexBuffer.h>
 #include <filament/LightManager.h>
+#include <filament/Material.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/Texture.h>
 
 namespace open3d {
 namespace visualization {

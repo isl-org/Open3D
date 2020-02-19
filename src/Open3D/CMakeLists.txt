@@ -29,6 +29,11 @@ ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
 if (ENABLE_GUI)
     ADD_SOURCE_GROUP(GUI)
+else ()
+    # Need a GUI target so that $<TARGET_OBJECTS:GUI> below works
+    # We can't create an empty library, but Gui.cpp has no dependencies on
+    # any other files.
+    add_library(GUI OBJECT "GUI/Gui.cpp")
 endif()
 ADD_SOURCE_GROUP(Visualization)
 

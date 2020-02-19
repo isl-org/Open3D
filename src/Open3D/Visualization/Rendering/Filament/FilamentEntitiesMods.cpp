@@ -32,6 +32,7 @@
 #include "Open3D/Utility/Console.h"
 
 #include <filament/MaterialInstance.h>
+#include <filament/TextureSampler.h>
 
 namespace open3d {
 namespace visualization {

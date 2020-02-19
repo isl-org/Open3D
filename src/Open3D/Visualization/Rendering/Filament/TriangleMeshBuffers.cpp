@@ -31,6 +31,12 @@
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 
+#include <filament/Engine.h>
+#include <filament/IndexBuffer.h>
+#include <filament/Scene.h>
+#include <filament/TransformManager.h>
+#include <filament/VertexBuffer.h>
+#include <filament/filament/MaterialEnums.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
 #include <map>

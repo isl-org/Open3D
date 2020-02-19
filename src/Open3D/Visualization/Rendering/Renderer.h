@@ -44,14 +44,14 @@ class ResourceLoadRequest {
 public:
     using ErrorCallback = std::function<void(
             const ResourceLoadRequest&, const uint8_t, const std::string&)>;
-    static ErrorCallback defaultErrorHandler;
+
+    ResourceLoadRequest(const void* data, size_t dataSize);
+    explicit ResourceLoadRequest(const char* path);
 
     ResourceLoadRequest(const void* data,
                         size_t dataSize,
-                        ErrorCallback errorCallback = defaultErrorHandler);
-    explicit ResourceLoadRequest(
-            const char* path,
-            ErrorCallback errorCallback = defaultErrorHandler);
+                        ErrorCallback errorCallback);
+    ResourceLoadRequest(const char* path, ErrorCallback errorCallback);
 
     const void* data;
     const size_t dataSize;
