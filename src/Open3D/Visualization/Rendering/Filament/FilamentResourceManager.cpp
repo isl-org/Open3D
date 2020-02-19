@@ -40,6 +40,7 @@
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/Texture.h>
+#include <filament/TextureSampler.h>
 
 namespace open3d {
 namespace visualization {

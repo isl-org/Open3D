@@ -26,9 +26,9 @@
 
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 
+#include "Open3D/GUI/Application.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
-#include "Open3D/GUI/Application.h"
 #include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
 #include "Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h"
 #include "Open3D/Visualization/Visualizer/ViewControlWithEditing.h"
@@ -48,35 +48,36 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int height /* = 480*/,
                     int left /* = 50*/,
                     int top /* = 50*/) {
-        Visualizer visualizer;
-        if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
-                                              top) == false) {
-            utility::LogWarning("[DrawGeometries] Failed creating OpenGL "
-                                "window.");
+    Visualizer visualizer;
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                          top) == false) {
+        utility::LogWarning(
+                "[DrawGeometries] Failed creating OpenGL "
+                "window.");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            utility::LogWarning("[DrawGeometries] Failed adding geometry.");
+            utility::LogWarning(
+                    "[DrawGeometries] Possibly due to bad geometry or wrong"
+                    " geometry type.");
             return false;
         }
-        for (const auto &geometry_ptr : geometry_ptrs) {
-            if (visualizer.AddGeometry(geometry_ptr) == false) {
-                utility::LogWarning("[DrawGeometries] Failed adding geometry.");
-                utility::LogWarning(
-                        "[DrawGeometries] Possibly due to bad geometry or wrong"
-                        " geometry type.");
-				return false;
-            }
-        }
-        visualizer.Run();
-        visualizer.DestroyVisualizerWindow();
-        return true;
-
-/*    auto &app = gui::Application::GetInstance();
-    app.Initialize();
-    auto vis = std::make_shared<GuiVisualizer>(geometry_ptrs, window_name,
-                                               width, height, left, top);
-    app.AddWindow(vis);
-    app.Run();
-
+    }
+    visualizer.Run();
+    visualizer.DestroyVisualizerWindow();
     return true;
-*/
+
+    /*    auto &app = gui::Application::GetInstance();
+        app.Initialize();
+        auto vis = std::make_shared<GuiVisualizer>(geometry_ptrs, window_name,
+                                                   width, height, left, top);
+        app.AddWindow(vis);
+        app.Run();
+
+        return true;
+    */
 }
 
 bool DrawGeometriesWithCustomAnimation(

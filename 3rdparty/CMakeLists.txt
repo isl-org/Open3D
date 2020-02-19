@@ -314,11 +314,9 @@ endif()
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
-<<<<<<< HEAD
 # PoissonRecon
 set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/)
 
-=======
 # Filament library
 if (ENABLE_GUI)
     if (BUILD_FILAMENT)
@@ -382,7 +380,6 @@ if (ENABLE_GUI)
         set(SDL2_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/SDL2)
     endif ()
 endif()
->>>>>>> Basic filament integration (#1331)
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers

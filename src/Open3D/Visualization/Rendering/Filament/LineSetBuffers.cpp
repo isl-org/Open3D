@@ -31,6 +31,9 @@
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"
 
+#include <filament/IndexBuffer.h>
+#include <filament/VertexBuffer.h>
+
 #include <Eigen/Core>
 
 #include <map>

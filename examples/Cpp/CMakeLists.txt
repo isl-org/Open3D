@@ -68,18 +68,11 @@ if (ENABLE_GUI)
     set(GUIDEMO_MATC ${3RDPARTY_INSTALL_PREFIX}/bin/matc)
     set(GUIDEMO_RSRCDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
 
-    file(MAKE_DIRECTORY ${GUIDEMO_RSRCDIR})
-    add_custom_command(OUTPUT ${GUIDEMO_RSRCDIR}/metal.filamat
-                       COMMAND ${GUIDEMO_MATC} ${GUIDEMO_MATC_ARGS} -o ${GUIDEMO_RSRCDIR}/metal.filamat ${CMAKE_CURRENT_SOURCE_DIR}/metal.mat)
-    add_custom_command(OUTPUT ${GUIDEMO_RSRCDIR}/nonmetal.filamat
-                       COMMAND ${GUIDEMO_MATC} ${GUIDEMO_MATC_ARGS} -o ${GUIDEMO_RSRCDIR}/nonmetal.filamat ${CMAKE_CURRENT_SOURCE_DIR}/nonmetal.mat)
     add_custom_target(GuiDemoResources
-                      DEPENDS ${GUIDEMO_RSRCDIR}/metal.filamat
-                              ${GUIDEMO_RSRCDIR}/nonmetal.filamat
-                     )
-    add_dependencies(GuiDemoResources filament_copy)
+                      COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRCDIR})
+    add_dependencies(GuiDemoResources GuiResources)
     add_dependencies(GuiDemo GuiDemoResources)
-
+                     
     # Copy .dll files on Windows
     if (WIN32)
         add_custom_target(copy_dll

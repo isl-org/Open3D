@@ -134,6 +134,7 @@ public:
         }
     }
     void ChangePointSize(double change);
+    void SetPointSize(double size);
     void ChangeLineWidth(double change);
     void TogglePointShowNormal() { point_show_normal_ = !point_show_normal_; }
     void ToggleShadingOption() {
