@@ -26,6 +26,7 @@
 
 #include "FilamentResourceManager.h"
 
+#include "FilamentEntitiesMods.h"
 #include "Open3D/GUI/Application.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/Utility/Console.h"
@@ -43,6 +44,7 @@
 namespace open3d {
 namespace visualization {
 
+namespace {
 template <class ResourceType>
 using ResourcesContainer =
         std::unordered_map<REHandle_abstract, std::shared_ptr<ResourceType>>;
@@ -96,29 +98,115 @@ void DestroyResource(const REHandle_abstract& id,
     container.erase(found);
 }
 
+// Image data that retained by renderer thread,
+// will be freed on PixelBufferDescriptor callback
+std::unordered_map<std::uint32_t, std::shared_ptr<geometry::Image>>
+        pendingImages;
+
+std::intptr_t RetainImageForLoading(
+        const std::shared_ptr<geometry::Image>& img) {
+    static std::intptr_t imgId = 1;
+
+    const auto id = imgId;
+    pendingImages[imgId] = img;
+    ++imgId;
+
+    return id;
+}
+
+void FreeRetainedImage(void* buffer, size_t size, void* userPtr) {
+    const auto id = reinterpret_cast<std::intptr_t>(userPtr);
+    auto found = pendingImages.find(id);
+    if (found != pendingImages.end()) {
+        pendingImages.erase(found);
+    } else {
+        utility::LogDebug(
+                "Trying to release non existent image shared pointer, id: {}",
+                id);
+    }
+}
+
+filament::Material* LoadMaterialFromFile(const std::string& path,
+                                         filament::Engine& engine) {
+    std::vector<char> materialData;
+    std::string errorStr;
+
+    if (utility::filesystem::FReadToBuffer(path, materialData, &errorStr)) {
+        using namespace filament;
+        return Material::Builder()
+                .package(materialData.data(), materialData.size())
+                .build(engine);
+    }
+
+    utility::LogDebug("Failed to load default material from {}. Error: {}",
+                      path, errorStr);
+
+    return nullptr;
+}
+
+namespace texture_loading {
+struct TextureSettings {
+    filament::Texture::Format imageFormat = filament::Texture::Format::RGB;
+    filament::Texture::Type imageType = filament::Texture::Type::UBYTE;
+    filament::Texture::InternalFormat format =
+            filament::Texture::InternalFormat::RGB8;
+    std::uint32_t texelWidth = 0;
+    std::uint32_t texelHeight = 0;
+};
+
+TextureSettings GetSettingsFromImage(const geometry::Image& image) {
+    TextureSettings settings;
+
+    settings.texelWidth = image.width_;
+    settings.texelHeight = image.height_;
+
+    switch (image.num_of_channels_) {
+        case 1:
+            settings.imageFormat = filament::Texture::Format::R;
+            settings.format = filament::Texture::InternalFormat::R8;
+            break;
+        case 3:
+            settings.imageFormat = filament::Texture::Format::RGB;
+            settings.format = filament::Texture::InternalFormat::RGB8;
+            break;
+        default:
+            utility::LogError("Unsupported image number of channels: {}",
+                              image.num_of_channels_);
+            break;
+    }
+
+    switch (image.bytes_per_channel_) {
+        case 1:
+            settings.imageType = filament::Texture::Type::UBYTE;
+            break;
+        default:
+            utility::LogError("Unsupported image bytes per channel: {}",
+                              image.bytes_per_channel_);
+            break;
+    }
+
+    return settings;
+}
+}  // namespace texture_loading
+
+}  // namespace
+
+const MaterialHandle FilamentResourceManager::kDefaultLit =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultUnlit =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kUbermaterial =
+        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
         MaterialInstanceHandle::Next();
+const TextureHandle FilamentResourceManager::kDefaultTexture =
+        TextureHandle::Next();
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
-    // FIXME: Move to precompiled resource blobs
-    const std::string resourceRoot =
-            gui::Application::GetInstance().GetResourcePath();
-
-    const auto depthPath = resourceRoot + "/depth.filamat";
-    const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
-    auto depthMat = materials_[hDepth];
-    materialInstances_[kDepthMaterial] =
-            MakeShared(depthMat->createInstance(), engine_);
-
-    const auto normalsPath = resourceRoot + "/normals.filamat";
-    const auto hNormals =
-            CreateMaterial(ResourceLoadRequest(normalsPath.data()));
-    auto normalsMat = materials_[hNormals];
-    materialInstances_[kNormalsMaterial] =
-            MakeShared(normalsMat->createInstance(), engine_);
+    LoadDefaults();
 }
 
 FilamentResourceManager::~FilamentResourceManager() { DestroyAll(); }
@@ -176,8 +264,6 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
 }
 
 TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
-    TextureHandle handle;
-
     std::shared_ptr<geometry::Image> img;
 
     if (path) {
@@ -186,21 +272,28 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
         utility::LogWarning("Empty path for texture loading provided");
     }
 
-    using namespace filament;
+    return CreateTexture(img);
+}
 
+TextureHandle FilamentResourceManager::CreateTexture(
+        const std::shared_ptr<geometry::Image>& img) {
+    TextureHandle handle;
     if (img->HasData()) {
-        Texture::PixelBufferDescriptor pb(img->data_.data(), img->data_.size(),
-                                          Texture::Format::RGB,
-                                          Texture::Type::UBYTE);
-        auto texture = Texture::Builder()
-                               .width((uint32_t)img->width_)
-                               .height((uint32_t)img->height_)
-                               .levels((uint8_t)1)
-                               .format(Texture::InternalFormat::RGB8)
-                               .sampler(Texture::Sampler::SAMPLER_2D)
-                               .build(engine_);
+        auto texture = LoadTextureFromImage(img);
 
-        texture->setImage(engine_, 0, std::move(pb));
+        handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    }
+
+    return handle;
+}
+
+TextureHandle FilamentResourceManager::CreateTexture(
+        const geometry::Image& image) {
+    TextureHandle handle;
+    if (image.HasData()) {
+        auto copy = std::make_shared<geometry::Image>(image);
+
+        auto texture = LoadTextureFromImage(copy);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
     }
@@ -292,6 +385,82 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
                     REHandle_abstract::TypeToString(id.type));
             break;
     }
+}
+
+filament::Texture* FilamentResourceManager::LoadTextureFromImage(
+        const std::shared_ptr<geometry::Image>& image) {
+    using namespace filament;
+
+    auto retainedImgId = RetainImageForLoading(image);
+    auto textureSettings = texture_loading::GetSettingsFromImage(*image);
+
+    Texture::PixelBufferDescriptor pb(image->data_.data(), image->data_.size(),
+                                      textureSettings.imageFormat,
+                                      textureSettings.imageType,
+                                      FreeRetainedImage, (void*)retainedImgId);
+    auto texture = Texture::Builder()
+                           .width(textureSettings.texelWidth)
+                           .height(textureSettings.texelHeight)
+                           .levels((uint8_t)1)
+                           .format(textureSettings.format)
+                           .sampler(Texture::Sampler::SAMPLER_2D)
+                           .build(engine_);
+
+    texture->setImage(engine_, 0, std::move(pb));
+
+    return texture;
+}
+
+void FilamentResourceManager::LoadDefaults() {
+    // FIXME: Move to precompiled resource blobs
+    const std::string resourceRoot =
+            gui::Application::GetInstance().GetResourcePath();
+
+    const auto texturePath = resourceRoot + "/defaultTexture.png";
+    auto textureImg = io::CreateImageFromFile(texturePath);
+    auto texture = LoadTextureFromImage(textureImg);
+    textures_[kDefaultTexture] = MakeShared(texture, engine_);
+
+    const auto defaultSampler =
+            FilamentMaterialModifier::SamplerFromSamplerParameters(
+                    TextureSamplerParameters::Pretty());
+    const auto defaultColor = filament::math::float3{1.f, 1.f, 1.f};
+
+    const auto litPath = resourceRoot + "/defaultLit.filamat";
+    auto litMat = LoadMaterialFromFile(litPath, engine_);
+    litMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                defaultColor);
+    litMat->setDefaultParameter("texture", texture, defaultSampler);
+    // TODO: Add some more pretty defaults
+    materials_[kDefaultLit] = MakeShared(litMat, engine_);
+
+    const auto unlitPath = resourceRoot + "/defaultUnlit.filamat";
+    auto unlitMat = LoadMaterialFromFile(unlitPath, engine_);
+    unlitMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                  defaultColor);
+    unlitMat->setDefaultParameter("pointSize", 3.f);
+    materials_[kDefaultUnlit] = MakeShared(unlitMat, engine_);
+
+    const auto uberPath = resourceRoot + "/ubermaterial.filamat";
+    auto uberMat = LoadMaterialFromFile(uberPath, engine_);
+    uberMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                 defaultColor);
+    uberMat->setDefaultParameter("diffuse", texture, defaultSampler);
+    // TODO: Add some more pretty defaults
+    materials_[kUbermaterial] = MakeShared(uberMat, engine_);
+
+    const auto depthPath = resourceRoot + "/depth.filamat";
+    const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
+    auto depthMat = materials_[hDepth];
+    materialInstances_[kDepthMaterial] =
+            MakeShared(depthMat->createInstance(), engine_);
+
+    const auto normalsPath = resourceRoot + "/normals.filamat";
+    const auto hNormals =
+            CreateMaterial(ResourceLoadRequest(normalsPath.data()));
+    auto normalsMat = materials_[hNormals];
+    materialInstances_[kNormalsMaterial] =
+            MakeShared(normalsMat->createInstance(), engine_);
 }
 
 }  // namespace visualization

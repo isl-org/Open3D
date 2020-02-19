@@ -32,13 +32,17 @@
 
 namespace filament {
 class MaterialInstance;
-}
+class TextureSampler;
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
 
 class FilamentMaterialModifier : public MaterialModifier {
 public:
+    static filament::TextureSampler SamplerFromSamplerParameters(
+            const TextureSamplerParameters& samplerConfig);
+
     FilamentMaterialModifier(
             const std::shared_ptr<filament::MaterialInstance>& materialInstance,
             const MaterialInstanceHandle& id);
@@ -52,11 +56,15 @@ public:
     MaterialModifier& SetParameter(const char* parameter, float value) override;
     MaterialModifier& SetColor(const char* parameter,
                                const Eigen::Vector3f& value) override;
+    MaterialModifier& SetColor(const char* parameter,
+                               const Eigen::Vector4f& value) override;
 
     MaterialModifier& SetTexture(
             const char* parameter,
             const TextureHandle& texture,
             const TextureSamplerParameters& sampler) override;
+
+    MaterialModifier& SetDoubleSided(bool doubleSided) override;
 
     MaterialInstanceHandle Finish() override;
 

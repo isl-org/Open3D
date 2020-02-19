@@ -57,6 +57,12 @@ public:
     virtual void SetViewActive(const ViewHandle& viewId, bool isActive) = 0;
     virtual void RemoveView(const ViewHandle& viewId) = 0;
 
+    // 'All defaults' way:
+    // * Will use geometry name as entity name
+    // * Will use apropriate default material for rendering
+    // * For geometries with textures, will try load and assign a texture
+    virtual GeometryHandle AddGeometry(
+            const geometry::Geometry3D& geometry) = 0;
     // Will use geometry name as entity name
     virtual GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
@@ -66,6 +72,8 @@ public:
                                        const std::string& name) = 0;
     virtual void AssignMaterial(const GeometryHandle& geometryId,
                                 const MaterialInstanceHandle& materialId) = 0;
+    virtual MaterialInstanceHandle GetMaterial(
+            const GeometryHandle& geometryId) const = 0;
     virtual std::vector<GeometryHandle> FindGeometryByName(
             const std::string& name) = 0;
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
