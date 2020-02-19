@@ -141,6 +141,48 @@ filament::Material* LoadMaterialFromFile(const std::string& path,
     return nullptr;
 }
 
+namespace texture_loading {
+struct TextureSettings {
+    filament::Texture::Format imageFormat = filament::Texture::Format::RGB;
+    filament::Texture::Type imageType = filament::Texture::Type::UBYTE;
+    filament::Texture::InternalFormat format = filament::Texture::InternalFormat::RGB8;
+    std::uint32_t texelWidth = 0;
+    std::uint32_t texelHeight = 0;
+};
+
+TextureSettings GetSettingsFromImage(const geometry::Image& image) {
+    TextureSettings settings;
+
+    settings.texelWidth = image.width_;
+    settings.texelHeight = image.height_;
+
+    switch (image.num_of_channels_) {
+        case 1:
+            settings.imageFormat = filament::Texture::Format::R;
+            settings.format = filament::Texture::InternalFormat::R8;
+            break;
+        case 3:
+            settings.imageFormat = filament::Texture::Format::RGB;
+            settings.format = filament::Texture::InternalFormat::RGB8;
+            break;
+        default:
+            utility::LogError("Unsupported image number of channels: {}", image.num_of_channels_);
+            break;
+    }
+
+    switch (image.bytes_per_channel_) {
+        case 1:
+            settings.imageType = filament::Texture::Type::UBYTE;
+            break;
+        default:
+            utility::LogError("Unsupported image bytes per channel: {}", image.bytes_per_channel_);
+            break;
+    }
+
+    return settings;
+}
+}
+
 }  // namespace
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
@@ -344,15 +386,16 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     using namespace filament;
 
     auto retainedImgId = RetainImageForLoading(image);
+    auto textureSettings = texture_loading::GetSettingsFromImage(*image);
 
     Texture::PixelBufferDescriptor pb(
-            image->data_.data(), image->data_.size(), Texture::Format::RGB,
-            Texture::Type::UBYTE, FreeRetainedImage, (void*)retainedImgId);
+            image->data_.data(), image->data_.size(), textureSettings.imageFormat,
+            textureSettings.imageType, FreeRetainedImage, (void*)retainedImgId);
     auto texture = Texture::Builder()
-                           .width((uint32_t)image->width_)
-                           .height((uint32_t)image->height_)
+                           .width(textureSettings.texelWidth)
+                           .height(textureSettings.texelHeight)
                            .levels((uint8_t)1)
-                           .format(Texture::InternalFormat::RGB8)
+                           .format(textureSettings.format)
                            .sampler(Texture::Sampler::SAMPLER_2D)
                            .build(engine_);
 
@@ -395,7 +438,7 @@ void FilamentResourceManager::LoadDefaults() {
     auto uberMat = LoadMaterialFromFile(uberPath, engine_);
     uberMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                  defaultColor);
-    uberMat->setDefaultParameter("texture", texture, defaultSampler);
+    uberMat->setDefaultParameter("diffuse", texture, defaultSampler);
     // TODO: Add some more pretty defaults
     materials_[kUbermaterial] = MakeShared(uberMat, engine_);
 
