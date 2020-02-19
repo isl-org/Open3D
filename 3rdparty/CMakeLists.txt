@@ -411,6 +411,13 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
 )
 endif()
 
+if (ENABLE_GUI)
+list(APPEND 3RDPARTY_INCLUDE_DIRS
+     ${filament_INCLUDE_DIRS}
+     ${SDL2_INCLUDE_DIRS}
+)
+endif()
+
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
 # The future plan is to minimize such dependencies
