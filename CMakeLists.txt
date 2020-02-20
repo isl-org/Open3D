@@ -122,8 +122,8 @@ endif()
 
 # Set OS-specific things here
 if (WIN32)
-    message("ENABLE_GUI is not currently supported on Windows, setting OFF")
-	 set(ENABLE_GUI OFF)
+    message(STATUS "New GUI is not currently supported on Windows, setting ENABLE_GUI to OFF")
+	set(ENABLE_GUI OFF)
 
     # can't hide the unit testing option on Windows only
     # as a precaution: disable unit testing on Windows regardless of user input
@@ -176,10 +176,6 @@ if (WIN32)
         string(REPLACE "/MT" "/MD" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
         string(REPLACE "/MTd" "/MDd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     endif ()
-    message(STATUS "CMAKE_C_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-    message(STATUS "CMAKE_C_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
-    message(STATUS "CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-    message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
