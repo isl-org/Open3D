@@ -118,19 +118,22 @@ public:
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the
-    /// projected depth of the boundary point. The point is not carved if none
-    /// of the boundary points of the voxel projects to a valid image location.
+    /// projected depth of the boundary point. If keep_voxels_outside_image is
+    /// true then voxels are only carved if all boundary points project to a
+    /// valid image location.
     VoxelGrid &CarveDepthMap(
             const Image &depth_map,
-            const camera::PinholeCameraParameters &camera_parameter);
+            const camera::PinholeCameraParameters &camera_parameter,
+            bool keep_voxels_outside_image);
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
-    /// of the voxel projects to a valid mask pixel (pixel value > 0). The point
-    /// is not carved if none of the boundary points of the voxel projects to a
-    /// valid image location.
+    /// of the voxel projects to a valid mask pixel (pixel value > 0). If
+    /// keep_voxels_outside_image is true then voxels are only carved if
+    /// all boundary points project to a valid image location.
     VoxelGrid &CarveSilhouette(
             const Image &silhouette_mask,
-            const camera::PinholeCameraParameters &camera_parameter);
+            const camera::PinholeCameraParameters &camera_parameter,
+            bool keep_voxels_outside_image);
 
     void CreateFromOctree(const Octree &octree);
 

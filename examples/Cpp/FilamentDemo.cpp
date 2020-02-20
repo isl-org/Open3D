@@ -176,12 +176,13 @@ int main(int argc, char* argv[]) {
                                                    materialData.size());
         visualization::MaterialHandle matId = renderer->AddMaterial(request);
 
-        matInstance = renderer->ModifyMaterial(matId)
-                              .SetParameter("roughness", 0.5f)
-                              .SetParameter("clearCoat", 1.0f)
-                              .SetParameter("clearCoatRoughness", 0.3f)
-                              .SetColor("baseColor", {1.f, 0.f, 0.f})
-                              .Finish();
+        matInstance =
+                renderer->ModifyMaterial(matId)
+                        .SetParameter("roughness", 0.5f)
+                        .SetParameter("clearCoat", 1.0f)
+                        .SetParameter("clearCoatRoughness", 0.3f)
+                        .SetColor("baseColor", Eigen::Vector3f{1.f, 0.f, 0.f})
+                        .Finish();
     }
 
     visualization::LightDescription lightDescription;

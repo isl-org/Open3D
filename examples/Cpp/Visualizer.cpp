@@ -35,7 +35,7 @@ void PrintUsage() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]");
+    utility::LogInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing|editmesh] [filename]");
     utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]");
     utility::LogInfo("    > Visualizer [rgbd] [color] [depth] [--rgbd_type]");
     // clang-format on
@@ -60,6 +60,17 @@ int main(int argc, char *argv[]) {
         }
         mesh_ptr->ComputeVertexNormals();
         visualization::DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
+    } else if (option == "editmesh") {
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
+            utility::LogInfo("Successfully read {}", argv[2]);
+        } else {
+            utility::LogWarning("Failed to read {}", argv[2]);
+            return 1;
+        }
+        mesh_ptr->ComputeVertexNormals();
+        visualization::DrawGeometriesWithVertexSelection(
+                {mesh_ptr}, "Edit Mesh", 1600, 900);
     } else if (option == "spin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {

@@ -41,6 +41,17 @@ public:
         Linear = 1,
     };
 
+    enum class DepthFunc {
+        Never = 0,
+        Less = 1,
+        Equal = 2,
+        LEqual = 3,
+        Greater = 4,
+        NotEqual = 5,
+        GEqual = 6,
+        Always = 7
+    };
+
     // PointCloud options
     enum class PointColorOption {
         Default = 0,
@@ -122,16 +133,9 @@ public:
             interpolation_option_ = TextureInterpolationOption::Nearest;
         }
     }
-    void ChangePointSize(double change) {
-        point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
-                                        POINT_SIZE_MAX),
-                               POINT_SIZE_MIN);
-    }
-    void ChangeLineWidth(double change) {
-        line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
-                                        LINE_WIDTH_MAX),
-                               LINE_WIDTH_MIN);
-    }
+    void ChangePointSize(double change);
+    void SetPointSize(double size);
+    void ChangeLineWidth(double change);
     void TogglePointShowNormal() { point_show_normal_ = !point_show_normal_; }
     void ToggleShadingOption() {
         if (mesh_shade_option_ == MeshShadeOption::FlatShade) {
@@ -157,11 +161,14 @@ public:
         }
     }
 
+    int GetGLDepthFunc() const;
+
 public:
     // global options
     Eigen::Vector3d background_color_ = Eigen::Vector3d::Ones();
     TextureInterpolationOption interpolation_option_ =
             TextureInterpolationOption::Nearest;
+    DepthFunc depthFunc_ = DepthFunc::Less;
 
     // Phong lighting options
     bool light_on_ = true;

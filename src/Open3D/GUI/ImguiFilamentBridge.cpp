@@ -32,21 +32,23 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
-#include <unordered_map>
-#include <vector>
-
-#include <imgui.h>
-
-#include <filamat/MaterialBuilder.h>
+#include <filament/Fence.h>
 #include <filament/IndexBuffer.h>
 #include <filament/Material.h>
 #include <filament/MaterialInstance.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/Texture.h>
+#include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
-#include <utils/EntityManager.h>
+#include <filament/filamat/MaterialBuilder.h>
+#include <filament/utils/EntityManager.h>
+
+#include <unordered_map>
+#include <vector>
+
+#include <imgui.h>
 
 #include <fcntl.h>
 #include <cerrno>
@@ -55,6 +57,8 @@
 #else
 #include <io.h>
 #endif
+
+#include <iostream>
 
 using namespace filament::math;
 using namespace filament;

@@ -33,6 +33,24 @@
 using namespace open3d;
 
 void pybind_geometry_classes(py::module &m) {
+    // open3d.geometry functions
+    m.def("get_rotation_matrix_from_xyz",
+          &geometry::Geometry3D::GetRotationMatrixFromXYZ, "rotation"_a);
+    m.def("get_rotation_matrix_from_yzx",
+          &geometry::Geometry3D::GetRotationMatrixFromYZX, "rotation"_a);
+    m.def("get_rotation_matrix_from_zxy",
+          &geometry::Geometry3D::GetRotationMatrixFromZXY, "rotation"_a);
+    m.def("get_rotation_matrix_from_xzy",
+          &geometry::Geometry3D::GetRotationMatrixFromXZY, "rotation"_a);
+    m.def("get_rotation_matrix_from_zyx",
+          &geometry::Geometry3D::GetRotationMatrixFromZYX, "rotation"_a);
+    m.def("get_rotation_matrix_from_yxz",
+          &geometry::Geometry3D::GetRotationMatrixFromYXZ, "rotation"_a);
+    m.def("get_rotation_matrix_from_axis_angle",
+          &geometry::Geometry3D::GetRotationMatrixFromAxisAngle, "rotation"_a);
+    m.def("get_rotation_matrix_from_quaternion",
+          &geometry::Geometry3D::GetRotationMatrixFromQuaternion, "rotation"_a);
+
     // open3d.geometry.Geometry
     py::class_<geometry::Geometry, PyGeometry<geometry::Geometry>,
                std::shared_ptr<geometry::Geometry>>

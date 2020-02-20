@@ -37,7 +37,10 @@
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/SwapChain.h>
 #include <filament/View.h>
+#include <filament/Viewport.h>
+#include <filament/backend/PixelBufferDescriptor.h>
 
 namespace open3d {
 namespace visualization {

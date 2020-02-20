@@ -116,6 +116,11 @@ MaterialHandle FilamentRenderer::AddMaterial(
     return resourceManager_.CreateMaterial(request);
 }
 
+MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
+        const MaterialHandle& material) {
+    return resourceManager_.CreateMaterialInstance(material);
+}
+
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     materialsModifier_->Reset();
 
@@ -210,6 +215,10 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     }
 
     // TODO: assert
+}
+TextureHandle FilamentRenderer::AddTexture(
+        const std::shared_ptr<geometry::Image>& image) {
+    return resourceManager_.CreateTexture(image);
 }
 
 void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {

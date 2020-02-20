@@ -314,6 +314,9 @@ endif()
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
+# PoissonRecon
+set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/)
+
 # Filament library
 if (ENABLE_GUI)
     if (BUILD_FILAMENT)
@@ -398,7 +401,15 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${googletest_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
+     ${poisson_INCLUDE_DIRS}
 )
+
+if (ENABLE_GUI)
+list(APPEND 3RDPARTY_INCLUDE_DIRS
+     ${filament_INCLUDE_DIRS}
+     ${SDL2_INCLUDE_DIRS}
+)
+endif()
 
 if (ENABLE_GUI)
 list(APPEND 3RDPARTY_INCLUDE_DIRS
@@ -427,6 +438,12 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
 )
 
 # set 3RDPARTY_LIBRARIES
+if (ENABLE_GUI)
+    list(APPEND 3RDPARTY_LIBRARIES
+         ${filament_LIBRARIES}
+         ${SDL2_LIBRARIES}
+    )
+endif()
 list(APPEND 3RDPARTY_LIBRARIES
      ${GLEW_LIBRARIES}
      ${GLFW_LIBRARIES}
@@ -439,14 +456,6 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
 )
-
-if (ENABLE_GUI)
-list(APPEND 3RDPARTY_LIBRARIES
-     ${filament_LIBRARIES}
-     ${SDL2_LIBRARIES}
-)
-endif()
-
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
@@ -467,6 +476,10 @@ endif ()
 if (NOT BUILD_TINYFILEDIALOGS)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${tinyfiledialogs_LIBRARIES})
 endif ()
+
+#if (WIN32)
+#    list(REMOVE_ITEM 3RDPARTY_LIBRARIES opengl32)
+#endif()
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
 set(3RDPARTY_INCLUDE_DIRS_AT_INSTALL ${3RDPARTY_INCLUDE_DIRS_AT_INSTALL} PARENT_SCOPE)

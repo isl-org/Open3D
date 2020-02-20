@@ -182,25 +182,29 @@ public:
         visualization::MaterialHandle nonmetal = GetRenderer().AddMaterial(
                 visualization::ResourceLoadRequest(nonmetalPath.data()));
 
-        auto redPlastic = GetRenderer()
-                                  .ModifyMaterial(nonmetal)
-                                  .SetColor("baseColor", {0.8, 0.0, 0.0})
-                                  .SetParameter("roughness", 0.5f)
-                                  .SetParameter("clearCoat", 1.f)
-                                  .SetParameter("clearCoatRoughness", 0.3f)
-                                  .Finish();
+        auto redPlastic =
+                GetRenderer()
+                        .ModifyMaterial(nonmetal)
+                        .SetColor("baseColor", Eigen::Vector3f{0.8, 0.0, 0.0})
+                        .SetParameter("roughness", 0.5f)
+                        .SetParameter("clearCoat", 1.f)
+                        .SetParameter("clearCoatRoughness", 0.3f)
+                        .Finish();
 
-        auto blueCeramic = GetRenderer()
-                                   .ModifyMaterial(nonmetal)
-                                   .SetColor("baseColor", {0.537, 0.812, 0.941})
-                                   .SetParameter("roughness", 0.5f)
-                                   .SetParameter("clearCoat", 1.f)
-                                   .SetParameter("clearCoatRoughness", 0.01f)
-                                   .Finish();
+        auto blueCeramic =
+                GetRenderer()
+                        .ModifyMaterial(nonmetal)
+                        .SetColor("baseColor",
+                                  Eigen::Vector3f{0.537, 0.812, 0.941})
+                        .SetParameter("roughness", 0.5f)
+                        .SetParameter("clearCoat", 1.f)
+                        .SetParameter("clearCoatRoughness", 0.01f)
+                        .Finish();
 
         auto green = GetRenderer()
                              .ModifyMaterial(nonmetal)
-                             .SetColor("baseColor", {0.537, 0.941, 0.6})
+                             .SetColor("baseColor",
+                                       Eigen::Vector3f{0.537f, 0.941f, 0.6f})
                              .SetParameter("roughness", 0.25f)
                              .SetParameter("clearCoat", 0.f)
                              .SetParameter("clearCoatRoughness", 0.01f)
@@ -208,7 +212,8 @@ public:
 
         auto white = GetRenderer()
                              .ModifyMaterial(nonmetal)
-                             .SetColor("baseColor", {1.0, 1.0, 1.0})
+                             .SetColor("baseColor",
+                                       Eigen::Vector3f{1.0f, 1.0f, 1.0f})
                              .SetParameter("roughness", 0.5f)
                              .SetParameter("clearCoat", 1.f)
                              .SetParameter("clearCoatRoughness", 0.3f)

@@ -45,6 +45,11 @@ class VertexBuffer;
 }  // namespace filament
 
 namespace open3d {
+
+namespace geometry {
+class Image;
+}
+
 namespace visualization {
 
 // Centralized storage of allocated resources.
@@ -52,8 +57,12 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
+    static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kDefaultUnlit;
+    static const MaterialHandle kUbermaterial;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
+    static const TextureHandle kDefaultTexture;
 
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
@@ -63,13 +72,16 @@ public:
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
 
     TextureHandle CreateTexture(const char* path);
+    TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
+    // Slow, will make copy of image data and free it after.
+    TextureHandle CreateTexture(const geometry::Image& image);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
 
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
-    // managed by FilamentScene class
+    // managed by FilamentGeometryBuffersBuilder class
     VertexBufferHandle AddVertexBuffer(filament::VertexBuffer* vertexBuffer);
     IndexBufferHandle CreateIndexBuffer(size_t indicesCount,
                                         size_t indexStride);
@@ -110,6 +122,11 @@ private:
     // WARNING: Don't put in dependent list resources which available publicly
     std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>>
             dependencies_;
+
+    filament::Texture* LoadTextureFromImage(
+            const std::shared_ptr<geometry::Image>& image);
+
+    void LoadDefaults();
 };
 
 }  // namespace visualization

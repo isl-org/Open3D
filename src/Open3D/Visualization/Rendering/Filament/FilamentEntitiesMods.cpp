@@ -32,6 +32,7 @@
 #include "Open3D/Utility/Console.h"
 
 #include <filament/MaterialInstance.h>
+#include <filament/TextureSampler.h>
 
 namespace open3d {
 namespace visualization {
@@ -54,7 +55,9 @@ TextureSampler::WrapMode ConvertWrapMode(
     return TextureSampler::WrapMode::CLAMP_TO_EDGE;
 }
 
-TextureSampler SamplerFromSamplerParameters(
+}  // namespace
+
+TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
         const TextureSamplerParameters& samplerConfig) {
     TextureSampler sampler;
 
@@ -100,7 +103,6 @@ TextureSampler SamplerFromSamplerParameters(
 
     return sampler;
 }
-}  // namespace
 
 FilamentMaterialModifier::FilamentMaterialModifier(
         const std::shared_ptr<filament::MaterialInstance>& materialInstance,
@@ -144,7 +146,19 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
     if (materialInstance_) {
         const auto color =
                 filament::math::float3{value.x(), value.y(), value.z()};
-        materialInstance_->setParameter(parameter, filament::RgbType::sRGB,
+        materialInstance_->setParameter(parameter, filament::RgbType::LINEAR,
+                                        color);
+    }
+
+    return *this;
+}
+
+MaterialModifier& FilamentMaterialModifier::SetColor(
+        const char* parameter, const Eigen::Vector4f& value) {
+    if (materialInstance_) {
+        auto color =
+                filament::math::float4{value(0), value(1), value(2), value(3)};
+        materialInstance_->setParameter(parameter, filament::RgbaType::LINEAR,
                                         color);
     }
 
@@ -174,6 +188,13 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
         }
     }
 
+    return *this;
+}
+
+MaterialModifier& FilamentMaterialModifier::SetDoubleSided(bool doubleSided) {
+    if (materialInstance_) {
+        materialInstance_->setDoubleSided(doubleSided);
+    }
     return *this;
 }
 

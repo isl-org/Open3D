@@ -33,6 +33,8 @@
 
 #include <Eigen/Core>
 
+#include <filament/IndexBuffer.h>
+#include <filament/VertexBuffer.h>
 #include <filament/geometry/SurfaceOrientation.h>
 
 using namespace filament;

@@ -57,7 +57,7 @@
     // -application:openFile: runs befure applicationDidFinishLaunching: so we
     // need to check if we loaded a file or we need to display an empty window.
     if (mOpenEmptyWindow) {
-        CreateWindow("");
+        LoadAndCreateWindow("");
     }
 
     self.timer = [NSTimer scheduledTimerWithTimeInterval:0.010 repeats:YES
@@ -76,8 +76,8 @@
 // after launching if the user double-clicks a file in the Finder or drops
 // a file onto the app icon and the application is already launched.
 - (BOOL)application:(NSApplication *)sender openFile:(NSString *)filename {
-    mOpenEmptyWindow = false;  // CreateWindow() always opens a window
-    return (CreateWindow(filename.UTF8String));
+    mOpenEmptyWindow = false;  // LoadAndCreateWindow() always opens a window
+    return (LoadAndCreateWindow(filename.UTF8String));
 }
 @end
 

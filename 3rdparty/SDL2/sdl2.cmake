@@ -31,8 +31,9 @@ if (WIN32)
     add_custom_target(sdl_copy
         COMMAND xcopy /s /i /y /q \"include\" \"${3RDPARTY_INSTALL_PREFIX}/include\"
         COMMAND xcopy /s /i /y /q \"lib\" \"${3RDPARTY_INSTALL_PREFIX}/lib\"
-        # Binaries go to examples directory
-        COMMAND xcopy /s /i /y /q \"bin\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\" 
+        # On Windows the DLLs end up in bin/ rather than lib/. Put them in
+        # lib for consistency with the other platforms
+        COMMAND xcopy /s /i /y /q \"bin\" \"${3RDPARTY_INSTALL_PREFIX}/lib\"
         WORKING_DIRECTORY ${SDL_TMP_INSTALL_DIR}
         DEPENDS ext_sdl2
         )
@@ -48,7 +49,17 @@ endif()
 add_library(sdl2_combined INTERFACE)
 add_dependencies(sdl2_combined sdl_copy)
 
-set(SDL2_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${CMAKE_STATIC_LIBRARY_SUFFIX})
+if (WIN32)
+    string(TOLOWER "${CMAKE_BUILD_TYPE}" LOWER_BUILD_TYPE)
+    if (LOWER_BUILD_TYPE MATCHES debug)
+        set(DEBUG_SUFFIX "d")
+     else()
+        set(DEBUG_SUFFIX "")
+     endif()
+else()
+        set(DEBUG_SUFFIX "")
+endif()
+set(SDL2_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${DEBUG_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX})
 target_link_libraries(sdl2_combined INTERFACE ${SDL2_LIB_FILES})
 
 #target_include_directories(sdl2 SYSTEM INTERFACE
@@ -69,6 +80,14 @@ if (APPLE)
     # non-system libraries
     list(APPEND SDL2_LIBRARIES ${CORE_AUDIO} ${AUDIO_TOOLBOX} ${FORCE_FEEDBACK} ${CARBON} /usr/lib/libiconv.dylib)
 endif()
+
+if (WIN32)
+    set(SDL2_DLL ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${DEBUG_SUFFIX}.dll)
+    list(APPEND SDL2_LIB_FILES ${SDL2_DLL})
+    # SDL not links staticly on Windows, so we force install dll's
+    install(FILES ${SDL2_DLL}
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif ()
 
 if (NOT BUILD_SHARED_LIBS)
     install(FILES ${SDL2_LIB_FILES}
