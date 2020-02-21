@@ -29,6 +29,11 @@ ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
 if (ENABLE_GUI)
     ADD_SOURCE_GROUP(GUI)
+else ()
+    # Need a GUI target so that $<TARGET_OBJECTS:GUI> below works
+    # We can't create an empty library, but Gui.cpp has no dependencies on
+    # any other files.
+    add_library(GUI OBJECT "GUI/Gui.cpp")
 endif()
 ADD_SOURCE_GROUP(Visualization)
 
@@ -63,9 +68,11 @@ if (ENABLE_HEADLESS_RENDERING)
     find_package(OSMesa REQUIRED)
     include_directories(${OSMESA_INCLUDE_DIR})
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OSMESA_LIBRARY})
+    set(OGL_LIBS ${OSMESA_LIBRARY})
 else ()
     find_package(OpenGL REQUIRED)
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
+    set(OGL_LIBS ${OPENGL_LIBRARIES})
 endif ()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
@@ -127,7 +134,7 @@ list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 #           1) Open3D
 #           2) Pre-installed 3rd-party libraries
 #           3) Built-from-source 3rd-party libraries
-list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OMP_LIBRARIES})
+list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OGL_LIBS} ${OMP_LIBRARIES})
 if (BUILD_SHARED_LIBS)
     list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
 else ()

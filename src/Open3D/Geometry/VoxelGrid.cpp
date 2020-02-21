@@ -270,7 +270,8 @@ std::shared_ptr<geometry::Octree> VoxelGrid::ToOctree(
 
 VoxelGrid &VoxelGrid::CarveDepthMap(
         const Image &depth_map,
-        const camera::PinholeCameraParameters &camera_parameter) {
+        const camera::PinholeCameraParameters &camera_parameter,
+        bool keep_voxels_outside_image) {
     if (depth_map.height_ != camera_parameter.intrinsic_.height_ ||
         depth_map.width_ != camera_parameter.intrinsic_.width_) {
         utility::LogError(
@@ -297,7 +298,8 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             double d;
             bool within_boundary;
             std::tie(within_boundary, d) = depth_map.FloatValueAt(u, v);
-            if (within_boundary && d > 0 && z >= d) {
+            if ((!within_boundary && keep_voxels_outside_image) ||
+                (within_boundary && d > 0 && z >= d)) {
                 carve = false;
                 break;
             }
@@ -312,7 +314,8 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
 
 VoxelGrid &VoxelGrid::CarveSilhouette(
         const Image &silhouette_mask,
-        const camera::PinholeCameraParameters &camera_parameter) {
+        const camera::PinholeCameraParameters &camera_parameter,
+        bool keep_voxels_outside_image) {
     if (silhouette_mask.height_ != camera_parameter.intrinsic_.height_ ||
         silhouette_mask.width_ != camera_parameter.intrinsic_.width_) {
         utility::LogError(
@@ -339,7 +342,8 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             double d;
             bool within_boundary;
             std::tie(within_boundary, d) = silhouette_mask.FloatValueAt(u, v);
-            if (within_boundary && d > 0) {
+            if ((!within_boundary && keep_voxels_outside_image) ||
+                (within_boundary && d > 0)) {
                 carve = false;
                 break;
             }

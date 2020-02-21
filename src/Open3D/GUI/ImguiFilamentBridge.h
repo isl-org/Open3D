@@ -26,6 +26,8 @@
 #include <filament/VertexBuffer.h>
 #include <filament/View.h>
 
+#include <memory>
+
 struct ImDrawData;
 
 namespace open3d {

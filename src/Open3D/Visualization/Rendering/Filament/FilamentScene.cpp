@@ -26,18 +26,35 @@
 
 #include "FilamentScene.h"
 
+#include <filament/Engine.h>
+#include <filament/LightManager.h>
+#include <filament/MaterialInstance.h>
+#include <filament/RenderableManager.h>
+#include <filament/Renderer.h>
+#include <filament/Scene.h>
+#include <filament/TextureSampler.h>
+#include <filament/TransformManager.h>
+#include <filament/View.h>
+#include <filament/utils/EntityManager.h>
+
+#include "FilamentEntitiesMods.h"
 #include "FilamentGeometryBuffersBuilder.h"
 #include "FilamentResourceManager.h"
 #include "FilamentView.h"
-#include "Open3D/Geometry/Geometry3D.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Utility/Console.h"
 
-#include <filament/Engine.h>
-#include <filament/LightManager.h>
-#include <filament/RenderableManager.h>
-#include <filament/Scene.h>
-#include <filament/TransformManager.h>
-#include <filament/View.h>
+namespace defaults_mapping {
+
+using GeometryType = open3d::geometry::Geometry::GeometryType;
+using MaterialHandle = open3d::visualization::MaterialHandle;
+using ResourceManager = open3d::visualization::FilamentResourceManager;
+
+const std::unordered_map<GeometryType, MaterialHandle> kDefaultMaterials = {
+        {GeometryType::TriangleMesh, ResourceManager::kDefaultLit},
+        {GeometryType::LineSet, ResourceManager::kDefaultUnlit},
+        {GeometryType::PointCloud, ResourceManager::kDefaultUnlit}};
+}  // namespace defaults_mapping
 
 namespace open3d {
 namespace visualization {
@@ -105,6 +122,54 @@ void FilamentScene::SetViewActive(const ViewHandle& viewId, bool isActive) {
 
 void FilamentScene::RemoveView(const ViewHandle& viewId) {
     views_.erase(viewId);
+}
+
+GeometryHandle FilamentScene::AddGeometry(
+        const geometry::Geometry3D& geometry) {
+    GeometryHandle handle;
+
+    const auto geometryType = geometry.GetGeometryType();
+    auto defaults = defaults_mapping::kDefaultMaterials.find(geometryType);
+    if (defaults != defaults_mapping::kDefaultMaterials.end()) {
+        MaterialInstanceHandle materialInstance =
+                resourceManager_.CreateMaterialInstance(defaults->second);
+        handle = AddGeometry(geometry, materialInstance);
+
+        if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
+            const auto& mesh =
+                    static_cast<const geometry::TriangleMesh&>(geometry);
+            if (mesh.texture_.HasData()) {
+                auto hTexture = resourceManager_.CreateTexture(
+                        mesh.texture_.FlipVertical());
+
+                if (hTexture) {
+                    auto& entity = entities_[handle];
+                    entity.texture = hTexture;
+
+                    auto wMaterial = resourceManager_.GetMaterialInstance(
+                            entity.material);
+                    auto mat = wMaterial.lock();
+
+                    auto wTexture = resourceManager_.GetTexture(hTexture);
+                    auto tex = wTexture.lock();
+                    if (mat && tex) {
+                        static const auto kDefaultSampler =
+                                FilamentMaterialModifier::
+                                        SamplerFromSamplerParameters(
+                                                TextureSamplerParameters::
+                                                        Pretty());
+                        mat->setParameter("texture", tex.get(),
+                                          kDefaultSampler);
+                    }
+                }
+            }
+        }
+    }
+
+    utility::LogWarning("Geometry type {} is not supported yet!",
+                        static_cast<size_t>(geometry.GetGeometryType()));
+
+    return handle;
 }
 
 GeometryHandle FilamentScene::AddGeometry(
@@ -190,8 +255,23 @@ void FilamentScene::AssignMaterial(const GeometryHandle& geometryId,
                 renderableManger.getInstance(found->second.info.self);
         renderableManger.setMaterialInstanceAt(inst, 0,
                                                wMaterialInstance.lock().get());
+    } else {
+        utility::LogWarning(
+                "Failed to assign material ({}) to geometry ({}): material or "
+                "entity not found",
+                materialId, geometryId);
     }
-    // TODO: Log if failed
+}
+
+MaterialInstanceHandle FilamentScene::GetMaterial(
+        const GeometryHandle& geometryId) const {
+    const auto found = entities_.find(geometryId);
+    if (found != entities_.end()) {
+        return found->second.material;
+    }
+
+    utility::LogWarning("Geometry {} is not registered in scene", geometryId);
+    return {};
 }
 
 void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
@@ -397,6 +477,7 @@ void FilamentScene::SceneEntity::Details::ReleaseResources(
 void FilamentScene::SceneEntity::ReleaseResources(
         filament::Engine& engine, FilamentResourceManager& manager) {
     info.ReleaseResources(engine, manager);
+    manager.Destroy(texture);
 
     engine.destroy(parent);
     parent.clear();

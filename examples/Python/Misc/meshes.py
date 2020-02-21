@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Basic/meshes.py
+# examples/Python/Misc/meshes.py
 
 import numpy as np
 import open3d as o3d
@@ -174,6 +174,16 @@ def bunny():
     mesh = o3d.io.read_triangle_mesh(bunny_path)
     mesh.compute_vertex_normals()
     return mesh
+
+
+def eagle():
+    path = _relative_path("../../TestData/eagle.ply")
+    if not os.path.exists(path):
+        print("downloading eagle pcl")
+        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
+        urllib.request.urlretrieve(url, path)
+    pcd = o3d.io.read_point_cloud(path)
+    return pcd
 
 
 def center_and_scale(mesh):

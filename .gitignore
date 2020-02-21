@@ -41,6 +41,7 @@ compile_commands.json
 examples/Python/ReconstructionSystem/dataset/
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
+examples/TestData/eagle.ply
 examples/TestData/voxelized.ply
 examples/Python/Basic/voxel_grid_test.ply
 examples/Python/Benchmark/testdata/

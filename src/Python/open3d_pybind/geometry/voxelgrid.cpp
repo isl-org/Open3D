@@ -100,18 +100,21 @@ void pybind_voxelgrid(py::module &m) {
                  "are mapped to the closest voxel.")
             .def("carve_depth_map", &geometry::VoxelGrid::CarveDepthMap,
                  "depth_map"_a, "camera_params"_a,
+                 "keep_voxels_outside_image"_a = false,
                  "Remove all voxels from the VoxelGrid where none of the "
                  "boundary points of the voxel projects to depth value that is "
                  "smaller, or equal than the projected depth of the boundary "
-                 "point. The point is not carved if none of the boundary "
-                 "points of the voxel projects to a valid image location.")
+                 "point. If keep_voxels_outside_image is true then voxels are "
+                 "only carved if all boundary points project to a valid image "
+                 "location.")
             .def("carve_silhouette", &geometry::VoxelGrid::CarveSilhouette,
                  "silhouette_mask"_a, "camera_params"_a,
+                 "keep_voxels_outside_image"_a = false,
                  "Remove all voxels from the VoxelGrid where none of the "
                  "boundary points of the voxel projects to a valid mask pixel "
-                 "(pixel value > 0). The point is not carved if none of the "
-                 "boundary points of the voxel projects to a valid image "
-                 "location.")
+                 "(pixel value > 0). If keep_voxels_outside_image is true then "
+                 "voxels are only carved if all boundary points project to a "
+                 "valid image location.")
             .def("to_octree", &geometry::VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
             .def("create_from_octree", &geometry::VoxelGrid::CreateFromOctree,
@@ -155,13 +158,19 @@ void pybind_voxelgrid(py::module &m) {
             m, "VoxelGrid", "carve_depth_map",
             {{"depth_map", "Depth map (Image) used for VoxelGrid carving."},
              {"camera_parameters",
-              "PinholeCameraParameters used to record the given depth_map."}});
+              "PinholeCameraParameters used to record the given depth_map."},
+             {"keep_voxels_outside_image",
+              "retain voxels that don't project"
+              " to pixels in the image"}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "carve_silhouette",
             {{"silhouette_mask",
               "Silhouette mask (Image) used for VoxelGrid carving."},
              {"camera_parameters",
-              "PinholeCameraParameters used to record the given depth_map."}});
+              "PinholeCameraParameters used to record the given depth_map."},
+             {"keep_voxels_outside_image",
+              "retain voxels that don't project"
+              " to pixels in the image"}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "to_octree",
             {{"max_depth", "int: Maximum depth of the octree."}});

@@ -1465,6 +1465,67 @@ void TriangleMesh::RemoveTrianglesByMask(
     }
 }
 
+void TriangleMesh::RemoveVerticesByIndex(
+        const std::vector<size_t> &vertex_indices) {
+    std::vector<bool> vertex_mask(vertices_.size(), false);
+    for (auto vidx : vertex_indices) {
+        if (vidx >= 0 && vidx < vertices_.size()) {
+            vertex_mask[vidx] = true;
+        } else {
+            utility::LogWarning(
+                    "[RemoveVerticessByIndex] contains vertex index {} that is "
+                    "not within the bounds",
+                    vidx);
+        }
+    }
+
+    RemoveVerticesByMask(vertex_mask);
+}
+
+void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
+    if (vertex_mask.size() != vertices_.size()) {
+        utility::LogError("vertex_mask has a different size than vertices_");
+    }
+
+    bool has_normal = HasVertexNormals();
+    bool has_color = HasVertexColors();
+    int to_vidx = 0;
+    std::unordered_map<int, int> vertex_map;
+    for (size_t from_vidx = 0; from_vidx < vertices_.size(); ++from_vidx) {
+        if (!vertex_mask[from_vidx]) {
+            vertex_map[from_vidx] = to_vidx;
+            vertices_[to_vidx] = vertices_[from_vidx];
+            if (has_normal) {
+                vertex_normals_[to_vidx] = vertex_normals_[from_vidx];
+            }
+            if (has_color) {
+                vertex_colors_[to_vidx] = vertex_colors_[from_vidx];
+            }
+            to_vidx++;
+        }
+    }
+    vertices_.resize(to_vidx);
+    if (has_normal) {
+        vertex_normals_.resize(to_vidx);
+    }
+    if (has_color) {
+        vertex_colors_.resize(to_vidx);
+    }
+
+    std::vector<bool> triangle_mask(triangles_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        auto &tria = triangles_[tidx];
+        triangle_mask[tidx] = vertex_mask[tria(0)] || vertex_mask[tria(1)] ||
+                              vertex_mask[tria(2)];
+        if (!triangle_mask[tidx]) {
+            tria(0) = vertex_map[tria(0)];
+            tria(1) = vertex_map[tria(1)];
+            tria(2) = vertex_map[tria(2)];
+        }
+    }
+    RemoveTrianglesByMask(triangle_mask);
+}
+
 std::unordered_map<Eigen::Vector2i,
                    double,
                    utility::hash_eigen::hash<Eigen::Vector2i>>

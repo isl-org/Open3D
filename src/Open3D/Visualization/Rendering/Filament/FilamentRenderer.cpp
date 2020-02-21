@@ -36,6 +36,7 @@
 
 #include "FilamentCamera.h"
 #include "FilamentEntitiesMods.h"
+#include "FilamentRenderToBuffer.h"
 #include "FilamentResourceManager.h"
 #include "FilamentScene.h"
 #include "FilamentView.h"
@@ -82,6 +83,13 @@ void FilamentRenderer::DestroyScene(const SceneHandle& id) {
 }
 
 void FilamentRenderer::BeginFrame() {
+    // We will complete render to buffer requests first
+    for (auto& br : bufferRenderers_) {
+        if (br->pending_) {
+            br->Render();
+        }
+    }
+
     frameStarted_ = renderer_->beginFrame(swapChain_);
 }
 
@@ -106,6 +114,11 @@ void FilamentRenderer::EndFrame() {
 MaterialHandle FilamentRenderer::AddMaterial(
         const ResourceLoadRequest& request) {
     return resourceManager_.CreateMaterial(request);
+}
+
+MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
+        const MaterialHandle& material) {
+    return resourceManager_.CreateMaterialInstance(material);
 }
 
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
@@ -157,6 +170,12 @@ void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
     resourceManager_.Destroy(id);
 }
 
+std::unique_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
+    auto renderer = std::make_unique<FilamentRenderToBuffer>(engine_, *this);
+    bufferRenderers_.insert(renderer.get());
+    return std::move(renderer);
+}
+
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     auto found = scenes_.find(id);
     if (found != scenes_.end()) {
@@ -167,6 +186,14 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     }
 
     // TODO: assert
+}
+TextureHandle FilamentRenderer::AddTexture(
+        const std::shared_ptr<geometry::Image>& image) {
+    return resourceManager_.CreateTexture(image);
+}
+
+void FilamentRenderer::OnBufferRenderDestroyed(FilamentRenderToBuffer* render) {
+    bufferRenderers_.erase(render);
 }
 
 }  // namespace visualization

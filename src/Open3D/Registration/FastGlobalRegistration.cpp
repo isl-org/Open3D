@@ -26,14 +26,12 @@
 
 #include "Open3D/Registration/FastGlobalRegistration.h"
 
-#include <ctime>
-
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Registration/Feature.h"
 #include "Open3D/Registration/Registration.h"
 #include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/Eigen.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -122,17 +120,17 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 
     // STEP 3) TUPLE CONSTRAINT
     utility::LogDebug("\t[tuple constraint] ");
-    std::srand((unsigned int)std::time(0));
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
     double scale = option.tuple_scale_;
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
+
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = rand() % ncorr;
-        rand1 = rand() % ncorr;
-        rand2 = rand() % ncorr;
+        rand0 = utility::UniformRandInt(0, ncorr - 1);
+        rand1 = utility::UniformRandInt(0, ncorr - 1);
+        rand2 = utility::UniformRandInt(0, ncorr - 1);
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;

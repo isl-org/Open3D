@@ -59,21 +59,24 @@ if (ENABLE_GUI)
     endif()
     EXAMPLE_CPP(GuiDemo               ${CMAKE_PROJECT_NAME})
 
-    set(GUIDEMO_RSRC_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
-    if (WIN32)
-        add_custom_target(GuiDemoResources
-                          ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
-    else ()
-        add_custom_target(GuiDemoResources
-                          rm -f ${GUIDEMO_RSRC_DIR}
-                          COMMAND ln -s ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRC_DIR})
+    # Compile .mat files and copy to resources directory in output directory
+    if (IOS OR ANDROID)
+        set(GUIDEMO_MATC_ARGS --platform mobile)
+    elseif (NOT WIN32) # On Windows only multiplatform materials working
+        set(GUIDEMO_MATC_ARGS --platform desktop)
     endif()
-    add_dependencies(GuiDemo GuiDemoResources)
+    set(GUIDEMO_MATC ${3RDPARTY_INSTALL_PREFIX}/bin/matc)
+    set(GUIDEMO_RSRCDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/resources)
 
+    add_custom_target(GuiDemoResources
+                      COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources ${GUIDEMO_RSRCDIR})
+    add_dependencies(GuiDemoResources GuiResources)
+    add_dependencies(GuiDemo GuiDemoResources)
+                     
     # Copy .dll files on Windows
     if (WIN32)
         add_custom_target(copy_dll
-            COMMAND xcopy /s /i /y /f \"bin/*.dll\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\"
+            COMMAND xcopy /s /i /y /f \"lib/*.dll\" \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/${CMAKE_BUILD_TYPE}\"
             WORKING_DIRECTORY ${3RDPARTY_INSTALL_PREFIX}
             DEPENDS ext_sdl2)
 

@@ -114,7 +114,10 @@ public:
 
     /// Function to downsample using VoxelDownSample, but specialized for
     /// Surface convolution project. Experimental function.
-    std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
+    /// Return reference indices of input point cloud.
+    std::tuple<std::shared_ptr<PointCloud>,
+               Eigen::MatrixXi,
+               std::vector<std::vector<int>>>
     VoxelDownSampleAndTrace(double voxel_size,
                             const Eigen::Vector3d &min_bound,
                             const Eigen::Vector3d &max_bound,
@@ -211,6 +214,20 @@ public:
                                    size_t min_points,
                                    bool print_progress = false) const;
 
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    ///
+    /// \param distance_threshold Max distance a point can be from the plane
+    /// model, and still be considered an inlier.
+    /// \param ransac_n Number of initial points to be considered inliers in
+    /// each iteration.
+    /// \param num_iterations Number of iterations.
+    /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
+    /// the plane inliers.
+    std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
+            const double distance_threshold = 0.01,
+            const int ransac_n = 3,
+            const int num_iterations = 100) const;
+
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)
     /// The input depth image can be either a float image, or a uint16_t image.
@@ -218,21 +235,31 @@ public:
     /// truncated at depth_trunc distance. The depth image is also sampled with
     /// stride, in order to support (fast) coarse point cloud extraction. Return
     /// an empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromDepthImage(
             const Image &depth,
             const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
             double depth_scale = 1000.0,
             double depth_trunc = 1000.0,
-            int stride = 1);
+            int stride = 1,
+            bool project_valid_depth_only = true);
 
     /// Factory function to create a pointcloud from an RGB-D image and a camera
     /// model (PointCloudFactory.cpp)
     /// Return an empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromRGBDImage(
             const RGBDImage &image,
             const camera::PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
+            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
+            bool project_valid_depth_only = true);
 
     /// Function to create a PointCloud from a VoxelGrid.
     /// It transforms the voxel centers to 3D points using the original point

@@ -41,7 +41,7 @@ namespace {
 static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
 }  // namespace
 
-bool CreateWindow(const char *path) {
+bool LoadAndCreateWindow(const char *path) {
     static int x = 50, y = 50;
 
     bool loaded = false;
@@ -81,7 +81,7 @@ int Run(int argc, const char *argv[]) {
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
 
-    CreateWindow(path);
+    LoadAndCreateWindow(path);
 
     app.Run();
 

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Utility/visualization.py
+# examples/Python/Utility/transformation.py
 
 import numpy as np
 import open3d as o3d

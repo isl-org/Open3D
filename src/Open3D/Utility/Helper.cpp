@@ -27,6 +27,7 @@
 #include "Open3D/Utility/Helper.h"
 
 #include <cctype>
+#include <random>
 #include <unordered_set>
 
 #ifdef _WIN32
@@ -95,6 +96,12 @@ void Sleep(int milliseconds) {
 #else
     usleep(milliseconds * 1000);
 #endif  // _WIN32
+}
+
+int UniformRandInt(const int min, const int max) {
+    static thread_local std::mt19937 generator(std::random_device{}());
+    std::uniform_int_distribution<int> distribution(min, max);
+    return distribution(generator);
 }
 
 }  // namespace utility
