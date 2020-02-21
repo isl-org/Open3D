@@ -73,6 +73,7 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_->setSampleCount(8);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
+    view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
