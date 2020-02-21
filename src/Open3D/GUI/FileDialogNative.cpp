@@ -41,24 +41,21 @@ struct FileDialog::Impl {
     std::string path;
     std::vector<std::pair<std::string, std::string>> filters;
     std::function<void()> onCancel;
-    std::function<void(const char*)> onDone;
+    std::function<void(const char *)> onDone;
 };
 
 FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
-: Dialog(title), impl_(new FileDialog::Impl()) {
+    : Dialog(title), impl_(new FileDialog::Impl()) {
     impl_->type = type;
 }
 
-FileDialog::~FileDialog() {
-}
+FileDialog::~FileDialog() {}
 
-void FileDialog::SetPath(const char *path) {
-    impl_->path = path;
-}
+void FileDialog::SetPath(const char *path) { impl_->path = path; }
 
 void FileDialog::AddFilter(const char *filter, const char *description) {
-    impl_->filters.push_back(std::make_pair<std::string,
-                                            std::string>(filter, description));
+    impl_->filters.push_back(
+            std::make_pair<std::string, std::string>(filter, description));
 }
 
 void FileDialog::SetOnCancel(std::function<void()> onCancel) {
@@ -76,13 +73,13 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
 void FileDialog::OnWillShow() {
     auto onOk = [this](const char *path) { this->impl_->onDone(path); };
     auto onCancel = [this]() { this->impl_->onCancel(); };
-    ShowNativeFileDialog(impl_->type, impl_->path, impl_->filters, onOk, onCancel);
+    ShowNativeFileDialog(impl_->type, impl_->path, impl_->filters, onOk,
+                         onCancel);
 }
 
-void FileDialog::OnDone() {
-}
+void FileDialog::OnDone() {}
 
 }  // namespace gui
 }  // namespace open3d
 
-#endif // __APPLE__
+#endif  // __APPLE__

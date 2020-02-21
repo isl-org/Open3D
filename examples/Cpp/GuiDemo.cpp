@@ -62,7 +62,8 @@ public:
             fileMenu->AddItem("Open", "Ctrl-O", FILE_OPEN);
             fileMenu->AddItem("Save", "Ctrl-S", FILE_SAVE);
             fileMenu->AddSeparator();
-            fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);  // Ctrl-C is copy...
+            fileMenu->AddItem("Close", "Ctrl-W",
+                              FILE_CLOSE);  // Ctrl-C is copy...
             menubar_->AddMenu("File", fileMenu);
             auto viewMenu = std::make_shared<gui::Menu>();
             viewMenu->AddItem("Points", "", VIEW_POINTS);

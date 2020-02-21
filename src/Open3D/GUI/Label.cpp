@@ -70,13 +70,9 @@ void Label::SetText(const char* text) {
     impl_->isSingleLine = !(impl_->text.find('\n') != std::string::npos);
 }
 
-Color Label::GetTextColor() const {
-    return impl_->color;
-}
+Color Label::GetTextColor() const { return impl_->color; }
 
-void Label::SetTextColor(const Color& color) {
-    impl_->color = color;
-}
+void Label::SetTextColor(const Color& color) { impl_->color = color; }
 
 Size Label::CalcPreferredSize(const Theme& theme) const {
     auto em = theme.fontSize;

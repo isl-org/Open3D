@@ -294,9 +294,7 @@ void Application::Initialize(int argc, const char *argv[]) {
     impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
 }
 
-std::shared_ptr<Menu> Application::GetMenubar() const {
-    return impl_->menubar;
-}
+std::shared_ptr<Menu> Application::GetMenubar() const { return impl_->menubar; }
 
 void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
     auto old = impl_->menubar;
@@ -314,7 +312,7 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
     if (native) {
         SetNativeMenubar(native);
     }
-#endif // __APPLE__
+#endif  // __APPLE__
 }
 
 void Application::AddWindow(std::shared_ptr<Window> window) {
@@ -337,8 +335,7 @@ void Application::RemoveWindow(Window *window) {
     }
 }
 
-void Application::Quit()
-{
+void Application::Quit() {
     for (auto &idAndWin : impl_->windows) {
         RemoveWindow(idAndWin.second.get());
     }

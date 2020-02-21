@@ -300,7 +300,7 @@ const char* Window::GetTitle() const {
     return SDL_GetWindowTitle(impl_->window);
 }
 
-void Window::SetTitle(const char *title) {
+void Window::SetTitle(const char* title) {
     SDL_SetWindowTitle(impl_->window, title);
 }
 
@@ -438,9 +438,7 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
-double Window::GetLastFrameTimeSeconds() const {
-    return impl_->lastFrameTime;
-}
+double Window::GetLastFrameTimeSeconds() const { return impl_->lastFrameTime; }
 
 void Window::Layout(const Theme& theme) {
     if (impl_->children.size() == 1) {
@@ -766,8 +764,7 @@ void Window::OnTextInput(const TextInputEvent& e) {
     io.AddInputCharactersUTF8(e.utf8);
 }
 
-void Window::OnDragDropped(const char *path) {
-}
+void Window::OnDragDropped(const char* path) {}
 
 }  // namespace gui
 }  // namespace open3d

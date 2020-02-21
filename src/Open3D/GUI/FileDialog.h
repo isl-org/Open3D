@@ -37,6 +37,7 @@ struct Theme;
 
 class FileDialog : public Dialog {
     using Super = Dialog;
+
 public:
     enum class Type { OPEN, SAVE };
 

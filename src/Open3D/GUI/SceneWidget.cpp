@@ -145,7 +145,7 @@ public:
         // vector in world space, but the translation happens in camera space.)
         // Since we want trackpad down (negative) to go forward ("pulling" the
         // model toward the viewer) we need to negate dy.
-        auto forward = Eigen::Vector3f(0, 0, -dist); // dist * (0, 0, -1)
+        auto forward = Eigen::Vector3f(0, 0, -dist);  // dist * (0, 0, -1)
         auto matrix = camera_->GetModelMatrix().translate(forward);
         camera_->SetModelMatrix(matrix);
 
@@ -233,7 +233,8 @@ public:
                         Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        Dolly(dy, true); // mouse movement is similar to trackpad
+                        Dolly(dy,
+                              true);  // mouse movement is similar to trackpad
                         break;
                     case State::ROTATE_XY:
                         Rotate(dx, dy);

@@ -68,7 +68,7 @@ public:
 
 protected:
     void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
-    void OnDragDropped(const char *path) override;
+    void OnDragDropped(const char* path) override;
 
 private:
     struct Impl;

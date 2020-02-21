@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #if defined(__APPLE__)
-    // See MenuMacOS.mm
+// See MenuMacOS.mm
 #else
 
 #include "Menu.h"
@@ -52,7 +52,8 @@ struct Menu::Impl {
         std::string name;
         std::string shortcut;
         std::shared_ptr<Menu> submenu;
-        Menu::Impl *submenuImpl = nullptr; // so FindMenuItem needn't be a friend
+        Menu::Impl *submenuImpl =
+                nullptr;  // so FindMenuItem needn't be a friend
         bool isEnabled = true;
         bool isChecked = false;
         bool isSeparator = false;
@@ -82,7 +83,7 @@ Menu::Menu() : impl_(new Menu::Impl()) {}
 
 Menu::~Menu() {}
 
-void* Menu::GetNativePointer() { return nullptr; }
+void *Menu::GetNativePointer() { return nullptr; }
 
 void Menu::AddItem(const char *name,
                    const char *shortcut,
@@ -96,8 +97,8 @@ void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
 }
 
 void Menu::AddSeparator() {
-    impl_->items.push_back({NO_ITEM, "", "", nullptr, nullptr,
-                            false, false, true});
+    impl_->items.push_back(
+            {NO_ITEM, "", "", nullptr, nullptr, false, false, true});
 }
 
 bool Menu::IsEnabled(ItemId itemId) const {
@@ -248,4 +249,4 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
 }  // namespace gui
 }  // namespace open3d
 
-#endif // __APPLE__
+#endif  // __APPLE__

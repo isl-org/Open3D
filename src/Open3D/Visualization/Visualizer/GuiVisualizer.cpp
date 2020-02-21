@@ -142,14 +142,11 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
-class DrawTimeLabel : public gui::Label
-{
+class DrawTimeLabel : public gui::Label {
     using Super = Label;
+
 public:
-    DrawTimeLabel(gui::Window *w)
-    : Label("0.0 ms") {
-        window_ = w;
-    }
+    DrawTimeLabel(gui::Window *w) : Label("0.0 ms") { window_ = w; }
 
     gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
         auto h = Super::CalcPreferredSize(theme).height;
@@ -164,7 +161,7 @@ public:
 
         return Super::Draw(context);
     }
-    
+
 private:
     gui::Window *window_;
 };
@@ -469,17 +466,16 @@ void GuiVisualizer::OnDragDropped(const char *path) {
 #if LOAD_IN_NEW_WINDOW
     auto frame = this->GetFrame();
     std::vector<std::shared_ptr<const geometry::Geometry>> nothing;
-    auto vis = std::make_shared<GuiVisualizer>(
-            nothing, title.c_str(), frame.width, frame.height,
-            frame.x + 20, frame.y + 20);
+    auto vis = std::make_shared<GuiVisualizer>(nothing, title.c_str(),
+                                               frame.width, frame.height,
+                                               frame.x + 20, frame.y + 20);
     gui::Application::GetInstance().AddWindow(vis);
 #else
     this->SetTitle(title);
     auto vis = this;
-#endif // LOAD_IN_NEW_WINDOW
+#endif  // LOAD_IN_NEW_WINDOW
     if (!vis->LoadGeometry(path)) {
-        auto err = std::string("Error reading geometry file '") +
-                   path + "'";
+        auto err = std::string("Error reading geometry file '") + path + "'";
         vis->ShowMessageBox("Error loading geometry", err.c_str());
     }
 }

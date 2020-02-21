@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #if defined(__APPLE__)
-    // see FileDialogNative.cpp
+// see FileDialogNative.cpp
 #else
 
 #include "FileDialog.h"
@@ -440,4 +440,4 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
 }  // namespace gui
 }  // namespace open3d
 
-#endif // __APPLE__
+#endif  // __APPLE__

@@ -78,7 +78,7 @@ public:
     void SetFrame(const Rect& r);  // in OS pixels; not scaled
 
     const char* GetTitle() const;
-    void SetTitle(const char *title);
+    void SetTitle(const char* title);
 
     void SizeToFit();  // auto size
     void SetSize(const Size& size);
@@ -113,7 +113,7 @@ protected:
     virtual void OnMenuItemSelected(Menu::ItemId itemId);
 
     // Override to handle drag and drop on the windowx
-    virtual void OnDragDropped(const char *path);
+    virtual void OnDragDropped(const char* path);
 
 private:
     enum DrawResult { NONE, REDRAW };

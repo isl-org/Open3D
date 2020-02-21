@@ -53,8 +53,8 @@ public:
     /// Does not return until the UI is completely finished. Use this if you
     /// just need something simple.
     void Run();
-    bool RunOneTick(); // internal use
-    void Quit(); // sends a terminate event
+    bool RunOneTick();  // internal use
+    void Quit();        // sends a terminate event
 
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menubar);
