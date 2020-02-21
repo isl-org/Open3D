@@ -1,5 +1,6 @@
 ## Master
 
+* Fixes on Open3D viewer app
 * Updated travis.yml to support Ubuntu 18.04, gcc-7, and clang-7.0
 * Contributors guidelines updated
 * Avoid cstdlib random generators in ransac registration, use C++11 random instead.
