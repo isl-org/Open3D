@@ -163,6 +163,15 @@ Tensor Tensor::Copy(const Device& device) const {
     return dst_tensor;
 }
 
+Tensor Tensor::To(Dtype dtype, bool copy) const {
+    if (!copy && dtype_ == dtype) {
+        return *this;
+    }
+    Tensor dst_tensor(shape_, dtype, GetDevice());
+    kernel::Copy(*this, dst_tensor);
+    return dst_tensor;
+}
+
 void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
 
 Tensor Tensor::Contiguous() const {

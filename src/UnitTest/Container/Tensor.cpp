@@ -143,7 +143,26 @@ TEST_P(TensorPermuteDevicePairs, Copy) {
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
+    EXPECT_EQ(dst_t.GetDtype(), src_t.GetDtype());
+    EXPECT_EQ(dst_t.ToFlatVector<float>(), vals);
+}
+
+TEST_P(TensorPermuteDevices, To) {
+    Device device = GetParam();
+
+    Dtype dtype(Dtype::Float32);
+    SizeVector shape{2, 3};
+
+    std::vector<float> src_vals{0.1, 1.2, 2.3, 3.4, 4.5, 5.6};
+    std::vector<int> dst_vals{0, 1, 2, 3, 4, 5};
+    Tensor src_t(src_vals, shape, dtype, device);
+
+    Tensor dst_t = src_t.To(Dtype::Int32);
+
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
+    EXPECT_EQ(dst_t.GetDevice(), device);
+    EXPECT_EQ(dst_t.GetDtype(), Dtype::Int32);
+    EXPECT_EQ(dst_t.ToFlatVector<int>(), dst_vals);
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {

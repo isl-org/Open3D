@@ -77,7 +77,8 @@ struct TensorRef {
 };
 
 enum class DtypePolicy {
-    NONE,         // Do not check.
+    NONE,         // Do not check. Expects the kernel to handle the conversion.
+                  // E.g. in Copy kernel with type casting.
     ASSERT_SAME,  // Assert same Dtypes for inputs and output
     CAST,         // Cast to common dtype.
                   // E.g. Tensor::Add:
@@ -110,9 +111,7 @@ public:
         if (dtype_policy == DtypePolicy::CAST ||
             dtype_policy == DtypePolicy::CAST_INPUTS) {
             utility::LogError("Unimplemented dtype_policy.");
-        }
-
-        if (dtype_policy == DtypePolicy::ASSERT_SAME) {
+        } else if (dtype_policy == DtypePolicy::ASSERT_SAME) {
             Dtype output_dtype = output_tensor.GetDtype();
             for (const auto& input_tensor : input_tensors) {
                 if (input_tensor.GetDtype() != output_dtype) {

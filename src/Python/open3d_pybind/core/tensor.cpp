@@ -217,6 +217,9 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    // Casting
+    tensor.def("to", &Tensor::To);
+
     // Binary element-wise ops
     tensor.def("add", &Tensor::Add);
     tensor.def("add_", &Tensor::Add_);
@@ -226,6 +229,14 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("mul_", &Tensor::Mul_);
     tensor.def("div", &Tensor::Div);
     tensor.def("div_", &Tensor::Div_);
+
+    // Getters
+    tensor.def("get_shape",
+               [](const Tensor& tensor) { return tensor.GetShape(); });
+    tensor.def("get_strides",
+               [](const Tensor& tensor) { return tensor.GetStrides(); });
+    tensor.def("get_dtype", &Tensor::GetDtype);
+    tensor.def("get_device", &Tensor::GetDevice);
 
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });

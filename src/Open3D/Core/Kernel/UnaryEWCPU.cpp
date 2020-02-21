@@ -37,26 +37,33 @@
 namespace open3d {
 namespace kernel {
 
-template <typename scalar_t>
+template <typename src_t, typename dst_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
+    *static_cast<dst_t*>(dst) =
+            static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
 void CopyCPU(const Tensor& src, Tensor& dst) {
     // src and dst have been checked to have the same shape, dtype, device
     SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
+    Dtype src_dtype = src.GetDtype();
+    Dtype dst_dtype = dst.GetDtype();
     if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
+        src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
+        MemoryManager::Memcpy(
+                dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
+                src.GetDevice(),
+                DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
     } else {
-        // TODO: in the future, we may want to allow automatic casting
-        Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    indexer, CPUCopyElementKernel<scalar_t>);
+        Indexer indexer({src}, dst, DtypePolicy::NONE);
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            using src_t = scalar_t;
+            DISPATCH_DTYPE_TO_TEMPLATE(dst_dtype, [&]() {
+                using dst_t = scalar_t;
+                CPULauncher::LaunchUnaryEWKernel(
+                        indexer, CPUCopyElementKernel<src_t, dst_t>);
+            });
+
         });
     }
 }
