@@ -36,9 +36,7 @@
 
 #include <Eigen/Geometry>
 
-#include <iostream>
-
-#define ENABLE_PAN 0
+#define ENABLE_PAN 1
 
 namespace open3d {
 namespace gui {
@@ -73,7 +71,7 @@ public:
         // original positions at mousedown to avoid hysteresis problems.
         auto localMove = -dx * unitsPerPx * Eigen::Vector3f(1, 0, 0) +
                          dy * unitsPerPx * Eigen::Vector3f(0, 1, 0);
-        auto worldMove = modelMatrix * localMove;
+        auto worldMove = modelMatrix.rotation() * localMove;
         centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
         modelMatrix.translate(localMove);
         camera_->SetModelMatrix(modelMatrix);
