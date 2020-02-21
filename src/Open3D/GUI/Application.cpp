@@ -481,6 +481,8 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         int mx, my;
                         SDL_GetGlobalMouseState(&mx, &my);
                         auto pos = win->GlobalToWindowCoord(mx, my);
+                        pos.x = int(std::ceil(float(pos.x) * scaling));
+                        pos.y = int(std::ceil(float(pos.y) * scaling));
                         int dx = int(std::ceil(float(e.x) * scaling));
                         int dy = int(std::ceil(float(e.y) * scaling));
 
