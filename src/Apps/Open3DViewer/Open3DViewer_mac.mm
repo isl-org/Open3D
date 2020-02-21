@@ -79,6 +79,19 @@
     mOpenEmptyWindow = false;  // LoadAndCreateWindow() always opens a window
     return (LoadAndCreateWindow(filename.UTF8String));
 }
+
+- (void)applicationWillTerminate:(NSNotification *)notification {
+    // The app will terminate after this function exits. This will result
+    // in the Application object in main() getting destructed, but it still
+    // thinks it is running. So tell it to quit.
+    open3d::gui::Application::GetInstance().Quit();
+    // Process events for a while. (Everything should happen in the first
+    // call, but call it multiple times just in case.)
+    int  i  = 0;
+    while (open3d::gui::Application::GetInstance().RunOneTick() && i < 20) {
+        i++;
+    }
+}
 @end
 
 // ----------------------------------------------------------------------------

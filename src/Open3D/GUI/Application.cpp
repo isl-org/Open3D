@@ -337,6 +337,14 @@ void Application::RemoveWindow(Window *window) {
     }
 }
 
+void Application::Quit()
+{
+    for (auto &idAndWin : impl_->windows) {
+        RemoveWindow(idAndWin.second.get());
+    }
+    // The last window will automatically send a quit event
+}
+
 void Application::OnMenuItemSelected(Menu::ItemId itemId) {
     for (auto &kv : impl_->windows) {
         if (kv.second->IsActiveWindow()) {
