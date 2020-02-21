@@ -91,18 +91,25 @@ bool TexturePhongShader::BindGeometry(const geometry::Geometry &geometry,
     }
 
     // Create buffers and bind the geometry
-    glGenBuffers(1, &vertex_position_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-                 points.data(), GL_STATIC_DRAW);
-    glGenBuffers(1, &vertex_normal_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(Eigen::Vector3f),
-                 normals.data(), GL_STATIC_DRAW);
-    glGenBuffers(1, &vertex_uv_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(Eigen::Vector2f),
-                 uvs.data(), GL_STATIC_DRAW);
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        glGenBuffers(1, &vertex_position_buffers_[mi]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffers_[mi]);
+        glBufferData(GL_ARRAY_BUFFER,
+                     draw_array_sizes_[mi] * sizeof(Eigen::Vector3f),
+                     points.data() + array_offsets_[mi], GL_STATIC_DRAW);
+
+        glGenBuffers(1, &vertex_normal_buffers_[mi]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffers_[mi]);
+        glBufferData(GL_ARRAY_BUFFER,
+                     draw_array_sizes_[mi] * sizeof(Eigen::Vector3f),
+                     normals.data() + array_offsets_[mi], GL_STATIC_DRAW);
+
+        glGenBuffers(1, &vertex_uv_buffers_[mi]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffers_[mi]);
+        glBufferData(GL_ARRAY_BUFFER,
+                     draw_array_sizes_[mi] * sizeof(Eigen::Vector2f),
+                     uvs.data() + array_offsets_[mi], GL_STATIC_DRAW);
+    }
     bound_ = true;
     return true;
 }
@@ -115,48 +122,68 @@ bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
         return false;
     }
     glUseProgram(program_);
-    glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
-    glUniformMatrix4fv(V_, 1, GL_FALSE, view.GetViewMatrix().data());
-    glUniformMatrix4fv(M_, 1, GL_FALSE, view.GetModelMatrix().data());
-    glUniformMatrix4fv(light_position_world_, 1, GL_FALSE,
-                       light_position_world_data_.data());
-    glUniformMatrix4fv(light_color_, 1, GL_FALSE, light_color_data_.data());
-    glUniform4fv(light_diffuse_power_, 1, light_diffuse_power_data_.data());
-    glUniform4fv(light_specular_power_, 1, light_specular_power_data_.data());
-    glUniform4fv(light_specular_shininess_, 1,
-                 light_specular_shininess_data_.data());
-    glUniform4fv(light_ambient_, 1, light_ambient_data_.data());
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
+        glUniformMatrix4fv(V_, 1, GL_FALSE, view.GetViewMatrix().data());
+        glUniformMatrix4fv(M_, 1, GL_FALSE, view.GetModelMatrix().data());
+        glUniformMatrix4fv(light_position_world_, 1, GL_FALSE,
+                           light_position_world_data_.data());
+        glUniformMatrix4fv(light_color_, 1, GL_FALSE, light_color_data_.data());
+        glUniform4fv(light_diffuse_power_, 1, light_diffuse_power_data_.data());
+        glUniform4fv(light_specular_power_, 1,
+                     light_specular_power_data_.data());
+        glUniform4fv(light_specular_shininess_, 1,
+                     light_specular_shininess_data_.data());
+        glUniform4fv(light_ambient_, 1, light_ambient_data_.data());
 
-    glUniform1i(diffuse_texture_, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
+        glUniform1i(diffuse_texture_, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffers_[mi]);
 
-    glEnableVertexAttribArray(vertex_position_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(vertex_position_);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffers_[mi]);
+        glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    glEnableVertexAttribArray(vertex_normal_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
-    glVertexAttribPointer(vertex_normal_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(vertex_normal_);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffers_[mi]);
+        glVertexAttribPointer(vertex_normal_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    glEnableVertexAttribArray(vertex_uv_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
-    glVertexAttribPointer(vertex_uv_, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(vertex_uv_);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffers_[mi]);
+        glVertexAttribPointer(vertex_uv_, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
+        glDrawArrays(draw_arrays_mode_, 0, draw_array_sizes_[mi]);
 
-    glDisableVertexAttribArray(vertex_position_);
-    glDisableVertexAttribArray(vertex_normal_);
-    glDisableVertexAttribArray(vertex_uv_);
+        glDisableVertexAttribArray(vertex_position_);
+        glDisableVertexAttribArray(vertex_normal_);
+        glDisableVertexAttribArray(vertex_uv_);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
     return true;
 }
 
 void TexturePhongShader::UnbindGeometry() {
     if (bound_) {
-        glDeleteBuffers(1, &vertex_position_buffer_);
-        glDeleteBuffers(1, &vertex_normal_buffer_);
-        glDeleteBuffers(1, &vertex_uv_buffer_);
-        glDeleteTextures(1, &diffuse_texture_buffer_);
+        for (auto buf : vertex_position_buffers_) {
+            glDeleteBuffers(1, &buf);
+        }
+        for (auto buf : vertex_normal_buffers_) {
+            glDeleteBuffers(1, &buf);
+        }
+        for (auto buf : vertex_uv_buffers_) {
+            glDeleteBuffers(1, &buf);
+        }
+        for (auto buf : diffuse_texture_buffers_) {
+            glDeleteTextures(1, &buf);
+        }
+
+        vertex_position_buffers_.clear();
+        vertex_normal_buffers_.clear();
+        vertex_uv_buffers_.clear();
+        diffuse_texture_buffers_.clear();
+        draw_array_sizes_.clear();
+        array_offsets_.clear();
+        num_materials_ = 0;
         bound_ = false;
     }
 }
@@ -253,81 +280,97 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;
     }
-    points.resize(mesh.triangles_.size() * 3);
-    normals.resize(mesh.triangles_.size() * 3);
-    uvs.resize(mesh.triangles_.size() * 3);
+    std::vector<std::vector<Eigen::Vector3f>> tmp_points;
+    std::vector<std::vector<Eigen::Vector3f>> tmp_normals;
+    std::vector<std::vector<Eigen::Vector2f>> tmp_uvs;
+
+    num_materials_ = (int)mesh.textures_.size();
+    array_offsets_.resize(num_materials_);
+    draw_array_sizes_.resize(num_materials_);
+    vertex_position_buffers_.resize(num_materials_);
+    vertex_normal_buffers_.resize(num_materials_);
+    vertex_uv_buffers_.resize(num_materials_);
+    diffuse_texture_buffers_.resize(num_materials_);
+
+    tmp_points.resize(num_materials_);
+    tmp_normals.resize(num_materials_);
+    tmp_uvs.resize(num_materials_);
 
     for (size_t i = 0; i < mesh.triangles_.size(); i++) {
         const auto &triangle = mesh.triangles_[i];
+        int mi = mesh.triangle_material_ids_[i];
+
         for (size_t j = 0; j < 3; j++) {
             size_t idx = i * 3 + j;
             size_t vi = triangle(j);
 
-            points[idx] = mesh.vertices_[vi].cast<float>();
-            uvs[idx] = mesh.triangle_uvs_[idx].cast<float>();
+            tmp_points[mi].push_back(mesh.vertices_[vi].cast<float>());
+            tmp_uvs[mi].push_back(mesh.triangle_uvs_[idx].cast<float>());
 
             if (option.mesh_shade_option_ ==
                 RenderOption::MeshShadeOption::FlatShade) {
-                normals[idx] = mesh.triangle_normals_[i].cast<float>();
+                tmp_normals[mi].push_back(
+                        mesh.triangle_normals_[i].cast<float>());
             } else {
-                normals[idx] = mesh.vertex_normals_[vi].cast<float>();
+                tmp_normals[mi].push_back(
+                        mesh.vertex_normals_[vi].cast<float>());
             }
         }
     }
 
-    glGenTextures(1, &diffuse_texture_);
-    glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
+    // Bind textures
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        glGenTextures(1, &diffuse_texture_buffers_[mi]);
+        glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffers_[mi]);
 
-    GLenum format;
-    switch (mesh.texture_.num_of_channels_) {
-        case 1: {
-            format = GL_RED;
-            break;
-        }
-        case 3: {
-            format = GL_RGB;
-            break;
-        }
-        case 4: {
-            format = GL_RGBA;
-            break;
-        }
-        default: {
-            utility::LogWarning("Unknown format, abort!");
+        GLenum format, type;
+        auto it = GLHelper::texture_format_map_.find(
+                mesh.textures_[mi].num_of_channels_);
+        if (it == GLHelper::texture_format_map_.end()) {
+            utility::LogWarning("Unknown texture format, abort!");
             return false;
         }
-    }
+        format = it->second;
 
-    GLenum type;
-    switch (mesh.texture_.bytes_per_channel_) {
-        case 1: {
-            type = GL_UNSIGNED_BYTE;
-            break;
-        }
-        case 2: {
-            type = GL_UNSIGNED_SHORT;
-            break;
-        }
-        case 4: {
-            type = GL_FLOAT;
-            break;
-        }
-        default: {
-            utility::LogWarning("Unknown format, abort!");
+        it = GLHelper::texture_type_map_.find(
+                mesh.textures_[mi].bytes_per_channel_);
+        if (it == GLHelper::texture_type_map_.end()) {
+            utility::LogWarning("Unknown texture type, abort!");
             return false;
         }
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.texture_.width_,
-                 mesh.texture_.height_, 0, format, type,
-                 mesh.texture_.data_.data());
+        type = it->second;
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.textures_[mi].width_,
+                     mesh.textures_[mi].height_, 0, format, type,
+                     mesh.textures_[mi].data_.data());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
+    // Point seperations
+    array_offsets_[0] = 0;
+    draw_array_sizes_[0] = tmp_points[0].size();
+    for (int mi = 1; mi < num_materials_; ++mi) {
+        draw_array_sizes_[mi] = tmp_points[mi].size();
+        array_offsets_[mi] = array_offsets_[mi - 1] + draw_array_sizes_[mi - 1];
+    }
+
+    // Prepared chunk of points and uvs
+    points.clear();
+    uvs.clear();
+    normals.clear();
+    for (int mi = 0; mi < num_materials_; ++mi) {
+        points.insert(points.end(), tmp_points[mi].begin(),
+                      tmp_points[mi].end());
+        uvs.insert(uvs.end(), tmp_uvs[mi].begin(), tmp_uvs[mi].end());
+        normals.insert(normals.end(), tmp_normals[mi].begin(),
+                       tmp_normals[mi].end());
+    }
 
     draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
     return true;
 }
 

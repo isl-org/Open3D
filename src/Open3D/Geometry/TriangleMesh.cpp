@@ -52,7 +52,8 @@ TriangleMesh &TriangleMesh::Clear() {
     triangle_normals_.clear();
     adjacency_list_.clear();
     triangle_uvs_.clear();
-    texture_.Clear();
+    triangle_material_ids_.clear();
+    textures_.clear();
     return *this;
 }
 
@@ -92,9 +93,10 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() || HasTexture()) {
+    if (HasTriangleUvs() || HasTextures() || HasTriangleMaterialIds()) {
         utility::LogError(
-                "[TriangleMesh] copy of uvs and texture is not implemented "
+                "[TriangleMesh] copy of uvs and texture and per-triangle "
+                "material ids is not implemented "
                 "yet");
     }
     return (*this);
