@@ -38,8 +38,8 @@ AddSourceDir("Visualizer")
 if (ENABLE_GUI)
     AddSourceDir("Rendering")
 else ()
-    list(REMOVE_ITEM VISUALIZATION_ALL_HEADER_FILES "Visualizer/GuiVisualizer.h")
-    list(REMOVE_ITEM VISUALIZATION_ALL_SOURCE_FILES "Visualizer/GuiVisualizer.cpp")
+    list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)
 endif()
 
 # create object library

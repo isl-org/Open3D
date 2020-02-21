@@ -38,7 +38,6 @@
 #include <filament/LightManager.h>
 #include <filament/Material.h>
 #include <filament/RenderableManager.h>
-#include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
 #include <filament/Texture.h>

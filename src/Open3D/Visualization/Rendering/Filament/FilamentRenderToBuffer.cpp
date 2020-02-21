@@ -38,9 +38,9 @@
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
 #include <filament/SwapChain.h>
+#include <filament/Texture.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
-#include <filament/backend/PixelBufferDescriptor.h>
 
 namespace open3d {
 namespace visualization {
@@ -139,9 +139,7 @@ void FilamentRenderToBuffer::RequestFrame(Scene* scene,
     callback_ = callback;
 }
 
-void FilamentRenderToBuffer::ReadPixelsCallback(void* buffer,
-                                                size_t size,
-                                                void* user) {
+void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     auto params = static_cast<PBDParams*>(user);
     FilamentRenderToBuffer* self;
     BufferReadyCallback callback;
