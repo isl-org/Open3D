@@ -333,34 +333,34 @@ public:
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
 
-    /// Element-wise square root of a tensor.
+    /// Element-wise square root of a tensor, returns a new tensor.
     Tensor Sqrt() const;
 
-    /// Element-wise square root of a tensor, in place.
+    /// Element-wise square root of a tensor, in-place.
     Tensor Sqrt_();
 
-    /// Element-wise sine of a tensor.
+    /// Element-wise sine of a tensor, returns a new tensor.
     Tensor Sin() const;
 
-    /// Element-wise sine of a tensor, in place.
+    /// Element-wise sine of a tensor, in-place.
     Tensor Sin_();
 
-    /// Element-wise cosine of a tensor.
+    /// Element-wise cosine of a tensor, returns a new tensor.
     Tensor Cos() const;
 
-    /// Element-wise cosine of a tensor, in place.
+    /// Element-wise cosine of a tensor, in-place.
     Tensor Cos_();
 
-    /// Element-wise negation of a tensor.
+    /// Element-wise negation of a tensor, returns a new tensor.
     Tensor Neg() const;
 
-    /// Element-wise negation of a tensor, in place.
+    /// Element-wise negation of a tensor, in-place.
     Tensor Neg_();
 
-    /// Element-wise exponential of a tensor.
+    /// Element-wise exponential of a tensor, returns a new tensor.
     Tensor Exp() const;
 
-    /// Element-wise exponential of a tensor, in place.
+    /// Element-wise exponential of a tensor, in-place.
     Tensor Exp_();
 
     /// Retrive all values as an std::vector, for debugging and testing
