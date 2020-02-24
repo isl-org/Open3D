@@ -69,8 +69,7 @@ public:
 
         // Move camera and center of rotation. Adjust values from the
         // original positions at mousedown to avoid hysteresis problems.
-        auto localMove = -dx * unitsPerPx * Eigen::Vector3f(1, 0, 0) +
-                         dy * unitsPerPx * Eigen::Vector3f(0, 1, 0);
+        auto localMove = Eigen::Vector3f(-dx * unitsPerPx, dy * unitsPerPx, 0);
         auto worldMove = modelMatrix.rotation() * localMove;
         centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
         modelMatrix.translate(localMove);
