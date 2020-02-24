@@ -91,7 +91,7 @@ class ReaderWithCallback:
                     o3d.io.write_image(depth_filename, rgbd.depth)
                     idx += 1
 
-            vis.update_geometry()
+            vis.update_geometry(rgbd)
             vis.poll_events()
             vis.update_renderer()
 
