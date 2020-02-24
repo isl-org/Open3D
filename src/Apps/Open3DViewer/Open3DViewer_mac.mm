@@ -83,10 +83,13 @@
 - (void)applicationWillTerminate:(NSNotification *)notification {
     // The app will terminate after this function exits. This will result
     // in the Application object in main() getting destructed, but it still
-    // thinks it is running. So tell it to quit.
+    // thinks it is running. So tell Application to quit, which will post
+    // the required events to the event loop to properly clean up.
     open3d::gui::Application::GetInstance().Quit();
-    // Process events for a while. (Everything should happen in the first
-    // call, but call it multiple times just in case.)
+    // Process events for a while to make sure that the cleanup events get
+    // processed. (Usually we will be finished after the first call to
+    // RunOneTick(), but if we haven't, continue calling for a while
+    // just in case.)
     int  i  = 0;
     while (open3d::gui::Application::GetInstance().RunOneTick() && i < 20) {
         i++;

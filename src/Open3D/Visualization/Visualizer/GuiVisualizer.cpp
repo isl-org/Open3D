@@ -240,8 +240,9 @@ GuiVisualizer::GuiVisualizer(
                     .ModifyMaterial(impl_->nonmetal)
                     .SetColor("baseColor", Eigen::Vector3f{1.0, 1.0, 1.0})
                     .SetParameter("roughness", 0.5f)
-                    .SetParameter("clearCoat", 1.f)
+                    .SetParameter("clearCoat", 0.0f)
                     .SetParameter("clearCoatRoughness", 0.3f)
+                    .SetDoubleSided(true)
                     .Finish();
 
     // Create scene

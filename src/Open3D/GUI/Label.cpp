@@ -118,8 +118,8 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
-    bool isDefaultColor = (impl_->color != DEFAULT_COLOR);
-    if (isDefaultColor) {
+    bool isDefaultColor = (impl_->color == DEFAULT_COLOR);
+    if (!isDefaultColor) {
         ImGui::PushStyleColor(ImGuiCol_Text, util::colorToImgui(impl_->color));
     }
     if (impl_->isSingleLine) {
@@ -133,7 +133,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
         ImGui::PopTextWrapPos();
     }
     ImGui::PopItemWidth();
-    if (isDefaultColor) {
+    if (!isDefaultColor) {
         ImGui::PopStyleColor();
     }
     return Widget::DrawResult::NONE;
