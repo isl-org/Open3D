@@ -51,6 +51,8 @@ enum class EntityType : std::uint16_t {
 
     Geometry,
     Light,
+    IndirectLight,
+    Skybox,
     Camera,
     Material,
     MaterialInstance,
@@ -146,6 +148,8 @@ typedef REHandle<EntityType::View> ViewHandle;
 typedef REHandle<EntityType::Scene> SceneHandle;
 typedef REHandle<EntityType::Geometry> GeometryHandle;
 typedef REHandle<EntityType::Light> LightHandle;
+typedef REHandle<EntityType::IndirectLight> IndirectLightHandle;
+typedef REHandle<EntityType::Skybox> SkyboxHandle;
 typedef REHandle<EntityType::Camera> CameraHandle;
 typedef REHandle<EntityType::Material> MaterialHandle;
 typedef REHandle<EntityType::MaterialInstance> MaterialInstanceHandle;

@@ -68,7 +68,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                 utility::LogWarning(
                         "[DrawGeometries] Possibly due to bad geometry or wrong"
                         " geometry type.");
-				return false;
+                return false;
             }
         }
     }
@@ -76,15 +76,15 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     visualizer.DestroyVisualizerWindow();
     return true;
 
-/*    auto &app = gui::Application::GetInstance();
-    app.Initialize();
-    auto vis = std::make_shared<GuiVisualizer>(geometry_ptrs, window_name,
-                                               width, height, left, top);
-    app.AddWindow(vis);
-    app.Run();
+    /*    auto &app = gui::Application::GetInstance();
+        app.Initialize();
+        auto vis = std::make_shared<GuiVisualizer>(geometry_ptrs, window_name,
+                                                   width, height, left, top);
+        app.AddWindow(vis);
+        app.Run();
 
-    return true;
-*/
+        return true;
+    */
 }
 
 bool DrawGeometriesWithCustomAnimation(

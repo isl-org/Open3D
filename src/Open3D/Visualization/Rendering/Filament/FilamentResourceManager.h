@@ -31,12 +31,15 @@
 
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace filament {
 class Engine;
 class IndexBuffer;
+class IndirectLight;
 class Material;
 class MaterialInstance;
+class Skybox;
 class Texture;
 class VertexBuffer;
 }  // namespace filament
@@ -73,6 +76,9 @@ public:
     // Slow, will make copy of image data and free it after.
     TextureHandle CreateTexture(const geometry::Image& image);
 
+    IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
+    SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
+
     // Since rendering uses not all Open3D geometry/filament features, we don't
     // know which arguments pass to CreateVB(...). Thus creation of VB is
     // managed by FilamentGeometryBuffersBuilder class
@@ -84,6 +90,9 @@ public:
     std::weak_ptr<filament::MaterialInstance> GetMaterialInstance(
             const MaterialInstanceHandle& id);
     std::weak_ptr<filament::Texture> GetTexture(const TextureHandle& id);
+    std::weak_ptr<filament::IndirectLight> GetIndirectLight(
+            const IndirectLightHandle& id);
+    std::weak_ptr<filament::Skybox> GetSkybox(const SkyboxHandle& id);
     std::weak_ptr<filament::VertexBuffer> GetVertexBuffer(
             const VertexBufferHandle& id);
     std::weak_ptr<filament::IndexBuffer> GetIndexBuffer(
@@ -103,8 +112,16 @@ private:
     ResourcesContainer<filament::MaterialInstance> materialInstances_;
     ResourcesContainer<filament::Material> materials_;
     ResourcesContainer<filament::Texture> textures_;
+    ResourcesContainer<filament::IndirectLight> ibls_;
+    ResourcesContainer<filament::Skybox> skyboxes_;
     ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
+
+    // Lists dependent resources, which should be deallocated when
+    // resource referred by map key is deallocated.
+    // WARNING: Don't put in dependent list resources which available publicly
+    std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>>
+            dependencies_;
 
     filament::Texture* LoadTextureFromImage(
             const std::shared_ptr<geometry::Image>& image);

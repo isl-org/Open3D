@@ -7,7 +7,7 @@ else()
     set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
 endif()
 
-set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament-1.4.3)
+set(FILAMENT_ROOT ${CMAKE_BINARY_DIR}/downloads/filament-1.4.5)
 if (NOT EXISTS ${FILAMENT_ROOT}/README.md)
     set(DOWNLOAD_PATH ${CMAKE_BINARY_DIR}/downloads)
     file(MAKE_DIRECTORY ${DOWNLOAD_PATH})
@@ -18,7 +18,7 @@ if (NOT EXISTS ${FILAMENT_ROOT}/README.md)
     if (NOT EXISTS ${ARCHIVE_FILE})
         set(ARCHIVE_FILE ${CMAKE_BINARY_DIR}/downloads/filament_source.tgz)
 
-        set(DOWNLOAD_URL "https://github.com/google/filament/archive/v1.4.3.tar.gz")
+        set(DOWNLOAD_URL "https://github.com/google/filament/archive/v1.4.5.tar.gz")
 
         file(DOWNLOAD ${DOWNLOAD_URL} ${ARCHIVE_FILE} SHOW_PROGRESS STATUS DOWNLOAD_RESULT)
     endif()
@@ -64,7 +64,7 @@ if (WIN32)
         )
 else()
     add_custom_target(filament_copy
-        COMMAND cp -a include ${filament_INCLUDE_DIRS}
+        COMMAND cp -a include/ ${filament_INCLUDE_DIRS}
         COMMAND cp -a lib/${CMAKE_SYSTEM_PROCESSOR}/* ${3RDPARTY_INSTALL_PREFIX}/lib
         COMMAND cp -a bin/* ${3RDPARTY_INSTALL_PREFIX}/bin
         WORKING_DIRECTORY ${FILAMENT_TMP_INSTALL_DIR}
