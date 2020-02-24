@@ -200,11 +200,20 @@ GuiVisualizer::GuiVisualizer(
 
     // Create light
     visualization::LightDescription lightDescription;
-    lightDescription.intensity = 100000;
+    lightDescription.intensity = 80000;
     lightDescription.direction = {-0.707, -.707, 0.0};
     lightDescription.customAttributes["custom_type"] = "SUN";
 
     scene->GetScene()->AddLight(lightDescription);
+
+    auto iblPath = rsrcPath + "/default_ibl.ktx";
+    auto ibl = GetRenderer().AddIndirectLight(ResourceLoadRequest(iblPath.data()));
+    scene->GetScene()->SetIndirectLight(ibl);
+    scene->GetScene()->SetIndirectLightIntensity(6000);
+
+    auto skyPath = rsrcPath + "/default_sky.ktx";
+    auto sky = GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
+    scene->GetScene()->SetSkybox(sky);
 
     SetGeometry(geometries);  // also updates the camera
 
@@ -293,7 +302,7 @@ void GuiVisualizer::SetGeometry(
                 auto g3 =
                         std::static_pointer_cast<const geometry::Geometry3D>(g);
                 bounds += g3->GetAxisAlignedBoundingBox();
-                auto handle = scene3d->AddGeometry(*g3, impl_->white);
+                auto handle = scene3d->AddGeometry(*g3);
                 impl_->geometryHandles.push_back(handle);
             }
             case geometry::Geometry::GeometryType::RGBDImage:

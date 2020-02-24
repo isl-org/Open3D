@@ -188,10 +188,10 @@ GeometryHandle FilamentScene::AddGeometry(
                 }
             }
         }
+    } else {
+        utility::LogWarning("Geometry type {} is not yet supported for easy-init!",
+                            static_cast<size_t>(geometry.GetGeometryType()));
     }
-
-    utility::LogWarning("Geometry type {} is not supported yet!",
-                        static_cast<size_t>(geometry.GetGeometryType()));
 
     return handle;
 }
