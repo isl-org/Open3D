@@ -126,12 +126,23 @@ public:
         camera_->SetModelMatrix(matrix);
     }
 
-    void Dolly(int dy, bool isTrackpad) {
+    enum class DragType { MOUSE, WHEEL, TWO_FINGER };
+
+    void Dolly(int dy, DragType dragType) {
         float dist;
-        if (isTrackpad) {
-            dist = float(-dy) * 0.005f * modelSize_;
-        } else {
-            dist = float(-dy) * 0.1f * modelSize_;
+        switch (dragType) {
+            case DragType::MOUSE:
+                // Zoom out is "push away" or up, is a negative value for mousing
+                dist = float(dy) * 0.0025f * modelSize_;
+                break;
+            case DragType::TWO_FINGER:
+                // Zoom out is "push away" or up, is a positive value for
+                // two-finger scrolling, so we need to invert dy.
+                dist = float(-dy) * 0.005f * modelSize_;
+                break;
+            case DragType::WHEEL: // actual mouse wheel, same as two-fingers
+                dist = float(-dy) * 0.1f * modelSize_;
+                break;
         }
 
         // Dolly is just moving the camera forward. Filament uses right as +x,
@@ -143,7 +154,13 @@ public:
         // Since we want trackpad down (negative) to go forward ("pulling" the
         // model toward the viewer) we need to negate dy.
         auto forward = Eigen::Vector3f(0, 0, -dist);  // dist * (0, 0, -1)
-        auto matrix = camera_->GetModelMatrix().translate(forward);
+        visualization::Camera::Transform matrix;
+        if (dragType == DragType::MOUSE) {
+            matrix = matrixAtMouseDown_; // copy
+            matrix.translate(forward);
+        } else {
+            matrix = camera_->GetModelMatrix().translate(forward);
+        }
         camera_->SetModelMatrix(matrix);
 
         // Update the far plane so that we don't get clipped by it as we dolly
@@ -206,11 +223,13 @@ public:
                 centerOfRotationAtMouseDown_ = centerOfRotation_;
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
-                        state_ = State::ROTATE_Z;
+                        state_ = State::DOLLY;
 #if ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::CTRL)) {
                         state_ = State::PAN;
 #endif  // ENABLE_PAN
+                    } else if (e.modifiers & int(KeyModifier::META)) {
+                        state_ = State::ROTATE_Z;
                     } else {
                         state_ = State::ROTATE_XY;
                     }
@@ -230,8 +249,7 @@ public:
                         Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        Dolly(dy,
-                              true);  // mouse movement is similar to trackpad
+                        Dolly(dy, DragType::MOUSE);
                         break;
                     case State::ROTATE_XY:
                         Rotate(dx, dy);
@@ -243,7 +261,8 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                Dolly(e.wheel.dy, e.wheel.isTrackpad);
+                Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
+                                                     : DragType::WHEEL);
                 break;
             }
             case MouseEvent::BUTTON_UP:
