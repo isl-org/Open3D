@@ -132,7 +132,8 @@ public:
         float dist;
         switch (dragType) {
             case DragType::MOUSE:
-                // Zoom out is "push away" or up, is a negative value for mousing
+                // Zoom out is "push away" or up, is a negative value for
+                // mousing
                 dist = float(dy) * 0.0025f * modelSize_;
                 break;
             case DragType::TWO_FINGER:
@@ -140,7 +141,7 @@ public:
                 // two-finger scrolling, so we need to invert dy.
                 dist = float(-dy) * 0.005f * modelSize_;
                 break;
-            case DragType::WHEEL: // actual mouse wheel, same as two-fingers
+            case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
                 dist = float(-dy) * 0.1f * modelSize_;
                 break;
         }
@@ -156,7 +157,7 @@ public:
         auto forward = Eigen::Vector3f(0, 0, -dist);  // dist * (0, 0, -1)
         visualization::Camera::Transform matrix;
         if (dragType == DragType::MOUSE) {
-            matrix = matrixAtMouseDown_; // copy
+            matrix = matrixAtMouseDown_;  // copy
             matrix.translate(forward);
         } else {
             matrix = camera_->GetModelMatrix().translate(forward);
