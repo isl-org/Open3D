@@ -554,8 +554,10 @@ void pybind_trianglemesh(py::module &m) {
             {{"number_of_points",
               "Number of points that should be uniformly sampled."},
              {"use_triangle_normal",
-              "If True uses the triangle normals instead of the vertex "
-              "normals"}});
+              "If True assigns the triangle normals instead of the "
+              "interpolated vertex normals to the returned points. The "
+              "triangle normals will be computed and added to the mesh if "
+              "necessary."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -566,8 +568,10 @@ void pybind_trianglemesh(py::module &m) {
               "Initial PointCloud that is used for sample elimination. If this "
               "parameter is provided the init_factor is ignored."},
              {"use_triangle_normal",
-              "If True uses the triangle normals instead of the vertex "
-              "normals"}});
+              "If True assigns the triangle normals instead of the "
+              "interpolated vertex normals to the returned points. The "
+              "triangle normals will be computed and added to the mesh if "
+              "necessary."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",
