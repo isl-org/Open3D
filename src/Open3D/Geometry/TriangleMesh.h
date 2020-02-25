@@ -313,12 +313,16 @@ public:
     std::shared_ptr<PointCloud> SamplePointsUniformlyImpl(
             size_t number_of_points,
             std::vector<double> &triangle_areas,
-            double surface_area) const;
+            double surface_area,
+            bool use_triangle_normal);
 
     /// Function to sample \param number_of_points points uniformly from the
-    /// mesh
+    /// mesh. \param use_triangle_normal Set to true to assign the triangle
+    /// normals to the returned points instead of the interpolated vertex
+    /// normals. The triangle normals will be computed and added to the mesh
+    /// if necessary.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points) const;
+            size_t number_of_points, bool use_triangle_normal = false);
 
     /// Function to sample \param number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
@@ -326,10 +330,15 @@ public:
     /// \param pcl_init is used for sample elimination if given, otherwise a
     /// PointCloud is first uniformly sampled with \param init_number_of_points
     /// x \param number_of_points number of points.
+    /// \param use_triangle_normal Set to true to assign the triangle
+    /// normals to the returned points instead of the interpolated vertex
+    /// normals. The triangle normals will be computed and added to the mesh
+    /// if necessary.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
-            const std::shared_ptr<PointCloud> pcl_init = nullptr) const;
+            const std::shared_ptr<PointCloud> pcl_init = nullptr,
+            bool use_triangle_normal = false);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
