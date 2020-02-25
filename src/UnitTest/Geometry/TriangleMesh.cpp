@@ -725,7 +725,10 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     }
 
     // use triangle normal instead of the vertex normals
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals() == false);
     pcd_simple = mesh_simple.SamplePointsUniformly(n_points, true);
+    // the mesh now has triangle normals as a side effect.
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals() == true);
     EXPECT_TRUE(pcd_simple->points_.size() == n_points);
     EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
