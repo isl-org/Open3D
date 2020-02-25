@@ -244,7 +244,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("sample_points_uniformly",
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100)
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false)
             .def("sample_points_poisson_disk",
                  &geometry::TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
@@ -253,7 +253,8 @@ void pybind_trianglemesh(py::module &m) {
                  "(blue "
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
-                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr)
+                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
+                 "use_triangle_normal"_a = false)
             .def("subdivide_midpoint",
                  &geometry::TriangleMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
@@ -551,7 +552,10 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_uniformly",
             {{"number_of_points",
-              "Number of points that should be uniformly sampled."}});
+              "Number of points that should be uniformly sampled."},
+             {"use_triangle_normal",
+              "If True uses the triangle normals instead of the vertex "
+              "normals"}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -560,7 +564,10 @@ void pybind_trianglemesh(py::module &m) {
               "PointCloud is used for sample elimination."},
              {"pcl",
               "Initial PointCloud that is used for sample elimination. If this "
-              "parameter is provided the init_factor is ignored."}});
+              "parameter is provided the init_factor is ignored."},
+             {"use_triangle_normal",
+              "If True uses the triangle normals instead of the vertex "
+              "normals"}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",

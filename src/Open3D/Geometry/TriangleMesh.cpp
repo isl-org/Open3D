@@ -429,7 +429,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
-        double surface_area) const {
+        double surface_area,
+        bool use_triangle_normal) const {
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -445,7 +446,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
-    if (has_vert_normal) {
+    if (has_vert_normal || use_triangle_normal) {
         pcd->normals_.resize(number_of_points);
     }
     if (has_vert_color) {
@@ -465,10 +466,41 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
             pcd->points_[point_idx] = a * vertices_[triangle(0)] +
                                       b * vertices_[triangle(1)] +
                                       c * vertices_[triangle(2)];
-            if (has_vert_normal) {
+            if (has_vert_normal && !use_triangle_normal) {
                 pcd->normals_[point_idx] = a * vertex_normals_[triangle(0)] +
                                            b * vertex_normals_[triangle(1)] +
                                            c * vertex_normals_[triangle(2)];
+            }
+            if (use_triangle_normal) {
+                // compute all cross products and use most stable solution
+                Eigen::Vector3d e01 =
+                        vertices_[triangle(1)] - vertices_[triangle(0)];
+                Eigen::Vector3d e12 =
+                        vertices_[triangle(2)] - vertices_[triangle(1)];
+                Eigen::Vector3d e20 =
+                        vertices_[triangle(0)] - vertices_[triangle(2)];
+
+                Eigen::Vector3d cross0 = e01.cross(e20);
+                double length_cross0 = cross0.norm();
+
+                Eigen::Vector3d cross1 = e12.cross(e01);
+                double length_cross1 = cross1.norm();
+
+                Eigen::Vector3d cross2 = e20.cross(e12);
+                double length_cross2 = cross2.norm();
+
+                Eigen::Vector3d tri_normal;
+                if (length_cross0 > length_cross1 &&
+                    length_cross0 > length_cross2) {
+                    tri_normal = -cross0 / length_cross0;
+                } else if (length_cross1 > length_cross0 &&
+                           length_cross1 > length_cross2) {
+                    tri_normal = -cross1 / length_cross1;
+                } else {
+                    tri_normal = -cross2 / length_cross2;
+                }
+
+                pcd->normals_[point_idx] = tri_normal;
             }
             if (has_vert_color) {
                 pcd->colors_[point_idx] = a * vertex_colors_[triangle(0)] +
@@ -484,7 +516,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points) const {
+        size_t number_of_points, bool use_triangle_normal /* = false */) const {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
     }
@@ -498,13 +530,14 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area);
+                                     surface_area, use_triangle_normal);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
-        const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) const {
+        const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
+        bool use_triangle_normal /* = false */) const {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
     }
@@ -531,7 +564,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     std::shared_ptr<PointCloud> pcl;
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
-                                        triangle_areas, surface_area);
+                                        triangle_areas, surface_area,
+                                        use_triangle_normal);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
