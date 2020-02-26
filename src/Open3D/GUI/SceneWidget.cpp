@@ -147,15 +147,15 @@ public:
         } else {
             newFOV = camera_->GetFieldOfView() + dFOV;
         }
-        newFOV = std::max(2.0f, newFOV);
-        newFOV = std::min(175.0f, newFOV);
-        
+        newFOV = std::max(5.0f, newFOV);
+        newFOV = std::min(90.0f, newFOV);
+
         float aspect = 1.0f;
         if (viewSize_.height > 0) {
             aspect = float(viewSize_.width) / float(viewSize_.height);
         }
-        camera_->SetProjection(newFOV, aspect,
-                               camera_->GetNear(), camera_->GetFar(),
+        camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
+                               camera_->GetFar(),
                                camera_->GetFieldOfViewType());
     }
 
@@ -256,7 +256,7 @@ public:
                 fovAtMouseDown_ = camera_->GetFieldOfView();
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
-                        state_ = State::DOLLY;
+                        state_ = State::ZOOM;
 #if ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::CTRL)) {
                         state_ = State::PAN;
@@ -297,8 +297,8 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                Zoom(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
-                                                    : DragType::WHEEL);
+                Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
+                                                     : DragType::WHEEL);
                 break;
             }
             case MouseEvent::BUTTON_UP:
