@@ -133,10 +133,14 @@ struct Layout1D::Impl {
     Margins margins;
 };
 
-Layout1D::Fixed::Fixed(int size) : size_(size) {}
+Layout1D::Fixed::Fixed(int size, Dir dir) : size_(size), dir_(dir) {}
 
 Size Layout1D::Fixed::CalcPreferredSize(const Theme& theme) const {
-    return Size(size_, size_);
+    if (dir_ == VERT) {
+        return {size_, 0};
+    }
+
+    return {0, size_};
 }
 
 Size Layout1D::Stretch::CalcPreferredSize(const Theme& theme) const {
@@ -250,7 +254,7 @@ void Layout1D::Layout(const Theme& theme) {
 
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Vert::MakeFixed(int size) {
-    return std::make_shared<Layout1D::Fixed>(size);
+    return std::make_shared<Layout1D::Fixed>(size, VERT);
 }
 
 std::shared_ptr<Layout1D::Stretch> Vert::MakeStretch() {
@@ -271,7 +275,7 @@ Vert::~Vert() {}
 
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Horiz::MakeFixed(int size) {
-    return std::make_shared<Layout1D::Fixed>(size);
+    return std::make_shared<Layout1D::Fixed>(size, HORIZ);
 }
 
 std::shared_ptr<Layout1D::Stretch> Horiz::MakeStretch() {
