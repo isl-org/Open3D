@@ -56,12 +56,10 @@ void pybind_trianglemesh(py::module &m) {
                              "triangles",
                              mesh.vertices_.size(), mesh.triangles_.size());
 
-                     if (mesh.HasTextures()) {
-                         info += fmt::format(", and textures of size ");
-                         for (auto &tex : mesh.textures_) {
-                             info += fmt::format("({}, {}) ", tex.width_,
-                                                 tex.height_);
-                         }
+                     if (mesh.HasTexture()) {
+                         info += fmt::format(", and ({}, {}) texture.",
+                                             mesh.texture_.width_,
+                                             mesh.texture_.height_);
                      } else {
                          info += ".";
                      }
@@ -173,10 +171,7 @@ void pybind_trianglemesh(py::module &m) {
                  "Returns ``True`` if the mesh contains adjacency normals.")
             .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
                  "Returns ``True`` if the mesh contains uv coordinates.")
-            .def("has_triangle_material_ids",
-                 &geometry::TriangleMesh::HasTriangleMaterialIds,
-                 "Returns ``True`` if the mesh contains material ids.")
-            .def("has_textures", &geometry::TriangleMesh::HasTextures,
+            .def("has_texture", &geometry::TriangleMesh::HasTexture,
                  "Returns ``True`` if the mesh contains a texture image.")
             .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
                  "Normalize both triangle normals and vertex normals to legnth "
@@ -450,8 +445,8 @@ void pybind_trianglemesh(py::module &m) {
                            "``numpy.asarray()`` to access data: List of "
                            "uvs denoted by the index of points forming "
                            "the triangle.")
-            .def_readwrite("textures", &geometry::TriangleMesh::textures_,
-                           "open3d.geometry.Image: The texture images.");
+            .def_readwrite("texture", &geometry::TriangleMesh::texture_,
+                           "open3d.geometry.Image: The texture image.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
@@ -465,9 +460,7 @@ void pybind_trianglemesh(py::module &m) {
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
-    docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "has_triangle_material_ids");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_textures");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "has_vertex_normals",

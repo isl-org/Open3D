@@ -119,6 +119,9 @@ TensorList& TensorList::operator=(const TensorList& other) && {
     if (shape_ != other.GetShape()) {
         utility::LogError("Incompatible tensorlist element shape!");
     }
+    if (dtype_ != other.GetDtype()) {
+        utility::LogError("Incompatible tensorlist dtype!");
+    }
     internal_tensor_.Slice(0 /* dim */, 0, size_) = other.AsTensor();
     return *this;
 }
@@ -129,6 +132,9 @@ TensorList& TensorList::operator=(TensorList&& other) && {
     }
     if (shape_ != other.GetShape()) {
         utility::LogError("Incompatible tensorlist element shape!");
+    }
+    if (dtype_ != other.GetDtype()) {
+        utility::LogError("Incompatible tensorlist dtype!");
     }
     internal_tensor_.Slice(0 /* dim */, 0, size_) = other.AsTensor();
     return *this;
