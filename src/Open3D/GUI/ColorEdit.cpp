@@ -51,20 +51,15 @@ ColorEdit::ColorEdit() : impl_(new ColorEdit::Impl()) {
     impl_->id = s.str();
 }
 
-ColorEdit::~ColorEdit() {
-}
+ColorEdit::~ColorEdit() {}
 
-void ColorEdit::SetValue(const Color& color) {
-    impl_->value = color;
-}
+void ColorEdit::SetValue(const Color& color) { impl_->value = color; }
 
 void ColorEdit::SetValue(const float r, const float g, const float b) {
-    impl_->value.SetRGB(r,g,b);
+    impl_->value.SetRGB(r, g, b);
 }
 
-const Color& ColorEdit::GetValue() const {
-    return impl_->value;
-}
+const Color& ColorEdit::GetValue() const { return impl_->value; }
 
 Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
     auto lineHeight = ImGui::GetTextLineHeight();
@@ -96,5 +91,5 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     return Widget::DrawResult::NONE;
 }
 
-}
-}
+}  // namespace gui
+}  // namespace open3d

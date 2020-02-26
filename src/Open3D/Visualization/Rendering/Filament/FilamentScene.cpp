@@ -189,8 +189,9 @@ GeometryHandle FilamentScene::AddGeometry(
             }
         }
     } else {
-        utility::LogWarning("Geometry type {} is not yet supported for easy-init!",
-                            static_cast<size_t>(geometry.GetGeometryType()));
+        utility::LogWarning(
+                "Geometry type {} is not yet supported for easy-init!",
+                static_cast<size_t>(geometry.GetGeometryType()));
     }
 
     return handle;
@@ -351,20 +352,24 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
     return handle;
 }
 
-void FilamentScene::SetLightIntensity(const LightHandle& id, const float intensity) {
+void FilamentScene::SetLightIntensity(const LightHandle& id,
+                                      const float intensity) {
     const auto found = entities_.find(id);
     if (found != entities_.end()) {
         auto& lightManager = engine_.getLightManager();
-        filament::LightManager::Instance inst = lightManager.getInstance(found->second.info.self);
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
         lightManager.setIntensity(inst, intensity);
     }
 }
 
-void FilamentScene::SetLightColor(const LightHandle& id, const Eigen::Vector3f& color) {
+void FilamentScene::SetLightColor(const LightHandle& id,
+                                  const Eigen::Vector3f& color) {
     const auto found = entities_.find(id);
     if (found != entities_.end()) {
         auto& lightManager = engine_.getLightManager();
-        filament::LightManager::Instance inst = lightManager.getInstance(found->second.info.self);
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
         lightManager.setColor(inst, {color(0), color(1), color(2)});
     }
 }
@@ -431,7 +436,8 @@ void FilamentScene::SetSkybox(const SkyboxHandle& id) {
     }
 }
 
-void FilamentScene::SetEntityEnabled(const REHandle_abstract& entityId, const bool enabled) {
+void FilamentScene::SetEntityEnabled(const REHandle_abstract& entityId,
+                                     const bool enabled) {
     auto found = entities_.find(entityId);
     if (found != entities_.end()) {
         auto& entity = found->second;

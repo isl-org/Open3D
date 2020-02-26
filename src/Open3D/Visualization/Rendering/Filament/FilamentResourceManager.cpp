@@ -485,7 +485,9 @@ void FilamentResourceManager::DestroyAll() {
 
 void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
     if (kDefaultResources.count(id) > 0) {
-        utility::LogDebug("Trying to destroy default resource {}. Nothing will happens.", id);
+        utility::LogDebug(
+                "Trying to destroy default resource {}. Nothing will happens.",
+                id);
         return;
     }
 
