@@ -129,7 +129,7 @@ public:
     enum class DragType { MOUSE, WHEEL, TWO_FINGER };
 
     void Dolly(int dy, DragType dragType) {
-        float dist;
+        float dist = 0.0f;  // initialize to make GCC happy
         switch (dragType) {
             case DragType::MOUSE:
                 // Zoom out is "push away" or up, is a negative value for
