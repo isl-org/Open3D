@@ -216,10 +216,10 @@ class TensorList(open3d_pybind.TensorList):
             return self.getindex(index)
 
         elif isinstance(index, slice):
-            step = index.step
-            if step is None:
-                step = 1
-            return self.getslice(index.start, index.stop, step)
+            start = 0 if index.start is None else index.start
+            stop = self.size() if index.stop is None else index.stop
+            step = 1 if index.step is None else index.step
+            return self.getslice(start, stop, step)
 
         elif isinstance(index, list) or isinstance(index, tuple):
             for i in index:
@@ -240,11 +240,10 @@ class TensorList(open3d_pybind.TensorList):
             self.setindex(index, value)
 
         elif isinstance(index, slice):
-            step = index.step
-            if step is None:
-                step = 1
-            # TODO: fix start/stop is None
-            return self.setslice(index.start, index.stop, step, value)
+            start = 0 if index.start is None else index.start
+            stop = self.size() if index.stop is None else index.stop
+            step = 1 if index.step is None else index.step
+            return self.setslice(start, stop, step, value)
 
         else:
             raise ValueError('Unsupported index type')
