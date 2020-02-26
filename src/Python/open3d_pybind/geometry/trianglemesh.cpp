@@ -241,6 +241,11 @@ void pybind_trianglemesh(py::module &m) {
                          geometry::TriangleMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
+            .def("get_surface_area",
+                 (double (geometry::TriangleMesh::*)() const) &
+                         geometry::TriangleMesh::GetSurfaceArea,
+                 "Function that computes the surface area of the mesh, i.e. "
+                 "the sum of the individual triangle surfaces.")
             .def("sample_points_uniformly",
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
