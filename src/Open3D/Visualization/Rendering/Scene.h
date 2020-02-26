@@ -79,6 +79,9 @@ public:
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
 
     virtual LightHandle AddLight(const LightDescription& descr) = 0;
+    // TODO: If possible, add getters
+    virtual void SetLightIntensity(const LightHandle& id, float intensity) = 0;
+    virtual void SetLightColor(const LightHandle& id, const Eigen::Vector3f& color) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
 
     // Passing empty id disables indirect lightning
@@ -91,6 +94,7 @@ public:
     // Passing empty id removes skybox
     virtual void SetSkybox(const SkyboxHandle& id) = 0;
 
+    virtual void SetEntityEnabled(const REHandle_abstract& entityId, bool enabled) = 0;
     virtual void SetEntityTransform(const REHandle_abstract& entityId,
                                     const Transform& transform) = 0;
     virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;

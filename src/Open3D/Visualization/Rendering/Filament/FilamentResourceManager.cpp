@@ -208,6 +208,14 @@ const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
 const TextureHandle FilamentResourceManager::kDefaultTexture =
         TextureHandle::Next();
 
+static const std::unordered_set<REHandle_abstract> kDefaultResources = {
+        FilamentResourceManager::kDefaultLit,
+        FilamentResourceManager::kDefaultUnlit,
+        FilamentResourceManager::kUbermaterial,
+        FilamentResourceManager::kDepthMaterial,
+        FilamentResourceManager::kNormalsMaterial,
+        FilamentResourceManager::kDefaultTexture};
+
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
     LoadDefaults();
@@ -476,6 +484,11 @@ void FilamentResourceManager::DestroyAll() {
 }
 
 void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
+    if (kDefaultResources.count(id) > 0) {
+        utility::LogDebug("Trying to destroy default resource {}. Nothing will happens.", id);
+        return;
+    }
+
     switch (id.type) {
         case EntityType::Material:
             DestroyResource(id, materials_);

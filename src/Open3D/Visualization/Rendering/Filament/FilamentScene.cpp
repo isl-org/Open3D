@@ -351,6 +351,24 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
     return handle;
 }
 
+void FilamentScene::SetLightIntensity(const LightHandle& id, const float intensity) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst = lightManager.getInstance(found->second.info.self);
+        lightManager.setIntensity(inst, intensity);
+    }
+}
+
+void FilamentScene::SetLightColor(const LightHandle& id, const Eigen::Vector3f& color) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst = lightManager.getInstance(found->second.info.self);
+        lightManager.setColor(inst, {color(0), color(1), color(2)});
+    }
+}
+
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
 void FilamentScene::SetIndirectLight(const IndirectLightHandle& id) {
@@ -410,6 +428,22 @@ void FilamentScene::SetSkybox(const SkyboxHandle& id) {
     if (auto skybox = wSkybox.lock()) {
         wSkybox_ = wSkybox;
         scene_->setSkybox(skybox.get());
+    }
+}
+
+void FilamentScene::SetEntityEnabled(const REHandle_abstract& entityId, const bool enabled) {
+    auto found = entities_.find(entityId);
+    if (found != entities_.end()) {
+        auto& entity = found->second;
+        if (entity.enabled != enabled) {
+            entity.enabled = enabled;
+
+            if (enabled) {
+                scene_->addEntity(entity.info.self);
+            } else {
+                scene_->remove(entity.info.self);
+            }
+        }
     }
 }
 
