@@ -14,14 +14,14 @@ material {
         { type : sampler2d, name : texture }
     ],
     requires : [
-        uv0
+        uv0, color
     ]
 }
 
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        material.baseColor.rgb = materialParams.baseColor*texture(materialParams_texture, getUV0()).rgb;
+        material.baseColor.rgb = getColor().rgb*materialParams.baseColor*texture(materialParams_texture, getUV0()).rgb;
         material.metallic = materialParams.metallic;
         material.roughness = materialParams.roughness;
         material.reflectance = materialParams.reflectance;

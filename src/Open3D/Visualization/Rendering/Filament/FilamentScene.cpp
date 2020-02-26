@@ -184,6 +184,7 @@ GeometryHandle FilamentScene::AddGeometry(
                                                         Pretty());
                         mat->setParameter("texture", tex.get(),
                                           kDefaultSampler);
+                        mat->setDoubleSided(true);
                     }
                 }
             }
