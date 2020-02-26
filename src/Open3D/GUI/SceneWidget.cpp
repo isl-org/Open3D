@@ -128,6 +128,37 @@ public:
 
     enum class DragType { MOUSE, WHEEL, TWO_FINGER };
 
+    void Zoom(int dy, DragType dragType) {
+        float dFOV = 0.0f;  // initialize to make GCC happy
+        switch (dragType) {
+            case DragType::MOUSE:
+                dFOV = float(-dy) * 0.1;  // deg
+                break;
+            case DragType::TWO_FINGER:
+                dFOV = float(dy) * 0.2f;  // deg
+                break;
+            case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
+                dFOV = float(dy) * 2.0f;  // deg
+                break;
+        }
+        float newFOV = 0.0;
+        if (dragType == DragType::MOUSE) {
+            newFOV = fovAtMouseDown_ + dFOV;
+        } else {
+            newFOV = camera_->GetFieldOfView() + dFOV;
+        }
+        newFOV = std::max(2.0f, newFOV);
+        newFOV = std::min(175.0f, newFOV);
+        
+        float aspect = 1.0f;
+        if (viewSize_.height > 0) {
+            aspect = float(viewSize_.width) / float(viewSize_.height);
+        }
+        camera_->SetProjection(newFOV, aspect,
+                               camera_->GetNear(), camera_->GetFar(),
+                               camera_->GetFieldOfViewType());
+    }
+
     void Dolly(int dy, DragType dragType) {
         float dist = 0.0f;  // initialize to make GCC happy
         switch (dragType) {
@@ -222,6 +253,7 @@ public:
                 mouseDownY_ = e.y;
                 matrixAtMouseDown_ = camera_->GetModelMatrix();
                 centerOfRotationAtMouseDown_ = centerOfRotation_;
+                fovAtMouseDown_ = camera_->GetFieldOfView();
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
                         state_ = State::DOLLY;
@@ -252,6 +284,9 @@ public:
                     case State::DOLLY:
                         Dolly(dy, DragType::MOUSE);
                         break;
+                    case State::ZOOM:
+                        Zoom(dy, DragType::MOUSE);
+                        break;
                     case State::ROTATE_XY:
                         Rotate(dx, dy);
                         break;
@@ -262,8 +297,8 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
-                                                     : DragType::WHEEL);
+                Zoom(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
+                                                    : DragType::WHEEL);
                 break;
             }
             case MouseEvent::BUTTON_UP:
@@ -285,10 +320,11 @@ private:
 
     visualization::Camera::Transform matrixAtMouseDown_;
     Eigen::Vector3f centerOfRotationAtMouseDown_;
+    double fovAtMouseDown_;
     int mouseDownX_;
     int mouseDownY_;
 
-    enum class State { NONE, PAN, DOLLY, ROTATE_XY, ROTATE_Z };
+    enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z };
     State state_ = State::NONE;
 };
 // ----------------------------------------------------------------------------
