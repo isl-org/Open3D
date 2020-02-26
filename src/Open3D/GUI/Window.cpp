@@ -103,6 +103,7 @@ struct Window::Impl {
     std::queue<std::function<void()>> deferredUntilDraw;
     Widget* focusWidget =
             nullptr;  // only used if ImGUI isn't taking keystrokes
+    double lastFrameTime = 0.0;
     int nSkippedFrames = 0;
     bool wantsAutoSizeAndCenter = false;
     bool needsLayout = true;
@@ -295,6 +296,14 @@ void Window::SetFrame(const Rect& r) {
     SDL_SetWindowSize(impl_->window, r.width, r.height);
 }
 
+const char* Window::GetTitle() const {
+    return SDL_GetWindowTitle(impl_->window);
+}
+
+void Window::SetTitle(const char* title) {
+    SDL_SetWindowTitle(impl_->window, title);
+}
+
 // Note: this can only be called during draw!
 Size Window::CalcPreferredSize() {
     Rect bbox(0, 0, 0, 0);
@@ -381,11 +390,8 @@ void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
 void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
 
-std::shared_ptr<Menu> Window::GetMenubar() const { return impl_->menubar; }
-
-void Window::SetMenubar(std::shared_ptr<Menu> menu) {
-    impl_->menubar = menu;
-    impl_->needsLayout = true;  // in case wasn't a menu before
+bool Window::IsActiveWindow() const {
+    return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS);
 }
 
 void Window::AddChild(std::shared_ptr<Widget> w) {
@@ -398,6 +404,7 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
         CloseDialog();
     }
     impl_->activeDialog = dlg;
+    dlg->OnWillShow();
 
     auto winSize = GetSize();
     auto pref = dlg->CalcPreferredSize(GetTheme());
@@ -430,6 +437,8 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     dlg->AddChild(layout);
     ShowDialog(dlg);
 }
+
+double Window::GetLastFrameTimeSeconds() const { return impl_->lastFrameTime; }
 
 void Window::Layout(const Theme& theme) {
     if (impl_->children.size() == 1) {
@@ -588,8 +597,9 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     // Draw menubar after the children so it is always on top (although it
     // shouldn't matter, as there shouldn't be anything under it)
-    if (impl_->menubar) {
-        auto id = impl_->menubar->DrawMenuBar(dc, !impl_->activeDialog);
+    auto menubar = Application::GetInstance().GetMenubar();
+    if (menubar) {
+        auto id = menubar->DrawMenuBar(dc, !impl_->activeDialog);
         if (id != Menu::NO_ITEM) {
             OnMenuItemSelected(id);
             needsRedraw = true;
@@ -625,6 +635,8 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 }
 
 Window::DrawResult Window::DrawOnce(float dtSec) {
+    auto t0 = SDL_GetPerformanceCounter();
+
     auto needsRedraw = OnDraw(dtSec);
 
     // ImGUI can take two frames to do its layout, so if we did a layout
@@ -635,6 +647,10 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
         impl_->needsLayout = false;
         OnDraw(0.001);
     }
+
+    auto t1 = SDL_GetPerformanceCounter();
+    double freq = double(SDL_GetPerformanceFrequency());
+    impl_->lastFrameTime = double(t1 - t0) / freq;
 
     return needsRedraw;
 }
@@ -747,6 +763,8 @@ void Window::OnTextInput(const TextInputEvent& e) {
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
 }
+
+void Window::OnDragDropped(const char* path) {}
 
 }  // namespace gui
 }  // namespace open3d

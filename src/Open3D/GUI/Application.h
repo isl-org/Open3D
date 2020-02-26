@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include "Menu.h"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -51,11 +53,11 @@ public:
     /// Does not return until the UI is completely finished. Use this if you
     /// just need something simple.
     void Run();
+    bool RunOneTick();  // internal use
+    void Quit();        // sends a terminate event
 
-    /// Executes one loop of Run(). Use this if you need to integrate with
-    /// the operating system's run loop:
-    /// while(RunOneTick()) { ... wait ... }
-    bool RunOneTick();
+    std::shared_ptr<Menu> GetMenubar() const;
+    void SetMenubar(std::shared_ptr<Menu> menubar);
 
     /// Must be called on the same thread that calls Run()
     void AddWindow(std::shared_ptr<Window> window);
@@ -75,6 +77,9 @@ public:
     const char *GetResourcePath()
             const;  // std::string not good in interfaces for ABI reasons
     const Theme &GetTheme() const;
+
+    /// Delivers the itemId to the active window. Used internally.
+    void OnMenuItemSelected(Menu::ItemId itemId);
 
 private:
     Application();

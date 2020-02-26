@@ -60,5 +60,18 @@ struct Rect {
 
 enum class BorderShape { NONE = 0, RECT, ROUNDED_RECT };
 
+enum class Alignment : unsigned int {
+    LEFT = 1,
+    HCENTER = 2,
+    RIGHT = 3,
+    TOP = (1 << 4),
+    VCENTER = (2 << 4),
+    BOTTOM = (3 << 4),
+    CENTER = (2 | (2 << 4))
+};
+constexpr Alignment operator|(Alignment x, Alignment y) {
+    return Alignment((unsigned int)(x) | (unsigned int)(y));
+}
+
 }  // namespace gui
 }  // namespace open3d

@@ -41,6 +41,9 @@ public:
     const char* GetText() const;  // std::string can cause ABI issues
     void SetText(const char* text);
 
+    Color GetTextColor() const;
+    void SetTextColor(const Color& color);
+
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;

@@ -179,11 +179,20 @@ int keyModsRightNow() {  // requires SDL is initialized
 namespace open3d {
 namespace gui {
 
+void PostWindowEvent(Window *w, SDL_WindowEventID type) {
+    SDL_Event e;
+    e.type = SDL_WINDOWEVENT;
+    e.window.windowID = w->GetID();
+    e.window.event = type;
+    SDL_PushEvent(&e);
+}
+
 struct Application::Impl {
     std::string resourcePath;
     Theme theme;
     bool isRunning = false;
 
+    std::shared_ptr<Menu> menubar;
     std::unordered_map<uint32_t, std::shared_ptr<Window>> windows;
     std::unordered_map<Window *, int> eventCounts;  // don't recreate each draw
 
@@ -285,6 +294,27 @@ void Application::Initialize(int argc, const char *argv[]) {
     impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
 }
 
+std::shared_ptr<Menu> Application::GetMenubar() const { return impl_->menubar; }
+
+void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
+    auto old = impl_->menubar;
+    impl_->menubar = menubar;
+    // If added or removed menubar, the size of the window's content region
+    // may have changed (in not on macOS), so need to relayout.
+    if ((!old && menubar) || (old && !menubar)) {
+        for (auto &kv : impl_->windows) {
+            kv.second->OnResize();
+        }
+    }
+
+#if defined(__APPLE__)
+    auto *native = menubar->GetNativePointer();
+    if (native) {
+        SetNativeMenubar(native);
+    }
+#endif  // __APPLE__
+}
+
 void Application::AddWindow(std::shared_ptr<Window> window) {
     window->OnResize();  // so we get an initial resize
     window->Show();
@@ -296,11 +326,7 @@ void Application::RemoveWindow(Window *window) {
     // messages, so we have to do them ourselves.
     int nWindows = impl_->windows.size();
 
-    SDL_Event e;
-    e.type = SDL_WINDOWEVENT;
-    e.window.windowID = window->GetID();
-    e.window.event = SDL_WINDOWEVENT_CLOSE;
-    SDL_PushEvent(&e);
+    PostWindowEvent(window, SDL_WINDOWEVENT_CLOSE);
 
     if (nWindows == 1) {
         SDL_Event quit;
@@ -309,9 +335,43 @@ void Application::RemoveWindow(Window *window) {
     }
 }
 
+void Application::Quit() {
+    for (auto &idAndWin : impl_->windows) {
+        RemoveWindow(idAndWin.second.get());
+    }
+    // The last window will automatically send a quit event
+}
+
+void Application::OnMenuItemSelected(Menu::ItemId itemId) {
+    for (auto &kv : impl_->windows) {
+        if (kv.second->IsActiveWindow()) {
+            kv.second->OnMenuItemSelected(itemId);
+            PostWindowEvent(kv.second.get(), SDL_WINDOWEVENT_EXPOSED);
+            return;
+        }
+    }
+}
+
 void Application::Run() {
-    while (RunOneTick()) {
-        SDL_Delay(RUNLOOP_DELAY_MSEC);
+    const double freq = double(SDL_GetPerformanceFrequency());
+    bool notDone = true;
+    while (notDone) {
+        auto t0 = SDL_GetPerformanceCounter();
+        notDone = RunOneTick();
+        auto t1 = SDL_GetPerformanceCounter();
+
+        // We want to wait a certain amount of time until handling the next
+        // frame so that we don't eat CPU spinning here. But if the frame is
+        // taking a substantial amount of time to draw, we want to wait less
+        // so that interactions are still as smooth as possible.
+        int deltaMSec = int(double(t1 - t0) / freq * 1000.0);
+        if (deltaMSec >= RUNLOOP_DELAY_MSEC) {
+            SDL_Delay(0);
+        } else {
+            // The resolution of the delay may not be good enough
+            // for this to be meaningful, but at least give it a try.
+            SDL_Delay(RUNLOOP_DELAY_MSEC - deltaMSec);
+        }
     }
 }
 
@@ -418,6 +478,8 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                         int mx, my;
                         SDL_GetGlobalMouseState(&mx, &my);
                         auto pos = win->GlobalToWindowCoord(mx, my);
+                        pos.x = int(std::ceil(float(pos.x) * scaling));
+                        pos.y = int(std::ceil(float(pos.y) * scaling));
                         int dx = int(std::ceil(float(e.x) * scaling));
                         int dy = int(std::ceil(float(e.y) * scaling));
 
@@ -567,7 +629,14 @@ Application::RunStatus Application::ProcessQueuedEvents() {
                     break;
                 }
                 case SDL_DROPFILE: {
-                    SDL_free(event->drop.file);
+                    auto &e = event->drop;
+                    auto it = impl_->windows.find(e.windowID);
+                    if (it != impl_->windows.end()) {
+                        auto &win = it->second;
+                        win->OnDragDropped(e.file);
+                        impl_->eventCounts[win.get()] += 1;
+                    }
+                    SDL_free(e.file);
                     break;
                 }
                 case SDL_WINDOWEVENT: {
@@ -609,11 +678,7 @@ Application::RunStatus Application::ProcessQueuedEvents() {
             if (w->IsVisible() && gotEvents) {
                 if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
                     Window::REDRAW) {
-                    SDL_Event expose;
-                    expose.type = SDL_WINDOWEVENT;
-                    expose.window.windowID = w->GetID();
-                    expose.window.event = SDL_WINDOWEVENT_EXPOSED;
-                    SDL_PushEvent(&expose);
+                    PostWindowEvent(w.get(), SDL_WINDOWEVENT_EXPOSED);
                 }
             }
         }

@@ -77,6 +77,9 @@ public:
     Rect GetFrame() const;         // in OS pixels; not scaled
     void SetFrame(const Rect& r);  // in OS pixels; not scaled
 
+    const char* GetTitle() const;
+    void SetTitle(const char* title);
+
     void SizeToFit();  // auto size
     void SetSize(const Size& size);
     Size GetSize() const;  // total interior size of window, including menubar
@@ -91,8 +94,7 @@ public:
     void SetTopmost(bool topmost);
     void RaiseToTop() const;
 
-    std::shared_ptr<Menu> GetMenubar() const;
-    void SetMenubar(std::shared_ptr<Menu> menu);
+    bool IsActiveWindow() const;
 
     void AddChild(std::shared_ptr<Widget> w);
 
@@ -101,12 +103,17 @@ public:
 
     void ShowMessageBox(const char* title, const char* message);
 
+    double GetLastFrameTimeSeconds() const;
+
 protected:
     virtual Size CalcPreferredSize(/*const Size& maxSize*/);
     virtual void Layout(const Theme& theme);
 
     // Override to handle menu items
     virtual void OnMenuItemSelected(Menu::ItemId itemId);
+
+    // Override to handle drag and drop on the windowx
+    virtual void OnDragDropped(const char* path);
 
 private:
     enum DrawResult { NONE, REDRAW };

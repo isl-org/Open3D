@@ -1,6 +1,7 @@
 material {
     name : Lit,
     shadingModel : lit,
+    doubleSided : false,
     parameters : [
         { type : float3, name : baseColor },
         { type : float,  name : roughness },

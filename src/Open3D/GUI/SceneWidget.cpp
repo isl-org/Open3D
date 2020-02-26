@@ -36,9 +36,7 @@
 
 #include <Eigen/Geometry>
 
-#include <iostream>
-
-#define ENABLE_PAN 0
+#define ENABLE_PAN 1
 
 namespace open3d {
 namespace gui {
@@ -71,9 +69,8 @@ public:
 
         // Move camera and center of rotation. Adjust values from the
         // original positions at mousedown to avoid hysteresis problems.
-        auto localMove = -dx * unitsPerPx * Eigen::Vector3f(1, 0, 0) +
-                         dy * unitsPerPx * Eigen::Vector3f(0, 1, 0);
-        auto worldMove = modelMatrix * localMove;
+        auto localMove = Eigen::Vector3f(-dx * unitsPerPx, dy * unitsPerPx, 0);
+        auto worldMove = modelMatrix.rotation() * localMove;
         centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
         modelMatrix.translate(localMove);
         camera_->SetModelMatrix(modelMatrix);
@@ -129,7 +126,57 @@ public:
         camera_->SetModelMatrix(matrix);
     }
 
-    void Dolly(int dy) {
+    enum class DragType { MOUSE, WHEEL, TWO_FINGER };
+
+    void Zoom(int dy, DragType dragType) {
+        float dFOV = 0.0f;  // initialize to make GCC happy
+        switch (dragType) {
+            case DragType::MOUSE:
+                dFOV = float(-dy) * 0.1;  // deg
+                break;
+            case DragType::TWO_FINGER:
+                dFOV = float(dy) * 0.2f;  // deg
+                break;
+            case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
+                dFOV = float(dy) * 2.0f;  // deg
+                break;
+        }
+        float newFOV = 0.0;
+        if (dragType == DragType::MOUSE) {
+            newFOV = fovAtMouseDown_ + dFOV;
+        } else {
+            newFOV = camera_->GetFieldOfView() + dFOV;
+        }
+        newFOV = std::max(5.0f, newFOV);
+        newFOV = std::min(90.0f, newFOV);
+
+        float aspect = 1.0f;
+        if (viewSize_.height > 0) {
+            aspect = float(viewSize_.width) / float(viewSize_.height);
+        }
+        camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
+                               camera_->GetFar(),
+                               camera_->GetFieldOfViewType());
+    }
+
+    void Dolly(int dy, DragType dragType) {
+        float dist = 0.0f;  // initialize to make GCC happy
+        switch (dragType) {
+            case DragType::MOUSE:
+                // Zoom out is "push away" or up, is a negative value for
+                // mousing
+                dist = float(dy) * 0.0025f * modelSize_;
+                break;
+            case DragType::TWO_FINGER:
+                // Zoom out is "push away" or up, is a positive value for
+                // two-finger scrolling, so we need to invert dy.
+                dist = float(-dy) * 0.005f * modelSize_;
+                break;
+            case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
+                dist = float(-dy) * 0.1f * modelSize_;
+                break;
+        }
+
         // Dolly is just moving the camera forward. Filament uses right as +x,
         // up as +y, and forward as -z (standard OpenGL coordinates). So to
         // move forward all we need to do is translate the camera matrix by
@@ -138,9 +185,14 @@ public:
         // vector in world space, but the translation happens in camera space.)
         // Since we want trackpad down (negative) to go forward ("pulling" the
         // model toward the viewer) we need to negate dy.
-        auto dist = -dy * 0.005 * modelSize_;
-        auto forward = dist * Eigen::Vector3f(0, 0, -1);
-        auto matrix = camera_->GetModelMatrix().translate(forward);
+        auto forward = Eigen::Vector3f(0, 0, -dist);  // dist * (0, 0, -1)
+        visualization::Camera::Transform matrix;
+        if (dragType == DragType::MOUSE) {
+            matrix = matrixAtMouseDown_;  // copy
+            matrix.translate(forward);
+        } else {
+            matrix = camera_->GetModelMatrix().translate(forward);
+        }
         camera_->SetModelMatrix(matrix);
 
         // Update the far plane so that we don't get clipped by it as we dolly
@@ -201,13 +253,16 @@ public:
                 mouseDownY_ = e.y;
                 matrixAtMouseDown_ = camera_->GetModelMatrix();
                 centerOfRotationAtMouseDown_ = centerOfRotation_;
+                fovAtMouseDown_ = camera_->GetFieldOfView();
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
-                        state_ = State::ROTATE_Z;
+                        state_ = State::ZOOM;
 #if ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::CTRL)) {
                         state_ = State::PAN;
 #endif  // ENABLE_PAN
+                    } else if (e.modifiers & int(KeyModifier::META)) {
+                        state_ = State::ROTATE_Z;
                     } else {
                         state_ = State::ROTATE_XY;
                     }
@@ -227,7 +282,10 @@ public:
                         Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        Dolly(dy);
+                        Dolly(dy, DragType::MOUSE);
+                        break;
+                    case State::ZOOM:
+                        Zoom(dy, DragType::MOUSE);
                         break;
                     case State::ROTATE_XY:
                         Rotate(dx, dy);
@@ -239,7 +297,8 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                Dolly(e.wheel.dy * 0.01 * modelSize_);
+                Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
+                                                     : DragType::WHEEL);
                 break;
             }
             case MouseEvent::BUTTON_UP:
@@ -261,10 +320,11 @@ private:
 
     visualization::Camera::Transform matrixAtMouseDown_;
     Eigen::Vector3f centerOfRotationAtMouseDown_;
+    double fovAtMouseDown_;
     int mouseDownX_;
     int mouseDownY_;
 
-    enum class State { NONE, PAN, DOLLY, ROTATE_XY, ROTATE_Z };
+    enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z };
     State state_ = State::NONE;
 };
 // ----------------------------------------------------------------------------

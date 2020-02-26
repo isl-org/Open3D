@@ -24,6 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#if defined(__APPLE__)
+// See MenuMacOS.mm
+#else
+
 #include "Menu.h"
 
 #include "Theme.h"
@@ -42,24 +46,44 @@ namespace gui {
 
 static const float EXTRA_PADDING_Y = 1.0f;
 
-struct Menu::MenuItem {
-    Menu::ItemId id;
-    std::string name;
-    std::string shortcut;
-    std::shared_ptr<Menu> submenu;
-    bool isEnabled = true;
-    bool isChecked = false;
-    bool isSeparator = false;
-};
-
 struct Menu::Impl {
-    std::vector<Menu::MenuItem> items;
+    struct MenuItem {
+        Menu::ItemId id;
+        std::string name;
+        std::string shortcut;
+        std::shared_ptr<Menu> submenu;
+        Menu::Impl *submenuImpl =
+                nullptr;  // so FindMenuItem needn't be a friend
+        bool isEnabled = true;
+        bool isChecked = false;
+        bool isSeparator = false;
+    };
+
+    std::vector<MenuItem> items;
     std::unordered_map<int, size_t> id2idx;
+
+    MenuItem *FindMenuItem(ItemId itemId) {
+        auto it = this->id2idx.find(itemId);
+        if (it != this->id2idx.end()) {
+            return &this->items[it->second];
+        }
+        for (auto &item : this->items) {
+            if (item.submenu) {
+                auto *possibility = item.submenuImpl->FindMenuItem(itemId);
+                if (possibility) {
+                    return possibility;
+                }
+            }
+        }
+        return nullptr;
+    }
 };
 
 Menu::Menu() : impl_(new Menu::Impl()) {}
 
 Menu::~Menu() {}
+
+void *Menu::GetNativePointer() { return nullptr; }
 
 void Menu::AddItem(const char *name,
                    const char *shortcut,
@@ -69,15 +93,16 @@ void Menu::AddItem(const char *name,
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items.push_back({NO_ITEM, name, "", submenu});
+    impl_->items.push_back({NO_ITEM, name, "", submenu, submenu->impl_.get()});
 }
 
 void Menu::AddSeparator() {
-    impl_->items.push_back({NO_ITEM, "", "", nullptr, false, false, true});
+    impl_->items.push_back(
+            {NO_ITEM, "", "", nullptr, nullptr, false, false, true});
 }
 
 bool Menu::IsEnabled(ItemId itemId) const {
-    auto *item = FindMenuItem(itemId);
+    auto *item = impl_->FindMenuItem(itemId);
     if (item) {
         return item->isEnabled;
     }
@@ -85,14 +110,14 @@ bool Menu::IsEnabled(ItemId itemId) const {
 }
 
 void Menu::SetEnabled(ItemId itemId, bool enabled) {
-    auto *item = FindMenuItem(itemId);
+    auto *item = impl_->FindMenuItem(itemId);
     if (item) {
         item->isEnabled = enabled;
     }
 }
 
 bool Menu::IsChecked(ItemId itemId) const {
-    auto *item = FindMenuItem(itemId);
+    auto *item = impl_->FindMenuItem(itemId);
     if (item) {
         return item->isChecked;
     }
@@ -100,26 +125,10 @@ bool Menu::IsChecked(ItemId itemId) const {
 }
 
 void Menu::SetChecked(ItemId itemId, bool checked) {
-    auto *item = FindMenuItem(itemId);
+    auto *item = impl_->FindMenuItem(itemId);
     if (item) {
         item->isChecked = checked;
     }
-}
-
-Menu::MenuItem *Menu::FindMenuItem(ItemId itemId) const {
-    auto it = impl_->id2idx.find(itemId);
-    if (it != impl_->id2idx.end()) {
-        return &impl_->items[it->second];
-    }
-    for (auto &item : impl_->items) {
-        if (item.submenu) {
-            auto *possibility = item.submenu->FindMenuItem(itemId);
-            if (possibility) {
-                return possibility;
-            }
-        }
-    }
-    return nullptr;
 }
 
 int Menu::CalcHeight(const Theme &theme) const {
@@ -239,3 +248,5 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
 
 }  // namespace gui
 }  // namespace open3d
+
+#endif  // __APPLE__

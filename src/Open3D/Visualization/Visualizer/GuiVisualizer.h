@@ -65,7 +65,10 @@ public:
     void ExportDepth(const std::string& path);
 
     void Layout(const gui::Theme& theme) override;
+
+protected:
     void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
+    void OnDragDropped(const char* path) override;
 
 private:
     struct Impl;

@@ -60,12 +60,12 @@
         LoadAndCreateWindow("");
     }
 
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.010 repeats:YES
+    // We cannot have the timer repeat and call RunOnce() because on macOS
+    // SDL does not queue up keyboard events unless SDL_Delay() is used.
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.010 repeats:NO
                                         block:^(NSTimer * _Nonnull timer) {
-        if (!open3d::gui::Application::GetInstance().RunOneTick()) {
-            [timer invalidate];
-            exit(0);
-        }
+        open3d::gui::Application::GetInstance().Run();
+        exit(0);
     }];
 }
 
@@ -78,6 +78,22 @@
 - (BOOL)application:(NSApplication *)sender openFile:(NSString *)filename {
     mOpenEmptyWindow = false;  // LoadAndCreateWindow() always opens a window
     return (LoadAndCreateWindow(filename.UTF8String));
+}
+
+- (void)applicationWillTerminate:(NSNotification *)notification {
+    // The app will terminate after this function exits. This will result
+    // in the Application object in main() getting destructed, but it still
+    // thinks it is running. So tell Application to quit, which will post
+    // the required events to the event loop to properly clean up.
+    open3d::gui::Application::GetInstance().Quit();
+    // Process events for a while to make sure that the cleanup events get
+    // processed. (Usually we will be finished after the first call to
+    // RunOneTick(), but if we haven't, continue calling for a while
+    // just in case.)
+    int  i  = 0;
+    while (open3d::gui::Application::GetInstance().RunOneTick() && i < 20) {
+        i++;
+    }
 }
 @end
 

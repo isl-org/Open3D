@@ -56,27 +56,31 @@ public:
         gui::Margins margins(theme.defaultMargin);
 
         // Menu
-        menubar_ = std::make_shared<gui::Menu>();
-        auto fileMenu = std::make_shared<gui::Menu>();
-        fileMenu->AddItem("Open", "Ctrl-O", FILE_OPEN);
-        fileMenu->AddItem("Save", "Ctrl-S", FILE_SAVE);
-        fileMenu->AddSeparator();
-        fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);  // Ctrl-C is copy...
-        menubar_->AddMenu("File", fileMenu);
-        auto viewMenu = std::make_shared<gui::Menu>();
-        viewMenu->AddItem("Points", "", VIEW_POINTS);
-        viewMenu->AddItem("Wireframe", "", VIEW_WIREFRAME);
-        viewMenu->AddItem("Mesh", "", VIEW_MESH);
-        auto debugSubmenu = std::make_shared<gui::Menu>();
-        debugSubmenu->AddItem("Voxinated", "", DEBUG_VOXINATED);
-        debugSubmenu->AddItem("Seluna", "", DEBUG_SELUNA);
-        viewMenu->AddMenu("Debug", debugSubmenu);
-        menubar_->AddMenu("View", viewMenu);
-        auto helpMenu = std::make_shared<gui::Menu>();
-        helpMenu->AddItem("About", "", HELP_ABOUT);
-        helpMenu->AddItem("Contact", "", HELP_CONTACT);
-        menubar_->AddMenu("Help", helpMenu);
-        SetMenubar(menubar_);
+        if (!gui::Application::GetInstance().GetMenubar()) {
+            menubar_ = std::make_shared<gui::Menu>();
+            auto fileMenu = std::make_shared<gui::Menu>();
+            fileMenu->AddItem("Open", "Ctrl-O", FILE_OPEN);
+            fileMenu->AddItem("Save", "Ctrl-S", FILE_SAVE);
+            fileMenu->AddSeparator();
+            fileMenu->AddItem("Close", "Ctrl-W",
+                              FILE_CLOSE);  // Ctrl-C is copy...
+            menubar_->AddMenu("File", fileMenu);
+            auto viewMenu = std::make_shared<gui::Menu>();
+            viewMenu->AddItem("Points", "", VIEW_POINTS);
+            viewMenu->AddItem("Wireframe", "", VIEW_WIREFRAME);
+            viewMenu->AddItem("Mesh", "", VIEW_MESH);
+            auto debugSubmenu = std::make_shared<gui::Menu>();
+            debugSubmenu->AddItem("Voxinated", "", DEBUG_VOXINATED);
+            debugSubmenu->AddItem("Seluna", "", DEBUG_SELUNA);
+            viewMenu->AddMenu("Debug", debugSubmenu);
+            menubar_->AddMenu("View", viewMenu);
+            auto helpMenu = std::make_shared<gui::Menu>();
+            helpMenu->AddItem("About", "", HELP_ABOUT);
+            helpMenu->AddItem("Contact", "", HELP_CONTACT);
+            menubar_->AddMenu("Help", helpMenu);
+
+            gui::Application::GetInstance().SetMenubar(menubar_);
+        }
 
         // Button grid (left panel)
         toolGrid_ = std::make_shared<gui::VGrid>(2, spacing, margins);
