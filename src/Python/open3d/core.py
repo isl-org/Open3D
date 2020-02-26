@@ -198,13 +198,56 @@ class TensorList(open3d_pybind.TensorList):
             raise ValueError('shape must be a list, tuple, or o3d.SizeVector')
 
         if dtype is None:
-            dtype = _numpy_dtype_to_dtype(data.dtype)
+            dtype = o3d.Dtype.Float32
         if device is None:
             device = o3d.Device("CPU:0")
         if size is None:
             size = 0
 
         super(TensorList, self).__init__(shape, dtype, device, size)
+
+    def __getitem__(self, index):
+        '''
+        \index can be a
+        \slice, or \list or \tuple of int: return a TensorList
+        \int: return a Tensor
+        '''
+        if isinstance(index, int):
+            return self.getindex(index)
+
+        elif isinstance(index, slice):
+            step = index.step
+            if step is None:
+                step = 1
+            return self.getslice(index.start, index.stop, step)
+
+        elif isinstance(index, list) or isinstance(index, tuple):
+            for i in index:
+                if not instance(i, int):
+                    raise ValueError(
+                        'every element of the index list must be a int')
+            return self.getindices(index)
+
+        else:
+            raise ValueError('Unsupported index type')
+
+    def __setitem__(self, index, value):
+        '''
+        If \index is a single int, \value is a Tensor;
+        If \index is a list of ints, \value is correspondingly a TensorList.
+        '''
+        if isinstance(index, int) and isinstance(value, o3d.Tensor):
+            self.setindex(index, value)
+
+        elif isinstance(index, slice):
+            step = index.step
+            if step is None:
+                step = 1
+            # TODO: fix start/stop is None
+            return self.setslice(index.start, index.stop, step, value)
+
+        else:
+            raise ValueError('Unsupported index type')
 
     @staticmethod
     def from_tensor(tensor, inplace=False):

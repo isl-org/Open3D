@@ -156,7 +156,7 @@ public:
     TensorList Slice(int64_t start, int64_t stop, int64_t step = 1);
 
     /// Return a new tensor list with copy of data.
-    TensorList IndexGet(std::vector<int64_t>& indices) const;
+    TensorList IndexGet(const std::vector<int64_t>& indices) const;
 
     /// Clear the tensor list by discarding all data and creating a empty one.
     void Clear();

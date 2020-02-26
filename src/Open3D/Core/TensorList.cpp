@@ -233,9 +233,9 @@ TensorList TensorList::Slice(int64_t start,
                       /*copy=*/false);
 }
 
-TensorList TensorList::IndexGet(std::vector<int64_t>& indices) const {
+TensorList TensorList::IndexGet(const std::vector<int64_t>& indices) const {
     std::vector<Tensor> tensors;
-    for (auto& index : indices) {
+    for (auto index : indices) {
         CheckIndex(index);
         if (index < 0) {
             index += size_;

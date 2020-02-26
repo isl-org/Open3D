@@ -78,6 +78,27 @@ void pybind_core_tensorlist(py::module& m) {
                      return tl_a.Extend(tl_b);
                  })
             .def("size", [](const TensorList& tl) { return tl.GetSize(); })
+
+            .def("getindex",
+                 [](TensorList& tl, int64_t index) { return tl[index]; })
+            .def("setindex", [](TensorList& tl, int64_t index,
+                                const Tensor& value) { tl[index] = value; })
+
+            .def("getslice",
+                 [](TensorList& tl, int64_t start, int64_t stop, int64_t step) {
+                     return tl.Slice(start, stop, step);
+                 })
+            .def("setslice",
+                 [](TensorList& tl, int64_t start, int64_t stop, int64_t step,
+                    const TensorList& value) {
+                     tl.Slice(start, stop, step) = value;
+                 })
+
+            .def("getindices",
+                 [](TensorList& tl, const std::vector<int64_t>& indices) {
+                     return tl.IndexGet(indices);
+                 })
+
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("__repr__", [](const TensorList& tl) { return tl.ToString(); })
