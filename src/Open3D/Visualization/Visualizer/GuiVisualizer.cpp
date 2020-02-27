@@ -295,12 +295,12 @@ GuiVisualizer::GuiVisualizer(
     auto skyPath = rsrcPath + "/default_sky.ktx";
     lightSettings.hSky =
             GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
-    scene->GetScene()->SetSkybox(lightSettings.hSky);
 
     SetGeometry(geometries);  // also updates the camera
 
     // Setup UI
-    int spacing = std::max(1, int(std::ceil(0.25 * theme.fontSize)));
+    const auto em = theme.fontSize;
+    int spacing = std::max(1, int(std::ceil(0.25 * em)));
 
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
     drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
@@ -316,8 +316,9 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase = std::make_shared<gui::Vert>();
     lightSettings.wgtBase->SetFrame({0, 0, 250, 44});
 
+    const int lm = std::ceil(0.25 * em);
     auto loadButtons =
-            std::make_shared<gui::Horiz>(16, gui::Margins{4, 4, 4, 4});
+            std::make_shared<gui::Horiz>(em, gui::Margins{lm, lm, lm, lm});
     lightSettings.wgtLoadAmbient = std::make_shared<gui::Button>("Load ibl");
     lightSettings.wgtLoadAmbient->SetOnClicked([this, renderScene]() {
         auto dlg = std::make_shared<gui::FileDialog>(
@@ -361,10 +362,11 @@ GuiVisualizer::GuiVisualizer(
     loadButtons->AddChild(lightSettings.wgtLoadSky);
     lightSettings.wgtBase->AddChild(loadButtons);
 
-    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(8));
+    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(int(em / 2.f)));
     lightSettings.wgtBase->AddChild(
             std::make_shared<gui::Label>("Light switches:"));
-    auto checkboxes = std::make_shared<gui::Horiz>(0, gui::Margins{0, 0, 0, 8});
+    auto checkboxes = std::make_shared<gui::Horiz>(
+            0, gui::Margins{0, 0, 0, int(em / 2.f)});
     lightSettings.wgtAmbientEnabled =
             std::make_shared<gui::Checkbox>("Ambient");
     lightSettings.wgtAmbientEnabled->SetChecked(true);
@@ -378,7 +380,7 @@ GuiVisualizer::GuiVisualizer(
             });
     checkboxes->AddChild(lightSettings.wgtAmbientEnabled);
     lightSettings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
-    lightSettings.wgtSkyEnabled->SetChecked(true);
+    lightSettings.wgtSkyEnabled->SetChecked(false);
     lightSettings.wgtSkyEnabled->SetOnChecked(
             [this, renderScene](bool checked) {
                 if (checked) {
@@ -481,14 +483,15 @@ void GuiVisualizer::SetGeometry(
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
+    const auto em = theme.fontSize;
     impl_->scene->SetFrame(r);
 
     const auto pref = impl_->drawTime->CalcPreferredSize(theme);
-    impl_->drawTime->SetFrame(gui::Rect(0, r.GetBottom() - pref.height,
-                                        5 * theme.fontSize, pref.height));
+    impl_->drawTime->SetFrame(
+            gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
     impl_->drawTime->Layout(theme);
 
-    const auto kLightSettignsWidth = 250;
+    const auto kLightSettignsWidth = 16 * em;
     auto lightSettingsSize =
             impl_->lightSettings.wgtBase->CalcPreferredSize(theme);
     gui::Rect lightSettingsRect(r.width - kLightSettignsWidth, r.y,
