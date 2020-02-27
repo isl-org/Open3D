@@ -29,7 +29,7 @@
 namespace open3d {
 // Public
 TensorList::TensorList(const SizeVector& shape,
-                       const Dtype& dtype,
+                       Dtype dtype,
                        const Device& device, /*= Device("CPU:0") */
                        const int64_t& size /* = 0 */)
     : shape_(shape),
@@ -179,7 +179,7 @@ TensorList TensorList::Concatenate(const TensorList& a, const TensorList& b) {
     return a + b;
 }
 
-void TensorList::operator+=(const TensorList& other) {
+TensorList& TensorList::operator+=(const TensorList& other) {
     /// Check consistency
     if (shape_ != other.GetShape()) {
         utility::LogError("TensorList shapes {} and {} are inconsistent.",
@@ -199,7 +199,7 @@ void TensorList::operator+=(const TensorList& other) {
 
     /// Ignore empty TensorList
     if (other.GetSize() == 0) {
-        return;
+        return *this;
     }
 
     int64_t new_reserved_size = ReserveSize(size_ + other.GetSize());
@@ -209,6 +209,8 @@ void TensorList::operator+=(const TensorList& other) {
     internal_tensor_.Slice(0 /* dim */, size_, size_ + other.GetSize()) =
             other.AsTensor();
     size_ = size_ + other.GetSize();
+
+    return *this;
 }
 
 void TensorList::Extend(const TensorList& b) { *this += b; }
@@ -305,4 +307,11 @@ void TensorList::CheckIndex(int64_t index) const {
     }
 }
 
+std::string TensorList::ToString() const {
+    std::ostringstream rc;
+    rc << fmt::format("\nTensorList[size={}, shape={}, {}, {}]", size_,
+                      shape_.ToString(), DtypeUtil::ToString(dtype_),
+                      GetDevice().ToString());
+    return rc.str();
+}
 }  // namespace open3d

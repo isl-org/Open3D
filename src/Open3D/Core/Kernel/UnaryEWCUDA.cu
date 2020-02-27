@@ -43,7 +43,7 @@ static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
 
 void CopyCUDA(const Tensor& src, Tensor& dst) {
     // It has been checked that
-    // - src and dst have the same shape, dtype
+    // - src and dst have the same dtype
     // - at least one of src or dst is CUDA device
     SizeVector shape = src.GetShape();
     Dtype dtype = src.GetDtype();
@@ -65,7 +65,8 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             // dst to wait for copy kernel to complete.
             CUDADeviceSwitcher switcher(src_device);
             DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-                Indexer indexer({src}, dst);
+                // TODO: in the future, we may want to allow automatic casting
+                Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
                 CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
                         indexer,
                         // Need to wrap as extended CUDA lamba function

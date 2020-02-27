@@ -26,17 +26,29 @@
 
 import open3d as o3d
 import numpy as np
-import torch
-import torch.utils.dlpack
 import pytest
+
+try:
+    import torch
+    import torch.utils.dlpack
+except ImportError:
+    _torch_imported = False
+else:
+    _torch_imported = True
 
 
 def list_devices():
     devices = [o3d.Device("CPU:" + str(0))]
-    if (o3d.cuda.device_count() != torch.cuda.device_count()):
-        raise RuntimeError(
-            f"o3d.cuda.device_count() != torch.cuda.device_count(), "
-            f"{o3d.cuda.device_count()} != {torch.cuda.device_count()}")
+    if _torch_imported:
+        if (o3d.cuda.device_count() != torch.cuda.device_count()):
+            raise RuntimeError(
+                f"o3d.cuda.device_count() != torch.cuda.device_count(), "
+                f"{o3d.cuda.device_count()} != {torch.cuda.device_count()}")
+    else:
+        print(
+            'Warning: torch is not imported, cannot guarantee the correctness of device_count()'
+        )
+
     for i in range(o3d.cuda.device_count()):
         devices.append(o3d.Device("CUDA:" + str(i)))
     return devices
@@ -122,7 +134,7 @@ def test_tensor_constructor():
 
     # 2D list
     li_t = [[0, 1, 2], [3, 4, 5]]
-    o3_t = o3d.Tensor(li_t, dtype, device)
+    no3_t = o3d.Tensor(li_t, dtype, device)
     np.testing.assert_equal(li_t, o3_t.numpy())
 
     # 2D list, inconsistent length
@@ -195,6 +207,9 @@ def test_tensor_to_numpy_scope():
 
 @pytest.mark.parametrize("device", list_devices())
 def test_tensor_to_pytorch_scope(device):
+    if not _torch_imported:
+        return
+
     src_t = np.array([[10, 11, 12.], [13., 14., 15.]])
 
     def get_dst_t():
@@ -208,6 +223,9 @@ def test_tensor_to_pytorch_scope(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_tensor_from_to_pytorch(device):
+    if not _torch_imported:
+        return
+
     device_id = device.get_id()
     device_type = device.get_type()
 
@@ -240,6 +258,9 @@ def test_tensor_from_to_pytorch(device):
 
 
 def test_tensor_numpy_to_open3d_to_pytorch():
+    if not _torch_imported:
+        return
+
     # Numpy -> Open3D -> PyTorch all share the same memory
     a = np.ones((2, 2))
     b = o3d.Tensor.from_numpy(a)
@@ -251,3 +272,56 @@ def test_tensor_numpy_to_open3d_to_pytorch():
     np.testing.assert_equal(r, a)
     np.testing.assert_equal(r, b.cpu().numpy())
     np.testing.assert_equal(r, c.cpu().numpy())
+
+
+def test_binary_ew_ops():
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    b = o3d.Tensor(np.array([2, 3, 4, 5, 6, 7]))
+    np.testing.assert_equal((a + b).numpy(), np.array([6, 9, 12, 15, 18, 21]))
+    np.testing.assert_equal((a - b).numpy(), np.array([2, 3, 4, 5, 6, 7]))
+    np.testing.assert_equal((a * b).numpy(), np.array([8, 18, 32, 50, 72, 98]))
+    np.testing.assert_equal((a / b).numpy(), np.array([2, 2, 2, 2, 2, 2]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a += b
+    np.testing.assert_equal(a.numpy(), np.array([6, 9, 12, 15, 18, 21]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a -= b
+    np.testing.assert_equal(a.numpy(), np.array([2, 3, 4, 5, 6, 7]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a *= b
+    np.testing.assert_equal(a.numpy(), np.array([8, 18, 32, 50, 72, 98]))
+
+    a = o3d.Tensor(np.array([4, 6, 8, 10, 12, 14]))
+    a //= b
+    np.testing.assert_equal(a.numpy(), np.array([2, 2, 2, 2, 2, 2]))
+
+
+def test_tensorlist_operations():
+    a = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=1)
+    assert a.size() == 1
+
+    b = o3d.TensorList.from_tensor(
+        o3d.Tensor(np.ones((2, 3, 4), dtype=np.float32)))
+    assert b.size() == 2
+
+    c = o3d.TensorList.from_tensors(
+        [o3d.Tensor(np.zeros((3, 4), dtype=np.float32))])
+    assert c.size() == 1
+
+    d = a + b
+    assert d.size() == 3
+
+    e = o3d.TensorList.concat(c, d)
+    assert e.size() == 4
+
+    e.push_back(o3d.Tensor(np.zeros((3, 4), dtype=np.float32)))
+    assert e.size() == 5
+
+    e.extend(d)
+    assert e.size() == 8
+
+    e += a
+    assert e.size() == 9
