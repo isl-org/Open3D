@@ -85,6 +85,7 @@ public:
     /// \brief Copy Constructor.
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid() override {}
+
     VoxelGrid &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
@@ -138,25 +139,31 @@ public:
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the
-    /// projected depth of the boundary point. The point is not carved if none
-    /// of the boundary points of the voxel projects to a valid image location.
+    /// projected depth of the boundary point. If keep_voxels_outside_image is
+    /// true then voxels are only carved if all boundary points project to a
+    /// valid image location.
     ///
     /// \param depth_map Depth map (Image) used for VoxelGrid carving.
     /// \param camera_params Input Camera Parameters.
+    /// \param keep_voxels_outside_image Project all voxels to a valid location.
     VoxelGrid &CarveDepthMap(
             const Image &depth_map,
-            const camera::PinholeCameraParameters &camera_parameter);
+            const camera::PinholeCameraParameters &camera_parameter,
+            bool keep_voxels_outside_image);
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
-    /// of the voxel projects to a valid mask pixel (pixel value > 0). The point
-    /// is not carved if none of the boundary points of the voxel projects to a
-    /// valid image location.
+    /// of the voxel projects to a valid mask pixel (pixel value > 0). If
+    /// keep_voxels_outside_image is true then voxels are only carved if
+    /// all boundary points project to a valid image location.
     ///
     /// \param silhouette_mask Silhouette mask (Image) used for VoxelGrid
-    /// carving. \param camera_params Input Camera Parameters.
+    /// carving.
+    /// \param camera_parameter Input Camera Parameters.
+    /// \param keep_voxels_outside_image Project all voxels to a valid location.
     VoxelGrid &CarveSilhouette(
             const Image &silhouette_mask,
-            const camera::PinholeCameraParameters &camera_parameter);
+            const camera::PinholeCameraParameters &camera_parameter,
+            bool keep_voxels_outside_image);
 
     /// Create VoxelGrid from Octree
     ///

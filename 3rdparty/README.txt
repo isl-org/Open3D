@@ -72,3 +72,7 @@ https://github.com/syoyo/tinyobjloader
 pybind11                    2.2                                      BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
+--------------------------------------------------------------------------------
+PoissonReco                 12.0                                     BSD license
+Poisson Surface Reconstruction
+https://github.com/mkazhdan/PoissonRecon

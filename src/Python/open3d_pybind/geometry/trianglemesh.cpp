@@ -56,10 +56,12 @@ void pybind_trianglemesh(py::module &m) {
                              "triangles",
                              mesh.vertices_.size(), mesh.triangles_.size());
 
-                     if (mesh.HasTexture()) {
-                         info += fmt::format(", and ({}, {}) texture.",
-                                             mesh.texture_.width_,
-                                             mesh.texture_.height_);
+                     if (mesh.HasTextures()) {
+                         info += fmt::format(", and textures of size ");
+                         for (auto &tex : mesh.textures_) {
+                             info += fmt::format("({}, {}) ", tex.width_,
+                                                 tex.height_);
+                         }
                      } else {
                          info += ".";
                      }
@@ -171,7 +173,10 @@ void pybind_trianglemesh(py::module &m) {
                  "Returns ``True`` if the mesh contains adjacency normals.")
             .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
                  "Returns ``True`` if the mesh contains uv coordinates.")
-            .def("has_texture", &geometry::TriangleMesh::HasTexture,
+            .def("has_triangle_material_ids",
+                 &geometry::TriangleMesh::HasTriangleMaterialIds,
+                 "Returns ``True`` if the mesh contains material ids.")
+            .def("has_textures", &geometry::TriangleMesh::HasTextures,
                  "Returns ``True`` if the mesh contains a texture image.")
             .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals,
                  "Normalize both triangle normals and vertex normals to length "
@@ -236,10 +241,15 @@ void pybind_trianglemesh(py::module &m) {
                          geometry::TriangleMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
+            .def("get_surface_area",
+                 (double (geometry::TriangleMesh::*)() const) &
+                         geometry::TriangleMesh::GetSurfaceArea,
+                 "Function that computes the surface area of the mesh, i.e. "
+                 "the sum of the individual triangle surfaces.")
             .def("sample_points_uniformly",
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100)
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false)
             .def("sample_points_poisson_disk",
                  &geometry::TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
@@ -248,7 +258,8 @@ void pybind_trianglemesh(py::module &m) {
                  "(blue "
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
-                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr)
+                 "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
+                 "use_triangle_normal"_a = false)
             .def("subdivide_midpoint",
                  &geometry::TriangleMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
@@ -293,6 +304,18 @@ void pybind_trianglemesh(py::module &m) {
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
+            .def("remove_vertices_by_index",
+                 &geometry::TriangleMesh::RemoveVerticesByIndex,
+                 "This function removes the vertices with index in "
+                 "vertex_indices. Note that also all triangles associated with "
+                 "the vertices are removed.",
+                 "vertex_indices"_a)
+            .def("remove_vertices_by_mask",
+                 &geometry::TriangleMesh::RemoveVerticesByMask,
+                 "This function removes the vertices that are masked in "
+                 "vertex_mask. Note that also all triangles associated with "
+                 "the vertices are removed.",
+                 "vertex_mask"_a)
             .def("deform_as_rigid_as_possible",
                  &geometry::TriangleMesh::DeformAsRigidAsPossible,
                  "This function deforms the mesh using the method by Sorkine "
@@ -321,6 +344,16 @@ void pybind_trianglemesh(py::module &m) {
                     "radius over the point cloud, whenever the ball touches "
                     "three points a triangle is created.",
                     "pcd"_a, "radii"_a)
+            .def_static("create_from_point_cloud_poisson",
+                        &geometry::TriangleMesh::CreateFromPointCloudPoisson,
+                        "Function that computes a triangle mesh from a "
+                        "oriented PointCloud pcd. This implements the Screened "
+                        "Poisson Reconstruction proposed in Kazhdan and Hoppe, "
+                        "\"Screened Poisson Surface Reconstruction\", 2013. "
+                        "This function uses the original implementation by "
+                        "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
+                        "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
+                        "linear_fit"_a = false)
             .def_static("create_box", &geometry::TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
@@ -423,8 +456,8 @@ void pybind_trianglemesh(py::module &m) {
                            "``numpy.asarray()`` to access data: List of "
                            "uvs denoted by the index of points forming "
                            "the triangle.")
-            .def_readwrite("texture", &geometry::TriangleMesh::texture_,
-                           "open3d.geometry.Image: The texture image.");
+            .def_readwrite("textures", &geometry::TriangleMesh::textures_,
+                           "open3d.geometry.Image: The texture images.");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
@@ -438,7 +471,9 @@ void pybind_trianglemesh(py::module &m) {
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "has_triangle_material_ids");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_textures");
     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "has_vertex_normals",
@@ -522,7 +557,12 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_uniformly",
             {{"number_of_points",
-              "Number of points that should be uniformly sampled."}});
+              "Number of points that should be uniformly sampled."},
+             {"use_triangle_normal",
+              "If True assigns the triangle normals instead of the "
+              "interpolated vertex normals to the returned points. The "
+              "triangle normals will be computed and added to the mesh if "
+              "necessary."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -531,7 +571,12 @@ void pybind_trianglemesh(py::module &m) {
               "PointCloud is used for sample elimination."},
              {"pcl",
               "Initial PointCloud that is used for sample elimination. If this "
-              "parameter is provided the init_factor is ignored."}});
+              "parameter is provided the init_factor is ignored."},
+             {"use_triangle_normal",
+              "If True assigns the triangle normals instead of the "
+              "interpolated vertex normals to the returned points. The "
+              "triangle normals will be computed and added to the mesh if "
+              "necessary."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",
@@ -569,6 +614,16 @@ void pybind_trianglemesh(py::module &m) {
                                       "1D bool array, True values indicate "
                                       "triangles that should be removed."}});
     docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "remove_vertices_by_index",
+            {{"vertex_indices",
+              "1D array of vertex indices that should be removed from the "
+              "TriangleMesh."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_vertices_by_mask",
+                                    {{"vertex_mask",
+                                      "1D bool array, True values indicate "
+                                      "vertices that should be removed."}});
+    docstring::ClassMethodDocInject(
             m, "TriangleMesh", "deform_as_rigid_as_possible",
             {{"constraint_vertex_indices",
               "Indices of the triangle vertices that should be constrained by "
@@ -599,6 +654,27 @@ void pybind_trianglemesh(py::module &m) {
              {"radii",
               "The radii of the ball that are used for the surface "
               "reconstruction."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_from_point_cloud_poisson",
+            {{"pcd",
+              "PointCloud from which the TriangleMesh surface is "
+              "reconstructed. Has to contain normals."},
+             {"depth",
+              "Maximum depth of the tree that will be used for surface "
+              "reconstruction. Running at depth d corresponds to solving on a "
+              "grid whose resolution is no larger than 2^d x 2^d x 2^d. Note "
+              "that since the reconstructor adapts the octree to the sampling "
+              "density, the specified reconstruction depth is only an upper "
+              "bound."},
+             {"width",
+              "Specifies the target width of the finest level octree cells. "
+              "This parameter is ignored if depth is specified"},
+             {"scale",
+              "Specifies the ratio between the diameter of the cube used for "
+              "reconstruction and the diameter of the samples' bounding cube."},
+             {"linear_fit",
+              "If true, the reconstructor use linear interpolation to estimate "
+              "the positions of iso-vertices."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},

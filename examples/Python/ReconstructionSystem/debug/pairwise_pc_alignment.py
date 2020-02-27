@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/ReconstructionSystem/debug/pairwise_pc_alignment.py
+
 import argparse
 import json
 import sys

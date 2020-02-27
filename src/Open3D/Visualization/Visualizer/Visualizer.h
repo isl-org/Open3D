@@ -36,6 +36,7 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "Open3D/Geometry/Geometry.h"
@@ -144,7 +145,8 @@ public:
     ///
     /// \param geometry The Geometry object.
     virtual bool AddGeometry(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr);
+            std::shared_ptr<const geometry::Geometry> geometry_ptr,
+            bool reset_bounding_box = true);
 
     /// \brief Function to remove geometry from the scene.
     ///
@@ -156,13 +158,22 @@ public:
     ///
     /// \param geometry The Geometry object.
     virtual bool RemoveGeometry(
-            std::shared_ptr<const geometry::Geometry> geometry_ptr);
+            std::shared_ptr<const geometry::Geometry> geometry_ptr,
+            bool reset_bounding_box = true);
+
+    /// Function to remove all geometries from the scene.
+    /// After calling this function, the Visualizer releases the pointer of
+    /// all geometry objects.
+    virtual bool ClearGeometries();
 
     /// \brief Function to update geometry.
     ///
     /// This function must be called when geometry has been changed. Otherwise
     /// the behavior of Visualizer is undefined.
-    virtual bool UpdateGeometry();
+    /// If called without an argument, updates all geometries, otherwise only
+    /// updates the geometry specified.
+    virtual bool UpdateGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr = nullptr);
     virtual bool HasGeometry() const;
 
     /// Function to inform render needed to be updated.
@@ -285,6 +296,10 @@ protected:
 
     // utility renderers
     std::vector<std::shared_ptr<glsl::GeometryRenderer>> utility_renderer_ptrs_;
+    // map's key is the renderer for which the RenderOption applies
+    // (should be something in utility_renderer_ptrs_)
+    std::unordered_map<std::shared_ptr<glsl::GeometryRenderer>, RenderOption>
+            utility_renderer_opts_;
 
     // coordinate frame
     std::shared_ptr<geometry::TriangleMesh> coordinate_frame_mesh_ptr_;

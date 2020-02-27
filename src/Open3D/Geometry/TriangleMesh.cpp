@@ -52,7 +52,8 @@ TriangleMesh &TriangleMesh::Clear() {
     triangle_normals_.clear();
     adjacency_list_.clear();
     triangle_uvs_.clear();
-    texture_.Clear();
+    triangle_material_ids_.clear();
+    textures_.clear();
     return *this;
 }
 
@@ -92,9 +93,10 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() || HasTexture()) {
+    if (HasTriangleUvs() || HasTextures() || HasTriangleMaterialIds()) {
         utility::LogError(
-                "[TriangleMesh] copy of uvs and texture is not implemented "
+                "[TriangleMesh] copy of uvs and texture and per-triangle "
+                "material ids is not implemented "
                 "yet");
     }
     return (*this);
@@ -427,7 +429,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
-        double surface_area) const {
+        double surface_area,
+        bool use_triangle_normal) {
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -443,8 +446,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
-    if (has_vert_normal) {
+    if (has_vert_normal || use_triangle_normal) {
         pcd->normals_.resize(number_of_points);
+    }
+    if (use_triangle_normal && !HasTriangleNormals()) {
+        ComputeTriangleNormals(true);
     }
     if (has_vert_color) {
         pcd->colors_.resize(number_of_points);
@@ -463,10 +469,13 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
             pcd->points_[point_idx] = a * vertices_[triangle(0)] +
                                       b * vertices_[triangle(1)] +
                                       c * vertices_[triangle(2)];
-            if (has_vert_normal) {
+            if (has_vert_normal && !use_triangle_normal) {
                 pcd->normals_[point_idx] = a * vertex_normals_[triangle(0)] +
                                            b * vertex_normals_[triangle(1)] +
                                            c * vertex_normals_[triangle(2)];
+            }
+            if (use_triangle_normal) {
+                pcd->normals_[point_idx] = triangle_normals_[tidx];
             }
             if (has_vert_color) {
                 pcd->colors_[point_idx] = a * vertex_colors_[triangle(0)] +
@@ -482,7 +491,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points) const {
+        size_t number_of_points, bool use_triangle_normal /* = false */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
     }
@@ -496,13 +505,14 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area);
+                                     surface_area, use_triangle_normal);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
-        const std::shared_ptr<PointCloud> pcl_init /* = nullptr */) const {
+        const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
+        bool use_triangle_normal /* = false */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
     }
@@ -529,7 +539,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     std::shared_ptr<PointCloud> pcl;
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
-                                        triangle_areas, surface_area);
+                                        triangle_areas, surface_area,
+                                        use_triangle_normal);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
@@ -1463,6 +1474,67 @@ void TriangleMesh::RemoveTrianglesByMask(
     if (has_tri_normal) {
         triangle_normals_.resize(to_tidx);
     }
+}
+
+void TriangleMesh::RemoveVerticesByIndex(
+        const std::vector<size_t> &vertex_indices) {
+    std::vector<bool> vertex_mask(vertices_.size(), false);
+    for (auto vidx : vertex_indices) {
+        if (vidx >= 0 && vidx < vertices_.size()) {
+            vertex_mask[vidx] = true;
+        } else {
+            utility::LogWarning(
+                    "[RemoveVerticessByIndex] contains vertex index {} that is "
+                    "not within the bounds",
+                    vidx);
+        }
+    }
+
+    RemoveVerticesByMask(vertex_mask);
+}
+
+void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
+    if (vertex_mask.size() != vertices_.size()) {
+        utility::LogError("vertex_mask has a different size than vertices_");
+    }
+
+    bool has_normal = HasVertexNormals();
+    bool has_color = HasVertexColors();
+    int to_vidx = 0;
+    std::unordered_map<int, int> vertex_map;
+    for (size_t from_vidx = 0; from_vidx < vertices_.size(); ++from_vidx) {
+        if (!vertex_mask[from_vidx]) {
+            vertex_map[from_vidx] = to_vidx;
+            vertices_[to_vidx] = vertices_[from_vidx];
+            if (has_normal) {
+                vertex_normals_[to_vidx] = vertex_normals_[from_vidx];
+            }
+            if (has_color) {
+                vertex_colors_[to_vidx] = vertex_colors_[from_vidx];
+            }
+            to_vidx++;
+        }
+    }
+    vertices_.resize(to_vidx);
+    if (has_normal) {
+        vertex_normals_.resize(to_vidx);
+    }
+    if (has_color) {
+        vertex_colors_.resize(to_vidx);
+    }
+
+    std::vector<bool> triangle_mask(triangles_.size());
+    for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        auto &tria = triangles_[tidx];
+        triangle_mask[tidx] = vertex_mask[tria(0)] || vertex_mask[tria(1)] ||
+                              vertex_mask[tria(2)];
+        if (!triangle_mask[tidx]) {
+            tria(0) = vertex_map[tria(0)];
+            tria(1) = vertex_map[tria(1)];
+            tria(2) = vertex_map[tria(2)];
+        }
+    }
+    RemoveTrianglesByMask(triangle_mask);
 }
 
 std::unordered_map<Eigen::Vector2i,

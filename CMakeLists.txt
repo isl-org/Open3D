@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.1)
 set (CMAKE_CXX_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
-    COMMAND cmake -E echo "Custom target build_all_3rd_party_libs reached."
+    COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -97,6 +97,16 @@ endif ()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
+# headless rendering
+if (ENABLE_HEADLESS_RENDERING)
+    if (APPLE)
+        message(FATAL_ERROR "Headless rendering is not supported on Mac OS")
+        set(ENABLE_HEADLESS_RENDERING OFF)
+    else()
+        add_definitions(-DHEADLESS_RENDERING)
+    endif()
+endif()
 
 # Set OS-specific things here
 if (WIN32)

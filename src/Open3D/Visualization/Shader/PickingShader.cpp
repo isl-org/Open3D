@@ -126,7 +126,7 @@ bool PickingShaderForPointCloud::PrepareRendering(
     }
     glPointSize(GLfloat(option.point_size_));
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
     return true;
 }
 
