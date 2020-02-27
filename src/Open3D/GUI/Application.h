@@ -74,8 +74,13 @@ public:
     /// have an alert (like Linux), then this can be used as a last resort.
     void ShowMessageBox(const char *title, const char *message);
 
-    const char *GetResourcePath()
-            const;  // std::string not good in interfaces for ABI reasons
+    // (std::string not good in interfaces for ABI reasons)
+    const char *GetResourcePath() const;
+
+    /// This is primarily intended for use by the Window class. Any size-related
+    /// fields (for example, fontSize) should be accessed through
+    /// Window::GetTheme() as they be updated to reflect the pixel scaling
+    /// on the monitor where the Window is displayed.
     const Theme &GetTheme() const;
 
     /// Delivers the itemId to the active window. Used internally.

@@ -36,6 +36,12 @@ struct Margins {
     int right;
     int bottom;
 
+    // Margins are specified in pixels, which are not the same size on all
+    // monitors. It is best to use a multiple of
+    // Window::GetTheme().fontSize to specify margins. Theme::fontSize,
+    // represents 1em and is scaled according to the scaling factor of the
+    // window. For example, 0.5em (that is, 0.5 * theme.fontSize) is typically
+    // a good size for a margin.
     Margins();  // all values zero
     Margins(int px);
     Margins(int horizPx, int vertPx);
@@ -85,6 +91,8 @@ public:
     static std::shared_ptr<Layout1D::Stretch> MakeStretch();
 
     Vert();
+    // Spacing is in pixels; see the comment in Margin(). 1em is typically
+    // a good value for spacing.
     Vert(int spacing, const Margins& margins = Margins());
     Vert(int spacing,
          const Margins& margins,
@@ -99,6 +107,8 @@ public:
     static std::shared_ptr<Horiz> MakeCentered(std::shared_ptr<Widget> w);
 
     Horiz();
+    // Spacing is in pixels; see the comment in Margin(). 1em is typically
+    // a good value for spacing.
     Horiz(int spacing, const Margins& margins = Margins());
     Horiz(int spacing,
           const Margins& margins,
