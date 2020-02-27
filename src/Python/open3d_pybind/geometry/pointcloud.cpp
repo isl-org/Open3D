@@ -199,9 +199,9 @@ void pybind_pointcloud(py::module &m) {
                         R"(- z = d / depth_scale
               - x = (u - cx) * z / fx
               - y = (v - cy) * z / fy)",
-                    "image"_a, "intrinsic"_a,
-                    "extrinsic"_a = Eigen::Matrix4d::Identity(),
-                    "project_valid_depth_only"_a = true)
+                        "image"_a, "intrinsic"_a,
+                        "extrinsic"_a = Eigen::Matrix4d::Identity(),
+                        "project_valid_depth_only"_a = true)
             .def_readwrite("points", &geometry::PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "

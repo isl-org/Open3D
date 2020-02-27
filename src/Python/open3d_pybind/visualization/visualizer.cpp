@@ -93,7 +93,8 @@ void pybind_visualizer(py::module &m) {
             .def("update_geometry", &visualization::Visualizer::UpdateGeometry,
                  "Function to update geometry. This function must be called "
                  "when geometry has been changed. Otherwise the behavior of "
-                 "Visualizer is undefined.", "geometry"_a)
+                 "Visualizer is undefined.",
+                 "geometry"_a)
             .def("update_renderer", &visualization::Visualizer::UpdateRender,
                  "Function to inform render needed to be updated")
             .def("poll_events", &visualization::Visualizer::PollEvents,
