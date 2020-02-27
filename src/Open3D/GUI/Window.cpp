@@ -88,7 +88,6 @@ struct Window::Impl {
         ImFont* systemFont;  // is a reference; owned by imguiContext
         float scaling = 1.0;
     } imgui;
-    std::shared_ptr<Menu> menubar;
     std::vector<std::shared_ptr<Widget>> children;
 
     // Active dialog is owned here. It is not put in the children because
@@ -353,8 +352,9 @@ Rect Window::GetContentRect() const {
     auto size = GetSize();
     int menuHeight = 0;
     MakeCurrent();
-    if (impl_->menubar) {
-        menuHeight = impl_->menubar->CalcHeight(GetTheme());
+    auto menubar = Application::GetInstance().GetMenubar();
+    if (menubar) {
+        menuHeight = menubar->CalcHeight(GetTheme());
     }
 
     return Rect(0, menuHeight, size.width, size.height - menuHeight);
