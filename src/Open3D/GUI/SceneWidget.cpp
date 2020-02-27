@@ -41,6 +41,7 @@
 namespace open3d {
 namespace gui {
 
+static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 100.0;
 
 // ----------------------------------------------------------------------------
@@ -141,21 +142,41 @@ public:
                 dFOV = float(dy) * 2.0f;  // deg
                 break;
         }
-        float newFOV = 0.0;
+        float oldFOV = 0.0;
         if (dragType == DragType::MOUSE) {
-            newFOV = fovAtMouseDown_ + dFOV;
+            oldFOV = fovAtMouseDown_;
         } else {
-            newFOV = camera_->GetFieldOfView() + dFOV;
+            oldFOV = camera_->GetFieldOfView();
         }
+        float newFOV = oldFOV + dFOV;
         newFOV = std::max(5.0f, newFOV);
         newFOV = std::min(90.0f, newFOV);
+
+        float toRadians = M_PI / 180.0;
+        float near = camera_->GetNear();
+        Eigen::Vector3f cameraPos, COR;
+        if (dragType == DragType::MOUSE) {
+            cameraPos = matrixAtMouseDown_.translation();
+            COR = centerOfRotationAtMouseDown_;
+        } else {
+            cameraPos = camera_->GetPosition();
+            COR = centerOfRotation_;
+        }
+        Eigen::Vector3f toCOR = COR - cameraPos;
+        float oldDistFromPlaneToCOR = toCOR.norm() - near;
+        float newDistFromPlaneToCOR = (near + oldDistFromPlaneToCOR) * std::tan(oldFOV / 2.0 * toRadians) / std::tan(newFOV / 2.0 * toRadians) - near;
+        if (dragType == DragType::MOUSE) {
+            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR), matrixAtMouseDown_);
+        } else {
+            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR), camera_->GetModelMatrix());
+        }
 
         float aspect = 1.0f;
         if (viewSize_.height > 0) {
             aspect = float(viewSize_.width) / float(viewSize_.height);
         }
-        camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
-                               camera_->GetFar(),
+        camera_->SetProjection(newFOV, aspect,
+                               camera_->GetNear(), camera_->GetFar(),
                                camera_->GetFieldOfViewType());
     }
 
@@ -177,6 +198,17 @@ public:
                 break;
         }
 
+        if (dragType == DragType::MOUSE) {
+            Dolly(dist, matrixAtMouseDown_); // copies the matrix
+        } else {
+            Dolly(dist, camera_->GetModelMatrix());
+        }
+    }
+
+    // Note: we pass `matrix` by value because we want to copy it,
+    //       as translate() will be modifying it.
+    void Dolly(float zDist, visualization::Camera::Transform matrix) {
+
         // Dolly is just moving the camera forward. Filament uses right as +x,
         // up as +y, and forward as -z (standard OpenGL coordinates). So to
         // move forward all we need to do is translate the camera matrix by
@@ -185,14 +217,8 @@ public:
         // vector in world space, but the translation happens in camera space.)
         // Since we want trackpad down (negative) to go forward ("pulling" the
         // model toward the viewer) we need to negate dy.
-        auto forward = Eigen::Vector3f(0, 0, -dist);  // dist * (0, 0, -1)
-        visualization::Camera::Transform matrix;
-        if (dragType == DragType::MOUSE) {
-            matrix = matrixAtMouseDown_;  // copy
-            matrix.translate(forward);
-        } else {
-            matrix = camera_->GetModelMatrix().translate(forward);
-        }
+        auto forward = Eigen::Vector3f(0, 0, -zDist);  // zDist * (0, 0, -1)
+        matrix.translate(forward);
         camera_->SetModelMatrix(matrix);
 
         // Update the far plane so that we don't get clipped by it as we dolly
@@ -256,7 +282,7 @@ public:
                 fovAtMouseDown_ = camera_->GetFieldOfView();
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
-                        state_ = State::ZOOM;
+                        state_ = State::DOLLY;
 #if ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::CTRL)) {
                         state_ = State::PAN;
@@ -297,8 +323,15 @@ public:
                 break;
             }
             case MouseEvent::WHEEL: {
-                Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
-                                                     : DragType::WHEEL);
+                if (e.modifiers & int(KeyModifier::SHIFT)) {
+                    Zoom(e.wheel.dy, e.wheel.isTrackpad
+                                            ? DragType::TWO_FINGER
+                                            : DragType::WHEEL);
+                } else {
+                    Dolly(e.wheel.dy, e.wheel.isTrackpad
+                                            ? DragType::TWO_FINGER
+                                            : DragType::WHEEL);
+                }
                 break;
             }
             case MouseEvent::BUTTON_UP:
@@ -380,9 +413,8 @@ void SceneWidget::SetupCamera(
     if (f.height > 0) {
         aspect = float(f.width) / float(f.height);
     }
-    auto near = 0.1f;
     auto far = std::max(MIN_FAR_PLANE, 2.0 * geometryBounds.GetExtent().norm());
-    GetCamera()->SetProjection(verticalFoV, aspect, near, far,
+    GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
                                visualization::Camera::FovType::Vertical);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
