@@ -83,6 +83,9 @@ public:
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;
+    void SetLightIntensity(const LightHandle& id, float intensity) override;
+    void SetLightColor(const LightHandle& id,
+                       const Eigen::Vector3f& color) override;
     void RemoveLight(const LightHandle& id) override;
 
     void SetIndirectLight(const IndirectLightHandle& id) override;
@@ -93,6 +96,8 @@ public:
 
     void SetSkybox(const SkyboxHandle& id) override;
 
+    void SetEntityEnabled(const REHandle_abstract& entityId,
+                          bool enabled) override;
     void SetEntityTransform(const REHandle_abstract& entityId,
                             const Transform& transform) override;
     Transform GetEntityTransform(const REHandle_abstract& entityId) override;
@@ -121,6 +126,9 @@ private:
                                   FilamentResourceManager& manager);
         } info;
 
+        // We can disable entities removing them from scene, but not
+        // deallocating
+        bool enabled = true;
         MaterialInstanceHandle material;
         TextureHandle texture;  // if none, default is used
         // Used for relocating transform to center of mass

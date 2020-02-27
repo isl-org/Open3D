@@ -45,8 +45,8 @@ namespace visualization {
 namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::float4 color = {1.f, 1.f, 1.f, 1.f};
-    math::quatf tangent = {0.f, 0.f, 0.f, 0.f};
+    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
+    math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
 
     static size_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
@@ -116,31 +116,43 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
-    // Converting vertex normals to float base
-    std::vector<Eigen::Vector3f> normals;
-    normals.resize(nVertices);
-    for (size_t i = 0; i < nVertices; ++i) {
-        normals[i] = geometry_.normals_[i].cast<float>();
-    }
+    math::quatf* float4VTangents = nullptr;
+    if (geometry_.HasNormals()) {
+        // Converting vertex normals to float base
+        std::vector<Eigen::Vector3f> normals;
+        normals.resize(nVertices);
+        for (size_t i = 0; i < nVertices; ++i) {
+            normals[i] = geometry_.normals_[i].cast<float>();
+        }
 
-    // Converting normals to Filament type - quaternions
-    const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
-    auto float4VTangents =
-            static_cast<math::quatf*>(malloc(tangentsBytesCount));
-    auto orientation =
-            filament::geometry::SurfaceOrientation::Builder()
-                    .vertexCount(nVertices)
-                    .normals(reinterpret_cast<math::float3*>(normals.data()))
-                    .build();
-    orientation.getQuats(float4VTangents, nVertices);
+        // Converting normals to Filament type - quaternions
+        const size_t tangentsBytesCount = nVertices * 4 * sizeof(float);
+        float4VTangents = static_cast<math::quatf*>(malloc(tangentsBytesCount));
+        auto orientation = filament::geometry::SurfaceOrientation::Builder()
+                                   .vertexCount(nVertices)
+                                   .normals(reinterpret_cast<math::float3*>(
+                                           normals.data()))
+                                   .build();
+        orientation.getQuats(float4VTangents, nVertices);
+    }
 
     const size_t verticesBytesCount = nVertices * sizeof(ColoredVertex);
     auto* vertices = static_cast<ColoredVertex*>(malloc(verticesBytesCount));
+    const ColoredVertex kDefault;
     for (size_t i = 0; i < geometry_.points_.size(); ++i) {
         ColoredVertex& element = vertices[i];
         element.SetVertexPosition(geometry_.points_[i]);
-        element.SetVertexColor(geometry_.colors_[i]);
-        element.tangent = float4VTangents[i];
+        if (geometry_.HasColors()) {
+            element.SetVertexColor(geometry_.colors_[i]);
+        } else {
+            element.color = kDefault.color;
+        }
+
+        if (float4VTangents) {
+            element.tangent = float4VTangents[i];
+        } else {
+            element.tangent = kDefault.tangent;
+        }
     }
 
     free(float4VTangents);

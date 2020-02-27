@@ -43,6 +43,8 @@
 #include "FilamentGeometryBuffersBuilder.h"
 #include "FilamentResourceManager.h"
 #include "FilamentView.h"
+#include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Utility/Console.h"
 
@@ -153,45 +155,68 @@ GeometryHandle FilamentScene::AddGeometry(
     GeometryHandle handle;
 
     const auto geometryType = geometry.GetGeometryType();
+
     auto defaults = defaults_mapping::kDefaultMaterials.find(geometryType);
     if (defaults != defaults_mapping::kDefaultMaterials.end()) {
         MaterialInstanceHandle materialInstance =
                 resourceManager_.CreateMaterialInstance(defaults->second);
         handle = AddGeometry(geometry, materialInstance);
 
+        auto& entity = entities_[handle];
+        auto wMaterial = resourceManager_.GetMaterialInstance(entity.material);
+        auto mat = wMaterial.lock();
+
+        bool needBaseColorReset = false;
         if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
             const auto& mesh =
                     static_cast<const geometry::TriangleMesh&>(geometry);
-            if (mesh.texture_.HasData()) {
-                auto hTexture = resourceManager_.CreateTexture(
-                        mesh.texture_.FlipVertical());
 
-                if (hTexture) {
-                    auto& entity = entities_[handle];
-                    entity.texture = hTexture;
+            if (mat) {
+                needBaseColorReset =
+                        mesh.HasTexture() || mesh.HasVertexColors();
 
-                    auto wMaterial = resourceManager_.GetMaterialInstance(
-                            entity.material);
-                    auto mat = wMaterial.lock();
+                if (mesh.texture_.HasData()) {
+                    auto hTexture = resourceManager_.CreateTexture(
+                            mesh.texture_.FlipVertical());
 
-                    auto wTexture = resourceManager_.GetTexture(hTexture);
-                    auto tex = wTexture.lock();
-                    if (mat && tex) {
-                        static const auto kDefaultSampler =
-                                FilamentMaterialModifier::
-                                        SamplerFromSamplerParameters(
-                                                TextureSamplerParameters::
-                                                        Pretty());
-                        mat->setParameter("texture", tex.get(),
-                                          kDefaultSampler);
+                    if (hTexture) {
+                        entity.texture = hTexture;
+
+                        auto wTexture = resourceManager_.GetTexture(hTexture);
+                        auto tex = wTexture.lock();
+                        if (tex) {
+                            static const auto kDefaultSampler =
+                                    FilamentMaterialModifier::
+                                            SamplerFromSamplerParameters(
+                                                    TextureSamplerParameters::
+                                                            Pretty());
+                            mat->setParameter("texture", tex.get(),
+                                              kDefaultSampler);
+                        }
                     }
                 }
             }
+        } else if (geometryType ==
+                   geometry::Geometry::GeometryType::PointCloud) {
+            const auto& pointcloud =
+                    static_cast<const geometry::PointCloud&>(geometry);
+            needBaseColorReset = pointcloud.HasColors();
+        } else if (geometryType == geometry::Geometry::GeometryType::LineSet) {
+            const auto& lineset =
+                    static_cast<const geometry::LineSet&>(geometry);
+            needBaseColorReset = lineset.HasColors();
         }
-    }
 
-    utility::LogWarning("Geometry type {} is not supported yet!",
-                        static_cast<size_t>(geometry.GetGeometryType()));
+        mat->setDoubleSided(true);
+        if (needBaseColorReset) {
+            mat->setParameter("baseColor", filament::RgbType::LINEAR,
+                              {1, 1, 1});
+        }
+    } else {
+        utility::LogWarning(
+                "Geometry type {} is not yet supported for easy-init!",
+                static_cast<size_t>(geometry.GetGeometryType()));
+    }
 
     return handle;
 }
@@ -351,6 +376,28 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
     return handle;
 }
 
+void FilamentScene::SetLightIntensity(const LightHandle& id,
+                                      const float intensity) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
+        lightManager.setIntensity(inst, intensity);
+    }
+}
+
+void FilamentScene::SetLightColor(const LightHandle& id,
+                                  const Eigen::Vector3f& color) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
+        lightManager.setColor(inst, {color(0), color(1), color(2)});
+    }
+}
+
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
 void FilamentScene::SetIndirectLight(const IndirectLightHandle& id) {
@@ -410,6 +457,23 @@ void FilamentScene::SetSkybox(const SkyboxHandle& id) {
     if (auto skybox = wSkybox.lock()) {
         wSkybox_ = wSkybox;
         scene_->setSkybox(skybox.get());
+    }
+}
+
+void FilamentScene::SetEntityEnabled(const REHandle_abstract& entityId,
+                                     const bool enabled) {
+    auto found = entities_.find(entityId);
+    if (found != entities_.end()) {
+        auto& entity = found->second;
+        if (entity.enabled != enabled) {
+            entity.enabled = enabled;
+
+            if (enabled) {
+                scene_->addEntity(entity.info.self);
+            } else {
+                scene_->remove(entity.info.self);
+            }
+        }
     }
 }
 
@@ -543,7 +607,10 @@ void FilamentScene::SceneEntity::Details::ReleaseResources(
 void FilamentScene::SceneEntity::ReleaseResources(
         filament::Engine& engine, FilamentResourceManager& manager) {
     info.ReleaseResources(engine, manager);
-    manager.Destroy(texture);
+
+    if (texture) {
+        manager.Destroy(texture);
+    }
 
     engine.destroy(parent);
     parent.clear();

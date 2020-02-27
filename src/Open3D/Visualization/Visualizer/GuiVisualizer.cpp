@@ -28,12 +28,15 @@
 
 #include "Open3D/GUI/Application.h"
 #include "Open3D/GUI/Button.h"
+#include "Open3D/GUI/Checkbox.h"
 #include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/ColorEdit.h"
 #include "Open3D/GUI/Dialog.h"
 #include "Open3D/GUI/FileDialog.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
 #include "Open3D/GUI/SceneWidget.h"
+#include "Open3D/GUI/Slider.h"
 #include "Open3D/GUI/Theme.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
@@ -142,6 +145,23 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
+std::shared_ptr<gui::Slider> AddAttributeSlider(const gui::Slider::Type type,
+                                                const double min,
+                                                const double max,
+                                                const double value,
+                                                const char *caption,
+                                                gui::Widget *parent) {
+    auto slider = std::make_shared<gui::Slider>(type);
+    slider->SetLimits(min, max);
+    slider->SetValue(value);
+    parent->AddChild(slider);
+
+    auto lblCaption = std::make_shared<gui::Label>(caption);
+    parent->AddChild(lblCaption);
+
+    return slider;
+}
+
 class DrawTimeLabel : public gui::Label {
     using Super = Label;
 
@@ -176,17 +196,32 @@ enum MenuId {
     VIEW_POINTS,
     VIEW_WIREFRAME,
     VIEW_MESH,
+    SETTINGS_LIGHT,
     HELP_ABOUT,
     HELP_CONTACT
 };
 
 struct GuiVisualizer::Impl {
-    visualization::MaterialHandle nonmetal;
-    visualization::MaterialInstanceHandle white;
     std::vector<visualization::GeometryHandle> geometryHandles;
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> drawTime;
+
+    struct LightSettings {
+        visualization::IndirectLightHandle hIbl;
+        visualization::SkyboxHandle hSky;
+        visualization::LightHandle hDirectionalLight;
+
+        std::shared_ptr<gui::Widget> wgtBase;
+        std::shared_ptr<gui::Button> wgtLoadAmbient;
+        std::shared_ptr<gui::Button> wgtLoadSky;
+        std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
+        std::shared_ptr<gui::Checkbox> wgtSkyEnabled;
+        std::shared_ptr<gui::Checkbox> wgtDirectionalEnabled;
+        std::shared_ptr<gui::Slider> wgtIntensity;
+        std::shared_ptr<gui::Slider> wgtAmbientIntensity;
+        std::shared_ptr<gui::ColorEdit> wgtLightColor;
+    } lightSettings;
 };
 
 GuiVisualizer::GuiVisualizer(
@@ -222,28 +257,15 @@ GuiVisualizer::GuiVisualizer(
         auto helpMenu = std::make_shared<gui::Menu>();
         helpMenu->AddItem("About", nullptr, HELP_ABOUT);
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
+        auto settingsMenu = std::make_shared<gui::Menu>();
+        settingsMenu->AddItem("Light", nullptr, SETTINGS_LIGHT);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
         menu->AddMenu("View", viewMenu);
+        menu->AddMenu("Settings", settingsMenu);
         menu->AddMenu("Help", helpMenu);
         gui::Application::GetInstance().SetMenubar(menu);
     }
-
-    // Create material
-    std::string err;
-    std::string rsrcPath = app.GetResourcePath();
-    std::string path = rsrcPath + "/nonmetal.filamat";
-    impl_->nonmetal =
-            GetRenderer().AddMaterial(ResourceLoadRequest(path.data()));
-    impl_->white =
-            GetRenderer()
-                    .ModifyMaterial(impl_->nonmetal)
-                    .SetColor("baseColor", Eigen::Vector3f{1.0, 1.0, 1.0})
-                    .SetParameter("roughness", 0.5f)
-                    .SetParameter("clearCoat", 0.0f)
-                    .SetParameter("clearCoatRoughness", 0.3f)
-                    .SetDoubleSided(true)
-                    .Finish();
 
     // Create scene
     auto sceneId = GetRenderer().CreateScene();
@@ -258,12 +280,27 @@ GuiVisualizer::GuiVisualizer(
     lightDescription.direction = {-0.707, -.707, 0.0};
     lightDescription.customAttributes["custom_type"] = "SUN";
 
-    scene->GetScene()->AddLight(lightDescription);
+    impl_->lightSettings.hDirectionalLight =
+            scene->GetScene()->AddLight(lightDescription);
+
+    auto &lightSettings = impl_->lightSettings;
+    std::string rsrcPath = app.GetResourcePath();
+    auto iblPath = rsrcPath + "/default_ibl.ktx";
+    lightSettings.hIbl =
+            GetRenderer().AddIndirectLight(ResourceLoadRequest(iblPath.data()));
+    scene->GetScene()->SetIndirectLight(lightSettings.hIbl);
+    const auto kAmbientIntensity = 50000;
+    scene->GetScene()->SetIndirectLightIntensity(kAmbientIntensity);
+
+    auto skyPath = rsrcPath + "/default_sky.ktx";
+    lightSettings.hSky =
+            GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
 
     SetGeometry(geometries);  // also updates the camera
 
     // Setup UI
-    int spacing = std::max(1, int(std::ceil(0.25 * theme.fontSize)));
+    const auto em = theme.fontSize;
+    int spacing = std::max(1, int(std::ceil(0.25 * em)));
 
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
     drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
@@ -272,6 +309,130 @@ GuiVisualizer::GuiVisualizer(
     impl_->drawTime->AddChild(drawTimeLabel);
 
     AddChild(scene);
+
+    auto renderScene = scene->GetScene();
+
+    // Add light settings widget
+    lightSettings.wgtBase = std::make_shared<gui::Vert>();
+    lightSettings.wgtBase->SetFrame({0, 0, 250, 44});
+
+    const int lm = std::ceil(0.25 * em);
+    auto loadButtons =
+            std::make_shared<gui::Horiz>(em, gui::Margins{lm, lm, lm, lm});
+    lightSettings.wgtLoadAmbient = std::make_shared<gui::Button>("Load ibl");
+    lightSettings.wgtLoadAmbient->SetOnClicked([this, renderScene]() {
+        auto dlg = std::make_shared<gui::FileDialog>(
+                gui::FileDialog::Type::OPEN, "Open IBL", GetTheme());
+        dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+        dlg->SetOnCancel([this]() { this->CloseDialog(); });
+        dlg->SetOnDone([this, renderScene](const char *path) {
+            this->CloseDialog();
+            auto newIBL =
+                    GetRenderer().AddIndirectLight(ResourceLoadRequest(path));
+            if (newIBL) {
+                impl_->lightSettings.hIbl = newIBL;
+
+                auto intensity = renderScene->GetIndirectLightIntensity();
+
+                renderScene->SetIndirectLight(newIBL);
+                renderScene->SetIndirectLightIntensity(intensity);
+            }
+        });
+        ShowDialog(dlg);
+    });
+    loadButtons->AddChild(lightSettings.wgtLoadAmbient);
+
+    lightSettings.wgtLoadSky = std::make_shared<gui::Button>("Load skybox");
+    lightSettings.wgtLoadSky->SetOnClicked([this, renderScene]() {
+        auto dlg = std::make_shared<gui::FileDialog>(
+                gui::FileDialog::Type::OPEN, "Open skybox", GetTheme());
+        dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+        dlg->SetOnCancel([this]() { this->CloseDialog(); });
+        dlg->SetOnDone([this, renderScene](const char *path) {
+            this->CloseDialog();
+            auto newSky = GetRenderer().AddSkybox(ResourceLoadRequest(path));
+            if (newSky) {
+                impl_->lightSettings.hSky = newSky;
+
+                renderScene->SetSkybox(newSky);
+            }
+        });
+        ShowDialog(dlg);
+    });
+    loadButtons->AddChild(lightSettings.wgtLoadSky);
+    lightSettings.wgtBase->AddChild(loadButtons);
+
+    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(int(em / 2.f)));
+    lightSettings.wgtBase->AddChild(
+            std::make_shared<gui::Label>("Light switches:"));
+    auto checkboxes = std::make_shared<gui::Horiz>(
+            0, gui::Margins{0, 0, 0, int(em / 2.f)});
+    lightSettings.wgtAmbientEnabled =
+            std::make_shared<gui::Checkbox>("Ambient");
+    lightSettings.wgtAmbientEnabled->SetChecked(true);
+    lightSettings.wgtAmbientEnabled->SetOnChecked(
+            [this, renderScene](bool checked) {
+                if (checked) {
+                    renderScene->SetIndirectLight(impl_->lightSettings.hIbl);
+                } else {
+                    renderScene->SetIndirectLight(IndirectLightHandle());
+                }
+            });
+    checkboxes->AddChild(lightSettings.wgtAmbientEnabled);
+    lightSettings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
+    lightSettings.wgtSkyEnabled->SetChecked(false);
+    lightSettings.wgtSkyEnabled->SetOnChecked(
+            [this, renderScene](bool checked) {
+                if (checked) {
+                    renderScene->SetSkybox(impl_->lightSettings.hSky);
+                } else {
+                    renderScene->SetSkybox(SkyboxHandle());
+                }
+            });
+    checkboxes->AddChild(lightSettings.wgtSkyEnabled);
+    lightSettings.wgtDirectionalEnabled =
+            std::make_shared<gui::Checkbox>("Sun");
+    lightSettings.wgtDirectionalEnabled->SetChecked(true);
+    lightSettings.wgtDirectionalEnabled->SetOnChecked(
+            [this, renderScene](bool checked) {
+                renderScene->SetEntityEnabled(
+                        impl_->lightSettings.hDirectionalLight, checked);
+            });
+    checkboxes->AddChild(lightSettings.wgtDirectionalEnabled);
+    lightSettings.wgtBase->AddChild(checkboxes);
+
+    lightSettings.wgtIntensity = AddAttributeSlider(
+            gui::Slider::INT, 0.0, 500000.0, lightDescription.intensity,
+            "Directional light intensity", lightSettings.wgtBase.get());
+    lightSettings.wgtIntensity->OnValueChanged =
+            [this, renderScene](double newValue) {
+                renderScene->SetLightIntensity(
+                        impl_->lightSettings.hDirectionalLight, newValue);
+            };
+    lightSettings.wgtAmbientIntensity = AddAttributeSlider(
+            gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity,
+            "Ambient light intensity", lightSettings.wgtBase.get());
+    lightSettings.wgtAmbientIntensity->OnValueChanged =
+            [renderScene](double newValue) {
+                renderScene->SetIndirectLightIntensity(newValue);
+            };
+    lightSettings.wgtLightColor = std::make_shared<gui::ColorEdit>();
+    lightSettings.wgtLightColor->SetValue({1, 1, 1});
+    lightSettings.wgtLightColor->OnValueChanged =
+            [this, renderScene](const gui::Color &newColor) {
+                renderScene->SetLightColor(
+                        impl_->lightSettings.hDirectionalLight,
+                        {newColor.GetRed(), newColor.GetGreen(),
+                         newColor.GetBlue()});
+            };
+    lightSettings.wgtBase->AddChild(lightSettings.wgtLightColor);
+    auto lblLightColor =
+            std::make_shared<gui::Label>("Directional light color");
+
+    lightSettings.wgtBase->AddChild(lblLightColor);
+    AddChild(lightSettings.wgtBase);
+    lightSettings.wgtBase->SetVisible(false);
+
     AddChild(impl_->drawTime);
 }
 
@@ -306,7 +467,8 @@ void GuiVisualizer::SetGeometry(
                 auto g3 =
                         std::static_pointer_cast<const geometry::Geometry3D>(g);
                 bounds += g3->GetAxisAlignedBoundingBox();
-                auto handle = scene3d->AddGeometry(*g3, impl_->white);
+                auto handle = scene3d->AddGeometry(*g3);
+
                 impl_->geometryHandles.push_back(handle);
             }
             case geometry::Geometry::GeometryType::RGBDImage:
@@ -321,12 +483,20 @@ void GuiVisualizer::SetGeometry(
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
+    const auto em = theme.fontSize;
     impl_->scene->SetFrame(r);
 
     const auto pref = impl_->drawTime->CalcPreferredSize(theme);
-    impl_->drawTime->SetFrame(gui::Rect(0, r.GetBottom() - pref.height,
-                                        5 * theme.fontSize, pref.height));
+    impl_->drawTime->SetFrame(
+            gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
     impl_->drawTime->Layout(theme);
+
+    const auto kLightSettignsWidth = 16 * em;
+    auto lightSettingsSize =
+            impl_->lightSettings.wgtBase->CalcPreferredSize(theme);
+    gui::Rect lightSettingsRect(r.width - kLightSettignsWidth, r.y,
+                                kLightSettignsWidth, lightSettingsSize.height);
+    impl_->lightSettings.wgtBase->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);
 }
@@ -449,6 +619,11 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             break;
         case VIEW_MESH:
             break;
+        case SETTINGS_LIGHT: {
+            auto visibility = !impl_->lightSettings.wgtBase->IsVisible();
+            impl_->lightSettings.wgtBase->SetVisible(visibility);
+            break;
+        }
         case HELP_ABOUT: {
             auto dlg = createAboutDialog(this);
             ShowDialog(dlg);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,33 +26,32 @@
 
 #pragma once
 
+#include "Widget.h"
+
+#include <functional>
+
 namespace open3d {
 namespace gui {
 
-class Color {
+class ColorEdit : public Widget {
 public:
-    Color();
-    Color(float r, float g, float b, float a = 1.0);
+    ColorEdit();
+    ~ColorEdit() override;
 
-    float GetRed() const;
-    float GetGreen() const;
-    float GetBlue() const;
-    float GetAlpha() const;
+    void SetValue(const Color& color);
+    void SetValue(float r, float g, float b);
 
-    void SetRGB(float r, float g, float b);
+    const Color& GetValue() const;
 
-    const float* GetPointer() const;
-    float* GetMutablePointer();
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    Color Lightened(float amount);  // amount is between 0 and 1
+    DrawResult Draw(const DrawContext& context) override;
 
-    unsigned int ToABGR32() const;
-
-    bool operator==(const Color& rhs) const;
-    bool operator!=(const Color& rhs) const;
+    std::function<void(const Color&)> OnValueChanged;
 
 private:
-    float rgba_[4];
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace gui

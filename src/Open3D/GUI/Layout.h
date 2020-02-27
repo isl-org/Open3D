@@ -69,11 +69,12 @@ public:
 public:
     class Fixed : public Widget {
     public:
-        explicit Fixed(int size);
+        Fixed(int size, Dir dir);
         Size CalcPreferredSize(const Theme& theme) const override;
 
     private:
         int size_;
+        Dir dir_;
     };
 
     class Stretch : public Widget {

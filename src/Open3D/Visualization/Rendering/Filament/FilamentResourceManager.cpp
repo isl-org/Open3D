@@ -208,6 +208,14 @@ const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
 const TextureHandle FilamentResourceManager::kDefaultTexture =
         TextureHandle::Next();
 
+static const std::unordered_set<REHandle_abstract> kDefaultResources = {
+        FilamentResourceManager::kDefaultLit,
+        FilamentResourceManager::kDefaultUnlit,
+        FilamentResourceManager::kUbermaterial,
+        FilamentResourceManager::kDepthMaterial,
+        FilamentResourceManager::kNormalsMaterial,
+        FilamentResourceManager::kDefaultTexture};
+
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
     LoadDefaults();
@@ -476,6 +484,13 @@ void FilamentResourceManager::DestroyAll() {
 }
 
 void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
+    if (kDefaultResources.count(id) > 0) {
+        utility::LogDebug(
+                "Trying to destroy default resource {}. Nothing will happen.",
+                id);
+        return;
+    }
+
     switch (id.type) {
         case EntityType::Material:
             DestroyResource(id, materials_);
@@ -547,14 +562,19 @@ void FilamentResourceManager::LoadDefaults() {
     const auto defaultSampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
-    const auto defaultColor = filament::math::float3{1.f, 1.f, 1.f};
+    const auto defaultColor = filament::math::float3{0.5f, 0.5f, 0.5f};
 
     const auto litPath = resourceRoot + "/defaultLit.filamat";
     auto litMat = LoadMaterialFromFile(litPath, engine_);
     litMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                 defaultColor);
+    litMat->setDefaultParameter("roughness", 0.7f);
+    litMat->setDefaultParameter("reflectance", 0.5f);
+    litMat->setDefaultParameter("metallic", 0.f);
+    litMat->setDefaultParameter("clearCoat", 0.f);
+    litMat->setDefaultParameter("clearCoatRoughness", 0.f);
+    litMat->setDefaultParameter("anisotropy", 0.f);
     litMat->setDefaultParameter("texture", texture, defaultSampler);
-    // TODO: Add some more pretty defaults
     materials_[kDefaultLit] = MakeShared(litMat, engine_);
 
     const auto unlitPath = resourceRoot + "/defaultUnlit.filamat";

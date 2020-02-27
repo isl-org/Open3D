@@ -56,13 +56,13 @@ struct BaseVertex {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
-    math::float4 color = {1.f, 1.f, 1.f, 1.f};
+    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
 };
 
 struct TexturedVertex {
     math::float3 position = {0.f, 0.f, 0.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
-    math::float4 color = {1.f, 1.f, 1.f, 1.f};
+    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
     math::float2 uv = {0.f, 0.f};
 };
 
@@ -177,6 +177,7 @@ std::tuple<vbdata, ibdata> CreatePlainBuffers(
     vertexData.bytesToCopy = vertexData.bytesCount;
     vertexData.bytes = malloc(vertexData.bytesCount);
 
+    const BaseVertex kDefault;
     auto plainVertices = static_cast<BaseVertex*>(vertexData.bytes);
     for (size_t i = 0; i < vertexData.verticesCount; ++i) {
         BaseVertex& element = plainVertices[i];
@@ -184,6 +185,8 @@ std::tuple<vbdata, ibdata> CreatePlainBuffers(
         SetVertexPosition(element, geometry.vertices_[i]);
         if (tangents != nullptr) {
             element.tangent = tangents[i];
+        } else {
+            element.tangent = kDefault.tangent;
         }
     }
 
@@ -211,6 +214,7 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
     vertexData.bytesToCopy = vertexData.bytesCount;
     vertexData.bytes = malloc(vertexData.bytesCount);
 
+    const ColoredVertex kDefault;
     auto coloredVertices = static_cast<ColoredVertex*>(vertexData.bytes);
     for (size_t i = 0; i < vertexData.verticesCount; ++i) {
         ColoredVertex& element = coloredVertices[i];
@@ -218,8 +222,15 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
         SetVertexPosition(element, geometry.vertices_[i]);
         if (tangents != nullptr) {
             element.tangent = tangents[i];
+        } else {
+            element.tangent = kDefault.tangent;
         }
-        SetVertexColor(element, geometry.vertex_colors_[i]);
+
+        if (geometry.HasVertexColors()) {
+            SetVertexColor(element, geometry.vertex_colors_[i]);
+        } else {
+            element.color = kDefault.color;
+        }
     }
 
     indexData.stride = sizeof(GeometryBuffersBuilder::IndexType);
@@ -284,6 +295,7 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(
     GeometryBuffersBuilder::IndexType uvIndex = 0;
     auto texturedVertices = static_cast<TexturedVertex*>(vertexData.bytes);
 
+    const TexturedVertex kDefault;
     for (size_t i = 0; i < geometry.triangles_.size(); ++i) {
         const auto& triangle = geometry.triangles_[i];
 
@@ -308,12 +320,17 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(
                 SetVertexPosition(element, pos);
                 if (tangents != nullptr) {
                     element.tangent = tangents[sourceIndex];
+                } else {
+                    element.tangent = kDefault.tangent;
                 }
+
                 SetVertexUV(element, uv);
 
                 if (geometry.HasVertexColors()) {
                     SetVertexColor(element,
                                    geometry.vertex_colors_[sourceIndex]);
+                } else {
+                    element.color = kDefault.color;
                 }
             }
 
@@ -371,7 +388,10 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                 "first.");
     }
 
-    const bool hasColors = geometry_.HasVertexColors();
+    // We defaulting to have vertex color attribute for all geometries, even if
+    // a geometry doesn't have one That's all due to our default material and
+    // large variety of geometries it should support
+    const bool hasColors = true;  // geometry_.HasVertexColors();
     const bool hasUVs = geometry_.HasTriangleUvs();
 
     std::tuple<vbdata, ibdata> buffersData;
