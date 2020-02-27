@@ -306,29 +306,22 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     return str;
 }
 
-Tensor Tensor::operator[](int64_t i) const {
+Tensor Tensor::operator[](int64_t i) const { return IndexSlice(0, i); }
+
+Tensor Tensor::IndexSlice(int64_t dim, int64_t idx) const {
     if (shape_.size() == 0) {
         utility::LogError("Tensor has shape (), cannot be indexed.");
     }
-    if (i < 0) {
-        utility::LogError("Only non-ngegative index is supported, but {} < 0.",
-                          i);
-    }
-    if (i >= shape_[0]) {
-        utility::LogError("Index {} is out of bounds for axis of length {}.", i,
-                          shape_[0]);
-    }
-    if (shape_.size() != strides_.size()) {
-        utility::LogError(
-                "Internal error, shape and strides dimension mismatch {} != "
-                "{}",
-                shape_.size(), strides_.size());
-    }
-    SizeVector new_shape(shape_.begin() + 1, shape_.end());
-    SizeVector new_stride(strides_.begin() + 1, strides_.end());
+    dim = WrapDim(dim, NumDims());
+    idx = WrapDim(idx, shape_[dim]);
+
+    SizeVector new_shape(shape_);
+    new_shape.erase(new_shape.begin() + dim);
+    SizeVector new_strides(strides_);
+    new_strides.erase(new_strides.begin() + dim);
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         strides_[0] * DtypeUtil::ByteSize(dtype_) * i;
-    return Tensor(new_shape, new_stride, new_data_ptr, dtype_, blob_);
+                         strides_[dim] * DtypeUtil::ByteSize(dtype_) * idx;
+    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
 
 Tensor Tensor::Slice(int64_t dim,
@@ -338,6 +331,7 @@ Tensor Tensor::Slice(int64_t dim,
     if (shape_.size() == 0) {
         utility::LogError("Slice cannot be applied to 0-dim Tensor");
     }
+    dim = WrapDim(dim, NumDims());
     if (dim < 0 || dim >= shape_.size()) {
         utility::LogError("Dim {} is out of bound for SizeVector of length {}",
                           dim, shape_.size());
@@ -346,16 +340,8 @@ Tensor Tensor::Slice(int64_t dim,
     if (step == 0) {
         utility::LogError("Step size cannot be 0");
     }
-    // TODO: support wrap-around start/stop index
-    if (start < 0 || start >= shape_[dim]) {
-        utility::LogError("Index {} is out of bounds for axis of length {}.",
-                          start, shape_[dim]);
-    }
-    // The stop index is non-inclusive
-    if (stop < 0 || stop > shape_[dim]) {
-        utility::LogError("Index {} is out of bounds for axis of length {}.",
-                          stop, shape_[dim]);
-    }
+    start = WrapDim(start, shape_[dim]);
+    stop = WrapDim(stop, shape_[dim], /*exclusive=*/true);
     if (stop < start) {
         stop = start;
     }

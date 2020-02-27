@@ -49,6 +49,30 @@ class Tensor(open3d_pybind.Tensor):
             device = o3d.Device("CPU:0")
         super(Tensor, self).__init__(data, dtype, device)
 
+    def __getitem__(self, val):
+        t = self
+        if isinstance(val, tuple):
+            slice_dim = 0
+            for v in val:
+                if isinstance(v, int):
+                    # _getitem_index removes the 0-th dim
+                    t = t._getitem_index(slice_dim, v)
+                elif isinstance(v, slice):
+                    # _getitem_slice does not remove a dimension, thus slice_dim
+                    # needs to be incremented to indicate the next slice_dim.
+                    t = t._getitem_slice(slice_dim, v)
+                    slice_dim += 1
+                else:
+                    raise TypeError(f"Invalid type {type(v)} for getitem.")
+        elif isinstance(val, int):
+            t = super(Tensor, self)._getitem_index(0, val)
+        elif isinstance(val, slice):
+            # Only need to apply at the 0-th dim, e.g. a[0:10:2].
+            t = super(Tensor, self)._getitem_slice(0, val)
+        else:
+            raise TypeError(f"Invalid type {type(val)} for getitem.")
+        return t
+
     def cuda(self, device_id=0):
         """
         Returns a copy of this tensor in CUDA memory.

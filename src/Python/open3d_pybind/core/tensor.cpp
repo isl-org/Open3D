@@ -217,6 +217,22 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    // After `_getitem_index`, the number of dimensions will be reduced by 1.
+    tensor.def("_getitem_index", &Tensor::IndexSlice);
+
+    // After `_getitem_slice`, the number of dimensions remain unchanged.
+    tensor.def("_getitem_slice",
+               [](Tensor& tensor, int64_t dim, py::slice slice) {
+                   dim = WrapDim(dim, tensor.NumDims());
+
+                   size_t start, stop, step, slice_length;
+                   if (!slice.compute(tensor.GetShape()[dim], &start, &stop,
+                                      &step, &slice_length)) {
+                       utility::LogError("Pybind11 slice already set.");
+                   }
+                   return tensor.Slice(dim, start, stop, step);
+               });
+
     // Binary element-wise ops
     tensor.def("add", &Tensor::Add);
     tensor.def("add_", &Tensor::Add_);
