@@ -164,19 +164,25 @@ public:
         }
         Eigen::Vector3f toCOR = COR - cameraPos;
         float oldDistFromPlaneToCOR = toCOR.norm() - near;
-        float newDistFromPlaneToCOR = (near + oldDistFromPlaneToCOR) * std::tan(oldFOV / 2.0 * toRadians) / std::tan(newFOV / 2.0 * toRadians) - near;
+        float newDistFromPlaneToCOR =
+                (near + oldDistFromPlaneToCOR) *
+                        std::tan(oldFOV / 2.0 * toRadians) /
+                        std::tan(newFOV / 2.0 * toRadians) -
+                near;
         if (dragType == DragType::MOUSE) {
-            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR), matrixAtMouseDown_);
+            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR),
+                  matrixAtMouseDown_);
         } else {
-            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR), camera_->GetModelMatrix());
+            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR),
+                  camera_->GetModelMatrix());
         }
 
         float aspect = 1.0f;
         if (viewSize_.height > 0) {
             aspect = float(viewSize_.width) / float(viewSize_.height);
         }
-        camera_->SetProjection(newFOV, aspect,
-                               camera_->GetNear(), camera_->GetFar(),
+        camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
+                               camera_->GetFar(),
                                camera_->GetFieldOfViewType());
     }
 
@@ -199,7 +205,7 @@ public:
         }
 
         if (dragType == DragType::MOUSE) {
-            Dolly(dist, matrixAtMouseDown_); // copies the matrix
+            Dolly(dist, matrixAtMouseDown_);  // copies the matrix
         } else {
             Dolly(dist, camera_->GetModelMatrix());
         }
@@ -208,7 +214,6 @@ public:
     // Note: we pass `matrix` by value because we want to copy it,
     //       as translate() will be modifying it.
     void Dolly(float zDist, visualization::Camera::Transform matrix) {
-
         // Dolly is just moving the camera forward. Filament uses right as +x,
         // up as +y, and forward as -z (standard OpenGL coordinates). So to
         // move forward all we need to do is translate the camera matrix by
@@ -324,13 +329,11 @@ public:
             }
             case MouseEvent::WHEEL: {
                 if (e.modifiers & int(KeyModifier::SHIFT)) {
-                    Zoom(e.wheel.dy, e.wheel.isTrackpad
-                                            ? DragType::TWO_FINGER
-                                            : DragType::WHEEL);
+                    Zoom(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
+                                                        : DragType::WHEEL);
                 } else {
-                    Dolly(e.wheel.dy, e.wheel.isTrackpad
-                                            ? DragType::TWO_FINGER
-                                            : DragType::WHEEL);
+                    Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
+                                                         : DragType::WHEEL);
                 }
                 break;
             }
