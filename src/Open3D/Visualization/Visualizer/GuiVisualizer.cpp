@@ -196,7 +196,7 @@ enum MenuId {
     VIEW_POINTS,
     VIEW_WIREFRAME,
     VIEW_MESH,
-    SETTINGS_LIGHTNING,
+    SETTINGS_LIGHT,
     HELP_ABOUT,
     HELP_CONTACT
 };
@@ -222,20 +222,6 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Slider> wgtAmbientIntensity;
         std::shared_ptr<gui::ColorEdit> wgtLightColor;
     } lightSettings;
-
-    // TBD
-    //    struct LitMaterialSettings {
-    //        visualization::MaterialInstanceHandle hMaterialInstance;
-    //
-    //        std::shared_ptr<gui::Widget> wgtBase;
-    //        std::shared_ptr<gui::ColorEdit> wgtBaseColor;
-    //        std::shared_ptr<gui::Slider> wgtRoughness;
-    //        std::shared_ptr<gui::Checkbox> wgtMetallic;
-    //        std::shared_ptr<gui::Slider> wgtReflectance;
-    //        std::shared_ptr<gui::Slider> wgtClearCoat;
-    //        std::shared_ptr<gui::Slider> wgtClearCoatRoughness;
-    //        std::shared_ptr<gui::Slider> wgtAnisotropy;
-    //    } litMaterialSettings;
 };
 
 GuiVisualizer::GuiVisualizer(
@@ -272,7 +258,7 @@ GuiVisualizer::GuiVisualizer(
         helpMenu->AddItem("About", nullptr, HELP_ABOUT);
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
         auto settingsMenu = std::make_shared<gui::Menu>();
-        settingsMenu->AddItem("Lightning", nullptr, SETTINGS_LIGHTNING);
+        settingsMenu->AddItem("Light", nullptr, SETTINGS_LIGHT);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
         menu->AddMenu("View", viewMenu);
@@ -414,7 +400,7 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->AddChild(checkboxes);
 
     lightSettings.wgtIntensity = AddAttributeSlider(
-            gui::Slider::INT, 0.0, 1000000.0, lightDescription.intensity,
+            gui::Slider::INT, 0.0, 500000.0, lightDescription.intensity,
             "Directional light intensity", lightSettings.wgtBase.get());
     lightSettings.wgtIntensity->OnValueChanged =
             [this, renderScene](double newValue) {
@@ -422,7 +408,7 @@ GuiVisualizer::GuiVisualizer(
                         impl_->lightSettings.hDirectionalLight, newValue);
             };
     lightSettings.wgtAmbientIntensity = AddAttributeSlider(
-            gui::Slider::INT, 0.0, 1000000.0, kAmbientIntensity,
+            gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity,
             "Ambient light intensity", lightSettings.wgtBase.get());
     lightSettings.wgtAmbientIntensity->OnValueChanged =
             [renderScene](double newValue) {
@@ -630,7 +616,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             break;
         case VIEW_MESH:
             break;
-        case SETTINGS_LIGHTNING: {
+        case SETTINGS_LIGHT: {
             auto visibility = !impl_->lightSettings.wgtBase->IsVisible();
             impl_->lightSettings.wgtBase->SetVisible(visibility);
             break;
