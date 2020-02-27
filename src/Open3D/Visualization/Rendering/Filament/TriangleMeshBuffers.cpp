@@ -388,9 +388,10 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                 "first.");
     }
 
-    // We defaulting to have vertex color attribute for all geometries, even if a geometry doesn't have one
-    // That's all due to our default material and large variety of geometries it should support
-    const bool hasColors = true;//geometry_.HasVertexColors();
+    // We defaulting to have vertex color attribute for all geometries, even if
+    // a geometry doesn't have one That's all due to our default material and
+    // large variety of geometries it should support
+    const bool hasColors = true;  // geometry_.HasVertexColors();
     const bool hasUVs = geometry_.HasTriangleUvs();
 
     std::tuple<vbdata, ibdata> buffersData;

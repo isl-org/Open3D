@@ -137,8 +137,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
     }
 
     const size_t verticesBytesCount = nVertices * sizeof(ColoredVertex);
-    auto* vertices =
-            static_cast<ColoredVertex*>(malloc(verticesBytesCount));
+    auto* vertices = static_cast<ColoredVertex*>(malloc(verticesBytesCount));
     const ColoredVertex kDefault;
     for (size_t i = 0; i < geometry_.points_.size(); ++i) {
         ColoredVertex& element = vertices[i];

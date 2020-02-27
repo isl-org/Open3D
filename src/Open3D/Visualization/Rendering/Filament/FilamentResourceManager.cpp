@@ -562,13 +562,13 @@ void FilamentResourceManager::LoadDefaults() {
     const auto defaultSampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
-    const auto defaultColor = filament::math::float3{1.f, 1.f, 1.f};
+    const auto defaultColor = filament::math::float3{0.5f, 0.5f, 0.5f};
 
     const auto litPath = resourceRoot + "/defaultLit.filamat";
     auto litMat = LoadMaterialFromFile(litPath, engine_);
-    litMat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
+    litMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                 defaultColor);
-    litMat->setDefaultParameter("roughness", 1.f);
+    litMat->setDefaultParameter("roughness", 0.7f);
     litMat->setDefaultParameter("reflectance", 0.5f);
     litMat->setDefaultParameter("metallic", 0.f);
     litMat->setDefaultParameter("clearCoat", 0.f);
@@ -579,14 +579,14 @@ void FilamentResourceManager::LoadDefaults() {
 
     const auto unlitPath = resourceRoot + "/defaultUnlit.filamat";
     auto unlitMat = LoadMaterialFromFile(unlitPath, engine_);
-    unlitMat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
+    unlitMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                   defaultColor);
     unlitMat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultUnlit] = MakeShared(unlitMat, engine_);
 
     const auto uberPath = resourceRoot + "/ubermaterial.filamat";
     auto uberMat = LoadMaterialFromFile(uberPath, engine_);
-    uberMat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
+    uberMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                  defaultColor);
     uberMat->setDefaultParameter("diffuse", texture, defaultSampler);
     // TODO: Add some more pretty defaults

@@ -290,7 +290,7 @@ GuiVisualizer::GuiVisualizer(
 
     // Create light
     visualization::LightDescription lightDescription;
-    lightDescription.intensity = 80000;
+    lightDescription.intensity = 100000;
     lightDescription.direction = {-0.707, -.707, 0.0};
     lightDescription.customAttributes["custom_type"] = "SUN";
 
@@ -303,7 +303,7 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.hIbl =
             GetRenderer().AddIndirectLight(ResourceLoadRequest(iblPath.data()));
     scene->GetScene()->SetIndirectLight(lightSettings.hIbl);
-    const auto kAmbientIntensity = 6000;
+    const auto kAmbientIntensity = 50000;
     scene->GetScene()->SetIndirectLightIntensity(kAmbientIntensity);
 
     auto skyPath = rsrcPath + "/default_sky.ktx";
