@@ -62,6 +62,8 @@ public:
 
     Size CalcPreferredSize(const Theme &theme) const override;
 
+    void OnWillShow() override;
+
 protected:
     void OnDone();
 

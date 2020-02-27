@@ -27,6 +27,7 @@
 #include "Label.h"
 
 #include "Theme.h"
+#include "Util.h"
 
 #include <imgui.h>
 
@@ -46,8 +47,11 @@ namespace gui {
 // and https://pearsonified.com/characters-per-line/
 static const int PREFERRED_WRAP_WIDTH_EM = 35;
 
+static const Color DEFAULT_COLOR(0, 0, 0, 0);
+
 struct Label::Impl {
     std::string text;
+    Color color = DEFAULT_COLOR;
     bool isSingleLine = true;
 };
 
@@ -65,6 +69,10 @@ void Label::SetText(const char* text) {
     impl_->text = text;
     impl_->isSingleLine = !(impl_->text.find('\n') != std::string::npos);
 }
+
+Color Label::GetTextColor() const { return impl_->color; }
+
+void Label::SetTextColor(const Color& color) { impl_->color = color; }
 
 Size Label::CalcPreferredSize(const Theme& theme) const {
     auto em = theme.fontSize;
@@ -110,6 +118,10 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
+    bool isDefaultColor = (impl_->color == DEFAULT_COLOR);
+    if (!isDefaultColor) {
+        ImGui::PushStyleColor(ImGuiCol_Text, util::colorToImgui(impl_->color));
+    }
     if (impl_->isSingleLine) {
         ImGui::TextUnformatted(impl_->text.c_str());
     } else {
@@ -121,6 +133,9 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
         ImGui::PopTextWrapPos();
     }
     ImGui::PopItemWidth();
+    if (!isDefaultColor) {
+        ImGui::PopStyleColor();
+    }
     return Widget::DrawResult::NONE;
 }
 

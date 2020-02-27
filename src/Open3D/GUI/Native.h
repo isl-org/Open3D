@@ -19,13 +19,31 @@
 
 #pragma once
 
+#include "FileDialog.h"
+
+#include <string>
+#include <vector>
+
 struct SDL_Window;
 
 namespace open3d {
 namespace gui {
 
-void *GetNativeDrawable(SDL_Window *sdlWindow);
-void ShowNativeAlert(const char *message);
+void* GetNativeDrawable(SDL_Window* sdlWindow);
+void ShowNativeAlert(const char* message);
+
+#ifdef __APPLE__
+void SetNativeMenubar(void* menubar);
+#endif  // __APPLE_
+
+#if defined(__APPLE__) || defined(_WIN32)
+void ShowNativeFileDialog(
+        FileDialog::Type type,
+        const std::string& path,
+        const std::vector<std::pair<std::string, std::string>>& filters,
+        std::function<void(const char*)> onOk,
+        std::function<void()> onCancel);
+#endif  // __APPLE__ || _WIN32
 
 }  // namespace gui
 }  // namespace open3d

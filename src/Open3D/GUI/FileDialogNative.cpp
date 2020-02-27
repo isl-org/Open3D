@@ -24,48 +24,62 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Dialog.h"
+#if defined(__APPLE__)
 
-#include "Window.h"
+#include "FileDialog.h"
+
+#include "Native.h"
 
 #include <string>
+#include <vector>
 
 namespace open3d {
 namespace gui {
 
-struct Dialog::Impl {
-    std::string title;
-    Window *parent = nullptr;
+struct FileDialog::Impl {
+    FileDialog::Type type;
+    std::string path;
+    std::vector<std::pair<std::string, std::string>> filters;
+    std::function<void()> onCancel;
+    std::function<void(const char *)> onDone;
 };
 
-Dialog::Dialog(const char *title) : impl_(std::make_unique<Dialog::Impl>()) {}
-
-Dialog::~Dialog() {}
-
-Size Dialog::CalcPreferredSize(const Theme &theme) const {
-    if (GetChildren().size() == 1) {
-        auto child = GetChildren()[0];
-        return child->CalcPreferredSize(theme);
-    } else {
-        return Super::CalcPreferredSize(theme);
-    }
+FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
+    : Dialog(title), impl_(new FileDialog::Impl()) {
+    impl_->type = type;
 }
 
-void Dialog::Layout(const Theme &theme) {
-    if (GetChildren().size() == 1) {
-        auto child = GetChildren()[0];
-        child->SetFrame(GetFrame());
-        child->Layout(theme);
-    } else {
-        Super::Layout(theme);
-    }
+FileDialog::~FileDialog() {}
+
+void FileDialog::SetPath(const char *path) { impl_->path = path; }
+
+void FileDialog::AddFilter(const char *filter, const char *description) {
+    impl_->filters.push_back(
+            std::make_pair<std::string, std::string>(filter, description));
 }
 
-void Dialog::OnWillShow() {}
-
-Widget::DrawResult Dialog::Draw(const DrawContext &context) {
-    return Super::Draw(context);
+void FileDialog::SetOnCancel(std::function<void()> onCancel) {
+    impl_->onCancel = onCancel;
 }
+
+void FileDialog::SetOnDone(std::function<void(const char *)> onDone) {
+    impl_->onDone = onDone;
+}
+
+Size FileDialog::CalcPreferredSize(const Theme &theme) const {
+    return Size(0, 0);
+}
+
+void FileDialog::OnWillShow() {
+    auto onOk = [this](const char *path) { this->impl_->onDone(path); };
+    auto onCancel = [this]() { this->impl_->onCancel(); };
+    ShowNativeFileDialog(impl_->type, impl_->path, impl_->filters, onOk,
+                         onCancel);
+}
+
+void FileDialog::OnDone() {}
 
 }  // namespace gui
 }  // namespace open3d
+
+#endif  // __APPLE__

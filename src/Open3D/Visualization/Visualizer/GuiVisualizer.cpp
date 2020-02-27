@@ -49,6 +49,8 @@
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
+#define LOAD_IN_NEW_WINDOW 0
+
 namespace open3d {
 namespace visualization {
 
@@ -160,6 +162,30 @@ std::shared_ptr<gui::Slider> AddAttributeSlider(const gui::Slider::Type type,
     return slider;
 }
 
+class DrawTimeLabel : public gui::Label {
+    using Super = Label;
+
+public:
+    DrawTimeLabel(gui::Window *w) : Label("0.0 ms") { window_ = w; }
+
+    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
+        auto h = Super::CalcPreferredSize(theme).height;
+        return gui::Size(theme.fontSize * 5, h);
+    }
+
+    DrawResult Draw(const gui::DrawContext &context) override {
+        char text[64];
+        double ms = window_->GetLastFrameTimeSeconds() * 1000.0;
+        snprintf(text, sizeof(text) - 1, "%.1f ms", ms);
+        SetText(text);
+
+        return Super::Draw(context);
+    }
+
+private:
+    gui::Window *window_;
+};
+
 }  // namespace
 
 enum MenuId {
@@ -170,7 +196,6 @@ enum MenuId {
     VIEW_POINTS,
     VIEW_WIREFRAME,
     VIEW_MESH,
-    SETTINGS_DEFAULT_MATERIAL,
     SETTINGS_LIGHTNING,
     HELP_ABOUT,
     HELP_CONTACT
@@ -180,7 +205,7 @@ struct GuiVisualizer::Impl {
     std::vector<visualization::GeometryHandle> geometryHandles;
 
     std::shared_ptr<gui::SceneWidget> scene;
-    std::shared_ptr<gui::Horiz> bottomBar;
+    std::shared_ptr<gui::Horiz> drawTime;
 
     struct LightSettings {
         visualization::IndirectLightHandle hIbl;
@@ -226,6 +251,36 @@ GuiVisualizer::GuiVisualizer(
     auto &app = gui::Application::GetInstance();
     auto &theme = GetTheme();
 
+    // Create menu
+    if (!gui::Application::GetInstance().GetMenubar()) {
+        auto fileMenu = std::make_shared<gui::Menu>();
+        fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
+        fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
+        fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
+        fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
+        fileMenu->SetEnabled(FILE_EXPORT_DEPTH, false);
+        fileMenu->AddSeparator();
+        fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
+        auto viewMenu = std::make_shared<gui::Menu>();
+        viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
+        viewMenu->SetEnabled(VIEW_POINTS, false);
+        viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
+        viewMenu->SetEnabled(VIEW_WIREFRAME, false);
+        viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
+        viewMenu->SetEnabled(VIEW_MESH, false);
+        auto helpMenu = std::make_shared<gui::Menu>();
+        helpMenu->AddItem("About", nullptr, HELP_ABOUT);
+        helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
+        auto settingsMenu = std::make_shared<gui::Menu>();
+        settingsMenu->AddItem("Lightning", nullptr, SETTINGS_LIGHTNING);
+        auto menu = std::make_shared<gui::Menu>();
+        menu->AddMenu("File", fileMenu);
+        menu->AddMenu("View", viewMenu);
+        menu->AddMenu("Settings", settingsMenu);
+        menu->AddMenu("Help", helpMenu);
+        gui::Application::GetInstance().SetMenubar(menu);
+    }
+
     // Create scene
     auto sceneId = GetRenderer().CreateScene();
     auto scene = std::make_shared<gui::SceneWidget>(
@@ -261,30 +316,13 @@ GuiVisualizer::GuiVisualizer(
     // Setup UI
     int spacing = std::max(1, int(std::ceil(0.25 * theme.fontSize)));
 
-    auto buttonTop = std::make_shared<gui::Button>("Top");
-    buttonTop->SetOnClicked([scene]() {
-        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Y);
-    });
-    auto buttonFront = std::make_shared<gui::Button>("Front");
-    buttonFront->SetOnClicked([scene]() {
-        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Z);
-    });
-    auto buttonSide = std::make_shared<gui::Button>("Side");
-    buttonSide->SetOnClicked([scene]() {
-        scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_X);
-    });
-    auto bottomBar =
-            std::make_shared<gui::Horiz>(spacing, gui::Margins(0, spacing));
-    impl_->bottomBar = bottomBar;
-    bottomBar->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
-    bottomBar->AddChild(gui::Horiz::MakeStretch());
-    bottomBar->AddChild(buttonTop);
-    bottomBar->AddChild(buttonFront);
-    bottomBar->AddChild(buttonSide);
-    bottomBar->AddChild(gui::Horiz::MakeStretch());
+    auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
+    drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
+    impl_->drawTime = std::make_shared<gui::Horiz>(0, gui::Margins(spacing, 0));
+    impl_->drawTime->SetBackgroundColor(gui::Color(0, 0, 0, 0));
+    impl_->drawTime->AddChild(drawTimeLabel);
 
     AddChild(scene);
-    AddChild(bottomBar);
 
     auto renderScene = scene->GetScene();
 
@@ -407,41 +445,13 @@ GuiVisualizer::GuiVisualizer(
     AddChild(lightSettings.wgtBase);
     lightSettings.wgtBase->SetVisible(false);
 
-    // Create menu
-    auto fileMenu = std::make_shared<gui::Menu>();
-    fileMenu->AddItem("Open Geometry...", "Ctrl-O", FILE_OPEN);
-    fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
-    fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
-    fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
-    fileMenu->SetEnabled(FILE_EXPORT_DEPTH, false);
-    fileMenu->AddSeparator();
-    fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
-    auto viewMenu = std::make_shared<gui::Menu>();
-    viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
-    viewMenu->SetEnabled(VIEW_POINTS, false);
-    viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
-    viewMenu->SetEnabled(VIEW_WIREFRAME, false);
-    viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
-    viewMenu->SetEnabled(VIEW_MESH, false);
-    auto settingsMenu = std::make_shared<gui::Menu>();
-    settingsMenu->AddItem("Default material", nullptr,
-                          SETTINGS_DEFAULT_MATERIAL);
-    settingsMenu->AddItem("Lightning", nullptr, SETTINGS_LIGHTNING);
-    auto helpMenu = std::make_shared<gui::Menu>();
-    helpMenu->AddItem("About", nullptr, HELP_ABOUT);
-    helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
-    auto menu = std::make_shared<gui::Menu>();
-    menu->AddMenu("File", fileMenu);
-    menu->AddMenu("View", viewMenu);
-    menu->AddMenu("Settings", settingsMenu);
-    menu->AddMenu("Help", helpMenu);
-    this->SetMenubar(menu);
+    AddChild(impl_->drawTime);
 }
 
 GuiVisualizer::~GuiVisualizer() {}
 
 void GuiVisualizer::SetTitle(const std::string &title) {
-    //    Super::SetTitle(title);
+    Super::SetTitle(title.c_str());
 }
 
 void GuiVisualizer::SetGeometry(
@@ -487,10 +497,10 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto r = GetContentRect();
     impl_->scene->SetFrame(r);
 
-    auto bottomHeight = impl_->bottomBar->CalcPreferredSize(theme).height;
-    gui::Rect bottomRect(0, r.GetBottom() - bottomHeight, r.width,
-                         bottomHeight);
-    impl_->bottomBar->SetFrame(bottomRect);
+    const auto pref = impl_->drawTime->CalcPreferredSize(theme);
+    impl_->drawTime->SetFrame(gui::Rect(0, r.GetBottom() - pref.height,
+                                        5 * theme.fontSize, pref.height));
+    impl_->drawTime->Layout(theme);
 
     const auto kLightSettignsWidth = 250;
     auto lightSettingsSize =
@@ -588,18 +598,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                auto frame = this->GetFrame();
-                auto title = std::string("Open3D - ") + path;
-                std::vector<std::shared_ptr<const geometry::Geometry>> nothing;
-                auto vis = std::make_shared<GuiVisualizer>(
-                        nothing, title.c_str(), frame.width, frame.height,
-                        frame.x + 20, frame.y + 20);
-                gui::Application::GetInstance().AddWindow(vis);
-                if (!vis->LoadGeometry(path)) {
-                    auto err = std::string("Error reading geometry file '") +
-                               path + "'";
-                    vis->ShowMessageBox("Error loading geometry", err.c_str());
-                }
+                OnDragDropped(path);
             });
             ShowDialog(dlg);
             break;
@@ -631,8 +630,6 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             break;
         case VIEW_MESH:
             break;
-        case SETTINGS_DEFAULT_MATERIAL:
-            break;
         case SETTINGS_LIGHTNING: {
             auto visibility = !impl_->lightSettings.wgtBase->IsVisible();
             impl_->lightSettings.wgtBase->SetVisible(visibility);
@@ -648,6 +645,25 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             ShowDialog(dlg);
             break;
         }
+    }
+}
+
+void GuiVisualizer::OnDragDropped(const char *path) {
+    auto title = std::string("Open3D - ") + path;
+#if LOAD_IN_NEW_WINDOW
+    auto frame = this->GetFrame();
+    std::vector<std::shared_ptr<const geometry::Geometry>> nothing;
+    auto vis = std::make_shared<GuiVisualizer>(nothing, title.c_str(),
+                                               frame.width, frame.height,
+                                               frame.x + 20, frame.y + 20);
+    gui::Application::GetInstance().AddWindow(vis);
+#else
+    this->SetTitle(title);
+    auto vis = this;
+#endif  // LOAD_IN_NEW_WINDOW
+    if (!vis->LoadGeometry(path)) {
+        auto err = std::string("Error reading geometry file '") + path + "'";
+        vis->ShowMessageBox("Error loading geometry", err.c_str());
     }
 }
 
