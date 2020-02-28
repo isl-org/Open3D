@@ -163,7 +163,7 @@ if __name__ == "__main__":
             if collision:
                 mesh0.paint_uniform_color((1, 0, 0))
                 dirs[idx0] *= -1
-        vis.update_geometry()
+            vis.update_geometry(mesh0)
         vis.poll_events()
         vis.update_renderer()
         time.sleep(0.05)
