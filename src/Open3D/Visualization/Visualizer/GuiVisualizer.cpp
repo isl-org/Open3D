@@ -475,7 +475,9 @@ void GuiVisualizer::SetGeometry(
             case geometry::Geometry::GeometryType::PointCloud: {
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
-                if (false == pcd->HasColors()) {
+                // Without normals we won't get proper shading or normals
+                // visualization So, switching to depth map mode
+                if (false == pcd->HasNormals()) {
                     renderMode = visualization::View::Mode::Depth;
                     SetViewMenuModeItemChecked(*impl_->viewMenu,
                                                VIEW_DEPTH_MODE);
