@@ -145,20 +145,13 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
-std::shared_ptr<gui::Slider> AddAttributeSlider(const gui::Slider::Type type,
-                                                const double min,
-                                                const double max,
-                                                const double value,
-                                                const char *caption,
-                                                gui::Widget *parent) {
+std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
+                                        const double min,
+                                        const double max,
+                                        const double value) {
     auto slider = std::make_shared<gui::Slider>(type);
     slider->SetLimits(min, max);
     slider->SetValue(value);
-    parent->AddChild(slider);
-
-    auto lblCaption = std::make_shared<gui::Label>(caption);
-    parent->AddChild(lblCaption);
-
     return slider;
 }
 
@@ -313,13 +306,12 @@ GuiVisualizer::GuiVisualizer(
     auto renderScene = scene->GetScene();
 
     // Add light settings widget
-    lightSettings.wgtBase = std::make_shared<gui::Vert>();
-    lightSettings.wgtBase->SetFrame({0, 0, 250, 44});
+    const int separationHeight = std::ceil(em);
+    const int lm = std::ceil(0.5 * em);
+    const int gridSpacing = std::ceil(0.25 * em);
+    lightSettings.wgtBase = std::make_shared<gui::Vert>(0, gui::Margins(lm));
 
-    const int lm = std::ceil(0.25 * em);
-    auto loadButtons =
-            std::make_shared<gui::Horiz>(em, gui::Margins{lm, lm, lm, lm});
-    lightSettings.wgtLoadAmbient = std::make_shared<gui::Button>("Load ibl");
+    lightSettings.wgtLoadAmbient = std::make_shared<gui::Button>("Load IBL");
     lightSettings.wgtLoadAmbient->SetOnClicked([this, renderScene]() {
         auto dlg = std::make_shared<gui::FileDialog>(
                 gui::FileDialog::Type::OPEN, "Open IBL", GetTheme());
@@ -340,7 +332,6 @@ GuiVisualizer::GuiVisualizer(
         });
         ShowDialog(dlg);
     });
-    loadButtons->AddChild(lightSettings.wgtLoadAmbient);
 
     lightSettings.wgtLoadSky = std::make_shared<gui::Button>("Load skybox");
     lightSettings.wgtLoadSky->SetOnClicked([this, renderScene]() {
@@ -359,14 +350,19 @@ GuiVisualizer::GuiVisualizer(
         });
         ShowDialog(dlg);
     });
+
+    auto loadButtons = std::make_shared<gui::Horiz>(spacing, gui::Margins(0));
+    loadButtons->AddChild(gui::Horiz::MakeStretch());
+    loadButtons->AddChild(lightSettings.wgtLoadAmbient);
     loadButtons->AddChild(lightSettings.wgtLoadSky);
+    loadButtons->AddChild(gui::Horiz::MakeStretch());
     lightSettings.wgtBase->AddChild(loadButtons);
 
-    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(int(em / 2.f)));
-    lightSettings.wgtBase->AddChild(
-            std::make_shared<gui::Label>("Light switches:"));
-    auto checkboxes = std::make_shared<gui::Horiz>(
-            0, gui::Margins{0, 0, 0, int(em / 2.f)});
+    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+
+    // ... lighting on/off
+    lightSettings.wgtBase->AddChild(std::make_shared<gui::Label>("> Light sources"));
+    auto checkboxes = std::make_shared<gui::Horiz>();
     lightSettings.wgtAmbientEnabled =
             std::make_shared<gui::Checkbox>("Ambient");
     lightSettings.wgtAmbientEnabled->SetChecked(true);
@@ -401,20 +397,31 @@ GuiVisualizer::GuiVisualizer(
     checkboxes->AddChild(lightSettings.wgtDirectionalEnabled);
     lightSettings.wgtBase->AddChild(checkboxes);
 
-    lightSettings.wgtIntensity = AddAttributeSlider(
-            gui::Slider::INT, 0.0, 500000.0, lightDescription.intensity,
-            "Directional light intensity", lightSettings.wgtBase.get());
+    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+
+    // ... ambient light (IBL)
+    lightSettings.wgtAmbientIntensity = MakeSlider(
+          gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity);
+    lightSettings.wgtAmbientIntensity->OnValueChanged =
+          [renderScene](double newValue) {
+              renderScene->SetIndirectLightIntensity(newValue);
+          };
+
+    auto ambientLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    ambientLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
+    ambientLayout->AddChild(lightSettings.wgtAmbientIntensity);
+
+    lightSettings.wgtBase->AddChild(std::make_shared<gui::Label>("> Ambient"));
+    lightSettings.wgtBase->AddChild(ambientLayout);
+    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+
+    // ... directional light (sun)
+    lightSettings.wgtIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
+                                            lightDescription.intensity);
     lightSettings.wgtIntensity->OnValueChanged =
             [this, renderScene](double newValue) {
                 renderScene->SetLightIntensity(
                         impl_->lightSettings.hDirectionalLight, newValue);
-            };
-    lightSettings.wgtAmbientIntensity = AddAttributeSlider(
-            gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity,
-            "Ambient light intensity", lightSettings.wgtBase.get());
-    lightSettings.wgtAmbientIntensity->OnValueChanged =
-            [renderScene](double newValue) {
-                renderScene->SetIndirectLightIntensity(newValue);
             };
     lightSettings.wgtLightColor = std::make_shared<gui::ColorEdit>();
     lightSettings.wgtLightColor->SetValue({1, 1, 1});
@@ -425,12 +432,18 @@ GuiVisualizer::GuiVisualizer(
                         {newColor.GetRed(), newColor.GetGreen(),
                          newColor.GetBlue()});
             };
-    lightSettings.wgtBase->AddChild(lightSettings.wgtLightColor);
-    auto lblLightColor =
-            std::make_shared<gui::Label>("Directional light color");
 
-    lightSettings.wgtBase->AddChild(lblLightColor);
+    auto sunLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    sunLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
+    sunLayout->AddChild(lightSettings.wgtIntensity);
+    sunLayout->AddChild(std::make_shared<gui::Label>("Color"));
+    sunLayout->AddChild(lightSettings.wgtLightColor);
+
+    lightSettings.wgtBase->AddChild(std::make_shared<gui::Label>("> Sun (Directional light)"));
+    lightSettings.wgtBase->AddChild(sunLayout);
+
     AddChild(lightSettings.wgtBase);
+
     lightSettings.wgtBase->SetVisible(false);
 
     AddChild(impl_->drawTime);
@@ -491,11 +504,11 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
             gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
     impl_->drawTime->Layout(theme);
 
-    const auto kLightSettignsWidth = 16 * em;
+    const auto kLightSettingsWidth = 16 * em;
     auto lightSettingsSize =
             impl_->lightSettings.wgtBase->CalcPreferredSize(theme);
-    gui::Rect lightSettingsRect(r.width - kLightSettignsWidth, r.y,
-                                kLightSettignsWidth, lightSettingsSize.height);
+    gui::Rect lightSettingsRect(r.width - kLightSettingsWidth, r.y,
+                                kLightSettingsWidth, lightSettingsSize.height);
     impl_->lightSettings.wgtBase->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);
