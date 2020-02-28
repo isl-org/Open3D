@@ -76,3 +76,7 @@ https://github.com/pybind/pybind11
 PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
+--------------------------------------------------------------------------------
+CUTLASS                     1.3.2                                    BSD license
+CUDA Templates for Linear Algebra Subroutines
+https://github.com/NVIDIA/cutlass

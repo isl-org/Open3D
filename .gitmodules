@@ -31,3 +31,6 @@
 [submodule "3rdparty/PoissonRecon/Open3D-PoissonRecon"]
 	path = 3rdparty/PoissonRecon
 	url = https://github.com/intel-isl/Open3D-PoissonRecon.git
+[submodule "3rdparty/cutlass"]
+	path = 3rdparty/cutlass
+	url = https://github.com/NVIDIA/cutlass
