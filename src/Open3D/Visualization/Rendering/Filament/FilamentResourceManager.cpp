@@ -617,7 +617,8 @@ void FilamentResourceManager::LoadDefaults() {
             MakeShared(normalsMat->createInstance(), engine_);
 
     const auto colorMapMatPath = resourceRoot + "/colorMap.filamat";
-    const auto hColorMapMat = CreateMaterial(ResourceLoadRequest(colorMapMatPath.data()));
+    const auto hColorMapMat =
+            CreateMaterial(ResourceLoadRequest(colorMapMatPath.data()));
     auto colorMapMat = materials_[hColorMapMat];
     auto colorMapMatInst = colorMapMat->createInstance();
     colorMapMatInst->setParameter("colorMap", colorMap, defaultSampler);

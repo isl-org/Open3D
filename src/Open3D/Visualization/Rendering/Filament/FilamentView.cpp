@@ -190,7 +190,8 @@ void FilamentView::PreRender() {
     if (mode_ == Mode::Depth) {
         materialHandle = FilamentResourceManager::kDepthMaterial;
         // FIXME: Refresh parameters only then something ACTUALLY changed
-        selectedMaterial = resourceManager_.GetMaterialInstance(materialHandle).lock();
+        selectedMaterial =
+                resourceManager_.GetMaterialInstance(materialHandle).lock();
         if (selectedMaterial) {
             const auto f = camera_->GetNativeCamera()->getCullingFar();
             const auto n = camera_->GetNativeCamera()->getNear();
@@ -202,6 +203,8 @@ void FilamentView::PreRender() {
         }
     } else if (mode_ == Mode::Normals) {
         materialHandle = FilamentResourceManager::kNormalsMaterial;
+        selectedMaterial =
+                resourceManager_.GetMaterialInstance(materialHandle).lock();
     } else if (mode_ >= Mode::ColorMapX) {
         materialHandle = FilamentResourceManager::kColorMapMaterial;
 
@@ -221,7 +224,8 @@ void FilamentView::PreRender() {
                 break;
         }
 
-        selectedMaterial = resourceManager_.GetMaterialInstance(materialHandle).lock();
+        selectedMaterial =
+                resourceManager_.GetMaterialInstance(materialHandle).lock();
         if (selectedMaterial) {
             FilamentMaterialModifier(selectedMaterial, materialHandle)
                     .SetParameter("coordinateIndex", coordinateIndex)
@@ -237,19 +241,21 @@ void FilamentView::PreRender() {
                 if (selectedMaterial) {
                     matInst = selectedMaterial;
 
-                    if (mode_ == Mode::ColorMapZ) {
+                    if (mode_ >= Mode::ColorMapX) {
                         auto bbox = scene_->GetEntityBoundingBox(pair.first);
                         auto bboxMin = bbox.first - bbox.second;
                         auto bboxMax = bbox.first + bbox.second;
 
-                        FilamentMaterialModifier(selectedMaterial, materialHandle)
+                        FilamentMaterialModifier(selectedMaterial,
+                                                 materialHandle)
                                 .SetParameter("bboxMin", bboxMin)
                                 .SetParameter("bboxMax", bboxMax)
                                 .Finish();
                     }
                 } else {
-                    matInst = resourceManager_.GetMaterialInstance(
-                            entity.material).lock();
+                    matInst = resourceManager_
+                                      .GetMaterialInstance(entity.material)
+                                      .lock();
                 }
 
                 filament::RenderableManager::Instance inst =

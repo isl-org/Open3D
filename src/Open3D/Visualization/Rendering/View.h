@@ -48,11 +48,15 @@ public:
         All = Color | Depth | Stencil
     };
 
-    enum class Mode : std::uint8_t { Color = 0u, Depth, Normals,
-            // This three modes always stay at end
-            ColorMapX,
-            ColorMapY,
-            ColorMapZ };
+    enum class Mode : std::uint8_t {
+        Color = 0u,
+        Depth,
+        Normals,
+        // This three modes always stay at end
+        ColorMapX,
+        ColorMapY,
+        ColorMapZ
+    };
 
     virtual ~View() {}
 
