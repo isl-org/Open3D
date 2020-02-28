@@ -128,14 +128,14 @@ installed to a system location (sudo required). For more customizations of the
 build, please see :ref:`compilation_options`.
 
 .. note::
-    When building from source, ``-DGLIBCXX_USE_CXX11_ABI=ON`` is set by default.
-    Some pre-installed dependencies such as ``libjsoncpp-dev`` on newer Ubuntu
-    are only compatible with the newer CXX11 ABI.
+    Importing Python libraries compiled with different CXX ABI may cause segfaults
+    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
+    and TensorFlow Python releases use the older CXX ABI; while when they are
+    compiled from source, newer ABI is enabled by default.
 
-    When releasing Open3D as a Python package on Pip or Conda, we set
-    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies
-    (like ``jasoncpp``) from source, in order to ensure compatibility with
-    PyTorch and TensorFlow Python releases.
+    When releasing Open3D as a Python package, we set
+    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
+    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
 
     If you build PyTorch or TensorFlow from source or if you run into ABI
     compatibility issues with them, please:
@@ -150,8 +150,15 @@ build, please see :ref:`compilation_options`.
            print(tensorflow.__cxx11_abi_flag__)
 
     2. Configure Open3D to compile all dependencies from source
-       (e.g. ``-DBUILD_JSONCPP=ON``), with the corresponding ABI version obtained
-       from step 1.
+       with the corresponding ABI version obtained from step 1.
+
+    After installation of the Python package, you can check Open3D ABI version
+    with:
+
+    .. code-block:: python
+
+        import open3d
+        print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
 
 .. _compilation_ubuntu_build:
 
@@ -414,7 +421,6 @@ The following is an example of forcing building dependencies from source code:
     cmake -DBUILD_EIGEN3=ON  \
           -DBUILD_GLEW=ON    \
           -DBUILD_GLFW=ON    \
-          -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
           ..
 
