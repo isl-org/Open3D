@@ -57,7 +57,7 @@ using ResourceManager = open3d::visualization::FilamentResourceManager;
 const std::unordered_map<GeometryType, MaterialHandle> kDefaultMaterials = {
         {GeometryType::TriangleMesh, ResourceManager::kDefaultLit},
         {GeometryType::LineSet, ResourceManager::kDefaultUnlit},
-        {GeometryType::PointCloud, ResourceManager::kDefaultUnlit}};
+        {GeometryType::PointCloud, ResourceManager::kDefaultLit}};
 }  // namespace defaults_mapping
 
 namespace converters {

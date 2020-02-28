@@ -45,7 +45,7 @@ namespace visualization {
 namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
+    math::float4 color = {1.0f, 1.0f, 1.0f, 1.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
 
     static size_t GetPositionOffset() {
@@ -87,7 +87,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     const size_t nVertices = geometry_.points_.size();
 
-    // We use CUSTOM0 for tangents instead of TANGENTS attribute
+    // We use CUSTOM0 for tangents along with TANGENTS attribute
     // because Filament would optimize out anything about normals and lightning
     // from unlit materials. But our shader for normals visualizing is unlit, so
     // we need to use this workaround.
@@ -102,6 +102,11 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                  .attribute(VertexAttribute::COLOR, 0,
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetColorOffset(),
+                                            sizeof(ColoredVertex))
+                                 .normalized(VertexAttribute::TANGENTS)
+                                 .attribute(VertexAttribute::TANGENTS, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            ColoredVertex::GetTangentOffset(),
                                             sizeof(ColoredVertex))
                                  .attribute(VertexAttribute::CUSTOM0, 0,
                                             VertexBuffer::AttributeType::FLOAT4,

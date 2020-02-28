@@ -11,11 +11,19 @@ material {
         { type : float,     name : clearCoat },
         { type : float,     name : clearCoatRoughness },
         { type : float,     name : anisotropy },
-        { type : sampler2d, name : texture }
+        { type : sampler2d, name : texture },
+
+        { type : float,     name : pointSize }
     ],
     requires : [
         uv0, color
     ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
 }
 
 fragment {
