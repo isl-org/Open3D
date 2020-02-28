@@ -86,6 +86,10 @@ public:
     void SetLightIntensity(const LightHandle& id, float intensity) override;
     void SetLightColor(const LightHandle& id,
                        const Eigen::Vector3f& color) override;
+    void SetLightDirection(const LightHandle& id,
+                           const Eigen::Vector3f& pos) override;
+    void SetLightPosition(const LightHandle& id,
+                          const Eigen::Vector3f& pos) override;
     void RemoveLight(const LightHandle& id) override;
 
     void SetIndirectLight(const IndirectLightHandle& id) override;

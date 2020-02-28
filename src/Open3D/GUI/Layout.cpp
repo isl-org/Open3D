@@ -344,6 +344,7 @@ void VGrid::Layout(const Theme& theme) {
     // Shrink columns that are too big.
     // TODO: right now this only handles DIM_GROW columns; extend to
     //       proportionally shrink columns that together add up to too much.
+    //       Probably should figure out how to reuse for other layouts.
     auto &frame = GetFrame();
     const int layoutWidth = frame.width - impl_->margins.left - impl_->margins.right;
     int wantedWidth = 0;

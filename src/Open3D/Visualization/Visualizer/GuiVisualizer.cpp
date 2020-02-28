@@ -179,6 +179,19 @@ private:
     gui::Window *window_;
 };
 
+class SmallButton : public gui::Button {
+    using Super = Button;
+
+public:
+    SmallButton(const char* title) : Button(title) {}
+
+    gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
+        auto em = theme.fontSize;
+        auto size = Super::CalcPreferredSize(theme);
+        return gui::Size(size.width - em, em);
+    }
+};
+
 }  // namespace
 
 enum MenuId {
@@ -211,9 +224,15 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
         std::shared_ptr<gui::Checkbox> wgtSkyEnabled;
         std::shared_ptr<gui::Checkbox> wgtDirectionalEnabled;
-        std::shared_ptr<gui::Slider> wgtIntensity;
         std::shared_ptr<gui::Slider> wgtAmbientIntensity;
-        std::shared_ptr<gui::ColorEdit> wgtLightColor;
+        std::shared_ptr<gui::Slider> wgtSunIntensity;
+        std::shared_ptr<gui::Button> wgtSunDirMinusX;
+        std::shared_ptr<gui::Button> wgtSunDirPlusX;
+        std::shared_ptr<gui::Button> wgtSunDirMinusY;
+        std::shared_ptr<gui::Button> wgtSunDirPlusY;
+        std::shared_ptr<gui::Button> wgtSunDirMinusZ;
+        std::shared_ptr<gui::Button> wgtSunDirPlusZ;
+        std::shared_ptr<gui::ColorEdit> wgtSunColor;
     } lightSettings;
 };
 
@@ -416,16 +435,73 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... directional light (sun)
-    lightSettings.wgtIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
-                                            lightDescription.intensity);
-    lightSettings.wgtIntensity->OnValueChanged =
+    lightSettings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0,
+                                               500000.0,
+                                               lightDescription.intensity);
+    lightSettings.wgtSunIntensity->OnValueChanged =
             [this, renderScene](double newValue) {
                 renderScene->SetLightIntensity(
                         impl_->lightSettings.hDirectionalLight, newValue);
             };
-    lightSettings.wgtLightColor = std::make_shared<gui::ColorEdit>();
-    lightSettings.wgtLightColor->SetValue({1, 1, 1});
-    lightSettings.wgtLightColor->OnValueChanged =
+
+    lightSettings.wgtSunDirMinusX = std::make_shared<SmallButton>("-X");
+    lightSettings.wgtSunDirMinusX->SetOnClicked(
+            [this, renderScene]() {
+                renderScene->SetLightDirection(
+                        impl_->lightSettings.hDirectionalLight,
+                        {1.0f, 0.0f, 0.0f});
+            });
+    lightSettings.wgtSunDirPlusX = std::make_shared<SmallButton>("+X");
+    lightSettings.wgtSunDirPlusX->SetOnClicked(
+            [this, renderScene]() {
+                renderScene->SetLightDirection(
+                        impl_->lightSettings.hDirectionalLight,
+                        {-1.0f, 0.0f, 0.0f});
+            });
+    lightSettings.wgtSunDirMinusY = std::make_shared<SmallButton>("-Y");
+    lightSettings.wgtSunDirMinusY->SetOnClicked(
+            [this, renderScene]() {
+                renderScene->SetLightDirection(
+                        impl_->lightSettings.hDirectionalLight,
+                        {0.0f, 1.0f, 0.0f});
+            });
+    lightSettings.wgtSunDirPlusY = std::make_shared<SmallButton>("+Y");
+    lightSettings.wgtSunDirPlusY->SetOnClicked(
+            [this, renderScene]() {
+                renderScene->SetLightDirection(
+                        impl_->lightSettings.hDirectionalLight,
+                        {0.0f, -1.0f, 0.0f});
+            });
+    lightSettings.wgtSunDirMinusZ = std::make_shared<SmallButton>("-Z");
+    lightSettings.wgtSunDirMinusZ->SetOnClicked(
+            [this, renderScene]() {
+                renderScene->SetLightDirection(
+                        impl_->lightSettings.hDirectionalLight,
+                        {0.0f, 0.0f, 1.0f});
+            });
+    lightSettings.wgtSunDirPlusZ = std::make_shared<SmallButton>("+Z");
+    lightSettings.wgtSunDirPlusZ->SetOnClicked(
+            [this, renderScene]() {
+                renderScene->SetLightDirection(
+                        impl_->lightSettings.hDirectionalLight,
+                        {0.0f, 0.0f, -1.0f});
+            });
+    auto sunDirLayout = std::make_shared<gui::Horiz>(gridSpacing);
+    sunDirLayout->AddChild(lightSettings.wgtSunDirMinusX);
+    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
+    sunDirLayout->AddChild(lightSettings.wgtSunDirPlusX);
+    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
+    sunDirLayout->AddChild(lightSettings.wgtSunDirMinusY);
+    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
+    sunDirLayout->AddChild(lightSettings.wgtSunDirPlusY);
+    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
+    sunDirLayout->AddChild(lightSettings.wgtSunDirMinusZ);
+    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
+    sunDirLayout->AddChild(lightSettings.wgtSunDirPlusZ);
+
+    lightSettings.wgtSunColor = std::make_shared<gui::ColorEdit>();
+    lightSettings.wgtSunColor->SetValue({1, 1, 1});
+    lightSettings.wgtSunColor->OnValueChanged =
             [this, renderScene](const gui::Color &newColor) {
                 renderScene->SetLightColor(
                         impl_->lightSettings.hDirectionalLight,
@@ -435,9 +511,11 @@ GuiVisualizer::GuiVisualizer(
 
     auto sunLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     sunLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
-    sunLayout->AddChild(lightSettings.wgtIntensity);
+    sunLayout->AddChild(lightSettings.wgtSunIntensity);
+    sunLayout->AddChild(std::make_shared<gui::Label>("Position"));
+    sunLayout->AddChild(sunDirLayout);
     sunLayout->AddChild(std::make_shared<gui::Label>("Color"));
-    sunLayout->AddChild(lightSettings.wgtLightColor);
+    sunLayout->AddChild(lightSettings.wgtSunColor);
 
     lightSettings.wgtBase->AddChild(std::make_shared<gui::Label>("> Sun (Directional light)"));
     lightSettings.wgtBase->AddChild(sunLayout);
@@ -504,7 +582,7 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
             gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
     impl_->drawTime->Layout(theme);
 
-    const auto kLightSettingsWidth = 16 * em;
+    const auto kLightSettingsWidth = 18 * em;
     auto lightSettingsSize =
             impl_->lightSettings.wgtBase->CalcPreferredSize(theme);
     gui::Rect lightSettingsRect(r.width - kLightSettingsWidth, r.y,

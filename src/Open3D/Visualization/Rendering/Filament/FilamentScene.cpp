@@ -398,6 +398,32 @@ void FilamentScene::SetLightColor(const LightHandle& id,
     }
 }
 
+void FilamentScene::SetLightDirection(const LightHandle& id,
+                                      const Eigen::Vector3f& dir) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
+        if (lightManager.isDirectional(inst)) {
+            lightManager.setDirection(inst, {dir.x(), dir.y(), dir.z()});
+        }
+    }
+}
+
+void FilamentScene::SetLightPosition(const LightHandle& id,
+                                     const Eigen::Vector3f& pos) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
+        if (!lightManager.isDirectional(inst)) {
+            lightManager.setPosition(inst, {pos.x(), pos.y(), pos.z()});
+        }
+    }
+}
+
 void FilamentScene::RemoveLight(const LightHandle& id) { RemoveEntity(id); }
 
 void FilamentScene::SetIndirectLight(const IndirectLightHandle& id) {
