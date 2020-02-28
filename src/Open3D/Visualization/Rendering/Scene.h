@@ -83,6 +83,10 @@ public:
     virtual void SetLightIntensity(const LightHandle& id, float intensity) = 0;
     virtual void SetLightColor(const LightHandle& id,
                                const Eigen::Vector3f& color) = 0;
+    virtual void SetLightDirection(const LightHandle& id,
+                                   const Eigen::Vector3f& pos) = 0;
+    virtual void SetLightPosition(const LightHandle& id,
+                                  const Eigen::Vector3f& pos) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
 
     // Passing empty id disables indirect lightning

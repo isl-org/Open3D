@@ -194,7 +194,8 @@ void Layout1D::Layout(const Theme& theme) {
         }
     }
     int frameSize = (impl_->dir == VERT ? frame.height : frame.width);
-    auto totalExtra = frameSize - total - impl_->spacing * (major.size() - 1);
+    auto totalExtra =
+            frameSize - total - impl_->spacing * int(major.size() - 1);
     if (nStretch > 0 && frameSize > total) {
         auto stretch = totalExtra / nStretch;
         auto leftoverStretch = totalExtra - stretch * nStretch;
@@ -341,9 +342,40 @@ void VGrid::Layout(const Theme& theme) {
     auto columns = calcColumns(impl_->nCols, GetChildren());
     auto columnSizes = calcColumnSizes(columns, theme);
 
-    int x = GetFrame().GetLeft() + impl_->margins.left;
+    // Shrink columns that are too big.
+    // TODO: right now this only handles DIM_GROW columns; extend to
+    //       proportionally shrink columns that together add up to too much.
+    //       Probably should figure out how to reuse for other layouts.
+    auto& frame = GetFrame();
+    const int layoutWidth =
+            frame.width - impl_->margins.left - impl_->margins.right;
+    int wantedWidth = 0;
+    int totalNotGrowingWidth = 0;
+    int nGrowing = 0;
+    for (auto& sz : columnSizes) {
+        wantedWidth += sz.width;
+        if (sz.width < DIM_GROW) {
+            totalNotGrowingWidth += sz.width;
+        } else {
+            nGrowing += 1;
+        }
+    }
+    if (wantedWidth > layoutWidth) {
+        int growingSize = (layoutWidth - totalNotGrowingWidth) / nGrowing;
+        if (growingSize < 0) {
+            growingSize = layoutWidth / nGrowing;
+        }
+        for (auto& sz : columnSizes) {
+            if (sz.width >= DIM_GROW) {
+                sz.width = growingSize;
+            }
+        }
+    }
+
+    // Do the layout
+    int x = frame.GetLeft() + impl_->margins.left;
     for (size_t i = 0; i < columns.size(); ++i) {
-        int y = GetFrame().GetTop() + impl_->margins.top;
+        int y = frame.GetTop() + impl_->margins.top;
         for (auto& w : columns[i]) {
             auto preferred = w->CalcPreferredSize(theme);
             w->SetFrame(Rect(x, y, columnSizes[i].width, preferred.height));

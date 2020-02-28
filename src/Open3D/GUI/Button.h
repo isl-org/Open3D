@@ -35,7 +35,7 @@ namespace gui {
 
 class Button : public Widget {
 public:
-    Button(const char* title);
+    explicit Button(const char* title);
     ~Button();
 
     Size CalcPreferredSize(const Theme& theme) const override;
