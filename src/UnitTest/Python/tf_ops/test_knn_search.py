@@ -39,14 +39,13 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
-@pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
+@pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
-@pytest.mark.parametrize('normalize_distances', [False, True])
-def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
-                       return_distances, normalize_distances):
+def test_knn_search(dtype, num_points_queries, metric, ignore_query_point,
+                    return_distances):
     import tensorflow as tf
     import open3d.ml.tf as ml3d
 
@@ -60,22 +59,25 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
-    radii = rng.uniform(0.1, 0.3, size=queries.shape[:1]).astype(dtype)
+    k = rng.randint(1, 11)
 
     # kd tree for computing the ground truth
     tree = cKDTree(points, copy_data=True)
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
-    gt_neighbors_index = [
-        tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
-    ]
+    if k > num_points:
+        gt_neighbors_index = [tree.query(q, k, p=p_norm) for q in queries]
+        gt_neighbors_index = [
+            idxs[np.isfinite(dists)] for dists, idxs in gt_neighbors_index
+        ]
+    else:
+        gt_neighbors_index = [tree.query(q, k, p=p_norm)[1] for q in queries]
 
-    ans = ml3d.ops.radius_search(points,
-                                 queries,
-                                 radii,
-                                 metric,
-                                 ignore_query_point=ignore_query_point,
-                                 return_distances=return_distances,
-                                 normalize_distances=normalize_distances)
+    ans = ml3d.ops.knn_search(points,
+                              queries,
+                              k,
+                              metric,
+                              ignore_query_point=ignore_query_point,
+                              return_distances=return_distances)
 
     # convert to numpy for convenience
     ans_neighbors_index = ans.neighbors_index.numpy()
@@ -89,7 +91,11 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
         end = ans_neighbors_row_splits[i + 1]
         q_neighbors_index = ans_neighbors_index[start:end]
 
-        gt_set = set(gt_neighbors_index[i])
+        if k == 1:
+            gt_set = set([gt_neighbors_index[i]])
+        else:
+            gt_set = set(gt_neighbors_index[i])
+
         if ignore_query_point:
             gt_set.remove(i)
         assert gt_set == set(q_neighbors_index)
@@ -100,17 +106,13 @@ def test_radius_search(dtype, num_points_queries, metric, ignore_query_point,
             for j, dist in zip(q_neighbors_index, q_neighbors_dist):
                 if metric == 'L2':
                     gt_dist = np.sum((q - points[j])**2)
-                    if normalize_distances:
-                        gt_dist /= radii[i]**2
                 else:
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
-                    if normalize_distances:
-                        gt_dist /= radii[i]
 
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-def test_radius_search_empty_point_sets():
+def test_knn_search_empty_point_sets():
     import tensorflow as tf
     import open3d.ml.tf as ml3d
     rng = np.random.RandomState(123)
@@ -120,9 +122,9 @@ def test_radius_search_empty_point_sets():
     # no query points
     points = rng.random(size=(100, 3)).astype(dtype)
     queries = rng.random(size=(0, 3)).astype(dtype)
-    radii = rng.uniform(0.1, 0.3, size=(0,)).astype(dtype)
+    k = rng.randint(1, 11)
 
-    ans = ml3d.ops.radius_search(points, queries, radii, return_distances=True)
+    ans = ml3d.ops.knn_search(points, queries, k, return_distances=True)
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [1]
@@ -133,7 +135,7 @@ def test_radius_search_empty_point_sets():
     queries = rng.random(size=(100, 3)).astype(dtype)
     radii = rng.uniform(0.1, 0.3, size=(100,)).astype(dtype)
 
-    ans = ml3d.ops.radius_search(points, queries, radii, return_distances=True)
+    ans = ml3d.ops.knn_search(points, queries, k, return_distances=True)
 
     assert ans.neighbors_index.shape.as_list() == [0]
     assert ans.neighbors_row_splits.shape.as_list() == [101]

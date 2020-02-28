@@ -2,7 +2,6 @@
 import os as _os
 import sys as _sys
 import tensorflow as _tf
-from tensorflow.python.framework import ops as _ops
 
 _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..', '..', '..')

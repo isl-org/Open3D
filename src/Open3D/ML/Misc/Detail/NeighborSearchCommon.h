@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,42 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/UnaryEW.h"
+#pragma once
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/CPULauncher.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+#include "nanoflann.hpp"
 
 namespace open3d {
-namespace kernel {
+namespace ml {
+namespace detail {
 
-template <typename scalar_t>
-static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
-}
+/// Supported metrics
+enum Metric { L1, L2, Linf };
 
-void CopyCPU(const Tensor& src, Tensor& dst) {
-    // src and dst have been checked to have the same shape, dtype, device
-    SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
-    if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
-    } else {
-        // TODO: in the future, we may want to allow automatic casting
-        Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    indexer, CPUCopyElementKernel<scalar_t>);
-        });
+/// Adaptor for nanoflann
+template <class T>
+class Adaptor {
+public:
+    Adaptor(size_t num_points, const T* const data)
+        : num_points(num_points), data(data) {}
+
+    inline size_t kdtree_get_point_count() const { return num_points; }
+
+    inline T kdtree_get_pt(const size_t idx, int dim) const {
+        return data[3 * idx + dim];
     }
-}
 
-}  // namespace kernel
+    template <class BBOX>
+    bool kdtree_get_bbox(BBOX&) const {
+        return false;
+    }
+
+private:
+    size_t num_points;
+    const T* const data;
+};
+
+template <int METRIC, class T>
+struct SelectNanoflannAdaptor {};
+
+template <class T>
+struct SelectNanoflannAdaptor<L2, T> {
+    typedef nanoflann::L2_Adaptor<T, Adaptor<T>> Adaptor_t;
+};
+
+template <class T>
+struct SelectNanoflannAdaptor<L1, T> {
+    typedef nanoflann::L1_Adaptor<T, Adaptor<T>> Adaptor_t;
+};
+
+}  // namespace detail
+}  // namespace ml
 }  // namespace open3d

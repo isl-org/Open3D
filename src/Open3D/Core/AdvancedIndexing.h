@@ -156,7 +156,7 @@ public:
                 inputs.push_back(index_tensor);
             }
         }
-        indexer_ = Indexer({inputs}, dst);
+        indexer_ = Indexer({inputs}, dst, DtypePolicy::NONE);
 
         // Fill shape and strides
         if (num_indices_ != static_cast<int64_t>(indexed_strides.size())) {

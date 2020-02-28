@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2020 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,42 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Kernel/UnaryEW.h"
+#include "KnnSearchOpKernel.h"
+#include "Open3D/ML/Misc/Detail/KnnSearch.h"
 
-#include "Open3D/Core/Dispatch.h"
-#include "Open3D/Core/Dtype.h"
-#include "Open3D/Core/Kernel/CPULauncher.h"
-#include "Open3D/Core/MemoryManager.h"
-#include "Open3D/Core/SizeVector.h"
-#include "Open3D/Core/Tensor.h"
-#include "Open3D/Utility/Console.h"
+using namespace open3d::ml::detail;
+using namespace knn_search_opkernel;
+using namespace tensorflow;
 
-namespace open3d {
-namespace kernel {
+template <class T>
+class KnnSearchOpKernelCPU : public KnnSearchOpKernel {
+public:
+    explicit KnnSearchOpKernelCPU(OpKernelConstruction* construction)
+        : KnnSearchOpKernel(construction) {}
 
-template <typename scalar_t>
-static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
-}
+    void Kernel(tensorflow::OpKernelContext* context,
+                const tensorflow::Tensor& points,
+                const tensorflow::Tensor& queries,
+                const int k,
+                tensorflow::Tensor& query_neighbors_row_splits) {
+        OutputAllocator<T> output_allocator(context);
 
-void CopyCPU(const Tensor& src, Tensor& dst) {
-    // src and dst have been checked to have the same shape, dtype, device
-    SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
-    if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
-    } else {
-        // TODO: in the future, we may want to allow automatic casting
-        Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    indexer, CPUCopyElementKernel<scalar_t>);
-        });
+        KnnSearchCPU((int64_t*)query_neighbors_row_splits.flat<int64>().data(),
+                     points.shape().dim_size(0), points.flat<T>().data(),
+                     queries.shape().dim_size(0), queries.flat<T>().data(), k,
+                     metric, ignore_query_point, return_distances,
+                     output_allocator);
     }
-}
+};
 
-}  // namespace kernel
-}  // namespace open3d
+#define REG_KB(type)                                            \
+    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")             \
+                                    .Device(DEVICE_CPU)         \
+                                    .TypeConstraint<type>("T"), \
+                            KnnSearchOpKernelCPU<type>);
+REG_KB(float)
+REG_KB(double)
+#undef REG_KB

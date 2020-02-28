@@ -53,7 +53,7 @@ public:
     /// \param dtype: type for the contained tensors. e.g. Dtype::Int64.
     /// \param device: device to store the contained tensors. e.g. "CPU:0".
     TensorList(const SizeVector& shape,
-               const Dtype& dtype,
+               Dtype dtype,
                const Device& device = Device("CPU:0"),
                const int64_t& size = 0);
 
@@ -92,12 +92,12 @@ public:
 
     /// Constructor from a raw internal tensor.
     /// The inverse of AsTensor().
-    /// \param copy:
+    /// \param inplace:
     /// - if false, use the raw internal tensor (could be non-contiguous),
     /// typically only used for Slice() assignment
     /// - if true, create a new contiguous internal tensor with precomputed
     /// reserved size.
-    TensorList(const Tensor& internal_tensor, bool copy = true);
+    TensorList(const Tensor& internal_tensor, bool inplace = true);
 
     /// Copy constructor from a tensor list.
     /// Create a new tensor list with copy of data.
@@ -143,7 +143,7 @@ public:
     /// Concatenate two tensor lists and append the copy of the other tensor
     /// list to the end of *this.
     /// Two TensorLists must have the same shape, dtype, and device.
-    void operator+=(const TensorList& other);
+    TensorList& operator+=(const TensorList& other);
     void Extend(const TensorList& b);
 
     /// Return the reference of one tensor with shared memory.
@@ -161,9 +161,12 @@ public:
     /// Clear the tensor list by discarding all data and creating a empty one.
     void Clear();
 
-    const SizeVector& GetShape() const { return shape_; }
-    const Device& GetDevice() const { return device_; }
-    const Dtype& GetDtype() const { return dtype_; }
+    std::string ToString() const;
+
+    SizeVector GetShape() const { return shape_; }
+    Device GetDevice() const { return device_; }
+    Dtype GetDtype() const { return dtype_; }
+
     int64_t GetSize() const { return size_; }
     int64_t GetReservedSize() const { return reserved_size_; }
     const Tensor& GetInternalTensor() const { return internal_tensor_; }
