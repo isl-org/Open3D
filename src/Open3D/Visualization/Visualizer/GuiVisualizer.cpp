@@ -363,6 +363,7 @@ GuiVisualizer::GuiVisualizer(
             auto newSky = GetRenderer().AddSkybox(ResourceLoadRequest(path));
             if (newSky) {
                 impl_->lightSettings.hSky = newSky;
+                impl_->lightSettings.wgtSkyEnabled->SetChecked(true);
 
                 renderScene->SetSkybox(newSky);
             }
