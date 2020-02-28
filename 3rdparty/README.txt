@@ -90,3 +90,7 @@ https://github.com/NVlabs/cub
 nanoflann                   1.3.1                                    BSD license
 A C++11 header-only library for Nearest Neighbor (NN) search with KD-trees
 https://github.com/jlblancoc/nanoflann
+--------------------------------------------------------------------------------
+CUTLASS                     1.3.2                                    BSD license
+CUDA Templates for Linear Algebra Subroutines
+https://github.com/NVIDIA/cutlass

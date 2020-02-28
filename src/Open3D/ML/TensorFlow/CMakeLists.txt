@@ -13,7 +13,7 @@ find_package( nanoflann REQUIRED )
 find_package( parallelstl REQUIRED )
 if ( CUDA_ENABLED )
     find_package( CUB REQUIRED )
-    #find_package( CUTLASS REQUIRED )
+    find_package( CUTLASS REQUIRED )
 endif ()
 
 
@@ -64,7 +64,7 @@ target_include_directories( open3d_tf_ops SYSTEM PRIVATE
 if ( CUDA_ENABLED )
     target_include_directories( open3d_tf_ops PRIVATE
         ${CUB_INCLUDE_DIR}
-        #${CUTLASS_INCLUDE_DIR}
+        ${CUTLASS_INCLUDE_DIR}
         )
 endif ()
 
