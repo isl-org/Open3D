@@ -62,7 +62,9 @@ public:
     static const MaterialHandle kUbermaterial;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
+    static const MaterialInstanceHandle kColorMapMaterial;
     static const TextureHandle kDefaultTexture;
+    static const TextureHandle kDefaulColorMap;
 
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();

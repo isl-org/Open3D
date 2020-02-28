@@ -117,8 +117,9 @@ class MaterialModifier {
 public:
     virtual ~MaterialModifier() = default;
 
-    virtual MaterialModifier& SetParameter(const char* parameter,
-                                           float value) = 0;
+    virtual MaterialModifier& SetParameter(const char* parameter, int value) = 0;
+    virtual MaterialModifier& SetParameter(const char* parameter, float value) = 0;
+    virtual MaterialModifier& SetParameter(const char* parameter, const Eigen::Vector3f& value) = 0;
     virtual MaterialModifier& SetColor(const char* parameter,
                                        const Eigen::Vector3f& value) = 0;
     virtual MaterialModifier& SetColor(const char* parameter,

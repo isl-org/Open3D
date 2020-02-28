@@ -133,9 +133,26 @@ void FilamentMaterialModifier::Init(
 }
 
 MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter,
+                                                         const int value) {
+    if (materialInstance_) {
+        materialInstance_->setParameter(parameter, value);
+    }
+
+    return *this;
+}
+
+MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter,
                                                          const float value) {
     if (materialInstance_) {
         materialInstance_->setParameter(parameter, value);
+    }
+
+    return *this;
+}
+
+MaterialModifier& FilamentMaterialModifier::SetParameter(const char* parameter, const Eigen::Vector3f& v) {
+    if (materialInstance_) {
+        materialInstance_->setParameter(parameter, math::float3{v(0), v(1), v(2)});
     }
 
     return *this;
