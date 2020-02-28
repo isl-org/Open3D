@@ -95,8 +95,9 @@ void pybind_core_tensorlist(py::module& m) {
                  })
 
             .def("getindices",
-                 [](TensorList& tl, const std::vector<int64_t>& indices) {
-                     return tl.IndexGet(indices);
+                 [](TensorList& tl, const SizeVector& indices_sizevec) {
+                     // force implicit cast here
+                     return tl.IndexGet(indices_sizevec);
                  })
 
             .def(py::self + py::self)

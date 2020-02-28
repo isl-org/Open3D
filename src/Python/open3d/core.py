@@ -223,10 +223,10 @@ class TensorList(open3d_pybind.TensorList):
 
         elif isinstance(index, list) or isinstance(index, tuple):
             for i in index:
-                if not instance(i, int):
+                if not isinstance(i, int):
                     raise ValueError(
                         'every element of the index list must be a int')
-            return self.getindices(index)
+            return self.getindices(o3d.SizeVector(index))
 
         else:
             raise ValueError('Unsupported index type')
@@ -246,7 +246,8 @@ class TensorList(open3d_pybind.TensorList):
             return self.setslice(start, stop, step, value)
 
         else:
-            raise ValueError('Unsupported index type')
+            raise ValueError('Unsupported index type.'
+                             'Use tensorlist.tensor() to assign value with advanced indexing')
 
     @staticmethod
     def from_tensor(tensor, inplace=False):
