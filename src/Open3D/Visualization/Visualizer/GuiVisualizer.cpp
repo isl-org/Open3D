@@ -183,7 +183,7 @@ class SmallButton : public gui::Button {
     using Super = Button;
 
 public:
-    SmallButton(const char* title) : Button(title) {}
+    SmallButton(const char *title) : Button(title) {}
 
     gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
         auto em = theme.fontSize;
@@ -381,7 +381,8 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... lighting on/off
-    lightSettings.wgtBase->AddChild(std::make_shared<gui::Label>("> Light sources"));
+    lightSettings.wgtBase->AddChild(
+            std::make_shared<gui::Label>("> Light sources"));
     auto checkboxes = std::make_shared<gui::Horiz>();
     lightSettings.wgtAmbientEnabled =
             std::make_shared<gui::Checkbox>("Ambient");
@@ -420,12 +421,12 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... ambient light (IBL)
-    lightSettings.wgtAmbientIntensity = MakeSlider(
-          gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity);
+    lightSettings.wgtAmbientIntensity =
+            MakeSlider(gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity);
     lightSettings.wgtAmbientIntensity->OnValueChanged =
-          [renderScene](double newValue) {
-              renderScene->SetIndirectLightIntensity(newValue);
-          };
+            [renderScene](double newValue) {
+                renderScene->SetIndirectLightIntensity(newValue);
+            };
 
     auto ambientLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     ambientLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
@@ -436,8 +437,7 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... directional light (sun)
-    lightSettings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0,
-                                               500000.0,
+    lightSettings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
                                                lightDescription.intensity);
     lightSettings.wgtSunIntensity->OnValueChanged =
             [this, renderScene](double newValue) {
@@ -446,47 +446,35 @@ GuiVisualizer::GuiVisualizer(
             };
 
     lightSettings.wgtSunDirMinusX = std::make_shared<SmallButton>("-X");
-    lightSettings.wgtSunDirMinusX->SetOnClicked(
-            [this, renderScene]() {
-                renderScene->SetLightDirection(
-                        impl_->lightSettings.hDirectionalLight,
-                        {1.0f, 0.0f, 0.0f});
-            });
+    lightSettings.wgtSunDirMinusX->SetOnClicked([this, renderScene]() {
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       {1.0f, 0.0f, 0.0f});
+    });
     lightSettings.wgtSunDirPlusX = std::make_shared<SmallButton>("+X");
-    lightSettings.wgtSunDirPlusX->SetOnClicked(
-            [this, renderScene]() {
-                renderScene->SetLightDirection(
-                        impl_->lightSettings.hDirectionalLight,
-                        {-1.0f, 0.0f, 0.0f});
-            });
+    lightSettings.wgtSunDirPlusX->SetOnClicked([this, renderScene]() {
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       {-1.0f, 0.0f, 0.0f});
+    });
     lightSettings.wgtSunDirMinusY = std::make_shared<SmallButton>("-Y");
-    lightSettings.wgtSunDirMinusY->SetOnClicked(
-            [this, renderScene]() {
-                renderScene->SetLightDirection(
-                        impl_->lightSettings.hDirectionalLight,
-                        {0.0f, 1.0f, 0.0f});
-            });
+    lightSettings.wgtSunDirMinusY->SetOnClicked([this, renderScene]() {
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       {0.0f, 1.0f, 0.0f});
+    });
     lightSettings.wgtSunDirPlusY = std::make_shared<SmallButton>("+Y");
-    lightSettings.wgtSunDirPlusY->SetOnClicked(
-            [this, renderScene]() {
-                renderScene->SetLightDirection(
-                        impl_->lightSettings.hDirectionalLight,
-                        {0.0f, -1.0f, 0.0f});
-            });
+    lightSettings.wgtSunDirPlusY->SetOnClicked([this, renderScene]() {
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       {0.0f, -1.0f, 0.0f});
+    });
     lightSettings.wgtSunDirMinusZ = std::make_shared<SmallButton>("-Z");
-    lightSettings.wgtSunDirMinusZ->SetOnClicked(
-            [this, renderScene]() {
-                renderScene->SetLightDirection(
-                        impl_->lightSettings.hDirectionalLight,
-                        {0.0f, 0.0f, 1.0f});
-            });
+    lightSettings.wgtSunDirMinusZ->SetOnClicked([this, renderScene]() {
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       {0.0f, 0.0f, 1.0f});
+    });
     lightSettings.wgtSunDirPlusZ = std::make_shared<SmallButton>("+Z");
-    lightSettings.wgtSunDirPlusZ->SetOnClicked(
-            [this, renderScene]() {
-                renderScene->SetLightDirection(
-                        impl_->lightSettings.hDirectionalLight,
-                        {0.0f, 0.0f, -1.0f});
-            });
+    lightSettings.wgtSunDirPlusZ->SetOnClicked([this, renderScene]() {
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       {0.0f, 0.0f, -1.0f});
+    });
     auto sunDirLayout = std::make_shared<gui::Horiz>(gridSpacing);
     sunDirLayout->AddChild(lightSettings.wgtSunDirMinusX);
     sunDirLayout->AddChild(gui::Horiz::MakeStretch());
@@ -518,7 +506,8 @@ GuiVisualizer::GuiVisualizer(
     sunLayout->AddChild(std::make_shared<gui::Label>("Color"));
     sunLayout->AddChild(lightSettings.wgtSunColor);
 
-    lightSettings.wgtBase->AddChild(std::make_shared<gui::Label>("> Sun (Directional light)"));
+    lightSettings.wgtBase->AddChild(
+            std::make_shared<gui::Label>("> Sun (Directional light)"));
     lightSettings.wgtBase->AddChild(sunLayout);
 
     AddChild(lightSettings.wgtBase);

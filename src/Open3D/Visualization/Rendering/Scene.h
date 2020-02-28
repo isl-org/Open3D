@@ -84,7 +84,7 @@ public:
     virtual void SetLightColor(const LightHandle& id,
                                const Eigen::Vector3f& color) = 0;
     virtual void SetLightDirection(const LightHandle& id,
-                                   const Eigen::Vector3f& pos)  = 0;
+                                   const Eigen::Vector3f& pos) = 0;
     virtual void SetLightPosition(const LightHandle& id,
                                   const Eigen::Vector3f& pos) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
