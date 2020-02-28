@@ -193,7 +193,9 @@ enum MenuId {
     FILE_EXPORT_RGB,
     FILE_EXPORT_DEPTH,
     FILE_CLOSE,
-    VIEW_POINTS,
+    VIEW_NORMALS_MODE,
+    VIEW_DEPTH_MODE,
+    VIEW_COLOR_MODE,
     VIEW_WIREFRAME,
     VIEW_MESH,
     SETTINGS_LIGHT,
@@ -201,11 +203,18 @@ enum MenuId {
     HELP_CONTACT
 };
 
+static void SetViewMenuModeItemChecked(gui::Menu &menu, const MenuId item) {
+    menu.SetChecked(VIEW_NORMALS_MODE, item == VIEW_NORMALS_MODE);
+    menu.SetChecked(VIEW_DEPTH_MODE, item == VIEW_DEPTH_MODE);
+    menu.SetChecked(VIEW_COLOR_MODE, item == VIEW_COLOR_MODE);
+}
+
 struct GuiVisualizer::Impl {
     std::vector<visualization::GeometryHandle> geometryHandles;
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> drawTime;
+    std::shared_ptr<gui::Menu> viewMenu;
 
     struct LightSettings {
         visualization::IndirectLightHandle hIbl;
@@ -248,12 +257,18 @@ GuiVisualizer::GuiVisualizer(
         fileMenu->AddSeparator();
         fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
         auto viewMenu = std::make_shared<gui::Menu>();
-        viewMenu->AddItem("Points", nullptr, VIEW_POINTS);
-        viewMenu->SetEnabled(VIEW_POINTS, false);
+        viewMenu->AddItem("Normal map", nullptr, VIEW_NORMALS_MODE);
+        viewMenu->SetEnabled(VIEW_NORMALS_MODE, true);
+        viewMenu->AddItem("Depth map", nullptr, VIEW_DEPTH_MODE);
+        viewMenu->SetEnabled(VIEW_DEPTH_MODE, true);
+        viewMenu->AddItem("Color", nullptr, VIEW_COLOR_MODE);
+        viewMenu->SetEnabled(VIEW_COLOR_MODE, true);
+        viewMenu->SetChecked(VIEW_COLOR_MODE, true);
         viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
         viewMenu->SetEnabled(VIEW_WIREFRAME, false);
         viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
         viewMenu->SetEnabled(VIEW_MESH, false);
+        impl_->viewMenu = viewMenu;
         auto helpMenu = std::make_shared<gui::Menu>();
         helpMenu->AddItem("About", nullptr, HELP_ABOUT);
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
@@ -451,12 +466,21 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->geometryHandles.clear();
 
+    visualization::View::Mode renderMode = visualization::View::Mode::Color;
     geometry::AxisAlignedBoundingBox bounds;
     for (auto &g : geometries) {
         switch (g->GetGeometryType()) {
             case geometry::Geometry::GeometryType::OrientedBoundingBox:
             case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
-            case geometry::Geometry::GeometryType::PointCloud:
+            case geometry::Geometry::GeometryType::PointCloud: {
+                auto pcd =
+                        std::static_pointer_cast<const geometry::PointCloud>(g);
+                if (false == pcd->HasColors()) {
+                    renderMode = visualization::View::Mode::Depth;
+                    SetViewMenuModeItemChecked(*impl_->viewMenu,
+                                               VIEW_DEPTH_MODE);
+                }
+            }
             case geometry::Geometry::GeometryType::LineSet:
             case geometry::Geometry::GeometryType::MeshBase:
             case geometry::Geometry::GeometryType::TriangleMesh:
@@ -470,6 +494,8 @@ void GuiVisualizer::SetGeometry(
                 auto handle = scene3d->AddGeometry(*g3);
 
                 impl_->geometryHandles.push_back(handle);
+                impl_->scene->GetView()->SetMode(renderMode);
+                SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLOR_MODE);
             }
             case geometry::Geometry::GeometryType::RGBDImage:
             case geometry::Geometry::GeometryType::Image:
@@ -613,7 +639,18 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
         case FILE_CLOSE:
             this->Close();
             break;
-        case VIEW_POINTS:
+        case VIEW_NORMALS_MODE:
+            impl_->scene->GetView()->SetMode(
+                    visualization::View::Mode::Normals);
+            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_NORMALS_MODE);
+            break;
+        case VIEW_DEPTH_MODE:
+            impl_->scene->GetView()->SetMode(visualization::View::Mode::Depth);
+            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_DEPTH_MODE);
+            break;
+        case VIEW_COLOR_MODE:
+            impl_->scene->GetView()->SetMode(visualization::View::Mode::Color);
+            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLOR_MODE);
             break;
         case VIEW_WIREFRAME:
             break;
