@@ -703,6 +703,8 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
         case SETTINGS_LIGHT: {
             auto visibility = !impl_->lightSettings.wgtBase->IsVisible();
             impl_->lightSettings.wgtBase->SetVisible(visibility);
+            auto menubar = gui::Application::GetInstance().GetMenubar();
+            menubar->SetChecked(SETTINGS_LIGHT, visibility);
             break;
         }
         case HELP_ABOUT: {
