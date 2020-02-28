@@ -117,6 +117,12 @@ void FilamentView::SetMode(Mode mode) {
             view_->setVisibleLayers(kAllLayersMask, kMainLayer);
             view_->setClearColor(kNormalsClearColor);
             break;
+        case Mode::ColorMapX:
+        case Mode::ColorMapY:
+        case Mode::ColorMapZ:
+            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+            view_->setClearColor(kDepthClearColor);
+            break;
     }
 
     mode_ = mode;
@@ -137,7 +143,7 @@ void FilamentView::SetViewport(std::int32_t x,
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clearColor_ = color;
 
-    if (mode_ == Mode::Color) {
+    if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
     }
 }
@@ -180,41 +186,75 @@ void FilamentView::PreRender() {
     auto& renderableManager = engine_.getRenderableManager();
 
     MaterialInstanceHandle materialHandle;
+    std::shared_ptr<filament::MaterialInstance> selectedMaterial;
     if (mode_ == Mode::Depth) {
         materialHandle = FilamentResourceManager::kDepthMaterial;
         // FIXME: Refresh parameters only then something ACTUALLY changed
-        auto matInst =
-                resourceManager_.GetMaterialInstance(materialHandle).lock();
-        if (matInst) {
+        selectedMaterial = resourceManager_.GetMaterialInstance(materialHandle).lock();
+        if (selectedMaterial) {
             const auto f = camera_->GetNativeCamera()->getCullingFar();
             const auto n = camera_->GetNativeCamera()->getNear();
 
-            FilamentMaterialModifier(matInst, materialHandle)
+            FilamentMaterialModifier(selectedMaterial, materialHandle)
                     .SetParameter("cameraNear", n)
                     .SetParameter("cameraFar", f)
                     .Finish();
         }
     } else if (mode_ == Mode::Normals) {
         materialHandle = FilamentResourceManager::kNormalsMaterial;
+    } else if (mode_ >= Mode::ColorMapX) {
+        materialHandle = FilamentResourceManager::kColorMapMaterial;
+
+        int coordinateIndex = 0;
+        switch (mode_) {
+            case Mode::ColorMapX:
+                coordinateIndex = 0;
+                break;
+            case Mode::ColorMapY:
+                coordinateIndex = 1;
+                break;
+            case Mode::ColorMapZ:
+                coordinateIndex = 2;
+                break;
+
+            default:
+                break;
+        }
+
+        selectedMaterial = resourceManager_.GetMaterialInstance(materialHandle).lock();
+        if (selectedMaterial) {
+            FilamentMaterialModifier(selectedMaterial, materialHandle)
+                    .SetParameter("coordinateIndex", coordinateIndex)
+                    .Finish();
+        }
     }
 
     if (scene_) {
         for (const auto& pair : scene_->entities_) {
             const auto& entity = pair.second;
             if (entity.info.type == EntityType::Geometry) {
-                std::weak_ptr<filament::MaterialInstance> matInst;
-                if (materialHandle) {
-                    matInst = resourceManager_.GetMaterialInstance(
-                            materialHandle);
+                std::shared_ptr<filament::MaterialInstance> matInst;
+                if (selectedMaterial) {
+                    matInst = selectedMaterial;
+
+                    if (mode_ == Mode::ColorMapZ) {
+                        auto bbox = scene_->GetEntityBoundingBox(pair.first);
+                        auto bboxMin = bbox.first - bbox.second;
+                        auto bboxMax = bbox.first + bbox.second;
+
+                        FilamentMaterialModifier(selectedMaterial, materialHandle)
+                                .SetParameter("bboxMin", bboxMin)
+                                .SetParameter("bboxMax", bboxMax)
+                                .Finish();
+                    }
                 } else {
                     matInst = resourceManager_.GetMaterialInstance(
-                            entity.material);
+                            entity.material).lock();
                 }
 
                 filament::RenderableManager::Instance inst =
                         renderableManager.getInstance(entity.info.self);
-                renderableManager.setMaterialInstanceAt(inst, 0,
-                                                        matInst.lock().get());
+                renderableManager.setMaterialInstanceAt(inst, 0, matInst.get());
             }
         }
     }
