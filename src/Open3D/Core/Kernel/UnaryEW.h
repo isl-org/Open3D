@@ -32,6 +32,18 @@
 namespace open3d {
 namespace kernel {
 
+enum class UnaryEWOpCode { Sqrt, Sin, Cos, Neg, Exp };
+
+void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
+
+void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
+
+#ifdef BUILD_CUDA_MODULE
+void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
+#endif
+
+// Copy is separated from other unary ops since it support cross-device copy and
+// dtype casting.
 void Copy(const Tensor& src, Tensor& dst);
 
 void CopyCPU(const Tensor& src, Tensor& dst);

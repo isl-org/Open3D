@@ -56,7 +56,7 @@ void BinaryEW(const Tensor& lhs,
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else {
-        utility::LogError("Add: Unimplemented device");
+        utility::LogError("BinaryEW: Unimplemented device");
     }
 }
 
