@@ -183,7 +183,7 @@ class SmallButton : public gui::Button {
     using Super = Button;
 
 public:
-    SmallButton(const char *title) : Button(title) {}
+    explicit SmallButton(const char *title) : Button(title) {}
 
     gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
         auto em = theme.fontSize;
