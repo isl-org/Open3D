@@ -305,7 +305,7 @@ def test_unary_ew_ops():
 
     np.testing.assert_allclose(src.sqrt().numpy(), np.sqrt(src_vals))
     np.testing.assert_allclose(src.sin().numpy(), np.sin(src_vals))
-    np.testing.assert_allclose(src.cos().numpy(), np.cos(src_vals))
+    np.testing.assert_allclose(src.cos().numpy(), np.cos(src_vals), rtol=1e-6)
     np.testing.assert_allclose(src.neg().numpy(), -src_vals)
     np.testing.assert_allclose(src.exp().numpy(), np.exp(src_vals))
 
@@ -336,3 +336,24 @@ def test_tensorlist_operations():
 
     e += a
     assert e.size() == 9
+
+
+def test_tensorlist_indexing():
+    tl = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=5)
+
+    # set slices
+    tl[1:5:2] = o3d.TensorList.from_tensor(
+        o3d.Tensor(np.ones((2, 3, 4), dtype=np.float32)), inplace=False)
+    # set item
+    tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
+
+    # get items
+    np.testing.assert_allclose(tl[1].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[3].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4), dtype=np.float32))
+
+    # get indices
+    tl_sub = tl[[1, 3, 4]]
+    np.testing.assert_allclose(tl_sub.tensor().numpy(),
+                               np.vstack((np.ones((2, 3, 4), dtype=np.float32),
+                                          np.zeros((1, 3, 4), dtype=np.float32))))

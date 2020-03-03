@@ -239,7 +239,7 @@ class TensorList(open3d_pybind.TensorList):
         if isinstance(index, int) and isinstance(value, o3d.Tensor):
             self.setindex(index, value)
 
-        elif isinstance(index, slice):
+        elif isinstance(index, slice) and isinstance(value, open3d_pybind.TensorList):
             start = 0 if index.start is None else index.start
             stop = self.size() if index.stop is None else index.stop
             step = 1 if index.step is None else index.step

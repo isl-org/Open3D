@@ -213,6 +213,14 @@ TEST_P(TensorListPermuteDevices, AccessOperator) {
     EXPECT_EQ(tensor_list[0].ToFlatVector<float>(), t0.ToFlatVector<float>());
     EXPECT_EQ(tensor_list[1].ToFlatVector<float>(), t1.ToFlatVector<float>());
     EXPECT_EQ(tensor_list[2].ToFlatVector<float>(), t2.ToFlatVector<float>());
+
+    tensor_list[0] = t2;
+    tensor_list[1] = t1;
+    tensor_list[2] = t0;
+
+    EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
+              std::vector<float>(
+                      {2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}));
 }
 
 TEST_P(TensorListPermuteDevices, Slice) {
@@ -238,6 +246,13 @@ TEST_P(TensorListPermuteDevices, Slice) {
     EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
               std::vector<float>(
                       {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1}));
+
+    new_tensor_list.Slice(0, 3, 2) =
+            TensorList(Tensor(std::vector<float>(2 * 2 * 3, -1), {2, 2, 3},
+                              Dtype::Float32, device));
+    EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
+              std::vector<float>({-1, -1, -1, -1, -1, -1, 2, 2, 2, 2, 2, 2, -1,
+                                  -1, -1, -1, -1, -1}));
 }
 
 TEST_P(TensorListPermuteDevices, IndexGet) {

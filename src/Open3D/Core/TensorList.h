@@ -229,8 +229,8 @@ protected:
     /// with reserved_size_ = (1 << (ceil(log2(size_)) + 1)).
     int64_t ReserveSize(int64_t n);
 
-    /// Check if index is out of bound [0, size_).
-    void CheckIndex(int64_t index) const;
+    /// Check if index is out of bound [0, size_) if not inclusive.
+    void CheckIndex(int64_t index, bool inclusive = false) const;
 
 protected:
     /// We always maintain an internal Tensor of (reserved_size_, **shape_).

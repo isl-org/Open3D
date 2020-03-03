@@ -233,7 +233,7 @@ TensorList TensorList::Slice(int64_t start,
                              int64_t stop,
                              int64_t step /* = 1 */) {
     CheckIndex(start);
-    CheckIndex(stop);
+    CheckIndex(stop, /*inclusive=*/true);
     TensorList new_tensor_list(GetShape(), GetDtype(), GetDevice());
     return TensorList(internal_tensor_.Slice(0 /* dim */, start, stop, step),
                       /*copy=*/false);
@@ -306,10 +306,10 @@ int64_t TensorList::ReserveSize(int64_t n) {
     return 1;
 }
 
-void TensorList::CheckIndex(int64_t index) const {
-    if (index < -size_ || index > size_ - 1) {
-        utility::LogError("Index {} out of bound ({}, {})", index, -size_,
-                          size_ - 1);
+void TensorList::CheckIndex(int64_t index, bool inclusive /*=false*/) const {
+    if (index < -size_ || index > size_ - (inclusive ? 0 : 1)) {
+        utility::LogError("Index {} is out of bound ({}, {})", index, -size_,
+                          size_ - (inclusive ? 0 : 1));
     }
 }
 
