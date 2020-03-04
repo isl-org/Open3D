@@ -42,6 +42,40 @@ static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
             static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDASqrtElementKernel(const void* src,
+                                                     void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            sqrt(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDASinElementKernel(const void* src,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            sin(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDACosElementKernel(const void* src,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            cos(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDANegElementKernel(const void* src,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = -*static_cast<const scalar_t*>(src);
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAExpElementKernel(const void* src,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            exp(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
 void CopyCUDA(const Tensor& src, Tensor& dst) {
     // It has been checked that
     // - src and dst have the same dtype
@@ -100,6 +134,67 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         utility::LogError("Wrong device type {} -> {}", src_device.ToString(),
                           dst_device.ToString());
     }
+}
+
+void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
+    // src and dst have been chaged to have the same shape, dtype, device
+    Dtype dtype = src.GetDtype();
+    Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
+
+    auto assert_dtype_is_float = [](Dtype dtype) -> void {
+        if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+            utility::LogError(
+                    "Only supports Float32 and Float64, but {} is used.",
+                    DtypeUtil::ToString(dtype));
+        }
+    };
+
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        switch (op_code) {
+            case UnaryEWOpCode::Sqrt:
+                assert_dtype_is_float(dtype);
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDASqrtElementKernel<scalar_t>(src, dst);
+                        });
+                break;
+            case UnaryEWOpCode::Sin:
+                assert_dtype_is_float(dtype);
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDASinElementKernel<scalar_t>(src, dst);
+                        });
+                break;
+            case UnaryEWOpCode::Cos:
+                assert_dtype_is_float(dtype);
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDACosElementKernel<scalar_t>(src, dst);
+                        });
+                break;
+            case UnaryEWOpCode::Neg:
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDANegElementKernel<scalar_t>(src, dst);
+                        });
+                break;
+            case UnaryEWOpCode::Exp:
+                assert_dtype_is_float(dtype);
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDAExpElementKernel<scalar_t>(src, dst);
+                        });
+                break;
+            default:
+                utility::LogError("Unimplemented op_code for UnaryEWCUDA");
+                break;
+        }
+    });
 }
 
 }  // namespace kernel

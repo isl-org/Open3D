@@ -309,6 +309,17 @@ def test_to():
     assert b.get_device() == a.get_device()
 
 
+def test_unary_ew_ops():
+    src_vals = np.array([0, 1, 2, 3, 4, 5]).astype(np.float32)
+    src = o3d.Tensor(src_vals)
+
+    np.testing.assert_allclose(src.sqrt().numpy(), np.sqrt(src_vals))
+    np.testing.assert_allclose(src.sin().numpy(), np.sin(src_vals))
+    np.testing.assert_allclose(src.cos().numpy(), np.cos(src_vals))
+    np.testing.assert_allclose(src.neg().numpy(), -src_vals)
+    np.testing.assert_allclose(src.exp().numpy(), np.exp(src_vals))
+
+
 def test_tensorlist_operations():
     a = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=1)
     assert a.size() == 1

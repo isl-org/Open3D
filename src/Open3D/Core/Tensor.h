@@ -308,7 +308,7 @@ public:
     Tensor operator+(const Tensor& value) const { return Add(value); }
 
     /// Inplace version of Tensor::Add. Adds a tensor to the current tensor and
-    /// retunrs the current tensor.
+    /// returns the current tensor.
     Tensor Add_(const Tensor& value);
     Tensor operator+=(const Tensor& value) { return Add_(value); }
 
@@ -317,7 +317,7 @@ public:
     Tensor operator-(const Tensor& value) const { return Sub(value); }
 
     /// Inplace version of Tensor::Sub. Substracts a tensor to the current
-    /// tensor and retunrs the current tensor.
+    /// tensor and returns the current tensor.
     Tensor Sub_(const Tensor& value);
     Tensor operator-=(const Tensor& value) { return Sub_(value); }
 
@@ -326,7 +326,7 @@ public:
     Tensor operator*(const Tensor& value) const { return Mul(value); }
 
     /// Inplace version of Tensor::Mul. Multiplies a tensor to the current
-    /// tensor and retunrs the current tensor.
+    /// tensor and returns the current tensor.
     Tensor Mul_(const Tensor& value);
     Tensor operator*=(const Tensor& value) { return Mul_(value); }
 
@@ -335,9 +335,39 @@ public:
     Tensor operator/(const Tensor& value) const { return Div(value); }
 
     /// Inplace version of Tensor::Div. Divides a tensor to the current
-    /// tensor and retunrs the current tensor.
+    /// tensor and returns the current tensor.
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
+
+    /// Element-wise square root of a tensor, returns a new tensor.
+    Tensor Sqrt() const;
+
+    /// Element-wise square root of a tensor, in-place.
+    Tensor Sqrt_();
+
+    /// Element-wise sine of a tensor, returns a new tensor.
+    Tensor Sin() const;
+
+    /// Element-wise sine of a tensor, in-place.
+    Tensor Sin_();
+
+    /// Element-wise cosine of a tensor, returns a new tensor.
+    Tensor Cos() const;
+
+    /// Element-wise cosine of a tensor, in-place.
+    Tensor Cos_();
+
+    /// Element-wise negation of a tensor, returns a new tensor.
+    Tensor Neg() const;
+
+    /// Element-wise negation of a tensor, in-place.
+    Tensor Neg_();
+
+    /// Element-wise exponential of a tensor, returns a new tensor.
+    Tensor Exp() const;
+
+    /// Element-wise exponential of a tensor, in-place.
+    Tensor Exp_();
 
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>

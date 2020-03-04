@@ -509,4 +509,59 @@ Tensor Tensor::Div_(const Tensor& value) {
     return *this;
 }
 
+Tensor Tensor::Sqrt() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Sqrt);
+    return dst_tensor;
+}
+
+Tensor Tensor::Sqrt_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Sqrt);
+    return *this;
+}
+
+Tensor Tensor::Sin() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Sin);
+    return dst_tensor;
+}
+
+Tensor Tensor::Sin_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Sin);
+    return *this;
+}
+
+Tensor Tensor::Cos() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Cos);
+    return dst_tensor;
+}
+
+Tensor Tensor::Cos_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Cos);
+    return *this;
+}
+
+Tensor Tensor::Neg() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Neg);
+    return dst_tensor;
+}
+
+Tensor Tensor::Neg_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Neg);
+    return *this;
+}
+
+Tensor Tensor::Exp() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Exp);
+    return dst_tensor;
+}
+
+Tensor Tensor::Exp_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Exp);
+    return *this;
+}
+
 }  // namespace open3d
