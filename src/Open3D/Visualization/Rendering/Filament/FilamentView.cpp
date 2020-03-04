@@ -31,6 +31,8 @@
 #include "FilamentResourceManager.h"
 #include "FilamentScene.h"
 
+#include "Open3D/Geometry/BoundingVolume.h"
+
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
@@ -243,8 +245,10 @@ void FilamentView::PreRender() {
 
                     if (mode_ >= Mode::ColorMapX) {
                         auto bbox = scene_->GetEntityBoundingBox(pair.first);
-                        auto bboxMin = bbox.first - bbox.second;
-                        auto bboxMax = bbox.first + bbox.second;
+                        Eigen::Vector3f bboxMin =
+                                bbox.GetMinBound().cast<float>();
+                        Eigen::Vector3f bboxMax =
+                                bbox.GetMaxBound().cast<float>();
 
                         FilamentMaterialModifier(selectedMaterial,
                                                  materialHandle)
