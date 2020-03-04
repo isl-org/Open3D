@@ -106,9 +106,7 @@ public:
                             const Transform& transform) override;
     Transform GetEntityTransform(const REHandle_abstract& entityId) override;
 
-    std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(
-            const REHandle_abstract& entityId) override;
-    std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(
+    geometry::AxisAlignedBoundingBox GetEntityBoundingBox(
             const REHandle_abstract& entityId) override;
 
     void Draw(filament::Renderer& renderer);

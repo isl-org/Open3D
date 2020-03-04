@@ -579,8 +579,8 @@ void GuiVisualizer::SetGeometry(
             case geometry::Geometry::GeometryType::VoxelGrid: {
                 auto g3 =
                         std::static_pointer_cast<const geometry::Geometry3D>(g);
-                bounds += g3->GetAxisAlignedBoundingBox();
                 auto handle = scene3d->AddGeometry(*g3);
+                bounds += scene3d->GetEntityBoundingBox(handle);
 
                 impl_->geometryHandles.push_back(handle);
                 impl_->scene->GetView()->SetMode(renderMode);
