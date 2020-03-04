@@ -39,7 +39,7 @@ namespace visualization {
 
 class Visualizer;
 
-/// \brief Function to draw a list of geometry.Geometry objects
+/// \brief Function to draw a list of geometry objects
 ///
 /// The convenient function of drawing something
 /// This function is a wrapper that calls the core functions of Visualizer.
@@ -59,7 +59,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     int height = 480,
                     int left = 50,
                     int top = 50);
-/// \brief Function to draw a list of geometry.Geometry objects with a GUI that
+/// \brief Function to draw a list of geometry objects with a GUI that
 /// supports animation.
 ///
 /// \param geometry_list List of geometries to be visualized.
@@ -80,7 +80,7 @@ bool DrawGeometriesWithCustomAnimation(
         int top = 50,
         const std::string &json_filename = "");
 
-/// \brief Function to draw a list of geometry.Geometry objects with a
+/// \brief Function to draw a list of geometry objects with a
 /// customized animation callback function.
 ///
 /// \param geometry_ptrs List of geometries to be visualized.

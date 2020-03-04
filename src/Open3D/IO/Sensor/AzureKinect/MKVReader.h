@@ -47,7 +47,7 @@ public:
     MKVReader();
     virtual ~MKVReader() {}
 
-    /// Check If the mkv file is opened. //Fix python
+    /// Check If the mkv file is opened.
     bool IsOpened();
     /// Check if the mkv file is all read.
     bool IsEOF() { return is_eof_; }

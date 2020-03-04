@@ -73,7 +73,7 @@ private:
             const std::vector<Eigen::Vector3d> &input) const;
 
 public:
-    /// one of `{x, y, z}`.
+    /// One of `{x, y, z}`.
     std::string orthogonal_axis_ = "";
     /// Bounding polygon boundary.
     std::vector<Eigen::Vector3d> bounding_polygon_;

@@ -133,7 +133,7 @@ public:
 
     /// Factory function to create a LineSet from edges of a triangle mesh.
     ///
-    /// \param mesh The input triangle  mesh.
+    /// \param mesh The input triangle mesh.
     static std::shared_ptr<LineSet> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
 

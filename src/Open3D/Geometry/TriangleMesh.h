@@ -564,9 +564,9 @@ public:
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
-    /// \param width is x-directional length
-    /// \param height is y-directional length
-    /// \param depth is z-directional length
+    /// \param width is x-directional length.
+    /// \param height is y-directional length.
+    /// \param depth is z-directional length.
     static std::shared_ptr<TriangleMesh> CreateBox(double width = 1.0,
                                                    double height = 1.0,
                                                    double depth = 1.0);

@@ -90,7 +90,6 @@ class OctreeNode : public utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     ///
-    /// Initializes all values as 0.
     OctreeNode() {}
     virtual ~OctreeNode() {}
 
@@ -121,7 +120,6 @@ class OctreeInternalNode : public OctreeNode {
 public:
     /// \brief Default Constructor.
     ///
-    /// Sets number of children to 8.
     OctreeInternalNode() : children_(8) {}
     static std::shared_ptr<OctreeNodeInfo> GetInsertionNodeInfo(
             const std::shared_ptr<OctreeNodeInfo>& node_info,
@@ -230,7 +228,7 @@ public:
 public:
     /// \brief Convert octree from point cloud.
     ///
-    /// \param point_cloud  Input point cloud.
+    /// \param point_cloud Input point cloud.
     /// \param size_expand A small expansion size such that the octree is
     /// slightly bigger than the original point cloud bounds to accomodate all
     /// points.

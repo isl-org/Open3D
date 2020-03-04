@@ -176,7 +176,7 @@ public:
     /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
     ///
-    /// \param bbox OrientedBoundingBox to crop points
+    /// \param bbox OrientedBoundingBox to crop points.
     std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a

@@ -211,12 +211,12 @@ public:
     void CaptureDepthImage(const std::string &filename = "",
                            bool do_render = true,
                            double depth_scale = 1000.0);
-    /// \brief Function to capture and save local point cloud
+    /// \brief Function to capture and save local point cloud.
     ///
     /// \param filename Path to file.
     /// \param do_render Set to `true` to do render.
     /// \param convert_to_world_coordinate Set to `true` to convert to world
-    /// coordinates
+    /// coordinates.
     void CaptureDepthPointCloud(const std::string &filename = "",
                                 bool do_render = true,
                                 bool convert_to_world_coordinate = false);

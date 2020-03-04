@@ -122,7 +122,7 @@ protected:
     int NextHalfEdgeOnBoundary(int curr_half_edge_index) const;
 
 public:
-    /// List of triangles  in the mesh.
+    /// List of triangles in the mesh.
     std::vector<Eigen::Vector3i> triangles_;
     /// List of triangle normals in the mesh.
     std::vector<Eigen::Vector3d> triangle_normals_;

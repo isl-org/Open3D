@@ -197,7 +197,7 @@ inline void SetVerbosityLevel(VerbosityLevel level) {
     Logger::i().verbosity_level_ = level;
 }
 
-/// Get global verbosity level of Open3D
+/// Get global verbosity level of Open3D.
 inline VerbosityLevel GetVerbosityLevel() {
     return Logger::i().verbosity_level_;
 }
