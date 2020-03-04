@@ -43,6 +43,7 @@
 #include "FilamentGeometryBuffersBuilder.h"
 #include "FilamentResourceManager.h"
 #include "FilamentView.h"
+#include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
@@ -288,6 +289,8 @@ GeometryHandle FilamentScene::AddGeometry(
 
         handle = GeometryHandle::Next();
         entities_[handle] = entityEntry;
+
+        SetEntityTransform(handle, Transform::Identity());
     }
 
     return handle;
@@ -554,9 +557,9 @@ FilamentScene::Transform FilamentScene::GetEntityTransform(
     return eTransform;
 }
 
-std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(
+geometry::AxisAlignedBoundingBox FilamentScene::GetEntityBoundingBox(
         const REHandle_abstract& entityId) {
-    std::pair<Eigen::Vector3f, Eigen::Vector3f> result;
+    geometry::AxisAlignedBoundingBox result;
 
     auto found = entities_.find(entityId);
     if (found != entities_.end()) {
@@ -564,26 +567,15 @@ std::pair<Eigen::Vector3f, Eigen::Vector3f> FilamentScene::GetEntityBoundingBox(
         auto inst = renderableManager.getInstance(found->second.info.self);
         auto box = renderableManager.getAxisAlignedBoundingBox(inst);
 
-        result.first = {box.center.x, box.center.y, box.center.z};
-        result.second = {box.halfExtent.x, box.halfExtent.y, box.halfExtent.z};
-    }
+        auto& transformMgr = engine_.getTransformManager();
+        auto iTransform = transformMgr.getInstance(found->second.info.self);
+        auto transform = transformMgr.getWorldTransform(iTransform);
 
-    return result;
-}
+        box = rigidTransform(box, transform);
 
-std::pair<Eigen::Vector3f, float> FilamentScene::GetEntityBoundingSphere(
-        const REHandle_abstract& entityId) {
-    std::pair<Eigen::Vector3f, float> result;
-
-    auto found = entities_.find(entityId);
-    if (found != entities_.end()) {
-        auto& renderableManager = engine_.getRenderableManager();
-        auto inst = renderableManager.getInstance(found->second.info.self);
-        auto sphere = renderableManager.getAxisAlignedBoundingBox(inst)
-                              .getBoundingSphere();
-
-        result.first = {sphere.x, sphere.y, sphere.z};
-        result.second = sphere.w;
+        auto min = box.center - box.halfExtent;
+        auto max = box.center + box.halfExtent;
+        result = {{min.x, min.y, min.z}, {max.x, max.y, max.z}};
     }
 
     return result;
@@ -620,7 +612,7 @@ FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
             iTransform = transformMgr.getInstance(found->second.info.self);
             iTransform = transformMgr.getInstance(found->second.parent);
 
-            auto center = GetEntityBoundingSphere(id).first;
+            auto center = GetEntityBoundingBox(id).GetCenter();
             transformMgr.create(
                     found->second.info.self, iTransform,
                     mat4f::translation(

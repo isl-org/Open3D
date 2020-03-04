@@ -35,7 +35,8 @@ namespace open3d {
 
 namespace geometry {
 class Geometry3D;
-}
+class AxisAlignedBoundingBox;
+}  // namespace geometry
 
 namespace visualization {
 
@@ -106,10 +107,8 @@ public:
                                     const Transform& transform) = 0;
     virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;
 
-    //               <     center        half extent  >
-    virtual std::pair<Eigen::Vector3f, Eigen::Vector3f> GetEntityBoundingBox(
-            const REHandle_abstract& entityId) = 0;
-    virtual std::pair<Eigen::Vector3f, float> GetEntityBoundingSphere(
+    // Returns world space AABB
+    virtual geometry::AxisAlignedBoundingBox GetEntityBoundingBox(
             const REHandle_abstract& entityId) = 0;
 };
 

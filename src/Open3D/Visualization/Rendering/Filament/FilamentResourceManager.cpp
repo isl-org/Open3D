@@ -205,7 +205,11 @@ const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
         MaterialInstanceHandle::Next();
+const MaterialInstanceHandle FilamentResourceManager::kColorMapMaterial =
+        MaterialInstanceHandle::Next();
 const TextureHandle FilamentResourceManager::kDefaultTexture =
+        TextureHandle::Next();
+const TextureHandle FilamentResourceManager::kDefaulColorMap =
         TextureHandle::Next();
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
@@ -214,7 +218,8 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kUbermaterial,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
-        FilamentResourceManager::kDefaultTexture};
+        FilamentResourceManager::kDefaultTexture,
+        FilamentResourceManager::kDefaulColorMap};
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
@@ -559,6 +564,11 @@ void FilamentResourceManager::LoadDefaults() {
     auto texture = LoadTextureFromImage(textureImg);
     textures_[kDefaultTexture] = MakeShared(texture, engine_);
 
+    const auto colorMapPath = resourceRoot + "/defaultGradient.png";
+    auto colorMapImg = io::CreateImageFromFile(colorMapPath);
+    auto colorMap = LoadTextureFromImage(colorMapImg);
+    textures_[kDefaulColorMap] = MakeShared(colorMap, engine_);
+
     const auto defaultSampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
@@ -605,6 +615,15 @@ void FilamentResourceManager::LoadDefaults() {
     auto normalsMat = materials_[hNormals];
     materialInstances_[kNormalsMaterial] =
             MakeShared(normalsMat->createInstance(), engine_);
+
+    const auto colorMapMatPath = resourceRoot + "/colorMap.filamat";
+    const auto hColorMapMat =
+            CreateMaterial(ResourceLoadRequest(colorMapMatPath.data()));
+    auto colorMapMat = materials_[hColorMapMat];
+    auto colorMapMatInst = colorMapMat->createInstance();
+    colorMapMatInst->setParameter("colorMap", colorMap, defaultSampler);
+    materialInstances_[kColorMapMaterial] =
+            MakeShared(colorMapMatInst, engine_);
 }
 
 }  // namespace visualization
