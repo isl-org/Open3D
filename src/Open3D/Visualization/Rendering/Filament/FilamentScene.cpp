@@ -272,6 +272,8 @@ GeometryHandle FilamentScene::AddGeometry(
     RenderableManager::Builder builder(1);
     builder.boundingBox(aabb)
             .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
+            .castShadows(true)
+            .receiveShadows(true)
             .geometry(0, geometryBuffersBuilder->GetPrimitiveType(), vbuf.get(),
                       ibuf.get());
 
