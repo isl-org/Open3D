@@ -50,9 +50,9 @@ namespace odometry {
 /// \param source Source RGBD image.
 /// \param target Target RGBD image.
 /// \param pinhole_camera_intrinsic Camera intrinsic parameters.
-/// \param odo_init Initial 4x4 motion matrix estimation. 
+/// \param odo_init Initial 4x4 motion matrix estimation.
 /// \param jacobin_method The odometry Jacobian method to use.
-/// \param option Odometry hyper parameteres. 
+/// \param option Odometry hyper parameteres.
 /// \return is_success, 4x4 motion matrix, 6x6 information matrix.
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
