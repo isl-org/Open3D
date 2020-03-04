@@ -239,15 +239,18 @@ class TensorList(open3d_pybind.TensorList):
         if isinstance(index, int) and isinstance(value, o3d.Tensor):
             self.setindex(index, value)
 
-        elif isinstance(index, slice) and isinstance(value, open3d_pybind.TensorList):
+        elif isinstance(index, slice) and isinstance(value,
+                                                     open3d_pybind.TensorList):
             start = 0 if index.start is None else index.start
             stop = self.size() if index.stop is None else index.stop
             step = 1 if index.step is None else index.step
             return self.setslice(start, stop, step, value)
 
         else:
-            raise ValueError('Unsupported index type.'
-                             'Use tensorlist.tensor() to assign value with advanced indexing')
+            raise ValueError(
+                'Unsupported index type.'
+                'Use tensorlist.tensor() to assign value with advanced indexing'
+            )
 
     @staticmethod
     def from_tensor(tensor, inplace=False):
