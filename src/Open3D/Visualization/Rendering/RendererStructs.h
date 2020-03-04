@@ -51,6 +51,7 @@ struct LightDescription {
     float lightConeOuter;
     Eigen::Vector3f color;
     Eigen::Vector3f direction;
+    Eigen::Vector3f position;
     bool castShadows;
 
     Json::Value customAttributes;
@@ -63,6 +64,7 @@ struct LightDescription {
           lightConeOuter(M_PI / 2),
           color(1.f, 1.f, 1.f),
           direction(0.f, 0.f, -1.f),
+          position(0.f, 0.f, 0.f),
           castShadows(true) {}
 };
 

@@ -55,10 +55,15 @@ using GeometryType = open3d::geometry::Geometry::GeometryType;
 using MaterialHandle = open3d::visualization::MaterialHandle;
 using ResourceManager = open3d::visualization::FilamentResourceManager;
 
-const std::unordered_map<GeometryType, MaterialHandle> kDefaultMaterials = {
-        {GeometryType::TriangleMesh, ResourceManager::kDefaultLit},
-        {GeometryType::LineSet, ResourceManager::kDefaultUnlit},
-        {GeometryType::PointCloud, ResourceManager::kDefaultLit}};
+MaterialHandle ColorOnlyMesh = ResourceManager::kDefaultUnlit;
+MaterialHandle PlainMesh = ResourceManager::kDefaultLit;
+MaterialHandle Mesh = ResourceManager::kDefaultLit;
+
+MaterialHandle ColoredPointcloud = ResourceManager::kDefaultUnlit;
+MaterialHandle Pointcloud = ResourceManager::kDefaultLit;
+
+MaterialHandle Lineset = ResourceManager::kDefaultUnlit;
+
 }  // namespace defaults_mapping
 
 namespace converters {
@@ -157,67 +162,75 @@ GeometryHandle FilamentScene::AddGeometry(
 
     const auto geometryType = geometry.GetGeometryType();
 
-    auto defaults = defaults_mapping::kDefaultMaterials.find(geometryType);
-    if (defaults != defaults_mapping::kDefaultMaterials.end()) {
-        MaterialInstanceHandle materialInstance =
-                resourceManager_.CreateMaterialInstance(defaults->second);
-        handle = AddGeometry(geometry, materialInstance);
+    MaterialInstanceHandle materialInstance;
+    handle = AddGeometry(geometry, materialInstance);
 
-        auto& entity = entities_[handle];
-        auto wMaterial = resourceManager_.GetMaterialInstance(entity.material);
-        auto mat = wMaterial.lock();
+    if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
+        const auto& mesh = static_cast<const geometry::TriangleMesh&>(geometry);
 
-        bool needBaseColorReset = false;
-        if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
-            const auto& mesh =
-                    static_cast<const geometry::TriangleMesh&>(geometry);
+        // Mesh with vertex color attribute set
+        if (mesh.HasVertexColors()) {
+            materialInstance = resourceManager_.CreateMaterialInstance(
+                    defaults_mapping::ColorOnlyMesh);
+            // Mesh with textures
+        } else if (mesh.HasTexture()) {
+            materialInstance = resourceManager_.CreateMaterialInstance(
+                    defaults_mapping::Mesh);
 
-            if (mat) {
-                needBaseColorReset =
-                        mesh.HasTexture() || mesh.HasVertexColors();
+            auto wMaterial =
+                    resourceManager_.GetMaterialInstance(materialInstance);
+            auto mat = wMaterial.lock();
 
-                if (mesh.texture_.HasData()) {
-                    auto hTexture = resourceManager_.CreateTexture(
-                            mesh.texture_.FlipVertical());
+            auto hTexture = resourceManager_.CreateTexture(
+                    mesh.texture_.FlipVertical());
 
-                    if (hTexture) {
-                        entity.texture = hTexture;
+            if (hTexture) {
+                auto& entity = entities_[handle];
+                entity.texture = hTexture;
 
-                        auto wTexture = resourceManager_.GetTexture(hTexture);
-                        auto tex = wTexture.lock();
-                        if (tex) {
-                            static const auto kDefaultSampler =
-                                    FilamentMaterialModifier::
-                                            SamplerFromSamplerParameters(
-                                                    TextureSamplerParameters::
-                                                            Pretty());
-                            mat->setParameter("texture", tex.get(),
-                                              kDefaultSampler);
-                        }
-                    }
+                auto wTexture = resourceManager_.GetTexture(hTexture);
+                auto tex = wTexture.lock();
+                if (tex) {
+                    static const auto kDefaultSampler =
+                            FilamentMaterialModifier::
+                                    SamplerFromSamplerParameters(
+                                            TextureSamplerParameters::Pretty());
+                    mat->setParameter("texture", tex.get(), kDefaultSampler);
                 }
             }
-        } else if (geometryType ==
-                   geometry::Geometry::GeometryType::PointCloud) {
-            const auto& pointcloud =
-                    static_cast<const geometry::PointCloud&>(geometry);
-            needBaseColorReset = pointcloud.HasColors();
-        } else if (geometryType == geometry::Geometry::GeometryType::LineSet) {
-            const auto& lineset =
-                    static_cast<const geometry::LineSet&>(geometry);
-            needBaseColorReset = lineset.HasColors();
-        }
+            // Mesh without any attributes set, only tangents are needed
+        } else {
+            materialInstance = resourceManager_.CreateMaterialInstance(
+                    defaults_mapping::PlainMesh);
 
-        mat->setDoubleSided(true);
-        if (needBaseColorReset) {
-            mat->setParameter("baseColor", filament::RgbType::LINEAR,
-                              {1, 1, 1});
+            auto wMaterial =
+                    resourceManager_.GetMaterialInstance(materialInstance);
+            auto mat = wMaterial.lock();
+
+            if (mat) {
+                mat->setParameter("baseColor", filament::RgbType::LINEAR,
+                                  {0.75f, 0.75f, 0.75f});
+            }
         }
+    } else if (geometryType == geometry::Geometry::GeometryType::PointCloud) {
+        const auto& pcd = static_cast<const geometry::PointCloud&>(geometry);
+        if (pcd.HasColors()) {
+            materialInstance = resourceManager_.CreateMaterialInstance(
+                    defaults_mapping::ColoredPointcloud);
+        } else {
+            materialInstance = resourceManager_.CreateMaterialInstance(
+                    defaults_mapping::Pointcloud);
+        }
+    } else if (geometryType == geometry::Geometry::GeometryType::LineSet) {
+        materialInstance = resourceManager_.CreateMaterialInstance(
+                defaults_mapping::Lineset);
     } else {
         utility::LogWarning(
                 "Geometry type {} is not yet supported for easy-init!",
                 static_cast<size_t>(geometry.GetGeometryType()));
     }
+
+    AssignMaterial(handle, materialInstance);
 
     return handle;
 }
@@ -357,6 +370,8 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
             filament::LightManager::Builder(lightType)
                     .direction({descr.direction.x(), descr.direction.y(),
                                 descr.direction.z()})
+                    .position({descr.position.x(), descr.position.y(),
+                               descr.position.z()})
                     .intensity(descr.intensity)
                     .falloff(descr.falloff)
                     .castShadows(descr.castShadows)
@@ -424,6 +439,17 @@ void FilamentScene::SetLightPosition(const LightHandle& id,
         if (!lightManager.isDirectional(inst)) {
             lightManager.setPosition(inst, {pos.x(), pos.y(), pos.z()});
         }
+    }
+}
+
+void FilamentScene::SetLightFalloff(const LightHandle& id,
+                                    const float falloff) {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
+        lightManager.setFalloff(inst, falloff);
     }
 }
 

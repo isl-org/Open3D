@@ -1,7 +1,7 @@
 material {
     name : defaultUnlit,
     shadingModel : unlit,
-    doubleSided : false,
+    doubleSided : true,
 
     parameters : [
         { type : float3, name : baseColor },

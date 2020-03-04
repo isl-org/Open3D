@@ -1,7 +1,7 @@
 material {
     name : defaultLit,
     shadingModel : lit,
-    doubleSided : false,
+    doubleSided : true,
 
     parameters : [
         { type : float3,    name : baseColor },

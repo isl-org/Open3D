@@ -572,7 +572,7 @@ void FilamentResourceManager::LoadDefaults() {
     const auto defaultSampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
-    const auto defaultColor = filament::math::float3{0.5f, 0.5f, 0.5f};
+    const auto defaultColor = filament::math::float3{1.0f, 1.0f, 1.0f};
 
     const auto litPath = resourceRoot + "/defaultLit.filamat";
     auto litMat = LoadMaterialFromFile(litPath, engine_);

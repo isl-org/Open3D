@@ -88,6 +88,7 @@ public:
                                    const Eigen::Vector3f& pos) = 0;
     virtual void SetLightPosition(const LightHandle& id,
                                   const Eigen::Vector3f& pos) = 0;
+    virtual void SetLightFalloff(const LightHandle& id, float falloff) = 0;
     virtual void RemoveLight(const LightHandle& id) = 0;
 
     // Passing empty id disables indirect lightning
