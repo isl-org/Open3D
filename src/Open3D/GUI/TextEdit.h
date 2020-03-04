@@ -51,6 +51,11 @@ public:
     void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
     void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
 
+protected:
+    /// Returns true if new text is valid. Otherwise call SetText() with a
+    /// valid value and return false.
+    virtual bool ValidateNewText(const char *text);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

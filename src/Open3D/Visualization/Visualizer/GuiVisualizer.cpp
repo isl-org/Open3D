@@ -31,10 +31,12 @@
 #include "Open3D/GUI/Checkbox.h"
 #include "Open3D/GUI/Color.h"
 #include "Open3D/GUI/ColorEdit.h"
+#include "Open3D/GUI/Combobox.h"
 #include "Open3D/GUI/Dialog.h"
 #include "Open3D/GUI/FileDialog.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/NumberEdit.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Slider.h"
 #include "Open3D/GUI/Theme.h"
@@ -155,6 +157,7 @@ std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
     return slider;
 }
 
+//----
 class DrawTimeLabel : public gui::Label {
     using Super = Label;
 
@@ -179,6 +182,7 @@ private:
     gui::Window *window_;
 };
 
+//----
 class SmallButton : public gui::Button {
     using Super = Button;
 
@@ -189,6 +193,59 @@ public:
         auto em = theme.fontSize;
         auto size = Super::CalcPreferredSize(theme);
         return gui::Size(size.width - em, em);
+    }
+};
+
+//----
+class UnitVectorEdit : public gui::Horiz {
+public:
+    UnitVectorEdit(const gui::Theme& theme) : gui::Horiz() {
+        wgtX_ = std::make_shared<gui::NumberEdit>(gui::NumberEdit::Type::DOUBLE);
+        wgtX_->SetLimits(-1.0, 1.0);
+        wgtX_->SetOnValueChanged([this](double d) { this->OnCoordChanged(0, d); });
+        this->AddChild(std::make_shared<gui::Label>("x"));
+        this->AddChild(wgtX_);
+        this->AddChild(MakeFixed(0.5 * theme.fontSize));
+
+        wgtY_ = std::make_shared<gui::NumberEdit>(gui::NumberEdit::Type::DOUBLE);
+        wgtY_->SetLimits(-1.0, 1.0);
+        wgtY_->SetOnValueChanged([this](double d) { this->OnCoordChanged(1, d); });
+        this->AddChild(std::make_shared<gui::Label>("y"));
+        this->AddChild(wgtY_);
+        this->AddChild(MakeFixed(0.5 * theme.fontSize));
+
+        wgtZ_ = std::make_shared<gui::NumberEdit>(gui::NumberEdit::Type::DOUBLE);
+        wgtZ_->SetLimits(-1.0, 1.0);
+        wgtZ_->SetOnValueChanged([this](double d) { this->OnCoordChanged(2, d); });
+        this->AddChild(std::make_shared<gui::Label>("z"));
+        this->AddChild(wgtZ_);
+    }
+
+    const Eigen::Vector3f& GetValue() const { return value_; }
+
+    void SetValue(const Eigen::Vector3f& value) {
+        value_ = value.normalized();
+        wgtX_->SetValue(value_.x());
+        wgtY_->SetValue(value_.y());
+        wgtZ_->SetValue(value_.z());
+    }
+
+    void SetOnValueChanged(std::function<void(const Eigen::Vector3f&)> onChanged) {
+        onChanged_ = onChanged;
+    }
+
+private:
+    Eigen::Vector3f value_;
+    std::shared_ptr<gui::NumberEdit> wgtX_;
+    std::shared_ptr<gui::NumberEdit> wgtY_;
+    std::shared_ptr<gui::NumberEdit> wgtZ_;
+    std::function<void(const Eigen::Vector3f&)> onChanged_;
+
+    void OnCoordChanged(int idx, double value) {
+        value_[idx] = value;
+        if (onChanged_) {
+            onChanged_(value_);
+        }
     }
 };
 
@@ -239,8 +296,10 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
         std::shared_ptr<gui::Checkbox> wgtSkyEnabled;
         std::shared_ptr<gui::Checkbox> wgtDirectionalEnabled;
+        std::shared_ptr<gui::Combobox> wgtAmbientIBLs;
         std::shared_ptr<gui::Slider> wgtAmbientIntensity;
         std::shared_ptr<gui::Slider> wgtSunIntensity;
+        std::shared_ptr<UnitVectorEdit> wgtSunDir;
         std::shared_ptr<gui::Button> wgtSunDirMinusX;
         std::shared_ptr<gui::Button> wgtSunDirPlusX;
         std::shared_ptr<gui::Button> wgtSunDirMinusY;
@@ -311,6 +370,7 @@ GuiVisualizer::GuiVisualizer(
     visualization::LightDescription lightDescription;
     lightDescription.intensity = 100000;
     lightDescription.direction = {-0.707, -.707, 0.0};
+    lightDescription.castShadows = true;
     lightDescription.customAttributes["custom_type"] = "SUN";
 
     impl_->lightSettings.hDirectionalLight =
@@ -352,23 +412,14 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase = std::make_shared<gui::Vert>(0, gui::Margins(lm));
 
     lightSettings.wgtLoadAmbient = std::make_shared<gui::Button>("Load IBL");
-    lightSettings.wgtLoadAmbient->SetOnClicked([this, renderScene]() {
+    lightSettings.wgtLoadAmbient->SetOnClicked([this]() {
         auto dlg = std::make_shared<gui::FileDialog>(
                 gui::FileDialog::Type::OPEN, "Open IBL", GetTheme());
         dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
         dlg->SetOnCancel([this]() { this->CloseDialog(); });
-        dlg->SetOnDone([this, renderScene](const char *path) {
+        dlg->SetOnDone([this](const char *path) {
             this->CloseDialog();
-            auto newIBL =
-                    GetRenderer().AddIndirectLight(ResourceLoadRequest(path));
-            if (newIBL) {
-                impl_->lightSettings.hIbl = newIBL;
-
-                auto intensity = renderScene->GetIndirectLightIntensity();
-
-                renderScene->SetIndirectLight(newIBL);
-                renderScene->SetIndirectLightIntensity(intensity);
-            }
+            this->SetIBL(path);
         });
         ShowDialog(dlg);
     });
@@ -442,6 +493,40 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... ambient light (IBL)
+    lightSettings.wgtAmbientIBLs = std::make_shared<gui::Combobox>();
+    std::vector<std::string> resourceFiles;
+    utility::filesystem::ListFilesInDirectory(rsrcPath, resourceFiles);
+    std::sort(resourceFiles.begin(), resourceFiles.end());
+    int n = 0;
+    for (auto &f : resourceFiles) {
+        if (f.find("_ibl.ktx") == f.size() - 8) {
+            auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
+            name = name.substr(0, name.size() - 8);
+            lightSettings.wgtAmbientIBLs->AddItem(name.c_str());
+            if (name == "default") {
+                lightSettings.wgtAmbientIBLs->SetSelectedIndex(n);
+            }
+            n++;
+        }
+    }
+    lightSettings.wgtAmbientIBLs->AddItem("Custom...");
+    lightSettings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name) {
+        std::string path = gui::Application::GetInstance().GetResourcePath();
+        path += std::string("/") + name + "_ibl.ktx";
+        if (!this->SetIBL(path.c_str())) {
+            // must be the "Custom..." option
+            auto dlg = std::make_shared<gui::FileDialog>(
+                    gui::FileDialog::Type::OPEN, "Open IBL", GetTheme());
+            dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+            dlg->SetOnCancel([this]() { this->CloseDialog(); });
+            dlg->SetOnDone([this](const char *path) {
+                this->CloseDialog();
+                this->SetIBL(path);
+            });
+            ShowDialog(dlg);
+        }
+    });
+
     lightSettings.wgtAmbientIntensity =
             MakeSlider(gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity);
     lightSettings.wgtAmbientIntensity->OnValueChanged =
@@ -450,6 +535,8 @@ GuiVisualizer::GuiVisualizer(
             };
 
     auto ambientLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    ambientLayout->AddChild(std::make_shared<gui::Label>("IBL"));
+    ambientLayout->AddChild(lightSettings.wgtAmbientIBLs);
     ambientLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
     ambientLayout->AddChild(lightSettings.wgtAmbientIntensity);
 
@@ -466,36 +553,41 @@ GuiVisualizer::GuiVisualizer(
                         impl_->lightSettings.hDirectionalLight, newValue);
             };
 
+    auto setSunDir = [this, renderScene](const Eigen::Vector3f& dir) {
+        this->impl_->lightSettings.wgtSunDir->SetValue(dir);
+        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
+                                       dir);
+    };
+
+    this->impl_->scene->SetDirectionalLight(renderScene,
+                                            lightSettings.hDirectionalLight,
+                                    [this](const Eigen::Vector3f& newDir) {
+        impl_->lightSettings.wgtSunDir->SetValue(newDir);
+    });
+
+    lightSettings.wgtSunDir = std::make_shared<UnitVectorEdit>(theme);
+    lightSettings.wgtSunDir->SetValue(lightDescription.direction);
+    lightSettings.wgtSunDir->SetOnValueChanged(setSunDir);
+
     lightSettings.wgtSunDirMinusX = std::make_shared<SmallButton>("-X");
-    lightSettings.wgtSunDirMinusX->SetOnClicked([this, renderScene]() {
-        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       {1.0f, 0.0f, 0.0f});
-    });
+    lightSettings.wgtSunDirMinusX->SetOnClicked(
+        [setSunDir]() { setSunDir({1.0f, 0.0f, 0.0f}); });
     lightSettings.wgtSunDirPlusX = std::make_shared<SmallButton>("+X");
-    lightSettings.wgtSunDirPlusX->SetOnClicked([this, renderScene]() {
-        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       {-1.0f, 0.0f, 0.0f});
-    });
+    lightSettings.wgtSunDirPlusX->SetOnClicked(
+        [setSunDir]() { setSunDir({-1.0f, 0.0f, 0.0f}); });
     lightSettings.wgtSunDirMinusY = std::make_shared<SmallButton>("-Y");
-    lightSettings.wgtSunDirMinusY->SetOnClicked([this, renderScene]() {
-        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       {0.0f, 1.0f, 0.0f});
-    });
+    lightSettings.wgtSunDirMinusY->SetOnClicked(
+        [setSunDir]() { setSunDir({0.0f, 1.0f, 0.0f}); });
     lightSettings.wgtSunDirPlusY = std::make_shared<SmallButton>("+Y");
-    lightSettings.wgtSunDirPlusY->SetOnClicked([this, renderScene]() {
-        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       {0.0f, -1.0f, 0.0f});
-    });
+    lightSettings.wgtSunDirPlusY->SetOnClicked(
+        [setSunDir]() { setSunDir({0.0f, -1.0f, 0.0f}); });
     lightSettings.wgtSunDirMinusZ = std::make_shared<SmallButton>("-Z");
-    lightSettings.wgtSunDirMinusZ->SetOnClicked([this, renderScene]() {
-        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       {0.0f, 0.0f, 1.0f});
-    });
+    lightSettings.wgtSunDirMinusZ->SetOnClicked(
+        [setSunDir]() { setSunDir({0.0f, 0.0f, 1.0f}); });
     lightSettings.wgtSunDirPlusZ = std::make_shared<SmallButton>("+Z");
-    lightSettings.wgtSunDirPlusZ->SetOnClicked([this, renderScene]() {
-        renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       {0.0f, 0.0f, -1.0f});
-    });
+    lightSettings.wgtSunDirPlusZ->SetOnClicked(
+        [setSunDir]() { setSunDir({0.0f, 0.0f, -1.0f}); });
+
     auto sunDirLayout = std::make_shared<gui::Horiz>(gridSpacing);
     sunDirLayout->AddChild(lightSettings.wgtSunDirMinusX);
     sunDirLayout->AddChild(gui::Horiz::MakeStretch());
@@ -522,6 +614,8 @@ GuiVisualizer::GuiVisualizer(
     auto sunLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     sunLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
     sunLayout->AddChild(lightSettings.wgtSunIntensity);
+    sunLayout->AddChild(std::make_shared<gui::Label>("Direction"));
+    sunLayout->AddChild(lightSettings.wgtSunDir);
     sunLayout->AddChild(std::make_shared<gui::Label>("Position"));
     sunLayout->AddChild(sunDirLayout);
     sunLayout->AddChild(std::make_shared<gui::Label>("Color"));
@@ -614,6 +708,20 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     impl_->lightSettings.wgtBase->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);
+}
+
+bool GuiVisualizer::SetIBL(const char *path) {
+    auto newIBL =
+            GetRenderer().AddIndirectLight(ResourceLoadRequest(path));
+    if (newIBL) {
+        auto *scene = impl_->scene->GetScene();
+        impl_->lightSettings.hIbl = newIBL;
+        auto intensity = scene->GetIndirectLightIntensity();
+        scene->SetIndirectLight(newIBL);
+        scene->SetIndirectLightIntensity(intensity);
+        return true;
+    }
+    return false;
 }
 
 bool GuiVisualizer::LoadGeometry(const std::string &path) {

@@ -92,6 +92,8 @@ void TextEdit::SetOnValueChanged(
     impl_->onValueChanged = onValueChanged;
 }
 
+bool TextEdit::ValidateNewText(const char *text) { return true; }
+
 Size TextEdit::CalcPreferredSize(const Theme &theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
@@ -139,9 +141,13 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (impl_->onValueChanged) {
-            impl_->onValueChanged(impl_->text.c_str());
+        if (ValidateNewText(impl_->text.c_str())) {
+            if (impl_->onValueChanged) {
+                impl_->onValueChanged(impl_->text.c_str());
+            }
         }
+        // ValidateNewText() may have updated text (even if returned true)
+        result = Widget::DrawResult::REDRAW;
     }
 
     return result;

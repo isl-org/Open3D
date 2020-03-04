@@ -24,58 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "TextEdit.h"
 
-#include "Open3D/GUI/Window.h"
+namespace open3d  {
+namespace gui  {
 
-#include <vector>
-
-namespace open3d {
-
-namespace geometry {
-class AxisAlignedBoundingBox;
-class Geometry;
-}  // namespace geometry
-
-namespace gui {
-struct Theme;
-}
-
-namespace visualization {
-class GuiVisualizer : public gui::Window {
-    using Super = gui::Window;
-
+class NumberEdit : public TextEdit {
+    using Super = TextEdit;
 public:
-    GuiVisualizer(const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                          geometries,
-                  const std::string& title,
-                  int width,
-                  int height,
-                  int left,
-                  int top);
-    virtual ~GuiVisualizer();
+    enum Type { INT, DOUBLE };
+    explicit NumberEdit(Type type);
+    ~NumberEdit();
 
-    void SetTitle(const std::string& title);
-    void SetGeometry(
-            const std::vector<std::shared_ptr<const geometry::Geometry>>&
-                    geometries);
+    int GetIntValue() const;
+    double GetDoubleValue() const;
+    void SetValue(double val);
 
-    bool SetIBL(const char *path);
+    double GetMinimumValue() const;
+    double GetMaximumValue() const;
+    void SetLimits(double minValue, double maxValue);
 
-    bool LoadGeometry(const std::string& path);
-    void ExportRGB(const std::string& path);
-    void ExportDepth(const std::string& path);
+    Size CalcPreferredSize(const Theme& theme) const override;
 
-    void Layout(const gui::Theme& theme) override;
+    void SetOnValueChanged(std::function<void(double)> onChanged);
 
 protected:
-    void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
-    void OnDragDropped(const char* path) override;
+    bool ValidateNewText(const char *text) override;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace visualization
 }  // namespace open3d
+}  // namespace gui
