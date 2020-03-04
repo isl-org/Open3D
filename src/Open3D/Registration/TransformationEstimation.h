@@ -48,29 +48,50 @@ enum class TransformationEstimationType {
     ColoredICP = 3,
 };
 
+/// \class TransformationEstimation
+///
 /// Base class that estimates a transformation between two point clouds
 /// The virtual function ComputeTransformation() must be implemented in
 /// subclasses.
 class TransformationEstimation {
 public:
+    /// \brief Default Constructor.
     TransformationEstimation() {}
     virtual ~TransformationEstimation() {}
 
 public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
+    /// Compute RMSE between source and target points cloud given
+    /// correspondences.
+    ///
+    /// \param source Source point cloud.
+    /// \param target Target point cloud.
+    /// \param corres Correspondence set between source and target point cloud.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
                                const CorrespondenceSet &corres) const = 0;
+    /// Compute transformation from source to target point cloud given
+    /// correspondences.
+    ///
+    /// \param source Source point cloud.
+    /// \param target Target point cloud.
+    /// \param corres Correspondence set between source and target point cloud.
     virtual Eigen::Matrix4d ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
 };
 
-/// Estimate a transformation for point to point distance
+/// \class TransformationEstimationPointToPoint
+///
+/// Estimate a transformation for point to point distance.
 class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param with_scaling Set to True to estimate scaling, False to force
+    /// scaling to be 1.
     TransformationEstimationPointToPoint(bool with_scaling = false)
         : with_scaling_(with_scaling) {}
     ~TransformationEstimationPointToPoint() override {}
@@ -89,6 +110,12 @@ public:
             const CorrespondenceSet &corres) const override;
 
 public:
+    /// \brief Set to True to estimate scaling, False to force scaling to be 1.
+    ///
+    /// The homogeneous transformation is given by\n
+    /// T = [ cR t]\n
+    ///    [0   1]\n
+    /// Sets 𝑐=1 if with_scaling is False.
     bool with_scaling_ = false;
 
 private:
@@ -96,9 +123,12 @@ private:
             TransformationEstimationType::PointToPoint;
 };
 
-/// Estimate a transformation for point to plane distance
+/// \class TransformationEstimationPointToPlane
+///
+/// Class to estimate a transformation for point to plane distance.
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
+    /// \brief Default Constructor.
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
