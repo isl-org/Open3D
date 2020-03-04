@@ -90,6 +90,7 @@ public:
                            const Eigen::Vector3f& pos) override;
     void SetLightPosition(const LightHandle& id,
                           const Eigen::Vector3f& pos) override;
+    void SetLightFalloff(const LightHandle& id, float falloff) override;
     void RemoveLight(const LightHandle& id) override;
 
     void SetIndirectLight(const IndirectLightHandle& id) override;
