@@ -73,6 +73,8 @@ public:
     // In other cases color will be set on mode switch
     virtual void SetClearColor(const Eigen::Vector3f& color) = 0;
 
+    virtual void SetSSAOEnabled(bool enabled) = 0;
+
     virtual Camera* GetCamera() const = 0;
 };
 

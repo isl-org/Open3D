@@ -76,6 +76,7 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
+
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
@@ -148,6 +149,11 @@ void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
     }
+}
+
+void FilamentView::SetSSAOEnabled(const bool enabled) {
+    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO : filament::View::AmbientOcclusion::NONE;
+    view_->setAmbientOcclusion(option);
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
