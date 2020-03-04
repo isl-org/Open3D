@@ -73,7 +73,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                     using dst_t = scalar_t;
                     CUDALauncher::LaunchUnaryEWKernel(
                             indexer,
-                            // Need to wrap as extended CUDA lamba function
+                            // Need to wrap as extended CUDA lambda function
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDACopyElementKernel<src_t, dst_t>(src, dst);
                             });
