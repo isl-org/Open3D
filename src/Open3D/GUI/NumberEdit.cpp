@@ -37,8 +37,8 @@
 
 #include <string.h>
 
-namespace open3d  {
-namespace gui  {
+namespace open3d {
+namespace gui {
 
 namespace {
 static int gNextNumberEditId = 1;
@@ -51,15 +51,14 @@ struct NumberEdit::Impl {
     // numbers that are reasonable for users to be entering. (Since JavaScript
     // only uses doubles, apparently it works for a lot more situations, too.)
     double value;
-    double minValue = -2e9; // -2 billion, which is roughly -INT_MAX
+    double minValue = -2e9;  // -2 billion, which is roughly -INT_MAX
     double maxValue = 2e9;
     int nDecimalDigits = -1;
     std::function<void(double)> onChanged;
 };
 
 NumberEdit::NumberEdit(Type type)
-: impl_(std::make_unique<NumberEdit::Impl>())
-{
+    : impl_(std::make_unique<NumberEdit::Impl>()) {
     impl_->type = type;
     std::stringstream s;
     s << "##numedit" << gNextNumberEditId++;
@@ -68,13 +67,9 @@ NumberEdit::NumberEdit(Type type)
 
 NumberEdit::~NumberEdit() {}
 
-int NumberEdit::GetIntValue() const {
-    return int(impl_->value);
-}
+int NumberEdit::GetIntValue() const { return int(impl_->value); }
 
-double NumberEdit::GetDoubleValue() const {
-    return impl_->value;
-}
+double NumberEdit::GetDoubleValue() const { return impl_->value; }
 
 void NumberEdit::SetValue(double val) {
     if (impl_->type == INT) {
@@ -84,13 +79,9 @@ void NumberEdit::SetValue(double val) {
     }
 }
 
-double NumberEdit::GetMinimumValue() const {
-    return impl_->minValue;
-}
+double NumberEdit::GetMinimumValue() const { return impl_->minValue; }
 
-double NumberEdit::GetMaximumValue() const {
-    return impl_->maxValue;
-}
+double NumberEdit::GetMaximumValue() const { return impl_->maxValue; }
 
 void NumberEdit::SetLimits(double minValue, double maxValue) {
     if (impl_->type == INT) {
@@ -111,7 +102,7 @@ void NumberEdit::SetOnValueChanged(std::function<void(double)> onChanged) {
     impl_->onChanged = onChanged;
 }
 
-Size NumberEdit::CalcPreferredSize(const Theme& theme) const {
+Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
     int nMinDigits = std::ceil(std::log10(std::abs(impl_->minValue)));
     int nMaxDigits = std::ceil(std::log10(std::abs(impl_->maxValue)));
     int nDigits = std::max(6, std::max(nMinDigits, nMaxDigits));
@@ -169,11 +160,11 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
             }
         }
         double dValue = impl_->value;
-        if (ImGui::InputDouble(impl_->id.c_str(), &dValue, 0.0, 0.0, fmt.c_str())) {
+        if (ImGui::InputDouble(impl_->id.c_str(), &dValue, 0.0, 0.0,
+                               fmt.c_str())) {
             SetValue(dValue);
             result = Widget::DrawResult::REDRAW;
         }
-
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
@@ -191,6 +182,5 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
     return result;
 }
 
-}  // namespace open3d
 }  // namespace gui
-
+}  // namespace open3d

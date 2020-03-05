@@ -26,11 +26,12 @@
 
 #include "Widget.h"
 
-namespace open3d  {
-namespace gui  {
+namespace open3d {
+namespace gui {
 
 class NumberEdit : public Widget {
     using Super = Widget;
+
 public:
     enum Type { INT, DOUBLE };
     explicit NumberEdit(Type type);
@@ -49,12 +50,12 @@ public:
     void SetOnValueChanged(std::function<void(double)> onChanged);
 
     Size CalcPreferredSize(const Theme& theme) const override;
-    Widget::DrawResult Draw(const DrawContext &context) override;
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace open3d
 }  // namespace gui
+}  // namespace open3d

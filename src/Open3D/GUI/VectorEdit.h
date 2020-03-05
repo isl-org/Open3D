@@ -28,11 +28,12 @@
 
 #include <Eigen/Geometry>
 
-namespace open3d  {
-namespace gui  {
+namespace open3d {
+namespace gui {
 
 class VectorEdit : public Widget {
     using Super = Widget;
+
 public:
     VectorEdit();
     ~VectorEdit();
@@ -40,16 +41,16 @@ public:
     Eigen::Vector3f GetValue() const;
     void SetValue(const Eigen::Vector3f& val);
 
-    void SetOnValueChanged(std::function<void(const Eigen::Vector3f&)> onChanged);
+    void SetOnValueChanged(
+            std::function<void(const Eigen::Vector3f&)> onChanged);
 
     Size CalcPreferredSize(const Theme& theme) const override;
-    Widget::DrawResult Draw(const DrawContext &context) override;
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace open3d
 }  // namespace gui
-
+}  // namespace open3d

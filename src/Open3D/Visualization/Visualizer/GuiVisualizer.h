@@ -60,7 +60,7 @@ public:
             const std::vector<std::shared_ptr<const geometry::Geometry>>&
                     geometries);
 
-    bool SetIBL(const char *path);
+    bool SetIBL(const char* path);
 
     bool LoadGeometry(const std::string& path);
     void ExportRGB(const std::string& path);

@@ -495,16 +495,17 @@ GuiVisualizer::GuiVisualizer(
                         impl_->lightSettings.hDirectionalLight, newValue);
             };
 
-    auto setSunDir = [this, renderScene](const Eigen::Vector3f& dir) {
+    auto setSunDir = [this, renderScene](const Eigen::Vector3f &dir) {
         this->impl_->lightSettings.wgtSunDir->SetValue(dir);
         renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
                                        dir.normalized());
     };
 
-    this->impl_->scene->SetDirectionalLight(lightSettings.hDirectionalLight,
-                                    [this](const Eigen::Vector3f& newDir) {
-        impl_->lightSettings.wgtSunDir->SetValue(newDir);
-    });
+    this->impl_->scene->SetDirectionalLight(
+            lightSettings.hDirectionalLight,
+            [this](const Eigen::Vector3f &newDir) {
+                impl_->lightSettings.wgtSunDir->SetValue(newDir);
+            });
 
     lightSettings.wgtSunDir = std::make_shared<gui::VectorEdit>();
     lightSettings.wgtSunDir->SetValue(lightDescription.direction);
@@ -618,8 +619,7 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 }
 
 bool GuiVisualizer::SetIBL(const char *path) {
-    auto newIBL =
-            GetRenderer().AddIndirectLight(ResourceLoadRequest(path));
+    auto newIBL = GetRenderer().AddIndirectLight(ResourceLoadRequest(path));
     if (newIBL) {
         auto *scene = impl_->scene->GetScene();
         impl_->lightSettings.hIbl = newIBL;

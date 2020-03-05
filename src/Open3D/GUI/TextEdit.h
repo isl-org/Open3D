@@ -54,7 +54,7 @@ public:
 protected:
     /// Returns true if new text is valid. Otherwise call SetText() with a
     /// valid value and return false.
-    virtual bool ValidateNewText(const char *text);
+    virtual bool ValidateNewText(const char* text);
 
 private:
     struct Impl;

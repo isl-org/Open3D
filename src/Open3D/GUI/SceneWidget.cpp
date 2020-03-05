@@ -53,7 +53,8 @@ public:
 
     void SetViewSize(const Size& size) { viewSize_ = size; }
 
-    virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
+    virtual void SetBoundingBox(
+            const geometry::AxisAlignedBoundingBox& bounds) {
         modelSize_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
         modelBounds_ = bounds;
     }
@@ -107,7 +108,8 @@ public:
         matrix_ = m;
     }
 
-    virtual void RotateWorld(int dx, int dy,
+    virtual void RotateWorld(int dx,
+                             int dy,
                              const Eigen::Vector3f& xAxis,
                              const Eigen::Vector3f& yAxis) {
         auto matrix = matrixAtMouseDown_;  // copy
@@ -120,7 +122,8 @@ public:
         axis = axis.normalized();
 
         axis = matrix.rotation() * axis;  // convert axis to world coords
-        auto rotMatrix = visualization::Camera::Transform::Identity() * Eigen::AngleAxisf(-theta, axis);
+        auto rotMatrix = visualization::Camera::Transform::Identity() *
+                         Eigen::AngleAxisf(-theta, axis);
 
         auto pos = matrix * Eigen::Vector3f(0, 0, 0);
         auto dist = (centerOfRotation_ - pos).norm();
@@ -205,11 +208,10 @@ protected:
 
 class LightDirControl : public MatrixControl {
     using Super = MatrixControl;
+
 public:
-    LightDirControl(visualization::Scene *scene,
-                    visualization::Camera *camera)
-    : scene_(scene), camera_(camera) {
-    }
+    LightDirControl(visualization::Scene* scene, visualization::Camera* camera)
+        : scene_(scene), camera_(camera) {}
 
     void SetDirectionalLight(visualization::LightHandle dirLight) {
         dirLight_ = dirLight;
@@ -227,7 +229,7 @@ public:
         auto identity = visualization::Camera::Transform::Identity();
         Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
-        for (auto &o : uiObjs_) {
+        for (auto& o : uiObjs_) {
             scene_->RemoveGeometry(o.handle);
         }
 
@@ -239,7 +241,7 @@ public:
         //       here. This code needs to be changed once we fix that
         //       behavior.
 
-        double sphereSize = 0.5 * modelSize_; // modelSize_ is a diameter
+        double sphereSize = 0.5 * modelSize_;  // modelSize_ is a diameter
         auto sphereTris = geometry::TriangleMesh::CreateSphere(sphereSize, 20);
         auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphereTris);
         sphere->PaintUniformColor({0.0f, 0.0f, 1.0f});
@@ -257,8 +259,8 @@ public:
 
         const double arrowRadius = 0.075 * sunRadius;
         const double arrowLength = 0.333 * modelSize_;
-        auto sunDir = CreateArrow(dir.cast<double>(), arrowRadius,
-                                  arrowLength, 0.1 * arrowLength, 20);
+        auto sunDir = CreateArrow(dir.cast<double>(), arrowRadius, arrowLength,
+                                  0.1 * arrowLength, 20);
         sunDir->PaintUniformColor({1.0f, 0.5f, 0.0f});
         auto t2 = visualization::Camera::Transform::Identity();
         t2.translate(-sphereSize * dir);
@@ -272,16 +274,16 @@ public:
     void UpdateMouseDragUI() {
         // TODO: uncomment the two lines here when we setting a transform
         //       no longer moves an object to be centered about the origin.
-        //auto modelCenter = modelBounds_.GetCenter().cast<float>();
-        for (auto &o : uiObjs_) {
+        // auto modelCenter = modelBounds_.GetCenter().cast<float>();
+        for (auto& o : uiObjs_) {
             visualization::Camera::Transform t = GetMatrix() * o.transform;
-            //t.pretranslate(modelCenter);
+            // t.pretranslate(modelCenter);
             scene_->SetEntityTransform(o.handle, t);
         }
     }
 
     void EndMouseDrag() {
-        for (auto &o : uiObjs_) {
+        for (auto& o : uiObjs_) {
             scene_->RemoveGeometry(o.handle);
         }
     }
@@ -291,8 +293,8 @@ public:
     }
 
 private:
-    visualization::Scene *scene_;
-    visualization::Camera *camera_;
+    visualization::Scene* scene_;
+    visualization::Camera* camera_;
     visualization::LightHandle dirLight_;
     Eigen::Vector3f lightDirAtMouseDown_;
 
@@ -302,11 +304,12 @@ private:
     };
     std::vector<UIObj> uiObjs_;
 
-    std::shared_ptr<geometry::TriangleMesh> CreateArrow(const Eigen::Vector3d& dir,
-                                                        double radius,
-                                                        double length,
-                                                        double headLength,
-                                                        int nSegs = 20) {
+    std::shared_ptr<geometry::TriangleMesh> CreateArrow(
+            const Eigen::Vector3d& dir,
+            double radius,
+            double length,
+            double headLength,
+            int nSegs = 20) {
         Eigen::Vector3d tmp(dir.y(), dir.z(), dir.x());
         Eigen::Vector3d u = dir.cross(tmp).normalized();
         Eigen::Vector3d v = dir.cross(u);
@@ -315,57 +318,60 @@ private:
         Eigen::Vector3d headStart((length - headLength) * dir.x(),
                                   (length - headLength) * dir.y(),
                                   (length - headLength) * dir.z());
-        Eigen::Vector3d end(length * dir.x(), length * dir.y(), length * dir.z());
+        Eigen::Vector3d end(length * dir.x(), length * dir.y(),
+                            length * dir.z());
         auto arrow = std::make_shared<geometry::TriangleMesh>();
         // Cylinder
-        CreateCircle(start, u, v, radius, nSegs,
-                     arrow->vertices_, arrow->vertex_normals_);
+        CreateCircle(start, u, v, radius, nSegs, arrow->vertices_,
+                     arrow->vertex_normals_);
         int nVertsInCircle = nSegs + 1;
-        CreateCircle(headStart, u, v, radius, nSegs,
-                     arrow->vertices_, arrow->vertex_normals_);
-        for (int i = 0;  i < nSegs;  ++i) {
+        CreateCircle(headStart, u, v, radius, nSegs, arrow->vertices_,
+                     arrow->vertex_normals_);
+        for (int i = 0; i < nSegs; ++i) {
             arrow->triangles_.push_back({i, i + 1, nVertsInCircle + i + 1});
-            arrow->triangles_.push_back({nVertsInCircle + i + 1, nVertsInCircle + i, i});
+            arrow->triangles_.push_back(
+                    {nVertsInCircle + i + 1, nVertsInCircle + i, i});
         }
 
         // End of cone
         int startIdx = int(arrow->vertices_.size());
-        CreateCircle(headStart, u, v, 2.0 * radius, nSegs,
-                     arrow->vertices_, arrow->vertex_normals_);
-        for (int i = startIdx;  i < int(arrow->vertices_.size());  ++i) {
+        CreateCircle(headStart, u, v, 2.0 * radius, nSegs, arrow->vertices_,
+                     arrow->vertex_normals_);
+        for (int i = startIdx; i < int(arrow->vertices_.size()); ++i) {
             arrow->vertex_normals_.push_back(-dir);
         }
         int centerIdx = int(arrow->vertices_.size());
         arrow->vertices_.push_back(headStart);
         arrow->vertex_normals_.push_back(-dir);
-        for (int i = 0;  i < nSegs;  ++i) {
-            arrow->triangles_.push_back({startIdx + i,
-                                         startIdx + i + 1,
-                                         centerIdx});
+        for (int i = 0; i < nSegs; ++i) {
+            arrow->triangles_.push_back(
+                    {startIdx + i, startIdx + i + 1, centerIdx});
         }
 
         // Cone
         startIdx = int(arrow->vertices_.size());
-        CreateCircle(headStart, u, v, 2.0 * radius, nSegs,
-                     arrow->vertices_, arrow->vertex_normals_);
-        for (int i = 0;  i < nSegs;  ++i) {
+        CreateCircle(headStart, u, v, 2.0 * radius, nSegs, arrow->vertices_,
+                     arrow->vertex_normals_);
+        for (int i = 0; i < nSegs; ++i) {
             int pointIdx = int(arrow->vertices_.size());
             arrow->vertices_.push_back(end);
-            arrow->vertex_normals_.push_back(arrow->vertex_normals_[startIdx + i]);
-            arrow->triangles_.push_back({startIdx + i,
-                                         startIdx + i + 1,
-                                         pointIdx});
+            arrow->vertex_normals_.push_back(
+                    arrow->vertex_normals_[startIdx + i]);
+            arrow->triangles_.push_back(
+                    {startIdx + i, startIdx + i + 1, pointIdx});
         }
 
         return arrow;
     }
 
     void CreateCircle(const Eigen::Vector3d& center,
-                      const Eigen::Vector3d& u, const Eigen::Vector3d& v,
-                      double radius, int nSegs,
+                      const Eigen::Vector3d& u,
+                      const Eigen::Vector3d& v,
+                      double radius,
+                      int nSegs,
                       std::vector<Eigen::Vector3d>& points,
                       std::vector<Eigen::Vector3d>& normals) {
-        for (int i = 0;  i <= nSegs;  ++i) {
+        for (int i = 0; i <= nSegs; ++i) {
             double theta = 2.0 * M_PI * double(i) / double(nSegs);
             double cosT = std::cos(theta);
             double sinT = std::sin(theta);
@@ -379,10 +385,12 @@ private:
 
 class CameraControls : public MatrixControl {
     using Super = MatrixControl;
+
 public:
     explicit CameraControls(visualization::Camera* c) : camera_(c) {}
 
-    void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) override{
+    void SetBoundingBox(
+            const geometry::AxisAlignedBoundingBox& bounds) override {
         Super::SetBoundingBox(bounds);
         // Initialize parent's matrix_ (in case we do a mouse wheel, which
         // doesn't involve a mouse down) and the center of rotation.
@@ -428,7 +436,6 @@ public:
         camera_->SetModelMatrix(modelMatrix);
     }
 
-
     void Dolly(int dy, DragType type) override {
         // Parent's matrix_ may not have been set yet
         if (type != DragType::MOUSE) {
@@ -437,7 +444,8 @@ public:
         Super::Dolly(dy, type);
     }
 
-    void Dolly(float zDist, visualization::Camera::Transform matrixIn) override {
+    void Dolly(float zDist,
+               visualization::Camera::Transform matrixIn) override {
         Super::Dolly(zDist, matrixIn);
         auto matrix = GetMatrix();
         camera_->SetModelMatrix(matrix);
@@ -564,11 +572,9 @@ private:
 
 class MouseInteractor {
 public:
-    MouseInteractor(visualization::Scene *scene,
-                    visualization::Camera* camera)
-    : cameraControls_(std::make_unique<CameraControls>(camera))
-    , lightDir_(std::make_unique<LightDirControl>(scene, camera)) {
-    }
+    MouseInteractor(visualization::Scene* scene, visualization::Camera* camera)
+        : cameraControls_(std::make_unique<CameraControls>(camera)),
+          lightDir_(std::make_unique<LightDirControl>(scene, camera)) {}
 
     void SetViewSize(const Size& size) {
         cameraControls_->SetViewSize(size);
@@ -581,8 +587,8 @@ public:
     }
 
     void SetDirectionalLight(
-                    visualization::LightHandle dirLight,
-                    std::function<void(const Eigen::Vector3f&)> onChanged) {
+            visualization::LightHandle dirLight,
+            std::function<void(const Eigen::Vector3f&)> onChanged) {
         lightDir_->SetDirectionalLight(dirLight);
         onLightDirChanged_ = onChanged;
     }
@@ -631,10 +637,12 @@ public:
                         cameraControls_->Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        cameraControls_->Dolly(dy, MatrixControl::DragType::MOUSE);
+                        cameraControls_->Dolly(dy,
+                                               MatrixControl::DragType::MOUSE);
                         break;
                     case State::ZOOM:
-                        cameraControls_->Zoom(dy, MatrixControl::DragType::MOUSE);
+                        cameraControls_->Zoom(dy,
+                                              MatrixControl::DragType::MOUSE);
                         break;
                     case State::ROTATE_XY:
                         cameraControls_->Rotate(dx, dy);
@@ -645,7 +653,8 @@ public:
                     case State::ROTATE_LIGHT:
                         lightDir_->Rotate(dx, dy);
                         if (onLightDirChanged_) {
-                            onLightDirChanged_(lightDir_->GetCurrentDirection());
+                            onLightDirChanged_(
+                                    lightDir_->GetCurrentDirection());
                         }
                         break;
                 }
@@ -653,13 +662,17 @@ public:
             }
             case MouseEvent::WHEEL: {
                 if (e.modifiers & int(KeyModifier::SHIFT)) {
-                    cameraControls_->Zoom(e.wheel.dy,
-                                          e.wheel.isTrackpad ? MatrixControl::DragType::TWO_FINGER
-                                                             : MatrixControl::DragType::WHEEL);
+                    cameraControls_->Zoom(
+                            e.wheel.dy,
+                            e.wheel.isTrackpad
+                                    ? MatrixControl::DragType::TWO_FINGER
+                                    : MatrixControl::DragType::WHEEL);
                 } else {
-                    cameraControls_->Dolly(e.wheel.dy,
-                                           e.wheel.isTrackpad ? MatrixControl::DragType::TWO_FINGER
-                                                              : MatrixControl::DragType::WHEEL);
+                    cameraControls_->Dolly(
+                            e.wheel.dy,
+                            e.wheel.isTrackpad
+                                    ? MatrixControl::DragType::TWO_FINGER
+                                    : MatrixControl::DragType::WHEEL);
                 }
                 break;
             }
@@ -681,7 +694,15 @@ private:
     int mouseDownX_ = 0;
     int mouseDownY_ = 0;
 
-    enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z, ROTATE_LIGHT };
+    enum class State {
+        NONE,
+        PAN,
+        DOLLY,
+        ZOOM,
+        ROTATE_XY,
+        ROTATE_Z,
+        ROTATE_LIGHT
+    };
     State state_ = State::NONE;
 };
 // ----------------------------------------------------------------------------
@@ -700,7 +721,8 @@ SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
     impl_->viewId = scene.AddView(0, 0, 1, 1);
 
     auto view = impl_->scene.GetView(impl_->viewId);
-    impl_->controls = std::make_shared<MouseInteractor>(&scene, view->GetCamera());
+    impl_->controls =
+            std::make_shared<MouseInteractor>(&scene, view->GetCamera());
 }
 
 SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
@@ -746,17 +768,17 @@ void SceneWidget::SetupCamera(
 }
 
 void SceneWidget::SetDirectionalLight(
-                visualization::LightHandle dirLight,
-                std::function<void(const Eigen::Vector3f&)> onDirChanged) {
+        visualization::LightHandle dirLight,
+        std::function<void(const Eigen::Vector3f&)> onDirChanged) {
     impl_->dirLight = dirLight;
     impl_->onLightDirChanged = onDirChanged;
-    impl_->controls->SetDirectionalLight(dirLight,
-                        [this, dirLight](const Eigen::Vector3f& dir) {
-        impl_->scene.SetLightDirection(dirLight, dir);
-        if (impl_->onLightDirChanged) {
-            impl_->onLightDirChanged(dir);
-        }
-    });
+    impl_->controls->SetDirectionalLight(
+            dirLight, [this, dirLight](const Eigen::Vector3f& dir) {
+                impl_->scene.SetLightDirection(dirLight, dir);
+                if (impl_->onLightDirChanged) {
+                    impl_->onLightDirChanged(dir);
+                }
+            });
 }
 
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {

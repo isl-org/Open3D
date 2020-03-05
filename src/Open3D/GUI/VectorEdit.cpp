@@ -33,8 +33,8 @@
 
 #include <sstream>
 
-namespace open3d  {
-namespace gui  {
+namespace open3d {
+namespace gui {
 
 namespace {
 static int gNextVectorEditId = 1;
@@ -54,9 +54,7 @@ VectorEdit::VectorEdit() : impl_(std::make_unique<VectorEdit::Impl>()) {
 
 VectorEdit::~VectorEdit() {}
 
-Eigen::Vector3f VectorEdit::GetValue() const {
-    return impl_->value;
-}
+Eigen::Vector3f VectorEdit::GetValue() const { return impl_->value; }
 
 void VectorEdit::SetValue(const Eigen::Vector3f& val) {
     if (impl_->isUnitVector) {
@@ -66,7 +64,8 @@ void VectorEdit::SetValue(const Eigen::Vector3f& val) {
     }
 }
 
-void VectorEdit::SetOnValueChanged(std::function<void(const Eigen::Vector3f&)> onChanged) {
+void VectorEdit::SetOnValueChanged(
+        std::function<void(const Eigen::Vector3f&)> onChanged) {
     impl_->onChanged = onChanged;
 }
 
@@ -76,8 +75,8 @@ Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
     return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
 }
 
-Widget::DrawResult VectorEdit::Draw(const DrawContext &context) {
-    auto &frame = GetFrame();
+Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
@@ -116,7 +115,5 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext &context) {
     return result;
 }
 
-}  // namespace open3d
 }  // namespace gui
-
-
+}  // namespace open3d
