@@ -49,7 +49,7 @@ void IndexGetCPU(const Tensor& src,
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchAdvancedIndexerKernel<scalar_t>(
+        CPULauncher::LaunchAdvancedIndexerKernel(
                 ai, CPUCopyElementKernel<scalar_t>);
     });
 }
@@ -63,7 +63,7 @@ void IndexSetCPU(const Tensor& src,
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        CPULauncher::LaunchAdvancedIndexerKernel<scalar_t>(
+        CPULauncher::LaunchAdvancedIndexerKernel(
                 ai, CPUCopyElementKernel<scalar_t>);
     });
 }

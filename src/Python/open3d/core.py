@@ -148,6 +148,42 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).div_(value)
 
+    def to(self, dtype, copy=False):
+        """
+        Returns a tensor with the specified dtype.
+
+        Args:
+            dtype: The targeted dtype to convert to.
+            copy: If true, a new tensor is always created; if false, the copy
+                  is avoided when the original tensor already have the targeted
+                  dtype.
+        """
+        return super(Tensor, self).to(dtype, copy)
+
+    def get_shpae(self):
+        """
+        Returns the shape of the tensor.
+        """
+        return super(Tensor, self).get_shpae()
+
+    def get_stides(self):
+        """
+        Returns the strides of the tensor.
+        """
+        return super(Tensor, self).get_strides()
+
+    def get_dtype(self):
+        """
+        Returns the dtype of the tensor.
+        """
+        return super(Tensor, self).get_dtype()
+
+    def get_device(self):
+        """
+        Returns the shape of the tensor.
+        """
+        return super(Tensor, self).get_device()
+
     def __add__(self, value):
         return self.add(value)
 

@@ -214,6 +214,12 @@ public:
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);
 
+    /// Returns a tensor with the specified \p dtype.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor already have the targeted dtype.
+    Tensor To(Dtype dtype, bool copy = false) const;
+
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
 

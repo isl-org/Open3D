@@ -71,19 +71,19 @@ void BinaryEWCPU(const Tensor& lhs,
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         switch (op_code) {
             case BinaryEWOpCode::Add:
-                CPULauncher::LaunchBinaryEWKernel<scalar_t>(
+                CPULauncher::LaunchBinaryEWKernel(
                         indexer, CPUAddElementKernel<scalar_t>);
                 break;
             case BinaryEWOpCode::Sub:
-                CPULauncher::LaunchBinaryEWKernel<scalar_t>(
+                CPULauncher::LaunchBinaryEWKernel(
                         indexer, CPUSubElementKernel<scalar_t>);
                 break;
             case BinaryEWOpCode::Mul:
-                CPULauncher::LaunchBinaryEWKernel<scalar_t>(
+                CPULauncher::LaunchBinaryEWKernel(
                         indexer, CPUMulElementKernel<scalar_t>);
                 break;
             case BinaryEWOpCode::Div:
-                CPULauncher::LaunchBinaryEWKernel<scalar_t>(
+                CPULauncher::LaunchBinaryEWKernel(
                         indexer, CPUDivElementKernel<scalar_t>);
                 break;
             default:
