@@ -233,6 +233,9 @@ void pybind_core_tensor(py::module& m) {
                    return tensor.Slice(dim, start, stop, step);
                });
 
+    // Casting
+    tensor.def("to", &Tensor::To);
+
     // Binary element-wise ops
     tensor.def("add", &Tensor::Add);
     tensor.def("add_", &Tensor::Add_);
@@ -242,6 +245,26 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("mul_", &Tensor::Mul_);
     tensor.def("div", &Tensor::Div);
     tensor.def("div_", &Tensor::Div_);
+
+    // Getters
+    tensor.def("get_shape",
+               [](const Tensor& tensor) { return tensor.GetShape(); });
+    tensor.def("get_strides",
+               [](const Tensor& tensor) { return tensor.GetStrides(); });
+    tensor.def("get_dtype", &Tensor::GetDtype);
+    tensor.def("get_device", &Tensor::GetDevice);
+
+    // Unary element-wise ops
+    tensor.def("sqrt", &Tensor::Sqrt);
+    tensor.def("sqrt_", &Tensor::Sqrt_);
+    tensor.def("sin", &Tensor::Sin);
+    tensor.def("sin_", &Tensor::Sin_);
+    tensor.def("cos", &Tensor::Cos);
+    tensor.def("cos_", &Tensor::Cos_);
+    tensor.def("neg", &Tensor::Neg);
+    tensor.def("neg_", &Tensor::Neg_);
+    tensor.def("exp", &Tensor::Exp);
+    tensor.def("exp_", &Tensor::Exp_);
 
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });

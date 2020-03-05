@@ -299,6 +299,44 @@ def test_binary_ew_ops():
     np.testing.assert_equal(a.numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
 
+def test_to():
+    a = o3d.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5, 5.6]).astype(np.float32))
+    b = a.to(o3d.Dtype.Int32)
+    np.testing.assert_equal(b.numpy(), np.array([0, 1, 2, 3, 4, 5]))
+    assert b.get_shape() == o3d.SizeVector([6])
+    assert b.get_strides() == o3d.SizeVector([1])
+    assert b.get_dtype() == o3d.Dtype.Int32
+    assert b.get_device() == a.get_device()
+
+
+def test_unary_ew_ops():
+    src_vals = np.array([0, 1, 2, 3, 4, 5]).astype(np.float32)
+    src = o3d.Tensor(src_vals)
+
+    rtol = 1e-5
+    atol = 0
+    np.testing.assert_allclose(src.sqrt().numpy(),
+                               np.sqrt(src_vals),
+                               rtol=rtol,
+                               atol=atol)
+    np.testing.assert_allclose(src.sin().numpy(),
+                               np.sin(src_vals),
+                               rtol=rtol,
+                               atol=atol)
+    np.testing.assert_allclose(src.cos().numpy(),
+                               np.cos(src_vals),
+                               rtol=rtol,
+                               atol=atol)
+    np.testing.assert_allclose(src.neg().numpy(),
+                               -src_vals,
+                               rtol=rtol,
+                               atol=atol)
+    np.testing.assert_allclose(src.exp().numpy(),
+                               np.exp(src_vals),
+                               rtol=rtol,
+                               atol=atol)
+
+
 def test_tensorlist_operations():
     a = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=1)
     assert a.size() == 1

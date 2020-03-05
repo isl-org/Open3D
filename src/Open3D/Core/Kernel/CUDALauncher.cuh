@@ -64,7 +64,7 @@ __global__ void ElementWiseKernel(int64_t num_elems, func_t f) {
 
 class CUDALauncher {
 public:
-    template <typename scalar_t, typename func_t>
+    template <typename func_t>
     static void LaunchUnaryEWKernel(const Indexer& indexer,
                                     func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
@@ -82,7 +82,7 @@ public:
                 <<<grid_size, threads_per_block, 0>>>(num_elems, f);
     }
 
-    template <typename scalar_t, typename func_t>
+    template <typename func_t>
     static void LaunchBinaryEWKernel(const Indexer& indexer,
                                      func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
@@ -101,7 +101,7 @@ public:
                 <<<grid_size, threads_per_block, 0>>>(num_elems, f);
     }
 
-    template <typename scalar_t, typename func_t>
+    template <typename func_t>
     static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
                                             func_t element_kernel) {
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
