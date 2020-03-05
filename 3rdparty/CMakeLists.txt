@@ -26,7 +26,12 @@ macro(INSTALL_HEADERS source)
 endmacro()
 
 # dirent
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
+if (WIN32)
+    message(STATUS "On windows, so using 3rdparty/dirent")
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
+else ()
+    message(STATUS "Using system dirent")
+endif ()
 
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
 if (BUILD_EIGEN3)
@@ -325,7 +330,7 @@ set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
-     # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
+     ${dirent_INCLUDE_DIRS}
      ${EIGEN3_INCLUDE_DIRS}
      ${FLANN_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
