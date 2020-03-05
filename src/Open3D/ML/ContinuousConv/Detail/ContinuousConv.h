@@ -348,10 +348,11 @@ void CConvComputeFeaturesCPU(TReal* out_features,
     CALL_TEMPLATE(INTERPOLATION, MAPPING, false, false, false, true) \
     CALL_TEMPLATE(INTERPOLATION, MAPPING, false, false, false, false)
 
-#define CALL_TEMPLATE3(INTERPOLATION)                             \
-    CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_RADIAL)            \
-    CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_VOLUME_PRESERVING) \
-    CALL_TEMPLATE2(INTERPOLATION, IDENTITY)
+#define CALL_TEMPLATE3(INTERPOLATION)                                     \
+    CALL_TEMPLATE2(INTERPOLATION, CoordinateMapping::BALL_TO_CUBE_RADIAL) \
+    CALL_TEMPLATE2(INTERPOLATION,                                         \
+                   CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING)     \
+    CALL_TEMPLATE2(INTERPOLATION, CoordinateMapping::IDENTITY)
 
 #define CALL_TEMPLATE4                               \
     CALL_TEMPLATE3(InterpolationMode::LINEAR)        \

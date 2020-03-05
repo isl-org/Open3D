@@ -124,7 +124,7 @@ inline __device__ void MapCylinderToCube(T& x, T& y, T& z) {
 /// \param offset_y    Like \p offset_x
 /// \param offset_z    Like \p offset_x
 ///
-template <bool ALIGN_CORNERS, int MAPPING, class T>
+template <bool ALIGN_CORNERS, CoordinateMapping MAPPING, class T>
 inline __device__ void ComputeFilterCoordinates(T& x,
                                                 T& y,
                                                 T& z,
@@ -137,7 +137,7 @@ inline __device__ void ComputeFilterCoordinates(T& x,
                                                 const T& offset_x,
                                                 const T& offset_y,
                                                 const T& offset_z) {
-    if (MAPPING == BALL_TO_CUBE_RADIAL) {
+    if (MAPPING == CoordinateMapping::BALL_TO_CUBE_RADIAL) {
         // x,y,z is now in the range [-1,1]
         x *= 2 * inv_extent_x;
         y *= 2 * inv_extent_y;
@@ -155,7 +155,7 @@ inline __device__ void ComputeFilterCoordinates(T& x,
             y *= T(0.5) * radius / abs_max;
             z *= T(0.5) * radius / abs_max;
         }
-    } else if (MAPPING == BALL_TO_CUBE_VOLUME_PRESERVING) {
+    } else if (MAPPING == CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING) {
         // x,y,z is now in the range [-1,1]
         x *= 2 * inv_extent_x;
         y *= 2 * inv_extent_y;

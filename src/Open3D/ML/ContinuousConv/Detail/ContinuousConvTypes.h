@@ -42,7 +42,7 @@ enum class InterpolationMode { LINEAR, LINEAR_BORDER, NEAREST_NEIGHBOR };
 /// - BALL_TO_CUBE_VOLUME_PRESERVING is using a more expensive volume
 ///   preserving mapping to map a sphere to a cube.
 /// - IDENTITY no mapping is applied to the coordinates.
-enum CoordinateMapping {
+enum class CoordinateMapping {
     BALL_TO_CUBE_RADIAL,
     BALL_TO_CUBE_VOLUME_PRESERVING,
     IDENTITY

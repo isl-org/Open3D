@@ -56,11 +56,12 @@ public:
                                                            &mapping_str));
 
         if (mapping_str == "ball_to_cube_radial")
-            coordinate_mapping = BALL_TO_CUBE_RADIAL;
+            coordinate_mapping = CoordinateMapping::BALL_TO_CUBE_RADIAL;
         else if (mapping_str == "ball_to_cube_volume_preserving")
-            coordinate_mapping = BALL_TO_CUBE_VOLUME_PRESERVING;
+            coordinate_mapping =
+                    CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING;
         else
-            coordinate_mapping = IDENTITY;
+            coordinate_mapping = CoordinateMapping::IDENTITY;
 
         OP_REQUIRES_OK(construction, construction->GetAttr("max_temp_mem_MB",
                                                            &max_temp_mem_MB));

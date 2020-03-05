@@ -37,7 +37,7 @@ namespace detail {
 template <class TReal,
           class TIndex,
           bool ALIGN_CORNERS,
-          int MAPPING,
+          CoordinateMapping MAPPING,
           InterpolationMode INTERPOLATION>
 __global__ void FillColumnKernel(
         TReal* columns,
@@ -219,10 +219,11 @@ void FillColumn(const cudaStream_t& stream,
     CALL_TEMPLATE(INTERPOLATION, MAPPING, true) \
     CALL_TEMPLATE(INTERPOLATION, MAPPING, false)
 
-#define CALL_TEMPLATE3(INTERPOLATION)                             \
-    CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_RADIAL)            \
-    CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_VOLUME_PRESERVING) \
-    CALL_TEMPLATE2(INTERPOLATION, IDENTITY)
+#define CALL_TEMPLATE3(INTERPOLATION)                                     \
+    CALL_TEMPLATE2(INTERPOLATION, CoordinateMapping::BALL_TO_CUBE_RADIAL) \
+    CALL_TEMPLATE2(INTERPOLATION,                                         \
+                   CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING)     \
+    CALL_TEMPLATE2(INTERPOLATION, CoordinateMapping::IDENTITY)
 
 #define CALL_TEMPLATE4                               \
     CALL_TEMPLATE3(InterpolationMode::LINEAR)        \
@@ -271,7 +272,7 @@ template void FillColumn<float, int32_t>(
 template <class TReal,
           class TIndex,
           bool ALIGN_CORNERS,
-          int MAPPING,
+          CoordinateMapping MAPPING,
           InterpolationMode INTERPOLATION>
 __global__ void FillColumnTransposeKernel(
         TReal* columns,
@@ -457,10 +458,11 @@ void FillColumnTranspose(
     CALL_TEMPLATE(INTERPOLATION, MAPPING, true) \
     CALL_TEMPLATE(INTERPOLATION, MAPPING, false)
 
-#define CALL_TEMPLATE3(INTERPOLATION)                             \
-    CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_RADIAL)            \
-    CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_VOLUME_PRESERVING) \
-    CALL_TEMPLATE2(INTERPOLATION, IDENTITY)
+#define CALL_TEMPLATE3(INTERPOLATION)                                     \
+    CALL_TEMPLATE2(INTERPOLATION, CoordinateMapping::BALL_TO_CUBE_RADIAL) \
+    CALL_TEMPLATE2(INTERPOLATION,                                         \
+                   CoordinateMapping::BALL_TO_CUBE_VOLUME_PRESERVING)     \
+    CALL_TEMPLATE2(INTERPOLATION, CoordinateMapping::IDENTITY)
 
 #define CALL_TEMPLATE4                               \
     CALL_TEMPLATE3(InterpolationMode::LINEAR)        \
