@@ -167,11 +167,9 @@ coordinate_mapping:
   For all mappings relative coordinates will be scaled with the inverse extent, 
   i.e. the extent becomes a unit cube.
   After that one of the following mappings will be applied:
-  
     'ball_to_cube_radial': maps a unit ball to a unit cube by radial stretching.
     'ball_to_cube_volume_preserving': maps a unit ball to a unit cube preserving the volume.
     'identity': the identity mapping.
-
   Use 'ball_to_cube_radial' for a spherical or ellipsoidal filter window 
   and 'identiy' for a rectangular filter window.
 

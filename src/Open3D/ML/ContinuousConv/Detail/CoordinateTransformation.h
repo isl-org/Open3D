@@ -204,7 +204,7 @@ struct InterpolationVec {};
 
 /// Implementation for NEAREST_NEIGHBOR
 template <class T, int VECSIZE>
-struct InterpolationVec<T, VECSIZE, NEAREST_NEIGHBOR> {
+struct InterpolationVec<T, VECSIZE, InterpolationMode::NEAREST_NEIGHBOR> {
     typedef Eigen::Array<T, 1, VECSIZE> Weight_t;
     typedef Eigen::Array<int, 1, VECSIZE> Idx_t;
 
@@ -254,7 +254,7 @@ struct InterpolationVec<T, VECSIZE, NEAREST_NEIGHBOR> {
 
 /// Implementation for LINEAR (uses coordinate clamping)
 template <class T, int VECSIZE>
-struct InterpolationVec<T, VECSIZE, LINEAR> {
+struct InterpolationVec<T, VECSIZE, InterpolationMode::LINEAR> {
     typedef Eigen::Array<T, 8, VECSIZE> Weight_t;
     typedef Eigen::Array<int, 8, VECSIZE> Idx_t;
 
@@ -309,7 +309,7 @@ struct InterpolationVec<T, VECSIZE, LINEAR> {
 
 /// Implementation for LINEAR_BORDER (uses zero border instead of clamping)
 template <class T, int VECSIZE>
-struct InterpolationVec<T, VECSIZE, LINEAR_BORDER> {
+struct InterpolationVec<T, VECSIZE, InterpolationMode::LINEAR_BORDER> {
     typedef Eigen::Array<T, 8, VECSIZE> Weight_t;
     typedef Eigen::Array<int, 8, VECSIZE> Idx_t;
 

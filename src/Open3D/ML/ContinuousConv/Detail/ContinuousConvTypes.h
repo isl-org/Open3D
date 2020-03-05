@@ -34,7 +34,7 @@ namespace detail {
 /// LINEAR is a standard trilinear interpolation with coordinate clamping
 /// LINEAR_BORDER uses a zero border instead of clamping
 /// NEAREST_NEIGHBOR no interpolation, use nearest neighbor
-enum InterpolationMode { LINEAR, LINEAR_BORDER, NEAREST_NEIGHBOR };
+enum class InterpolationMode { LINEAR, LINEAR_BORDER, NEAREST_NEIGHBOR };
 
 /// Coordinate Mapping functions
 /// - BALL_TO_CUBE_RADIAL uses radial stretching to map a sphere to

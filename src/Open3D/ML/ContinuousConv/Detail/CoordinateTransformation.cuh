@@ -225,7 +225,7 @@ inline __device__ void ComputeFilterCoordinates(T& x,
 /// \param filter_size_z    Like \p filter_size_x
 ///
 /// \param num_channels    The number of channels of the filter.
-template <int INTERPOLATION, class T>
+template <InterpolationMode INTERPOLATION, class T>
 inline __device__ void Interpolate(T* w,
                                    int* idx,
                                    const T& x,
@@ -235,7 +235,7 @@ inline __device__ void Interpolate(T* w,
                                    const int& filter_size_y,
                                    const int& filter_size_z,
                                    int num_channels = 1) {
-    if (INTERPOLATION == NEAREST_NEIGHBOR) {
+    if (INTERPOLATION == InterpolationMode::NEAREST_NEIGHBOR) {
         int xi = roundf(x);
         int yi = roundf(y);
         int zi = roundf(z);
@@ -247,7 +247,7 @@ inline __device__ void Interpolate(T* w,
         idx[0] = num_channels *
                  (zi * filter_size_y * filter_size_x + yi * filter_size_x + xi);
         w[0] = 1;
-    } else if (INTERPOLATION == LINEAR_BORDER) {
+    } else if (INTERPOLATION == InterpolationMode::LINEAR_BORDER) {
         int xi0 = int(floor(x));
         int xi1 = xi0 + 1;
 

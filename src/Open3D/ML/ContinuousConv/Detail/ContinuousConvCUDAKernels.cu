@@ -38,7 +38,7 @@ template <class TReal,
           class TIndex,
           bool ALIGN_CORNERS,
           int MAPPING,
-          int INTERPOLATION>
+          InterpolationMode INTERPOLATION>
 __global__ void FillColumnKernel(
         TReal* columns,
         int in_channels,
@@ -67,7 +67,10 @@ __global__ void FillColumnKernel(
     TIndex out_idx = begin_idx + blockIdx.x;
     if (out_idx >= end_idx) return;
     const int NUM_INTERP_VALUES =
-            (INTERPOLATION == LINEAR || INTERPOLATION == LINEAR_BORDER ? 8 : 1);
+            (INTERPOLATION == InterpolationMode::LINEAR ||
+                             INTERPOLATION == InterpolationMode::LINEAR_BORDER
+                     ? 8
+                     : 1);
     TReal interp_weights[NUM_INTERP_VALUES];
     TIndex interp_indices[NUM_INTERP_VALUES];
 
@@ -221,10 +224,10 @@ void FillColumn(const cudaStream_t& stream,
     CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_VOLUME_PRESERVING) \
     CALL_TEMPLATE2(INTERPOLATION, IDENTITY)
 
-#define CALL_TEMPLATE4            \
-    CALL_TEMPLATE3(LINEAR)        \
-    CALL_TEMPLATE3(LINEAR_BORDER) \
-    CALL_TEMPLATE3(NEAREST_NEIGHBOR)
+#define CALL_TEMPLATE4                               \
+    CALL_TEMPLATE3(InterpolationMode::LINEAR)        \
+    CALL_TEMPLATE3(InterpolationMode::LINEAR_BORDER) \
+    CALL_TEMPLATE3(InterpolationMode::NEAREST_NEIGHBOR)
 
     if (grid.x) {
         CALL_TEMPLATE4
@@ -269,7 +272,7 @@ template <class TReal,
           class TIndex,
           bool ALIGN_CORNERS,
           int MAPPING,
-          int INTERPOLATION>
+          InterpolationMode INTERPOLATION>
 __global__ void FillColumnTransposeKernel(
         TReal* columns,
         int in_channels,
@@ -298,7 +301,10 @@ __global__ void FillColumnTransposeKernel(
     TIndex out_idx = begin_idx + blockIdx.x;
     if (out_idx >= end_idx) return;
     const int NUM_INTERP_VALUES =
-            (INTERPOLATION == LINEAR || INTERPOLATION == LINEAR_BORDER ? 8 : 1);
+            (INTERPOLATION == InterpolationMode::LINEAR ||
+                             INTERPOLATION == InterpolationMode::LINEAR_BORDER
+                     ? 8
+                     : 1);
     TReal interp_weights[NUM_INTERP_VALUES];
     TIndex interp_indices[NUM_INTERP_VALUES];
 
@@ -456,10 +462,10 @@ void FillColumnTranspose(
     CALL_TEMPLATE2(INTERPOLATION, BALL_TO_CUBE_VOLUME_PRESERVING) \
     CALL_TEMPLATE2(INTERPOLATION, IDENTITY)
 
-#define CALL_TEMPLATE4            \
-    CALL_TEMPLATE3(LINEAR)        \
-    CALL_TEMPLATE3(LINEAR_BORDER) \
-    CALL_TEMPLATE3(NEAREST_NEIGHBOR)
+#define CALL_TEMPLATE4                               \
+    CALL_TEMPLATE3(InterpolationMode::LINEAR)        \
+    CALL_TEMPLATE3(InterpolationMode::LINEAR_BORDER) \
+    CALL_TEMPLATE3(InterpolationMode::NEAREST_NEIGHBOR)
 
     if (grid.x) {
         CALL_TEMPLATE4

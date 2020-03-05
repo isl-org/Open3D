@@ -45,11 +45,11 @@ public:
                                                            &interpolation_str));
 
         if (interpolation_str == "linear")
-            interpolation = LINEAR;
+            interpolation = InterpolationMode::LINEAR;
         else if (interpolation_str == "linear_border")
-            interpolation = LINEAR_BORDER;
+            interpolation = InterpolationMode::LINEAR_BORDER;
         else
-            interpolation = NEAREST_NEIGHBOR;
+            interpolation = InterpolationMode::NEAREST_NEIGHBOR;
 
         std::string mapping_str;
         OP_REQUIRES_OK(construction, construction->GetAttr("coordinate_mapping",
