@@ -61,10 +61,11 @@ static std::vector<T> ToFlatVector(
 }
 
 void pybind_core_tensor(py::module& m) {
-    py::class_<Tensor> tensor(
+    py::class_<Tensor, std::shared_ptr<Tensor>> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
 
+    // Constructor from numpy array
     tensor.def(py::init([](py::array np_array, const Dtype& dtype,
                            const Device& device) {
         py::buffer_info info = np_array.request();
@@ -75,6 +76,9 @@ void pybind_core_tensor(py::module& m) {
         });
         return t;
     }));
+
+    // Tensor copy
+    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 
     // Device transfer
     tensor.def("cuda",
@@ -246,13 +250,15 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("div", &Tensor::Div);
     tensor.def("div_", &Tensor::Div_);
 
-    // Getters
-    tensor.def("get_shape",
-               [](const Tensor& tensor) { return tensor.GetShape(); });
-    tensor.def("get_strides",
-               [](const Tensor& tensor) { return tensor.GetStrides(); });
-    tensor.def("get_dtype", &Tensor::GetDtype);
-    tensor.def("get_device", &Tensor::GetDevice);
+    // Getters and setters as peoperty
+    tensor.def_property_readonly(
+            "shape", [](const Tensor& tensor) { return tensor.GetShape(); });
+    tensor.def_property_readonly("strides", [](const Tensor& tensor) {
+        return tensor.GetStrides();
+    });
+    tensor.def_property_readonly("dtype", &Tensor::GetDtype);
+    tensor.def_property_readonly("device", &Tensor::GetDevice);
+    tensor.def_property_readonly("blob", &Tensor::GetBlob);
 
     // Unary element-wise ops
     tensor.def("sqrt", &Tensor::Sqrt);

@@ -303,10 +303,10 @@ def test_to():
     a = o3d.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5, 5.6]).astype(np.float32))
     b = a.to(o3d.Dtype.Int32)
     np.testing.assert_equal(b.numpy(), np.array([0, 1, 2, 3, 4, 5]))
-    assert b.get_shape() == o3d.SizeVector([6])
-    assert b.get_strides() == o3d.SizeVector([1])
-    assert b.get_dtype() == o3d.Dtype.Int32
-    assert b.get_device() == a.get_device()
+    assert b.shape == o3d.SizeVector([6])
+    assert b.strides == o3d.SizeVector([1])
+    assert b.dtype == o3d.Dtype.Int32
+    assert b.device == a.device
 
 
 def test_unary_ew_ops():
@@ -380,3 +380,14 @@ def test_slice():
     np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].numpy(), np_t[0, 1:3, 0:4:2])
     np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].numpy(), np_t[0, 1:3, 0:-1:2])
     np.testing.assert_equal(o3_t[0, 1, :].numpy(), np_t[0, 1, :])
+
+    # Slice the slice
+    np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].numpy(),
+                            np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
+
+
+def test_cast_to_py_tensor():
+    a = o3d.Tensor([1])
+    b = o3d.Tensor([2])
+    c = a + b
+    assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor

@@ -24,16 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
+#include "open3d_pybind/core/container.h"
+#include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-void pybind_core(py::module& m);
+#include "Open3D/Core/Blob.h"
 
-void pybind_cuda_utils(py::module& m);
-void pybind_core_blob(py::module& m);
-void pybind_core_dtype(py::module& m);
-void pybind_core_device(py::module& m);
-void pybind_core_size_vector(py::module& m);
-void pybind_core_tensor(py::module& m);
-void pybind_core_tensorlist(py::module& m);
+using namespace open3d;
+
+void pybind_core_blob(py::module &m) {
+    py::class_<Blob, std::shared_ptr<Blob>> blob(m, "Blob");
+}

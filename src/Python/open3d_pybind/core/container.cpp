@@ -29,6 +29,7 @@
 
 void pybind_core(py::module &m) {
     pybind_cuda_utils(m);
+    pybind_core_blob(m);
     pybind_core_dtype(m);
     pybind_core_device(m);
     pybind_core_size_vector(m);

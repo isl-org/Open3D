@@ -32,6 +32,24 @@ class SizeVector(open3d_pybind.SizeVector):
         super(SizeVector, self).__init__(values.astype(np.int64))
 
 
+def cast_to_py_tensor(func):
+    """
+    Args:
+        func: function returning a `o3d.open3d_pybind.Tensor`.
+
+    Return:
+        A function which returns a python object `o3d.Tensor`.
+    """
+
+    def wrapped_func(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        wrapped_result = Tensor([])
+        wrapped_result.shallow_copy_from(result)
+        return wrapped_result
+
+    return wrapped_func
+
+
 class Tensor(open3d_pybind.Tensor):
     """
     Open3D Tensor class. A Tensor is a view of data blob with shape, strides
@@ -49,6 +67,7 @@ class Tensor(open3d_pybind.Tensor):
             device = o3d.Device("CPU:0")
         super(Tensor, self).__init__(data, dtype, device)
 
+    @cast_to_py_tensor
     def __getitem__(self, val):
         t = self
         if isinstance(val, tuple):
@@ -73,6 +92,7 @@ class Tensor(open3d_pybind.Tensor):
             raise TypeError(f"Invalid type {type(val)} for getitem.")
         return t
 
+    @cast_to_py_tensor
     def cuda(self, device_id=0):
         """
         Returns a copy of this tensor in CUDA memory.
@@ -82,6 +102,7 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).cuda(device_id)
 
+    @cast_to_py_tensor
     def cpu(self):
         """
         Returns a copy of this tensor in CPU.
@@ -100,6 +121,7 @@ class Tensor(open3d_pybind.Tensor):
         return super(Tensor, self).numpy()
 
     @staticmethod
+    @cast_to_py_tensor
     def from_numpy(np_array):
         """
         Returns a Tensor from NumPy array. The resulting tensor is a CPU tensor
@@ -118,60 +140,70 @@ class Tensor(open3d_pybind.Tensor):
         return super(Tensor, self).to_dlpack()
 
     @staticmethod
+    @cast_to_py_tensor
     def from_dlpack(dlpack):
         """
         Returns a tensor converted from DLPack PyCapsule.
         """
         return super(Tensor, Tensor).from_dlpack(dlpack)
 
+    @cast_to_py_tensor
     def add(self, value):
         """
         Adds a tensor and returns the resulting tensor.
         """
         return super(Tensor, self).add(value)
 
+    @cast_to_py_tensor
     def add_(self, value):
         """
         Inplace version of Tensor.add
         """
         return super(Tensor, self).add_(value)
 
+    @cast_to_py_tensor
     def sub(self, value):
         """
         Substracts a tensor and returns the resulting tensor.
         """
         return super(Tensor, self).sub(value)
 
+    @cast_to_py_tensor
     def sub_(self, value):
         """
         Inplace version of Tensor.sub
         """
         return super(Tensor, self).sub_(value)
 
+    @cast_to_py_tensor
     def mul(self, value):
         """
         Multiplies a tensor and returns the resulting tensor.
         """
         return super(Tensor, self).mul(value)
 
+    @cast_to_py_tensor
     def mul_(self, value):
         """
         Inplace version of Tensor.mul
         """
         return super(Tensor, self).mul_(value)
 
+    @cast_to_py_tensor
     def div(self, value):
         """
         Divides a tensor and returns the resulting tensor.
         """
         return super(Tensor, self).div(value)
 
+    @cast_to_py_tensor
     def div_(self, value):
         """
         Inplace version of Tensor.div
         """
         return super(Tensor, self).div_(value)
 
+    @cast_to_py_tensor
     def to(self, dtype, copy=False):
         """
         Returns a tensor with the specified dtype.
@@ -184,60 +216,46 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).to(dtype, copy)
 
-    def get_shpae(self):
-        """
-        Returns the shape of the tensor.
-        """
-        return super(Tensor, self).get_shpae()
-
-    def get_stides(self):
-        """
-        Returns the strides of the tensor.
-        """
-        return super(Tensor, self).get_strides()
-
-    def get_dtype(self):
-        """
-        Returns the dtype of the tensor.
-        """
-        return super(Tensor, self).get_dtype()
-
-    def get_device(self):
-        """
-        Returns the shape of the tensor.
-        """
-        return super(Tensor, self).get_device()
-
+    @cast_to_py_tensor
     def __add__(self, value):
         return self.add(value)
 
+    @cast_to_py_tensor
     def __iadd__(self, value):
         return self.add_(value)
 
+    @cast_to_py_tensor
     def __sub__(self, value):
         return self.sub(value)
 
+    @cast_to_py_tensor
     def __isub__(self, value):
         return self.sub_(value)
 
+    @cast_to_py_tensor
     def __mul__(self, value):
         return self.mul(value)
 
+    @cast_to_py_tensor
     def __imul__(self, value):
         return self.mul_(value)
 
+    @cast_to_py_tensor
     def __truediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
+    @cast_to_py_tensor
     def __itruediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
+    @cast_to_py_tensor
     def __floordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
+    @cast_to_py_tensor
     def __ifloordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
