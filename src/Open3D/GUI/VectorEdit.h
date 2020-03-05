@@ -26,27 +26,21 @@
 
 #include "Widget.h"
 
+#include <Eigen/Geometry>
+
 namespace open3d  {
 namespace gui  {
 
-class NumberEdit : public Widget {
+class VectorEdit : public Widget {
     using Super = Widget;
 public:
-    enum Type { INT, DOUBLE };
-    explicit NumberEdit(Type type);
-    ~NumberEdit();
+    VectorEdit();
+    ~VectorEdit();
 
-    int GetIntValue() const;
-    double GetDoubleValue() const;
-    void SetValue(double val);
+    Eigen::Vector3f GetValue() const;
+    void SetValue(const Eigen::Vector3f& val);
 
-    double GetMinimumValue() const;
-    double GetMaximumValue() const;
-    void SetLimits(double minValue, double maxValue);
-
-    void SetDecimalPrecision(int nDigits);
-
-    void SetOnValueChanged(std::function<void(double)> onChanged);
+    void SetOnValueChanged(std::function<void(const Eigen::Vector3f&)> onChanged);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     Widget::DrawResult Draw(const DrawContext &context) override;
@@ -58,3 +52,4 @@ private:
 
 }  // namespace open3d
 }  // namespace gui
+

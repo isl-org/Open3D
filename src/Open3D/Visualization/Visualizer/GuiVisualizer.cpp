@@ -40,6 +40,7 @@
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Slider.h"
 #include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/VectorEdit.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
@@ -196,59 +197,6 @@ public:
     }
 };
 
-//----
-class UnitVectorEdit : public gui::Horiz {
-public:
-    UnitVectorEdit(const gui::Theme& theme) : gui::Horiz() {
-        wgtX_ = std::make_shared<gui::NumberEdit>(gui::NumberEdit::Type::DOUBLE);
-        wgtX_->SetLimits(-1.0, 1.0);
-        wgtX_->SetOnValueChanged([this](double d) { this->OnCoordChanged(0, d); });
-        this->AddChild(std::make_shared<gui::Label>("x"));
-        this->AddChild(wgtX_);
-        this->AddChild(MakeFixed(0.5 * theme.fontSize));
-
-        wgtY_ = std::make_shared<gui::NumberEdit>(gui::NumberEdit::Type::DOUBLE);
-        wgtY_->SetLimits(-1.0, 1.0);
-        wgtY_->SetOnValueChanged([this](double d) { this->OnCoordChanged(1, d); });
-        this->AddChild(std::make_shared<gui::Label>("y"));
-        this->AddChild(wgtY_);
-        this->AddChild(MakeFixed(0.5 * theme.fontSize));
-
-        wgtZ_ = std::make_shared<gui::NumberEdit>(gui::NumberEdit::Type::DOUBLE);
-        wgtZ_->SetLimits(-1.0, 1.0);
-        wgtZ_->SetOnValueChanged([this](double d) { this->OnCoordChanged(2, d); });
-        this->AddChild(std::make_shared<gui::Label>("z"));
-        this->AddChild(wgtZ_);
-    }
-
-    const Eigen::Vector3f& GetValue() const { return value_; }
-
-    void SetValue(const Eigen::Vector3f& value) {
-        value_ = value.normalized();
-        wgtX_->SetValue(value_.x());
-        wgtY_->SetValue(value_.y());
-        wgtZ_->SetValue(value_.z());
-    }
-
-    void SetOnValueChanged(std::function<void(const Eigen::Vector3f&)> onChanged) {
-        onChanged_ = onChanged;
-    }
-
-private:
-    Eigen::Vector3f value_;
-    std::shared_ptr<gui::NumberEdit> wgtX_;
-    std::shared_ptr<gui::NumberEdit> wgtY_;
-    std::shared_ptr<gui::NumberEdit> wgtZ_;
-    std::function<void(const Eigen::Vector3f&)> onChanged_;
-
-    void OnCoordChanged(int idx, double value) {
-        value_[idx] = value;
-        if (onChanged_) {
-            onChanged_(value_);
-        }
-    }
-};
-
 }  // namespace
 
 enum MenuId {
@@ -299,7 +247,7 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Combobox> wgtAmbientIBLs;
         std::shared_ptr<gui::Slider> wgtAmbientIntensity;
         std::shared_ptr<gui::Slider> wgtSunIntensity;
-        std::shared_ptr<UnitVectorEdit> wgtSunDir;
+        std::shared_ptr<gui::VectorEdit> wgtSunDir;
         std::shared_ptr<gui::ColorEdit> wgtSunColor;
     } lightSettings;
 };
@@ -550,7 +498,7 @@ GuiVisualizer::GuiVisualizer(
     auto setSunDir = [this, renderScene](const Eigen::Vector3f& dir) {
         this->impl_->lightSettings.wgtSunDir->SetValue(dir);
         renderScene->SetLightDirection(impl_->lightSettings.hDirectionalLight,
-                                       dir);
+                                       dir.normalized());
     };
 
     this->impl_->scene->SetDirectionalLight(renderScene,
@@ -559,7 +507,7 @@ GuiVisualizer::GuiVisualizer(
         impl_->lightSettings.wgtSunDir->SetValue(newDir);
     });
 
-    lightSettings.wgtSunDir = std::make_shared<UnitVectorEdit>(theme);
+    lightSettings.wgtSunDir = std::make_shared<gui::VectorEdit>();
     lightSettings.wgtSunDir->SetValue(lightDescription.direction);
     lightSettings.wgtSunDir->SetOnValueChanged(setSunDir);
 
