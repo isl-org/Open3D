@@ -27,6 +27,9 @@
 #include "NumberEdit.h"
 
 #include "Theme.h"
+#include "Util.h"
+
+#include <imgui.h>
 
 #include <cmath>
 #include <sstream>
@@ -37,41 +40,12 @@
 namespace open3d  {
 namespace gui  {
 
-static std::string NumberToText(double n, NumberEdit::Type type) {
-    if (type == NumberEdit::Type::INT) {
-        std::stringstream s;
-        s << n;
-        return s.str();
-    } else {
-        char buff[64];
-        snprintf(buff, sizeof(buff) / sizeof(char) - 1, "%.3f", n);
-        return buff;
-    }
-}
-
-static bool TextToDouble(const char *text, double *value) {
-    static std::unordered_set<char> gValidZeroChars = {
-        '0', '-', '+', '.', 'e'
-    };
-
-    double n = std::stod(text);
-    if (value) {
-        *value = n;
-    }
-
-    if (n != 0.0) {
-        return true;
-    } else {
-        // stod() returns 0.0 if conversion error. But maybe the text actually
-        // was zero? ("-0.0e0" would be a valid zero)
-        if (gValidZeroChars.find(*text) == gValidZeroChars.end()) {
-            return false;
-        }
-        return true;
-    }
+namespace {
+static int gNextNumberEditId = 1;
 }
 
 struct NumberEdit::Impl {
+    std::string id;
     NumberEdit::Type type;
     // Double has 24-bits of integer range, which is sufficient for the
     // numbers that are reasonable for users to be entering. (Since JavaScript
@@ -79,6 +53,7 @@ struct NumberEdit::Impl {
     double value;
     double minValue = -2e9; // -2 billion, which is roughly -INT_MAX
     double maxValue = 2e9;
+    int nDecimalDigits = -1;
     std::function<void(double)> onChanged;
 };
 
@@ -86,11 +61,9 @@ NumberEdit::NumberEdit(Type type)
 : impl_(std::make_unique<NumberEdit::Impl>())
 {
     impl_->type = type;
-    TextEdit::SetOnValueChanged([this](const char *) {
-        if (this->impl_->onChanged) {
-            this->impl_->onChanged(GetDoubleValue());
-        }
-    });
+    std::stringstream s;
+    s << "##numedit" << gNextNumberEditId++;
+    impl_->id = s.str();
 }
 
 NumberEdit::~NumberEdit() {}
@@ -109,7 +82,6 @@ void NumberEdit::SetValue(double val) {
     } else {
         impl_->value = val;
     }
-    SetText(NumberToText(impl_->value, impl_->type).c_str());
 }
 
 double NumberEdit::GetMinimumValue() const {
@@ -131,6 +103,10 @@ void NumberEdit::SetLimits(double minValue, double maxValue) {
     impl_->value = std::min(maxValue, std::max(minValue, impl_->value));
 }
 
+void NumberEdit::SetDecimalPrecision(int nDigits) {
+    impl_->nDecimalDigits = nDigits;
+}
+
 void NumberEdit::SetOnValueChanged(std::function<void(double)> onChanged) {
     impl_->onChanged = onChanged;
 }
@@ -148,19 +124,71 @@ Size NumberEdit::CalcPreferredSize(const Theme& theme) const {
     return Size((nDigits * theme.fontSize) / 2 + padding, pref.height);
 }
 
-bool NumberEdit::ValidateNewText(const char *text) {
-    static std::unordered_set<char> gValidChars = {
-        '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '.', 'e' };
+Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
+    auto &frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    double newValue;
-    if (TextToDouble(text, &newValue)) {
-        SetValue(newValue);
-        return true;
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
+                        0.0);  // macOS doesn't round text edit borders
+
+    ImGui::PushStyleColor(
+            ImGuiCol_FrameBg,
+            util::colorToImgui(context.theme.textEditBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_FrameBgHovered,
+            util::colorToImgui(context.theme.textEditBackgroundColor));
+    ImGui::PushStyleColor(
+            ImGuiCol_FrameBgActive,
+            util::colorToImgui(context.theme.textEditBackgroundColor));
+
+    auto result = Widget::DrawResult::NONE;
+    DrawImGuiPushEnabledState();
+    ImGui::PushItemWidth(GetFrame().width);
+    if (impl_->type == INT) {
+        int iValue = impl_->value;
+        if (ImGui::InputInt(impl_->id.c_str(), &iValue)) {
+            SetValue(iValue);
+            result = Widget::DrawResult::REDRAW;
+        }
     } else {
-        SetText(NumberToText(impl_->value, impl_->type).c_str());
-        return false;
+        std::string fmt;
+        if (impl_->nDecimalDigits >= 0) {
+            char buff[32];
+            snprintf(buff, 31, "%%.%df", impl_->nDecimalDigits);
+            fmt = buff;
+        } else {
+            if (impl_->value < 10) {
+                fmt = "%.3f";
+            } else if (impl_->value < 100) {
+                fmt = "%.2f";
+            } else if (impl_->value < 1000) {
+                fmt = "%.1f";
+            } else {
+                fmt = "%.0f";
+            }
+        }
+        double dValue = impl_->value;
+        if (ImGui::InputDouble(impl_->id.c_str(), &dValue, 0.0, 0.0, fmt.c_str())) {
+            SetValue(dValue);
+            result = Widget::DrawResult::REDRAW;
+        }
+
     }
+    ImGui::PopItemWidth();
+    DrawImGuiPopEnabledState();
+
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar();
+
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        if (impl_->onChanged) {
+            impl_->onChanged(impl_->value);
+        }
+        result = Widget::DrawResult::REDRAW;
+    }
+
+    return result;
 }
 
 }  // namespace open3d

@@ -29,8 +29,8 @@
 namespace open3d  {
 namespace gui  {
 
-class NumberEdit : public TextEdit {
-    using Super = TextEdit;
+class NumberEdit : public Widget {
+    using Super = Widget;
 public:
     enum Type { INT, DOUBLE };
     explicit NumberEdit(Type type);
@@ -44,12 +44,12 @@ public:
     double GetMaximumValue() const;
     void SetLimits(double minValue, double maxValue);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    void SetDecimalPrecision(int nDigits);
 
     void SetOnValueChanged(std::function<void(double)> onChanged);
 
-protected:
-    bool ValidateNewText(const char *text) override;
+    Size CalcPreferredSize(const Theme& theme) const override;
+    Widget::DrawResult Draw(const DrawContext &context) override;
 
 private:
     struct Impl;
