@@ -53,6 +53,10 @@ class Image;
 }  // namespace geometry
 
 namespace visualization {
+
+/// \class Visualizer
+///
+/// \brief The main Visualizer class.
 class Visualizer {
 public:
     struct MouseControl {
@@ -75,8 +79,16 @@ public:
     Visualizer &operator=(const Visualizer &) = delete;
 
 public:
-    /// Function to create a window and initialize GLFW
+    /// \brief Function to create a window and initialize GLFW.
+    ///
     /// This function MUST be called from the main thread.
+    ///
+    /// \param window_name Window title name.
+    /// \param width Width of the window.
+    /// \param height Height of window.
+    /// \param left Left margin of the window to the screen.
+    /// \param top Top margin of the window to the screen.
+    /// \param visible Whether the window is visible.
     bool CreateVisualizerWindow(const std::string &window_name = "Open3D",
                                 const int width = 640,
                                 const int height = 480,
@@ -84,52 +96,67 @@ public:
                                 const int top = 50,
                                 const bool visible = true);
 
-    /// Function to destroy a window
+    /// \brief Function to destroy a window.
+    ///
     /// This function MUST be called from the main thread.
     void DestroyVisualizerWindow();
 
-    /// Function to register a callback function for animation
-    /// The callback function returns if UpdateGeometry() needs to be run
+    /// \brief Function to register a callback function for animation.
+    ///
+    /// The callback function returns if UpdateGeometry() needs to be run.
+    ///
+    /// \param callback_func The call back function.
     void RegisterAnimationCallback(
             std::function<bool(Visualizer *)> callback_func);
 
-    /// Function to activate the window
+    /// \brief Function to activate the window.
+    ///
     /// This function will block the current thread until the window is closed.
     void Run();
 
     /// Function to to notify the window to be closed
     void Close();
 
-    /// Function to process the event queue and return if the window is closed
+    /// \brief Function to process the event queue and return if the window is
+    /// closed.
+    ///
     /// Use this function if you want to manage the while loop yourself. This
     /// function will block the thread.
     bool WaitEvents();
 
-    /// Function to process the event queue and return if the window is closed
+    /// Function to process the event queue and return if the window is closed.
+    ///
     /// Use this function if you want to manage the while loop yourself. This
     /// function will NOT block the thread. Thus it is suitable for computation
     /// heavy task behind the scene.
     bool PollEvents();
 
-    /// Function to add geometry to the scene and create corresponding shaders
+    /// \brief Function to add geometry to the scene and create corresponding
+    /// shaders.
+    ///
     /// 1. After calling this function, the Visualizer owns the geometry object.
     /// 2. This function MUST be called after CreateVisualizerWindow().
     /// 3. This function returns FALSE when the geometry is of an unsupported
     /// type.
     /// 4. If an added geometry is changed, the behavior of Visualizer is
-    /// undefined. Programmers are responsible for calling UpdateGeometry() to
+    /// undefined. Programmers are responsible for calling Geometry() to
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
+    ///
+    /// \param geometry The Geometry object.
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
 
-    /// Function to remove geometry from the scene
+    /// \brief Function to remove geometry from the scene.
+    ///
     /// 1. After calling this function, the Visualizer releases the pointer of
     /// the geometry object.
     /// 2. This function MUST be called after CreateVisualizerWindow().
     /// 3. This function returns FALSE if the geometry to be removed is not
     /// added by AddGeometry
+    ///
+    /// \param geometry The Geometry object.
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
@@ -139,7 +166,8 @@ public:
     /// all geometry objects.
     virtual bool ClearGeometries();
 
-    /// Function to update geometry
+    /// \brief Function to update geometry.
+    ///
     /// This function must be called when geometry has been changed. Otherwise
     /// the behavior of Visualizer is undefined.
     /// If called without an argument, updates all geometries, otherwise only
@@ -148,28 +176,52 @@ public:
             std::shared_ptr<const geometry::Geometry> geometry_ptr = nullptr);
     virtual bool HasGeometry() const;
 
-    /// Function to set the redraw flag as dirty
+    /// Function to inform render needed to be updated.
     virtual void UpdateRender();
 
     virtual void PrintVisualizerHelp();
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
 
+    /// Function to retrieve the associated ViewControl
     ViewControl &GetViewControl() { return *view_control_ptr_; }
+    /// Function to retrieve the associated RenderOption.
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
+    /// \brief Function to capture screen and store RGB in a float buffer.
+    ///
+    /// \param do_render Set to `true` to do render.
     std::shared_ptr<geometry::Image> CaptureScreenFloatBuffer(
             bool do_render = true);
+    /// \brief Function to capture and save a screen image.
+    ///
+    /// \param do_render Set to `true` to do render.
+    /// \param depth_scale Scale depth value when capturing the depth image.
     void CaptureScreenImage(const std::string &filename = "",
                             bool do_render = true);
+    /// Function to capture depth in a float buffer.
+    ///
+    /// \param do_render Set to `true` to do render.
     std::shared_ptr<geometry::Image> CaptureDepthFloatBuffer(
             bool do_render = true);
+    /// Function to capture and save a depth image.
+    ///
+    /// \param filename Path to file.
+    /// \param do_render Set to `true` to do render.
+    /// \param depth_scale Scale depth value when capturing the depth image.
     void CaptureDepthImage(const std::string &filename = "",
                            bool do_render = true,
                            double depth_scale = 1000.0);
+    /// \brief Function to capture and save local point cloud.
+    ///
+    /// \param filename Path to file.
+    /// \param do_render Set to `true` to do render.
+    /// \param convert_to_world_coordinate Set to `true` to convert to world
+    /// coordinates.
     void CaptureDepthPointCloud(const std::string &filename = "",
                                 bool do_render = true,
                                 bool convert_to_world_coordinate = false);
     void CaptureRenderOption(const std::string &filename = "");
+    /// Function to reset view point.
     void ResetViewPoint(bool reset_bounding_box = false);
 
     const std::string &GetWindowName() const { return window_name_; }
@@ -204,6 +256,7 @@ protected:
                                      int mods);
     virtual void KeyPressCallback(
             GLFWwindow *window, int key, int scancode, int action, int mods);
+    /// \brief Function to notify the window to be closed.
     virtual void WindowCloseCallback(GLFWwindow *window);
 
 protected:

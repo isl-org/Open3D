@@ -17,7 +17,7 @@ We welcome and celebrate contributions from the community. In order to maintain 
 Guiding principles
 ===========================
 
-Open3D strives to be:
+Open3D aspires to be:
 
 * **Useful**. Optimized data structures and algorithms. Complete workflows.
 * **Easy to use**. Fast compilation from source. Lightweight dependencies. Python bindings.

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Basic/meshes.py
+# examples/Python/Misc/meshes.py
 
 import numpy as np
 import open3d as o3d

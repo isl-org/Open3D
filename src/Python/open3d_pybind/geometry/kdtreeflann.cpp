@@ -71,7 +71,7 @@ void pybind_kdtreeflann(py::module &m) {
                             std::to_string(param.knn_);
                  })
             .def_readwrite("knn", &geometry::KDTreeSearchParamKNN::knn_,
-                           "``knn`` neighbors will be searched.");
+                           "Number of the neighbors that will be searched.");
 
     // open3d.geometry.KDTreeSearchParamRadius
     py::class_<geometry::KDTreeSearchParamRadius> kdtreesearchparam_radius(
@@ -126,12 +126,14 @@ void pybind_kdtreeflann(py::module &m) {
     kdtreeflann.def(py::init<>())
             .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
             .def("set_matrix_data", &geometry::KDTreeFlann::SetMatrixData,
-                 "data"_a)
+                 "Sets the data for the KDTree from a matrix.", "data"_a)
             .def(py::init<const geometry::Geometry &>(), "geometry"_a)
             .def("set_geometry", &geometry::KDTreeFlann::SetGeometry,
-                 "geometry"_a)
+                 "Sets the data for the KDTree from geometry.", "geometry"_a)
             .def(py::init<const registration::Feature &>(), "feature"_a)
-            .def("set_feature", &geometry::KDTreeFlann::SetFeature, "feature"_a)
+            .def("set_feature", &geometry::KDTreeFlann::SetFeature,
+                 "Sets the data for the KDTree from the feature data.",
+                 "feature"_a)
             // Although these C++ style functions are fast by orders of
             // magnitudes when similar queries are performed for a large number
             // of times and memory management is involved, we prefer not to
