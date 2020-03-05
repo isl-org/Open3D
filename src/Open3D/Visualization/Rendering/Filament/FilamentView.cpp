@@ -44,8 +44,8 @@ namespace open3d {
 namespace visualization {
 
 namespace {
-const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
-const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
+// const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
+// const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
 
 filament::View::TargetBufferFlags FlagsFromTargetBuffers(
         const View::TargetBuffers& buffers) {
