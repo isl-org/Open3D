@@ -105,27 +105,28 @@ FilamentView::~FilamentView() {
 }
 
 void FilamentView::SetMode(Mode mode) {
-    switch (mode) {
-        case Mode::Color:
-            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
-            view_->setClearColor(
-                    {clearColor_.x(), clearColor_.y(), clearColor_.z(), 1.f});
-            break;
-        case Mode::Depth:
-            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
-            view_->setClearColor(kDepthClearColor);
-            break;
-        case Mode::Normals:
-            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
-            view_->setClearColor(kNormalsClearColor);
-            break;
-        case Mode::ColorMapX:
-        case Mode::ColorMapY:
-        case Mode::ColorMapZ:
-            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
-            view_->setClearColor(kDepthClearColor);
-            break;
-    }
+    // As color switching disabled, we don't need this code.
+    // Yet disabling this looks like a bad idea, so I leave code commented
+    //    switch (mode) {
+    //        case Mode::Color:
+    //            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    //            view_->setClearColor({clearColor_.x(), clearColor_.y(),
+    //            clearColor_.z(), 1.f}); break;
+    //        case Mode::Depth:
+    //            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    //            view_->setClearColor(kDepthClearColor);
+    //            break;
+    //        case Mode::Normals:
+    //            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    //            view_->setClearColor(kNormalsClearColor);
+    //            break;
+    //        case Mode::ColorMapX:
+    //        case Mode::ColorMapY:
+    //        case Mode::ColorMapZ:
+    //            view_->setVisibleLayers(kAllLayersMask, kMainLayer);
+    //            view_->setClearColor(kDepthClearColor);
+    //            break;
+    //    }
 
     mode_ = mode;
 }
@@ -145,9 +146,9 @@ void FilamentView::SetViewport(std::int32_t x,
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clearColor_ = color;
 
-    if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
-        view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
-    }
+    // if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
+    view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
+    //}
 }
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
