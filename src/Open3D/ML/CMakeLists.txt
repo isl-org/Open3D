@@ -6,3 +6,7 @@ if (BUILD_TENSORFLOW_OPS)
     add_subdirectory(TensorFlow)
 endif ()
 
+if (BUILD_PYTORCH_OPS)
+    add_subdirectory(PyTorch)
+endif ()
+

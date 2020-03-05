@@ -88,6 +88,7 @@ option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
 option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
+option(BUILD_PYTORCH_OPS         "Build ops for Pytorch"                    OFF)
 
 # Cache variables for specifying the GPU architectures
 set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
