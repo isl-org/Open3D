@@ -501,8 +501,7 @@ GuiVisualizer::GuiVisualizer(
                                        dir.normalized());
     };
 
-    this->impl_->scene->SetDirectionalLight(renderScene,
-                                            lightSettings.hDirectionalLight,
+    this->impl_->scene->SetDirectionalLight(lightSettings.hDirectionalLight,
                                     [this](const Eigen::Vector3f& newDir) {
         impl_->lightSettings.wgtSunDir->SetValue(newDir);
     });

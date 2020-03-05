@@ -68,7 +68,6 @@ public:
     /// SceneWidget will update the light's direction, so onDirChanged is
     /// only needed if other things need to be updated (like a UI).
     void SetDirectionalLight(
-                    visualization::Scene *scene,
                     visualization::LightHandle dirLight,
                     std::function<void(const Eigen::Vector3f&)> onDirChanged);
 
@@ -85,7 +84,6 @@ public:
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     void Mouse(const MouseEvent& e) override;
-
 
 private:
     visualization::Camera* GetCamera() const;

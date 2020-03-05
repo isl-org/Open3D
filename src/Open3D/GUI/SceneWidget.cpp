@@ -206,13 +206,12 @@ protected:
 class LightDirControl : public MatrixControl {
     using Super = MatrixControl;
 public:
-    LightDirControl(visualization::Camera *camera)
-    : camera_(camera) {
+    LightDirControl(visualization::Scene *scene,
+                    visualization::Camera *camera)
+    : scene_(scene), camera_(camera) {
     }
 
-    void SetDirectionalLight(visualization::Scene *scene,
-                             visualization::LightHandle dirLight) {
-        scene_ = scene;
+    void SetDirectionalLight(visualization::LightHandle dirLight) {
         dirLight_ = dirLight;
     }
 
@@ -381,7 +380,7 @@ private:
 class CameraControls : public MatrixControl {
     using Super = MatrixControl;
 public:
-    CameraControls(visualization::Camera* c) : camera_(c) {}
+    explicit CameraControls(visualization::Camera* c) : camera_(c) {}
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) override{
         Super::SetBoundingBox(bounds);
@@ -565,9 +564,10 @@ private:
 
 class MouseInteractor {
 public:
-    MouseInteractor(visualization::Camera* camera)
+    MouseInteractor(visualization::Scene *scene,
+                    visualization::Camera* camera)
     : cameraControls_(std::make_unique<CameraControls>(camera))
-    , lightDir_(std::make_unique<LightDirControl>(camera)) {
+    , lightDir_(std::make_unique<LightDirControl>(scene, camera)) {
     }
 
     void SetViewSize(const Size& size) {
@@ -581,10 +581,9 @@ public:
     }
 
     void SetDirectionalLight(
-                    visualization::Scene *scene,
                     visualization::LightHandle dirLight,
                     std::function<void(const Eigen::Vector3f&)> onChanged) {
-        lightDir_->SetDirectionalLight(scene, dirLight);
+        lightDir_->SetDirectionalLight(dirLight);
         onLightDirChanged_ = onChanged;
     }
 
@@ -679,8 +678,8 @@ private:
     std::unique_ptr<LightDirControl> lightDir_;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
 
-    int mouseDownX_;
-    int mouseDownY_;
+    int mouseDownX_ = 0;
+    int mouseDownY_ = 0;
 
     enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z, ROTATE_LIGHT };
     State state_ = State::NONE;
@@ -689,7 +688,6 @@ private:
 struct SceneWidget::Impl {
     visualization::Scene& scene;
     visualization::ViewHandle viewId;
-//    std::shared_ptr<CameraControls> controls;
     std::shared_ptr<MouseInteractor> controls;
     bool frameChanged = false;
     visualization::LightHandle dirLight;
@@ -702,7 +700,7 @@ SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
     impl_->viewId = scene.AddView(0, 0, 1, 1);
 
     auto view = impl_->scene.GetView(impl_->viewId);
-    impl_->controls = std::make_shared<MouseInteractor>(view->GetCamera());
+    impl_->controls = std::make_shared<MouseInteractor>(&scene, view->GetCamera());
 }
 
 SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
@@ -748,14 +746,13 @@ void SceneWidget::SetupCamera(
 }
 
 void SceneWidget::SetDirectionalLight(
-                visualization::Scene *scene,
                 visualization::LightHandle dirLight,
                 std::function<void(const Eigen::Vector3f&)> onDirChanged) {
     impl_->dirLight = dirLight;
     impl_->onLightDirChanged = onDirChanged;
-    impl_->controls->SetDirectionalLight(scene, dirLight,
-                        [this, scene, dirLight](const Eigen::Vector3f& dir) {
-        scene->SetLightDirection(dirLight, dir);
+    impl_->controls->SetDirectionalLight(dirLight,
+                        [this, dirLight](const Eigen::Vector3f& dir) {
+        impl_->scene.SetLightDirection(dirLight, dir);
         if (impl_->onLightDirChanged) {
             impl_->onLightDirChanged(dir);
         }
