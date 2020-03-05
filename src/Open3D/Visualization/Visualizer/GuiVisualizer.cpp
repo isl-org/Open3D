@@ -300,12 +300,6 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Slider> wgtAmbientIntensity;
         std::shared_ptr<gui::Slider> wgtSunIntensity;
         std::shared_ptr<UnitVectorEdit> wgtSunDir;
-        std::shared_ptr<gui::Button> wgtSunDirMinusX;
-        std::shared_ptr<gui::Button> wgtSunDirPlusX;
-        std::shared_ptr<gui::Button> wgtSunDirMinusY;
-        std::shared_ptr<gui::Button> wgtSunDirPlusY;
-        std::shared_ptr<gui::Button> wgtSunDirMinusZ;
-        std::shared_ptr<gui::Button> wgtSunDirPlusZ;
         std::shared_ptr<gui::ColorEdit> wgtSunColor;
     } lightSettings;
 };
@@ -569,38 +563,6 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtSunDir->SetValue(lightDescription.direction);
     lightSettings.wgtSunDir->SetOnValueChanged(setSunDir);
 
-    lightSettings.wgtSunDirMinusX = std::make_shared<SmallButton>("-X");
-    lightSettings.wgtSunDirMinusX->SetOnClicked(
-        [setSunDir]() { setSunDir({1.0f, 0.0f, 0.0f}); });
-    lightSettings.wgtSunDirPlusX = std::make_shared<SmallButton>("+X");
-    lightSettings.wgtSunDirPlusX->SetOnClicked(
-        [setSunDir]() { setSunDir({-1.0f, 0.0f, 0.0f}); });
-    lightSettings.wgtSunDirMinusY = std::make_shared<SmallButton>("-Y");
-    lightSettings.wgtSunDirMinusY->SetOnClicked(
-        [setSunDir]() { setSunDir({0.0f, 1.0f, 0.0f}); });
-    lightSettings.wgtSunDirPlusY = std::make_shared<SmallButton>("+Y");
-    lightSettings.wgtSunDirPlusY->SetOnClicked(
-        [setSunDir]() { setSunDir({0.0f, -1.0f, 0.0f}); });
-    lightSettings.wgtSunDirMinusZ = std::make_shared<SmallButton>("-Z");
-    lightSettings.wgtSunDirMinusZ->SetOnClicked(
-        [setSunDir]() { setSunDir({0.0f, 0.0f, 1.0f}); });
-    lightSettings.wgtSunDirPlusZ = std::make_shared<SmallButton>("+Z");
-    lightSettings.wgtSunDirPlusZ->SetOnClicked(
-        [setSunDir]() { setSunDir({0.0f, 0.0f, -1.0f}); });
-
-    auto sunDirLayout = std::make_shared<gui::Horiz>(gridSpacing);
-    sunDirLayout->AddChild(lightSettings.wgtSunDirMinusX);
-    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
-    sunDirLayout->AddChild(lightSettings.wgtSunDirPlusX);
-    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
-    sunDirLayout->AddChild(lightSettings.wgtSunDirMinusY);
-    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
-    sunDirLayout->AddChild(lightSettings.wgtSunDirPlusY);
-    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
-    sunDirLayout->AddChild(lightSettings.wgtSunDirMinusZ);
-    sunDirLayout->AddChild(gui::Horiz::MakeStretch());
-    sunDirLayout->AddChild(lightSettings.wgtSunDirPlusZ);
-
     lightSettings.wgtSunColor = std::make_shared<gui::ColorEdit>();
     lightSettings.wgtSunColor->SetValue({1, 1, 1});
     lightSettings.wgtSunColor->OnValueChanged =
@@ -616,8 +578,6 @@ GuiVisualizer::GuiVisualizer(
     sunLayout->AddChild(lightSettings.wgtSunIntensity);
     sunLayout->AddChild(std::make_shared<gui::Label>("Direction"));
     sunLayout->AddChild(lightSettings.wgtSunDir);
-    sunLayout->AddChild(std::make_shared<gui::Label>("Position"));
-    sunLayout->AddChild(sunDirLayout);
     sunLayout->AddChild(std::make_shared<gui::Label>("Color"));
     sunLayout->AddChild(lightSettings.wgtSunColor);
 
