@@ -376,7 +376,7 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.hIbl =
             GetRenderer().AddIndirectLight(ResourceLoadRequest(iblPath.data()));
     scene->GetScene()->SetIndirectLight(lightSettings.hIbl);
-    const auto kAmbientIntensity = 50000;
+    const auto kAmbientIntensity = 12500;
     scene->GetScene()->SetIndirectLightIntensity(kAmbientIntensity);
 
     auto skyPath = rsrcPath + "/default_sky.ktx";
