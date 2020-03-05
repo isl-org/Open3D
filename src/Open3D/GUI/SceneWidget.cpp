@@ -53,7 +53,7 @@ public:
 
     void SetViewSize(const Size& size) { viewSize_ = size; }
 
-    void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
+    virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
         modelSize_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
         modelBounds_ = bounds;
     }
@@ -252,7 +252,7 @@ public:
         auto sun = geometry::TriangleMesh::CreateSphere(sunRadius, 20);
         sun->PaintUniformColor({1.0f, 0.5f, 0.0f});
         auto t1 = visualization::Camera::Transform::Identity();
-        t1.translate(Eigen::Vector3f{-sphereSize * dir.x(), -sphereSize * dir.y(), -sphereSize * dir.z()});
+        t1.translate(-sphereSize * dir);
         uiObjs_.push_back({scene_->AddGeometry(*sun), t1});
         scene_->SetEntityTransform(uiObjs_[1].handle, t1);
 
@@ -262,7 +262,7 @@ public:
                                   arrowLength, 0.1 * arrowLength, 20);
         sunDir->PaintUniformColor({1.0f, 0.5f, 0.0f});
         auto t2 = visualization::Camera::Transform::Identity();
-        t2.translate(Eigen::Vector3f{-sphereSize * dir.x(), -sphereSize * dir.y(), -sphereSize * dir.z()});
+        t2.translate(-sphereSize * dir);
         t2.translate(0.5 * arrowLength * dir);
         uiObjs_.push_back({scene_->AddGeometry(*sunDir), t2});
         scene_->SetEntityTransform(uiObjs_[2].handle, t2);
@@ -381,13 +381,14 @@ private:
 class CameraControls : public MatrixControl {
     using Super = MatrixControl;
 public:
-    CameraControls(visualization::Camera* c) : camera_(c) {
-        // Initialize parent's matrix_ in case we do something with the
-        // mouse wheel. (Everything else involves a click first, which
-        // will initialize the matrix and everything else).
-        // centerOfRotation_ is not correct, but will be reset by
-        // the mouse down.
-        SetMouseDownInfo(camera_->GetModelMatrix(), centerOfRotation_);
+    CameraControls(visualization::Camera* c) : camera_(c) {}
+
+    void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) override{
+        Super::SetBoundingBox(bounds);
+        // Initialize parent's matrix_ (in case we do a mouse wheel, which
+        // doesn't involve a mouse down) and the center of rotation.
+        SetMouseDownInfo(camera_->GetModelMatrix(),
+                         bounds.GetCenter().cast<float>());
     }
 
     void Rotate(int dx, int dy) override {
@@ -547,7 +548,7 @@ public:
         centerOfRotationAtMouseDown_ = centerOfRotation_;
         fovAtMouseDown_ = camera_->GetFieldOfView();
 
-        Super::SetMouseDownInfo(matrixAtMouseDown_, centerOfRotationAtMouseDown_);
+        Super::SetMouseDownInfo(matrixAtMouseDown_, centerOfRotation_);
     }
 
     void UpdateMouseDragUI() {}
@@ -556,7 +557,6 @@ public:
 
 private:
     visualization::Camera* camera_;
-    Eigen::Vector3f centerOfRotation_;
 
     visualization::Camera::Transform matrixAtMouseDown_;
     Eigen::Vector3f centerOfRotationAtMouseDown_;
