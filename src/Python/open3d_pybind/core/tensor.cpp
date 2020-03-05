@@ -218,7 +218,7 @@ void pybind_core_tensor(py::module& m) {
     });
 
     // After `_getitem_index`, the number of dimensions will be reduced by 1.
-    tensor.def("_getitem_index", &Tensor::IndexSlice);
+    tensor.def("_getitem_index", &Tensor::IndexExtract);
 
     // After `_getitem_slice`, the number of dimensions remain unchanged.
     tensor.def("_getitem_slice",

@@ -81,17 +81,18 @@ public:
 ///
 /// E.g. If max_dim == 5, dim -1 will be converted to 4.
 ///
-/// \param dim dimension index
-/// \param max_dim maximum dimension index
-/// \param exclusive true to allow dim == max_dim for exclusive range generation
+/// \param dim Dimension index
+/// \param max_dim Maximum dimension index
+/// \param inclusive Set to true to allow dim == max_dim. E.g. for slice
+///        T[start:end], we allow end == max_dim.
 static inline int64_t WrapDim(int64_t dim,
                               int64_t max_dim,
-                              bool exclusive = false) {
+                              bool inclusive = false) {
     if (max_dim <= 0) {
         utility::LogError("max_dim {} must be >= 0");
     }
     int64_t min = -max_dim;
-    int64_t max = exclusive ? max_dim : max_dim - 1;
+    int64_t max = inclusive ? max_dim : max_dim - 1;
 
     if (dim < min || dim > max) {
         utility::LogError(

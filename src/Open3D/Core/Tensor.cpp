@@ -306,9 +306,9 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     return str;
 }
 
-Tensor Tensor::operator[](int64_t i) const { return IndexSlice(0, i); }
+Tensor Tensor::operator[](int64_t i) const { return IndexExtract(0, i); }
 
-Tensor Tensor::IndexSlice(int64_t dim, int64_t idx) const {
+Tensor Tensor::IndexExtract(int64_t dim, int64_t idx) const {
     if (shape_.size() == 0) {
         utility::LogError("Tensor has shape (), cannot be indexed.");
     }
@@ -341,7 +341,7 @@ Tensor Tensor::Slice(int64_t dim,
         utility::LogError("Step size cannot be 0");
     }
     start = WrapDim(start, shape_[dim]);
-    stop = WrapDim(stop, shape_[dim], /*exclusive=*/true);
+    stop = WrapDim(stop, shape_[dim], /*inclusive=*/true);
     if (stop < start) {
         stop = start;
     }

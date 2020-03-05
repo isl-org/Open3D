@@ -220,9 +220,9 @@ public:
     /// Extract the i-th Tensor along the first axis, creating a new view
     Tensor operator[](int64_t i) const;
 
-    /// Extract the \p idx -th sub-tensor in dimension \p dim. After IndexSlice,
-    /// the dimension \p dim will be removed.
-    Tensor IndexSlice(int64_t dim, int64_t idx) const;
+    /// Extract the \p idx -th sub-tensor in dimension \p dim. After
+    /// IndexExtract, the dimension \p dim will be removed.
+    Tensor IndexExtract(int64_t dim, int64_t idx) const;
 
     /// Slice Tensor
     Tensor Slice(int64_t dim,
