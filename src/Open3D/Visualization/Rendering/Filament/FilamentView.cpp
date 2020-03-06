@@ -44,8 +44,13 @@ namespace open3d {
 namespace visualization {
 
 namespace {
+
+#define AUTO_CLEAR_COLOR 0
+
+#if AUTO_CLEAR_COLOR
 const filament::LinearColorA kDepthClearColor = {0.f, 0.f, 0.f, 0.f};
 const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
+#endif
 
 filament::View::TargetBufferFlags FlagsFromTargetBuffers(
         const View::TargetBuffers& buffers) {
@@ -76,7 +81,7 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
-
+    view_->setToneMapping(filament::View::ToneMapping::LINEAR);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
@@ -106,6 +111,9 @@ FilamentView::~FilamentView() {
 }
 
 void FilamentView::SetMode(Mode mode) {
+// As color switching disabled, we don't need this code.
+// Yet disabling this looks like a bad idea, so I leave code commented
+#if AUTO_CLEAR_COLOR
     switch (mode) {
         case Mode::Color:
             view_->setVisibleLayers(kAllLayersMask, kMainLayer);
@@ -127,6 +135,7 @@ void FilamentView::SetMode(Mode mode) {
             view_->setClearColor(kDepthClearColor);
             break;
     }
+#endif
 
     mode_ = mode;
 }
@@ -146,9 +155,13 @@ void FilamentView::SetViewport(std::int32_t x,
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
     clearColor_ = color;
 
+#if AUTO_CLEAR_COLOR
     if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
         view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
     }
+#else
+    view_->setClearColor({color.x(), color.y(), color.z(), 1.f});
+#endif
 }
 
 void FilamentView::SetSSAOEnabled(const bool enabled) {
@@ -277,25 +290,7 @@ void FilamentView::PreRender() {
     }
 }
 
-void FilamentView::PostRender() {
-    // For now, we don't need to restore material.
-    // One could easily find assigned material in SceneEntity::material
-
-    //    auto& renderableManager = engine_.getRenderableManager();
-    //
-    //    for (const auto& pair : scene_.entities_) {
-    //        const auto& entity = pair.second;
-    //        if (entity.type == EntityType::Geometry) {
-    //            auto wMaterialInstance =
-    //                    resourceManager_.GetMaterialInstance(entity.material);
-    //
-    //            filament::RenderableManager::Instance inst =
-    //                    renderableManager.getInstance(entity.self);
-    //            renderableManager.setMaterialInstanceAt(
-    //                    inst, 0, wMaterialInstance.lock().get());
-    //        }
-    //    }
-}
+void FilamentView::PostRender() {}
 
 }  // namespace visualization
 }  // namespace open3d
