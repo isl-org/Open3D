@@ -270,8 +270,7 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
 
         Gemm::launch(params, stream);
     }
-
-}  // conv_compute_features
+}
 
 }  // namespace detail
 }  // namespace ml
