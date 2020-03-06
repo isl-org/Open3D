@@ -69,6 +69,8 @@ public:
     MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
     MaterialInstanceHandle AddMaterialInstance(
             const MaterialHandle& material) override;
+    MaterialInstanceHandle AddMaterialInstance(
+            const geometry::TriangleMesh::Material& material) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
 

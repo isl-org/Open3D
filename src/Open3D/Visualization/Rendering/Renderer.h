@@ -29,6 +29,8 @@
 #include "MaterialModifier.h"
 #include "RendererHandle.h"
 
+#include "Open3D/Geometry/TriangleMesh.h"
+
 namespace open3d {
 
 namespace geometry {
@@ -74,6 +76,8 @@ public:
     virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
     virtual MaterialInstanceHandle AddMaterialInstance(
             const MaterialHandle& material) = 0;
+    virtual MaterialInstanceHandle AddMaterialInstance(
+            const geometry::TriangleMesh::Material& material) = 0;
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(
             const MaterialInstanceHandle& id) = 0;

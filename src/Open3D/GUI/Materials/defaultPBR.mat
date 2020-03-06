@@ -1,0 +1,32 @@
+material {
+    name : defaultPBR,
+    shadingModel : lit,
+    doubleSided : true,
+
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : baseMetallic },
+        { type : float,     name : baseRoughness },
+        { type : sampler2d, name : albedo },
+        { type : sampler2d, name : metallic },
+        { type : sampler2d, name : roughness },
+        { type : sampler2d, name : normalMap },
+        { type : sampler2d, name : ambientOcclusion }
+    ],
+    requires : [
+        uv0
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        vec3 normal = texture(materialParams_normalMap, getUV0()).xyz;
+        material.normal = normal * 2.0 - 1.0;
+
+        prepareMaterial(material);
+        material.baseColor.rgb = materialParams.baseColor*texture(materialParams_albedo, getUV0()).rgb;
+        material.roughness = materialParams.baseRoughness * texture(materialParams_roughness, getUV0()).r;
+        material.metallic = materialParams.baseMetallic * texture(materialParams_metallic, getUV0()).r;
+        material.ambientOcclusion = texture(materialParams_ambientOcclusion, getUV0()).r;
+    }
+}

@@ -52,6 +52,7 @@ TriangleMesh &TriangleMesh::Clear() {
     triangle_normals_.clear();
     adjacency_list_.clear();
     triangle_uvs_.clear();
+    materials_.clear();
     texture_.Clear();
     return *this;
 }

@@ -1,6 +1,7 @@
 material {
     name : normals,
     shadingModel : unlit,
+    doubleSided : true,
 
     // We use this attribute for acquiring tangents from vertex buffer.
     // We can't use 'tangents' attribute, because it would be

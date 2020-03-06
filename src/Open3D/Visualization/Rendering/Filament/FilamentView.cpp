@@ -152,7 +152,8 @@ void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
 }
 
 void FilamentView::SetSSAOEnabled(const bool enabled) {
-    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO : filament::View::AmbientOcclusion::NONE;
+    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
+                                : filament::View::AmbientOcclusion::NONE;
     view_->setAmbientOcclusion(option);
 }
 
