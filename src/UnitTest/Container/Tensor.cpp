@@ -460,6 +460,23 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
 }
 
+TEST_P(TensorPermuteDevices, GetItem) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t_1 = t[1, :3, 0:-1:2], effectively not sliced
+    Tensor t_1 =
+            t.GetItem({TensorKey::Index(1), TensorKey::Slice(None, 3, None),
+                       TensorKey::Slice(0, -1, 2)});
+    EXPECT_EQ(t_1.GetShape(), SizeVector({3, 2}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 2}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({12, 14, 16, 18, 20, 22}));
+}
+
 TEST_P(TensorPermuteDevices, SliceAssign) {
     Device device = GetParam();
 

@@ -32,17 +32,42 @@
 
 using namespace open3d;
 
-void pybind_core_tensor_key(py::module &m) {
+void pybind_core_tensor_key(py::module& m) {
+    py::class_<NoneType> none_type(m, "NoneType");
+    none_type.def(py::init([]() { return new NoneType(); }));
+
     py::class_<TensorKey> tensor_key(m, "TensorKey");
     tensor_key.def_static("index", &TensorKey::Index);
     tensor_key.def_static("slice",
                           [](int64_t start, int64_t stop, int64_t step) {
                               return TensorKey::Slice(start, stop, step);
                           });
-    tensor_key.def_static("slice", [](int64_t start, int64_t stop, int64_t step,
-                                      bool start_is_none, bool stop_is_none,
-                                      bool step_is_none) {
-        return TensorKey::Slice(start, stop, step, start_is_none, stop_is_none,
-                                step_is_none);
-    });
+    tensor_key.def_static("slice",
+                          [](int64_t start, int64_t stop, NoneType step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice",
+                          [](int64_t start, NoneType stop, int64_t step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice",
+                          [](int64_t start, NoneType stop, NoneType step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice",
+                          [](NoneType start, int64_t stop, int64_t step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice",
+                          [](NoneType start, int64_t stop, NoneType step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice",
+                          [](NoneType start, NoneType stop, int64_t step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice",
+                          [](NoneType start, NoneType stop, NoneType step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
 }

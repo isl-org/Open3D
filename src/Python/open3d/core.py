@@ -51,14 +51,14 @@ def cast_to_py_tensor(func):
 
 
 def _to_o3d_tensor_key(key):
+
     if isinstance(key, int):
         return o3d.open3d_pybind.TensorKey.index(key)
     elif isinstance(key, slice):
         return o3d.open3d_pybind.TensorKey.slice(
-            0 if key.start == None else key.start,
-            0 if key.stop == None else key.stop,
-            0 if key.step == None else key.step, key.start == None,
-            key.stop == None, key.step == None)
+            o3d.none if key.start == None else key.start,
+            o3d.none if key.stop == None else key.stop,
+            o3d.none if key.step == None else key.step)
     else:
         raise TypeError(f"Invalid key type {type(key)}.")
 
