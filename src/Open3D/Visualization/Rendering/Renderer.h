@@ -77,6 +77,7 @@ public:
     virtual MaterialModifier& ModifyMaterial(const MaterialHandle& id) = 0;
     virtual MaterialModifier& ModifyMaterial(
             const MaterialInstanceHandle& id) = 0;
+    virtual void RemoveMaterialInstance(const MaterialInstanceHandle& id) = 0;
 
     virtual TextureHandle AddTexture(const ResourceLoadRequest& request) = 0;
     virtual TextureHandle AddTexture(

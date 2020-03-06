@@ -272,7 +272,7 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
     impl_->filename->SetOnTextChanged(
             [this](const char *) { this->impl_->UpdateOk(); });
     impl_->dirtree->SetOnValueChanged(
-            [this](const char *) { this->impl_->UpdateDirectoryListing(); });
+            [this](Combobox *) { this->impl_->UpdateDirectoryListing(); });
     impl_->filelist->SetOnValueChanged(
             [this](const char *value, bool isDoubleClick) {
                 auto &entry = this->impl_->GetSelectedEntry();
@@ -296,7 +296,7 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
                 }
                 this->impl_->UpdateOk();
             });
-    impl_->filter->SetOnValueChanged([this](const char *) {
+    impl_->filter->SetOnValueChanged([this](Combobox *) {
         this->impl_->UpdateDirectoryListing();  // re-filter directory
     });
     impl_->cancel->SetOnClicked([this]() {

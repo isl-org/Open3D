@@ -71,6 +71,7 @@ public:
             const MaterialHandle& material) override;
     MaterialModifier& ModifyMaterial(const MaterialHandle& id) override;
     MaterialModifier& ModifyMaterial(const MaterialInstanceHandle& id) override;
+    void RemoveMaterialInstance(const MaterialInstanceHandle& id) override;
 
     TextureHandle AddTexture(const ResourceLoadRequest& request) override;
     TextureHandle AddTexture(
