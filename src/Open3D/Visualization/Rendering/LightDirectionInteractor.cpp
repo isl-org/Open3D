@@ -187,9 +187,7 @@ void LightDirectionInteractor::UpdateMouseDragUI() {
     }
 }
 
-void LightDirectionInteractor::EndMouseDrag() {
-    ClearUI();
-}
+void LightDirectionInteractor::EndMouseDrag() { ClearUI(); }
 
 void LightDirectionInteractor::ClearUI() {
     for (auto& o : uiObjs_) {
