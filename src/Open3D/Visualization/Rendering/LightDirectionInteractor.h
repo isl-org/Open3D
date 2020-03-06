@@ -26,38 +26,44 @@
 
 #pragma once
 
-#include "Widget.h"
+#include "MatrixInteractor.h"
+
+#include "RendererHandle.h"
 
 namespace open3d {
-namespace gui {
+namespace visualization {
 
-class NumberEdit : public Widget {
-    using Super = Widget;
+class Camera;
+class Scene;
+
+class LightDirectionInteractor : public MatrixInteractor {
+    using Super = MatrixInteractor;
 
 public:
-    enum Type { INT, DOUBLE };
-    explicit NumberEdit(Type type);
-    ~NumberEdit();
+    LightDirectionInteractor(Scene* scene, Camera* camera);
 
-    int GetIntValue() const;
-    double GetDoubleValue() const;
-    void SetValue(double val);
+    void SetDirectionalLight(LightHandle dirLight);
 
-    double GetMinimumValue() const;
-    double GetMaximumValue() const;
-    void SetLimits(double minValue, double maxValue);
+    void Rotate(int dx, int dy) override;
 
-    void SetDecimalPrecision(int nDigits);
+    void StartMouseDrag();
+    void UpdateMouseDragUI();
+    void EndMouseDrag();
 
-    void SetOnValueChanged(std::function<void(double)> onChanged);
-
-    Size CalcPreferredSize(const Theme& theme) const override;
-    Widget::DrawResult Draw(const DrawContext& context) override;
+    Eigen::Vector3f GetCurrentDirection() const;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    Scene* scene_;
+    Camera* camera_;
+    LightHandle dirLight_;
+    Eigen::Vector3f lightDirAtMouseDown_;
+
+    struct UIObj {
+        GeometryHandle handle;
+        Camera::Transform transform;
+    };
+    std::vector<UIObj> uiObjs_;
 };
 
-}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

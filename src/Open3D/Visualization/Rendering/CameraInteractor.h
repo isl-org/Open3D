@@ -26,38 +26,49 @@
 
 #pragma once
 
-#include "Widget.h"
+#include "MatrixInteractor.h"
 
 namespace open3d {
-namespace gui {
+namespace visualization {
 
-class NumberEdit : public Widget {
-    using Super = Widget;
+class CameraInteractor : public MatrixInteractor {
+    using Super = MatrixInteractor;
 
 public:
-    enum Type { INT, DOUBLE };
-    explicit NumberEdit(Type type);
-    ~NumberEdit();
+    CameraInteractor(Camera* c, double minFarPlane);
 
-    int GetIntValue() const;
-    double GetDoubleValue() const;
-    void SetValue(double val);
+    void SetBoundingBox(
+            const geometry::AxisAlignedBoundingBox& bounds) override;
 
-    double GetMinimumValue() const;
-    double GetMaximumValue() const;
-    void SetLimits(double minValue, double maxValue);
+    void Rotate(int dx, int dy) override;
+    void RotateZ(int dx, int dy) override;
+    void Dolly(int dy, DragType type) override;
+    void Dolly(float zDist, Camera::Transform matrixIn) override;
 
-    void SetDecimalPrecision(int nDigits);
+    void Pan(int dx, int dy);
 
-    void SetOnValueChanged(std::function<void(double)> onChanged);
+    /// Sets camera field of view
+    void Zoom(int dy, DragType dragType);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
-    Widget::DrawResult Draw(const DrawContext& context) override;
+    enum class CameraPreset {
+        PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
+        PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
+        PLUS_Z
+    };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
+    void GoToPreset(CameraPreset preset);
+
+    void StartMouseDrag();
+    void UpdateMouseDragUI();
+    void EndMouseDrag();
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    double minFarPlane_;
+    visualization::Camera* camera_;
+
+    visualization::Camera::Transform matrixAtMouseDown_;
+    Eigen::Vector3f centerOfRotationAtMouseDown_;
+    double fovAtMouseDown_;
 };
 
-}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
