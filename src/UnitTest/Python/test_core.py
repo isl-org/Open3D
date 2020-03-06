@@ -369,21 +369,21 @@ def test_slice():
     np_t = np.array(range(24)).reshape((2, 3, 4))
     o3_t = o3d.Tensor(np_t)
 
-    # np.testing.assert_equal(o3_t[:].numpy(), np_t[:])
-    # np.testing.assert_equal(o3_t[0].numpy(), np_t[0])
+    np.testing.assert_equal(o3_t[:].numpy(), np_t[:])
+    np.testing.assert_equal(o3_t[0].numpy(), np_t[0])
     np.testing.assert_equal(o3_t[0, 1].numpy(), np_t[0, 1])
-    # np.testing.assert_equal(o3_t[0, :].numpy(), np_t[0, :])
-    # np.testing.assert_equal(o3_t[0, 1:3].numpy(), np_t[0, 1:3])
-    # np.testing.assert_equal(o3_t[0, :, :-2].numpy(), np_t[0, :, :-2])
-    # np.testing.assert_equal(o3_t[0, 1:3, 2].numpy(), np_t[0, 1:3, 2])
-    # np.testing.assert_equal(o3_t[0, 1:-1, 2].numpy(), np_t[0, 1:-1, 2])
-    # np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].numpy(), np_t[0, 1:3, 0:4:2])
-    # np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].numpy(), np_t[0, 1:3, 0:-1:2])
-    # np.testing.assert_equal(o3_t[0, 1, :].numpy(), np_t[0, 1, :])
+    np.testing.assert_equal(o3_t[0, :].numpy(), np_t[0, :])
+    np.testing.assert_equal(o3_t[0, 1:3].numpy(), np_t[0, 1:3])
+    np.testing.assert_equal(o3_t[0, :, :-2].numpy(), np_t[0, :, :-2])
+    np.testing.assert_equal(o3_t[0, 1:3, 2].numpy(), np_t[0, 1:3, 2])
+    np.testing.assert_equal(o3_t[0, 1:-1, 2].numpy(), np_t[0, 1:-1, 2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:4:2].numpy(), np_t[0, 1:3, 0:4:2])
+    np.testing.assert_equal(o3_t[0, 1:3, 0:-1:2].numpy(), np_t[0, 1:3, 0:-1:2])
+    np.testing.assert_equal(o3_t[0, 1, :].numpy(), np_t[0, 1, :])
 
-    # # Slice the slice
-    # np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].numpy(),
-    #                         np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
+    # Slice the slice
+    np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].numpy(),
+                            np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
 
 
 def test_cast_to_py_tensor():

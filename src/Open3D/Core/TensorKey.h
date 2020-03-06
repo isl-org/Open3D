@@ -97,8 +97,11 @@ public:
     /// When dim_size is know, convert the slice object such that
     /// start_is_none_ == stop_is_none_ == step_is_none_ == false
     /// E.g. if t.shape == (5,), t[:4]:
-    ///      before compute: Slice(None, 4, None)
-    ///      after compute : Slice(   0, 4,    1)
+    ///      before compute: Slice(None,    4, None)
+    ///      after compute : Slice(   0,    4,    1)
+    /// E.g. if t.shape == (5,), t[1:]:
+    ///      before compute: Slice(   1, None, None)
+    ///      after compute : Slice(   1,    5,    1)
     TensorKey UpdateWithDimSize(int64_t dim_size) const {
         AssertMode(TensorKeyMode::Slice);
         return TensorKey(TensorKeyMode::Slice, 0, start_is_none_ ? 0 : start_,

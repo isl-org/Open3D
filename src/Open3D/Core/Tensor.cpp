@@ -91,7 +91,7 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
         if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
             t = t.IndexExtract(slice_dim, tk.GetIndex());
         } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
-            TensorKey tk_new = tk.UpdateWithDimSize(shape_[slice_dim]);
+            TensorKey tk_new = tk.UpdateWithDimSize(t.shape_[slice_dim]);
             t = t.Slice(slice_dim, tk_new.GetStart(), tk_new.GetStop(),
                         tk_new.GetStep());
             slice_dim++;

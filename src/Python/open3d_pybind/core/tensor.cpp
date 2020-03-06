@@ -38,6 +38,7 @@
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
+#include "Open3D/Core/TensorKey.h"
 
 using namespace open3d;
 
