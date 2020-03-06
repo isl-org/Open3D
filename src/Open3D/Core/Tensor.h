@@ -36,6 +36,7 @@
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/TensorKey.h"
 
 namespace open3d {
 
@@ -142,6 +143,26 @@ public:
         });
         return *this;
     }
+
+    /// Pythonic __getitem__ for tensor, returning a new view.
+    ///
+    /// Example usage:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// Tensor t1 = t.GetItem(TensorIndex(2)); // t[2] in Python
+    /// Tensor t2 = t.GetItem(TensorSlice(0, 4, 2)) // t[0:4:2] in Python
+    /// ```
+    Tensor GetItem(const TensorKey& tk) const;
+
+    /// Pythonic __getitem__ for tensor, returning a new view.
+    ///
+    /// Example usage:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// // Same as t[2, 0:4:2] in Python.
+    /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
+    /// ```
+    Tensor GetItem(const std::vector<TensorKey>& tks) const;
 
     DLManagedTensor* ToDLPack() const { return dlpack::ToDLPack(*this); }
 

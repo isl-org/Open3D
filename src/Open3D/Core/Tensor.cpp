@@ -36,6 +36,7 @@
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/Kernel/Kernel.h"
 #include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/TensorKey.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -70,6 +71,35 @@ Tensor& Tensor::operator=(const Tensor& other) && {
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
+}
+
+Tensor Tensor::GetItem(const TensorKey& tk) const {
+    if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+        return IndexExtract(0, tk.GetIndex());
+    } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+        TensorKey tk_new = tk.UpdateWithDimSize(shape_[0]);
+        return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
+    } else {
+        utility::LogError("Internal error: wrong TensorKeyMode.");
+    }
+}
+
+Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
+    Tensor t = *this;
+    int64_t slice_dim = 0;
+    for (const TensorKey& tk : tks) {
+        if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+            t = t.IndexExtract(slice_dim, tk.GetIndex());
+        } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+            TensorKey tk_new = tk.UpdateWithDimSize(shape_[slice_dim]);
+            t = t.Slice(slice_dim, tk_new.GetStart(), tk_new.GetStop(),
+                        tk_new.GetStep());
+            slice_dim++;
+        } else {
+            utility::LogError("Internal error: wrong TensorKeyMode.");
+        }
+    }
+    return t;
 }
 
 /// Assign (copy) values from another Tensor, shape, dtype, device may change.

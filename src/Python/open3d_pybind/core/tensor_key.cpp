@@ -24,18 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
+#include "open3d_pybind/core/container.h"
+#include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-void pybind_core(py::module& m);
+#include "Open3D/Core/TensorKey.h"
 
-void pybind_cuda_utils(py::module& m);
-void pybind_core_blob(py::module& m);
-void pybind_core_dtype(py::module& m);
-void pybind_core_device(py::module& m);
-void pybind_core_size_vector(py::module& m);
-void pybind_core_tensor_key(py::module& m);
-void pybind_core_tensor(py::module& m);
-void pybind_core_tensorlist(py::module& m);
+using namespace open3d;
 
+void pybind_core_tensor_key(py::module &m) {
+    py::class_<TensorKey> tensor_key(m, "TensorKey");
+    tensor_key.def_static("index", &TensorKey::Index);
+    tensor_key.def_static("slice",
+                          [](int64_t start, int64_t stop, int64_t step) {
+                              return TensorKey::Slice(start, stop, step);
+                          });
+    tensor_key.def_static("slice", [](int64_t start, int64_t stop, int64_t step,
+                                      bool start_is_none, bool stop_is_none,
+                                      bool step_is_none) {
+        return TensorKey::Slice(start, stop, step, start_is_none, stop_is_none,
+                                step_is_none);
+    });
+}

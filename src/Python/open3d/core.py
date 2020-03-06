@@ -50,6 +50,19 @@ def cast_to_py_tensor(func):
     return wrapped_func
 
 
+def _to_o3d_tensor_key(key):
+    if isinstance(key, int):
+        return o3d.open3d_pybind.TensorKey.index(key)
+    elif isinstance(key, slice):
+        return o3d.open3d_pybind.TensorKey.slice(
+            0 if key.start == None else key.start,
+            0 if key.stop == None else key.stop,
+            0 if key.step == None else key.step, key.start == None,
+            key.stop == None, key.step == None)
+    else:
+        raise TypeError(f"Invalid key type {type(key)}.")
+
+
 class Tensor(open3d_pybind.Tensor):
     """
     Open3D Tensor class. A Tensor is a view of data blob with shape, strides
@@ -68,28 +81,15 @@ class Tensor(open3d_pybind.Tensor):
         super(Tensor, self).__init__(data, dtype, device)
 
     @cast_to_py_tensor
-    def __getitem__(self, val):
+    def __getitem__(self, key):
         t = self
-        if isinstance(val, tuple):
-            slice_dim = 0
-            for v in val:
-                if isinstance(v, int):
-                    # _getitem_index removes the 0-th dim
-                    t = t._getitem_index(slice_dim, v)
-                elif isinstance(v, slice):
-                    # _getitem_slice does not remove a dimension, thus slice_dim
-                    # needs to be incremented to indicate the next slice_dim.
-                    t = t._getitem_slice(slice_dim, v)
-                    slice_dim += 1
-                else:
-                    raise TypeError(f"Invalid type {type(v)} for getitem.")
-        elif isinstance(val, int):
-            t = super(Tensor, self)._getitem_index(0, val)
-        elif isinstance(val, slice):
-            # Only need to apply at the 0-th dim, e.g. a[0:10:2].
-            t = super(Tensor, self)._getitem_slice(0, val)
+        if isinstance(key, tuple) or isinstance(key, list):
+            t = super(Tensor, self)._getitem_vector(
+                [_to_o3d_tensor_key(k) for k in key])
+        elif isinstance(key, int) or isinstance(key, slice):
+            t = super(Tensor, self)._getitem(_to_o3d_tensor_key(key))
         else:
-            raise TypeError(f"Invalid type {type(val)} for getitem.")
+            raise TypeError(f"Invalid type {type(key)} for getitem.")
         return t
 
     @cast_to_py_tensor
