@@ -152,6 +152,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     auto t0 = Camera::Transform::Identity();
     uiObjs_.push_back({scene_->AddGeometry(*sphere), t0});
     scene_->SetEntityTransform(uiObjs_[0].handle, t0);
+    scene_->SetGeometryShadows(uiObjs_[0].handle, false, false);
 
     auto sunRadius = 0.05 * modelSize_;
     auto sun = geometry::TriangleMesh::CreateSphere(sunRadius, 20);
@@ -160,6 +161,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     t1.translate(-sphereSize * dir);
     uiObjs_.push_back({scene_->AddGeometry(*sun), t1});
     scene_->SetEntityTransform(uiObjs_[1].handle, t1);
+    scene_->SetGeometryShadows(uiObjs_[1].handle, false, false);
 
     const double arrowRadius = 0.075 * sunRadius;
     const double arrowLength = 0.333 * modelSize_;
@@ -171,6 +173,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     t2.translate(0.5 * arrowLength * dir);
     uiObjs_.push_back({scene_->AddGeometry(*sunDir), t2});
     scene_->SetEntityTransform(uiObjs_[2].handle, t2);
+    scene_->SetGeometryShadows(uiObjs_[2].handle, false, false);
 
     UpdateMouseDragUI();
 }

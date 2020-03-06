@@ -341,6 +341,19 @@ MaterialInstanceHandle FilamentScene::GetMaterial(
     return {};
 }
 
+void FilamentScene::SetGeometryShadows(const GeometryHandle& geometryId,
+                                       bool castsShadows,
+                                       bool receivesShadows) {
+    const auto found = entities_.find(geometryId);
+    if (found != entities_.end()) {
+        auto& renderableManger = engine_.getRenderableManager();
+        filament::RenderableManager::Instance inst =
+                renderableManger.getInstance(found->second.info.self);
+        renderableManger.setCastShadows(inst, castsShadows);
+        renderableManger.setReceiveShadows(inst, castsShadows);
+    }
+}
+
 void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
     RemoveEntity(geometryId);
 }

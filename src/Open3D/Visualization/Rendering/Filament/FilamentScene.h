@@ -80,6 +80,9 @@ public:
                         const MaterialInstanceHandle& materialId) override;
     MaterialInstanceHandle GetMaterial(
             const GeometryHandle& geometryId) const override;
+    void SetGeometryShadows(const GeometryHandle& geometryId,
+                            bool castsShadows,
+                            bool receivesShadows) override;
     void RemoveGeometry(const GeometryHandle& geometryId) override;
 
     LightHandle AddLight(const LightDescription& descr) override;

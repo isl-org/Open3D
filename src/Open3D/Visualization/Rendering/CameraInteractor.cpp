@@ -30,7 +30,7 @@ namespace open3d {
 namespace visualization {
 
 CameraInteractor::CameraInteractor(Camera* c, double minFarPlane)
-    : minFarPlane_(minFarPlane), camera_(c) {}
+    : minFarPlane_(minFarPlane), camera_(c), fovAtMouseDown_(60.0) {}
 
 void CameraInteractor::SetBoundingBox(
         const geometry::AxisAlignedBoundingBox& bounds) {
