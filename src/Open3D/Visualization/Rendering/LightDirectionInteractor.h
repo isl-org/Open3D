@@ -63,6 +63,8 @@ private:
         Camera::Transform transform;
     };
     std::vector<UIObj> uiObjs_;
+
+    void ClearUI();
 };
 
 }  // namespace visualization

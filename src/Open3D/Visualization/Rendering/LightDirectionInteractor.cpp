@@ -133,9 +133,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
-    for (auto& o : uiObjs_) {
-        scene_->RemoveGeometry(o.handle);
-    }
+    ClearUI();
 
     auto dir = scene_->GetLightDirection(dirLight_);
 
@@ -190,9 +188,14 @@ void LightDirectionInteractor::UpdateMouseDragUI() {
 }
 
 void LightDirectionInteractor::EndMouseDrag() {
+    ClearUI();
+}
+
+void LightDirectionInteractor::ClearUI() {
     for (auto& o : uiObjs_) {
         scene_->RemoveGeometry(o.handle);
     }
+    uiObjs_.clear();
 }
 
 Eigen::Vector3f LightDirectionInteractor::GetCurrentDirection() const {
