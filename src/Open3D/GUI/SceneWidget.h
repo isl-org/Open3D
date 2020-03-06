@@ -67,7 +67,7 @@ public:
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
     /// only needed if other things need to be updated (like a UI).
-    void SetDirectionalLight(
+    void SelectDirectionalLight(
             visualization::LightHandle dirLight,
             std::function<void(const Eigen::Vector3f&)> onDirChanged);
 

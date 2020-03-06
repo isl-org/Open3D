@@ -267,7 +267,7 @@ void SceneWidget::SetupCamera(
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 }
 
-void SceneWidget::SetDirectionalLight(
+void SceneWidget::SelectDirectionalLight(
         visualization::LightHandle dirLight,
         std::function<void(const Eigen::Vector3f&)> onDirChanged) {
     impl_->dirLight = dirLight;

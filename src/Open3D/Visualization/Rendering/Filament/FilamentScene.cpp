@@ -424,10 +424,8 @@ Eigen::Vector3f FilamentScene::GetLightDirection(const LightHandle& id) const {
         auto& lightManager = engine_.getLightManager();
         filament::LightManager::Instance inst =
                 lightManager.getInstance(found->second.info.self);
-        if (lightManager.isDirectional(inst)) {
-            auto dir = lightManager.getDirection(inst);
-            return {dir[0], dir[1], dir[2]};
-        }
+        auto dir = lightManager.getDirection(inst);
+        return {dir[0], dir[1], dir[2]};
     }
     return {0.0f, 0.0f, 0.0f};
 }
@@ -439,9 +437,7 @@ void FilamentScene::SetLightDirection(const LightHandle& id,
         auto& lightManager = engine_.getLightManager();
         filament::LightManager::Instance inst =
                 lightManager.getInstance(found->second.info.self);
-        if (lightManager.isDirectional(inst)) {
-            lightManager.setDirection(inst, {dir.x(), dir.y(), dir.z()});
-        }
+        lightManager.setDirection(inst, {dir.x(), dir.y(), dir.z()});
     }
 }
 
