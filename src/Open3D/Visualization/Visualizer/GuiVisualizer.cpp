@@ -397,10 +397,9 @@ GuiVisualizer::GuiVisualizer(
     // ... background colors
     auto bgcolor = std::make_shared<gui::ColorEdit>();
     bgcolor->SetValue({1, 1, 1});
-    bgcolor->OnValueChanged =
-          [scene](const gui::Color &newColor) {
-              scene->SetBackgroundColor(newColor);
-          };
+    bgcolor->OnValueChanged = [scene](const gui::Color &newColor) {
+        scene->SetBackgroundColor(newColor);
+    };
     auto bgcolorLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     bgcolorLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
     bgcolorLayout->AddChild(bgcolor);
