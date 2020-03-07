@@ -34,6 +34,9 @@
 #include "Open3D/Visualization/Rendering/Scene.h"
 #include "Open3D/Visualization/Rendering/View.h"
 
+#include "Open3D/Visualization/Rendering/CameraInteractor.h"
+#include "Open3D/Visualization/Rendering/LightDirectionInteractor.h"
+
 #include <Eigen/Geometry>
 
 #define ENABLE_PAN 1
@@ -45,236 +48,46 @@ static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 20.0;
 
 // ----------------------------------------------------------------------------
-class CameraControls {
+class MouseInteractor {
 public:
-    CameraControls(visualization::Camera* c) : camera_(c) {}
+    MouseInteractor(visualization::Scene* scene, visualization::Camera* camera)
+        : cameraControls_(std::make_unique<visualization::CameraInteractor>(
+                  camera, MIN_FAR_PLANE)),
+          lightDir_(std::make_unique<visualization::LightDirectionInteractor>(
+                  scene, camera)) {}
 
-    void Pan(int dx, int dy) {
-        // Calculate the depth to the pixel we clicked on, so that we
-        // can compensate for perspective and have the mouse stays on
-        // that location. Unfortunately, we don't really have access to
-        // the depth buffer with Filament, so we'll fake it by finding
-        // the depth of the center of rotation.
-        auto pos = camera_->GetPosition();
-        auto forward = camera_->GetForwardVector();
-        float near = camera_->GetNear();
-        float dist = forward.dot(centerOfRotationAtMouseDown_ - pos);
-        dist = std::max(near, dist);
-
-        // How far is one pixel?
-        auto modelMatrix = matrixAtMouseDown_;  // copy
-        float halfFoV = camera_->GetFieldOfView() / 2.0;
-        float halfFoVRadians = halfFoV * M_PI / 180.0;
-        float unitsAtDist = 2.0f * std::tan(halfFoVRadians) * (near + dist);
-        float unitsPerPx = unitsAtDist / float(viewSize_.height);
-
-        // Move camera and center of rotation. Adjust values from the
-        // original positions at mousedown to avoid hysteresis problems.
-        auto localMove = Eigen::Vector3f(-dx * unitsPerPx, dy * unitsPerPx, 0);
-        auto worldMove = modelMatrix.rotation() * localMove;
-        centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
-        modelMatrix.translate(localMove);
-        camera_->SetModelMatrix(modelMatrix);
+    void SetViewSize(const Size& size) {
+        cameraControls_->SetViewSize(size.width, size.height);
+        lightDir_->SetViewSize(size.width, size.height);
     }
-
-    void Rotate(int dx, int dy) {
-        auto matrix = matrixAtMouseDown_;  // copy
-        Eigen::AngleAxisf rotMatrix(0, Eigen::Vector3f(1, 0, 0));
-
-        // We want to rotate as if we were rotating an imaginary trackball
-        // centered at the point of rotation. To do this we need an axis
-        // of rotation and an angle about the axis. To find the axis, we
-        // imagine that the viewing plane has been translated into the screen
-        // so that it intersects the center of rotation. The axis we want
-        // to rotate around is perpendicular to the vector defined by (dx, dy)
-        // (assuming +x is right and +y is up). (Imagine the situation if the
-        // mouse movement is (100, 0) or (0, 100).) Now it is easy to find
-        // the perpendicular in 2D. Conveniently, (axis.x, axis.y, 0) is the
-        // correct axis in camera-local coordinates. We can multiply by the
-        // camera's rotation matrix to get the correct world vector.
-        dy = -dy;  // up is negative, but the calculations are easiest to
-                   // imagine up is positive.
-        Eigen::Vector3f axis(-dy, dx, 0);  // rotate by 90 deg in 2D
-        float theta =
-                0.5 * M_PI * axis.norm() / (0.5f * float(viewSize_.height));
-        axis = axis.normalized();
-
-        axis = matrix.rotation() * axis;  // convert axis to world coords
-        rotMatrix = rotMatrix * Eigen::AngleAxisf(-theta, axis);
-
-        auto pos = matrix * Eigen::Vector3f(0, 0, 0);
-        auto dist = (centerOfRotation_ - pos).norm();
-        visualization::Camera::Transform m;
-        m.fromPositionOrientationScale(centerOfRotation_,
-                                       rotMatrix * matrix.rotation(),
-                                       Eigen::Vector3f(1, 1, 1));
-        m.translate(Eigen::Vector3f(0, 0, dist));
-
-        camera_->SetModelMatrix(m);
-    }
-
-    void RotateZ(int dx, int dy) {
-        // RotateZ rotates around the axis normal to the screen. Since we
-        // will be rotating using camera coordinates, we want to rotate
-        // about (0, 0, 1).
-        Eigen::Vector3f axis(0, 0, 1);
-        // Moving half the height should rotate 360 deg (= 2 * PI).
-        // This makes it easy to rotate enough without rotating too much.
-        auto rad = 4.0 * M_PI * dy / viewSize_.height;
-
-        auto matrix = matrixAtMouseDown_;  // copy
-        matrix.rotate(Eigen::AngleAxisf(rad, axis));
-        camera_->SetModelMatrix(matrix);
-    }
-
-    enum class DragType { MOUSE, WHEEL, TWO_FINGER };
-
-    void Zoom(int dy, DragType dragType) {
-        float dFOV = 0.0f;  // initialize to make GCC happy
-        switch (dragType) {
-            case DragType::MOUSE:
-                dFOV = float(-dy) * 0.1;  // deg
-                break;
-            case DragType::TWO_FINGER:
-                dFOV = float(dy) * 0.2f;  // deg
-                break;
-            case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
-                dFOV = float(dy) * 2.0f;  // deg
-                break;
-        }
-        float oldFOV = 0.0;
-        if (dragType == DragType::MOUSE) {
-            oldFOV = fovAtMouseDown_;
-        } else {
-            oldFOV = camera_->GetFieldOfView();
-        }
-        float newFOV = oldFOV + dFOV;
-        newFOV = std::max(5.0f, newFOV);
-        newFOV = std::min(90.0f, newFOV);
-
-        float toRadians = M_PI / 180.0;
-        float near = camera_->GetNear();
-        Eigen::Vector3f cameraPos, COR;
-        if (dragType == DragType::MOUSE) {
-            cameraPos = matrixAtMouseDown_.translation();
-            COR = centerOfRotationAtMouseDown_;
-        } else {
-            cameraPos = camera_->GetPosition();
-            COR = centerOfRotation_;
-        }
-        Eigen::Vector3f toCOR = COR - cameraPos;
-        float oldDistFromPlaneToCOR = toCOR.norm() - near;
-        float newDistFromPlaneToCOR =
-                (near + oldDistFromPlaneToCOR) *
-                        std::tan(oldFOV / 2.0 * toRadians) /
-                        std::tan(newFOV / 2.0 * toRadians) -
-                near;
-        if (dragType == DragType::MOUSE) {
-            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR),
-                  matrixAtMouseDown_);
-        } else {
-            Dolly(-(newDistFromPlaneToCOR - oldDistFromPlaneToCOR),
-                  camera_->GetModelMatrix());
-        }
-
-        float aspect = 1.0f;
-        if (viewSize_.height > 0) {
-            aspect = float(viewSize_.width) / float(viewSize_.height);
-        }
-        camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
-                               camera_->GetFar(),
-                               camera_->GetFieldOfViewType());
-    }
-
-    void Dolly(int dy, DragType dragType) {
-        float dist = 0.0f;  // initialize to make GCC happy
-        switch (dragType) {
-            case DragType::MOUSE:
-                // Zoom out is "push away" or up, is a negative value for
-                // mousing
-                dist = float(dy) * 0.0025f * modelSize_;
-                break;
-            case DragType::TWO_FINGER:
-                // Zoom out is "push away" or up, is a positive value for
-                // two-finger scrolling, so we need to invert dy.
-                dist = float(-dy) * 0.005f * modelSize_;
-                break;
-            case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
-                dist = float(-dy) * 0.1f * modelSize_;
-                break;
-        }
-
-        if (dragType == DragType::MOUSE) {
-            Dolly(dist, matrixAtMouseDown_);  // copies the matrix
-        } else {
-            Dolly(dist, camera_->GetModelMatrix());
-        }
-    }
-
-    // Note: we pass `matrix` by value because we want to copy it,
-    //       as translate() will be modifying it.
-    void Dolly(float zDist, visualization::Camera::Transform matrix) {
-        // Dolly is just moving the camera forward. Filament uses right as +x,
-        // up as +y, and forward as -z (standard OpenGL coordinates). So to
-        // move forward all we need to do is translate the camera matrix by
-        // dist * (0, 0, -1). Note that translating by camera_->GetForwardVector
-        // would be incorrect, since GetForwardVector() returns the forward
-        // vector in world space, but the translation happens in camera space.)
-        // Since we want trackpad down (negative) to go forward ("pulling" the
-        // model toward the viewer) we need to negate dy.
-        auto forward = Eigen::Vector3f(0, 0, -zDist);  // zDist * (0, 0, -1)
-        matrix.translate(forward);
-        camera_->SetModelMatrix(matrix);
-
-        // Update the far plane so that we don't get clipped by it as we dolly
-        // out or lose precision as we dolly in.
-        auto pos = matrix.translation().cast<double>();
-        auto far1 = (geometryBounds_.GetMinBound() - pos).norm();
-        auto far2 = (geometryBounds_.GetMaxBound() - pos).norm();
-        auto modelSize = 2.0 * geometryBounds_.GetExtent().norm();
-        auto far = std::max(MIN_FAR_PLANE, std::max(far1, far2) + modelSize);
-        float aspect = 1.0f;
-        if (viewSize_.height > 0) {
-            aspect = float(viewSize_.width) / float(viewSize_.height);
-        }
-        camera_->SetProjection(camera_->GetFieldOfView(), aspect,
-                               camera_->GetNear(), far,
-                               camera_->GetFieldOfViewType());
-    }
-
-    void GoToPreset(SceneWidget::CameraPreset preset) {
-        auto boundsMax = geometryBounds_.GetMaxBound();
-        auto maxDim =
-                std::max(boundsMax.x(), std::max(boundsMax.y(), boundsMax.z()));
-        maxDim = 1.5f * maxDim;
-        auto center = centerOfRotation_;
-        Eigen::Vector3f eye, up;
-        switch (preset) {
-            case SceneWidget::CameraPreset::PLUS_X: {
-                eye = Eigen::Vector3f(maxDim, center.y(), center.z());
-                up = Eigen::Vector3f(0, 1, 0);
-                break;
-            }
-            case SceneWidget::CameraPreset::PLUS_Y: {
-                eye = Eigen::Vector3f(center.x(), maxDim, center.z());
-                up = Eigen::Vector3f(1, 0, 0);
-                break;
-            }
-            case SceneWidget::CameraPreset::PLUS_Z: {
-                eye = Eigen::Vector3f(center.x(), center.y(), maxDim);
-                up = Eigen::Vector3f(0, 1, 0);
-                break;
-            }
-        }
-        camera_->LookAt(center, eye, up);
-    }
-
-    void SetViewSize(const Size& size) { viewSize_ = size; }
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
-        geometryBounds_ = bounds;
-        modelSize_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
-        centerOfRotation_ = bounds.GetCenter().cast<float>();
+        cameraControls_->SetBoundingBox(bounds);
+        lightDir_->SetBoundingBox(bounds);
+    }
+
+    void SetDirectionalLight(
+            visualization::LightHandle dirLight,
+            std::function<void(const Eigen::Vector3f&)> onChanged) {
+        lightDir_->SetDirectionalLight(dirLight);
+        onLightDirChanged_ = onChanged;
+    }
+
+    void GoToCameraPreset(SceneWidget::CameraPreset preset) {
+        switch (preset) {
+            case SceneWidget::CameraPreset::PLUS_X:
+                cameraControls_->GoToPreset(
+                        visualization::CameraInteractor::CameraPreset::PLUS_X);
+                break;
+            case SceneWidget::CameraPreset::PLUS_Y:
+                cameraControls_->GoToPreset(
+                        visualization::CameraInteractor::CameraPreset::PLUS_Y);
+                break;
+            case SceneWidget::CameraPreset::PLUS_Z:
+                cameraControls_->GoToPreset(
+                        visualization::CameraInteractor::CameraPreset::PLUS_Z);
+                break;
+        }
     }
 
     void Mouse(const MouseEvent& e) {
@@ -282,9 +95,6 @@ public:
             case MouseEvent::BUTTON_DOWN:
                 mouseDownX_ = e.x;
                 mouseDownY_ = e.y;
-                matrixAtMouseDown_ = camera_->GetModelMatrix();
-                centerOfRotationAtMouseDown_ = centerOfRotation_;
-                fovAtMouseDown_ = camera_->GetFieldOfView();
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
                         state_ = State::DOLLY;
@@ -294,6 +104,8 @@ public:
 #endif  // ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::META)) {
                         state_ = State::ROTATE_Z;
+                    } else if (e.modifiers & int(KeyModifier::ALT)) {
+                        state_ = State::ROTATE_LIGHT;
                     } else {
                         state_ = State::ROTATE_XY;
                     }
@@ -301,6 +113,11 @@ public:
                 } else if (e.button.button == MouseButton::RIGHT) {
                     state_ = State::PAN;
 #endif  // ENABLE_PAN
+                }
+                if (state_ == State::ROTATE_LIGHT) {
+                    lightDir_->StartMouseDrag();
+                } else if (state_ != State::NONE) {
+                    cameraControls_->StartMouseDrag();
                 }
                 break;
             case MouseEvent::DRAG: {
@@ -310,34 +127,57 @@ public:
                     case State::NONE:
                         break;
                     case State::PAN:
-                        Pan(dx, dy);
+                        cameraControls_->Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        Dolly(dy, DragType::MOUSE);
+                        cameraControls_->Dolly(dy,
+                                               visualization::MatrixInteractor::
+                                                       DragType::MOUSE);
                         break;
                     case State::ZOOM:
-                        Zoom(dy, DragType::MOUSE);
+                        cameraControls_->Zoom(dy,
+                                              visualization::MatrixInteractor::
+                                                      DragType::MOUSE);
                         break;
                     case State::ROTATE_XY:
-                        Rotate(dx, dy);
+                        cameraControls_->Rotate(dx, dy);
                         break;
                     case State::ROTATE_Z:
-                        RotateZ(dx, dy);
+                        cameraControls_->RotateZ(dx, dy);
+                        break;
+                    case State::ROTATE_LIGHT:
+                        lightDir_->Rotate(dx, dy);
+                        if (onLightDirChanged_) {
+                            onLightDirChanged_(
+                                    lightDir_->GetCurrentDirection());
+                        }
                         break;
                 }
                 break;
             }
             case MouseEvent::WHEEL: {
                 if (e.modifiers & int(KeyModifier::SHIFT)) {
-                    Zoom(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
-                                                        : DragType::WHEEL);
+                    cameraControls_->Zoom(
+                            e.wheel.dy,
+                            e.wheel.isTrackpad
+                                    ? visualization::MatrixInteractor::
+                                              DragType::TWO_FINGER
+                                    : visualization::MatrixInteractor::
+                                              DragType::WHEEL);
                 } else {
-                    Dolly(e.wheel.dy, e.wheel.isTrackpad ? DragType::TWO_FINGER
-                                                         : DragType::WHEEL);
+                    cameraControls_->Dolly(
+                            e.wheel.dy,
+                            e.wheel.isTrackpad
+                                    ? visualization::MatrixInteractor::
+                                              DragType::TWO_FINGER
+                                    : visualization::MatrixInteractor::
+                                              DragType::WHEEL);
                 }
                 break;
             }
             case MouseEvent::BUTTON_UP:
+                cameraControls_->EndMouseDrag();
+                lightDir_->EndMouseDrag();
                 state_ = State::NONE;
                 break;
             default:
@@ -345,31 +185,34 @@ public:
         }
     }
 
-    void Key(const KeyEvent& e) {}
-
 private:
-    visualization::Camera* camera_;
-    Size viewSize_;
-    double modelSize_ = 100;
-    geometry::AxisAlignedBoundingBox geometryBounds_;
-    Eigen::Vector3f centerOfRotation_;
+    std::unique_ptr<visualization::CameraInteractor> cameraControls_;
+    std::unique_ptr<visualization::LightDirectionInteractor> lightDir_;
+    std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
 
-    visualization::Camera::Transform matrixAtMouseDown_;
-    Eigen::Vector3f centerOfRotationAtMouseDown_;
-    double fovAtMouseDown_;
-    int mouseDownX_;
-    int mouseDownY_;
+    int mouseDownX_ = 0;
+    int mouseDownY_ = 0;
 
-    enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z };
+    enum class State {
+        NONE,
+        PAN,
+        DOLLY,
+        ZOOM,
+        ROTATE_XY,
+        ROTATE_Z,
+        ROTATE_LIGHT
+    };
     State state_ = State::NONE;
 };
+
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
     visualization::Scene& scene;
     visualization::ViewHandle viewId;
-    //    std::unique_ptr<visualization::CameraManipulator> cameraManipulator;
-    std::shared_ptr<CameraControls> controls;
+    std::shared_ptr<MouseInteractor> controls;
     bool frameChanged = false;
+    visualization::LightHandle dirLight;
+    std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
 
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
@@ -378,7 +221,8 @@ SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
     impl_->viewId = scene.AddView(0, 0, 1, 1);
 
     auto view = impl_->scene.GetView(impl_->viewId);
-    impl_->controls = std::make_shared<CameraControls>(view->GetCamera());
+    impl_->controls =
+            std::make_shared<MouseInteractor>(&scene, view->GetCamera());
 }
 
 SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
@@ -423,8 +267,22 @@ void SceneWidget::SetupCamera(
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 }
 
+void SceneWidget::SelectDirectionalLight(
+        visualization::LightHandle dirLight,
+        std::function<void(const Eigen::Vector3f&)> onDirChanged) {
+    impl_->dirLight = dirLight;
+    impl_->onLightDirChanged = onDirChanged;
+    impl_->controls->SetDirectionalLight(
+            dirLight, [this, dirLight](const Eigen::Vector3f& dir) {
+                impl_->scene.SetLightDirection(dirLight, dir);
+                if (impl_->onLightDirChanged) {
+                    impl_->onLightDirChanged(dir);
+                }
+            });
+}
+
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
-    impl_->controls->GoToPreset(preset);
+    impl_->controls->GoToCameraPreset(preset);
 }
 
 visualization::View* SceneWidget::GetView() const {
@@ -472,8 +330,6 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 }
 
 void SceneWidget::Mouse(const MouseEvent& e) { impl_->controls->Mouse(e); }
-
-void SceneWidget::Key(const KeyEvent& e) { impl_->controls->Key(e); }
 
 }  // namespace gui
 }  // namespace open3d

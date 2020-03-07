@@ -26,67 +26,28 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
-#include "Open3D/Visualization/Rendering/View.h"
-
 #include "Widget.h"
 
+#include <Eigen/Geometry>
+
 namespace open3d {
-
-namespace geometry {
-class AxisAlignedBoundingBox;
-}  // namespace geometry
-
-namespace visualization {
-class Camera;
-class CameraManipulator;
-class Scene;
-class View;
-}  // namespace visualization
-
 namespace gui {
 
-class Color;
-
-class SceneWidget : public Widget {
+class VectorEdit : public Widget {
     using Super = Widget;
 
 public:
-    explicit SceneWidget(visualization::Scene& scene);
-    ~SceneWidget() override;
+    VectorEdit();
+    ~VectorEdit();
 
-    void SetFrame(const Rect& f) override;
+    Eigen::Vector3f GetValue() const;
+    void SetValue(const Eigen::Vector3f& val);
 
-    void SetBackgroundColor(const Color& color);
-    void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
+    void SetOnValueChanged(
+            std::function<void(const Eigen::Vector3f&)> onChanged);
 
-    void SetupCamera(float verticalFoV,
-                     const geometry::AxisAlignedBoundingBox& geometryBounds,
-                     const Eigen::Vector3f& centerOfRotation);
-
-    /// Enables changing the directional light with the mouse.
-    /// SceneWidget will update the light's direction, so onDirChanged is
-    /// only needed if other things need to be updated (like a UI).
-    void SelectDirectionalLight(
-            visualization::LightHandle dirLight,
-            std::function<void(const Eigen::Vector3f&)> onDirChanged);
-
-    enum class CameraPreset {
-        PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
-        PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
-        PLUS_Z
-    };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
-    void GoToCameraPreset(CameraPreset preset);
-
-    visualization::View* GetView() const;
-    visualization::Scene* GetScene() const;
-
+    Size CalcPreferredSize(const Theme& theme) const override;
     Widget::DrawResult Draw(const DrawContext& context) override;
-
-    void Mouse(const MouseEvent& e) override;
-
-private:
-    visualization::Camera* GetCamera() const;
 
 private:
     struct Impl;

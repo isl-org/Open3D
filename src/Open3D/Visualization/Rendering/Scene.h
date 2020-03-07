@@ -75,6 +75,9 @@ public:
                                 const MaterialInstanceHandle& materialId) = 0;
     virtual MaterialInstanceHandle GetMaterial(
             const GeometryHandle& geometryId) const = 0;
+    virtual void SetGeometryShadows(const GeometryHandle& geometryId,
+                                    bool castsShadows,
+                                    bool receivesShadows) = 0;
     virtual std::vector<GeometryHandle> FindGeometryByName(
             const std::string& name) = 0;
     virtual void RemoveGeometry(const GeometryHandle& geometryId) = 0;
@@ -84,8 +87,9 @@ public:
     virtual void SetLightIntensity(const LightHandle& id, float intensity) = 0;
     virtual void SetLightColor(const LightHandle& id,
                                const Eigen::Vector3f& color) = 0;
+    virtual Eigen::Vector3f GetLightDirection(const LightHandle& id) const = 0;
     virtual void SetLightDirection(const LightHandle& id,
-                                   const Eigen::Vector3f& pos) = 0;
+                                   const Eigen::Vector3f& dir) = 0;
     virtual void SetLightPosition(const LightHandle& id,
                                   const Eigen::Vector3f& pos) = 0;
     virtual void SetLightFalloff(const LightHandle& id, float falloff) = 0;

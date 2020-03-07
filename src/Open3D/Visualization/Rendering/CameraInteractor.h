@@ -26,72 +26,49 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
-#include "Open3D/Visualization/Rendering/View.h"
-
-#include "Widget.h"
+#include "MatrixInteractor.h"
 
 namespace open3d {
-
-namespace geometry {
-class AxisAlignedBoundingBox;
-}  // namespace geometry
-
 namespace visualization {
-class Camera;
-class CameraManipulator;
-class Scene;
-class View;
-}  // namespace visualization
 
-namespace gui {
-
-class Color;
-
-class SceneWidget : public Widget {
-    using Super = Widget;
+class CameraInteractor : public MatrixInteractor {
+    using Super = MatrixInteractor;
 
 public:
-    explicit SceneWidget(visualization::Scene& scene);
-    ~SceneWidget() override;
+    CameraInteractor(Camera* c, double minFarPlane);
 
-    void SetFrame(const Rect& f) override;
+    void SetBoundingBox(
+            const geometry::AxisAlignedBoundingBox& bounds) override;
 
-    void SetBackgroundColor(const Color& color);
-    void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
+    void Rotate(int dx, int dy) override;
+    void RotateZ(int dx, int dy) override;
+    void Dolly(int dy, DragType type) override;
+    void Dolly(float zDist, Camera::Transform matrixIn) override;
 
-    void SetupCamera(float verticalFoV,
-                     const geometry::AxisAlignedBoundingBox& geometryBounds,
-                     const Eigen::Vector3f& centerOfRotation);
+    void Pan(int dx, int dy);
 
-    /// Enables changing the directional light with the mouse.
-    /// SceneWidget will update the light's direction, so onDirChanged is
-    /// only needed if other things need to be updated (like a UI).
-    void SelectDirectionalLight(
-            visualization::LightHandle dirLight,
-            std::function<void(const Eigen::Vector3f&)> onDirChanged);
+    /// Sets camera field of view
+    void Zoom(int dy, DragType dragType);
 
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
         PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
         PLUS_Z
     };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
-    void GoToCameraPreset(CameraPreset preset);
+    void GoToPreset(CameraPreset preset);
 
-    visualization::View* GetView() const;
-    visualization::Scene* GetScene() const;
-
-    Widget::DrawResult Draw(const DrawContext& context) override;
-
-    void Mouse(const MouseEvent& e) override;
+    void StartMouseDrag();
+    void UpdateMouseDragUI();
+    void EndMouseDrag();
 
 private:
-    visualization::Camera* GetCamera() const;
+    double minFarPlane_;
+    visualization::Camera* camera_;
 
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    visualization::Camera::Transform matrixAtMouseDown_;
+    Eigen::Vector3f centerOfRotationAtMouseDown_;
+    double fovAtMouseDown_;
 };
 
-}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

@@ -26,40 +26,46 @@
 
 #pragma once
 
-#include "Widget.h"
+#include "MatrixInteractor.h"
 
-#include <functional>
+#include "RendererHandle.h"
 
 namespace open3d {
-namespace gui {
+namespace visualization {
 
-class TextEdit : public Widget {
+class Camera;
+class Scene;
+
+class LightDirectionInteractor : public MatrixInteractor {
+    using Super = MatrixInteractor;
+
 public:
-    TextEdit();
-    ~TextEdit();
+    LightDirectionInteractor(Scene* scene, Camera* camera);
 
-    const char* GetText() const;
-    void SetText(const char* text);
+    void SetDirectionalLight(LightHandle dirLight);
 
-    const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char* text);
+    void Rotate(int dx, int dy) override;
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    void StartMouseDrag();
+    void UpdateMouseDragUI();
+    void EndMouseDrag();
 
-    DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
-
-protected:
-    /// Returns true if new text is valid. Otherwise call SetText() with a
-    /// valid value and return false.
-    virtual bool ValidateNewText(const char* text);
+    Eigen::Vector3f GetCurrentDirection() const;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+    Scene* scene_;
+    Camera* camera_;
+    LightHandle dirLight_;
+    Eigen::Vector3f lightDirAtMouseDown_;
+
+    struct UIObj {
+        GeometryHandle handle;
+        Camera::Transform transform;
+    };
+    std::vector<UIObj> uiObjs_;
+
+    void ClearUI();
 };
 
-}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d

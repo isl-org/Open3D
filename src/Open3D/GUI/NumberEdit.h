@@ -33,28 +33,28 @@
 namespace open3d {
 namespace gui {
 
-class TextEdit : public Widget {
+class NumberEdit : public Widget {
+    using Super = Widget;
+
 public:
-    TextEdit();
-    ~TextEdit();
+    enum Type { INT, DOUBLE };
+    explicit NumberEdit(Type type);
+    ~NumberEdit();
 
-    const char* GetText() const;
-    void SetText(const char* text);
+    int GetIntValue() const;
+    double GetDoubleValue() const;
+    void SetValue(double val);
 
-    const char* GetPlaceholderText() const;
-    void SetPlaceholderText(const char* text);
+    double GetMinimumValue() const;
+    double GetMaximumValue() const;
+    void SetLimits(double minValue, double maxValue);
+
+    void SetDecimalPrecision(int nDigits);
+
+    void SetOnValueChanged(std::function<void(double)> onChanged);
 
     Size CalcPreferredSize(const Theme& theme) const override;
-
-    DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
-
-protected:
-    /// Returns true if new text is valid. Otherwise call SetText() with a
-    /// valid value and return false.
-    virtual bool ValidateNewText(const char* text);
+    Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:
     struct Impl;

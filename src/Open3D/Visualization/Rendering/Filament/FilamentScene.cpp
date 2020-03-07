@@ -272,6 +272,8 @@ GeometryHandle FilamentScene::AddGeometry(
     RenderableManager::Builder builder(1);
     builder.boundingBox(aabb)
             .layerMask(FilamentView::kAllLayersMask, FilamentView::kMainLayer)
+            .castShadows(true)
+            .receiveShadows(true)
             .geometry(0, geometryBuffersBuilder->GetPrimitiveType(), vbuf.get(),
                       ibuf.get());
 
@@ -337,6 +339,19 @@ MaterialInstanceHandle FilamentScene::GetMaterial(
 
     utility::LogWarning("Geometry {} is not registered in scene", geometryId);
     return {};
+}
+
+void FilamentScene::SetGeometryShadows(const GeometryHandle& geometryId,
+                                       bool castsShadows,
+                                       bool receivesShadows) {
+    const auto found = entities_.find(geometryId);
+    if (found != entities_.end()) {
+        auto& renderableManger = engine_.getRenderableManager();
+        filament::RenderableManager::Instance inst =
+                renderableManger.getInstance(found->second.info.self);
+        renderableManger.setCastShadows(inst, castsShadows);
+        renderableManger.setReceiveShadows(inst, castsShadows);
+    }
 }
 
 void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
@@ -416,6 +431,18 @@ void FilamentScene::SetLightColor(const LightHandle& id,
     }
 }
 
+Eigen::Vector3f FilamentScene::GetLightDirection(const LightHandle& id) const {
+    const auto found = entities_.find(id);
+    if (found != entities_.end()) {
+        auto& lightManager = engine_.getLightManager();
+        filament::LightManager::Instance inst =
+                lightManager.getInstance(found->second.info.self);
+        auto dir = lightManager.getDirection(inst);
+        return {dir[0], dir[1], dir[2]};
+    }
+    return {0.0f, 0.0f, 0.0f};
+}
+
 void FilamentScene::SetLightDirection(const LightHandle& id,
                                       const Eigen::Vector3f& dir) {
     const auto found = entities_.find(id);
@@ -423,9 +450,7 @@ void FilamentScene::SetLightDirection(const LightHandle& id,
         auto& lightManager = engine_.getLightManager();
         filament::LightManager::Instance inst =
                 lightManager.getInstance(found->second.info.self);
-        if (lightManager.isDirectional(inst)) {
-            lightManager.setDirection(inst, {dir.x(), dir.y(), dir.z()});
-        }
+        lightManager.setDirection(inst, {dir.x(), dir.y(), dir.z()});
     }
 }
 

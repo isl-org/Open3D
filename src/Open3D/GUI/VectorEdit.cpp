@@ -24,84 +24,59 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TextEdit.h"
+#include "VectorEdit.h"
 
 #include "Theme.h"
 #include "Util.h"
 
 #include <imgui.h>
 
-#include <cmath>
 #include <sstream>
-#include <string>
 
 namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextTextEditId = 1;
-
-// See 3rdparty/imgui/misc/imgui_stdlib.cpp
-int InputTextCallback(ImGuiInputTextCallbackData *data) {
-    if (data && data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        std::string *s = (std::string *)data->UserData;
-        s->resize(data->BufTextLen);
-        data->Buf = (char *)s->c_str();
-    }
-    return 0;
+static int gNextVectorEditId = 1;
 }
 
-}  // namespace
-
-struct TextEdit::Impl {
+struct VectorEdit::Impl {
     std::string id;
-    std::string text;
-    std::string placeholder;
-    std::function<void(const char *)> onTextChanged;
-    std::function<void(const char *)> onValueChanged;
+    Eigen::Vector3f value;
+    bool isUnitVector = false;
+    std::function<void(const Eigen::Vector3f&)> onChanged;
 };
 
-TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
+VectorEdit::VectorEdit() : impl_(std::make_unique<VectorEdit::Impl>()) {
     std::stringstream s;
-    s << "##textedit_" << gNextTextEditId++;
-    impl_->id = s.str();
-    impl_->text.reserve(1);
+    s << "##vectoredit" << gNextVectorEditId++ << std::endl;
 }
 
-TextEdit::~TextEdit() {}
+VectorEdit::~VectorEdit() {}
 
-const char *TextEdit::GetText() const { return impl_->text.c_str(); }
+Eigen::Vector3f VectorEdit::GetValue() const { return impl_->value; }
 
-void TextEdit::SetText(const char *text) { impl_->text = text; }
-
-const char *TextEdit::GetPlaceholderText() const {
-    return impl_->placeholder.c_str();
+void VectorEdit::SetValue(const Eigen::Vector3f& val) {
+    if (impl_->isUnitVector) {
+        impl_->value = val.normalized();
+    } else {
+        impl_->value = val;
+    }
 }
 
-void TextEdit::SetPlaceholderText(const char *text) {
-    impl_->placeholder = text;
+void VectorEdit::SetOnValueChanged(
+        std::function<void(const Eigen::Vector3f&)> onChanged) {
+    impl_->onChanged = onChanged;
 }
 
-void TextEdit::SetOnTextChanged(
-        std::function<void(const char *)> onTextChanged) {
-    impl_->onTextChanged = onTextChanged;
-}
-
-void TextEdit::SetOnValueChanged(
-        std::function<void(const char *)> onValueChanged) {
-    impl_->onValueChanged = onValueChanged;
-}
-
-bool TextEdit::ValidateNewText(const char *text) { return true; }
-
-Size TextEdit::CalcPreferredSize(const Theme &theme) const {
+Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
     return Size(Widget::DIM_GROW, std::ceil(em + 2.0f * padding.y));
 }
 
-Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
-    auto &frame = GetFrame();
+Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
@@ -118,20 +93,10 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
             ImGuiCol_FrameBgActive,
             util::colorToImgui(context.theme.textEditBackgroundColor));
 
-    int textFlags = ImGuiInputTextFlags_CallbackResize;
-    if (!IsEnabled()) {
-        textFlags = ImGuiInputTextFlags_ReadOnly;
-    }
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (ImGui::InputTextWithHint(impl_->id.c_str(), impl_->placeholder.c_str(),
-                                 (char *)impl_->text.c_str(),
-                                 impl_->text.capacity(), textFlags,
-                                 InputTextCallback, &impl_->text)) {
-        if (impl_->onTextChanged) {
-            impl_->onTextChanged(impl_->text.c_str());
-        }
+    if (ImGui::InputFloat3(impl_->id.c_str(), impl_->value.data(), 3)) {
         result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();
@@ -141,12 +106,9 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (ValidateNewText(impl_->text.c_str())) {
-            if (impl_->onValueChanged) {
-                impl_->onValueChanged(impl_->text.c_str());
-            }
+        if (impl_->onChanged) {
+            impl_->onChanged(impl_->value);
         }
-        // ValidateNewText() may have updated text (even if returned true)
         result = Widget::DrawResult::REDRAW;
     }
 
