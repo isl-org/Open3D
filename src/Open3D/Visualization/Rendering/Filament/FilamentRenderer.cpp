@@ -33,6 +33,7 @@
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/SwapChain.h>
 
 #include "FilamentCamera.h"
 #include "FilamentEntitiesMods.h"
@@ -80,6 +81,38 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
 
 void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
+}
+
+void FilamentRenderer::UpdateSwapChain() {
+    void* nativeWindow = swapChain_->getNativeWindow();
+    engine_.destroy(swapChain_);
+
+#if defined(__APPLE__)
+    auto resizeMetalLayer = [](void* nativeWindow) -> void* {
+        utility::LogError(
+                "::resizeMetalLayer() needs to be implemented. Please see "
+                "filament/samples/app/NativeWindowHelperCocoa.mm for "
+                "reference.");
+        return nativeWindow;
+    };
+
+    void* nativeSwapChain = nativeWindow;
+    void* metalLayer = nullptr;
+    auto backend = engine_.getBackend();
+    if (backend == filament::Engine::Backend::METAL) {
+        metalLayer = resizeMetalLayer(nativeWindow);
+        // The swap chain on Metal is a CAMetalLayer.
+        nativeSwapChain = metalLayer;
+    }
+
+#if defined(FILAMENT_DRIVER_SUPPORTS_VULKAN)
+    if (backend == filament::Engine::Backend::VULKAN) {
+        resizeMetalLayer(nativeWindow);
+    }
+#endif  // vulkan
+#endif  // __APPLE__
+
+    swapChain_ = engine_.createSwapChain(nativeWindow);
 }
 
 void FilamentRenderer::BeginFrame() {
