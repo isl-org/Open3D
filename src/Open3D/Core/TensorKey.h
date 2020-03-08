@@ -54,43 +54,34 @@ public:
 
     /// Construct an indexing TensorKey
     static TensorKey Index(int64_t index) {
-        TensorKey t = TensorKey(TensorKeyMode::Index, index, 0, 0, 0, false,
-                                false, false);
-        return t;
+        return TensorKey(TensorKeyMode::Index, index, 0, 0, 0, false, false,
+                         false);
     }
 
     /// Construct a slicing TensorKey
     static TensorKey Slice(int64_t start, int64_t stop, int64_t step) {
-        TensorKey t = Slice(start, stop, step, false, false, false);
-        return t;
+        return Slice(start, stop, step, false, false, false);
     }
     static TensorKey Slice(int64_t start, int64_t stop, NoneType step) {
-        TensorKey t = Slice(start, stop, 0, false, false, true);
-        return t;
+        return Slice(start, stop, 0, false, false, true);
     }
     static TensorKey Slice(int64_t start, NoneType stop, int64_t step) {
-        TensorKey t = Slice(start, 0, step, false, true, false);
-        return t;
+        return Slice(start, 0, step, false, true, false);
     }
     static TensorKey Slice(int64_t start, NoneType stop, NoneType step) {
-        TensorKey t = Slice(start, 0, 0, false, true, true);
-        return t;
+        return Slice(start, 0, 0, false, true, true);
     }
     static TensorKey Slice(NoneType start, int64_t stop, int64_t step) {
-        TensorKey t = Slice(0, stop, step, true, false, false);
-        return t;
+        return Slice(0, stop, step, true, false, false);
     }
     static TensorKey Slice(NoneType start, int64_t stop, NoneType step) {
-        TensorKey t = Slice(0, stop, 0, true, false, true);
-        return t;
+        return Slice(0, stop, 0, true, false, true);
     }
     static TensorKey Slice(NoneType start, NoneType stop, int64_t step) {
-        TensorKey t = Slice(0, 0, step, true, true, false);
-        return t;
+        return Slice(0, 0, step, true, true, false);
     }
     static TensorKey Slice(NoneType start, NoneType stop, NoneType step) {
-        TensorKey t = Slice(0, 0, 0, true, true, true);
-        return t;
+        return Slice(0, 0, 0, true, true, true);
     }
 
     /// Getters will check the TensorKeyMode
