@@ -257,14 +257,14 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
             success &= normal_mesh_shader_.Render(mesh, option, view);
         } else if (option.mesh_color_option_ ==
                            RenderOption::MeshColorOption::Color &&
-                   mesh.HasTriangleUvs() && mesh.HasTexture()) {
+                   mesh.HasTriangleUvs() && mesh.HasTextures()) {
             success &= texture_phong_mesh_shader_.Render(mesh, option, view);
         } else {
             success &= phong_mesh_shader_.Render(mesh, option, view);
         }
     } else {  // if normals are not ready
         if (option.mesh_color_option_ == RenderOption::MeshColorOption::Color &&
-            mesh.HasTriangleUvs() && mesh.HasTexture()) {
+            mesh.HasTriangleUvs() && mesh.HasTextures()) {
             success &= texture_simple_mesh_shader_.Render(mesh, option, view);
         } else {
             success &= simple_mesh_shader_.Render(mesh, option, view);

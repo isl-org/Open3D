@@ -68,12 +68,17 @@ protected:
 
 protected:
     GLuint vertex_position_;
-    GLuint vertex_position_buffer_;
     GLuint vertex_uv_;
-    GLuint vertex_uv_buffer_;
     GLuint texture_;
-    GLuint texture_buffer_;
     GLuint MVP_;
+
+    int num_materials_;
+    std::vector<int> array_offsets_;
+    std::vector<GLsizei> draw_array_sizes_;
+
+    std::vector<GLuint> vertex_position_buffers_;
+    std::vector<GLuint> vertex_uv_buffers_;
+    std::vector<GLuint> texture_buffers_;
 };
 
 class TextureSimpleShaderForTriangleMesh : public TextureSimpleShader {

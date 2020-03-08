@@ -1,3 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/ReconstructionSystem/sensors/azure_kinect_viewer.py
+
 import argparse
 import open3d as o3d
 
@@ -33,7 +39,7 @@ class ViewerWithCallback:
                 vis.add_geometry(rgbd)
                 vis_geometry_added = True
 
-            vis.update_geometry()
+            vis.update_geometry(rgbd)
             vis.poll_events()
             vis.update_renderer()
 

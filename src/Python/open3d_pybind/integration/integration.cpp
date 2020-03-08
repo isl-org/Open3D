@@ -97,7 +97,7 @@ In SIGGRAPH, 1996)");
                  "Function to extract a triangle mesh")
             .def_readwrite("voxel_length",
                            &integration::TSDFVolume::voxel_length_,
-                           "float: Voxel size.")
+                           "float: Length of the voxel in meters.")
             .def_readwrite("sdf_trunc", &integration::TSDFVolume::sdf_trunc_,
                            "float: Truncation value for signed distance "
                            "function (SDF).")
@@ -162,7 +162,10 @@ In SIGGRAPH, 1996)");
             scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
 ScalableTSDFVolume implements a more memory efficient data structure for
 volumetric integration.
-
+                                
+This implementation is based on the following repository:
+https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
+                                
 An observed depth pixel gives two types of information: (a) an approximation
 of the nearby surface, and (b) empty space from the camera to the surface.
 They induce two core concepts of volumetric integration: weighted average of
