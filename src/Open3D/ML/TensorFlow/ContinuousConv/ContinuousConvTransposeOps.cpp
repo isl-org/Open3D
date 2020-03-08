@@ -240,9 +240,9 @@ out_positions:
   The coordinates for each point is a vector with format [x,y,z].
 
 out_importance:
-  An optional scalar importance for each output point. The features of each point
-  will be multiplied with the corresponding value. The shape is [num input points].
-  Use a zero length Tensor to disable.
+  An optional scalar importance for each output point. The output features of 
+  each point will be multiplied with the corresponding value. 
+  The shape is [num input points]. Use a zero length Tensor to disable.
 
 extents:
   The extent defines the spatial size of the filter for each input point. 
