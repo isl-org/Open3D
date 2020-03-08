@@ -39,7 +39,7 @@ namespace open3d {
 namespace ml {
 namespace detail {
 
-/// Computes the output features of a continuous convolution.
+/// Computes the backprop for the filter of a continuous convolution.
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
@@ -58,14 +58,12 @@ namespace detail {
 /// \param texture_alignment    The texture alignment in bytes. This is used
 ///        for allocating segments within the temporary memory.
 ///
-/// \param out_features    Output array for the computed features with shape
-///        [num_out, out channels]
+/// \param filter_backrop    Output array for the computed filter gradient
+///        with shape [depth,height,witdth, inp channels, out channels]
 ///
 /// \param filter_dims    The sizes of the filter dimensions. The size of
 ///        filter_dims must be 5. The order is
 ///        [depth, height, width, inp channels, out channels].
-///
-/// \param filter    Pointer to the filter values.
 ///
 /// \param num_out    The number of output points.
 ///
@@ -121,37 +119,37 @@ namespace detail {
 /// \param isotropic_extent    If true each then the extent is isotropic for
 ///        each output point.
 ///
-/// \param normalize    If true then the result is normalized either by the
-///        number of points (neighbors_importance is null) or by the sum of
-///        the respective values in neighbors_importance.
+/// \param normalize    If true then the output features are normalized either
+///        by the number of points (neighbors_importance is null) or by the sum
+///        of the respective values in neighbors_importance.
 ///
 template <class TReal, class TIndex>
-void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
-                              void* temp,
-                              size_t& temp_size,
-                              size_t& max_temp_size,
-                              int texture_alignment,
-                              TReal* out_features,
-                              const std::vector<int>& filter_dims,
-                              const TReal* filter,
-                              TIndex num_out,
-                              const TReal* out_positions,
-                              TIndex num_inp,
-                              const TReal* inp_positions,
-                              const TReal* inp_features,
-                              const TReal* inp_importance,
-                              size_t neighbors_index_size,
-                              const TIndex* neighbors_index,
-                              const TReal* neighbors_importance,
-                              const int64_t* neighbors_row_splits,
-                              const TReal* extents,
-                              const TReal* offsets,
-                              InterpolationMode interpolation,
-                              CoordinateMapping coordinate_mapping,
-                              bool align_corners,
-                              bool individual_extent,
-                              bool isotropic_extent,
-                              bool normalize) {
+void CConvBackpropFilterCUDA(const cudaStream_t& stream,
+                             void* temp,
+                             size_t& temp_size,
+                             size_t& max_temp_size,
+                             int texture_alignment,
+                             TReal* filter_backprop,
+                             const std::vector<int>& filter_dims,
+                             TIndex num_out,
+                             const TReal* out_positions,
+                             TIndex num_inp,
+                             const TReal* inp_positions,
+                             const TReal* inp_features,
+                             const TReal* inp_importance,
+                             size_t neighbors_index_size,
+                             const TIndex* neighbors_index,
+                             const TReal* neighbors_importance,
+                             const int64_t* neighbors_row_splits,
+                             const TReal* extents,
+                             const TReal* offsets,
+                             const TReal* out_features_gradient,
+                             InterpolationMode interpolation,
+                             CoordinateMapping coordinate_mapping,
+                             bool align_corners,
+                             bool individual_extent,
+                             bool isotropic_extent,
+                             bool normalize) {
     const bool get_temp_size = !temp;
 
     if (get_temp_size) {
@@ -167,7 +165,7 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
     int spatial_filter_size = 1;
     for (int i = 0; i < 3; ++i) spatial_filter_size *= filter_dims[i];
 
-    // this defines how much temporary storage we need at least.
+    // this defines how much temporary storage we need at least
     // we want to allocate memory for at least 32 output points.
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
@@ -197,34 +195,33 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
     }
 
     // init output
-    cudaMemsetAsync(out_features, 0, sizeof(TReal) * num_out * out_channels,
-                    stream);
+    cudaMemsetAsync(
+            filter_backprop, 0,
+            sizeof(TReal) * spatial_filter_size * in_channels * out_channels,
+            stream);
 
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
     typedef cutlass::gemm::SgemmTraits<
-            cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix (filter)
-            cutlass::MatrixLayout::kColumnMajor,  // layout of B matrix
-                                                  // (columns)
+            cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix
+            cutlass::MatrixLayout::kRowMajor,     // layout of B matrix
             cutlass::Shape<8, 64, 64>             // threadblock tile size
             >
             GemmTraits;
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
-    // this is the pointer to the patch matrix
     TReal* columns = (TReal*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
-    const size_t num_runs = DivUp(num_out, num_cols_per_run);
+    size_t num_runs = DivUp(num_out, num_cols_per_run);
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = run_i * num_cols_per_run;
         const TIndex end_idx =
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run);
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        // compute the patch matrix
         FillColumn<TReal, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
@@ -233,22 +230,23 @@ void CConvComputeFeaturesCUDA(const cudaStream_t& stream,
                 filter_dims, interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize);
 
+        typename Gemm::Params params;
         // C is MxN
         // B is KxN
         // A is MxK
         int m = out_channels;
-        int k = spatial_filter_size * in_channels;
-        int n = num_cols_this_run;
+        int k = num_cols_this_run;
+        int n = spatial_filter_size * in_channels;
         float alpha = 1;
-        const float* const A = filter;
+        const float* const A = out_features_gradient +
+                               (run_i * num_cols_per_run * out_channels);
         int lda = m;
         const float* const B = columns;
-        int ldb = k;
+        int ldb = n;
         float beta = 1;
-        float* C = out_features + (run_i * num_cols_per_run * out_channels);
+        float* C = filter_backprop;
         int ldc = m;
 
-        typename Gemm::Params params;
         int result = params.initialize(m,      // GEMM M dimension
                                        n,      // GEMM N dimension
                                        k,      // GEMM K dimension
