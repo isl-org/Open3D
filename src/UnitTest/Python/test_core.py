@@ -365,7 +365,7 @@ def test_tensorlist_operations():
     assert e.size() == 9
 
 
-def test_slice():
+def test_getitem():
     np_t = np.array(range(24)).reshape((2, 3, 4))
     o3_t = o3d.Tensor(np_t)
 
@@ -384,6 +384,107 @@ def test_slice():
     # Slice the slice
     np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].numpy(),
                             np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
+
+
+def test_setitem():
+    np_ref = np.array(range(24)).reshape((2, 3, 4))
+    o3_ref = o3d.Tensor(np_ref)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[:].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[:] = np_fill_t
+    o3_t[:] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0] = np_fill_t
+    o3_t[0] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1] = np_fill_t
+    o3_t[0, 1] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, :].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, :] = np_fill_t
+    o3_t[0, :] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1:3].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1:3] = np_fill_t
+    o3_t[0, 1:3] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, :, :-2].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, :, :-2] = np_fill_t
+    o3_t[0, :, :-2] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1:3, 2].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1:3, 2] = np_fill_t
+    o3_t[0, 1:3, 2] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1:-1, 2].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1:-1, 2] = np_fill_t
+    o3_t[0, 1:-1, 2] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1:3, 0:4:2].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1:3, 0:4:2] = np_fill_t
+    o3_t[0, 1:3, 0:4:2] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1:3, 0:-1:2].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1:3, 0:-1:2] = np_fill_t
+    o3_t[0, 1:3, 0:-1:2] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0, 1, :].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0, 1, :] = np_fill_t
+    o3_t[0, 1, :] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
+
+    np_t = np_ref.copy()
+    o3_t = o3d.Tensor(np_t)
+    np_fill_t = np.random.rand(*np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].shape)
+    o3_fill_t = o3d.Tensor(np_fill_t)
+    np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = np_fill_t
+    o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = o3_fill_t
+    np.testing.assert_equal(o3_t.numpy(), np_t)
 
 
 def test_cast_to_py_tensor():

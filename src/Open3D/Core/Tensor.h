@@ -146,23 +146,72 @@ public:
 
     /// Pythonic __getitem__ for tensor, returning a new view.
     ///
-    /// Example usage:
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t1 = t[2]
+    /// t2 = t[0:4:2]
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, Dtype::Float32);
-    /// Tensor t1 = t.GetItem(TensorIndex(2)); // t[2] in Python
-    /// Tensor t2 = t.GetItem(TensorSlice(0, 4, 2)) // t[0:4:2] in Python
+    /// Tensor t1 = t.GetItem(TensorIndex(2));
+    /// Tensor t2 = t.GetItem(TensorSlice(0, 4, 2));
     /// ```
     Tensor GetItem(const TensorKey& tk) const;
 
     /// Pythonic __getitem__ for tensor, returning a new view.
     ///
-    /// Example usage:
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t1 = t[1, 0:4:2]
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, Dtype::Float32);
-    /// // Same as t[2, 0:4:2] in Python.
     /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
     /// ```
+    ///
     Tensor GetItem(const std::vector<TensorKey>& tks) const;
+
+    /// Set all items. Equivalent to `tensor[:] = value` in Python.
+    Tensor SetItem(const Tensor& value);
+
+    /// Pythonic __setitem__ for tensor.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t[2] = np.empty((5,), dtype=np.float32)
+    /// t[0:4:2] = np.empty((2, 5), dtype=np.float32)
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem(TensorIndex(2), Tensor({5}, Dtype::Float32));
+    /// t.SetItem(TensorSlice(0, 4, 2), Tensor({2, 5}, Dtype::Float32));
+    /// ```
+    Tensor SetItem(const TensorKey& tk, const Tensor& value);
+
+    /// Pythonic __setitem__ for tensor.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
+    ///           Tensor({2, 5}, Dtype::Float32));
+    /// ```
+    Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
     DLManagedTensor* ToDLPack() const { return dlpack::ToDLPack(*this); }
 

@@ -93,6 +93,12 @@ class Tensor(open3d_pybind.Tensor):
         return t
 
     @cast_to_py_tensor
+    def __setitem__(self, key, value):
+        t = self.__getitem__(key)
+        super(Tensor, t)._setitem(value)
+        return self
+
+    @cast_to_py_tensor
     def cuda(self, device_id=0):
         """
         Returns a copy of this tensor in CUDA memory.

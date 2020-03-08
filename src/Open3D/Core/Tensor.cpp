@@ -102,6 +102,21 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
     return t;
 }
 
+Tensor Tensor::SetItem(const Tensor& value) {
+    this->AsRvalue() = value;
+    return *this;
+}
+
+Tensor Tensor::SetItem(const TensorKey& tk, const Tensor& value) {
+    this->GetItem(tk) = value;
+    return *this;
+}
+
+Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
+    this->GetItem(tks) = value;
+    return *this;
+}
+
 /// Assign (copy) values from another Tensor, shape, dtype, device may change.
 void Tensor::Assign(const Tensor& other) {
     shape_ = other.shape_;
