@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <Eigen/Dense>
+#include <limits>
 
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Geometry/Image.h"
@@ -53,12 +54,19 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
         const Image &depth,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
-        int stride) {
+        int stride,
+        bool project_valid_depth_only) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    int num_valid_pixels = CountValidDepthPixels(depth, stride);
+    int num_valid_pixels;
+    if (!project_valid_depth_only) {
+        num_valid_pixels =
+                int(depth.height_ / stride) * int(depth.width_ / stride);
+    } else {
+        num_valid_pixels = CountValidDepthPixels(depth, stride);
+    }
     pointcloud->points_.resize(num_valid_pixels);
     int cnt = 0;
     for (int i = 0; i < depth.height_; i += stride) {
@@ -72,6 +80,11 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
                 Eigen::Vector4d point =
                         camera_pose * Eigen::Vector4d(x, y, z, 1.0);
                 pointcloud->points_[cnt++] = point.block<3, 1>(0, 0);
+            } else if (!project_valid_depth_only) {
+                double z = std::numeric_limits<float>::quiet_NaN();
+                double x = std::numeric_limits<float>::quiet_NaN();
+                double y = std::numeric_limits<float>::quiet_NaN();
+                pointcloud->points_[cnt++] = Eigen::Vector3d(x, y, z);
             }
         }
     }
@@ -82,13 +95,19 @@ template <typename TC, int NC>
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic) {
+        const Eigen::Matrix4d &extrinsic,
+        bool project_valid_depth_only) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
-    int num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+    int num_valid_pixels;
+    if (!project_valid_depth_only) {
+        num_valid_pixels = image.depth_.height_ * image.depth_.width_;
+    } else {
+        num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+    }
     pointcloud->points_.resize(num_valid_pixels);
     pointcloud->colors_.resize(num_valid_pixels);
     int cnt = 0;
@@ -109,6 +128,15 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
                 pointcloud->colors_[cnt++] =
                         Eigen::Vector3d(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) /
                         scale;
+            } else if (!project_valid_depth_only) {
+                double z = std::numeric_limits<float>::quiet_NaN();
+                double x = std::numeric_limits<float>::quiet_NaN();
+                double y = std::numeric_limits<float>::quiet_NaN();
+                pointcloud->points_[cnt] = Eigen::Vector3d(x, y, z);
+                pointcloud->colors_[cnt++] =
+                        Eigen::Vector3d(std::numeric_limits<TC>::quiet_NaN(),
+                                        std::numeric_limits<TC>::quiet_NaN(),
+                                        std::numeric_limits<TC>::quiet_NaN());
             }
         }
     }
@@ -124,16 +152,19 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
         const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
         double depth_scale /* = 1000.0*/,
         double depth_trunc /* = 1000.0*/,
-        int stride /* = 1*/) {
+        int stride /* = 1*/,
+        bool project_valid_depth_only) {
     if (depth.num_of_channels_ == 1) {
         if (depth.bytes_per_channel_ == 2) {
             auto float_depth =
                     depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
-            return CreatePointCloudFromFloatDepthImage(*float_depth, intrinsic,
-                                                       extrinsic, stride);
+            return CreatePointCloudFromFloatDepthImage(
+                    *float_depth, intrinsic, extrinsic, stride,
+                    project_valid_depth_only);
         } else if (depth.bytes_per_channel_ == 4) {
-            return CreatePointCloudFromFloatDepthImage(depth, intrinsic,
-                                                       extrinsic, stride);
+            return CreatePointCloudFromFloatDepthImage(
+                    depth, intrinsic, extrinsic, stride,
+                    project_valid_depth_only);
         }
     }
     utility::LogError(
@@ -144,17 +175,18 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
 std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/) {
+        const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
+        bool project_valid_depth_only) {
     if (image.depth_.num_of_channels_ == 1 &&
         image.depth_.bytes_per_channel_ == 4) {
         if (image.color_.bytes_per_channel_ == 1 &&
             image.color_.num_of_channels_ == 3) {
-            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(image, intrinsic,
-                                                              extrinsic);
+            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
+                    image, intrinsic, extrinsic, project_valid_depth_only);
         } else if (image.color_.bytes_per_channel_ == 4 &&
                    image.color_.num_of_channels_ == 1) {
-            return CreatePointCloudFromRGBDImageT<float, 1>(image, intrinsic,
-                                                            extrinsic);
+            return CreatePointCloudFromRGBDImageT<float, 1>(
+                    image, intrinsic, extrinsic, project_valid_depth_only);
         }
     }
     utility::LogError(

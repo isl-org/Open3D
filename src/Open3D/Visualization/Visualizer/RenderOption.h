@@ -33,6 +33,9 @@
 namespace open3d {
 namespace visualization {
 
+/// \class RenderOption
+///
+/// \brief Defines rendering options for visualizer.
 class RenderOption : public utility::IJsonConvertible {
 public:
     // Global options
@@ -52,7 +55,9 @@ public:
         Always = 7
     };
 
-    // PointCloud options
+    /// \enum PointColorOption
+    ///
+    /// \brief Enum class for point color for PointCloud.
     enum class PointColorOption {
         Default = 0,
         Color = 1,
@@ -71,12 +76,17 @@ public:
     const double LINE_WIDTH_STEP = 1.0;
     const double LINE_WIDTH_DEFAULT = 1.0;
 
-    // TriangleMesh options
+    /// \enum MeshShadeOption
+    ///
+    /// \brief Enum class for mesh shading for TriangleMesh.
     enum class MeshShadeOption {
         FlatShade = 0,
         SmoothShade = 1,
     };
 
+    /// \enum MeshColorOption
+    ///
+    /// \brief Enum class for color for TriangleMesh.
     enum class MeshColorOption {
         Default = 0,
         Color = 1,
@@ -94,6 +104,7 @@ public:
     };
 
 public:
+    /// \brief Default Constructor.
     RenderOption() {
         // VS2013 does not fully support C++11
         // Array initialization has to be done in constructors.
@@ -175,12 +186,14 @@ public:
 
 public:
     // global options
+    /// Background RGB color.
     Eigen::Vector3d background_color_ = Eigen::Vector3d::Ones();
     TextureInterpolationOption interpolation_option_ =
             TextureInterpolationOption::Nearest;
     DepthFunc depthFunc_ = DepthFunc::Less;
 
     // Phong lighting options
+    /// Whether to turn on Phong lighting.
     bool light_on_ = true;
     Eigen::Vector3d light_position_relative_[4];
     Eigen::Vector3d light_color_[4];
@@ -190,18 +203,26 @@ public:
     double light_specular_shininess_[4];
 
     // PointCloud options
+    /// Point size for PointCloud.
     double point_size_ = POINT_SIZE_DEFAULT;
+    /// Point color option for PointCloud.
     PointColorOption point_color_option_ = PointColorOption::Default;
+    /// Whether to show normal for PointCloud.
     bool point_show_normal_ = false;
 
     // TriangleMesh options
+    /// Mesh shading option for TriangleMesh.
     MeshShadeOption mesh_shade_option_ = MeshShadeOption::FlatShade;
+    /// Color option for TriangleMesh.
     MeshColorOption mesh_color_option_ = MeshColorOption::Color;
+    /// Whether to show back faces for TriangleMesh.
     bool mesh_show_back_face_ = false;
+
     bool mesh_show_wireframe_ = false;
     Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(0.7, 0.7, 0.7);
 
     // LineSet options
+    /// Line width for LineSet.
     double line_width_ = LINE_WIDTH_DEFAULT;
 
     // Image options
@@ -210,6 +231,7 @@ public:
     int image_max_depth_ = 3000;
 
     // Coordinate frame
+    /// Whether to show coordinate frame.
     bool show_coordinate_frame_ = false;
 };
 

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Advanced/surface_reconstruction_ball_pivoting.py
+# examples/Python/Advanced/surface_reconstruction_alpha_shape.py
 
 import open3d as o3d
 import numpy as np

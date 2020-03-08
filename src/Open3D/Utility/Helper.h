@@ -151,5 +151,10 @@ inline int DivUp(int x, int y) {
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
 
+/// Thread-safe function returning a pseudo-random integer.
+/// The integer is drawn from a uniform distribution bounded by min and max
+/// (inclusive)
+int UniformRandInt(const int min, const int max);
+
 }  // namespace utility
 }  // namespace open3d

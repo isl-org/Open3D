@@ -27,12 +27,12 @@
 #include "Open3D/Registration/Registration.h"
 
 #include <cstdlib>
-#include <ctime>
 
 #include "Open3D/Geometry/KDTreeFlann.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Registration/Feature.h"
 #include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 
@@ -213,15 +213,16 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
-    std::srand((unsigned int)std::time(0));
     Eigen::Matrix4d transformation;
     CorrespondenceSet ransac_corres(ransac_n);
     RegistrationResult result;
+
     for (int itr = 0;
          itr < criteria.max_iteration_ && itr < criteria.max_validation_;
          itr++) {
         for (int j = 0; j < ransac_n; j++) {
-            ransac_corres[j] = corres[std::rand() % (int)corres.size()];
+            ransac_corres[j] =
+                    corres[utility::UniformRandInt(0, corres.size() - 1)];
         }
         transformation =
                 estimation.ComputeTransformation(source, target, ransac_corres);
@@ -272,14 +273,6 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree(target);
         geometry::KDTreeFlann kdtree_feature(target_feature);
         RegistrationResult result_private;
-        unsigned int seed_number;
-#ifdef _OPENMP
-        // each thread has different seed_number
-        seed_number = (unsigned int)std::time(0) * (omp_get_thread_num() + 1);
-#else
-    seed_number = (unsigned int)std::time(0);
-#endif
-        std::srand(seed_number);
 
 #ifdef _OPENMP
 #pragma omp for nowait
@@ -289,8 +282,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 std::vector<double> dists(num_similar_features);
                 Eigen::Matrix4d transformation;
                 for (int j = 0; j < ransac_n; j++) {
-                    int source_sample_id =
-                            std::rand() % (int)source.points_.size();
+                    int source_sample_id = utility::UniformRandInt(
+                            0, source.points_.size() - 1);
                     if (similar_features[source_sample_id].empty()) {
                         std::vector<int> indices(num_similar_features);
                         kdtree_feature.SearchKNN(
@@ -306,11 +299,11 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                     if (num_similar_features == 1)
                         ransac_corres[j](1) =
                                 similar_features[source_sample_id][0];
-                    else
-                        ransac_corres[j](1) =
-                                similar_features[source_sample_id]
-                                                [std::rand() %
-                                                 num_similar_features];
+                    else {
+                        ransac_corres[j](1) = similar_features
+                                [source_sample_id][utility::UniformRandInt(
+                                        0, num_similar_features - 1)];
+                    }
                 }
                 bool check = true;
                 for (const auto &checker : checkers) {
