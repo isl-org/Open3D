@@ -658,6 +658,12 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
 void Window::OnResize() {
     impl_->needsLayout = true;
 
+#if __APPLE__
+    // We need to recreate the swap chain after resizing a window on macOS
+    // otherwise things look very wrong.
+    impl_->renderer->UpdateSwapChain();
+#endif  // __APPLE__
+
     impl_->imgui.imguiBridge->onWindowResized(*this);
 
     auto size = GetSize();

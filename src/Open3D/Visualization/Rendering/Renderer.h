@@ -67,6 +67,8 @@ public:
     virtual Scene* GetScene(const SceneHandle& id) const = 0;
     virtual void DestroyScene(const SceneHandle& id) = 0;
 
+    virtual void UpdateSwapChain() = 0;
+
     virtual void BeginFrame() = 0;
     virtual void Draw() = 0;
     virtual void EndFrame() = 0;

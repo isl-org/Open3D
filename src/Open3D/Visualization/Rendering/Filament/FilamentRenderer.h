@@ -62,6 +62,8 @@ public:
     Scene* GetScene(const SceneHandle& id) const override;
     void DestroyScene(const SceneHandle& id) override;
 
+    void UpdateSwapChain() override;
+
     void BeginFrame() override;
     void Draw() override;
     void EndFrame() override;
