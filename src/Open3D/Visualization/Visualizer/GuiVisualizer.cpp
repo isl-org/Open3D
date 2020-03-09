@@ -408,10 +408,10 @@ GuiVisualizer::GuiVisualizer(
         impl_->materialSettings.wgtType.reset(
                 new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
         impl_->materialSettings.wgtType->SetOnValueChanged(
-                [this, scene, renderScene](gui::Combobox *combobox) {
+                [this, scene, renderScene](const char *, int selectedIdx) {
                     using MaterialType = Impl::MaterialSettings::MaterialType;
                     using ViewMode = visualization::View::Mode;
-                    auto selected = (MaterialType)combobox->GetSelectedIndex();
+                    auto selected = (MaterialType)selectedIdx;
 
                     auto view = scene->GetView();
                     impl_->materialSettings.selectedType = selected;
@@ -591,7 +591,7 @@ GuiVisualizer::GuiVisualizer(
         }
     }
     lightSettings.wgtAmbientIBLs->AddItem("Custom...");
-    lightSettings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name) {
+    lightSettings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name, int) {
         std::string path = gui::Application::GetInstance().GetResourcePath();
         path += std::string("/") + name + "_ibl.ktx";
         if (!this->SetIBL(path.c_str())) {
