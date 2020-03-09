@@ -113,6 +113,8 @@ public:
                 } else if (e.button.button == MouseButton::RIGHT) {
                     state_ = State::PAN;
 #endif  // ENABLE_PAN
+                } else if (e.button.button == MouseButton::MIDDLE) {
+                    state_ = State::ROTATE_LIGHT;
                 }
                 if (state_ == State::ROTATE_LIGHT) {
                     lightDir_->StartMouseDrag();
