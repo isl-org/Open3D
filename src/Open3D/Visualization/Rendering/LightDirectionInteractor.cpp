@@ -114,6 +114,9 @@ std::shared_ptr<geometry::TriangleMesh> CreateArrow(const Eigen::Vector3d& dir,
 
 }  // namespace
 
+static const Eigen::Vector3d SKY_COLOR(0.0f, 0.0f, 1.0f);
+static const Eigen::Vector3d SUN_COLOR(1.0f, 0.9f, 0.0f);
+
 LightDirectionInteractor::LightDirectionInteractor(Scene* scene, Camera* camera)
     : scene_(scene), camera_(camera) {}
 
@@ -146,7 +149,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     double sphereSize = 0.5 * modelSize_;  // modelSize_ is a diameter
     auto sphereTris = geometry::TriangleMesh::CreateSphere(sphereSize, 20);
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphereTris);
-    sphere->PaintUniformColor({0.0f, 0.0f, 1.0f});
+    sphere->PaintUniformColor(SKY_COLOR);
     auto t0 = Camera::Transform::Identity();
     uiObjs_.push_back({scene_->AddGeometry(*sphere), t0});
     scene_->SetEntityTransform(uiObjs_[0].handle, t0);
@@ -154,7 +157,7 @@ void LightDirectionInteractor::StartMouseDrag() {
 
     auto sunRadius = 0.05 * modelSize_;
     auto sun = geometry::TriangleMesh::CreateSphere(sunRadius, 20);
-    sun->PaintUniformColor({1.0f, 0.5f, 0.0f});
+    sun->PaintUniformColor(SUN_COLOR);
     auto t1 = Camera::Transform::Identity();
     t1.translate(-sphereSize * dir);
     uiObjs_.push_back({scene_->AddGeometry(*sun), t1});
@@ -165,7 +168,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     const double arrowLength = 0.333 * modelSize_;
     auto sunDir = CreateArrow(dir.cast<double>(), arrowRadius, arrowLength,
                               0.1 * arrowLength, 20);
-    sunDir->PaintUniformColor({1.0f, 0.5f, 0.0f});
+    sunDir->PaintUniformColor(SUN_COLOR);
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphereSize * dir);
     t2.translate(0.5 * arrowLength * dir);

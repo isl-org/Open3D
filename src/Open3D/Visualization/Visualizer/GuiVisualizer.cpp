@@ -394,6 +394,18 @@ GuiVisualizer::GuiVisualizer(
 
     lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
+    // ... background colors
+    auto bgcolor = std::make_shared<gui::ColorEdit>();
+    bgcolor->SetValue({1, 1, 1});
+    bgcolor->OnValueChanged = [scene](const gui::Color &newColor) {
+        scene->SetBackgroundColor(newColor);
+    };
+    auto bgcolorLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    bgcolorLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
+    bgcolorLayout->AddChild(bgcolor);
+    lightSettings.wgtBase->AddChild(bgcolorLayout);
+    lightSettings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+
     // ... lighting on/off
     lightSettings.wgtBase->AddChild(
             std::make_shared<gui::Label>("> Light sources"));
