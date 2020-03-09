@@ -231,9 +231,12 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
 
     // Zero dim
     EXPECT_THROW(Tensor({}, Dtype::Float32)[0], std::runtime_error);
+    EXPECT_THROW(Tensor({}, Dtype::Float32)[-1], std::runtime_error);
+    EXPECT_THROW(Tensor({}, Dtype::Float32)[2], std::runtime_error);
 
     // Index out-of-bounds
     EXPECT_THROW(Tensor({0, 1}, Dtype::Float32)[0], std::runtime_error);
+    EXPECT_THROW(Tensor({0, 1}, Dtype::Float32)[-1], std::runtime_error);
     EXPECT_THROW(Tensor({1, 2}, Dtype::Float32)[10], std::runtime_error);
 
     // Regular cases
@@ -247,7 +250,20 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
     EXPECT_EQ(t_0.GetDataPtr(), t.GetDataPtr());
     EXPECT_EQ(t_0.GetBlob(), t.GetBlob());
 
+    t_0 = t[-2];  // t[-2] == t[0]
+    EXPECT_EQ(t_0.GetShape(), SizeVector({3, 4}));
+    EXPECT_EQ(t_0.GetStrides(), SizeVector({4, 1}));
+    EXPECT_EQ(t_0.GetDataPtr(), t.GetDataPtr());
+    EXPECT_EQ(t_0.GetBlob(), t.GetBlob());
+
     Tensor t_1 = t[1];
+    EXPECT_EQ(t_1.GetShape(), SizeVector({3, 4}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 1}));
+    EXPECT_EQ(t_1.GetDataPtr(),
+              static_cast<char *>(t.GetDataPtr()) + 1 * 3 * 4 * sizeof(float));
+    EXPECT_EQ(t_1.GetBlob(), t.GetBlob());
+
+    t_1 = t[-1];  // t[-1] == t[1]
     EXPECT_EQ(t_1.GetShape(), SizeVector({3, 4}));
     EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 1}));
     EXPECT_EQ(t_1.GetDataPtr(),
@@ -433,6 +449,32 @@ TEST_P(TensorPermuteDevices, Slice) {
               static_cast<const char *>(blob_head) +
                       DtypeUtil::ByteSize(Dtype::Float32) * 3 * 4);
     EXPECT_EQ(t_4.ToFlatVector<float>(), std::vector<float>({12, 14, 20, 22}));
+
+    // t_5 = t[1, 0:-1, 0:-2:2] == t[1, 0:2, 0:2:2]
+    Tensor t_5 = t[1].Slice(0, 0, -1).Slice(1, 0, -2, 2);
+    EXPECT_EQ(t_5.GetShape(), SizeVector({2, 1}));
+    EXPECT_EQ(t_5.GetStrides(), SizeVector({4, 2}));
+    EXPECT_EQ(t_5.GetDataPtr(),
+              static_cast<const char *>(blob_head) +
+                      DtypeUtil::ByteSize(Dtype::Float32) * 3 * 4);
+    EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
+}
+
+TEST_P(TensorPermuteDevices, GetItem) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t_1 = t[1, :3, 0:-1:2], effectively not sliced
+    Tensor t_1 =
+            t.GetItem({TensorKey::Index(1), TensorKey::Slice(None, 3, None),
+                       TensorKey::Slice(0, -1, 2)});
+    EXPECT_EQ(t_1.GetShape(), SizeVector({3, 2}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 2}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({12, 14, 16, 18, 20, 22}));
 }
 
 TEST_P(TensorPermuteDevices, SliceAssign) {

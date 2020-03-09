@@ -36,6 +36,7 @@
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/TensorKey.h"
 
 namespace open3d {
 
@@ -143,6 +144,75 @@ public:
         return *this;
     }
 
+    /// Pythonic __getitem__ for tensor, returning a new view.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t1 = t[2]
+    /// t2 = t[0:4:2]
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// Tensor t1 = t.GetItem(TensorIndex(2));
+    /// Tensor t2 = t.GetItem(TensorSlice(0, 4, 2));
+    /// ```
+    Tensor GetItem(const TensorKey& tk) const;
+
+    /// Pythonic __getitem__ for tensor, returning a new view.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t1 = t[1, 0:4:2]
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
+    /// ```
+    ///
+    Tensor GetItem(const std::vector<TensorKey>& tks) const;
+
+    /// Set all items. Equivalent to `tensor[:] = value` in Python.
+    Tensor SetItem(const Tensor& value);
+
+    /// Pythonic __setitem__ for tensor.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t[2] = np.empty((5,), dtype=np.float32)
+    /// t[0:4:2] = np.empty((2, 5), dtype=np.float32)
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem(TensorIndex(2), Tensor({5}, Dtype::Float32));
+    /// t.SetItem(TensorSlice(0, 4, 2), Tensor({2, 5}, Dtype::Float32));
+    /// ```
+    Tensor SetItem(const TensorKey& tk, const Tensor& value);
+
+    /// Pythonic __setitem__ for tensor.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
+    ///           Tensor({2, 5}, Dtype::Float32));
+    /// ```
+    Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
+
     DLManagedTensor* ToDLPack() const { return dlpack::ToDLPack(*this); }
 
     static Tensor FromDLPack(DLManagedTensor* src) {
@@ -214,6 +284,9 @@ public:
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);
 
+    /// Shallow copy a tensor, returning a tensor sharing the same memory.
+    void ShallowCopyFrom(const Tensor& other);
+
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
@@ -225,6 +298,10 @@ public:
 
     /// Extract the i-th Tensor along the first axis, creating a new view
     Tensor operator[](int64_t i) const;
+
+    /// Extract the \p idx -th sub-tensor in dimension \p dim. After
+    /// IndexExtract, the dimension \p dim will be removed.
+    Tensor IndexExtract(int64_t dim, int64_t idx) const;
 
     /// Slice Tensor
     Tensor Slice(int64_t dim,

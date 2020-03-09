@@ -38,6 +38,7 @@
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
+#include "Open3D/Core/TensorKey.h"
 
 using namespace open3d;
 
@@ -61,10 +62,11 @@ static std::vector<T> ToFlatVector(
 }
 
 void pybind_core_tensor(py::module& m) {
-    py::class_<Tensor> tensor(
+    py::class_<Tensor, std::shared_ptr<Tensor>> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
 
+    // Constructor from numpy array
     tensor.def(py::init([](py::array np_array, const Dtype& dtype,
                            const Device& device) {
         py::buffer_info info = np_array.request();
@@ -75,6 +77,9 @@ void pybind_core_tensor(py::module& m) {
         });
         return t;
     }));
+
+    // Tensor copy
+    tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 
     // Device transfer
     tensor.def("cuda",
@@ -217,6 +222,23 @@ void pybind_core_tensor(py::module& m) {
         return t;
     });
 
+    tensor.def("_getitem", [](const Tensor& tensor, const TensorKey& tk) {
+        return tensor.GetItem(tk);
+    });
+
+    tensor.def("_getitem_vector",
+               [](const Tensor& tensor, std::vector<TensorKey> tks) {
+                   return tensor.GetItem(tks);
+               });
+
+    // Only need to bind the "set everything" case.
+    // In Python, __setitem__(self, key, value) is decpomposed to
+    // t = self.__getitem__(key)
+    // t[:] = value
+    tensor.def("_setitem", [](Tensor& tensor, const Tensor& value) {
+        return tensor.SetItem(value);
+    });
+
     // Casting
     tensor.def("to", &Tensor::To);
 
@@ -230,13 +252,15 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("div", &Tensor::Div);
     tensor.def("div_", &Tensor::Div_);
 
-    // Getters
-    tensor.def("get_shape",
-               [](const Tensor& tensor) { return tensor.GetShape(); });
-    tensor.def("get_strides",
-               [](const Tensor& tensor) { return tensor.GetStrides(); });
-    tensor.def("get_dtype", &Tensor::GetDtype);
-    tensor.def("get_device", &Tensor::GetDevice);
+    // Getters and setters as peoperty
+    tensor.def_property_readonly(
+            "shape", [](const Tensor& tensor) { return tensor.GetShape(); });
+    tensor.def_property_readonly("strides", [](const Tensor& tensor) {
+        return tensor.GetStrides();
+    });
+    tensor.def_property_readonly("dtype", &Tensor::GetDtype);
+    tensor.def_property_readonly("device", &Tensor::GetDevice);
+    tensor.def_property_readonly("blob", &Tensor::GetBlob);
 
     // Unary element-wise ops
     tensor.def("sqrt", &Tensor::Sqrt);
