@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <algorithm>
 #include <fstream>
 #include <numeric>
 #include <vector>
@@ -205,14 +204,8 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                     material.specular[2]);
 
             if (!material.specular_texname.empty()) {
-                // Most .mtl files using specular as glossiness
-                meshMaterial.glossiness =
-                        textureLoader(material.specular_texname);
-            }
-
-            if (!material.specular_highlight_texname.empty()) {
                 meshMaterial.specularColor =
-                        textureLoader(material.specular_highlight_texname);
+                        textureLoader(material.specular_texname);
             }
         }
 

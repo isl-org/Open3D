@@ -333,8 +333,18 @@ MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
 
             materialInstance->setParameter("illum", descriptor.illum);
 
-            TRY_ASSIGN_MAP(glossiness);
-            TRY_ASSIGN_MAP(specularColor);
+            // we have exception for glossiness, because materials looks better
+            // then we use specularColor for it instead
+            if (descriptor.specularColor &&
+                descriptor.specularColor->HasData()) {
+                auto hGlossinessTex = CreateTexture(descriptor.specularColor);
+                if (hGlossinessTex) {
+                    materialInstance->setParameter(
+                            "glossiness", textures_[hGlossinessTex].get(),
+                            sampler);
+                    dependencies_[handle].insert(hGlossinessTex);
+                }
+            }
         }
 
         TRY_ASSIGN_MAP(albedo);
