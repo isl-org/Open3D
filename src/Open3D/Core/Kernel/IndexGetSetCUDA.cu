@@ -53,7 +53,7 @@ void IndexGetCUDA(const Tensor& src,
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         cuda_launcher::LaunchAdvancedIndexerKernel<scalar_t>(
                 ai,
-                // Need to wrap as extended CUDA lamba function
+                // Need to wrap as extended CUDA lambda function
                 [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyElementKernel<scalar_t>(src, dst);
                 });
@@ -72,7 +72,7 @@ void IndexSetCUDA(const Tensor& src,
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         cuda_launcher::LaunchAdvancedIndexerKernel<scalar_t>(
                 ai,
-                // Need to wrap as extended CUDA lamba function
+                // Need to wrap as extended CUDA lambda function
                 [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyElementKernel<scalar_t>(src, dst);
                 });

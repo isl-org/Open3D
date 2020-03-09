@@ -25,6 +25,7 @@ set (CORE_SRC
     MemoryManagerCPU.cpp
     MemoryManagerCUDA.cu
     Tensor.cpp
+    TensorKey.cpp
     TensorList.cpp
 )
 

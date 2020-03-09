@@ -294,7 +294,9 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     return output;
 }
 
-std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
+std::tuple<std::shared_ptr<PointCloud>,
+           Eigen::MatrixXi,
+           std::vector<std::vector<int>>>
 PointCloud::VoxelDownSampleAndTrace(double voxel_size,
                                     const Eigen::Vector3d &min_bound,
                                     const Eigen::Vector3d &max_bound,
@@ -335,6 +337,8 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
+    std::vector<std::vector<int>> original_indices(
+            voxelindex_to_accpoint.size());
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
         if (has_normals) {
@@ -352,13 +356,14 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             size_t pid = original_id[i].point_id;
             int cid = original_id[i].cubic_id;
             cubic_id(cnt, cid) = int(pid);
+            original_indices[cnt].push_back(int(pid));
         }
         cnt++;
     }
     utility::LogDebug(
             "Pointcloud down sampled from {:d} points to {:d} points.",
             (int)points_.size(), (int)output->points_.size());
-    return std::make_tuple(output, cubic_id);
+    return std::make_tuple(output, cubic_id, original_indices);
 }
 
 std::shared_ptr<PointCloud> PointCloud::UniformDownSample(

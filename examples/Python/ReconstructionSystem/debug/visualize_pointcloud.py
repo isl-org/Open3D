@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/ReconstructionSystem/debug/visualize_pointcloud.py
+
 import argparse
 import json
 import math

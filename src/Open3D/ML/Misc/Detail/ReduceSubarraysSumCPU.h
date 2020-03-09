@@ -50,7 +50,6 @@ void ReduceSubarraysSumCPU(const T* const values,
                            T* out_sums) {
     tbb::parallel_for(tbb::blocked_range<size_t>(0, prefix_sum_size),
                       [&](const tbb::blocked_range<size_t>& r) {
-
                           for (size_t i = r.begin(); i != r.end(); ++i) {
                               size_t begin_idx = prefix_sum[i];
                               // use values_size as end_idx for the last

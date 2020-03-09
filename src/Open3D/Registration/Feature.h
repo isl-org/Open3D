@@ -40,20 +40,33 @@ class PointCloud;
 
 namespace registration {
 
+/// \class Feature
+///
+/// \brief Class to store featrues for registration.
 class Feature {
 public:
+    /// Resize feature data buffer to `dim x n`.
+    ///
+    /// \param dim Feature dimension per point.
+    /// \param n Number of points.
     void Resize(int dim, int n) {
         data_.resize(dim, n);
         data_.setZero();
     }
+    /// Returns feature dimensions per point.
     size_t Dimension() const { return data_.rows(); }
+    /// Returns number of points.
     size_t Num() const { return data_.cols(); }
 
 public:
+    /// Data buffer storing features.
     Eigen::MatrixXd data_;
 };
 
-/// Function to compute FPFH feature for a point cloud
+/// Function to compute FPFH feature for a point cloud.
+///
+/// \param input The Input point cloud.
+/// \param search_param KDTree KNN search parameter.
 std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam &search_param =

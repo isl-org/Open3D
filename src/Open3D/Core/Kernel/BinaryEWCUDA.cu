@@ -113,7 +113,6 @@ void BinaryEWCUDA(const Tensor& lhs,
             default:
                 break;
         }
-
     });
 }
 

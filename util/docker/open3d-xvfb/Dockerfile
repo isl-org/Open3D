@@ -26,7 +26,6 @@ RUN apt-get update && \
     libglew-dev \
     libglfw3-dev \
     libglu1-mesa-dev \
-    libjsoncpp-dev \
     libosmesa6-dev \
     libpng-dev \
     lxde \
