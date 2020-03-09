@@ -204,27 +204,13 @@ enum MenuId {
     FILE_EXPORT_RGB,
     FILE_EXPORT_DEPTH,
     FILE_CLOSE,
-    VIEW_NORMALS_MODE,
-    VIEW_DEPTH_MODE,
-    VIEW_COLOR_MODE,
-    VIEW_COLORMAP_X,
-    VIEW_COLORMAP_Y,
-    VIEW_COLORMAP_Z,
     VIEW_WIREFRAME,
     VIEW_MESH,
     SETTINGS_LIGHT,
+    SETTINGS_MATERIALS,
     HELP_ABOUT,
     HELP_CONTACT
 };
-
-static void SetViewMenuModeItemChecked(gui::Menu &menu, const MenuId item) {
-    static const MenuId ids[6] = {VIEW_NORMALS_MODE, VIEW_DEPTH_MODE,
-                                  VIEW_COLOR_MODE,   VIEW_COLORMAP_X,
-                                  VIEW_COLORMAP_Y,   VIEW_COLORMAP_Z};
-    for (auto id : ids) {
-        menu.SetChecked(id, id == item);
-    }
-}
 
 struct GuiVisualizer::Impl {
     std::vector<visualization::GeometryHandle> geometryHandles;
@@ -232,6 +218,35 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> drawTime;
     std::shared_ptr<gui::Menu> viewMenu;
+
+    struct LitMaterial {
+        visualization::MaterialInstanceHandle handle;
+        Eigen::Vector3f baseColor = {0.75f, 0.75f, 0.75f};
+        float metallic = 0.f;
+        float roughness = 0.7;
+        float reflectance = 0.5f;
+        float clearCoat = 0.f;
+        float clearCoatRoughness = 0.f;
+        float anisotropy = 0.f;
+        float pointSize = 3.f;
+    };
+
+    struct UnlitMaterial {
+        visualization::MaterialInstanceHandle handle;
+        Eigen::Vector3f baseColor = {1.f, 1.f, 1.f};
+        float pointSize = 3.f;
+    };
+
+    struct Materials {
+        LitMaterial lit;
+        UnlitMaterial unlit;
+    };
+
+    std::unordered_map<visualization::REHandle_abstract, Materials>
+            geometryMaterials;
+
+    visualization::MaterialHandle hLitMaterial;
+    visualization::MaterialHandle hUnlitMaterial;
 
     struct LightSettings {
         visualization::IndirectLightHandle hIbl;
@@ -250,6 +265,47 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::VectorEdit> wgtSunDir;
         std::shared_ptr<gui::ColorEdit> wgtSunColor;
     } lightSettings;
+
+    struct MaterialSettings {
+        enum MaterialType {
+            LIT = 0,
+            UNLIT,
+            NORMAL_MAP,
+            DEPTH,
+        };
+
+        MaterialType selectedType = LIT;
+        std::shared_ptr<gui::Widget> wgtBase;
+        std::shared_ptr<gui::Combobox> wgtType;
+
+        std::shared_ptr<gui::Slider> wgtPointSize;
+
+        void SetMaterialSelected(const MaterialType type) {
+            wgtType->SetSelectedIndex(type);
+        }
+    } materialSettings;
+
+    static void SetMaterialsDefaults(Materials &materials,
+                                     visualization::Renderer &renderer) {
+        materials.lit.handle =
+                renderer.ModifyMaterial(materials.lit.handle)
+                        .SetColor("baseColor", materials.lit.baseColor)
+                        .SetParameter("roughness", materials.lit.roughness)
+                        .SetParameter("metallic", materials.lit.metallic)
+                        .SetParameter("reflectance", materials.lit.reflectance)
+                        .SetParameter("clearCoat", materials.lit.clearCoat)
+                        .SetParameter("clearCoatRoughness",
+                                      materials.lit.clearCoatRoughness)
+                        .SetParameter("anisotropy", materials.lit.anisotropy)
+                        .SetParameter("pointSize", materials.lit.pointSize)
+                        .Finish();
+
+        materials.unlit.handle =
+                renderer.ModifyMaterial(materials.unlit.handle)
+                        .SetColor("baseColor", materials.unlit.baseColor)
+                        .SetParameter("pointSize", materials.unlit.pointSize)
+                        .Finish();
+    }
 };
 
 GuiVisualizer::GuiVisualizer(
@@ -276,13 +332,6 @@ GuiVisualizer::GuiVisualizer(
         fileMenu->AddSeparator();
         fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
         auto viewMenu = std::make_shared<gui::Menu>();
-        viewMenu->AddItem("Normal map", nullptr, VIEW_NORMALS_MODE);
-        viewMenu->AddItem("Depth map", nullptr, VIEW_DEPTH_MODE);
-        viewMenu->AddItem("Color", nullptr, VIEW_COLOR_MODE);
-        viewMenu->AddItem("Color map X", nullptr, VIEW_COLORMAP_X);
-        viewMenu->AddItem("Color map Y", nullptr, VIEW_COLORMAP_Y);
-        viewMenu->AddItem("Color map Z", nullptr, VIEW_COLORMAP_Z);
-        viewMenu->SetChecked(VIEW_COLOR_MODE, true);
         viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
         viewMenu->SetEnabled(VIEW_WIREFRAME, false);
         viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
@@ -293,6 +342,7 @@ GuiVisualizer::GuiVisualizer(
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
         auto settingsMenu = std::make_shared<gui::Menu>();
         settingsMenu->AddItem("Light", nullptr, SETTINGS_LIGHT);
+        settingsMenu->AddItem("Material", nullptr, SETTINGS_MATERIALS);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
         menu->AddMenu("View", viewMenu);
@@ -331,10 +381,91 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.hSky =
             GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
 
-    SetGeometry(geometries);  // also updates the camera
+    auto litPath = rsrcPath + "/defaultLit.filamat";
+    impl_->hLitMaterial = GetRenderer().AddMaterial(
+            visualization::ResourceLoadRequest(litPath.data()));
+
+    auto unlitPath = rsrcPath + "/defaultUnlit.filamat";
+    impl_->hUnlitMaterial = GetRenderer().AddMaterial(
+            visualization::ResourceLoadRequest(unlitPath.data()));
+
+    auto renderScene = scene->GetScene();
+
+    const auto em = theme.fontSize;
+    const int lm = std::ceil(0.5 * em);
+    const int gridSpacing = std::ceil(0.25 * em);
 
     // Setup UI
-    const auto em = theme.fontSize;
+    // Material settings
+    {
+        impl_->materialSettings.wgtBase =
+                std::make_shared<gui::Vert>(0, gui::Margins(lm));
+        impl_->materialSettings.wgtBase->AddChild(
+                std::make_shared<gui::Label>("> Material settings"));
+
+        auto mainGrid = std::make_shared<gui::VGrid>(2, gridSpacing);
+        mainGrid->AddChild(std::make_shared<gui::Label>("Type"));
+        impl_->materialSettings.wgtType.reset(
+                new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
+        impl_->materialSettings.wgtType->SetOnValueChanged(
+                [this, scene, renderScene](gui::Combobox *combobox) {
+                    using MaterialType = Impl::MaterialSettings::MaterialType;
+                    using ViewMode = visualization::View::Mode;
+                    auto selected = (MaterialType)combobox->GetSelectedIndex();
+
+                    auto view = scene->GetView();
+                    impl_->materialSettings.selectedType = selected;
+
+                    switch (selected) {
+                        case MaterialType::LIT:
+                            view->SetMode(ViewMode::Color);
+                            for (const auto &handle : impl_->geometryHandles) {
+                                auto mat = impl_->geometryMaterials[handle]
+                                                   .lit.handle;
+                                renderScene->AssignMaterial(handle, mat);
+                            }
+                            break;
+                        case MaterialType::UNLIT:
+                            view->SetMode(ViewMode::Color);
+                            for (const auto &handle : impl_->geometryHandles) {
+                                auto mat = impl_->geometryMaterials[handle]
+                                                   .unlit.handle;
+                                renderScene->AssignMaterial(handle, mat);
+                            }
+                            break;
+                        case MaterialType::NORMAL_MAP:
+                            view->SetMode(ViewMode::Normals);
+                            break;
+                        case MaterialType::DEPTH:
+                            view->SetMode(ViewMode::Depth);
+                            break;
+                    }
+                });
+        mainGrid->AddChild(impl_->materialSettings.wgtType);
+
+        mainGrid->AddChild(std::make_shared<gui::Label>("Point size"));
+        impl_->materialSettings.wgtPointSize =
+                MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);
+        impl_->materialSettings.wgtPointSize->OnValueChanged =
+                [this](double value) {
+                    for (const auto &pair : impl_->geometryMaterials) {
+                        auto &renderer = GetRenderer();
+                        renderer.ModifyMaterial(pair.second.lit.handle)
+                                .SetParameter("pointSize", (float)value)
+                                .Finish();
+                        renderer.ModifyMaterial(pair.second.unlit.handle)
+                                .SetParameter("pointSize", (float)value)
+                                .Finish();
+                    }
+                };
+        mainGrid->AddChild(impl_->materialSettings.wgtPointSize);
+
+        impl_->materialSettings.wgtBase->AddChild(mainGrid);
+        impl_->materialSettings.wgtBase->SetVisible(false);
+
+        AddChild(impl_->materialSettings.wgtBase);
+    }
+
     int spacing = std::max(1, int(std::ceil(0.25 * em)));
 
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
@@ -345,12 +476,8 @@ GuiVisualizer::GuiVisualizer(
 
     AddChild(scene);
 
-    auto renderScene = scene->GetScene();
-
     // Add light settings widget
     const int separationHeight = std::ceil(em);
-    const int lm = std::ceil(0.5 * em);
-    const int gridSpacing = std::ceil(0.25 * em);
     lightSettings.wgtBase = std::make_shared<gui::Vert>(0, gui::Margins(lm));
 
     lightSettings.wgtLoadAmbient = std::make_shared<gui::Button>("Load IBL");
@@ -550,6 +677,8 @@ GuiVisualizer::GuiVisualizer(
     lightSettings.wgtBase->SetVisible(false);
 
     AddChild(impl_->drawTime);
+
+    SetGeometry(geometries);  // also updates the camera
 }
 
 GuiVisualizer::~GuiVisualizer() {}
@@ -567,44 +696,71 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->geometryHandles.clear();
 
-    visualization::View::Mode renderMode = visualization::View::Mode::Color;
+    auto &renderer = GetRenderer();
+    for (const auto &pair : impl_->geometryMaterials) {
+        renderer.RemoveMaterialInstance(pair.second.unlit.handle);
+        renderer.RemoveMaterialInstance(pair.second.lit.handle);
+    }
+    impl_->geometryMaterials.clear();
+
     geometry::AxisAlignedBoundingBox bounds;
+
     for (auto &g : geometries) {
+        Impl::Materials materials;
+        materials.lit.handle =
+                GetRenderer().AddMaterialInstance(impl_->hLitMaterial);
+        materials.unlit.handle =
+                GetRenderer().AddMaterialInstance(impl_->hUnlitMaterial);
+        Impl::SetMaterialsDefaults(materials, GetRenderer());
+
+        visualization::MaterialInstanceHandle selectedMaterial;
+
         switch (g->GetGeometryType()) {
-            case geometry::Geometry::GeometryType::OrientedBoundingBox:
-            case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
             case geometry::Geometry::GeometryType::PointCloud: {
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
-                // Without normals we won't get proper shading or normals
-                // visualization So, switching to depth map mode
-                if (false == pcd->HasNormals()) {
-                    renderMode = visualization::View::Mode::Depth;
-                    SetViewMenuModeItemChecked(*impl_->viewMenu,
-                                               VIEW_DEPTH_MODE);
-                }
-            }
-            case geometry::Geometry::GeometryType::LineSet:
-            case geometry::Geometry::GeometryType::MeshBase:
-            case geometry::Geometry::GeometryType::TriangleMesh:
-            case geometry::Geometry::GeometryType::HalfEdgeTriangleMesh:
-            case geometry::Geometry::GeometryType::TetraMesh:
-            case geometry::Geometry::GeometryType::Octree:
-            case geometry::Geometry::GeometryType::VoxelGrid: {
-                auto g3 =
-                        std::static_pointer_cast<const geometry::Geometry3D>(g);
-                auto handle = scene3d->AddGeometry(*g3);
-                bounds += scene3d->GetEntityBoundingBox(handle);
 
-                impl_->geometryHandles.push_back(handle);
-                impl_->scene->GetView()->SetMode(renderMode);
-                SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLOR_MODE);
-            }
-            case geometry::Geometry::GeometryType::RGBDImage:
-            case geometry::Geometry::GeometryType::Image:
-            case geometry::Geometry::GeometryType::Unspecified:
+                if (pcd->HasColors()) {
+                    selectedMaterial = materials.unlit.handle;
+                } else {
+                    selectedMaterial = materials.lit.handle;
+                }
+            } break;
+            case geometry::Geometry::GeometryType::LineSet: {
+                selectedMaterial = materials.unlit.handle;
+            } break;
+            case geometry::Geometry::GeometryType::TriangleMesh: {
+                auto mesh =
+                        std::static_pointer_cast<const geometry::TriangleMesh>(
+                                g);
+
+                if (mesh->HasVertexColors()) {
+                    selectedMaterial = materials.unlit.handle;
+                } else {
+                    selectedMaterial = materials.lit.handle;
+                }
+            } break;
+            default:
+                utility::LogWarning("Geometry type {} not supported!",
+                                    (int)g->GetGeometryType());
                 break;
         }
+
+        auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
+        auto handle = scene3d->AddGeometry(*g3, selectedMaterial);
+        bounds += scene3d->GetEntityBoundingBox(handle);
+
+        impl_->geometryHandles.push_back(handle);
+
+        if (selectedMaterial == materials.unlit.handle) {
+            impl_->materialSettings.SetMaterialSelected(
+                    Impl::MaterialSettings::UNLIT);
+        } else {
+            impl_->materialSettings.SetMaterialSelected(
+                    Impl::MaterialSettings::LIT);
+        }
+
+        impl_->geometryMaterials.emplace(handle, materials);
     }
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
@@ -626,6 +782,17 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     gui::Rect lightSettingsRect(r.width - kLightSettingsWidth, r.y,
                                 kLightSettingsWidth, lightSettingsSize.height);
     impl_->lightSettings.wgtBase->SetFrame(lightSettingsRect);
+
+    auto materialsSettingsSize =
+            impl_->materialSettings.wgtBase->CalcPreferredSize(theme);
+    gui::Rect materialsSettingsRect(r.width - kLightSettingsWidth, r.y,
+                                    kLightSettingsWidth,
+                                    materialsSettingsSize.height);
+
+    if (impl_->lightSettings.wgtBase->IsVisible()) {
+        materialsSettingsRect.y += lightSettingsSize.height;
+    }
+    impl_->materialSettings.wgtBase->SetFrame(materialsSettingsRect);
 
     Super::Layout(theme);
 }
@@ -758,34 +925,6 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
         case FILE_CLOSE:
             this->Close();
             break;
-        case VIEW_NORMALS_MODE:
-            impl_->scene->GetView()->SetMode(
-                    visualization::View::Mode::Normals);
-            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_NORMALS_MODE);
-            break;
-        case VIEW_DEPTH_MODE:
-            impl_->scene->GetView()->SetMode(visualization::View::Mode::Depth);
-            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_DEPTH_MODE);
-            break;
-        case VIEW_COLOR_MODE:
-            impl_->scene->GetView()->SetMode(visualization::View::Mode::Color);
-            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLOR_MODE);
-            break;
-        case VIEW_COLORMAP_X:
-            impl_->scene->GetView()->SetMode(
-                    visualization::View::Mode::ColorMapX);
-            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLORMAP_X);
-            break;
-        case VIEW_COLORMAP_Y:
-            impl_->scene->GetView()->SetMode(
-                    visualization::View::Mode::ColorMapY);
-            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLORMAP_Y);
-            break;
-        case VIEW_COLORMAP_Z:
-            impl_->scene->GetView()->SetMode(
-                    visualization::View::Mode::ColorMapZ);
-            SetViewMenuModeItemChecked(*impl_->viewMenu, VIEW_COLORMAP_Z);
-            break;
         case VIEW_WIREFRAME:
             break;
         case VIEW_MESH:
@@ -795,6 +934,23 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             impl_->lightSettings.wgtBase->SetVisible(visibility);
             auto menubar = gui::Application::GetInstance().GetMenubar();
             menubar->SetChecked(SETTINGS_LIGHT, visibility);
+
+            // We need relayout because materials settings pos depends on light
+            // settings visibility
+            Layout(GetTheme());
+
+            break;
+        }
+        case SETTINGS_MATERIALS: {
+            auto visibility = !impl_->materialSettings.wgtBase->IsVisible();
+            impl_->materialSettings.wgtBase->SetVisible(visibility);
+            auto menubar = gui::Application::GetInstance().GetMenubar();
+            menubar->SetChecked(SETTINGS_MATERIALS, visibility);
+
+            // We need relayout because materials settings pos depends on light
+            // settings visibility
+            Layout(GetTheme());
+
             break;
         }
         case HELP_ABOUT: {

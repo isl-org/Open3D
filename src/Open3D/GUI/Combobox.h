@@ -37,7 +37,7 @@ class Combobox : public Widget {
 public:
     Combobox();
     explicit Combobox(const std::vector<const char*>& items);
-    ~Combobox();
+    ~Combobox() override;
 
     void ClearItems();
     void AddItem(const char* name);
@@ -52,7 +52,7 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
+    void SetOnValueChanged(std::function<void(Combobox*)> onValueChanged);
 
 private:
     struct Impl;

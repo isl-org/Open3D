@@ -53,7 +53,7 @@ struct Combobox::Impl {
     std::vector<std::string> items;
     int currentIndex = 0;
     int selectedIndex = -1;
-    std::function<void(const char*)> onValueChanged;
+    std::function<void(Combobox*)> onValueChanged;
 };
 
 Combobox::Combobox() : impl_(new Combobox::Impl()) {
@@ -100,7 +100,7 @@ void Combobox::SetSelectedIndex(int index) {
 }
 
 void Combobox::SetOnValueChanged(
-        std::function<void(const char*)> onValueChanged) {
+        std::function<void(Combobox*)> onValueChanged) {
     impl_->onValueChanged = onValueChanged;
 }
 
@@ -148,7 +148,7 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
                 impl_->selectedIndex = -1;
                 valueChanged = true;
                 if (impl_->onValueChanged) {
-                    impl_->onValueChanged(impl_->items[i].c_str());
+                    impl_->onValueChanged(this);
                 }
             }
             if (isSelected) {

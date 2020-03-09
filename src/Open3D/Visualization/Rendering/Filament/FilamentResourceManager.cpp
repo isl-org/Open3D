@@ -512,6 +512,12 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
         case EntityType::IndexBuffer:
             DestroyResource(id, indexBuffers_);
             break;
+        case EntityType::Skybox:
+            DestroyResource(id, skyboxes_);
+            break;
+        case EntityType::IndirectLight:
+            DestroyResource(id, ibls_);
+            break;
         default:
             utility::LogWarning(
                     "Resource {} is not suited for destruction by "
@@ -584,7 +590,6 @@ void FilamentResourceManager::LoadDefaults() {
     litMat->setDefaultParameter("clearCoat", 0.f);
     litMat->setDefaultParameter("clearCoatRoughness", 0.f);
     litMat->setDefaultParameter("anisotropy", 0.f);
-    litMat->setDefaultParameter("texture", texture, defaultSampler);
     litMat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultLit] = MakeShared(litMat, engine_);
 

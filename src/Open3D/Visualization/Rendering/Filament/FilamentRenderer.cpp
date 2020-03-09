@@ -189,6 +189,11 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
     return *materialsModifier_;
 }
 
+void FilamentRenderer::RemoveMaterialInstance(
+        const MaterialInstanceHandle& id) {
+    resourceManager_.Destroy(id);
+}
+
 TextureHandle FilamentRenderer::AddTexture(const ResourceLoadRequest& request) {
     if (request.path.empty()) {
         request.errorCallback(request, -1,
