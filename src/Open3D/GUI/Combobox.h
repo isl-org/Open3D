@@ -53,7 +53,8 @@ public:
     DrawResult Draw(const DrawContext& context) override;
 
     // Calls onValueChanged(newValue, newIndex) when value changes
-    void SetOnValueChanged(std::function<void(const char*, int)> onValueChanged);
+    void SetOnValueChanged(
+            std::function<void(const char*, int)> onValueChanged);
 
 private:
     struct Impl;

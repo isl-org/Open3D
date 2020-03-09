@@ -591,7 +591,8 @@ GuiVisualizer::GuiVisualizer(
         }
     }
     lightSettings.wgtAmbientIBLs->AddItem("Custom...");
-    lightSettings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name, int) {
+    lightSettings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name,
+                                                           int) {
         std::string path = gui::Application::GetInstance().GetResourcePath();
         path += std::string("/") + name + "_ibl.ktx";
         if (!this->SetIBL(path.c_str())) {

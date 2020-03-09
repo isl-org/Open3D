@@ -100,7 +100,7 @@ void Combobox::SetSelectedIndex(int index) {
 }
 
 void Combobox::SetOnValueChanged(
-      std::function<void(const char*, int)> onValueChanged) {
+        std::function<void(const char*, int)> onValueChanged) {
     impl_->onValueChanged = onValueChanged;
 }
 

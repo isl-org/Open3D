@@ -132,8 +132,7 @@ public:
         auto materials = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"Gold", "Red plastic", "Blue ceramic"}));
         materials->SetOnValueChanged([](const char *value, int) {
-            std::cout << "New material: " << value 
-                      << std::endl;
+            std::cout << "New material: " << value << std::endl;
         });
         auto materials2 = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"One", "Two", "Three"}));
