@@ -188,6 +188,13 @@ __global__ void ReduceKernelBlock(scalar_t identity,
     cg::thread_block cta = cg::this_thread_block();
     scalar_t* sdata = SharedMemory<scalar_t>();
     unsigned int tid = threadIdx.x;
+
+    // The `*2` is used since each thread first reduces 2 items before the
+    // unrolled reduction.s. e.g.
+    // local_result = g_idata[i] + g_idata[i + blockDim.x]
+    //
+    // Ref: see the `reduce6` kernel at
+    // https://github.com/NVIDIA/cuda-samples/blob/master/Samples/reduction/reduction_kernel.cu
     unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
     unsigned int grid_stride = blockDim.x * 2 * gridDim.x;
     unsigned int output_idx = blockIdx.y;

@@ -397,12 +397,12 @@ public:
         return is_reduction_dims_[i];
     }
 
-    /// Narrows iteration to a specific range in a specific dimension.
-    /// \param dim The dimension to be narrowed to.
+    /// Shrink iteration to a specific range in a specific dimension.
+    /// \param dim The dimension to be shrinked to.
     /// \param start Starting index (inclusive) for dimension \p dim. No
     /// dimension wraping is available.
     /// \param size The size to iterate in dimension \p dim.
-    OPEN3D_HOST_DEVICE void Narrow(int64_t dim, int64_t start, int64_t size) {
+    OPEN3D_HOST_DEVICE void Shink(int64_t dim, int64_t start, int64_t size) {
         assert(dim >= 0 && dim < ndims_ && size > 0);
         int64_t original_size = master_shape_[dim];
         master_shape_[dim] = size;

@@ -227,6 +227,11 @@ public:
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
     /// casted to the Tensor's dtype.
+    ///
+    /// \param v Value of arbitrary numerical type.
+    ///
+    /// Note: The input value type is T. In DISPATCH_DTYPE_TO_TEMPLATE, dtype
+    ///       is converted to the equivalent scalar_t as the output value type.
     template <typename T>
     void Fill(T v) {
         Tensor v_tensor;
