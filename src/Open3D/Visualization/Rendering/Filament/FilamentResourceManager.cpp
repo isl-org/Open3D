@@ -611,6 +611,7 @@ void FilamentResourceManager::LoadDefaults() {
     const auto depthPath = resourceRoot + "/depth.filamat";
     const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));
     auto depthMat = materials_[hDepth];
+    depthMat->setDefaultParameter("pointSize", 3.f);
     materialInstances_[kDepthMaterial] =
             MakeShared(depthMat->createInstance(), engine_);
 
@@ -618,6 +619,7 @@ void FilamentResourceManager::LoadDefaults() {
     const auto hNormals =
             CreateMaterial(ResourceLoadRequest(normalsPath.data()));
     auto normalsMat = materials_[hNormals];
+    normalsMat->setDefaultParameter("pointSize", 3.f);
     materialInstances_[kNormalsMaterial] =
             MakeShared(normalsMat->createInstance(), engine_);
 

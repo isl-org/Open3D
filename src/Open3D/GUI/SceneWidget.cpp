@@ -45,7 +45,7 @@ namespace open3d {
 namespace gui {
 
 static const double NEAR_PLANE = 0.1;
-static const double MIN_FAR_PLANE = 20.0;
+static const double MIN_FAR_PLANE = 1.0;
 
 // ----------------------------------------------------------------------------
 class MouseInteractor {
