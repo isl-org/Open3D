@@ -47,7 +47,7 @@ static void CPUProdReductionKernel(const void* src, void* dst) {
 void ReductionCPU(const Tensor& src,
                   Tensor& dst,
                   const SizeVector& dims,
-                  bool keep_dim,
+                  bool keepdim,
                   ReductionOpCode op_code) {
     Dtype dtype = dst.GetDtype();
     Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME, dims);

@@ -266,6 +266,27 @@ class Tensor(open3d_pybind.Tensor):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
+    def _reduction_dim_to_size_vector(self, dim):
+        if dim is None:
+            return o3d.SizeVector(list(range(self.ndim)))
+        elif isinstance(dim, int):
+            return o3d.SizeVector([dim])
+        elif isinstance(dim, list) or isinstance(dim, tuple):
+            return o3d.SizeVector(dim)
+        else:
+            raise TypeError(
+                f"dim must be int, list or tuple, but was {type(dim)}.")
+
+    @cast_to_py_tensor
+    def sum(self, dim=None, keepdim=False):
+        """
+        Returns the sum of along each the specified dimension `dim`. If `dim` is
+        None, the reduction happens for all elements of the tensor. If `dim` is
+        a list or tuple, the reduction happens in all of the specified `dim`.
+        """
+        dim = self._reduction_dim_to_size_vector(dim)
+        return super(Tensor, self).sum(dim, keepdim)
+
 
 class TensorList(open3d_pybind.TensorList):
     """

@@ -197,7 +197,6 @@ __global__ void ReduceKernelBlock(scalar_t identity,
     // https://github.com/NVIDIA/cuda-samples/blob/master/Samples/reduction/reduction_kernel.cu
     unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
     unsigned int grid_stride = blockDim.x * 2 * gridDim.x;
-    unsigned int output_idx = blockIdx.y;
 
     // Reduce multiple elements per thread. Larger gridDim.x results in larger
     // grid_stride and fewer elements per thread.

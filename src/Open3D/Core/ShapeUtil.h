@@ -72,10 +72,10 @@ bool CanBeBrocastedToShape(const SizeVector& src_shape,
 /// E.g. CanBeBrocastedToShape({1, 2}, {3, 5, 2}) -> true
 ///      CanBeBrocastedToShape({1, 2}, {3, 5, 3}) -> false
 /// \param dims A list of dimensions to be reduced.
-/// \param keep_dim If true, the reduced dims will be retained as size 1.
+/// \param keepdim If true, the reduced dims will be retained as size 1.
 SizeVector ReductionShape(const SizeVector& src_shape,
                           const SizeVector& dims,
-                          bool keep_dim);
+                          bool keepdim);
 
 /// \brief Wrap around negative \p dim.
 ///

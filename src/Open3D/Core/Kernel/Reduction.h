@@ -38,20 +38,20 @@ enum class ReductionOpCode { Sum, Prod };
 void Reduction(const Tensor& src,
                Tensor& dst,
                const SizeVector& dims,
-               bool keep_dim,
+               bool keepdim,
                ReductionOpCode op_code);
 
 void ReductionCPU(const Tensor& src,
                   Tensor& dst,
                   const SizeVector& dims,
-                  bool keep_dim,
+                  bool keepdim,
                   ReductionOpCode op_code);
 
 #ifdef BUILD_CUDA_MODULE
 void ReductionCUDA(const Tensor& src,
                    Tensor& dst,
                    const SizeVector& dims,
-                   bool keep_dim,
+                   bool keepdim,
                    ReductionOpCode op_code);
 #endif
 

@@ -33,19 +33,19 @@ namespace kernel {
 void Reduction(const Tensor& src,
                Tensor& dst,
                const SizeVector& dims,
-               bool keep_dim,
+               bool keepdim,
                ReductionOpCode op_code) {
-    SizeVector keep_dim_shape =
+    SizeVector keepdim_shape =
             shape_util::ReductionShape(src.GetShape(), dims, true);
-    SizeVector non_keep_dim_shape =
+    SizeVector non_keepdim_shape =
             shape_util::ReductionShape(src.GetShape(), dims, false);
-    if (keep_dim && keep_dim_shape != dst.GetShape()) {
+    if (keepdim && keepdim_shape != dst.GetShape()) {
         utility::LogError("Expected output shape {} but got {}.",
-                          keep_dim_shape.ToString(), dst.GetShape().ToString());
+                          keepdim_shape.ToString(), dst.GetShape().ToString());
     }
-    if (!keep_dim && non_keep_dim_shape != dst.GetShape()) {
+    if (!keepdim && non_keepdim_shape != dst.GetShape()) {
         utility::LogError("Expected output shape {} but got {}.",
-                          keep_dim_shape.ToString(), dst.GetShape().ToString());
+                          keepdim_shape.ToString(), dst.GetShape().ToString());
     }
 
     // Directly copy for non-reduction.
@@ -54,9 +54,9 @@ void Reduction(const Tensor& src,
         return;
     }
 
-    // Always reshape to keep_dim case. This reshaping is copy-free.
-    if (!keep_dim) {
-        dst = dst.Reshape(keep_dim_shape);
+    // Always reshape to keepdim case. This reshaping is copy-free.
+    if (!keepdim) {
+        dst = dst.Reshape(keepdim_shape);
     }
 
     if (src.GetDevice() != dst.GetDevice()) {
@@ -67,10 +67,10 @@ void Reduction(const Tensor& src,
 
     Device::DeviceType device_type = src.GetDevice().GetType();
     if (device_type == Device::DeviceType::CPU) {
-        ReductionCPU(src, dst, dims, keep_dim, op_code);
+        ReductionCPU(src, dst, dims, keepdim, op_code);
     } else if (device_type == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ReductionCUDA(src, dst, dims, keep_dim, op_code);
+        ReductionCUDA(src, dst, dims, keepdim, op_code);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -78,8 +78,8 @@ void Reduction(const Tensor& src,
         utility::LogError("Unimplemented device.");
     }
 
-    if (!keep_dim) {
-        dst = dst.Reshape(non_keep_dim_shape);
+    if (!keepdim) {
+        dst = dst.Reshape(non_keepdim_shape);
     }
 }
 

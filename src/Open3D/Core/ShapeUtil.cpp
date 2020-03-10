@@ -114,12 +114,12 @@ bool CanBeBrocastedToShape(const SizeVector& src_shape,
 
 SizeVector ReductionShape(const SizeVector& src_shape,
                           const SizeVector& dims,
-                          bool keep_dim) {
+                          bool keepdim) {
     int64_t src_ndims = src_shape.size();
     SizeVector out_shape = src_shape;
 
     // WrapDim throws exception if out-of-range.
-    if (keep_dim) {
+    if (keepdim) {
         for (const int64_t& dim : dims) {
             out_shape[WrapDim(dim, src_ndims)] = 1;
         }

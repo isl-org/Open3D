@@ -549,17 +549,17 @@ Tensor Tensor::Div_(const Tensor& value) {
     return *this;
 }
 
-Tensor Tensor::Sum(const SizeVector& dims, bool keep_dim) const {
-    Tensor dst(shape_util::ReductionShape(shape_, dims, keep_dim), dtype_,
+Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
                GetDevice());
-    kernel::Reduction(*this, dst, dims, keep_dim, kernel::ReductionOpCode::Sum);
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Sum);
     return dst;
 }
 
-Tensor Tensor::Prod(const SizeVector& dims, bool keep_dim) const {
-    Tensor dst(shape_util::ReductionShape(shape_, dims, keep_dim), dtype_,
+Tensor Tensor::Prod(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
                GetDevice());
-    kernel::Reduction(*this, dst, dims, keep_dim,
+    kernel::Reduction(*this, dst, dims, keepdim,
                       kernel::ReductionOpCode::Prod);
     return dst;
 }

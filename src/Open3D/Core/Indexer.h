@@ -150,7 +150,7 @@ public:
                 utility::LogError(
                         "Internal error: reduction op can only have 1 inputs.");
             }
-            // Only handles keep_dim == true in Indexer.
+            // Only handles keepdim == true in Indexer.
             if (shape_util::ReductionShape(input_tensors[0].GetShape(),
                                            reduction_dims,
                                            true) != output_tensor.GetShape()) {
@@ -244,7 +244,7 @@ public:
     }
 
     /// Symmetrical to BroadcastRestride. Set the reduced dimensions' stride to
-    /// 0 at output. Currently only support the keep_dim=true case.
+    /// 0 at output. Currently only support the keepdim=true case.
     static void ReductionRestride(TensorRef& dst,
                                   int64_t src_ndims,
                                   const int64_t* src_shape,
