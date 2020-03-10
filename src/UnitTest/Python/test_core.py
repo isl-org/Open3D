@@ -504,3 +504,15 @@ def test_reduction_sum(dim, keepdim):
     np_dst = np_src.sum(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.sum(dim=dim, keepdim=keepdim)
     np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim", [None, (0), (1), (2), (0, 1), (0, 2), (1, 2), (0, 1, 2)])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_prod(dim, keepdim):
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.prod(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.prod(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
