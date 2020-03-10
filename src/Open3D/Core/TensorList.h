@@ -229,7 +229,9 @@ protected:
     /// with reserved_size_ = (1 << (ceil(log2(size_)) + 1)).
     int64_t ReserveSize(int64_t n);
 
-    /// Check if index is out of bound [0, size_) if not inclusive.
+    /// Assert that index is within the valid range for TensorList.
+    /// If inclusive == false, the bound is [0, size_).
+    /// If inclusive == true , the bound is [0, size_].
     void CheckIndex(int64_t index, bool inclusive = false) const;
 
 protected:
