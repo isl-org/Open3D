@@ -265,7 +265,6 @@ struct GuiVisualizer::Impl {
     std::vector<visualization::GeometryHandle> geometryHandles;
 
     std::shared_ptr<gui::SceneWidget> scene;
-    std::shared_ptr<gui::Horiz> drawTime;
     std::shared_ptr<gui::VGrid> helpKeys;
     std::shared_ptr<gui::Menu> viewMenu;
 
@@ -449,9 +448,6 @@ GuiVisualizer::GuiVisualizer(
 
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
     drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
-    impl_->drawTime = std::make_shared<gui::Horiz>(0, gui::Margins(spacing, 0));
-    impl_->drawTime->SetBackgroundColor(gui::Color(0, 0, 0, 0));
-    impl_->drawTime->AddChild(drawTimeLabel);
 
     AddChild(scene);
 
@@ -710,8 +706,6 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtBase->SetVisible(false);
 
     // Other items
-    AddChild(impl_->drawTime);
-
     impl_->helpKeys = createHelpDisplay(this);
     impl_->helpKeys->SetVisible(false);
     AddChild(impl_->helpKeys);
@@ -814,14 +808,8 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     const auto em = theme.fontSize;
     impl_->scene->SetFrame(r);
 
-    // Draw time in lower right
-    auto pref = impl_->drawTime->CalcPreferredSize(theme);
-    impl_->drawTime->SetFrame(
-            gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
-    impl_->drawTime->Layout(theme);
-
-    // Draw time in upper left
-    pref = impl_->helpKeys->CalcPreferredSize(theme);
+    // Draw help keys HUD in upper left
+    const auto pref = impl_->helpKeys->CalcPreferredSize(theme);
     impl_->helpKeys->SetFrame(gui::Rect(0, 0, pref.width, pref.height));
     impl_->helpKeys->Layout(theme);
 
