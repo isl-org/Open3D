@@ -22,6 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
+#include "../TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -50,27 +51,21 @@ public:
         const int64 num_points = num_points_tensor.scalar<int64>()();
 
         const Tensor& inp_neighbors_index = context->input(1);
-        OP_REQUIRES(context, inp_neighbors_index.shape().dims() == 1,
-                    errors::InvalidArgument(
-                            "inp_neighbors_index must be a rank 1 tensor"));
 
         const Tensor& inp_neighbors_row_splits = context->input(2);
-        OP_REQUIRES(
-                context, inp_neighbors_row_splits.shape().dims() == 1,
-                errors::InvalidArgument(
-                        "inp_neighbors_row_splits must be a rank 1 tensor"));
 
         const Tensor& inp_neighbors_attributes = context->input(3);
-        OP_REQUIRES(context, inp_neighbors_attributes.shape().dims() >= 1,
-                    errors::InvalidArgument("inp_neighbors_attributes must be "
-                                            "at least a rank 1 tensor"));
-        OP_REQUIRES(context,
-                    inp_neighbors_attributes.shape().dim_size(0) ==
-                                    inp_neighbors_index.shape().dim_size(0) ||
-                            inp_neighbors_attributes.shape().dim_size(0) == 0,
-                    errors::InvalidArgument(
-                            "first dim of inp_neighbors_attributes does not "
-                            "match the first dim of inp_neighbors_index"));
+
+        // check input shapes
+        {
+            using namespace open3d::ml::shape_checking;
+            Dim num_neighbors("num_neighbors");
+
+            CHECK_SHAPE(context, inp_neighbors_index, num_neighbors);
+            CHECK_SHAPE_IGNORE_LAST_DIMS(context, inp_neighbors_attributes,
+                                         num_neighbors || 0);
+            CHECK_SHAPE(context, inp_neighbors_row_splits, Dim());
+        }
 
         // compute the number of attributes for each neighbor
         int num_attributes;
@@ -93,6 +88,7 @@ public:
         OP_REQUIRES_OK(context,
                        context->allocate_output(1, neighbors_row_splits_shape,
                                                 &neighbors_row_splits));
+
         Tensor* neighbors_attributes = 0;
         TensorShape neighbors_attributes_shape(
                 inp_neighbors_attributes.shape());
