@@ -49,6 +49,7 @@
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
@@ -499,18 +500,27 @@ GuiVisualizer::GuiVisualizer(
         mainGrid->AddChild(std::make_shared<gui::Label>("Point size"));
         impl_->materialSettings.wgtPointSize =
                 MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);
-        impl_->materialSettings.wgtPointSize->OnValueChanged =
-                [this](double value) {
-                    for (const auto &pair : impl_->geometryMaterials) {
-                        auto &renderer = GetRenderer();
-                        renderer.ModifyMaterial(pair.second.lit.handle)
-                                .SetParameter("pointSize", (float)value)
-                                .Finish();
-                        renderer.ModifyMaterial(pair.second.unlit.handle)
-                                .SetParameter("pointSize", (float)value)
-                                .Finish();
-                    }
-                };
+        impl_->materialSettings.wgtPointSize
+                ->OnValueChanged = [this](double value) {
+            auto &renderer = GetRenderer();
+            for (const auto &pair : impl_->geometryMaterials) {
+                renderer.ModifyMaterial(pair.second.lit.handle)
+                        .SetParameter("pointSize", (float)value)
+                        .Finish();
+                renderer.ModifyMaterial(pair.second.unlit.handle)
+                        .SetParameter("pointSize", (float)value)
+                        .Finish();
+            }
+
+            renderer.ModifyMaterial(visualization::FilamentResourceManager::
+                                            kDepthMaterial)
+                    .SetParameter("pointSize", (float)value)
+                    .Finish();
+            renderer.ModifyMaterial(visualization::FilamentResourceManager::
+                                            kNormalsMaterial)
+                    .SetParameter("pointSize", (float)value)
+                    .Finish();
+        };
         mainGrid->AddChild(impl_->materialSettings.wgtPointSize);
 
         impl_->materialSettings.wgtBase->AddChild(mainGrid);

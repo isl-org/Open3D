@@ -3,13 +3,14 @@ material {
     shadingModel : unlit,
     parameters : [
             { type : float,  name : cameraFar },
-            { type : float,  name : cameraNear }
+            { type : float,  name : cameraNear },
+            { type : float,  name : pointSize }
         ],
 }
 
 vertex {
     void materialVertex(inout MaterialVertexInputs material) {
-        gl_PointSize = 3.0;
+        gl_PointSize = materialParams.pointSize;
     }
 }
 
@@ -23,6 +24,6 @@ fragment {
         float eye_z = near * far / ((gl_FragCoord.z * (far - near)) - far);
         float linearZ = (eye_z + near) / (near - far);
 
-        material.baseColor.rgb = float3(linearZ);
+        material.baseColor.rgb = heatmap(4*linearZ);
     }
 }
