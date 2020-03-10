@@ -112,6 +112,55 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
     return dlg;
 }
 
+std::shared_ptr<gui::Label> createBlackLabel(const char *text) {
+    auto label = std::make_shared<gui::Label>(text);
+    label->SetTextColor(gui::Color(0, 0, 0));
+    return label;
+}
+
+std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
+    auto &theme = window->GetTheme();
+
+    gui::Margins margins(theme.fontSize);
+    auto layout = std::make_shared<gui::VGrid>(2, 0, margins);
+    layout->SetBackgroundColor(gui::Color(0, 0, 0, 0));
+
+    layout->AddChild(createBlackLabel("Left-drag"));
+    layout->AddChild(createBlackLabel("Rotate camera"));
+
+    layout->AddChild(createBlackLabel("Shift + left-drag"));
+    layout->AddChild(createBlackLabel("Forward/backward"));
+
+#if defined(__APPLE__)
+    layout->AddChild(createBlackLabel("Cmd + left-drag"));
+#else
+    layout->AddChild(createBlackLabel("Ctrl + left-drag"));
+#endif  // __APPLE__
+    layout->AddChild(createBlackLabel("Pan camera"));
+
+#if defined(__APPLE__)
+    layout->AddChild(createBlackLabel("Opt + left-drag"));
+#else
+    layout->AddChild(createBlackLabel("Win + left-drag"));
+#endif  // __APPLE__
+    layout->AddChild(createBlackLabel("Rotate around forward axis"));
+
+#if defined(__APPLE__)
+    layout->AddChild(createBlackLabel("Ctrl + left-drag"));
+#else
+    layout->AddChild(createBlackLabel("Alt + left-drag"));
+#endif  // __APPLE__
+    layout->AddChild(createBlackLabel("Rotate directional light"));
+
+    layout->AddChild(createBlackLabel("Right-drag"));
+    layout->AddChild(createBlackLabel("Pan camera"));
+
+    layout->AddChild(createBlackLabel("Middle-drag"));
+    layout->AddChild(createBlackLabel("Rotate directional light"));
+
+    return layout;
+}
+
 std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     auto &theme = window->GetTheme();
     auto em = theme.fontSize;
@@ -208,6 +257,7 @@ enum MenuId {
     VIEW_MESH,
     SETTINGS_LIGHT,
     SETTINGS_MATERIALS,
+    HELP_KEYS,
     HELP_ABOUT,
     HELP_CONTACT
 };
@@ -217,6 +267,7 @@ struct GuiVisualizer::Impl {
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::Horiz> drawTime;
+    std::shared_ptr<gui::VGrid> helpKeys;
     std::shared_ptr<gui::Menu> viewMenu;
 
     struct LitMaterial {
@@ -338,6 +389,8 @@ GuiVisualizer::GuiVisualizer(
         viewMenu->SetEnabled(VIEW_MESH, false);
         impl_->viewMenu = viewMenu;
         auto helpMenu = std::make_shared<gui::Menu>();
+        helpMenu->AddItem("Show Keys", nullptr, HELP_KEYS);
+        helpMenu->AddSeparator();
         helpMenu->AddItem("About", nullptr, HELP_ABOUT);
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
         auto settingsMenu = std::make_shared<gui::Menu>();
@@ -677,8 +730,14 @@ GuiVisualizer::GuiVisualizer(
 
     lightSettings.wgtBase->SetVisible(false);
 
+    // Other items
     AddChild(impl_->drawTime);
 
+    impl_->helpKeys = createHelpDisplay(this);
+    impl_->helpKeys->SetVisible(false);
+    AddChild(impl_->helpKeys);
+
+    // Set the actual geometries
     SetGeometry(geometries);  // also updates the camera
 }
 
@@ -772,11 +831,18 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     const auto em = theme.fontSize;
     impl_->scene->SetFrame(r);
 
-    const auto pref = impl_->drawTime->CalcPreferredSize(theme);
+    // Draw time in lower right
+    auto pref = impl_->drawTime->CalcPreferredSize(theme);
     impl_->drawTime->SetFrame(
             gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
     impl_->drawTime->Layout(theme);
 
+    // Draw time in upper left
+    pref = impl_->helpKeys->CalcPreferredSize(theme);
+    impl_->helpKeys->SetFrame(gui::Rect(0, 0, pref.width, pref.height));
+    impl_->helpKeys->Layout(theme);
+
+    // Settings in upper right
     const auto kLightSettingsWidth = 18 * em;
     auto lightSettingsSize =
             impl_->lightSettings.wgtBase->CalcPreferredSize(theme);
@@ -952,6 +1018,13 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             // settings visibility
             Layout(GetTheme());
 
+            break;
+        }
+        case HELP_KEYS: {
+            bool isVisible = !impl_->helpKeys->IsVisible();
+            impl_->helpKeys->SetVisible(isVisible);
+            auto menubar = gui::Application::GetInstance().GetMenubar();
+            menubar->SetChecked(HELP_KEYS, isVisible);
             break;
         }
         case HELP_ABOUT: {
