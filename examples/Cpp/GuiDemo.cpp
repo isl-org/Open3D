@@ -131,9 +131,8 @@ public:
                 materials->AddItem("Blue ceramic"); */
         auto materials = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"Gold", "Red plastic", "Blue ceramic"}));
-        materials->SetOnValueChanged([](gui::Combobox *combobox) {
-            std::cout << "New material: " << combobox->GetSelectedValue()
-                      << std::endl;
+        materials->SetOnValueChanged([](const char *value, int) {
+            std::cout << "New material: " << value << std::endl;
         });
         auto materials2 = std::shared_ptr<gui::Combobox>(
                 new gui::Combobox({"One", "Two", "Three"}));
