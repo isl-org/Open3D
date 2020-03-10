@@ -31,8 +31,10 @@
 void pybind_core(py::module& m);
 
 void pybind_cuda_utils(py::module& m);
+void pybind_core_blob(py::module& m);
 void pybind_core_dtype(py::module& m);
 void pybind_core_device(py::module& m);
 void pybind_core_size_vector(py::module& m);
+void pybind_core_tensor_key(py::module& m);
 void pybind_core_tensor(py::module& m);
 void pybind_core_tensorlist(py::module& m);

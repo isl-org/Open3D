@@ -39,9 +39,10 @@
 namespace open3d {
 namespace kernel {
 
-template <typename scalar_t>
+template <typename src_t, typename dst_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
+    *static_cast<dst_t*>(dst) =
+            static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
 template <typename scalar_t>
@@ -73,18 +74,24 @@ static void CPUExpElementKernel(const void* src, void* dst) {
 void CopyCPU(const Tensor& src, Tensor& dst) {
     // src and dst have been checked to have the same shape, dtype, device
     SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
+    Dtype src_dtype = src.GetDtype();
+    Dtype dst_dtype = dst.GetDtype();
     if (src.IsContiguous() && dst.IsContiguous() &&
-        src.GetShape() == dst.GetShape()) {
-        MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(),
-                              src.GetDataPtr(), src.GetDevice(),
-                              DtypeUtil::ByteSize(dtype) * shape.NumElements());
+        src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
+        MemoryManager::Memcpy(
+                dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
+                src.GetDevice(),
+                DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
     } else {
-        // TODO: in the future, we may want to allow automatic casting
-        Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                    indexer, CPUCopyElementKernel<scalar_t>);
+        Indexer indexer({src}, dst, DtypePolicy::NONE);
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            using src_t = scalar_t;
+            DISPATCH_DTYPE_TO_TEMPLATE(dst_dtype, [&]() {
+                using dst_t = scalar_t;
+                CPULauncher::LaunchUnaryEWKernel(
+                        indexer, CPUCopyElementKernel<src_t, dst_t>);
+            });
+
         });
     }
 }
@@ -106,27 +113,27 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         switch (op_code) {
             case UnaryEWOpCode::Sqrt:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
+                CPULauncher::LaunchUnaryEWKernel(
                         indexer, CPUSqrtElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Sin:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUSinElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUSinElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Cos:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUCosElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUCosElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Neg:
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUNegElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUNegElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Exp:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUExpElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUExpElementKernel<scalar_t>);
                 break;
             default:
                 utility::LogError("Unimplemented op_code for UnaryEWCPU");

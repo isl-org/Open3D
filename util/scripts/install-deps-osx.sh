@@ -15,7 +15,7 @@ else
     brew update
 fi
 
-for pkg in libusb glew glfw3 libpng pkg-config jsoncpp eigen tbb; do
+for pkg in libusb glew glfw3 libpng pkg-config eigen tbb; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         echo "Package '$pkg' has already been installed and is being upgraded ..."
         brew upgrade $pkg || true # Upgrade might cause error when already installed

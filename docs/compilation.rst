@@ -42,7 +42,7 @@ compilation time. Otherwise, the dependencies can also be build from source, see
 2. Setup Python binding environments
 ````````````````````````````````````
 
-This step is only required Python support for Open3D is needed.
+This step is only required if Python support for Open3D is needed.
 We use `pybind11 <https://github.com/pybind/pybind11>`_ for the Python
 binding. Please refer to
 `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_
@@ -111,7 +111,6 @@ compilation options to ``OFF``:
 
 - ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
-- ``BUILD_PYTHON_TUTORIALS``
 
 .. _compilation_ubuntu_config:
 
@@ -127,6 +126,39 @@ The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
 Open3D to a user location. In the absence of this argument Open3D will be
 installed to a system location (sudo required). For more customizations of the
 build, please see :ref:`compilation_options`.
+
+.. note::
+    Importing Python libraries compiled with different CXX ABI may cause segfaults
+    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
+    and TensorFlow Python releases use the older CXX ABI; while when they are
+    compiled from source, newer ABI is enabled by default.
+
+    When releasing Open3D as a Python package, we set
+    ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
+    in order to ensure compatibility with PyTorch and TensorFlow Python releases.
+
+    If you build PyTorch or TensorFlow from source or if you run into ABI
+    compatibility issues with them, please:
+
+    1. Check PyTorch and TensorFlow ABI with
+
+       .. code-block:: python
+
+           import torch
+           import tensorflow
+           print(torch._C._GLIBCXX_USE_CXX11_ABI)
+           print(tensorflow.__cxx11_abi_flag__)
+
+    2. Configure Open3D to compile all dependencies from source
+       with the corresponding ABI version obtained from step 1.
+
+    After installation of the Python package, you can check Open3D ABI version
+    with:
+
+    .. code-block:: python
+
+        import open3d
+        print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
 
 .. _compilation_ubuntu_build:
 
@@ -200,7 +232,7 @@ To Install/uninstall the Open3D as a C++ library (headers and binaries):
     ...
     make uninstall
 
-Note taht ``sudo`` may be needed to install Open3D to a system location.
+Note that ``sudo`` may be needed to install Open3D to a system location.
 
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`create_cplusplus_project`, starting from
@@ -389,7 +421,6 @@ The following is an example of forcing building dependencies from source code:
     cmake -DBUILD_EIGEN3=ON  \
           -DBUILD_GLEW=ON    \
           -DBUILD_GLFW=ON    \
-          -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
           ..
 

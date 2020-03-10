@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include <iostream>
 
 #include <unordered_map>
 
@@ -88,6 +89,10 @@ bool ReadPointCloud(const std::string &filename,
     } else {
         filename_ext = format;
     }
+
+    std::cout << "Format = " << format << std::endl;
+    std::cout << "Extension = " << filename_ext << std::endl;
+
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read geometry::PointCloud failed: unknown file extension.");
