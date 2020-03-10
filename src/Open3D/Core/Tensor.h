@@ -296,7 +296,7 @@ public:
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
 
-    /// Extract the i-th Tensor along the first axis, creating a new view
+    /// Extract the i-th Tensor along the first axis, returning a new view.
     Tensor operator[](int64_t i) const;
 
     /// Extract the \p idx -th sub-tensor in dimension \p dim. After

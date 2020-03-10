@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/Core/TensorList.h"
+#include "Open3D/Core/SizeVector.h"
 
 namespace open3d {
 // Public
@@ -44,7 +45,7 @@ TensorList::TensorList(const SizeVector& shape,
 
 TensorList::TensorList(const std::vector<Tensor>& tensors, const Device& device)
     : device_(device),
-      /// Default empty tensor
+      // Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, device) {
     ConstructFromIterators(tensors.begin(), tensors.end());
 }
@@ -52,7 +53,7 @@ TensorList::TensorList(const std::vector<Tensor>& tensors, const Device& device)
 TensorList::TensorList(const std::initializer_list<Tensor>& tensors,
                        const Device& device)
     : device_(device),
-      /// Default empty tensor
+      // Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, device) {
     ConstructFromIterators(tensors.begin(), tensors.end());
 }
@@ -60,7 +61,7 @@ TensorList::TensorList(const std::initializer_list<Tensor>& tensors,
 TensorList::TensorList(const Tensor& internal_tensor, bool copy)
     : dtype_(internal_tensor.GetDtype()),
       device_(internal_tensor.GetDevice()),
-      /// Default empty tensor
+      // Default empty tensor
       internal_tensor_(
               SizeVector(), Dtype::Int64, internal_tensor.GetDevice()) {
     SizeVector shape = internal_tensor.GetShape();
@@ -69,13 +70,13 @@ TensorList::TensorList(const Tensor& internal_tensor, bool copy)
     shape_ = SizeVector(std::next(shape.begin()), shape.end());
 
     if (copy) {
-        /// Construct the internal tensor with copy
+        // Construct the internal tensor with copy
         reserved_size_ = ReserveSize(size_);
         SizeVector expanded_shape = ExpandFrontDim(shape_, reserved_size_);
         internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
         internal_tensor_.Slice(0 /* dim */, 0, size_) = internal_tensor;
     } else {
-        /// Directly reuse the slices
+        // Directly reuse the slices
         reserved_size_ = size_;
         internal_tensor_ = internal_tensor;
     }
@@ -87,7 +88,7 @@ TensorList::TensorList(const TensorList& other)
       device_(other.GetDevice()),
       size_(other.GetSize()),
       reserved_size_(other.GetReservedSize()),
-      /// Default empty tensor
+      // Default empty tensor
       internal_tensor_(SizeVector(), Dtype::Int64, other.GetDevice()) {
     internal_tensor_.Assign(other.GetInternalTensor());
 }
@@ -145,14 +146,14 @@ Tensor TensorList::AsTensor() const {
 }
 
 void TensorList::Resize(int64_t n) {
-    /// Increase internal tensor size
+    // Increase internal tensor size
     int64_t new_reserved_size = ReserveSize(n);
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
 
     if (n > size_) {
-        /// Now new_reserved_size <= reserved_size, safe to fill in data
+        // Now new_reserved_size <= reserved_size, safe to fill in data
         internal_tensor_.Slice(0 /* dim */, size_, n).Fill(0);
     }
     size_ = n;
@@ -169,24 +170,18 @@ void TensorList::PushBack(const Tensor& tensor) {
         ExpandTensor(new_reserved_size);
     }
 
-    /// Copy tensor
+    // Copy tensor
     internal_tensor_[size_] = tensor;
     ++size_;
 }
 
-TensorList TensorList::operator+(const TensorList& other) const {
-    /// Copy construct a new tensor list
-    TensorList new_tensor_list(*this);
-    new_tensor_list += other;
-    return new_tensor_list;
-}
-
 TensorList TensorList::Concatenate(const TensorList& a, const TensorList& b) {
-    return a + b;
+    TensorList result(a);
+    result.Extend(b);
+    return result;
 }
 
-TensorList& TensorList::operator+=(const TensorList& other) {
-    /// Check consistency
+void TensorList::Extend(const TensorList& other) {  // Check consistency
     if (shape_ != other.GetShape()) {
         utility::LogError("TensorList shapes {} and {} are inconsistent.",
                           shape_, other.GetShape());
@@ -203,9 +198,9 @@ TensorList& TensorList::operator+=(const TensorList& other) {
                           DtypeUtil::ToString(other.GetDtype()));
     }
 
-    /// Ignore empty TensorList
+    // Ignore empty TensorList
     if (other.GetSize() == 0) {
-        return *this;
+        return;
     }
 
     int64_t new_reserved_size = ReserveSize(size_ + other.GetSize());
@@ -215,17 +210,10 @@ TensorList& TensorList::operator+=(const TensorList& other) {
     internal_tensor_.Slice(0 /* dim */, size_, size_ + other.GetSize()) =
             other.AsTensor();
     size_ = size_ + other.GetSize();
-
-    return *this;
 }
 
-void TensorList::Extend(const TensorList& b) { *this += b; }
-
-Tensor TensorList::operator[](int64_t index) {
-    CheckIndex(index);
-    if (index < 0) {
-        index += size_;
-    }
+Tensor TensorList::operator[](int64_t index) const {
+    index = WrapDim(index, size_);  // WrapDim asserts index is within range.
     return internal_tensor_[index];
 }
 
@@ -263,7 +251,7 @@ void TensorList::ExpandTensor(int64_t new_reserved_size) {
     SizeVector new_expanded_shape = ExpandFrontDim(shape_, new_reserved_size);
     Tensor new_internal_tensor = Tensor(new_expanded_shape, dtype_, device_);
 
-    /// Copy data
+    // Copy data
     new_internal_tensor.Slice(0 /* dim */, 0, size_) =
             internal_tensor_.Slice(0 /* dim */, 0, size_);
     internal_tensor_ = new_internal_tensor;
@@ -288,21 +276,21 @@ int64_t TensorList::ReserveSize(int64_t n) {
     }
 
     for (int i = 63; i >= 0; --i) {
-        /// First nnz bit
+        // First nnz bit
         if (((base << i) & n) > 0) {
             if (n == (base << i)) {
-                /// Power of 2: 2 * n. For instance, 8 tensors will be
-                /// reserved for size=4
+                // Power of 2: 2 * n. For instance, 8 tensors will be
+                // reserved for size=4
                 return (base << (i + 1));
             } else {
-                /// Non-power of 2: ceil(log(2)) * 2. For instance, 16
-                /// tensors will be reserved for size=5
+                // Non-power of 2: ceil(log(2)) * 2. For instance, 16
+                // tensors will be reserved for size=5
                 return (base << (i + 2));
             }
         }
     }
 
-    /// No nnz bit: by default reserve 1 element.
+    // No nnz bit: by default reserve 1 element.
     return 1;
 }
 
