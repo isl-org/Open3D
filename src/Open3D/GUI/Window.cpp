@@ -737,8 +737,8 @@ void Window::OnMouseEvent(const MouseEvent& e) {
     if (e.type == MouseEvent::BUTTON_DOWN || e.type == MouseEvent::BUTTON_UP) {
         ImGuiContext* context = ImGui::GetCurrentContext();
         for (auto* w : context->Windows) {
-            if (w->Flags & ImGuiWindowFlags_Popup) {
-                Rect r(w->Pos.x, w->Pos.y, w->SizeFull.x, w->SizeFull.y);
+            if (!w->Hidden && w->Flags & ImGuiWindowFlags_Popup) {
+                Rect r(w->Pos.x, w->Pos.y, w->Size.x, w->Size.y);
                 if (r.Contains(e.x, e.y)) {
                     bool weKnowThis = false;
                     for (auto child : impl_->children) {
@@ -760,7 +760,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
     // Iterate backwards so that we send mouse events from the top down.
     auto handleMouseForChild = [this](const MouseEvent& e,
                                       std::shared_ptr<Widget> child) -> bool {
-        if (child->GetFrame().Contains(e.x, e.y)) {
+        if (child->GetFrame().Contains(e.x, e.y) && child->IsVisible()) {
             if (e.type == MouseEvent::BUTTON_DOWN) {
                 impl_->focusWidget = child.get();
             }
