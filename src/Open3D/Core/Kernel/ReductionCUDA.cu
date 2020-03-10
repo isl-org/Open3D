@@ -26,6 +26,8 @@
 
 #include "Open3D/Core/Kernel/Reduction.h"
 
+#include <limits>
+
 #include "Open3D/Core/CUDAState.cuh"
 #include "Open3D/Core/CUDAUtils.h"
 #include "Open3D/Core/Dispatch.h"
@@ -45,6 +47,26 @@ template <typename scalar_t>
 static OPEN3D_HOST_DEVICE void CUDAProdReductionKernel(const void* src,
                                                        void* dst) {
     *static_cast<scalar_t*>(dst) *= *static_cast<const scalar_t*>(src);
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAMinReductionKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<scalar_t*>(dst) =
+            *static_cast<const scalar_t*>(src) <
+                            *static_cast<const scalar_t*>(dst)
+                    ? *static_cast<const scalar_t*>(src)
+                    : *static_cast<const scalar_t*>(dst);
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAMaxReductionKernel(const void* src,
+                                                      void* dst) {
+    *static_cast<scalar_t*>(dst) =
+            *static_cast<const scalar_t*>(src) >
+                            *static_cast<const scalar_t*>(dst)
+                    ? *static_cast<const scalar_t*>(src)
+                    : *static_cast<const scalar_t*>(dst);
 }
 
 void ReductionCUDA(const Tensor& src,
@@ -77,6 +99,28 @@ void ReductionCUDA(const Tensor& src,
                             indexer, 1,
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDAProdReductionKernel<scalar_t>(src, dst);
+                            });
+                }
+                break;
+            case ReductionOpCode::Min:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError("Zero-size Tensor does not suport Min.");
+                } else {
+                    cuda_launcher::LaunchReductionKernel<scalar_t>(
+                            indexer, std::numeric_limits<scalar_t>::max(),
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDAMinReductionKernel<scalar_t>(src, dst);
+                            });
+                }
+                break;
+            case ReductionOpCode::Max:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError("Zero-size Tensor does not suport Max.");
+                } else {
+                    cuda_launcher::LaunchReductionKernel<scalar_t>(
+                            indexer, std::numeric_limits<scalar_t>::min(),
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDAMaxReductionKernel<scalar_t>(src, dst);
                             });
                 }
                 break;

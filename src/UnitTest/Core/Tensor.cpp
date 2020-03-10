@@ -1158,6 +1158,196 @@ TEST_P(TensorPermuteDevices, ReduceProdLargeArray) {
     }
 }
 
+TEST_P(TensorPermuteDevices, ReduceMinKeepDim) {
+    Device device = GetParam();
+    Tensor src(
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}),
+            {2, 3, 4}, Dtype::Float32, device);
+    Tensor dst;
+
+    dst = src.Min({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3, 4}));
+    EXPECT_EQ(
+            dst.ToFlatVector<float>(),
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}));
+
+    dst = src.Min({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({7, 21, 11, 1, 4, 2, 10, 13, 5, 3, 16, 0}));
+
+    dst = src.Min({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({6, 3, 17, 0, 4, 2, 10, 1}));
+
+    dst = src.Min({2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({9, 6, 0, 1, 2, 5}));
+
+    dst = src.Min({0, 1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({4, 2, 10, 0}));
+
+    dst = src.Min({0, 2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1, 2, 0}));
+
+    dst = src.Min({1, 2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0, 1}));
+
+    dst = src.Min({0, 1, 2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
+}
+
+TEST_P(TensorPermuteDevices, ReduceMinNotKeepDim) {
+    Device device = GetParam();
+    Tensor src(
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}),
+            {2, 3, 4}, Dtype::Float32, device);
+    Tensor dst;
+
+    dst = src.Min({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3, 4}));
+    EXPECT_EQ(
+            dst.ToFlatVector<float>(),
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}));
+
+    dst = src.Min({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({3, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({7, 21, 11, 1, 4, 2, 10, 13, 5, 3, 16, 0}));
+
+    dst = src.Min({1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({6, 3, 17, 0, 4, 2, 10, 1}));
+
+    dst = src.Min({2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({9, 6, 0, 1, 2, 5}));
+
+    dst = src.Min({0, 1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({4, 2, 10, 0}));
+
+    dst = src.Min({0, 2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1, 2, 0}));
+
+    dst = src.Min({1, 2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0, 1}));
+
+    dst = src.Min({0, 1, 2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
+}
+
+TEST_P(TensorPermuteDevices, ReduceMaxKeepDim) {
+    Device device = GetParam();
+    Tensor src(
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}),
+            {2, 3, 4}, Dtype::Float32, device);
+    Tensor dst;
+
+    dst = src.Max({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3, 4}));
+    EXPECT_EQ(
+            dst.ToFlatVector<float>(),
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}));
+
+    dst = src.Max({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3, 4}));
+    EXPECT_EQ(
+            dst.ToFlatVector<float>(),
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 19, 15, 8, 17, 12}));
+
+    dst = src.Max({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({22, 23, 20, 13, 7, 21, 16, 19}));
+
+    dst = src.Max({2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({23, 18, 17, 21, 19, 16}));
+
+    dst = src.Max({0, 1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({22, 23, 20, 19}));
+
+    dst = src.Max({0, 2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23, 19, 17}));
+
+    dst = src.Max({1, 2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23, 21}));
+
+    dst = src.Max({0, 1, 2}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23}));
+}
+
+TEST_P(TensorPermuteDevices, ReduceMaxNotKeepDim) {
+    Device device = GetParam();
+    Tensor src(
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}),
+            {2, 3, 4}, Dtype::Float32, device);
+    Tensor dst;
+
+    dst = src.Max({}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3, 4}));
+    EXPECT_EQ(
+            dst.ToFlatVector<float>(),
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 13, 15, 3, 17, 0,
+                                7,  21, 11, 1, 4, 2,  10, 19, 5,  8, 16, 12}));
+
+    dst = src.Max({0}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({3, 4}));
+    EXPECT_EQ(
+            dst.ToFlatVector<float>(),
+            std::vector<float>({22, 23, 20, 9, 6, 14, 18, 19, 15, 8, 17, 12}));
+
+    dst = src.Max({1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({22, 23, 20, 13, 7, 21, 16, 19}));
+
+    dst = src.Max({2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({23, 18, 17, 21, 19, 16}));
+
+    dst = src.Max({0, 1}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({4}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({22, 23, 20, 19}));
+
+    dst = src.Max({0, 2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23, 19, 17}));
+
+    dst = src.Max({1, 2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23, 21}));
+
+    dst = src.Max({0, 1, 2}, false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23}));
+}
+
 TEST_P(TensorPermuteDevices, Sqrt) {
     Device device = GetParam();
     Tensor src(std::vector<float>({0, 1, 4, 9, 16, 25}), {2, 3}, Dtype::Float32,

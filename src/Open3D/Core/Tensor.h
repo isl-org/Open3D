@@ -439,6 +439,16 @@ public:
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Prod(const SizeVector& dims, bool keepdim = false) const;
 
+    /// Returns min of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Min(const SizeVector& dims, bool keepdim = false) const;
+
+    /// Returns max of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Max(const SizeVector& dims, bool keepdim = false) const;
+
     /// Element-wise square root of a tensor, returns a new tensor.
     Tensor Sqrt() const;
 

@@ -495,7 +495,8 @@ def test_cast_to_py_tensor():
 
 
 @pytest.mark.parametrize(
-    "dim", [None, (0), (1), (2), (0, 1), (0, 2), (1, 2), (0, 1, 2)])
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
 def test_reduction_sum(dim, keepdim):
     np_src = np.array(range(24)).reshape((2, 3, 4))
@@ -507,7 +508,8 @@ def test_reduction_sum(dim, keepdim):
 
 
 @pytest.mark.parametrize(
-    "dim", [None, (0), (1), (2), (0, 1), (0, 2), (1, 2), (0, 1, 2)])
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
 def test_reduction_prod(dim, keepdim):
     np_src = np.array(range(24)).reshape((2, 3, 4))
@@ -515,4 +517,34 @@ def test_reduction_prod(dim, keepdim):
 
     np_dst = np_src.prod(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.prod(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_min(dim, keepdim):
+    np_src = np.array(range(24))
+    np.random.shuffle(np_src)
+    np_src = np_src.reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.min(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.min(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_max(dim, keepdim):
+    np_src = np.array(range(24))
+    np.random.shuffle(np_src)
+    np_src = np_src.reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.max(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.max(dim=dim, keepdim=keepdim)
     np.testing.assert_allclose(o3_dst.numpy(), np_dst)

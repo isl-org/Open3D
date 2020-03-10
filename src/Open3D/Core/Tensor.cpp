@@ -559,8 +559,21 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 Tensor Tensor::Prod(const SizeVector& dims, bool keepdim) const {
     Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
                GetDevice());
-    kernel::Reduction(*this, dst, dims, keepdim,
-                      kernel::ReductionOpCode::Prod);
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Prod);
+    return dst;
+}
+
+Tensor Tensor::Min(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Min);
+    return dst;
+}
+
+Tensor Tensor::Max(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Max);
     return dst;
 }
 

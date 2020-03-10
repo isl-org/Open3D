@@ -26,6 +26,8 @@
 
 #include "Open3D/Core/Kernel/Reduction.h"
 
+#include <limits>
+
 #include "Open3D/Core/Dispatch.h"
 #include "Open3D/Core/Indexer.h"
 #include "Open3D/Core/Kernel/CPULauncher.h"
@@ -42,6 +44,18 @@ static void CPUSumReductionKernel(const void* src, void* dst) {
 template <typename scalar_t>
 static void CPUProdReductionKernel(const void* src, void* dst) {
     *static_cast<scalar_t*>(dst) *= *static_cast<const scalar_t*>(src);
+}
+
+template <typename scalar_t>
+static void CPUMinReductionKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::min(*static_cast<scalar_t*>(dst),
+                                            *static_cast<const scalar_t*>(src));
+}
+
+template <typename scalar_t>
+static void CPUMaxReductionKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::max(*static_cast<scalar_t*>(dst),
+                                            *static_cast<const scalar_t*>(src));
 }
 
 void ReductionCPU(const Tensor& src,
@@ -64,6 +78,22 @@ void ReductionCPU(const Tensor& src,
             case ReductionOpCode::Prod:
                 identity = static_cast<scalar_t>(1);
                 element_kernel = CPUProdReductionKernel<scalar_t>;
+                break;
+            case ReductionOpCode::Min:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError("Zero-size Tensor does not suport Min.");
+                } else {
+                    identity = std::numeric_limits<scalar_t>::max();
+                    element_kernel = CPUMinReductionKernel<scalar_t>;
+                }
+                break;
+            case ReductionOpCode::Max:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError("Zero-size Tensor does not suport Max.");
+                } else {
+                    identity = std::numeric_limits<scalar_t>::min();
+                    element_kernel = CPUMaxReductionKernel<scalar_t>;
+                }
                 break;
             default:
                 utility::LogError("Unsupported op code.");

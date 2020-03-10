@@ -278,6 +278,8 @@ void pybind_core_tensor(py::module& m) {
     // Reuduction ops
     tensor.def("sum", &Tensor::Sum);
     tensor.def("prod", &Tensor::Prod);
+    tensor.def("min", &Tensor::Min);
+    tensor.def("max", &Tensor::Max);
 
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });

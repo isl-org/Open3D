@@ -33,7 +33,7 @@
 namespace open3d {
 namespace kernel {
 
-enum class ReductionOpCode { Sum, Prod };
+enum class ReductionOpCode { Sum, Prod, Min, Max };
 
 void Reduction(const Tensor& src,
                Tensor& dst,
