@@ -360,7 +360,7 @@ void VGrid::Layout(const Theme& theme) {
             nGrowing += 1;
         }
     }
-    if (wantedWidth > layoutWidth) {
+    if (wantedWidth > layoutWidth && nGrowing > 0) {
         int growingSize = (layoutWidth - totalNotGrowingWidth) / nGrowing;
         if (growingSize < 0) {
             growingSize = layoutWidth / nGrowing;
