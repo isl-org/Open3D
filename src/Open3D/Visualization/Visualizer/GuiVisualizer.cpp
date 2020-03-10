@@ -822,7 +822,7 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 
     // Draw time in upper left
     pref = impl_->helpKeys->CalcPreferredSize(theme);
-    impl_->helpKeys->SetFrame(gui::Rect(0, 0, pref.width, pref.height));
+    impl_->helpKeys->SetFrame(gui::Rect(0, r.y, pref.width, pref.height));
     impl_->helpKeys->Layout(theme);
 
     // Settings in upper right
