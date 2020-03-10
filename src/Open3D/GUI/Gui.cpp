@@ -62,5 +62,12 @@ Rect Rect::UnionedWith(const Rect& r) const {
     return Rect(newX, newY, w, h);
 }
 
+bool Rect::operator==(const Rect& other) const {
+    return (this->x == other.x && this->y == other.y &&
+            this->width == other.width && this->height == other.height);
+}
+
+bool Rect::operator!=(const Rect& other) const { return !operator==(other); }
+
 }  // namespace gui
 }  // namespace open3d

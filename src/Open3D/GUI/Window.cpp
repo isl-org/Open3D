@@ -727,6 +727,36 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             break;
         }
     }
+
+    // Some ImGUI widgets have popup windows, in particular, the color
+    // picker, which creates a popup window when you click on the color
+    // patch. Since these aren't gui::Widgets, we don't know about them,
+    // and will deliver mouse events to something below them. So find any
+    // that would use the mouse, and if it isn't a toplevel child, then
+    // eat the event for it.
+    if (e.type == MouseEvent::BUTTON_DOWN || e.type == MouseEvent::BUTTON_UP) {
+        ImGuiContext* context = ImGui::GetCurrentContext();
+        for (auto* w : context->Windows) {
+            if (w->Flags & ImGuiWindowFlags_Popup) {
+                Rect r(w->Pos.x, w->Pos.y, w->SizeFull.x, w->SizeFull.y);
+                if (r.Contains(e.x, e.y)) {
+                    bool weKnowThis = false;
+                    for (auto child : impl_->children) {
+                        if (child->GetFrame() == r) {
+                            weKnowThis = true;
+                            break;
+                        }
+                    }
+                    if (!weKnowThis) {
+                        // This is not a rect that is one of our children,
+                        // must be an ImGUI internal popup. Eat event.
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     // Iterate backwards so that we send mouse events from the top down.
     auto handleMouseForChild = [this](const MouseEvent& e,
                                       std::shared_ptr<Widget> child) -> bool {
