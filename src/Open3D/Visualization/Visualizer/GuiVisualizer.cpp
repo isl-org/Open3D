@@ -390,7 +390,8 @@ GuiVisualizer::GuiVisualizer(
         helpMenu->AddItem("About", nullptr, HELP_ABOUT);
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
         auto settingsMenu = std::make_shared<gui::Menu>();
-        settingsMenu->AddItem("Lighting & Materials", nullptr, SETTINGS_LIGHT_AND_MATERIALS);
+        settingsMenu->AddItem("Lighting & Materials", nullptr,
+                              SETTINGS_LIGHT_AND_MATERIALS);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
         menu->AddMenu("View", viewMenu);
@@ -512,39 +513,34 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... lighting on/off
-    settings.wgtBase->AddChild(
-            std::make_shared<gui::Label>("> Light sources"));
+    settings.wgtBase->AddChild(std::make_shared<gui::Label>("> Light sources"));
     auto checkboxes = std::make_shared<gui::Horiz>();
-    settings.wgtAmbientEnabled =
-            std::make_shared<gui::Checkbox>("Ambient");
+    settings.wgtAmbientEnabled = std::make_shared<gui::Checkbox>("Ambient");
     settings.wgtAmbientEnabled->SetChecked(true);
-    settings.wgtAmbientEnabled->SetOnChecked(
-            [this, renderScene](bool checked) {
-                if (checked) {
-                    renderScene->SetIndirectLight(impl_->settings.hIbl);
-                } else {
-                    renderScene->SetIndirectLight(IndirectLightHandle());
-                }
-            });
+    settings.wgtAmbientEnabled->SetOnChecked([this, renderScene](bool checked) {
+        if (checked) {
+            renderScene->SetIndirectLight(impl_->settings.hIbl);
+        } else {
+            renderScene->SetIndirectLight(IndirectLightHandle());
+        }
+    });
     checkboxes->AddChild(settings.wgtAmbientEnabled);
     settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
     settings.wgtSkyEnabled->SetChecked(false);
-    settings.wgtSkyEnabled->SetOnChecked(
-            [this, renderScene](bool checked) {
-                if (checked) {
-                    renderScene->SetSkybox(impl_->settings.hSky);
-                } else {
-                    renderScene->SetSkybox(SkyboxHandle());
-                }
-            });
+    settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
+        if (checked) {
+            renderScene->SetSkybox(impl_->settings.hSky);
+        } else {
+            renderScene->SetSkybox(SkyboxHandle());
+        }
+    });
     checkboxes->AddChild(settings.wgtSkyEnabled);
-    settings.wgtDirectionalEnabled =
-            std::make_shared<gui::Checkbox>("Sun");
+    settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");
     settings.wgtDirectionalEnabled->SetChecked(true);
     settings.wgtDirectionalEnabled->SetOnChecked(
             [this, renderScene](bool checked) {
-                renderScene->SetEntityEnabled(
-                        impl_->settings.hDirectionalLight, checked);
+                renderScene->SetEntityEnabled(impl_->settings.hDirectionalLight,
+                                              checked);
             });
     checkboxes->AddChild(settings.wgtDirectionalEnabled);
     settings.wgtBase->AddChild(checkboxes);
@@ -569,8 +565,7 @@ GuiVisualizer::GuiVisualizer(
         }
     }
     settings.wgtAmbientIBLs->AddItem("Custom...");
-    settings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name,
-                                                           int) {
+    settings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name, int) {
         std::string path = gui::Application::GetInstance().GetResourcePath();
         path += std::string("/") + name + "_ibl.ktx";
         if (!this->SetIBL(path.c_str())) {
@@ -607,11 +602,11 @@ GuiVisualizer::GuiVisualizer(
     // ... directional light (sun)
     settings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
                                           lightDescription.intensity);
-    settings.wgtSunIntensity->OnValueChanged =
-            [this, renderScene](double newValue) {
-                renderScene->SetLightIntensity(
-                        impl_->settings.hDirectionalLight, newValue);
-            };
+    settings.wgtSunIntensity->OnValueChanged = [this,
+                                                renderScene](double newValue) {
+        renderScene->SetLightIntensity(impl_->settings.hDirectionalLight,
+                                       newValue);
+    };
 
     auto setSunDir = [this, renderScene](const Eigen::Vector3f &dir) {
         this->impl_->settings.wgtSunDir->SetValue(dir);
@@ -620,8 +615,7 @@ GuiVisualizer::GuiVisualizer(
     };
 
     this->impl_->scene->SelectDirectionalLight(
-            settings.hDirectionalLight,
-            [this](const Eigen::Vector3f &newDir) {
+            settings.hDirectionalLight, [this](const Eigen::Vector3f &newDir) {
                 impl_->settings.wgtSunDir->SetValue(newDir);
             });
 
@@ -631,13 +625,12 @@ GuiVisualizer::GuiVisualizer(
 
     settings.wgtSunColor = std::make_shared<gui::ColorEdit>();
     settings.wgtSunColor->SetValue({1, 1, 1});
-    settings.wgtSunColor->OnValueChanged =
-            [this, renderScene](const gui::Color &newColor) {
-                renderScene->SetLightColor(
-                        impl_->settings.hDirectionalLight,
-                        {newColor.GetRed(), newColor.GetGreen(),
-                         newColor.GetBlue()});
-            };
+    settings.wgtSunColor->OnValueChanged = [this, renderScene](
+                                                   const gui::Color &newColor) {
+        renderScene->SetLightColor(
+                impl_->settings.hDirectionalLight,
+                {newColor.GetRed(), newColor.GetGreen(), newColor.GetBlue()});
+    };
 
     auto sunLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     sunLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
@@ -654,63 +647,60 @@ GuiVisualizer::GuiVisualizer(
     // materials settings
     settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
     settings.wgtBase->AddChild(
-          std::make_shared<gui::Label>("> Material settings"));
+            std::make_shared<gui::Label>("> Material settings"));
 
     auto matGrid = std::make_shared<gui::VGrid>(2, gridSpacing);
     matGrid->AddChild(std::make_shared<gui::Label>("Type"));
     settings.wgtMaterialType.reset(
             new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
-    settings.wgtMaterialType->SetOnValueChanged(
-            [this, scene, renderScene](const char *, int selectedIdx) {
-                using MaterialType = Impl::Settings::MaterialType;
-                using ViewMode = visualization::View::Mode;
-                auto selected = (Impl::Settings::MaterialType)selectedIdx;
+    settings.wgtMaterialType->SetOnValueChanged([this, scene, renderScene](
+                                                        const char *,
+                                                        int selectedIdx) {
+        using MaterialType = Impl::Settings::MaterialType;
+        using ViewMode = visualization::View::Mode;
+        auto selected = (Impl::Settings::MaterialType)selectedIdx;
 
-                auto view = scene->GetView();
-                impl_->settings.selectedType = selected;
+        auto view = scene->GetView();
+        impl_->settings.selectedType = selected;
 
-                switch (selected) {
-                    case MaterialType::LIT:
-                        view->SetMode(ViewMode::Color);
-                        for (const auto &handle : impl_->geometryHandles) {
-                            auto mat = impl_->geometryMaterials[handle]
-                                               .lit.handle;
-                            renderScene->AssignMaterial(handle, mat);
-                        }
-                        break;
-                    case MaterialType::UNLIT:
-                        view->SetMode(ViewMode::Color);
-                        for (const auto &handle : impl_->geometryHandles) {
-                            auto mat = impl_->geometryMaterials[handle]
-                                               .unlit.handle;
-                            renderScene->AssignMaterial(handle, mat);
-                        }
-                        break;
-                    case MaterialType::NORMAL_MAP:
-                        view->SetMode(ViewMode::Normals);
-                        break;
-                    case MaterialType::DEPTH:
-                        view->SetMode(ViewMode::Depth);
-                        break;
+        switch (selected) {
+            case MaterialType::LIT:
+                view->SetMode(ViewMode::Color);
+                for (const auto &handle : impl_->geometryHandles) {
+                    auto mat = impl_->geometryMaterials[handle].lit.handle;
+                    renderScene->AssignMaterial(handle, mat);
                 }
-            });
+                break;
+            case MaterialType::UNLIT:
+                view->SetMode(ViewMode::Color);
+                for (const auto &handle : impl_->geometryHandles) {
+                    auto mat = impl_->geometryMaterials[handle].unlit.handle;
+                    renderScene->AssignMaterial(handle, mat);
+                }
+                break;
+            case MaterialType::NORMAL_MAP:
+                view->SetMode(ViewMode::Normals);
+                break;
+            case MaterialType::DEPTH:
+                view->SetMode(ViewMode::Depth);
+                break;
+        }
+    });
     matGrid->AddChild(settings.wgtMaterialType);
 
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
-    settings.wgtPointSize =
-          MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);
-    settings.wgtPointSize->OnValueChanged =
-          [this](double value) {
-              for (const auto &pair : impl_->geometryMaterials) {
-                  auto &renderer = GetRenderer();
-                  renderer.ModifyMaterial(pair.second.lit.handle)
-                          .SetParameter("pointSize", (float)value)
-                          .Finish();
-                  renderer.ModifyMaterial(pair.second.unlit.handle)
-                          .SetParameter("pointSize", (float)value)
-                          .Finish();
-              }
-          };
+    settings.wgtPointSize = MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);
+    settings.wgtPointSize->OnValueChanged = [this](double value) {
+        for (const auto &pair : impl_->geometryMaterials) {
+            auto &renderer = GetRenderer();
+            renderer.ModifyMaterial(pair.second.lit.handle)
+                    .SetParameter("pointSize", (float)value)
+                    .Finish();
+            renderer.ModifyMaterial(pair.second.unlit.handle)
+                    .SetParameter("pointSize", (float)value)
+                    .Finish();
+        }
+    };
     matGrid->AddChild(settings.wgtPointSize);
 
     settings.wgtBase->AddChild(matGrid);
@@ -808,11 +798,9 @@ void GuiVisualizer::SetGeometry(
         impl_->geometryHandles.push_back(handle);
 
         if (selectedMaterial == materials.unlit.handle) {
-            impl_->settings.SetMaterialSelected(
-                    Impl::Settings::UNLIT);
+            impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
         } else {
-            impl_->settings.SetMaterialSelected(
-                    Impl::Settings::LIT);
+            impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
         }
 
         impl_->geometryMaterials.emplace(handle, materials);
@@ -839,8 +827,7 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 
     // Settings in upper right
     const auto kLightSettingsWidth = 18 * em;
-    auto lightSettingsSize =
-            impl_->settings.wgtBase->CalcPreferredSize(theme);
+    auto lightSettingsSize = impl_->settings.wgtBase->CalcPreferredSize(theme);
     gui::Rect lightSettingsRect(r.width - kLightSettingsWidth, r.y,
                                 kLightSettingsWidth, lightSettingsSize.height);
     impl_->settings.wgtBase->SetFrame(lightSettingsRect);
