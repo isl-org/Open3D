@@ -48,7 +48,7 @@ public:
     const char* GetSelectedValue() const;
     void SetSelectedIndex(int index);
     // Does nothing if 'value' is not an item
-    void SetSelectedValue(const char *value);
+    void SetSelectedValue(const char* value);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 

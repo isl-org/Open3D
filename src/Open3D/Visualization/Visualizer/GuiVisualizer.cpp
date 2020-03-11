@@ -293,25 +293,67 @@ struct GuiVisualizer::Impl {
     };
 
     std::map<std::string, LitMaterial> prefabMaterials = {
-        { "Default", {} },
-        { "Aluminum", { visualization::MaterialInstanceHandle::kBad,
-                    {0.913f, 0.921f, 0.925f}, 1.0f, 0.5f, 0.9f,
-                    0.0f, 0.0f, 0.0f, 3.0f } },
-        { "Gold", { visualization::MaterialInstanceHandle::kBad,
-                    {1.000f, 0.766f, 0.336f}, 1.0f, 0.3f, 0.9f,
-                    0.0f, 0.0f, 0.0f, 3.0f } },
-        { "Copper", { visualization::MaterialInstanceHandle::kBad,
-                    {0.955f, 0.637f, 0.538f}, 1.0f, 0.3f, 0.9f,
-                    0.0f, 0.0f, 0.0f, 3.0f } },
-        { "Iron", { visualization::MaterialInstanceHandle::kBad,
-                    {0.560f, 0.570f, 0.580f}, 1.0f, 0.5f, 0.9f,
-                    0.0f, 0.0f, 0.0f, 3.0f } },
-        { "Plastic (white)", { visualization::MaterialInstanceHandle::kBad,
-                    {1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.5f,
-                    0.5f, 0.2f, 0.0f, 3.0f } },
-        { "Ceramic (white)", { visualization::MaterialInstanceHandle::kBad,
-                    {1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.9f,
-                    1.0f, 0.1f, 0.0f, 3.0f } },
+            {"Default", {}},
+            {"Aluminum",
+             {visualization::MaterialInstanceHandle::kBad,
+              {0.913f, 0.921f, 0.925f},
+              1.0f,
+              0.5f,
+              0.9f,
+              0.0f,
+              0.0f,
+              0.0f,
+              3.0f}},
+            {"Gold",
+             {visualization::MaterialInstanceHandle::kBad,
+              {1.000f, 0.766f, 0.336f},
+              1.0f,
+              0.3f,
+              0.9f,
+              0.0f,
+              0.0f,
+              0.0f,
+              3.0f}},
+            {"Copper",
+             {visualization::MaterialInstanceHandle::kBad,
+              {0.955f, 0.637f, 0.538f},
+              1.0f,
+              0.3f,
+              0.9f,
+              0.0f,
+              0.0f,
+              0.0f,
+              3.0f}},
+            {"Iron",
+             {visualization::MaterialInstanceHandle::kBad,
+              {0.560f, 0.570f, 0.580f},
+              1.0f,
+              0.5f,
+              0.9f,
+              0.0f,
+              0.0f,
+              0.0f,
+              3.0f}},
+            {"Plastic (white)",
+             {visualization::MaterialInstanceHandle::kBad,
+              {1.0f, 1.0f, 1.0f},
+              0.0f,
+              0.5f,
+              0.5f,
+              0.5f,
+              0.2f,
+              0.0f,
+              3.0f}},
+            {"Ceramic (white)",
+             {visualization::MaterialInstanceHandle::kBad,
+              {1.0f, 1.0f, 1.0f},
+              0.0f,
+              0.5f,
+              0.9f,
+              1.0f,
+              0.1f,
+              0.0f,
+              3.0f}},
     };
 
     std::unordered_map<visualization::REHandle_abstract, Materials>
@@ -709,17 +751,19 @@ GuiVisualizer::GuiVisualizer(
                 break;
         }
 
-        impl_->settings.wgtPrefabMaterial->SetEnabled(selected == MaterialType::LIT);
+        impl_->settings.wgtPrefabMaterial->SetEnabled(selected ==
+                                                      MaterialType::LIT);
     });
     matGrid->AddChild(settings.wgtMaterialType);
 
-    settings.wgtPrefabMaterial= std::make_shared<gui::Combobox>();
+    settings.wgtPrefabMaterial = std::make_shared<gui::Combobox>();
     for (auto &prefab : impl_->prefabMaterials) {
-          settings.wgtPrefabMaterial->AddItem(prefab.first.c_str());
+        settings.wgtPrefabMaterial->AddItem(prefab.first.c_str());
     }
     settings.wgtPrefabMaterial->SetSelectedValue("Default");
     settings.wgtPrefabMaterial->SetOnValueChanged([this, renderScene](
-                                                    const char *name, int) {
+                                                          const char *name,
+                                                          int) {
         auto &renderer = this->GetRenderer();
         auto prefabIt = this->impl_->prefabMaterials.find(name);
         if (prefabIt != this->impl_->prefabMaterials.end()) {
@@ -727,16 +771,16 @@ GuiVisualizer::GuiVisualizer(
             for (const auto &handle : impl_->geometryHandles) {
                 auto mat = impl_->geometryMaterials[handle].lit.handle;
                 mat = renderer.ModifyMaterial(mat)
-                        .SetColor("baseColor", prefab.baseColor)
-                        .SetParameter("roughness", prefab.roughness)
-                        .SetParameter("metallic", prefab.metallic)
-                        .SetParameter("reflectance", prefab.reflectance)
-                        .SetParameter("clearCoat", prefab.clearCoat)
-                        .SetParameter("clearCoatRoughness",
-                                      prefab.clearCoatRoughness)
-                        .SetParameter("anisotropy", prefab.anisotropy)
-                        .SetParameter("pointSize", prefab.pointSize)
-                        .Finish();
+                              .SetColor("baseColor", prefab.baseColor)
+                              .SetParameter("roughness", prefab.roughness)
+                              .SetParameter("metallic", prefab.metallic)
+                              .SetParameter("reflectance", prefab.reflectance)
+                              .SetParameter("clearCoat", prefab.clearCoat)
+                              .SetParameter("clearCoatRoughness",
+                                            prefab.clearCoatRoughness)
+                              .SetParameter("anisotropy", prefab.anisotropy)
+                              .SetParameter("pointSize", prefab.pointSize)
+                              .Finish();
                 renderScene->AssignMaterial(handle, mat);
             }
         }
