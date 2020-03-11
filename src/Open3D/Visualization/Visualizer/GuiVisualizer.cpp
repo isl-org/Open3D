@@ -292,6 +292,28 @@ struct GuiVisualizer::Impl {
         UnlitMaterial unlit;
     };
 
+    std::map<std::string, LitMaterial> prefabMaterials = {
+        { "Default", {} },
+        { "Aluminum", { visualization::MaterialInstanceHandle::kBad,
+                    {0.913f, 0.921f, 0.925f}, 1.0f, 0.5f, 0.9f,
+                    0.0f, 0.0f, 0.0f, 3.0f } },
+        { "Gold", { visualization::MaterialInstanceHandle::kBad,
+                    {1.000f, 0.766f, 0.336f}, 1.0f, 0.3f, 0.9f,
+                    0.0f, 0.0f, 0.0f, 3.0f } },
+        { "Copper", { visualization::MaterialInstanceHandle::kBad,
+                    {0.955f, 0.637f, 0.538f}, 1.0f, 0.3f, 0.9f,
+                    0.0f, 0.0f, 0.0f, 3.0f } },
+        { "Iron", { visualization::MaterialInstanceHandle::kBad,
+                    {0.560f, 0.570f, 0.580f}, 1.0f, 0.5f, 0.9f,
+                    0.0f, 0.0f, 0.0f, 3.0f } },
+        { "Plastic (white)", { visualization::MaterialInstanceHandle::kBad,
+                    {1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.5f,
+                    0.5f, 0.2f, 0.0f, 3.0f } },
+        { "Ceramic (white)", { visualization::MaterialInstanceHandle::kBad,
+                    {1.0f, 1.0f, 1.0f}, 0.0f, 0.5f, 0.9f,
+                    1.0f, 0.1f, 0.0f, 3.0f } },
+    };
+
     std::unordered_map<visualization::REHandle_abstract, Materials>
             geometryMaterials;
 
@@ -325,6 +347,7 @@ struct GuiVisualizer::Impl {
         MaterialType selectedType = LIT;
         std::shared_ptr<gui::Combobox> wgtMaterialType;
 
+        std::shared_ptr<gui::Combobox> wgtPrefabMaterial;
         std::shared_ptr<gui::Slider> wgtPointSize;
 
         void SetMaterialSelected(const MaterialType type) {
@@ -685,8 +708,41 @@ GuiVisualizer::GuiVisualizer(
                 view->SetMode(ViewMode::Depth);
                 break;
         }
+
+        impl_->settings.wgtPrefabMaterial->SetEnabled(selected == MaterialType::LIT);
     });
     matGrid->AddChild(settings.wgtMaterialType);
+
+    settings.wgtPrefabMaterial= std::make_shared<gui::Combobox>();
+    for (auto &prefab : impl_->prefabMaterials) {
+          settings.wgtPrefabMaterial->AddItem(prefab.first.c_str());
+    }
+    settings.wgtPrefabMaterial->SetSelectedValue("Default");
+    settings.wgtPrefabMaterial->SetOnValueChanged([this, renderScene](
+                                                    const char *name, int) {
+        auto &renderer = this->GetRenderer();
+        auto prefabIt = this->impl_->prefabMaterials.find(name);
+        if (prefabIt != this->impl_->prefabMaterials.end()) {
+            auto &prefab = prefabIt->second;
+            for (const auto &handle : impl_->geometryHandles) {
+                auto mat = impl_->geometryMaterials[handle].lit.handle;
+                mat = renderer.ModifyMaterial(mat)
+                        .SetColor("baseColor", prefab.baseColor)
+                        .SetParameter("roughness", prefab.roughness)
+                        .SetParameter("metallic", prefab.metallic)
+                        .SetParameter("reflectance", prefab.reflectance)
+                        .SetParameter("clearCoat", prefab.clearCoat)
+                        .SetParameter("clearCoatRoughness",
+                                      prefab.clearCoatRoughness)
+                        .SetParameter("anisotropy", prefab.anisotropy)
+                        .SetParameter("pointSize", prefab.pointSize)
+                        .Finish();
+                renderScene->AssignMaterial(handle, mat);
+            }
+        }
+    });
+    matGrid->AddChild(std::make_shared<gui::Label>("Material"));
+    matGrid->AddChild(settings.wgtPrefabMaterial);
 
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
     settings.wgtPointSize = MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);

@@ -99,6 +99,16 @@ void Combobox::SetSelectedIndex(int index) {
     }
 }
 
+void Combobox::SetSelectedValue(const char *value) {
+    std::string svalue = value;
+    for (size_t i = 0;  i < impl_->items.size();  ++i) {
+        if (impl_->items[i] == svalue) {
+            SetSelectedIndex(i);
+            return;
+        }
+    }
+}
+
 void Combobox::SetOnValueChanged(
         std::function<void(const char*, int)> onValueChanged) {
     impl_->onValueChanged = onValueChanged;
