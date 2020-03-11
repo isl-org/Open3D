@@ -759,17 +759,12 @@ void GuiVisualizer::SetGeometry(
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
-                // This is troublesome:
-                // - some point clouds have no vertex color; they should be
-                //   unlit
-                // - some point clouds specify a vertex color of white;
-                //   they also need to be unlit
-                // - some point clouds have vertex colors that are real;
-                //   they should be unlit. Unfortunately, we can't tell the
-                //   the difference between these and the previous case,
-                //   and unlit with white vertices looks really bad. So we
-                //   always use lit for point clouds.
-                selectedMaterial = materials.lit.handle;
+                // NOTE: There would be a check for uniform color soon
+                if (pcd->HasColors()) {
+                    selectedMaterial = materials.unlit.handle;
+                } else {
+                    selectedMaterial = materials.lit.handle;
+                }
             } break;
             case geometry::Geometry::GeometryType::LineSet: {
                 selectedMaterial = materials.unlit.handle;
