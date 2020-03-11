@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if defined(__APPLE__)
+#include "Menu.h"  // defines GUI_USE_NATIVE_MENUS
+
+#if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
 // See MenuMacOS.mm
 #else
-
-#include "Menu.h"
 
 #include "Theme.h"
 #include "Widget.h"
