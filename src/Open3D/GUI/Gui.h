@@ -56,6 +56,9 @@ struct Rect {
     bool Contains(const Point& pt) const;
 
     Rect UnionedWith(const Rect& r) const;
+
+    bool operator==(const Rect& other) const;
+    bool operator!=(const Rect& other) const;
 };
 
 enum class BorderShape { NONE = 0, RECT, ROUNDED_RECT };

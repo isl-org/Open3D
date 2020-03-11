@@ -24,10 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "Menu.h"  // defines GUI_USE_NATIVE_MENUS
+
+#if GUI_USE_NATIVE_MENUS
+
 #import "AppKit/AppKit.h"
 
 #include "Application.h"
-#include "Menu.h"
 
 #include <string>
 #include <vector>
@@ -170,3 +173,5 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
 
 }  // namespace gui
 }  // namespace open3d
+
+#endif  // GUI_USE_NATIVE_MENUS

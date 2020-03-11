@@ -28,6 +28,8 @@
 
 #include <memory>
 
+#define GUI_USE_NATIVE_MENUS 1
+
 namespace open3d {
 namespace gui {
 
