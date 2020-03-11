@@ -36,7 +36,6 @@
 #include "Open3D/GUI/FileDialog.h"
 #include "Open3D/GUI/Label.h"
 #include "Open3D/GUI/Layout.h"
-#include "Open3D/GUI/NumberEdit.h"
 #include "Open3D/GUI/SceneWidget.h"
 #include "Open3D/GUI/Slider.h"
 #include "Open3D/GUI/Theme.h"
@@ -197,6 +196,26 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
+struct SmartMode {
+    static bool PointcloudHasUniformColor(const geometry::PointCloud &pcd) {
+        if (!pcd.HasColors()) {
+            return true;
+        }
+
+        static const double e = 1.0 / 255.0;
+        static const double kSqEpsilon = Eigen::Vector3d(e, e, e).squaredNorm();
+        const auto &color = pcd.colors_[0];
+
+        for (const auto &c : pcd.colors_) {
+            if ((color - c).squaredNorm() > kSqEpsilon) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+
 std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
                                         const double min,
                                         const double max,
@@ -326,6 +345,11 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Combobox> wgtMaterialType;
 
         std::shared_ptr<gui::Slider> wgtPointSize;
+
+        struct SmartMode {
+            bool enabled = true;
+            bool checkUniformColor = true;
+        } smartMode;
 
         void SetMaterialSelected(const MaterialType type) {
             wgtMaterialType->SetSelectedIndex(type);
@@ -705,6 +729,23 @@ GuiVisualizer::GuiVisualizer(
 
     settings.wgtBase->AddChild(matGrid);
 
+    {
+        settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+        settings.wgtBase->AddChild(
+                std::make_shared<gui::Label>("> Smart mode"));
+
+        auto checkPcdColors =
+                std::make_shared<gui::Checkbox>("Check pointcloud colors");
+        checkPcdColors->SetOnChecked([this](const bool checked) {
+            impl_->settings.smartMode.checkUniformColor = checked;
+        });
+
+        settings.wgtBase->AddChild(checkPcdColors);
+
+        checkPcdColors->SetChecked(impl_->settings.smartMode.checkUniformColor);
+        checkPcdColors->SetEnabled(impl_->settings.smartMode.enabled);
+    }
+
     AddChild(settings.wgtBase);
 
     settings.wgtBase->SetVisible(false);
@@ -759,9 +800,16 @@ void GuiVisualizer::SetGeometry(
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
-                // NOTE: There would be a check for uniform color soon
                 if (pcd->HasColors()) {
                     selectedMaterial = materials.unlit.handle;
+
+                    const bool smartMode =
+                            impl_->settings.smartMode.enabled &&
+                            impl_->settings.smartMode.checkUniformColor;
+                    if (smartMode &&
+                        SmartMode::PointcloudHasUniformColor(*pcd)) {
+                        selectedMaterial = materials.lit.handle;
+                    }
                 } else {
                     selectedMaterial = materials.lit.handle;
                 }
