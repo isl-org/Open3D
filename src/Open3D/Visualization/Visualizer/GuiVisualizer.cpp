@@ -271,12 +271,12 @@ struct GuiVisualizer::Impl {
 
     struct LitMaterial {
         visualization::MaterialInstanceHandle handle;
-        Eigen::Vector3f baseColor = {0.75f, 0.75f, 0.75f};
+        Eigen::Vector3f baseColor = {0.9f, 0.9f, 0.9f};
         float metallic = 0.f;
         float roughness = 0.7;
         float reflectance = 0.5f;
-        float clearCoat = 0.f;
-        float clearCoatRoughness = 0.f;
+        float clearCoat = 0.2f;
+        float clearCoatRoughness = 0.2f;
         float anisotropy = 0.f;
         float pointSize = 3.f;
     };
