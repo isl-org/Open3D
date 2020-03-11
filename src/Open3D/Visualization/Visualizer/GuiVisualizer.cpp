@@ -111,9 +111,9 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
     return dlg;
 }
 
-std::shared_ptr<gui::Label> createBlackLabel(const char *text) {
+std::shared_ptr<gui::Label> createHelpLabel(const char *text) {
     auto label = std::make_shared<gui::Label>(text);
-    label->SetTextColor(gui::Color(0, 0, 0));
+    label->SetTextColor(gui::Color(1, 1, 1));
     return label;
 }
 
@@ -122,40 +122,40 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
 
     gui::Margins margins(theme.fontSize);
     auto layout = std::make_shared<gui::VGrid>(2, 0, margins);
-    layout->SetBackgroundColor(gui::Color(0, 0, 0, 0));
+    layout->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
 
-    layout->AddChild(createBlackLabel("Left-drag"));
-    layout->AddChild(createBlackLabel("Rotate camera"));
+    layout->AddChild(createHelpLabel("Left-drag"));
+    layout->AddChild(createHelpLabel("Rotate camera"));
 
-    layout->AddChild(createBlackLabel("Shift + left-drag"));
-    layout->AddChild(createBlackLabel("Forward/backward"));
-
-#if defined(__APPLE__)
-    layout->AddChild(createBlackLabel("Cmd + left-drag"));
-#else
-    layout->AddChild(createBlackLabel("Ctrl + left-drag"));
-#endif  // __APPLE__
-    layout->AddChild(createBlackLabel("Pan camera"));
+    layout->AddChild(createHelpLabel("Shift + left-drag    "));
+    layout->AddChild(createHelpLabel("Forward/backward"));
 
 #if defined(__APPLE__)
-    layout->AddChild(createBlackLabel("Opt + left-drag"));
+    layout->AddChild(createHelpLabel("Cmd + left-drag"));
 #else
-    layout->AddChild(createBlackLabel("Win + left-drag"));
+    layout->AddChild(createHelpLabel("Ctrl + left-drag"));
 #endif  // __APPLE__
-    layout->AddChild(createBlackLabel("Rotate around forward axis"));
+    layout->AddChild(createHelpLabel("Pan camera"));
 
 #if defined(__APPLE__)
-    layout->AddChild(createBlackLabel("Ctrl + left-drag"));
+    layout->AddChild(createHelpLabel("Opt + left-drag"));
 #else
-    layout->AddChild(createBlackLabel("Alt + left-drag"));
+    layout->AddChild(createHelpLabel("Win + left-drag"));
 #endif  // __APPLE__
-    layout->AddChild(createBlackLabel("Rotate directional light"));
+    layout->AddChild(createHelpLabel("Rotate around forward axis"));
 
-    layout->AddChild(createBlackLabel("Right-drag"));
-    layout->AddChild(createBlackLabel("Pan camera"));
+#if defined(__APPLE__)
+    layout->AddChild(createHelpLabel("Ctrl + left-drag"));
+#else
+    layout->AddChild(createHelpLabel("Alt + left-drag"));
+#endif  // __APPLE__
+    layout->AddChild(createHelpLabel("Rotate directional light"));
 
-    layout->AddChild(createBlackLabel("Middle-drag"));
-    layout->AddChild(createBlackLabel("Rotate directional light"));
+    layout->AddChild(createHelpLabel("Right-drag"));
+    layout->AddChild(createHelpLabel("Pan camera"));
+
+    layout->AddChild(createHelpLabel("Middle-drag"));
+    layout->AddChild(createHelpLabel("Rotate directional light"));
 
     return layout;
 }
@@ -284,7 +284,6 @@ struct GuiVisualizer::Impl {
     std::vector<visualization::GeometryHandle> geometryHandles;
 
     std::shared_ptr<gui::SceneWidget> scene;
-    std::shared_ptr<gui::Horiz> drawTime;
     std::shared_ptr<gui::VGrid> helpKeys;
     std::shared_ptr<gui::Menu> viewMenu;
 
@@ -473,9 +472,6 @@ GuiVisualizer::GuiVisualizer(
 
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
     drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
-    impl_->drawTime = std::make_shared<gui::Horiz>(0, gui::Margins(spacing, 0));
-    impl_->drawTime->SetBackgroundColor(gui::Color(0, 0, 0, 0));
-    impl_->drawTime->AddChild(drawTimeLabel);
 
     AddChild(scene);
 
@@ -751,8 +747,6 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtBase->SetVisible(false);
 
     // Other items
-    AddChild(impl_->drawTime);
-
     impl_->helpKeys = createHelpDisplay(this);
     impl_->helpKeys->SetVisible(false);
     AddChild(impl_->helpKeys);
@@ -857,14 +851,8 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     const auto em = theme.fontSize;
     impl_->scene->SetFrame(r);
 
-    // Draw time in lower right
-    auto pref = impl_->drawTime->CalcPreferredSize(theme);
-    impl_->drawTime->SetFrame(
-            gui::Rect(0, r.GetBottom() - pref.height, 5 * em, pref.height));
-    impl_->drawTime->Layout(theme);
-
-    // Draw time in upper left
-    pref = impl_->helpKeys->CalcPreferredSize(theme);
+    // Draw help keys HUD in upper left
+    const auto pref = impl_->helpKeys->CalcPreferredSize(theme);
     impl_->helpKeys->SetFrame(gui::Rect(0, r.y, pref.width, pref.height));
     impl_->helpKeys->Layout(theme);
 
