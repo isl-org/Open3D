@@ -10,8 +10,9 @@ import time
 import copy
 
 
-def visualize_non_blocking(vis):
-    vis.update_geometry()
+def visualize_non_blocking(vis, pcds):
+    for pcd in pcds:
+        vis.update_geometry(pcd)
     vis.poll_events()
     vis.update_renderer()
 
@@ -50,4 +51,4 @@ while True:
                 added[i] = False
                 print("Removing %d" % i)
 
-    visualize_non_blocking(vis)
+    visualize_non_blocking(vis, pcds)

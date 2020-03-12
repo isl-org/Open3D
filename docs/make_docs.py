@@ -41,6 +41,7 @@ import shutil
 import warnings
 import weakref
 from tempfile import mkdtemp
+import re
 
 
 def _create_or_clear_dir(dir_path):
@@ -62,22 +63,37 @@ class PyAPIDocsBuilder:
     ...
     """
 
-    def __init__(self, output_dir, c_module, c_module_relative):
+    def __init__(self, output_dir, module_names):
         self.output_dir = output_dir
-        self.c_module = c_module
-        self.c_module_relative = c_module_relative
+        self.module_names = module_names
         print("Generating *.rst Python API docs in directory: %s" %
               self.output_dir)
 
     def generate_rst(self):
         _create_or_clear_dir(self.output_dir)
 
-        main_c_module = importlib.import_module(self.c_module)
-        sub_module_names = sorted(
-            [obj[0] for obj in getmembers(main_c_module) if ismodule(obj[1])])
-        for sub_module_name in sub_module_names:
+        for module_name in self.module_names:
+            module = self._get_open3d_module(module_name)
             PyAPIDocsBuilder._generate_sub_module_class_function_docs(
-                sub_module_name, self.output_dir)
+                module_name, module, self.output_dir)
+
+    @staticmethod
+    def _get_open3d_module(full_module_name):
+        """Returns the module object for the given module path"""
+        import open3d  # make sure the root module is loaded
+        try:
+            # try to import directly. This will work for pure python submodules
+            module = importlib.import_module(full_module_name)
+            return module
+        except ImportError:
+            # traverse the module hierarchy of the root module.
+            # This code path is necessary for modules for which we manually
+            # define a specific module path (e.g. the modules defined with
+            # pybind).
+            current_module = open3d
+            for sub_module_name in full_module_name.split('.')[1:]:
+                current_module = getattr(current_module, sub_module_name)
+            return current_module
 
     @staticmethod
     def _generate_function_doc(sub_module_full_name, function_name,
@@ -110,12 +126,15 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _generate_sub_module_doc(sub_module_name, class_names, function_names,
-                                 sub_module_doc_path):
+    def _generate_sub_module_doc(
+            sub_module_full_name,
+            class_names,
+            function_names,
+            sub_module_doc_path,
+    ):
         # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
-        sub_module_full_name = "open3d.%s" % (sub_module_name,)
         out_string = ""
         out_string += sub_module_full_name
         out_string += "\n" + "-" * len(out_string)
@@ -154,10 +173,8 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _generate_sub_module_class_function_docs(sub_module_name, output_dir):
-        sub_module = importlib.import_module("open3d.open3d_pybind.%s" %
-                                             (sub_module_name,))
-        sub_module_full_name = "open3d.%s" % (sub_module_name,)
+    def _generate_sub_module_class_function_docs(sub_module_full_name,
+                                                 sub_module, output_dir):
         print("Generating docs for submodule: %s" % sub_module_full_name)
 
         # Class docs
@@ -183,8 +200,8 @@ class PyAPIDocsBuilder:
         # Submodule docs
         sub_module_doc_path = os.path.join(output_dir,
                                            sub_module_full_name + ".rst")
-        PyAPIDocsBuilder._generate_sub_module_doc(sub_module_name, class_names,
-                                                  function_names,
+        PyAPIDocsBuilder._generate_sub_module_doc(sub_module_full_name,
+                                                  class_names, function_names,
                                                   sub_module_doc_path)
 
 
@@ -199,15 +216,27 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, html_output_dir, is_release):
-        # Directory structure for the Open3D Python package:
-        # open3d
-        # - __init__.py
-        # - open3d.so  # Actual name depends on OS and Python version
-        self.c_module = "open3d.open3d_pybind"  # Points to the open3d.so
-        self.c_module_relative = "open3d"  # The relative module reference to open3d.so
+
+        # Get the modules for which we want to build the documentation.
+        # We use the modules listed in the index.rst file here.
+        self.documented_modules = self._get_module_names_from_index_rst()
+
+        # self.documented_modules = "open3d.open3d_pybind"  # Points to the open3d.so
+        # self.c_module_relative = "open3d"  # The relative module reference to open3d.so
         self.python_api_output_dir = "python_api"
         self.html_output_dir = html_output_dir
         self.is_release = is_release
+
+    @staticmethod
+    def _get_module_names_from_index_rst():
+        """Reads the modules of the python api from the index.rst"""
+        module_names = []
+        with open('index.rst', 'r') as f:
+            for line in f:
+                m = re.match('^\s*python_api/(.*)\s*$', line)
+                if m:
+                    module_names.append(m.group(1))
+        return module_names
 
     def run(self):
         self._gen_python_api_docs()
@@ -220,8 +249,8 @@ class SphinxDocsBuilder:
         """
         # self.python_api_output_dir cannot be a temp dir, since other
         # "*.rst" files reference it
-        pd = PyAPIDocsBuilder(self.python_api_output_dir, self.c_module,
-                              self.c_module_relative)
+        pd = PyAPIDocsBuilder(self.python_api_output_dir,
+                              self.documented_modules)
         pd.generate_rst()
 
     def _run_sphinx(self):

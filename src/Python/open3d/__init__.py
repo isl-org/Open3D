@@ -61,6 +61,9 @@ from open3d.core import SizeVector
 from open3d.core import Tensor
 from open3d.core import TensorList
 
+from open3d.open3d_pybind import NoneType
+none = NoneType()
+
 __version__ = '@PROJECT_VERSION@'
 
 if "@ENABLE_JUPYTER@" == "ON":

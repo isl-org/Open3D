@@ -35,10 +35,11 @@
 namespace open3d {
 namespace kernel {
 
-template <typename scalar_t>
+template <typename src_t, typename dst_t>
 static OPEN3D_HOST_DEVICE void CUDACopyElementKernel(const void* src,
                                                      void* dst) {
-    *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
+    *static_cast<dst_t*>(dst) =
+            static_cast<dst_t>(*static_cast<const src_t*>(src));
 }
 
 template <typename scalar_t>
@@ -80,7 +81,8 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
     // - src and dst have the same dtype
     // - at least one of src or dst is CUDA device
     SizeVector shape = src.GetShape();
-    Dtype dtype = src.GetDtype();
+    Dtype src_dtype = src.GetDtype();
+    Dtype dst_dtype = dst.GetDtype();
 
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
@@ -88,25 +90,28 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
     if (src_device.GetType() == Device::DeviceType::CUDA &&
         dst_device.GetType() == Device::DeviceType::CUDA) {
         if (src.IsContiguous() && dst.IsContiguous() &&
-            src.GetShape() == dst.GetShape()) {
+            src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
             // MemoryManager handles p2p and non-p2p device copy.
             MemoryManager::Memcpy(
                     dst.GetDataPtr(), dst_device, src.GetDataPtr(), src_device,
-                    DtypeUtil::ByteSize(dtype) * shape.NumElements());
+                    DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
         } else if (src_device == dst_device) {
             // For more optimized version, one can check if P2P from src to dst
             // is enabled, then put synchronization with streams on both src and
             // dst to wait for copy kernel to complete.
             CUDADeviceSwitcher switcher(src_device);
-            DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-                // TODO: in the future, we may want to allow automatic casting
-                Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer,
-                        // Need to wrap as extended CUDA lamba function
-                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
-                            CUDACopyElementKernel<scalar_t>(src, dst);
-                        });
+            Indexer indexer({src}, dst, DtypePolicy::NONE);
+            DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+                using src_t = scalar_t;
+                DISPATCH_DTYPE_TO_TEMPLATE(dst_dtype, [&]() {
+                    using dst_t = scalar_t;
+                    CUDALauncher::LaunchUnaryEWKernel(
+                            indexer,
+                            // Need to wrap as extended CUDA lambda function
+                            [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                                CUDACopyElementKernel<src_t, dst_t>(src, dst);
+                            });
+                });
             });
         } else {
             dst.CopyFrom(src.Contiguous().Copy(dst_device));
@@ -116,11 +121,12 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                src_device.GetType() == Device::DeviceType::CUDA &&
                        dst_device.GetType() == Device::DeviceType::CPU) {
         Tensor src_conti = src.Contiguous();  // No op if already contiguous
-        if (dst.IsContiguous() && src.GetShape() == dst.GetShape()) {
+        if (dst.IsContiguous() && src.GetShape() == dst.GetShape() &&
+            src_dtype == dst_dtype) {
             MemoryManager::Memcpy(
                     dst.GetDataPtr(), dst_device, src_conti.GetDataPtr(),
                     src_conti.GetDevice(),
-                    DtypeUtil::ByteSize(dtype) * shape.NumElements());
+                    DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
         } else {
             dst.CopyFrom(src.Contiguous().Copy(dst_device));
         }
@@ -147,7 +153,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         switch (op_code) {
             case UnaryEWOpCode::Sqrt:
                 assert_dtype_is_float(dtype);
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDASqrtElementKernel<scalar_t>(src, dst);
@@ -155,7 +161,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Sin:
                 assert_dtype_is_float(dtype);
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDASinElementKernel<scalar_t>(src, dst);
@@ -163,14 +169,14 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Cos:
                 assert_dtype_is_float(dtype);
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDACosElementKernel<scalar_t>(src, dst);
                         });
                 break;
             case UnaryEWOpCode::Neg:
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDANegElementKernel<scalar_t>(src, dst);
@@ -178,7 +184,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Exp:
                 assert_dtype_is_float(dtype);
-                CUDALauncher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDAExpElementKernel<scalar_t>(src, dst);

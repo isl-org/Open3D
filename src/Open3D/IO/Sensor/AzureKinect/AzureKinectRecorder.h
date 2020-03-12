@@ -45,18 +45,32 @@ class Image;
 
 namespace io {
 
+/// \class AzureKinectRecorder
+///
+/// AzureKinect recorder.
 class AzureKinectRecorder : public RGBDRecorder {
 public:
     AzureKinectRecorder(const AzureKinectSensorConfig& sensor_config,
                         size_t sensor_index);
     ~AzureKinectRecorder() override;
 
+    /// Initialize sensor.
     bool InitSensor() override;
+    /// Attempt to create and open an mkv file.
+    ///
+    /// \param filename Path to the mkv file.
     bool OpenRecord(const std::string& filename) override;
+    /// Close the recorded mkv file.
     bool CloseRecord() override;
+    /// Record a frame to mkv if flag is on and return an RGBD object.
+    ///
+    /// \param write Enable recording to mkv file.
+    /// \param enable_align_depth_to_color Enable aligning WFOV depth image to
+    /// the color image in visualizer.
     std::shared_ptr<geometry::RGBDImage> RecordFrame(
             bool write, bool enable_align_depth_to_color) override;
 
+    /// Check if the mkv file is created.
     bool IsRecordCreated() { return is_record_created_; }
 
 protected:

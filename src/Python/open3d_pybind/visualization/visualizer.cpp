@@ -75,19 +75,26 @@ void pybind_visualizer(py::module &m) {
                  "visible"_a = true)
             .def("destroy_window",
                  &visualization::Visualizer::DestroyVisualizerWindow,
-                 "Function to destroy a window")
+                 "Function to destroy a window. This function MUST be called "
+                 "from the main thread.")
             .def("register_animation_callback",
                  &visualization::Visualizer::RegisterAnimationCallback,
-                 "Function to register a callback function for animation",
+                 "Function to register a callback function for animation. The "
+                 "callback function returns if UpdateGeometry() needs to be "
+                 "run.",
                  "callback_func"_a)
             .def("run", &visualization::Visualizer::Run,
-                 "Function to activate the window")
+                 "Function to activate the window. This function will block "
+                 "the current thread until the window is closed.")
             .def("close", &visualization::Visualizer::Close,
                  "Function to notify the window to be closed")
             .def("reset_view_point", &visualization::Visualizer::ResetViewPoint,
                  "Function to reset view point")
             .def("update_geometry", &visualization::Visualizer::UpdateGeometry,
-                 "Function to update geometry")
+                 "Function to update geometry. This function must be called "
+                 "when geometry has been changed. Otherwise the behavior of "
+                 "Visualizer is undefined.",
+                 "geometry"_a)
             .def("update_renderer", &visualization::Visualizer::UpdateRender,
                  "Function to inform render needed to be updated")
             .def("poll_events", &visualization::Visualizer::PollEvents,
@@ -149,6 +156,15 @@ void pybind_visualizer(py::module &m) {
                  &visualization::VisualizerWithKeyCallback::RegisterKeyCallback,
                  "Function to register a callback function for a key press "
                  "event",
+                 "key"_a, "callback_func"_a)
+
+            .def("register_key_action_callback",
+                 &visualization::VisualizerWithKeyCallback::
+                         RegisterKeyActionCallback,
+                 "Function to register a callback function for a key action "
+                 "event. The callback function takes Visualizer, action and "
+                 "mods as input and returns a boolean indicating if "
+                 "UpdateGeometry() needs to be run.",
                  "key"_a, "callback_func"_a);
 
     py::class_<visualization::VisualizerWithEditing,
