@@ -48,6 +48,7 @@
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
@@ -811,8 +812,8 @@ GuiVisualizer::GuiVisualizer(
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
     settings.wgtPointSize = MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);
     settings.wgtPointSize->OnValueChanged = [this](double value) {
+        auto &renderer = GetRenderer();
         for (const auto &pair : impl_->geometryMaterials) {
-            auto &renderer = GetRenderer();
             renderer.ModifyMaterial(pair.second.lit.handle)
                     .SetParameter("pointSize", (float)value)
                     .Finish();
@@ -820,6 +821,13 @@ GuiVisualizer::GuiVisualizer(
                     .SetParameter("pointSize", (float)value)
                     .Finish();
         }
+
+        renderer.ModifyMaterial(FilamentResourceManager::kDepthMaterial)
+                .SetParameter("pointSize", (float)value)
+                .Finish();
+        renderer.ModifyMaterial(FilamentResourceManager::kNormalsMaterial)
+                .SetParameter("pointSize", (float)value)
+                .Finish();
     };
     matGrid->AddChild(settings.wgtPointSize);
 
