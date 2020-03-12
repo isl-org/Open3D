@@ -276,30 +276,30 @@ struct LightingProfile {
 };
 
 static const std::vector<LightingProfile> gLightingProfiles = {
-    {.name = "Brighter, up is +Y",
-     .iblIntensity = 100000,
-     .sunIntensity = 100000,
-     .sunDir = {0.577f, -0.577f, -0.577f}},
-    {.name = "Brighter, up is -Y",
-     .iblIntensity = 100000,
-     .sunIntensity = 100000,
-     .sunDir = {0.577f, 0.577f, 0.577f}},
-    {.name = "Brighter, up is +Z",
-     .iblIntensity = 100000,
-     .sunIntensity = 100000,
-     .sunDir = {0.577f, 0.577f, -0.577f}},
-    {.name = "Darker, up is +Y",
-     .iblIntensity = 75000,
-     .sunIntensity = 100000,
-     .sunDir = {0.577f, -0.577f, -0.577f}},
-    {.name = "Darker, up is -Y",
-     .iblIntensity = 75000,
-     .sunIntensity = 100000,
-     .sunDir = {0.577f, 0.577f, 0.577f}},
-    {.name = "Darker, up is +Z",
-     .iblIntensity = 75000,
-     .sunIntensity = 100000,
-     .sunDir = {0.577f, 0.577f, -0.577f}},
+        {.name = "Brighter, up is +Y",
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, -0.577f, -0.577f}},
+        {.name = "Brighter, up is -Y",
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, 0.577f}},
+        {.name = "Brighter, up is +Z",
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, -0.577f}},
+        {.name = "Darker, up is +Y",
+         .iblIntensity = 75000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, -0.577f, -0.577f}},
+        {.name = "Darker, up is -Y",
+         .iblIntensity = 75000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, 0.577f}},
+        {.name = "Darker, up is +Z",
+         .iblIntensity = 75000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, -0.577f}},
 };
 
 enum MenuId {
@@ -651,12 +651,13 @@ GuiVisualizer::GuiVisualizer(
         settings.wgtLightingProfile->AddItem(gLightingProfiles[i].name.c_str());
     }
     settings.wgtLightingProfile->SetSelectedIndex(defaultLightingProfileIdx);
-    settings.wgtLightingProfile->SetOnValueChanged([this](const char *, int index) {
-        this->impl_->SetLightingProfile(gLightingProfiles[index]);
-    });
+    settings.wgtLightingProfile->SetOnValueChanged(
+            [this](const char *, int index) {
+                this->impl_->SetLightingProfile(gLightingProfiles[index]);
+            });
 
     auto profileLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
-    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting"));
+    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting Profiles"));
     profileLayout->AddChild(settings.wgtLightingProfile);
     settings.wgtBase->AddChild(profileLayout);
     settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
@@ -729,9 +730,8 @@ GuiVisualizer::GuiVisualizer(
         }
     });
 
-    settings.wgtAmbientIntensity =
-            MakeSlider(gui::Slider::INT, 0.0, 150000.0,
-                       lightingProfile.iblIntensity);
+    settings.wgtAmbientIntensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
+                                              lightingProfile.iblIntensity);
     settings.wgtAmbientIntensity->OnValueChanged =
             [renderScene](double newValue) {
                 renderScene->SetIndirectLightIntensity(newValue);
