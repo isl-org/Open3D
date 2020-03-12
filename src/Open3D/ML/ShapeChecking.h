@@ -336,11 +336,29 @@ int64_t GetValue(DimX<TLeft, TRight, TOp> a) {
     return a.value();
 }
 
+template <class TLeft, class TRight, class TOp>
+int64_t GetValue(DimX<TLeft, TRight, TOp> a, int64_t unknown_dim_value) {
+    if (a.constant()) {
+        return a.value();
+    } else {
+        return unknown_dim_value;
+    }
+    return a.value();
+}
+
 inline int64_t GetValue(Dim a) { return a.value(); }
+
+inline int64_t GetValue(Dim a, int64_t unknown_dim_value) {
+    if (a.constant()) {
+        return a.value();
+    } else {
+        return unknown_dim_value;
+    }
+}
 
 inline std::string CreateDimXString() { return std::string(); }
 
-template <class TDimX, class... TArgs>
+template <class TDimX>
 std::string CreateDimXString(TDimX dimex) {
     return GetString(dimex);
 }
@@ -348,6 +366,38 @@ std::string CreateDimXString(TDimX dimex) {
 template <class TDimX, class... TArgs>
 std::string CreateDimXString(TDimX dimex, TArgs... args) {
     return GetString(dimex) + ", " + CreateDimXString(args...);
+}
+
+template <class TDimX>
+void CreateDimVector(std::vector<int64_t>& out,
+                     int64_t unknown_dim_value,
+                     TDimX dimex) {
+    out.push_back(GetValue(dimex, unknown_dim_value));
+}
+
+template <class TDimX, class... TArgs>
+void CreateDimVector(std::vector<int64_t>& out,
+                     int64_t unknown_dim_value,
+                     TDimX dimex,
+                     TArgs... args) {
+    out.push_back(GetValue(dimex, unknown_dim_value));
+    CreateDimVector(out, unknown_dim_value, args...);
+}
+
+template <class TDimX>
+std::vector<int64_t> CreateDimVector(int64_t unknown_dim_value, TDimX dimex) {
+    std::vector<int64_t> out;
+    CreateDimVector(out, unknown_dim_value, dimex);
+    return out;
+}
+
+template <class TDimX, class... TArgs>
+std::vector<int64_t> CreateDimVector(int64_t unknown_dim_value,
+                                     TDimX dimex,
+                                     TArgs... args) {
+    std::vector<int64_t> out;
+    CreateDimVector(out, unknown_dim_value, dimex, args...);
+    return out;
 }
 
 //
