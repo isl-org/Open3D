@@ -539,4 +539,3 @@ def test_advanced_index_set_mixed():
     o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = o3_fill_val
     np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = np_fill_val
     np.testing.assert_equal(o3_src.numpy(), np_src)
-    print(np_src)
