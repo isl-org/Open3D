@@ -359,7 +359,7 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
 
     ImGui::SetNextTreeNodeOpen(impl_->isOpen);
     if (ImGui::TreeNode(impl_->id.c_str())) {
-        Super::Draw(context);
+        result = Super::Draw(context);
         ImGui::TreePop();
         impl_->isOpen = true;
     } else {

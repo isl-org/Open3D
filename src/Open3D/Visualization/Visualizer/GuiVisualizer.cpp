@@ -535,6 +535,7 @@ GuiVisualizer::GuiVisualizer(
         auto settingsMenu = std::make_shared<gui::Menu>();
         settingsMenu->AddItem("Lighting & Materials", nullptr,
                               SETTINGS_LIGHT_AND_MATERIALS);
+        settingsMenu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
         menu->AddMenu("View", viewMenu);
@@ -906,8 +907,6 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtBase->AddChild(materials);
 
     AddChild(settings.wgtBase);
-
-    settings.wgtBase->SetVisible(false);
 
     // Other items
     impl_->helpKeys = createHelpDisplay(this);

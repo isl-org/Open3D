@@ -346,6 +346,13 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
     for (auto &kv : impl_->windows) {
         if (kv.second->IsActiveWindow()) {
             kv.second->OnMenuItemSelected(itemId);
+            // This is a menu selection that came from a native menu.
+            // We need to draw twice to ensure that any new dialog
+            // that the menu item may have displayed is properly laid out.
+            // (ImGUI can take up to two iterations to fully layout)
+            // If we post two expose events they get coalesced, but
+            // setting needsLayout forces two (for the reason given above).
+            kv.second->SetNeedsLayout();
             PostWindowEvent(kv.second.get(), SDL_WINDOWEVENT_EXPOSED);
             return;
         }
