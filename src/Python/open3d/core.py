@@ -315,10 +315,10 @@ class TensorList(open3d_pybind.TensorList):
         \int: return a Tensor
         '''
         if isinstance(index, int):
-            return cast_to_py_tensor(self.getindex)(index)
+            return cast_to_py_tensor(self._getindex)(index)
 
         elif isinstance(index, slice):
-            return cast_to_py_tensorlist(self.getslice)(
+            return cast_to_py_tensorlist(self._getslice)(
                 _to_o3d_tensor_key(index))
 
         elif isinstance(index, list) or isinstance(index, tuple):
@@ -326,7 +326,7 @@ class TensorList(open3d_pybind.TensorList):
                 if not isinstance(i, int):
                     raise ValueError(
                         'every element of the index list must be a int')
-            return cast_to_py_tensorlist(self.getindices)(o3d.SizeVector(index))
+            return cast_to_py_tensorlist(self._getindices)(o3d.SizeVector(index))
 
         else:
             raise ValueError('Unsupported index type')
@@ -337,16 +337,33 @@ class TensorList(open3d_pybind.TensorList):
         If \index is a list of ints, \value is correspondingly a TensorList.
         '''
         if isinstance(index, int) and isinstance(value, o3d.Tensor):
-            self.setindex(index, value)
+            self._setindex(index, value)
 
         elif isinstance(index, slice) and isinstance(value, o3d.TensorList):
-            self.setslice(_to_o3d_tensor_key(index), value)
+            self._setslice(_to_o3d_tensor_key(index), value)
 
         else:
             raise ValueError(
                 'Unsupported index type.'
                 'Use tensorlist.tensor() to assign value with advanced indexing'
             )
+
+    @cast_to_py_tensorlist
+    def __iadd__(self, other):
+        return super(TensorList, self).__iadd__(other)
+
+    @cast_to_py_tensorlist
+    def __add__(self, other):
+        return super(TensorList, self).__add__(other)
+
+    @cast_to_py_tensor
+    def tensor(self):
+        return super(TensorList, self).tensor()
+
+    @staticmethod
+    @cast_to_py_tensorlist
+    def concat(tl_a, tl_b):
+        return super(TensorList, TensorList).concat(tl_a, tl_b)
 
     @staticmethod
     @cast_to_py_tensorlist
