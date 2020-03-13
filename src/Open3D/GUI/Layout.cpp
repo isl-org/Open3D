@@ -26,7 +26,14 @@
 
 #include "Layout.h"
 
+#include "Theme.h"
+#include "Util.h"
+
+#include <imgui.h>
+
 #include <algorithm>
+#include <cmath>
+#include <sstream>
 
 namespace open3d {
 namespace gui {
@@ -159,6 +166,8 @@ Layout1D::Layout1D(Dir dir,
 
 Layout1D::~Layout1D() {}
 
+Margins& Layout1D::GetMutableMargins() { return impl_->margins; }
+
 Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     int minor;
     std::vector<int> major =
@@ -274,6 +283,98 @@ Vert::Vert(int spacing,
 
 Vert::~Vert() {}
 
+// ----------------------------------------------------------------------------
+struct CollapsableVert::Impl {
+    std::string id;
+    std::string text;
+    bool isOpen = true;
+};
+
+CollapsableVert::CollapsableVert(const char* text)
+    : CollapsableVert(text, 0, Margins()) {}
+
+CollapsableVert::CollapsableVert(const char* text,
+                                 int spacing,
+                                 const Margins& margins /*= Margins()*/)
+    : Vert(spacing, margins), impl_(std::make_unique<CollapsableVert::Impl>()) {
+    static int gNextId = 1;
+
+    impl_->text = text;
+
+    std::stringstream s;
+    s << text << "##collapsing" << gNextId++;
+    impl_->id = s.str();
+}
+
+CollapsableVert::~CollapsableVert() {}
+
+void CollapsableVert::SetIsOpen(bool isOpen) { impl_->isOpen = isOpen; }
+
+Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
+    auto* font = ImGui::GetFont();
+    auto padding = ImGui::GetStyle().FramePadding;
+    int textHeight =
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
+    int textWidth = std::ceil(font->CalcTextSizeA(theme.fontSize, FLT_MAX,
+                                                  FLT_MAX, impl_->text.c_str())
+                                      .x);
+
+    auto pref = Super::CalcPreferredSize(theme);
+    if (!impl_->isOpen) {
+        pref.height = 0;
+    }
+
+    return Size(std::max(textWidth, pref.width), textHeight + pref.height);
+}
+
+void CollapsableVert::Layout(const Theme& theme) {
+    auto padding = ImGui::GetStyle().FramePadding;
+    int textHeight =
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
+
+    auto& margins = GetMutableMargins();
+    auto origTop = margins.top;
+    margins.top = origTop + textHeight;
+
+    Super::Layout(theme);
+
+    margins.top = origTop;
+}
+
+Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
+    auto result = Widget::DrawResult::NONE;
+    bool oldIsOpen = impl_->isOpen;
+
+    auto& frame = GetFrame();
+    ImGui::SetCursorPos(
+            ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
+    ImGui::PushItemWidth(frame.width);
+
+    auto padding = ImGui::GetStyle().FramePadding;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, padding.y));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
+                          util::colorToImgui(context.theme.buttonHoverColor));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive,
+                          util::colorToImgui(context.theme.buttonActiveColor));
+
+    ImGui::SetNextTreeNodeOpen(impl_->isOpen);
+    if (ImGui::TreeNode(impl_->id.c_str())) {
+        Super::Draw(context);
+        ImGui::TreePop();
+        impl_->isOpen = true;
+    } else {
+        impl_->isOpen = false;
+    }
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
+    ImGui::PopItemWidth();
+
+    if (impl_->isOpen != oldIsOpen) {
+        return DrawResult::RELAYOUT;
+    }
+    return result;
+}
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Horiz::MakeFixed(int size) {
     return std::make_shared<Layout1D::Fixed>(size, HORIZ);

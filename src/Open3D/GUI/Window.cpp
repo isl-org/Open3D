@@ -390,6 +390,8 @@ void Window::Show(bool vis /*= true*/) {
 
 void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
+void Window::SetNeedsLayout() { impl_->needsLayout = true; }
+
 void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
 
 bool Window::IsActiveWindow() const {
@@ -515,7 +517,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
 }
 }  // namespace
 
-Window::DrawResult Window::OnDraw(float dtSec) {
+Widget::DrawResult Window::OnDraw(float dtSec) {
     // These are here to provide fast unique window names. If you find yourself
     // needing more than a handful, you should probably be using a container
     // of some sort (see Layout.h).
@@ -524,6 +526,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
             "win8",  "win9",  "win10", "win11", "win12", "win13", "win14",
             "win15", "win16", "win17", "win18", "win19", "win20"};
 
+    bool needsLayout = false;
     bool needsRedraw = false;
 
     // Run the deferred callbacks that need to happen outside a draw
@@ -574,10 +577,10 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     // Layout if necessary.  This must happen within ImGui setup so that widgets
     // can query font information.
-    auto& theme = this->impl_->theme;
-    if (this->impl_->needsLayout) {
-        this->Layout(theme);
-        // needsLayout is cleared by the caller, DrawOnce()
+    auto& theme = impl_->theme;
+    if (impl_->needsLayout) {
+        Layout(theme);
+        impl_->needsLayout = false;
     }
 
     auto size = GetSize();
@@ -591,9 +594,12 @@ Window::DrawResult Window::OnDraw(float dtSec) {
         if (!child->IsVisible()) {
             continue;
         }
-        if (DrawChild(dc, winNames[winIdx++], child, drawMode) !=
-            Widget::DrawResult::NONE) {
+        auto result = DrawChild(dc, winNames[winIdx++], child, drawMode);
+        if (result != Widget::DrawResult::NONE) {
             needsRedraw = true;
+        }
+        if (result == Widget::DrawResult::RELAYOUT) {
+            needsLayout = true;
         }
     }
 
@@ -633,20 +639,30 @@ Window::DrawResult Window::OnDraw(float dtSec) {
 
     impl_->renderer->EndFrame();
 
-    return (needsRedraw ? REDRAW : NONE);
+    if (needsLayout) {
+        return Widget::DrawResult::RELAYOUT;
+    } else if (needsRedraw) {
+        return Widget::DrawResult::REDRAW;
+    } else {
+        return Widget::DrawResult::NONE;
+    }
 }
 
 Window::DrawResult Window::DrawOnce(float dtSec) {
     auto t0 = SDL_GetPerformanceCounter();
 
-    auto needsRedraw = OnDraw(dtSec);
+    bool neededLayout = impl_->needsLayout;
+
+    auto result = OnDraw(dtSec);
+    if (result == Widget::DrawResult::RELAYOUT) {
+        impl_->needsLayout = true;
+    }
 
     // ImGUI can take two frames to do its layout, so if we did a layout
     // redraw a second time. This helps prevent a brief red flash when the
     // window first appears, as well as corrupted images if the
     // window initially appears underneath the mouse.
-    if (impl_->needsLayout) {
-        impl_->needsLayout = false;
+    if (neededLayout || impl_->needsLayout) {
         OnDraw(0.001);
     }
 
@@ -654,7 +670,7 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
     double freq = double(SDL_GetPerformanceFrequency());
     impl_->lastFrameTime = double(t1 - t0) / freq;
 
-    return needsRedraw;
+    return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
 }
 
 void Window::OnResize() {

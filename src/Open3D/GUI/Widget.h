@@ -53,7 +53,7 @@ class Widget {
     friend class Window;
 
 public:
-    enum class DrawResult { NONE, REDRAW };
+    enum class DrawResult { NONE, REDRAW, RELAYOUT };
 
     Widget();
     explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
