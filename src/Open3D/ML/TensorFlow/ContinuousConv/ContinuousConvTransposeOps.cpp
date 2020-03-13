@@ -31,7 +31,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DContinuousConv")
+REGISTER_OP("Open3DContinuousConvTranspose")
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")
@@ -42,41 +42,55 @@ REGISTER_OP("Open3DContinuousConv")
         .Attr("interpolation: {'linear', 'linear_border', 'nearest_neighbor'} "
               "= 'linear'")
         .Attr("max_temp_mem_MB: int = 64")
+        .Attr("debug: bool = false")
         .Input("filters: TReal")        // [depth, height, width, in_ch, out_ch]
         .Input("out_positions: TReal")  // [num_points_out, 3]
-        .Input("extents: TReal")        // [num_points_out, 3]
-        .Input("offset: TReal")         // [3]
-        .Input("inp_positions: TReal")  // [num_points_in, 3]
-        .Input("inp_features: TReal")   // [num_points_in, in_ch]
-        .Input("inp_importance: TReal")        // [num_points_in]
-        .Input("neighbors_index: TIndex")      // [?]
-        .Input("neighbors_importance: TReal")  // [?]
-        .Input("neighbors_row_splits: int64")  // [num_points_out+1]
-        .Output("out_features : TReal")        // [num_points_out, out_ch]
+        .Input("out_importance: TReal")                // [num_points_out]
+        .Input("extents: TReal")                       // [num_points_in, 3]
+        .Input("offset: TReal")                        // [3]
+        .Input("inp_positions: TReal")                 // [num_points_in, 3]
+        .Input("inp_features: TReal")                  // [num_points_in, in_ch]
+        .Input("inp_neighbors_index: TIndex")          // [?]
+        .Input("inp_neighbors_importance_sum: TReal")  // [num_points_in]
+        .Input("inp_neighbors_row_splits: int64")      // [num_points_in+1]
+        .Input("neighbors_index: TIndex")              // [?]
+        .Input("neighbors_importance: TReal")          // [?]
+        .Input("neighbors_row_splits: int64")          // [num_points_out+1]
+        .Output("out_features : TReal")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
+
             using namespace ::tensorflow::shape_inference;
-            ShapeHandle filters_shape, out_positions_shape, extents_shape,
-                    offset_shape, inp_positions_shape, inp_features_shape,
-                    inp_importance_shape, neighbors_index_shape,
-                    neighbors_importance_shape, neighbors_row_splits_shape;
+            ShapeHandle filters_shape, out_positions_shape,
+                    out_importance_shape, extents_shape, offset_shape,
+                    inp_positions_shape, inp_features_shape,
+                    inp_neighbors_importance_sum_shape,
+                    inp_neighbors_index_shape, inp_neighbors_row_splits_shape,
+                    neighbors_index_shape, neighbors_importance_shape,
+                    neighbors_row_splits_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 5, &filters_shape));
             TF_RETURN_IF_ERROR(
                     c->WithRank(c->input(1), 2, &out_positions_shape));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 2, &extents_shape));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 1, &offset_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(4), 2, &inp_positions_shape));
+                    c->WithRank(c->input(2), 1, &out_importance_shape));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 2, &extents_shape));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(4), 1, &offset_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(5), 2, &inp_features_shape));
+                    c->WithRank(c->input(5), 2, &inp_positions_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(6), 1, &inp_importance_shape));
+                    c->WithRank(c->input(6), 2, &inp_features_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(7), 1, &neighbors_index_shape));
+                    c->WithRank(c->input(7), 1, &inp_neighbors_index_shape));
+            TF_RETURN_IF_ERROR(c->WithRank(
+                    c->input(8), 1, &inp_neighbors_importance_sum_shape));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(9), 1,
+                                           &inp_neighbors_row_splits_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(8), 1, &neighbors_importance_shape));
+                    c->WithRank(c->input(10), 1, &neighbors_index_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(9), 1, &neighbors_row_splits_shape));
+                    c->WithRank(c->input(11), 1, &neighbors_importance_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(12), 1, &neighbors_row_splits_shape));
 
             //
             // check if dimensions make sense between tensors
@@ -89,6 +103,24 @@ REGISTER_OP("Open3DContinuousConv")
                         c->Dim(neighbors_row_splits_shape, 0), 1, &num_out));
                 TF_RETURN_IF_ERROR(
                         c->Merge(c->Dim(out_positions_shape, 0), num_out, &d));
+            }
+
+            if (c->RankKnown(inp_positions_shape) &&
+                c->RankKnown(inp_neighbors_row_splits_shape)) {
+                DimensionHandle d;
+                DimensionHandle num_inp;
+                TF_RETURN_IF_ERROR(
+                        c->Subtract(c->Dim(inp_neighbors_row_splits_shape, 0),
+                                    1, &num_inp));
+                TF_RETURN_IF_ERROR(
+                        c->Merge(c->Dim(inp_positions_shape, 0), num_inp, &d));
+            }
+
+            if (c->RankKnown(inp_neighbors_index_shape) &&
+                c->RankKnown(neighbors_index_shape)) {
+                ShapeHandle s;
+                TF_RETURN_IF_ERROR(c->Merge(inp_neighbors_index_shape,
+                                            neighbors_index_shape, &s));
             }
 
             if (c->RankKnown(inp_positions_shape) &&
@@ -155,7 +187,7 @@ REGISTER_OP("Open3DContinuousConv")
             return Status::OK();
         })
         .Doc(R"doc(
-Continuous convolution of two pointclouds.
+Continuous tranpose convolution of two pointclouds.
 
 align_corners:
   If True the outer voxel centers of the filter grid are aligned with the boundary of the spatial shape.
@@ -175,8 +207,8 @@ coordinate_mapping:
 
 
 normalize:
-  If True the output feature values will be normalized using the sum for 
-  'neighbors_importance' for each output point.  
+  If True the input feature values will be normalized using 
+  'inp_neighbors_importance_sum'. 
 
 
 interpolation:
@@ -203,8 +235,17 @@ out_positions:
   The coordinates for each point is a vector with format [x,y,z].
 
 
+out_positions:
+  A 1D tensor with the 3D point positions of each output point.
+  The coordinates for each point is a vector with format [x,y,z].
+
+out_importance:
+  An optional scalar importance for each output point. The output features of 
+  each point will be multiplied with the corresponding value. 
+  The shape is [num input points]. Use a zero length Tensor to disable.
+
 extents:
-  The extent defines the spatial size of the filter for each output point. 
+  The extent defines the spatial size of the filter for each input point. 
   It is a 2D vector of the form [[x_size, y_size, z_size], ..].
   For 'ball to cube' coordinate mappings the extent defines the bounding box
   of the ball.
@@ -226,10 +267,20 @@ inp_features:
   A 2D tensor which stores a feature vector for each input point.
 
 
-inp_importance:
-  An optional scalar importance for each input point. The features of each point
-  will be multiplied with the corresponding value. The shape is [num input points].
-  Use a zero length Tensor to disable.
+inp_neighbors_index:
+  The inp_neighbors_index stores a list of indices of neighbors for each input point as nested lists.
+  The start and end of each list can be computed using 'inp_neighbors_row_splits'.
+
+
+inp_neighbors_importance_sum:
+  Tensor of the same shape as 'inp_positions'. This is the sum of the values in 
+  'neighbors_importance' for each input point.
+
+
+inp_neighbors_row_splits:
+  The exclusive prefix sum of the neighbor count for the input points including
+  the total neighbor count as the last element. The size of this array is the 
+  number of input points + 1.
 
 
 neighbors_index:
@@ -239,8 +290,7 @@ neighbors_index:
 
 neighbors_importance:
   Tensor of the same shape as 'neighbors_index' with a scalar value that is used to scale
-  the features of each neighbor. Use a zero length Tensor to weigh each neighbor
-  with 1.
+  the features of each neighbor.
 
 
 neighbors_row_splits:
