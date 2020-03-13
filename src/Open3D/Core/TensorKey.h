@@ -30,6 +30,8 @@
 
 namespace open3d {
 
+class Tensor;  // Avoids circular include
+
 class NoneType {};
 
 extern NoneType None;
@@ -50,39 +52,26 @@ extern NoneType None;
 /// ```
 class TensorKey {
 public:
-    enum class TensorKeyMode { Index, Slice };
+    enum class TensorKeyMode { Index, Slice, IndexTensor };
 
-    /// Construct an indexing TensorKey
-    static TensorKey Index(int64_t index) {
-        return TensorKey(TensorKeyMode::Index, index, 0, 0, 0, false, false,
-                         false);
-    }
+    /// Construct an TensorKeyMode::Index type TensorKey.
+    /// E.g. b = a[3]
+    static TensorKey Index(int64_t index);
 
-    /// Construct a slicing TensorKey
-    static TensorKey Slice(int64_t start, int64_t stop, int64_t step) {
-        return Slice(start, stop, step, false, false, false);
-    }
-    static TensorKey Slice(int64_t start, int64_t stop, NoneType step) {
-        return Slice(start, stop, 0, false, false, true);
-    }
-    static TensorKey Slice(int64_t start, NoneType stop, int64_t step) {
-        return Slice(start, 0, step, false, true, false);
-    }
-    static TensorKey Slice(int64_t start, NoneType stop, NoneType step) {
-        return Slice(start, 0, 0, false, true, true);
-    }
-    static TensorKey Slice(NoneType start, int64_t stop, int64_t step) {
-        return Slice(0, stop, step, true, false, false);
-    }
-    static TensorKey Slice(NoneType start, int64_t stop, NoneType step) {
-        return Slice(0, stop, 0, true, false, true);
-    }
-    static TensorKey Slice(NoneType start, NoneType stop, int64_t step) {
-        return Slice(0, 0, step, true, true, false);
-    }
-    static TensorKey Slice(NoneType start, NoneType stop, NoneType step) {
-        return Slice(0, 0, 0, true, true, true);
-    }
+    /// Construct an TensorKeyMode::Slice type TensorKey.
+    /// E.g. b = a[0:100:2]
+    static TensorKey Slice(int64_t start, int64_t stop, int64_t step);
+    static TensorKey Slice(int64_t start, int64_t stop, NoneType step);
+    static TensorKey Slice(int64_t start, NoneType stop, int64_t step);
+    static TensorKey Slice(int64_t start, NoneType stop, NoneType step);
+    static TensorKey Slice(NoneType start, int64_t stop, int64_t step);
+    static TensorKey Slice(NoneType start, int64_t stop, NoneType step);
+    static TensorKey Slice(NoneType start, NoneType stop, int64_t step);
+    static TensorKey Slice(NoneType start, NoneType stop, NoneType step);
+
+    /// Construct an TensorKeyMode::IndexTensor type TensorKey (advnced
+    /// indexing).
+    static TensorKey IndexTensor(const Tensor& index_tensor);
 
     /// Getters will check the TensorKeyMode
     TensorKeyMode GetMode() const { return mode_; }
@@ -91,30 +80,38 @@ public:
         AssertMode(TensorKeyMode::Index);
         return index_;
     }
+
     int64_t GetStart() const {
         AssertMode(TensorKeyMode::Slice);
         return start_;
     }
+
     int64_t GetStop() const {
         AssertMode(TensorKeyMode::Slice);
         return stop_;
     }
+
     int64_t GetStep() const {
         AssertMode(TensorKeyMode::Slice);
         return step_;
     }
+
     bool GetStartIsNone() const {
         AssertMode(TensorKeyMode::Slice);
         return start_is_none_;
     }
+
     bool GetStopIsNone() const {
         AssertMode(TensorKeyMode::Slice);
         return stop_is_none_;
     }
+
     bool GetStepIsNone() const {
         AssertMode(TensorKeyMode::Slice);
         return step_is_none_;
     }
+
+    std::shared_ptr<Tensor> GetIndexTensor() const;
 
     /// When dim_size is know, convert the slice object such that
     /// start_is_none_ == stop_is_none_ == step_is_none_ == false
@@ -124,12 +121,7 @@ public:
     /// E.g. if t.shape == (5,), t[1:]:
     ///      before compute: Slice(   1, None, None)
     ///      after compute : Slice(   1,    5,    1)
-    TensorKey UpdateWithDimSize(int64_t dim_size) const {
-        AssertMode(TensorKeyMode::Slice);
-        return TensorKey(TensorKeyMode::Slice, 0, start_is_none_ ? 0 : start_,
-                         stop_is_none_ ? dim_size : stop_,
-                         step_is_none_ ? 1 : step_, false, false, false);
-    }
+    TensorKey UpdateWithDimSize(int64_t dim_size) const;
 
 protected:
     /// The fully specifiec slice factory shall not be called directly.
@@ -138,10 +130,7 @@ protected:
                            int64_t step,
                            bool start_is_none,
                            bool stop_is_none,
-                           bool step_is_none) {
-        return TensorKey(TensorKeyMode::Slice, 0, start, stop, step,
-                         start_is_none, stop_is_none, step_is_none);
-    }
+                           bool step_is_none);
 
     /// The fully specified constructor shall not be called directly. Use the
     /// factory functions instead.
@@ -152,15 +141,8 @@ protected:
               int64_t step,
               bool start_is_none,
               bool stop_is_none,
-              bool step_is_none)
-        : mode_(mode),
-          index_(index),
-          start_(start),
-          stop_(stop),
-          step_(step),
-          start_is_none_(start_is_none),
-          stop_is_none_(stop_is_none),
-          step_is_none_(step_is_none){};
+              bool step_is_none,
+              const Tensor& index_tensor);
 
     void AssertMode(TensorKeyMode mode) const {
         if (mode != mode_) {
@@ -182,6 +164,11 @@ public:
     bool start_is_none_ = false;
     bool stop_is_none_ = false;
     bool step_is_none_ = false;
+
+    /// Properties for TensorKeyMode::IndexTensor.
+    /// To avoid circular include, the pointer type is used. The index_tensor is
+    /// shallow-copied when the TensorKey constructor is called.
+    std::shared_ptr<Tensor> index_tensor_;
 };
 
 };  // namespace open3d

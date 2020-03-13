@@ -59,6 +59,14 @@ def _to_o3d_tensor_key(key):
             o3d.none if key.start == None else key.start,
             o3d.none if key.stop == None else key.stop,
             o3d.none if key.step == None else key.step)
+    elif isinstance(key, (tuple, list)):
+        key = np.array(key).astype(np.int64)
+        return o3d.open3d_pybind.TensorKey.index_tensor(Tensor(key))
+    elif isinstance(key, np.ndarray):
+        key = key.astype(np.int64)
+        return o3d.open3d_pybind.TensorKey.index_tensor(Tensor(key))
+    elif isinstance(key, Tensor):
+        return o3d.open3d_pybind.TensorKey.index_tensor(key)
     else:
         raise TypeError(f"Invalid key type {type(key)}.")
 
@@ -83,10 +91,10 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def __getitem__(self, key):
         t = self
-        if isinstance(key, tuple) or isinstance(key, list):
-            t = super(Tensor, self)._getitem_vector(
-                [_to_o3d_tensor_key(k) for k in key])
-        elif isinstance(key, int) or isinstance(key, slice):
+        if isinstance(key, tuple):
+            o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
+            t = super(Tensor, self)._getitem_vector(o3d_tensor_keys)
+        elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
             t = super(Tensor, self)._getitem(_to_o3d_tensor_key(key))
         else:
             raise TypeError(f"Invalid type {type(key)} for getitem.")
@@ -94,8 +102,13 @@ class Tensor(open3d_pybind.Tensor):
 
     @cast_to_py_tensor
     def __setitem__(self, key, value):
-        t = self.__getitem__(key)
-        super(Tensor, t)._setitem(value)
+        if isinstance(key, tuple):
+            o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
+            super(Tensor, self)._setitem_vector(o3d_tensor_keys, value)
+        elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
+            super(Tensor, self)._setitem(_to_o3d_tensor_key(key), value)
+        else:
+            raise TypeError(f"Invalid type {type(key)} for getitem.")
         return self
 
     @cast_to_py_tensor

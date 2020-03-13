@@ -144,7 +144,11 @@ public:
         return *this;
     }
 
-    /// Pythonic __getitem__ for tensor, returning a new view.
+    /// Pythonic __getitem__ for tensor.
+    ///
+    /// Returns a view of the original tensor, if TensorKey is
+    /// TensorKeyMode::Index or TensorKeyMode::Slice. Returns a copy if the
+    /// TensorKey contains TensorKeyMode::IndexTensor (advanced indexing).
     ///
     /// For example, in numpy:
     /// ```python
@@ -161,7 +165,11 @@ public:
     /// ```
     Tensor GetItem(const TensorKey& tk) const;
 
-    /// Pythonic __getitem__ for tensor, returning a new view.
+    /// Pythonic __getitem__ for tensor.
+    ///
+    /// Returns a view of the original tensor, if TensorKey only contains
+    /// TensorKeyMode::Index or TensorKeyMode::Slice. Returns a copy if the
+    /// TensorKey contains IndexTensor (advanced indexing).
     ///
     /// For example, in numpy:
     /// ```python
@@ -322,16 +330,6 @@ public:
     ///
     /// We use the Numpy advanced indexing symnatics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
-    ///
-    /// Note: Only support 1D index tensors.
-    /// Note: Only support advanced indices are all next to each other. E.g.
-    /// ```
-    /// A = np.ones((10, 20, 30, 40, 50))
-    /// A[:, [1, 2], [2, 3], :, :]  # Supported,
-    ///                               output_shape: [10, 2, 40, 50]
-    ///                               slice_map:    [0, -1, 3, 4]
-    /// A[:, [1, 2], :, [2, 3], :]  # No suport, output_shape: [2, 10, 30, 50]
-    ///                             # For this case, a transpose op is necessary
     /// ```
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
 

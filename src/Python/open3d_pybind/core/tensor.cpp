@@ -227,17 +227,18 @@ void pybind_core_tensor(py::module& m) {
     });
 
     tensor.def("_getitem_vector",
-               [](const Tensor& tensor, std::vector<TensorKey> tks) {
+               [](const Tensor& tensor, const std::vector<TensorKey>& tks) {
                    return tensor.GetItem(tks);
                });
 
-    // Only need to bind the "set everything" case.
-    // In Python, __setitem__(self, key, value) is decpomposed to
-    // t = self.__getitem__(key)
-    // t[:] = value
-    tensor.def("_setitem", [](Tensor& tensor, const Tensor& value) {
-        return tensor.SetItem(value);
-    });
+    tensor.def("_setitem",
+               [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
+                   return tensor.SetItem(tk, value);
+               });
+
+    tensor.def("_setitem_vector",
+               [](Tensor& tensor, const std::vector<TensorKey>& tks,
+                  const Tensor& value) { return tensor.SetItem(tks, value); });
 
     // Casting
     tensor.def("to", &Tensor::To);

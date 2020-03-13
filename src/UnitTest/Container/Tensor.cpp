@@ -477,6 +477,77 @@ TEST_P(TensorPermuteDevices, GetItem) {
               std::vector<float>({12, 14, 16, 18, 20, 22}));
 }
 
+TEST_P(TensorPermuteDevices, GetItemAdvancedIndexing) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {24}, Dtype::Float32, device);
+
+    // t_1 = t[[0, 1, 1, 2, 3, 5, 8, 13, 21]]
+    Tensor index_tensor(std::vector<int64_t>{0, 1, 1, 2, 3, 5, 8, 13, 21}, {9},
+                        Dtype::Int64, device);
+    Tensor t_1 = t.GetItem(TensorKey::IndexTensor(index_tensor));
+    EXPECT_EQ(t_1.GetShape(), SizeVector({9}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 1, 2, 3, 5, 8, 13, 21}));
+}
+
+TEST_P(TensorPermuteDevices, GetItemAdvancedIndexingMixed) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t_1 = t[1, 0:2, [1, 2]]
+    Tensor index_tensor(std::vector<int64_t>{1, 2}, {2}, Dtype::Int64, device);
+
+    Tensor t_1 = t.GetItem({TensorKey::Index(1), TensorKey::Slice(0, 2, None),
+                            TensorKey::IndexTensor(index_tensor)});
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 2}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({2, 1}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({13, 17, 14, 18}));
+}
+
+TEST_P(TensorPermuteDevices, SetItemAdvancedIndexing) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {24}, Dtype::Float32, device);
+
+    // t[[1, 3]] = np.array([100, 300])
+    Tensor index_tensor(std::vector<int64_t>{1, 3}, {2}, Dtype::Int64, device);
+    Tensor fill_tensor(std::vector<float>{100, 300}, {2}, Dtype::Float32,
+                       device);
+    t.SetItem(TensorKey::IndexTensor(index_tensor), fill_tensor);
+    EXPECT_EQ(t.ToFlatVector<float>(),
+              std::vector<float>({0,  100, 2,  300, 4,  5,  6,  7,
+                                  8,  9,   10, 11,  12, 13, 14, 15,
+                                  16, 17,  18, 19,  20, 21, 22, 23}));
+}
+
+TEST_P(TensorPermuteDevices, SetItemAdvancedIndexingMixed) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t[1, 0:2, [1, 2]] = np.array([[100, 200], [300, 400]])
+    Tensor index_tensor(std::vector<int64_t>{1, 2}, {2}, Dtype::Int64, device);
+    Tensor fill_tensor(std::vector<float>{100, 200, 300, 400}, {2, 2},
+                       Dtype::Float32, device);
+    t.SetItem({TensorKey::Index(1), TensorKey::Slice(0, 2, None),
+               TensorKey::IndexTensor(index_tensor)},
+              fill_tensor);
+    EXPECT_EQ(t.ToFlatVector<float>(),
+              std::vector<float>({0,  1,   2,   3,  4,  5,   6,   7,
+                                  8,  9,   10,  11, 12, 100, 300, 15,
+                                  16, 200, 400, 19, 20, 21,  22,  23}));
+}
+
 TEST_P(TensorPermuteDevices, SliceAssign) {
     Device device = GetParam();
 
