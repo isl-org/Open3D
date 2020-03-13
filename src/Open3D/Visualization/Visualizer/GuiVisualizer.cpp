@@ -545,7 +545,7 @@ GuiVisualizer::GuiVisualizer(
         viewMenu->SetEnabled(VIEW_MESH, false);
         impl_->viewMenu = viewMenu;
         auto helpMenu = std::make_shared<gui::Menu>();
-        helpMenu->AddItem("Show Keys", nullptr, HELP_KEYS);
+        helpMenu->AddItem("Show Controls", nullptr, HELP_KEYS);
         helpMenu->AddSeparator();
         helpMenu->AddItem("About", nullptr, HELP_ABOUT);
         helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
@@ -557,7 +557,13 @@ GuiVisualizer::GuiVisualizer(
         menu->AddMenu("File", fileMenu);
         menu->AddMenu("View", viewMenu);
         menu->AddMenu("Settings", settingsMenu);
+#if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
+        // macOS adds a special search item to menus named "Help",
+        // so add a space to avoid that.
+        menu->AddMenu("Help ", helpMenu);
+#else
         menu->AddMenu("Help", helpMenu);
+#endif
         gui::Application::GetInstance().SetMenubar(menu);
     }
 
