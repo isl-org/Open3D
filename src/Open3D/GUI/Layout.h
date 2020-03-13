@@ -81,6 +81,9 @@ public:
         Size CalcPreferredSize(const Theme& theme) const override;
     };
 
+protected:
+    Margins& GetMutableMargins();
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
@@ -99,6 +102,29 @@ public:
          const Margins& margins,
          const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Vert();
+};
+
+class CollapsableVert : public Vert {
+    using Super = Vert;
+public:
+    CollapsableVert(const char *text);
+    CollapsableVert(const char *text, int spacing,
+                    const Margins& margins = Margins());
+    virtual ~CollapsableVert();
+
+    // You will need to make sure the window knows it needs to layout.
+    // (If you call this before the widnows is displayed everything
+    // will work out fine, as layout will automatically be called when
+    // the window is shown.)
+    void SetIsOpen(bool isOpen);
+
+    Size CalcPreferredSize(const Theme& theme) const override;
+    void Layout(const Theme& theme) override;
+    Widget::DrawResult Draw(const DrawContext& context) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 class Horiz : public Layout1D {

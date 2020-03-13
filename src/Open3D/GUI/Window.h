@@ -33,6 +33,7 @@
 #include "Events.h"
 #include "Gui.h"
 #include "Menu.h"
+#include "Widget.h"
 #include "Open3D/Visualization/Rendering/Renderer.h"
 
 namespace open3d {
@@ -42,7 +43,6 @@ class Dialog;
 class Menu;
 class Renderer;
 struct Theme;
-class Widget;
 
 class Window {
     friend class Application;
@@ -91,6 +91,8 @@ public:
     void Show(bool vis = true);
     void Close();  // same as calling Application::RemoveWindow()
 
+    void SetNeedsLayout();
+    
     void SetTopmost(bool topmost);
     void RaiseToTop() const;
 
@@ -117,7 +119,7 @@ protected:
 
 private:
     enum DrawResult { NONE, REDRAW };
-    DrawResult OnDraw(float dtSec);
+    Widget::DrawResult OnDraw(float dtSec);
     DrawResult DrawOnce(float dtSec);
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
