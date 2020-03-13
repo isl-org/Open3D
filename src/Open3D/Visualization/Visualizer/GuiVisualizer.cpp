@@ -268,6 +268,40 @@ public:
 
 }  // namespace
 
+struct LightingProfile {
+    std::string name;
+    double iblIntensity;
+    double sunIntensity;
+    Eigen::Vector3f sunDir;
+};
+
+static const std::vector<LightingProfile> gLightingProfiles = {
+        {.name = "Brighter, up is +Y",
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, -0.577f, -0.577f}},
+        {.name = "Brighter, up is -Y",
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, 0.577f}},
+        {.name = "Brighter, up is +Z",
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, -0.577f}},
+        {.name = "Darker, up is +Y",
+         .iblIntensity = 75000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, -0.577f, -0.577f}},
+        {.name = "Darker, up is -Y",
+         .iblIntensity = 75000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, 0.577f}},
+        {.name = "Darker, up is +Z",
+         .iblIntensity = 75000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, 0.577f, -0.577f}},
+};
+
 enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
@@ -389,6 +423,7 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Widget> wgtBase;
         std::shared_ptr<gui::Button> wgtLoadAmbient;
         std::shared_ptr<gui::Button> wgtLoadSky;
+        std::shared_ptr<gui::Combobox> wgtLightingProfile;
         std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
         std::shared_ptr<gui::Checkbox> wgtSkyEnabled;
         std::shared_ptr<gui::Checkbox> wgtDirectionalEnabled;
@@ -442,6 +477,18 @@ struct GuiVisualizer::Impl {
                         .SetParameter("pointSize", materials.unlit.pointSize)
                         .Finish();
     }
+
+    void SetLightingProfile(const LightingProfile &profile) {
+        auto *renderScene = this->scene->GetScene();
+        renderScene->SetIndirectLightIntensity(profile.iblIntensity);
+        renderScene->SetLightIntensity(this->settings.hDirectionalLight,
+                                       profile.sunIntensity);
+        renderScene->SetLightDirection(this->settings.hDirectionalLight,
+                                       profile.sunDir);
+        this->settings.wgtAmbientIntensity->SetValue(profile.iblIntensity);
+        this->settings.wgtSunIntensity->SetValue(profile.sunIntensity);
+        this->settings.wgtSunDir->SetValue(profile.sunDir);
+    }
 };
 
 GuiVisualizer::GuiVisualizer(
@@ -493,13 +540,16 @@ GuiVisualizer::GuiVisualizer(
     auto sceneId = GetRenderer().CreateScene();
     auto scene = std::make_shared<gui::SceneWidget>(
             *GetRenderer().GetScene(sceneId));
+    auto renderScene = scene->GetScene();
     impl_->scene = scene;
     scene->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
 
     // Create light
+    const int defaultLightingProfileIdx = 0;
+    auto &lightingProfile = gLightingProfiles[defaultLightingProfileIdx];
     visualization::LightDescription lightDescription;
-    lightDescription.intensity = 100000;
-    lightDescription.direction = {-0.707, -.707, 0.0};
+    lightDescription.intensity = lightingProfile.sunIntensity;
+    lightDescription.direction = lightingProfile.sunDir;
     lightDescription.castShadows = true;
     lightDescription.customAttributes["custom_type"] = "SUN";
 
@@ -511,10 +561,10 @@ GuiVisualizer::GuiVisualizer(
     auto iblPath = rsrcPath + "/default_ibl.ktx";
     settings.hIbl =
             GetRenderer().AddIndirectLight(ResourceLoadRequest(iblPath.data()));
-    scene->GetScene()->SetIndirectLight(settings.hIbl);
-    const auto kAmbientIntensity = 100000;
-    scene->GetScene()->SetIndirectLightIntensity(kAmbientIntensity);
+    renderScene->SetIndirectLight(settings.hIbl);
+    renderScene->SetIndirectLightIntensity(lightingProfile.iblIntensity);
 
+    // Create materials
     auto skyPath = rsrcPath + "/default_sky.ktx";
     settings.hSky =
             GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
@@ -527,13 +577,10 @@ GuiVisualizer::GuiVisualizer(
     impl_->hUnlitMaterial = GetRenderer().AddMaterial(
             visualization::ResourceLoadRequest(unlitPath.data()));
 
-    auto renderScene = scene->GetScene();
-
+    // Setup UI
     const auto em = theme.fontSize;
     const int lm = std::ceil(0.5 * em);
     const int gridSpacing = std::ceil(0.25 * em);
-
-    // Setup UI
     int spacing = std::max(1, int(std::ceil(0.25 * em)));
 
     auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
@@ -598,8 +645,23 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtBase->AddChild(bgcolorLayout);
     settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
-    // ... lighting on/off
-    settings.wgtBase->AddChild(std::make_shared<gui::Label>("> Light sources"));
+    // ... lighting profiles
+    settings.wgtLightingProfile = std::make_shared<gui::Combobox>();
+    for (size_t i = 0; i < gLightingProfiles.size(); ++i) {
+        settings.wgtLightingProfile->AddItem(gLightingProfiles[i].name.c_str());
+    }
+    settings.wgtLightingProfile->SetSelectedIndex(defaultLightingProfileIdx);
+    settings.wgtLightingProfile->SetOnValueChanged(
+            [this](const char *, int index) {
+                this->impl_->SetLightingProfile(gLightingProfiles[index]);
+            });
+
+    auto profileLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting Profiles"));
+    profileLayout->AddChild(settings.wgtLightingProfile);
+    settings.wgtBase->AddChild(profileLayout);
+    settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+
     auto checkboxes = std::make_shared<gui::Horiz>();
     settings.wgtAmbientEnabled = std::make_shared<gui::Checkbox>("Ambient");
     settings.wgtAmbientEnabled->SetChecked(true);
@@ -668,8 +730,8 @@ GuiVisualizer::GuiVisualizer(
         }
     });
 
-    settings.wgtAmbientIntensity =
-            MakeSlider(gui::Slider::INT, 0.0, 150000.0, kAmbientIntensity);
+    settings.wgtAmbientIntensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
+                                              lightingProfile.iblIntensity);
     settings.wgtAmbientIntensity->OnValueChanged =
             [renderScene](double newValue) {
                 renderScene->SetIndirectLightIntensity(newValue);
@@ -687,7 +749,7 @@ GuiVisualizer::GuiVisualizer(
 
     // ... directional light (sun)
     settings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
-                                          lightDescription.intensity);
+                                          lightingProfile.sunIntensity);
     settings.wgtSunIntensity->OnValueChanged = [this,
                                                 renderScene](double newValue) {
         renderScene->SetLightIntensity(impl_->settings.hDirectionalLight,
