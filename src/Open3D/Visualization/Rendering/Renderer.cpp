@@ -77,5 +77,24 @@ ResourceLoadRequest::ResourceLoadRequest(const char* aPath,
       path(aPath),
       errorCallback(std::move(aErrorCallback)) {}
 
+void Renderer::RenderToBuffer(
+        std::size_t width,
+        std::size_t height,
+        View* view,
+        Scene* scene,
+        std::function<void(const visualization::RenderToBuffer::Buffer&)> cb) {
+    auto render = CreateBufferRenderer();
+    render->SetDimensions(width, height);
+    render->CopySettings(view);
+    render->RequestFrame(
+            scene,
+            // the shared_ptr (render) is const unless the lambda
+            // is made mutable
+            [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
+                cb(buffer);
+                render = nullptr;
+            });
+}
+
 }  // namespace visualization
 }  // namespace open3d

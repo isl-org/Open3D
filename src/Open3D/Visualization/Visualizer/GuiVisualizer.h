@@ -63,8 +63,7 @@ public:
     bool SetIBL(const char* path);
 
     bool LoadGeometry(const std::string& path);
-    void ExportRGB(const std::string& path);
-    void ExportDepth(const std::string& path);
+    void ExportCurrentImage(int width, int height, const std::string& path);
 
     void Layout(const gui::Theme& theme) override;
 

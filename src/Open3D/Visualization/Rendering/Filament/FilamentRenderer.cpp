@@ -237,8 +237,8 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
     resourceManager_.Destroy(id);
 }
 
-std::unique_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
-    auto renderer = std::make_unique<FilamentRenderToBuffer>(engine_, *this);
+std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
+    auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_, *this);
     bufferRenderers_.insert(renderer.get());
     return std::move(renderer);
 }

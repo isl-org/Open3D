@@ -41,16 +41,21 @@
 #include "Open3D/GUI/Theme.h"
 #include "Open3D/GUI/VectorEdit.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "Open3D/Visualization/Rendering/RenderToBuffer.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
+
+#include <thread>
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -312,7 +317,6 @@ static const std::vector<LightingProfile> gLightingProfiles = {
 enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
-    FILE_EXPORT_DEPTH,
     FILE_CLOSE,
     VIEW_WIREFRAME,
     VIEW_MESH,
@@ -532,10 +536,7 @@ GuiVisualizer::GuiVisualizer(
     if (!gui::Application::GetInstance().GetMenubar()) {
         auto fileMenu = std::make_shared<gui::Menu>();
         fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
-        fileMenu->AddItem("Export RGB...", nullptr, FILE_EXPORT_RGB);
-        fileMenu->SetEnabled(FILE_EXPORT_RGB, false);
-        fileMenu->AddItem("Export depth image...", nullptr, FILE_EXPORT_DEPTH);
-        fileMenu->SetEnabled(FILE_EXPORT_DEPTH, false);
+        fileMenu->AddItem("Export Current Image...", nullptr, FILE_EXPORT_RGB);
         fileMenu->AddSeparator();
         fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
         auto viewMenu = std::make_shared<gui::Menu>();
@@ -1114,12 +1115,22 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
     return (geometry != nullptr);
 }
 
-void GuiVisualizer::ExportRGB(const std::string &path) {
-    ShowMessageBox("Not implemented", "ExportRGB() is not implemented yet");
-}
-
-void GuiVisualizer::ExportDepth(const std::string &path) {
-    ShowMessageBox("Not implemented", "ExportDepth() is not implemented yet");
+void GuiVisualizer::ExportCurrentImage(int width,
+                                       int height,
+                                       const std::string &path) {
+    GetRenderer().RenderToBuffer(
+            width, height, impl_->scene->GetView(), impl_->scene->GetScene(),
+            [path](const visualization::RenderToBuffer::Buffer
+                           &buffer) mutable {
+                geometry::Image image;
+                image.width_ = buffer.width;
+                image.height_ = buffer.height;
+                image.num_of_channels_ = 3;
+                image.bytes_per_channel_ = 1;
+                image.data_ = std::vector<uint8_t>(buffer.bytes,
+                                                   buffer.bytes + buffer.size);
+                io::WriteImage(path, image);
+            });
 }
 
 void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
@@ -1155,20 +1166,16 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             ShowDialog(dlg);
             break;
         }
-        case FILE_EXPORT_RGB:  // fall through
-        case FILE_EXPORT_DEPTH: {
+        case FILE_EXPORT_RGB: {
             auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Type::SAVE, "Save File", GetTheme());
             dlg->AddFilter(".png", "PNG images (.png)");
             dlg->AddFilter("", "All files");
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
-            dlg->SetOnDone([this, menuId](const char *path) {
+            dlg->SetOnDone([this](const char *path) {
                 this->CloseDialog();
-                if (menuId == FILE_EXPORT_RGB) {
-                    this->ExportRGB(path);
-                } else {
-                    this->ExportDepth(path);
-                }
+                auto r = GetContentRect();
+                this->ExportCurrentImage(r.width, r.height, path);
             });
             ShowDialog(dlg);
             break;

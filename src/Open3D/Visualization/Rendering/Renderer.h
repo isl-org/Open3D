@@ -27,6 +27,7 @@
 #pragma once
 
 #include "MaterialModifier.h"
+#include "RenderToBuffer.h"
 #include "RendererHandle.h"
 
 namespace open3d {
@@ -37,7 +38,6 @@ class Image;
 
 namespace visualization {
 
-class RenderToBuffer;
 class Scene;
 
 class ResourceLoadRequest {
@@ -93,7 +93,13 @@ public:
     virtual SkyboxHandle AddSkybox(const ResourceLoadRequest& request) = 0;
     virtual void RemoveSkybox(const SkyboxHandle& id) = 0;
 
-    virtual std::unique_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+    virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+
+    void RenderToBuffer(std::size_t width,
+                        std::size_t height,
+                        View* view,
+                        Scene* scene,
+                        std::function<void(const RenderToBuffer::Buffer&)> cb);
 };
 
 }  // namespace visualization
