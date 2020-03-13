@@ -198,7 +198,7 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
 }
 
 struct SmartMode {
-    static bool PointcloudHasUniformColor(const geometry::PointCloud &pcd) {
+    static bool PointCloudHasUniformColor(const geometry::PointCloud &pcd) {
         if (!pcd.HasColors()) {
             return true;
         }
@@ -446,11 +446,6 @@ struct GuiVisualizer::Impl {
 
         std::shared_ptr<gui::Combobox> wgtPrefabMaterial;
         std::shared_ptr<gui::Slider> wgtPointSize;
-
-        struct SmartMode {
-            bool enabled = true;
-            bool checkUniformColor = true;
-        } smartMode;
 
         void SetCustomProfile() {
             wgtLightingProfile->SetSelectedIndex(gLightingProfiles.size());
@@ -910,22 +905,6 @@ GuiVisualizer::GuiVisualizer(
 
     settings.wgtBase->AddChild(materials);
 
-    {
-        settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
-        settings.wgtBase->AddChild(std::make_shared<gui::Label>("Smart mode"));
-
-        auto checkPcdColors =
-                std::make_shared<gui::Checkbox>("Check pointcloud colors");
-        checkPcdColors->SetOnChecked([this](const bool checked) {
-            impl_->settings.smartMode.checkUniformColor = checked;
-        });
-
-        settings.wgtBase->AddChild(checkPcdColors);
-
-        checkPcdColors->SetChecked(impl_->settings.smartMode.checkUniformColor);
-        checkPcdColors->SetEnabled(impl_->settings.smartMode.enabled);
-    }
-
     AddChild(settings.wgtBase);
 
     settings.wgtBase->SetVisible(false);
@@ -981,11 +960,7 @@ void GuiVisualizer::SetGeometry(
                 if (pcd->HasColors()) {
                     selectedMaterial = materials.unlit.handle;
 
-                    const bool smartMode =
-                            impl_->settings.smartMode.enabled &&
-                            impl_->settings.smartMode.checkUniformColor;
-                    if (smartMode &&
-                        SmartMode::PointcloudHasUniformColor(*pcd)) {
+                    if (SmartMode::PointCloudHasUniformColor(*pcd)) {
                         selectedMaterial = materials.lit.handle;
                     }
                 } else {
