@@ -92,6 +92,15 @@ TensorList::TensorList(const TensorList& other)
     internal_tensor_.Assign(other.GetInternalTensor());
 }
 
+void TensorList::ShallowCopyFrom(const TensorList& other) {
+    shape_ = other.GetShape();
+    dtype_ = other.GetDtype();
+    device_ = other.GetDevice();
+    size_ = other.GetSize();
+    reserved_size_ = other.GetReservedSize();
+    internal_tensor_.ShallowCopyFrom(other.GetInternalTensor());
+}
+
 TensorList& TensorList::operator=(const TensorList& other) & {
     shape_ = other.GetShape();
     dtype_ = other.GetDtype();
@@ -242,11 +251,7 @@ TensorList TensorList::Slice(int64_t start,
 TensorList TensorList::IndexGet(const std::vector<int64_t>& indices) const {
     std::vector<Tensor> tensors;
     for (auto index : indices) {
-        CheckIndex(index);
-        if (index < 0) {
-            index += size_;
-        }
-        tensors.push_back(internal_tensor_[index]);
+        tensors.push_back(internal_tensor_.IndexExtract(0, index));
     }
 
     return TensorList(tensors, device_);

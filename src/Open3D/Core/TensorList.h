@@ -103,6 +103,9 @@ public:
     /// Create a new tensor list with copy of data.
     TensorList(const TensorList& other);
 
+    /// Shallow copy
+    void ShallowCopyFrom(const TensorList& other);
+
     /// TensorList assignment lvalue = lvalue, e.g.
     /// `tensorlist_a = tensorlist_b`,
     /// resulting in a "shallow" copy.

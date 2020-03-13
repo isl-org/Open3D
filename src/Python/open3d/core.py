@@ -266,6 +266,22 @@ class Tensor(open3d_pybind.Tensor):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
+def cast_to_py_tensorlist(func):
+    """
+    Args:
+        func: function returning a `o3d.open3d_pybind.Tensor`.
+
+    Return:
+        A function which returns a python object `o3d.Tensor`.
+    """
+
+    def wrapped_func(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        wrapped_result = TensorList([0])
+        wrapped_result.shallow_copy_from(result)
+        return wrapped_result
+
+    return wrapped_func
 
 class TensorList(open3d_pybind.TensorList):
     """
@@ -297,20 +313,20 @@ class TensorList(open3d_pybind.TensorList):
         \int: return a Tensor
         '''
         if isinstance(index, int):
-            return self.getindex(index)
+            return cast_to_py_tensor(self.getindex)(index)
 
         elif isinstance(index, slice):
             start = 0 if index.start is None else index.start
             stop = self.size() if index.stop is None else index.stop
             step = 1 if index.step is None else index.step
-            return self.getslice(start, stop, step)
+            return cast_to_py_tensorlist(self.getslice)(start, stop, step)
 
         elif isinstance(index, list) or isinstance(index, tuple):
             for i in index:
                 if not isinstance(i, int):
                     raise ValueError(
                         'every element of the index list must be a int')
-            return self.getindices(o3d.SizeVector(index))
+            return cast_to_py_tensorlist(self.getindices)(o3d.SizeVector(index))
 
         else:
             raise ValueError('Unsupported index type')
@@ -337,6 +353,7 @@ class TensorList(open3d_pybind.TensorList):
             )
 
     @staticmethod
+    @cast_to_py_tensorlist
     def from_tensor(tensor, inplace=False):
         """
         Returns a TensorList from an existing tensor.
@@ -352,6 +369,7 @@ class TensorList(open3d_pybind.TensorList):
         return super(TensorList, TensorList).from_tensor(tensor, inplace)
 
     @staticmethod
+    @cast_to_py_tensorlist
     def from_tensors(tensors, device=None):
         """
         Returns a TensorList from a list of existing tensors.

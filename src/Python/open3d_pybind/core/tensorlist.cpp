@@ -52,7 +52,7 @@ void pybind_core_tensorlist(py::module& m) {
                 TensorList tl = TensorList(shape, dtype, device, size);
                 return tl;
             }))
-
+            .def("shallow_copy_from", &TensorList::ShallowCopyFrom)
             // Construct from existing tensors with compatible shapes
             .def("from_tensors",
                  [](const std::vector<Tensor>& tensors, const Device& device) {
