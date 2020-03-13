@@ -389,6 +389,7 @@ def test_tensorlist_indexing():
             (2, 3, 4), dtype=np.float32), np.zeros((1, 3, 4),
                                                    dtype=np.float32))))
 
+
 def test_getitem():
     np_t = np.array(range(24)).reshape((2, 3, 4))
     o3_t = o3d.Tensor(np_t)

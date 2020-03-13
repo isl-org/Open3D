@@ -266,6 +266,7 @@ class Tensor(open3d_pybind.Tensor):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
+
 def cast_to_py_tensorlist(func):
     """
     Args:
@@ -282,6 +283,7 @@ def cast_to_py_tensorlist(func):
         return wrapped_result
 
     return wrapped_func
+
 
 class TensorList(open3d_pybind.TensorList):
     """
@@ -316,7 +318,8 @@ class TensorList(open3d_pybind.TensorList):
             return cast_to_py_tensor(self.getindex)(index)
 
         elif isinstance(index, slice):
-            return cast_to_py_tensorlist(self.getslice)(_to_o3d_tensor_key(index))
+            return cast_to_py_tensorlist(self.getslice)(
+                _to_o3d_tensor_key(index))
 
         elif isinstance(index, list) or isinstance(index, tuple):
             for i in index:

@@ -91,7 +91,6 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                 CPULauncher::LaunchUnaryEWKernel(
                         indexer, CPUCopyElementKernel<src_t, dst_t>);
             });
-
         });
     }
 }
