@@ -84,16 +84,11 @@ void pybind_core_tensorlist(py::module& m) {
             .def("setindex", [](TensorList& tl, int64_t index,
                                 const Tensor& value) { tl[index] = value; })
 
-            .def("getslice",
-                 [](TensorList& tl, int64_t start, int64_t stop, int64_t step) {
-                     return tl.Slice(start, stop, step);
-                 })
+            .def("getslice", [](TensorList& tl,
+                                const TensorKey& tk) { return tl.Slice(tk); })
             .def("setslice",
-                 [](TensorList& tl, int64_t start, int64_t stop, int64_t step,
-                    const TensorList& value) {
-                     tl.Slice(start, stop, step) = value;
-                 })
-
+                 [](TensorList& tl, const TensorKey& tk,
+                    const TensorList& value) { tl.Slice(tk) = value; })
             .def("getindices",
                  [](TensorList& tl, const SizeVector& indices_sizevec) {
                      // force implicit cast here

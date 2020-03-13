@@ -316,10 +316,7 @@ class TensorList(open3d_pybind.TensorList):
             return cast_to_py_tensor(self.getindex)(index)
 
         elif isinstance(index, slice):
-            start = 0 if index.start is None else index.start
-            stop = self.size() if index.stop is None else index.stop
-            step = 1 if index.step is None else index.step
-            return cast_to_py_tensorlist(self.getslice)(start, stop, step)
+            return cast_to_py_tensorlist(self.getslice)(_to_o3d_tensor_key(index))
 
         elif isinstance(index, list) or isinstance(index, tuple):
             for i in index:
@@ -339,12 +336,8 @@ class TensorList(open3d_pybind.TensorList):
         if isinstance(index, int) and isinstance(value, o3d.Tensor):
             self.setindex(index, value)
 
-        elif isinstance(index, slice) and isinstance(value,
-                                                     open3d_pybind.TensorList):
-            start = 0 if index.start is None else index.start
-            stop = self.size() if index.stop is None else index.stop
-            step = 1 if index.step is None else index.step
-            return self.setslice(start, stop, step, value)
+        elif isinstance(index, slice) and isinstance(value, o3d.TensorList):
+            self.setslice(_to_o3d_tensor_key(index), value)
 
         else:
             raise ValueError(
