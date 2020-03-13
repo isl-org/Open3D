@@ -106,9 +106,11 @@ public:
 
 class CollapsableVert : public Vert {
     using Super = Vert;
+
 public:
-    CollapsableVert(const char *text);
-    CollapsableVert(const char *text, int spacing,
+    CollapsableVert(const char* text);
+    CollapsableVert(const char* text,
+                    int spacing,
                     const Margins& margins = Margins());
     virtual ~CollapsableVert();
 

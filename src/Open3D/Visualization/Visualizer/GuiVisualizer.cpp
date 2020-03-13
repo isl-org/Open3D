@@ -498,9 +498,8 @@ struct GuiVisualizer::Impl {
         this->settings.wgtAmbientIntensity->SetValue(profile.iblIntensity);
         this->settings.wgtSunIntensity->SetValue(profile.sunIntensity);
         this->settings.wgtSunDir->SetValue(profile.sunDir);
-        this->settings.wgtSunColor->SetValue(gui::Color(profile.sunColor[0],
-                                                        profile.sunColor[1],
-                                                        profile.sunColor[2]));
+        this->settings.wgtSunColor->SetValue(gui::Color(
+                profile.sunColor[0], profile.sunColor[1], profile.sunColor[2]));
     }
 };
 
@@ -645,7 +644,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtLightingProfile->SetSelectedIndex(defaultLightingProfileIdx);
     settings.wgtLightingProfile->SetOnValueChanged(
             [this](const char *, int index) {
-                if (index < gLightingProfiles.size()) {
+                if (index < int(gLightingProfiles.size())) {
                     this->impl_->SetLightingProfile(gLightingProfiles[index]);
                 } else {
                     this->impl_->settings.wgtAdvanced->SetIsOpen(true);
@@ -661,12 +660,14 @@ GuiVisualizer::GuiVisualizer(
 
     // ... advanced lighting
     gui::Margins indent(em, 0, 0, 0);
-    settings.wgtAdvanced = std::make_shared<gui::CollapsableVert>("Advanced Lighting", 0, indent);
+    settings.wgtAdvanced = std::make_shared<gui::CollapsableVert>(
+            "Advanced Lighting", 0, indent);
     settings.wgtAdvanced->SetIsOpen(false);
     settings.wgtBase->AddChild(settings.wgtAdvanced);
 
     // ....... lighting on/off
-    settings.wgtAdvanced->AddChild(std::make_shared<gui::Label>("Light sources"));
+    settings.wgtAdvanced->AddChild(
+            std::make_shared<gui::Label>("Light sources"));
     auto checkboxes = std::make_shared<gui::Horiz>();
     settings.wgtAmbientEnabled = std::make_shared<gui::Checkbox>("Ambient");
     settings.wgtAmbientEnabled->SetChecked(true);
@@ -911,8 +912,7 @@ GuiVisualizer::GuiVisualizer(
 
     {
         settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
-        settings.wgtBase->AddChild(
-                std::make_shared<gui::Label>("Smart mode"));
+        settings.wgtBase->AddChild(std::make_shared<gui::Label>("Smart mode"));
 
         auto checkPcdColors =
                 std::make_shared<gui::Checkbox>("Check pointcloud colors");

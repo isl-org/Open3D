@@ -640,10 +640,8 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
     impl_->renderer->EndFrame();
 
     if (needsLayout) {
-        std::cout << "[debug] RELAYOUT" << std::endl;
         return Widget::DrawResult::RELAYOUT;
     } else if (needsRedraw) {
-        std::cout << "[debug] REDRAW" << std::endl;
         return Widget::DrawResult::REDRAW;
     } else {
         return Widget::DrawResult::NONE;
@@ -656,7 +654,7 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
     bool neededLayout = impl_->needsLayout;
 
     auto result = OnDraw(dtSec);
-    if (result == Widget::DrawResult::RELAYOUT)  {
+    if (result == Widget::DrawResult::RELAYOUT) {
         impl_->needsLayout = true;
     }
 

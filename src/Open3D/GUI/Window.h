@@ -33,8 +33,8 @@
 #include "Events.h"
 #include "Gui.h"
 #include "Menu.h"
-#include "Widget.h"
 #include "Open3D/Visualization/Rendering/Renderer.h"
+#include "Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -92,7 +92,7 @@ public:
     void Close();  // same as calling Application::RemoveWindow()
 
     void SetNeedsLayout();
-    
+
     void SetTopmost(bool topmost);
     void RaiseToTop() const;
 

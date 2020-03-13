@@ -166,7 +166,7 @@ Layout1D::Layout1D(Dir dir,
 
 Layout1D::~Layout1D() {}
 
-Margins& Layout1D::GetMutableMargins() { return  impl_->margins; }
+Margins& Layout1D::GetMutableMargins() { return impl_->margins; }
 
 Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     int minor;
@@ -290,12 +290,13 @@ struct CollapsableVert::Impl {
     bool isOpen = true;
 };
 
-CollapsableVert::CollapsableVert(const char *text)
-: CollapsableVert(text, 0, Margins()) {}
+CollapsableVert::CollapsableVert(const char* text)
+    : CollapsableVert(text, 0, Margins()) {}
 
-CollapsableVert::CollapsableVert(const char *text, int spacing,
+CollapsableVert::CollapsableVert(const char* text,
+                                 int spacing,
                                  const Margins& margins /*= Margins()*/)
-: Vert(spacing, margins), impl_(std::make_unique<CollapsableVert::Impl>()) {
+    : Vert(spacing, margins), impl_(std::make_unique<CollapsableVert::Impl>()) {
     static int gNextId = 1;
 
     impl_->text = text;
@@ -307,18 +308,16 @@ CollapsableVert::CollapsableVert(const char *text, int spacing,
 
 CollapsableVert::~CollapsableVert() {}
 
-void CollapsableVert::SetIsOpen(bool isOpen) {
-    impl_->isOpen = isOpen;
-}
+void CollapsableVert::SetIsOpen(bool isOpen) { impl_->isOpen = isOpen; }
 
 Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     auto* font = ImGui::GetFont();
     auto padding = ImGui::GetStyle().FramePadding;
-    int textHeight = std::ceil(ImGui::GetTextLineHeightWithSpacing() +
-                               2 * padding.y);
+    int textHeight =
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
     int textWidth = std::ceil(font->CalcTextSizeA(theme.fontSize, FLT_MAX,
-                                                  FLT_MAX,
-                                                  impl_->text.c_str()).x);
+                                                  FLT_MAX, impl_->text.c_str())
+                                      .x);
 
     auto pref = Super::CalcPreferredSize(theme);
     if (!impl_->isOpen) {
@@ -328,12 +327,12 @@ Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     return Size(std::max(textWidth, pref.width), textHeight + pref.height);
 }
 
-void CollapsableVert::Layout(const Theme &theme) {
+void CollapsableVert::Layout(const Theme& theme) {
     auto padding = ImGui::GetStyle().FramePadding;
-    int textHeight = std::ceil(ImGui::GetTextLineHeightWithSpacing() +
-                               2 * padding.y);
+    int textHeight =
+            std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
 
-    auto &margins = GetMutableMargins();
+    auto& margins = GetMutableMargins();
     auto origTop = margins.top;
     margins.top = origTop + textHeight;
 
