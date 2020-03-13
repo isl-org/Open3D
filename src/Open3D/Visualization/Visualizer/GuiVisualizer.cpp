@@ -274,6 +274,7 @@ struct LightingProfile {
     double sunIntensity;
     Eigen::Vector3f sunDir;
     Eigen::Vector3f sunColor = {1.0f, 1.0f, 1.0f};
+    Scene::Transform iblRotation = Scene::Transform::Identity();
 };
 
 static const std::vector<LightingProfile> gLightingProfiles = {
@@ -284,7 +285,10 @@ static const std::vector<LightingProfile> gLightingProfiles = {
         {.name = "Brighter, up is -Y",
          .iblIntensity = 100000,
          .sunIntensity = 100000,
-         .sunDir = {0.577f, 0.577f, 0.577f}},
+         .sunDir = {0.577f, 0.577f, 0.577f},
+         .sunColor = {1.0f, 1.0f, 1.0f},
+         .iblRotation = Scene::Transform(
+                 Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
         {.name = "Brighter, up is +Z",
          .iblIntensity = 100000,
          .sunIntensity = 100000,
@@ -296,12 +300,14 @@ static const std::vector<LightingProfile> gLightingProfiles = {
         {.name = "Darker, up is -Y",
          .iblIntensity = 75000,
          .sunIntensity = 100000,
-         .sunDir = {0.577f, 0.577f, 0.577f}},
+         .sunDir = {0.577f, 0.577f, 0.577f},
+         .sunColor = {1.0f, 1.0f, 1.0f},
+         .iblRotation = Scene::Transform(
+                 Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
         {.name = "Darker, up is +Z",
          .iblIntensity = 75000,
          .sunIntensity = 100000,
-         .sunDir = {0.577f, 0.577f, -0.577f}},
-};
+         .sunDir = {0.577f, 0.577f, -0.577f}}};
 
 enum MenuId {
     FILE_OPEN,
@@ -408,6 +414,16 @@ struct GuiVisualizer::Impl {
               0.1f,
               0.0f,
               3.0f}},
+            {"Clay",
+             {visualization::MaterialInstanceHandle::kBad,
+              {0.7725f, 0.7725f, 0.7725f},
+              0.0f,
+              1.0f,
+              0.5f,
+              0.1f,
+              0.287f,
+              0.0f,
+              3.0f}},
     };
 
     std::unordered_map<visualization::REHandle_abstract, Materials>
@@ -482,6 +498,7 @@ struct GuiVisualizer::Impl {
         auto *renderScene = this->scene->GetScene();
         renderScene->SetIndirectLight(this->settings.hIbl);
         renderScene->SetIndirectLightIntensity(profile.iblIntensity);
+        renderScene->SetIndirectLightRotation(profile.iblRotation);
         renderScene->SetSkybox(visualization::SkyboxHandle::kBad);
         renderScene->SetLightIntensity(this->settings.hDirectionalLight,
                                        profile.sunIntensity);
@@ -571,6 +588,7 @@ GuiVisualizer::GuiVisualizer(
             GetRenderer().AddIndirectLight(ResourceLoadRequest(iblPath.data()));
     renderScene->SetIndirectLight(settings.hIbl);
     renderScene->SetIndirectLightIntensity(lightingProfile.iblIntensity);
+    renderScene->SetIndirectLightRotation(lightingProfile.iblRotation);
 
     // Create materials
     auto skyPath = rsrcPath + "/default_sky.ktx";
