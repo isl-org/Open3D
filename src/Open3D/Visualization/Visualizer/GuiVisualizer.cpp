@@ -262,7 +262,7 @@ public:
     gui::Size CalcPreferredSize(const gui::Theme &theme) const override {
         auto em = theme.fontSize;
         auto size = Super::CalcPreferredSize(theme);
-        return gui::Size(size.width - em, em);
+        return gui::Size(size.width - em, 1.2 * em);
     }
 };
 
