@@ -85,7 +85,8 @@ void MatrixInteractor::Rotate(int dx, int dy) {
     // the sign of 'dist'. We can just dotprod with the forward vector
     // of the camera. Forward is [0, 0, -1] for an identity matrix,
     // so forward is simply rotation * [0, 0, -1].
-    Eigen::Vector3f forward = matrix.rotation() * Eigen::Vector3f{0.0f, 0.0f, -1.0f};
+    Eigen::Vector3f forward =
+            matrix.rotation() * Eigen::Vector3f{0.0f, 0.0f, -1.0f};
     if (toCOR.dot(forward) < 0) {
         dist = -dist;
     }
