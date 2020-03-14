@@ -52,7 +52,6 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             utility::filesystem::GetFileParentDirectory(filename);
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
                                 filename.c_str(), mtl_base_path.c_str());
-
     if (!warn.empty()) {
         utility::LogWarning("Read OBJ failed: {}", warn);
     }
@@ -128,6 +127,8 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
                 }
             }
             mesh.triangles_.push_back(facet);
+            mesh.triangle_material_ids_.push_back(
+                    shapes[s].mesh.material_ids[f]);
             index_offset += fv;
         }
     }
@@ -149,10 +150,10 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     // diffuse material
     for (auto& material : materials) {
         if (!material.diffuse_texname.empty()) {
-            mesh.texture_ = *(io::CreateImageFromFile(mtl_base_path +
-                                                      material.diffuse_texname)
-                                      ->FlipVertical());
-            break;
+            mesh.textures_.push_back(
+                    *(io::CreateImageFromFile(mtl_base_path +
+                                              material.diffuse_texname)
+                              ->FlipVertical()));
         }
     }
 
@@ -185,9 +186,8 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     file << "# number of vertices: " << mesh.vertices_.size() << std::endl;
     file << "# number of triangles: " << mesh.triangles_.size() << std::endl;
 
-    // always write material name in obj file, regardless of uvs or textures
+    // always write material filename in obj file, regardless of uvs or textures
     file << "mtllib " << object_name << ".mtl" << std::endl;
-    file << "usemtl " << object_name << std::endl;
 
     utility::ConsoleProgressBar progress_bar(
             mesh.vertices_.size() + mesh.triangles_.size(),
@@ -225,32 +225,59 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
         }
     }
 
-    for (size_t tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
-        const Eigen::Vector3i& triangle = mesh.triangles_[tidx];
-        if (write_vertex_normals && write_triangle_uvs) {
-            file << "f ";
-            file << triangle(0) + 1 << "/" << 3 * tidx + 1 << "/"
-                 << triangle(0) + 1 << " ";
-            file << triangle(1) + 1 << "/" << 3 * tidx + 2 << "/"
-                 << triangle(1) + 1 << " ";
-            file << triangle(2) + 1 << "/" << 3 * tidx + 3 << "/"
-                 << triangle(2) + 1 << std::endl;
-        } else if (!write_vertex_normals && write_triangle_uvs) {
-            file << "f ";
-            file << triangle(0) + 1 << "/" << 3 * tidx + 1 << " ";
-            file << triangle(1) + 1 << "/" << 3 * tidx + 2 << " ";
-            file << triangle(2) + 1 << "/" << 3 * tidx + 3 << std::endl;
-        } else if (write_vertex_normals && !write_triangle_uvs) {
-            file << "f " << triangle(0) + 1 << "//" << triangle(0) + 1 << " "
-                 << triangle(1) + 1 << "//" << triangle(1) + 1 << " "
-                 << triangle(2) + 1 << "//" << triangle(2) + 1 << std::endl;
-        } else {
-            file << "f " << triangle(0) + 1 << " " << triangle(1) + 1 << " "
-                 << triangle(2) + 1 << std::endl;
+    // write faces with (possibly multiple) material ids
+    // map faces with material ids
+    std::map<int, std::vector<size_t>> material_id_faces_map;
+    if (mesh.HasTriangleMaterialIds()) {
+        for (size_t i = 0; i < mesh.triangle_material_ids_.size(); ++i) {
+            int mi = mesh.triangle_material_ids_[i];
+            auto it = material_id_faces_map.find(mi);
+            if (it == material_id_faces_map.end()) {
+                material_id_faces_map[mi] = {i};
+            } else {
+                it->second.push_back(i);
+            }
         }
-        ++progress_bar;
+    } else {  // every face falls to the default material
+        material_id_faces_map[0].resize(mesh.triangles_.size());
+        std::iota(material_id_faces_map[0].begin(),
+                  material_id_faces_map[0].end(), 0);
     }
 
+    // enumerate ids and their corresponding faces
+    for (auto it = material_id_faces_map.begin();
+         it != material_id_faces_map.end(); ++it) {
+        // write the mtl name
+        std::string mtl_name = object_name + "_" + std::to_string(it->first);
+        file << "usemtl " << mtl_name << std::endl;
+
+        // write the corresponding faces
+        for (auto tidx : it->second) {
+            const Eigen::Vector3i& triangle = mesh.triangles_[tidx];
+            if (write_vertex_normals && write_triangle_uvs) {
+                file << "f ";
+                file << triangle(0) + 1 << "/" << 3 * tidx + 1 << "/"
+                     << triangle(0) + 1 << " ";
+                file << triangle(1) + 1 << "/" << 3 * tidx + 2 << "/"
+                     << triangle(1) + 1 << " ";
+                file << triangle(2) + 1 << "/" << 3 * tidx + 3 << "/"
+                     << triangle(2) + 1 << std::endl;
+            } else if (!write_vertex_normals && write_triangle_uvs) {
+                file << "f ";
+                file << triangle(0) + 1 << "/" << 3 * tidx + 1 << " ";
+                file << triangle(1) + 1 << "/" << 3 * tidx + 2 << " ";
+                file << triangle(2) + 1 << "/" << 3 * tidx + 3 << std::endl;
+            } else if (write_vertex_normals && !write_triangle_uvs) {
+                file << "f " << triangle(0) + 1 << "//" << triangle(0) + 1
+                     << " " << triangle(1) + 1 << "//" << triangle(1) + 1 << " "
+                     << triangle(2) + 1 << "//" << triangle(2) + 1 << std::endl;
+            } else {
+                file << "f " << triangle(0) + 1 << " " << triangle(1) + 1 << " "
+                     << triangle(2) + 1 << std::endl;
+            }
+            ++progress_bar;
+        }
+    }
     // end of writing obj.
     //////
 
@@ -259,9 +286,8 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     std::string parent_dir =
             utility::filesystem::GetFileParentDirectory(filename);
     std::string mtl_filename = parent_dir + object_name + ".mtl";
-    std::string tex_filename = parent_dir + object_name + ".png";
 
-    // write standard material info to mtl file
+    // write headers
     std::ofstream mtl_file(mtl_filename.c_str(), std::ios::out);
     if (!mtl_file) {
         utility::LogWarning(
@@ -270,19 +296,34 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     }
     mtl_file << "# Created by Open3D " << std::endl;
     mtl_file << "# object name: " << object_name << std::endl;
-    mtl_file << "newmtl " << object_name << std::endl;
-    mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
-    mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
-    mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
 
-    if (write_triangle_uvs && mesh.HasTexture()) {
-        if (!io::WriteImage(tex_filename, *mesh.texture_.FlipVertical())) {
-            utility::LogWarning(
-                    "Write OBJ successful, but failed to write texture "
-                    "file.");
-            return true;
+    // write textures (if existing)
+    for (size_t i = 0; i < mesh.textures_.size(); ++i) {
+        std::string mtl_name = object_name + "_" + std::to_string(i);
+        mtl_file << "newmtl " << mtl_name << std::endl;
+        mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+        mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+        mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
+        if (write_triangle_uvs && mesh.HasTextures()) {
+            std::string tex_filename = parent_dir + mtl_name + ".png";
+            if (!io::WriteImage(tex_filename,
+                                *mesh.textures_[i].FlipVertical())) {
+                utility::LogWarning(
+                        "Write OBJ successful, but failed to write texture "
+                        "file.");
+                return true;
+            }
+            mtl_file << "map_Kd " << mtl_name << ".png\n";
         }
-        mtl_file << "map_Kd " << object_name << ".png";
+    }
+
+    // write the default material
+    if (!mesh.HasTextures()) {
+        std::string mtl_name = object_name + "_0";
+        mtl_file << "newmtl " << mtl_name << std::endl;
+        mtl_file << "Ka 1.000 1.000 1.000" << std::endl;
+        mtl_file << "Kd 1.000 1.000 1.000" << std::endl;
+        mtl_file << "Ks 0.000 0.000 0.000" << std::endl;
     }
 
     return true;

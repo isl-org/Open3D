@@ -37,8 +37,9 @@ namespace integration {
 
 class UniformTSDFVolume;
 
-/// Class that implements a more memory efficient data structure for volumetric
-/// integration
+/// The ScalableTSDFVolume implements a more memory efficient data structure for
+/// volumetric integration.
+///
 /// This implementation is based on the following repository:
 /// https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
 /// The reference is:
@@ -54,7 +55,6 @@ class UniformTSDFVolume;
 /// normal and producing a smooth surface output. The carving is great in
 /// removing outlier structures like floating noise pixels and bumps along
 /// structure edges.
-
 class ScalableTSDFVolume : public TSDFVolume {
 public:
     struct VolumeUnit {
@@ -81,6 +81,7 @@ public:
                    const Eigen::Matrix4d &extrinsic) override;
     std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override;
     std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override;
+    /// Debug function to extract the voxel data into a point cloud.
     std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud();
 
 public:

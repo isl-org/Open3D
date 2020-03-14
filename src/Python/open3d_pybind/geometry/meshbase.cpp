@@ -77,9 +77,10 @@ void pybind_meshbase(py::module &m) {
             .def("has_vertex_colors", &geometry::MeshBase::HasVertexColors,
                  "Returns ``True`` if the mesh contains vertex colors.")
             .def("normalize_normals", &geometry::MeshBase::NormalizeNormals,
-                 "Normalize vertex normals to legnth 1.")
+                 "Normalize vertex normals to length 1.")
             .def("paint_uniform_color", &geometry::MeshBase::PaintUniformColor,
-                 "Assigns each vertex in the MeshBase the same color.")
+                 "Assigns each vertex in the MeshBase the same color.",
+                 "color"_a)
             .def("compute_convex_hull", &geometry::MeshBase::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def_readwrite("vertices", &geometry::MeshBase::vertices_,
@@ -103,9 +104,8 @@ void pybind_meshbase(py::module &m) {
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "MeshBase", "has_vertices");
     docstring::ClassMethodDocInject(m, "MeshBase", "normalize_normals");
-    docstring::ClassMethodDocInject(
-            m, "MeshBase", "paint_uniform_color",
-            {{"color", "RGB color for the PointCloud."}});
+    docstring::ClassMethodDocInject(m, "MeshBase", "paint_uniform_color",
+                                    {{"color", "RGB colors of vertices."}});
     docstring::ClassMethodDocInject(m, "MeshBase", "compute_convex_hull");
 }
 

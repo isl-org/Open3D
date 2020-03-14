@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Advanced/outlier_removal.py
+# examples/Python/Advanced/pointcloud_outlier_removal.py
 
 import open3d as o3d
 

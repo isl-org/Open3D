@@ -520,7 +520,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
     utility::LogDebug("[Initial     ] residual : {:e}", current_residual);
 
     bool stop = false;
-    if (stop || CheckRightTerm(b, criteria)) return;
+    if (CheckRightTerm(b, criteria)) return;
 
     utility::Timer timer_overall;
     timer_overall.Start();
