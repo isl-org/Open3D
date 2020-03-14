@@ -425,7 +425,7 @@ void FileDialog::OnDone() {
     if (this->impl_->onDone) {
         auto dir = this->impl_->CalcCurrentDirectory();
         utility::filesystem::ChangeWorkingDirectory(dir);
-        auto name = this->impl_->GetSelectedEntry().GetName();
+        auto name = this->impl_->filename->GetText();
         this->impl_->onDone((dir + "/" + name).c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");

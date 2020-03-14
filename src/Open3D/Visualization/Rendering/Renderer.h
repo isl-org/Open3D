@@ -39,6 +39,7 @@ namespace visualization {
 
 class RenderToBuffer;
 class Scene;
+class View;
 
 class ResourceLoadRequest {
 public:
@@ -93,7 +94,14 @@ public:
     virtual SkyboxHandle AddSkybox(const ResourceLoadRequest& request) = 0;
     virtual void RemoveSkybox(const SkyboxHandle& id) = 0;
 
-    virtual std::unique_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+    virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+
+    void RenderToImage(
+            std::size_t width,
+            std::size_t height,
+            View* view,
+            Scene* scene,
+            std::function<void(std::shared_ptr<geometry::Image>)> cb);
 };
 
 }  // namespace visualization

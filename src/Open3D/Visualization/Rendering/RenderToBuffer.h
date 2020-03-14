@@ -52,6 +52,8 @@ public:
     virtual void SetDimensions(std::size_t width, std::size_t height) = 0;
     virtual void CopySettings(const View* view) = 0;
     virtual View& GetView() = 0;
+    // BufferReadyCallback does not need to free Buffer::bytes.
+    // It should also not cache the pointer.
     virtual void RequestFrame(Scene* scene, BufferReadyCallback cb) = 0;
 };
 
