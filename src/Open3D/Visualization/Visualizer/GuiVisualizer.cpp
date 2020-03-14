@@ -316,6 +316,8 @@ static const std::vector<LightingProfile> gLightingProfiles = {
          .iblIntensity = 100000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, -0.577f, -0.577f},
+         .sunColor = {1.0f, 1.0f, 1.0f},
+         .iblRotation = Scene::Transform::Identity(),
          .iblEnabled = true,
          .sunEnabled = false}};
 
@@ -999,7 +1001,7 @@ void GuiVisualizer::SetGeometry(
 
     geometry::AxisAlignedBoundingBox bounds;
 
-    int nPointClouds = 0;
+    std::size_t nPointClouds = 0;
     for (auto &g : geometries) {
         Impl::Materials materials;
         materials.lit.handle =
