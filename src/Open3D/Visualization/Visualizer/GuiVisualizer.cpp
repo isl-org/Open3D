@@ -275,7 +275,11 @@ struct LightingProfile {
     Eigen::Vector3f sunDir;
     Eigen::Vector3f sunColor = {1.0f, 1.0f, 1.0f};
     Scene::Transform iblRotation = Scene::Transform::Identity();
+    bool iblEnabled = true;
+    bool sunEnabled = true;
 };
+
+static const std::string kPointCloudProfileName = "Point clouds (no sun)";
 
 static const std::vector<LightingProfile> gLightingProfiles = {
         {.name = "Brighter, up is +Y",
@@ -307,7 +311,13 @@ static const std::vector<LightingProfile> gLightingProfiles = {
         {.name = "Darker, up is +Z",
          .iblIntensity = 75000,
          .sunIntensity = 100000,
-         .sunDir = {0.577f, 0.577f, -0.577f}}};
+         .sunDir = {0.577f, 0.577f, -0.577f}},
+        {.name = kPointCloudProfileName,
+         .iblIntensity = 100000,
+         .sunIntensity = 100000,
+         .sunDir = {0.577f, -0.577f, -0.577f},
+         .iblEnabled = true,
+         .sunEnabled = false}};
 
 enum MenuId {
     FILE_OPEN,
@@ -494,18 +504,39 @@ struct GuiVisualizer::Impl {
                         .Finish();
     }
 
+    void SetLightingProfile(const std::string &name) {
+        for (size_t i = 0; i < gLightingProfiles.size(); ++i) {
+            if (gLightingProfiles[i].name == name) {
+                SetLightingProfile(gLightingProfiles[i]);
+                this->settings.wgtLightingProfile->SetSelectedValue(
+                        name.c_str());
+                return;
+            }
+        }
+        utility::LogWarning("Could not find lighting profile '{}'", name);
+    }
+
     void SetLightingProfile(const LightingProfile &profile) {
         auto *renderScene = this->scene->GetScene();
-        renderScene->SetIndirectLight(this->settings.hIbl);
+        if (profile.iblEnabled) {
+            renderScene->SetIndirectLight(this->settings.hIbl);
+        } else {
+            renderScene->SetIndirectLight(IndirectLightHandle());
+        }
         renderScene->SetIndirectLightIntensity(profile.iblIntensity);
         renderScene->SetIndirectLightRotation(profile.iblRotation);
-        renderScene->SetSkybox(visualization::SkyboxHandle::kBad);
+        renderScene->SetSkybox(SkyboxHandle());
+        renderScene->SetEntityEnabled(this->settings.hDirectionalLight,
+                                      profile.sunEnabled);
         renderScene->SetLightIntensity(this->settings.hDirectionalLight,
                                        profile.sunIntensity);
         renderScene->SetLightDirection(this->settings.hDirectionalLight,
                                        profile.sunDir);
         renderScene->SetLightColor(this->settings.hDirectionalLight,
                                    profile.sunColor);
+        this->settings.wgtAmbientEnabled->SetChecked(profile.iblEnabled);
+        this->settings.wgtSkyEnabled->SetChecked(false);
+        this->settings.wgtDirectionalEnabled->SetChecked(profile.sunEnabled);
         this->settings.wgtAmbientIBLs->SetSelectedValue("default");
         this->settings.wgtAmbientIntensity->SetValue(profile.iblIntensity);
         this->settings.wgtSunIntensity->SetValue(profile.sunIntensity);
@@ -692,6 +723,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtAmbientEnabled = std::make_shared<gui::Checkbox>("Ambient");
     settings.wgtAmbientEnabled->SetChecked(true);
     settings.wgtAmbientEnabled->SetOnChecked([this, renderScene](bool checked) {
+        impl_->settings.SetCustomProfile();
         if (checked) {
             renderScene->SetIndirectLight(impl_->settings.hIbl);
         } else {
@@ -702,6 +734,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
     settings.wgtSkyEnabled->SetChecked(false);
     settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
+        impl_->settings.SetCustomProfile();
         if (checked) {
             renderScene->SetSkybox(impl_->settings.hSky);
         } else {
@@ -713,6 +746,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtDirectionalEnabled->SetChecked(true);
     settings.wgtDirectionalEnabled->SetOnChecked(
             [this, renderScene](bool checked) {
+                impl_->settings.SetCustomProfile();
                 renderScene->SetEntityEnabled(impl_->settings.hDirectionalLight,
                                               checked);
             });
@@ -965,6 +999,7 @@ void GuiVisualizer::SetGeometry(
 
     geometry::AxisAlignedBoundingBox bounds;
 
+    int nPointClouds = 0;
     for (auto &g : geometries) {
         Impl::Materials materials;
         materials.lit.handle =
@@ -977,6 +1012,7 @@ void GuiVisualizer::SetGeometry(
 
         switch (g->GetGeometryType()) {
             case geometry::Geometry::GeometryType::PointCloud: {
+                nPointClouds++;
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
@@ -1020,6 +1056,10 @@ void GuiVisualizer::SetGeometry(
             impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
         } else {
             impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
+        }
+
+        if (nPointClouds == geometries.size()) {
+            impl_->SetLightingProfile(kPointCloudProfileName);
         }
 
         impl_->geometryMaterials.emplace(handle, materials);
