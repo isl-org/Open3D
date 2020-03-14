@@ -79,7 +79,16 @@ void MatrixInteractor::Rotate(int dx, int dy) {
     rotMatrix = rotMatrix * Eigen::AngleAxisf(-theta, axis);
 
     auto pos = matrix * Eigen::Vector3f(0, 0, 0);
-    auto dist = (centerOfRotation_ - pos).norm();
+    Eigen::Vector3f toCOR = centerOfRotation_ - pos;
+    auto dist = toCOR.norm();
+    // If the center of rotation is behind the camera we need to flip
+    // the sign of 'dist'. We can just dotprod with the forward vector
+    // of the camera. Forward is [0, 0, -1] for an identity matrix,
+    // so forward is simply rotation * [0, 0, -1].
+    Eigen::Vector3f forward = matrix.rotation() * Eigen::Vector3f{0.0f, 0.0f, -1.0f};
+    if (toCOR.dot(forward) < 0) {
+        dist = -dist;
+    }
     visualization::Camera::Transform m;
     m.fromPositionOrientationScale(centerOfRotation_,
                                    rotMatrix * matrix.rotation(),
