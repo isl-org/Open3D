@@ -55,8 +55,6 @@
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
 
-#include <thread>
-
 #define LOAD_IN_NEW_WINDOW 0
 
 namespace open3d {
@@ -1118,18 +1116,15 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
 void GuiVisualizer::ExportCurrentImage(int width,
                                        int height,
                                        const std::string &path) {
-    GetRenderer().RenderToBuffer(
+    GetRenderer().RenderToImage(
             width, height, impl_->scene->GetView(), impl_->scene->GetScene(),
-            [path](const visualization::RenderToBuffer::Buffer
-                           &buffer) mutable {
-                geometry::Image image;
-                image.width_ = buffer.width;
-                image.height_ = buffer.height;
-                image.num_of_channels_ = 3;
-                image.bytes_per_channel_ = 1;
-                image.data_ = std::vector<uint8_t>(buffer.bytes,
-                                                   buffer.bytes + buffer.size);
-                io::WriteImage(path, image);
+            [this, path](std::shared_ptr<geometry::Image> image) mutable {
+                if (!io::WriteImage(path, *image)) {
+                    this->ShowMessageBox(
+                            "Error", (std::string("Could not write image to ") +
+                                      path + ".")
+                                             .c_str());
+                }
             });
 }
 

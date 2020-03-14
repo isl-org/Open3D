@@ -26,6 +26,9 @@
 
 #include "Renderer.h"
 
+#include "RenderToBuffer.h"
+
+#include "Open3D/Geometry/Image.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -77,12 +80,12 @@ ResourceLoadRequest::ResourceLoadRequest(const char* aPath,
       path(aPath),
       errorCallback(std::move(aErrorCallback)) {}
 
-void Renderer::RenderToBuffer(
+void Renderer::RenderToImage(
         std::size_t width,
         std::size_t height,
         View* view,
         Scene* scene,
-        std::function<void(const visualization::RenderToBuffer::Buffer&)> cb) {
+        std::function<void(std::shared_ptr<geometry::Image>)> cb) {
     auto render = CreateBufferRenderer();
     render->SetDimensions(width, height);
     render->CopySettings(view);
@@ -91,7 +94,14 @@ void Renderer::RenderToBuffer(
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
             [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
-                cb(buffer);
+                auto image = std::make_shared<geometry::Image>();
+                image->width_ = buffer.width;
+                image->height_ = buffer.height;
+                image->num_of_channels_ = 3;
+                image->bytes_per_channel_ = 1;
+                image->data_ = std::vector<uint8_t>(buffer.bytes,
+                                                    buffer.bytes + buffer.size);
+                cb(image);
                 render = nullptr;
             });
 }
