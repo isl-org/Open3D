@@ -76,6 +76,13 @@ static OPEN3D_HOST_DEVICE void CUDAExpElementKernel(const void* src,
             exp(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAAbsElementKernel(const void* src,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            abs(static_cast<double>(*static_cast<const scalar_t*>(src))));
+}
+
 void CopyCUDA(const Tensor& src, Tensor& dst) {
     // It has been checked that
     // - src and dst have the same dtype
@@ -188,6 +195,14 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDAExpElementKernel<scalar_t>(src, dst);
+                        });
+                break;
+            case UnaryEWOpCode::Abs:
+                assert_dtype_is_float(dtype);
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDAAbsElementKernel<scalar_t>(src, dst);
                         });
                 break;
             default:

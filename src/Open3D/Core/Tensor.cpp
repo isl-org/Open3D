@@ -603,4 +603,15 @@ Tensor Tensor::Exp_() {
     return *this;
 }
 
+Tensor Tensor::Abs() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Abs);
+    return dst_tensor;
+}
+
+Tensor Tensor::Abs_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Abs);
+    return *this;
+}
+
 }  // namespace open3d
