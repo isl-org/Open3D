@@ -1053,10 +1053,17 @@ void GuiVisualizer::SetGeometry(
 
         impl_->geometryHandles.push_back(handle);
 
-        if (selectedMaterial == materials.unlit.handle) {
-            impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
+        auto viewMode = impl_->scene->GetView()->GetMode();
+        if (viewMode == visualization::View::Mode::Normals) {
+            impl_->settings.SetMaterialSelected(Impl::Settings::NORMAL_MAP);
+        } else if (viewMode == visualization::View::Mode::Depth) {
+            impl_->settings.SetMaterialSelected(Impl::Settings::DEPTH);
         } else {
-            impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
+            if (selectedMaterial == materials.unlit.handle) {
+                impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
+            } else {
+                impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
+            }
         }
 
         if (nPointClouds == geometries.size()) {

@@ -110,6 +110,8 @@ FilamentView::~FilamentView() {
     engine_.destroy(view_);
 }
 
+View::Mode FilamentView::GetMode() const { return mode_; }
+
 void FilamentView::SetMode(Mode mode) {
 // As color switching disabled, we don't need this code.
 // Yet disabling this looks like a bad idea, so I leave code commented
