@@ -3,7 +3,13 @@
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
 cmake_minimum_required(VERSION 3.1)
+# Use the correct OpenGL Library preference if available
+if (POLICY CMP0072)
+    cmake_policy(SET CMP0072 NEW)
+endif()
+
 set (CMAKE_CXX_STANDARD 11)
+
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
