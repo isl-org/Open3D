@@ -31,11 +31,12 @@ if __name__ == "__main__":
 
     mesh = meshes.bunny()
     pcd = mesh.sample_points_poisson_disk(750)
+    tetra_mesh, pt_map = o3d.geometry.TetraMesh.create_from_point_cloud(pcd)
     o3d.visualization.draw_geometries([pcd])
     for alpha in np.logspace(np.log10(0.5), np.log10(0.01), num=4):
         print("alpha={}".format(alpha))
         mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(
-            pcd, alpha)
+            pcd, alpha, tetra_mesh, pt_map)
         mesh.compute_vertex_normals()
         draw_geometries_with_back_face([mesh])
 
