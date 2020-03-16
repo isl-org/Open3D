@@ -328,8 +328,6 @@ enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
     FILE_CLOSE,
-    VIEW_WIREFRAME,
-    VIEW_MESH,
     SETTINGS_LIGHT_AND_MATERIALS,
     HELP_KEYS,
     HELP_ABOUT,
@@ -341,7 +339,6 @@ struct GuiVisualizer::Impl {
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::VGrid> helpKeys;
-    std::shared_ptr<gui::Menu> viewMenu;
 
     struct LitMaterial {
         visualization::MaterialInstanceHandle handle;
@@ -570,12 +567,6 @@ GuiVisualizer::GuiVisualizer(
         fileMenu->AddItem("Export Current Image...", nullptr, FILE_EXPORT_RGB);
         fileMenu->AddSeparator();
         fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
-        auto viewMenu = std::make_shared<gui::Menu>();
-        viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
-        viewMenu->SetEnabled(VIEW_WIREFRAME, false);
-        viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
-        viewMenu->SetEnabled(VIEW_MESH, false);
-        impl_->viewMenu = viewMenu;
         auto helpMenu = std::make_shared<gui::Menu>();
         helpMenu->AddItem("Show Controls", nullptr, HELP_KEYS);
         helpMenu->AddSeparator();
@@ -587,7 +578,6 @@ GuiVisualizer::GuiVisualizer(
         settingsMenu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
-        menu->AddMenu("View", viewMenu);
         menu->AddMenu("Settings", settingsMenu);
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
         // macOS adds a special search item to menus named "Help",
@@ -1234,10 +1224,6 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
         }
         case FILE_CLOSE:
             this->Close();
-            break;
-        case VIEW_WIREFRAME:
-            break;
-        case VIEW_MESH:
             break;
         case SETTINGS_LIGHT_AND_MATERIALS: {
             auto visibility = !impl_->settings.wgtBase->IsVisible();
