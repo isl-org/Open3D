@@ -931,7 +931,15 @@ GuiVisualizer::GuiVisualizer(
                               .SetParameter("clearCoatRoughness",
                                             prefab.clearCoatRoughness)
                               .SetParameter("anisotropy", prefab.anisotropy)
-                              .SetParameter("pointSize", prefab.pointSize)
+                              // Point size is part of the material for
+                              // rendering reasons, and therefore
+                              // prefab.pointSize exists, but conceptually (and
+                              // UI-wise) it is separate. So use the current
+                              // setting instead of the prefab setting for point
+                              // size.
+                              .SetParameter("pointSize",
+                                            float(impl_->settings.wgtPointSize
+                                                          ->GetDoubleValue()))
                               .Finish();
                 renderScene->AssignMaterial(handle, mat);
             }
