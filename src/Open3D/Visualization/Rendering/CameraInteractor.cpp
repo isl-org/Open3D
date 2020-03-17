@@ -41,6 +41,10 @@ void CameraInteractor::SetBoundingBox(
                      bounds.GetCenter().cast<float>());
 }
 
+void CameraInteractor::SetCenterOfRotation(const Eigen::Vector3f& center) {
+    centerOfRotation_ = center;
+}
+
 void CameraInteractor::Rotate(int dx, int dy) {
     Super::Rotate(dx, dy);
     camera_->SetModelMatrix(GetMatrix());
@@ -105,6 +109,19 @@ void CameraInteractor::Pan(int dx, int dy) {
     auto worldMove = modelMatrix.rotation() * localMove;
     centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
     modelMatrix.translate(localMove);
+    camera_->SetModelMatrix(modelMatrix);
+}
+
+void CameraInteractor::RotateLocal(float angleRad,
+                                   const Eigen::Vector3f& axis) {
+    auto modelMatrix = camera_->GetModelMatrix(); // copy
+    modelMatrix.rotate(Eigen::AngleAxis<float>(angleRad, axis));
+    camera_->SetModelMatrix(modelMatrix);
+}
+
+void CameraInteractor::MoveLocal(const Eigen::Vector3f& v) {
+    auto modelMatrix = camera_->GetModelMatrix(); // copy
+    modelMatrix.translate(v);
     camera_->SetModelMatrix(modelMatrix);
 }
 

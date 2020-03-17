@@ -105,6 +105,7 @@ struct Window::Impl {
     double lastFrameTime = 0.0;
     int nSkippedFrames = 0;
     bool wantsAutoSizeAndCenter = false;
+    bool wantsTickEvents = false;
     bool needsLayout = true;
 };
 
@@ -396,6 +397,17 @@ void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
 
 bool Window::IsActiveWindow() const {
     return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS);
+}
+
+bool Window::GetTickEventsEnabled() const {
+    return impl_->wantsTickEvents;
+}
+void Window::SetTickEventsEnabled(bool enable)  {
+    impl_->wantsTickEvents = enable;
+}
+
+void Window::SetFocusWidget(Widget *w) {
+    impl_->focusWidget = w;
 }
 
 void Window::AddChild(std::shared_ptr<Widget> w) {
@@ -780,7 +792,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
                                       std::shared_ptr<Widget> child) -> bool {
         if (child->GetFrame().Contains(e.x, e.y) && child->IsVisible()) {
             if (e.type == MouseEvent::BUTTON_DOWN) {
-                impl_->focusWidget = child.get();
+                SetFocusWidget(child.get());
             }
             child->Mouse(e);
             return true;
@@ -816,6 +828,17 @@ void Window::OnTextInput(const TextInputEvent& e) {
     MakeCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
+}
+
+bool Window::OnTickEvent(const TickEvent& e) {
+    MakeCurrent();
+    bool redraw = false;
+    for (auto child : impl_->children) {
+        if (child->Tick(e) == Widget::DrawResult::REDRAW) {
+            redraw = true;
+        }
+    }
+    return redraw;
 }
 
 void Window::OnDragDropped(const char* path) {}

@@ -682,6 +682,11 @@ Application::RunStatus Application::ProcessQueuedEvents() {
             auto w = kv.second;
             bool gotEvents = (impl_->eventCounts.find(w.get()) !=
                               impl_->eventCounts.end());
+            if (w->GetTickEventsEnabled()) {
+                if (w->OnTickEvent(TickEvent())) {
+                    gotEvents = true;
+                }
+            }
             if (w->IsVisible() && gotEvents) {
                 if (w->DrawOnce(float(RUNLOOP_DELAY_MSEC) / 1000.0) ==
                     Window::REDRAW) {

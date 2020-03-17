@@ -40,6 +40,8 @@ public:
     void SetBoundingBox(
             const geometry::AxisAlignedBoundingBox& bounds) override;
 
+    void SetCenterOfRotation(const Eigen::Vector3f& center);
+
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
     void Dolly(int dy, DragType type) override;
@@ -49,6 +51,9 @@ public:
 
     /// Sets camera field of view
     void Zoom(int dy, DragType dragType);
+
+    void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
+    void MoveLocal(const Eigen::Vector3f& v);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();

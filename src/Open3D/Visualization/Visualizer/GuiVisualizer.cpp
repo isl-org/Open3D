@@ -681,6 +681,42 @@ GuiVisualizer::GuiVisualizer(
         ShowDialog(dlg);
     });
 
+    // ... view manipulator buttons
+    auto viewRotate = std::make_shared<SmallButton>("Rotate");
+    viewRotate->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::ROTATE_OBJ);
+        this->SetTickEventsEnabled(false);
+    });
+    auto viewFPS = std::make_shared<SmallButton>("FPS");
+    viewFPS->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::FPS);
+        this->SetFocusWidget(this->impl_->scene.get());
+        this->SetTickEventsEnabled(true);
+    });
+    auto viewSun = std::make_shared<SmallButton>("Sun");
+    viewSun->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::ROTATE_SUN);
+        this->SetTickEventsEnabled(false);
+    });
+    auto viewIBL = std::make_shared<SmallButton>("IBL");
+    viewIBL->SetEnabled(false);
+    viewIBL->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::ROTATE_IBL);
+        this->SetTickEventsEnabled(false);
+    });
+
+    auto viewControls = std::make_shared<gui::Horiz>(gridSpacing);
+    viewControls->AddChild(gui::Horiz::MakeStretch());
+    viewControls->AddChild(viewRotate);
+    viewControls->AddChild(viewFPS);
+    viewControls->AddChild(gui::Horiz::MakeFixed(em));
+    viewControls->AddChild(viewSun);
+    viewControls->AddChild(viewIBL);
+    viewControls->AddChild(gui::Horiz::MakeStretch());
+    settings.wgtBase->AddChild(std::make_shared<gui::Label>("View controls"));
+    settings.wgtBase->AddChild(viewControls);
+    settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+
     // ... background colors
     auto bgcolor = std::make_shared<gui::ColorEdit>();
     bgcolor->SetValue({1, 1, 1});

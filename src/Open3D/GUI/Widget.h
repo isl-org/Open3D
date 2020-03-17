@@ -35,8 +35,9 @@ namespace open3d {
 namespace gui {
 
 class Color;
-struct KeyEvent;
 struct MouseEvent;
+struct KeyEvent;
+struct TickEvent;
 struct Theme;
 
 struct DrawContext {
@@ -96,6 +97,13 @@ public:
     /// as Dear ImGUI will take care of all the mouse handling during
     /// the Draw().
     virtual void Key(const KeyEvent& e);
+
+    /// If sending tick events is enabled for the window, a tick event
+    /// will be sent each time the event loop processes events. This
+    /// allows for things like animation or smoothly moving the camera
+    /// as long as a key is pressed without necessarily always redrawing.
+    /// Return DrawResult::REDRAW if you want to be redrawn.
+    virtual DrawResult Tick(const TickEvent& e);
 
 protected:
     void DrawImGuiPushEnabledState();

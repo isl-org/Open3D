@@ -39,6 +39,8 @@
 
 #include <Eigen/Geometry>
 
+#include <set>
+
 #define ENABLE_PAN 1
 
 namespace open3d {
@@ -55,6 +57,7 @@ public:
     virtual visualization::MatrixInteractor& GetMatrixInteractor() = 0;
     virtual void Mouse(const MouseEvent& e) = 0;
     virtual void Key(const KeyEvent& e) = 0;
+    virtual Widget::DrawResult Tick(const TickEvent& e) = 0;
 };
 
 class RotateSunInteractor : public MouseInteractor {
@@ -105,11 +108,121 @@ public:
 
     void Key(const KeyEvent& e) override {}
 
+    Widget::DrawResult Tick(const TickEvent& e) override {
+        return Widget::DrawResult::NONE;
+    }
+
 private:
     std::unique_ptr<visualization::LightDirectionInteractor> lightDir_;
     int mouseDownX_ = 0;
     int mouseDownY_ = 0;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
+};
+
+class FPSInteractor : public MouseInteractor {
+public:
+    FPSInteractor(visualization::Camera* camera)
+    : camera_(camera)
+    , cameraControls_(std::make_unique<visualization::CameraInteractor>(camera, MIN_FAR_PLANE))
+    {}
+
+    visualization::MatrixInteractor& GetMatrixInteractor() override {
+        return *cameraControls_.get();
+    }
+
+    void Mouse(const MouseEvent& e) override {
+        switch (e.type) {
+            case MouseEvent::BUTTON_DOWN:
+                mouseDownX_ = e.x;
+                mouseDownY_ = e.y;
+                cameraControls_->SetCenterOfRotation(camera_->GetPosition());
+                cameraControls_->StartMouseDrag();
+                break;
+            case MouseEvent::DRAG: {
+                int dx = e.x - mouseDownX_;
+                int dy = e.y - mouseDownY_;
+                cameraControls_->Rotate(-dx, -dy);
+                break;
+            }
+            case MouseEvent::WHEEL: {
+                break;
+            }
+            case MouseEvent::BUTTON_UP:
+                cameraControls_->EndMouseDrag();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Key(const KeyEvent& e) override {
+        if (e.type == KeyEvent::Type::DOWN) {
+            keysDown_.insert(e.key);
+        } else if (e.type == KeyEvent::Type::UP) {
+            keysDown_.erase(e.key);
+        }
+    }
+
+    Widget::DrawResult Tick(const TickEvent& e) override {
+        const float dist = 0.1f;
+        const float angleRad = 0.01f;
+
+        bool redraw = false;
+
+        if (keysDown_.find('a') != keysDown_.end()) {
+            cameraControls_->MoveLocal({-dist, 0, 0});
+            redraw = true;
+        }
+        if (keysDown_.find('d') != keysDown_.end()) {
+            cameraControls_->MoveLocal({dist, 0, 0});
+            redraw = true;
+        }
+        if (keysDown_.find('w') != keysDown_.end()) {
+            cameraControls_->MoveLocal({0, 0, -dist});
+            redraw = true;
+        }
+        if (keysDown_.find('s') != keysDown_.end()) {
+            cameraControls_->MoveLocal({0, 0, dist});
+            redraw = true;
+        }
+        if (keysDown_.find('q') != keysDown_.end()) {
+            cameraControls_->MoveLocal({0, dist, 0});
+            redraw = true;
+        }
+        if (keysDown_.find('z') != keysDown_.end()) {
+            cameraControls_->MoveLocal({0, -dist, 0});
+            redraw = true;
+        }
+        if (keysDown_.find(KEY_UP) != keysDown_.end()) {
+            cameraControls_->RotateLocal(angleRad, {1, 0, 0});
+            redraw = true;
+        }
+        if (keysDown_.find(KEY_DOWN) != keysDown_.end()) {
+            cameraControls_->RotateLocal(-angleRad, {1, 0, 0});
+            redraw = true;
+        }
+        if (keysDown_.find(KEY_LEFT) != keysDown_.end()) {
+            cameraControls_->RotateLocal(angleRad, {0, 1, 0});
+            redraw = true;
+        }
+        if (keysDown_.find(KEY_RIGHT) != keysDown_.end()) {
+            cameraControls_->RotateLocal(-angleRad, {0, 1, 0});
+            redraw = true;
+        }
+
+        if (redraw) {
+            return Widget::DrawResult::REDRAW;
+        }
+        return Widget::DrawResult::NONE;
+    }
+
+private:
+    visualization::Camera *camera_;
+    std::unique_ptr<visualization::CameraInteractor> cameraControls_;
+    std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
+    int mouseDownX_ = 0;
+    int mouseDownY_ = 0;
+    std::set<uint32_t> keysDown_;
 };
 
 class RotateObjectInteractor : public MouseInteractor {
@@ -120,6 +233,10 @@ public:
 
     visualization::MatrixInteractor& GetMatrixInteractor() override {
         return *cameraControls_.get();
+    }
+
+    void SetCenterOfRotation(const Eigen::Vector3f& center) {
+        cameraControls_->SetCenterOfRotation(center);
     }
 
     void Mouse(const MouseEvent& e) override {
@@ -205,6 +322,10 @@ public:
 
     void Key(const KeyEvent& e) override {}
 
+    Widget::DrawResult Tick(const TickEvent& e) override {
+        return Widget::DrawResult::NONE;
+    }
+
 private:
     std::unique_ptr<visualization::CameraInteractor> cameraControls_;
     int mouseDownX_ = 0;
@@ -226,6 +347,7 @@ class Interactors {
 public:
     Interactors(visualization::Scene* scene, visualization::Camera* camera) {
         rotate_ = std::make_unique<RotateObjectInteractor>(camera);
+        fps_ = std::make_unique<FPSInteractor>(camera);
         lightDir_ = std::make_unique<RotateSunInteractor>(scene, camera);
 
         current_ = rotate_.get();
@@ -233,18 +355,50 @@ public:
 
     void SetViewSize(const Size& size) {
         rotate_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+        fps_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         lightDir_->GetMatrixInteractor().SetViewSize(size.width, size.height);
     }
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
         rotate_->GetMatrixInteractor().SetBoundingBox(bounds);
+        fps_->GetMatrixInteractor().SetBoundingBox(bounds);
         lightDir_->GetMatrixInteractor().SetBoundingBox(bounds);
+    }
+
+    void SetCenterOfRotation(const Eigen::Vector3f& center) {
+        rotate_->SetCenterOfRotation(center);
     }
 
     void SetDirectionalLight(
             visualization::LightHandle dirLight,
             std::function<void(const Eigen::Vector3f&)> onChanged) {
         lightDir_->SetDirectionalLight(dirLight, onChanged);
+    }
+
+    SceneWidget::Controls GetControls() const {
+        if (current_ == fps_.get()) {
+            return SceneWidget::Controls::FPS;
+        } else if (current_ == lightDir_.get()) {
+            return SceneWidget::Controls::ROTATE_SUN;
+        } else {
+            return SceneWidget::Controls::ROTATE_OBJ;
+        }
+    }
+
+    void SetControls(SceneWidget::Controls mode) {
+        switch (mode) {
+            case SceneWidget::Controls::ROTATE_OBJ:
+                current_ = rotate_.get();
+                break;
+            case SceneWidget::Controls::FPS:
+                current_ = fps_.get();
+                break;
+            case SceneWidget::Controls::ROTATE_SUN:
+                current_ = lightDir_.get();
+                break;
+            case SceneWidget::Controls::ROTATE_IBL:
+                break;
+        }
     }
 
     void Mouse(const MouseEvent& e) {
@@ -268,11 +422,21 @@ public:
     }
 
     void Key(const KeyEvent& e) {
+        if (current_) {
+            current_->Key(e);
+        }
+    }
 
+    Widget::DrawResult Tick(const TickEvent& e) {
+        if (current_) {
+            return current_->Tick(e);
+        }
+        return Widget::DrawResult::NONE;
     }
 
 private:
     std::unique_ptr<RotateObjectInteractor> rotate_;
+    std::unique_ptr<FPSInteractor> fps_;
     std::unique_ptr<RotateSunInteractor> lightDir_;
 
     MouseInteractor *current_ = nullptr;
@@ -359,6 +523,18 @@ void SceneWidget::SelectDirectionalLight(
             });
 }
 
+void SceneWidget::SetViewControls(Controls mode) {
+    if (mode == Controls::ROTATE_OBJ
+        && impl_->controls->GetControls() == Controls::FPS) {
+        // If we're going from FPS to standard rotate obj, reset the
+        // camera
+        impl_->controls->SetControls(mode);
+        GoToCameraPreset(CameraPreset::PLUS_Z);
+    } else {
+        impl_->controls->SetControls(mode);
+    }
+}
+
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     auto boundsMax = impl_->bounds.GetMaxBound();
     auto maxDim =
@@ -384,6 +560,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
         }
     }
     impl_->camera->LookAt(center, eye, up);
+    impl_->controls->SetCenterOfRotation(center);
 }
 
 visualization::View* SceneWidget::GetView() const {
@@ -433,6 +610,10 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 void SceneWidget::Mouse(const MouseEvent& e) { impl_->controls->Mouse(e); }
 
 void SceneWidget::Key(const KeyEvent& e) { impl_->controls->Key(e); }
+
+Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
+    return impl_->controls->Tick(e);
+}
 
 }  // namespace gui
 }  // namespace open3d
