@@ -105,9 +105,9 @@ void pybind_pointcloud(py::module &m) {
                          geometry::PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
-            .def("remove_none_finite_points",
-                 &geometry::PointCloud::RemoveNoneFinitePoints,
-                 "Function to remove none-finite points from the PointCloud",
+            .def("remove_non_finite_points",
+                 &geometry::PointCloud::RemoveNonFinitePoints,
+                 "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
             .def("remove_radius_outlier",
                  &geometry::PointCloud::RemoveRadiusOutliers,
@@ -244,7 +244,7 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_none_finite_points",
+            m, "PointCloud", "remove_non_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},
              {"remove_infinite",
               "Remove infinite values from the PointCloud"}});

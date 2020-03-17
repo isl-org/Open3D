@@ -142,7 +142,7 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     return distances;
 }
 
-PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
+PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                                bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
@@ -166,7 +166,7 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
     utility::LogDebug(
-            "[RemoveNoneFinitePoints] {:d} nan points have been removed.",
+            "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
     return *this;
 }

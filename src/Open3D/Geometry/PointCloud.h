@@ -115,7 +115,7 @@ public:
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
-    PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
+    PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
                                        bool remove_infinite = true);
 
     /// \brief Function to select points from \p input pointcloud into
