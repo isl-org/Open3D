@@ -114,13 +114,13 @@ void CameraInteractor::Pan(int dx, int dy) {
 
 void CameraInteractor::RotateLocal(float angleRad,
                                    const Eigen::Vector3f& axis) {
-    auto modelMatrix = camera_->GetModelMatrix(); // copy
+    auto modelMatrix = camera_->GetModelMatrix();  // copy
     modelMatrix.rotate(Eigen::AngleAxis<float>(angleRad, axis));
     camera_->SetModelMatrix(modelMatrix);
 }
 
 void CameraInteractor::MoveLocal(const Eigen::Vector3f& v) {
-    auto modelMatrix = camera_->GetModelMatrix(); // copy
+    auto modelMatrix = camera_->GetModelMatrix();  // copy
     modelMatrix.translate(v);
     camera_->SetModelMatrix(modelMatrix);
 }

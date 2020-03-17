@@ -684,7 +684,8 @@ GuiVisualizer::GuiVisualizer(
     // ... view manipulator buttons
     auto viewRotate = std::make_shared<SmallButton>("Rotate");
     viewRotate->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::ROTATE_OBJ);
+        this->impl_->scene->SetViewControls(
+                gui::SceneWidget::Controls::ROTATE_OBJ);
         this->SetTickEventsEnabled(false);
     });
     auto viewFPS = std::make_shared<SmallButton>("FPS");
@@ -695,13 +696,15 @@ GuiVisualizer::GuiVisualizer(
     });
     auto viewSun = std::make_shared<SmallButton>("Sun");
     viewSun->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::ROTATE_SUN);
+        this->impl_->scene->SetViewControls(
+                gui::SceneWidget::Controls::ROTATE_SUN);
         this->SetTickEventsEnabled(false);
     });
     auto viewIBL = std::make_shared<SmallButton>("IBL");
     viewIBL->SetEnabled(false);
     viewIBL->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::ROTATE_IBL);
+        this->impl_->scene->SetViewControls(
+                gui::SceneWidget::Controls::ROTATE_IBL);
         this->SetTickEventsEnabled(false);
     });
 

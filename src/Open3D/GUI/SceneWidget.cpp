@@ -64,8 +64,8 @@ class RotateSunInteractor : public MouseInteractor {
 public:
     RotateSunInteractor(visualization::Scene* scene,
                         visualization::Camera* camera)
-    : lightDir_(std::make_unique<visualization::LightDirectionInteractor>(scene, camera))
-    {}
+        : lightDir_(std::make_unique<visualization::LightDirectionInteractor>(
+                  scene, camera)) {}
 
     visualization::MatrixInteractor& GetMatrixInteractor() override {
         return *lightDir_.get();
@@ -103,7 +103,6 @@ public:
             default:
                 break;
         }
-
     }
 
     void Key(const KeyEvent& e) override {}
@@ -122,9 +121,9 @@ private:
 class FPSInteractor : public MouseInteractor {
 public:
     FPSInteractor(visualization::Camera* camera)
-    : camera_(camera)
-    , cameraControls_(std::make_unique<visualization::CameraInteractor>(camera, MIN_FAR_PLANE))
-    {}
+        : camera_(camera),
+          cameraControls_(std::make_unique<visualization::CameraInteractor>(
+                  camera, MIN_FAR_PLANE)) {}
 
     visualization::MatrixInteractor& GetMatrixInteractor() override {
         return *cameraControls_.get();
@@ -217,7 +216,7 @@ public:
     }
 
 private:
-    visualization::Camera *camera_;
+    visualization::Camera* camera_;
     std::unique_ptr<visualization::CameraInteractor> cameraControls_;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
     int mouseDownX_ = 0;
@@ -228,8 +227,8 @@ private:
 class RotateObjectInteractor : public MouseInteractor {
 public:
     RotateObjectInteractor(visualization::Camera* camera)
-    : cameraControls_(std::make_unique<visualization::CameraInteractor>(camera, MIN_FAR_PLANE))
-    {}
+        : cameraControls_(std::make_unique<visualization::CameraInteractor>(
+                  camera, MIN_FAR_PLANE)) {}
 
     visualization::MatrixInteractor& GetMatrixInteractor() override {
         return *cameraControls_.get();
@@ -331,14 +330,7 @@ private:
     int mouseDownX_ = 0;
     int mouseDownY_ = 0;
 
-    enum class State {
-        NONE,
-        PAN,
-        DOLLY,
-        ZOOM,
-        ROTATE_XY,
-        ROTATE_Z
-    };
+    enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z };
     State state_ = State::NONE;
 };
 
@@ -403,9 +395,9 @@ public:
 
     void Mouse(const MouseEvent& e) {
         if (current_ == rotate_.get()) {
-            if (e.type == MouseEvent::Type::BUTTON_DOWN
-                && (e.button.button == MouseButton::MIDDLE
-                    || e.modifiers & int(KeyModifier::ALT))) {
+            if (e.type == MouseEvent::Type::BUTTON_DOWN &&
+                (e.button.button == MouseButton::MIDDLE ||
+                 e.modifiers & int(KeyModifier::ALT))) {
                 override_ = lightDir_.get();
             }
         }
@@ -439,15 +431,15 @@ private:
     std::unique_ptr<FPSInteractor> fps_;
     std::unique_ptr<RotateSunInteractor> lightDir_;
 
-    MouseInteractor *current_ = nullptr;
-    MouseInteractor *override_ = nullptr;
+    MouseInteractor* current_ = nullptr;
+    MouseInteractor* override_ = nullptr;
 };
 
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
     visualization::Scene& scene;
     visualization::ViewHandle viewId;
-    visualization::Camera *camera;
+    visualization::Camera* camera;
     geometry::AxisAlignedBoundingBox bounds;
     std::shared_ptr<Interactors> controls;
     bool frameChanged = false;
@@ -462,8 +454,7 @@ SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
 
     auto view = impl_->scene.GetView(impl_->viewId);
     impl_->camera = view->GetCamera();
-    impl_->controls =
-            std::make_shared<Interactors>(&scene, view->GetCamera());
+    impl_->controls = std::make_shared<Interactors>(&scene, view->GetCamera());
 }
 
 SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
@@ -524,8 +515,8 @@ void SceneWidget::SelectDirectionalLight(
 }
 
 void SceneWidget::SetViewControls(Controls mode) {
-    if (mode == Controls::ROTATE_OBJ
-        && impl_->controls->GetControls() == Controls::FPS) {
+    if (mode == Controls::ROTATE_OBJ &&
+        impl_->controls->GetControls() == Controls::FPS) {
         // If we're going from FPS to standard rotate obj, reset the
         // camera
         impl_->controls->SetControls(mode);

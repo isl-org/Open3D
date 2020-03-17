@@ -399,16 +399,12 @@ bool Window::IsActiveWindow() const {
     return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS);
 }
 
-bool Window::GetTickEventsEnabled() const {
-    return impl_->wantsTickEvents;
-}
-void Window::SetTickEventsEnabled(bool enable)  {
+bool Window::GetTickEventsEnabled() const { return impl_->wantsTickEvents; }
+void Window::SetTickEventsEnabled(bool enable) {
     impl_->wantsTickEvents = enable;
 }
 
-void Window::SetFocusWidget(Widget *w) {
-    impl_->focusWidget = w;
-}
+void Window::SetFocusWidget(Widget* w) { impl_->focusWidget = w; }
 
 void Window::AddChild(std::shared_ptr<Widget> w) {
     impl_->children.push_back(w);

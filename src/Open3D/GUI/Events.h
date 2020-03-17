@@ -69,8 +69,7 @@ struct MouseEvent {
     };
 };
 
-struct TickEvent {
-};
+struct TickEvent {};
 
 enum {
     KEY_BACKSPACE = 8,
