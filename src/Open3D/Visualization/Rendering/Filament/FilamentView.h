@@ -60,6 +60,7 @@ public:
                  FilamentResourceManager& resourceManager);
     ~FilamentView() override;
 
+    Mode GetMode() const override;
     void SetMode(Mode mode) override;
     void SetDiscardBuffers(const TargetBuffers& buffers) override;
 

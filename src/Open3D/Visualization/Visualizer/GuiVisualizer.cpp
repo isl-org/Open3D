@@ -328,8 +328,6 @@ enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
     FILE_CLOSE,
-    VIEW_WIREFRAME,
-    VIEW_MESH,
     SETTINGS_LIGHT_AND_MATERIALS,
     HELP_KEYS,
     HELP_ABOUT,
@@ -341,7 +339,6 @@ struct GuiVisualizer::Impl {
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::VGrid> helpKeys;
-    std::shared_ptr<gui::Menu> viewMenu;
 
     struct LitMaterial {
         visualization::MaterialInstanceHandle handle;
@@ -570,12 +567,6 @@ GuiVisualizer::GuiVisualizer(
         fileMenu->AddItem("Export Current Image...", nullptr, FILE_EXPORT_RGB);
         fileMenu->AddSeparator();
         fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
-        auto viewMenu = std::make_shared<gui::Menu>();
-        viewMenu->AddItem("Wireframe", nullptr, VIEW_WIREFRAME);
-        viewMenu->SetEnabled(VIEW_WIREFRAME, false);
-        viewMenu->AddItem("Mesh", nullptr, VIEW_MESH);
-        viewMenu->SetEnabled(VIEW_MESH, false);
-        impl_->viewMenu = viewMenu;
         auto helpMenu = std::make_shared<gui::Menu>();
         helpMenu->AddItem("Show Controls", nullptr, HELP_KEYS);
         helpMenu->AddSeparator();
@@ -587,7 +578,6 @@ GuiVisualizer::GuiVisualizer(
         settingsMenu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
         auto menu = std::make_shared<gui::Menu>();
         menu->AddMenu("File", fileMenu);
-        menu->AddMenu("View", viewMenu);
         menu->AddMenu("Settings", settingsMenu);
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
         // macOS adds a special search item to menus named "Help",
@@ -931,7 +921,15 @@ GuiVisualizer::GuiVisualizer(
                               .SetParameter("clearCoatRoughness",
                                             prefab.clearCoatRoughness)
                               .SetParameter("anisotropy", prefab.anisotropy)
-                              .SetParameter("pointSize", prefab.pointSize)
+                              // Point size is part of the material for
+                              // rendering reasons, and therefore
+                              // prefab.pointSize exists, but conceptually (and
+                              // UI-wise) it is separate. So use the current
+                              // setting instead of the prefab setting for point
+                              // size.
+                              .SetParameter("pointSize",
+                                            float(impl_->settings.wgtPointSize
+                                                          ->GetDoubleValue()))
                               .Finish();
                 renderScene->AssignMaterial(handle, mat);
             }
@@ -1053,10 +1051,17 @@ void GuiVisualizer::SetGeometry(
 
         impl_->geometryHandles.push_back(handle);
 
-        if (selectedMaterial == materials.unlit.handle) {
-            impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
+        auto viewMode = impl_->scene->GetView()->GetMode();
+        if (viewMode == visualization::View::Mode::Normals) {
+            impl_->settings.SetMaterialSelected(Impl::Settings::NORMAL_MAP);
+        } else if (viewMode == visualization::View::Mode::Depth) {
+            impl_->settings.SetMaterialSelected(Impl::Settings::DEPTH);
         } else {
-            impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
+            if (selectedMaterial == materials.unlit.handle) {
+                impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
+            } else {
+                impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
+            }
         }
 
         if (nPointClouds == geometries.size()) {
@@ -1219,10 +1224,6 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
         }
         case FILE_CLOSE:
             this->Close();
-            break;
-        case VIEW_WIREFRAME:
-            break;
-        case VIEW_MESH:
             break;
         case SETTINGS_LIGHT_AND_MATERIALS: {
             auto visibility = !impl_->settings.wgtBase->IsVisible();
