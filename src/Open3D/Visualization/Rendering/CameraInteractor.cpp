@@ -163,33 +163,6 @@ void CameraInteractor::Zoom(int dy, DragType dragType) {
                            camera_->GetFar(), camera_->GetFieldOfViewType());
 }
 
-void CameraInteractor::GoToPreset(CameraPreset preset) {
-    auto boundsMax = modelBounds_.GetMaxBound();
-    auto maxDim =
-            std::max(boundsMax.x(), std::max(boundsMax.y(), boundsMax.z()));
-    maxDim = 1.5f * maxDim;
-    auto center = centerOfRotation_;
-    Eigen::Vector3f eye, up;
-    switch (preset) {
-        case CameraPreset::PLUS_X: {
-            eye = Eigen::Vector3f(maxDim, center.y(), center.z());
-            up = Eigen::Vector3f(0, 1, 0);
-            break;
-        }
-        case CameraPreset::PLUS_Y: {
-            eye = Eigen::Vector3f(center.x(), maxDim, center.z());
-            up = Eigen::Vector3f(1, 0, 0);
-            break;
-        }
-        case CameraPreset::PLUS_Z: {
-            eye = Eigen::Vector3f(center.x(), center.y(), maxDim);
-            up = Eigen::Vector3f(0, 1, 0);
-            break;
-        }
-    }
-    camera_->LookAt(center, eye, up);
-}
-
 void CameraInteractor::StartMouseDrag() {
     matrixAtMouseDown_ = camera_->GetModelMatrix();
     centerOfRotationAtMouseDown_ = centerOfRotation_;

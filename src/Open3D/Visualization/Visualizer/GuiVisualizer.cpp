@@ -161,6 +161,12 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     layout->AddChild(createHelpLabel("Middle-drag"));
     layout->AddChild(createHelpLabel("Rotate directional light"));
 
+    layout->AddChild(createHelpLabel("Wheel"));
+    layout->AddChild(createHelpLabel("Forward/backward"));
+
+    layout->AddChild(createHelpLabel("Shift + Wheel"));
+    layout->AddChild(createHelpLabel("Change field of view"));
+
     return layout;
 }
 
