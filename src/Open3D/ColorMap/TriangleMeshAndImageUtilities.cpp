@@ -278,7 +278,7 @@ void SetGeometryColorAverage(
     }
     if (invisible_vertex_color_knn > 0) {
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-                mesh.SelectDownSample(valid_vertices);
+                mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -356,7 +356,7 @@ void SetGeometryColorAverage(
     }
     if (invisible_vertex_color_knn > 0) {
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-                mesh.SelectDownSample(valid_vertices);
+                mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)

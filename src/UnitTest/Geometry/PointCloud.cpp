@@ -398,7 +398,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFile) {
     unit_test::NotImplemented();
 }
 
-TEST(PointCloud, SelectDownSample) {
+TEST(PointCloud, SelectByIndex) {
     vector<Vector3d> ref = {{796.078431, 909.803922, 196.078431},
                             {768.627451, 525.490196, 768.627451},
                             {400.000000, 890.196078, 282.352941},
@@ -442,7 +442,7 @@ TEST(PointCloud, SelectDownSample) {
     it = unique(indices.begin(), indices.end());
     indices.resize(distance(indices.begin(), it));
 
-    auto output_pc = pc.SelectDownSample(indices);
+    auto output_pc = pc.SelectByIndex(indices);
 
     ExpectEQ(ref, output_pc->points_);
 }
@@ -1074,7 +1074,7 @@ TEST(PointCloud, SegmentPlane) {
     Eigen::Vector4d plane_model;
     std::vector<size_t> inliers;
     std::tie(plane_model, inliers) = pc.SegmentPlane(0.01, 3, 10);
-    auto output_pc = pc.SelectDownSample(inliers);
+    auto output_pc = pc.SelectByIndex(inliers);
 
     ExpectEQ(ref, output_pc->points_);
 }
