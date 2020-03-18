@@ -323,6 +323,16 @@ void pybind_trianglemesh(py::module &m) {
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
                  "max_iter"_a)
             .def_static("create_from_point_cloud_alpha_shape",
+                        [](const geometry::PointCloud &pcd, double alpha) {
+                            return geometry::TriangleMesh::
+                                    CreateFromPointCloudAlphaShape(pcd, alpha);
+                        },
+                        "Alpha shapes are a generalization of the convex hull. "
+                        "With decreasing alpha value the shape schrinks and "
+                        "creates cavities. See Edelsbrunner and Muecke, "
+                        "\"Three-Dimensional Alpha Shapes\", 1994.",
+                        "pcd"_a, "alpha"_a)
+            .def_static("create_from_point_cloud_alpha_shape",
                         &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "
                         "With decreasing alpha value the shape schrinks and "
