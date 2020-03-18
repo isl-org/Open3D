@@ -220,8 +220,7 @@ void pybind_trianglemesh(py::module &m) {
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
-            .def("select_down_sample",
-                 &geometry::TriangleMesh::SelectDownSample,
+            .def("select_by_index", &geometry::TriangleMesh::SelectByIndex,
                  "Function to select mesh from input triangle mesh into output "
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
@@ -549,7 +548,7 @@ void pybind_trianglemesh(py::module &m) {
              {"mu", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "select_down_sample",
+            m, "TriangleMesh", "select_by_index",
             {{"indices", "Indices of vertices to be selected."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",

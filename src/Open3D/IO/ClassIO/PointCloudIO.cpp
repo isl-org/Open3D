@@ -109,8 +109,8 @@ bool ReadPointCloud(const std::string &filename,
     utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
                       (int)pointcloud.points_.size());
     if (remove_nan_points || remove_infinite_points) {
-        pointcloud.RemoveNoneFinitePoints(remove_nan_points,
-                                          remove_infinite_points);
+        pointcloud.RemoveNonFinitePoints(remove_nan_points,
+                                         remove_infinite_points);
     }
     return success;
 }

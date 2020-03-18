@@ -38,10 +38,10 @@ For comparison, ``uniform_down_sample`` can downsample point cloud by collecting
 .. image:: ../../_static/Advanced/pointcloud_outlier_removal/uniform_down_sample.png
     :width: 400px
 
-Select down sample
+Select by index
 =====================================
 
-The helper function uses ``select_down_sample`` that takes binary mask to output only the selected points.
+The helper function uses ``select_by_index`` that takes binary mask to output only the selected points.
 The selected points and the non-selected points are visualized.
 
 .. literalinclude:: ../../../examples/Python/Advanced/pointcloud_outlier_removal.py
