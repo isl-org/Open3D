@@ -201,7 +201,9 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     front_ = -extrinsic.block<1, 3>(2, 0).transpose();
     eye_ = extrinsic.block<3, 3>(0, 0).inverse() *
            (extrinsic.block<3, 1>(0, 3) * -1.0);
-    double ideal_distance = (eye_ - bounding_box_.GetCenter()).dot(front_);
+
+    auto bb_center = bounding_box_.GetCenter();
+    double ideal_distance = std::abs((eye_ - bb_center).dot(front_));
     double ideal_zoom = ideal_distance *
                         std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
                         bounding_box_.GetMaxExtent();
