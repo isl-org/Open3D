@@ -285,7 +285,7 @@ struct LightingProfile {
 static const std::string kPointCloudProfileName = "Point clouds (no sun)";
 
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {.name = "Brighter, up is +Y",
+        {.name = "Brighter, up is +Y [default]",
          .iblIntensity = 100000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, -0.577f, -0.577f}},
@@ -316,7 +316,7 @@ static const std::vector<LightingProfile> gLightingProfiles = {
          .sunIntensity = 100000,
          .sunDir = {0.577f, 0.577f, -0.577f}},
         {.name = kPointCloudProfileName,
-         .iblIntensity = 100000,
+         .iblIntensity = 60000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, -0.577f, -0.577f},
          .sunColor = {1.0f, 1.0f, 1.0f},
@@ -349,13 +349,13 @@ struct GuiVisualizer::Impl {
         float clearCoat = 0.2f;
         float clearCoatRoughness = 0.2f;
         float anisotropy = 0.f;
-        float pointSize = 3.f;
+        float pointSize = 5.f;
     };
 
     struct UnlitMaterial {
         visualization::MaterialInstanceHandle handle;
         Eigen::Vector3f baseColor = {1.f, 1.f, 1.f};
-        float pointSize = 3.f;
+        float pointSize = 5.f;
     };
 
     struct Materials {
