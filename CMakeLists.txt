@@ -117,6 +117,17 @@ if (ENABLE_HEADLESS_RENDERING)
     endif()
 endif()
 
+if (POLICY CMP0072)
+    cmake_policy(SET CMP0072 NEW)
+    if (BUILD_EIGEN3
+        OR BUILD_FLANN
+        OR BUILD_GLEW
+        OR BUILD_GLFW
+        OR BUILD_PNG)
+        cmake_policy(SET CMP0072 OLD)
+    endif()
+endif()
+
 # Set OS-specific things here
 if (WIN32)
     # can't hide the unit testing option on Windows only
