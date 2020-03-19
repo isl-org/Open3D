@@ -161,8 +161,8 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                 "ransac_n should be set to higher than or equal to 3.");
         return std::make_tuple(best_plane_model, inliers);
     }
-    if (num_points < 3) {
-        utility::LogError("There must be at least 3 points.");
+    if (num_points < ransac_n) {
+        utility::LogError("There must be at least 'ransac_n' points.");
         return std::make_tuple(best_plane_model, inliers);
     }
 
