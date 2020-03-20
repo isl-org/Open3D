@@ -41,18 +41,15 @@
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 
-#include <SDL.h>
+#include <GLFW/glfw3.h>
 #include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include <cmath>
 #include <queue>
+#include <unordered_map>
 #include <vector>
-
-#ifdef WIN32
-#include <SDL_syswm.h>
-#endif
 
 using namespace open3d::gui::util;
 
@@ -74,12 +71,66 @@ void updateImGuiForScaling(float newScaling) {
     style.FrameRounding *= newScaling;
 }
 
+int mouseButtonFromGLFW(int button) {
+    switch (button) {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            return int(MouseButton::LEFT);
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            return int(MouseButton::RIGHT);
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            return int(MouseButton::MIDDLE);
+        case GLFW_MOUSE_BUTTON_4:
+            return int(MouseButton::BUTTON4);
+        case GLFW_MOUSE_BUTTON_5:
+            return int(MouseButton::BUTTON5);
+        default:
+            return int(MouseButton::NONE);
+    }
+}
+
+int keymodsFromGLFW(int glfwMods) {
+    int keymods = 0;
+    if (glfwMods & GLFW_MOD_SHIFT) {
+        keymods |= int(KeyModifier::SHIFT);
+    }
+    if (glfwMods & GLFW_MOD_CONTROL) {
+#if __APPLE__
+        keymods |= int(KeyModifier::ALT);
+#else
+        keymods |= int(KeyModifier::CTRL);
+#endif // __APPLE__
+    }
+    if (glfwMods & GLFW_MOD_ALT) {
+#if __APPLE__
+        keymods |= int(KeyModifier::META);
+#else
+        keymods |= int(KeyModifier::ALT);
+#endif // __APPLE__
+    }
+    if (glfwMods & GLFW_MOD_SUPER) {
+#if __APPLE__
+        keymods |= int(KeyModifier::CTRL);
+#else
+        keymods |= int(KeyModifier::META);
+#endif // __APPLE__
+    }
+    if (glfwMods & GLFW_MOD_CAPS_LOCK) {
+        keymods |= int(KeyModifier::CAPS_LOCK);
+    }
+    if (glfwMods & GLFW_MOD_NUM_LOCK) {
+        keymods |= int(KeyModifier::NUM_LOCK);
+    }
+    return keymods;
+}
+
 }  // namespace
 
 const int Window::FLAG_TOPMOST = (1 << 0);
 
 struct Window::Impl {
-    SDL_Window* window = nullptr;
+    GLFWwindow* window = nullptr;
+    std::string title;  // there is no glfwGetWindowTitle()...
+    int mouseMods = 0;
     Theme theme;  // so that the font size can be different based on scaling
     visualization::FilamentRenderer* renderer;
     struct {
@@ -102,7 +153,6 @@ struct Window::Impl {
     std::queue<std::function<void()>> deferredUntilDraw;
     Widget* focusWidget =
             nullptr;  // only used if ImGUI isn't taking keystrokes
-    double lastFrameTime = 0.0;
     int nSkippedFrames = 0;
     bool wantsAutoSizeAndCenter = false;
     bool needsLayout = true;
@@ -124,24 +174,36 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
-    if (x == CENTERED_X) {
-        x = SDL_WINDOWPOS_CENTERED;
-    }
-    if (y == CENTERED_Y) {
-        y = SDL_WINDOWPOS_CENTERED;
-    }
-    if (width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT) {
+    if (x == CENTERED_X || y == CENTERED_Y ||
+        width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT) {
+        x = 0; y = 0;
         impl_->wantsAutoSizeAndCenter = true;
     }
-    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+/*    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
     if (sdlflags & FLAG_TOPMOST) {
         sdlflags |= SDL_WINDOW_ALWAYS_ON_TOP;
-    }
-    impl_->window =
-            SDL_CreateWindow(title.c_str(), x, y, width, height, sdlflags);
+    } */
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
+    impl_->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+    impl_->title = title;
+
+    glfwSetWindowUserPointer(impl_->window, this);
+    glfwSetWindowSizeCallback(impl_->window, ResizeCallback);
+    glfwSetWindowRefreshCallback(impl_->window, DrawCallback);
+    glfwSetCursorPosCallback(impl_->window, MouseMoveCallback);
+    glfwSetMouseButtonCallback(impl_->window, MouseButtonCallback);
+    glfwSetScrollCallback(impl_->window, MouseScrollCallback);
+    glfwSetKeyCallback(impl_->window, KeyCallback);
+    glfwSetDropCallback(impl_->window, DragDropCallback);
+    glfwSetWindowCloseCallback(impl_->window, CloseCallback);
 
     // On single-threaded platforms, Filament's OpenGL context must be current,
-    // not SDL's context, so create the renderer after the window.
+    // not GLFW's context, so create the renderer after the window.
 
     // ImGUI creates a bitmap atlas from a font, so we need to have the correct
     // size when we create it, because we can't change the bitmap without
@@ -238,12 +300,12 @@ Window::Window(const std::string& title,
     io.KeyMap[ImGuiKey_X] = 'x';
     io.KeyMap[ImGuiKey_Y] = 'y';
     io.KeyMap[ImGuiKey_Z] = 'z';
-    io.SetClipboardTextFn = [](void*, const char* text) {
-        SDL_SetClipboardText(text);
+/*    io.SetClipboardTextFn = [this](void*, const char* text) {
+        glfwSetClipboardString(this->impl_->window, text);
     };
-    io.GetClipboardTextFn = [](void*) -> const char* {
-        return SDL_GetClipboardText();
-    };
+    io.GetClipboardTextFn = [this](void*) -> const char* {
+        return glfwGetClipboardString(this->impl_->window);
+    }; */
     io.ClipboardUserData = nullptr;
 
     // Restore the context, in case we are creating a window during a draw.
@@ -258,7 +320,7 @@ Window::~Window() {
     ImGui::SetCurrentContext(impl_->imgui.context);
     ImGui::DestroyContext();
     delete impl_->renderer;
-    SDL_DestroyWindow(impl_->window);
+    glfwDestroyWindow(impl_->window);
 }
 
 void* Window::MakeCurrent() const {
@@ -275,8 +337,6 @@ void* Window::GetNativeDrawable() const {
     return open3d::gui::GetNativeDrawable(impl_->window);
 }
 
-uint32_t Window::GetID() const { return SDL_GetWindowID(impl_->window); }
-
 const Theme& Window::GetTheme() const { return impl_->theme; }
 
 visualization::Renderer& Window::GetRenderer() const {
@@ -285,22 +345,23 @@ visualization::Renderer& Window::GetRenderer() const {
 
 Rect Window::GetFrame() const {
     int x, y, w, h;
-    SDL_GetWindowPosition(impl_->window, &x, &y);
-    SDL_GetWindowSize(impl_->window, &w, &h);
+    glfwGetWindowPos(impl_->window, &x, &y);
+    glfwGetWindowSize(impl_->window, &w, &h);
     return Rect(x, y, w, h);
 }
 
 void Window::SetFrame(const Rect& r) {
-    SDL_SetWindowPosition(impl_->window, r.x, r.y);
-    SDL_SetWindowSize(impl_->window, r.width, r.height);
+    glfwSetWindowPos(impl_->window, r.x, r.y);
+    glfwSetWindowSize(impl_->window, r.width, r.height);
 }
 
 const char* Window::GetTitle() const {
-    return SDL_GetWindowTitle(impl_->window);
+    return impl_->title.c_str();
 }
 
 void Window::SetTitle(const char* title) {
-    SDL_SetWindowTitle(impl_->window, title);
+    impl_->title = title;
+    glfwSetWindowTitle(impl_->window, title);
 }
 
 // Note: this can only be called during draw!
@@ -334,7 +395,7 @@ void Window::SetSize(const Size& size) {
     // Make sure we do the resize outside of a draw, to avoid unsightly
     // errors if we happen to do this in the middle of a draw.
     auto resize = [this, size /*copy*/]() {
-        SDL_SetWindowSize(this->impl_->window, size.width, size.height);
+        glfwSetWindowSize(this->impl_->window, size.width, size.height);
         // SDL_SetWindowSize() doesn't generate an event, so we need to update
         // the size ourselves
         this->OnResize();
@@ -344,7 +405,7 @@ void Window::SetSize(const Size& size) {
 
 Size Window::GetSize() const {
     uint32_t w, h;
-    SDL_GL_GetDrawableSize(impl_->window, (int*)&w, (int*)&h);
+    glfwGetFramebufferSize(impl_->window, (int*)&w, (int*)&h);
     return Size(w, h);
 }
 
@@ -363,28 +424,26 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
-    uint32_t wPx, hPx;
-    SDL_GL_GetDrawableSize(impl_->window, (int*)&wPx, (int*)&hPx);
-    int wVpx, hVpx;
-    SDL_GetWindowSize(impl_->window, &wVpx, &hVpx);
-    return (float(wPx) / float(wVpx));
+    float xscale, yscale;
+    glfwGetWindowContentScale(impl_->window, &xscale, &yscale);
+    return xscale;
 }
 
 Point Window::GlobalToWindowCoord(int globalX, int globalY) {
     int wx, wy;
-    SDL_GetWindowPosition(impl_->window, &wx, &wy);
+    glfwGetWindowPos(impl_->window, &wx, &wy);
     return Point(globalX - wx, globalY - wy);
 }
 
 bool Window::IsVisible() const {
-    return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_SHOWN);
+    return glfwGetWindowAttrib(impl_->window, GLFW_VISIBLE);
 }
 
 void Window::Show(bool vis /*= true*/) {
     if (vis) {
-        SDL_ShowWindow(impl_->window);
+        glfwShowWindow(impl_->window);
     } else {
-        SDL_HideWindow(impl_->window);
+        glfwHideWindow(impl_->window);
     }
 }
 
@@ -392,10 +451,12 @@ void Window::Close() { Application::GetInstance().RemoveWindow(this); }
 
 void Window::SetNeedsLayout() { impl_->needsLayout = true; }
 
-void Window::RaiseToTop() const { SDL_RaiseWindow(impl_->window); }
+void Window::PostRedraw() { PostNativeExposeEvent(impl_->window); }
+
+void Window::RaiseToTop() const { glfwFocusWindow(impl_->window); }
 
 bool Window::IsActiveWindow() const {
-    return (SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS);
+    return glfwGetWindowAttrib(impl_->window, GLFW_FOCUSED);
 }
 
 void Window::AddChild(std::shared_ptr<Widget> w) {
@@ -441,8 +502,6 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     dlg->AddChild(layout);
     ShowDialog(dlg);
 }
-
-double Window::GetLastFrameTimeSeconds() const { return impl_->lastFrameTime; }
 
 void Window::Layout(const Theme& theme) {
     if (impl_->children.size() == 1) {
@@ -544,24 +603,25 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
     io.DeltaTime = dtSec;
 
     // Set mouse information
-    int mx, my;
-    Uint32 buttons = SDL_GetGlobalMouseState(&mx, &my);
-    auto mousePos = GlobalToWindowCoord(mx, my);
+    double mx, my;
+//    auto mousePos = GlobalToWindowCoord(mx, my);
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-    io.MouseDown[0] = (buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-    io.MouseDown[1] = (buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-    io.MouseDown[2] = (buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
-    if ((SDL_GetWindowFlags(impl_->window) & SDL_WINDOW_INPUT_FOCUS) != 0) {
-        auto scaling = GetScaling();
-        io.MousePos = ImVec2((float)mousePos.x * scaling,
-                             (float)mousePos.y * scaling);
+    if (IsActiveWindow()) {
+//        auto scaling = GetScaling();
+//        io.MousePos = ImVec2((float)mousePos.x * scaling,
+//                             (float)mousePos.y * scaling);
+        glfwGetCursorPos(impl_->window, &mx, &my);
+        io.MousePos = ImVec2(mx, my);
     }
+    io.MouseDown[0] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
+    io.MouseDown[1] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
+    io.MouseDown[2] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
 
     // Set key information
-    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
+    io.KeyShift = (impl_->mouseMods & int(KeyModifier::SHIFT));
+    io.KeyAlt = (impl_->mouseMods & int(KeyModifier::ALT));
+    io.KeyCtrl = (impl_->mouseMods & int(KeyModifier::CTRL));
+    io.KeySuper = (impl_->mouseMods & int(KeyModifier::META));
 
     // Begin ImGUI frame
     ImGui::NewFrame();
@@ -649,8 +709,6 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
 }
 
 Window::DrawResult Window::DrawOnce(float dtSec) {
-    auto t0 = SDL_GetPerformanceCounter();
-
     bool neededLayout = impl_->needsLayout;
 
     auto result = OnDraw(dtSec);
@@ -665,10 +723,6 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
     if (neededLayout || impl_->needsLayout) {
         OnDraw(0.001);
     }
-
-    auto t1 = SDL_GetPerformanceCounter();
-    double freq = double(SDL_GetPerformanceFrequency());
-    impl_->lastFrameTime = double(t1 - t0) / freq;
 
     return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
 }
@@ -705,9 +759,16 @@ void Window::OnResize() {
         auto pref = CalcPreferredSize();
         Size size(pref.width / this->impl_->imgui.scaling,
                   pref.height / this->impl_->imgui.scaling);
-        SDL_SetWindowSize(impl_->window, size.width, size.height);
-        SDL_SetWindowPosition(impl_->window, SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED);
+        glfwSetWindowSize(impl_->window, size.width, size.height);
+        auto *monitor = glfwGetWindowMonitor(impl_->window);
+//        int monWidth, monHeight;
+//        glfwGetMonitorWorkarea(monitor, NULL, NULL, &monWidth, &monHeight);
+//        glfwSetWindowPos(impl_->window, (monWidth - size.width) / 2,
+//                              (monHeight - size.height) / 2);
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        glfwSetWindowPos(impl_->window, (mode->width - size.width) / 2,
+                         (mode->height - size.height) / 2);
+
         ImGui::PopFont();
         ImGui::EndFrame();
         OnResize();
@@ -717,6 +778,8 @@ void Window::OnResize() {
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
+    impl_->mouseMods = e.modifiers;
+
     MakeCurrent();
     switch (e.type) {
         case MouseEvent::MOVE:
@@ -819,6 +882,161 @@ void Window::OnTextInput(const TextInputEvent& e) {
 }
 
 void Window::OnDragDropped(const char* path) {}
+
+// ----------------------------------------------------------------------------
+void Window::DrawCallback(GLFWwindow* window) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    if (w->DrawOnce(0.1) == Window::REDRAW) {
+        // Can't just draw here, because Filament sometimes fences within
+        // a draw, and then you can get two draws happening at the same
+        // time, which ends up with a crash.
+        PostNativeExposeEvent(w->impl_->window);
+    }
+}
+
+void Window::ResizeCallback(GLFWwindow* window, int osWidth, int osHeight) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    w->OnResize();
+    UpdateAfterEvent(w);
+}
+
+void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    w->OnResize();
+    UpdateAfterEvent(w);
+}
+
+void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    int buttons = 0;
+    for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
+        if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
+            buttons |= mouseButtonFromGLFW(b);
+        }
+    }
+    int ix = int(std::ceil(x));
+    int iy = int(std::ceil(y));
+
+    auto type = (buttons == 0 ? MouseEvent::MOVE
+                              : MouseEvent::DRAG);
+    MouseEvent me = {type, ix, iy, w->impl_->mouseMods};
+    me.button.button = MouseButton(buttons);
+
+    w->OnMouseEvent(me);
+    UpdateAfterEvent(w);
+}
+
+void Window::MouseButtonCallback(GLFWwindow* window, int button,
+                                int action, int mods) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+
+    auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
+                                      : MouseEvent::BUTTON_UP);
+    double mx, my;
+    glfwGetCursorPos(window, &mx, &my);
+//    auto scaling = w->GetScaling();
+//    int x = int(std::ceil(float(mx) * scaling));
+//    int y = int(std::ceil(float(my) * scaling));
+    int ix = int(std::ceil(mx));
+    int iy = int(std::ceil(my));
+
+    MouseEvent me = {type, ix, iy, keymodsFromGLFW(mods)};
+    me.button.button = MouseButton(mouseButtonFromGLFW(button));
+
+    w->OnMouseEvent(me);
+    UpdateAfterEvent(w);
+}
+
+void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+
+    double mx, my;
+    glfwGetCursorPos(window, &mx, &my);
+//    auto scaling = w->GetScaling();
+//    int x = int(std::ceil(float(mx) * scaling));
+//    int y = int(std::ceil(float(my) * scaling));
+    int ix = int(std::ceil(mx));
+    int iy = int(std::ceil(my));
+
+    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouseMods};
+    me.wheel.dx = dx;
+    me.wheel.dy = dy;
+
+    // GLFW doesn't give us any information about whether this scroll event
+    // came from a mousewheel or a trackpad two-finger scroll.
+#if __APPLE__
+    me.wheel.isTrackpad = true;
+#else
+    me.wheel.isTrackpad = false;
+#endif  // __APPLE__
+
+    w->OnMouseEvent(me);
+    UpdateAfterEvent(w);
+}
+
+void Window::KeyCallback(GLFWwindow* window, int key, int scancode,
+                        int action, int mods) {
+    static std::unordered_map<int, uint32_t> gGLFW2Key = {
+        {GLFW_KEY_BACKSPACE, KEY_BACKSPACE},
+        {GLFW_KEY_TAB, KEY_TAB},
+        {GLFW_KEY_ENTER, KEY_ENTER},
+        {GLFW_KEY_ESCAPE, KEY_ESCAPE},
+        {GLFW_KEY_DELETE, KEY_DELETE},
+        {GLFW_KEY_LEFT_SHIFT, KEY_LSHIFT},
+        {GLFW_KEY_RIGHT_SHIFT, KEY_RSHIFT},
+        {GLFW_KEY_LEFT_CONTROL, KEY_LCTRL},
+        {GLFW_KEY_RIGHT_CONTROL, KEY_RCTRL},
+        {GLFW_KEY_LEFT_ALT, KEY_ALT},
+        {GLFW_KEY_RIGHT_ALT, KEY_ALT},
+        {GLFW_KEY_LEFT_SUPER, KEY_META},
+        {GLFW_KEY_RIGHT_SUPER, KEY_META},
+        {GLFW_KEY_CAPS_LOCK, KEY_CAPSLOCK},
+        {GLFW_KEY_LEFT, KEY_LEFT},
+        {GLFW_KEY_RIGHT, KEY_RIGHT},
+        {GLFW_KEY_UP, KEY_UP},
+        {GLFW_KEY_DOWN, KEY_DOWN},
+        {GLFW_KEY_INSERT, KEY_INSERT},
+        {GLFW_KEY_HOME, KEY_HOME},
+        {GLFW_KEY_END, KEY_END},
+        {GLFW_KEY_PAGE_UP, KEY_PAGEUP},
+        {GLFW_KEY_PAGE_DOWN, KEY_PAGEDOWN},
+    };
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+
+    auto type = (action == GLFW_RELEASE ? KeyEvent::Type::UP
+                                        : KeyEvent::Type::DOWN);
+
+    uint32_t k = key;
+    if (key >= 'A' && key <= 'Z') {
+        k += 32; // GLFW gives uppercase for letters, convert to lowercase
+    } else {
+        auto it = gGLFW2Key.find(key);
+        if (it != gGLFW2Key.end()) {
+            k = it->second;
+        }
+    }
+    KeyEvent e = {type, k, (action == GLFW_REPEAT)};
+
+    w->OnKeyEvent(e);
+    UpdateAfterEvent(w);
+}
+
+void Window::DragDropCallback(GLFWwindow* window, int count, const char *paths[]) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    for (int i = 0; i < count; ++i) {
+        w->OnDragDropped(paths[i]);
+    }
+    UpdateAfterEvent(w);
+}
+
+void Window::CloseCallback(GLFWwindow* window) {
+    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Application::GetInstance().RemoveWindow(w);
+}
+
+void Window::UpdateAfterEvent(Window *w) {
+    PostNativeExposeEvent(w->impl_->window);
+}
 
 }  // namespace gui
 }  // namespace open3d

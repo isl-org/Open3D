@@ -19,18 +19,17 @@
 
 #include "Native.h"
 
-#include <SDL_syswm.h>
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32 1
+#include <GLFW/glfw3native.h>
 
 #include <winuser.h>
 
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(SDL_Window* window) {
-    SDL_SysWMinfo wmi;
-    SDL_VERSION(&wmi.version);
-    SDL_GetWindowWMInfo(window, &wmi);
-    return (void*)wmi.info.win.window;
+void* GetNativeDrawable(GLFWwindow* window) {
+    return glfwGetWin32Window(glfwWindow);
 }
 
 void ShowNativeAlert(const char* message) {
