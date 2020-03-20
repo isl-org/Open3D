@@ -64,6 +64,8 @@ extensions = [
 
 # Allow for more time for notebook cell evaluation
 nbsphinx_timeout = 300
+# TODO: remove after jupyter fix
+nbsphinx_allow_errors = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -79,7 +81,7 @@ master_doc = "index"
 
 # General information about the project.
 project = u"Open3D"
-copyright = u"2018 - 2019, www.open3d.org"
+copyright = u"2018 - 2020, www.open3d.org"
 author = u"www.open3d.org"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -220,10 +222,10 @@ test_data_out_dir = Path(current_file_dir) / "TestData"
 if test_data_out_dir.exists():
     shutil.rmtree(test_data_out_dir)
 shutil.copytree(test_data_in_dir, test_data_out_dir)
-example_dirs = ["Basic"]
+example_dirs = ["Basic", "Advanced"]
 for example_dir in example_dirs:
     in_dir = Path(current_file_dir).parent / "examples" / "Python" / example_dir
-    out_dir = Path(current_file_dir) / "tutorial" / "Basic"
+    out_dir = Path(current_file_dir) / "tutorial" / example_dir
     # remove all existing jupyter notebooks
     for nb_out_path in out_dir.glob("*.ipynb"):
         nb_out_path.unlink()

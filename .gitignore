@@ -39,6 +39,7 @@ compile_commands.json
 
 # Example resources
 examples/Python/ReconstructionSystem/dataset/
+examples/TestData/fountain_small
 examples/TestData/Armadillo.ply
 examples/TestData/Bunny.ply
 examples/TestData/eagle.ply
