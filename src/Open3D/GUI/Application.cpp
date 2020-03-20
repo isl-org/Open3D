@@ -105,6 +105,7 @@ struct Application::Impl {
     Theme theme;
     bool isGLFWinitalized = false;
     bool isRunning = false;
+    bool shouldQuit = false;
 
     std::shared_ptr<Menu> menubar;
     std::unordered_set<std::shared_ptr<Window>> windows;
@@ -238,13 +239,16 @@ void Application::RemoveWindow(Window *window) {
             break;
         }
     }
+
+    if (impl_->windows.empty()) {
+        impl_->shouldQuit = true;
+    }
 }
 
 void Application::Quit() {
     for (auto win : impl_->windows) {
         RemoveWindow(win.get());
     }
-    // Run() will exit when there are no more windows left
 }
 
 void Application::OnMenuItemSelected(Menu::ItemId itemId) {
@@ -258,7 +262,6 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
             // If we post two expose events they get coalesced, but
             // setting needsLayout forces two (for the reason given above).
             w->SetNeedsLayout();
-//            PostWindowEvent(w.get(), SDL_WINDOWEVENT_EXPOSED);
             Window::UpdateAfterEvent(w.get());
             return;
         }
@@ -266,9 +269,8 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
 }
 
 void Application::Run() {
-    while (!impl_->windows.empty()) {
-        RunOneTick();
-    }
+    while (RunOneTick())
+        ;
 }
 
 bool Application::RunOneTick() {
@@ -318,10 +320,11 @@ bool Application::RunOneTick() {
 }
 
 Application::RunStatus Application::ProcessQueuedEvents() {
-    auto status = RunStatus::CONTINUE;
-
     glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
-    return status;
+    if (impl_->shouldQuit) {
+        return RunStatus::DONE;
+    }
+    return RunStatus::CONTINUE;
 }
 
 const char *Application::GetResourcePath() const {
