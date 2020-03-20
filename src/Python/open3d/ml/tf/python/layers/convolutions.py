@@ -5,7 +5,7 @@ import tensorflow as tf
 class ContinuousConv(tf.keras.layers.Layer):
     """Continuous Convolution. This op supports continuous input and output point positions.
 
-    This layer computes a continuous convolution on a point cloud at the 
+    This layer computes a continuous convolution on a point cloud at the
     specified output points.
 
     Arguments:
@@ -31,7 +31,7 @@ class ContinuousConv(tf.keras.layers.Layer):
           boundary of the filter shape.
 
         coordinate_mapping: The mapping that is applied to the input coordinates.
-          One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving', 
+          One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving',
           'identity'.
           - 'ball_to_cube_radial' uses radial stretching to map a sphere to
             a cube.
@@ -45,7 +45,7 @@ class ContinuousConv(tf.keras.layers.Layer):
           - 'nearest_neighbor' uses the neares neighbor instead of interpolation.
 
         normalize: If true then the result is normalized either by the number of
-          points (neighbors_importance is null) or by the sum of the respective 
+          points (neighbors_importance is null) or by the sum of the respective
           values in neighbors_importance.
 
         radius_search_ignore_query_points: If true the points that coincide with the
@@ -54,14 +54,14 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         radius_search_metric: Either L1, L2 or Linf. Default is L2
 
-        offset: A single 3D vector used in the filter coordinate computation. 
+        offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3].
 
         window_function: Optional radial window function to steer the importance of
           points based on their distance to the center. The input to the function
           is a 1D tensor of distances (squared distances if radius_search_metric is 'L2').
           The output must be a tensor of the same shape. Example:
-          
+
             def window_fn(r_sqr):
                 return tf.clip_by_value((1 - r_sqr)**3, 0, 1)
 
@@ -142,16 +142,16 @@ class ContinuousConv(tf.keras.layers.Layer):
           inp_features: A 2D tensor which stores a feature vector for each input
             point.
 
-          inp_positions: A 2D tensor with the 3D point positions of each input 
+          inp_positions: A 2D tensor with the 3D point positions of each input
             point. The coordinates for each point is a vector with format [x,y,z].
 
-          out_positions: A 2D tensor with the 3D point positions of each output 
+          out_positions: A 2D tensor with the 3D point positions of each output
             point. The coordinates for each point is a vector with format [x,y,z].
-          
-          extents: The extent defines the spatial size of the filter for each 
-            output point. 
-            For 'ball to cube' coordinate mappings the extent defines the 
-            bounding box of the ball. 
+
+          extents: The extent defines the spatial size of the filter for each
+            output point.
+            For 'ball to cube' coordinate mappings the extent defines the
+            bounding box of the ball.
             The shape of the tensor is either [1] or [num output points].
 
           inp_importance: Optional scalar importance value for each input point.
