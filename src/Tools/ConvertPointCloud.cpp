@@ -112,7 +112,7 @@ void convert(int argc,
                 indices.push_back(i);
             }
         }
-        auto pcd = pointcloud_ptr->SelectDownSample(indices);
+        auto pcd = pointcloud_ptr->SelectByIndex(indices);
         utility::LogDebug(
                 "Based on Mahalanobis distance, {:d} points were filtered.",
                 (int)(pointcloud_ptr->points_.size() - pcd->points_.size()));

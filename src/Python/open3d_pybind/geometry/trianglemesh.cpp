@@ -220,8 +220,7 @@ void pybind_trianglemesh(py::module &m) {
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
-            .def("select_down_sample",
-                 &geometry::TriangleMesh::SelectDownSample,
+            .def("select_by_index", &geometry::TriangleMesh::SelectByIndex,
                  "Function to select mesh from input triangle mesh into output "
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
@@ -323,6 +322,16 @@ void pybind_trianglemesh(py::module &m) {
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
                  "max_iter"_a)
+            .def_static("create_from_point_cloud_alpha_shape",
+                        [](const geometry::PointCloud &pcd, double alpha) {
+                            return geometry::TriangleMesh::
+                                    CreateFromPointCloudAlphaShape(pcd, alpha);
+                        },
+                        "Alpha shapes are a generalization of the convex hull. "
+                        "With decreasing alpha value the shape schrinks and "
+                        "creates cavities. See Edelsbrunner and Muecke, "
+                        "\"Three-Dimensional Alpha Shapes\", 1994.",
+                        "pcd"_a, "alpha"_a)
             .def_static("create_from_point_cloud_alpha_shape",
                         &geometry::TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "
@@ -549,7 +558,7 @@ void pybind_trianglemesh(py::module &m) {
              {"mu", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "select_down_sample",
+            m, "TriangleMesh", "select_by_index",
             {{"indices", "Indices of vertices to be selected."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "crop",

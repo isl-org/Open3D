@@ -1398,7 +1398,7 @@ TEST(TriangleMesh, DeformAsRigidAsPossible) {
     ExpectEQ(*mesh_deform, mesh_gt);
 }
 
-TEST(TriangleMesh, SelectDownSample) {
+TEST(TriangleMesh, SelectByIndex) {
     vector<Vector3d> ref_vertices = {{349.019608, 803.921569, 917.647059},
                                      {439.215686, 117.647059, 588.235294},
                                      {290.196078, 356.862745, 874.509804},
@@ -1532,7 +1532,7 @@ TEST(TriangleMesh, SelectDownSample) {
     vector<size_t> indices(size / 40);
     Rand(indices, 0, size - 1, 0);
 
-    auto output_tm = tm.SelectDownSample(indices);
+    auto output_tm = tm.SelectByIndex(indices);
 
     ExpectEQ(ref_vertices, output_tm->vertices_);
     ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
@@ -2118,7 +2118,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     }
     unique(indices.begin(), indices.end());
     sort(indices.begin(), indices.end());
-    auto output = output_tm->SelectDownSample(indices);
+    auto output = output_tm->SelectByIndex(indices);
 
     ExpectEQ(ref_vertices, output->vertices_);
     ExpectEQ(ref_vertex_normals, output->vertex_normals_);
