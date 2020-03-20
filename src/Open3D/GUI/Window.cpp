@@ -115,10 +115,10 @@ int keymodsFromGLFW(int glfwMods) {
 #endif // __APPLE__
     }
     if (glfwMods & GLFW_MOD_CAPS_LOCK) {
-        keymods |= int(KeyModifier::CAPS_LOCK);
+        keymods |= int(KeyModifier::CAPSLOCK);
     }
     if (glfwMods & GLFW_MOD_NUM_LOCK) {
-        keymods |= int(KeyModifier::NUM_LOCK);
+        keymods |= int(KeyModifier::NUMLOCK);
     }
     return keymods;
 }
@@ -130,7 +130,11 @@ const int Window::FLAG_TOPMOST = (1 << 0);
 struct Window::Impl {
     GLFWwindow* window = nullptr;
     std::string title;  // there is no glfwGetWindowTitle()...
+    // We need these for mouse moves and wheel events.
+    // The only source of ground truth is button events, so the rest of
+    // the time we monitor key up/down events.
     int mouseMods = 0;
+
     Theme theme;  // so that the font size can be different based on scaling
     visualization::FilamentRenderer* renderer;
     struct {
@@ -603,15 +607,12 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
     io.DeltaTime = dtSec;
 
     // Set mouse information
-    double mx, my;
-//    auto mousePos = GlobalToWindowCoord(mx, my);
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     if (IsActiveWindow()) {
-//        auto scaling = GetScaling();
-//        io.MousePos = ImVec2((float)mousePos.x * scaling,
-//                             (float)mousePos.y * scaling);
+        double mx, my;
         glfwGetCursorPos(impl_->window, &mx, &my);
-        io.MousePos = ImVec2(mx, my);
+        auto scaling = GetScaling();
+        io.MousePos = ImVec2(mx * scaling, my * scaling);
     }
     io.MouseDown[0] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
     io.MouseDown[1] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
@@ -863,6 +864,25 @@ void Window::OnMouseEvent(const MouseEvent& e) {
 }
 
 void Window::OnKeyEvent(const KeyEvent& e) {
+    auto thisMod = 0;
+    if (e.key == KEY_LSHIFT || e.key == KEY_RSHIFT) {
+        thisMod = int(KeyModifier::SHIFT);
+    } else if (e.key == KEY_LCTRL || e.key == KEY_RCTRL) {
+        thisMod = int(KeyModifier::CTRL);
+    } else if (e.key == KEY_ALT) {
+        thisMod = int(KeyModifier::ALT);
+    } else if (e.key == KEY_META) {
+        thisMod = int(KeyModifier::META);
+    } else if (e.key == KEY_CAPSLOCK) {
+        thisMod = int(KeyModifier::CAPSLOCK);
+    }
+
+    if (e.type == KeyEvent::UP) {
+        impl_->mouseMods &= ~thisMod;
+    } else {
+        impl_->mouseMods |= thisMod;
+    }
+
     ImGuiIO& io = ImGui::GetIO();
     if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
         io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
