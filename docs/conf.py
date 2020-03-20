@@ -24,10 +24,12 @@ import sys
 import os
 import re
 import subprocess
+from pathlib import Path
+import shutil
 
 
 def get_git_short_hash():
-    rc = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
+    rc = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
     rc = rc.decode("utf-8").strip()
     return rc
 
@@ -38,8 +40,10 @@ def get_git_short_hash():
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(
     0,
-    os.path.join(current_file_dir, "..", "build", "lib", "python_package",
-                 "open3d"))
+    os.path.join(
+        current_file_dir, "..", "build", "lib", "python_package", "open3d"
+    ),
+)
 
 # -- General configuration ------------------------------------------------
 
@@ -51,26 +55,32 @@ sys.path.insert(
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.mathjax', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon'
+    "sphinx.ext.mathjax",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "nbsphinx",
 ]
 
+# Allow for more time for notebook cell evaluation
+nbsphinx_timeout = 300
+
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = u'Open3D'
-copyright = u'2018 - 2019, www.open3d.org'
-author = u'www.open3d.org'
+project = u"Open3D"
+copyright = u"2018 - 2019, www.open3d.org"
+author = u"www.open3d.org"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -93,10 +103,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
@@ -107,8 +117,9 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-theme_path = os.path.join(current_file_dir, "..", "3rdparty",
-                          "open3d_sphinx_theme")
+theme_path = os.path.join(
+    current_file_dir, "..", "3rdparty", "open3d_sphinx_theme"
+)
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [theme_path]
 html_favicon = "_static/open3d_logo.ico"
@@ -127,13 +138,13 @@ html_theme_options = {
 
 # '_static' contains the theme overwrite
 static_path = os.path.join(theme_path, "sphinx_rtd_theme", "static")
-html_static_path = [static_path, '_static']
+html_static_path = [static_path, "_static"]
 
 # Force table wrap: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
 html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-    ],
+    "css_files": [
+        "_static/theme_overrides.css"  # override wide tables in RTD theme
+    ]
 }
 
 # added by Jaesik to hide "View page source"
@@ -142,7 +153,7 @@ html_show_sourcelink = False
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Open3Ddoc'
+htmlhelp_basename = "Open3Ddoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -150,15 +161,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -168,15 +176,20 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Open3D.tex', u'Open3D Documentation', u'Qianyi Zhou',
-     'manual'),
+    (
+        master_doc,
+        "Open3D.tex",
+        u"Open3D Documentation",
+        u"Qianyi Zhou",
+        "manual",
+    )
 ]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, 'open3d', u'Open3D Documentation', [author], 1)]
+man_pages = [(master_doc, "open3d", u"Open3D Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -184,20 +197,45 @@ man_pages = [(master_doc, 'open3d', u'Open3D Documentation', [author], 1)]
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Open3D', u'Open3D Documentation', author, 'Open3D',
-     'One line description of project.', 'Miscellaneous'),
+    (
+        master_doc,
+        "Open3D",
+        u"Open3D Documentation",
+        author,
+        "Open3D",
+        "One line description of project.",
+        "Miscellaneous",
+    )
 ]
 
 # Version 0: Added by Jaesik to list Python members using the source order
 # Version 1: Changed to 'groupwise': __init__ first, then methods, then
 #            properties. Within each, sorted alphabetically.
-autodoc_member_order = 'groupwise'
+autodoc_member_order = "groupwise"
+
+
+# Copy jupyter notebooks and test data to tutorial folder
+test_data_in_dir = Path(current_file_dir).parent / "examples" / "TestData"
+test_data_out_dir = Path(current_file_dir) / "TestData"
+if test_data_out_dir.exists():
+    shutil.rmtree(test_data_out_dir)
+shutil.copytree(test_data_in_dir, test_data_out_dir)
+example_dirs = ["Basic"]
+for example_dir in example_dirs:
+    in_dir = Path(current_file_dir).parent / "examples" / "Python" / example_dir
+    out_dir = Path(current_file_dir) / "tutorial" / "Basic"
+    # remove all existing jupyter notebooks
+    for nb_out_path in out_dir.glob("*.ipynb"):
+        nb_out_path.unlink()
+    shutil.copy(in_dir / "open3d_tutorial.py", out_dir / "open3d_tutorial.py")
+    for nb_in_path in in_dir.glob("*.ipynb"):
+        nb_out_path = out_dir / nb_in_path.name
+        shutil.copy(nb_in_path, nb_out_path)
 
 
 def is_enum_class(func, func_name):
-
     def import_from_str(class_name):
-        components = class_name.split('.')
+        components = class_name.split(".")
         mod = __import__(components[0])
         for comp in components[1:]:
             mod = getattr(mod, comp)

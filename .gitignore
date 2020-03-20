@@ -61,3 +61,12 @@ examples/Python/Basic/copy_of_lena_color.jpg
 examples/Python/Basic/copy_of_crate.mtl
 examples/Python/Basic/copy_of_crate.png
 examples/Python/Basic/copy_of_crate.obj
+
+# doc
+docs/TestData
+docs/tutorial/**/*.ipynb
+docs/tutorial/**/*.py
+docs/tutorial/**/*.jpg
+docs/tutorial/**/*.ply
+docs/tutorial/**/*.pcd
+docs/tutorial/**/*.json
