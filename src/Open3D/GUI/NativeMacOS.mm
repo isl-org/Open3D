@@ -115,12 +115,14 @@ void ShowNativeFileDialog(FileDialog::Type type,
     dlg.allowedFileTypes = allowed;
     dlg.allowsOtherFileTypes = YES;
 
+    NSWindow *current = NSApp.mainWindow;
     [dlg beginWithCompletionHandler:^(NSModalResponse result) {
         if (result == NSModalResponseOK) {
             onOk(dlg.URL.path.UTF8String);
         } else {
             onCancel();
         }
+        [current makeKeyWindow];
     }];
 }
 

@@ -1275,6 +1275,7 @@ void GuiVisualizer::OnDragDropped(const char *path) {
         auto err = std::string("Error reading geometry file '") + path + "'";
         vis->ShowMessageBox("Error loading geometry", err.c_str());
     }
+    PostRedraw();
 }
 
 }  // namespace visualization
