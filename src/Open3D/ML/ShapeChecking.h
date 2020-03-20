@@ -37,23 +37,27 @@ namespace shape_checking {
 /// Class for representing a possibly unknown dimension value
 class DimValue {
 public:
-    DimValue() : value(0), constant(false) {}
-    DimValue(int64_t v) : value(v), constant(true) {}
+    DimValue() : value_(0), constant_(false) {}
+    DimValue(int64_t v) : value_(v), constant_(true) {}
     DimValue& operator*=(const DimValue& b) {
-        if (constant && b.constant)
-            value *= b.value;
+        if (constant_ && b.constant_)
+            value_ *= b.value_;
         else
-            constant = false;
+            constant_ = false;
         return *this;
     }
     std::string ToString() const {
-        if (constant)
-            return std::to_string(value);
+        if (constant_)
+            return std::to_string(value_);
         else
             return "?";
     }
-    int64_t value;
-    bool constant;
+    int64_t& value() { return value_; }
+    bool& constant() { return constant_; }
+
+private:
+    int64_t value_;
+    bool constant_;
 };
 
 inline DimValue UnknownValue() { return DimValue(); }
@@ -226,7 +230,7 @@ public:
 
     int64_t value() {
         if (constant_) {
-            return TOp::apply(left.value(), right.value());
+            return TOp::apply(left_.value(), right_.value());
         }
         return 0;
     }
@@ -238,21 +242,21 @@ public:
         if (constant_) {
             return value() == a;
         } else {
-            return TOp::backprop(a, left, right);
+            return TOp::backprop(a, left_, right_);
         }
     }
 
     std::string ToString(bool show_value = true) {
-        return left.ToString(show_value) + TOp::ToString() +
-               right.ToString(show_value);
+        return left_.ToString(show_value) + TOp::ToString() +
+               right_.ToString(show_value);
     }
 
 private:
-    DimX(TLeft left, TRight right) : left(left), right(right) {
+    DimX(TLeft left, TRight right) : left_(left), right_(right) {
         constant_ = left.constant() && right.constant() && TOp::constant();
     }
-    TLeft left;
-    TRight right;
+    TLeft left_;
+    TRight right_;
     bool constant_;
 };
 
@@ -299,16 +303,16 @@ DEFINE_DIMX_OPERATOR(DimXOr, ||)
 
 template <class TLeft, class TRight, class TOp>
 inline bool operator==(DimValue a, DimX<TLeft, TRight, TOp>&& b) {
-    if (a.constant) {
+    if (a.constant()) {
         auto b_copy(b);
-        return b_copy.assign(a.value);
+        return b_copy.assign(a.value());
     } else
         return true;
 }
 
 inline bool operator==(DimValue a, Dim b) {
-    if (a.constant)
-        return b.assign(a.value);
+    if (a.constant())
+        return b.assign(a.value());
     else
         return true;
 }
