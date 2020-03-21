@@ -275,7 +275,7 @@ Case 4: When adding a Python tutorial
    stripping the output cells of all tutorials.
    Alternatively, you can enable a pre-commit filter by running the script 
    ``utils/scripts/git_enable_ipynb_filter.sh`` once. In any case you need to 
-   have ``jupyter`` in your ``PATH``.
+   have ``jupyter`` in your ``PATH`` and ``nbconvert`` installed.
 
 Dos
 -----------------------
