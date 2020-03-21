@@ -103,31 +103,10 @@ endif ()
 # Azure Kinect
 include(azure_kinect/azure_kinect.cmake)
 
-# JSONCPP
-if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-    # It is a known bug that g++ on OSX only supports libstdc++
-    # The jsoncpp installed by brew by default is compiled with libc++
-    # If the two libraries are linked together, they break the build
-    # https://github.com/open-source-parsers/jsoncpp/issues/597
-    # https://github.com/IntelVCL/Open3D/issues/9
-    message(STATUS "Building JSONCPP from source, without installing headers")
-    add_subdirectory(jsoncpp)
-    set(BUILD_JSONCPP ON)
-else ()
-    if (BUILD_JSONCPP)
-        message(STATUS "Building JSONCPP from source (BUILD_JSONCPP=ON)")
-    elseif (JSONCPP_FOUND)
-        message(STATUS "Using installed JSONCPP ${JSONCPP_VERSION}")
-    else ()
-        message(STATUS "Unable to find JSONCPP installed in the system")
-        message(STATUS "Building JSONCPP from source")
-        set(BUILD_JSONCPP ON)
-    endif ()
+# JSONCPP is always built from source to avoid ABI compatibility issues
+message(STATUS "Building JSONCPP from source")
+add_subdirectory(jsoncpp)
 
-    if (BUILD_JSONCPP)
-        add_subdirectory(jsoncpp)
-    endif ()
-endif ()
 
 # liblzf
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
@@ -382,9 +361,6 @@ if (NOT BUILD_GLEW)
 endif ()
 if (NOT BUILD_GLFW)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${GLFW_LIBRARIES})
-endif ()
-if (NOT BUILD_JSONCPP)
-    list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${JSONCPP_LIBRARIES})
 endif ()
 if (NOT BUILD_PNG)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${PNG_LIBRARIES})

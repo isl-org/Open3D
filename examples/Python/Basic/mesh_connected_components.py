@@ -1,3 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/Basic/mesh_connected_components.py
+
 import open3d as o3d
 import numpy as np
 import copy

@@ -36,6 +36,7 @@
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/TensorKey.h"
 
 namespace open3d {
 
@@ -143,6 +144,75 @@ public:
         return *this;
     }
 
+    /// Pythonic __getitem__ for tensor, returning a new view.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t1 = t[2]
+    /// t2 = t[0:4:2]
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// Tensor t1 = t.GetItem(TensorIndex(2));
+    /// Tensor t2 = t.GetItem(TensorSlice(0, 4, 2));
+    /// ```
+    Tensor GetItem(const TensorKey& tk) const;
+
+    /// Pythonic __getitem__ for tensor, returning a new view.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t1 = t[1, 0:4:2]
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// Tensor t1 = t.GetItem({TensorIndex(2), TensorSlice(0, 4, 2)});
+    /// ```
+    ///
+    Tensor GetItem(const std::vector<TensorKey>& tks) const;
+
+    /// Set all items. Equivalent to `tensor[:] = value` in Python.
+    Tensor SetItem(const Tensor& value);
+
+    /// Pythonic __setitem__ for tensor.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t[2] = np.empty((5,), dtype=np.float32)
+    /// t[0:4:2] = np.empty((2, 5), dtype=np.float32)
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem(TensorIndex(2), Tensor({5}, Dtype::Float32));
+    /// t.SetItem(TensorSlice(0, 4, 2), Tensor({2, 5}, Dtype::Float32));
+    /// ```
+    Tensor SetItem(const TensorKey& tk, const Tensor& value);
+
+    /// Pythonic __setitem__ for tensor.
+    ///
+    /// For example, in numpy:
+    /// ```python
+    /// t = np.empty((4, 5), dtype=np.float32)
+    /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
+    /// ```
+    ///
+    /// The equivalent Open3D C++ calls:
+    /// ```cpp
+    /// Tensor t({4, 5}, Dtype::Float32);
+    /// t.SetItem({TensorIndex(2), TensorSlice(0, 4, 2)},
+    ///           Tensor({2, 5}, Dtype::Float32));
+    /// ```
+    Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
+
     DLManagedTensor* ToDLPack() const { return dlpack::ToDLPack(*this); }
 
     static Tensor FromDLPack(DLManagedTensor* src) {
@@ -214,11 +284,24 @@ public:
     /// Copy Tensor values to current tensor for source tensor
     void CopyFrom(const Tensor& other);
 
+    /// Shallow copy a tensor, returning a tensor sharing the same memory.
+    void ShallowCopyFrom(const Tensor& other);
+
+    /// Returns a tensor with the specified \p dtype.
+    /// \param dtype The targeted dtype to convert to.
+    /// \param copy If true, a new tensor is always created; if false, the copy
+    /// is avoided when the original tensor already have the targeted dtype.
+    Tensor To(Dtype dtype, bool copy = false) const;
+
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
 
     /// Extract the i-th Tensor along the first axis, creating a new view
     Tensor operator[](int64_t i) const;
+
+    /// Extract the \p idx -th sub-tensor in dimension \p dim. After
+    /// IndexExtract, the dimension \p dim will be removed.
+    Tensor IndexExtract(int64_t dim, int64_t idx) const;
 
     /// Slice Tensor
     Tensor Slice(int64_t dim,
@@ -302,7 +385,7 @@ public:
     Tensor operator+(const Tensor& value) const { return Add(value); }
 
     /// Inplace version of Tensor::Add. Adds a tensor to the current tensor and
-    /// retunrs the current tensor.
+    /// returns the current tensor.
     Tensor Add_(const Tensor& value);
     Tensor operator+=(const Tensor& value) { return Add_(value); }
 
@@ -311,7 +394,7 @@ public:
     Tensor operator-(const Tensor& value) const { return Sub(value); }
 
     /// Inplace version of Tensor::Sub. Substracts a tensor to the current
-    /// tensor and retunrs the current tensor.
+    /// tensor and returns the current tensor.
     Tensor Sub_(const Tensor& value);
     Tensor operator-=(const Tensor& value) { return Sub_(value); }
 
@@ -320,7 +403,7 @@ public:
     Tensor operator*(const Tensor& value) const { return Mul(value); }
 
     /// Inplace version of Tensor::Mul. Multiplies a tensor to the current
-    /// tensor and retunrs the current tensor.
+    /// tensor and returns the current tensor.
     Tensor Mul_(const Tensor& value);
     Tensor operator*=(const Tensor& value) { return Mul_(value); }
 
@@ -329,9 +412,39 @@ public:
     Tensor operator/(const Tensor& value) const { return Div(value); }
 
     /// Inplace version of Tensor::Div. Divides a tensor to the current
-    /// tensor and retunrs the current tensor.
+    /// tensor and returns the current tensor.
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
+
+    /// Element-wise square root of a tensor, returns a new tensor.
+    Tensor Sqrt() const;
+
+    /// Element-wise square root of a tensor, in-place.
+    Tensor Sqrt_();
+
+    /// Element-wise sine of a tensor, returns a new tensor.
+    Tensor Sin() const;
+
+    /// Element-wise sine of a tensor, in-place.
+    Tensor Sin_();
+
+    /// Element-wise cosine of a tensor, returns a new tensor.
+    Tensor Cos() const;
+
+    /// Element-wise cosine of a tensor, in-place.
+    Tensor Cos_();
+
+    /// Element-wise negation of a tensor, returns a new tensor.
+    Tensor Neg() const;
+
+    /// Element-wise negation of a tensor, in-place.
+    Tensor Neg_();
+
+    /// Element-wise exponential of a tensor, returns a new tensor.
+    Tensor Exp() const;
+
+    /// Element-wise exponential of a tensor, in-place.
+    Tensor Exp_();
 
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>

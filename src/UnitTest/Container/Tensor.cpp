@@ -24,12 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Tensor.h"
+#include <cmath>
+
 #include "Open3D/Core/AdvancedIndexing.h"
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/Kernel/Kernel.h"
 #include "Open3D/Core/MemoryManager.h"
 #include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
 
 #include "Container/ContainerTest.h"
 #include "TestUtility/UnitTest.h"
@@ -143,7 +145,26 @@ TEST_P(TensorPermuteDevicePairs, Copy) {
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
+    EXPECT_EQ(dst_t.GetDtype(), src_t.GetDtype());
+    EXPECT_EQ(dst_t.ToFlatVector<float>(), vals);
+}
+
+TEST_P(TensorPermuteDevices, To) {
+    Device device = GetParam();
+
+    Dtype dtype(Dtype::Float32);
+    SizeVector shape{2, 3};
+
+    std::vector<float> src_vals{0.1, 1.2, 2.3, 3.4, 4.5, 5.6};
+    std::vector<int> dst_vals{0, 1, 2, 3, 4, 5};
+    Tensor src_t(src_vals, shape, dtype, device);
+
+    Tensor dst_t = src_t.To(Dtype::Int32);
+
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
+    EXPECT_EQ(dst_t.GetDevice(), device);
+    EXPECT_EQ(dst_t.GetDtype(), Dtype::Int32);
+    EXPECT_EQ(dst_t.ToFlatVector<int>(), dst_vals);
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
@@ -210,9 +231,12 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
 
     // Zero dim
     EXPECT_THROW(Tensor({}, Dtype::Float32)[0], std::runtime_error);
+    EXPECT_THROW(Tensor({}, Dtype::Float32)[-1], std::runtime_error);
+    EXPECT_THROW(Tensor({}, Dtype::Float32)[2], std::runtime_error);
 
     // Index out-of-bounds
     EXPECT_THROW(Tensor({0, 1}, Dtype::Float32)[0], std::runtime_error);
+    EXPECT_THROW(Tensor({0, 1}, Dtype::Float32)[-1], std::runtime_error);
     EXPECT_THROW(Tensor({1, 2}, Dtype::Float32)[10], std::runtime_error);
 
     // Regular cases
@@ -226,7 +250,20 @@ TEST_P(TensorPermuteDevices, OperatorSquareBrackets) {
     EXPECT_EQ(t_0.GetDataPtr(), t.GetDataPtr());
     EXPECT_EQ(t_0.GetBlob(), t.GetBlob());
 
+    t_0 = t[-2];  // t[-2] == t[0]
+    EXPECT_EQ(t_0.GetShape(), SizeVector({3, 4}));
+    EXPECT_EQ(t_0.GetStrides(), SizeVector({4, 1}));
+    EXPECT_EQ(t_0.GetDataPtr(), t.GetDataPtr());
+    EXPECT_EQ(t_0.GetBlob(), t.GetBlob());
+
     Tensor t_1 = t[1];
+    EXPECT_EQ(t_1.GetShape(), SizeVector({3, 4}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 1}));
+    EXPECT_EQ(t_1.GetDataPtr(),
+              static_cast<char *>(t.GetDataPtr()) + 1 * 3 * 4 * sizeof(float));
+    EXPECT_EQ(t_1.GetBlob(), t.GetBlob());
+
+    t_1 = t[-1];  // t[-1] == t[1]
     EXPECT_EQ(t_1.GetShape(), SizeVector({3, 4}));
     EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 1}));
     EXPECT_EQ(t_1.GetDataPtr(),
@@ -412,6 +449,32 @@ TEST_P(TensorPermuteDevices, Slice) {
               static_cast<const char *>(blob_head) +
                       DtypeUtil::ByteSize(Dtype::Float32) * 3 * 4);
     EXPECT_EQ(t_4.ToFlatVector<float>(), std::vector<float>({12, 14, 20, 22}));
+
+    // t_5 = t[1, 0:-1, 0:-2:2] == t[1, 0:2, 0:2:2]
+    Tensor t_5 = t[1].Slice(0, 0, -1).Slice(1, 0, -2, 2);
+    EXPECT_EQ(t_5.GetShape(), SizeVector({2, 1}));
+    EXPECT_EQ(t_5.GetStrides(), SizeVector({4, 2}));
+    EXPECT_EQ(t_5.GetDataPtr(),
+              static_cast<const char *>(blob_head) +
+                      DtypeUtil::ByteSize(Dtype::Float32) * 3 * 4);
+    EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
+}
+
+TEST_P(TensorPermuteDevices, GetItem) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t_1 = t[1, :3, 0:-1:2], effectively not sliced
+    Tensor t_1 =
+            t.GetItem({TensorKey::Index(1), TensorKey::Slice(None, 3, None),
+                       TensorKey::Slice(0, -1, 2)});
+    EXPECT_EQ(t_1.GetShape(), SizeVector({3, 2}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 2}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({12, 14, 16, 18, 20, 22}));
 }
 
 TEST_P(TensorPermuteDevices, SliceAssign) {
@@ -919,4 +982,122 @@ TEST_P(TensorPermuteDevices, Div_) {
              device);
     a /= b;
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
+}
+
+TEST_P(TensorPermuteDevices, Sqrt) {
+    Device device = GetParam();
+    Tensor src(std::vector<float>({0, 1, 4, 9, 16, 25}), {2, 3}, Dtype::Float32,
+               device);
+    Tensor dst = src.Sqrt();
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4, 5}));
+
+    // Sqrt only works for float types, throws exception otherwise.
+    src = Tensor({2, 3}, Dtype::Int32, device);
+    EXPECT_THROW(src.Sqrt(), std::runtime_error);
+
+    // Negative number's sqrt shall be NaN.
+    src = Tensor(std::vector<float>({0, 1, 4, 9, -16, -25}), {2, 3},
+                 Dtype::Float32, device);
+    dst = src.Sqrt();
+    std::vector<float> dst_vals = dst.ToFlatVector<float>();
+    EXPECT_EQ(dst_vals[0], 0);
+    EXPECT_EQ(dst_vals[1], 1);
+    EXPECT_EQ(dst_vals[2], 2);
+    EXPECT_EQ(dst_vals[3], 3);
+    EXPECT_TRUE(std::isnan(dst_vals[4]));
+    EXPECT_TRUE(std::isnan(dst_vals[5]));
+
+    // Inplace version.
+    src = Tensor(std::vector<float>({0, 1, 4, 9, 16, 25}), {2, 3},
+                 Dtype::Float32, device);
+    src.Sqrt_();
+    EXPECT_EQ(src.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4, 5}));
+}
+
+TEST_P(TensorPermuteDevices, Sin) {
+    Device device = GetParam();
+
+    std::vector<float> src_vals{-2, -1, 0, 1, 2, 3};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::sin(v); });
+
+    Tensor src(src_vals, {2, 3}, Dtype::Float32, device);
+    Tensor dst = src.Sin();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Inplace version.
+    src.Sin_();
+    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+
+    // Only works for float types, throws exception otherwise.
+    src = Tensor({2, 3}, Dtype::Int32, device);
+    EXPECT_THROW(src.Sin(), std::runtime_error);
+}
+
+TEST_P(TensorPermuteDevices, Cos) {
+    Device device = GetParam();
+
+    std::vector<float> src_vals{-2, -1, 0, 1, 2, 3};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::cos(v); });
+
+    Tensor src(src_vals, {2, 3}, Dtype::Float32, device);
+    Tensor dst = src.Cos();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Inplace version.
+    src.Cos_();
+    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+
+    // Only works for float types, throws exception otherwise.
+    src = Tensor({2, 3}, Dtype::Int32, device);
+    EXPECT_THROW(src.Cos(), std::runtime_error);
+}
+
+TEST_P(TensorPermuteDevices, Neg) {
+    Device device = GetParam();
+
+    std::vector<float> src_vals{-2, -1, 0, 1, 2, 3};
+    std::vector<float> dst_vals{2, 1, 0, -1, -2, -3};
+
+    Tensor src(src_vals, {2, 3}, Dtype::Float32, device);
+    Tensor dst = src.Neg();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Inplace version.
+    src.Neg_();
+    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+
+    // Also works for int.
+    src = Tensor(std::vector<int>{-1, 0, 2}, {1, 3}, Dtype::Int32, device);
+    dst = src.Neg();
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>({1, 0, -2}));
+}
+
+TEST_P(TensorPermuteDevices, Exp) {
+    Device device = GetParam();
+
+    std::vector<float> src_vals{-2, -1, 0, 1, 2, 3};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::exp(v); });
+
+    Tensor src(src_vals, {2, 3}, Dtype::Float32, device);
+    Tensor dst = src.Exp();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Inplace version.
+    src.Exp_();
+    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+
+    // Only works for float types, throws exception otherwise.
+    src = Tensor({2, 3}, Dtype::Int32, device);
+    EXPECT_THROW(src.Exp(), std::runtime_error);
 }

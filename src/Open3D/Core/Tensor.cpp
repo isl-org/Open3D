@@ -36,6 +36,7 @@
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/Kernel/Kernel.h"
 #include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/TensorKey.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -69,6 +70,50 @@ Tensor& Tensor::operator=(const Tensor& other) && {
 /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
+    return *this;
+}
+
+Tensor Tensor::GetItem(const TensorKey& tk) const {
+    if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+        return IndexExtract(0, tk.GetIndex());
+    } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+        TensorKey tk_new = tk.UpdateWithDimSize(shape_[0]);
+        return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
+    } else {
+        utility::LogError("Internal error: wrong TensorKeyMode.");
+    }
+}
+
+Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
+    Tensor t = *this;
+    int64_t slice_dim = 0;
+    for (const TensorKey& tk : tks) {
+        if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+            t = t.IndexExtract(slice_dim, tk.GetIndex());
+        } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+            TensorKey tk_new = tk.UpdateWithDimSize(t.shape_[slice_dim]);
+            t = t.Slice(slice_dim, tk_new.GetStart(), tk_new.GetStop(),
+                        tk_new.GetStep());
+            slice_dim++;
+        } else {
+            utility::LogError("Internal error: wrong TensorKeyMode.");
+        }
+    }
+    return t;
+}
+
+Tensor Tensor::SetItem(const Tensor& value) {
+    this->AsRvalue() = value;
+    return *this;
+}
+
+Tensor Tensor::SetItem(const TensorKey& tk, const Tensor& value) {
+    this->GetItem(tk) = value;
+    return *this;
+}
+
+Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
+    this->GetItem(tks) = value;
     return *this;
 }
 
@@ -163,7 +208,24 @@ Tensor Tensor::Copy(const Device& device) const {
     return dst_tensor;
 }
 
+Tensor Tensor::To(Dtype dtype, bool copy) const {
+    if (!copy && dtype_ == dtype) {
+        return *this;
+    }
+    Tensor dst_tensor(shape_, dtype, GetDevice());
+    kernel::Copy(*this, dst_tensor);
+    return dst_tensor;
+}
+
 void Tensor::CopyFrom(const Tensor& other) { AsRvalue() = other; }
+
+void Tensor::ShallowCopyFrom(const Tensor& other) {
+    shape_ = other.shape_;
+    strides_ = other.strides_;
+    dtype_ = other.dtype_;
+    blob_ = other.blob_;
+    data_ptr_ = other.data_ptr_;
+}
 
 Tensor Tensor::Contiguous() const {
     if (IsContiguous()) {
@@ -306,29 +368,22 @@ std::string Tensor::ScalarPtrToString(const void* ptr) const {
     return str;
 }
 
-Tensor Tensor::operator[](int64_t i) const {
+Tensor Tensor::operator[](int64_t i) const { return IndexExtract(0, i); }
+
+Tensor Tensor::IndexExtract(int64_t dim, int64_t idx) const {
     if (shape_.size() == 0) {
         utility::LogError("Tensor has shape (), cannot be indexed.");
     }
-    if (i < 0) {
-        utility::LogError("Only non-ngegative index is supported, but {} < 0.",
-                          i);
-    }
-    if (i >= shape_[0]) {
-        utility::LogError("Index {} is out of bounds for axis of length {}.", i,
-                          shape_[0]);
-    }
-    if (shape_.size() != strides_.size()) {
-        utility::LogError(
-                "Internal error, shape and strides dimension mismatch {} != "
-                "{}",
-                shape_.size(), strides_.size());
-    }
-    SizeVector new_shape(shape_.begin() + 1, shape_.end());
-    SizeVector new_stride(strides_.begin() + 1, strides_.end());
+    dim = WrapDim(dim, NumDims());
+    idx = WrapDim(idx, shape_[dim]);
+
+    SizeVector new_shape(shape_);
+    new_shape.erase(new_shape.begin() + dim);
+    SizeVector new_strides(strides_);
+    new_strides.erase(new_strides.begin() + dim);
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
-                         strides_[0] * DtypeUtil::ByteSize(dtype_) * i;
-    return Tensor(new_shape, new_stride, new_data_ptr, dtype_, blob_);
+                         strides_[dim] * DtypeUtil::ByteSize(dtype_) * idx;
+    return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
 
 Tensor Tensor::Slice(int64_t dim,
@@ -338,6 +393,7 @@ Tensor Tensor::Slice(int64_t dim,
     if (shape_.size() == 0) {
         utility::LogError("Slice cannot be applied to 0-dim Tensor");
     }
+    dim = WrapDim(dim, NumDims());
     if (dim < 0 || dim >= shape_.size()) {
         utility::LogError("Dim {} is out of bound for SizeVector of length {}",
                           dim, shape_.size());
@@ -346,16 +402,8 @@ Tensor Tensor::Slice(int64_t dim,
     if (step == 0) {
         utility::LogError("Step size cannot be 0");
     }
-    // TODO: support wrap-around start/stop index
-    if (start < 0 || start >= shape_[dim]) {
-        utility::LogError("Index {} is out of bounds for axis of length {}.",
-                          start, shape_[dim]);
-    }
-    // The stop index is non-inclusive
-    if (stop < 0 || stop > shape_[dim]) {
-        utility::LogError("Index {} is out of bounds for axis of length {}.",
-                          stop, shape_[dim]);
-    }
+    start = WrapDim(start, shape_[dim]);
+    stop = WrapDim(stop, shape_[dim], /*inclusive=*/true);
     if (stop < start) {
         stop = start;
     }
@@ -497,6 +545,61 @@ Tensor Tensor::Div(const Tensor& value) const {
 
 Tensor Tensor::Div_(const Tensor& value) {
     kernel::Div(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Sqrt() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Sqrt);
+    return dst_tensor;
+}
+
+Tensor Tensor::Sqrt_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Sqrt);
+    return *this;
+}
+
+Tensor Tensor::Sin() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Sin);
+    return dst_tensor;
+}
+
+Tensor Tensor::Sin_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Sin);
+    return *this;
+}
+
+Tensor Tensor::Cos() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Cos);
+    return dst_tensor;
+}
+
+Tensor Tensor::Cos_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Cos);
+    return *this;
+}
+
+Tensor Tensor::Neg() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Neg);
+    return dst_tensor;
+}
+
+Tensor Tensor::Neg_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Neg);
+    return *this;
+}
+
+Tensor Tensor::Exp() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Exp);
+    return dst_tensor;
+}
+
+Tensor Tensor::Exp_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Exp);
     return *this;
 }
 

@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/Python/Advanced/o3d.color_map.color_map_optimization.py
+# examples/Python/Advanced/color_map_optimization.py
 
 import open3d as o3d
 from trajectory_io import *

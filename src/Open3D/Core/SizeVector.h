@@ -80,15 +80,25 @@ public:
 /// \brief Wrap around negative \p dim.
 ///
 /// E.g. If max_dim == 5, dim -1 will be converted to 4.
-static inline int64_t WrapDim(int64_t dim, int64_t max_dim) {
+///
+/// \param dim Dimension index
+/// \param max_dim Maximum dimension index
+/// \param inclusive Set to true to allow dim == max_dim. E.g. for slice
+///        T[start:end], we allow end == max_dim.
+static inline int64_t WrapDim(int64_t dim,
+                              int64_t max_dim,
+                              bool inclusive = false) {
     if (max_dim <= 0) {
         utility::LogError("max_dim {} must be >= 0");
     }
-    if (dim < -max_dim || dim > max_dim - 1) {
+    int64_t min = -max_dim;
+    int64_t max = inclusive ? max_dim : max_dim - 1;
+
+    if (dim < min || dim > max) {
         utility::LogError(
                 "Index out-of-range: dim == {}, but it must satisfy {} <= dim "
                 "<= {}",
-                dim, 0, max_dim - 1);
+                dim, min, max);
     }
     if (dim < 0) {
         dim += max_dim;

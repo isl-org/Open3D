@@ -1,3 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/Advanced/mesh_voxelization.py
+
 import os
 import sys
 import urllib.request

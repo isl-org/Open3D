@@ -29,8 +29,23 @@
 namespace open3d {
 namespace registration {
 
+/// \class GlobalOptimizationOption
+///
+/// \brief Option for GlobalOptimization.
 class GlobalOptimizationOption {
 public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param max_correspondence_distance Identifies which distance value is
+    /// used for finding neighboring points when making information matrix.
+    /// According to [Choi et al 2015], this distance is used for determining
+    /// $mu, a line process weight. \param edge_prune_threshold According to
+    /// [Choi et al 2015], line_process weight < edge_prune_threshold (0.25) is
+    /// pruned. \param preference_loop_closure dometry vs loop-closure. [0,1] ->
+    /// try to unchange odometry edges, [1) -> try to utilize loop-closure.
+    /// Recommendation: 0.1 for RGBD Odometry, 2.0 for fragment registration.
+    /// \param reference_node The pose of this node is unchanged after
+    /// optimization.
     GlobalOptimizationOption(double max_correspondence_distance = 0.075,
                              double edge_prune_threshold = 0.25,
                              double preference_loop_closure = 1.0,
@@ -63,14 +78,27 @@ public:
     /// Balancing parameter to decide which one is more reliable: odometry vs
     /// loop-closure. [0,1] -> try to unchange odometry edges, [1) -> try to
     /// utilize loop-closure. Recommendation: 0.1 for RGBD Odometry, 2.0 for
-    /// fragment registration
+    /// fragment registration.
     double preference_loop_closure_;
-    /// The pose of this node is unchanged after optimization
+    /// The pose of this node is unchanged after optimization.
     int reference_node_;
 };
 
+/// \class GlobalOptimizationConvergenceCriteria
+///
+///  \brief Convergence criteria of GlobalOptimization.
 class GlobalOptimizationConvergenceCriteria {
 public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param max_iteration Maximum iteration number.
+    /// \param min_relative_increment Minimum relative increments.
+    /// \param min_relative_residual_increment Minimum relative residual
+    /// increments. \param min_right_term Minimum right term value. \param
+    /// min_residual Minimum residual value. \param max_iteration_lm Maximum
+    /// iteration number for Levenberg Marquardt method. \param
+    /// upper_scale_factor Upper scale factor value. \param lower_scale_factor
+    /// Lower scale factor value.
     GlobalOptimizationConvergenceCriteria(
             int max_iteration = 100,
             double min_relative_increment = 1e-6,
@@ -100,21 +128,31 @@ public:
     ~GlobalOptimizationConvergenceCriteria() {}
 
 public:
-    /// maximum iteration number for iterative optmization module.
+    /// Maximum iteration number for iterative optimization module.
     int max_iteration_;
-    /// several convergence criteria to determine
-    /// stability of iterative optimization
+    /// \brief Minimum relative increments.
+    ///
+    /// Several convergence criteria to determine
+    /// stability of iterative optimization.
     double min_relative_increment_;
+    /// Minimum relative residual increments.
     double min_relative_residual_increment_;
+    /// Minimum right term value.
     double min_right_term_;
+    /// Minimum residual value.
     double min_residual_;
-    /// max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop
-    /// that automatically changes steepest gradient gain
+    /// \brief Maximum iteration number for Levenberg Marquardt method.
+    ///
+    /// \p max_iteration_lm_ is used for additional Levenberg-Marquardt inner
+    /// loop that automatically changes steepest gradient gain.
     int max_iteration_lm_;
-    /// below two variables used for levenberg marquardt algorithm
+    /// \brief Upper scale factor value.
+    ///
+    /// Scaling factors are used for levenberg marquardt algorithm
     /// these are scaling factors that increase/decrease lambda
     /// used in H_LM = H + lambda * I
     double upper_scale_factor_;
+    /// Lower scale factor value.
     double lower_scale_factor_;
 };
 

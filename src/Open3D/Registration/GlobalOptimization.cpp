@@ -497,7 +497,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
 
     utility::LogDebug(
             "[GlobalOptimizationGaussNewton] Optimizing PoseGraph having {:d} "
-            "nodes and %d edges.",
+            "nodes and {:d} edges.",
             n_nodes, n_edges);
     utility::LogDebug("Line process weight : {:f}", line_process_weight);
 
@@ -520,7 +520,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
     utility::LogDebug("[Initial     ] residual : {:e}", current_residual);
 
     bool stop = false;
-    if (stop || CheckRightTerm(b, criteria)) return;
+    if (CheckRightTerm(b, criteria)) return;
 
     utility::Timer timer_overall;
     timer_overall.Start();

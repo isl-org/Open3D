@@ -1,3 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/ReconstructionSystem/sensors/azure_kinect_mkv_reader.py
+
 import argparse
 import open3d as o3d
 import os
@@ -85,7 +91,10 @@ class ReaderWithCallback:
                     o3d.io.write_image(depth_filename, rgbd.depth)
                     idx += 1
 
-            vis.update_geometry()
+            try:
+                vis.update_geometry(rgbd)
+            except NameError:
+                pass
             vis.poll_events()
             vis.update_renderer()
 

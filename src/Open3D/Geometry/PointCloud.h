@@ -47,9 +47,17 @@ class RGBDImage;
 class TriangleMesh;
 class VoxelGrid;
 
+/// \class PointCloud
+///
+/// \brief A point cloud consists of point coordinates, and optionally point
+/// colors and point normals.
 class PointCloud : public Geometry3D {
 public:
+    /// \brief Default Constructor.
     PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param points Points coordinates.
     PointCloud(const std::vector<Eigen::Vector3d> &points)
         : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
     ~PointCloud() override {}
@@ -71,16 +79,20 @@ public:
     PointCloud &operator+=(const PointCloud &cloud);
     PointCloud operator+(const PointCloud &cloud) const;
 
+    /// Returns 'true' if the point cloud contains points.
     bool HasPoints() const { return points_.size() > 0; }
 
+    /// Returns `true` if the point cloud contains point normals.
     bool HasNormals() const {
         return points_.size() > 0 && normals_.size() == points_.size();
     }
 
+    /// Returns `true` if the point cloud contains point colors.
     bool HasColors() const {
         return points_.size() > 0 && colors_.size() == points_.size();
     }
 
+    /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
             normals_[i].normalize();
@@ -88,125 +100,181 @@ public:
         return *this;
     }
 
-    /// Assigns each point in the PointCloud the same color \param color.
+    /// Assigns each point in the PointCloud the same color.
+    ///
+    /// \param color  RGB colors of points.
     PointCloud &PaintUniformColor(const Eigen::Vector3d &color) {
         ResizeAndPaintUniformColor(colors_, points_.size(), color);
         return *this;
     }
 
-    /// Remove all points fromt he point cloud that have a nan entry, or
+    /// \brief Remove all points fromt he point cloud that have a nan entry, or
     /// infinite entries.
+    ///
     /// Also removes the corresponding normals and color entries.
+    ///
+    /// \param remove_nan Remove NaN values from the PointCloud.
+    /// \param remove_infinite Remove infinite values from the PointCloud.
     PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
                                        bool remove_infinite = true);
 
-    /// Function to select points from \param input pointcloud into
-    /// \return output pointcloud
+    /// \brief Function to select points from \p input pointcloud into
+    /// \p output pointcloud.
+    ///
     /// Points with indices in \param indices are selected.
+    ///
+    /// \param indices Indices of points to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
     std::shared_ptr<PointCloud> SelectDownSample(
             const std::vector<size_t> &indices, bool invert = false) const;
 
-    /// Function to downsample \param input pointcloud into output pointcloud
-    /// with a voxel \param voxel_size defines the resolution of the voxel grid,
-    /// smaller value leads to denser output point cloud. Normals and colors are
-    /// averaged if they exist.
+    /// \brief Function to downsample input pointcloud into output pointcloud
+    /// with a voxel.
+    ///
+    /// Normals and colors are averaged if they exist.
+    ///
+    /// \param voxel_size Defines the resolution of the voxel grid,
+    /// smaller value leads to denser output point cloud.
     std::shared_ptr<PointCloud> VoxelDownSample(double voxel_size) const;
 
-    /// Function to downsample using VoxelDownSample, but specialized for
-    /// Surface convolution project. Experimental function.
-    std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
+    /// \brief Function to downsample using geometry.PointCloud.VoxelDownSample
+    ///
+    /// Also records point cloud index before downsampling.
+    ///
+    /// \param voxel_size Voxel size to downsample into.
+    /// \param min_bound Minimum coordinate of voxel boundaries
+    /// \param max_bound Maximum coordinate of voxel boundaries
+    /// \param approximate_class Whether to approximate.
+    std::tuple<std::shared_ptr<PointCloud>,
+               Eigen::MatrixXi,
+               std::vector<std::vector<int>>>
     VoxelDownSampleAndTrace(double voxel_size,
                             const Eigen::Vector3d &min_bound,
                             const Eigen::Vector3d &max_bound,
                             bool approximate_class = false) const;
 
-    /// Function to downsample \param input pointcloud into output pointcloud
-    /// uniformly \param every_k_points indicates the sample rate.
+    /// \brief Function to downsample input pointcloud into output pointcloud
+    /// uniformly.
+    ///
+    /// The sample is performed in the order of the points with the 0-th point
+    /// always chosen, not at random.
+    ///
+    /// \param every_k_points Sample rate, the selected point indices are [0, k,
+    /// 2k, …].
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
-    /// Function to crop pointcloud into output pointcloud
-    /// All points with coordinates outside the bounding box \param bbox are
+    /// \brief Function to crop pointcloud into output pointcloud
+    ///
+    /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
+    ///
+    /// \param bbox AxisAlignedBoundingBox to crop points.
     std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox) const;
 
-    /// Function to crop pointcloud into output pointcloud
-    /// All points with coordinates outside the bounding box \param bbox are
+    /// \brief Function to crop pointcloud into output pointcloud
+    ///
+    /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
+    ///
+    /// \param bbox OrientedBoundingBox to crop points.
     std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
 
-    /// Function to remove points that have less than \param nb_points in a
-    /// sphere of radius \param search_radius
+    /// \brief Function to remove points that have less than \p nb_points in a
+    /// sphere of a given radius.
+    ///
+    /// \param nb_points Number of points within the radius.
+    /// \param search_radius Radius of the sphere.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
 
-    /// Function to remove points that are further away from their
-    /// \param nb_neighbor neighbors in average.
+    /// \brief Function to remove points that are further away from their
+    /// \p nb_neighbor neighbors in average.
+    ///
+    /// \param nb_neighbors Number of neighbors around the target point.
+    /// \param std_ratio Standard deviation ratio.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
 
-    /// Function to compute the normals of a point cloud
-    /// \param cloud is the input point cloud. It also stores the output
-    /// normals. Normals are oriented with respect to the input point cloud if
-    /// normals exist in the input. \param search_param The KDTree search
-    /// parameters
+    /// \brief Function to compute the normals of a point cloud.
+    ///
+    /// Normals are oriented with respect to the input point cloud if normals
+    /// exist.
+    ///
+    /// \param search_param The KDTree search parameters for neighborhood
+    /// search. \param fast_normal_computation If true, the normal estiamtion
+    /// uses a non-iterative method to extract the eigenvector from the
+    /// covariance matrix. This is faster, but is not as numerical stable.
     bool EstimateNormals(
             const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
             bool fast_normal_computation = true);
 
-    /// Function to orient the normals of a point cloud
-    /// \param cloud is the input point cloud. It must have normals.
-    /// Normals are oriented with respect to \param orientation_reference
+    /// \brief Function to orient the normals of a point cloud.
+    ///
+    /// \param orientation_reference Normals are oriented with respect to
+    /// orientation_reference.
     bool OrientNormalsToAlignWithDirection(
             const Eigen::Vector3d &orientation_reference =
                     Eigen::Vector3d(0.0, 0.0, 1.0));
 
-    /// Function to orient the normals of a point cloud
-    /// \param cloud is the input point cloud. It also stores the output
-    /// normals. Normals are oriented with towards \param camera_location
+    /// \brief Function to orient the normals of a point cloud.
+    ///
+    /// \param camera_location Normals are oriented with towards the
+    /// camera_location.
     bool OrientNormalsTowardsCameraLocation(
             const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
 
-    /// Function to compute the point to point distances between point clouds
-    /// \param source is the first point cloud.
-    /// \param target is the second point cloud.
-    /// \return the output distance. It has the same size as the number
-    /// of points in \param source
+    /// \brief Function to compute the point to point distances between point
+    /// clouds.
+    ///
+    /// For each point in the \p source point cloud, compute the distance to the
+    /// \p target point cloud.
+    ///
+    /// \param target The target point cloud.
     std::vector<double> ComputePointCloudDistance(const PointCloud &target);
 
     /// Function to compute the mean and covariance matrix
-    /// of an \param input point cloud
+    /// of a point cloud.
     std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance()
             const;
 
-    /// Function to compute the Mahalanobis distance for points
-    /// in an \param input point cloud
-    /// https://en.wikipedia.org/wiki/Mahalanobis_distance
+    /// \brief Function to compute the Mahalanobis distance for points
+    /// in an input point cloud.
+    ///
+    /// See: https://en.wikipedia.org/wiki/Mahalanobis_distance
     std::vector<double> ComputeMahalanobisDistance() const;
 
     /// Function to compute the distance from a point to its nearest neighbor in
-    /// the \param input point cloud
+    /// the input point cloud
     std::vector<double> ComputeNearestNeighborDistance() const;
 
     /// Function that computes the convex hull of the point cloud using qhull
     std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
     ComputeConvexHull() const;
 
-    /// This is an implementation of the Hidden Point Removal operator
+    /// \brief This is an implementation of the Hidden Point Removal operator
     /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.
-    /// \param camera_location is the view point that is used to remove
-    /// invisible points. \param radius defines the radius of the spherical
-    /// projection. Additional information about the choice of \param radius
+    ///
+    /// Additional information about the choice of radius
     /// for noisy point clouds can be found in Mehra et. al. 'Visibility of
     /// Noisy Point Cloud Data', 2010.
+    ///
+    /// \param camera_location All points not visible from that location will be
+    /// removed. \param radius The radius of the sperical projection.
     std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
     HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                        const double radius) const;
 
-    /// Cluster PointCloud using the DBSCAN algorithm
+    /// \brief Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
     /// in Large Spatial Databases with Noise", 1996
-    /// Returns a vector of point labels, -1 indicates noise according to
+    ///
+    /// Returns a list of point labels, -1 indicates noise according to
     /// the algorithm.
+    ///
+    /// \param eps Density parameter that is used to find neighbouring points.
+    /// \param min_points Minimum number of points to form a cluster.
+    /// \param print_progress If `true` the progress is visualized in the
+    /// console.
     std::vector<int> ClusterDBSCAN(double eps,
                                    size_t min_points,
                                    bool print_progress = false) const;
@@ -225,38 +293,71 @@ public:
             const int ransac_n = 3,
             const int num_iterations = 100) const;
 
-    /// Factory function to create a pointcloud from a depth image and a camera
-    /// model (PointCloudFactory.cpp)
-    /// The input depth image can be either a float image, or a uint16_t image.
-    /// In the latter case, the depth is scaled by 1 / depth_scale, and
-    /// truncated at depth_trunc distance. The depth image is also sampled with
-    /// stride, in order to support (fast) coarse point cloud extraction. Return
-    /// an empty pointcloud if the conversion fails.
+    /// \brief Factory function to create a pointcloud from a depth image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
+    /// / fy\n
+    ///
+    /// \param depth The input depth image can be either a float image, or a
+    /// uint16_t image. \param intrinsic Intrinsic parameters of the camera.
+    /// \param extrinsic Extrinsic parameters of the camera.
+    /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
+    /// \param depth_trunc Truncated at \p depth_trunc distance.
+    /// \param stride Sampling factor to support coarse point cloud extraction.
+    ///
+    /// \Return An empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromDepthImage(
             const Image &depth,
             const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
             double depth_scale = 1000.0,
             double depth_trunc = 1000.0,
-            int stride = 1);
+            int stride = 1,
+            bool project_valid_depth_only = true);
 
-    /// Factory function to create a pointcloud from an RGB-D image and a camera
-    /// model (PointCloudFactory.cpp)
-    /// Return an empty pointcloud if the conversion fails.
+    /// \brief Factory function to create a pointcloud from an RGB-D image and a
+    /// camera model.
+    ///
+    /// Given depth value d at (u, v) image coordinate, the corresponding 3d
+    /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
+    /// / fy\n
+    ///
+    /// \param image The input image.
+    /// \param intrinsic Intrinsic parameters of the camera.
+    /// \param extrinsic Extrinsic parameters of the camera.
+    ///
+    /// \Return An empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromRGBDImage(
             const RGBDImage &image,
             const camera::PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
+            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
+            bool project_valid_depth_only = true);
 
-    /// Function to create a PointCloud from a VoxelGrid.
+    /// \brief Function to create a PointCloud from a VoxelGrid.
+    ///
     /// It transforms the voxel centers to 3D points using the original point
     /// cloud coordinate (with respect to the center of the voxel grid).
+    ///
+    /// \param voxel_grid The input VoxelGrid.
     std::shared_ptr<PointCloud> CreateFromVoxelGrid(
             const VoxelGrid &voxel_grid);
 
 public:
+    /// RGB colors of points.
     std::vector<Eigen::Vector3d> points_;
+    /// Points normals.
     std::vector<Eigen::Vector3d> normals_;
+    /// Points coordinates.
     std::vector<Eigen::Vector3d> colors_;
 };
 

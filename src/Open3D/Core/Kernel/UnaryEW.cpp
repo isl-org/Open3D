@@ -33,6 +33,34 @@
 namespace open3d {
 namespace kernel {
 
+void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
+    // Check shape
+    if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
+        utility::LogError("Shape {} can not be broadcasted to {}.",
+                          src.GetShape(), dst.GetShape());
+    }
+
+    // Disbatch to device
+    Device src_device = src.GetDevice();
+    Device dst_device = dst.GetDevice();
+    if (src_device != dst_device) {
+        utility::LogError("Source device {} != destination device {}.",
+                          src_device.ToString(), dst_device.ToString());
+    }
+
+    if (src_device.GetType() == Device::DeviceType::CPU) {
+        UnaryEWCPU(src, dst, op_code);
+    } else if (src_device.GetType() == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        UnaryEWCUDA(src, dst, op_code);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("UnaryEW Unimplemented device");
+    }
+}
+
 void Copy(const Tensor& src, Tensor& dst) {
     // Check shape
     if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
