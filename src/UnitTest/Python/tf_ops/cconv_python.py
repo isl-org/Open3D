@@ -59,9 +59,11 @@ def map_cube_to_cylinder(points, inverse=False):
     The input and output range of the coordinates is [-1,1]. The cylinder axis
     is along z.
 
-    points: numpy arrays with shape [n,3]
+    points: numpy array with shape [n,3]
     inverse: If True apply the inverse transform: cylinder -> cube
     """
+    assert points.ndim == 2
+    assert points.shape[1] == 3
     # yapf: disable
     result = np.empty_like(points)
 
@@ -98,9 +100,11 @@ def map_cylinder_to_sphere(points, inverse=False):
     The input and output range of the coordinates is [-1,1]. The cylinder axis
     is along z.
 
-    points: numpy arrays with shape [n,3]
+    points: numpy array with shape [n,3]
     inverse: If True apply the inverse transform: sphere -> cylinder
     """
+    assert points.ndim == 2
+    assert points.shape[1] == 3
     # yapf: disable
     result = np.empty_like(points)
 
@@ -137,7 +141,7 @@ def map_cylinder_to_sphere(points, inverse=False):
     # yapf: enable
 
 
-def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
+def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offset,
                                align_corners, mapping):
     """Computes the filter coordinates for a single point
     The input to this function are coordinates relative to the point where the
@@ -176,6 +180,14 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
              - IDENTITY no mapping is applied to the coordinates.
 
     """
+    assert pos.ndim == 1
+    assert pos.shape[0] == 3
+    assert filter_xyz_size.ndim == 1
+    assert all(filter_xyz_size.shape)
+    assert inv_extents.ndim == 1
+    assert inv_extents.shape[0] == 3
+    assert offset.ndim == 1
+    assert offset.shape[0] == 3
     p = pos.copy()
     if mapping == BALL_TO_CUBE_RADIAL:
         p *= 2 * inv_extents  # p is now a position in a sphere with radius 1
@@ -187,8 +199,9 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
             p *= 0.5 * np.sqrt(np.sum(p * p)) / abs_max
     elif mapping == BALL_TO_CUBE_VOLUME_PRESERVING:
         p *= 2 * inv_extents
-        p = 0.5 * map_cube_to_cylinder(
-            map_cylinder_to_sphere([p], inverse=True), inverse=True)[0]
+        p = 0.5 * map_cube_to_cylinder(map_cylinder_to_sphere(p[np.newaxis, :],
+                                                              inverse=True),
+                                       inverse=True)[0]
     elif mapping == IDENTITY:
         # map to the unit cube with edge length 1 and range [-0.5,0.5]
         p *= inv_extents
@@ -200,7 +213,7 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
         p *= filter_xyz_size - 1
     else:
         p *= filter_xyz_size
-        p += offsets
+        p += offset
 
         # integer div
         p += filter_xyz_size // 2
@@ -232,6 +245,10 @@ def window_function(pos, inv_extents, window, window_params):
                    from the center at which the linear decay starts.
 
     """
+    assert pos.ndim == 1
+    assert pos.shape[0] == 3
+    assert inv_extents.ndim == 1
+    assert inv_extents.shape[0] == 3
     p = pos.copy()
     if window == RECTANGLE:
         return 1
@@ -353,8 +370,8 @@ def cconv(filter, out_positions, extent, offset, inp_positions, inp_features,
              This is a 2D array with shape [1,1] or [1,3] or [num_out,1]
              or [num_out,3]
 
-    offsets: A single 3D vector used in the filter coordinate
-             computation. The shape is [3].
+    offset: A single 3D vector used in the filter coordinate
+            computation. The shape is [3].
 
     inp_positions: The positions of the input points. The shape is
                    [num_inp, 3].
@@ -598,8 +615,8 @@ def cconv_transpose(filter, out_positions, out_importance, extent, offset,
              This is a 2D array with shape [1,1] or [1,3] or [num_inp,1]
              or [num_inp,3]
 
-    offsets: A single 3D vector used in the filter coordinate
-             computation. The shape is [3].
+    offset: A single 3D vector used in the filter coordinate
+            computation. The shape is [3].
 
     inp_positions: The positions of the input points. The shape is
                    [num_inp, 3].
