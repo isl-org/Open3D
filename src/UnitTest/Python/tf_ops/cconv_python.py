@@ -56,7 +56,7 @@ _convert_parameter_str_dict = {
 
 def map_cube_to_cylinder(points, inverse=False):
     """maps a cube to a cylinder and vice versa
-    The input and output range of the coordinates is [-1,1]. The cylinder axis 
+    The input and output range of the coordinates is [-1,1]. The cylinder axis
     is along z.
 
     points: numpy arrays with shape [n,3]
@@ -94,8 +94,8 @@ def map_cube_to_cylinder(points, inverse=False):
 
 
 def map_cylinder_to_sphere(points, inverse=False):
-    """maps a cylinder to a sphere and vice versa. 
-    The input and output range of the coordinates is [-1,1]. The cylinder axis 
+    """maps a cylinder to a sphere and vice versa.
+    The input and output range of the coordinates is [-1,1]. The cylinder axis
     is along z.
 
     points: numpy arrays with shape [n,3]
@@ -157,10 +157,10 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
                      array for the spatial dimensions.
 
     inv_extents: An array of shape [3], which defines the spatial extent of the
-                 filter. The values are the reciprocal of the spatial extent 
+                 filter. The values are the reciprocal of the spatial extent
                  for x,y and z.
 
-    offset: An array of shape [3]. An offset for shifting the center. Can be 
+    offset: An array of shape [3]. An offset for shifting the center. Can be
             used to implement discrete filters with even filter size.
 
     align_corners: If True then the voxel centers of the outer voxels
@@ -189,9 +189,11 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
         p *= 2 * inv_extents
         p = 0.5 * map_cube_to_cylinder(
             map_cylinder_to_sphere([p], inverse=True), inverse=True)[0]
-    else:
+    elif mapping == IDENTITY:
         # map to the unit cube with edge length 1 and range [-0.5,0.5]
         p *= inv_extents
+    else:
+        raise ValueError("Unknown mapping")
 
     if align_corners:
         p += 0.5
@@ -212,23 +214,23 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offsets,
 
 def window_function(pos, inv_extents, window, window_params):
     """Implements 3 types of window functions
-    
+
     pos: A single 3D point. An array of shape [3] with x,y,z coordinates.
 
     inv_extents: An array of shape [3], which defines the spatial extent of the
-                 filter. The values are the reciprocal of the spatial extent 
+                 filter. The values are the reciprocal of the spatial extent
                  for x,y and z.
 
     window: The window type. Allowed types are
             -RECTANGLE this just returns 1 everywhere.
-            -TRAPEZOID /‾\ plateau with 1 at the center and decays linearly 
+            -TRAPEZOID /‾\ plateau with 1 at the center and decays linearly
                        to 0 at the borders.
             -POLY The poly 6 window
 
     window_params: array with parameters for the windows.
                    Only TRAPEZOID uses this to define the normalized distance
                    from the center at which the linear decay starts.
-            
+
     """
     p = pos.copy()
     if window == RECTANGLE:
@@ -254,7 +256,7 @@ def window_function(pos, inv_extents, window, window_params):
 
 def interpolate(xyz, xyz_size, interpolation):
     """ Computes interpolation weights and indices
-    
+
     xyz: A single 3D point.
 
     xyz_size: An array of shape [3], which defines the size of the filter
@@ -305,7 +307,7 @@ def interpolate(xyz, xyz_size, interpolation):
                 w_idx.append((w_,idx_))
         w, idx = zip(*w_idx)
         return w, idx
-    else:
+    elif interpolation == LINEAR:
         pi0 = np.clip(xyz.astype(np.int32), np.zeros_like(xyz, dtype=np.int32), xyz_size-1)
         pi1 = np.clip(pi0+1, np.zeros_like(pi0), xyz_size-1)
         a = xyz[0]-pi0[0]
@@ -331,6 +333,8 @@ def interpolate(xyz, xyz_size, interpolation):
              (pi1[2], pi1[1], pi0[0]),
              (pi1[2], pi1[1], pi1[0]))
         return w, idx
+    else:
+        raise ValueError("Unknown interpolation mode")
     # yapf: enable
 
 
@@ -339,10 +343,10 @@ def cconv(filter, out_positions, extent, offset, inp_positions, inp_features,
           neighbors_row_splits, align_corners, coordinate_mapping, normalize,
           interpolation, **kwargs):
     """ Computes the output features of a continuous convolution.
-    
+
     filter: 5D filter array with shape [depth,height,width,inp_ch, out_ch]
 
-    out_positions: The positions of the output points. The shape is 
+    out_positions: The positions of the output points. The shape is
                    [num_out, 3].
 
     extents: The spatial extents of the filter in coordinate units.
@@ -354,19 +358,19 @@ def cconv(filter, out_positions, extent, offset, inp_positions, inp_features,
 
     inp_positions: The positions of the input points. The shape is
                    [num_inp, 3].
-    
+
     inp_features: The input features with shape [num_inp, in_channels].
-    
+
     inp_importance: Optional importance for each input point with
                     shape [num_inp]. Set to np.array([]) to disable.
 
     neighbors_index: The array with lists of neighbors for each
            output point. The start and end of each sublist is defined by
            neighbors_row_splits.
-    
+
     neighbors_importance: Optional importance for each entry in
            neighbors_index. Set to np.array([]) to disable.
-    
+
     neighbors_row_splits:   The prefix sum which defines the start
            and end of the sublists in neighbors_index. The size of the
            array is num_out + 1.
@@ -382,9 +386,9 @@ def cconv(filter, out_positions, extent, offset, inp_positions, inp_features,
     normalize: If true then the result is normalized either by the
            number of points (neighbors_importance is null) or by the sum of
            the respective values in neighbors_importance.
-    
+
     interpolation: The interpolation mode. Either LINEAR or NEAREST_NEIGHBOR.
-    
+
     """
     assert filter.ndim == 5
     assert all(filter.shape)
@@ -479,7 +483,7 @@ def cconv_backprop_filter(filter, out_positions, extent, offset, inp_positions,
                           **kwargs):
     """This implements the backprop to the filter weights for the cconv.
 
-    out_features_gradient: An array with the gradient for the outputs of the 
+    out_features_gradient: An array with the gradient for the outputs of the
                            cconv in the forward pass.
 
     See cconv for more info about the parameters.
@@ -584,7 +588,7 @@ def cconv_transpose(filter, out_positions, out_importance, extent, offset,
 
     filter: 5D filter array with shape [depth,height,width,inp_ch, out_ch]
 
-    out_positions: The positions of the output points. The shape is 
+    out_positions: The positions of the output points. The shape is
                    [num_out, 3].
 
     inp_importance: Optional importance for each output point with
@@ -596,34 +600,34 @@ def cconv_transpose(filter, out_positions, out_importance, extent, offset,
 
     offsets: A single 3D vector used in the filter coordinate
              computation. The shape is [3].
-    
+
     inp_positions: The positions of the input points. The shape is
                    [num_inp, 3].
-    
+
     inp_features: The input features with shape [num_inp, in_channels].
 
     inp_neighbors_index: The array with lists of neighbors for each
            input point. The start and end of each sublist is defined by
            inp_neighbors_row_splits.
-    
+
     inp_neighbors_importance: Optional importance for each entry in
            inp_neighbors_index. Set to np.array([]) to disable.
-    
+
     inp_neighbors_row_splits:   The prefix sum which defines the start
            and end of the sublists in inp_neighbors_index. The size of the
            array is num_inp + 1.
-    
+
     neighbors_index: The array with lists of neighbors for each
            output point. The start and end of each sublist is defined by
            neighbors_row_splits.
-    
+
     neighbors_importance: Optional importance for each entry in
            neighbors_index. Set to np.array([]) to disable.
-    
+
     neighbors_row_splits:   The prefix sum which defines the start
            and end of the sublists in neighbors_index. The size of the
            array is num_out + 1.
-    
+
     align_corners: If true then the voxel centers of the outer voxels
            of the filter array are mapped to the boundary of the filter shape.
            If false then the boundary of the filter array is mapped to the
@@ -635,7 +639,7 @@ def cconv_transpose(filter, out_positions, out_importance, extent, offset,
     normalize: If true then the result is normalized either by the
            number of points (neighbors_importance is null) or by the sum of
            the respective values in neighbors_importance.
-    
+
     interpolation: The interpolation mode. Either LINEAR or NEAREST_NEIGHBOR.
 
     """
@@ -758,7 +762,7 @@ def cconv_transpose_backprop_filter(
     """This implements the backprop to the filter weights for the transpose
     cconv.
 
-    out_features_gradient: An array with the gradient for the outputs of the 
+    out_features_gradient: An array with the gradient for the outputs of the
                            cconv in the forward pass.
 
     See cconv_transpose for more info about the parameters.
