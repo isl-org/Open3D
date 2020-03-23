@@ -246,8 +246,8 @@ void Application::RemoveWindow(Window *window) {
 }
 
 void Application::Quit() {
-    for (auto win : impl_->windows) {
-        RemoveWindow(win.get());
+    while (!impl_->windows.empty()) {
+        RemoveWindow(impl_->windows.begin()->get());
     }
 }
 

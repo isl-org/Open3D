@@ -106,7 +106,7 @@ int main(int argc, const char *argv[]) {
         open3d::utility::filesystem::ChangeWorkingDirectory(homedir);
     }
 
-/*    open3d::gui::Application::GetInstance().Initialize(argc, argv);
+    open3d::gui::Application::GetInstance().Initialize(argc, argv);
 
     @autoreleasepool {
         AppDelegate *delegate = [[AppDelegate alloc] init];
@@ -115,7 +115,7 @@ int main(int argc, const char *argv[]) {
         [application setDelegate:delegate];
         [NSApp run];
     }
- */
+ 
     Run(argc, argv);
 }
 
