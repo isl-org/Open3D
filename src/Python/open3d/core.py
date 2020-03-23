@@ -308,6 +308,7 @@ class TensorList(open3d_pybind.TensorList):
 
         super(TensorList, self).__init__(shape, dtype, device, size)
 
+    @cast_to_py_tensor
     def __getitem__(self, index):
         '''
         \index can be a
@@ -315,21 +316,10 @@ class TensorList(open3d_pybind.TensorList):
         \int: return a Tensor
         '''
         if isinstance(index, int):
-            return cast_to_py_tensor(self._getindex)(index)
-
-        elif isinstance(index, slice):
-            return cast_to_py_tensorlist(self._getslice)(
-                _to_o3d_tensor_key(index))
-
-        elif isinstance(index, list) or isinstance(index, tuple):
-            for i in index:
-                if not isinstance(i, int):
-                    raise ValueError(
-                        'every element of the index list must be a int')
-            return cast_to_py_tensorlist(self._getindices)(o3d.SizeVector(index))
+            return cast_to_py_tensor(self._getitem)(index)
 
         else:
-            raise ValueError('Unsupported index type')
+            raise ValueError('Unsupported index type, only int is supported.')
 
     def __setitem__(self, index, value):
         '''
@@ -337,15 +327,12 @@ class TensorList(open3d_pybind.TensorList):
         If \index is a list of ints, \value is correspondingly a TensorList.
         '''
         if isinstance(index, int) and isinstance(value, o3d.Tensor):
-            self._setindex(index, value)
-
-        elif isinstance(index, slice) and isinstance(value, o3d.TensorList):
-            self._setslice(_to_o3d_tensor_key(index), value)
+            self._setitem(index, value)
 
         else:
             raise ValueError(
                 'Unsupported index type.'
-                'Use tensorlist.tensor() to assign value with advanced indexing'
+                'Use tensorlist.tensor() to assign value with slices or advanced indexing'
             )
 
     @cast_to_py_tensorlist

@@ -127,10 +127,10 @@ class PyAPIDocsBuilder:
 
     @staticmethod
     def _generate_sub_module_doc(
-            sub_module_full_name,
-            class_names,
-            function_names,
-            sub_module_doc_path,
+        sub_module_full_name,
+        class_names,
+        function_names,
+        sub_module_doc_path,
     ):
         # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)

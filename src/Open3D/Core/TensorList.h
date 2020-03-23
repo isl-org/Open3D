@@ -83,9 +83,7 @@ public:
     TensorList(InputIterator first,
                InputIterator last,
                const Device& device = Device("CPU:0"))
-        : device_(device),
-          /// Default empty tensor
-          internal_tensor_(SizeVector(), Dtype::Int64, device) {
+        : device_(device) {
         ConstructFromIterators(first, last);
     }
 
@@ -93,36 +91,31 @@ public:
     /// The inverse of AsTensor().
     ///
     /// \param inplace:
-    /// - if false, use the raw internal tensor (could be non-contiguous),
-    /// typically only used for Slice() assignment
-    /// - if true, create a new contiguous internal tensor with precomputed
+    /// - If true (default), reuse the raw internal tensor. The input tensor
+    /// must be contiguous.
+    /// - If false, create a new contiguous internal tensor with precomputed
     /// reserved size.
     TensorList(const Tensor& internal_tensor, bool inplace = true);
+
+    /// Factory constructor from a raw tensor
+    static TensorList FromTensor(const Tensor& tensor, bool inplace = false);
 
     /// Copy constructor from a tensor list.
     /// Create a new tensor list with copy of data.
     TensorList(const TensorList& other);
 
-    /// Shallow copy
-    void ShallowCopyFrom(const TensorList& other);
+    /// Deep copy
+    void CopyFrom(const TensorList& other);
 
     /// TensorList assignment lvalue = lvalue, e.g.
     /// `tensorlist_a = tensorlist_b`,
-    /// resulting in a "shallow" copy.
+    /// resulting in a shallow copy.
+    /// We don't redirect Slice operation to tensors, so right value assignment
+    /// is not explicitly supported.
     TensorList& operator=(const TensorList& other) &;
 
-    /// TensorList assignment lvalue = rvalue, e.g.
-    /// `tensorlist_a = tensorlist_b[0]`,
-    /// resulting in a "shallow" copy.
-    TensorList& operator=(TensorList&& other) &;
-
-    /// TensorList assignment rvalue = lvalue, e.g.
-    /// `tensorlist_a.Slice(x, x, x) = tensorlist_b`
-    TensorList& operator=(const TensorList& other) &&;
-
-    /// TensorLIst assignment rvalue = rvalue, e.g.
-    /// `tensorlist_a.Slice(x, x, x) = tensor_b.Slice(y, y, y)`
-    TensorList& operator=(TensorList&& other) &&;
+    /// Shallow copy
+    void ShallowCopyFrom(const TensorList& other);
 
     /// Return the reference of the contained valid tensors with shared memory.
     Tensor AsTensor() const;
@@ -158,19 +151,8 @@ public:
     }
 
     /// Extract the i-th Tensor along the first axis, returning a new view.
+    /// For advanced indexing like Slice, use tensorlist.AsTensor().Slice().
     Tensor operator[](int64_t index) const;
-
-    /// Return the reference of the sliced tensor with shared memory
-    /// Note: this shared memory could be non-contiguous
-    /// without reserved space. The new created TensorList's internal tensor
-    /// will be copied to an internal contiguous tensor for PushBack operations
-    TensorList Slice(int64_t start, int64_t stop, int64_t step = 1);
-
-    /// Wrapper for python binding: only supports slice
-    TensorList Slice(const TensorKey& tk);
-
-    /// Return a new tensor list with copy of data.
-    TensorList IndexGet(const std::vector<int64_t>& indices) const;
 
     /// Clear the tensor list by discarding all data and creating a empty one.
     void Clear();
@@ -246,11 +228,6 @@ protected:
     /// Compute the reserved size for the desired number of tensors
     /// with reserved_size_ = (1 << (ceil(log2(size_)) + 1)).
     int64_t ReserveSize(int64_t n);
-
-    /// Assert that index is within the valid range for TensorList.
-    /// If inclusive == false, the bound is [0, size_).
-    /// If inclusive == true , the bound is [0, size_].
-    void CheckIndex(int64_t index, bool inclusive = false) const;
 
 protected:
     /// The shape_ represents the shape for each element in the TensorList.

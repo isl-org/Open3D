@@ -123,7 +123,8 @@ void Tensor::Assign(const Tensor& other) {
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
     blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), GetDevice());
+            shape_.NumElements() * DtypeUtil::ByteSize(dtype_),
+            other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }

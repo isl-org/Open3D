@@ -37,33 +37,24 @@ TensorList::TensorList(const SizeVector& shape,
       dtype_(dtype),
       device_(device),
       size_(size),
-      reserved_size_(ReserveSize(size)),
-      internal_tensor_(SizeVector(), Dtype::Int64, device) {
+      reserved_size_(ReserveSize(size)) {
     internal_tensor_ =
             Tensor(ExpandFrontDim(shape_, reserved_size_), dtype_, device_);
 }
 
 TensorList::TensorList(const std::vector<Tensor>& tensors, const Device& device)
-    : device_(device),
-      // Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device) {
+    : device_(device) {
     ConstructFromIterators(tensors.begin(), tensors.end());
 }
 
 TensorList::TensorList(const std::initializer_list<Tensor>& tensors,
                        const Device& device)
-    : device_(device),
-      // Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, device) {
+    : device_(device) {
     ConstructFromIterators(tensors.begin(), tensors.end());
 }
 
 TensorList::TensorList(const Tensor& internal_tensor, bool copy)
-    : dtype_(internal_tensor.GetDtype()),
-      device_(internal_tensor.GetDevice()),
-      // Default empty tensor
-      internal_tensor_(
-              SizeVector(), Dtype::Int64, internal_tensor.GetDevice()) {
+    : dtype_(internal_tensor.GetDtype()), device_(internal_tensor.GetDevice()) {
     SizeVector shape = internal_tensor.GetShape();
 
     size_ = shape[0];
@@ -77,20 +68,34 @@ TensorList::TensorList(const Tensor& internal_tensor, bool copy)
         internal_tensor_.Slice(0 /* dim */, 0, size_) = internal_tensor;
     } else {
         // Directly reuse the slices
+        if (!internal_tensor.IsContiguous()) {
+            utility::LogError(
+                    "Tensor must be contiguous for inplace TensorList "
+                    "construction.");
+        }
         reserved_size_ = size_;
         internal_tensor_ = internal_tensor;
     }
 }
 
-TensorList::TensorList(const TensorList& other)
-    : shape_(other.GetShape()),
-      dtype_(other.GetDtype()),
-      device_(other.GetDevice()),
-      size_(other.GetSize()),
-      reserved_size_(other.GetReservedSize()),
-      // Default empty tensor
-      internal_tensor_(SizeVector(), Dtype::Int64, other.GetDevice()) {
+TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
+    return TensorList(tensor, inplace);
+}
+
+TensorList::TensorList(const TensorList& other) { CopyFrom(other); }
+
+void TensorList::CopyFrom(const TensorList& other) {
+    shape_ = other.GetShape();
+    dtype_ = other.GetDtype();
+    device_ = other.GetDevice();
+    size_ = other.GetSize();
+    reserved_size_ = other.GetReservedSize();
     internal_tensor_.Assign(other.GetInternalTensor());
+}
+
+TensorList& TensorList::operator=(const TensorList& other) & {
+    ShallowCopyFrom(other);
+    return *this;
 }
 
 void TensorList::ShallowCopyFrom(const TensorList& other) {
@@ -100,54 +105,6 @@ void TensorList::ShallowCopyFrom(const TensorList& other) {
     size_ = other.GetSize();
     reserved_size_ = other.GetReservedSize();
     internal_tensor_.ShallowCopyFrom(other.GetInternalTensor());
-}
-
-TensorList& TensorList::operator=(const TensorList& other) & {
-    shape_ = other.GetShape();
-    dtype_ = other.GetDtype();
-    device_ = other.GetDevice();
-    size_ = other.GetSize();
-    reserved_size_ = other.GetReservedSize();
-    internal_tensor_ = other.GetInternalTensor();
-    return *this;
-}
-
-TensorList& TensorList::operator=(TensorList&& other) & {
-    shape_ = other.GetShape();
-    dtype_ = other.GetDtype();
-    device_ = other.GetDevice();
-    size_ = other.GetSize();
-    reserved_size_ = other.GetReservedSize();
-    internal_tensor_ = other.GetInternalTensor();
-    return *this;
-}
-
-TensorList& TensorList::operator=(const TensorList& other) && {
-    if (size_ != other.GetSize()) {
-        utility::LogError("Incompatible tensorlist size!");
-    }
-    if (shape_ != other.GetShape()) {
-        utility::LogError("Incompatible tensorlist element shape!");
-    }
-    if (dtype_ != other.GetDtype()) {
-        utility::LogError("Incompatible tensorlist dtype!");
-    }
-    internal_tensor_.Slice(0 /* dim */, 0, size_) = other.AsTensor();
-    return *this;
-}
-
-TensorList& TensorList::operator=(TensorList&& other) && {
-    if (size_ != other.GetSize()) {
-        utility::LogError("Incompatible tensorlist size!");
-    }
-    if (shape_ != other.GetShape()) {
-        utility::LogError("Incompatible tensorlist element shape!");
-    }
-    if (dtype_ != other.GetDtype()) {
-        utility::LogError("Incompatible tensorlist dtype!");
-    }
-    internal_tensor_.Slice(0 /* dim */, 0, size_) = other.AsTensor();
-    return *this;
 }
 
 Tensor TensorList::AsTensor() const {
@@ -212,47 +169,27 @@ void TensorList::Extend(const TensorList& other) {  // Check consistency
         return;
     }
 
-    int64_t new_reserved_size = ReserveSize(size_ + other.GetSize());
+    // Shallow copy by default
+    TensorList extension = other;
+
+    // Make a deep copy to avoid corrupting duplicate data
+    if (GetInternalTensor().GetDataPtr() ==
+        other.GetInternalTensor().GetDataPtr()) {
+        extension = TensorList(*this);
+    }
+
+    int64_t new_reserved_size = ReserveSize(size_ + extension.GetSize());
     if (new_reserved_size > reserved_size_) {
         ExpandTensor(new_reserved_size);
     }
-    internal_tensor_.Slice(0 /* dim */, size_, size_ + other.GetSize()) =
-            other.AsTensor();
-    size_ = size_ + other.GetSize();
+    internal_tensor_.Slice(0 /* dim */, size_, size_ + extension.GetSize()) =
+            extension.AsTensor();
+    size_ = size_ + extension.GetSize();
 }
 
 Tensor TensorList::operator[](int64_t index) const {
     index = WrapDim(index, size_);  // WrapDim asserts index is within range.
     return internal_tensor_[index];
-}
-
-TensorList TensorList::Slice(int64_t start,
-                             int64_t stop,
-                             int64_t step /* = 1 */) {
-    CheckIndex(start);
-    CheckIndex(stop, /*inclusive=*/true);
-    TensorList new_tensor_list(GetShape(), GetDtype(), GetDevice());
-    return TensorList(internal_tensor_.Slice(0 /* dim */, start, stop, step),
-                      /*copy=*/false);
-}
-
-TensorList TensorList::Slice(const TensorKey& tk) {
-    if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
-        TensorKey tk_new = tk.UpdateWithDimSize(size_);
-        return Slice(tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
-    } else {
-        utility::LogError("Internal error: wrong TensorKeyMode.");
-    }
-}
-
-TensorList TensorList::IndexGet(const std::vector<int64_t>& indices) const {
-    std::vector<Tensor> tensors;
-    for (auto index : indices) {
-        tensors.push_back(
-                internal_tensor_.IndexExtract(0, WrapDim(index, size_)));
-    }
-
-    return TensorList(tensors, device_);
 }
 
 void TensorList::Clear() { *this = TensorList(shape_, dtype_, device_); }
@@ -307,13 +244,6 @@ int64_t TensorList::ReserveSize(int64_t n) {
 
     // No nnz bit: by default reserve 1 element.
     return 1;
-}
-
-void TensorList::CheckIndex(int64_t index, bool inclusive /*=false*/) const {
-    if (index < -size_ || index > size_ - (inclusive ? 0 : 1)) {
-        utility::LogError("Index {} is out of bound ({}, {})", index, -size_,
-                          size_ - (inclusive ? 0 : 1));
-    }
 }
 
 std::string TensorList::ToString() const {

@@ -365,31 +365,6 @@ def test_tensorlist_operations():
     assert e.size() == 9
 
 
-def test_tensorlist_indexing():
-    tl = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=5)
-
-    # set slices
-    tl[1:5:2] = o3d.TensorList.from_tensor(o3d.Tensor(
-        np.ones((2, 3, 4), dtype=np.float32)),
-                                           inplace=False)
-    # set item
-    tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
-
-    # get items
-    np.testing.assert_allclose(tl[1].numpy(), np.ones((3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[3].numpy(), np.ones((3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4),
-                                                       dtype=np.float32))
-
-    # get indices
-    tl_sub = tl[[1, 3, 4]]
-    np.testing.assert_allclose(
-        tl_sub.tensor().numpy(),
-        np.vstack((np.ones(
-            (2, 3, 4), dtype=np.float32), np.zeros((1, 3, 4),
-                                                   dtype=np.float32))))
-
-
 def test_getitem():
     np_t = np.array(range(24)).reshape((2, 3, 4))
     o3_t = o3d.Tensor(np_t)
@@ -520,25 +495,46 @@ def test_cast_to_py_tensor():
 
 
 def test_tensorlist_indexing():
-    tl = o3d.TensorList([3, 4], o3d.Dtype.Float32, o3d.Device(), size=5)
+    # 5 x (3, 4)
+    dtype = o3d.Dtype.Float32
+    device = o3d.Device("CPU:0")
+    np_t = np.ones((5, 3, 4), dtype=np.float32)
+    t = o3d.Tensor(np_t, dtype, device)
 
-    # set slices
-    tl[1:5:2] = o3d.TensorList.from_tensor(o3d.Tensor(
-        np.ones((2, 3, 4), dtype=np.float32)),
-                                           inplace=False)
-    # set item
+    tl = o3d.TensorList.from_tensor(t, inplace=True)
+
+    # set slices [1, 3]
+    tl.tensor()[1:5:2] = o3d.Tensor(3 * np.ones((2, 3, 4), dtype=np.float32))
+
+    # set items [4]
     tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
 
     # get items
-    np.testing.assert_allclose(tl[1].numpy(), np.ones((3, 4), dtype=np.float32))
-    np.testing.assert_allclose(tl[3].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[0].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[1].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[2].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[3].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
     np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4),
                                                        dtype=np.float32))
 
-    # get indices
-    tl_sub = tl[[1, 3, 4]]
-    np.testing.assert_allclose(
-        tl_sub.tensor().numpy(),
-        np.vstack((np.ones(
-            (2, 3, 4), dtype=np.float32), np.zeros((1, 3, 4),
-                                                   dtype=np.float32))))
+    # push_back
+    tl.push_back(o3d.Tensor(-1 * np.ones((3, 4)), dtype, device))
+    assert tl.size() == 6
+    np.testing.assert_allclose(tl[5].numpy(), -1 * np.ones(
+        (3, 4), dtype=np.float32))
+
+    tl += tl
+    assert tl.size() == 12
+    for offset in [0, 6]:
+        np.testing.assert_allclose(tl[0 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[1 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[2 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[3 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[4 + offset].numpy(),
+                                   np.zeros((3, 4), dtype=np.float32))
