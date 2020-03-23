@@ -32,17 +32,19 @@ try:
 except:
     pass
 
-from .open3d import * # py2 py3 compatible
+from .open3d import *  # py2 py3 compatible
 
-__version__ = '@PROJECT_VERSION@'
+__version__ = "@PROJECT_VERSION@"
 
 if "@ENABLE_JUPYTER@" == "ON":
     from .j_visualizer import *
 
     def _jupyter_nbextension_paths():
-        return [{
-            'section': 'notebook',
-            'src': 'static',
-            'dest': 'open3d',
-            'require': 'open3d/extension'
-        }]
+        return [
+            {
+                "section": "notebook",
+                "src": "static",
+                "dest": "open3d",
+                "require": "open3d/extension",
+            }
+        ]

@@ -40,9 +40,8 @@ def get_git_short_hash():
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(
     0,
-    os.path.join(
-        current_file_dir, "..", "build", "lib", "python_package", "open3d"
-    ),
+    os.path.join(current_file_dir, "..", "build", "lib", "python_package",
+                 "open3d"),
 )
 
 # -- General configuration ------------------------------------------------
@@ -119,9 +118,8 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-theme_path = os.path.join(
-    current_file_dir, "..", "3rdparty", "open3d_sphinx_theme"
-)
+theme_path = os.path.join(current_file_dir, "..", "3rdparty",
+                          "open3d_sphinx_theme")
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [theme_path]
 html_favicon = "_static/open3d_logo.ico"
@@ -177,15 +175,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "Open3D.tex",
-        u"Open3D Documentation",
-        u"Qianyi Zhou",
-        "manual",
-    )
-]
+latex_documents = [(
+    master_doc,
+    "Open3D.tex",
+    u"Open3D Documentation",
+    u"Qianyi Zhou",
+    "manual",
+)]
 
 # -- Options for manual page output ---------------------------------------
 
@@ -198,23 +194,20 @@ man_pages = [(master_doc, "open3d", u"Open3D Documentation", [author], 1)]
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "Open3D",
-        u"Open3D Documentation",
-        author,
-        "Open3D",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
+texinfo_documents = [(
+    master_doc,
+    "Open3D",
+    u"Open3D Documentation",
+    author,
+    "Open3D",
+    "One line description of project.",
+    "Miscellaneous",
+)]
 
 # Version 0: Added by Jaesik to list Python members using the source order
 # Version 1: Changed to 'groupwise': __init__ first, then methods, then
 #            properties. Within each, sorted alphabetically.
 autodoc_member_order = "groupwise"
-
 
 # Copy jupyter notebooks and test data to tutorial folder
 test_data_in_dir = Path(current_file_dir).parent / "examples" / "TestData"
@@ -236,6 +229,7 @@ for example_dir in example_dirs:
 
 
 def is_enum_class(func, func_name):
+
     def import_from_str(class_name):
         components = class_name.split(".")
         mod = __import__(components[0])
