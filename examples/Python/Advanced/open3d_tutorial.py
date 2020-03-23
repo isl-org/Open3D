@@ -7,23 +7,33 @@ interactive = True
 
 
 def jupyter_draw_geometries(
-        geoms,
-        window_name="Open3D",
-        width=1920,
-        height=1080,
-        left=50,
-        top=50,
-        point_show_normal=False,
+    geoms,
+    window_name="Open3D",
+    width=1920,
+    height=1080,
+    left=50,
+    top=50,
+    point_show_normal=False,
+    lookat=None,
+    up=None,
+    front=None,
+    zoom=None,
 ):
     vis = o3d.visualization.Visualizer()
-    vis.create_window(window_name=window_name,
-                      width=width,
-                      height=height,
-                      left=left,
-                      top=top)
+    vis.create_window(
+        window_name=window_name, width=width, height=height, left=left, top=top
+    )
     vis.get_render_option().point_show_normal = point_show_normal
     for geom in geoms:
         vis.add_geometry(geom)
+    if lookat is not None:
+        vis.get_view_control().set_lookat(lookat)
+    if up is not None:
+        vis.get_view_control().set_up(up)
+    if front is not None:
+        vis.get_view_control().set_front(front)
+    if zoom is not None:
+        vis.get_view_control().set_zoom(zoom)
     if interactive:
         vis.run()
     else:
