@@ -25,11 +25,26 @@
 #define GLFW_EXPOSE_NATIVE_X11 1
 #include <GLFW/glfw3native.h>
 
+#include <memory.h>
+
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(GLFWwindow* window) {
-    return glfwGetX11Window(glfwWindow);
+void* GetNativeDrawable(GLFWwindow* glfwWindow) {
+    return (void*)glfwGetX11Window(glfwWindow);
+}
+
+void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
+    Display *d = glfwGetX11Display();
+    auto x11win = glfwGetX11Window(glfwWindow);
+
+    XEvent e;
+    memset(&e, 0, sizeof(e));
+    e.type = Expose;
+    e.xexpose.window = x11win;
+
+    XSendEvent(d, x11win, False, ExposureMask, &e);
+    XFlush(d);
 }
 
 void ShowNativeAlert(const char* message) {
