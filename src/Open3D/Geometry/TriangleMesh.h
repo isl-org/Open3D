@@ -194,7 +194,7 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
+    /// $v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)$,
     /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
     /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
     /// based on the inverse distance (closer neighbours have higher weight),

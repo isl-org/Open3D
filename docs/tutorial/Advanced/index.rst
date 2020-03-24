@@ -9,6 +9,7 @@ Advanced
     multiway_registration
     rgbd_integration
     color_map_optimization
+    surface_reconstruction
     customized_visualization
     non_blocking_visualization
     interactive_visualization

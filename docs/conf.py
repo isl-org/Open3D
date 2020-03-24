@@ -62,7 +62,7 @@ extensions = [
 ]
 
 # Allow for more time for notebook cell evaluation
-nbsphinx_timeout = 300
+nbsphinx_timeout = 6000
 # TODO: remove after jupyter fix
 nbsphinx_allow_errors = True
 
@@ -222,7 +222,7 @@ for example_dir in example_dirs:
     # remove all existing jupyter notebooks
     for nb_out_path in out_dir.glob("*.ipynb"):
         nb_out_path.unlink()
-    shutil.copy(in_dir / "open3d_tutorial.py", out_dir / "open3d_tutorial.py")
+    shutil.copy(in_dir.parent / "open3d_tutorial.py", out_dir.parent / "open3d_tutorial.py")
     for nb_in_path in in_dir.glob("*.ipynb"):
         nb_out_path = out_dir / nb_in_path.name
         shutil.copy(nb_in_path, nb_out_path)
