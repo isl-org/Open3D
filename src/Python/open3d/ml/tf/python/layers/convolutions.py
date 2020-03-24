@@ -95,8 +95,14 @@ class ContinuousConv(tf.keras.layers.Layer):
         self.bias_initializer = initializers.get(bias_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
         self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.align_corners = align_corners
+        self.coordinate_mapping = coordinate_mapping
+        self.interpolation = interpolation
+        self.normalize = normalize
+        self.radius_search_ignore_query_points = radius_search_ignore_query_points
+        self.radius_search_metric = radius_search_metric
 
-        if not offset is None:
+        if offset is None:
             self.offset = tf.zeros(shape=(3,))
         else:
             self.offset = offset
@@ -183,10 +189,10 @@ class ContinuousConv(tf.keras.layers.Layer):
                 hash_table_size_factor=hash_table_size_factor)
             if return_distances:
                 if self.radius_search_metric == 'L2':
-                    neighbors_distances_normalized = self.nns.neighbors_distances / (
+                    neighbors_distance_normalized = self.nns.neighbors_distance / (
                         radius * radius)
                 else:  # L1
-                    neighbors_distances_normalized = self.nns.neighbors_distances / radius
+                    neighbors_distance_normalized = self.nns.neighbors_distance / radius
 
         elif extents.shape.rank == 1:
             radii = 0.5 * extents
@@ -206,7 +212,7 @@ class ContinuousConv(tf.keras.layers.Layer):
             neighbors_importance = tf.ones((0,), dtype=tf.float32)
         else:
             neighbors_importance = self.window_function(
-                neighbors_distances_normalized)
+                neighbors_distance_normalized)
 
         # for stats and debugging
         num_pairs = tf.shape(self.nns.neighbors_index)[0]
@@ -226,7 +232,7 @@ class ContinuousConv(tf.keras.layers.Layer):
             'inp_importance': inp_importance,
             'neighbors_index': self.nns.neighbors_index,
             'neighbors_importance': neighbors_importance,
-            'neighbors_prefix_sum': self.nns.neighbors_count_prefix_sum,
+            'neighbors_row_splits': self.nns.neighbors_row_splits,
             'align_corners': self.align_corners,
             'coordinate_mapping': self.coordinate_mapping,
             'interpolation': self.interpolation,

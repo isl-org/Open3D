@@ -32,8 +32,8 @@
 using namespace tensorflow;
 
 REGISTER_OP("Open3DContinuousConvBackpropFilter")
-        .Attr("T: {float, double}")
-        .Attr("T2: {int32, int64}")
+        .Attr("TReal: {float, double}")
+        .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")
         .Attr("coordinate_mapping: {'ball_to_cube_radial', "
               "'ball_to_cube_volume_preserving', 'identity'} = "
@@ -43,18 +43,19 @@ REGISTER_OP("Open3DContinuousConvBackpropFilter")
               "= 'linear'")
         .Attr("max_temp_mem_MB: int = 64")
         .Attr("debug: bool = false")
-        .Input("filters: T")           // [depth, height, width, in_ch, out_ch]
-        .Input("out_positions: T")     // [num_points_out, 3]
-        .Input("extents: T")           // [num_points_out, 3]
-        .Input("offset: T")            // [3]
-        .Input("inp_positions: T")     // [num_points_in, 3]
-        .Input("inp_features: T")      // [num_points_in, in_ch]
-        .Input("inp_importance: T")    // [num_points_in]
-        .Input("neighbors_index: T2")  // [?]
-        .Input("neighbors_importance: T")      // [?]
-        .Input("neighbors_row_splits: int64")  // [num_points_out]
-        .Input("out_features_gradient: T")     // [num_points_out, out_ch]
-        .Output("filter_backprop : T")  // [depth, height, width, in_ch, out_ch]
+        .Input("filters: TReal")        // [depth, height, width, in_ch, out_ch]
+        .Input("out_positions: TReal")  // [num_points_out, 3]
+        .Input("extents: TReal")        // [num_points_out, 3]
+        .Input("offset: TReal")         // [3]
+        .Input("inp_positions: TReal")  // [num_points_in, 3]
+        .Input("inp_features: TReal")   // [num_points_in, in_ch]
+        .Input("inp_importance: TReal")         // [num_points_in]
+        .Input("neighbors_index: TIndex")       // [?]
+        .Input("neighbors_importance: TReal")   // [?]
+        .Input("neighbors_row_splits: int64")   // [num_points_out]
+        .Input("out_features_gradient: TReal")  // [num_points_out, out_ch]
+        .Output("filter_backprop : TReal")      // [depth, height, width, in_ch,
+                                                // out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle filters_shape, out_positions_shape, extents_shape,
@@ -194,8 +195,10 @@ interpolation:
 
 
 max_temp_mem_MB:
-  Defines the maximum temporary memory in megabytes to be used for the GPU implementation.
-  More memory means fewer kernel invocations.
+  Defines the maximum temporary memory in megabytes to be used for the GPU 
+  implementation. More memory means fewer kernel invocations. Note that the 
+  a minimum amount of temp memory will always be allocated even if this
+  variable is set to 0.
 
 
 filters:

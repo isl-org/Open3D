@@ -218,8 +218,10 @@ interpolation:
 
 
 max_temp_mem_MB:
-  Defines the maximum temporary memory in megabytes to be used for the GPU implementation.
-  More memory means fewer kernel invocations.
+  Defines the maximum temporary memory in megabytes to be used for the GPU 
+  implementation. More memory means fewer kernel invocations. Note that the 
+  a minimum amount of temp memory will always be allocated even if this
+  variable is set to 0.
 
 
 filters:
