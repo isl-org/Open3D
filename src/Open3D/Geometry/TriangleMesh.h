@@ -267,7 +267,7 @@ public:
     bool IsIntersecting(const TriangleMesh &other) const;
 
     /// Function that tests if the given triangle mesh is orientable, i.e.
-    /// the triangles can oriented in such a way that all normals point
+    /// the triangles can be oriented in such a way that all normals point
     /// towards the outside.
     bool IsOrientable() const;
 
@@ -479,11 +479,17 @@ public:
     /// \param constraint_vertex_positions Vertex positions used for the
     /// constraints.
     /// \param max_iter maximum number of iterations to minimize energy
-    /// functional. \return The deformed TriangleMesh
+    /// functional.
+    /// \param energy energy model that should be optimized
+    /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
+    /// \return The deformed TriangleMesh
     std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
             const std::vector<int> &constraint_vertex_indices,
             const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-            size_t max_iter) const;
+            size_t max_iter,
+            DeformAsRigidAsPossibleEnergy energy =
+                    DeformAsRigidAsPossibleEnergy::Spokes,
+            double smoothed_alpha = 0.01) const;
 
     /// \brief Alpha shapes are a generalization of the convex hull. With
     /// decreasing alpha value the shape schrinks and creates cavities.

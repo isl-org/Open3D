@@ -8,7 +8,9 @@ Advanced
     global_registration
     multiway_registration
     rgbd_integration
+    voxelization
     color_map_optimization
+    mesh_deformation
     surface_reconstruction
     customized_visualization
     non_blocking_visualization

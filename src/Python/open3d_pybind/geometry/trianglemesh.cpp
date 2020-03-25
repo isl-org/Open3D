@@ -321,7 +321,10 @@ void pybind_trianglemesh(py::module &m) {
                  "and Alexa, "
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
-                 "max_iter"_a)
+                 "max_iter"_a,
+                 "energy"_a = geometry::MeshBase::
+                         DeformAsRigidAsPossibleEnergy::Spokes,
+                 "smoothed_alpha"_a = 0.01)
             .def_static("create_from_point_cloud_alpha_shape",
                         [](const geometry::PointCloud &pcd, double alpha) {
                             return geometry::TriangleMesh::
@@ -641,7 +644,12 @@ void pybind_trianglemesh(py::module &m) {
              {"constraint_vertex_positions",
               "Vertex positions used for the constraints."},
              {"max_iter",
-              "Maximum number of iterations to minimize energy functional."}});
+              "Maximum number of iterations to minimize energy functional."},
+             {"energy",
+              "Energy model that is minimized in the deformation process"},
+             {"smoothed_alpha",
+              "trade-off parameter for the smoothed energy functional for the "
+              "regularization term."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
             {{"pcd",

@@ -11,6 +11,7 @@ interface of Open3D.
     file_io
     pointcloud
     mesh
+    transformation
     rgbd_image
     rgbd_odometry
     visualization
