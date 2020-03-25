@@ -153,6 +153,13 @@ def test_tensor_constructor():
     o3_t = o3d.Tensor(np_t, dtype, device)
     np.testing.assert_equal(np_t, o3_t.numpy())
 
+    # Boolean
+    np_t = np.array([True, False, True], dtype=np.bool)
+    o3_t = o3d.Tensor([True, False, True], o3d.Dtype.Bool, device)
+    np.testing.assert_equal(np_t, o3_t.numpy())
+    o3_t = o3d.Tensor(np_t, o3d.Dtype.Bool, device)
+    np.testing.assert_equal(np_t, o3_t.numpy())
+
 
 def test_tensor_from_to_numpy():
     # a->b copy; b, c share memory
@@ -492,3 +499,36 @@ def test_cast_to_py_tensor():
     b = o3d.Tensor([2])
     c = a + b
     assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor
+
+
+def test_logical_ops():
+    np_a = np.array([True, False, True, False])
+    np_b = np.array([True, True, False, False])
+    o3_a = o3d.Tensor(np_a)
+    o3_b = o3d.Tensor(np_b)
+
+    o3_r = o3_a.logical_and(o3_b)
+    np_r = np.logical_and(np_a, np_b)
+    np.testing.assert_equal(o3_r.numpy(), np_r)
+
+    o3_r = o3_a.logical_or(o3_b)
+    np_r = np.logical_or(np_a, np_b)
+    np.testing.assert_equal(o3_r.numpy(), np_r)
+
+    o3_r = o3_a.logical_xor(o3_b)
+    np_r = np.logical_xor(np_a, np_b)
+    np.testing.assert_equal(o3_r.numpy(), np_r)
+
+
+def test_comparision_ops():
+    np_a = np.array([0, 1, -1])
+    np_b = np.array([0, 0, 0])
+    o3_a = o3d.Tensor(np_a)
+    o3_b = o3d.Tensor(np_b)
+
+    np.testing.assert_equal((o3_a > o3_b).numpy(), np_a > np_b)
+    np.testing.assert_equal((o3_a >= o3_b).numpy(), np_a >= np_b)
+    np.testing.assert_equal((o3_a < o3_b).numpy(), np_a < np_b)
+    np.testing.assert_equal((o3_a <= o3_b).numpy(), np_a <= np_b)
+    np.testing.assert_equal((o3_a == o3_b).numpy(), np_a == np_b)
+    np.testing.assert_equal((o3_a != o3_b).numpy(), np_a != np_b)

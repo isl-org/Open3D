@@ -26,13 +26,31 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace kernel {
 
-enum class BinaryEWOpCode { Add, Sub, Mul, Div };
+enum class BinaryEWOpCode {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    LogicalAnd,
+    LogicalOr,
+    LogicalXor,
+    Gt,
+    Lt,
+    Ge,
+    Le,
+    Eq,
+    Ne,
+};
+
+extern const std::unordered_set<BinaryEWOpCode> s_boolean_binary_ew_op_codes;
 
 void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,

@@ -362,9 +362,13 @@ std::string Tensor::ToString(bool with_suffix,
 
 std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
-        str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
-    });
+    if (dtype_ == Dtype::Bool) {
+        str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
+    } else {
+        DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
+            str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
+        });
+    }
     return str;
 }
 
@@ -600,6 +604,128 @@ Tensor Tensor::Exp() const {
 
 Tensor Tensor::Exp_() {
     kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Exp);
+    return *this;
+}
+
+Tensor Tensor::LogicalNot() const {
+    Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::LogicalNot);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalNot_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::LogicalNot);
+    return *this;
+}
+
+Tensor Tensor::LogicalAnd(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor,
+                     kernel::BinaryEWOpCode::LogicalAnd);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalAnd_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
+    return *this;
+}
+
+Tensor Tensor::LogicalOr(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor,
+                     kernel::BinaryEWOpCode::LogicalOr);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalOr_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
+    return *this;
+}
+
+Tensor Tensor::LogicalXor(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor,
+                     kernel::BinaryEWOpCode::LogicalXor);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalXor_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
+    return *this;
+}
+
+Tensor Tensor::Gt(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
+    return dst_tensor;
+}
+
+Tensor Tensor::Gt_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
+    return *this;
+}
+
+Tensor Tensor::Lt(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
+    return dst_tensor;
+}
+
+Tensor Tensor::Lt_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
+    return *this;
+}
+
+Tensor Tensor::Ge(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
+    return dst_tensor;
+}
+
+Tensor Tensor::Ge_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
+    return *this;
+}
+
+Tensor Tensor::Le(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
+    return dst_tensor;
+}
+
+Tensor Tensor::Le_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
+    return *this;
+}
+
+Tensor Tensor::Eq(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
+    return dst_tensor;
+}
+
+Tensor Tensor::Eq_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
+    return *this;
+}
+
+Tensor Tensor::Ne(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
+    return dst_tensor;
+}
+
+Tensor Tensor::Ne_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
     return *this;
 }
 
