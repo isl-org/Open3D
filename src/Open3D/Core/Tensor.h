@@ -440,11 +440,17 @@ public:
     /// Element-wise negation of a tensor, in-place.
     Tensor Neg_();
 
-    /// Element-wise exponential of a tensor, returns a new tensor.
+    /// Element-wise base-e exponential of a tensor, returns a new tensor.
     Tensor Exp() const;
 
-    /// Element-wise exponential of a tensor, in-place.
+    /// Element-wise base-e exponential of a tensor, in-place.
     Tensor Exp_();
+
+    /// Element-wise absolute value of a tensor, returns a new tensor.
+    Tensor Abs() const;
+
+    /// Element-wise absolute value of a tensor, in-place.
+    Tensor Abs_();
 
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>

@@ -163,7 +163,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def add_(self, value):
         """
-        Inplace version of Tensor.add
+        In-place version of Tensor.add
         """
         return super(Tensor, self).add_(value)
 
@@ -177,7 +177,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def sub_(self, value):
         """
-        Inplace version of Tensor.sub
+        In-place version of Tensor.sub
         """
         return super(Tensor, self).sub_(value)
 
@@ -191,7 +191,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def mul_(self, value):
         """
-        Inplace version of Tensor.mul
+        In-place version of Tensor.mul
         """
         return super(Tensor, self).mul_(value)
 
@@ -205,9 +205,93 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def div_(self, value):
         """
-        Inplace version of Tensor.div
+        In-place version of Tensor.div
         """
         return super(Tensor, self).div_(value)
+
+    @cast_to_py_tensor
+    def sqrt(self):
+        """
+        Returns element-wise square root of a tensor.
+        """
+        return super(Tensor, self).sqrt()
+
+    @cast_to_py_tensor
+    def sqrt_(self):
+        """
+        In-place version of Tensor.sqrt().
+        """
+        return super(Tensor, self).sqrt_()
+
+    @cast_to_py_tensor
+    def sin(self):
+        """
+        Returns element-wise sin of a tensor.
+        """
+        return super(Tensor, self).sin()
+
+    @cast_to_py_tensor
+    def sin_(self):
+        """
+        In-place version of Tensor.sin().
+        """
+        return super(Tensor, self).sin_()
+
+    @cast_to_py_tensor
+    def cos(self):
+        """
+        Returns element-wise cosine of a tensor.
+        """
+        return super(Tensor, self).cos()
+
+    @cast_to_py_tensor
+    def cos_(self):
+        """
+        In-place version of Tensor.cos().
+        """
+        return super(Tensor, self).cos_()
+
+    @cast_to_py_tensor
+    def neg(self):
+        """
+        Returns element-wise negation of a tensor.
+        """
+        return super(Tensor, self).neg()
+
+    @cast_to_py_tensor
+    def neg_(self):
+        """
+        In-place version of Tensor.neg().
+        """
+        return super(Tensor, self).neg_()
+
+    @cast_to_py_tensor
+    def exp(self):
+        """
+        Returns element-wise base-e exponential of a tensor.
+        """
+        return super(Tensor, self).exp()
+
+    @cast_to_py_tensor
+    def exp_(self):
+        """
+        In-place version of Tensor.exp().
+        """
+        return super(Tensor, self).exp_()
+
+    @cast_to_py_tensor
+    def abs(self):
+        """
+        Returns element-wise absolute value of a tensor.
+        """
+        return super(Tensor, self).abs()
+
+    @cast_to_py_tensor
+    def abs_(self):
+        """
+        In-place version of Tensor.abs().
+        """
+        return super(Tensor, self).abs_()
 
     @cast_to_py_tensor
     def to(self, dtype, copy=False):
