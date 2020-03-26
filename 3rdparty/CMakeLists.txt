@@ -1,7 +1,6 @@
 find_package(PkgConfig QUIET)
 find_package(OpenGL    QUIET)
 find_package(pybind11  QUIET)
-find_package(SDL2      QUIET)
 
 if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
@@ -371,16 +370,6 @@ int main(int argc, char *argv[]) { return 0; }"
     endif ()
 endif()
 
-if (ENABLE_GUI)
-    if (SDL2_FOUND)
-        message(STATUS "Using installed SDL2 ${SDL2_VERSION}")
-    else ()
-        message(STATUS "Building SDL2 from source")
-        include(SDL2/sdl2.cmake)
-        set(SDL2_INCLUDE_DIRS ${3RDPARTY_INSTALL_PREFIX}/include/SDL2)
-    endif ()
-endif()
-
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
      ${EIGEN3_INCLUDE_DIRS}
@@ -407,14 +396,12 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
 if (ENABLE_GUI)
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${filament_INCLUDE_DIRS}
-     ${SDL2_INCLUDE_DIRS}
 )
 endif()
 
 if (ENABLE_GUI)
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${filament_INCLUDE_DIRS}
-     ${SDL2_INCLUDE_DIRS}
 )
 endif()
 
@@ -441,7 +428,6 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
 if (ENABLE_GUI)
     list(APPEND 3RDPARTY_LIBRARIES
          ${filament_LIBRARIES}
-         ${SDL2_LIBRARIES}
     )
 endif()
 list(APPEND 3RDPARTY_LIBRARIES
