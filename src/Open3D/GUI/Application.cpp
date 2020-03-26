@@ -115,7 +115,7 @@ struct Application::Impl {
             return;
         }
 
-        glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE); // no auto-create menubar
+        glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
         glfwInit();
         this->isGLFWinitalized = true;
     }

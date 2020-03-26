@@ -132,14 +132,16 @@ private:
     static void ResizeCallback(GLFWwindow* window, int osWidth, int osHeight);
     static void RescaleCallback(GLFWwindow* window, float xscale, float yscale);
     static void MouseMoveCallback(GLFWwindow* window, double x, double y);
-    static void MouseButtonCallback(GLFWwindow* window, int button,
-                                    int action, int mods);
+    static void MouseButtonCallback(GLFWwindow* window,
+                                    int button,
+                                    int action,
+                                    int mods);
     static void MouseScrollCallback(GLFWwindow* window, double dx, double dy);
-    static void KeyCallback(GLFWwindow* window, int key, int scancode,
-                            int action, int mods);
-    static void DragDropCallback(GLFWwindow*, int count, const char *paths[]);
+    static void KeyCallback(
+            GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
     static void CloseCallback(GLFWwindow* window);
-    static void UpdateAfterEvent(Window *w);
+    static void UpdateAfterEvent(Window* w);
 
 private:
     struct Impl;

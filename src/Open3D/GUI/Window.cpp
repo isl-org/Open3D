@@ -98,21 +98,21 @@ int keymodsFromGLFW(int glfwMods) {
         keymods |= int(KeyModifier::ALT);
 #else
         keymods |= int(KeyModifier::CTRL);
-#endif // __APPLE__
+#endif  // __APPLE__
     }
     if (glfwMods & GLFW_MOD_ALT) {
 #if __APPLE__
         keymods |= int(KeyModifier::META);
 #else
         keymods |= int(KeyModifier::ALT);
-#endif // __APPLE__
+#endif  // __APPLE__
     }
     if (glfwMods & GLFW_MOD_SUPER) {
 #if __APPLE__
         keymods |= int(KeyModifier::CTRL);
 #else
         keymods |= int(KeyModifier::META);
-#endif // __APPLE__
+#endif  // __APPLE__
     }
     if (glfwMods & GLFW_MOD_CAPS_LOCK) {
         keymods |= int(KeyModifier::CAPSLOCK);
@@ -178,21 +178,23 @@ Window::Window(const std::string& title,
                int height,
                int flags /*= 0*/)
     : impl_(new Window::Impl()) {
-    if (x == CENTERED_X || y == CENTERED_Y ||
-        width == AUTOSIZE_WIDTH || height == AUTOSIZE_HEIGHT) {
-        x = 0; y = 0;
+    if (x == CENTERED_X || y == CENTERED_Y || width == AUTOSIZE_WIDTH ||
+        height == AUTOSIZE_HEIGHT) {
+        x = 0;
+        y = 0;
         impl_->wantsAutoSizeAndCenter = true;
     }
-/*    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
-    if (sdlflags & FLAG_TOPMOST) {
-        sdlflags |= SDL_WINDOW_ALWAYS_ON_TOP;
-    } */
+    /*    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+        if (sdlflags & FLAG_TOPMOST) {
+            sdlflags |= SDL_WINDOW_ALWAYS_ON_TOP;
+        } */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
-    glfwWindowHint(GLFW_VISIBLE, impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_VISIBLE,
+                   impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
     impl_->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
     impl_->title = title;
 
@@ -304,12 +306,12 @@ Window::Window(const std::string& title,
     io.KeyMap[ImGuiKey_X] = 'x';
     io.KeyMap[ImGuiKey_Y] = 'y';
     io.KeyMap[ImGuiKey_Z] = 'z';
-/*    io.SetClipboardTextFn = [this](void*, const char* text) {
-        glfwSetClipboardString(this->impl_->window, text);
-    };
-    io.GetClipboardTextFn = [this](void*) -> const char* {
-        return glfwGetClipboardString(this->impl_->window);
-    }; */
+    /*    io.SetClipboardTextFn = [this](void*, const char* text) {
+            glfwSetClipboardString(this->impl_->window, text);
+        };
+        io.GetClipboardTextFn = [this](void*) -> const char* {
+            return glfwGetClipboardString(this->impl_->window);
+        }; */
     io.ClipboardUserData = nullptr;
 
     // Restore the context, in case we are creating a window during a draw.
@@ -359,9 +361,7 @@ void Window::SetFrame(const Rect& r) {
     glfwSetWindowSize(impl_->window, r.width, r.height);
 }
 
-const char* Window::GetTitle() const {
-    return impl_->title.c_str();
-}
+const char* Window::GetTitle() const { return impl_->title.c_str(); }
 
 void Window::SetTitle(const char* title) {
     impl_->title = title;
@@ -614,9 +614,15 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
         auto scaling = GetScaling();
         io.MousePos = ImVec2(mx * scaling, my * scaling);
     }
-    io.MouseDown[0] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
-    io.MouseDown[1] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
-    io.MouseDown[2] = (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
+    io.MouseDown[0] =
+            (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_LEFT) ==
+             GLFW_PRESS);
+    io.MouseDown[1] =
+            (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_RIGHT) ==
+             GLFW_PRESS);
+    io.MouseDown[2] =
+            (glfwGetMouseButton(impl_->window, GLFW_MOUSE_BUTTON_MIDDLE) ==
+             GLFW_PRESS);
 
     // Set key information
     io.KeyShift = (impl_->mouseMods & int(KeyModifier::SHIFT));
@@ -761,12 +767,8 @@ void Window::OnResize() {
         Size size(pref.width / this->impl_->imgui.scaling,
                   pref.height / this->impl_->imgui.scaling);
         glfwSetWindowSize(impl_->window, size.width, size.height);
-        auto *monitor = glfwGetWindowMonitor(impl_->window);
-//        int monWidth, monHeight;
-//        glfwGetMonitorWorkarea(monitor, NULL, NULL, &monWidth, &monHeight);
-//        glfwSetWindowPos(impl_->window, (monWidth - size.width) / 2,
-//                              (monHeight - size.height) / 2);
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        auto* monitor = glfwGetWindowMonitor(impl_->window);
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
         glfwSetWindowPos(impl_->window, (mode->width - size.width) / 2,
                          (mode->height - size.height) / 2);
 
@@ -905,7 +907,7 @@ void Window::OnDragDropped(const char* path) {}
 
 // ----------------------------------------------------------------------------
 void Window::DrawCallback(GLFWwindow* window) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
     if (w->DrawOnce(0.1) == Window::REDRAW) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
@@ -915,19 +917,19 @@ void Window::DrawCallback(GLFWwindow* window) {
 }
 
 void Window::ResizeCallback(GLFWwindow* window, int osWidth, int osHeight) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
     w->OnResize();
     UpdateAfterEvent(w);
 }
 
 void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
     w->OnResize();
     UpdateAfterEvent(w);
 }
 
 void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
         if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
@@ -937,8 +939,7 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     int ix = int(std::ceil(x));
     int iy = int(std::ceil(y));
 
-    auto type = (buttons == 0 ? MouseEvent::MOVE
-                              : MouseEvent::DRAG);
+    auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
     MouseEvent me = {type, ix, iy, w->impl_->mouseMods};
     me.button.button = MouseButton(buttons);
 
@@ -946,17 +947,16 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     UpdateAfterEvent(w);
 }
 
-void Window::MouseButtonCallback(GLFWwindow* window, int button,
-                                int action, int mods) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+void Window::MouseButtonCallback(GLFWwindow* window,
+                                 int button,
+                                 int action,
+                                 int mods) {
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
 
     auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
                                       : MouseEvent::BUTTON_UP);
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-//    auto scaling = w->GetScaling();
-//    int x = int(std::ceil(float(mx) * scaling));
-//    int y = int(std::ceil(float(my) * scaling));
     int ix = int(std::ceil(mx));
     int iy = int(std::ceil(my));
 
@@ -968,13 +968,10 @@ void Window::MouseButtonCallback(GLFWwindow* window, int button,
 }
 
 void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-//    auto scaling = w->GetScaling();
-//    int x = int(std::ceil(float(mx) * scaling));
-//    int y = int(std::ceil(float(my) * scaling));
     int ix = int(std::ceil(mx));
     int iy = int(std::ceil(my));
 
@@ -994,41 +991,41 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
     UpdateAfterEvent(w);
 }
 
-void Window::KeyCallback(GLFWwindow* window, int key, int scancode,
-                        int action, int mods) {
+void Window::KeyCallback(
+        GLFWwindow* window, int key, int scancode, int action, int mods) {
     static std::unordered_map<int, uint32_t> gGLFW2Key = {
-        {GLFW_KEY_BACKSPACE, KEY_BACKSPACE},
-        {GLFW_KEY_TAB, KEY_TAB},
-        {GLFW_KEY_ENTER, KEY_ENTER},
-        {GLFW_KEY_ESCAPE, KEY_ESCAPE},
-        {GLFW_KEY_DELETE, KEY_DELETE},
-        {GLFW_KEY_LEFT_SHIFT, KEY_LSHIFT},
-        {GLFW_KEY_RIGHT_SHIFT, KEY_RSHIFT},
-        {GLFW_KEY_LEFT_CONTROL, KEY_LCTRL},
-        {GLFW_KEY_RIGHT_CONTROL, KEY_RCTRL},
-        {GLFW_KEY_LEFT_ALT, KEY_ALT},
-        {GLFW_KEY_RIGHT_ALT, KEY_ALT},
-        {GLFW_KEY_LEFT_SUPER, KEY_META},
-        {GLFW_KEY_RIGHT_SUPER, KEY_META},
-        {GLFW_KEY_CAPS_LOCK, KEY_CAPSLOCK},
-        {GLFW_KEY_LEFT, KEY_LEFT},
-        {GLFW_KEY_RIGHT, KEY_RIGHT},
-        {GLFW_KEY_UP, KEY_UP},
-        {GLFW_KEY_DOWN, KEY_DOWN},
-        {GLFW_KEY_INSERT, KEY_INSERT},
-        {GLFW_KEY_HOME, KEY_HOME},
-        {GLFW_KEY_END, KEY_END},
-        {GLFW_KEY_PAGE_UP, KEY_PAGEUP},
-        {GLFW_KEY_PAGE_DOWN, KEY_PAGEDOWN},
+            {GLFW_KEY_BACKSPACE, KEY_BACKSPACE},
+            {GLFW_KEY_TAB, KEY_TAB},
+            {GLFW_KEY_ENTER, KEY_ENTER},
+            {GLFW_KEY_ESCAPE, KEY_ESCAPE},
+            {GLFW_KEY_DELETE, KEY_DELETE},
+            {GLFW_KEY_LEFT_SHIFT, KEY_LSHIFT},
+            {GLFW_KEY_RIGHT_SHIFT, KEY_RSHIFT},
+            {GLFW_KEY_LEFT_CONTROL, KEY_LCTRL},
+            {GLFW_KEY_RIGHT_CONTROL, KEY_RCTRL},
+            {GLFW_KEY_LEFT_ALT, KEY_ALT},
+            {GLFW_KEY_RIGHT_ALT, KEY_ALT},
+            {GLFW_KEY_LEFT_SUPER, KEY_META},
+            {GLFW_KEY_RIGHT_SUPER, KEY_META},
+            {GLFW_KEY_CAPS_LOCK, KEY_CAPSLOCK},
+            {GLFW_KEY_LEFT, KEY_LEFT},
+            {GLFW_KEY_RIGHT, KEY_RIGHT},
+            {GLFW_KEY_UP, KEY_UP},
+            {GLFW_KEY_DOWN, KEY_DOWN},
+            {GLFW_KEY_INSERT, KEY_INSERT},
+            {GLFW_KEY_HOME, KEY_HOME},
+            {GLFW_KEY_END, KEY_END},
+            {GLFW_KEY_PAGE_UP, KEY_PAGEUP},
+            {GLFW_KEY_PAGE_DOWN, KEY_PAGEDOWN},
     };
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
 
     auto type = (action == GLFW_RELEASE ? KeyEvent::Type::UP
                                         : KeyEvent::Type::DOWN);
 
     uint32_t k = key;
     if (key >= 'A' && key <= 'Z') {
-        k += 32; // GLFW gives uppercase for letters, convert to lowercase
+        k += 32;  // GLFW gives uppercase for letters, convert to lowercase
     } else {
         auto it = gGLFW2Key.find(key);
         if (it != gGLFW2Key.end()) {
@@ -1041,8 +1038,10 @@ void Window::KeyCallback(GLFWwindow* window, int key, int scancode,
     UpdateAfterEvent(w);
 }
 
-void Window::DragDropCallback(GLFWwindow* window, int count, const char *paths[]) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+void Window::DragDropCallback(GLFWwindow* window,
+                              int count,
+                              const char* paths[]) {
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
     for (int i = 0; i < count; ++i) {
         w->OnDragDropped(paths[i]);
     }
@@ -1050,11 +1049,11 @@ void Window::DragDropCallback(GLFWwindow* window, int count, const char *paths[]
 }
 
 void Window::CloseCallback(GLFWwindow* window) {
-    Window *w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = (Window*)glfwGetWindowUserPointer(window);
     Application::GetInstance().RemoveWindow(w);
 }
 
-void Window::UpdateAfterEvent(Window *w) {
+void Window::UpdateAfterEvent(Window* w) {
     PostNativeExposeEvent(w->impl_->window);
 }
 

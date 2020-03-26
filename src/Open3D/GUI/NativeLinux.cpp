@@ -35,7 +35,7 @@ void* GetNativeDrawable(GLFWwindow* glfwWindow) {
 }
 
 void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
-    Display *d = glfwGetX11Display();
+    Display* d = glfwGetX11Display();
     auto x11win = glfwGetX11Window(glfwWindow);
 
     XEvent e;

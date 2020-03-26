@@ -244,7 +244,7 @@ public:
 
     DrawResult Draw(const gui::DrawContext &context) override {
         char text[64];
-//        double ms = window_->GetLastFrameTimeSeconds() * 1000.0;
+        // double ms = window_->GetLastFrameTimeSeconds() * 1000.0;
         double ms = 0.0;
         snprintf(text, sizeof(text) - 1, "%.1f ms", ms);
         SetText(text);
