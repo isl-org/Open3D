@@ -24,7 +24,7 @@ if ("${PATH_TO_FILAMENT}" STREQUAL "")
                 file(MAKE_DIRECTORY ${FILAMENT_ROOT})
                 set(TAR_PWD ${FILAMENT_ROOT})
             elseif (APPLE)
-                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-mac-10.14-resizefix.tgz")
+                set(DOWNLOAD_URL_PRIMARY "https://storage.googleapis.com/isl-datasets/open3d-dev/filament-20200127-mac-10.14-resizefix2.tgz")
                 set(DOWNLOAD_URL_FALLBACK "https://github.com/google/filament/releases/download/v1.4.5/filament-20200127-mac.tgz")
             endif()
             # =================================================================================================
