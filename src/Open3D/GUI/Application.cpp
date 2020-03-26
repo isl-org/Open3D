@@ -115,7 +115,9 @@ struct Application::Impl {
             return;
         }
 
+#if __APPLE__
         glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
+#endif
         glfwInit();
         this->isGLFWinitalized = true;
     }
