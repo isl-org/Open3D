@@ -155,9 +155,7 @@ public:
             const float dist = 0.1f;
             const float angleRad = 0.01f;
 
-            auto hasKey = [&e](uint32_t key) -> bool {
-                return (e.key == key);
-            };
+            auto hasKey = [&e](uint32_t key) -> bool { return (e.key == key); };
 
             if (hasKey('a')) {
                 cameraControls_->MoveLocal({-dist, 0, 0});

@@ -59,8 +59,7 @@ void CameraInteractor::RotateFPS(int dx, int dy) {
     // First-person shooter rotation is always about the current camera
     // matrix, and the camera's position, so we need to update Super's
     // matrix information.
-    Super::SetMouseDownInfo(camera_->GetModelMatrix(),
-                            camera_->GetPosition());
+    Super::SetMouseDownInfo(camera_->GetModelMatrix(), camera_->GetPosition());
     Super::RotateFPS(-dx, -dy);
     camera_->SetModelMatrix(GetMatrix());
 }

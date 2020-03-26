@@ -115,12 +115,6 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
     return dlg;
 }
 
-std::shared_ptr<gui::Label> createHelpLabel(const char *text) {
-    auto label = std::make_shared<gui::Label>(text);
-    label->SetTextColor(gui::Color(1, 1, 1));
-    return label;
-}
-
 std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     auto &theme = window->GetTheme();
 
@@ -128,44 +122,55 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     auto layout = std::make_shared<gui::VGrid>(2, 0, margins);
     layout->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
 
-    layout->AddChild(createHelpLabel("Left-drag"));
-    layout->AddChild(createHelpLabel("Rotate camera"));
+    auto addLabel = [layout](const char *text) {
+        auto label = std::make_shared<gui::Label>(text);
+        label->SetTextColor(gui::Color(1, 1, 1));
+        layout->AddChild(label);
+    };
+    auto addRow = [layout, &addLabel](const char *left, const char *right) {
+        addLabel(left);
+        addLabel(right);
+    };
 
-    layout->AddChild(createHelpLabel("Shift + left-drag    "));
-    layout->AddChild(createHelpLabel("Forward/backward"));
-
-#if defined(__APPLE__)
-    layout->AddChild(createHelpLabel("Cmd + left-drag"));
-#else
-    layout->AddChild(createHelpLabel("Ctrl + left-drag"));
-#endif  // __APPLE__
-    layout->AddChild(createHelpLabel("Pan camera"));
-
-#if defined(__APPLE__)
-    layout->AddChild(createHelpLabel("Opt + left-drag"));
-#else
-    layout->AddChild(createHelpLabel("Win + left-drag"));
-#endif  // __APPLE__
-    layout->AddChild(createHelpLabel("Rotate around forward axis"));
+    addRow("Left-drag", "Rotate camera");
+    addRow("Shift + left-drag    ", "Forward/backward");
 
 #if defined(__APPLE__)
-    layout->AddChild(createHelpLabel("Ctrl + left-drag"));
+    addLabel("Cmd + left-drag");
 #else
-    layout->AddChild(createHelpLabel("Alt + left-drag"));
+    addLabel("Ctrl + left-drag");
 #endif  // __APPLE__
-    layout->AddChild(createHelpLabel("Rotate directional light"));
+    addLabel("Pan camera");
 
-    layout->AddChild(createHelpLabel("Right-drag"));
-    layout->AddChild(createHelpLabel("Pan camera"));
+#if defined(__APPLE__)
+    addLabel("Opt + left-drag");
+#else
+    addLabel("Win + left-drag");
+#endif  // __APPLE__
+    addLabel("Rotate around forward axis");
 
-    layout->AddChild(createHelpLabel("Middle-drag"));
-    layout->AddChild(createHelpLabel("Rotate directional light"));
+#if defined(__APPLE__)
+    addLabel("Ctrl + left-drag");
+#else
+    addLabel("Alt + left-drag");
+#endif  // __APPLE__
+    addLabel("Rotate directional light");
 
-    layout->AddChild(createHelpLabel("Wheel"));
-    layout->AddChild(createHelpLabel("Forward/backward"));
+    addRow("Right-drag", "Pan camera");
+    addRow("Middle-drag", "Rotate directional light");
+    addRow("Wheel", "Forward/backward");
+    addRow("Shift + Wheel", "Change field of view");
+    addRow("", "");
 
-    layout->AddChild(createHelpLabel("Shift + Wheel"));
-    layout->AddChild(createHelpLabel("Change field of view"));
+    addRow("First person mode", " ");
+    addRow("W", "Forward");
+    addRow("S", "Backward");
+    addRow("A", "Step left");
+    addRow("D", "Step right");
+    addRow("Up", "Look up");
+    addRow("Down", "Look down");
+    addRow("Left", "Look left");
+    addRow("Right", "Look right");
 
     return layout;
 }
