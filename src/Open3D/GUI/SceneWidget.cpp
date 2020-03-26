@@ -26,6 +26,7 @@
 
 #include "SceneWidget.h"
 
+#include "Application.h"
 #include "Color.h"
 #include "Events.h"
 
@@ -57,7 +58,6 @@ public:
     virtual visualization::MatrixInteractor& GetMatrixInteractor() = 0;
     virtual void Mouse(const MouseEvent& e) = 0;
     virtual void Key(const KeyEvent& e) = 0;
-    virtual Widget::DrawResult Tick(const TickEvent& e) = 0;
 };
 
 class RotateSunInteractor : public MouseInteractor {
@@ -107,10 +107,6 @@ public:
 
     void Key(const KeyEvent& e) override {}
 
-    Widget::DrawResult Tick(const TickEvent& e) override {
-        return Widget::DrawResult::NONE;
-    }
-
 private:
     std::unique_ptr<visualization::LightDirectionInteractor> lightDir_;
     int mouseDownX_ = 0;
@@ -155,64 +151,45 @@ public:
     }
 
     void Key(const KeyEvent& e) override {
-        if (e.type == KeyEvent::Type::DOWN) {
-            keysDown_.insert(e.key);
-        } else if (e.type == KeyEvent::Type::UP) {
-            keysDown_.erase(e.key);
-        }
-    }
+        if (e.type != KeyEvent::Type::UP) {
+            const float dist = 0.1f;
+            const float angleRad = 0.01f;
 
-    Widget::DrawResult Tick(const TickEvent& e) override {
-        const float dist = 0.1f;
-        const float angleRad = 0.01f;
+            auto hasKey = [&e](uint32_t key) -> bool {
+                return (e.key == key);
+            };
 
-        bool redraw = false;
-
-        if (keysDown_.find('a') != keysDown_.end()) {
-            cameraControls_->MoveLocal({-dist, 0, 0});
-            redraw = true;
+            if (hasKey('a')) {
+                cameraControls_->MoveLocal({-dist, 0, 0});
+            }
+            if (hasKey('d')) {
+                cameraControls_->MoveLocal({dist, 0, 0});
+            }
+            if (hasKey('w')) {
+                cameraControls_->MoveLocal({0, 0, -dist});
+            }
+            if (hasKey('s')) {
+                cameraControls_->MoveLocal({0, 0, dist});
+            }
+            if (hasKey('q')) {
+                cameraControls_->MoveLocal({0, dist, 0});
+            }
+            if (hasKey('z')) {
+                cameraControls_->MoveLocal({0, -dist, 0});
+            }
+            if (hasKey(KEY_UP)) {
+                cameraControls_->RotateLocal(angleRad, {1, 0, 0});
+            }
+            if (hasKey(KEY_DOWN)) {
+                cameraControls_->RotateLocal(-angleRad, {1, 0, 0});
+            }
+            if (hasKey(KEY_LEFT)) {
+                cameraControls_->RotateLocal(angleRad, {0, 1, 0});
+            }
+            if (hasKey(KEY_RIGHT)) {
+                cameraControls_->RotateLocal(-angleRad, {0, 1, 0});
+            }
         }
-        if (keysDown_.find('d') != keysDown_.end()) {
-            cameraControls_->MoveLocal({dist, 0, 0});
-            redraw = true;
-        }
-        if (keysDown_.find('w') != keysDown_.end()) {
-            cameraControls_->MoveLocal({0, 0, -dist});
-            redraw = true;
-        }
-        if (keysDown_.find('s') != keysDown_.end()) {
-            cameraControls_->MoveLocal({0, 0, dist});
-            redraw = true;
-        }
-        if (keysDown_.find('q') != keysDown_.end()) {
-            cameraControls_->MoveLocal({0, dist, 0});
-            redraw = true;
-        }
-        if (keysDown_.find('z') != keysDown_.end()) {
-            cameraControls_->MoveLocal({0, -dist, 0});
-            redraw = true;
-        }
-        if (keysDown_.find(KEY_UP) != keysDown_.end()) {
-            cameraControls_->RotateLocal(angleRad, {1, 0, 0});
-            redraw = true;
-        }
-        if (keysDown_.find(KEY_DOWN) != keysDown_.end()) {
-            cameraControls_->RotateLocal(-angleRad, {1, 0, 0});
-            redraw = true;
-        }
-        if (keysDown_.find(KEY_LEFT) != keysDown_.end()) {
-            cameraControls_->RotateLocal(angleRad, {0, 1, 0});
-            redraw = true;
-        }
-        if (keysDown_.find(KEY_RIGHT) != keysDown_.end()) {
-            cameraControls_->RotateLocal(-angleRad, {0, 1, 0});
-            redraw = true;
-        }
-
-        if (redraw) {
-            return Widget::DrawResult::REDRAW;
-        }
-        return Widget::DrawResult::NONE;
     }
 
 private:
@@ -321,10 +298,6 @@ public:
 
     void Key(const KeyEvent& e) override {}
 
-    Widget::DrawResult Tick(const TickEvent& e) override {
-        return Widget::DrawResult::NONE;
-    }
-
 private:
     std::unique_ptr<visualization::CameraInteractor> cameraControls_;
     int mouseDownX_ = 0;
@@ -420,9 +393,6 @@ public:
     }
 
     Widget::DrawResult Tick(const TickEvent& e) {
-        if (current_) {
-            return current_->Tick(e);
-        }
         return Widget::DrawResult::NONE;
     }
 
