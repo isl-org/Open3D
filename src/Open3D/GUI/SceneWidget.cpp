@@ -117,8 +117,7 @@ private:
 class FPSInteractor : public MouseInteractor {
 public:
     FPSInteractor(visualization::Camera* camera)
-        : camera_(camera),
-          cameraControls_(std::make_unique<visualization::CameraInteractor>(
+        : cameraControls_(std::make_unique<visualization::CameraInteractor>(
                   camera, MIN_FAR_PLANE)) {}
 
     visualization::MatrixInteractor& GetMatrixInteractor() override {
@@ -128,15 +127,16 @@ public:
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
             case MouseEvent::BUTTON_DOWN:
-                mouseDownX_ = e.x;
-                mouseDownY_ = e.y;
-                cameraControls_->SetCenterOfRotation(camera_->GetPosition());
+                lastMouseX_ = e.x;
+                lastMouseY_ = e.y;
                 cameraControls_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
-                int dx = e.x - mouseDownX_;
-                int dy = e.y - mouseDownY_;
-                cameraControls_->Rotate(-dx, -dy);
+                int dx = e.x - lastMouseX_;
+                int dy = e.y - lastMouseY_;
+                cameraControls_->RotateFPS(-dx, -dy);
+                lastMouseX_ = e.x;
+                lastMouseY_ = e.y;
                 break;
             }
             case MouseEvent::WHEEL: {
@@ -193,12 +193,11 @@ public:
     }
 
 private:
-    visualization::Camera* camera_;
     std::unique_ptr<visualization::CameraInteractor> cameraControls_;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
-    int mouseDownX_ = 0;
-    int mouseDownY_ = 0;
-    std::set<uint32_t> keysDown_;
+    int lastMouseX_ = 0;
+    int lastMouseY_ = 0;
+    visualization::Camera::Transform _mouseDownRotation;
 };
 
 class RotateObjectInteractor : public MouseInteractor {

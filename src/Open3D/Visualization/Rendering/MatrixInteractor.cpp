@@ -140,6 +140,21 @@ void MatrixInteractor::RotateZ(int dx, int dy) {
     matrix_ = matrix;
 }
 
+void MatrixInteractor::RotateFPS(int dx, int dy) {
+    Eigen::Vector3f axis(dy, dx, 0);
+    float theta = 0.5 * M_PI * axis.norm() / (0.5f * float(viewHeight_));
+    axis = axis.normalized();
+
+    Eigen::AngleAxisf rotMatrix(0, Eigen::Vector3f(1, 0, 0));
+    rotMatrix = rotMatrix * Eigen::AngleAxisf(-theta, axis);
+
+    visualization::Camera::Transform m;
+    m.fromPositionOrientationScale(matrix_.translation(),
+                                   rotMatrix * matrix_.rotation(),
+                                   Eigen::Vector3f(1, 1, 1));
+    matrix_ = m;
+}
+
 enum class DragType { MOUSE, WHEEL, TWO_FINGER };
 
 void MatrixInteractor::Dolly(int dy, DragType dragType) {

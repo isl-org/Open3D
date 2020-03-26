@@ -52,7 +52,8 @@ public:
 
     /// Rotates about an axis defined by dx * matrixLeft, dy * matrixUp.
     /// `dy` is assumed to be in window-style coordinates, that is, going
-    /// up produces a negative dy.
+    /// up produces a negative dy. The axis goes through the center of
+    /// rotation.
     virtual void Rotate(int dx, int dy);
 
     /// Same as Rotate() except that the dx-axis and the dy-axis are
@@ -64,6 +65,10 @@ public:
 
     /// Rotates about the forward axis of the matrix
     virtual void RotateZ(int dx, int dy);
+
+    /// Rotates the camera as in an first-person shooter game;
+    /// that is, the center of rotation is the camera.
+    virtual void RotateFPS(int dx, int dy);
 
     enum class DragType { MOUSE, WHEEL, TWO_FINGER };
 
