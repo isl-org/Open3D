@@ -21,7 +21,9 @@
 
 #include "Open3D/Utility/Helper.h"
 
-#include <SDL_syswm.h>
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_COCOA 1
+#include <GLFW/glfw3native.h>
 
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
@@ -29,13 +31,15 @@
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(SDL_Window* sdlWindow) {
-    SDL_SysWMinfo wmi;
-    SDL_VERSION(&wmi.version);
-    SDL_GetWindowWMInfo(sdlWindow, &wmi);
-    NSWindow* win = wmi.info.cocoa.window;
+void* GetNativeDrawable(GLFWwindow* glfwWindow) {
+    NSWindow* win = glfwGetCocoaWindow(glfwWindow);
     NSView* view = [win contentView];
     return view;
+}
+
+void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
+    NSWindow* win = glfwGetCocoaWindow(glfwWindow);
+    [win contentView].needsDisplay = YES;
 }
 
 void ShowNativeAlert(const char *message) {
@@ -111,12 +115,14 @@ void ShowNativeFileDialog(FileDialog::Type type,
     dlg.allowedFileTypes = allowed;
     dlg.allowsOtherFileTypes = YES;
 
+    NSWindow *current = NSApp.mainWindow;
     [dlg beginWithCompletionHandler:^(NSModalResponse result) {
         if (result == NSModalResponseOK) {
             onOk(dlg.URL.path.UTF8String);
         } else {
             onCancel();
         }
+        [current makeKeyWindow];
     }];
 }
 

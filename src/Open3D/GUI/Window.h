@@ -36,6 +36,8 @@
 #include "Open3D/Visualization/Rendering/Renderer.h"
 #include "Widget.h"
 
+struct GLFWwindow;
+
 namespace open3d {
 namespace gui {
 
@@ -69,8 +71,6 @@ public:
            int flags = 0);
     virtual ~Window();
 
-    uint32_t GetID() const;
-
     const Theme& GetTheme() const;
     visualization::Renderer& GetRenderer() const;
 
@@ -92,6 +92,7 @@ public:
     void Close();  // same as calling Application::RemoveWindow()
 
     void SetNeedsLayout();
+    void PostRedraw();
 
     void SetTopmost(bool topmost);
     void RaiseToTop() const;
@@ -109,8 +110,6 @@ public:
     void CloseDialog();
 
     void ShowMessageBox(const char* title, const char* message);
-
-    double GetLastFrameTimeSeconds() const;
 
 protected:
     virtual Size CalcPreferredSize(/*const Size& maxSize*/);
@@ -134,6 +133,21 @@ private:
     void* MakeCurrent() const;
     void RestoreCurrent(void* oldContext) const;
     void* GetNativeDrawable() const;
+
+    static void DrawCallback(GLFWwindow* window);
+    static void ResizeCallback(GLFWwindow* window, int osWidth, int osHeight);
+    static void RescaleCallback(GLFWwindow* window, float xscale, float yscale);
+    static void MouseMoveCallback(GLFWwindow* window, double x, double y);
+    static void MouseButtonCallback(GLFWwindow* window,
+                                    int button,
+                                    int action,
+                                    int mods);
+    static void MouseScrollCallback(GLFWwindow* window, double dx, double dy);
+    static void KeyCallback(
+            GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
+    static void CloseCallback(GLFWwindow* window);
+    static void UpdateAfterEvent(Window* w);
 
 private:
     struct Impl;

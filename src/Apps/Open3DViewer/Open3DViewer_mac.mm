@@ -59,14 +59,6 @@
     if (mOpenEmptyWindow) {
         LoadAndCreateWindow("");
     }
-
-    // We cannot have the timer repeat and call RunOnce() because on macOS
-    // SDL does not queue up keyboard events unless SDL_Delay() is used.
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:0.010 repeats:NO
-                                        block:^(NSTimer * _Nonnull timer) {
-        open3d::gui::Application::GetInstance().Run();
-        exit(0);
-    }];
 }
 
 // Called by [NSApp run] if the user passes command line arguments (which may
@@ -86,14 +78,6 @@
     // thinks it is running. So tell Application to quit, which will post
     // the required events to the event loop to properly clean up.
     open3d::gui::Application::GetInstance().Quit();
-    // Process events for a while to make sure that the cleanup events get
-    // processed. (Usually we will be finished after the first call to
-    // RunOneTick(), but if we haven't, continue calling for a while
-    // just in case.)
-    int  i  = 0;
-    while (open3d::gui::Application::GetInstance().RunOneTick() && i < 20) {
-        i++;
-    }
 }
 @end
 
@@ -108,13 +92,31 @@ int main(int argc, const char *argv[]) {
 
     open3d::gui::Application::GetInstance().Initialize(argc, argv);
 
-    @autoreleasepool {
-        AppDelegate *delegate = [[AppDelegate alloc] init];
+    // Note: if NSApp is created (which happens in +sharedApplication)
+    //       then GLFW will use our NSApp with our delegate instead of its
+    //       own delegate that doesn't have the openFile and terminate
+    //       selectors.
 
-        NSApplication *application = [NSApplication sharedApplication];
-        [application setDelegate:delegate];
-        [NSApp run];
-    }
+    // Ideally we could do the following:
+    //@autoreleasepool {
+    //    AppDelegate *delegate = [[AppDelegate alloc] init];
+    //    NSApplication *application = [NSApplication sharedApplication];
+    //    [application setDelegate:delegate];
+    //    [NSApp run];
+    //}
+    // But somewhere along the line GLFW seems to clean up the autorelease
+    // pool, which then causes a crash when [NSApp run] finishes and the
+    // autorelease pool cleans up at the '}'. To avoid that, we will not
+    // autorelease things. That creates a memory leak, but we're exiting
+    // after that so it does not matter.
+    AppDelegate *delegate = [[AppDelegate alloc] init];
+    NSApplication *application = [NSApplication sharedApplication];
+    [application setDelegate:delegate];
+    // ---- [NSApp run] equivalent ----
+    // https://www.cocoawithlove.com/2009/01/demystifying-nsapplication-by.html
+    [NSApp finishLaunching];
+    open3d::gui::Application::GetInstance().Run();
+    // ----
 }
 
 #endif // __APPLE__

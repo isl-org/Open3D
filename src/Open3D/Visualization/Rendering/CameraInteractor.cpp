@@ -114,8 +114,8 @@ void CameraInteractor::Pan(int dx, int dy) {
 
     // Move camera and center of rotation. Adjust values from the
     // original positions at mousedown to avoid hysteresis problems.
-    auto localMove = Eigen::Vector3f(-dx * unitsPerPx, dy * unitsPerPx, 0);
-    auto worldMove = modelMatrix.rotation() * localMove;
+    Eigen::Vector3f localMove(-dx * unitsPerPx, dy * unitsPerPx, 0);
+    Eigen::Vector3f worldMove = modelMatrix.rotation() * localMove;
     centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
     modelMatrix.translate(localMove);
     camera_->SetModelMatrix(modelMatrix);

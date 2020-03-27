@@ -61,6 +61,7 @@ public:
     virtual ~View() {}
 
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
+    virtual Mode GetMode() const = 0;
     virtual void SetMode(Mode mode) = 0;
 
     virtual void SetViewport(std::int32_t x,

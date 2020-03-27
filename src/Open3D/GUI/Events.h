@@ -45,7 +45,9 @@ enum class KeyModifier {
     SHIFT = (1 << 0),
     CTRL = (1 << 1),  // win/linux: ctrl, macOS: command
     ALT = (1 << 2),   // win/linux: alt, macOS: ctrl
-    META = (1 << 3)   // win/linux: windows key, macOS: option
+    META = (1 << 3),  // win/linux: windows key, macOS: option
+    CAPSLOCK = (1 << 4),
+    NUMLOCK = (1 << 5)
 };
 
 struct MouseEvent {

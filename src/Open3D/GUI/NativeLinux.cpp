@@ -21,16 +21,30 @@
 
 #include "Application.h"
 
-#include <SDL_syswm.h>
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_X11 1
+#include <GLFW/glfw3native.h>
+
+#include <memory.h>
 
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(SDL_Window* window) {
-    SDL_SysWMinfo wmi;
-    SDL_VERSION(&wmi.version);
-    SDL_GetWindowWMInfo(window, &wmi);
-    return (void*)wmi.info.x11.window;
+void* GetNativeDrawable(GLFWwindow* glfwWindow) {
+    return (void*)glfwGetX11Window(glfwWindow);
+}
+
+void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
+    Display* d = glfwGetX11Display();
+    auto x11win = glfwGetX11Window(glfwWindow);
+
+    XEvent e;
+    memset(&e, 0, sizeof(e));
+    e.type = Expose;
+    e.xexpose.window = x11win;
+
+    XSendEvent(d, x11win, False, ExposureMask, &e);
+    XFlush(d);
 }
 
 void ShowNativeAlert(const char* message) {
