@@ -162,7 +162,7 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addRow("Shift + Wheel", "Change field of view");
     addRow("", "");
 
-    addRow("First person mode", " ");
+    addRow("Fly mode", " ");
     addRow("W", "Forward");
     addRow("S", "Backward");
     addRow("A", "Step left");
@@ -677,14 +677,18 @@ GuiVisualizer::GuiVisualizer(
         ShowDialog(dlg);
     });
 
+    gui::Margins indent(em, 0, 0, 0);
+    auto viewCtrls = std::make_shared<gui::CollapsableVert>("View controls",
+                                                            0, indent);
+
     // ... view manipulator buttons
-    auto viewRotate = std::make_shared<SmallButton>("Rotate");
+    auto viewRotate = std::make_shared<SmallButton>("Arcball");
     viewRotate->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(
                 gui::SceneWidget::Controls::ROTATE_OBJ);
         this->SetTickEventsEnabled(false);
     });
-    auto viewFPS = std::make_shared<SmallButton>("FPS");
+    auto viewFPS = std::make_shared<SmallButton>("Fly");
     viewFPS->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::FPS);
         this->SetFocusWidget(this->impl_->scene.get());
@@ -704,17 +708,16 @@ GuiVisualizer::GuiVisualizer(
         this->SetTickEventsEnabled(false);
     });
 
-    auto viewControls = std::make_shared<gui::Horiz>(gridSpacing);
-    viewControls->AddChild(gui::Horiz::MakeStretch());
-    viewControls->AddChild(viewRotate);
-    viewControls->AddChild(viewFPS);
-    viewControls->AddChild(gui::Horiz::MakeFixed(em));
-    viewControls->AddChild(viewSun);
-    viewControls->AddChild(viewIBL);
-    viewControls->AddChild(gui::Horiz::MakeStretch());
-    settings.wgtBase->AddChild(std::make_shared<gui::Label>("View controls"));
-    settings.wgtBase->AddChild(viewControls);
-    settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
+    cameraControls->AddChild(gui::Horiz::MakeStretch());
+    cameraControls->AddChild(viewRotate);
+    cameraControls->AddChild(viewFPS);
+    cameraControls->AddChild(gui::Horiz::MakeFixed(em));
+    cameraControls->AddChild(viewSun);
+    cameraControls->AddChild(viewIBL);
+    cameraControls->AddChild(gui::Horiz::MakeStretch());
+    viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
+    viewCtrls->AddChild(cameraControls);
 
     // ... background colors
     auto bgcolor = std::make_shared<gui::ColorEdit>();
@@ -725,8 +728,8 @@ GuiVisualizer::GuiVisualizer(
     auto bgcolorLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     bgcolorLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
     bgcolorLayout->AddChild(bgcolor);
-    settings.wgtBase->AddChild(bgcolorLayout);
-    settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    viewCtrls->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    viewCtrls->AddChild(bgcolorLayout);
 
     // ... lighting profiles
     settings.wgtLightingProfile = std::make_shared<gui::Combobox>();
@@ -746,15 +749,17 @@ GuiVisualizer::GuiVisualizer(
             });
 
     auto profileLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
-    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting Profiles"));
+    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting "));
     profileLayout->AddChild(settings.wgtLightingProfile);
-    settings.wgtBase->AddChild(profileLayout);
+    viewCtrls->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    viewCtrls->AddChild(profileLayout);
+
+    settings.wgtBase->AddChild(viewCtrls);
     settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
 
     // ... advanced lighting
-    gui::Margins indent(em, 0, 0, 0);
     settings.wgtAdvanced = std::make_shared<gui::CollapsableVert>(
-            "Advanced Lighting", 0, indent);
+            "Advanced lighting", 0, indent);
     settings.wgtAdvanced->SetIsOpen(false);
     settings.wgtBase->AddChild(settings.wgtAdvanced);
 
