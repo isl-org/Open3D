@@ -400,8 +400,7 @@ class TensorList(open3d_pybind.TensorList):
         \int: return a Tensor
         '''
         if isinstance(index, int):
-            return cast_to_py_tensor(self._getitem)(index)
-
+            return self._getitem(index)
         else:
             raise ValueError('Unsupported index type, only int is supported.')
 
