@@ -933,8 +933,9 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
             buttons |= mouseButtonFromGLFW(b);
         }
     }
-    int ix = int(std::ceil(x));
-    int iy = int(std::ceil(y));
+    float scaling = w->GetScaling();
+    int ix = int(std::ceil(x * scaling));
+    int iy = int(std::ceil(y * scaling));
 
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
     MouseEvent me = {type, ix, iy, w->impl_->mouseMods};
@@ -954,8 +955,9 @@ void Window::MouseButtonCallback(GLFWwindow* window,
                                       : MouseEvent::BUTTON_UP);
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    int ix = int(std::ceil(mx));
-    int iy = int(std::ceil(my));
+    float scaling = w->GetScaling();
+    int ix = int(std::ceil(mx * scaling));
+    int iy = int(std::ceil(my * scaling));
 
     MouseEvent me = {type, ix, iy, keymodsFromGLFW(mods)};
     me.button.button = MouseButton(mouseButtonFromGLFW(button));
@@ -969,8 +971,9 @@ void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    int ix = int(std::ceil(mx));
-    int iy = int(std::ceil(my));
+    float scaling = w->GetScaling();
+    int ix = int(std::ceil(mx * scaling));
+    int iy = int(std::ceil(my * scaling));
 
     MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouseMods};
     me.wheel.dx = dx;
