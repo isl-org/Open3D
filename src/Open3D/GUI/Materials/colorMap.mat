@@ -23,10 +23,10 @@ vertex {
         float min = materialParams.bboxMin[materialParams.coordinateIndex];
         float max = materialParams.bboxMax[materialParams.coordinateIndex];
 
-        float4 pos = getWorldFromModelMatrix()*getPosition() + vec4(getWorldOffset(),0);
+        float4 pos = getWorldFromModelMatrix()*getPosition() + vec4(getWorldOffset(),0.0);
         float a = pos[materialParams.coordinateIndex];
         material.colorMapUV.s = (a - min)/(max - min);
-        material.colorMapUV.t = 0;
+        material.colorMapUV.t = 0.0;
     }
 }
 

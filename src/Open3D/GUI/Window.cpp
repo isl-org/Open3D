@@ -278,10 +278,7 @@ Window::Window(const std::string& title,
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
 #ifdef WIN32
-    SDL_SysWMinfo wmInfo;
-    SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(impl_->window, &wmInfo);
-    io.ImeWindowHandle = wmInfo.info.win.window;
+    io.ImeWindowHandle = GetNativeDrawable();
 #endif
     // ImGUI's io.KeysDown is indexed by our scan codes, and we fill out
     // io.KeyMap to map from our code to ImGui's code.
