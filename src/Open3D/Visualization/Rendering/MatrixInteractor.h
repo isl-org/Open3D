@@ -43,6 +43,7 @@ public:
 
     void SetViewSize(int width, int height);
 
+    const geometry::AxisAlignedBoundingBox& GetBoundingBox() const;
     virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds);
 
     void SetMouseDownInfo(const Camera::Transform& matrix,

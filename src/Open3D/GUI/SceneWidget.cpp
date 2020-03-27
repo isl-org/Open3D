@@ -152,8 +152,9 @@ public:
 
     void Key(const KeyEvent& e) override {
         if (e.type != KeyEvent::Type::UP) {
-            const float dist = 0.1f;
-            const float angleRad = 0.01f;
+            auto &bounds = cameraControls_->GetBoundingBox();
+            const float dist = 0.005f * bounds.GetExtent().norm();
+            const float angleRad = 0.0075f;
 
             auto hasKey = [&e](uint32_t key) -> bool { return (e.key == key); };
 
