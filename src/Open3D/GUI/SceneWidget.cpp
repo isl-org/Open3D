@@ -152,7 +152,7 @@ public:
 
     void Key(const KeyEvent& e) override {
         if (e.type != KeyEvent::Type::UP) {
-            auto &bounds = cameraControls_->GetBoundingBox();
+            auto& bounds = cameraControls_->GetBoundingBox();
             const float dist = 0.005f * bounds.GetExtent().norm();
             const float angleRad = 0.0075f;
 

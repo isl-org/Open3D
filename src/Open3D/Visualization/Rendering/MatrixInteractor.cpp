@@ -36,7 +36,8 @@ void MatrixInteractor::SetViewSize(int width, int height) {
     viewHeight_ = height;
 }
 
-const geometry::AxisAlignedBoundingBox& MatrixInteractor::GetBoundingBox() const {
+const geometry::AxisAlignedBoundingBox& MatrixInteractor::GetBoundingBox()
+        const {
     return modelBounds_;
 }
 

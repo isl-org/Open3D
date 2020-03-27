@@ -50,17 +50,11 @@ Button::Button(const char* title) : impl_(new Button::Impl()) {
 
 Button::~Button() {}
 
-bool Button::GetIsToggleable() const {
-    return impl_->isToggleable;
-}
+bool Button::GetIsToggleable() const { return impl_->isToggleable; }
 
-void Button::SetToggleable(bool toggles) {
-    impl_->isToggleable = toggles;
-}
+void Button::SetToggleable(bool toggles) { impl_->isToggleable = toggles; }
 
-bool Button::GetIsOn() const {
-    return impl_->isOn;
-}
+bool Button::GetIsOn() const { return impl_->isOn; }
 
 void Button::SetOn(bool isOn) {
     if (impl_->isToggleable) {
@@ -86,14 +80,17 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
 
     bool oldIsOn = impl_->isOn;
     if (oldIsOn) {
-        ImGui::PushStyleColor(ImGuiCol_Text,
-                              util::colorToImgui(context.theme.buttonOnTextColor));
+        ImGui::PushStyleColor(
+                ImGuiCol_Text,
+                util::colorToImgui(context.theme.buttonOnTextColor));
         ImGui::PushStyleColor(ImGuiCol_Button,
                               util::colorToImgui(context.theme.buttonOnColor));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                              util::colorToImgui(context.theme.buttonOnHoverColor));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
-                              util::colorToImgui(context.theme.buttonOnActiveColor));
+        ImGui::PushStyleColor(
+                ImGuiCol_ButtonHovered,
+                util::colorToImgui(context.theme.buttonOnHoverColor));
+        ImGui::PushStyleColor(
+                ImGuiCol_ButtonActive,
+                util::colorToImgui(context.theme.buttonOnActiveColor));
     }
     DrawImGuiPushEnabledState();
     ImGui::SetCursorPos(

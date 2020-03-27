@@ -31,7 +31,7 @@
 
 #include <imgui.h>
 
-#include<algorithm>  // for min, max
+#include <algorithm>  // for min, max
 #include <cmath>
 #include <sstream>
 #include <unordered_set>

@@ -692,8 +692,8 @@ GuiVisualizer::GuiVisualizer(
     });
 
     gui::Margins indent(em, 0, 0, 0);
-    auto viewCtrls = std::make_shared<gui::CollapsableVert>("View controls",
-                                                            0, indent);
+    auto viewCtrls =
+            std::make_shared<gui::CollapsableVert>("View controls", 0, indent);
 
     // ... view manipulator buttons
     settings.wgtMouseArcball = std::make_shared<SmallToggleButton>("Arcball");
@@ -744,7 +744,7 @@ GuiVisualizer::GuiVisualizer(
     cameraControls->AddChild(settings.wgtMouseFly);
     cameraControls->AddChild(gui::Horiz::MakeFixed(em));
     cameraControls->AddChild(settings.wgtMouseSun);
-    //cameraControls->AddChild(settings.wgtMouseIBL);
+    // cameraControls->AddChild(settings.wgtMouseIBL);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);
