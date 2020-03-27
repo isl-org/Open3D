@@ -71,6 +71,11 @@ static void CPUExpElementKernel(const void* src, void* dst) {
     *static_cast<scalar_t*>(dst) = std::exp(*static_cast<const scalar_t*>(src));
 }
 
+template <typename scalar_t>
+static void CPUAbsElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::abs(*static_cast<const scalar_t*>(src));
+}
+
 void CopyCPU(const Tensor& src, Tensor& dst) {
     // src and dst have been checked to have the same shape, dtype, device
     SizeVector shape = src.GetShape();
@@ -134,6 +139,11 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 assert_dtype_is_float(dtype);
                 CPULauncher::LaunchUnaryEWKernel(indexer,
                                                  CPUExpElementKernel<scalar_t>);
+                break;
+            case UnaryEWOpCode::Abs:
+                assert_dtype_is_float(dtype);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUAbsElementKernel<scalar_t>);
                 break;
             default:
                 utility::LogError("Unimplemented op_code for UnaryEWCPU");

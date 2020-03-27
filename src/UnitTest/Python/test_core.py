@@ -539,3 +539,31 @@ def test_advanced_index_set_mixed():
     o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = o3_fill_val
     np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = np_fill_val
     np.testing.assert_equal(o3_src.numpy(), np_src)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_tensor_from_to_pytorch(device):
+    if not _torch_imported:
+        return
+
+
+@pytest.mark.parametrize("np_func_name,o3_func_name", [("sqrt", "sqrt"),
+                                                       ("sin", "sin"),
+                                                       ("cos", "cos"),
+                                                       ("negative", "neg"),
+                                                       ("exp", "exp"),
+                                                       ("abs", "abs")])
+def test_unary_elementwise(np_func_name, o3_func_name):
+    np_t = np.array([-3, -2, -1, 9, 1, 2, 3]).astype(np.float32)
+    o3_t = o3d.Tensor(np_t)
+
+    # Test non-in-place version
+    np.seterr(invalid='ignore')  # e.g. sqrt of negative should be -nan
+    np.testing.assert_allclose(
+        getattr(o3_t, o3_func_name)().numpy(),
+        getattr(np, np_func_name)(np_t))
+
+    # Test in-place version
+    o3_func_name_inplace = o3_func_name + "_"
+    getattr(o3_t, o3_func_name_inplace)()
+    np.testing.assert_allclose(o3_t.numpy(), getattr(np, np_func_name)(np_t))

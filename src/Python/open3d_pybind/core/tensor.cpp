@@ -274,6 +274,8 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("neg_", &Tensor::Neg_);
     tensor.def("exp", &Tensor::Exp);
     tensor.def("exp_", &Tensor::Exp_);
+    tensor.def("abs", &Tensor::Abs);
+    tensor.def("abs_", &Tensor::Abs_);
 
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });
