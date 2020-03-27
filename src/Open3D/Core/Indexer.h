@@ -77,16 +77,17 @@ struct TensorRef {
 };
 
 enum class DtypePolicy {
-    NONE,         // Do not check. Expects the kernel to handle the conversion.
-                  // E.g. in Copy kernel with type casting.
-    ASSERT_SAME,  // Assert same Dtypes for inputs and output
-    CAST,         // Cast to common dtype.
-                  // E.g. Tensor::Add:
-                  // int64   + int32   = int64   (valid)
-                  // float32 + float32 = int32   (invalid)
-                  // float64 + float64 = float32 (valid)
-    CAST_INPUTS   // Cast inputs to common dtypes (e.g. comparison ops have
-                  // boolean output).
+    NONE,  // Do not check. Expects the kernel to handle the conversion.
+           // E.g. in Copy kernel with type casting.
+    ASSERT_SAME_OR_BOOL_OUT,  // Assert same Dtypes for inputs and output, with
+                              // the exception that the output can be bool.
+    CAST,                     // Cast to common dtype.
+                              // E.g. Tensor::Add:
+                              // int64   + int32   = int64   (valid)
+                              // float32 + float32 = int32   (invalid)
+                              // float64 + float64 = float32 (valid)
+    CAST_INPUTS  // Cast inputs to common dtypes (e.g. comparison ops have
+                 // boolean output).
 };
 
 /// Indexing engine for elementwise ops with broadcasting support.
@@ -106,19 +107,32 @@ public:
     /// all outputs.
     Indexer(const std::vector<Tensor>& input_tensors,
             const Tensor& output_tensor,
-            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME) {
+            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME_OR_BOOL_OUT) {
+        // Must have at least one input input tensor(s)
+        if (input_tensors.size() == 0) {
+            utility::LogError("Must have at least one input tensor(s).");
+        }
+
         // Dtype sanity check and handling.
         if (dtype_policy == DtypePolicy::CAST ||
             dtype_policy == DtypePolicy::CAST_INPUTS) {
             utility::LogError("Unimplemented dtype_policy.");
-        } else if (dtype_policy == DtypePolicy::ASSERT_SAME) {
+        } else if (dtype_policy == DtypePolicy::ASSERT_SAME_OR_BOOL_OUT) {
+            Dtype ref_dtype = input_tensors[0].GetDtype();
+
             Dtype output_dtype = output_tensor.GetDtype();
+            if (output_dtype != Dtype::Bool && output_dtype != ref_dtype) {
+                utility::LogError("Dype mismatch {} != {}.",
+                                  DtypeUtil::ToString(output_dtype),
+                                  DtypeUtil::ToString(ref_dtype));
+            }
+
             for (const auto& input_tensor : input_tensors) {
-                if (input_tensor.GetDtype() != output_dtype) {
+                if (input_tensor.GetDtype() != ref_dtype) {
                     utility::LogError(
                             "Dype mismatch {} != {}.",
                             DtypeUtil::ToString(input_tensor.GetDtype()),
-                            DtypeUtil::ToString(output_dtype));
+                            DtypeUtil::ToString(ref_dtype));
                 }
             }
         }

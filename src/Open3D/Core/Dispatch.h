@@ -73,3 +73,13 @@
                 utility::LogError("Unsupported data type."); \
         }                                                    \
     }()
+
+#define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(DTYPE, LAMBDA_FUNC) \
+    [&] {                                                        \
+        if (DTYPE == open3d::Dtype::Bool) {                      \
+            using scalar_t = bool;                               \
+            return LAMBDA_FUNC();                                \
+        } else {                                                 \
+            DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, LAMBDA_FUNC);      \
+        }                                                        \
+    }()
