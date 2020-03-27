@@ -54,7 +54,7 @@ matrix:
         - cd build
         - which python
         - python -V
-        - pip install -U -q sphinx sphinx-rtd-theme nbsphinx
+        - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow
         - cmake -DPYTHON_EXECUTABLE=`which python` ..
         - make install-pip-package -j$NPROC
         - python -c "from open3d import *; import open3d; print(open3d)"

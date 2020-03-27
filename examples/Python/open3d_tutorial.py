@@ -8,6 +8,7 @@ import os
 import urllib
 import tarfile
 import gzip
+import zipfile
 import shutil
 
 interactive = True
@@ -29,11 +30,14 @@ def jupyter_draw_geometries(
         zoom=None,
 ):
     vis = o3d.visualization.Visualizer()
-    vis.create_window(window_name=window_name,
-                      width=width,
-                      height=height,
-                      left=left,
-                      top=top)
+    vis.create_window(
+        window_name=window_name,
+        width=width,
+        height=height,
+        left=left,
+        top=top,
+        visible=interactive,
+    )
     vis.get_render_option().point_show_normal = point_show_normal
     vis.get_render_option().mesh_show_wireframe = mesh_show_wireframe
     vis.get_render_option().mesh_show_back_face = mesh_show_back_face
@@ -77,6 +81,20 @@ def _relative_path(path):
     script_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_path)
     return os.path.join(script_dir, path)
+
+
+def download_fountain_dataset():
+    fountain_path = _relative_path("../TestData/fountain_small")
+    fountain_zip_path = _relative_path("../TestData/fountain.zip")
+    if not os.path.exists(fountain_path):
+        print("downloading fountain dataset")
+        url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
+        urllib.request.urlretrieve(url, fountain_zip_path)
+        print("extract fountain dataset")
+        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
+            zip_ref.extractall(os.path.dirname(fountain_path))
+        os.remove(fountain_zip_path)
+    return fountain_path
 
 
 def get_non_manifold_edge_mesh():
