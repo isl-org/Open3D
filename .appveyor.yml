@@ -14,6 +14,9 @@ environment:
   - PYTHON: 36
     CONFIG: Release
     SHARED: ON
+  - PYTHON: 36
+    CONFIG: Debug
+    SHARED: OFF  # Only check Debug mode with SHARED=OFF to save time.
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") {
