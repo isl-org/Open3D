@@ -351,6 +351,24 @@ class Tensor(open3d_pybind.Tensor):
         return self.div_(value)
 
 
+def cast_to_py_tensorlist(func):
+    """
+    Args:
+        func: function returning a `o3d.open3d_pybind.Tensor`.
+
+    Return:
+        A function which returns a python object `o3d.Tensor`.
+    """
+
+    def wrapped_func(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        wrapped_result = TensorList([0])
+        wrapped_result.shallow_copy_from(result)
+        return wrapped_result
+
+    return wrapped_func
+
+
 class TensorList(open3d_pybind.TensorList):
     """
     Open3D TensorList class. A TensorList is an extendable tensor at the 0-th dimension.
@@ -366,7 +384,7 @@ class TensorList(open3d_pybind.TensorList):
             raise ValueError('shape must be a list, tuple, or o3d.SizeVector')
 
         if dtype is None:
-            dtype = _numpy_dtype_to_dtype(data.dtype)
+            dtype = o3d.Dtype.Float32
         if device is None:
             device = o3d.Device("CPU:0")
         if size is None:
@@ -374,7 +392,51 @@ class TensorList(open3d_pybind.TensorList):
 
         super(TensorList, self).__init__(shape, dtype, device, size)
 
+    @cast_to_py_tensor
+    def __getitem__(self, index):
+        '''
+        \index can be a
+        \slice, or \list or \tuple of int: return a TensorList
+        \int: return a Tensor
+        '''
+        if isinstance(index, int):
+            return self._getitem(index)
+        else:
+            raise ValueError('Unsupported index type, only int is supported.')
+
+    def __setitem__(self, index, value):
+        '''
+        If \index is a single int, \value is a Tensor;
+        If \index is a list of ints, \value is correspondingly a TensorList.
+        '''
+        if isinstance(index, int) and isinstance(value, o3d.Tensor):
+            self._setitem(index, value)
+
+        else:
+            raise ValueError(
+                'Unsupported index type.'
+                'Use tensorlist.tensor() to assign value with slices or advanced indexing'
+            )
+
+    @cast_to_py_tensorlist
+    def __iadd__(self, other):
+        return super(TensorList, self).__iadd__(other)
+
+    @cast_to_py_tensorlist
+    def __add__(self, other):
+        return super(TensorList, self).__add__(other)
+
+    @cast_to_py_tensor
+    def tensor(self):
+        return super(TensorList, self).tensor()
+
     @staticmethod
+    @cast_to_py_tensorlist
+    def concat(tl_a, tl_b):
+        return super(TensorList, TensorList).concat(tl_a, tl_b)
+
+    @staticmethod
+    @cast_to_py_tensorlist
     def from_tensor(tensor, inplace=False):
         """
         Returns a TensorList from an existing tensor.
@@ -390,6 +452,7 @@ class TensorList(open3d_pybind.TensorList):
         return super(TensorList, TensorList).from_tensor(tensor, inplace)
 
     @staticmethod
+    @cast_to_py_tensorlist
     def from_tensors(tensors, device=None):
         """
         Returns a TensorList from a list of existing tensors.

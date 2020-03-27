@@ -37,6 +37,10 @@ void pybind_core_tensor_key(py::module& m) {
     none_type.def(py::init([]() { return new NoneType(); }));
 
     py::class_<TensorKey> tensor_key(m, "TensorKey");
+    tensor_key.def("get_start", &TensorKey::GetStart)
+            .def("get_stop", &TensorKey::GetStop)
+            .def("get_step", &TensorKey::GetStep);
+
     tensor_key.def_static("index", &TensorKey::Index);
     tensor_key.def_static("slice",
                           [](int64_t start, int64_t stop, int64_t step) {

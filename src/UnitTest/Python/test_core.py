@@ -494,6 +494,52 @@ def test_cast_to_py_tensor():
     assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor
 
 
+def test_tensorlist_indexing():
+    # 5 x (3, 4)
+    dtype = o3d.Dtype.Float32
+    device = o3d.Device("CPU:0")
+    np_t = np.ones((5, 3, 4), dtype=np.float32)
+    t = o3d.Tensor(np_t, dtype, device)
+
+    tl = o3d.TensorList.from_tensor(t, inplace=True)
+
+    # set slices [1, 3]
+    tl.tensor()[1:5:2] = o3d.Tensor(3 * np.ones((2, 3, 4), dtype=np.float32))
+
+    # set items [4]
+    tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
+
+    # get items
+    np.testing.assert_allclose(tl[0].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[1].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[2].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[3].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4),
+                                                       dtype=np.float32))
+
+    # push_back
+    tl.push_back(o3d.Tensor(-1 * np.ones((3, 4)), dtype, device))
+    assert tl.size() == 6
+    np.testing.assert_allclose(tl[5].numpy(), -1 * np.ones(
+        (3, 4), dtype=np.float32))
+
+    tl += tl
+    assert tl.size() == 12
+    for offset in [0, 6]:
+        np.testing.assert_allclose(tl[0 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[1 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[2 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[3 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[4 + offset].numpy(),
+                                   np.zeros((3, 4), dtype=np.float32))
+
+
 @pytest.mark.parametrize("device", list_devices())
 def test_tensor_from_to_pytorch(device):
     if not _torch_imported:

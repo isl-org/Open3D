@@ -133,7 +133,7 @@ TEST_P(TensorListPermuteDevices, AssignOperator) {
     TensorList tensor_list_a = {t2, t2, t2};
     TensorList tensor_list_b = {t0, t1};
 
-    tensor_list_a.Slice(0, 2) = tensor_list_b;
+    tensor_list_a.AsTensor().Slice(0, 0, 2) = tensor_list_b.AsTensor();
     EXPECT_EQ(tensor_list_a.AsTensor().ToFlatVector<float>(),
               tensor_list_gt.AsTensor().ToFlatVector<float>());
 }
@@ -213,6 +213,14 @@ TEST_P(TensorListPermuteDevices, AccessOperator) {
     EXPECT_EQ(tensor_list[0].ToFlatVector<float>(), t0.ToFlatVector<float>());
     EXPECT_EQ(tensor_list[1].ToFlatVector<float>(), t1.ToFlatVector<float>());
     EXPECT_EQ(tensor_list[2].ToFlatVector<float>(), t2.ToFlatVector<float>());
+
+    tensor_list[0] = t2;
+    tensor_list[1] = t1;
+    tensor_list[2] = t0;
+
+    EXPECT_EQ(tensor_list.AsTensor().ToFlatVector<float>(),
+              std::vector<float>(
+                      {2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}));
 }
 
 TEST_P(TensorListPermuteDevices, Slice) {
@@ -226,18 +234,9 @@ TEST_P(TensorListPermuteDevices, Slice) {
     std::vector<Tensor> tensors = {t0, t1, t2, t3};
     TensorList tensor_list(tensors, device);
 
-    TensorList new_tensor_list = tensor_list.Slice(0, 3, 2);
-    EXPECT_EQ(new_tensor_list.GetSize(), 2);
-    EXPECT_EQ(new_tensor_list.GetReservedSize(), 2);
-    EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
+    Tensor tensor = tensor_list.AsTensor().Slice(0, 0, 3, 2);
+    EXPECT_EQ(tensor.ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2}));
-
-    new_tensor_list.PushBack(t1);
-    EXPECT_EQ(new_tensor_list.GetSize(), 3);
-    EXPECT_EQ(new_tensor_list.GetReservedSize(), 8);
-    EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
-              std::vector<float>(
-                      {0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1}));
 }
 
 TEST_P(TensorListPermuteDevices, IndexGet) {
@@ -251,11 +250,10 @@ TEST_P(TensorListPermuteDevices, IndexGet) {
     std::vector<Tensor> tensors = {t0, t1, t2, t3};
     TensorList tensor_list(tensors, device);
 
-    std::vector<int64_t> indices = {0, -1, 2};
-    TensorList new_tensor_list = tensor_list.IndexGet(indices);
-    EXPECT_EQ(new_tensor_list.GetSize(), 3);
-    EXPECT_EQ(new_tensor_list.GetReservedSize(), 8);
-    EXPECT_EQ(new_tensor_list.AsTensor().ToFlatVector<float>(),
+    std::vector<Tensor> indices = {Tensor(std::vector<int64_t>({0, -1, 2}), {3},
+                                          Dtype::Int64, device)};
+    Tensor tensor = tensor_list.AsTensor().IndexGet(indices);
+    EXPECT_EQ(tensor.ToFlatVector<float>(),
               std::vector<float>(
                       {0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2}));
 }
