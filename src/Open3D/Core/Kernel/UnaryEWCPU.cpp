@@ -73,7 +73,14 @@ static void CPUExpElementKernel(const void* src, void* dst) {
 
 template <typename scalar_t>
 static void CPUAbsElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = std::abs(*static_cast<const scalar_t*>(src));
+    *static_cast<scalar_t*>(dst) =
+            std::abs(static_cast<double>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename src_t, typename dst_t>
+static void CPULogicalNotElementKernel(const void* src, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            !static_cast<bool>(*static_cast<const src_t*>(src)));
 }
 
 void CopyCPU(const Tensor& src, Tensor& dst) {
@@ -89,9 +96,9 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                 DtypeUtil::ByteSize(src_dtype) * shape.NumElements());
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
-        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
             using src_t = scalar_t;
-            DISPATCH_DTYPE_TO_TEMPLATE(dst_dtype, [&]() {
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                 using dst_t = scalar_t;
                 CPULauncher::LaunchUnaryEWKernel(
                         indexer, CPUCopyElementKernel<src_t, dst_t>);
@@ -102,9 +109,10 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
 }
 
 void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
-    // src and dst have been chaged to have the same shape, dtype, device
-    Dtype dtype = src.GetDtype();
-    Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME);
+    // src and dst have been chaged to have the same shape, device
+    Dtype src_dtype = src.GetDtype();
+    Dtype dst_dtype = dst.GetDtype();
+    Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME_OR_BOOL_OUT);
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
@@ -114,42 +122,52 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         }
     };
 
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        switch (op_code) {
-            case UnaryEWOpCode::Sqrt:
-                assert_dtype_is_float(dtype);
+    if (op_code == UnaryEWOpCode::LogicalNot) {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+            using src_t = scalar_t;
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                using dst_t = scalar_t;
                 CPULauncher::LaunchUnaryEWKernel(
-                        indexer, CPUSqrtElementKernel<scalar_t>);
-                break;
-            case UnaryEWOpCode::Sin:
-                assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel(indexer,
-                                                 CPUSinElementKernel<scalar_t>);
-                break;
-            case UnaryEWOpCode::Cos:
-                assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel(indexer,
-                                                 CPUCosElementKernel<scalar_t>);
-                break;
-            case UnaryEWOpCode::Neg:
-                CPULauncher::LaunchUnaryEWKernel(indexer,
-                                                 CPUNegElementKernel<scalar_t>);
-                break;
-            case UnaryEWOpCode::Exp:
-                assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel(indexer,
-                                                 CPUExpElementKernel<scalar_t>);
-                break;
-            case UnaryEWOpCode::Abs:
-                assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel(indexer,
-                                                 CPUAbsElementKernel<scalar_t>);
-                break;
-            default:
-                utility::LogError("Unimplemented op_code for UnaryEWCPU");
-                break;
-        }
-    });
+                        indexer, CPULogicalNotElementKernel<src_t, dst_t>);
+            });
+        });
+    } else {
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            switch (op_code) {
+                case UnaryEWOpCode::Sqrt:
+                    assert_dtype_is_float(src_dtype);
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUSqrtElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Sin:
+                    assert_dtype_is_float(src_dtype);
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUSinElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Cos:
+                    assert_dtype_is_float(src_dtype);
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUCosElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Neg:
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUNegElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Exp:
+                    assert_dtype_is_float(src_dtype);
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUExpElementKernel<scalar_t>);
+                    break;
+                case UnaryEWOpCode::Abs:
+                    CPULauncher::LaunchUnaryEWKernel(
+                            indexer, CPUAbsElementKernel<scalar_t>);
+                    break;
+                default:
+                    utility::LogError("Unimplemented op_code for UnaryEWCPU");
+                    break;
+            }
+        });
+    }
 }
 
 }  // namespace kernel

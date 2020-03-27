@@ -14,6 +14,8 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         return o3d.Dtype.Int64
     elif numpy_dtype == np.uint8:
         return o3d.Dtype.UInt8
+    elif numpy_dtype == np.bool:
+        return o3d.Dtype.Bool
     else:
         raise ValueError("Unsupported numpy dtype:", numpy_dtype)
 
@@ -163,7 +165,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def add_(self, value):
         """
-        In-place version of Tensor.add
+        Inplace version of Tensor.add.
         """
         return super(Tensor, self).add_(value)
 
@@ -177,7 +179,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def sub_(self, value):
         """
-        In-place version of Tensor.sub
+        Inplace version of Tensor.sub.
         """
         return super(Tensor, self).sub_(value)
 
@@ -191,7 +193,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def mul_(self, value):
         """
-        In-place version of Tensor.mul
+        Inplace version of Tensor.mul.
         """
         return super(Tensor, self).mul_(value)
 
@@ -205,79 +207,9 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def div_(self, value):
         """
-        In-place version of Tensor.div
+        Inplace version of Tensor.div.
         """
         return super(Tensor, self).div_(value)
-
-    @cast_to_py_tensor
-    def sqrt(self):
-        """
-        Returns element-wise square root of a tensor.
-        """
-        return super(Tensor, self).sqrt()
-
-    @cast_to_py_tensor
-    def sqrt_(self):
-        """
-        In-place version of Tensor.sqrt().
-        """
-        return super(Tensor, self).sqrt_()
-
-    @cast_to_py_tensor
-    def sin(self):
-        """
-        Returns element-wise sin of a tensor.
-        """
-        return super(Tensor, self).sin()
-
-    @cast_to_py_tensor
-    def sin_(self):
-        """
-        In-place version of Tensor.sin().
-        """
-        return super(Tensor, self).sin_()
-
-    @cast_to_py_tensor
-    def cos(self):
-        """
-        Returns element-wise cosine of a tensor.
-        """
-        return super(Tensor, self).cos()
-
-    @cast_to_py_tensor
-    def cos_(self):
-        """
-        In-place version of Tensor.cos().
-        """
-        return super(Tensor, self).cos_()
-
-    @cast_to_py_tensor
-    def neg(self):
-        """
-        Returns element-wise negation of a tensor.
-        """
-        return super(Tensor, self).neg()
-
-    @cast_to_py_tensor
-    def neg_(self):
-        """
-        In-place version of Tensor.neg().
-        """
-        return super(Tensor, self).neg_()
-
-    @cast_to_py_tensor
-    def exp(self):
-        """
-        Returns element-wise base-e exponential of a tensor.
-        """
-        return super(Tensor, self).exp()
-
-    @cast_to_py_tensor
-    def exp_(self):
-        """
-        In-place version of Tensor.exp().
-        """
-        return super(Tensor, self).exp_()
 
     @cast_to_py_tensor
     def abs(self):
@@ -289,9 +221,164 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def abs_(self):
         """
-        In-place version of Tensor.abs().
+        Inplace version of Tensor.abs.
         """
         return super(Tensor, self).abs_()
+
+    @cast_to_py_tensor
+    def logical_and(self, value):
+        """
+        Element-wise logical and operation.
+
+        If the tensor is not boolean, zero will be treated as False, while
+        non-zero values will be treated as True.
+        """
+        return super(Tensor, self).logical_and(value)
+
+    @cast_to_py_tensor
+    def logical_and_(self, value):
+        """
+        Inplace version of Tensor.logical_and.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).logical_and_(value)
+
+    @cast_to_py_tensor
+    def logical_or(self, value):
+        """
+        Element-wise logical or operation.
+
+        If the tensor is not boolean, zero will be treated as False, while
+        non-zero values will be treated as True.
+        """
+        return super(Tensor, self).logical_or(value)
+
+    @cast_to_py_tensor
+    def logical_or_(self, value):
+        """
+        Inplace version of Tensor.logical_or.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).logical_or_(value)
+
+    @cast_to_py_tensor
+    def logical_xor(self, value):
+        """
+        Element-wise logical exclusive-or operation.
+
+        If the tensor is not boolean, zero will be treated as False, while
+        non-zero values will be treated as True.
+        """
+        return super(Tensor, self).logical_xor(value)
+
+    @cast_to_py_tensor
+    def logical_xor_(self, value):
+        """
+        Inplace version of Tensor.logical_xor.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).logical_xor_(value)
+
+    @cast_to_py_tensor
+    def gt(self, value):
+        """
+        Element-wise greater than operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).gt(value)
+
+    @cast_to_py_tensor
+    def gt_(self, value):
+        """
+        Inplace version of Tensor.gt.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).gt_(value)
+
+    @cast_to_py_tensor
+    def lt(self, value):
+        """
+        Element-wise less than operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).lt(value)
+
+    @cast_to_py_tensor
+    def lt_(self, value):
+        """
+        Inplace version of Tensor.lt.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).lt_(value)
+
+    @cast_to_py_tensor
+    def ge(self, value):
+        """
+        Element-wise greater-than-or-equals-to operation, returning a new
+        boolean tensor.
+        """
+        return super(Tensor, self).ge(value)
+
+    @cast_to_py_tensor
+    def ge_(self, value):
+        """
+        Inplace version of Tensor.ge.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).ge_(value)
+
+    @cast_to_py_tensor
+    def le(self, value):
+        """
+        Element-wise less-than-or-equals-to than operation, returning a new
+        boolean tensor.
+        """
+        return super(Tensor, self).le(value)
+
+    @cast_to_py_tensor
+    def le_(self, value):
+        """
+        Inplace version of Tensor.le.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).le_(value)
+
+    @cast_to_py_tensor
+    def eq(self, value):
+        """
+        Element-wise equal operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).eq(value)
+
+    @cast_to_py_tensor
+    def eq_(self, value):
+        """
+        Inplace version of Tensor.eq.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).eq_(value)
+
+    @cast_to_py_tensor
+    def ne(self, value):
+        """
+        Element-wise not-equal operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).ne(value)
+
+    @cast_to_py_tensor
+    def ne_(self, value):
+        """
+        Inplace version of Tensor.ne.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).ne_(value)
 
     @cast_to_py_tensor
     def to(self, dtype, copy=False):
@@ -306,49 +393,57 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).to(dtype, copy)
 
-    @cast_to_py_tensor
     def __add__(self, value):
         return self.add(value)
 
-    @cast_to_py_tensor
     def __iadd__(self, value):
         return self.add_(value)
 
-    @cast_to_py_tensor
     def __sub__(self, value):
         return self.sub(value)
 
-    @cast_to_py_tensor
     def __isub__(self, value):
         return self.sub_(value)
 
-    @cast_to_py_tensor
     def __mul__(self, value):
         return self.mul(value)
 
-    @cast_to_py_tensor
     def __imul__(self, value):
         return self.mul_(value)
 
-    @cast_to_py_tensor
     def __truediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
-    @cast_to_py_tensor
     def __itruediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
-    @cast_to_py_tensor
     def __floordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
-    @cast_to_py_tensor
     def __ifloordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
+
+    def __lt__(self, value):
+        return self.lt(value)
+
+    def __le__(self, value):
+        return self.le(value)
+
+    def __eq__(self, value):
+        return self.eq(value)
+
+    def __ne__(self, value):
+        return self.ne(value)
+
+    def __gt__(self, value):
+        return self.gt(value)
+
+    def __ge__(self, value):
+        return self.ge(value)
 
 
 class TensorList(open3d_pybind.TensorList):

@@ -35,6 +35,15 @@
 namespace open3d {
 namespace kernel {
 
+const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class::hash>
+        s_boolean_binary_ew_op_codes{
+                BinaryEWOpCode::LogicalAnd, BinaryEWOpCode::LogicalOr,
+                BinaryEWOpCode::LogicalXor, BinaryEWOpCode::Gt,
+                BinaryEWOpCode::Lt,         BinaryEWOpCode::Ge,
+                BinaryEWOpCode::Le,         BinaryEWOpCode::Eq,
+                BinaryEWOpCode::Ne,
+        };
+
 void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,
               Tensor& dst,
