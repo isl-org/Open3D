@@ -281,6 +281,16 @@ public:
     }
 };
 
+//----
+class SmallToggleButton : public SmallButton {
+    using Super = SmallButton;
+
+public:
+    explicit SmallToggleButton(const char *title) : SmallButton(title) {
+        SetToggleable(true);
+    }
+};
+
 }  // namespace
 
 struct LightingProfile {
@@ -461,6 +471,10 @@ struct GuiVisualizer::Impl {
         visualization::LightHandle hDirectionalLight;
 
         std::shared_ptr<gui::Widget> wgtBase;
+        std::shared_ptr<gui::Button> wgtMouseArcball;
+        std::shared_ptr<gui::Button> wgtMouseFly;
+        std::shared_ptr<gui::Button> wgtMouseSun;
+        std::shared_ptr<gui::Button> wgtMouseIBL;
         std::shared_ptr<gui::Combobox> wgtLightingProfile;
         std::shared_ptr<gui::CollapsableVert> wgtAdvanced;
         std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
@@ -682,39 +696,55 @@ GuiVisualizer::GuiVisualizer(
                                                             0, indent);
 
     // ... view manipulator buttons
-    auto viewRotate = std::make_shared<SmallButton>("Arcball");
-    viewRotate->SetOnClicked([this]() {
+    settings.wgtMouseArcball = std::make_shared<SmallToggleButton>("Arcball");
+    this->impl_->settings.wgtMouseArcball->SetOn(true);
+    settings.wgtMouseArcball->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(
                 gui::SceneWidget::Controls::ROTATE_OBJ);
         this->SetTickEventsEnabled(false);
+        this->impl_->settings.wgtMouseArcball->SetOn(true);
+        this->impl_->settings.wgtMouseFly->SetOn(false);
+        this->impl_->settings.wgtMouseSun->SetOn(false);
+        this->impl_->settings.wgtMouseIBL->SetOn(false);
     });
-    auto viewFPS = std::make_shared<SmallButton>("Fly");
-    viewFPS->SetOnClicked([this]() {
+    settings.wgtMouseFly = std::make_shared<SmallToggleButton>("Fly");
+    settings.wgtMouseFly->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::FPS);
         this->SetFocusWidget(this->impl_->scene.get());
         this->SetTickEventsEnabled(true);
+        this->impl_->settings.wgtMouseArcball->SetOn(false);
+        this->impl_->settings.wgtMouseFly->SetOn(true);
+        this->impl_->settings.wgtMouseSun->SetOn(false);
+        this->impl_->settings.wgtMouseIBL->SetOn(false);
     });
-    auto viewSun = std::make_shared<SmallButton>("Sun");
-    viewSun->SetOnClicked([this]() {
+    settings.wgtMouseSun = std::make_shared<SmallToggleButton>("Sun");
+    settings.wgtMouseSun->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(
                 gui::SceneWidget::Controls::ROTATE_SUN);
         this->SetTickEventsEnabled(false);
+        this->impl_->settings.wgtMouseArcball->SetOn(false);
+        this->impl_->settings.wgtMouseFly->SetOn(false);
+        this->impl_->settings.wgtMouseSun->SetOn(true);
+        this->impl_->settings.wgtMouseIBL->SetOn(false);
     });
-    auto viewIBL = std::make_shared<SmallButton>("IBL");
-    viewIBL->SetEnabled(false);
-    viewIBL->SetOnClicked([this]() {
+    settings.wgtMouseIBL = std::make_shared<SmallToggleButton>("IBL");
+    settings.wgtMouseIBL->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(
                 gui::SceneWidget::Controls::ROTATE_IBL);
         this->SetTickEventsEnabled(false);
+        this->impl_->settings.wgtMouseArcball->SetOn(false);
+        this->impl_->settings.wgtMouseFly->SetOn(false);
+        this->impl_->settings.wgtMouseSun->SetOn(false);
+        this->impl_->settings.wgtMouseIBL->SetOn(true);
     });
 
     auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
-    cameraControls->AddChild(viewRotate);
-    cameraControls->AddChild(viewFPS);
+    cameraControls->AddChild(settings.wgtMouseArcball);
+    cameraControls->AddChild(settings.wgtMouseFly);
     cameraControls->AddChild(gui::Horiz::MakeFixed(em));
-    cameraControls->AddChild(viewSun);
-    cameraControls->AddChild(viewIBL);
+    cameraControls->AddChild(settings.wgtMouseSun);
+    //cameraControls->AddChild(settings.wgtMouseIBL);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);

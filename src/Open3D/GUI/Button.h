@@ -38,6 +38,12 @@ public:
     explicit Button(const char* title);
     ~Button();
 
+    bool GetIsToggleable() const;
+    void SetToggleable(bool toggles);
+
+    bool GetIsOn() const;
+    void SetOn(bool isOn);
+
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;
