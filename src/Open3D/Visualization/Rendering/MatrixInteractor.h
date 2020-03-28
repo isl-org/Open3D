@@ -67,10 +67,6 @@ public:
     /// Rotates about the forward axis of the matrix
     virtual void RotateZ(int dx, int dy);
 
-    /// Rotates the camera as in an first-person shooter game;
-    /// that is, the center of rotation is the camera.
-    virtual void RotateFPS(int dx, int dy);
-
     enum class DragType { MOUSE, WHEEL, TWO_FINGER };
 
     /// Moves the matrix along the forward axis. (This is one type

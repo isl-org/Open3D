@@ -44,7 +44,6 @@ public:
 
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
-    void RotateFPS(int dx, int dy) override;
     void Dolly(int dy, DragType type) override;
     void Dolly(float zDist, Camera::Transform matrixIn) override;
 
@@ -55,6 +54,8 @@ public:
 
     void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
     void MoveLocal(const Eigen::Vector3f& v);
+
+    void RotateFPS(int dx, int dy);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();

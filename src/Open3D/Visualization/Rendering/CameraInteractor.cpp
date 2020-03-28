@@ -60,7 +60,7 @@ void CameraInteractor::RotateFPS(int dx, int dy) {
     // matrix, and the camera's position, so we need to update Super's
     // matrix information.
     Super::SetMouseDownInfo(camera_->GetModelMatrix(), camera_->GetPosition());
-    Super::RotateFPS(-dx, -dy);
+    Super::Rotate(-dx, -dy);
     camera_->SetModelMatrix(GetMatrix());
 }
 
