@@ -114,12 +114,6 @@ int keymodsFromGLFW(int glfwMods) {
         keymods |= int(KeyModifier::META);
 #endif  // __APPLE__
     }
-    if (glfwMods & GLFW_MOD_CAPS_LOCK) {
-        keymods |= int(KeyModifier::CAPSLOCK);
-    }
-    if (glfwMods & GLFW_MOD_NUM_LOCK) {
-        keymods |= int(KeyModifier::NUMLOCK);
-    }
     return keymods;
 }
 
@@ -192,7 +186,9 @@ Window::Window(const std::string& title,
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
+#endif
     glfwWindowHint(GLFW_VISIBLE,
                    impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
     impl_->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
@@ -425,9 +421,13 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
+#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 3
     float xscale, yscale;
     glfwGetWindowContentScale(impl_->window, &xscale, &yscale);
     return xscale;
+#else
+    return 1.0f;
+#endif  // GLFW version >= 3.3
 }
 
 Point Window::GlobalToWindowCoord(int globalX, int globalY) {
@@ -872,8 +872,6 @@ void Window::OnKeyEvent(const KeyEvent& e) {
         thisMod = int(KeyModifier::ALT);
     } else if (e.key == KEY_META) {
         thisMod = int(KeyModifier::META);
-    } else if (e.key == KEY_CAPSLOCK) {
-        thisMod = int(KeyModifier::CAPSLOCK);
     }
 
     if (e.type == KeyEvent::UP) {
