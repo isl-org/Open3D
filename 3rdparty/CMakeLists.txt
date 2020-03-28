@@ -429,7 +429,7 @@ if (ENABLE_GUI)
     list(APPEND 3RDPARTY_LIBRARIES
          ${filament_LIBRARIES}
     )
-    if (UNIX)
+    if (UNIX AND NOT APPLE)
         # GUI needs to be able to send Expose events, which needs to link
         # against libX11 if using system GLFW.
         list(APPEND 3RDPARTY_LIBRARIES "-lX11")
