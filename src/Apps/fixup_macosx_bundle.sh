@@ -43,7 +43,7 @@ libs=`otool -L "$exe" | grep -v "$exe" | grep -v /usr | grep -v /System | awk '{
 for lib in $libs; do
     if [[ ${lib:0:1} != "@" ]]; then    # external library with a regular path
         # copy the external library
-        cp -a "$lib" "$exeDir"
+        cp -aL "$lib" "$exeDir"
 
         # change its path in the executable
         libname=`basename $lib`

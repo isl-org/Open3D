@@ -52,11 +52,6 @@ EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
 
 if (ENABLE_GUI)
-    if (WIN32)
-        EXAMPLE_CPP(FilamentDemo      ${CMAKE_PROJECT_NAME} SDL2main$<$<CONFIG:Debug>:d>)
-    else()
-        EXAMPLE_CPP(FilamentDemo      ${CMAKE_PROJECT_NAME})
-    endif()
     EXAMPLE_CPP(GuiDemo               ${CMAKE_PROJECT_NAME})
 
     # Compile .mat files and copy to resources directory in output directory
