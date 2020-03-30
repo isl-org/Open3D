@@ -252,9 +252,9 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
 
     // Point seperations
     array_offsets_[0] = 0;
-    draw_array_sizes_[0] = tmp_points[0].size();
+    draw_array_sizes_[0] = static_cast<int>(tmp_points[0].size());
     for (int mi = 1; mi < num_materials_; ++mi) {
-        draw_array_sizes_[mi] = tmp_points[mi].size();
+        draw_array_sizes_[mi] = static_cast<int>(tmp_points[mi].size());
         array_offsets_[mi] = array_offsets_[mi - 1] + draw_array_sizes_[mi - 1];
     }
 

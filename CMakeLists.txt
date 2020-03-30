@@ -158,13 +158,17 @@ if (WIN32)
     endif (MSVC)
 
     if (STATIC_WINDOWS_RUNTIME)
-        # by default, "/MD" and "/MDd" is set by CMake automatically
+        # /MT  links libcmt.lib   libvcruntime.lib   libucrt.lib
+        # /MTd links libcmtd.lib  libvcruntimed.lib  libucrtd.lib
         string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
         string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
         string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
         string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     else ()
-        # handles the case when re-running cmake with STATIC_WINDOWS_RUNTIME=OFF
+        # By default, STATIC_WINDOWS_RUNTIME=OFF, also CMake defaults to
+        # "/MD" or "/MDd"
+        # /MD  links msvcrt.lib   vcruntime.lib      ucrt.lib
+        # /MDd links msvcrtd.lib  vcruntimed.lib     ucrtd.lib
         string(REPLACE "/MT" "/MD" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
         string(REPLACE "/MTd" "/MDd" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
         string(REPLACE "/MT" "/MD" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})

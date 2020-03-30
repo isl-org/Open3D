@@ -637,7 +637,7 @@ PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
             Qhull::ComputeConvexHull(spherical_projection);
 
     // reassign original points to mesh
-    int origin_vidx = pt_map.size();
+    size_t origin_vidx = pt_map.size();
     for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
         size_t pidx = pt_map[vidx];
         visible_mesh->vertices_[vidx] = points_[pidx];
@@ -648,22 +648,22 @@ PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
     }
 
     // erase origin if part of mesh
-    if (origin_vidx < (int)(visible_mesh->vertices_.size())) {
+    if (origin_vidx < visible_mesh->vertices_.size()) {
         visible_mesh->vertices_.erase(visible_mesh->vertices_.begin() +
                                       origin_vidx);
         pt_map.erase(pt_map.begin() + origin_vidx);
         for (size_t tidx = visible_mesh->triangles_.size(); tidx-- > 0;) {
-            if (visible_mesh->triangles_[tidx](0) == origin_vidx ||
-                visible_mesh->triangles_[tidx](1) == origin_vidx ||
-                visible_mesh->triangles_[tidx](2) == origin_vidx) {
+            if (visible_mesh->triangles_[tidx](0) == (int)origin_vidx ||
+                visible_mesh->triangles_[tidx](1) == (int)origin_vidx ||
+                visible_mesh->triangles_[tidx](2) == (int)origin_vidx) {
                 visible_mesh->triangles_.erase(
                         visible_mesh->triangles_.begin() + tidx);
             } else {
-                if (visible_mesh->triangles_[tidx](0) > origin_vidx)
+                if (visible_mesh->triangles_[tidx](0) > (int)origin_vidx)
                     visible_mesh->triangles_[tidx](0) -= 1;
-                if (visible_mesh->triangles_[tidx](1) > origin_vidx)
+                if (visible_mesh->triangles_[tidx](1) > (int)origin_vidx)
                     visible_mesh->triangles_[tidx](1) -= 1;
-                if (visible_mesh->triangles_[tidx](2) > origin_vidx)
+                if (visible_mesh->triangles_[tidx](2) > (int)origin_vidx)
                     visible_mesh->triangles_[tidx](2) -= 1;
             }
         }

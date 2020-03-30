@@ -166,8 +166,9 @@ public:
         mesh_->vertex_normals_ = pcd.normals_;
         mesh_->vertex_colors_ = pcd.colors_;
         for (size_t vidx = 0; vidx < pcd.points_.size(); ++vidx) {
-            vertices.emplace_back(new BallPivotingVertex(
-                    vidx, pcd.points_[vidx], pcd.normals_[vidx]));
+            vertices.emplace_back(new BallPivotingVertex(static_cast<int>(vidx),
+                                                         pcd.points_[vidx],
+                                                         pcd.normals_[vidx]));
         }
     }
 
