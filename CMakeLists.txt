@@ -160,6 +160,16 @@ if (WIN32)
         set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MP ${MSVC_WARNING_IGNORE} /WX")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP ${MSVC_WARNING_IGNORE} /WX")
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP ${MSVC_WARNING_IGNORE} /WX")
+
+        # /bigobj is enabled by default. On Windows, the build type (Debug, Release)
+        # is set at build time, not config time, since CMAKE_BUILD_TYPE is not
+        # supported on Windows.
+        # ref: https://stackoverflow.com/a/15110915
+        # ref: https://stackoverflow.com/a/19026241
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
     endif (MSVC)
 
     if (STATIC_WINDOWS_RUNTIME)
