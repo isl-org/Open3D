@@ -114,12 +114,6 @@ int keymodsFromGLFW(int glfwMods) {
         keymods |= int(KeyModifier::META);
 #endif  // __APPLE__
     }
-    if (glfwMods & GLFW_MOD_CAPS_LOCK) {
-        keymods |= int(KeyModifier::CAPSLOCK);
-    }
-    if (glfwMods & GLFW_MOD_NUM_LOCK) {
-        keymods |= int(KeyModifier::NUMLOCK);
-    }
     return keymods;
 }
 
@@ -181,8 +175,6 @@ Window::Window(const std::string& title,
     : impl_(new Window::Impl()) {
     if (x == CENTERED_X || y == CENTERED_Y || width == AUTOSIZE_WIDTH ||
         height == AUTOSIZE_HEIGHT) {
-        x = 0;
-        y = 0;
         impl_->wantsAutoSizeAndCenter = true;
     }
     /*    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
@@ -193,7 +185,9 @@ Window::Window(const std::string& title,
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
+#endif
     glfwWindowHint(GLFW_VISIBLE,
                    impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
     impl_->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
@@ -426,9 +420,13 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
+#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 3
     float xscale, yscale;
     glfwGetWindowContentScale(impl_->window, &xscale, &yscale);
     return xscale;
+#else
+    return 1.0f;
+#endif  // GLFW version >= 3.3
 }
 
 Point Window::GlobalToWindowCoord(int globalX, int globalY) {
@@ -880,8 +878,6 @@ void Window::OnKeyEvent(const KeyEvent& e) {
         thisMod = int(KeyModifier::ALT);
     } else if (e.key == KEY_META) {
         thisMod = int(KeyModifier::META);
-    } else if (e.key == KEY_CAPSLOCK) {
-        thisMod = int(KeyModifier::CAPSLOCK);
     }
 
     if (e.type == KeyEvent::UP) {
@@ -923,7 +919,7 @@ void Window::OnDragDropped(const char* path) {}
 
 // ----------------------------------------------------------------------------
 void Window::DrawCallback(GLFWwindow* window) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (w->DrawOnce(0.1) == Window::REDRAW) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
@@ -933,27 +929,28 @@ void Window::DrawCallback(GLFWwindow* window) {
 }
 
 void Window::ResizeCallback(GLFWwindow* window, int osWidth, int osHeight) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
     UpdateAfterEvent(w);
 }
 
 void Window::RescaleCallback(GLFWwindow* window, float xscale, float yscale) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
     UpdateAfterEvent(w);
 }
 
 void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
         if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
             buttons |= mouseButtonFromGLFW(b);
         }
     }
-    int ix = int(std::ceil(x));
-    int iy = int(std::ceil(y));
+    float scaling = w->GetScaling();
+    int ix = int(std::ceil(x * scaling));
+    int iy = int(std::ceil(y * scaling));
 
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
     MouseEvent me = {type, ix, iy, w->impl_->mouseMods};
@@ -967,14 +964,15 @@ void Window::MouseButtonCallback(GLFWwindow* window,
                                  int button,
                                  int action,
                                  int mods) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     auto type = (action == GLFW_PRESS ? MouseEvent::BUTTON_DOWN
                                       : MouseEvent::BUTTON_UP);
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    int ix = int(std::ceil(mx));
-    int iy = int(std::ceil(my));
+    float scaling = w->GetScaling();
+    int ix = int(std::ceil(mx * scaling));
+    int iy = int(std::ceil(my * scaling));
 
     MouseEvent me = {type, ix, iy, keymodsFromGLFW(mods)};
     me.button.button = MouseButton(mouseButtonFromGLFW(button));
@@ -984,12 +982,13 @@ void Window::MouseButtonCallback(GLFWwindow* window,
 }
 
 void Window::MouseScrollCallback(GLFWwindow* window, double dx, double dy) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    int ix = int(std::ceil(mx));
-    int iy = int(std::ceil(my));
+    float scaling = w->GetScaling();
+    int ix = int(std::ceil(mx * scaling));
+    int iy = int(std::ceil(my * scaling));
 
     MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->impl_->mouseMods};
     me.wheel.dx = dx;
@@ -1034,7 +1033,7 @@ void Window::KeyCallback(
             {GLFW_KEY_PAGE_UP, KEY_PAGEUP},
             {GLFW_KEY_PAGE_DOWN, KEY_PAGEDOWN},
     };
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     auto type = (action == GLFW_RELEASE ? KeyEvent::Type::UP
                                         : KeyEvent::Type::DOWN);
@@ -1057,7 +1056,7 @@ void Window::KeyCallback(
 void Window::DragDropCallback(GLFWwindow* window,
                               int count,
                               const char* paths[]) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     for (int i = 0; i < count; ++i) {
         w->OnDragDropped(paths[i]);
     }
@@ -1065,7 +1064,7 @@ void Window::DragDropCallback(GLFWwindow* window,
 }
 
 void Window::CloseCallback(GLFWwindow* window) {
-    Window* w = (Window*)glfwGetWindowUserPointer(window);
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     Application::GetInstance().RemoveWindow(w);
 }
 
