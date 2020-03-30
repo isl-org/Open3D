@@ -36,7 +36,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
                          patchSize=31)  # to save time
     [kp_s, des_s] = orb.detectAndCompute(color_cv_s, None)
     [kp_t, des_t] = orb.detectAndCompute(color_cv_t, None)
-    if len(kp_s) is 0 or len(kp_t) is 0:
+    if len(kp_s) == 0 or len(kp_t) == 0:
         return success, trans
 
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
