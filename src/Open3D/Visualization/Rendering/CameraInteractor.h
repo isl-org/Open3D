@@ -40,6 +40,8 @@ public:
     void SetBoundingBox(
             const geometry::AxisAlignedBoundingBox& bounds) override;
 
+    void SetCenterOfRotation(const Eigen::Vector3f& center);
+
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
     void Dolly(int dy, DragType type) override;
@@ -50,12 +52,10 @@ public:
     /// Sets camera field of view
     void Zoom(int dy, DragType dragType);
 
-    enum class CameraPreset {
-        PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
-        PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
-        PLUS_Z
-    };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
-    void GoToPreset(CameraPreset preset);
+    void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
+    void MoveLocal(const Eigen::Vector3f& v);
+
+    void RotateFPS(int dx, int dy);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();

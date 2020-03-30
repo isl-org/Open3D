@@ -164,6 +164,10 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme.buttonColor = Color(0.4, 0.4, 0.4);
     impl_->theme.buttonHoverColor = Color(0.6, 0.6, 0.6);
     impl_->theme.buttonActiveColor = Color(0.5, 0.5, 0.5);
+    impl_->theme.buttonOnColor = Color(0.7, 0.7, 0.7);
+    impl_->theme.buttonOnHoverColor = Color(0.9, 0.9, 0.9);
+    impl_->theme.buttonOnActiveColor = Color(0.8, 0.8, 0.8);
+    impl_->theme.buttonOnTextColor = Color(0, 0, 0);
     impl_->theme.checkboxBackgroundOffColor = Color(0.333, 0.333, .333);
     impl_->theme.checkboxBackgroundOnColor = highlightColor;
     impl_->theme.checkboxBackgroundHoverOffColor = Color(0.5, 0.5, 0.5);

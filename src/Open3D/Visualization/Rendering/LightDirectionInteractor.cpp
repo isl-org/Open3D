@@ -146,7 +146,11 @@ void LightDirectionInteractor::StartMouseDrag() {
     //       here. This code needs to be changed once we fix that
     //       behavior.
 
-    double sphereSize = 0.5 * modelSize_;  // modelSize_ is a diameter
+    double size = modelSize_;
+    if (size <= 0.001) {
+        size = 10;
+    }
+    double sphereSize = 0.5 * size;  // size is a diameter
     auto sphereTris = geometry::TriangleMesh::CreateSphere(sphereSize, 20);
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphereTris);
     sphere->PaintUniformColor(SKY_COLOR);
@@ -155,7 +159,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     scene_->SetEntityTransform(uiObjs_[0].handle, t0);
     scene_->SetGeometryShadows(uiObjs_[0].handle, false, false);
 
-    auto sunRadius = 0.05 * modelSize_;
+    auto sunRadius = 0.05 * size;
     auto sun = geometry::TriangleMesh::CreateSphere(sunRadius, 20);
     sun->PaintUniformColor(SUN_COLOR);
     auto t1 = Camera::Transform::Identity();
@@ -165,7 +169,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     scene_->SetGeometryShadows(uiObjs_[1].handle, false, false);
 
     const double arrowRadius = 0.075 * sunRadius;
-    const double arrowLength = 0.333 * modelSize_;
+    const double arrowLength = 0.333 * size;
     auto sunDir = CreateArrow(dir.cast<double>(), arrowRadius, arrowLength,
                               0.1 * arrowLength, 20);
     sunDir->PaintUniformColor(SUN_COLOR);

@@ -27,6 +27,7 @@
 #include "Button.h"
 
 #include "Theme.h"
+#include "Util.h"
 
 #include <imgui.h>
 
@@ -38,6 +39,8 @@ namespace gui {
 
 struct Button::Impl {
     std::string title;
+    bool isToggleable = false;
+    bool isOn = false;
     std::function<void()> onClicked;
 };
 
@@ -46,6 +49,18 @@ Button::Button(const char* title) : impl_(new Button::Impl()) {
 }
 
 Button::~Button() {}
+
+bool Button::GetIsToggleable() const { return impl_->isToggleable; }
+
+void Button::SetToggleable(bool toggles) { impl_->isToggleable = toggles; }
+
+bool Button::GetIsOn() const { return impl_->isOn; }
+
+void Button::SetOn(bool isOn) {
+    if (impl_->isToggleable) {
+        impl_->isOn = isOn;
+    }
+}
 
 void Button::SetOnClicked(std::function<void()> onClicked) {
     impl_->onClicked = onClicked;
@@ -63,17 +78,37 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
+    bool oldIsOn = impl_->isOn;
+    if (oldIsOn) {
+        ImGui::PushStyleColor(
+                ImGuiCol_Text,
+                util::colorToImgui(context.theme.buttonOnTextColor));
+        ImGui::PushStyleColor(ImGuiCol_Button,
+                              util::colorToImgui(context.theme.buttonOnColor));
+        ImGui::PushStyleColor(
+                ImGuiCol_ButtonHovered,
+                util::colorToImgui(context.theme.buttonOnHoverColor));
+        ImGui::PushStyleColor(
+                ImGuiCol_ButtonActive,
+                util::colorToImgui(context.theme.buttonOnActiveColor));
+    }
     DrawImGuiPushEnabledState();
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     if (ImGui::Button(impl_->title.c_str(),
                       ImVec2(GetFrame().width, GetFrame().height))) {
+        if (impl_->isToggleable) {
+            impl_->isOn = !impl_->isOn;
+        }
         if (impl_->onClicked) {
             impl_->onClicked();
         }
         result = Widget::DrawResult::REDRAW;
     }
     DrawImGuiPopEnabledState();
+    if (oldIsOn) {
+        ImGui::PopStyleColor(4);
+    }
 
     return result;
 }

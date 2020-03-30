@@ -41,6 +41,10 @@ void CameraInteractor::SetBoundingBox(
                      bounds.GetCenter().cast<float>());
 }
 
+void CameraInteractor::SetCenterOfRotation(const Eigen::Vector3f& center) {
+    centerOfRotation_ = center;
+}
+
 void CameraInteractor::Rotate(int dx, int dy) {
     Super::Rotate(dx, dy);
     camera_->SetModelMatrix(GetMatrix());
@@ -48,6 +52,15 @@ void CameraInteractor::Rotate(int dx, int dy) {
 
 void CameraInteractor::RotateZ(int dx, int dy) {
     Super::RotateZ(dx, dy);
+    camera_->SetModelMatrix(GetMatrix());
+}
+
+void CameraInteractor::RotateFPS(int dx, int dy) {
+    // First-person shooter rotation is always about the current camera
+    // matrix, and the camera's position, so we need to update Super's
+    // matrix information.
+    Super::SetMouseDownInfo(camera_->GetModelMatrix(), camera_->GetPosition());
+    Super::Rotate(-dx, -dy);
     camera_->SetModelMatrix(GetMatrix());
 }
 
@@ -108,6 +121,19 @@ void CameraInteractor::Pan(int dx, int dy) {
     camera_->SetModelMatrix(modelMatrix);
 }
 
+void CameraInteractor::RotateLocal(float angleRad,
+                                   const Eigen::Vector3f& axis) {
+    auto modelMatrix = camera_->GetModelMatrix();  // copy
+    modelMatrix.rotate(Eigen::AngleAxis<float>(angleRad, axis));
+    camera_->SetModelMatrix(modelMatrix);
+}
+
+void CameraInteractor::MoveLocal(const Eigen::Vector3f& v) {
+    auto modelMatrix = camera_->GetModelMatrix();  // copy
+    modelMatrix.translate(v);
+    camera_->SetModelMatrix(modelMatrix);
+}
+
 void CameraInteractor::Zoom(int dy, DragType dragType) {
     float dFOV = 0.0f;  // initialize to make GCC happy
     switch (dragType) {
@@ -161,33 +187,6 @@ void CameraInteractor::Zoom(int dy, DragType dragType) {
     }
     camera_->SetProjection(newFOV, aspect, camera_->GetNear(),
                            camera_->GetFar(), camera_->GetFieldOfViewType());
-}
-
-void CameraInteractor::GoToPreset(CameraPreset preset) {
-    auto boundsMax = modelBounds_.GetMaxBound();
-    auto maxDim =
-            std::max(boundsMax.x(), std::max(boundsMax.y(), boundsMax.z()));
-    maxDim = 1.5f * maxDim;
-    auto center = centerOfRotation_;
-    Eigen::Vector3f eye, up;
-    switch (preset) {
-        case CameraPreset::PLUS_X: {
-            eye = Eigen::Vector3f(maxDim, center.y(), center.z());
-            up = Eigen::Vector3f(0, 1, 0);
-            break;
-        }
-        case CameraPreset::PLUS_Y: {
-            eye = Eigen::Vector3f(center.x(), maxDim, center.z());
-            up = Eigen::Vector3f(1, 0, 0);
-            break;
-        }
-        case CameraPreset::PLUS_Z: {
-            eye = Eigen::Vector3f(center.x(), center.y(), maxDim);
-            up = Eigen::Vector3f(0, 1, 0);
-            break;
-        }
-    }
-    camera_->LookAt(center, eye, up);
 }
 
 void CameraInteractor::StartMouseDrag() {

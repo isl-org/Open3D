@@ -60,6 +60,9 @@ public:
     void SetBackgroundColor(const Color& color);
     void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
+    enum Controls { ROTATE_OBJ, FPS, ROTATE_SUN, ROTATE_IBL };
+    void SetViewControls(Controls mode);
+
     void SetupCamera(float verticalFoV,
                      const geometry::AxisAlignedBoundingBox& geometryBounds,
                      const Eigen::Vector3f& centerOfRotation);
@@ -84,6 +87,8 @@ public:
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     void Mouse(const MouseEvent& e) override;
+    void Key(const KeyEvent& e) override;
+    Widget::DrawResult Tick(const TickEvent& e) override;
 
 private:
     visualization::Camera* GetCamera() const;

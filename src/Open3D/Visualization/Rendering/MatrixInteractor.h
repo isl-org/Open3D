@@ -43,6 +43,7 @@ public:
 
     void SetViewSize(int width, int height);
 
+    const geometry::AxisAlignedBoundingBox& GetBoundingBox() const;
     virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds);
 
     void SetMouseDownInfo(const Camera::Transform& matrix,
@@ -52,7 +53,8 @@ public:
 
     /// Rotates about an axis defined by dx * matrixLeft, dy * matrixUp.
     /// `dy` is assumed to be in window-style coordinates, that is, going
-    /// up produces a negative dy.
+    /// up produces a negative dy. The axis goes through the center of
+    /// rotation.
     virtual void Rotate(int dx, int dy);
 
     /// Same as Rotate() except that the dx-axis and the dy-axis are

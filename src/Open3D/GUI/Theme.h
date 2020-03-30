@@ -54,6 +54,10 @@ struct Theme {
     Color buttonColor;
     Color buttonHoverColor;
     Color buttonActiveColor;
+    Color buttonOnColor;
+    Color buttonOnHoverColor;
+    Color buttonOnActiveColor;
+    Color buttonOnTextColor;
 
     Color checkboxBackgroundOffColor;
     Color checkboxBackgroundOnColor;

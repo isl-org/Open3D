@@ -99,6 +99,11 @@ public:
 
     bool IsActiveWindow() const;
 
+    bool GetTickEventsEnabled() const;
+    void SetTickEventsEnabled(bool enable);
+
+    void SetFocusWidget(Widget* w);
+
     void AddChild(std::shared_ptr<Widget> w);
 
     void ShowDialog(std::shared_ptr<Dialog> dlg);
@@ -124,6 +129,7 @@ private:
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
+    bool OnTickEvent(const TickEvent& e);
     void* MakeCurrent() const;
     void RestoreCurrent(void* oldContext) const;
     void* GetNativeDrawable() const;

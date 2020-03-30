@@ -145,5 +145,15 @@ void Widget::Mouse(const MouseEvent& e) {
 
 void Widget::Key(const KeyEvent& e) {}
 
+Widget::DrawResult Widget::Tick(const TickEvent& e) {
+    auto result = DrawResult::NONE;
+    for (auto it = impl_->children.begin(); it != impl_->children.end(); ++it) {
+        if ((*it)->Tick(e) == DrawResult::REDRAW) {
+            result = DrawResult::REDRAW;
+        }
+    }
+    return result;
+}
+
 }  // namespace gui
 }  // namespace open3d
