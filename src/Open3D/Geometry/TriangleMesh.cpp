@@ -1411,13 +1411,13 @@ TriangleMesh::ClusterConnectedTriangles() const {
         triangle_queue.push(tidx);
         triangle_clusters[tidx] = cluster_idx;
         while (!triangle_queue.empty()) {
-            tidx = triangle_queue.front();
+            int tidx_1 = triangle_queue.front();
             triangle_queue.pop();
 
             cluster_n_triangles++;
-            cluster_area += GetTriangleArea(tidx);
+            cluster_area += GetTriangleArea(tidx_1);
 
-            for (auto tnb : adjacency_list[tidx]) {
+            for (auto tnb : adjacency_list[tidx_1]) {
                 if (triangle_clusters[tnb] == -1) {
                     triangle_queue.push(tnb);
                     triangle_clusters[tnb] = cluster_idx;
