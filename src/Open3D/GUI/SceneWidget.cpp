@@ -116,7 +116,7 @@ private:
 
 class FPSInteractor : public MouseInteractor {
 public:
-    FPSInteractor(visualization::Camera* camera)
+    explicit FPSInteractor(visualization::Camera* camera)
         : cameraControls_(std::make_unique<visualization::CameraInteractor>(
                   camera, MIN_FAR_PLANE)) {}
 
@@ -201,7 +201,7 @@ private:
 
 class RotateObjectInteractor : public MouseInteractor {
 public:
-    RotateObjectInteractor(visualization::Camera* camera)
+    explicit RotateObjectInteractor(visualization::Camera* camera)
         : cameraControls_(std::make_unique<visualization::CameraInteractor>(
                   camera, MIN_FAR_PLANE)) {}
 
@@ -308,11 +308,10 @@ private:
 // ----------------------------------------------------------------------------
 class Interactors {
 public:
-    Interactors(visualization::Scene* scene, visualization::Camera* camera) {
-        rotate_ = std::make_unique<RotateObjectInteractor>(camera);
-        fps_ = std::make_unique<FPSInteractor>(camera);
-        lightDir_ = std::make_unique<RotateSunInteractor>(scene, camera);
-
+    Interactors(visualization::Scene* scene, visualization::Camera* camera)
+        : rotate_(std::make_unique<RotateObjectInteractor>(camera)),
+          fps_(std::make_unique<FPSInteractor>(camera)),
+          lightDir_(std::make_unique<RotateSunInteractor>(scene, camera)) {
         current_ = rotate_.get();
     }
 
