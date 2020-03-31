@@ -208,7 +208,7 @@ public:
     void Key(const KeyEvent& e) override {
         if (e.type != KeyEvent::Type::UP) {
             auto& bounds = cameraControls_->GetBoundingBox();
-            const float dist = 0.005f * bounds.GetExtent().norm();
+            const float dist = 0.01f * bounds.GetExtent().norm();
             const float angleRad = 0.0075f;
 
             auto hasKey = [&e](uint32_t key) -> bool { return (e.key == key); };
@@ -331,7 +331,7 @@ public:
                                               DragType::WHEEL);
                 } else {
                     cameraControls_->Dolly(
-                            e.wheel.dy,
+                            2.0 * e.wheel.dy,
                             e.wheel.isTrackpad
                                     ? visualization::MatrixInteractor::
                                               DragType::TWO_FINGER
