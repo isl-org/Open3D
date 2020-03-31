@@ -744,7 +744,7 @@ GuiVisualizer::GuiVisualizer(
     cameraControls->AddChild(settings.wgtMouseFly);
     cameraControls->AddChild(gui::Horiz::MakeFixed(em));
     cameraControls->AddChild(settings.wgtMouseSun);
-    // cameraControls->AddChild(settings.wgtMouseIBL);
+    cameraControls->AddChild(settings.wgtMouseIBL);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);
