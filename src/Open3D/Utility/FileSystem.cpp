@@ -207,9 +207,10 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
 #else
     std::wstring filename_w;
     filename_w.resize(filename.size());
-    int newSize = MultiByteToWideChar(
-            CP_UTF8, 0, filename.c_str(), filename.length(),
-            const_cast<wchar_t *>(filename_w.c_str()), filename.length());
+    int newSize = MultiByteToWideChar(CP_UTF8, 0, filename.c_str(),
+                                      static_cast<int>(filename.length()),
+                                      const_cast<wchar_t *>(filename_w.c_str()),
+                                      static_cast<int>(filename.length()));
     filename_w.resize(newSize);
     std::wstring mode_w(mode.begin(), mode.end());
     fp = _wfopen(filename_w.c_str(), mode_w.c_str());

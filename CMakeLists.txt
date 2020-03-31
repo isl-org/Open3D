@@ -145,16 +145,21 @@ if (WIN32)
         add_definitions(-D_USE_MATH_DEFINES)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D _ENABLE_EXTENDED_ALIGNED_STORAGE")
+
+        # Ignore certain warnings
+        # C4522: multiple assignment operators specified
+        set(MSVC_WARNING_IGNORE "/wd4522")
+
         # Multi-thread compile, two ways to enable
         # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
         # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
         # OPtion 2, at configure time: add /MP flag, no need to use Option 1
         # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
         add_definitions("/MP")
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MP")
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MP")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
+        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MP ${MSVC_WARNING_IGNORE} /WX")
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MP ${MSVC_WARNING_IGNORE} /WX")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP ${MSVC_WARNING_IGNORE} /WX")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP ${MSVC_WARNING_IGNORE} /WX")
 
         # /bigobj is enabled by default. On Windows, the build type (Debug, Release)
         # is set at build time, not config time, since CMAKE_BUILD_TYPE is not
@@ -168,13 +173,17 @@ if (WIN32)
     endif (MSVC)
 
     if (STATIC_WINDOWS_RUNTIME)
-        # by default, "/MD" and "/MDd" is set by CMake automatically
+        # /MT  links libcmt.lib   libvcruntime.lib   libucrt.lib
+        # /MTd links libcmtd.lib  libvcruntimed.lib  libucrtd.lib
         string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
         string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
         string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
         string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     else ()
-        # handles the case when re-running cmake with STATIC_WINDOWS_RUNTIME=OFF
+        # By default, STATIC_WINDOWS_RUNTIME=OFF, also CMake defaults to
+        # "/MD" or "/MDd"
+        # /MD  links msvcrt.lib   vcruntime.lib      ucrt.lib
+        # /MDd links msvcrtd.lib  vcruntimed.lib     ucrtd.lib
         string(REPLACE "/MT" "/MD" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
         string(REPLACE "/MTd" "/MDd" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
         string(REPLACE "/MT" "/MD" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})

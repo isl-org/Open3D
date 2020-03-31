@@ -1504,7 +1504,7 @@ void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
     std::unordered_map<int, int> vertex_map;
     for (size_t from_vidx = 0; from_vidx < vertices_.size(); ++from_vidx) {
         if (!vertex_mask[from_vidx]) {
-            vertex_map[from_vidx] = to_vidx;
+            vertex_map[static_cast<int>(from_vidx)] = static_cast<int>(to_vidx);
             vertices_[to_vidx] = vertices_[from_vidx];
             if (has_normal) {
                 vertex_normals_[to_vidx] = vertex_normals_[from_vidx];

@@ -287,9 +287,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     std::vector<Eigen::Vector4d> triangle_planes(triangles_.size());
     std::vector<double> triangle_areas(triangles_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
-        vert_to_triangles[triangles_[tidx](0)].emplace(tidx);
-        vert_to_triangles[triangles_[tidx](1)].emplace(tidx);
-        vert_to_triangles[triangles_[tidx](2)].emplace(tidx);
+        vert_to_triangles[triangles_[tidx](0)].emplace(static_cast<int>(tidx));
+        vert_to_triangles[triangles_[tidx](1)].emplace(static_cast<int>(tidx));
+        vert_to_triangles[triangles_[tidx](2)].emplace(static_cast<int>(tidx));
 
         triangle_planes[tidx] = GetTrianglePlane(tidx);
         triangle_areas[tidx] = GetTriangleArea(tidx);
