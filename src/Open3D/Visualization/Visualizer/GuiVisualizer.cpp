@@ -132,6 +132,7 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
         addLabel(right);
     };
 
+    addRow("Arcball mode", " ");
     addRow("Left-drag", "Rotate camera");
     addRow("Shift + left-drag    ", "Forward/backward");
 
@@ -167,6 +168,8 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addRow("S", "Backward");
     addRow("A", "Step left");
     addRow("D", "Step right");
+    addRow("Q", "Step up");
+    addRow("Z", "Step down");
     addRow("Up", "Look up");
     addRow("Down", "Look down");
     addRow("Left", "Look left");
@@ -304,36 +307,36 @@ struct LightingProfile {
     bool sunEnabled = true;
 };
 
-static const std::string kPointCloudProfileName = "Point clouds (no sun)";
+static const std::string kPointCloudProfileName = "Cloudy day (no direct sun)";
 
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {.name = "Brighter, up is +Y [default]",
+        {.name = "Bright day with sun at +Y [default]",
          .iblIntensity = 100000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, -0.577f, -0.577f}},
-        {.name = "Brighter, up is -Y",
+        {.name = "Bright day with sun at -Y",
          .iblIntensity = 100000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, 0.577f, 0.577f},
          .sunColor = {1.0f, 1.0f, 1.0f},
          .iblRotation = Scene::Transform(
                  Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-        {.name = "Brighter, up is +Z",
+        {.name = "Bright day with sun at +Z",
          .iblIntensity = 100000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, 0.577f, -0.577f}},
-        {.name = "Darker, up is +Y",
+        {.name = "Less bright day with sun at +Y",
          .iblIntensity = 75000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, -0.577f, -0.577f}},
-        {.name = "Darker, up is -Y",
+        {.name = "Less bright day with sun at -Y",
          .iblIntensity = 75000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, 0.577f, 0.577f},
          .sunColor = {1.0f, 1.0f, 1.0f},
          .iblRotation = Scene::Transform(
                  Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
-        {.name = "Darker, up is +Z",
+        {.name = "Less bright day with sun at +Z",
          .iblIntensity = 75000,
          .sunIntensity = 100000,
          .sunDir = {0.577f, 0.577f, -0.577f}},
@@ -778,8 +781,8 @@ GuiVisualizer::GuiVisualizer(
                 }
             });
 
-    auto profileLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
-    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting "));
+    auto profileLayout = std::make_shared<gui::Vert>();
+    profileLayout->AddChild(std::make_shared<gui::Label>("Lighting profiles"));
     profileLayout->AddChild(settings.wgtLightingProfile);
     viewCtrls->AddChild(gui::Horiz::MakeFixed(separationHeight));
     viewCtrls->AddChild(profileLayout);
