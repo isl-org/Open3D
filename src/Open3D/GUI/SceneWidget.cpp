@@ -36,6 +36,7 @@
 #include "Open3D/Visualization/Rendering/View.h"
 
 #include "Open3D/Visualization/Rendering/CameraInteractor.h"
+#include "Open3D/Visualization/Rendering/IBLRotationInteractor.h"
 #include "Open3D/Visualization/Rendering/LightDirectionInteractor.h"
 
 #include <Eigen/Geometry>
@@ -112,6 +113,60 @@ private:
     int mouseDownX_ = 0;
     int mouseDownY_ = 0;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
+};
+
+class RotateIBLInteractor : public MouseInteractor {
+public:
+    RotateIBLInteractor(visualization::Scene* scene,
+                        visualization::Camera* camera)
+        : ibl_(std::make_unique<visualization::IBLRotationInteractor>(
+                  scene, camera)) {}
+
+    visualization::MatrixInteractor& GetMatrixInteractor() override {
+        return *ibl_.get();
+    }
+
+    void SetOnChanged(
+            std::function<void(const visualization::Camera::Transform&)>
+                    onChanged) {
+        onRotationChanged_ = onChanged;
+    }
+
+    void Mouse(const MouseEvent& e) override {
+        switch (e.type) {
+            case MouseEvent::BUTTON_DOWN:
+                mouseDownX_ = e.x;
+                mouseDownY_ = e.y;
+                ibl_->StartMouseDrag();
+                break;
+            case MouseEvent::DRAG: {
+                int dx = e.x - mouseDownX_;
+                int dy = e.y - mouseDownY_;
+                ibl_->Rotate(dx, dy);
+                if (onRotationChanged_) {
+                    onRotationChanged_(ibl_->GetCurrentRotation());
+                }
+                break;
+            }
+            case MouseEvent::WHEEL: {
+                break;
+            }
+            case MouseEvent::BUTTON_UP:
+                ibl_->EndMouseDrag();
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Key(const KeyEvent& e) override {}
+
+private:
+    std::unique_ptr<visualization::IBLRotationInteractor> ibl_;
+    int mouseDownX_ = 0;
+    int mouseDownY_ = 0;
+    std::function<void(const visualization::Camera::Transform&)>
+            onRotationChanged_;
 };
 
 class FPSInteractor : public MouseInteractor {
@@ -311,7 +366,8 @@ public:
     Interactors(visualization::Scene* scene, visualization::Camera* camera)
         : rotate_(std::make_unique<RotateObjectInteractor>(camera)),
           fps_(std::make_unique<FPSInteractor>(camera)),
-          lightDir_(std::make_unique<RotateSunInteractor>(scene, camera)) {
+          lightDir_(std::make_unique<RotateSunInteractor>(scene, camera)),
+          ibl_(std::make_unique<RotateIBLInteractor>(scene, camera)) {
         current_ = rotate_.get();
     }
 
@@ -319,12 +375,14 @@ public:
         rotate_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         fps_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         lightDir_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+        ibl_->GetMatrixInteractor().SetViewSize(size.width, size.height);
     }
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
         rotate_->GetMatrixInteractor().SetBoundingBox(bounds);
         fps_->GetMatrixInteractor().SetBoundingBox(bounds);
         lightDir_->GetMatrixInteractor().SetBoundingBox(bounds);
+        ibl_->GetMatrixInteractor().SetBoundingBox(bounds);
     }
 
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
@@ -342,6 +400,8 @@ public:
             return SceneWidget::Controls::FPS;
         } else if (current_ == lightDir_.get()) {
             return SceneWidget::Controls::ROTATE_SUN;
+        } else if (current_ == ibl_.get()) {
+            return SceneWidget::Controls::ROTATE_IBL;
         } else {
             return SceneWidget::Controls::ROTATE_OBJ;
         }
@@ -359,6 +419,7 @@ public:
                 current_ = lightDir_.get();
                 break;
             case SceneWidget::Controls::ROTATE_IBL:
+                current_ = ibl_.get();
                 break;
         }
     }
@@ -397,6 +458,7 @@ private:
     std::unique_ptr<RotateObjectInteractor> rotate_;
     std::unique_ptr<FPSInteractor> fps_;
     std::unique_ptr<RotateSunInteractor> lightDir_;
+    std::unique_ptr<RotateIBLInteractor> ibl_;
 
     MouseInteractor* current_ = nullptr;
     MouseInteractor* override_ = nullptr;
