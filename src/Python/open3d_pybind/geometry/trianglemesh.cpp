@@ -248,7 +248,8 @@ void pybind_trianglemesh(py::module &m) {
             .def("sample_points_uniformly",
                  &geometry::TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100, "use_triangle_normal"_a = false)
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false,
+                 "seed"_a = -1)
             .def("sample_points_poisson_disk",
                  &geometry::TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
@@ -258,7 +259,7 @@ void pybind_trianglemesh(py::module &m) {
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
                  "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
-                 "use_triangle_normal"_a = false)
+                 "use_triangle_normal"_a = false, "seed"_a = -1)
             .def("subdivide_midpoint",
                  &geometry::TriangleMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
