@@ -471,6 +471,7 @@ struct GuiVisualizer::Impl {
     struct Settings {
         visualization::IndirectLightHandle hIbl;
         visualization::SkyboxHandle hSky;
+        visualization::TextureHandle hSkyTexture;
         visualization::LightHandle hDirectionalLight;
 
         std::shared_ptr<gui::Widget> wgtBase;
@@ -820,6 +821,7 @@ GuiVisualizer::GuiVisualizer(
         } else {
             renderScene->SetSkybox(SkyboxHandle());
         }
+        impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
     });
     checkboxes->AddChild(settings.wgtSkyEnabled);
     settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");
@@ -1191,6 +1193,19 @@ bool GuiVisualizer::SetIBL(const char *path) {
         auto intensity = scene->GetIndirectLightIntensity();
         scene->SetIndirectLight(newIBL);
         scene->SetIndirectLightIntensity(intensity);
+
+        std::string pathStr(path);
+        auto idx = pathStr.find("ibl.ktx");
+        if (idx != std::string::npos) {
+            std::string skyboxPath = pathStr.substr(0, idx);
+            skyboxPath += "skybox.ktx";
+            auto skybox = GetRenderer().AddSkybox(
+                    ResourceLoadRequest(skyboxPath.c_str()));
+            impl_->scene->SetSkyboxHandle(
+                    skybox, impl_->settings.wgtSkyEnabled->IsChecked());
+            impl_->settings.hSky = skybox;
+        } else {
+        }
         return true;
     }
     return false;

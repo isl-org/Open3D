@@ -39,9 +39,12 @@ class IBLRotationInteractor : public MatrixInteractor {
     using Super = MatrixInteractor;
 
 public:
-    explicit IBLRotationInteractor(Scene* scene, Camera* camera);
+    IBLRotationInteractor(Scene* scene, Camera* camera);
 
     void Rotate(int dx, int dy) override;
+    void RotateZ(int dx, int dy) override;
+
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();
@@ -52,6 +55,8 @@ public:
 private:
     Scene* scene_;
     Camera* camera_;
+    visualization::SkyboxHandle skybox_;
+    bool skyboxIsNormallyOn_;
     Camera::Transform iblRotationAtMouseDown_;
 
     struct UIObj {

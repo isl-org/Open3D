@@ -74,6 +74,8 @@ public:
             visualization::LightHandle dirLight,
             std::function<void(const Eigen::Vector3f&)> onDirChanged);
 
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
+
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
         PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
@@ -86,8 +88,8 @@ public:
 
     Widget::DrawResult Draw(const DrawContext& context) override;
 
-    void Mouse(const MouseEvent& e) override;
-    void Key(const KeyEvent& e) override;
+    Widget::EventResult Mouse(const MouseEvent& e) override;
+    Widget::EventResult Key(const KeyEvent& e) override;
     Widget::DrawResult Tick(const TickEvent& e) override;
 
 private:

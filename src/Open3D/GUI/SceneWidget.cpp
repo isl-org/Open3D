@@ -126,6 +126,10 @@ public:
         return *ibl_.get();
     }
 
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn) {
+        ibl_->SetSkyboxHandle(skybox, isOn);
+    }
+
     void SetOnChanged(
             std::function<void(const visualization::Camera::Transform&)>
                     onChanged) {
@@ -142,7 +146,11 @@ public:
             case MouseEvent::DRAG: {
                 int dx = e.x - mouseDownX_;
                 int dy = e.y - mouseDownY_;
-                ibl_->Rotate(dx, dy);
+                if (e.modifiers & int(KeyModifier::META)) {
+                    ibl_->RotateZ(dx, dy);
+                } else {
+                    ibl_->Rotate(dx, dy);
+                }
                 if (onRotationChanged_) {
                     onRotationChanged_(ibl_->GetCurrentRotation());
                 }
@@ -395,6 +403,10 @@ public:
         lightDir_->SetDirectionalLight(dirLight, onChanged);
     }
 
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn) {
+        ibl_->SetSkyboxHandle(skybox, isOn);
+    }
+
     SceneWidget::Controls GetControls() const {
         if (current_ == fps_.get()) {
             return SceneWidget::Controls::FPS;
@@ -543,6 +555,11 @@ void SceneWidget::SelectDirectionalLight(
             });
 }
 
+void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
+                                  bool isOn) {
+    impl_->controls->SetSkyboxHandle(skybox, isOn);
+}
+
 void SceneWidget::SetViewControls(Controls mode) {
     if (mode == Controls::ROTATE_OBJ &&
         impl_->controls->GetControls() == Controls::FPS) {
@@ -627,9 +644,15 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     return Widget::DrawResult::NONE;
 }
 
-void SceneWidget::Mouse(const MouseEvent& e) { impl_->controls->Mouse(e); }
+Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
+    impl_->controls->Mouse(e);
+    return Widget::EventResult::CONSUMED;
+}
 
-void SceneWidget::Key(const KeyEvent& e) { impl_->controls->Key(e); }
+Widget::EventResult SceneWidget::Key(const KeyEvent& e) {
+    impl_->controls->Key(e);
+    return Widget::EventResult::CONSUMED;
+}
 
 Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
     return impl_->controls->Tick(e);
