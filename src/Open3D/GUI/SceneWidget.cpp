@@ -195,9 +195,18 @@ public:
                 cameraControls_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
+                // Use relative movement because user may be moving
+                // with keys at the same time.
                 int dx = e.x - lastMouseX_;
                 int dy = e.y - lastMouseY_;
-                cameraControls_->RotateFPS(-dx, -dy);
+                if (e.modifiers & int(KeyModifier::META)) {
+                    // RotateZ() was not intended to be used for relative
+                    // movement, so reset the mouse-down matrix first.
+                    cameraControls_->StartMouseDrag();
+                    cameraControls_->RotateZ(dx, dy);
+                } else {
+                    cameraControls_->RotateFPS(-dx, -dy);
+                }
                 lastMouseX_ = e.x;
                 lastMouseY_ = e.y;
                 break;
@@ -238,6 +247,14 @@ public:
             }
             if (hasKey('z')) {
                 cameraControls_->MoveLocal({0, -dist, 0});
+            }
+            if (hasKey('e')) {
+                cameraControls_->StartMouseDrag();
+                cameraControls_->RotateZ(0, -2);
+            }
+            if (hasKey('r')) {
+                cameraControls_->StartMouseDrag();
+                cameraControls_->RotateZ(0, 2);
             }
             if (hasKey(KEY_UP)) {
                 cameraControls_->RotateLocal(angleRad, {1, 0, 0});
@@ -563,10 +580,19 @@ void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
 void SceneWidget::SetViewControls(Controls mode) {
     if (mode == Controls::ROTATE_OBJ &&
         impl_->controls->GetControls() == Controls::FPS) {
-        // If we're going from FPS to standard rotate obj, reset the
-        // camera
         impl_->controls->SetControls(mode);
-        GoToCameraPreset(CameraPreset::PLUS_Z);
+        // If we're going from FPS to standard rotate obj, we need to
+        // adjust the center of rotation or it will jump to a different
+        // matrix rather abruptly. The center of rotation is used for the
+        // panning distance so that the cursor stays in roughly the same
+        // position as the user moves the mouse. Use the distance to the
+        // center of the model, which should be reasonable.
+        Eigen::Vector3f toCenter = impl_->bounds.GetCenter().cast<float>() -
+                                   impl_->camera->GetPosition();
+        Eigen::Vector3f forward = impl_->camera->GetForwardVector();
+        Eigen::Vector3f center =
+                impl_->camera->GetPosition() + toCenter.norm() * forward;
+        impl_->controls->SetCenterOfRotation(center);
     } else {
         impl_->controls->SetControls(mode);
     }
