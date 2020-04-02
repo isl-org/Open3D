@@ -546,10 +546,17 @@ void SceneWidget::SelectDirectionalLight(
 void SceneWidget::SetViewControls(Controls mode) {
     if (mode == Controls::ROTATE_OBJ &&
         impl_->controls->GetControls() == Controls::FPS) {
-        // If we're going from FPS to standard rotate obj, reset the
-        // camera
         impl_->controls->SetControls(mode);
-        GoToCameraPreset(CameraPreset::PLUS_Z);
+        // If we're going from FPS to standard rotate obj, we need to
+        // adjust the center of rotation or it will jump to a different
+        // matrix rather abruptly. The center of rotation is used for the
+        // panning distance so that the cursor stays in roughly the same
+        // position as the user moves the mouse. Use the distance to the
+        // center of the model, which should be reasonable.
+        Eigen::Vector3f toCenter = impl_->bounds.GetCenter().cast<float>() - impl_->camera->GetPosition();
+        Eigen::Vector3f forward = impl_->camera->GetForwardVector();
+        Eigen::Vector3f center = impl_->camera->GetPosition() + toCenter.norm() * forward;
+        impl_->controls->SetCenterOfRotation(center);
     } else {
         impl_->controls->SetControls(mode);
     }
