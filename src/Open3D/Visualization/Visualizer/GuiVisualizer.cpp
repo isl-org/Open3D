@@ -537,7 +537,7 @@ struct GuiVisualizer::Impl {
                         .Finish();
     }
 
-    void SetLightingProfile(visualization::Renderer& renderer,
+    void SetLightingProfile(visualization::Renderer &renderer,
                             const std::string &name) {
         for (size_t i = 0; i < gLightingProfiles.size(); ++i) {
             if (gLightingProfiles[i].name == name) {
@@ -550,12 +550,13 @@ struct GuiVisualizer::Impl {
         utility::LogWarning("Could not find lighting profile '{}'", name);
     }
 
-    void SetLightingProfile(visualization::Renderer& renderer,
+    void SetLightingProfile(visualization::Renderer &renderer,
                             const LightingProfile &profile) {
         auto *renderScene = this->scene->GetScene();
         if (profile.useDefaultIBL) {
             this->SetIBL(renderer, nullptr);
-            this->settings.wgtAmbientIBLs->SetSelectedValue(kDefaultIBL.c_str());
+            this->settings.wgtAmbientIBLs->SetSelectedValue(
+                    kDefaultIBL.c_str());
         }
         if (profile.iblEnabled) {
             renderScene->SetIndirectLight(this->settings.hIbl);
@@ -584,11 +585,15 @@ struct GuiVisualizer::Impl {
                 profile.sunColor[0], profile.sunColor[1], profile.sunColor[2]));
     }
 
-    bool SetIBL(visualization::Renderer& renderer, const char *path) {
+    bool SetIBL(visualization::Renderer &renderer, const char *path) {
         visualization::IndirectLightHandle newIBL;
         if (!path) {
-            std::string defaultPath = std::string(gui::Application::GetInstance().GetResourcePath()) + "/" + kDefaultIBL + "_ibl.ktx";
-            newIBL = renderer.AddIndirectLight(ResourceLoadRequest(defaultPath.c_str()));
+            std::string defaultPath =
+                    std::string(
+                            gui::Application::GetInstance().GetResourcePath()) +
+                    "/" + kDefaultIBL + "_ibl.ktx";
+            newIBL = renderer.AddIndirectLight(
+                    ResourceLoadRequest(defaultPath.c_str()));
         } else {
             newIBL = renderer.AddIndirectLight(ResourceLoadRequest(path));
         }
@@ -602,7 +607,6 @@ struct GuiVisualizer::Impl {
         }
         return false;
     }
-
 };
 
 GuiVisualizer::GuiVisualizer(
