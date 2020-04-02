@@ -313,9 +313,11 @@ struct LightingProfile {
     Eigen::Vector3f sunColor = {1.0f, 1.0f, 1.0f};
     Scene::Transform iblRotation = Scene::Transform::Identity();
     bool iblEnabled = true;
+    bool useDefaultIBL = false;
     bool sunEnabled = true;
 };
 
+static const std::string kDefaultIBL = "default";
 static const std::string kPointCloudProfileName = "Cloudy day (no direct sun)";
 
 static const std::vector<LightingProfile> gLightingProfiles = {
@@ -356,6 +358,7 @@ static const std::vector<LightingProfile> gLightingProfiles = {
          .sunColor = {1.0f, 1.0f, 1.0f},
          .iblRotation = Scene::Transform::Identity(),
          .iblEnabled = true,
+         .useDefaultIBL = true,
          .sunEnabled = false}};
 
 enum MenuId {
@@ -543,10 +546,11 @@ struct GuiVisualizer::Impl {
                         .Finish();
     }
 
-    void SetLightingProfile(const std::string &name) {
+    void SetLightingProfile(visualization::Renderer &renderer,
+                            const std::string &name) {
         for (size_t i = 0; i < gLightingProfiles.size(); ++i) {
             if (gLightingProfiles[i].name == name) {
-                SetLightingProfile(gLightingProfiles[i]);
+                SetLightingProfile(renderer, gLightingProfiles[i]);
                 this->settings.wgtLightingProfile->SetSelectedValue(
                         name.c_str());
                 return;
@@ -555,8 +559,14 @@ struct GuiVisualizer::Impl {
         utility::LogWarning("Could not find lighting profile '{}'", name);
     }
 
-    void SetLightingProfile(const LightingProfile &profile) {
+    void SetLightingProfile(visualization::Renderer &renderer,
+                            const LightingProfile &profile) {
         auto *renderScene = this->scene->GetScene();
+        if (profile.useDefaultIBL) {
+            this->SetIBL(renderer, nullptr);
+            this->settings.wgtAmbientIBLs->SetSelectedValue(
+                    kDefaultIBL.c_str());
+        }
         if (profile.iblEnabled) {
             renderScene->SetIndirectLight(this->settings.hIbl);
         } else {
@@ -582,6 +592,29 @@ struct GuiVisualizer::Impl {
         this->settings.wgtSunDir->SetValue(profile.sunDir);
         this->settings.wgtSunColor->SetValue(gui::Color(
                 profile.sunColor[0], profile.sunColor[1], profile.sunColor[2]));
+    }
+
+    bool SetIBL(visualization::Renderer &renderer, const char *path) {
+        visualization::IndirectLightHandle newIBL;
+        if (!path) {
+            std::string defaultPath =
+                    std::string(
+                            gui::Application::GetInstance().GetResourcePath()) +
+                    "/" + kDefaultIBL + "_ibl.ktx";
+            newIBL = renderer.AddIndirectLight(
+                    ResourceLoadRequest(defaultPath.c_str()));
+        } else {
+            newIBL = renderer.AddIndirectLight(ResourceLoadRequest(path));
+        }
+        if (newIBL) {
+            auto *renderScene = this->scene->GetScene();
+            this->settings.hIbl = newIBL;
+            auto intensity = renderScene->GetIndirectLightIntensity();
+            renderScene->SetIndirectLight(newIBL);
+            renderScene->SetIndirectLightIntensity(intensity);
+            return true;
+        }
+        return false;
     }
 };
 
@@ -657,7 +690,7 @@ GuiVisualizer::GuiVisualizer(
     renderScene->SetIndirectLightRotation(lightingProfile.iblRotation);
 
     // Create materials
-    auto skyPath = rsrcPath + "/default_sky.ktx";
+    auto skyPath = rsrcPath + "/" + kDefaultIBL + "_sky.ktx";
     settings.hSky =
             GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
 
@@ -783,7 +816,8 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtLightingProfile->SetOnValueChanged(
             [this](const char *, int index) {
                 if (index < int(gLightingProfiles.size())) {
-                    this->impl_->SetLightingProfile(gLightingProfiles[index]);
+                    this->impl_->SetLightingProfile(this->GetRenderer(),
+                                                    gLightingProfiles[index]);
                 } else {
                     this->impl_->settings.wgtAdvanced->SetIsOpen(true);
                     this->SetNeedsLayout();
@@ -855,7 +889,7 @@ GuiVisualizer::GuiVisualizer(
             auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
             name = name.substr(0, name.size() - 8);
             settings.wgtAmbientIBLs->AddItem(name.c_str());
-            if (name == "default") {
+            if (name == kDefaultIBL) {
                 settings.wgtAmbientIBLs->SetSelectedIndex(n);
             }
             n++;
@@ -1163,7 +1197,7 @@ void GuiVisualizer::SetGeometry(
         }
 
         if (nPointClouds == geometries.size()) {
-            impl_->SetLightingProfile(kPointCloudProfileName);
+            impl_->SetLightingProfile(GetRenderer(), kPointCloudProfileName);
         }
 
         impl_->geometryMaterials.emplace(handle, materials);
@@ -1193,16 +1227,9 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 }
 
 bool GuiVisualizer::SetIBL(const char *path) {
-    auto newIBL = GetRenderer().AddIndirectLight(ResourceLoadRequest(path));
-    if (newIBL) {
-        auto *scene = impl_->scene->GetScene();
-        impl_->settings.hIbl = newIBL;
-        auto intensity = scene->GetIndirectLightIntensity();
-        scene->SetIndirectLight(newIBL);
-        scene->SetIndirectLightIntensity(intensity);
-        return true;
-    }
-    return false;
+    auto result = impl_->SetIBL(GetRenderer(), path);
+    PostRedraw();
+    return result;
 }
 
 bool GuiVisualizer::LoadGeometry(const std::string &path) {
