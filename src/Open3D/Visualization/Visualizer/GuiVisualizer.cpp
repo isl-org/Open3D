@@ -164,12 +164,21 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addRow("", "");
 
     addRow("Fly mode", " ");
+    addRow("Left-drag", "Rotate camera");
+#if defined(__APPLE__)
+    addLabel("Opt + left-drag");
+#else
+    addLabel("Win + left-drag");
+#endif  // __APPLE__
+    addLabel("Rotate around forward axis");
     addRow("W", "Forward");
     addRow("S", "Backward");
     addRow("A", "Step left");
     addRow("D", "Step right");
     addRow("Q", "Step up");
     addRow("Z", "Step down");
+    addRow("E", "Roll left");
+    addRow("R", "Roll right");
     addRow("Up", "Look up");
     addRow("Down", "Look down");
     addRow("Left", "Look left");

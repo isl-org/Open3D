@@ -187,9 +187,18 @@ public:
                 cameraControls_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
+                // Use relative movement because user may be moving
+                // with keys at the same time.
                 int dx = e.x - lastMouseX_;
                 int dy = e.y - lastMouseY_;
-                cameraControls_->RotateFPS(-dx, -dy);
+                if (e.modifiers & int(KeyModifier::META)) {
+                    // RotateZ() was not intended to be used for relative
+                    // movement, so reset the mouse-down matrix first.
+                    cameraControls_->StartMouseDrag();
+                    cameraControls_->RotateZ(dx, dy);
+                } else {
+                    cameraControls_->RotateFPS(-dx, -dy);
+                }
                 lastMouseX_ = e.x;
                 lastMouseY_ = e.y;
                 break;
@@ -230,6 +239,14 @@ public:
             }
             if (hasKey('z')) {
                 cameraControls_->MoveLocal({0, -dist, 0});
+            }
+            if (hasKey('e')) {
+                cameraControls_->StartMouseDrag();
+                cameraControls_->RotateZ(0, -2);
+            }
+            if (hasKey('r')) {
+                cameraControls_->StartMouseDrag();
+                cameraControls_->RotateZ(0, 2);
             }
             if (hasKey(KEY_UP)) {
                 cameraControls_->RotateLocal(angleRad, {1, 0, 0});
