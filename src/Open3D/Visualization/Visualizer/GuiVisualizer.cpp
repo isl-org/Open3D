@@ -1214,7 +1214,9 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
 }
 
 bool GuiVisualizer::SetIBL(const char *path) {
-    return impl_->SetIBL(GetRenderer(), path);
+    auto result = impl_->SetIBL(GetRenderer(), path);
+    PostRedraw();
+    return result;
 }
 
 bool GuiVisualizer::LoadGeometry(const std::string &path) {
