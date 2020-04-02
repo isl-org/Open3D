@@ -88,15 +88,17 @@ public:
     virtual void Layout(const Theme& theme);
     virtual DrawResult Draw(const DrawContext& context);
 
-    /// Widgets that use Dear ImGUI should not need to override this,
-    /// as Dear ImGUI will take care of all the mouse handling during
-    /// the Draw().
-    virtual void Mouse(const MouseEvent& e);
+    enum class EventResult { IGNORED, CONSUMED, DISCARD };
 
     /// Widgets that use Dear ImGUI should not need to override this,
     /// as Dear ImGUI will take care of all the mouse handling during
     /// the Draw().
-    virtual void Key(const KeyEvent& e);
+    virtual EventResult Mouse(const MouseEvent& e);
+
+    /// Widgets that use Dear ImGUI should not need to override this,
+    /// as Dear ImGUI will take care of all the mouse handling during
+    /// the Draw().
+    virtual EventResult Key(const KeyEvent& e);
 
     /// If sending tick events is enabled for the window, a tick event
     /// will be sent each time the event loop processes events. This

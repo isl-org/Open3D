@@ -128,22 +128,33 @@ void Widget::DrawImGuiPopEnabledState() {
     }
 }
 
-void Widget::Mouse(const MouseEvent& e) {
+Widget::EventResult Widget::Mouse(const MouseEvent& e) {
     if (!impl_->isVisible) {
-        return;
+        return EventResult::IGNORED;
     }
 
     // Iterate backwards so that we send mouse events from the top down.
     for (auto it = impl_->children.rbegin(); it != impl_->children.rend();
          ++it) {
         if ((*it)->GetFrame().Contains(e.x, e.y)) {
-            (*it)->Mouse(e);
-            break;
+            auto result = (*it)->Mouse(e);
+            if (result != EventResult::IGNORED) {
+                return result;
+            }
         }
     }
+
+    // If we get here then this event is either for an ImGUI widget,
+    // in which case we should not process this event further (ImGUI will
+    // do it later), or this is an empty widget like a panel or something,
+    // which eats events (it doesn't handle the event [e.g. button down]
+    // and nor should anything else).
+    return EventResult::DISCARD;
 }
 
-void Widget::Key(const KeyEvent& e) {}
+Widget::EventResult Widget::Key(const KeyEvent& e) {
+    return EventResult::DISCARD;
+}
 
 Widget::DrawResult Widget::Tick(const TickEvent& e) {
     auto result = DrawResult::NONE;

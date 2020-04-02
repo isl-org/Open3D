@@ -484,6 +484,7 @@ struct GuiVisualizer::Impl {
     struct Settings {
         visualization::IndirectLightHandle hIbl;
         visualization::SkyboxHandle hSky;
+        visualization::TextureHandle hSkyTexture;
         visualization::LightHandle hDirectionalLight;
         visualization::GeometryHandle hAxes;
 
@@ -879,6 +880,7 @@ GuiVisualizer::GuiVisualizer(
         } else {
             renderScene->SetSkybox(SkyboxHandle());
         }
+        impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
     });
     checkboxes->AddChild(settings.wgtSkyEnabled);
     settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");

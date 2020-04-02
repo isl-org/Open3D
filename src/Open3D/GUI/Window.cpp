@@ -149,6 +149,7 @@ struct Window::Impl {
 
     std::queue<std::function<void()>> deferredUntilBeforeDraw;
     std::queue<std::function<void()>> deferredUntilDraw;
+    Widget* mouseGrabberWidget = nullptr;  // only if not ImGUI widget
     Widget* focusWidget =
             nullptr;  // only used if ImGUI isn't taking keystrokes
     int nSkippedFrames = 0;
@@ -815,6 +816,14 @@ void Window::OnMouseEvent(const MouseEvent& e) {
         }
     }
 
+    if (impl_->mouseGrabberWidget) {
+        impl_->mouseGrabberWidget->Mouse(e);
+        if (e.type == MouseEvent::BUTTON_UP) {
+            impl_->mouseGrabberWidget = nullptr;
+        }
+        return;
+    }
+
     // Some ImGUI widgets have popup windows, in particular, the color
     // picker, which creates a popup window when you click on the color
     // patch. Since these aren't gui::Widgets, we don't know about them,
@@ -851,7 +860,14 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             if (e.type == MouseEvent::BUTTON_DOWN) {
                 SetFocusWidget(child.get());
             }
-            child->Mouse(e);
+            auto result = child->Mouse(e);
+            if (e.type == MouseEvent::BUTTON_DOWN) {
+                if (result == Widget::EventResult::CONSUMED) {
+                    impl_->mouseGrabberWidget = child.get();
+                }
+            } else if (e.type == MouseEvent::BUTTON_UP) {
+                impl_->mouseGrabberWidget = nullptr;
+            }
             return true;
         }
         return false;

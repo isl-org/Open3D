@@ -45,10 +45,27 @@ void IBLRotationInteractor::Rotate(int dx, int dy) {
     UpdateMouseDragUI();
 }
 
+void IBLRotationInteractor::RotateZ(int dx, int dy) {
+    Eigen::Vector3f forward = camera_->GetForwardVector();
+    RotateWorld(0, dy, {0, 0, 0}, forward);
+    scene_->SetIndirectLightRotation(GetCurrentRotation());
+    UpdateMouseDragUI();
+}
+
+void IBLRotationInteractor::SetSkyboxHandle(visualization::SkyboxHandle skybox,
+                                            bool isOn) {
+    skybox_ = skybox;
+    skyboxIsNormallyOn_ = isOn;
+}
+
 void IBLRotationInteractor::StartMouseDrag() {
     iblRotationAtMouseDown_ = scene_->GetIndirectLightRotation();
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
+
+    if (!skyboxIsNormallyOn_) {
+        scene_->SetSkybox(skybox_);
+    }
 
     ClearUI();
 
@@ -62,7 +79,12 @@ void IBLRotationInteractor::UpdateMouseDragUI() {
     }
 }
 
-void IBLRotationInteractor::EndMouseDrag() { ClearUI(); }
+void IBLRotationInteractor::EndMouseDrag() {
+    ClearUI();
+    if (!skyboxIsNormallyOn_) {
+        scene_->SetSkybox(visualization::SkyboxHandle());
+    }
+}
 
 void IBLRotationInteractor::ClearUI() {
     for (auto& o : uiObjs_) {
