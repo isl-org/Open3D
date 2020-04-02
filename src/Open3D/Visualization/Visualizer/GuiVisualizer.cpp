@@ -319,6 +319,7 @@ struct LightingProfile {
 
 static const std::string kDefaultIBL = "default";
 static const std::string kPointCloudProfileName = "Cloudy day (no direct sun)";
+static const bool kDefaultShowAxes = false;
 
 static const std::vector<LightingProfile> gLightingProfiles = {
         {.name = "Bright day with sun at +Y [default]",
@@ -484,8 +485,10 @@ struct GuiVisualizer::Impl {
         visualization::IndirectLightHandle hIbl;
         visualization::SkyboxHandle hSky;
         visualization::LightHandle hDirectionalLight;
+        visualization::GeometryHandle hAxes;
 
         std::shared_ptr<gui::Widget> wgtBase;
+        std::shared_ptr<gui::Checkbox> wgtShowAxes;
         std::shared_ptr<gui::Button> wgtMouseArcball;
         std::shared_ptr<gui::Button> wgtMouseFly;
         std::shared_ptr<gui::Button> wgtMouseSun;
@@ -668,6 +671,11 @@ GuiVisualizer::GuiVisualizer(
     impl_->scene = scene;
     scene->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
 
+    // Add axes
+    auto axes = geometry::TriangleMesh::CreateCoordinateFrame(1);
+    impl_->settings.hAxes = renderScene->AddGeometry(*axes);
+    renderScene->SetEntityEnabled(impl_->settings.hAxes, kDefaultShowAxes);
+
     // Create light
     const int defaultLightingProfileIdx = 0;
     auto &lightingProfile = gLightingProfiles[defaultLightingProfileIdx];
@@ -805,6 +813,14 @@ GuiVisualizer::GuiVisualizer(
     bgcolorLayout->AddChild(bgcolor);
     viewCtrls->AddChild(gui::Horiz::MakeFixed(separationHeight));
     viewCtrls->AddChild(bgcolorLayout);
+
+    // ... show axes
+    settings.wgtShowAxes = std::make_shared<gui::Checkbox>("Show axes");
+    settings.wgtShowAxes->SetChecked(kDefaultShowAxes);
+    settings.wgtShowAxes->SetOnChecked([this, renderScene](bool isChecked) {
+        renderScene->SetEntityEnabled(this->impl_->settings.hAxes, isChecked);
+    });
+    viewCtrls->AddChild(settings.wgtShowAxes);
 
     // ... lighting profiles
     settings.wgtLightingProfile = std::make_shared<gui::Combobox>();
