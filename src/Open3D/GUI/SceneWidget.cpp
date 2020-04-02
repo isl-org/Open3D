@@ -570,9 +570,11 @@ void SceneWidget::SetViewControls(Controls mode) {
         // panning distance so that the cursor stays in roughly the same
         // position as the user moves the mouse. Use the distance to the
         // center of the model, which should be reasonable.
-        Eigen::Vector3f toCenter = impl_->bounds.GetCenter().cast<float>() - impl_->camera->GetPosition();
+        Eigen::Vector3f toCenter = impl_->bounds.GetCenter().cast<float>() -
+                                   impl_->camera->GetPosition();
         Eigen::Vector3f forward = impl_->camera->GetForwardVector();
-        Eigen::Vector3f center = impl_->camera->GetPosition() + toCenter.norm() * forward;
+        Eigen::Vector3f center =
+                impl_->camera->GetPosition() + toCenter.norm() * forward;
         impl_->controls->SetCenterOfRotation(center);
     } else {
         impl_->controls->SetControls(mode);
