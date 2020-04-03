@@ -625,8 +625,8 @@ struct GuiVisualizer::Impl {
                 this->settings.hSky = renderer.AddSkybox(
                         ResourceLoadRequest(skyboxPath.c_str()));
                 if (!this->settings.hSky) {
-                    this->settings.hSky = renderer.AddSkybox(
-                            ResourceLoadRequest(path));
+                    this->settings.hSky =
+                            renderer.AddSkybox(ResourceLoadRequest(path));
                 }
                 bool isOn = this->settings.wgtSkyEnabled->IsChecked();
                 if (isOn) {
