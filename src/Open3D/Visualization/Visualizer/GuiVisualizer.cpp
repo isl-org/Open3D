@@ -319,6 +319,7 @@ struct LightingProfile {
 
 static const std::string kDefaultIBL = "default";
 static const std::string kPointCloudProfileName = "Cloudy day (no direct sun)";
+static const bool kDefaultShowSkybox = false;
 static const bool kDefaultShowAxes = false;
 
 static const std::vector<LightingProfile> gLightingProfiles = {
@@ -616,6 +617,23 @@ struct GuiVisualizer::Impl {
             auto intensity = renderScene->GetIndirectLightIntensity();
             renderScene->SetIndirectLight(newIBL);
             renderScene->SetIndirectLightIntensity(intensity);
+
+            auto skyboxPath = std::string(path);
+            if (skyboxPath.find("_ibl.ktx") != std::string::npos) {
+                skyboxPath = skyboxPath.substr(0, skyboxPath.size() - 8);
+                skyboxPath += "_skybox.ktx";
+                this->settings.hSky = renderer.AddSkybox(
+                        ResourceLoadRequest(skyboxPath.c_str()));
+                if (!this->settings.hSky) {
+                    this->settings.hSky = renderer.AddSkybox(
+                            ResourceLoadRequest(path));
+                }
+                bool isOn = this->settings.wgtSkyEnabled->IsChecked();
+                if (isOn) {
+                    this->scene->GetScene()->SetSkybox(this->settings.hSky);
+                }
+                this->scene->SetSkyboxHandle(this->settings.hSky, isOn);
+            }
             return true;
         }
         return false;
@@ -698,11 +716,12 @@ GuiVisualizer::GuiVisualizer(
     renderScene->SetIndirectLightIntensity(lightingProfile.iblIntensity);
     renderScene->SetIndirectLightRotation(lightingProfile.iblRotation);
 
-    // Create materials
-    auto skyPath = rsrcPath + "/" + kDefaultIBL + "_sky.ktx";
+    auto skyPath = rsrcPath + "/" + kDefaultIBL + "_skybox.ktx";
     settings.hSky =
             GetRenderer().AddSkybox(ResourceLoadRequest(skyPath.data()));
+    scene->SetSkyboxHandle(settings.hSky, kDefaultShowSkybox);
 
+    // Create materials
     auto litPath = rsrcPath + "/defaultLit.filamat";
     impl_->hLitMaterial = GetRenderer().AddMaterial(
             visualization::ResourceLoadRequest(litPath.data()));
@@ -740,6 +759,7 @@ GuiVisualizer::GuiVisualizer(
                 impl_->settings.SetCustomProfile();
 
                 renderScene->SetSkybox(newSky);
+                impl_->scene->SetSkyboxHandle(newSky, true);
             }
         });
         ShowDialog(dlg);
@@ -872,7 +892,7 @@ GuiVisualizer::GuiVisualizer(
     });
     checkboxes->AddChild(settings.wgtAmbientEnabled);
     settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
-    settings.wgtSkyEnabled->SetChecked(false);
+    settings.wgtSkyEnabled->SetChecked(kDefaultShowSkybox);
     settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
         impl_->settings.SetCustomProfile();
         if (checked) {
