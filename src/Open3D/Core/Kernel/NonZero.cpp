@@ -24,9 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "Open3D/Core/Kernel/BinaryEW.h"
-#include "Open3D/Core/Kernel/IndexGetSet.h"
 #include "Open3D/Core/Kernel/NonZero.h"
-#include "Open3D/Core/Kernel/UnaryEW.h"
+
+#include "Open3D/Core/Device.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
+
+namespace open3d {
+namespace kernel {
+
+Tensor NonZero(const Tensor& src) {
+    Device::DeviceType device_type = src.GetDevice().GetType();
+    if (device_type == Device::DeviceType::CPU) {
+        return NonZeroCPU(src);
+    } else if (device_type == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        return NonZeroCUDA(src);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("NonZero: Unimplemented device");
+    }
+}
+
+}  // namespace kernel
+}  // namespace open3d

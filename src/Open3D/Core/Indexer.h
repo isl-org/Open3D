@@ -90,6 +90,50 @@ enum class DtypePolicy {
                  // boolean output).
 };
 
+/// Indexer to one Tensor
+///
+/// Example usage:
+///
+/// ```cpp
+/// // Create a float Tensor and set all elements to 100.
+/// std::vector<float> vals{0, 1, 2, 3, 4};
+/// Tensor a(vals, SizeVector{5}, Dtype::Float32);
+/// TensorIterator iter(a);
+/// for (int64_t i = 0; i < iter.NumWorkloads(); ++i) {
+///     *static_cast<float*>(iter.GetPtr(i)) = 100.f;
+/// }
+/// ```
+class TensorIterator {
+public:
+    TensorIterator(const Tensor& tensor)
+        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {}
+
+    OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
+        int64_t num_workloads = 1;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            num_workloads *= input_.shape_[i];
+        }
+        return num_workloads;
+    }
+
+    OPEN3D_HOST_DEVICE void* GetPtr(int64_t workload_idx) const {
+        if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
+            return nullptr;
+        }
+        int64_t offset = 0;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            offset += workload_idx / input_.strides_[i] * input_.strides_[i];
+            workload_idx = workload_idx % input_.strides_[i];
+        }
+        return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
+                                  offset * input_.dtype_byte_size_);
+    }
+
+protected:
+    TensorRef input_;
+    int64_t ndims_;
+};
+
 /// Indexing engine for elementwise ops with broadcasting support.
 ///
 /// Fancy indexing is supported by restriding input tensor and treating the
@@ -137,7 +181,7 @@ public:
             }
         }
 
-        // Conver to TensorRef.
+        // Convert to TensorRef.
         num_inputs_ = static_cast<int64_t>(input_tensors.size());
         if (num_inputs_ > MAX_OPERANDS) {
             utility::LogError("Operation has too many inputs {} > {}",

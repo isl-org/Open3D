@@ -39,9 +39,7 @@ class AdvancedIndexPreprocessor {
 public:
     AdvancedIndexPreprocessor(const Tensor& tensor,
                               const std::vector<Tensor>& index_tensors)
-        : tensor_(tensor), index_tensors_(index_tensors) {
-        // The constructor makes shallow copies of the tensors to keep input
-        // tensors untouched by the preprocessing.
+        : tensor_(tensor), index_tensors_(ExpandBoolTensors(index_tensors)) {
         RunPreprocess();
     }
 
@@ -100,6 +98,10 @@ public:
 protected:
     /// Preprocess tensor and index tensors.
     void RunPreprocess();
+
+    /// Expand boolean tensor to integer index.
+    static std::vector<Tensor> ExpandBoolTensors(
+            const std::vector<Tensor>& index_tensors);
 
     /// The processed tensors being indexed. The tensor still uses the same
     /// underlying memory, but it may have been reshaped and restrided.
