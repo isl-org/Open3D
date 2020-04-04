@@ -627,7 +627,7 @@ FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
         iTransform = transformMgr.getInstance(found->second.parent);
         if (!iTransform.isValid()) {
             using namespace filament::math;
-            // Forcing user to manipulate transform located in center of entity
+
             auto parent = utils::EntityManager::get().create();
             found->second.parent = parent;
 
@@ -637,11 +637,8 @@ FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
             iTransform = transformMgr.getInstance(found->second.info.self);
             iTransform = transformMgr.getInstance(found->second.parent);
 
-            auto center = GetEntityBoundingBox(id).GetCenter();
-            transformMgr.create(
-                    found->second.info.self, iTransform,
-                    mat4f::translation(
-                            float3{-center.x(), -center.y(), -center.z()}));
+            transformMgr.create(found->second.info.self, iTransform,
+                                mat4f::translation(float3{0.0f, 0.0f, 0.0f}));
         }
     }
 

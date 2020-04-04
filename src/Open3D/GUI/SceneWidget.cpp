@@ -603,7 +603,7 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     auto maxDim =
             std::max(boundsMax.x(), std::max(boundsMax.y(), boundsMax.z()));
     maxDim = 1.5f * maxDim;
-    auto center = impl_->bounds.GetCenter().cast<float>();
+    Eigen::Vector3f center = impl_->bounds.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
         case CameraPreset::PLUS_X: {

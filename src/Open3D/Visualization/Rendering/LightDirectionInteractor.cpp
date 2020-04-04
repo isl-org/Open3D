@@ -140,12 +140,6 @@ void LightDirectionInteractor::StartMouseDrag() {
 
     auto dir = scene_->GetLightDirection(dirLight_);
 
-    // TODO: it seems that SetEntityTransform moves an object to be
-    //       centered about the origin before applying the transform.
-    //       This appears to be a Filament behavior, which we work around
-    //       here. This code needs to be changed once we fix that
-    //       behavior.
-
     double size = modelSize_;
     if (size <= 0.001) {
         size = 10;
@@ -175,7 +169,6 @@ void LightDirectionInteractor::StartMouseDrag() {
     sunDir->PaintUniformColor(SUN_COLOR);
     auto t2 = Camera::Transform::Identity();
     t2.translate(-sphereSize * dir);
-    t2.translate(0.5 * arrowLength * dir);
     uiObjs_.push_back({scene_->AddGeometry(*sunDir), t2});
     scene_->SetEntityTransform(uiObjs_[2].handle, t2);
     scene_->SetGeometryShadows(uiObjs_[2].handle, false, false);
