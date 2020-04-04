@@ -647,9 +647,10 @@ struct GuiVisualizer::Impl {
             newIBL = renderer.AddIndirectLight(ResourceLoadRequest(path));
             iblPath = path;
         } else {
-            iblPath = std::string(
+            iblPath =
+                    std::string(
                             gui::Application::GetInstance().GetResourcePath()) +
-                            "/" + kDefaultIBL + "_ibl.ktx";
+                    "/" + kDefaultIBL + "_ibl.ktx";
             newIBL = renderer.AddIndirectLight(
                     ResourceLoadRequest(iblPath.c_str()));
         }
@@ -667,8 +668,8 @@ struct GuiVisualizer::Impl {
                 this->settings.hSky = renderer.AddSkybox(
                         ResourceLoadRequest(skyboxPath.c_str()));
                 if (!this->settings.hSky) {
-                    this->settings.hSky =
-                            renderer.AddSkybox(ResourceLoadRequest(iblPath.c_str()));
+                    this->settings.hSky = renderer.AddSkybox(
+                            ResourceLoadRequest(iblPath.c_str()));
                 }
                 bool isOn = this->settings.wgtSkyEnabled->IsChecked();
                 if (isOn) {

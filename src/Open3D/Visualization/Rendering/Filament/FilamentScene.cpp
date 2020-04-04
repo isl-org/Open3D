@@ -637,9 +637,8 @@ FilamentScene::GetEntityTransformInstance(const REHandle_abstract& id) {
             iTransform = transformMgr.getInstance(found->second.info.self);
             iTransform = transformMgr.getInstance(found->second.parent);
 
-            transformMgr.create(
-                    found->second.info.self, iTransform,
-                    mat4f::translation(float3{0.0f, 0.0f, 0.0f}));
+            transformMgr.create(found->second.info.self, iTransform,
+                                mat4f::translation(float3{0.0f, 0.0f, 0.0f}));
         }
     }
 
