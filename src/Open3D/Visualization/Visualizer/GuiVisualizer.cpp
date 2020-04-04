@@ -1289,7 +1289,7 @@ void GuiVisualizer::SetGeometry(
     }
     auto axes = CreateAxes(axisLength);
     impl_->settings.hAxes = scene3d->AddGeometry(*axes);
-
+    scene3d->SetGeometryShadows(impl_->settings.hAxes, false, false);
     scene3d->SetEntityEnabled(impl_->settings.hAxes,
                               impl_->settings.wgtShowAxes->IsChecked());
 
