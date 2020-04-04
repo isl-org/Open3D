@@ -177,12 +177,10 @@ void LightDirectionInteractor::StartMouseDrag() {
 }
 
 void LightDirectionInteractor::UpdateMouseDragUI() {
-    // TODO: uncomment the two lines here when we setting a transform
-    //       no longer moves an object to be centered about the origin.
-    // auto modelCenter = modelBounds_.GetCenter().cast<float>();
+    auto modelCenter = modelBounds_.GetCenter().cast<float>();
     for (auto& o : uiObjs_) {
         Camera::Transform t = GetMatrix() * o.transform;
-        // t.pretranslate(modelCenter);
+        t.pretranslate(modelCenter);
         scene_->SetEntityTransform(o.handle, t);
     }
 }
