@@ -223,6 +223,47 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
+std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axisLength) {
+    const double sphereRadius = 0.005 * axisLength;
+    const double cylRadius = 0.0025 * axisLength;
+    const double coneRadius = 0.0075 * axisLength;
+    const double cylHeight = 0.975 * axisLength;
+    const double coneHeight = 0.025 * axisLength;
+
+    auto mesh_frame = geometry::TriangleMesh::CreateSphere(sphereRadius);
+    mesh_frame->ComputeVertexNormals();
+    mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
+
+    std::shared_ptr<geometry::TriangleMesh> mesh_arrow;
+    Eigen::Matrix4d transformation;
+
+    mesh_arrow = geometry::TriangleMesh::CreateArrow(cylRadius, coneRadius,
+                                                     cylHeight, coneHeight);
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
+    transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
+    mesh_arrow->Transform(transformation);
+    *mesh_frame += *mesh_arrow;
+
+    mesh_arrow = geometry::TriangleMesh::CreateArrow(cylRadius, coneRadius,
+                                                     cylHeight, coneHeight);
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
+    transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
+    mesh_arrow->Transform(transformation);
+    *mesh_frame += *mesh_arrow;
+
+    mesh_arrow = geometry::TriangleMesh::CreateArrow(cylRadius, coneRadius,
+                                                     cylHeight, coneHeight);
+    mesh_arrow->ComputeVertexNormals();
+    mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
+    transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+    mesh_arrow->Transform(transformation);
+    *mesh_frame += *mesh_arrow;
+
+    return mesh_frame;
+}
+
 struct SmartMode {
     static bool PointCloudHasUniformColor(const geometry::PointCloud &pcd) {
         if (!pcd.HasColors()) {
@@ -601,15 +642,16 @@ struct GuiVisualizer::Impl {
 
     bool SetIBL(visualization::Renderer &renderer, const char *path) {
         visualization::IndirectLightHandle newIBL;
-        if (!path) {
-            std::string defaultPath =
-                    std::string(
-                            gui::Application::GetInstance().GetResourcePath()) +
-                    "/" + kDefaultIBL + "_ibl.ktx";
-            newIBL = renderer.AddIndirectLight(
-                    ResourceLoadRequest(defaultPath.c_str()));
-        } else {
+        std::string iblPath;
+        if (path) {
             newIBL = renderer.AddIndirectLight(ResourceLoadRequest(path));
+            iblPath = path;
+        } else {
+            iblPath = std::string(
+                            gui::Application::GetInstance().GetResourcePath()) +
+                            "/" + kDefaultIBL + "_ibl.ktx";
+            newIBL = renderer.AddIndirectLight(
+                    ResourceLoadRequest(iblPath.c_str()));
         }
         if (newIBL) {
             auto *renderScene = this->scene->GetScene();
@@ -618,7 +660,7 @@ struct GuiVisualizer::Impl {
             renderScene->SetIndirectLight(newIBL);
             renderScene->SetIndirectLightIntensity(intensity);
 
-            auto skyboxPath = std::string(path);
+            auto skyboxPath = std::string(iblPath);
             if (skyboxPath.find("_ibl.ktx") != std::string::npos) {
                 skyboxPath = skyboxPath.substr(0, skyboxPath.size() - 8);
                 skyboxPath += "_skybox.ktx";
@@ -626,7 +668,7 @@ struct GuiVisualizer::Impl {
                         ResourceLoadRequest(skyboxPath.c_str()));
                 if (!this->settings.hSky) {
                     this->settings.hSky =
-                            renderer.AddSkybox(ResourceLoadRequest(path));
+                            renderer.AddSkybox(ResourceLoadRequest(iblPath.c_str()));
                 }
                 bool isOn = this->settings.wgtSkyEnabled->IsChecked();
                 if (isOn) {
@@ -689,11 +731,6 @@ GuiVisualizer::GuiVisualizer(
     auto renderScene = scene->GetScene();
     impl_->scene = scene;
     scene->SetBackgroundColor(gui::Color(1.0, 1.0, 1.0));
-
-    // Add axes
-    auto axes = geometry::TriangleMesh::CreateCoordinateFrame(1);
-    impl_->settings.hAxes = renderScene->AddGeometry(*axes);
-    renderScene->SetEntityEnabled(impl_->settings.hAxes, kDefaultShowAxes);
 
     // Create light
     const int defaultLightingProfileIdx = 0;
@@ -1154,6 +1191,9 @@ void GuiVisualizer::SetGeometry(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
                 &geometries) {
     auto *scene3d = impl_->scene->GetScene();
+    if (impl_->settings.hAxes) {
+        scene3d->RemoveGeometry(impl_->settings.hAxes);
+    }
     for (auto &h : impl_->geometryHandles) {
         scene3d->RemoveGeometry(h);
     }
@@ -1240,6 +1280,17 @@ void GuiVisualizer::SetGeometry(
 
         impl_->geometryMaterials.emplace(handle, materials);
     }
+
+    // Add axes
+    auto axisLength = bounds.GetMaxExtent();
+    if (axisLength < 0.001) {
+        axisLength = 1.0;
+    }
+    auto axes = CreateAxes(axisLength);
+    impl_->settings.hAxes = scene3d->AddGeometry(*axes);
+
+    scene3d->SetEntityEnabled(impl_->settings.hAxes,
+                              impl_->settings.wgtShowAxes->IsChecked());
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }
