@@ -67,7 +67,7 @@ void pybind_pointcloud(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
                  "Assigns each point in the PointCloud the same color.")
-            .def("select_down_sample", &geometry::PointCloud::SelectDownSample,
+            .def("select_by_index", &geometry::PointCloud::SelectByIndex,
                  "Function to select points from input pointcloud into output "
                  "pointcloud.",
                  "indices"_a, "invert"_a = false)
@@ -105,9 +105,9 @@ void pybind_pointcloud(py::module &m) {
                          geometry::PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
-            .def("remove_none_finite_points",
-                 &geometry::PointCloud::RemoveNoneFinitePoints,
-                 "Function to remove none-finite points from the PointCloud",
+            .def("remove_non_finite_points",
+                 &geometry::PointCloud::RemoveNonFinitePoints,
+                 "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
             .def("remove_radius_outlier",
                  &geometry::PointCloud::RemoveRadiusOutliers,
@@ -223,7 +223,7 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "paint_uniform_color",
             {{"color", "RGB color for the PointCloud."}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "select_down_sample",
+            m, "PointCloud", "select_by_index",
             {{"indices", "Indices of points to be selected."},
              {"invert",
               "Set to ``True`` to invert the selection of indices."}});
@@ -244,7 +244,7 @@ void pybind_pointcloud(py::module &m) {
             m, "PointCloud", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_none_finite_points",
+            m, "PointCloud", "remove_non_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},
              {"remove_infinite",
               "Remove infinite values from the PointCloud"}});

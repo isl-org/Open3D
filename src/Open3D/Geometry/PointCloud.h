@@ -115,8 +115,8 @@ public:
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
-    PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
-                                       bool remove_infinite = true);
+    PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
+                                      bool remove_infinite = true);
 
     /// \brief Function to select points from \p input pointcloud into
     /// \p output pointcloud.
@@ -125,7 +125,7 @@ public:
     ///
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
-    std::shared_ptr<PointCloud> SelectDownSample(
+    std::shared_ptr<PointCloud> SelectByIndex(
             const std::vector<size_t> &indices, bool invert = false) const;
 
     /// \brief Function to downsample input pointcloud into output pointcloud

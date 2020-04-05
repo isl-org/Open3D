@@ -413,7 +413,7 @@ public:
     /// output TriangleMesh
     /// Vertices with indices in \param indices are selected.
     /// \param indices defines Indices of vertices to be selected.
-    std::shared_ptr<TriangleMesh> SelectDownSample(
+    std::shared_ptr<TriangleMesh> SelectByIndex(
             const std::vector<size_t> &indices) const;
 
     /// Function to crop pointcloud into output pointcloud

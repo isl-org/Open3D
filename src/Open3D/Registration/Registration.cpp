@@ -221,8 +221,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
          itr < criteria.max_iteration_ && itr < criteria.max_validation_;
          itr++) {
         for (int j = 0; j < ransac_n; j++) {
-            ransac_corres[j] =
-                    corres[utility::UniformRandInt(0, corres.size() - 1)];
+            ransac_corres[j] = corres[utility::UniformRandInt(
+                    0, static_cast<int>(corres.size()) - 1)];
         }
         transformation =
                 estimation.ComputeTransformation(source, target, ransac_corres);
@@ -283,7 +283,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 Eigen::Matrix4d transformation;
                 for (int j = 0; j < ransac_n; j++) {
                     int source_sample_id = utility::UniformRandInt(
-                            0, source.points_.size() - 1);
+                            0, static_cast<int>(source.points_.size()) - 1);
                     if (similar_features[source_sample_id].empty()) {
                         std::vector<int> indices(num_similar_features);
                         kdtree_feature.SearchKNN(

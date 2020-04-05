@@ -658,7 +658,7 @@ void VisualizerWithVertexSelection::MouseButtonCallback(GLFWwindow *window,
         // plane is a larger distance than one pixel projected onto the
         // viewing plane because perspective shrinks things as they get
         // farther away.
-        auto depth = GetDepth(x, y);
+        auto depth = GetDepth(static_cast<int>(x), static_cast<int>(y));
         // If we clicked on something, set the depth, otherwise keep it what
         // it was last time, which should be about right (as good as we're
         // going to get)
@@ -800,8 +800,8 @@ const std::vector<Eigen::Vector3d>
     return points;
 }
 
-Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(int winX,
-                                                             int winY) {
+Eigen::Vector3d VisualizerWithVertexSelection::CalcDragDelta(double winX,
+                                                             double winY) {
     auto &view = (ViewControlWithEditing &)(*view_control_ptr_);
     auto start = GLHelper::Unproject(
             Eigen::Vector3d(mouse_down_pos_.x(),
