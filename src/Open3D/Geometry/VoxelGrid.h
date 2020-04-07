@@ -237,6 +237,11 @@ public:
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound);
 
+    /// Returns List of ``Voxel``: Voxels contained in voxel grid.
+    /// Changes to the voxels returned from this method are not reflected in
+    /// the voxel grid.
+    std::vector<Voxel> GetVoxels() const;
+
 public:
     /// Size of the voxel.
     double voxel_size_ = 0.0;
