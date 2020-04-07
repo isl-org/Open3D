@@ -85,8 +85,10 @@ void pybind_voxelgrid(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def_readwrite("voxels", &geometry::VoxelGrid::voxels_,
-                           "List of ``Voxel``: Voxels contained in voxel grid")
+            .def("get_voxels", &geometry::VoxelGrid::GetVoxels,
+                 "Returns List of ``Voxel``: Voxels contained in voxel grid. "
+                 "Changes to the voxels returned from this method"
+                 "are not reflected in the voxel grid.")
             .def("has_colors", &geometry::VoxelGrid::HasColors,
                  "Returns ``True`` if the voxel grid contains voxel colors.")
             .def("has_voxels", &geometry::VoxelGrid::HasVoxels,
