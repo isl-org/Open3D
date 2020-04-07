@@ -138,7 +138,7 @@ void LightDirectionInteractor::StartMouseDrag() {
 
     ClearUI();
 
-    auto dir = scene_->GetLightDirection(dirLight_);
+    Eigen::Vector3f dir = scene_->GetLightDirection(dirLight_);
 
     double size = modelSize_;
     if (size <= 0.001) {
@@ -177,7 +177,7 @@ void LightDirectionInteractor::StartMouseDrag() {
 }
 
 void LightDirectionInteractor::UpdateMouseDragUI() {
-    auto modelCenter = modelBounds_.GetCenter().cast<float>();
+    Eigen::Vector3f modelCenter = modelBounds_.GetCenter().cast<float>();
     for (auto& o : uiObjs_) {
         Camera::Transform t = GetMatrix() * o.transform;
         t.pretranslate(modelCenter);
