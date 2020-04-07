@@ -27,6 +27,7 @@
 #include "Open3D/Odometry/Odometry.h"
 
 #include <Eigen/Dense>
+#include <memory>
 
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/RGBDImage.h"
@@ -350,21 +351,43 @@ inline bool CheckImagePair(const geometry::Image &image_s,
             image_s.height_ == image_t.height_);
 }
 
+inline bool IsColorImageRGB(const geometry::Image &image) {
+    return (image.num_of_channels_ == 3);
+}
+
 inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
                                const geometry::RGBDImage &target) {
-    return (CheckImagePair(source.color_, target.color_) &&
-            CheckImagePair(source.depth_, target.depth_) &&
-            CheckImagePair(source.color_, source.depth_) &&
-            CheckImagePair(target.color_, target.depth_) &&
-            CheckImagePair(source.color_, target.color_) &&
-            source.color_.num_of_channels_ == 1 &&
-            source.depth_.num_of_channels_ == 1 &&
-            target.color_.num_of_channels_ == 1 &&
-            target.depth_.num_of_channels_ == 1 &&
-            source.color_.bytes_per_channel_ == 4 &&
-            target.color_.bytes_per_channel_ == 4 &&
-            source.depth_.bytes_per_channel_ == 4 &&
-            target.depth_.bytes_per_channel_ == 4);
+    if (IsColorImageRGB(source.color_) && IsColorImageRGB(target.color_)) {
+        return (CheckImagePair(source.color_, target.color_) &&
+                CheckImagePair(source.depth_, target.depth_) &&
+                CheckImagePair(source.color_, source.depth_) &&
+                CheckImagePair(target.color_, target.depth_) &&
+                CheckImagePair(source.color_, target.color_) &&
+                source.color_.num_of_channels_ == 3 &&
+                target.color_.num_of_channels_ == 3 &&
+                source.depth_.num_of_channels_ == 1 &&
+                target.depth_.num_of_channels_ == 1 &&
+                source.color_.bytes_per_channel_ == 1 &&
+                target.color_.bytes_per_channel_ == 1 &&
+                source.depth_.bytes_per_channel_ == 4 &&
+                target.depth_.bytes_per_channel_ == 4);
+    }
+    if (!IsColorImageRGB(source.color_) && !IsColorImageRGB(target.color_)) {
+        return (CheckImagePair(source.color_, target.color_) &&
+                CheckImagePair(source.depth_, target.depth_) &&
+                CheckImagePair(source.color_, source.depth_) &&
+                CheckImagePair(target.color_, target.depth_) &&
+                CheckImagePair(source.color_, target.color_) &&
+                source.color_.num_of_channels_ == 1 &&
+                source.depth_.num_of_channels_ == 1 &&
+                target.color_.num_of_channels_ == 1 &&
+                target.depth_.num_of_channels_ == 1 &&
+                source.color_.bytes_per_channel_ == 4 &&
+                target.color_.bytes_per_channel_ == 4 &&
+                source.depth_.bytes_per_channel_ == 4 &&
+                target.depth_.bytes_per_channel_ == 4);
+    }
+    return false;
 }
 
 std::tuple<std::shared_ptr<geometry::RGBDImage>,
@@ -375,10 +398,19 @@ InitializeRGBDOdometry(
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Eigen::Matrix4d &odo_init,
         const OdometryOption &option) {
+    std::shared_ptr<geometry::Image> source_color, target_color;
+    if (IsColorImageRGB(source.color_) && IsColorImageRGB(target.color_)) {
+        source_color = source.color_.CreateFloatImage();
+        target_color = target.color_.CreateFloatImage();
+    } else {
+        source_color = std::make_shared<geometry::Image>(source.color_);
+        target_color = std::make_shared<geometry::Image>(target.color_);
+    }
+
     auto source_gray =
-            source.color_.Filter(geometry::Image::FilterType::Gaussian3);
+            source_color->Filter(geometry::Image::FilterType::Gaussian3);
     auto target_gray =
-            target.color_.Filter(geometry::Image::FilterType::Gaussian3);
+            target_color->Filter(geometry::Image::FilterType::Gaussian3);
     auto source_depth_preprocessed = PreprocessDepth(source.depth_, option);
     auto target_depth_preprocessed = PreprocessDepth(target.depth_, option);
     auto source_depth = source_depth_preprocessed->Filter(
