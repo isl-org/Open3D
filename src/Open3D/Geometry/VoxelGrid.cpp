@@ -356,5 +356,16 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
     return *this;
 }
 
+std::vector<Voxel> VoxelGrid::Voxels()
+{
+  std::vector<Voxel> result;
+  result.reserve(voxels_.size());
+  for (const auto& keyval : voxels_)
+  {
+    result.push_back(keyval.second);
+  }
+  return result;
+}
+
 }  // namespace geometry
 }  // namespace open3d

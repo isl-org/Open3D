@@ -237,6 +237,8 @@ public:
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound);
 
+    std::vector<Voxel> Voxels();
+
 public:
     /// Size of the voxel.
     double voxel_size_ = 0.0;
