@@ -36,7 +36,7 @@ def jupyter_draw_geometries(
         height=height,
         left=left,
         top=top,
-        visible=interactive,
+        visible=True,  # If false, capture_screen_float_buffer() won't work.
     )
     vis.get_render_option().point_show_normal = point_show_normal
     vis.get_render_option().mesh_show_wireframe = mesh_show_wireframe

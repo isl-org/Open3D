@@ -208,27 +208,6 @@ texinfo_documents = [(
 #            properties. Within each, sorted alphabetically.
 autodoc_member_order = "groupwise"
 
-# Copy jupyter notebooks and test data to tutorial folder
-test_data_in_dir = Path(current_file_dir).parent / "examples" / "TestData"
-test_data_out_dir = Path(current_file_dir) / "TestData"
-if test_data_out_dir.exists():
-    shutil.rmtree(test_data_out_dir)
-shutil.copytree(test_data_in_dir, test_data_out_dir)
-example_dirs = ["Basic", "Advanced"]
-for example_dir in example_dirs:
-    in_dir = Path(current_file_dir).parent / "examples" / "Python" / example_dir
-    out_dir = Path(current_file_dir) / "tutorial" / example_dir
-    # remove all existing jupyter notebooks
-    for nb_out_path in out_dir.glob("*.ipynb"):
-        nb_out_path.unlink()
-    shutil.copy(
-        in_dir.parent / "open3d_tutorial.py",
-        out_dir.parent / "open3d_tutorial.py",
-    )
-    for nb_in_path in in_dir.glob("*.ipynb"):
-        nb_out_path = out_dir / nb_in_path.name
-        shutil.copy(nb_in_path, nb_out_path)
-
 
 def is_enum_class(func, func_name):
 
