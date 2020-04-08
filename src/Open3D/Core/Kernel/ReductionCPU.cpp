@@ -105,14 +105,14 @@ void ReductionCPU(const Tensor& src,
         // Ref: PyTorch's TensorIterator::parallel_reduce
         if (parallel_util::GetMaxThreads() == 1 ||
             parallel_util::InParallel()) {
-            cpu_launcher::LaunchReductionKernelSerial<scalar_t>(indexer,
-                                                                element_kernel);
+            CPULauncher::LaunchReductionKernelSerial<scalar_t>(indexer,
+                                                               element_kernel);
         } else if (indexer.NumOutputElements() == 1) {
-            cpu_launcher::LaunchReductionKernelTwoPass<scalar_t>(
+            CPULauncher::LaunchReductionKernelTwoPass<scalar_t>(
                     indexer, element_kernel, identity);
         } else {
-            cpu_launcher::LaunchReductionParallelDim<scalar_t>(indexer,
-                                                               element_kernel);
+            CPULauncher::LaunchReductionParallelDim<scalar_t>(indexer,
+                                                              element_kernel);
         }
 
     });
