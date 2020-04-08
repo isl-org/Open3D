@@ -50,6 +50,9 @@ matrix:
           packages:
             - cmake
             - doxygen
+            - texlive
+            - texlive-latex-extra
+            - pandoc
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
