@@ -38,6 +38,7 @@
 #include "Open3D/Visualization/Rendering/CameraInteractor.h"
 #include "Open3D/Visualization/Rendering/IBLRotationInteractor.h"
 #include "Open3D/Visualization/Rendering/LightDirectionInteractor.h"
+#include "Open3D/Visualization/Rendering/ModelInteractor.h"
 
 #include <Eigen/Geometry>
 
@@ -279,18 +280,18 @@ private:
     visualization::Camera::Transform _mouseDownRotation;
 };
 
-class RotateObjectInteractor : public MouseInteractor {
+class RotationInteractor : public MouseInteractor {
 public:
-    explicit RotateObjectInteractor(visualization::Camera* camera)
-        : cameraControls_(std::make_unique<visualization::CameraInteractor>(
-                  camera, MIN_FAR_PLANE)) {}
+    void SetInteractor(visualization::RotationInteractor* r) {
+        interactor_ = r;
+    }
 
     visualization::MatrixInteractor& GetMatrixInteractor() override {
-        return *cameraControls_.get();
+        return *interactor_;
     }
 
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
-        cameraControls_->SetCenterOfRotation(center);
+        interactor_->SetCenterOfRotation(center);
     }
 
     void Mouse(const MouseEvent& e) override {
@@ -315,7 +316,7 @@ public:
                     state_ = State::PAN;
 #endif  // ENABLE_PAN
                 }
-                cameraControls_->StartMouseDrag();
+                interactor_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
                 int dx = e.x - mouseDownX_;
@@ -324,27 +325,89 @@ public:
                     case State::NONE:
                         break;
                     case State::PAN:
-                        cameraControls_->Pan(dx, dy);
+                        interactor_->Pan(dx, dy);
                         break;
                     case State::DOLLY:
-                        cameraControls_->Dolly(dy,
-                                               visualization::MatrixInteractor::
+                        interactor_->Dolly(dy, visualization::MatrixInteractor::
                                                        DragType::MOUSE);
                         break;
-                    case State::ZOOM:
-                        cameraControls_->Zoom(dy,
-                                              visualization::MatrixInteractor::
-                                                      DragType::MOUSE);
-                        break;
                     case State::ROTATE_XY:
-                        cameraControls_->Rotate(dx, dy);
+                        interactor_->Rotate(dx, dy);
                         break;
                     case State::ROTATE_Z:
-                        cameraControls_->RotateZ(dx, dy);
+                        interactor_->RotateZ(dx, dy);
                         break;
                 }
+                interactor_->UpdateMouseDragUI();
                 break;
             }
+            case MouseEvent::WHEEL: {
+                interactor_->Dolly(2.0 * e.wheel.dy,
+                                   e.wheel.isTrackpad
+                                           ? visualization::MatrixInteractor::
+                                                     DragType::TWO_FINGER
+                                           : visualization::MatrixInteractor::
+                                                     DragType::WHEEL);
+                break;
+            }
+            case MouseEvent::BUTTON_UP:
+                interactor_->EndMouseDrag();
+                state_ = State::NONE;
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Key(const KeyEvent& e) override {}
+
+protected:
+    visualization::RotationInteractor* interactor_ = nullptr;
+    int mouseDownX_ = 0;
+    int mouseDownY_ = 0;
+
+    enum class State { NONE, PAN, DOLLY, ROTATE_XY, ROTATE_Z };
+    State state_ = State::NONE;
+};
+
+class RotateModelInteractor : public RotationInteractor {
+public:
+    explicit RotateModelInteractor(visualization::Scene* scene,
+                                   visualization::Camera* camera)
+        : RotationInteractor(),
+          rotation_(new visualization::ModelInteractor(
+                  scene, camera, MIN_FAR_PLANE)) {
+        SetInteractor(rotation_.get());
+    }
+
+    void SetModel(visualization::GeometryHandle axes,
+                  const std::vector<visualization::GeometryHandle>& objects) {
+        rotation_->SetModel(axes, objects);
+    }
+
+private:
+    std::unique_ptr<visualization::ModelInteractor> rotation_;
+    visualization::GeometryHandle axes_;
+};
+
+class RotateCameraInteractor : public RotationInteractor {
+    using Super = RotationInteractor;
+
+public:
+    explicit RotateCameraInteractor(visualization::Camera* camera)
+        : cameraControls_(std::make_unique<visualization::CameraInteractor>(
+                  camera, MIN_FAR_PLANE)) {
+        SetInteractor(cameraControls_.get());
+    }
+
+    void Mouse(const MouseEvent& e) override {
+        switch (e.type) {
+            case MouseEvent::BUTTON_DOWN:
+            case MouseEvent::DRAG:
+            case MouseEvent::BUTTON_UP:
+            default:
+                Super::Mouse(e);
+                break;
             case MouseEvent::WHEEL: {
                 if (e.modifiers & int(KeyModifier::SHIFT)) {
                     cameraControls_->Zoom(
@@ -355,44 +418,26 @@ public:
                                     : visualization::MatrixInteractor::
                                               DragType::WHEEL);
                 } else {
-                    cameraControls_->Dolly(
-                            2.0 * e.wheel.dy,
-                            e.wheel.isTrackpad
-                                    ? visualization::MatrixInteractor::
-                                              DragType::TWO_FINGER
-                                    : visualization::MatrixInteractor::
-                                              DragType::WHEEL);
+                    Super::Mouse(e);
                 }
                 break;
             }
-            case MouseEvent::BUTTON_UP:
-                cameraControls_->EndMouseDrag();
-                state_ = State::NONE;
-                break;
-            default:
-                break;
         }
     }
 
-    void Key(const KeyEvent& e) override {}
-
 private:
     std::unique_ptr<visualization::CameraInteractor> cameraControls_;
-    int mouseDownX_ = 0;
-    int mouseDownY_ = 0;
-
-    enum class State { NONE, PAN, DOLLY, ZOOM, ROTATE_XY, ROTATE_Z };
-    State state_ = State::NONE;
 };
 
 // ----------------------------------------------------------------------------
 class Interactors {
 public:
     Interactors(visualization::Scene* scene, visualization::Camera* camera)
-        : rotate_(std::make_unique<RotateObjectInteractor>(camera)),
+        : rotate_(std::make_unique<RotateCameraInteractor>(camera)),
           fps_(std::make_unique<FPSInteractor>(camera)),
           lightDir_(std::make_unique<RotateSunInteractor>(scene, camera)),
-          ibl_(std::make_unique<RotateIBLInteractor>(scene, camera)) {
+          ibl_(std::make_unique<RotateIBLInteractor>(scene, camera)),
+          model_(std::make_unique<RotateModelInteractor>(scene, camera)) {
         current_ = rotate_.get();
     }
 
@@ -401,6 +446,7 @@ public:
         fps_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         lightDir_->GetMatrixInteractor().SetViewSize(size.width, size.height);
         ibl_->GetMatrixInteractor().SetViewSize(size.width, size.height);
+        model_->GetMatrixInteractor().SetViewSize(size.width, size.height);
     }
 
     void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds) {
@@ -408,6 +454,7 @@ public:
         fps_->GetMatrixInteractor().SetBoundingBox(bounds);
         lightDir_->GetMatrixInteractor().SetBoundingBox(bounds);
         ibl_->GetMatrixInteractor().SetBoundingBox(bounds);
+        model_->GetMatrixInteractor().SetBoundingBox(bounds);
     }
 
     void SetCenterOfRotation(const Eigen::Vector3f& center) {
@@ -424,6 +471,11 @@ public:
         ibl_->SetSkyboxHandle(skybox, isOn);
     }
 
+    void SetModel(visualization::GeometryHandle axes,
+                  const std::vector<visualization::GeometryHandle>& objects) {
+        model_->SetModel(axes, objects);
+    }
+
     SceneWidget::Controls GetControls() const {
         if (current_ == fps_.get()) {
             return SceneWidget::Controls::FPS;
@@ -431,6 +483,8 @@ public:
             return SceneWidget::Controls::ROTATE_SUN;
         } else if (current_ == ibl_.get()) {
             return SceneWidget::Controls::ROTATE_IBL;
+        } else if (current_ == model_.get()) {
+            return SceneWidget::Controls::ROTATE_MODEL;
         } else {
             return SceneWidget::Controls::ROTATE_OBJ;
         }
@@ -449,6 +503,9 @@ public:
                 break;
             case SceneWidget::Controls::ROTATE_IBL:
                 current_ = ibl_.get();
+                break;
+            case SceneWidget::Controls::ROTATE_MODEL:
+                current_ = model_.get();
                 break;
         }
     }
@@ -484,10 +541,11 @@ public:
     }
 
 private:
-    std::unique_ptr<RotateObjectInteractor> rotate_;
+    std::unique_ptr<RotateCameraInteractor> rotate_;
     std::unique_ptr<FPSInteractor> fps_;
     std::unique_ptr<RotateSunInteractor> lightDir_;
     std::unique_ptr<RotateIBLInteractor> ibl_;
+    std::unique_ptr<RotateModelInteractor> model_;
 
     MouseInteractor* current_ = nullptr;
     MouseInteractor* override_ = nullptr;
@@ -575,6 +633,12 @@ void SceneWidget::SelectDirectionalLight(
 void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
                                   bool isOn) {
     impl_->controls->SetSkyboxHandle(skybox, isOn);
+}
+
+void SceneWidget::SetModel(
+        visualization::GeometryHandle axes,
+        const std::vector<visualization::GeometryHandle>& objects) {
+    impl_->controls->SetModel(axes, objects);
 }
 
 void SceneWidget::SetViewControls(Controls mode) {

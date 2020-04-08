@@ -536,6 +536,7 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Button> wgtMouseFly;
         std::shared_ptr<gui::Button> wgtMouseSun;
         std::shared_ptr<gui::Button> wgtMouseIBL;
+        std::shared_ptr<gui::Button> wgtMouseModel;
         std::shared_ptr<gui::Combobox> wgtLightingProfile;
         std::shared_ptr<gui::CollapsableVert> wgtAdvanced;
         std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
@@ -818,6 +819,7 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(false);
         this->impl_->settings.wgtMouseSun->SetOn(false);
         this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
     });
     settings.wgtMouseFly = std::make_shared<SmallToggleButton>("Fly");
     settings.wgtMouseFly->SetOnClicked([this]() {
@@ -828,6 +830,7 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(true);
         this->impl_->settings.wgtMouseSun->SetOn(false);
         this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
     });
     settings.wgtMouseSun = std::make_shared<SmallToggleButton>("Sun");
     settings.wgtMouseSun->SetOnClicked([this]() {
@@ -838,6 +841,7 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(false);
         this->impl_->settings.wgtMouseSun->SetOn(true);
         this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
     });
     settings.wgtMouseIBL = std::make_shared<SmallToggleButton>("IBL");
     settings.wgtMouseIBL->SetOnClicked([this]() {
@@ -848,15 +852,28 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(false);
         this->impl_->settings.wgtMouseSun->SetOn(false);
         this->impl_->settings.wgtMouseIBL->SetOn(true);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
+    });
+    settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
+    settings.wgtMouseModel->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(
+                gui::SceneWidget::Controls::ROTATE_MODEL);
+        this->SetTickEventsEnabled(false);
+        this->impl_->settings.wgtMouseArcball->SetOn(false);
+        this->impl_->settings.wgtMouseFly->SetOn(false);
+        this->impl_->settings.wgtMouseSun->SetOn(false);
+        this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(true);
     });
 
     auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     cameraControls->AddChild(settings.wgtMouseArcball);
     cameraControls->AddChild(settings.wgtMouseFly);
-    cameraControls->AddChild(gui::Horiz::MakeFixed(em));
+    cameraControls->AddChild(gui::Horiz::MakeFixed(1 * em));
     cameraControls->AddChild(settings.wgtMouseSun);
     cameraControls->AddChild(settings.wgtMouseIBL);
+    cameraControls->AddChild(settings.wgtMouseModel);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);
@@ -870,7 +887,7 @@ GuiVisualizer::GuiVisualizer(
     auto bgcolorLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     bgcolorLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
     bgcolorLayout->AddChild(bgcolor);
-    viewCtrls->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    viewCtrls->AddChild(gui::Vert::MakeFixed(separationHeight));
     viewCtrls->AddChild(bgcolorLayout);
 
     // ... show axes
@@ -902,11 +919,11 @@ GuiVisualizer::GuiVisualizer(
     auto profileLayout = std::make_shared<gui::Vert>();
     profileLayout->AddChild(std::make_shared<gui::Label>("Lighting profiles"));
     profileLayout->AddChild(settings.wgtLightingProfile);
-    viewCtrls->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    viewCtrls->AddChild(gui::Vert::MakeFixed(separationHeight));
     viewCtrls->AddChild(profileLayout);
 
     settings.wgtBase->AddChild(viewCtrls);
-    settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    settings.wgtBase->AddChild(gui::Vert::MakeFixed(separationHeight));
 
     // ... advanced lighting
     settings.wgtAdvanced = std::make_shared<gui::CollapsableVert>(
@@ -952,7 +969,7 @@ GuiVisualizer::GuiVisualizer(
     checkboxes->AddChild(settings.wgtDirectionalEnabled);
     settings.wgtAdvanced->AddChild(checkboxes);
 
-    settings.wgtAdvanced->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    settings.wgtAdvanced->AddChild(gui::Vert::MakeFixed(separationHeight));
 
     // ....... ambient light (IBL)
     settings.wgtAmbientIBLs = std::make_shared<gui::Combobox>();
@@ -1008,7 +1025,7 @@ GuiVisualizer::GuiVisualizer(
 
     settings.wgtAdvanced->AddChild(std::make_shared<gui::Label>("Ambient"));
     settings.wgtAdvanced->AddChild(ambientLayout);
-    settings.wgtAdvanced->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    settings.wgtAdvanced->AddChild(gui::Vert::MakeFixed(separationHeight));
 
     // ... directional light (sun)
     settings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
@@ -1060,7 +1077,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtAdvanced->AddChild(sunLayout);
 
     // materials settings
-    settings.wgtBase->AddChild(gui::Horiz::MakeFixed(separationHeight));
+    settings.wgtBase->AddChild(gui::Vert::MakeFixed(separationHeight));
     auto materials = std::make_shared<gui::CollapsableVert>("Material settings",
                                                             0, indent);
 
@@ -1208,6 +1225,7 @@ void GuiVisualizer::SetGeometry(
     impl_->geometryMaterials.clear();
 
     geometry::AxisAlignedBoundingBox bounds;
+    std::vector<visualization::GeometryHandle> objects;
 
     std::size_t nPointClouds = 0;
     for (auto &g : geometries) {
@@ -1259,6 +1277,7 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         auto handle = scene3d->AddGeometry(*g3, selectedMaterial);
         bounds += scene3d->GetEntityBoundingBox(handle);
+        objects.push_back(handle);
 
         impl_->geometryHandles.push_back(handle);
 
@@ -1292,6 +1311,7 @@ void GuiVisualizer::SetGeometry(
     scene3d->SetGeometryShadows(impl_->settings.hAxes, false, false);
     scene3d->SetEntityEnabled(impl_->settings.hAxes,
                               impl_->settings.wgtShowAxes->IsChecked());
+    impl_->scene->SetModel(impl_->settings.hAxes, objects);
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }

@@ -26,41 +26,35 @@
 
 #pragma once
 
-#include "RotationInteractor.h"
+#include "MatrixInteractor.h"
 
 namespace open3d {
 namespace visualization {
 
-class CameraInteractor : public RotationInteractor {
-    using Super = RotationInteractor;
+class RotationInteractor : public MatrixInteractor {
+    using Super = MatrixInteractor;
 
 public:
-    CameraInteractor(Camera* c, double minFarPlane);
+    explicit RotationInteractor(visualization::Camera *camera,
+                                double minFarPlane);
+    ~RotationInteractor();
 
-    void SetBoundingBox(
-            const geometry::AxisAlignedBoundingBox& bounds) override;
+    virtual void SetCenterOfRotation(const Eigen::Vector3f &center);
 
-    void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType type) override;
-    void Dolly(float zDist, Camera::Transform matrixIn) override;
+    // Panning is always relative to the camera's left (x) and up (y)
+    // axis. Modifies center of rotation and the matrix.
+    virtual void Pan(int dx, int dy);
 
-    void Pan(int dx, int dy) override;
+    virtual void StartMouseDrag();
+    virtual void UpdateMouseDragUI();
+    virtual void EndMouseDrag();
 
-    /// Sets camera field of view
-    void Zoom(int dy, DragType dragType);
+protected:
+    double minFarPlane_;
+    visualization::Camera *camera_;
 
-    void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
-    void MoveLocal(const Eigen::Vector3f& v);
-
-    void RotateFPS(int dx, int dy);
-
-    void StartMouseDrag() override;
-    void UpdateMouseDragUI() override;
-    void EndMouseDrag() override;
-
-private:
-    double fovAtMouseDown_;
+    Eigen::Vector3f CalcPanVectorWorld(int dx, int dy);
+    void UpdateCameraFarPlane();
 };
 
 }  // namespace visualization

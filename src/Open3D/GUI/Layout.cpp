@@ -143,7 +143,7 @@ struct Layout1D::Impl {
 Layout1D::Fixed::Fixed(int size, Dir dir) : size_(size), dir_(dir) {}
 
 Size Layout1D::Fixed::CalcPreferredSize(const Theme& theme) const {
-    if (dir_ == VERT) {
+    if (dir_ == HORIZ) {
         return {size_, 0};
     }
 
