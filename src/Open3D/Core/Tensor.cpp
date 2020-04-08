@@ -123,7 +123,8 @@ void Tensor::Assign(const Tensor& other) {
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
     blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), GetDevice());
+            shape_.NumElements() * DtypeUtil::ByteSize(dtype_),
+            other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
@@ -629,6 +630,17 @@ Tensor Tensor::Exp() const {
 
 Tensor Tensor::Exp_() {
     kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Exp);
+    return *this;
+}
+
+Tensor Tensor::Abs() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Abs);
+    return dst_tensor;
+}
+
+Tensor Tensor::Abs_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Abs);
     return *this;
 }
 

@@ -163,7 +163,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def add_(self, value):
         """
-        Inplace version of Tensor.add
+        In-place version of Tensor.add
         """
         return super(Tensor, self).add_(value)
 
@@ -177,7 +177,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def sub_(self, value):
         """
-        Inplace version of Tensor.sub
+        In-place version of Tensor.sub
         """
         return super(Tensor, self).sub_(value)
 
@@ -191,7 +191,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def mul_(self, value):
         """
-        Inplace version of Tensor.mul
+        In-place version of Tensor.mul
         """
         return super(Tensor, self).mul_(value)
 
@@ -205,9 +205,93 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def div_(self, value):
         """
-        Inplace version of Tensor.div
+        In-place version of Tensor.div
         """
         return super(Tensor, self).div_(value)
+
+    @cast_to_py_tensor
+    def sqrt(self):
+        """
+        Returns element-wise square root of a tensor.
+        """
+        return super(Tensor, self).sqrt()
+
+    @cast_to_py_tensor
+    def sqrt_(self):
+        """
+        In-place version of Tensor.sqrt().
+        """
+        return super(Tensor, self).sqrt_()
+
+    @cast_to_py_tensor
+    def sin(self):
+        """
+        Returns element-wise sin of a tensor.
+        """
+        return super(Tensor, self).sin()
+
+    @cast_to_py_tensor
+    def sin_(self):
+        """
+        In-place version of Tensor.sin().
+        """
+        return super(Tensor, self).sin_()
+
+    @cast_to_py_tensor
+    def cos(self):
+        """
+        Returns element-wise cosine of a tensor.
+        """
+        return super(Tensor, self).cos()
+
+    @cast_to_py_tensor
+    def cos_(self):
+        """
+        In-place version of Tensor.cos().
+        """
+        return super(Tensor, self).cos_()
+
+    @cast_to_py_tensor
+    def neg(self):
+        """
+        Returns element-wise negation of a tensor.
+        """
+        return super(Tensor, self).neg()
+
+    @cast_to_py_tensor
+    def neg_(self):
+        """
+        In-place version of Tensor.neg().
+        """
+        return super(Tensor, self).neg_()
+
+    @cast_to_py_tensor
+    def exp(self):
+        """
+        Returns element-wise base-e exponential of a tensor.
+        """
+        return super(Tensor, self).exp()
+
+    @cast_to_py_tensor
+    def exp_(self):
+        """
+        In-place version of Tensor.exp().
+        """
+        return super(Tensor, self).exp_()
+
+    @cast_to_py_tensor
+    def abs(self):
+        """
+        Returns element-wise absolute value of a tensor.
+        """
+        return super(Tensor, self).abs()
+
+    @cast_to_py_tensor
+    def abs_(self):
+        """
+        In-place version of Tensor.abs().
+        """
+        return super(Tensor, self).abs_()
 
     @cast_to_py_tensor
     def to(self, dtype, copy=False):
@@ -325,6 +409,24 @@ class Tensor(open3d_pybind.Tensor):
         return super(Tensor, self).max(dim, keepdim)
 
 
+def cast_to_py_tensorlist(func):
+    """
+    Args:
+        func: function returning a `o3d.open3d_pybind.Tensor`.
+
+    Return:
+        A function which returns a python object `o3d.Tensor`.
+    """
+
+    def wrapped_func(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        wrapped_result = TensorList([0])
+        wrapped_result.shallow_copy_from(result)
+        return wrapped_result
+
+    return wrapped_func
+
+
 class TensorList(open3d_pybind.TensorList):
     """
     Open3D TensorList class. A TensorList is an extendable tensor at the 0-th dimension.
@@ -340,7 +442,7 @@ class TensorList(open3d_pybind.TensorList):
             raise ValueError('shape must be a list, tuple, or o3d.SizeVector')
 
         if dtype is None:
-            dtype = _numpy_dtype_to_dtype(data.dtype)
+            dtype = o3d.Dtype.Float32
         if device is None:
             device = o3d.Device("CPU:0")
         if size is None:
@@ -348,7 +450,51 @@ class TensorList(open3d_pybind.TensorList):
 
         super(TensorList, self).__init__(shape, dtype, device, size)
 
+    @cast_to_py_tensor
+    def __getitem__(self, index):
+        '''
+        \index can be a
+        \slice, or \list or \tuple of int: return a TensorList
+        \int: return a Tensor
+        '''
+        if isinstance(index, int):
+            return self._getitem(index)
+        else:
+            raise ValueError('Unsupported index type, only int is supported.')
+
+    def __setitem__(self, index, value):
+        '''
+        If \index is a single int, \value is a Tensor;
+        If \index is a list of ints, \value is correspondingly a TensorList.
+        '''
+        if isinstance(index, int) and isinstance(value, o3d.Tensor):
+            self._setitem(index, value)
+
+        else:
+            raise ValueError(
+                'Unsupported index type.'
+                'Use tensorlist.tensor() to assign value with slices or advanced indexing'
+            )
+
+    @cast_to_py_tensorlist
+    def __iadd__(self, other):
+        return super(TensorList, self).__iadd__(other)
+
+    @cast_to_py_tensorlist
+    def __add__(self, other):
+        return super(TensorList, self).__add__(other)
+
+    @cast_to_py_tensor
+    def tensor(self):
+        return super(TensorList, self).tensor()
+
     @staticmethod
+    @cast_to_py_tensorlist
+    def concat(tl_a, tl_b):
+        return super(TensorList, TensorList).concat(tl_a, tl_b)
+
+    @staticmethod
+    @cast_to_py_tensorlist
     def from_tensor(tensor, inplace=False):
         """
         Returns a TensorList from an existing tensor.
@@ -364,6 +510,7 @@ class TensorList(open3d_pybind.TensorList):
         return super(TensorList, TensorList).from_tensor(tensor, inplace)
 
     @staticmethod
+    @cast_to_py_tensorlist
     def from_tensors(tensors, device=None):
         """
         Returns a TensorList from a list of existing tensors.

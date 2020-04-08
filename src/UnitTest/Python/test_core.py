@@ -548,3 +548,77 @@ def test_reduction_max(dim, keepdim):
     np_dst = np_src.max(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.max(dim=dim, keepdim=keepdim)
     np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+def test_tensorlist_indexing():
+    # 5 x (3, 4)
+    dtype = o3d.Dtype.Float32
+    device = o3d.Device("CPU:0")
+    np_t = np.ones((5, 3, 4), dtype=np.float32)
+    t = o3d.Tensor(np_t, dtype, device)
+
+    tl = o3d.TensorList.from_tensor(t, inplace=True)
+
+    # set slices [1, 3]
+    tl.tensor()[1:5:2] = o3d.Tensor(3 * np.ones((2, 3, 4), dtype=np.float32))
+
+    # set items [4]
+    tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
+
+    # get items
+    np.testing.assert_allclose(tl[0].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[1].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[2].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[3].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4),
+                                                       dtype=np.float32))
+
+    # push_back
+    tl.push_back(o3d.Tensor(-1 * np.ones((3, 4)), dtype, device))
+    assert tl.size() == 6
+    np.testing.assert_allclose(tl[5].numpy(), -1 * np.ones(
+        (3, 4), dtype=np.float32))
+
+    tl += tl
+    assert tl.size() == 12
+    for offset in [0, 6]:
+        np.testing.assert_allclose(tl[0 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[1 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[2 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[3 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[4 + offset].numpy(),
+                                   np.zeros((3, 4), dtype=np.float32))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_tensor_from_to_pytorch(device):
+    if not _torch_imported:
+        return
+
+
+@pytest.mark.parametrize("np_func_name,o3_func_name", [("sqrt", "sqrt"),
+                                                       ("sin", "sin"),
+                                                       ("cos", "cos"),
+                                                       ("negative", "neg"),
+                                                       ("exp", "exp"),
+                                                       ("abs", "abs")])
+def test_unary_elementwise(np_func_name, o3_func_name):
+    np_t = np.array([-3, -2, -1, 9, 1, 2, 3]).astype(np.float32)
+    o3_t = o3d.Tensor(np_t)
+
+    # Test non-in-place version
+    np.seterr(invalid='ignore')  # e.g. sqrt of negative should be -nan
+    np.testing.assert_allclose(
+        getattr(o3_t, o3_func_name)().numpy(),
+        getattr(np, np_func_name)(np_t))
+
+    # Test in-place version
+    o3_func_name_inplace = o3_func_name + "_"
+    getattr(o3_t, o3_func_name_inplace)()
+    np.testing.assert_allclose(o3_t.numpy(), getattr(np, np_func_name)(np_t))

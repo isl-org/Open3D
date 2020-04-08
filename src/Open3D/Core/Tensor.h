@@ -309,7 +309,7 @@ public:
     std::string ToString(bool with_suffix = true,
                          const std::string& indent = "") const;
 
-    /// Extract the i-th Tensor along the first axis, creating a new view
+    /// Extract the i-th Tensor along the first axis, returning a new view.
     Tensor operator[](int64_t i) const;
 
     /// Extract the \p idx -th sub-tensor in dimension \p dim. After
@@ -473,11 +473,17 @@ public:
     /// Element-wise negation of a tensor, in-place.
     Tensor Neg_();
 
-    /// Element-wise exponential of a tensor, returns a new tensor.
+    /// Element-wise base-e exponential of a tensor, returns a new tensor.
     Tensor Exp() const;
 
-    /// Element-wise exponential of a tensor, in-place.
+    /// Element-wise base-e exponential of a tensor, in-place.
     Tensor Exp_();
+
+    /// Element-wise absolute value of a tensor, returns a new tensor.
+    Tensor Abs() const;
+
+    /// Element-wise absolute value of a tensor, in-place.
+    Tensor Abs_();
 
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
