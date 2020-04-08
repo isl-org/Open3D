@@ -7,6 +7,11 @@ echo
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
+echo "---- debugging ----"
+echo "Verify Xcode"
+codesign --verify /Applications/Xcode.app
+echo "----"
+
 echo "cmake configure the Open3D project..."
 date
 mkdir build
@@ -33,7 +38,8 @@ echo
 
 echo "build & install Open3D..."
 date
-make install -j$NPROC
+#make install -j$NPROC
+make install -j$NPROC VERBOS=1
 echo
 
 echo "running the Open3D unit tests..."
