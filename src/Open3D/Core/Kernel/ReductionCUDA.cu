@@ -84,7 +84,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(0);
                 } else {
-                    cuda_launcher::LaunchReductionKernel<scalar_t>(
+                    CUDALauncher::LaunchReductionKernel<scalar_t>(
                             indexer, 0,
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDASumReductionKernel<scalar_t>(src, dst);
@@ -95,7 +95,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(1);
                 } else {
-                    cuda_launcher::LaunchReductionKernel<scalar_t>(
+                    CUDALauncher::LaunchReductionKernel<scalar_t>(
                             indexer, 1,
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDAProdReductionKernel<scalar_t>(src, dst);
@@ -106,7 +106,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     utility::LogError("Zero-size Tensor does not suport Min.");
                 } else {
-                    cuda_launcher::LaunchReductionKernel<scalar_t>(
+                    CUDALauncher::LaunchReductionKernel<scalar_t>(
                             indexer, std::numeric_limits<scalar_t>::max(),
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDAMinReductionKernel<scalar_t>(src, dst);
@@ -117,7 +117,7 @@ void ReductionCUDA(const Tensor& src,
                 if (indexer.NumWorkloads() == 0) {
                     utility::LogError("Zero-size Tensor does not suport Max.");
                 } else {
-                    cuda_launcher::LaunchReductionKernel<scalar_t>(
+                    CUDALauncher::LaunchReductionKernel<scalar_t>(
                             indexer, std::numeric_limits<scalar_t>::min(),
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                                 CUDAMaxReductionKernel<scalar_t>(src, dst);

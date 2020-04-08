@@ -112,7 +112,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
                 using src_t = scalar_t;
                 DISPATCH_DTYPE_TO_TEMPLATE(dst_dtype, [&]() {
                     using dst_t = scalar_t;
-                    cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                    CUDALauncher::LaunchUnaryEWKernel(
                             indexer,
                             // Need to wrap as extended CUDA lambda function
                             [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
@@ -160,7 +160,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         switch (op_code) {
             case UnaryEWOpCode::Sqrt:
                 assert_dtype_is_float(dtype);
-                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDASqrtElementKernel<scalar_t>(src, dst);
@@ -168,7 +168,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Sin:
                 assert_dtype_is_float(dtype);
-                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDASinElementKernel<scalar_t>(src, dst);
@@ -176,14 +176,14 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Cos:
                 assert_dtype_is_float(dtype);
-                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDACosElementKernel<scalar_t>(src, dst);
                         });
                 break;
             case UnaryEWOpCode::Neg:
-                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDANegElementKernel<scalar_t>(src, dst);
@@ -191,7 +191,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Exp:
                 assert_dtype_is_float(dtype);
-                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDAExpElementKernel<scalar_t>(src, dst);
@@ -199,7 +199,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 break;
             case UnaryEWOpCode::Abs:
                 assert_dtype_is_float(dtype);
-                cuda_launcher::LaunchUnaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                             CUDAAbsElementKernel<scalar_t>(src, dst);

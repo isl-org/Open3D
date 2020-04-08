@@ -43,7 +43,7 @@ namespace cg = cooperative_groups;
 
 namespace open3d {
 namespace kernel {
-namespace cuda_launcher {
+namespace CUDALauncher {
 
 template <typename T>
 struct SharedMemory {
@@ -326,6 +326,6 @@ void LaunchReductionKernel(const Indexer& indexer,
     OPEN3D_CUDA_CHECK(cudaFree(d_tdata));
 }
 
-}  // namespace cuda_launcher
+}  // namespace CUDALauncher
 }  // namespace kernel
 }  // namespace open3d

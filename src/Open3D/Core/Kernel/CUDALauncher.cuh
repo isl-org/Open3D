@@ -46,7 +46,6 @@ static constexpr int64_t default_thread_size = 4;
 
 namespace open3d {
 namespace kernel {
-namespace cuda_launcher {
 
 // Applies f for each element
 // Works for unary / binary elementwise operations
@@ -63,59 +62,62 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
     }
 }
 
-template <typename scalar_t, typename func_t>
-void LaunchUnaryEWKernel(const Indexer& indexer, func_t element_kernel) {
-    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+class CUDALauncher {
+public:
+    template <typename func_t>
+    static void LaunchUnaryEWKernel(const Indexer& indexer,
+                                    func_t element_kernel) {
+        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-    int64_t n = indexer.NumWorkloads();
-    int64_t items_per_block = default_block_size * default_thread_size;
-    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+        int64_t n = indexer.NumWorkloads();
+        int64_t items_per_block = default_block_size * default_thread_size;
+        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        element_kernel(indexer.GetInputPtr(0, workload_idx),
-                       indexer.GetOutputPtr(workload_idx));
-    };
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
+        };
 
-    ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
-}
+        ElementWiseKernel<default_block_size, default_thread_size>
+                <<<grid_size, default_block_size, 0>>>(n, f);
+    }
 
-template <typename scalar_t, typename func_t>
-void LaunchBinaryEWKernel(const Indexer& indexer, func_t element_kernel) {
-    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+    template <typename func_t>
+    static void LaunchBinaryEWKernel(const Indexer& indexer,
+                                     func_t element_kernel) {
+        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-    int64_t n = indexer.NumWorkloads();
-    int64_t items_per_block = default_block_size * default_thread_size;
-    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+        int64_t n = indexer.NumWorkloads();
+        int64_t items_per_block = default_block_size * default_thread_size;
+        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        element_kernel(indexer.GetInputPtr(0, workload_idx),
-                       indexer.GetInputPtr(1, workload_idx),
-                       indexer.GetOutputPtr(workload_idx));
-    };
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+            element_kernel(indexer.GetInputPtr(0, workload_idx),
+                           indexer.GetInputPtr(1, workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
+        };
 
-    ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
-}
+        ElementWiseKernel<default_block_size, default_thread_size>
+                <<<grid_size, default_block_size, 0>>>(n, f);
+    }
 
-template <typename scalar_t, typename func_t>
-void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
-                                 func_t element_kernel) {
-    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+    template <typename func_t>
+    static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                            func_t element_kernel) {
+        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-    int64_t n = indexer.NumWorkloads();
-    int64_t items_per_block = default_block_size * default_thread_size;
-    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+        int64_t n = indexer.NumWorkloads();
+        int64_t items_per_block = default_block_size * default_thread_size;
+        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        element_kernel(indexer.GetInputPtr(workload_idx),
-                       indexer.GetOutputPtr(workload_idx));
-    };
+        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+            element_kernel(indexer.GetInputPtr(workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
+        };
 
-    ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
-}
-
-}  // namespace cuda_launcher
+        ElementWiseKernel<default_block_size, default_thread_size>
+                <<<grid_size, default_block_size, 0>>>(n, f);
+    }
+};
 }  // namespace kernel
 }  // namespace open3d

@@ -83,28 +83,28 @@ void BinaryEWCUDA(const Tensor& lhs,
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         switch (op_code) {
             case BinaryEWOpCode::Add:
-                cuda_launcher::LaunchBinaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchBinaryEWKernel(
                         indexer, [] OPEN3D_HOST_DEVICE(const void* lhs,
                                                        void* rhs, void* dst) {
                             CUDAAddElementKernel<scalar_t>(lhs, rhs, dst);
                         });
                 break;
             case BinaryEWOpCode::Sub:
-                cuda_launcher::LaunchBinaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchBinaryEWKernel(
                         indexer, [] OPEN3D_HOST_DEVICE(const void* lhs,
                                                        void* rhs, void* dst) {
                             CUDASubElementKernel<scalar_t>(lhs, rhs, dst);
                         });
                 break;
             case BinaryEWOpCode::Mul:
-                cuda_launcher::LaunchBinaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchBinaryEWKernel(
                         indexer, [] OPEN3D_HOST_DEVICE(const void* lhs,
                                                        void* rhs, void* dst) {
                             CUDAMulElementKernel<scalar_t>(lhs, rhs, dst);
                         });
                 break;
             case BinaryEWOpCode::Div:
-                cuda_launcher::LaunchBinaryEWKernel<scalar_t>(
+                CUDALauncher::LaunchBinaryEWKernel(
                         indexer, [] OPEN3D_HOST_DEVICE(const void* lhs,
                                                        void* rhs, void* dst) {
                             CUDADivElementKernel<scalar_t>(lhs, rhs, dst);
