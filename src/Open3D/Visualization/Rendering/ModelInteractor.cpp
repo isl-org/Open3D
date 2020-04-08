@@ -34,7 +34,9 @@ namespace visualization {
 ModelInteractor::ModelInteractor(visualization::Scene* scene,
                                  visualization::Camera* camera,
                                  double minFarPlane)
-    : RotationInteractor(camera, minFarPlane), scene_(scene) {}
+    : RotationInteractor(camera, minFarPlane),
+      scene_(scene),
+      isAxesVisible_(false) {}
 
 ModelInteractor::~ModelInteractor() {}
 

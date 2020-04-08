@@ -76,7 +76,6 @@ Eigen::Vector3f RotationInteractor::CalcPanVectorWorld(int dx, int dy) {
     // original positions at mousedown to avoid hysteresis problems.
     // Note that the interactor's matrix may not be the same as the
     // camera's matrix.
-    auto matrix = matrixAtMouseDown_;  // copy
     Eigen::Vector3f cameraLocalMove(-dx * unitsPerPx, dy * unitsPerPx, 0);
     Eigen::Vector3f worldMove =
             camera_->GetModelMatrix().rotation() * cameraLocalMove;
