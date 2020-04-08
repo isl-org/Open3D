@@ -67,6 +67,19 @@ public:
         }
     }
 
+    template <typename func_t>
+    static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                            func_t element_kernel) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
+             ++workload_idx) {
+            element_kernel(indexer.GetInputPtr(workload_idx),
+                           indexer.GetOutputPtr(workload_idx));
+        }
+    }
+
     template <typename scalar_t, typename func_t>
     static void LaunchReductionKernelSerial(const Indexer& indexer,
                                             func_t element_kernel) {
@@ -147,19 +160,6 @@ public:
             Indexer sub_indexer(indexer);
             sub_indexer.Shrink(best_dim, i, 1);
             LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
-        }
-    }
-
-    template <typename func_t>
-    static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
-                                            func_t element_kernel) {
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
-        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-             ++workload_idx) {
-            element_kernel(indexer.GetInputPtr(workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
         }
     }
 };
