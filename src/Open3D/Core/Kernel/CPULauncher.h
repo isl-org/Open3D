@@ -140,7 +140,7 @@ void LaunchReductionParallelDim(const Indexer& indexer, func_t element_kernel) {
 #endif
     for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
         Indexer sub_indexer(indexer);
-        sub_indexer.Shink(best_dim, i, 1);
+        sub_indexer.Shrink(best_dim, i, 1);
         LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
     }
 }

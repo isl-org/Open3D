@@ -402,9 +402,10 @@ public:
     /// \param start Starting index (inclusive) for dimension \p dim. No
     /// dimension wraping is available.
     /// \param size The size to iterate in dimension \p dim.
-    OPEN3D_HOST_DEVICE void Shink(int64_t dim, int64_t start, int64_t size) {
+    OPEN3D_HOST_DEVICE void Shrink(int64_t dim, int64_t start, int64_t size) {
         assert(dim >= 0 && dim < ndims_ && size > 0);
         int64_t original_size = master_shape_[dim];
+        (void)original_size;  // Avoids unused variable warning for some setups.
         master_shape_[dim] = size;
         UpdateMasterStrides();
 
