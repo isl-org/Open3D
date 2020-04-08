@@ -144,9 +144,9 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addLabel("Pan camera");
 
 #if defined(__APPLE__)
-    addLabel("Opt + left-drag");
+    addLabel("Opt + left-drag (up/down)");
 #else
-    addLabel("Win + left-drag");
+    addLabel("Win + left-drag (up/down)");
 #endif  // __APPLE__
     addLabel("Rotate around forward axis");
 
@@ -832,6 +832,17 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseIBL->SetOn(false);
         this->impl_->settings.wgtMouseModel->SetOn(false);
     });
+    settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
+    settings.wgtMouseModel->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(
+                gui::SceneWidget::Controls::ROTATE_MODEL);
+        this->SetTickEventsEnabled(false);
+        this->impl_->settings.wgtMouseArcball->SetOn(false);
+        this->impl_->settings.wgtMouseFly->SetOn(false);
+        this->impl_->settings.wgtMouseSun->SetOn(false);
+        this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(true);
+    });
     settings.wgtMouseSun = std::make_shared<SmallToggleButton>("Sun");
     settings.wgtMouseSun->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(
@@ -854,26 +865,15 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseIBL->SetOn(true);
         this->impl_->settings.wgtMouseModel->SetOn(false);
     });
-    settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
-    settings.wgtMouseModel->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(
-                gui::SceneWidget::Controls::ROTATE_MODEL);
-        this->SetTickEventsEnabled(false);
-        this->impl_->settings.wgtMouseArcball->SetOn(false);
-        this->impl_->settings.wgtMouseFly->SetOn(false);
-        this->impl_->settings.wgtMouseSun->SetOn(false);
-        this->impl_->settings.wgtMouseIBL->SetOn(false);
-        this->impl_->settings.wgtMouseModel->SetOn(true);
-    });
 
     auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     cameraControls->AddChild(settings.wgtMouseArcball);
     cameraControls->AddChild(settings.wgtMouseFly);
+    cameraControls->AddChild(settings.wgtMouseModel);
     cameraControls->AddChild(gui::Horiz::MakeFixed(1 * em));
     cameraControls->AddChild(settings.wgtMouseSun);
     cameraControls->AddChild(settings.wgtMouseIBL);
-    cameraControls->AddChild(settings.wgtMouseModel);
     cameraControls->AddChild(gui::Horiz::MakeStretch());
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);
