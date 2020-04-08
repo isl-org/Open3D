@@ -40,7 +40,7 @@ namespace kernel {
 
 class CPULauncher {
 public:
-    template <typename scalar_t, typename func_t>
+    template <typename func_t>
     static void LaunchUnaryEWKernel(const Indexer& indexer,
                                     func_t element_kernel) {
 #ifdef _OPENMP
@@ -53,7 +53,7 @@ public:
         }
     }
 
-    template <typename scalar_t, typename func_t>
+    template <typename func_t>
     static void LaunchBinaryEWKernel(const Indexer& indexer,
                                      func_t element_kernel) {
 #ifdef _OPENMP
@@ -150,7 +150,7 @@ public:
         }
     }
 
-    template <typename scalar_t, typename func_t>
+    template <typename func_t>
     static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
                                             func_t element_kernel) {
 #ifdef _OPENMP

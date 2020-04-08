@@ -94,7 +94,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
             using src_t = scalar_t;
             DISPATCH_DTYPE_TO_TEMPLATE(dst_dtype, [&]() {
                 using dst_t = scalar_t;
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
+                CPULauncher::LaunchUnaryEWKernel(
                         indexer, CPUCopyElementKernel<src_t, dst_t>);
             });
         });
@@ -118,32 +118,32 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         switch (op_code) {
             case UnaryEWOpCode::Sqrt:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
+                CPULauncher::LaunchUnaryEWKernel(
                         indexer, CPUSqrtElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Sin:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUSinElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUSinElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Cos:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUCosElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUCosElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Neg:
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUNegElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUNegElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Exp:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUExpElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUExpElementKernel<scalar_t>);
                 break;
             case UnaryEWOpCode::Abs:
                 assert_dtype_is_float(dtype);
-                CPULauncher::LaunchUnaryEWKernel<scalar_t>(
-                        indexer, CPUAbsElementKernel<scalar_t>);
+                CPULauncher::LaunchUnaryEWKernel(indexer,
+                                                 CPUAbsElementKernel<scalar_t>);
                 break;
             default:
                 utility::LogError("Unimplemented op_code for UnaryEWCPU");
