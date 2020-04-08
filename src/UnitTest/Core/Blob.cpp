@@ -29,7 +29,7 @@
 #include "Open3D/Core/MemoryManager.h"
 #include "TestUtility/UnitTest.h"
 
-#include "Container/ContainerTest.h"
+#include "Core/CoreTest.h"
 
 using namespace std;
 using namespace open3d;

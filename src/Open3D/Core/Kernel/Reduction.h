@@ -26,7 +26,34 @@
 
 #pragma once
 
-#include "Open3D/Core/Kernel/BinaryEW.h"
-#include "Open3D/Core/Kernel/IndexGetSet.h"
-#include "Open3D/Core/Kernel/Reduction.h"
-#include "Open3D/Core/Kernel/UnaryEW.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
+
+namespace open3d {
+namespace kernel {
+
+enum class ReductionOpCode { Sum, Prod, Min, Max };
+
+void Reduction(const Tensor& src,
+               Tensor& dst,
+               const SizeVector& dims,
+               bool keepdim,
+               ReductionOpCode op_code);
+
+void ReductionCPU(const Tensor& src,
+                  Tensor& dst,
+                  const SizeVector& dims,
+                  bool keepdim,
+                  ReductionOpCode op_code);
+
+#ifdef BUILD_CUDA_MODULE
+void ReductionCUDA(const Tensor& src,
+                   Tensor& dst,
+                   const SizeVector& dims,
+                   bool keepdim,
+                   ReductionOpCode op_code);
+#endif
+
+}  // namespace kernel
+}  // namespace open3d

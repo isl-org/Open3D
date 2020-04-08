@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "Container/ContainerTest.h"
+#include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace std;

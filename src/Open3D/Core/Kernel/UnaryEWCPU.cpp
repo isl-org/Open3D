@@ -73,7 +73,8 @@ static void CPUExpElementKernel(const void* src, void* dst) {
 
 template <typename scalar_t>
 static void CPUAbsElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = std::abs(*static_cast<const scalar_t*>(src));
+    *static_cast<scalar_t*>(dst) =
+            std::abs(static_cast<double>(*static_cast<const scalar_t*>(src)));
 }
 
 void CopyCPU(const Tensor& src, Tensor& dst) {
