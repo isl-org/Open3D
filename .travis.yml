@@ -38,6 +38,8 @@ matrix:
     # Build docs only
     - os: linux
       dist: bionic
+      services:
+        - xvfb
       sudo: true
       language: python
       python: "3.6"

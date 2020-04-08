@@ -7,7 +7,7 @@ if __name__ == "__main__":
     nb_paths = sorted((file_dir / "Basic").glob("*.ipynb"))
     nb_paths += sorted((file_dir / "Advanced").glob("*.ipynb"))
     for nb_path in nb_paths:
-        print(f"Execute {nb_path.name}")
+        print(f"[Executing notebook {nb_path.name}]")
 
         with open(nb_path) as f:
             nb = nbformat.read(f, as_version=4)
