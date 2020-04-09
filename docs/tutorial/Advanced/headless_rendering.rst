@@ -62,10 +62,7 @@ As a result, the cmake command is the following
     (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON \
                      -DBUILD_GLEW=ON \
                      -DBUILD_GLFW=ON \
-                     -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
                      ..
-
-Note that ``-DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3`` is the same path that was used for :ref:`install_virtualenv`.
 
 If cmake successfully generates makefiles, build Open3D.
 
@@ -183,7 +180,7 @@ Here are instructions for compiling mesa-19.0.8, last version that still support
     (py3env) $ cd ~/Open3D
     (py3env) $ mkdir build&&cd build
     (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON \
-        -DOSMESA_INCLUDE_DIR=$HOME/osmesa -DOSMESA_LIBRARY="$HOME/osmesa/lib/libOSMesa.so" \
+        -DOSMESA_INCLUDE_DIR=$HOME/osmesa/include -DOSMESA_LIBRARY="$HOME/osmesa/lib/libOSMesa.so" \
         ..
     (py3env) $ make -j$(nproc)
     (py3env) $ make install-pip-package
