@@ -12,6 +12,7 @@ echo "Codesign verify Xcode.app:"
 codesign --verify /Applications/Xcode.app
 echo "Xcode SDK path:"
 xcrun --show-sdk-path
+ls -lR `xcrun --show-sdk-path`
 
 echo "cmake configure the Open3D project..."
 date
