@@ -569,6 +569,7 @@ struct GuiVisualizer::Impl {
 
         void SetMaterialSelected(const MaterialType type) {
             wgtMaterialType->SetSelectedIndex(type);
+            wgtPrefabMaterial->SetEnabled(type == MaterialType::LIT);
         }
     } settings;
 
@@ -1084,6 +1085,9 @@ GuiVisualizer::GuiVisualizer(
         auto view = scene->GetView();
         impl_->settings.selectedType = selected;
 
+        bool isLit = (selected == MaterialType::LIT);
+        impl_->settings.wgtPrefabMaterial->SetEnabled(isLit);
+
         switch (selected) {
             case MaterialType::LIT:
                 view->SetMode(ViewMode::Color);
@@ -1106,9 +1110,6 @@ GuiVisualizer::GuiVisualizer(
                 view->SetMode(ViewMode::Depth);
                 break;
         }
-
-        impl_->settings.wgtPrefabMaterial->SetEnabled(selected ==
-                                                      MaterialType::LIT);
     });
     matGrid->AddChild(settings.wgtMaterialType);
 
