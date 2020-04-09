@@ -66,6 +66,9 @@ public:
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
 
+    void AddFixed(int size);
+    void AddStretch();
+
 public:
     class Fixed : public Widget {
     public:
