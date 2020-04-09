@@ -533,6 +533,7 @@ struct GuiVisualizer::Impl {
 
         std::shared_ptr<gui::Vert> wgtBase;
         std::shared_ptr<gui::Checkbox> wgtShowAxes;
+        std::shared_ptr<gui::ColorEdit> wgtBGColor;
         std::shared_ptr<gui::Button> wgtMouseArcball;
         std::shared_ptr<gui::Button> wgtMouseFly;
         std::shared_ptr<gui::Button> wgtMouseSun;
@@ -862,17 +863,32 @@ GuiVisualizer::GuiVisualizer(
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);
 
-    // ... background colors
-    auto bgcolor = std::make_shared<gui::ColorEdit>();
-    bgcolor->SetValue({1, 1, 1});
-    bgcolor->OnValueChanged = [scene](const gui::Color &newColor) {
+    // ... background
+    settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Show skymap");
+    settings.wgtSkyEnabled->SetChecked(kDefaultShowSkybox);
+    settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
+        if (checked) {
+          renderScene->SetSkybox(impl_->settings.hSky);
+        } else {
+          renderScene->SetSkybox(SkyboxHandle());
+        }
+        impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
+        impl_->settings.wgtBGColor->SetEnabled(!checked);
+    });
+
+    impl_->settings.wgtBGColor = std::make_shared<gui::ColorEdit>();
+    impl_->settings.wgtBGColor->SetValue({1, 1, 1});
+    impl_->settings.wgtBGColor->OnValueChanged = [scene](const gui::Color &newColor) {
         scene->SetBackgroundColor(newColor);
     };
-    auto bgcolorLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
-    bgcolorLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
-    bgcolorLayout->AddChild(bgcolor);
+    auto bgLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    bgLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
+    bgLayout->AddChild(impl_->settings.wgtBGColor);
+
     viewCtrls->AddFixed(separationHeight);
-    viewCtrls->AddChild(bgcolorLayout);
+    viewCtrls->AddChild(settings.wgtSkyEnabled);
+    viewCtrls->AddFixed(0.25 * em);
+    viewCtrls->AddChild(bgLayout);
 
     // ... show axes
     settings.wgtShowAxes = std::make_shared<gui::Checkbox>("Show axes");
@@ -880,6 +896,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtShowAxes->SetOnChecked([this, renderScene](bool isChecked) {
         renderScene->SetEntityEnabled(this->impl_->settings.hAxes, isChecked);
     });
+    viewCtrls->AddFixed(separationHeight);
     viewCtrls->AddChild(settings.wgtShowAxes);
 
     // ... lighting profiles
@@ -930,18 +947,6 @@ GuiVisualizer::GuiVisualizer(
         }
     });
     checkboxes->AddChild(settings.wgtIBLEnabled);
-    settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
-    settings.wgtSkyEnabled->SetChecked(kDefaultShowSkybox);
-    settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
-        impl_->settings.SetCustomProfile();
-        if (checked) {
-            renderScene->SetSkybox(impl_->settings.hSky);
-        } else {
-            renderScene->SetSkybox(SkyboxHandle());
-        }
-        impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
-    });
-    checkboxes->AddChild(settings.wgtSkyEnabled);
     settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");
     settings.wgtDirectionalEnabled->SetChecked(true);
     settings.wgtDirectionalEnabled->SetOnChecked(
