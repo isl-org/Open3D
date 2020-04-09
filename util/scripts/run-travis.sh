@@ -8,6 +8,12 @@ echo
 OPEN3D_INSTALL_DIR=~/open3d_install
 
 # debugging
+echo "find /usr/local/Cellar -name math.h"
+find /usr/local/Cellar -name math.h
+echo "find /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include -name math.h"
+find /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include -name math.h
+echo "find /Users/travis/build/intel-isl/Open3D -name math.h"
+find /Users/travis/build/intel-isl/Open3D -name math.h
 echo "Codesign verify Xcode.app:"
 codesign --verify /Applications/Xcode.app
 echo "Xcode SDK path:"
