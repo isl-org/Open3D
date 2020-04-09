@@ -109,9 +109,9 @@ matrix:
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
-    # Default environment of macOS 10.14 (Xcode 10.2)
+    # Default environment of macOS 10.14 (Xcode 11.2)
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.2
       before_install:
         - ./util/scripts/install-deps-osx.sh
       script: travis_wait 40 ./util/scripts/run-travis.sh
