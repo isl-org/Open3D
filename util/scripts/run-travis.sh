@@ -8,7 +8,10 @@ echo
 OPEN3D_INSTALL_DIR=~/open3d_install
 
 # debugging
+echo "Codesign verify Xcode.app:"
 codesign --verify /Applications/Xcode.app
+echo "Xcode SDK path:"
+xcrun --show-sdk-path
 
 echo "cmake configure the Open3D project..."
 date
