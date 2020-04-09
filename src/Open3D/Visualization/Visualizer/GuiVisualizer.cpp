@@ -612,8 +612,7 @@ struct GuiVisualizer::Impl {
         auto *renderScene = this->scene->GetScene();
         if (profile.useDefaultIBL) {
             this->SetIBL(renderer, nullptr);
-            this->settings.wgtIBLs->SetSelectedValue(
-                    kDefaultIBL.c_str());
+            this->settings.wgtIBLs->SetSelectedValue(kDefaultIBL.c_str());
         }
         if (profile.iblEnabled) {
             renderScene->SetIndirectLight(this->settings.hIbl);
@@ -868,9 +867,9 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtSkyEnabled->SetChecked(kDefaultShowSkybox);
     settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
         if (checked) {
-          renderScene->SetSkybox(impl_->settings.hSky);
+            renderScene->SetSkybox(impl_->settings.hSky);
         } else {
-          renderScene->SetSkybox(SkyboxHandle());
+            renderScene->SetSkybox(SkyboxHandle());
         }
         impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
         impl_->settings.wgtBGColor->SetEnabled(!checked);
@@ -878,9 +877,10 @@ GuiVisualizer::GuiVisualizer(
 
     impl_->settings.wgtBGColor = std::make_shared<gui::ColorEdit>();
     impl_->settings.wgtBGColor->SetValue({1, 1, 1});
-    impl_->settings.wgtBGColor->OnValueChanged = [scene](const gui::Color &newColor) {
-        scene->SetBackgroundColor(newColor);
-    };
+    impl_->settings.wgtBGColor->OnValueChanged =
+            [scene](const gui::Color &newColor) {
+                scene->SetBackgroundColor(newColor);
+            };
     auto bgLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     bgLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
     bgLayout->AddChild(impl_->settings.wgtBGColor);
@@ -997,20 +997,20 @@ GuiVisualizer::GuiVisualizer(
     });
 
     settings.wgtIBLIntensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
-                                              lightingProfile.iblIntensity);
-    settings.wgtIBLIntensity->OnValueChanged =
-            [this, renderScene](double newValue) {
-                renderScene->SetIndirectLightIntensity(newValue);
-                this->impl_->settings.SetCustomProfile();
-            };
+                                          lightingProfile.iblIntensity);
+    settings.wgtIBLIntensity->OnValueChanged = [this,
+                                                renderScene](double newValue) {
+        renderScene->SetIndirectLightIntensity(newValue);
+        this->impl_->settings.SetCustomProfile();
+    };
 
     auto ambientLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     ambientLayout->AddChild(std::make_shared<gui::Label>("HDR map"));
     ambientLayout->AddChild(settings.wgtIBLs);
     ambientLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
     ambientLayout->AddChild(settings.wgtIBLIntensity);
-    //ambientLayout->AddChild(std::make_shared<gui::Label>("Skybox"));
-    //ambientLayout->AddChild(settings.wgtLoadSky);
+    // ambientLayout->AddChild(std::make_shared<gui::Label>("Skybox"));
+    // ambientLayout->AddChild(settings.wgtLoadSky);
 
     settings.wgtAdvanced->AddChild(std::make_shared<gui::Label>("Environment"));
     settings.wgtAdvanced->AddChild(ambientLayout);
