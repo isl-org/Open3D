@@ -572,7 +572,10 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."}});
+              "necessary."},
+             {"seed",
+              "Seed value used in the random generator, set to -1 to use a "
+              "random seed value with each function call."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -586,7 +589,10 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."}});
+              "necessary."},
+             {"seed",
+              "Seed value used in the random generator, set to -1 to use a "
+              "random seed value with each function call."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",
