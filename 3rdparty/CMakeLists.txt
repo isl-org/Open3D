@@ -300,6 +300,14 @@ if (BUILD_UNIT_TESTS)
     set(googletest_LIBRARIES googletest)
 endif()
 
+# benchmark
+if (BUILD_BENCHMARKS)
+    set( BENCHMARK_ENABLE_INSTALL OFF )
+    set( BENCHMARK_ENABLE_GTEST_TESTS OFF )
+    set( BENCHMARK_ENABLE_TESTING OFF )
+    add_subdirectory(benchmark)
+endif()
+
 # fmt library
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
