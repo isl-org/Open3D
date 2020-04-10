@@ -21,6 +21,8 @@ xcrun --show-sdk-path
 echo "Xcode version:"
 xcodebuild -version
 #ls -lRH `xcrun --show-sdk-path`
+echo "[cmd] grep for signbit"
+grep signbit /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include/*
 
 echo "cmake configure the Open3D project..."
 date
