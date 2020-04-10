@@ -443,8 +443,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
     if (seed == -1) {
-      std::random_device rd;
-      seed = rd();
+        std::random_device rd;
+        seed = rd();
     }
     std::mt19937 mt(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -495,7 +495,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points, bool use_triangle_normal /* = false */, int seed /* = -1 */) {
+        size_t number_of_points,
+        bool use_triangle_normal /* = false */,
+        int seed /* = -1 */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
     }

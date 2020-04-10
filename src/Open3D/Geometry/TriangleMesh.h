@@ -359,7 +359,9 @@ public:
     /// if necessary. \param seed Sets the seed value used in the random
     /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points, bool use_triangle_normal = false, int seed = -1);
+            size_t number_of_points,
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to sample \param number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
