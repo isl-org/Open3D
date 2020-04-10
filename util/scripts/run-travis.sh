@@ -18,6 +18,8 @@ find /Users/travis/build/intel-isl/Open3D -name math.h
 #codesign --verify /Applications/Xcode.app
 echo "Xcode SDK path:"
 xcrun --show-sdk-path
+echo "Xcode version:"
+xcodebuild -version
 #ls -lRH `xcrun --show-sdk-path`
 
 echo "cmake configure the Open3D project..."
