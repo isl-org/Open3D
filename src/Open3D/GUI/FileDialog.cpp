@@ -232,10 +232,10 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
     if (type == Type::SAVE) {
         auto filenameLabel = std::make_shared<Label>("Save as:");
         auto horiz = std::make_shared<Horiz>();
-        horiz->AddChild(Horiz::MakeStretch());
+        horiz->AddStretch();
         horiz->AddChild(filenameLabel);
         horiz->AddChild(impl_->filename);
-        horiz->AddChild(Horiz::MakeStretch());
+        horiz->AddStretch();
         layout->AddChild(horiz);
     }
 
@@ -255,15 +255,15 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
     impl_->filter = std::make_shared<Combobox>();
     auto filterLabel = std::make_shared<Label>("File type:");
     impl_->filterRow = std::make_shared<Horiz>();
-    impl_->filterRow->AddChild(Horiz::MakeStretch());
+    impl_->filterRow->AddStretch();
     impl_->filterRow->AddChild(filterLabel);
     impl_->filterRow->AddChild(impl_->filter);
-    impl_->filterRow->AddChild(Horiz::MakeStretch());
+    impl_->filterRow->AddStretch();
     impl_->filterRow->SetVisible(false);
     layout->AddChild(impl_->filterRow);
 
     auto horiz = std::make_shared<Horiz>(em);
-    horiz->AddChild(Horiz::MakeStretch());
+    horiz->AddStretch();
     horiz->AddChild(impl_->cancel);
     horiz->AddChild(impl_->ok);
     layout->AddChild(horiz);
