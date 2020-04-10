@@ -109,6 +109,7 @@ struct Application::Impl {
 
     std::shared_ptr<Menu> menubar;
     std::unordered_set<std::shared_ptr<Window>> windows;
+    std::unordered_set<std::shared_ptr<Window>> windowsToBeDestroyed;
 
     void InitGFLW() {
         if (this->isGLFWinitalized) {
@@ -241,6 +242,7 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 void Application::RemoveWindow(Window *window) {
     for (auto it = impl_->windows.begin(); it != impl_->windows.end(); ++it) {
         if (it->get() == window) {
+            impl_->windowsToBeDestroyed.insert(*it);
             impl_->windows.erase(it);
             break;
         }
@@ -327,6 +329,12 @@ bool Application::RunOneTick() {
 
 Application::RunStatus Application::ProcessQueuedEvents() {
     glfwWaitEventsTimeout(RUNLOOP_DELAY_SEC);
+
+    // We can't destroy a GLFW window in a callback, so we need to do it here.
+    // Since these are the only copy of the shared pointers, this will cause
+    // the Window destructor to be called.
+    impl_->windowsToBeDestroyed.clear();
+
     if (impl_->shouldQuit) {
         return RunStatus::DONE;
     }
