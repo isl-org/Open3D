@@ -158,7 +158,7 @@ void MatrixInteractor::Dolly(int dy, DragType dragType) {
         case DragType::TWO_FINGER:
             // Zoom out is "push away" or up, is a positive value for
             // two-finger scrolling, so we need to invert dy.
-            dist = float(-dy) * 0.005f * modelSize_;
+            dist = float(-dy) * 0.01f * modelSize_;
             break;
         case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
             dist = float(-dy) * 0.1f * modelSize_;
