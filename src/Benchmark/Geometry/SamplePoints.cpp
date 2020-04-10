@@ -20,7 +20,7 @@ BENCHMARK_DEFINE_F(SamplePointsFixture, Poisson)(benchmark::State& state) {
     }
 }
 
-BENCHMARK_REGISTER_F(SamplePointsFixture, Poisson)->Args({123})->Arg({1000});
+BENCHMARK_REGISTER_F(SamplePointsFixture, Poisson)->Args({123})->Args({1000});
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Uniform)(benchmark::State& state) {
     for (auto _ : state) {
