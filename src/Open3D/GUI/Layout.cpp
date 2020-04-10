@@ -143,11 +143,11 @@ struct Layout1D::Impl {
 Layout1D::Fixed::Fixed(int size, Dir dir) : size_(size), dir_(dir) {}
 
 Size Layout1D::Fixed::CalcPreferredSize(const Theme& theme) const {
-    if (dir_ == HORIZ) {
-        return {size_, 0};
+    if (dir_ == VERT) {
+        return {0, size_};
     }
 
-    return {0, size_};
+    return {size_, 0};
 }
 
 Size Layout1D::Stretch::CalcPreferredSize(const Theme& theme) const {
@@ -167,6 +167,12 @@ Layout1D::Layout1D(Dir dir,
 Layout1D::~Layout1D() {}
 
 Margins& Layout1D::GetMutableMargins() { return impl_->margins; }
+
+void Layout1D::AddFixed(int size) {
+    AddChild(std::make_shared<Fixed>(size, impl_->dir));
+}
+
+void Layout1D::AddStretch() { AddChild(std::make_shared<Stretch>()); }
 
 Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     int minor;

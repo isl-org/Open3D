@@ -70,7 +70,7 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
             (std::string("Open3D ") + OPEN3D_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
-            "Copyright (c) 2018 www.open3d.org\n\n"
+            "Copyright (c) 2018 - 2020 www.open3d.org\n\n"
 
             "Permission is hereby granted, free of charge, to any person "
             "obtaining "
@@ -106,9 +106,9 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
     gui::Margins margins(theme.fontSize);
     auto layout = std::make_shared<gui::Vert>(0, margins);
     layout->AddChild(gui::Horiz::MakeCentered(title));
-    layout->AddChild(gui::Horiz::MakeFixed(theme.fontSize));
+    layout->AddFixed(theme.fontSize);
     layout->AddChild(text);
-    layout->AddChild(gui::Horiz::MakeFixed(theme.fontSize));
+    layout->AddFixed(theme.fontSize);
     layout->AddChild(gui::Horiz::MakeCentered(ok));
     dlg->AddChild(layout);
 
@@ -209,14 +209,14 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     gui::Margins margins(em);
     auto layout = std::make_shared<gui::Vert>(0, margins);
     layout->AddChild(gui::Horiz::MakeCentered(title));
-    layout->AddChild(gui::Horiz::MakeFixed(em));
+    layout->AddFixed(em);
 
     auto columns = std::make_shared<gui::Horiz>(em, gui::Margins());
     columns->AddChild(leftCol);
     columns->AddChild(rightCol);
     layout->AddChild(columns);
 
-    layout->AddChild(gui::Horiz::MakeFixed(em));
+    layout->AddFixed(em);
     layout->AddChild(gui::Horiz::MakeCentered(ok));
     dlg->AddChild(layout);
 
@@ -359,6 +359,7 @@ struct LightingProfile {
 };
 
 static const std::string kDefaultIBL = "default";
+static const std::string kDefaultMaterialName = "Polished ceramic [default]";
 static const std::string kPointCloudProfileName = "Cloudy day (no direct sun)";
 static const bool kDefaultShowSkybox = false;
 static const bool kDefaultShowAxes = false;
@@ -444,7 +445,7 @@ struct GuiVisualizer::Impl {
     };
 
     std::map<std::string, LitMaterial> prefabMaterials = {
-            {"Default", {}},
+            {kDefaultMaterialName, {}},
             {"Aluminum",
              {visualization::MaterialInstanceHandle::kBad,
               {0.913f, 0.921f, 0.925f},
@@ -495,7 +496,7 @@ struct GuiVisualizer::Impl {
               0.2f,
               0.0f,
               3.0f}},
-            {"Ceramic (white)",
+            {"Glazed ceramic (white)",
              {visualization::MaterialInstanceHandle::kBad,
               {1.0f, 1.0f, 1.0f},
               0.0f,
@@ -530,8 +531,9 @@ struct GuiVisualizer::Impl {
         visualization::LightHandle hDirectionalLight;
         visualization::GeometryHandle hAxes;
 
-        std::shared_ptr<gui::Widget> wgtBase;
+        std::shared_ptr<gui::Vert> wgtBase;
         std::shared_ptr<gui::Checkbox> wgtShowAxes;
+        std::shared_ptr<gui::ColorEdit> wgtBGColor;
         std::shared_ptr<gui::Button> wgtMouseArcball;
         std::shared_ptr<gui::Button> wgtMouseFly;
         std::shared_ptr<gui::Button> wgtMouseSun;
@@ -539,12 +541,12 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Button> wgtMouseModel;
         std::shared_ptr<gui::Combobox> wgtLightingProfile;
         std::shared_ptr<gui::CollapsableVert> wgtAdvanced;
-        std::shared_ptr<gui::Checkbox> wgtAmbientEnabled;
+        std::shared_ptr<gui::Checkbox> wgtIBLEnabled;
         std::shared_ptr<gui::Checkbox> wgtSkyEnabled;
         std::shared_ptr<gui::Checkbox> wgtDirectionalEnabled;
-        std::shared_ptr<gui::Combobox> wgtAmbientIBLs;
+        std::shared_ptr<gui::Combobox> wgtIBLs;
         std::shared_ptr<gui::Button> wgtLoadSky;
-        std::shared_ptr<gui::Slider> wgtAmbientIntensity;
+        std::shared_ptr<gui::Slider> wgtIBLIntensity;
         std::shared_ptr<gui::Slider> wgtSunIntensity;
         std::shared_ptr<gui::VectorEdit> wgtSunDir;
         std::shared_ptr<gui::ColorEdit> wgtSunColor;
@@ -568,6 +570,7 @@ struct GuiVisualizer::Impl {
 
         void SetMaterialSelected(const MaterialType type) {
             wgtMaterialType->SetSelectedIndex(type);
+            wgtPrefabMaterial->SetEnabled(type == MaterialType::LIT);
         }
     } settings;
 
@@ -611,8 +614,7 @@ struct GuiVisualizer::Impl {
         auto *renderScene = this->scene->GetScene();
         if (profile.useDefaultIBL) {
             this->SetIBL(renderer, nullptr);
-            this->settings.wgtAmbientIBLs->SetSelectedValue(
-                    kDefaultIBL.c_str());
+            this->settings.wgtIBLs->SetSelectedValue(kDefaultIBL.c_str());
         }
         if (profile.iblEnabled) {
             renderScene->SetIndirectLight(this->settings.hIbl);
@@ -630,11 +632,11 @@ struct GuiVisualizer::Impl {
                                        profile.sunDir);
         renderScene->SetLightColor(this->settings.hDirectionalLight,
                                    profile.sunColor);
-        this->settings.wgtAmbientEnabled->SetChecked(profile.iblEnabled);
+        this->settings.wgtIBLEnabled->SetChecked(profile.iblEnabled);
         this->settings.wgtSkyEnabled->SetChecked(false);
         this->settings.wgtDirectionalEnabled->SetChecked(profile.sunEnabled);
-        this->settings.wgtAmbientIBLs->SetSelectedValue("default");
-        this->settings.wgtAmbientIntensity->SetValue(profile.iblIntensity);
+        this->settings.wgtIBLs->SetSelectedValue(kDefaultIBL.c_str());
+        this->settings.wgtIBLIntensity->SetValue(profile.iblIntensity);
         this->settings.wgtSunIntensity->SetValue(profile.sunIntensity);
         this->settings.wgtSunDir->SetValue(profile.sunDir);
         this->settings.wgtSunColor->SetValue(gui::Color(
@@ -854,7 +856,7 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseIBL->SetOn(false);
         this->impl_->settings.wgtMouseModel->SetOn(false);
     });
-    settings.wgtMouseIBL = std::make_shared<SmallToggleButton>("IBL");
+    settings.wgtMouseIBL = std::make_shared<SmallToggleButton>("Environment");
     settings.wgtMouseIBL->SetOnClicked([this]() {
         this->impl_->scene->SetViewControls(
                 gui::SceneWidget::Controls::ROTATE_IBL);
@@ -867,28 +869,44 @@ GuiVisualizer::GuiVisualizer(
     });
 
     auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
-    cameraControls->AddChild(gui::Horiz::MakeStretch());
+    cameraControls->AddStretch();
     cameraControls->AddChild(settings.wgtMouseArcball);
     cameraControls->AddChild(settings.wgtMouseFly);
     cameraControls->AddChild(settings.wgtMouseModel);
-    cameraControls->AddChild(gui::Horiz::MakeFixed(1 * em));
+    cameraControls->AddFixed(em);
     cameraControls->AddChild(settings.wgtMouseSun);
     cameraControls->AddChild(settings.wgtMouseIBL);
-    cameraControls->AddChild(gui::Horiz::MakeStretch());
+    cameraControls->AddStretch();
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
     viewCtrls->AddChild(cameraControls);
 
-    // ... background colors
-    auto bgcolor = std::make_shared<gui::ColorEdit>();
-    bgcolor->SetValue({1, 1, 1});
-    bgcolor->OnValueChanged = [scene](const gui::Color &newColor) {
-        scene->SetBackgroundColor(newColor);
-    };
-    auto bgcolorLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
-    bgcolorLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
-    bgcolorLayout->AddChild(bgcolor);
-    viewCtrls->AddChild(gui::Vert::MakeFixed(separationHeight));
-    viewCtrls->AddChild(bgcolorLayout);
+    // ... background
+    settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Show skymap");
+    settings.wgtSkyEnabled->SetChecked(kDefaultShowSkybox);
+    settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
+        if (checked) {
+            renderScene->SetSkybox(impl_->settings.hSky);
+        } else {
+            renderScene->SetSkybox(SkyboxHandle());
+        }
+        impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
+        impl_->settings.wgtBGColor->SetEnabled(!checked);
+    });
+
+    impl_->settings.wgtBGColor = std::make_shared<gui::ColorEdit>();
+    impl_->settings.wgtBGColor->SetValue({1, 1, 1});
+    impl_->settings.wgtBGColor->OnValueChanged =
+            [scene](const gui::Color &newColor) {
+                scene->SetBackgroundColor(newColor);
+            };
+    auto bgLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
+    bgLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
+    bgLayout->AddChild(impl_->settings.wgtBGColor);
+
+    viewCtrls->AddFixed(separationHeight);
+    viewCtrls->AddChild(settings.wgtSkyEnabled);
+    viewCtrls->AddFixed(0.25 * em);
+    viewCtrls->AddChild(bgLayout);
 
     // ... show axes
     settings.wgtShowAxes = std::make_shared<gui::Checkbox>("Show axes");
@@ -896,6 +914,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtShowAxes->SetOnChecked([this, renderScene](bool isChecked) {
         renderScene->SetEntityEnabled(this->impl_->settings.hAxes, isChecked);
     });
+    viewCtrls->AddFixed(separationHeight);
     viewCtrls->AddChild(settings.wgtShowAxes);
 
     // ... lighting profiles
@@ -919,11 +938,11 @@ GuiVisualizer::GuiVisualizer(
     auto profileLayout = std::make_shared<gui::Vert>();
     profileLayout->AddChild(std::make_shared<gui::Label>("Lighting profiles"));
     profileLayout->AddChild(settings.wgtLightingProfile);
-    viewCtrls->AddChild(gui::Vert::MakeFixed(separationHeight));
+    viewCtrls->AddFixed(separationHeight);
     viewCtrls->AddChild(profileLayout);
 
     settings.wgtBase->AddChild(viewCtrls);
-    settings.wgtBase->AddChild(gui::Vert::MakeFixed(separationHeight));
+    settings.wgtBase->AddFixed(separationHeight);
 
     // ... advanced lighting
     settings.wgtAdvanced = std::make_shared<gui::CollapsableVert>(
@@ -935,9 +954,9 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtAdvanced->AddChild(
             std::make_shared<gui::Label>("Light sources"));
     auto checkboxes = std::make_shared<gui::Horiz>();
-    settings.wgtAmbientEnabled = std::make_shared<gui::Checkbox>("Ambient");
-    settings.wgtAmbientEnabled->SetChecked(true);
-    settings.wgtAmbientEnabled->SetOnChecked([this, renderScene](bool checked) {
+    settings.wgtIBLEnabled = std::make_shared<gui::Checkbox>("HDR map");
+    settings.wgtIBLEnabled->SetChecked(true);
+    settings.wgtIBLEnabled->SetOnChecked([this, renderScene](bool checked) {
         impl_->settings.SetCustomProfile();
         if (checked) {
             renderScene->SetIndirectLight(impl_->settings.hIbl);
@@ -945,19 +964,7 @@ GuiVisualizer::GuiVisualizer(
             renderScene->SetIndirectLight(IndirectLightHandle());
         }
     });
-    checkboxes->AddChild(settings.wgtAmbientEnabled);
-    settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Sky");
-    settings.wgtSkyEnabled->SetChecked(kDefaultShowSkybox);
-    settings.wgtSkyEnabled->SetOnChecked([this, renderScene](bool checked) {
-        impl_->settings.SetCustomProfile();
-        if (checked) {
-            renderScene->SetSkybox(impl_->settings.hSky);
-        } else {
-            renderScene->SetSkybox(SkyboxHandle());
-        }
-        impl_->scene->SetSkyboxHandle(impl_->settings.hSky, checked);
-    });
-    checkboxes->AddChild(settings.wgtSkyEnabled);
+    checkboxes->AddChild(settings.wgtIBLEnabled);
     settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");
     settings.wgtDirectionalEnabled->SetChecked(true);
     settings.wgtDirectionalEnabled->SetOnChecked(
@@ -969,10 +976,10 @@ GuiVisualizer::GuiVisualizer(
     checkboxes->AddChild(settings.wgtDirectionalEnabled);
     settings.wgtAdvanced->AddChild(checkboxes);
 
-    settings.wgtAdvanced->AddChild(gui::Vert::MakeFixed(separationHeight));
+    settings.wgtAdvanced->AddFixed(separationHeight);
 
-    // ....... ambient light (IBL)
-    settings.wgtAmbientIBLs = std::make_shared<gui::Combobox>();
+    // ....... IBL
+    settings.wgtIBLs = std::make_shared<gui::Combobox>();
     std::vector<std::string> resourceFiles;
     utility::filesystem::ListFilesInDirectory(rsrcPath, resourceFiles);
     std::sort(resourceFiles.begin(), resourceFiles.end());
@@ -981,21 +988,21 @@ GuiVisualizer::GuiVisualizer(
         if (f.find("_ibl.ktx") == f.size() - 8) {
             auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
             name = name.substr(0, name.size() - 8);
-            settings.wgtAmbientIBLs->AddItem(name.c_str());
+            settings.wgtIBLs->AddItem(name.c_str());
             if (name == kDefaultIBL) {
-                settings.wgtAmbientIBLs->SetSelectedIndex(n);
+                settings.wgtIBLs->SetSelectedIndex(n);
             }
             n++;
         }
     }
-    settings.wgtAmbientIBLs->AddItem("Custom...");
-    settings.wgtAmbientIBLs->SetOnValueChanged([this](const char *name, int) {
+    settings.wgtIBLs->AddItem("Custom...");
+    settings.wgtIBLs->SetOnValueChanged([this](const char *name, int) {
         std::string path = gui::Application::GetInstance().GetResourcePath();
         path += std::string("/") + name + "_ibl.ktx";
         if (!this->SetIBL(path.c_str())) {
             // must be the "Custom..." option
             auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Type::OPEN, "Open IBL", GetTheme());
+                    gui::FileDialog::Type::OPEN, "Open HDR Map", GetTheme());
             dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
@@ -1007,25 +1014,25 @@ GuiVisualizer::GuiVisualizer(
         }
     });
 
-    settings.wgtAmbientIntensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
-                                              lightingProfile.iblIntensity);
-    settings.wgtAmbientIntensity->OnValueChanged =
-            [this, renderScene](double newValue) {
-                renderScene->SetIndirectLightIntensity(newValue);
-                this->impl_->settings.SetCustomProfile();
-            };
+    settings.wgtIBLIntensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
+                                          lightingProfile.iblIntensity);
+    settings.wgtIBLIntensity->OnValueChanged = [this,
+                                                renderScene](double newValue) {
+        renderScene->SetIndirectLightIntensity(newValue);
+        this->impl_->settings.SetCustomProfile();
+    };
 
     auto ambientLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
-    ambientLayout->AddChild(std::make_shared<gui::Label>("IBL"));
-    ambientLayout->AddChild(settings.wgtAmbientIBLs);
+    ambientLayout->AddChild(std::make_shared<gui::Label>("HDR map"));
+    ambientLayout->AddChild(settings.wgtIBLs);
     ambientLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
-    ambientLayout->AddChild(settings.wgtAmbientIntensity);
-    ambientLayout->AddChild(std::make_shared<gui::Label>("Skybox"));
-    ambientLayout->AddChild(settings.wgtLoadSky);
+    ambientLayout->AddChild(settings.wgtIBLIntensity);
+    // ambientLayout->AddChild(std::make_shared<gui::Label>("Skybox"));
+    // ambientLayout->AddChild(settings.wgtLoadSky);
 
-    settings.wgtAdvanced->AddChild(std::make_shared<gui::Label>("Ambient"));
+    settings.wgtAdvanced->AddChild(std::make_shared<gui::Label>("Environment"));
     settings.wgtAdvanced->AddChild(ambientLayout);
-    settings.wgtAdvanced->AddChild(gui::Vert::MakeFixed(separationHeight));
+    settings.wgtAdvanced->AddFixed(separationHeight);
 
     // ... directional light (sun)
     settings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
@@ -1077,7 +1084,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtAdvanced->AddChild(sunLayout);
 
     // materials settings
-    settings.wgtBase->AddChild(gui::Vert::MakeFixed(separationHeight));
+    settings.wgtBase->AddFixed(separationHeight);
     auto materials = std::make_shared<gui::CollapsableVert>("Material settings",
                                                             0, indent);
 
@@ -1094,6 +1101,9 @@ GuiVisualizer::GuiVisualizer(
 
         auto view = scene->GetView();
         impl_->settings.selectedType = selected;
+
+        bool isLit = (selected == MaterialType::LIT);
+        impl_->settings.wgtPrefabMaterial->SetEnabled(isLit);
 
         switch (selected) {
             case MaterialType::LIT:
@@ -1117,9 +1127,6 @@ GuiVisualizer::GuiVisualizer(
                 view->SetMode(ViewMode::Depth);
                 break;
         }
-
-        impl_->settings.wgtPrefabMaterial->SetEnabled(selected ==
-                                                      MaterialType::LIT);
     });
     matGrid->AddChild(settings.wgtMaterialType);
 
@@ -1127,7 +1134,7 @@ GuiVisualizer::GuiVisualizer(
     for (auto &prefab : impl_->prefabMaterials) {
         settings.wgtPrefabMaterial->AddItem(prefab.first.c_str());
     }
-    settings.wgtPrefabMaterial->SetSelectedValue("Default");
+    settings.wgtPrefabMaterial->SetSelectedValue(kDefaultMaterialName.c_str());
     settings.wgtPrefabMaterial->SetOnValueChanged([this, renderScene](
                                                           const char *name,
                                                           int) {
@@ -1164,7 +1171,7 @@ GuiVisualizer::GuiVisualizer(
     matGrid->AddChild(settings.wgtPrefabMaterial);
 
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
-    settings.wgtPointSize = MakeSlider(gui::Slider::INT, 0.0, 10.0, 3);
+    settings.wgtPointSize = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
     settings.wgtPointSize->OnValueChanged = [this](double value) {
         auto &renderer = GetRenderer();
         for (const auto &pair : impl_->geometryMaterials) {
@@ -1297,6 +1304,7 @@ void GuiVisualizer::SetGeometry(
         if (nPointClouds == geometries.size()) {
             impl_->SetLightingProfile(GetRenderer(), kPointCloudProfileName);
         }
+        impl_->settings.wgtPointSize->SetEnabled(nPointClouds > 0);
 
         impl_->geometryMaterials.emplace(handle, materials);
     }
