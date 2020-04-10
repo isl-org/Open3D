@@ -35,7 +35,7 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
         -DBUILD_GLEW=OFF \
         -DBUILD_GLFW=OFF \
         -DBUILD_JSONCPP=ON \
-        -DBUILD_PNG=OFF \
+        -DBUILD_PNG=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python) \
         ..
