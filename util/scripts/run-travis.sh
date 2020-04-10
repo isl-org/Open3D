@@ -33,7 +33,7 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_EIGEN3=ON \
         -DBUILD_GLEW=ON \
-        -DBUILD_GLFW=ON \
+        -DBUILD_GLFW=OFF \
         -DBUILD_JSONCPP=ON \
         -DBUILD_PNG=OFF \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
