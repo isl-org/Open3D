@@ -32,8 +32,8 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
         -DBUILD_UNIT_TESTS=ON \
         -DBUILD_EIGEN3=ON \
-        -DBUILD_GLEW=OFF \
-        -DBUILD_GLFW=OFF \
+        -DBUILD_GLEW=ON \
+        -DBUILD_GLFW=ON \
         -DBUILD_JSONCPP=ON \
         -DBUILD_PNG=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
