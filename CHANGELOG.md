@@ -1,11 +1,12 @@
 ## Master
 
-* Fixes on appveyor configuration
-* Fixes on Open3D viewer app
-* Updated travis.yml to support Ubuntu 18.04, gcc-7, and clang-7.0
-* Contributors guidelines updated
-* Avoid cstdlib random generators in ransac registration, use C++11 random instead.
+*  Fixes on travis to investigate problems building the gui branch
+*  Fixes on appveyor configuration
+*  Fixes on Open3D viewer app
+*  Updated travis.yml to support Ubuntu 18.04, gcc-7, and clang-7.0
+*  Contributors guidelines updated
+*  Avoid cstdlib random generators in ransac registration, use C++11 random instead.
 
 ## 0.9.0
 
-* Version bump to 0.9.0
+*  Version bump to 0.9.0
