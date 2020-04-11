@@ -50,7 +50,7 @@ struct Menu::Impl {
     struct MenuItem {
         Menu::ItemId id;
         std::string name;
-        std::string shortcut;
+        KeyName shortcutKey;
         std::shared_ptr<Menu> submenu;
         Menu::Impl *submenuImpl =
                 nullptr;  // so FindMenuItem needn't be a friend
@@ -86,19 +86,20 @@ Menu::~Menu() {}
 void *Menu::GetNativePointer() { return nullptr; }
 
 void Menu::AddItem(const char *name,
-                   const char *shortcut,
-                   ItemId itemId /*= NO_ITEM*/) {
+                   ItemId itemId /*= NO_ITEM*/,
+                   KeyName key /*= KEY_NONE*/) {
     impl_->id2idx[itemId] = impl_->items.size();
-    impl_->items.push_back({itemId, name, (shortcut ? shortcut : ""), nullptr});
+    impl_->items.push_back({itemId, name, key, nullptr});
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items.push_back({NO_ITEM, name, "", submenu, submenu->impl_.get()});
+    impl_->items.push_back({NO_ITEM, name, KEY_NONE,
+                            submenu, submenu->impl_.get()});
 }
 
 void Menu::AddSeparator() {
     impl_->items.push_back(
-            {NO_ITEM, "", "", nullptr, nullptr, false, false, true});
+            {NO_ITEM, "", KEY_NONE, nullptr, nullptr, false, false, true});
 }
 
 bool Menu::IsEnabled(ItemId itemId) const {

@@ -28,6 +28,8 @@
 
 #include <memory>
 
+#include "Events.h"
+
 #define GUI_USE_NATIVE_MENUS 1
 
 namespace open3d {
@@ -47,8 +49,8 @@ public:
     virtual ~Menu();
 
     void AddItem(const char* name,
-                 const char* shortcut,
-                 ItemId itemId = NO_ITEM);
+                 ItemId itemId = NO_ITEM,
+                 KeyName key = KEY_NONE);
     void AddMenu(const char* name, std::shared_ptr<Menu> submenu);
     void AddSeparator();
 

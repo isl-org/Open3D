@@ -408,7 +408,7 @@ static const std::vector<LightingProfile> gLightingProfiles = {
 enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
-    FILE_CLOSE,
+    FILE_QUIT,
     SETTINGS_LIGHT_AND_MATERIALS,
     HELP_KEYS,
     HELP_ABOUT,
@@ -701,17 +701,21 @@ GuiVisualizer::GuiVisualizer(
     // Create menu
     if (!gui::Application::GetInstance().GetMenubar()) {
         auto fileMenu = std::make_shared<gui::Menu>();
-        fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
-        fileMenu->AddItem("Export Current Image...", nullptr, FILE_EXPORT_RGB);
+        fileMenu->AddItem("Open...", FILE_OPEN, gui::KEY_O);
+        fileMenu->AddItem("Export Current Image...", FILE_EXPORT_RGB);
         fileMenu->AddSeparator();
-        fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
+#if WIN32
+        fileMenu->AddItem("Exit", FILE_QUIT);
+#else
+        fileMenu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
+#endif
         auto helpMenu = std::make_shared<gui::Menu>();
-        helpMenu->AddItem("Show Controls", nullptr, HELP_KEYS);
+        helpMenu->AddItem("Show Controls", HELP_KEYS);
         helpMenu->AddSeparator();
-        helpMenu->AddItem("About", nullptr, HELP_ABOUT);
-        helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
+        helpMenu->AddItem("About", HELP_ABOUT);
+        helpMenu->AddItem("Contact", HELP_CONTACT);
         auto settingsMenu = std::make_shared<gui::Menu>();
-        settingsMenu->AddItem("Lighting & Materials", nullptr,
+        settingsMenu->AddItem("Lighting & Materials",
                               SETTINGS_LIGHT_AND_MATERIALS);
         settingsMenu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
         auto menu = std::make_shared<gui::Menu>();
@@ -1445,8 +1449,8 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             ShowDialog(dlg);
             break;
         }
-        case FILE_CLOSE:
-            this->Close();
+        case FILE_QUIT:
+            gui::Application::GetInstance().Quit();
             break;
         case SETTINGS_LIGHT_AND_MATERIALS: {
             auto visibility = !impl_->settings.wgtBase->IsVisible();

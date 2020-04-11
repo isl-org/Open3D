@@ -33,6 +33,7 @@
 #include "Application.h"
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 @interface Open3DRunnable : NSObject
@@ -92,14 +93,11 @@ Menu::~Menu() {} // ARC will automatically release impl_->menu
 void* Menu::GetNativePointer() { return impl_->menu; }
 
 void Menu::AddItem(const char *name,
-                   const char *shortcut,
-                   ItemId itemId /*= NO_ITEM*/) {
-    NSString *objcShortcut;
-    if (!shortcut) {
-        objcShortcut = @"";
-    } else {
-        objcShortcut = [NSString stringWithUTF8String:shortcut];
-    }
+                   ItemId itemId /*= NO_ITEM*/,
+                   KeyName key /*= KEY_NONE*/) {
+    std::string shortcut;
+    shortcut += char(key);
+    NSString *objcShortcut = [NSString stringWithUTF8String:shortcut.c_str()];
     auto item = [[NSMenuItem alloc]
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:@selector(run)
