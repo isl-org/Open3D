@@ -7,35 +7,12 @@ echo
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 
-# debugging
-echo "[cmd] find /usr/local/Cellar -name math.h"
-find /usr/local/Cellar -name math.h
-#echo "[cmd] find /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include -name math.h"
-#find /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include -name math.h
-echo "[cmd] find /Users/travis/build/intel-isl/Open3D -name math.h"
-find /Users/travis/build/intel-isl/Open3D -name math.h
-#echo "Codesign verify Xcode.app:"
-#codesign --verify /Applications/Xcode.app
-echo "Xcode SDK path:"
-xcrun --show-sdk-path
-echo "Xcode version:"
-xcodebuild -version
-#ls -lRH `xcrun --show-sdk-path`
-#echo "[cmd] grep for signbit"
-#grep signbit /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk/usr/include/*
-
 echo "cmake configure the Open3D project..."
 date
 mkdir build
 cd build
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
-        -DBUILD_UNIT_TESTS=ON \
-        -DBUILD_EIGEN3=ON \
-        -DBUILD_GLEW=ON \
-        -DBUILD_GLFW=OFF \
-        -DBUILD_JSONCPP=ON \
-        -DBUILD_PNG=OFF \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python) \
         ..
@@ -55,8 +32,7 @@ echo
 
 echo "build & install Open3D..."
 date
-#make install -j$NPROC
-make install -j$NPROC VERBOSE=1
+make install -j$NPROC
 echo
 
 echo "running the Open3D unit tests..."
