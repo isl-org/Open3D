@@ -494,6 +494,53 @@ def test_cast_to_py_tensor():
     assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor
 
 
+def test_advanced_index_get_mixed():
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src[1, 0:2, [1, 2]]
+    o3_dst = o3_src[1, 0:2, [1, 2]]
+    np.testing.assert_equal(o3_dst.numpy(), np_dst)
+
+    # Subtle differences between slice and list
+    np_src = np.array([0, 100, 200, 300, 400, 500, 600, 700, 800]).reshape(3, 3)
+    o3_src = o3d.Tensor(np_src)
+    np.testing.assert_equal(o3_src[1, 2].numpy(), np_src[1, 2])
+    np.testing.assert_equal(o3_src[[1, 2]].numpy(), np_src[[1, 2]])
+    np.testing.assert_equal(o3_src[(1, 2)].numpy(), np_src[(1, 2)])
+    np.testing.assert_equal(o3_src[(1, 2), [1, 2]].numpy(),
+                            np_src[(1, 2), [1, 2]])
+
+    # Complex case: interleaving slice and advanced indexing
+    np_src = np.array(range(120)).reshape((2, 3, 4, 5))
+    o3_src = o3d.Tensor(np_src)
+    o3_dst = o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]
+    np_dst = np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]
+    np.testing.assert_equal(o3_dst.numpy(), np_dst)
+
+
+def test_advanced_index_set_mixed():
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_fill = np.array(([[100, 200], [300, 400]]))
+    o3_fill = o3d.Tensor(np_fill)
+
+    np_src[1, 0:2, [1, 2]] = np_fill
+    o3_src[1, 0:2, [1, 2]] = o3_fill
+    np.testing.assert_equal(o3_src.numpy(), np_src)
+
+    # Complex case: interleaving slice and advanced indexing
+    np_src = np.array(range(120)).reshape((2, 3, 4, 5))
+    o3_src = o3d.Tensor(np_src)
+    fill_shape = np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]].shape
+    np_fill_val = np.random.randint(5000, size=fill_shape).astype(np_src.dtype)
+    o3_fill_val = o3d.Tensor(np_fill_val)
+    o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = o3_fill_val
+    np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = np_fill_val
+    np.testing.assert_equal(o3_src.numpy(), np_src)
+
+
 def test_tensorlist_indexing():
     # 5 x (3, 4)
     dtype = o3d.Dtype.Float32

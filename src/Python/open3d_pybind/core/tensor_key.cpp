@@ -28,6 +28,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
+#include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorKey.h"
 
 using namespace open3d;
@@ -74,4 +75,5 @@ void pybind_core_tensor_key(py::module& m) {
                           [](NoneType start, NoneType stop, NoneType step) {
                               return TensorKey::Slice(start, stop, step);
                           });
+    tensor_key.def_static("index_tensor", &TensorKey::IndexTensor);
 }
