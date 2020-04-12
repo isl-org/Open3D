@@ -698,6 +698,8 @@ inline Tensor::Tensor(const std::vector<bool>& init_vals,
     // Check data types
     AssertTemplateDtype<bool>();
 
+    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
+    // uses 1-byte-sized boolean storage for easy indexing.
     std::vector<unsigned char> init_vals_uchar(init_vals.size());
     std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
                    [](bool v) -> unsigned char {
@@ -717,6 +719,9 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
     MemoryManager::MemcpyToHost(
             values_uchar.data(), Contiguous().GetDataPtr(), GetDevice(),
             DtypeUtil::ByteSize(GetDtype()) * NumElements());
+
+    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
+    // uses 1-byte-sized boolean storage for easy indexing.
     std::transform(
             values_uchar.begin(), values_uchar.end(), values.begin(),
             [](unsigned char v) -> bool { return static_cast<bool>(v); });
