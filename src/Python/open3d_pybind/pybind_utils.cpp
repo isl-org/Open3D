@@ -47,6 +47,8 @@ Dtype ArrayFormatToDtype(const std::string& format) {
         return Dtype::Int64;
     } else if (format == py::format_descriptor<uint8_t>::format()) {
         return Dtype::UInt8;
+    } else if (format == py::format_descriptor<bool>::format()) {
+        return Dtype::Bool;
     } else {
         utility::LogError("Unsupported data type.");
     }
@@ -63,6 +65,8 @@ std::string DtypeToArrayFormat(const Dtype& dtype) {
         return py::format_descriptor<int64_t>::format();
     } else if (dtype == Dtype::UInt8) {
         return py::format_descriptor<uint8_t>::format();
+    } else if (dtype == Dtype::Bool) {
+        return py::format_descriptor<bool>::format();
     } else {
         utility::LogError("Unsupported data type.");
     }

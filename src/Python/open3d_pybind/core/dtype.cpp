@@ -40,6 +40,7 @@ void pybind_core_dtype(py::module &m) {
             .value("Int32", Dtype::Int32)
             .value("Int64", Dtype::Int64)
             .value("UInt8", Dtype::UInt8)
+            .value("Bool", Dtype::Bool)
             .export_values();
 
     py::class_<DtypeUtil> dtype_util(m, "DtypeUtil");

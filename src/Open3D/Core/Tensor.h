@@ -77,9 +77,9 @@ public:
         AssertTemplateDtype<T>();
 
         // Copy data to blob
-        MemoryManager::MemcpyFromHost(blob_->GetDataPtr(), GetDevice(),
-                                      init_vals.data(),
-                                      init_vals.size() * sizeof(T));
+        MemoryManager::MemcpyFromHost(
+                blob_->GetDataPtr(), GetDevice(), init_vals.data(),
+                init_vals.size() * DtypeUtil::ByteSize(dtype));
     }
 
     /// The fully specified constructor
@@ -136,7 +136,7 @@ public:
                     "Assignment with scalar only works for scalar Tensor of "
                     "shape ()");
         }
-        DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
             scalar_t casted_v = static_cast<scalar_t>(v);
             MemoryManager::MemcpyFromHost(GetDataPtr(), GetDevice(), &casted_v,
                                           sizeof(scalar_t));
@@ -236,7 +236,7 @@ public:
     /// casted to the Tensor's dtype.
     template <typename T>
     void Fill(const T& v) {
-        DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
             scalar_t casted_v = static_cast<scalar_t>(v);
             Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
                        GetDtype(), GetDevice());
@@ -247,7 +247,7 @@ public:
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
 
-    /// Expand Tensor to a new broadcastable shape, returns a new view.
+    /// Expand Tensor to a new broadcastable shape, returning a new view.
     ///
     /// Tensors can be expanded to broadcastable shape by setting dimension of
     /// size 1 to have stride 0, without allocating new memory.
@@ -266,7 +266,7 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
 
-    /// Returns a new tensor view with the same data but of a different shape.
+    /// returning a new tensor view with the same data but of a different shape.
     ///
     /// The returned tensor shares the same data and must have the same number
     /// of elements, but may have a different size. For a tensor to be viewed,
@@ -414,41 +414,149 @@ public:
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
 
-    /// Element-wise square root of a tensor, returns a new tensor.
+    /// Element-wise square root of a tensor, returning a new tensor.
     Tensor Sqrt() const;
 
     /// Element-wise square root of a tensor, in-place.
     Tensor Sqrt_();
 
-    /// Element-wise sine of a tensor, returns a new tensor.
+    /// Element-wise sine of a tensor, returning a new tensor.
     Tensor Sin() const;
 
     /// Element-wise sine of a tensor, in-place.
     Tensor Sin_();
 
-    /// Element-wise cosine of a tensor, returns a new tensor.
+    /// Element-wise cosine of a tensor, returning a new tensor.
     Tensor Cos() const;
 
     /// Element-wise cosine of a tensor, in-place.
     Tensor Cos_();
 
-    /// Element-wise negation of a tensor, returns a new tensor.
+    /// Element-wise negation of a tensor, returning a new tensor.
     Tensor Neg() const;
 
     /// Element-wise negation of a tensor, in-place.
     Tensor Neg_();
 
-    /// Element-wise base-e exponential of a tensor, returns a new tensor.
+    /// Element-wise exponential of a tensor, returning a new tensor.
     Tensor Exp() const;
 
     /// Element-wise base-e exponential of a tensor, in-place.
     Tensor Exp_();
 
-    /// Element-wise absolute value of a tensor, returns a new tensor.
+    /// Element-wise absolute value of a tensor, returning a new tensor.
     Tensor Abs() const;
 
     /// Element-wise absolute value of a tensor, in-place.
     Tensor Abs_();
+    /// Element-wise logical not of a tensor, returning a new boolean tensor.
+    ///
+    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
+    /// will be treated as True.
+    Tensor LogicalNot() const;
+
+    /// Element-wise logical not of a tensor, in-place. This operation won't
+    /// change the tensor's dtype.
+    ///
+    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
+    /// will be treated as True. The tensor will be filled with 0 or 1 casted to
+    /// the tensor's dtype.
+    Tensor LogicalNot_();
+
+    /// Element-wise logical and of a tensor, returning a new boolean tensor.
+    ///
+    /// If the tensor is not boolean, zero will be treated as False, while
+    /// non-zero values will be treated as True.
+    Tensor LogicalAnd(const Tensor& value) const;
+    Tensor operator&&(const Tensor& value) const { return LogicalAnd(value); }
+
+    /// Element-wise logical and of tensors, in-place. This operation won't
+    /// change the tensor's dtype.
+    ///
+    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
+    /// will be treated as True. The tensor will be filled with 0 or 1 casted to
+    /// the tensor's dtype.
+    Tensor LogicalAnd_(const Tensor& value);
+
+    /// Element-wise logical or of tensors, returning a new boolean tensor.
+    ///
+    /// If the tensor is not boolean, zero will be treated as False, while
+    /// non-zero values will be treated as True.
+    Tensor LogicalOr(const Tensor& value) const;
+    Tensor operator||(const Tensor& value) const { return LogicalOr(value); }
+
+    /// Element-wise logical or of tensors, in-place. This operation won't
+    /// change the tensor's dtype.
+    ///
+    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
+    /// will be treated as True. The tensor will be filled with 0 or 1 casted to
+    /// the tensor's dtype.
+    Tensor LogicalOr_(const Tensor& value);
+
+    /// Element-wise logical exclusive-or of tensors, returning a new boolean
+    /// tensor.
+    ///
+    /// If the tensor is not boolean, zero will be treated as False, while
+    /// non-zero values will be treated as True.
+    Tensor LogicalXor(const Tensor& value) const;
+
+    /// Element-wise logical exclusive-or of tensors, in-place. This operation
+    /// won't change the tensor's dtype.
+    ///
+    /// If the tensor is not boolean, zero will be treated as False, while
+    /// non-zero values will be treated as True. The tensor will be filled with
+    /// 0 or 1 casted to the tensor's dtype.
+    Tensor LogicalXor_(const Tensor& value);
+
+    /// Element-wise greater-than of tensors, returning a new boolean tensor.
+    Tensor Gt(const Tensor& value) const;
+    Tensor operator>(const Tensor& value) const { return Gt(value); }
+
+    /// Element-wise greater-than of tensors, in-place. This operation
+    /// won't change the tensor's dtype.
+    Tensor Gt_(const Tensor& value);
+
+    /// Element-wise less-than of tensors, returning a new boolean tensor.
+    Tensor Lt(const Tensor& value) const;
+    Tensor operator<(const Tensor& value) const { return Lt(value); }
+
+    /// Element-wise less-than of tensors, in-place. This operation won't change
+    /// the tensor's dtype.
+    Tensor Lt_(const Tensor& value);
+
+    /// Element-wise greater-than-or-equals-to of tensors, returning a new
+    /// boolean tensor.
+    Tensor Ge(const Tensor& value) const;
+    Tensor operator>=(const Tensor& value) const { return Ge(value); }
+
+    /// Element-wise greater-than-or-equals-to of tensors, in-place. This
+    /// operation won't change the tensor's dtype.
+    Tensor Ge_(const Tensor& value);
+
+    /// Element-wise less-than-or-equals-to of tensors, returning a new boolean
+    /// tensor.
+    Tensor Le(const Tensor& value) const;
+    Tensor operator<=(const Tensor& value) const { return Le(value); }
+
+    /// Element-wise less-than-or-equals-to of tensors, in-place. This operation
+    /// won't change the tensor's dtype.
+    Tensor Le_(const Tensor& value);
+
+    /// Element-wise equals-to of tensors, returning a new boolean tensor.
+    Tensor Eq(const Tensor& value) const;
+    Tensor operator==(const Tensor& value) const { return Eq(value); }
+
+    /// Element-wise equals-to of tensors, in-place. This
+    /// operation won't change the tensor's dtype.
+    Tensor Eq_(const Tensor& value);
+
+    /// Element-wise not-equals-to of tensors, returning a new boolean tensor.
+    Tensor Ne(const Tensor& value) const;
+    Tensor operator!=(const Tensor& value) const { return Ne(value); }
+
+    /// Element-wise equals-to of tensors, in-place. This
+    /// operation won't change the tensor's dtype.
+    Tensor Ne_(const Tensor& value);
 
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
@@ -570,5 +678,52 @@ protected:
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
 };
+
+template <>
+inline Tensor::Tensor(const std::vector<bool>& init_vals,
+                      const SizeVector& shape,
+                      Dtype dtype,
+                      const Device& device)
+    : Tensor(shape, dtype, device) {
+    // Check number of elements
+    if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
+        utility::LogError(
+                "Tensor initialization values' size {} does not match the "
+                "shape {}",
+                init_vals.size(), shape_.NumElements());
+    }
+
+    // Check data types
+    AssertTemplateDtype<bool>();
+
+    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
+    // uses 1-byte-sized boolean storage for easy indexing.
+    std::vector<unsigned char> init_vals_uchar(init_vals.size());
+    std::transform(init_vals.begin(), init_vals.end(), init_vals_uchar.begin(),
+                   [](bool v) -> unsigned char {
+                       return static_cast<unsigned char>(v);
+                   });
+
+    MemoryManager::MemcpyFromHost(
+            blob_->GetDataPtr(), GetDevice(), init_vals_uchar.data(),
+            init_vals_uchar.size() * DtypeUtil::ByteSize(dtype));
+}
+
+template <>
+inline std::vector<bool> Tensor::ToFlatVector() const {
+    AssertTemplateDtype<bool>();
+    std::vector<bool> values(NumElements());
+    std::vector<unsigned char> values_uchar(NumElements());
+    MemoryManager::MemcpyToHost(
+            values_uchar.data(), Contiguous().GetDataPtr(), GetDevice(),
+            DtypeUtil::ByteSize(GetDtype()) * NumElements());
+
+    // std::vector<bool> possibly implements 1-bit-sized boolean storage. Open3D
+    // uses 1-byte-sized boolean storage for easy indexing.
+    std::transform(
+            values_uchar.begin(), values_uchar.end(), values.begin(),
+            [](unsigned char v) -> bool { return static_cast<bool>(v); });
+    return values;
+}
 
 }  // namespace open3d

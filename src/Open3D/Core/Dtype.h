@@ -41,6 +41,7 @@ static_assert(sizeof(int64_t) == 8,
               "Unsupported platform: int64_t must be 8 bytes");
 static_assert(sizeof(uint8_t) == 1,
               "Unsupported platform: uint8_t must be 1 byte");
+static_assert(sizeof(bool) == 1, "Unsupported platform: bool must be 1 byte");
 
 namespace open3d {
 
@@ -51,6 +52,7 @@ enum class Dtype {
     Int32,
     Int64,
     UInt8,
+    Bool,
 };
 
 class DtypeUtil {
@@ -71,6 +73,9 @@ public:
                 byte_size = 8;
                 break;
             case Dtype::UInt8:
+                byte_size = 1;
+                break;
+            case Dtype::Bool:
                 byte_size = 1;
                 break;
             default:
@@ -109,6 +114,9 @@ public:
             case Dtype::UInt8:
                 str = "UInt8";
                 break;
+            case Dtype::Bool:
+                str = "Bool";
+                break;
             default:
                 utility::LogError("Unsupported data type");
         }
@@ -139,6 +147,11 @@ inline Dtype DtypeUtil::FromType<int64_t>() {
 template <>
 inline Dtype DtypeUtil::FromType<uint8_t>() {
     return Dtype::UInt8;
+}
+
+template <>
+inline Dtype DtypeUtil::FromType<bool>() {
+    return Dtype::Bool;
 }
 
 }  // namespace open3d
