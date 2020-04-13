@@ -93,8 +93,8 @@ void Menu::AddItem(const char *name,
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    impl_->items.push_back({NO_ITEM, name, KEY_NONE,
-                            submenu, submenu->impl_.get()});
+    impl_->items.push_back(
+            {NO_ITEM, name, KEY_NONE, submenu, submenu->impl_.get()});
 }
 
 void Menu::AddSeparator() {

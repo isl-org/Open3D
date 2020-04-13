@@ -47,7 +47,7 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
-    std::function<void(const Color&)> OnValueChanged;
+    void SetOnValueChanged(std::function<void(const Color&)> onValueChanged);
 
 private:
     struct Impl;

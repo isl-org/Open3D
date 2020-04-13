@@ -43,6 +43,7 @@ static int gNextColorEditId = 1;
 struct ColorEdit::Impl {
     std::string id;
     Color value;
+    std::function<void(const Color&)> onValueChanged;
 };
 
 ColorEdit::ColorEdit() : impl_(new ColorEdit::Impl()) {
@@ -60,6 +61,11 @@ void ColorEdit::SetValue(const float r, const float g, const float b) {
 }
 
 const Color& ColorEdit::GetValue() const { return impl_->value; }
+
+void ColorEdit::SetOnValueChanged(
+        std::function<void(const Color&)> onValueChanged) {
+    impl_->onValueChanged = onValueChanged;
+}
 
 Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
     auto lineHeight = ImGui::GetTextLineHeight();
@@ -82,8 +88,8 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
 
     if (impl_->value != newValue) {
         impl_->value = newValue;
-        if (OnValueChanged) {
-            OnValueChanged(newValue);
+        if (impl_->onValueChanged) {
+            impl_->onValueChanged(newValue);
         }
 
         return Widget::DrawResult::REDRAW;
