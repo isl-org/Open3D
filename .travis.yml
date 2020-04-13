@@ -3,7 +3,7 @@ env:
   global:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
-    - NPROC=1
+    - NPROC=2
 
 notifications:
   email:
@@ -13,118 +13,13 @@ notifications:
 matrix:
 
   include:
-    # Style check only
-    - os: linux
-      dist: bionic
-      sudo: true
-      language: python
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - clang-7
-            - clang-format-5.0
-      before_install: ./util/scripts/setup-linux.sh
-      script:
-        - mkdir build
-        - cd build
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
-        - pip install -U yapf==0.28.0
-        - make check-style
-
-    # Build docs only
-    - os: linux
-      dist: bionic
-      sudo: true
-      language: python
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - doxygen
-      before_install: ./util/scripts/setup-linux.sh
-      script:
-        - mkdir build
-        - cd build
-        - which python
-        - python -V
-        - pip install -U -q sphinx sphinx-rtd-theme
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
-        - make install-pip-package -j$NPROC
-        - python -c "from open3d import *; import open3d; print(open3d)"
-        - ../util/scripts/make-documentation.sh
-
-
-    # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
-    - os: linux
-      dist: bionic
-      sudo: required
-      language: python
-      python: "3.5"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      env: SHARED=ON
-      before_install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
-
-    # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
-    - os: linux
-      dist: bionic
-      sudo: required
-      language: python
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
-
-    # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
-    - os: linux
-      dist: bionic
-      sudo: required
-      language: python
-      python: "3.7" # bionic has Python 3.7 on travis
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-      env: SHARED=ON BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh
-      script: ./util/scripts/run-travis.sh
-
-    # Default environment of macOS 10.14 (Xcode 11.2)
     - os: osx
       osx_image: xcode10.2
       before_install:
         - ./util/scripts/install-deps-osx.sh
       script: travis_wait 90 ./util/scripts/run-travis.sh
 
-    - os: osx
-      osx_image: xcode10.2
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      script: travis_wait 90 ./util/scripts/run-travis.sh
-
-    # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
-    #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   before_install: sudo apt-get update && sudo apt-get install -y realpath
-
-    # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
-    #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   before_install: sudo apt-get update && sudo apt-get install -y realpath
+    # - os: osx
+    #   osx_image: xcode10.2
+    #   env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+    #   script: travis_wait 90 ./util/scripts/run-travis.sh
