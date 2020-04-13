@@ -67,6 +67,8 @@ public:
     /// Rotates about the forward axis of the matrix
     virtual void RotateZ(int dx, int dy);
 
+    virtual void RotateZWorld(int dx, int dy, const Eigen::Vector3f& forward);
+
     enum class DragType { MOUSE, WHEEL, TWO_FINGER };
 
     /// Moves the matrix along the forward axis. (This is one type
@@ -77,15 +79,20 @@ public:
 private:
     Camera::Transform matrix_;
 
-    Camera::Transform matrixAtMouseDown_;
-    Eigen::Vector3f centerOfRotationAtMouseDown_;
-
 protected:
     int viewWidth_ = 1;
     int viewHeight_ = 1;
     double modelSize_ = 20.0;
     geometry::AxisAlignedBoundingBox modelBounds_;
     Eigen::Vector3f centerOfRotation_;
+
+    Camera::Transform matrixAtMouseDown_;
+    Eigen::Vector3f centerOfRotationAtMouseDown_;
+
+    void SetMatrix(const Camera::Transform& matrix);
+    double CalcRotateRadians(int dx, int dy);
+    double CalcRotateZRadians(int dx, int dy);
+    float CalcDollyDist(int dy, DragType dragType);
 };
 
 }  // namespace visualization

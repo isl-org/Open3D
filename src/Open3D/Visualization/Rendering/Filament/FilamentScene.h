@@ -107,6 +107,7 @@ public:
 
     void SetEntityEnabled(const REHandle_abstract& entityId,
                           bool enabled) override;
+    bool GetEntityEnabled(const REHandle_abstract& entityId) override;
     void SetEntityTransform(const REHandle_abstract& entityId,
                             const Transform& transform) override;
     Transform GetEntityTransform(const REHandle_abstract& entityId) override;

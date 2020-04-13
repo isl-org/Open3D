@@ -30,7 +30,7 @@ namespace open3d {
 namespace visualization {
 
 CameraInteractor::CameraInteractor(Camera* c, double minFarPlane)
-    : minFarPlane_(minFarPlane), camera_(c), fovAtMouseDown_(60.0) {}
+    : RotationInteractor(c, minFarPlane), fovAtMouseDown_(60.0) {}
 
 void CameraInteractor::SetBoundingBox(
         const geometry::AxisAlignedBoundingBox& bounds) {
@@ -39,10 +39,6 @@ void CameraInteractor::SetBoundingBox(
     // doesn't involve a mouse down) and the center of rotation.
     SetMouseDownInfo(camera_->GetModelMatrix(),
                      bounds.GetCenter().cast<float>());
-}
-
-void CameraInteractor::SetCenterOfRotation(const Eigen::Vector3f& center) {
-    centerOfRotation_ = center;
 }
 
 void CameraInteractor::Rotate(int dx, int dy) {
@@ -77,48 +73,12 @@ void CameraInteractor::Dolly(float zDist, Camera::Transform matrixIn) {
     auto matrix = GetMatrix();
     camera_->SetModelMatrix(matrix);
 
-    // Update the far plane so that we don't get clipped by it as we dolly
-    // out or lose precision as we dolly in.
-    auto pos = matrix.translation().cast<double>();
-    auto far1 = (modelBounds_.GetMinBound() - pos).norm();
-    auto far2 = (modelBounds_.GetMaxBound() - pos).norm();
-    auto modelSize = 2.0 * modelBounds_.GetExtent().norm();
-    auto far = std::max(minFarPlane_, std::max(far1, far2) + modelSize);
-    float aspect = 1.0f;
-    if (viewHeight_ > 0) {
-        aspect = float(viewWidth_) / float(viewHeight_);
-    }
-    camera_->SetProjection(camera_->GetFieldOfView(), aspect,
-                           camera_->GetNear(), far,
-                           camera_->GetFieldOfViewType());
+    UpdateCameraFarPlane();
 }
 
 void CameraInteractor::Pan(int dx, int dy) {
-    // Calculate the depth to the pixel we clicked on, so that we
-    // can compensate for perspective and have the mouse stays on
-    // that location. Unfortunately, we don't really have access to
-    // the depth buffer with Filament, so we'll fake it by finding
-    // the depth of the center of rotation.
-    auto pos = camera_->GetPosition();
-    auto forward = camera_->GetForwardVector();
-    float near = camera_->GetNear();
-    float dist = forward.dot(centerOfRotationAtMouseDown_ - pos);
-    dist = std::max(near, dist);
-
-    // How far is one pixel?
-    auto modelMatrix = matrixAtMouseDown_;  // copy
-    float halfFoV = camera_->GetFieldOfView() / 2.0;
-    float halfFoVRadians = halfFoV * M_PI / 180.0;
-    float unitsAtDist = 2.0f * std::tan(halfFoVRadians) * (near + dist);
-    float unitsPerPx = unitsAtDist / float(viewHeight_);
-
-    // Move camera and center of rotation. Adjust values from the
-    // original positions at mousedown to avoid hysteresis problems.
-    Eigen::Vector3f localMove(-dx * unitsPerPx, dy * unitsPerPx, 0);
-    Eigen::Vector3f worldMove = modelMatrix.rotation() * localMove;
-    centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
-    modelMatrix.translate(localMove);
-    camera_->SetModelMatrix(modelMatrix);
+    Super::Pan(dx, dy);
+    camera_->SetModelMatrix(GetMatrix());
 }
 
 void CameraInteractor::RotateLocal(float angleRad,
@@ -190,11 +150,8 @@ void CameraInteractor::Zoom(int dy, DragType dragType) {
 }
 
 void CameraInteractor::StartMouseDrag() {
-    matrixAtMouseDown_ = camera_->GetModelMatrix();
-    centerOfRotationAtMouseDown_ = centerOfRotation_;
+    Super::SetMouseDownInfo(camera_->GetModelMatrix(), centerOfRotation_);
     fovAtMouseDown_ = camera_->GetFieldOfView();
-
-    Super::SetMouseDownInfo(matrixAtMouseDown_, centerOfRotation_);
 }
 
 void CameraInteractor::UpdateMouseDragUI() {}

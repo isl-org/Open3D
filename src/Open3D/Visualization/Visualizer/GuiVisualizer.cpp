@@ -144,9 +144,9 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addLabel("Pan camera");
 
 #if defined(__APPLE__)
-    addLabel("Opt + left-drag");
+    addLabel("Opt + left-drag (up/down)");
 #else
-    addLabel("Win + left-drag");
+    addLabel("Win + left-drag (up/down)");
 #endif  // __APPLE__
     addLabel("Rotate around forward axis");
 
@@ -538,6 +538,7 @@ struct GuiVisualizer::Impl {
         std::shared_ptr<gui::Button> wgtMouseFly;
         std::shared_ptr<gui::Button> wgtMouseSun;
         std::shared_ptr<gui::Button> wgtMouseIBL;
+        std::shared_ptr<gui::Button> wgtMouseModel;
         std::shared_ptr<gui::Combobox> wgtLightingProfile;
         std::shared_ptr<gui::CollapsableVert> wgtAdvanced;
         std::shared_ptr<gui::Checkbox> wgtIBLEnabled;
@@ -923,6 +924,7 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(false);
         this->impl_->settings.wgtMouseSun->SetOn(false);
         this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
     });
     settings.wgtMouseFly = std::make_shared<SmallToggleButton>("Fly");
     settings.wgtMouseFly->SetOnClicked([this]() {
@@ -933,6 +935,18 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(true);
         this->impl_->settings.wgtMouseSun->SetOn(false);
         this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
+    });
+    settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
+    settings.wgtMouseModel->SetOnClicked([this]() {
+        this->impl_->scene->SetViewControls(
+                gui::SceneWidget::Controls::ROTATE_MODEL);
+        this->SetTickEventsEnabled(false);
+        this->impl_->settings.wgtMouseArcball->SetOn(false);
+        this->impl_->settings.wgtMouseFly->SetOn(false);
+        this->impl_->settings.wgtMouseSun->SetOn(false);
+        this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(true);
     });
     settings.wgtMouseSun = std::make_shared<SmallToggleButton>("Sun");
     settings.wgtMouseSun->SetOnClicked([this]() {
@@ -943,6 +957,7 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(false);
         this->impl_->settings.wgtMouseSun->SetOn(true);
         this->impl_->settings.wgtMouseIBL->SetOn(false);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
     });
     settings.wgtMouseIBL = std::make_shared<SmallToggleButton>("Environment");
     settings.wgtMouseIBL->SetOnClicked([this]() {
@@ -953,12 +968,14 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseFly->SetOn(false);
         this->impl_->settings.wgtMouseSun->SetOn(false);
         this->impl_->settings.wgtMouseIBL->SetOn(true);
+        this->impl_->settings.wgtMouseModel->SetOn(false);
     });
 
     auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
     cameraControls->AddStretch();
     cameraControls->AddChild(settings.wgtMouseArcball);
     cameraControls->AddChild(settings.wgtMouseFly);
+    cameraControls->AddChild(settings.wgtMouseModel);
     cameraControls->AddFixed(em);
     cameraControls->AddChild(settings.wgtMouseSun);
     cameraControls->AddChild(settings.wgtMouseIBL);
@@ -1307,6 +1324,7 @@ void GuiVisualizer::SetGeometry(
 
     impl_->SetMaterialsToDefault(GetRenderer());
 
+    std::vector<visualization::GeometryHandle> objects;
     geometry::AxisAlignedBoundingBox bounds;
     std::size_t nPointClouds = 0;
     std::size_t nUnlit = 0;
@@ -1356,6 +1374,7 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         auto handle = scene3d->AddGeometry(*g3, selectedMaterial);
         bounds += scene3d->GetEntityBoundingBox(handle);
+        objects.push_back(handle);
 
         impl_->geometryHandles.push_back(handle);
         impl_->geometryMaterials.emplace(handle, materials);
@@ -1391,6 +1410,7 @@ void GuiVisualizer::SetGeometry(
     scene3d->SetGeometryShadows(impl_->settings.hAxes, false, false);
     scene3d->SetEntityEnabled(impl_->settings.hAxes,
                               impl_->settings.wgtShowAxes->IsChecked());
+    impl_->scene->SetModel(impl_->settings.hAxes, objects);
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }
