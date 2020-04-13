@@ -3,7 +3,7 @@ env:
   global:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
-    - NPROC=2
+    - NPROC=1
 
 notifications:
   email:
@@ -109,17 +109,17 @@ matrix:
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
-    # Default environment of macOS 10.14 (Xcode 10.2)
+    # Default environment of macOS 10.14 (Xcode 11.2)
     - os: osx
       osx_image: xcode10.2
       before_install:
         - ./util/scripts/install-deps-osx.sh
-      script: travis_wait 40 ./util/scripts/run-travis.sh
+      script: travis_wait 90 ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode10.2
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      script: travis_wait 40 ./util/scripts/run-travis.sh
+      script: travis_wait 90 ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK

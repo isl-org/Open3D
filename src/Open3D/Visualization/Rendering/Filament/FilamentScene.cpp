@@ -557,6 +557,15 @@ void FilamentScene::SetEntityEnabled(const REHandle_abstract& entityId,
     }
 }
 
+bool FilamentScene::GetEntityEnabled(const REHandle_abstract& entityId) {
+    auto found = entities_.find(entityId);
+    if (found != entities_.end()) {
+        return found->second.enabled;
+    } else {
+        return false;
+    }
+}
+
 void FilamentScene::SetEntityTransform(const REHandle_abstract& entityId,
                                        const Transform& transform) {
     auto iTransform = GetEntityTransformInstance(entityId);

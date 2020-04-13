@@ -107,6 +107,7 @@ public:
 
     virtual void SetEntityEnabled(const REHandle_abstract& entityId,
                                   bool enabled) = 0;
+    virtual bool GetEntityEnabled(const REHandle_abstract& entityId) = 0;
     virtual void SetEntityTransform(const REHandle_abstract& entityId,
                                     const Transform& transform) = 0;
     virtual Transform GetEntityTransform(const REHandle_abstract& entityId) = 0;

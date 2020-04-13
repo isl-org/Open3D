@@ -60,7 +60,7 @@ public:
     void SetBackgroundColor(const Color& color);
     void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
-    enum Controls { ROTATE_OBJ, FPS, ROTATE_SUN, ROTATE_IBL };
+    enum Controls { ROTATE_OBJ, FPS, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
@@ -73,8 +73,9 @@ public:
     void SelectDirectionalLight(
             visualization::LightHandle dirLight,
             std::function<void(const Eigen::Vector3f&)> onDirChanged);
-
     void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
+    void SetModel(visualization::GeometryHandle axes,
+                  const std::vector<visualization::GeometryHandle>& objects);
 
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
