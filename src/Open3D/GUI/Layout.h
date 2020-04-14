@@ -57,8 +57,9 @@ class Layout1D : public Widget {
 public:
     enum Dir { VERT, HORIZ };
 
-    static void debug_PrintPreferredSizes(Layout1D *layout,
-                                          const Theme& theme, int depth = 0);
+    static void debug_PrintPreferredSizes(Layout1D* layout,
+                                          const Theme& theme,
+                                          int depth = 0);
 
     Layout1D(Dir dir,
              int spacing,

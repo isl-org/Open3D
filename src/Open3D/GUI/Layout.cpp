@@ -141,10 +141,11 @@ struct Layout1D::Impl {
     Margins margins;
 };
 
-void Layout1D::debug_PrintPreferredSizes(Layout1D *layout, const Theme& theme,
+void Layout1D::debug_PrintPreferredSizes(Layout1D* layout,
+                                         const Theme& theme,
                                          int depth /*= 0*/) {
     static const char spaces[21] = "                    ";
-    const char *indent = spaces + (20 - 3 * depth);
+    const char* indent = spaces + (20 - 3 * depth);
     auto prefTotal = layout->CalcPreferredSize(theme);
     std::cout << "[debug] " << indent << "Layout1D ("
               << (layout->impl_->dir == Layout1D::VERT ? "VERT" : "HORIZ")
@@ -158,27 +159,28 @@ void Layout1D::debug_PrintPreferredSizes(Layout1D *layout, const Theme& theme,
     for (size_t i = 0; i < layout->GetChildren().size(); ++i) {
         auto child = layout->GetChildren()[i];
         auto pref = child->CalcPreferredSize(theme);
-        std::cout << "[debug] " << indent << "i: " << i
-                  << " (" << pref.width << ", " << pref.height << ")" << std::endl;
-        Layout1D *childLayout = dynamic_cast<Layout1D*>(child.get());
+        std::cout << "[debug] " << indent << "i: " << i << " (" << pref.width
+                  << ", " << pref.height << ")" << std::endl;
+        Layout1D* childLayout = dynamic_cast<Layout1D*>(child.get());
         if (childLayout) {
             debug_PrintPreferredSizes(childLayout, theme, depth + 1);
         }
-        VGrid *vgrid = dynamic_cast<VGrid*>(child.get());
+        VGrid* vgrid = dynamic_cast<VGrid*>(child.get());
         if (vgrid) {
-            const char *gridIndent = spaces + (20 - 3 * (depth + 1));
+            const char* gridIndent = spaces + (20 - 3 * (depth + 1));
             std::cout << "[debug] " << gridIndent
                       << "VGrid: spacing: " << vgrid->GetSpacing()
                       << ", margins: (l:" << vgrid->GetMargins().left
                       << ", t:" << vgrid->GetMargins().top
                       << ", r:" << vgrid->GetMargins().right
-                      << ", b:" << vgrid->GetMargins().bottom
-                      << ")" << std::endl;
+                      << ", b:" << vgrid->GetMargins().bottom << ")"
+                      << std::endl;
             for (size_t i = 0; i < vgrid->GetChildren().size(); ++i) {
                 auto e = vgrid->GetChildren()[i];
                 auto pref = e->CalcPreferredSize(theme);
-                std::cout << "[debug] " << gridIndent << "i: " << i
-                          << " (" << pref.width << ", " << pref.height << ")" << std::endl;
+                std::cout << "[debug] " << gridIndent << "i: " << i << " ("
+                          << pref.width << ", " << pref.height << ")"
+                          << std::endl;
             }
         }
     }
@@ -376,7 +378,7 @@ Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
         pref.height = 0;
     }
 
-    auto &margins = GetMargins();
+    auto& margins = GetMargins();
     return Size(std::max(textWidth, pref.width) + margins.GetHoriz(),
                 textHeight + pref.height + margins.GetVert());
 }
@@ -537,7 +539,7 @@ void VGrid::Layout(const Theme& theme) {
     int rightHalf = int(std::ceil(float(impl_->spacing) / 2.0));
     for (size_t i = 0; i < columnSizes.size() - 1; ++i) {
         columnSizes[i].width -= leftHalf;
-        columnSizes[i+1].width -= rightHalf;
+        columnSizes[i + 1].width -= rightHalf;
     }
 
     // Do the layout
