@@ -46,6 +46,23 @@ namespace gui {
 
 static const float EXTRA_PADDING_Y = 1.0f;
 
+namespace {
+
+std::string CalcShortcutText(KeyName key) {
+    return "";
+    // Dear ImGUI doesn't currently support shortcut keys
+    // if (key == KEY_NONE) {
+    //     return "";
+    // }
+    // char k = char(key);
+    // if (k >= 'a' && k <= 'z') {
+    //     k -= 32; // uppercase
+    // }
+    // return std::string("Ctrl + ") + char(k);
+}
+
+}  // namespace
+
 struct Menu::Impl {
     struct MenuItem {
         Menu::ItemId id;
@@ -194,8 +211,9 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
     for (auto &item : impl_->items) {
         auto size1 = font->CalcTextSizeA(context.theme.fontSize, 10000, 10000,
                                          item.name.c_str());
+        auto shortcut = CalcShortcutText(item.shortcutKey);
         auto size2 = font->CalcTextSizeA(context.theme.fontSize, 10000, 10000,
-                                         item.shortcut.c_str());
+                                         shortcut.c_str());
         nameWidth = std::max(nameWidth, int(std::ceil(size1.x)));
         shortcutWidth = std::max(shortcutWidth, int(std::ceil(size2.x)));
     }
@@ -235,7 +253,8 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
                 // Note: can't set width (width - 2 * padding) because
                 //       SetNextItemWidth is ignored.
                 ImGui::SetCursorPos(ImVec2(padding, y));
-                ImGui::MenuItem(item.name.c_str(), item.shortcut.c_str(),
+                auto shortcutText = CalcShortcutText(item.shortcutKey);
+                ImGui::MenuItem(item.name.c_str(), shortcutText.c_str(),
                                 item.isChecked, item.isEnabled);
             }
         }
