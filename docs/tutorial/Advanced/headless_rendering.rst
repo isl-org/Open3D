@@ -128,7 +128,7 @@ it should look something like
 
 .. code-block:: shell
 
-    [Open3D INFO] tryGLVersion: 3.3  GLFW_OPENGL_CORE_PROFILE
+    [Open3D INFO] TryGLVersion: 3.3  GLFW_OPENGL_CORE_PROFILE
     [Open3D DEBUG] GL_VERSION:	3.3 (Core Profile) Mesa 19.2.8
     [Open3D DEBUG] GL_RENDERER:	llvmpipe (LLVM 9.0, 256 bits)
     [Open3D DEBUG] GL_VENDOR:	VMware, Inc.
@@ -138,7 +138,7 @@ If instead you get
 
 .. code-block:: shell
 
-    [Open3D INFO] tryGLVersion: 3.3  GLFW_OPENGL_CORE_PROFILE
+    [Open3D INFO] TryGLVersion: 3.3  GLFW_OPENGL_CORE_PROFILE
     [Open3D WARNING] GLFW Error: OSMesa: Failed to create context
     [Open3D DEBUG] Failed to create window
 
