@@ -885,8 +885,11 @@ GuiVisualizer::GuiVisualizer(
     AddChild(scene);
 
     // Add settings widget
-    const int separationHeight = std::ceil(em);
-    settings.wgtBase = std::make_shared<gui::Vert>(0, gui::Margins(lm));
+    const int separationHeight = std::ceil(0.75 * em);
+    // (we don't want as much left margin because the twisty arrow is the
+    // only thing there, and visually it looks larger than the right.)
+    const gui::Margins baseMargins(0.5 * lm, lm, lm, lm);
+    settings.wgtBase = std::make_shared<gui::Vert>(0, baseMargins);
 
     settings.wgtLoadSky = std::make_shared<SmallButton>("Load skybox");
     settings.wgtLoadSky->SetOnClicked([this, renderScene]() {
@@ -971,17 +974,21 @@ GuiVisualizer::GuiVisualizer(
         this->impl_->settings.wgtMouseModel->SetOn(false);
     });
 
-    auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
-    cameraControls->AddStretch();
-    cameraControls->AddChild(settings.wgtMouseArcball);
-    cameraControls->AddChild(settings.wgtMouseFly);
-    cameraControls->AddChild(settings.wgtMouseModel);
-    cameraControls->AddFixed(em);
-    cameraControls->AddChild(settings.wgtMouseSun);
-    cameraControls->AddChild(settings.wgtMouseIBL);
-    cameraControls->AddStretch();
+    auto cameraControls1 = std::make_shared<gui::Horiz>(gridSpacing);
+    cameraControls1->AddStretch();
+    cameraControls1->AddChild(settings.wgtMouseArcball);
+    cameraControls1->AddChild(settings.wgtMouseFly);
+    cameraControls1->AddChild(settings.wgtMouseModel);
+    cameraControls1->AddStretch();
+    auto cameraControls2 = std::make_shared<gui::Horiz>(gridSpacing);
+    cameraControls2->AddStretch();
+    cameraControls2->AddChild(settings.wgtMouseSun);
+    cameraControls2->AddChild(settings.wgtMouseIBL);
+    cameraControls2->AddStretch();
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
-    viewCtrls->AddChild(cameraControls);
+    viewCtrls->AddChild(cameraControls1);
+    viewCtrls->AddFixed(0.25 * em);
+    viewCtrls->AddChild(cameraControls2);
 
     // ... background
     settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Show skymap");
@@ -1188,7 +1195,6 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtAdvanced->AddChild(sunLayout);
 
     // materials settings
-    settings.wgtBase->AddFixed(separationHeight);
     auto materials = std::make_shared<gui::CollapsableVert>("Material settings",
                                                             0, indent);
 
@@ -1284,6 +1290,7 @@ GuiVisualizer::GuiVisualizer(
     matGrid->AddChild(settings.wgtPointSize);
     materials->AddChild(matGrid);
 
+    settings.wgtBase->AddFixed(separationHeight);
     settings.wgtBase->AddChild(materials);
 
     AddChild(settings.wgtBase);
