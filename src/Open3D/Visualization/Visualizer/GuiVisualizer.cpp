@@ -782,7 +782,7 @@ struct GuiVisualizer::Impl {
         return false;
     }
 
-    void SetMouseControls(gui::Window& window,
+    void SetMouseControls(gui::Window &window,
                           gui::SceneWidget::Controls mode) {
         using Controls = gui::SceneWidget::Controls;
         this->scene->SetViewControls(mode);
@@ -940,7 +940,8 @@ GuiVisualizer::GuiVisualizer(
     });
     settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
     settings.wgtMouseModel->SetOnClicked([this]() {
-        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_MODEL);
+        impl_->SetMouseControls(*this,
+                                gui::SceneWidget::Controls::ROTATE_MODEL);
     });
     settings.wgtMouseSun = std::make_shared<SmallToggleButton>("Sun");
     settings.wgtMouseSun->SetOnClicked([this]() {
