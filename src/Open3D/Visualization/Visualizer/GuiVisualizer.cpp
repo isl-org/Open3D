@@ -408,7 +408,7 @@ static const std::vector<LightingProfile> gLightingProfiles = {
 enum MenuId {
     FILE_OPEN,
     FILE_EXPORT_RGB,
-    FILE_CLOSE,
+    FILE_QUIT,
     SETTINGS_LIGHT_AND_MATERIALS,
     HELP_KEYS,
     HELP_ABOUT,
@@ -559,41 +559,138 @@ struct GuiVisualizer::Impl {
         };
 
         MaterialType selectedType = LIT;
+        Materials currentMaterials;
         std::shared_ptr<gui::Combobox> wgtMaterialType;
 
         std::shared_ptr<gui::Combobox> wgtPrefabMaterial;
+        std::shared_ptr<gui::ColorEdit> wgtMaterialColor;
         std::shared_ptr<gui::Slider> wgtPointSize;
 
         void SetCustomProfile() {
             wgtLightingProfile->SetSelectedIndex(gLightingProfiles.size());
         }
-
-        void SetMaterialSelected(const MaterialType type) {
-            wgtMaterialType->SetSelectedIndex(type);
-            wgtPrefabMaterial->SetEnabled(type == MaterialType::LIT);
-        }
     } settings;
 
-    static void SetMaterialsDefaults(Materials &materials,
-                                     visualization::Renderer &renderer) {
-        materials.lit.handle =
-                renderer.ModifyMaterial(materials.lit.handle)
-                        .SetColor("baseColor", materials.lit.baseColor)
-                        .SetParameter("roughness", materials.lit.roughness)
-                        .SetParameter("metallic", materials.lit.metallic)
-                        .SetParameter("reflectance", materials.lit.reflectance)
-                        .SetParameter("clearCoat", materials.lit.clearCoat)
+    void SetMaterialsToDefault(visualization::Renderer &renderer) {
+        Materials defaults;
+        this->settings.currentMaterials = defaults;
+        auto hLit = renderer.AddMaterialInstance(this->hLitMaterial);
+        this->settings.currentMaterials.lit.handle =
+                renderer.ModifyMaterial(hLit)
+                        .SetColor("baseColor", defaults.lit.baseColor)
+                        .SetParameter("roughness", defaults.lit.roughness)
+                        .SetParameter("metallic", defaults.lit.metallic)
+                        .SetParameter("reflectance", defaults.lit.reflectance)
+                        .SetParameter("clearCoat", defaults.lit.clearCoat)
                         .SetParameter("clearCoatRoughness",
-                                      materials.lit.clearCoatRoughness)
-                        .SetParameter("anisotropy", materials.lit.anisotropy)
-                        .SetParameter("pointSize", materials.lit.pointSize)
+                                      defaults.lit.clearCoatRoughness)
+                        .SetParameter("anisotropy", defaults.lit.anisotropy)
+                        .SetParameter("pointSize", defaults.lit.pointSize)
                         .Finish();
 
-        materials.unlit.handle =
-                renderer.ModifyMaterial(materials.unlit.handle)
-                        .SetColor("baseColor", materials.unlit.baseColor)
-                        .SetParameter("pointSize", materials.unlit.pointSize)
+        auto hUnlit = renderer.AddMaterialInstance(this->hLitMaterial);
+        this->settings.currentMaterials.unlit.handle =
+                renderer.ModifyMaterial(hUnlit)
+                        .SetColor("baseColor", defaults.unlit.baseColor)
+                        .SetParameter("pointSize", defaults.unlit.pointSize)
                         .Finish();
+        if (this->settings.wgtPrefabMaterial) {
+            this->settings.wgtPrefabMaterial->SetSelectedValue(
+                    kDefaultMaterialName.c_str());
+        }
+        if (this->settings.wgtMaterialColor) {
+            Eigen::Vector3f color =
+                    (this->settings.selectedType == Settings::MaterialType::LIT
+                             ? defaults.lit.baseColor
+                             : defaults.unlit.baseColor);
+            this->settings.wgtMaterialColor->SetValue(color.x(), color.y(),
+                                                      color.z());
+        }
+    }
+
+    void SetMaterialType(Impl::Settings::MaterialType type) {
+        using MaterialType = Impl::Settings::MaterialType;
+        using ViewMode = visualization::View::Mode;
+
+        auto renderScene = scene->GetScene();
+        auto view = scene->GetView();
+        this->settings.selectedType = type;
+        this->settings.wgtMaterialType->SetSelectedIndex(int(type));
+
+        bool isLit = (type == MaterialType::LIT);
+        this->settings.wgtPrefabMaterial->SetEnabled(isLit);
+
+        switch (type) {
+            case MaterialType::LIT: {
+                view->SetMode(ViewMode::Color);
+                for (const auto &handle : this->geometryHandles) {
+                    auto mat = this->geometryMaterials[handle].lit.handle;
+                    renderScene->AssignMaterial(handle, mat);
+                }
+                this->settings.wgtMaterialColor->SetEnabled(true);
+                gui::Color color(
+                        this->settings.currentMaterials.lit.baseColor.x(),
+                        this->settings.currentMaterials.lit.baseColor.y(),
+                        this->settings.currentMaterials.lit.baseColor.z());
+                this->settings.wgtMaterialColor->SetValue(color);
+                break;
+            }
+            case MaterialType::UNLIT: {
+                view->SetMode(ViewMode::Color);
+                for (const auto &handle : this->geometryHandles) {
+                    auto mat = this->geometryMaterials[handle].unlit.handle;
+                    renderScene->AssignMaterial(handle, mat);
+                }
+                this->settings.wgtMaterialColor->SetEnabled(true);
+                gui::Color color(
+                        this->settings.currentMaterials.unlit.baseColor.x(),
+                        this->settings.currentMaterials.unlit.baseColor.y(),
+                        this->settings.currentMaterials.unlit.baseColor.z());
+                this->settings.wgtMaterialColor->SetValue(color);
+                break;
+            }
+            case MaterialType::NORMAL_MAP:
+                view->SetMode(ViewMode::Normals);
+                this->settings.wgtMaterialColor->SetEnabled(false);
+                break;
+            case MaterialType::DEPTH:
+                view->SetMode(ViewMode::Depth);
+                this->settings.wgtMaterialColor->SetEnabled(false);
+                break;
+        }
+    }
+
+    visualization::MaterialInstanceHandle CreateUnlitMaterial(
+            visualization::Renderer &renderer,
+            visualization::MaterialInstanceHandle mat) {
+        auto color = settings.wgtMaterialColor->GetValue();
+        Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
+                               color.GetBlue());
+        float pointSize = settings.wgtPointSize->GetDoubleValue();
+        return renderer.ModifyMaterial(mat)
+                .SetColor("baseColor", color3)
+                .SetParameter("pointSize", pointSize)
+                .Finish();
+    }
+
+    visualization::MaterialInstanceHandle CreateLitMaterial(
+            visualization::Renderer &renderer,
+            visualization::MaterialInstanceHandle mat,
+            const LitMaterial &prefab) {
+        auto color = settings.wgtMaterialColor->GetValue();
+        Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
+                               color.GetBlue());
+        float pointSize = settings.wgtPointSize->GetDoubleValue();
+        return renderer.ModifyMaterial(mat)
+                .SetColor("baseColor", color3)
+                .SetParameter("roughness", prefab.roughness)
+                .SetParameter("metallic", prefab.metallic)
+                .SetParameter("reflectance", prefab.reflectance)
+                .SetParameter("clearCoat", prefab.clearCoat)
+                .SetParameter("clearCoatRoughness", prefab.clearCoatRoughness)
+                .SetParameter("anisotropy", prefab.anisotropy)
+                .SetParameter("pointSize", pointSize)
+                .Finish();
     }
 
     void SetLightingProfile(visualization::Renderer &renderer,
@@ -684,6 +781,18 @@ struct GuiVisualizer::Impl {
         }
         return false;
     }
+
+    void SetMouseControls(gui::Window &window,
+                          gui::SceneWidget::Controls mode) {
+        using Controls = gui::SceneWidget::Controls;
+        this->scene->SetViewControls(mode);
+        window.SetFocusWidget(this->scene.get());
+        this->settings.wgtMouseArcball->SetOn(mode == Controls::ROTATE_OBJ);
+        this->settings.wgtMouseFly->SetOn(mode == Controls::FPS);
+        this->settings.wgtMouseModel->SetOn(mode == Controls::ROTATE_MODEL);
+        this->settings.wgtMouseSun->SetOn(mode == Controls::ROTATE_SUN);
+        this->settings.wgtMouseIBL->SetOn(mode == Controls::ROTATE_IBL);
+    }
 };
 
 GuiVisualizer::GuiVisualizer(
@@ -702,17 +811,21 @@ GuiVisualizer::GuiVisualizer(
     // Create menu
     if (!gui::Application::GetInstance().GetMenubar()) {
         auto fileMenu = std::make_shared<gui::Menu>();
-        fileMenu->AddItem("Open...", "Ctrl-O", FILE_OPEN);
-        fileMenu->AddItem("Export Current Image...", nullptr, FILE_EXPORT_RGB);
+        fileMenu->AddItem("Open...", FILE_OPEN, gui::KEY_O);
+        fileMenu->AddItem("Export Current Image...", FILE_EXPORT_RGB);
         fileMenu->AddSeparator();
-        fileMenu->AddItem("Close", "Ctrl-W", FILE_CLOSE);
+#if WIN32
+        fileMenu->AddItem("Exit", FILE_QUIT);
+#else
+        fileMenu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
+#endif
         auto helpMenu = std::make_shared<gui::Menu>();
-        helpMenu->AddItem("Show Controls", nullptr, HELP_KEYS);
+        helpMenu->AddItem("Show Controls", HELP_KEYS);
         helpMenu->AddSeparator();
-        helpMenu->AddItem("About", nullptr, HELP_ABOUT);
-        helpMenu->AddItem("Contact", nullptr, HELP_CONTACT);
+        helpMenu->AddItem("About", HELP_ABOUT);
+        helpMenu->AddItem("Contact", HELP_CONTACT);
         auto settingsMenu = std::make_shared<gui::Menu>();
-        settingsMenu->AddItem("Lighting & Materials", nullptr,
+        settingsMenu->AddItem("Lighting & Materials",
                               SETTINGS_LIGHT_AND_MATERIALS);
         settingsMenu->SetChecked(SETTINGS_LIGHT_AND_MATERIALS, true);
         auto menu = std::make_shared<gui::Menu>();
@@ -771,6 +884,8 @@ GuiVisualizer::GuiVisualizer(
     impl_->hUnlitMaterial = GetRenderer().AddMaterial(
             visualization::ResourceLoadRequest(unlitPath.data()));
 
+    impl_->SetMaterialsToDefault(GetRenderer());
+
     // Setup UI
     const auto em = theme.fontSize;
     const int lm = std::ceil(0.5 * em);
@@ -782,8 +897,11 @@ GuiVisualizer::GuiVisualizer(
     AddChild(scene);
 
     // Add settings widget
-    const int separationHeight = std::ceil(em);
-    settings.wgtBase = std::make_shared<gui::Vert>(0, gui::Margins(lm));
+    const int separationHeight = std::ceil(0.75 * em);
+    // (we don't want as much left margin because the twisty arrow is the
+    // only thing there, and visually it looks larger than the right.)
+    const gui::Margins baseMargins(0.5 * lm, lm, lm, lm);
+    settings.wgtBase = std::make_shared<gui::Vert>(0, baseMargins);
 
     settings.wgtLoadSky = std::make_shared<SmallButton>("Load skybox");
     settings.wgtLoadSky->SetOnClicked([this, renderScene]() {
@@ -814,71 +932,41 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtMouseArcball = std::make_shared<SmallToggleButton>("Arcball");
     this->impl_->settings.wgtMouseArcball->SetOn(true);
     settings.wgtMouseArcball->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(
-                gui::SceneWidget::Controls::ROTATE_OBJ);
-        this->SetTickEventsEnabled(false);
-        this->impl_->settings.wgtMouseArcball->SetOn(true);
-        this->impl_->settings.wgtMouseFly->SetOn(false);
-        this->impl_->settings.wgtMouseSun->SetOn(false);
-        this->impl_->settings.wgtMouseIBL->SetOn(false);
-        this->impl_->settings.wgtMouseModel->SetOn(false);
+        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_OBJ);
     });
     settings.wgtMouseFly = std::make_shared<SmallToggleButton>("Fly");
     settings.wgtMouseFly->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(gui::SceneWidget::Controls::FPS);
-        this->SetFocusWidget(this->impl_->scene.get());
-        this->SetTickEventsEnabled(true);
-        this->impl_->settings.wgtMouseArcball->SetOn(false);
-        this->impl_->settings.wgtMouseFly->SetOn(true);
-        this->impl_->settings.wgtMouseSun->SetOn(false);
-        this->impl_->settings.wgtMouseIBL->SetOn(false);
-        this->impl_->settings.wgtMouseModel->SetOn(false);
+        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::FPS);
     });
     settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
     settings.wgtMouseModel->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(
-                gui::SceneWidget::Controls::ROTATE_MODEL);
-        this->SetTickEventsEnabled(false);
-        this->impl_->settings.wgtMouseArcball->SetOn(false);
-        this->impl_->settings.wgtMouseFly->SetOn(false);
-        this->impl_->settings.wgtMouseSun->SetOn(false);
-        this->impl_->settings.wgtMouseIBL->SetOn(false);
-        this->impl_->settings.wgtMouseModel->SetOn(true);
+        impl_->SetMouseControls(*this,
+                                gui::SceneWidget::Controls::ROTATE_MODEL);
     });
     settings.wgtMouseSun = std::make_shared<SmallToggleButton>("Sun");
     settings.wgtMouseSun->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(
-                gui::SceneWidget::Controls::ROTATE_SUN);
-        this->SetTickEventsEnabled(false);
-        this->impl_->settings.wgtMouseArcball->SetOn(false);
-        this->impl_->settings.wgtMouseFly->SetOn(false);
-        this->impl_->settings.wgtMouseSun->SetOn(true);
-        this->impl_->settings.wgtMouseIBL->SetOn(false);
-        this->impl_->settings.wgtMouseModel->SetOn(false);
+        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_SUN);
     });
     settings.wgtMouseIBL = std::make_shared<SmallToggleButton>("Environment");
     settings.wgtMouseIBL->SetOnClicked([this]() {
-        this->impl_->scene->SetViewControls(
-                gui::SceneWidget::Controls::ROTATE_IBL);
-        this->SetTickEventsEnabled(false);
-        this->impl_->settings.wgtMouseArcball->SetOn(false);
-        this->impl_->settings.wgtMouseFly->SetOn(false);
-        this->impl_->settings.wgtMouseSun->SetOn(false);
-        this->impl_->settings.wgtMouseIBL->SetOn(true);
-        this->impl_->settings.wgtMouseModel->SetOn(false);
+        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_IBL);
     });
 
-    auto cameraControls = std::make_shared<gui::Horiz>(gridSpacing);
-    cameraControls->AddStretch();
-    cameraControls->AddChild(settings.wgtMouseArcball);
-    cameraControls->AddChild(settings.wgtMouseFly);
-    cameraControls->AddChild(settings.wgtMouseModel);
-    cameraControls->AddFixed(em);
-    cameraControls->AddChild(settings.wgtMouseSun);
-    cameraControls->AddChild(settings.wgtMouseIBL);
-    cameraControls->AddStretch();
+    auto cameraControls1 = std::make_shared<gui::Horiz>(gridSpacing);
+    cameraControls1->AddStretch();
+    cameraControls1->AddChild(settings.wgtMouseArcball);
+    cameraControls1->AddChild(settings.wgtMouseFly);
+    cameraControls1->AddChild(settings.wgtMouseModel);
+    cameraControls1->AddStretch();
+    auto cameraControls2 = std::make_shared<gui::Horiz>(gridSpacing);
+    cameraControls2->AddStretch();
+    cameraControls2->AddChild(settings.wgtMouseSun);
+    cameraControls2->AddChild(settings.wgtMouseIBL);
+    cameraControls2->AddStretch();
     viewCtrls->AddChild(std::make_shared<gui::Label>("Mouse Controls"));
-    viewCtrls->AddChild(cameraControls);
+    viewCtrls->AddChild(cameraControls1);
+    viewCtrls->AddFixed(0.25 * em);
+    viewCtrls->AddChild(cameraControls2);
 
     // ... background
     settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Show skymap");
@@ -895,10 +983,10 @@ GuiVisualizer::GuiVisualizer(
 
     impl_->settings.wgtBGColor = std::make_shared<gui::ColorEdit>();
     impl_->settings.wgtBGColor->SetValue({1, 1, 1});
-    impl_->settings.wgtBGColor->OnValueChanged =
+    impl_->settings.wgtBGColor->SetOnValueChanged(
             [scene](const gui::Color &newColor) {
                 scene->SetBackgroundColor(newColor);
-            };
+            });
     auto bgLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     bgLayout->AddChild(std::make_shared<gui::Label>("BG Color"));
     bgLayout->AddChild(impl_->settings.wgtBGColor);
@@ -1063,13 +1151,14 @@ GuiVisualizer::GuiVisualizer(
 
     settings.wgtSunColor = std::make_shared<gui::ColorEdit>();
     settings.wgtSunColor->SetValue({1, 1, 1});
-    settings.wgtSunColor->OnValueChanged = [this, renderScene](
-                                                   const gui::Color &newColor) {
-        this->impl_->settings.SetCustomProfile();
-        renderScene->SetLightColor(
-                impl_->settings.hDirectionalLight,
-                {newColor.GetRed(), newColor.GetGreen(), newColor.GetBlue()});
-    };
+    settings.wgtSunColor->SetOnValueChanged(
+            [this, renderScene](const gui::Color &newColor) {
+                this->impl_->settings.SetCustomProfile();
+                renderScene->SetLightColor(
+                        impl_->settings.hDirectionalLight,
+                        {newColor.GetRed(), newColor.GetGreen(),
+                         newColor.GetBlue()});
+            });
 
     auto sunLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     sunLayout->AddChild(std::make_shared<gui::Label>("Intensity"));
@@ -1084,7 +1173,6 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtAdvanced->AddChild(sunLayout);
 
     // materials settings
-    settings.wgtBase->AddFixed(separationHeight);
     auto materials = std::make_shared<gui::CollapsableVert>("Material settings",
                                                             0, indent);
 
@@ -1092,41 +1180,9 @@ GuiVisualizer::GuiVisualizer(
     matGrid->AddChild(std::make_shared<gui::Label>("Type"));
     settings.wgtMaterialType.reset(
             new gui::Combobox({"Lit", "Unlit", "Normal map", "Depth"}));
-    settings.wgtMaterialType->SetOnValueChanged([this, scene, renderScene](
-                                                        const char *,
-                                                        int selectedIdx) {
-        using MaterialType = Impl::Settings::MaterialType;
-        using ViewMode = visualization::View::Mode;
-        auto selected = (Impl::Settings::MaterialType)selectedIdx;
-
-        auto view = scene->GetView();
-        impl_->settings.selectedType = selected;
-
-        bool isLit = (selected == MaterialType::LIT);
-        impl_->settings.wgtPrefabMaterial->SetEnabled(isLit);
-
-        switch (selected) {
-            case MaterialType::LIT:
-                view->SetMode(ViewMode::Color);
-                for (const auto &handle : impl_->geometryHandles) {
-                    auto mat = impl_->geometryMaterials[handle].lit.handle;
-                    renderScene->AssignMaterial(handle, mat);
-                }
-                break;
-            case MaterialType::UNLIT:
-                view->SetMode(ViewMode::Color);
-                for (const auto &handle : impl_->geometryHandles) {
-                    auto mat = impl_->geometryMaterials[handle].unlit.handle;
-                    renderScene->AssignMaterial(handle, mat);
-                }
-                break;
-            case MaterialType::NORMAL_MAP:
-                view->SetMode(ViewMode::Normals);
-                break;
-            case MaterialType::DEPTH:
-                view->SetMode(ViewMode::Depth);
-                break;
-        }
+    settings.wgtMaterialType->SetOnValueChanged([this](const char *,
+                                                       int selectedIdx) {
+        impl_->SetMaterialType(Impl::Settings::MaterialType(selectedIdx));
     });
     matGrid->AddChild(settings.wgtMaterialType);
 
@@ -1135,64 +1191,84 @@ GuiVisualizer::GuiVisualizer(
         settings.wgtPrefabMaterial->AddItem(prefab.first.c_str());
     }
     settings.wgtPrefabMaterial->SetSelectedValue(kDefaultMaterialName.c_str());
-    settings.wgtPrefabMaterial->SetOnValueChanged([this, renderScene](
-                                                          const char *name,
-                                                          int) {
-        auto &renderer = this->GetRenderer();
-        auto prefabIt = this->impl_->prefabMaterials.find(name);
-        if (prefabIt != this->impl_->prefabMaterials.end()) {
-            auto &prefab = prefabIt->second;
-            for (const auto &handle : impl_->geometryHandles) {
-                auto mat = impl_->geometryMaterials[handle].lit.handle;
-                mat = renderer.ModifyMaterial(mat)
-                              .SetColor("baseColor", prefab.baseColor)
-                              .SetParameter("roughness", prefab.roughness)
-                              .SetParameter("metallic", prefab.metallic)
-                              .SetParameter("reflectance", prefab.reflectance)
-                              .SetParameter("clearCoat", prefab.clearCoat)
-                              .SetParameter("clearCoatRoughness",
-                                            prefab.clearCoatRoughness)
-                              .SetParameter("anisotropy", prefab.anisotropy)
-                              // Point size is part of the material for
-                              // rendering reasons, and therefore
-                              // prefab.pointSize exists, but conceptually (and
-                              // UI-wise) it is separate. So use the current
-                              // setting instead of the prefab setting for point
-                              // size.
-                              .SetParameter("pointSize",
-                                            float(impl_->settings.wgtPointSize
-                                                          ->GetDoubleValue()))
-                              .Finish();
-                renderScene->AssignMaterial(handle, mat);
-            }
-        }
-    });
+    settings.wgtPrefabMaterial->SetOnValueChanged(
+            [this, renderScene](const char *name, int) {
+                auto &renderer = this->GetRenderer();
+                auto prefabIt = this->impl_->prefabMaterials.find(name);
+                if (prefabIt != this->impl_->prefabMaterials.end()) {
+                    auto &prefab = prefabIt->second;
+                    impl_->settings.currentMaterials.lit.baseColor =
+                            prefab.baseColor;
+                    impl_->settings.wgtMaterialColor->SetValue(
+                            prefab.baseColor.x(), prefab.baseColor.y(),
+                            prefab.baseColor.z());
+                    for (const auto &handle : impl_->geometryHandles) {
+                        auto mat = impl_->geometryMaterials[handle].lit.handle;
+                        mat = impl_->CreateLitMaterial(renderer, mat, prefab);
+                        renderScene->AssignMaterial(handle, mat);
+                    }
+                }
+            });
+
     matGrid->AddChild(std::make_shared<gui::Label>("Material"));
     matGrid->AddChild(settings.wgtPrefabMaterial);
+
+    settings.wgtMaterialColor = std::make_shared<gui::ColorEdit>();
+    settings.wgtMaterialColor->SetOnValueChanged(
+            [this, renderScene](const gui::Color &color) {
+                auto &renderer = this->GetRenderer();
+                Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
+                                       color.GetBlue());
+                if (this->impl_->settings.selectedType == Impl::Settings::LIT) {
+                    this->impl_->settings.currentMaterials.lit.baseColor =
+                            color3;
+                } else {
+                    this->impl_->settings.currentMaterials.unlit.baseColor =
+                            color3;
+                }
+                for (const auto &handle : impl_->geometryHandles) {
+                    visualization::MaterialInstanceHandle mat;
+                    if (impl_->settings.selectedType == Impl::Settings::UNLIT) {
+                        mat = impl_->geometryMaterials[handle].unlit.handle;
+                    } else {
+                        mat = impl_->geometryMaterials[handle].lit.handle;
+                    }
+                    mat = renderer.ModifyMaterial(mat)
+                                  .SetColor("baseColor", color3)
+                                  .Finish();
+                    renderScene->AssignMaterial(handle, mat);
+                }
+            });
+
+    matGrid->AddChild(std::make_shared<gui::Label>("Color"));
+    matGrid->AddChild(settings.wgtMaterialColor);
 
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
     settings.wgtPointSize = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
     settings.wgtPointSize->OnValueChanged = [this](double value) {
+        float size = float(value);
+        this->impl_->settings.currentMaterials.unlit.pointSize = size;
         auto &renderer = GetRenderer();
         for (const auto &pair : impl_->geometryMaterials) {
             renderer.ModifyMaterial(pair.second.lit.handle)
-                    .SetParameter("pointSize", (float)value)
+                    .SetParameter("pointSize", size)
                     .Finish();
             renderer.ModifyMaterial(pair.second.unlit.handle)
-                    .SetParameter("pointSize", (float)value)
+                    .SetParameter("pointSize", size)
                     .Finish();
         }
 
         renderer.ModifyMaterial(FilamentResourceManager::kDepthMaterial)
-                .SetParameter("pointSize", (float)value)
+                .SetParameter("pointSize", size)
                 .Finish();
         renderer.ModifyMaterial(FilamentResourceManager::kNormalsMaterial)
-                .SetParameter("pointSize", (float)value)
+                .SetParameter("pointSize", size)
                 .Finish();
     };
     matGrid->AddChild(settings.wgtPointSize);
     materials->AddChild(matGrid);
 
+    settings.wgtBase->AddFixed(separationHeight);
     settings.wgtBase->AddChild(materials);
 
     AddChild(settings.wgtBase);
@@ -1231,17 +1307,14 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->geometryMaterials.clear();
 
-    geometry::AxisAlignedBoundingBox bounds;
-    std::vector<visualization::GeometryHandle> objects;
+    impl_->SetMaterialsToDefault(GetRenderer());
 
+    std::vector<visualization::GeometryHandle> objects;
+    geometry::AxisAlignedBoundingBox bounds;
     std::size_t nPointClouds = 0;
+    std::size_t nUnlit = 0;
     for (auto &g : geometries) {
-        Impl::Materials materials;
-        materials.lit.handle =
-                GetRenderer().AddMaterialInstance(impl_->hLitMaterial);
-        materials.unlit.handle =
-                GetRenderer().AddMaterialInstance(impl_->hUnlitMaterial);
-        Impl::SetMaterialsDefaults(materials, GetRenderer());
+        Impl::Materials materials = impl_->settings.currentMaterials;
 
         visualization::MaterialInstanceHandle selectedMaterial;
 
@@ -1263,6 +1336,7 @@ void GuiVisualizer::SetGeometry(
             } break;
             case geometry::Geometry::GeometryType::LineSet: {
                 selectedMaterial = materials.unlit.handle;
+                nUnlit += 1;
             } break;
             case geometry::Geometry::GeometryType::TriangleMesh: {
                 auto mesh =
@@ -1271,6 +1345,7 @@ void GuiVisualizer::SetGeometry(
 
                 if (mesh->HasVertexColors()) {
                     selectedMaterial = materials.unlit.handle;
+                    nUnlit += 1;
                 } else {
                     selectedMaterial = materials.lit.handle;
                 }
@@ -1287,17 +1362,20 @@ void GuiVisualizer::SetGeometry(
         objects.push_back(handle);
 
         impl_->geometryHandles.push_back(handle);
+        impl_->geometryMaterials.emplace(handle, materials);
+    }
 
+    if (!geometries.empty()) {
         auto viewMode = impl_->scene->GetView()->GetMode();
         if (viewMode == visualization::View::Mode::Normals) {
-            impl_->settings.SetMaterialSelected(Impl::Settings::NORMAL_MAP);
+            impl_->SetMaterialType(Impl::Settings::NORMAL_MAP);
         } else if (viewMode == visualization::View::Mode::Depth) {
-            impl_->settings.SetMaterialSelected(Impl::Settings::DEPTH);
+            impl_->SetMaterialType(Impl::Settings::DEPTH);
         } else {
-            if (selectedMaterial == materials.unlit.handle) {
-                impl_->settings.SetMaterialSelected(Impl::Settings::UNLIT);
+            if (nUnlit == geometries.size()) {
+                impl_->SetMaterialType(Impl::Settings::UNLIT);
             } else {
-                impl_->settings.SetMaterialSelected(Impl::Settings::LIT);
+                impl_->SetMaterialType(Impl::Settings::LIT);
             }
         }
 
@@ -1305,8 +1383,6 @@ void GuiVisualizer::SetGeometry(
             impl_->SetLightingProfile(GetRenderer(), kPointCloudProfileName);
         }
         impl_->settings.wgtPointSize->SetEnabled(nPointClouds > 0);
-
-        impl_->geometryMaterials.emplace(handle, materials);
     }
 
     // Add axes
@@ -1322,6 +1398,7 @@ void GuiVisualizer::SetGeometry(
     impl_->scene->SetModel(impl_->settings.hAxes, objects);
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
+    impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_OBJ);
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
@@ -1465,8 +1542,8 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             ShowDialog(dlg);
             break;
         }
-        case FILE_CLOSE:
-            this->Close();
+        case FILE_QUIT:
+            gui::Application::GetInstance().Quit();
             break;
         case SETTINGS_LIGHT_AND_MATERIALS: {
             auto visibility = !impl_->settings.wgtBase->IsVisible();

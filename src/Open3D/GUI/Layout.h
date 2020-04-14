@@ -57,11 +57,18 @@ class Layout1D : public Widget {
 public:
     enum Dir { VERT, HORIZ };
 
+    static void debug_PrintPreferredSizes(Layout1D* layout,
+                                          const Theme& theme,
+                                          int depth = 0);
+
     Layout1D(Dir dir,
              int spacing,
              const Margins& margins,
              const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Layout1D();
+
+    int GetSpacing() const;
+    const Margins& GetMargins() const;
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
@@ -154,6 +161,9 @@ class VGrid : public Widget {
 public:
     VGrid(int nCols, int spacing = 0, const Margins& margins = Margins());
     virtual ~VGrid();
+
+    int GetSpacing() const;
+    const Margins& GetMargins() const;
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
