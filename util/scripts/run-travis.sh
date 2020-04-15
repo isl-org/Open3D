@@ -29,7 +29,7 @@ if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
 fi
 
 echo
-echo "Running cmake $cmakeOptions .."
+echo "Running cmake" $cmakeOptions ..
 cmake $cmakeOptions ..
 echo
 
