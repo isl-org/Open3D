@@ -61,35 +61,152 @@ static void CPUDivElementKernel(const void* lhs, const void* rhs, void* dst) {
                                    *static_cast<const scalar_t*>(rhs);
 }
 
+template <typename src_t, typename dst_t>
+static void CPULogicalAndElementKernel(const void* lhs,
+                                       const void* rhs,
+                                       void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            static_cast<bool>(*static_cast<const src_t*>(lhs)) &&
+            static_cast<bool>(*static_cast<const src_t*>(rhs)));
+}
+
+template <typename src_t, typename dst_t>
+static void CPULogicalOrElementKernel(const void* lhs,
+                                      const void* rhs,
+                                      void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            static_cast<bool>(*static_cast<const src_t*>(lhs)) ||
+            static_cast<bool>(*static_cast<const src_t*>(rhs)));
+}
+
+template <typename src_t, typename dst_t>
+static void CPULogicalXorElementKernel(const void* lhs,
+                                       const void* rhs,
+                                       void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            static_cast<bool>(*static_cast<const src_t*>(lhs)) !=
+            static_cast<bool>(*static_cast<const src_t*>(rhs)));
+}
+
+template <typename src_t, typename dst_t>
+static void CPUGtElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            *static_cast<const src_t*>(lhs) > *static_cast<const src_t*>(rhs));
+}
+
+template <typename src_t, typename dst_t>
+static void CPULtElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            *static_cast<const src_t*>(lhs) < *static_cast<const src_t*>(rhs));
+}
+
+template <typename src_t, typename dst_t>
+static void CPUGeqElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            *static_cast<const src_t*>(lhs) >= *static_cast<const src_t*>(rhs));
+}
+
+template <typename src_t, typename dst_t>
+static void CPULeqElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            *static_cast<const src_t*>(lhs) <= *static_cast<const src_t*>(rhs));
+}
+
+template <typename src_t, typename dst_t>
+static void CPUEqElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            *static_cast<const src_t*>(lhs) == *static_cast<const src_t*>(rhs));
+}
+
+template <typename src_t, typename dst_t>
+static void CPUNeqElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            *static_cast<const src_t*>(lhs) != *static_cast<const src_t*>(rhs));
+}
+
 void BinaryEWCPU(const Tensor& lhs,
                  const Tensor& rhs,
                  Tensor& dst,
                  BinaryEWOpCode op_code) {
-    Dtype dtype = dst.GetDtype();
-    Indexer indexer({lhs, rhs}, dst, DtypePolicy::ASSERT_SAME);
+    Dtype src_dtype = lhs.GetDtype();
+    Dtype dst_dtype = dst.GetDtype();
+    Indexer indexer({lhs, rhs}, dst, DtypePolicy::ASSERT_SAME_OR_BOOL_OUT);
 
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        switch (op_code) {
-            case BinaryEWOpCode::Add:
-                CPULauncher::LaunchBinaryEWKernel(
-                        indexer, CPUAddElementKernel<scalar_t>);
-                break;
-            case BinaryEWOpCode::Sub:
-                CPULauncher::LaunchBinaryEWKernel(
-                        indexer, CPUSubElementKernel<scalar_t>);
-                break;
-            case BinaryEWOpCode::Mul:
-                CPULauncher::LaunchBinaryEWKernel(
-                        indexer, CPUMulElementKernel<scalar_t>);
-                break;
-            case BinaryEWOpCode::Div:
-                CPULauncher::LaunchBinaryEWKernel(
-                        indexer, CPUDivElementKernel<scalar_t>);
-                break;
-            default:
-                break;
-        }
-    });
+    if (s_boolean_binary_ew_op_codes.find(op_code) !=
+        s_boolean_binary_ew_op_codes.end()) {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+            using src_t = scalar_t;
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
+                using dst_t = scalar_t;
+                switch (op_code) {
+                    case BinaryEWOpCode::LogicalAnd:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalAndElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::LogicalOr:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalOrElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::LogicalXor:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalXorElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::Gt:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer, CPUGtElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::Lt:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer, CPULtElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::Ge:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer, CPUGeqElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::Le:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer, CPULeqElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::Eq:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer, CPUEqElementKernel<src_t, dst_t>);
+                        break;
+                    case BinaryEWOpCode::Ne:
+                        CPULauncher::LaunchBinaryEWKernel(
+                                indexer, CPUNeqElementKernel<src_t, dst_t>);
+                        break;
+                    default:
+                        break;
+                }
+            });
+        });
+    } else {
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            switch (op_code) {
+                case BinaryEWOpCode::Add:
+                    CPULauncher::LaunchBinaryEWKernel(
+                            indexer, CPUAddElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Sub:
+                    CPULauncher::LaunchBinaryEWKernel(
+                            indexer, CPUSubElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Mul:
+                    CPULauncher::LaunchBinaryEWKernel(
+                            indexer, CPUMulElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Div:
+                    CPULauncher::LaunchBinaryEWKernel(
+                            indexer, CPUDivElementKernel<scalar_t>);
+                    break;
+                default:
+                    break;
+            }
+        });
+    }
 }
 
 }  // namespace kernel

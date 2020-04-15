@@ -153,6 +153,13 @@ def test_tensor_constructor():
     o3_t = o3d.Tensor(np_t, dtype, device)
     np.testing.assert_equal(np_t, o3_t.numpy())
 
+    # Boolean
+    np_t = np.array([True, False, True], dtype=np.bool)
+    o3_t = o3d.Tensor([True, False, True], o3d.Dtype.Bool, device)
+    np.testing.assert_equal(np_t, o3_t.numpy())
+    o3_t = o3d.Tensor(np_t, o3d.Dtype.Bool, device)
+    np.testing.assert_equal(np_t, o3_t.numpy())
+
 
 def test_tensor_from_to_numpy():
     # a->b copy; b, c share memory
@@ -492,3 +499,157 @@ def test_cast_to_py_tensor():
     b = o3d.Tensor([2])
     c = a + b
     assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor
+
+
+def test_advanced_index_get_mixed():
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src[1, 0:2, [1, 2]]
+    o3_dst = o3_src[1, 0:2, [1, 2]]
+    np.testing.assert_equal(o3_dst.numpy(), np_dst)
+
+    # Subtle differences between slice and list
+    np_src = np.array([0, 100, 200, 300, 400, 500, 600, 700, 800]).reshape(3, 3)
+    o3_src = o3d.Tensor(np_src)
+    np.testing.assert_equal(o3_src[1, 2].numpy(), np_src[1, 2])
+    np.testing.assert_equal(o3_src[[1, 2]].numpy(), np_src[[1, 2]])
+    np.testing.assert_equal(o3_src[(1, 2)].numpy(), np_src[(1, 2)])
+    np.testing.assert_equal(o3_src[(1, 2), [1, 2]].numpy(),
+                            np_src[(1, 2), [1, 2]])
+
+    # Complex case: interleaving slice and advanced indexing
+    np_src = np.array(range(120)).reshape((2, 3, 4, 5))
+    o3_src = o3d.Tensor(np_src)
+    o3_dst = o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]
+    np_dst = np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]]
+    np.testing.assert_equal(o3_dst.numpy(), np_dst)
+
+
+def test_advanced_index_set_mixed():
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_fill = np.array(([[100, 200], [300, 400]]))
+    o3_fill = o3d.Tensor(np_fill)
+
+    np_src[1, 0:2, [1, 2]] = np_fill
+    o3_src[1, 0:2, [1, 2]] = o3_fill
+    np.testing.assert_equal(o3_src.numpy(), np_src)
+
+    # Complex case: interleaving slice and advanced indexing
+    np_src = np.array(range(120)).reshape((2, 3, 4, 5))
+    o3_src = o3d.Tensor(np_src)
+    fill_shape = np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]].shape
+    np_fill_val = np.random.randint(5000, size=fill_shape).astype(np_src.dtype)
+    o3_fill_val = o3d.Tensor(np_fill_val)
+    o3_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = o3_fill_val
+    np_src[1, [[1, 2], [2, 1]], 0:4:2, [3, 4]] = np_fill_val
+    np.testing.assert_equal(o3_src.numpy(), np_src)
+
+
+def test_tensorlist_indexing():
+    # 5 x (3, 4)
+    dtype = o3d.Dtype.Float32
+    device = o3d.Device("CPU:0")
+    np_t = np.ones((5, 3, 4), dtype=np.float32)
+    t = o3d.Tensor(np_t, dtype, device)
+
+    tl = o3d.TensorList.from_tensor(t, inplace=True)
+
+    # set slices [1, 3]
+    tl.tensor()[1:5:2] = o3d.Tensor(3 * np.ones((2, 3, 4), dtype=np.float32))
+
+    # set items [4]
+    tl[-1] = o3d.Tensor(np.zeros((3, 4), dtype=np.float32))
+
+    # get items
+    np.testing.assert_allclose(tl[0].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[1].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[2].numpy(), np.ones((3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[3].numpy(), 3 * np.ones(
+        (3, 4), dtype=np.float32))
+    np.testing.assert_allclose(tl[4].numpy(), np.zeros((3, 4),
+                                                       dtype=np.float32))
+
+    # push_back
+    tl.push_back(o3d.Tensor(-1 * np.ones((3, 4)), dtype, device))
+    assert tl.size() == 6
+    np.testing.assert_allclose(tl[5].numpy(), -1 * np.ones(
+        (3, 4), dtype=np.float32))
+
+    tl += tl
+    assert tl.size() == 12
+    for offset in [0, 6]:
+        np.testing.assert_allclose(tl[0 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[1 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[2 + offset].numpy(),
+                                   np.ones((3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[3 + offset].numpy(), 3 * np.ones(
+            (3, 4), dtype=np.float32))
+        np.testing.assert_allclose(tl[4 + offset].numpy(),
+                                   np.zeros((3, 4), dtype=np.float32))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_tensor_from_to_pytorch(device):
+    if not _torch_imported:
+        return
+
+
+@pytest.mark.parametrize("np_func_name,o3_func_name", [("sqrt", "sqrt"),
+                                                       ("sin", "sin"),
+                                                       ("cos", "cos"),
+                                                       ("negative", "neg"),
+                                                       ("exp", "exp"),
+                                                       ("abs", "abs")])
+def test_unary_elementwise(np_func_name, o3_func_name):
+    np_t = np.array([-3, -2, -1, 9, 1, 2, 3]).astype(np.float32)
+    o3_t = o3d.Tensor(np_t)
+
+    # Test non-in-place version
+    np.seterr(invalid='ignore')  # e.g. sqrt of negative should be -nan
+    np.testing.assert_allclose(
+        getattr(o3_t, o3_func_name)().numpy(),
+        getattr(np, np_func_name)(np_t))
+
+    # Test in-place version
+    o3_func_name_inplace = o3_func_name + "_"
+    getattr(o3_t, o3_func_name_inplace)()
+    np.testing.assert_allclose(o3_t.numpy(), getattr(np, np_func_name)(np_t))
+
+
+def test_logical_ops():
+    np_a = np.array([True, False, True, False])
+    np_b = np.array([True, True, False, False])
+    o3_a = o3d.Tensor(np_a)
+    o3_b = o3d.Tensor(np_b)
+
+    o3_r = o3_a.logical_and(o3_b)
+    np_r = np.logical_and(np_a, np_b)
+    np.testing.assert_equal(o3_r.numpy(), np_r)
+
+    o3_r = o3_a.logical_or(o3_b)
+    np_r = np.logical_or(np_a, np_b)
+    np.testing.assert_equal(o3_r.numpy(), np_r)
+
+    o3_r = o3_a.logical_xor(o3_b)
+    np_r = np.logical_xor(np_a, np_b)
+    np.testing.assert_equal(o3_r.numpy(), np_r)
+
+
+def test_comparision_ops():
+    np_a = np.array([0, 1, -1])
+    np_b = np.array([0, 0, 0])
+    o3_a = o3d.Tensor(np_a)
+    o3_b = o3d.Tensor(np_b)
+
+    np.testing.assert_equal((o3_a > o3_b).numpy(), np_a > np_b)
+    np.testing.assert_equal((o3_a >= o3_b).numpy(), np_a >= np_b)
+    np.testing.assert_equal((o3_a < o3_b).numpy(), np_a < np_b)
+    np.testing.assert_equal((o3_a <= o3_b).numpy(), np_a <= np_b)
+    np.testing.assert_equal((o3_a == o3_b).numpy(), np_a == np_b)
+    np.testing.assert_equal((o3_a != o3_b).numpy(), np_a != np_b)

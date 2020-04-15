@@ -52,7 +52,6 @@ void bind_templated_constructor(py::class_<Tensor>& tensor) {
                "init_vals"_a, "shape"_a, "dtype"_a, "device"_a);
 }
 
-/// Automatically casts type to T.
 template <typename T>
 static std::vector<T> ToFlatVector(
         py::array_t<T, py::array::c_style | py::array::forcecast> np_array) {
@@ -72,7 +71,7 @@ void pybind_core_tensor(py::module& m) {
         py::buffer_info info = np_array.request();
         SizeVector shape(info.shape.begin(), info.shape.end());
         Tensor t;
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             t = Tensor(ToFlatVector<scalar_t>(np_array), shape, dtype, device);
         });
         return t;
@@ -227,17 +226,18 @@ void pybind_core_tensor(py::module& m) {
     });
 
     tensor.def("_getitem_vector",
-               [](const Tensor& tensor, std::vector<TensorKey> tks) {
+               [](const Tensor& tensor, const std::vector<TensorKey>& tks) {
                    return tensor.GetItem(tks);
                });
 
-    // Only need to bind the "set everything" case.
-    // In Python, __setitem__(self, key, value) is decpomposed to
-    // t = self.__getitem__(key)
-    // t[:] = value
-    tensor.def("_setitem", [](Tensor& tensor, const Tensor& value) {
-        return tensor.SetItem(value);
-    });
+    tensor.def("_setitem",
+               [](Tensor& tensor, const TensorKey& tk, const Tensor& value) {
+                   return tensor.SetItem(tk, value);
+               });
+
+    tensor.def("_setitem_vector",
+               [](Tensor& tensor, const std::vector<TensorKey>& tks,
+                  const Tensor& value) { return tensor.SetItem(tks, value); });
 
     // Casting
     tensor.def("to", &Tensor::To);
@@ -251,6 +251,26 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("mul_", &Tensor::Mul_);
     tensor.def("div", &Tensor::Div);
     tensor.def("div_", &Tensor::Div_);
+
+    // Binary boolean element-wise ops
+    tensor.def("logical_and", &Tensor::LogicalAnd);
+    tensor.def("logical_and_", &Tensor::LogicalAnd_);
+    tensor.def("logical_or", &Tensor::LogicalOr);
+    tensor.def("logical_or_", &Tensor::LogicalOr_);
+    tensor.def("logical_xor", &Tensor::LogicalXor);
+    tensor.def("logical_xor_", &Tensor::LogicalXor_);
+    tensor.def("gt", &Tensor::Gt);
+    tensor.def("gt_", &Tensor::Gt_);
+    tensor.def("lt", &Tensor::Lt);
+    tensor.def("lt_", &Tensor::Lt_);
+    tensor.def("ge", &Tensor::Ge);
+    tensor.def("ge_", &Tensor::Ge_);
+    tensor.def("le", &Tensor::Le);
+    tensor.def("le_", &Tensor::Le_);
+    tensor.def("eq", &Tensor::Eq);
+    tensor.def("eq_", &Tensor::Eq_);
+    tensor.def("ne", &Tensor::Ne);
+    tensor.def("ne_", &Tensor::Ne_);
 
     // Getters and setters as peoperty
     tensor.def_property_readonly(
@@ -273,6 +293,10 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("neg_", &Tensor::Neg_);
     tensor.def("exp", &Tensor::Exp);
     tensor.def("exp_", &Tensor::Exp_);
+    tensor.def("abs", &Tensor::Abs);
+    tensor.def("abs_", &Tensor::Abs_);
+    tensor.def("logical_not", &Tensor::LogicalNot);
+    tensor.def("logical_not_", &Tensor::LogicalNot_);
 
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });

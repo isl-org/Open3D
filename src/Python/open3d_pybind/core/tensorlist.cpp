@@ -52,7 +52,8 @@ void pybind_core_tensorlist(py::module& m) {
                 TensorList tl = TensorList(shape, dtype, device, size);
                 return tl;
             }))
-
+            .def("shallow_copy_from", &TensorList::ShallowCopyFrom)
+            .def("copy_from", &TensorList::CopyFrom)
             // Construct from existing tensors with compatible shapes
             .def("from_tensors",
                  [](const std::vector<Tensor>& tensors, const Device& device) {
@@ -61,11 +62,7 @@ void pybind_core_tensorlist(py::module& m) {
                  })
             // Construct from existing internal tensor with at least one valid
             // dimension
-            .def("from_tensor",
-                 [](const Tensor& internal_tensor, bool inplace = true) {
-                     TensorList tl = TensorList(internal_tensor, inplace);
-                     return tl;
-                 })
+            .def_static("from_tensor", &TensorList::FromTensor)
             .def("tensor", [](const TensorList& tl) { return tl.AsTensor(); })
             .def("push_back",
                  [](TensorList& tl, const Tensor& tensor) {
@@ -78,6 +75,14 @@ void pybind_core_tensorlist(py::module& m) {
                      return tl_a.Extend(tl_b);
                  })
             .def("size", [](const TensorList& tl) { return tl.GetSize(); })
+
+            .def("_getitem",
+                 [](TensorList& tl, int64_t index) { return tl[index]; })
+            .def("_setitem",
+                 [](TensorList& tl, int64_t index, const Tensor& value) {
+                     tl[index].SetItem(value);
+                 })
+
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("__repr__", [](const TensorList& tl) { return tl.ToString(); })

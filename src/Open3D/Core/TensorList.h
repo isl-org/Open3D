@@ -36,90 +36,86 @@
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
+#include "Open3D/Core/TensorKey.h"
 namespace open3d {
 
 /// A TensorList is an extendable tensor at the 0-th dimension.
-/// It is similar to std::vector<Tensor>,
-/// but uses Open3D's tensor memory management system.
+/// It is similar to std::vector<Tensor>, but uses Open3D's tensor memory
+/// management system.
+///
 /// Typical use cases:
-/// - Pointcloud: N x 3
-/// - Sparse Voxel Grid: N x 8 x 8 x 8
+/// - Pointcloud: (N, 3)
+/// - Sparse Voxel Grid: (N, 8, 8, 8)
 class TensorList {
 public:
     /// Constructor for creating an (empty by default) tensor list.
-    /// \param shape: shape for the contained tensors. e.g.
+    ///
+    /// \param shape Shape for the contained tensors. e.g.
     /// (3) for a list points,
     /// (8, 8, 8) for a list of voxel blocks.
-    /// \param dtype: type for the contained tensors. e.g. Dtype::Int64.
-    /// \param device: device to store the contained tensors. e.g. "CPU:0".
+    /// \param dtype Type for the contained tensors. e.g. Dtype::Int64.
+    /// \param device Device to store the contained tensors. e.g. "CPU:0".
     TensorList(const SizeVector& shape,
                Dtype dtype,
                const Device& device = Device("CPU:0"),
                const int64_t& size = 0);
 
     /// Constructor from a vector with broadcastable tensors.
-    /// \param tensors: a vector of tensors with compatible shapes for
-    /// broadcasting.
-    /// \param device: device to store the contained tensors. e.g. "CPU:0".
-    /// The tensors must have compatible shapes after broadcasting.
-    /// The tensors must be on the same device and have the same dtype.
+    ///
+    /// \param tensors A vector of tensors. The tensors must be broadcastable to
+    /// a common shape, which will be set as the shape of the TensorList. The
+    /// tensors must be on the same device and have the same dtype.
+    /// \param device Device to store the contained tensors. e.g. "CPU:0".
     TensorList(const std::vector<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
 
     /// Constructor from a list of broadcastable tensors.
-    /// \param tensors: a list of tensors contained in {},
-    /// with compatible shapes for broadcasting.
-    /// \param device: device to store the contained tensors. e.g. "CPU:0".
-    /// The tensors must have compatible shapes after broadcasting.
-    /// The tensors must be on the same device and have the same dtype.
+    ///
+    /// \param tensors A list of tensors. The tensors must be broadcastable to
+    /// a common shape, which will be set as the shape of the TensorList.
+    /// \param device Ddevice to store the contained tensors. e.g. "CPU:0".
     TensorList(const std::initializer_list<Tensor>& tensors,
                const Device& device = Device("CPU:0"));
 
     /// Constructor from iterators, an abstract wrapper for std vectors
-    /// and initialize lists.
-    /// The tensors pointed by iterators must have compatible shapes after
-    /// broadcasting.
-    /// The tensors must be on the same device and have the same dtype.
+    /// and initializer lists.
     template <class InputIterator>
     TensorList(InputIterator first,
                InputIterator last,
                const Device& device = Device("CPU:0"))
-        : device_(device),
-          /// Default empty tensor
-          internal_tensor_(SizeVector(), Dtype::Int64, device) {
+        : device_(device) {
         ConstructFromIterators(first, last);
     }
 
     /// Constructor from a raw internal tensor.
     /// The inverse of AsTensor().
+    ///
     /// \param inplace:
-    /// - if false, use the raw internal tensor (could be non-contiguous),
-    /// typically only used for Slice() assignment
-    /// - if true, create a new contiguous internal tensor with precomputed
+    /// - If true (default), reuse the raw internal tensor. The input tensor
+    /// must be contiguous.
+    /// - If false, create a new contiguous internal tensor with precomputed
     /// reserved size.
     TensorList(const Tensor& internal_tensor, bool inplace = true);
+
+    /// Factory constructor from a raw tensor
+    static TensorList FromTensor(const Tensor& tensor, bool inplace = false);
 
     /// Copy constructor from a tensor list.
     /// Create a new tensor list with copy of data.
     TensorList(const TensorList& other);
 
+    /// Deep copy
+    void CopyFrom(const TensorList& other);
+
     /// TensorList assignment lvalue = lvalue, e.g.
     /// `tensorlist_a = tensorlist_b`,
-    /// resulting in a "shallow" copy.
+    /// resulting in a shallow copy.
+    /// We don't redirect Slice operation to tensors, so right value assignment
+    /// is not explicitly supported.
     TensorList& operator=(const TensorList& other) &;
 
-    /// TensorList assignment lvalue = rvalue, e.g.
-    /// `tensorlist_a = tensorlist_b[0]`,
-    /// resulting in a "shallow" copy.
-    TensorList& operator=(TensorList&& other) &;
-
-    /// TensorList assignment rvalue = lvalue, e.g.
-    /// `tensorlist_a.Slice(x, x, x) = tensorlist_b`
-    TensorList& operator=(const TensorList& other) &&;
-
-    /// TensorLIst assignment rvalue = rvalue, e.g.
-    /// `tensorlist_a.Slice(x, x, x) = tensor_b.Slice(y, y, y)`
-    TensorList& operator=(TensorList&& other) &&;
+    /// Shallow copy
+    void ShallowCopyFrom(const TensorList& other);
 
     /// Return the reference of the contained valid tensors with shared memory.
     Tensor AsTensor() const;
@@ -130,33 +126,33 @@ public:
     void Resize(int64_t n);
 
     /// Push back the copy of a tensor to the list.
-    /// The tensor must have a compatible shape after broadcasting.
+    /// The tensor must broadcastable to the TensorList's shape.
     /// The tensor must be on the same device and have the same dtype.
     void PushBack(const Tensor& tensor);
 
-    /// Concatenate two tensor lists.
-    /// Return a new tensor list with copy of data.
-    /// Two tensor lists must have the same shape, type, and device.
-    TensorList operator+(const TensorList& other) const;
+    /// Concatenate two TensorLists.
+    /// Return a new TensorList with data copied.
+    /// Two TensorLists must have the same shape, type, and device.
     static TensorList Concatenate(const TensorList& a, const TensorList& b);
 
-    /// Concatenate two tensor lists and append the copy of the other tensor
-    /// list to the end of *this.
-    /// Two TensorLists must have the same shape, dtype, and device.
-    TensorList& operator+=(const TensorList& other);
-    void Extend(const TensorList& b);
+    /// Concatenate two TensorLists.
+    TensorList operator+(const TensorList& other) const {
+        return Concatenate(*this, other);
+    }
 
-    /// Return the reference of one tensor with shared memory.
-    Tensor operator[](int64_t index);
+    /// Extend the current TensorList with another TensorList appended to the
+    /// end. The data is copied. The two TensorLists must have the same shape,
+    /// dtype, and device.
+    void Extend(const TensorList& other);
 
-    /// Return the reference of the sliced tensor with shared memory
-    /// Note: this shared memory could be non-contiguous
-    /// without reserved space. The new created TensorList's internal tensor
-    /// will be copied to an internal contiguous tensor for PushBack operations
-    TensorList Slice(int64_t start, int64_t stop, int64_t step = 1);
+    TensorList& operator+=(const TensorList& other) {
+        Extend(other);
+        return *this;
+    }
 
-    /// Return a new tensor list with copy of data.
-    TensorList IndexGet(std::vector<int64_t>& indices) const;
+    /// Extract the i-th Tensor along the first axis, returning a new view.
+    /// For advanced indexing like Slice, use tensorlist.AsTensor().Slice().
+    Tensor operator[](int64_t index) const;
 
     /// Clear the tensor list by discarding all data and creating a empty one.
     void Clear();
@@ -164,15 +160,19 @@ public:
     std::string ToString() const;
 
     SizeVector GetShape() const { return shape_; }
+
     Device GetDevice() const { return device_; }
+
     Dtype GetDtype() const { return dtype_; }
 
     int64_t GetSize() const { return size_; }
+
     int64_t GetReservedSize() const { return reserved_size_; }
+
     const Tensor& GetInternalTensor() const { return internal_tensor_; }
 
 protected:
-    /// The shared internal constructor for iterators.
+    // The shared internal constructor for iterators.
     template <class InputIterator>
     void ConstructFromIterators(InputIterator first, InputIterator last) {
         int64_t size = std::distance(first, last);
@@ -181,11 +181,11 @@ protected:
                     "Empty input tensors cannot initialize a TensorList.");
         }
 
-        /// Infer size and reserved_size
+        // Infer size and reserved_size
         size_ = size;
         reserved_size_ = ReserveSize(size_);
 
-        /// Infer shape
+        // Infer shape
         shape_ = std::accumulate(
                 std::next(first), last, first->GetShape(),
                 [](const SizeVector shape, const Tensor& tensor) {
@@ -193,7 +193,7 @@ protected:
                                             tensor.GetShape());
                 });
 
-        /// Infer dtype
+        // Infer dtype
         dtype_ = first->GetDtype();
         bool dtype_consistent = std::accumulate(
                 std::next(first), last, true,
@@ -206,11 +206,11 @@ protected:
                     "in TensorList.");
         }
 
-        /// Construct internal tensor
+        // Construct internal tensor
         SizeVector expanded_shape = ExpandFrontDim(shape_, reserved_size_);
         internal_tensor_ = Tensor(expanded_shape, dtype_, device_);
 
-        /// Assign tensors
+        // Assign tensors
         size_t i = 0;
         for (auto iter = first; iter != last; ++iter, ++i) {
             internal_tensor_[i] = *iter;
@@ -229,22 +229,27 @@ protected:
     /// with reserved_size_ = (1 << (ceil(log2(size_)) + 1)).
     int64_t ReserveSize(int64_t n);
 
-    /// Check if index is out of bound [0, size_).
-    void CheckIndex(int64_t index) const;
-
 protected:
-    /// We always maintain an internal Tensor of (reserved_size_, **shape_).
-    /// However, we only allow accessing the Tensor of (size_, **shape_).
-    /// In general, reserved_size_ >= (1 << (ceil(log2(size_)) + 1))
-    /// as conventionally done in std::vector.
-    /// Examples: (size_, reserved_size_) = (3, 8), (4, 8), (5, 16).
+    /// The shape_ represents the shape for each element in the TensorList.
+    /// The internal_tensor_'s shape is (reserved_size_, *shape_).
     SizeVector shape_;
+
     Dtype dtype_;
     Device device_;
 
-    int64_t size_ = 0;
+    /// Maximum number of elements in TensorList.
+    /// The internal_tensor_'s shape is (reserved_size_, *shape_).
+    /// In general, reserved_size_ >= (1 << (ceil(log2(size_)) + 1))
+    /// as conventionally done in std::vector.
+    /// Examples: (size_, reserved_size_) = (3, 8), (4, 8), (5, 16).
     int64_t reserved_size_ = 0;
 
+    /// Number of active (valid) elements in TensorList.
+    /// The internal_tensor_ has shape (reserved_size_, *shape_), but only the
+    /// front (size_, *shape_) is active.
+    int64_t size_ = 0;
+
+    /// The internal tensor for data storage.
     Tensor internal_tensor_;
 };
 }  // namespace open3d

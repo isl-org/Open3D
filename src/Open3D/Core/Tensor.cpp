@@ -79,12 +79,72 @@ Tensor Tensor::GetItem(const TensorKey& tk) const {
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
         TensorKey tk_new = tk.UpdateWithDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
+    } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+        Tensor index_tensor(*tk.GetIndexTensor());
+        return IndexGet({index_tensor});
     } else {
         utility::LogError("Internal error: wrong TensorKeyMode.");
     }
 }
 
 Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
+    if (std::any_of(tks.begin(), tks.end(), [](const TensorKey& tk) {
+            return tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor;
+        })) {
+        // If tks contains one or more IndexTensor, the advanced indexing mode
+        // is enabled. Under Advanced indexing mode, we do some preprocessing
+        // with regular slicing, before sending to the advanced indexing engine.
+        //
+        // 1) TensorKey::Index: convert to a TensorKey::IndexTensor with the
+        //    specified index.
+        // 2) TensorKey::Slice: if the slice is non-full slice, slice the tensor
+        //    first and then use full slice for the advanced indexing engine.
+        //
+        // e.g.
+        // dst = src[1,     0:2,   [1, 2]]
+        //           ^      ^      ^
+        //           Index  Slice  IndexTensor
+        // is done in two steps:
+        // temp = src[:, 0:2, :]
+        // dst = temp[[1], :, [1, 2]]
+
+        std::vector<TensorKey> preprocess_tks;
+
+        // Performs `temp = src[:, 0:2, :]`, see the example above.
+        for (const TensorKey& tk : tks) {
+            if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+                preprocess_tks.push_back(TensorKey::Slice(None, None, None));
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+                preprocess_tks.push_back(tk);
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+                preprocess_tks.push_back(TensorKey::Slice(None, None, None));
+            } else {
+                utility::LogError("Internal error: wrong TensorKeyMode.");
+            }
+        }
+        Tensor preprocess_t = GetItem(preprocess_tks);
+
+        // Performs `dst = temp[[1], :, [1, 2]]`, see the example above.
+        std::vector<Tensor> index_tensors;
+        for (const TensorKey& tk : tks) {
+            if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+                index_tensors.push_back(
+                        Tensor(std::vector<int64_t>({tk.GetIndex()}), {1},
+                               Dtype::Int64, GetDevice()));
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+                index_tensors.push_back(Tensor(std::vector<int64_t>{},
+                                               Dtype::Int64, GetDevice()));
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+                index_tensors.push_back(Tensor(*tk.GetIndexTensor()));
+            } else {
+                utility::LogError("Internal error: wrong TensorKeyMode.");
+            }
+        }
+
+        // Calls Advanced indexing engine.
+        return preprocess_t.IndexGet(index_tensors);
+    }
+
     Tensor t = *this;
     int64_t slice_dim = 0;
     for (const TensorKey& tk : tks) {
@@ -108,12 +168,56 @@ Tensor Tensor::SetItem(const Tensor& value) {
 }
 
 Tensor Tensor::SetItem(const TensorKey& tk, const Tensor& value) {
-    this->GetItem(tk) = value;
+    if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+        Tensor index_tensor(*tk.GetIndexTensor());
+        IndexSet({index_tensor}, value);
+    } else {
+        this->GetItem(tk) = value;
+    }
     return *this;
 }
 
 Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
-    this->GetItem(tks) = value;
+    if (std::any_of(tks.begin(), tks.end(), [](const TensorKey& tk) {
+            return tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor;
+        })) {
+        // Advanced indexing mode, see Tensor::GetItem for detailed docs.
+        std::vector<TensorKey> preprocess_tks;
+
+        for (const TensorKey& tk : tks) {
+            if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+                preprocess_tks.push_back(TensorKey::Slice(None, None, None));
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+                preprocess_tks.push_back(tk);
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+                preprocess_tks.push_back(TensorKey::Slice(None, None, None));
+            } else {
+                utility::LogError("Internal error: wrong TensorKeyMode.");
+            }
+        }
+        Tensor preprocess_t = GetItem(preprocess_tks);
+
+        std::vector<Tensor> index_tensors;
+        for (const TensorKey& tk : tks) {
+            if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
+                index_tensors.push_back(
+                        Tensor(std::vector<int64_t>({tk.GetIndex()}), {1},
+                               Dtype::Int64, GetDevice()));
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+                index_tensors.push_back(Tensor(std::vector<int64_t>{},
+                                               Dtype::Int64, GetDevice()));
+            } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+                index_tensors.push_back(Tensor(*tk.GetIndexTensor()));
+            } else {
+                utility::LogError("Internal error: wrong TensorKeyMode.");
+            }
+        }
+
+        preprocess_t.IndexSet(index_tensors, value);
+    } else {
+        this->GetItem(tks) = value;
+    }
+
     return *this;
 }
 
@@ -123,7 +227,8 @@ void Tensor::Assign(const Tensor& other) {
     strides_ = DefaultStrides(shape_);
     dtype_ = other.dtype_;
     blob_ = std::make_shared<Blob>(
-            shape_.NumElements() * DtypeUtil::ByteSize(dtype_), GetDevice());
+            shape_.NumElements() * DtypeUtil::ByteSize(dtype_),
+            other.GetDevice());
     data_ptr_ = blob_->GetDataPtr();
     kernel::Copy(other, *this);
 }
@@ -362,9 +467,13 @@ std::string Tensor::ToString(bool with_suffix,
 
 std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
-        str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
-    });
+    if (dtype_ == Dtype::Bool) {
+        str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
+    } else {
+        DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
+            str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
+        });
+    }
     return str;
 }
 
@@ -600,6 +709,139 @@ Tensor Tensor::Exp() const {
 
 Tensor Tensor::Exp_() {
     kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Exp);
+    return *this;
+}
+
+Tensor Tensor::Abs() const {
+    Tensor dst_tensor(shape_, dtype_, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Abs);
+    return dst_tensor;
+}
+
+Tensor Tensor::Abs_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::Abs);
+    return *this;
+}
+
+Tensor Tensor::LogicalNot() const {
+    Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+    kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::LogicalNot);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalNot_() {
+    kernel::UnaryEW(*this, *this, kernel::UnaryEWOpCode::LogicalNot);
+    return *this;
+}
+
+Tensor Tensor::LogicalAnd(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor,
+                     kernel::BinaryEWOpCode::LogicalAnd);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalAnd_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
+    return *this;
+}
+
+Tensor Tensor::LogicalOr(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor,
+                     kernel::BinaryEWOpCode::LogicalOr);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalOr_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
+    return *this;
+}
+
+Tensor Tensor::LogicalXor(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor,
+                     kernel::BinaryEWOpCode::LogicalXor);
+    return dst_tensor;
+}
+
+Tensor Tensor::LogicalXor_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
+    return *this;
+}
+
+Tensor Tensor::Gt(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
+    return dst_tensor;
+}
+
+Tensor Tensor::Gt_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
+    return *this;
+}
+
+Tensor Tensor::Lt(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
+    return dst_tensor;
+}
+
+Tensor Tensor::Lt_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
+    return *this;
+}
+
+Tensor Tensor::Ge(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
+    return dst_tensor;
+}
+
+Tensor Tensor::Ge_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
+    return *this;
+}
+
+Tensor Tensor::Le(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
+    return dst_tensor;
+}
+
+Tensor Tensor::Le_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
+    return *this;
+}
+
+Tensor Tensor::Eq(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
+    return dst_tensor;
+}
+
+Tensor Tensor::Eq_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
+    return *this;
+}
+
+Tensor Tensor::Ne(const Tensor& value) const {
+    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
+                      GetDevice());
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
+    return dst_tensor;
+}
+
+Tensor Tensor::Ne_(const Tensor& value) {
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
     return *this;
 }
 

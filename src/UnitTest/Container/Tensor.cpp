@@ -71,11 +71,32 @@ TEST_P(TensorPermuteDevices, Constructor) {
     EXPECT_EQ(t.GetBlob()->GetDevice(), device);
 }
 
+TEST_P(TensorPermuteDevices, ConstructorBool) {
+    Device device = GetParam();
+
+    SizeVector shape{2, 3};
+    Dtype dtype = Dtype::Bool;
+    Tensor t(shape, dtype, device);
+
+    EXPECT_EQ(t.GetShape(), shape);
+    EXPECT_EQ(t.GetBlob()->GetDevice(), device);
+    EXPECT_EQ(t.GetDtype(), dtype);
+}
+
 TEST_P(TensorPermuteDevices, WithInitValue) {
     Device device = GetParam();
 
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     Tensor t(vals, {2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(t.ToFlatVector<float>(), vals);
+}
+
+TEST_P(TensorPermuteDevices, WithInitValueBool) {
+    Device device = GetParam();
+
+    std::vector<bool> vals{true, false, true, true, false, false};
+    Tensor t(vals, {2, 3}, Dtype::Bool, device);
+    EXPECT_EQ(t.ToFlatVector<bool>(), vals);
 }
 
 TEST_P(TensorPermuteDevices, WithInitValueTypeMismatch) {
@@ -97,15 +118,22 @@ TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
 TEST_P(TensorPermuteDevices, Fill) {
     Device device = GetParam();
     Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    t.Slice(1, 0, 3, 2).Fill(1);  // t[:, 0:3:2].fill(1)
-    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 0, 1, 1, 0, 1}));
+    t.Fill(1);
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 1, 1, 1, 1, 1}));
+}
+
+TEST_P(TensorPermuteDevices, FillBool) {
+    Device device = GetParam();
+    Tensor t(std::vector<bool>(2 * 3, false), {2, 3}, Dtype::Bool, device);
+    t.Fill(true);
+    EXPECT_EQ(t.ToFlatVector<bool>(), std::vector<bool>(2 * 3, true));
 }
 
 TEST_P(TensorPermuteDevices, FillSlice) {
     Device device = GetParam();
     Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, Dtype::Float32, device);
-    t.Fill(1);
-    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 1, 1, 1, 1, 1}));
+    t.Slice(1, 0, 3, 2).Fill(1);  // t[:, 0:3:2].fill(1)
+    EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 0, 1, 1, 0, 1}));
 }
 
 TEST_P(TensorPermuteDevicePairs, IndexSetFillFancy) {
@@ -147,6 +175,25 @@ TEST_P(TensorPermuteDevicePairs, Copy) {
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
     EXPECT_EQ(dst_t.GetDtype(), src_t.GetDtype());
     EXPECT_EQ(dst_t.ToFlatVector<float>(), vals);
+}
+
+TEST_P(TensorPermuteDevicePairs, CopyBool) {
+    Device dst_device;
+    Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
+    Dtype dtype(Dtype::Bool);
+    SizeVector shape{2, 3};
+
+    std::vector<bool> vals{true, false, true, false, true, true};
+    Tensor src_t(vals, shape, dtype, src_device);
+
+    Tensor dst_t = src_t.Copy(dst_device);
+
+    EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
+    EXPECT_EQ(dst_t.GetDevice(), dst_device);
+    EXPECT_EQ(dst_t.GetDtype(), src_t.GetDtype());
+    EXPECT_EQ(dst_t.ToFlatVector<bool>(), vals);
 }
 
 TEST_P(TensorPermuteDevices, To) {
@@ -368,10 +415,11 @@ TEST_P(TensorPermuteDevices, ToString) {
   [[20 21],
    [22 23]]]])");
 
-    // utility::LogDebug("\n{}", t1.ToString());
-    // utility::LogDebug("\n{}", t3.ToString());
-    // utility::LogDebug("\n{}", t2.ToString());
-    // utility::LogDebug("\n{}", t4.ToString());
+    Tensor t5(std::vector<bool>{true, false, true, true, false, false}, {2, 3},
+              Dtype::Bool, device);
+    EXPECT_EQ(t5.ToString(/*with_suffix=*/false),
+              R"([[True False True],
+ [True False False]])");
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyContiguous) {
@@ -475,6 +523,77 @@ TEST_P(TensorPermuteDevices, GetItem) {
     EXPECT_EQ(t_1.GetStrides(), SizeVector({4, 2}));
     EXPECT_EQ(t_1.ToFlatVector<float>(),
               std::vector<float>({12, 14, 16, 18, 20, 22}));
+}
+
+TEST_P(TensorPermuteDevices, GetItemAdvancedIndexing) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {24}, Dtype::Float32, device);
+
+    // t_1 = t[[0, 1, 1, 2, 3, 5, 8, 13, 21]]
+    Tensor index_tensor(std::vector<int64_t>{0, 1, 1, 2, 3, 5, 8, 13, 21}, {9},
+                        Dtype::Int64, device);
+    Tensor t_1 = t.GetItem(TensorKey::IndexTensor(index_tensor));
+    EXPECT_EQ(t_1.GetShape(), SizeVector({9}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 1, 2, 3, 5, 8, 13, 21}));
+}
+
+TEST_P(TensorPermuteDevices, GetItemAdvancedIndexingMixed) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t_1 = t[1, 0:2, [1, 2]]
+    Tensor index_tensor(std::vector<int64_t>{1, 2}, {2}, Dtype::Int64, device);
+
+    Tensor t_1 = t.GetItem({TensorKey::Index(1), TensorKey::Slice(0, 2, None),
+                            TensorKey::IndexTensor(index_tensor)});
+    EXPECT_EQ(t_1.GetShape(), SizeVector({2, 2}));
+    EXPECT_EQ(t_1.GetStrides(), SizeVector({2, 1}));
+    EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({13, 17, 14, 18}));
+}
+
+TEST_P(TensorPermuteDevices, SetItemAdvancedIndexing) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {24}, Dtype::Float32, device);
+
+    // t[[1, 3]] = np.array([100, 300])
+    Tensor index_tensor(std::vector<int64_t>{1, 3}, {2}, Dtype::Int64, device);
+    Tensor fill_tensor(std::vector<float>{100, 300}, {2}, Dtype::Float32,
+                       device);
+    t.SetItem(TensorKey::IndexTensor(index_tensor), fill_tensor);
+    EXPECT_EQ(t.ToFlatVector<float>(),
+              std::vector<float>({0,  100, 2,  300, 4,  5,  6,  7,
+                                  8,  9,   10, 11,  12, 13, 14, 15,
+                                  16, 17,  18, 19,  20, 21, 22, 23}));
+}
+
+TEST_P(TensorPermuteDevices, SetItemAdvancedIndexingMixed) {
+    Device device = GetParam();
+
+    std::vector<float> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                            12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
+    Tensor t(vals, {2, 3, 4}, Dtype::Float32, device);
+
+    // t[1, 0:2, [1, 2]] = np.array([[100, 200], [300, 400]])
+    Tensor index_tensor(std::vector<int64_t>{1, 2}, {2}, Dtype::Int64, device);
+    Tensor fill_tensor(std::vector<float>{100, 200, 300, 400}, {2, 2},
+                       Dtype::Float32, device);
+    t.SetItem({TensorKey::Index(1), TensorKey::Slice(0, 2, None),
+               TensorKey::IndexTensor(index_tensor)},
+              fill_tensor);
+    EXPECT_EQ(t.ToFlatVector<float>(),
+              std::vector<float>({0,  1,   2,   3,  4,  5,   6,   7,
+                                  8,  9,   10,  11, 12, 100, 300, 15,
+                                  16, 200, 400, 19, 20, 21,  22,  23}));
 }
 
 TEST_P(TensorPermuteDevices, SliceAssign) {
@@ -1100,4 +1219,253 @@ TEST_P(TensorPermuteDevices, Exp) {
     // Only works for float types, throws exception otherwise.
     src = Tensor({2, 3}, Dtype::Int32, device);
     EXPECT_THROW(src.Exp(), std::runtime_error);
+}
+
+TEST_P(TensorPermuteDevices, Abs) {
+    Device device = GetParam();
+
+    std::vector<float> src_vals{-2, -1, 0, 1, 2, 3};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> float { return std::abs(v); });
+
+    Tensor src(src_vals, {2, 3}, Dtype::Float32, device);
+    Tensor dst = src.Abs();
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Inplace version.
+    src.Abs_();
+    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, LogicalNot) {
+    Device device = GetParam();
+
+    std::vector<bool> src_vals{true, false, true, false};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](bool v) -> bool { return !static_cast<bool>(v); });
+
+    Tensor src(src_vals, {2, 2}, Dtype::Bool, device);
+    Tensor dst = src.LogicalNot();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+
+    // Inplace version.
+    src.LogicalNot_();
+    EXPECT_EQ(src.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, LogicalNotFloat) {
+    Device device = GetParam();
+
+    std::vector<float> src_vals{0, -1, 1, 2};
+    std::vector<float> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals), [](float v) -> float {
+                       return static_cast<float>(!static_cast<bool>(v));
+                   });
+    std::vector<bool> dst_bool_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_bool_vals), [](float v) -> bool {
+                       return static_cast<bool>(!static_cast<bool>(v));
+                   });
+
+    Tensor src(src_vals, {2, 2}, Dtype::Float32, device);
+    Tensor dst = src.LogicalNot();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_bool_vals);
+
+    // Inplace version.
+    src.LogicalNot_();
+    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, LogicalAnd) {
+    Device device = GetParam();
+    Tensor a(std::vector<bool>({true, false, true, false}), {2, 2}, Dtype::Bool,
+             device);
+    Tensor b(std::vector<bool>({true, true, false, false}), {2, 2}, Dtype::Bool,
+             device);
+    Tensor c = a.LogicalAnd(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, false}));
+    c = a && b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, false}));
+
+    // Inplace version.
+    a.LogicalAnd_(b);
+    EXPECT_EQ(a.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, false}));
+}
+
+TEST_P(TensorPermuteDevices, LogicalAndFloat) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({-1, 0, 1, 0}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({1, 0, 0, 0}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.LogicalAnd(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, false}));
+
+    // Inplace version.
+    a.LogicalAnd_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 0, 0, 0}));
+}
+
+TEST_P(TensorPermuteDevices, LogicalOr) {
+    Device device = GetParam();
+    Tensor a(std::vector<bool>({true, false, true, false}), {2, 2}, Dtype::Bool,
+             device);
+    Tensor b(std::vector<bool>({true, true, false, false}), {2, 2}, Dtype::Bool,
+             device);
+    Tensor c = a.LogicalOr(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, true, false}));
+    c = a || b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, true, false}));
+
+    // Inplace version.
+    a.LogicalOr_(b);
+    EXPECT_EQ(a.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, true, false}));
+}
+
+TEST_P(TensorPermuteDevices, LogicalOrFloat) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({-1, 0, 1, 0}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({1, -1, 0, 0}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.LogicalOr(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, true, false}));
+
+    // Inplace version.
+    a.LogicalOr_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 1, 1, 0}));
+}
+
+TEST_P(TensorPermuteDevices, LogicalXor) {
+    Device device = GetParam();
+    Tensor a(std::vector<bool>({true, false, true, false}), {2, 2}, Dtype::Bool,
+             device);
+    Tensor b(std::vector<bool>({true, true, false, false}), {2, 2}, Dtype::Bool,
+             device);
+    Tensor c = a.LogicalXor(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, true, false}));
+
+    // Inplace version.
+    a.LogicalXor_(b);
+    EXPECT_EQ(a.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, true, false}));
+}
+
+TEST_P(TensorPermuteDevices, LogicalXorFloat) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({-1, 0, 1, 0}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({1, -1, 0, 0}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.LogicalXor(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, true, false}));
+
+    // Inplace version.
+    a.LogicalXor_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 0}));
+}
+
+TEST_P(TensorPermuteDevices, Gt) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, -1, 1}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 0, 0, 2}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.Gt(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, false, false}));
+    c = a > b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, false, false}));
+
+    // Inplace version.
+    a.Gt_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 0, 0}));
+}
+
+TEST_P(TensorPermuteDevices, Lt) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, -1, 1}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 0, 0, 2}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.Lt(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, false, true, true}));
+    c = a < b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, false, true, true}));
+
+    // Inplace version.
+    a.Lt_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 0, 1, 1}));
+}
+
+TEST_P(TensorPermuteDevices, Ge) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, -1, 1}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 0, 0, 2}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.Ge(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, false, false}));
+    c = a >= b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, true, false, false}));
+
+    // Inplace version.
+    a.Ge_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 1, 0, 0}));
+}
+
+TEST_P(TensorPermuteDevices, Le) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, -1, 1}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 0, 0, 2}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.Le(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, true, true}));
+    c = a <= b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, true, true}));
+
+    // Inplace version.
+    a.Le_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 0, 1, 1}));
+}
+
+TEST_P(TensorPermuteDevices, Eq) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, -1, 1}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 0, 0, 2}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.Eq(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, false}));
+    c = a == b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({true, false, false, false}));
+
+    // Inplace version.
+    a.Eq_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 0, 0, 0}));
+}
+
+TEST_P(TensorPermuteDevices, Ne) {
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, -1, 1}), {2, 2}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0, 0, 0, 2}), {2, 2}, Dtype::Float32, device);
+    Tensor c = a.Ne(b);
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, true, true}));
+    c = a != b;
+    EXPECT_EQ(c.ToFlatVector<bool>(),
+              std::vector<bool>({false, true, true, true}));
+
+    // Inplace version.
+    a.Ne_(b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 1}));
 }

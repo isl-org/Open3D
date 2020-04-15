@@ -14,6 +14,8 @@ def _numpy_dtype_to_dtype(numpy_dtype):
         return o3d.Dtype.Int64
     elif numpy_dtype == np.uint8:
         return o3d.Dtype.UInt8
+    elif numpy_dtype == np.bool:
+        return o3d.Dtype.Bool
     else:
         raise ValueError("Unsupported numpy dtype:", numpy_dtype)
 
@@ -59,6 +61,14 @@ def _to_o3d_tensor_key(key):
             o3d.none if key.start == None else key.start,
             o3d.none if key.stop == None else key.stop,
             o3d.none if key.step == None else key.step)
+    elif isinstance(key, (tuple, list)):
+        key = np.array(key).astype(np.int64)
+        return o3d.open3d_pybind.TensorKey.index_tensor(Tensor(key))
+    elif isinstance(key, np.ndarray):
+        key = key.astype(np.int64)
+        return o3d.open3d_pybind.TensorKey.index_tensor(Tensor(key))
+    elif isinstance(key, Tensor):
+        return o3d.open3d_pybind.TensorKey.index_tensor(key)
     else:
         raise TypeError(f"Invalid key type {type(key)}.")
 
@@ -83,10 +93,10 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def __getitem__(self, key):
         t = self
-        if isinstance(key, tuple) or isinstance(key, list):
-            t = super(Tensor, self)._getitem_vector(
-                [_to_o3d_tensor_key(k) for k in key])
-        elif isinstance(key, int) or isinstance(key, slice):
+        if isinstance(key, tuple):
+            o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
+            t = super(Tensor, self)._getitem_vector(o3d_tensor_keys)
+        elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
             t = super(Tensor, self)._getitem(_to_o3d_tensor_key(key))
         else:
             raise TypeError(f"Invalid type {type(key)} for getitem.")
@@ -94,8 +104,13 @@ class Tensor(open3d_pybind.Tensor):
 
     @cast_to_py_tensor
     def __setitem__(self, key, value):
-        t = self.__getitem__(key)
-        super(Tensor, t)._setitem(value)
+        if isinstance(key, tuple):
+            o3d_tensor_keys = [_to_o3d_tensor_key(k) for k in key]
+            super(Tensor, self)._setitem_vector(o3d_tensor_keys, value)
+        elif isinstance(key, (int, slice, list, np.ndarray, Tensor)):
+            super(Tensor, self)._setitem(_to_o3d_tensor_key(key), value)
+        else:
+            raise TypeError(f"Invalid type {type(key)} for getitem.")
         return self
 
     @cast_to_py_tensor
@@ -163,7 +178,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def add_(self, value):
         """
-        Inplace version of Tensor.add
+        Inplace version of Tensor.add.
         """
         return super(Tensor, self).add_(value)
 
@@ -177,7 +192,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def sub_(self, value):
         """
-        Inplace version of Tensor.sub
+        Inplace version of Tensor.sub.
         """
         return super(Tensor, self).sub_(value)
 
@@ -191,7 +206,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def mul_(self, value):
         """
-        Inplace version of Tensor.mul
+        Inplace version of Tensor.mul.
         """
         return super(Tensor, self).mul_(value)
 
@@ -205,9 +220,178 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def div_(self, value):
         """
-        Inplace version of Tensor.div
+        Inplace version of Tensor.div.
         """
         return super(Tensor, self).div_(value)
+
+    @cast_to_py_tensor
+    def abs(self):
+        """
+        Returns element-wise absolute value of a tensor.
+        """
+        return super(Tensor, self).abs()
+
+    @cast_to_py_tensor
+    def abs_(self):
+        """
+        Inplace version of Tensor.abs.
+        """
+        return super(Tensor, self).abs_()
+
+    @cast_to_py_tensor
+    def logical_and(self, value):
+        """
+        Element-wise logical and operation.
+
+        If the tensor is not boolean, zero will be treated as False, while
+        non-zero values will be treated as True.
+        """
+        return super(Tensor, self).logical_and(value)
+
+    @cast_to_py_tensor
+    def logical_and_(self, value):
+        """
+        Inplace version of Tensor.logical_and.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).logical_and_(value)
+
+    @cast_to_py_tensor
+    def logical_or(self, value):
+        """
+        Element-wise logical or operation.
+
+        If the tensor is not boolean, zero will be treated as False, while
+        non-zero values will be treated as True.
+        """
+        return super(Tensor, self).logical_or(value)
+
+    @cast_to_py_tensor
+    def logical_or_(self, value):
+        """
+        Inplace version of Tensor.logical_or.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).logical_or_(value)
+
+    @cast_to_py_tensor
+    def logical_xor(self, value):
+        """
+        Element-wise logical exclusive-or operation.
+
+        If the tensor is not boolean, zero will be treated as False, while
+        non-zero values will be treated as True.
+        """
+        return super(Tensor, self).logical_xor(value)
+
+    @cast_to_py_tensor
+    def logical_xor_(self, value):
+        """
+        Inplace version of Tensor.logical_xor.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).logical_xor_(value)
+
+    @cast_to_py_tensor
+    def gt(self, value):
+        """
+        Element-wise greater than operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).gt(value)
+
+    @cast_to_py_tensor
+    def gt_(self, value):
+        """
+        Inplace version of Tensor.gt.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).gt_(value)
+
+    @cast_to_py_tensor
+    def lt(self, value):
+        """
+        Element-wise less than operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).lt(value)
+
+    @cast_to_py_tensor
+    def lt_(self, value):
+        """
+        Inplace version of Tensor.lt.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).lt_(value)
+
+    @cast_to_py_tensor
+    def ge(self, value):
+        """
+        Element-wise greater-than-or-equals-to operation, returning a new
+        boolean tensor.
+        """
+        return super(Tensor, self).ge(value)
+
+    @cast_to_py_tensor
+    def ge_(self, value):
+        """
+        Inplace version of Tensor.ge.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).ge_(value)
+
+    @cast_to_py_tensor
+    def le(self, value):
+        """
+        Element-wise less-than-or-equals-to than operation, returning a new
+        boolean tensor.
+        """
+        return super(Tensor, self).le(value)
+
+    @cast_to_py_tensor
+    def le_(self, value):
+        """
+        Inplace version of Tensor.le.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).le_(value)
+
+    @cast_to_py_tensor
+    def eq(self, value):
+        """
+        Element-wise equal operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).eq(value)
+
+    @cast_to_py_tensor
+    def eq_(self, value):
+        """
+        Inplace version of Tensor.eq.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).eq_(value)
+
+    @cast_to_py_tensor
+    def ne(self, value):
+        """
+        Element-wise not-equal operation, returning a new boolean tensor.
+        """
+        return super(Tensor, self).ne(value)
+
+    @cast_to_py_tensor
+    def ne_(self, value):
+        """
+        Inplace version of Tensor.ne.
+
+        This operation won't change the tensor's dtype.
+        """
+        return super(Tensor, self).ne_(value)
 
     @cast_to_py_tensor
     def to(self, dtype, copy=False):
@@ -222,49 +406,75 @@ class Tensor(open3d_pybind.Tensor):
         """
         return super(Tensor, self).to(dtype, copy)
 
-    @cast_to_py_tensor
     def __add__(self, value):
         return self.add(value)
 
-    @cast_to_py_tensor
     def __iadd__(self, value):
         return self.add_(value)
 
-    @cast_to_py_tensor
     def __sub__(self, value):
         return self.sub(value)
 
-    @cast_to_py_tensor
     def __isub__(self, value):
         return self.sub_(value)
 
-    @cast_to_py_tensor
     def __mul__(self, value):
         return self.mul(value)
 
-    @cast_to_py_tensor
     def __imul__(self, value):
         return self.mul_(value)
 
-    @cast_to_py_tensor
     def __truediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
-    @cast_to_py_tensor
     def __itruediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
 
-    @cast_to_py_tensor
     def __floordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
-    @cast_to_py_tensor
     def __ifloordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
+
+    def __lt__(self, value):
+        return self.lt(value)
+
+    def __le__(self, value):
+        return self.le(value)
+
+    def __eq__(self, value):
+        return self.eq(value)
+
+    def __ne__(self, value):
+        return self.ne(value)
+
+    def __gt__(self, value):
+        return self.gt(value)
+
+    def __ge__(self, value):
+        return self.ge(value)
+
+
+def cast_to_py_tensorlist(func):
+    """
+    Args:
+        func: function returning a `o3d.open3d_pybind.Tensor`.
+
+    Return:
+        A function which returns a python object `o3d.Tensor`.
+    """
+
+    def wrapped_func(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        wrapped_result = TensorList([0])
+        wrapped_result.shallow_copy_from(result)
+        return wrapped_result
+
+    return wrapped_func
 
 
 class TensorList(open3d_pybind.TensorList):
@@ -282,7 +492,7 @@ class TensorList(open3d_pybind.TensorList):
             raise ValueError('shape must be a list, tuple, or o3d.SizeVector')
 
         if dtype is None:
-            dtype = _numpy_dtype_to_dtype(data.dtype)
+            dtype = o3d.Dtype.Float32
         if device is None:
             device = o3d.Device("CPU:0")
         if size is None:
@@ -290,7 +500,51 @@ class TensorList(open3d_pybind.TensorList):
 
         super(TensorList, self).__init__(shape, dtype, device, size)
 
+    @cast_to_py_tensor
+    def __getitem__(self, index):
+        '''
+        \index can be a
+        \slice, or \list or \tuple of int: return a TensorList
+        \int: return a Tensor
+        '''
+        if isinstance(index, int):
+            return self._getitem(index)
+        else:
+            raise ValueError('Unsupported index type, only int is supported.')
+
+    def __setitem__(self, index, value):
+        '''
+        If \index is a single int, \value is a Tensor;
+        If \index is a list of ints, \value is correspondingly a TensorList.
+        '''
+        if isinstance(index, int) and isinstance(value, o3d.Tensor):
+            self._setitem(index, value)
+
+        else:
+            raise ValueError(
+                'Unsupported index type.'
+                'Use tensorlist.tensor() to assign value with slices or advanced indexing'
+            )
+
+    @cast_to_py_tensorlist
+    def __iadd__(self, other):
+        return super(TensorList, self).__iadd__(other)
+
+    @cast_to_py_tensorlist
+    def __add__(self, other):
+        return super(TensorList, self).__add__(other)
+
+    @cast_to_py_tensor
+    def tensor(self):
+        return super(TensorList, self).tensor()
+
     @staticmethod
+    @cast_to_py_tensorlist
+    def concat(tl_a, tl_b):
+        return super(TensorList, TensorList).concat(tl_a, tl_b)
+
+    @staticmethod
+    @cast_to_py_tensorlist
     def from_tensor(tensor, inplace=False):
         """
         Returns a TensorList from an existing tensor.
@@ -306,6 +560,7 @@ class TensorList(open3d_pybind.TensorList):
         return super(TensorList, TensorList).from_tensor(tensor, inplace)
 
     @staticmethod
+    @cast_to_py_tensorlist
     def from_tensors(tensors, device=None):
         """
         Returns a TensorList from a list of existing tensors.
