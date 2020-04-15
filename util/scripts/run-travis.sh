@@ -14,6 +14,7 @@ cd build
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
         -DBUILD_UNIT_TESTS=ON \
+        -DBUILD_BENCHMARKS=ON \
         -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
         -DPYTHON_EXECUTABLE=$(which python) \
         ..
