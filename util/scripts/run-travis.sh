@@ -20,7 +20,7 @@ cmakeOptions="-DBUILD_SHARED_LIBS=$SHARED \
         -DPYTHON_EXECUTABLE=$(which python)"
 
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "ON" ]; then
-    cmakeOption="$cmakeOptions \
+    cmakeOptions="$cmakeOptions \
         -DBUILD_EIGEN3=ON \
         -DBUILD_FLANN=ON \
         -DBUILD_GLEW=ON \
