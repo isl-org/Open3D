@@ -128,9 +128,10 @@ bool RGBDImageShader::BindGeometry(const geometry::Geometry &geometry,
     /* https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
      * In OpenGL, texture of GL_UNSIGNED_SHORT are converted to [0, 1] (float),
      * while texture of GL_FLOAT seems not converted. */
-    depth_max_data_ = (depth_type == GL_UNSIGNED_SHORT)
-                              ? option.image_max_depth_ / 65535.0
-                              : option.image_max_depth_ / 1000.0f;
+    depth_max_data_ =
+            (depth_type == GL_UNSIGNED_SHORT)
+                    ? static_cast<float>(option.image_max_depth_) / 65535.0f
+                    : static_cast<float>(option.image_max_depth_) / 1000.0f;
     glGenTextures(1, &depth_texture_buffer_);
     glBindTexture(GL_TEXTURE_2D, depth_texture_buffer_);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, depth_image.width_,
@@ -173,15 +174,17 @@ bool RGBDImageShader::RenderGeometry(const geometry::Geometry &geometry,
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(image_texture_, 0);
 
-    glViewport(0, 0, view.GetWindowWidth() * color_rel_ratio_,
+    glViewport(0, 0,
+               static_cast<GLsizei>(view.GetWindowWidth() * color_rel_ratio_),
                view.GetWindowHeight());
     glUniform1i(texture_mode_, color_texture_mode_);
     glBindTexture(GL_TEXTURE_2D, color_texture_buffer_);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
 
-    glViewport(view.GetWindowWidth() * color_rel_ratio_, 0,
-               view.GetWindowWidth() * (1 - color_rel_ratio_),
-               view.GetWindowHeight());
+    glViewport(
+            static_cast<GLint>(view.GetWindowWidth() * color_rel_ratio_), 0,
+            static_cast<GLint>(view.GetWindowWidth() * (1 - color_rel_ratio_)),
+            view.GetWindowHeight());
     glUniform1i(texture_mode_, depth_texture_mode_);
     glBindTexture(GL_TEXTURE_2D, depth_texture_buffer_);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);

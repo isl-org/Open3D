@@ -40,7 +40,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
 
     option = o3d.odometry.OdometryOption()
     option.max_depth_diff = config["max_depth_diff"]
-    if abs(s - t) is not 1:
+    if abs(s - t) != 1:
         if with_opencv:
             success_5pt, odo_init = pose_estimation(source_rgbd_image,
                                                     target_rgbd_image,

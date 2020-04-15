@@ -430,7 +430,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area,
-        bool use_triangle_normal) {
+        bool use_triangle_normal,
+        int seed) {
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -441,8 +442,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    std::random_device rd;
-    std::mt19937 mt(rd());
+    if (seed == -1) {
+        std::random_device rd;
+        seed = rd();
+    }
+    std::mt19937 mt(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
@@ -491,7 +495,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points, bool use_triangle_normal /* = false */) {
+        size_t number_of_points,
+        bool use_triangle_normal /* = false */,
+        int seed /* = -1 */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
     }
@@ -505,14 +511,15 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area, use_triangle_normal);
+                                     surface_area, use_triangle_normal, seed);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
-        bool use_triangle_normal /* = false */) {
+        bool use_triangle_normal /* = false */,
+        int seed /* = -1 */) {
     if (number_of_points <= 0) {
         utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
     }
@@ -540,7 +547,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area,
-                                        use_triangle_normal);
+                                        use_triangle_normal, seed);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
@@ -1411,13 +1418,13 @@ TriangleMesh::ClusterConnectedTriangles() const {
         triangle_queue.push(tidx);
         triangle_clusters[tidx] = cluster_idx;
         while (!triangle_queue.empty()) {
-            tidx = triangle_queue.front();
+            int cluster_tidx = triangle_queue.front();
             triangle_queue.pop();
 
             cluster_n_triangles++;
-            cluster_area += GetTriangleArea(tidx);
+            cluster_area += GetTriangleArea(cluster_tidx);
 
-            for (auto tnb : adjacency_list[tidx]) {
+            for (auto tnb : adjacency_list[cluster_tidx]) {
                 if (triangle_clusters[tnb] == -1) {
                     triangle_queue.push(tnb);
                     triangle_clusters[tnb] = cluster_idx;
@@ -1504,7 +1511,7 @@ void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
     std::unordered_map<int, int> vertex_map;
     for (size_t from_vidx = 0; from_vidx < vertices_.size(); ++from_vidx) {
         if (!vertex_mask[from_vidx]) {
-            vertex_map[from_vidx] = to_vidx;
+            vertex_map[static_cast<int>(from_vidx)] = static_cast<int>(to_vidx);
             vertices_[to_vidx] = vertices_[from_vidx];
             if (has_normal) {
                 vertex_normals_[to_vidx] = vertex_normals_[from_vidx];

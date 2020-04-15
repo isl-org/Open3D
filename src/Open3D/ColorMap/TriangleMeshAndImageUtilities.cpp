@@ -294,7 +294,7 @@ void SetGeometryColorAverage(
                 new_color += valid_mesh->vertex_colors_[index];
             }
             if (indices.size() > 0) {
-                new_color /= indices.size();
+                new_color /= static_cast<double>(indices.size());
             }
             mesh.vertex_colors_[invalid_vertex] = new_color;
         }
@@ -372,7 +372,7 @@ void SetGeometryColorAverage(
                 new_color += valid_mesh->vertex_colors_[index];
             }
             if (indices.size() > 0) {
-                new_color /= indices.size();
+                new_color /= static_cast<double>(indices.size());
             }
             mesh.vertex_colors_[invalid_vertex] = new_color;
         }

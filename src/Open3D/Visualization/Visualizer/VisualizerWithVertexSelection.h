@@ -96,7 +96,7 @@ protected:
     void AddPickedPoints(const std::vector<int> indices);
     void RemovePickedPoints(const std::vector<int> indices);
     float GetDepth(int winX, int winY);
-    Eigen::Vector3d CalcDragDelta(int winX, int winY);
+    Eigen::Vector3d CalcDragDelta(double winX, double winY);
     enum DragType { DRAG_MOVING, DRAG_END };
     void DragSelectedPoints(const Eigen::Vector3d &delta, DragType type);
     const std::vector<Eigen::Vector3d> *GetGeometryPoints(

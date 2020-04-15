@@ -11,5 +11,5 @@ set -e
 curr_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 pushd ${curr_dir}/../../docs
-xvfb-run -a python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxyge
+python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxyge
 popd
