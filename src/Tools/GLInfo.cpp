@@ -30,7 +30,7 @@ void GLFWErrorCallback(int error, const char *description) {
     open3d::utility::LogWarning("GLFW Error: {}", description);
 }
 
-void tryGLVersion(int major,
+void TryGLVersion(int major,
                   int minor,
                   bool forwardCompat,
                   bool setProfile,
@@ -50,7 +50,7 @@ void tryGLVersion(int major,
     OPEN3D_CHECK_PROFILESTR(GLFW_OPENGL_ANY_PROFILE);
 #undef OPEN3D_CHECK_PROFILESTR
 
-    utility::LogInfo("tryGLVersion: {:d}.{:d} {}{}", major, minor,
+    utility::LogInfo("TryGLVersion: {:d}.{:d} {}{}", major, minor,
                      forwardCompatStr, profileStr);
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
@@ -67,9 +67,7 @@ void tryGLVersion(int major,
     if (setProfile) glfwWindowHint(GLFW_OPENGL_PROFILE, profileId);
     glfwWindowHint(GLFW_VISIBLE, 0);
 
-    GLFWwindow *window_ = nullptr;
-
-    window_ = glfwCreateWindow(640, 480, "GLInfo", NULL, NULL);
+    GLFWwindow *window_ = glfwCreateWindow(640, 480, "GLInfo", NULL, NULL);
     if (!window_) {
         utility::LogDebug("Failed to create window");
         glfwTerminate();
@@ -99,11 +97,11 @@ void tryGLVersion(int major,
 }
 
 int main(int argc, char **argv) {
-    tryGLVersion(1, 0, false, false, GLFW_OPENGL_ANY_PROFILE);
-    tryGLVersion(3, 3, false, true, GLFW_OPENGL_CORE_PROFILE);
-    tryGLVersion(3, 3, true, true, GLFW_OPENGL_CORE_PROFILE);
-    tryGLVersion(3, 3, false, true, GLFW_OPENGL_COMPAT_PROFILE);
-    tryGLVersion(3, 3, false, true, GLFW_OPENGL_ANY_PROFILE);
-    tryGLVersion(1, 0, false, true, GLFW_OPENGL_ANY_PROFILE);
+    TryGLVersion(1, 0, false, false, GLFW_OPENGL_ANY_PROFILE);
+    TryGLVersion(3, 3, false, true, GLFW_OPENGL_CORE_PROFILE);
+    TryGLVersion(3, 3, true, true, GLFW_OPENGL_CORE_PROFILE);
+    TryGLVersion(3, 3, false, true, GLFW_OPENGL_COMPAT_PROFILE);
+    TryGLVersion(3, 3, false, true, GLFW_OPENGL_ANY_PROFILE);
+    TryGLVersion(1, 0, false, true, GLFW_OPENGL_ANY_PROFILE);
     return 0;
 }
