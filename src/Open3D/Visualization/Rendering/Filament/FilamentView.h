@@ -64,6 +64,9 @@ public:
     void SetMode(Mode mode) override;
     void SetDiscardBuffers(const TargetBuffers& buffers) override;
 
+    void SetSampleCount(int n) override;
+    int GetSampleCount() const override;
+
     void SetViewport(std::int32_t x,
                      std::int32_t y,
                      std::uint32_t w,

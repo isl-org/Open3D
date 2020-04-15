@@ -34,6 +34,7 @@
 #include "Layout.h"
 #include "Menu.h"
 #include "Native.h"
+#include "SceneWidget.h"
 #include "Theme.h"
 #include "Util.h"
 #include "Widget.h"
@@ -117,6 +118,20 @@ int keymodsFromGLFW(int glfwMods) {
     return keymods;
 }
 
+void ChangeAllMSAA(SceneWidget::MSAALevel level,
+                   const std::vector<std::shared_ptr<Widget>>& children) {
+    for (auto child : children) {
+        auto sw = std::dynamic_pointer_cast<SceneWidget>(child);
+        if (sw) {
+            sw->SetMSAALevel(level);
+        } else {
+            if (child->GetChildren().size() > 0) {
+                ChangeAllMSAA(level, child->GetChildren());
+            }
+        }
+    }
+}
+
 }  // namespace
 
 const int Window::FLAG_TOPMOST = (1 << 0);
@@ -156,6 +171,7 @@ struct Window::Impl {
     bool wantsAutoSizeAndCenter = false;
     bool wantsTickEvents = false;
     bool needsLayout = true;
+    bool isResizing = false;
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -178,10 +194,6 @@ Window::Window(const std::string& title,
         height == AUTOSIZE_HEIGHT) {
         impl_->wantsAutoSizeAndCenter = true;
     }
-    /*    uint32_t sdlflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
-        if (sdlflags & FLAG_TOPMOST) {
-            sdlflags |= SDL_WINDOW_ALWAYS_ON_TOP;
-        } */
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -584,7 +596,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
 }
 }  // namespace
 
-Widget::DrawResult Window::OnDraw(float dtSec) {
+Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
     // These are here to provide fast unique window names. If you find yourself
     // needing more than a handful, you should probably be using a container
     // of some sort (see Layout.h).
@@ -602,8 +614,10 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
         impl_->deferredUntilBeforeDraw.pop();
     }
 
-    impl_->renderer->BeginFrame();  // this can return false if Filament wants
-                                    // to skip a frame
+    if (!isLayoutPass) {
+        impl_->renderer->BeginFrame();  // this can return false if Filament
+                                        // wants to skip a frame
+    }
 
     // Set current context
     MakeCurrent();  // make sure our ImGUI context is active
@@ -706,9 +720,13 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
     // Draw the ImGui commands
     impl_->imgui.imguiBridge->update(ImGui::GetDrawData());
 
-    impl_->renderer->Draw();
-
-    impl_->renderer->EndFrame();
+    // Draw. Since ImGUI is an immediate mode gui, it does layout during
+    // draw, and if we are drawing for layout purposes, don't actually
+    // draw, because we are just going to draw again after this returns.
+    if (!isLayoutPass) {
+        impl_->renderer->Draw();
+        impl_->renderer->EndFrame();
+    }
 
     if (needsLayout) {
         return Widget::DrawResult::RELAYOUT;
@@ -719,10 +737,10 @@ Widget::DrawResult Window::OnDraw(float dtSec) {
     }
 }
 
-Window::DrawResult Window::DrawOnce(float dtSec) {
+Window::DrawResult Window::OnDraw(float dtSec) {
     bool neededLayout = impl_->needsLayout;
 
-    auto result = OnDraw(dtSec);
+    auto result = DrawOnce(dtSec, neededLayout);
     if (result == Widget::DrawResult::RELAYOUT) {
         impl_->needsLayout = true;
     }
@@ -732,7 +750,7 @@ Window::DrawResult Window::DrawOnce(float dtSec) {
     // window first appears, as well as corrupted images if the
     // window initially appears underneath the mouse.
     if (neededLayout || impl_->needsLayout) {
-        OnDraw(0.001);
+        DrawOnce(0.001, false);
     }
 
     return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
@@ -781,10 +799,30 @@ void Window::OnResize() {
         OnResize();
     }
 
+    // Resizing looks bad if drawing takes a long time, so turn off MSAA
+    // while we resize. On macOS this is critical, because the GL driver does
+    // not release the memory for all the buffers of the new sizes right away
+    // so it eats up GBs of memory rapidly and then resizing looks awful and
+    // eventually stops working correctly. Unfortunately, there isn't a good
+    // way to tell when we've stopped resizing, so we use the mouse mouvement.
+    // (We get no mouse events while resizing, so any mouse even must mean we
+    // are no longer resizing.)
+    if (!impl_->isResizing) {
+        impl_->isResizing = true;
+        ChangeAllMSAA(SceneWidget::MSAALevel::FAST, impl_->children);
+    }
+
     RestoreCurrent(oldContext);
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
+    // We don't have a good way of determining when resizing ends; the most
+    // likely action after resizing a window is to move the mouse.
+    if (impl_->isResizing) {
+        impl_->isResizing = false;
+        ChangeAllMSAA(SceneWidget::MSAALevel::BEST, impl_->children);
+    }
+
     impl_->mouseMods = e.modifiers;
 
     MakeCurrent();
@@ -936,7 +974,7 @@ void Window::OnDragDropped(const char* path) {}
 // ----------------------------------------------------------------------------
 void Window::DrawCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (w->DrawOnce(0.1) == Window::REDRAW) {
+    if (w->OnDraw(0.1) == Window::REDRAW) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
         // time, which ends up with a crash.

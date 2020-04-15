@@ -123,8 +123,8 @@ protected:
 
 private:
     enum DrawResult { NONE, REDRAW };
-    Widget::DrawResult OnDraw(float dtSec);
-    DrawResult DrawOnce(float dtSec);
+    DrawResult OnDraw(float dtSec);
+    Widget::DrawResult DrawOnce(float dtSec, bool isLayoutPass);
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);

@@ -77,6 +77,10 @@ public:
     void SetModel(visualization::GeometryHandle axes,
                   const std::vector<visualization::GeometryHandle>& objects);
 
+    enum class MSAALevel { FAST, BEST };
+    void SetMSAALevel(MSAALevel level);
+    MSAALevel GetMSAALevel() const;
+
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
         PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)

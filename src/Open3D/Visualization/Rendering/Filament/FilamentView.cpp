@@ -77,7 +77,7 @@ FilamentView::FilamentView(filament::Engine& engine,
                            FilamentResourceManager& resourceManager)
     : engine_(engine), resourceManager_(resourceManager) {
     view_ = engine_.createView();
-    view_->setSampleCount(8);
+    view_->setSampleCount(4);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
     view_->setPostProcessingEnabled(true);
     view_->setAmbientOcclusion(filament::View::AmbientOcclusion::SSAO);
@@ -146,6 +146,10 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     discardBuffers_ = buffers;
     view_->setRenderTarget(nullptr, FlagsFromTargetBuffers(buffers));
 }
+
+void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
+
+int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
 
 void FilamentView::SetViewport(std::int32_t x,
                                std::int32_t y,

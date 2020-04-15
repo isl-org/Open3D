@@ -662,6 +662,24 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
+void SceneWidget::SetMSAALevel(MSAALevel level) {
+    auto view = impl_->scene.GetView(impl_->viewId);
+    if (level == MSAALevel::FAST) {
+        view->SetSampleCount(1);
+    } else {
+        view->SetSampleCount(4);
+    }
+}
+
+SceneWidget::MSAALevel SceneWidget::GetMSAALevel() const {
+    int n = impl_->scene.GetView(impl_->viewId)->GetSampleCount();
+    if (n == 1) {
+        return MSAALevel::FAST;
+    } else {
+        return MSAALevel::BEST;
+    }
+}
+
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     auto boundsMax = impl_->bounds.GetMaxBound();
     auto maxDim =

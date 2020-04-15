@@ -64,6 +64,9 @@ public:
     virtual Mode GetMode() const = 0;
     virtual void SetMode(Mode mode) = 0;
 
+    virtual void SetSampleCount(int n) = 0;
+    virtual int GetSampleCount() const = 0;
+
     virtual void SetViewport(std::int32_t x,
                              std::int32_t y,
                              std::uint32_t w,
