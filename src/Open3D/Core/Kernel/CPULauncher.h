@@ -96,7 +96,7 @@ public:
     static void LaunchReductionKernelTwoPass(const Indexer& indexer,
                                              func_t element_kernel,
                                              scalar_t identity) {
-        if (indexer.NumOutputElements() != 1) {
+        if (indexer.NumOutputElements() > 1) {
             utility::LogError(
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
@@ -158,7 +158,7 @@ public:
 #endif
         for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
             Indexer sub_indexer(indexer);
-            sub_indexer.Shrink(best_dim, i, 1);
+            sub_indexer.ShrinkDim(best_dim, i, 1);
             LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
         }
     }

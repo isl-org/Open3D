@@ -33,9 +33,13 @@
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
+#include <sstream>
+
 namespace open3d {
 
 class Indexer;
+
+class IndexerIterator;
 
 // Maximum number of dimensions of TensorRef.
 static constexpr int64_t MAX_DIMS = 10;
@@ -45,6 +49,9 @@ static constexpr int64_t MAX_OPERANDS = 10;
 
 /// A minimalistic class that reference a Tensor.
 struct TensorRef {
+    // The default copy constructor works on __device__ as well so we don't
+    // define it explicitly. shape_[MAX_DIMS] and strides[MAX_DIMS] will be
+    // copied fully.
     TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
 
     TensorRef(const Tensor& t) {
@@ -57,15 +64,56 @@ struct TensorRef {
         dtype_byte_size_ = DtypeUtil::ByteSize(t.GetDtype());
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
-            strides_[i] = t.GetStride(i);
+            byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
         }
     }
+
+    void Permute(const SizeVector& dims) {
+        // Check dims are permuntation of [0, 1, 2, ..., n-1]
+        std::vector<bool> seen_dims(ndims_, false);
+        for (const int64_t& dim : dims) {
+            seen_dims[dim] = true;
+        }
+        if (!std::all_of(seen_dims.begin(), seen_dims.end(),
+                         [](bool seen) { return seen; })) {
+            utility::LogError(
+                    "Permute dims must be a permuntation from 0 to {}",
+                    dims.size() - 1);
+        }
+
+        // Map to new shape and strides
+        SizeVector new_shape(ndims_);
+        SizeVector new_byte_strides(ndims_);
+        for (int64_t i = 0; i < ndims_; ++i) {
+            int64_t old_dim = shape_util::WrapDim(dims[i], ndims_);
+            new_shape[i] = shape_[old_dim];
+            new_byte_strides[i] = byte_strides_[old_dim];
+        }
+        for (int64_t i = 0; i < ndims_; ++i) {
+            shape_[i] = new_shape[i];
+            byte_strides_[i] = new_byte_strides[i];
+        }
+    }
+
+    bool operator==(const TensorRef& other) const {
+        bool rc = true;
+        rc = rc && (data_ptr_ == other.data_ptr_);
+        rc = rc && (ndims_ == other.ndims_);
+        rc = rc && (dtype_byte_size_ == other.dtype_byte_size_);
+        for (int64_t i = 0; i < ndims_; ++i) {
+            rc = rc && (shape_[i] == other.shape_[i]);
+            rc = rc && (byte_strides_[i] == other.byte_strides_[i]);
+        }
+        return rc;
+    }
+
+    bool operator!=(const TensorRef& other) const { return !(*this == other); }
 
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
-    int64_t strides_[MAX_DIMS];
+    int64_t byte_strides_[MAX_DIMS];
 };
 
 enum class DtypePolicy {
@@ -91,6 +139,10 @@ enum class DtypePolicy {
 class Indexer {
 public:
     Indexer() {}
+
+    Indexer(Indexer&& other) = default;
+    Indexer(const Indexer& other) = default;
+    Indexer& operator=(const Indexer& other) = default;
 
     /// Only single output is supported for simplicity. To extend this function
     /// to support multiple outputs, one may check for shape compatibility of
@@ -129,28 +181,13 @@ public:
         // Theoretically, reduction can be mixed with broadcasting. For
         // simplicity, we require explicit broadcasting after reduction.
         if (reduction_dims.size() > 0) {
-            // Reduce inputs to match output shape, by resetting output's shape
-            // and strides.
-            //
-            // e.g.
-            // [Before]
-            // src.shape_:     [2, 3]
-            // src.strides_:   [3, 1]
-            // reduction_dim:  [0]
-            // dst.shape_:     [1, 3]
-            // dst.strides_:   [3, 1]
-            //
-            // [After]
-            // src.shape_:     [2, 3]
-            // src.strides_:   [3, 1]
-            // dst.shape_:     [1, 3] <- Reduced dimension will have shape 1
-            // dst.strides_:   [0, 1] <- Reduced dimension will have stride 0
-            // master_shape_:  [2, 3] <- master_shape == src.shape for reduction
             if (num_inputs_ != 1) {
                 utility::LogError(
                         "Internal error: reduction op can only have 1 inputs.");
             }
-            // Only handles keepdim == true in Indexer.
+
+            // Sanity check. The indexer only handles keepdim == true.
+            // This also ensures that reduction is not mixed with broadcasting.
             if (shape_util::ReductionShape(input_tensors[0].GetShape(),
                                            reduction_dims,
                                            true) != output_tensor.GetShape()) {
@@ -160,18 +197,20 @@ public:
                         input_tensors[0].GetShape(), reduction_dims,
                         output_tensor.GetShape());
             }
+
+            // ndims_ == inputs_[0].ndims_ == output_.ndims
+            ndims_ = inputs_[0].ndims_;
+
+            // For each reduction dim, set the corresponding ouput strides to 0.
             ReductionRestride(output_, inputs_[0].ndims_, inputs_[0].shape_,
                               reduction_dims);
 
+            // Permute reduction dimensions to front
+            ReorderDimensions(reduction_dims);
+
             // Fill global shape
-            ndims_ = inputs_[0].ndims_;
             for (int64_t i = 0; i < ndims_; ++i) {
                 master_shape_[i] = inputs_[0].shape_[i];
-            }
-
-            // Fill is_reduction_dims_
-            for (const int64_t reduction_dim : reduction_dims) {
-                is_reduction_dims_[reduction_dim] = true;
             }
         } else {
             // Broadcast inputs to match output shape, by resetting input's
@@ -191,73 +230,125 @@ public:
         UpdateMasterStrides();
     }
 
-    /// Broadcast src to dst by setting shape 1 to omitted dimensions and
-    /// setting stride 0 to brocasted dimensions.
-    ///
-    /// Note that other approaches may also work. E.g. one could set src's shape
-    /// to exactly the same as dst's shape. In general, if a dimension is of
-    /// size 1, the stride have no effect in computing offsets; or likewise if a
-    /// dimension has stride 0, the shape have no effect in computing offsets.
-    ///
-    /// [Before]
-    ///                 Omitted
-    ///                 |       Broadcast
-    ///                 |       |   No broadcast
-    ///                 |       |   |
-    ///                 V       V   V
-    /// src.shape_:   [     2,  1,  1,  3]
-    /// src.strides_: [     3,  3,  3,  1]
-    /// dst.shape_:   [ 2,  2,  2,  1,  3]
-    /// dst.strides_: [12,  6,  3,  3,  1]
-    ///
-    /// [After]
-    /// src.shape_:   [ 1,  2,  1,  1,  3]
-    /// src.strides_: [ 0,  3,  0,  3,  1]
-    ///
-    /// \param src The source TensorRef to be broadcasted.
-    /// \param dst The destination TensorRef to be broadcasted to.
-    static void BroadcastRestride(TensorRef& src,
-                                  int64_t dst_ndims,
-                                  const int64_t* dst_shape) {
-        int64_t src_ndims = src.ndims_;
+    /// Returns true iff the maximum_offsets in bytes are smaller than 2^31 - 1.
+    bool CanUse32BitIndexing() const {
+        // 2^31 - 1 = 2147483647
+        int64_t max_value = std::numeric_limits<int32_t>::max();
 
-        // Fill omitted dimensions.
-        int64_t ndims_omitted = dst_ndims - src_ndims;
-        for (int64_t i = src_ndims - 1; i >= 0; --i) {
-            src.shape_[ndims_omitted + i] = src.shape_[i];
-            src.strides_[ndims_omitted + i] = src.strides_[i];
+        if (NumWorkloads() > max_value) {
+            return false;
         }
-        for (int64_t i = 0; i < ndims_omitted; ++i) {
-            src.shape_[i] = 1;
-            src.strides_[i] = 0;
-        }
-        src.ndims_ = dst_ndims;
 
-        // Fill broadcasted dimensions.
-        for (int64_t i = 0; i < dst_ndims; ++i) {
-            // It is okay if src.shape_[i] != 1 && dst.shape[i] == 1 for
-            // reduction.
-            if (src.shape_[i] == 1 && dst_shape[i] != 1) {
-                src.strides_[i] = 0;
+        for (int64_t i = 0; i < NumInputs(); i++) {
+            int64_t max_offset = 1;
+            for (int dim = 0; dim < ndims_; dim++) {
+                max_offset += (master_shape_[dim] - 1) *
+                              inputs_[i].byte_strides_[dim];
             }
+            if (max_offset > max_value) {
+                return false;
+            }
+        }
+
+        int64_t max_offset = 1;
+        for (int dim = 0; dim < ndims_; dim++) {
+            max_offset += (master_shape_[dim] - 1) * output_.byte_strides_[dim];
+        }
+
+        if (max_offset > max_value) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// Returns an iterator of Indexers, each of each can be indexed in 32 bits.
+    IndexerIterator SplitTo32BitIndexing() const;
+
+    /// Split the indexer such that the largest-span-dimension is split into two
+    /// halves. The returned new indexer iterates the first half while the
+    /// current indexer iterates the second half.
+    std::unique_ptr<Indexer> SplitLargestDim() {
+        // Get the dimension to split.
+        if (ndims_ == 0) {
+            utility::LogError("Cannot split when ndims_ == 0");
+        }
+        if (master_shape_[ndims_ - 1] < 2) {
+            utility::LogError(
+                    "master_shape_[ndims_ - 1] = {} < 2, cannot split.",
+                    master_shape_[ndims_ - 1]);
+        }
+        int64_t max_extent = -1;
+        int dim_to_split = -1;
+        for (int dim = ndims_ - 1; dim >= 0; dim--) {
+            int64_t size = master_shape_[dim];
+
+            // Inputs
+            for (int64_t i = 0; i < NumInputs(); i++) {
+                int64_t extent = (size - 1) * inputs_[i].byte_strides_[dim];
+                if (extent > max_extent) {
+                    max_extent = extent;
+                    dim_to_split = dim;
+                }
+            }
+            int64_t extent = (size - 1) * output_.byte_strides_[dim];
+            if (extent > max_extent) {
+                max_extent = extent;
+                dim_to_split = dim;
+            }
+        }
+        assert(max_extent >= 0);
+        assert(dim_to_split >= 0 && dim_to_split < ndims_ &&
+               master_shape_[dim_to_split] >= 2);
+
+        std::unique_ptr<Indexer> copy(new Indexer(*this));
+        bool overlaps = IsReductionDim(dim_to_split);
+        auto copy_size = master_shape_[dim_to_split] / 2;
+        auto this_size = master_shape_[dim_to_split] - copy_size;
+        copy->ShrinkDim(dim_to_split, 0, copy_size);
+        copy->final_output_ &= !overlaps;
+        this->ShrinkDim(dim_to_split, copy_size, this_size);
+        this->accumulate_ |= overlaps;
+
+        return copy;
+    }
+
+    bool ShouldAccumulate() const { return accumulate_; }
+
+    bool IsFinalOutput() const { return final_output_; }
+
+    /// Shrink iteration to a specific range in a specific dimension.
+    /// \param dim The dimension to be shrinked to.
+    /// \param start Starting index (inclusive) for dimension \p dim. No
+    /// dimension wraping is available.
+    /// \param size The size to iterate in dimension \p dim.
+    void ShrinkDim(int64_t dim, int64_t start, int64_t size) {
+        // inputs_ and output_'s shapes are not important.
+        assert(dim >= 0 && dim < ndims_ && size > 0);
+        output_.data_ptr_ = static_cast<char*>(output_.data_ptr_) +
+                            output_.byte_strides_[dim] * start;
+        for (int64_t i = 0; i < num_inputs_; ++i) {
+            inputs_[i].data_ptr_ = static_cast<char*>(inputs_[i].data_ptr_) +
+                                   inputs_[i].byte_strides_[dim] * start;
+        }
+
+        master_shape_[dim] = size;
+        UpdateMasterStrides();
+
+        if (size == 1) {
+            CoalesceDimensions();
         }
     }
 
-    /// Symmetrical to BroadcastRestride. Set the reduced dimensions' stride to
-    /// 0 at output. Currently only support the keepdim=true case.
-    static void ReductionRestride(TensorRef& dst,
-                                  int64_t src_ndims,
-                                  const int64_t* src_shape,
-                                  const SizeVector& reduction_dims) {
-        if (dst.ndims_ != src_ndims) {
-            utility::LogError("Internal error, src ndims {} != dst ndims {}",
-                              src_ndims, dst.ndims_);
-        }
-        for (int64_t i = 0; i < dst.ndims_; ++i) {
-            if (dst.shape_[i] == 1 && src_shape[i] != 1) {
-                dst.strides_[i] = 0;
+    /// Returns the number of reudction dimensions.
+    OPEN3D_HOST_DEVICE int64_t NumReductionDims() const {
+        int64_t count = 0;
+        for (int64_t dim = 0; dim < ndims_; dim++) {
+            if (output_.byte_strides_[dim] == 0) {
+                count++;
             }
         }
+        return count;
     }
 
     /// Returns number of dimensions of the Indexer.
@@ -296,8 +387,10 @@ public:
     /// Returns the number of output elements.
     OPEN3D_HOST_DEVICE int64_t NumOutputElements() const {
         int64_t num_output_elements = 1;
-        for (int64_t i = 0; i < output_.ndims_; ++i) {
-            num_output_elements *= output_.shape_[i];
+        for (int64_t i = 0; i < ndims_; ++i) {
+            if (output_.byte_strides_[i] != 0 || master_shape_[i] == 0) {
+                num_output_elements *= master_shape_[i];
+            }
         }
         return num_output_elements;
     }
@@ -315,65 +408,6 @@ public:
         return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
     }
 
-    /// Returns the input pointer for the \p ipo_idx -th input element of the
-    /// output element with index \p output_element_idx. In reduction op, for
-    /// each output element, there are IPO (inputs per output) corresponding
-    /// inputs. This function only makes sense for reduction ops.
-    ///
-    /// Note: assume there's only one tensor (inputs_[0]) for reduction op
-    /// \param output_element_idx Element index in flattend output tensor.
-    /// \param ipo_idx IPO == "inputs per output", ipo_idx can take
-    ///        value from [0, IPO)
-    OPEN3D_HOST_DEVICE char* GetReductionInputPtr(int64_t output_element_idx,
-                                                  int64_t ipo_idx) const {
-        int64_t output_default_strides[MAX_OPERANDS];
-        int64_t input_reduced_shape[MAX_OPERANDS];
-        int64_t input_reduced_strides[MAX_OPERANDS];
-        int64_t output_indices[MAX_OPERANDS];
-        int64_t input_indices[MAX_OPERANDS];
-
-        // int64_t original_ipo_idx = ipo_idx;
-        int64_t ipo = NumWorkloads() / NumOutputElements();
-        if (ipo_idx < 0 || ipo_idx >= ipo) {
-            return nullptr;
-        }
-
-        Indexer::SetDefaultStrides(output_.shape_, output_default_strides,
-                                   ndims_);
-
-        for (int64_t i = 0; i < ndims_; ++i) {
-            if (IsReductionDim(i)) {
-                input_reduced_shape[i] = inputs_[0].shape_[i];
-            } else {
-                input_reduced_shape[i] = 1;
-            }
-        }
-
-        Indexer::SetDefaultStrides(input_reduced_shape, input_reduced_strides,
-                                   ndims_);
-
-        for (int64_t i = 0; i < ndims_; ++i) {
-            output_indices[i] = output_element_idx / output_default_strides[i];
-            output_element_idx = output_element_idx % output_default_strides[i];
-        }
-
-        for (int64_t i = 0; i < ndims_; ++i) {
-            if (!IsReductionDim(i)) {
-                input_indices[i] = output_indices[i];
-            } else {
-                input_indices[i] = ipo_idx / input_reduced_strides[i];
-                ipo_idx = ipo_idx % input_reduced_strides[i];
-            }
-        }
-
-        int64_t input_workload_idx = 0;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            input_workload_idx += input_indices[i] * master_strides_[i];
-        }
-
-        return GetInputPtr(0, input_workload_idx);
-    }
-
     /// Get output Tensor data pointer based on \p workload_idx.
     ///
     /// \param workload_idx The index of the compute workload, similar to
@@ -387,64 +421,206 @@ public:
 
     /// Returns input TensorRef.
     /// Note: no out-of-range checks for in OPEN3D_HOST_DEVICE
-    OPEN3D_HOST_DEVICE TensorRef GetInput(int64_t i) { return inputs_[i]; }
-
-    /// Returns output TensorRef.
-    OPEN3D_HOST_DEVICE TensorRef GetOutput() { return output_; }
-
-    /// Returns true if the \p i -th dimension is reduced.
-    OPEN3D_HOST_DEVICE bool IsReductionDim(int64_t i) const {
-        return is_reduction_dims_[i];
+    OPEN3D_HOST_DEVICE TensorRef& GetInput(int64_t i) { return inputs_[i]; }
+    OPEN3D_HOST_DEVICE const TensorRef& GetInput(int64_t i) const {
+        return inputs_[i];
     }
 
-    /// Shrink iteration to a specific range in a specific dimension.
-    /// \param dim The dimension to be shrinked to.
-    /// \param start Starting index (inclusive) for dimension \p dim. No
-    /// dimension wraping is available.
-    /// \param size The size to iterate in dimension \p dim.
-    OPEN3D_HOST_DEVICE void Shrink(int64_t dim, int64_t start, int64_t size) {
-        assert(dim >= 0 && dim < ndims_ && size > 0);
-        int64_t original_size = master_shape_[dim];
-        (void)original_size;  // Avoids unused variable warning for some setups.
-        master_shape_[dim] = size;
-        UpdateMasterStrides();
+    /// Returns output TensorRef.
+    OPEN3D_HOST_DEVICE TensorRef& GetOutput() { return output_; }
+    OPEN3D_HOST_DEVICE const TensorRef& GetOutput() const { return output_; }
 
-        assert(output_.shape_[dim] == original_size);
-        output_.shape_[dim] = size;
-        for (int64_t i = 0; i < num_inputs_; ++i) {
-            assert(inputs_[i].shape_[dim] == original_size);
-            inputs_[i].shape_[dim] = size;
-        }
-
-        output_.data_ptr_ =
-                static_cast<char*>(output_.data_ptr_) +
-                output_.dtype_byte_size_ * output_.strides_[dim] * start;
-        for (int64_t i = 0; i < num_inputs_; ++i) {
-            inputs_[i].data_ptr_ = static_cast<char*>(inputs_[i].data_ptr_) +
-                                   inputs_[i].dtype_byte_size_ *
-                                           inputs_[i].strides_[dim] * start;
-        }
+    /// Returns true if the \p dim -th dimension is reduced.
+    bool IsReductionDim(int64_t dim) const {
+        return output_.byte_strides_[dim] == 0 && master_shape_[dim] > 1;
     }
 
 protected:
+    /// Merge adjacent dimensions if either dim is 1 or if:
+    /// shape[n] * stride[n] == shape[n + 1]
+    void CoalesceDimensions() {
+        if (ndims_ <= 1) {
+            return;
+        }
+
+        auto can_coalesce = [&](int dim0, int dim1) {
+            auto shape0 = master_shape_[dim0];
+            auto shape1 = master_shape_[dim1];
+            if (shape0 == 1 || shape1 == 1) {
+                return true;
+            }
+            for (int i = 0; i < num_inputs_; i++) {
+                auto& stride = inputs_[i].byte_strides_;
+                if (shape0 * stride[dim0] != stride[dim1]) {
+                    return false;
+                }
+            }
+            auto& stride = output_.byte_strides_;
+            if (shape0 * stride[dim0] != stride[dim1]) {
+                return false;
+            }
+            return true;
+        };
+
+        // Replace each operands stride at dim0 with its stride at dim1
+        auto replace_stride = [&](int dim0, int dim1) {
+            for (int i = 0; i < num_inputs_; i++) {
+                inputs_[i].byte_strides_[dim0] = inputs_[i].byte_strides_[dim1];
+            }
+            output_.byte_strides_[dim0] = output_.byte_strides_[dim1];
+        };
+
+        int prev_dim = 0;
+        for (int dim = 1; dim < ndims_; dim++) {
+            if (can_coalesce(prev_dim, dim)) {
+                if (master_shape_[prev_dim] == 1) {
+                    replace_stride(prev_dim, dim);
+                }
+                master_shape_[prev_dim] *= master_shape_[dim];
+            } else {
+                prev_dim++;
+                if (prev_dim != dim) {
+                    replace_stride(prev_dim, dim);
+                    master_shape_[prev_dim] = master_shape_[dim];
+                }
+            }
+        }
+
+        ndims_ = prev_dim + 1;
+        for (int i = 0; i < num_inputs_; i++) {
+            inputs_[i].ndims_ = ndims_;
+        }
+        output_.ndims_ = ndims_;
+
+        UpdateMasterStrides();
+    }
+
+    // Permute reduction dimensions to front.
+    // TODO: Sort the dimensions based on strides in ascending orderto improve
+    // thread coalescing.
+    void ReorderDimensions(const SizeVector& reduction_dims) {
+        std::vector<TensorRef> operands{output_, inputs_[0]};
+        SizeVector permute(NumDims());
+        if (NumDims() == 1) {
+            permute[0] = 0;
+        } else {
+            std::iota(permute.rbegin(), permute.rend(), 0);
+            auto should_swap = [&](size_t dim0, size_t dim1) {
+                int ret = 0;
+                for (size_t arg = 0; arg < operands.size(); arg++) {
+                    int64_t stride0 = operands[arg].byte_strides_[dim0];
+                    int64_t stride1 = operands[arg].byte_strides_[dim1];
+                    if (arg == 0) {  // output
+                        // move reduced dimensions to the front
+                        if ((stride0 == 0) != (stride1 == 0)) {
+                            return stride1 == 0 ? 1 : -1;
+                        }
+                    }
+                    if (stride0 == 0 || stride1 == 0) {
+                        continue;
+                    } else if (stride0 <= stride1) {
+                        return -1;
+                    } else {
+                        return 1;
+                    }
+                }
+                return ret;
+            };
+            // insertion sort with support for ambiguous comparisons
+            for (int i = 1; i < NumDims(); i++) {
+                int dim1 = i;
+                for (int dim0 = i - 1; dim0 >= 0; dim0--) {
+                    int comparison = should_swap(permute[dim0], permute[dim1]);
+                    if (comparison > 0) {
+                        std::swap(permute[dim0], permute[dim1]);
+                        dim1 = dim0;
+                    } else if (comparison < 0) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        inputs_[0].Permute(permute);
+        output_.Permute(permute);
+    }
+
+    /// Broadcast src to dst by setting shape 1 to omitted dimensions and
+    /// setting stride 0 to brocasted dimensions.
+    ///
+    /// Note that other approaches may also work. E.g. one could set src's shape
+    /// to exactly the same as dst's shape. In general, if a dimension is of
+    /// size 1, the stride have no effect in computing offsets; or likewise if a
+    /// dimension has stride 0, the shape have no effect in computing offsets.
+    ///
+    /// [Before]
+    ///                 Omitted
+    ///                 |       Broadcast
+    ///                 |       |   No broadcast
+    ///                 |       |   |
+    ///                 V       V   V
+    /// src.shape_:   [     2,  1,  1,  3]
+    /// src.strides_: [     3,  3,  3,  1]
+    /// dst.shape_:   [ 2,  2,  2,  1,  3]
+    /// dst.strides_: [12,  6,  3,  3,  1]
+    ///
+    /// [After]
+    /// src.shape_:   [ 1,  2,  1,  1,  3]
+    /// src.strides_: [ 0,  3,  0,  3,  1]
+    ///
+    /// \param src The source TensorRef to be broadcasted.
+    /// \param dst The destination TensorRef to be broadcasted to.
+    static void BroadcastRestride(TensorRef& src,
+                                  int64_t dst_ndims,
+                                  const int64_t* dst_shape) {
+        int64_t src_ndims = src.ndims_;
+
+        // Fill omitted dimensions.
+        int64_t ndims_omitted = dst_ndims - src_ndims;
+        for (int64_t i = src_ndims - 1; i >= 0; --i) {
+            src.shape_[ndims_omitted + i] = src.shape_[i];
+            src.byte_strides_[ndims_omitted + i] = src.byte_strides_[i];
+        }
+        for (int64_t i = 0; i < ndims_omitted; ++i) {
+            src.shape_[i] = 1;
+            src.byte_strides_[i] = 0;
+        }
+        src.ndims_ = dst_ndims;
+
+        // Fill broadcasted dimensions.
+        for (int64_t i = 0; i < dst_ndims; ++i) {
+            // It is okay if src.shape_[i] != 1 && dst.shape[i] == 1 for
+            // reduction.
+            if (src.shape_[i] == 1 && dst_shape[i] != 1) {
+                src.byte_strides_[i] = 0;
+            }
+        }
+    }
+
+    /// Symmetrical to BroadcastRestride. Set the reduced dimensions' stride to
+    /// 0 at output. Currently only support the keepdim=true case.
+    static void ReductionRestride(TensorRef& dst,
+                                  int64_t src_ndims,
+                                  const int64_t* src_shape,
+                                  const SizeVector& reduction_dims) {
+        if (dst.ndims_ != src_ndims) {
+            utility::LogError("Internal error, src ndims {} != dst ndims {}",
+                              src_ndims, dst.ndims_);
+        }
+        for (int64_t i = 0; i < dst.ndims_; ++i) {
+            if (dst.shape_[i] == 1 && src_shape[i] != 1) {
+                dst.byte_strides_[i] = 0;
+            }
+        }
+    }
+
     /// Update master_strides_ based on master_shape_.
-    OPEN3D_HOST_DEVICE void UpdateMasterStrides() {
+    void UpdateMasterStrides() {
         int64_t stride = 1;
         for (int64_t i = ndims_ - 1; i >= 0; --i) {
             master_strides_[i] = stride;
             // Handles 0-sized dimensions
             stride = master_shape_[i] > 1 ? stride * master_shape_[i] : stride;
-        }
-    }
-
-    static OPEN3D_HOST_DEVICE void SetDefaultStrides(const int64_t* shape,
-                                                     int64_t* strides,
-                                                     int64_t ndims) {
-        int64_t stride = 1;
-        for (int64_t i = ndims - 1; i >= 0; --i) {
-            strides[i] = stride;
-            // Handles 0-sized dimensions
-            stride = shape[i] > 1 ? stride * shape[i] : stride;
         }
     }
 
@@ -460,10 +636,10 @@ protected:
         }
         int64_t offset = 0;
         for (int64_t i = 0; i < ndims_; ++i) {
-            offset += workload_idx / master_strides_[i] * tr.strides_[i];
+            offset += workload_idx / master_strides_[i] * tr.byte_strides_[i];
             workload_idx = workload_idx % master_strides_[i];
         }
-        return static_cast<char*>(tr.data_ptr_) + offset * tr.dtype_byte_size_;
+        return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
     /// Number of input Tensors.
@@ -474,9 +650,6 @@ protected:
 
     /// Output TensorRef.
     TensorRef output_;
-
-    /// is_reduction_dims_[i] == True iff dimension i is reduced.
-    bool is_reduction_dims_[MAX_DIMS] = {false};
 
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.
@@ -497,6 +670,39 @@ protected:
 
     /// Indexer's global number of dimensions.
     int64_t ndims_ = 0;
+
+    /// Whether this iterator produces the actual output, as opposed to
+    /// something that will be accumulated further. Only relevant for CUDA
+    /// reductions.
+    bool final_output_ = true;
+
+    /// If the kernel should accumulate into the output. Only relevant for CUDA
+    /// reductions.
+    bool accumulate_ = false;
+};
+
+class IndexerIterator {
+public:
+    struct Iterator {
+        Iterator(){};
+        Iterator(const Indexer& indexer);
+        Iterator(Iterator&& other) = default;
+
+        Indexer& operator*() const;
+        Iterator& operator++();
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
+
+        std::vector<std::unique_ptr<Indexer>> vec_;
+    };
+
+    IndexerIterator(const Indexer& indexer);
+
+    Iterator begin() const;
+    Iterator end() const;
+
+private:
+    const Indexer& indexer_;
 };
 
 }  // namespace open3d

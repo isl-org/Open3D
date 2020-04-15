@@ -107,7 +107,7 @@ void ReductionCPU(const Tensor& src,
             parallel_util::InParallel()) {
             CPULauncher::LaunchReductionKernelSerial<scalar_t>(indexer,
                                                                element_kernel);
-        } else if (indexer.NumOutputElements() == 1) {
+        } else if (indexer.NumOutputElements() <= 1) {
             CPULauncher::LaunchReductionKernelTwoPass<scalar_t>(
                     indexer, element_kernel, identity);
         } else {

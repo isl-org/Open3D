@@ -1081,21 +1081,7 @@ TEST_P(TensorPermuteDevices, ReduceSumNotKeepDim) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({276}));
 }
 
-TEST_P(TensorPermuteDevices, ReduceSumDebug) {
-    Device device = GetParam();
-
-    Tensor src(std::vector<float>({0,  1,  2,  3,  4,  5,  6,  7,
-                                   8,  9,  10, 11, 12, 13, 14, 15,
-                                   16, 17, 18, 19, 20, 21, 22, 23}),
-               {2, 3, 4}, Dtype::Float32, device);
-    Tensor dst;
-
-    dst = src.Sum({0, 2}, true);
-    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3, 1}));
-    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({60, 92, 124}));
-}
-
-TEST_P(TensorPermuteDevices, DISABLED_ReduceMultiSumLargeArray) {
+TEST_P(TensorPermuteDevices, ReduceMultipleOutputsSumLargeArray) {
     Device device = GetParam();
     SizeVector shape{3, 7, 8234719};
     int64_t size = shape.NumElements();
@@ -1110,6 +1096,83 @@ TEST_P(TensorPermuteDevices, DISABLED_ReduceMultiSumLargeArray) {
     dst = src.Sum({0}, false);
     EXPECT_EQ(dst.GetShape(), SizeVector({7, 8234719}));
     EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(7 * 8234719, 3));
+}
+
+TEST_P(TensorPermuteDevices, ReduceSum64bit1D) {
+    Device device = GetParam();
+    // num_bytes = 8 * (2 ^ 28) + 1 = 2 ^ 31 + 1 ~= 2GB
+    // max_offsets = num_bytes - 1 = 2 ^ 31
+    // max_32_bit_indexing = 2 ^ 31 - 1
+    // max_offsets > max_32_bit_indexing
+    int64_t num_elements = (1ULL << 28) + 10;
+    std::vector<int64_t> vals(num_elements, 1);
+    Tensor src(vals, {num_elements}, Dtype::Int64, device);
+    Tensor dst;
+
+    dst = src.Sum({0}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(),
+              std::vector<int64_t>(1, num_elements));
+}
+
+// np.sum(np.ones((2, large_dim)), dim=0)
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
+    Device device = GetParam();
+    int64_t large_dim = (1ULL << 28) + 10;
+    SizeVector shape{2, large_dim};
+    int64_t num_elements = shape.NumElements();
+    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    Tensor src(vals, shape, Dtype::Int64, device);
+    Tensor dst;
+
+    dst = src.Sum({0}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({large_dim}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(large_dim, 2));
+}
+
+// np.sum(np.ones((2, large_dim)), dim=1)
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
+    Device device = GetParam();
+    int64_t large_dim = (1ULL << 28) + 10;
+    SizeVector shape{2, large_dim};
+    int64_t num_elements = shape.NumElements();
+    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    Tensor src(vals, shape, Dtype::Int64, device);
+    Tensor dst;
+
+    dst = src.Sum({1}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(2, large_dim));
+}
+
+// np.sum(np.ones((large_dim, 2)), dim=0)
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
+    Device device = GetParam();
+    int64_t large_dim = (1ULL << 28) + 10;
+    SizeVector shape{large_dim, 2};
+    int64_t num_elements = shape.NumElements();
+    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    Tensor src(vals, shape, Dtype::Int64, device);
+    Tensor dst;
+
+    dst = src.Sum({0}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(2, large_dim));
+}
+
+// np.sum(np.ones((large_dim, 2)), dim=1)
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase3) {
+    Device device = GetParam();
+    int64_t large_dim = (1ULL << 28) + 10;
+    SizeVector shape{large_dim, 2};
+    int64_t num_elements = shape.NumElements();
+    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    Tensor src(vals, shape, Dtype::Int64, device);
+    Tensor dst;
+
+    dst = src.Sum({1}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({large_dim}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(large_dim, 2));
 }
 
 TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {

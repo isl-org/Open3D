@@ -40,6 +40,7 @@
 #include <cuda_runtime.h>
 
 #define OPEN3D_HOST_DEVICE __host__ __device__
+#define OPEN3D_DEVICE __device__
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
@@ -51,6 +52,7 @@
 #else  // #ifdef BUILD_CUDA_MODULE
 
 #define OPEN3D_HOST_DEVICE
+#define OPEN3D_DEVICE
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
 #define OPEN3D_CUDA_CHECK(err)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message)

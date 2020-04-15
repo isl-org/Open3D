@@ -458,14 +458,12 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
     }
 
     // Map to new shape and strides
-    const SizeVector& old_shape = shape_;
-    const SizeVector& old_stides = strides_;
     SizeVector new_shape(n_dims);
     SizeVector new_strides(n_dims);
     for (int64_t i = 0; i < n_dims; ++i) {
         int64_t old_dim = shape_util::WrapDim(dims[i], n_dims);
-        new_shape[i] = old_shape[old_dim];
-        new_strides[i] = old_stides[old_dim];
+        new_shape[i] = shape_[old_dim];
+        new_strides[i] = strides_[old_dim];
     }
 
     return AsStrided(new_shape, new_strides);

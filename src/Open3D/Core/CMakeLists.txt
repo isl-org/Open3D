@@ -21,6 +21,7 @@ set (CORE_SRC
     AdvancedIndexing.cpp
     ShapeUtil.cpp
     CUDAUtils.cpp
+    Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
     MemoryManagerCUDA.cu
