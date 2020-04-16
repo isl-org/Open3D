@@ -84,6 +84,7 @@ class PyAPIDocsBuilder:
     def _get_open3d_module(full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
+
         try:
             # try to import directly. This will work for pure python submodules
             module = importlib.import_module(full_module_name)
@@ -94,7 +95,7 @@ class PyAPIDocsBuilder:
             # define a specific module path (e.g. the modules defined with
             # pybind).
             current_module = open3d
-            for sub_module_name in full_module_name.split('.')[1:]:
+            for sub_module_name in full_module_name.split(".")[1:]:
                 current_module = getattr(current_module, sub_module_name)
             return current_module
 
@@ -129,12 +130,8 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _generate_sub_module_doc(
-            sub_module_full_name,
-            class_names,
-            function_names,
-            sub_module_doc_path,
-    ):
+    def _generate_sub_module_doc(sub_module_full_name, class_names,
+                                 function_names, sub_module_doc_path):
         # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
@@ -203,9 +200,12 @@ class PyAPIDocsBuilder:
         # Submodule docs
         sub_module_doc_path = os.path.join(output_dir,
                                            sub_module_full_name + ".rst")
-        PyAPIDocsBuilder._generate_sub_module_doc(sub_module_full_name,
-                                                  class_names, function_names,
-                                                  sub_module_doc_path)
+        PyAPIDocsBuilder._generate_sub_module_doc(
+            sub_module_full_name,
+            class_names,
+            function_names,
+            sub_module_doc_path,
+        )
 
 
 class SphinxDocsBuilder:
@@ -233,9 +233,9 @@ class SphinxDocsBuilder:
     def _get_module_names_from_index_rst():
         """Reads the modules of the python api from the index.rst"""
         module_names = []
-        with open('index.rst', 'r') as f:
+        with open("index.rst", "r") as f:
             for line in f:
-                m = re.match('^\s*python_api/(.*)\s*$', line)
+                m = re.match("^\s*python_api/(.*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
         return module_names
@@ -263,10 +263,10 @@ class SphinxDocsBuilder:
 
         if self.is_release:
             version_list = [
-                line.rstrip('\n').split(' ')[1]
-                for line in open('../src/Open3D/version.txt')
+                line.rstrip("\n").split(" ")[1]
+                for line in open("../src/Open3D/version.txt")
             ]
-            release_version = '.'.join(version_list[:3])
+            release_version = ".".join(version_list[:3])
             print("Building docs for release:", release_version)
 
             cmd = [
@@ -308,8 +308,10 @@ class DoxygenDocsBuilder:
         cmd = ["doxygen", "Doxyfile"]
         print('Calling: "%s"' % " ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
-        shutil.copytree(os.path.join("doxygen", "html"),
-                        os.path.join(self.html_output_dir, "html", "cpp_api"))
+        shutil.copytree(
+            os.path.join("doxygen", "html"),
+            os.path.join(self.html_output_dir, "html", "cpp_api"),
+        )
 
         if os.path.exists(doxygen_temp_dir):
             shutil.rmtree(doxygen_temp_dir)
@@ -330,8 +332,8 @@ class JupyterDocsBuilder:
 
     def run(self):
         # Copy TestData directory to the tutorial folder
-        test_data_in_dir = Path(
-            self.current_file_dir).parent / "examples" / "TestData"
+        test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
+                            "TestData")
         test_data_out_dir = Path(self.current_file_dir) / "TestData"
         if test_data_out_dir.exists():
             shutil.rmtree(test_data_out_dir)
@@ -341,8 +343,8 @@ class JupyterDocsBuilder:
         nb_paths = []
         example_dirs = ["Basic", "Advanced"]
         for example_dir in example_dirs:
-            in_dir = Path(self.current_file_dir
-                         ).parent / "examples" / "Python" / example_dir
+            in_dir = (Path(self.current_file_dir).parent / "examples" /
+                      "Python" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
             shutil.copy(
                 in_dir.parent / "open3d_tutorial.py",
@@ -370,11 +372,11 @@ class JupyterDocsBuilder:
                 nb = nbformat.read(f, as_version=4)
 
             # https://github.com/spatialaudio/nbsphinx/blob/master/src/nbsphinx.py
-            has_code = any(c.source for c in nb.cells if c.cell_type == 'code')
+            has_code = any(c.source for c in nb.cells if c.cell_type == "code")
             has_output = any(
-                c.get('outputs') or c.get('execution_count')
+                c.get("outputs") or c.get("execution_count")
                 for c in nb.cells
-                if c.cell_type == 'code')
+                if c.cell_type == "code")
             execute = (self.execute_notebooks == "auto" and has_code and
                        not has_output) or self.execute_notebooks == "always"
             print(
@@ -382,7 +384,7 @@ class JupyterDocsBuilder:
             )
 
             if execute:
-                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
+                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=60000)
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
@@ -411,27 +413,35 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help=("Whether to clean existing notebooks in docs/tutorial. "
-              "Notebooks are copied from examples/Python to docs/tutorial."))
+              "Notebooks are copied from examples/Python to docs/tutorial."),
+    )
     parser.add_argument(
         "--execute_notebooks",
         dest="execute_notebooks",
         default="auto",
-        help="Jupyter notebook execution mode, one of {auto, always, never}.")
-    parser.add_argument("--sphinx",
-                        dest="build_sphinx",
-                        action="store_true",
-                        default=False,
-                        help="Build Sphinx for main docs and Python API docs.")
-    parser.add_argument("--doxygen",
-                        dest="build_doxygen",
-                        action="store_true",
-                        default=False,
-                        help="Build Doxygen for C++ API docs.")
-    parser.add_argument("--is_release",
-                        dest="is_release",
-                        action="store_true",
-                        default=False,
-                        help="Show Open3D version number rather than git hash.")
+        help="Jupyter notebook execution mode, one of {auto, always, never}.",
+    )
+    parser.add_argument(
+        "--sphinx",
+        dest="build_sphinx",
+        action="store_true",
+        default=False,
+        help="Build Sphinx for main docs and Python API docs.",
+    )
+    parser.add_argument(
+        "--doxygen",
+        dest="build_doxygen",
+        action="store_true",
+        default=False,
+        help="Build Doxygen for C++ API docs.",
+    )
+    parser.add_argument(
+        "--is_release",
+        dest="is_release",
+        action="store_true",
+        default=False,
+        help="Show Open3D version number rather than git hash.",
+    )
     args = parser.parse_args()
 
     pwd = os.path.dirname(os.path.realpath(__file__))
