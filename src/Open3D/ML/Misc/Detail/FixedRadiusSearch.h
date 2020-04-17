@@ -40,6 +40,86 @@ namespace detail {
 
 namespace {
 
+/// Builds a spatial hash table for a fixed radius search of 3D points.
+///
+/// \param num_points    The number of points.
+///
+/// \param points    The array of 3D points.
+///
+/// \param radius    The radius that will be used for searching.
+///
+/// \param hash_table_row_splits_size    This is the length of the
+///        hash_table_row_splits array.
+///
+/// \param hash_table_row_splits    This is an output array storing the start
+///        of each hash table entry. The size of this array defines the size of
+///        the hash table.
+///        The hash table size is hash_table_row_splits_size - 1.
+///
+/// \param hash_table_index    This is an output array storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        array must be equal to the number of points.
+///
+template <class TReal, class TIndex>
+void BuildSpatialHashTableCPU(const size_t num_points,
+                              const TReal* const points,
+                              const TReal radius,
+                              const size_t hash_table_row_splits_size,
+                              TIndex* hash_table_row_splits,
+                              TIndex* hash_table_index) {
+    using namespace open3d::utility;
+    typedef Eigen::Array<TReal, 3, 1> Vec3_t;
+
+    const TReal voxel_size = 2 * radius;
+    const TReal inv_voxel_size = 1 / voxel_size;
+    const size_t hash_table_size = hash_table_row_splits_size - 1;
+
+    memset(&hash_table_row_splits[0], 0,
+           sizeof(TIndex) * hash_table_row_splits_size);
+
+    // compute number of points that map to each hash
+    tbb::parallel_for(
+            tbb::blocked_range<size_t>(0, num_points),
+            [&](const tbb::blocked_range<size_t>& r) {
+                for (size_t i = r.begin(); i != r.end(); ++i) {
+                    Eigen::Map<const Vec3_t> pos(points + 3 * i);
+
+                    Eigen::Vector3i voxel_index =
+                            ComputeVoxelIndex(pos, inv_voxel_size);
+                    size_t hash = SpatialHash(voxel_index.x(), voxel_index.y(),
+                                              voxel_index.z()) %
+                                  hash_table_size;
+
+                    // note the +1 because we want the first element to be 0
+                    AtomicFetchAddRelaxed(&hash_table_row_splits[hash + 1], 1);
+                }
+            });
+    InclusivePrefixSum(&hash_table_row_splits[0],
+                       &hash_table_row_splits[hash_table_row_splits_size],
+                       &hash_table_row_splits[0]);
+
+    std::vector<uint32_t> count_tmp(hash_table_size, 0);
+
+    // now compute the indices for hash_table_index
+    tbb::parallel_for(
+            tbb::blocked_range<size_t>(0, num_points),
+            [&](const tbb::blocked_range<size_t>& r) {
+                for (size_t i = r.begin(); i != r.end(); ++i) {
+                    Eigen::Map<const Vec3_t> pos(points + 3 * i);
+
+                    Eigen::Vector3i voxel_index =
+                            ComputeVoxelIndex(pos, inv_voxel_size);
+                    size_t hash = SpatialHash(voxel_index.x(), voxel_index.y(),
+                                              voxel_index.z()) %
+                                  hash_table_size;
+
+                    hash_table_index[hash_table_row_splits[hash] +
+                                     AtomicFetchAddRelaxed(&count_tmp[hash],
+                                                           1)] = i;
+                }
+            });
+}
+
 /// Vectorized distance computation. This function computes the distance to
 /// \p p for a fixed number of points.
 ///
@@ -74,23 +154,6 @@ Eigen::Array<typename TDerived::Scalar, VECSIZE, 1> NeighborsDist(
         dist = (points.rowwise() - p.transpose()).square().rowwise().sum();
     }
     return dist;
-}
-
-/// Computes an integer voxel index for a 3D position.
-///
-/// \param pos               A 3D position.
-/// \param inv_voxel_size    The reciprocal of the voxel size
-///
-template <class TDerived>
-Eigen::Vector3i ComputeVoxelIndex(
-        const Eigen::ArrayBase<TDerived>& pos,
-        const typename TDerived::Scalar& inv_voxel_size) {
-    typedef typename TDerived::Scalar Scalar_t;
-    Eigen::Array<Scalar_t, 3, 1> ref_coord = pos * inv_voxel_size;
-
-    Eigen::Vector3i voxel_index;
-    voxel_index = ref_coord.floor().template cast<int>();
-    return voxel_index;
 }
 
 /// Implementation of FixedRadiusSearchCPU with template params for metrics
@@ -139,55 +202,15 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
     // and want the first element to be 0.
     std::vector<Index_t> row_splits(hash_table_size + 1, 0);
 
-    open3d::utility::hash_eigen::hash<Eigen::Vector3i> hash_fn;
-
-    const T voxel_size = 2 * radius;
-    const T inv_voxel_size = 1 / voxel_size;
-
-    // compute number of points that map to each hash
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, num_points),
-                      [&](const tbb::blocked_range<size_t>& r) {
-                          for (size_t i = r.begin(); i != r.end(); ++i) {
-                              Eigen::Map<const Vec3_t> pos(points + i * 3);
-
-                              Eigen::Vector3i voxel_index =
-                                      ComputeVoxelIndex(pos, inv_voxel_size);
-                              size_t hash =
-                                      hash_fn(voxel_index) % hash_table_size;
-
-                              // note the +1
-                              AtomicFetchAddRelaxed(&row_splits[hash + 1], 1);
-                          }
-                      });
-
-    InclusivePrefixSum(&row_splits[0], &row_splits[row_splits.size()],
-                       &row_splits[0]);
-
     // stores the indices to the points for each hash entry. Start and end of
     // the hash entries is defined by the row_splits.
     std::vector<Index_t> index_table(num_points);
 
-    // now compute the indices for index_table
-    {
-        // tmp memory for computing indices
-        std::vector<uint32_t> count_tmp(hash_table_size, 0);
+    BuildSpatialHashTableCPU(num_points, points, radius, row_splits.size(),
+                             row_splits.data(), index_table.data());
 
-        tbb::parallel_for(
-                tbb::blocked_range<size_t>(0, num_points),
-                [&](const tbb::blocked_range<size_t>& r) {
-                    for (size_t i = r.begin(); i != r.end(); ++i) {
-                        Eigen::Map<const Vec3_t> pos(points + i * 3);
-
-                        Eigen::Vector3i voxel_index =
-                                ComputeVoxelIndex(pos, inv_voxel_size);
-                        size_t hash = hash_fn(voxel_index) % hash_table_size;
-
-                        index_table[row_splits[hash] +
-                                    AtomicFetchAddRelaxed(&count_tmp[hash],
-                                                          1)] = i;
-                    }
-                });
-    }
+    const T voxel_size = 2 * radius;
+    const T inv_voxel_size = 1 / voxel_size;
 
     // counts the number of indices we have to return. This is the number of all
     // neighbors we find.
@@ -210,7 +233,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
                     Eigen::Vector3i voxel_index =
                             ComputeVoxelIndex(pos, inv_voxel_size);
-                    size_t hash = hash_fn(voxel_index) % hash_table_size;
+                    size_t hash = SpatialHash(voxel_index) % hash_table_size;
 
                     bins_to_visit.insert(hash);
 
@@ -220,7 +243,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 Vec3_t p = pos + radius * Vec3_t(dx, dy, dz);
                                 voxel_index
                                         << ComputeVoxelIndex(p, inv_voxel_size);
-                                hash = hash_fn(voxel_index) % hash_table_size;
+                                hash = SpatialHash(voxel_index) %
+                                       hash_table_size;
                                 bins_to_visit.insert(hash);
                             }
 
@@ -309,7 +333,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
                     Eigen::Vector3i voxel_index =
                             ComputeVoxelIndex(pos, inv_voxel_size);
-                    size_t hash = hash_fn(voxel_index) % hash_table_size;
+                    size_t hash = SpatialHash(voxel_index) % hash_table_size;
 
                     bins_to_visit.insert(hash);
 
@@ -319,7 +343,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 Vec3_t p = pos + radius * Vec3_t(dx, dy, dz);
                                 voxel_index
                                         << ComputeVoxelIndex(p, inv_voxel_size);
-                                hash = hash_fn(voxel_index) % hash_table_size;
+                                hash = SpatialHash(voxel_index) %
+                                       hash_table_size;
                                 bins_to_visit.insert(hash);
                             }
 
