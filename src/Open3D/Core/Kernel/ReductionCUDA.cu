@@ -44,36 +44,50 @@ void ReductionCUDA(const Tensor& src,
                    ReductionOpCode op_code) {
     Dtype dtype = dst.GetDtype();
     Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME, dims);
+    CUDAReductionEngine re(indexer);
 
     CUDADeviceSwitcher switcher(src.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         switch (op_code) {
             case ReductionOpCode::Sum:
                 if (indexer.NumWorkloads() == 0) {
+                    // 0-sized input can be reduced to non-0-sized outputs,
+                    // where identity elements should be filled.
+                    // E.g. np.sum(np.ones((0, 5)), axis=0).shape == (5,).
                     dst.Fill(0);
                 } else {
-                    sum_kernel_impl<scalar_t>(indexer);
+                    re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                                   -> scalar_t { return a + b; },
+                           static_cast<scalar_t>(0));
                 }
                 break;
             case ReductionOpCode::Prod:
                 if (indexer.NumWorkloads() == 0) {
                     dst.Fill(1);
                 } else {
-                    prod_kernel_impl<scalar_t>(indexer);
+                    re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                                   -> scalar_t { return a * b; },
+                           static_cast<scalar_t>(1));
                 }
                 break;
             case ReductionOpCode::Min:
                 if (indexer.NumWorkloads() == 0) {
                     utility::LogError("Zero-size Tensor does not suport Min.");
                 } else {
-                    min_kernel_impl<scalar_t>(indexer);
+                    re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                                   -> scalar_t { return a < b ? a : b; },
+                           static_cast<scalar_t>(
+                                   std::numeric_limits<scalar_t>::max()));
                 }
                 break;
             case ReductionOpCode::Max:
                 if (indexer.NumWorkloads() == 0) {
                     utility::LogError("Zero-size Tensor does not suport Max.");
                 } else {
-                    max_kernel_impl<scalar_t>(indexer);
+                    re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                                   -> scalar_t { return a > b ? a : b; },
+                           static_cast<scalar_t>(
+                                   std::numeric_limits<scalar_t>::min()));
                 }
                 break;
             default:

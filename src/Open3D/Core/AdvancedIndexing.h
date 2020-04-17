@@ -208,9 +208,7 @@ public:
         return offset;
     }
 
-    OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
-        return indexer_.NumWorkloads();
-    }
+    int64_t NumWorkloads() const { return indexer_.NumWorkloads(); }
 
 protected:
     Indexer indexer_;
