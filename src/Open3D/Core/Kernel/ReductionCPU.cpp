@@ -63,9 +63,17 @@ void ReductionCPU(const Tensor& src,
                   const SizeVector& dims,
                   bool keepdim,
                   ReductionOpCode op_code) {
-    Dtype dtype = dst.GetDtype();
-    Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME, dims);
+    DtypePolicy dtype_policy;
+    if (regular_reduce_ops.find(op_code) != regular_reduce_ops.end()) {
+        dtype_policy = DtypePolicy::ASSERT_SAME;
+    } else if (arg_reduce_ops.find(op_code) != regular_reduce_ops.end()) {
+        dtype_policy = DtypePolicy::ASSERT_SAME_INPUTS;
+    } else {
+        utility::LogError("Unsupported op code.");
+    }
 
+    Indexer indexer({src}, dst, dtype_policy, dims);
+    Dtype dtype = src.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         // Optain identity and element kernel based on op_code.
         scalar_t identity;
@@ -93,6 +101,22 @@ void ReductionCPU(const Tensor& src,
                 } else {
                     identity = std::numeric_limits<scalar_t>::min();
                     element_kernel = CPUMaxReductionKernel<scalar_t>;
+                }
+                break;
+            case ReductionOpCode::ArgMin:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError(
+                            "Zero-size Tensor does not suport ArgMin.");
+                } else {
+                    utility::LogError("TODO: ArgMin CPU is not implemented.");
+                }
+                break;
+            case ReductionOpCode::ArgMax:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError(
+                            "Zero-size Tensor does not suport ArgMax.");
+                } else {
+                    utility::LogError("TODO: ArgMax CPU is not implemented.");
                 }
                 break;
             default:

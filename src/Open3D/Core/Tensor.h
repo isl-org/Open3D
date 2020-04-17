@@ -449,6 +449,26 @@ public:
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Max(const SizeVector& dims, bool keepdim = false) const;
 
+    /// Returns minimum index of the tensor long the given \p dim. The returned
+    /// tensor has dtype int64_t, and has the same shape as original tensor
+    /// except that the reduced dimension is removed.
+    ///
+    /// \param dims \p dims can only contain a single dimension or all
+    /// dimensions. If \p dims contains a single dimension, the index is along
+    /// the specified dimension. If \p dims contains all dimensions, the index
+    /// is into the flattend tensor.
+    Tensor ArgMin(const SizeVector& dims) const;
+
+    /// Returns maximum index of the tensor long the given \p dim. The returned
+    /// tensor has dtype int64_t, and has the same shape as original tensor
+    /// except that the reduced dimension is removed.
+    ///
+    /// \param dims \p dims can only contain a single dimension or all
+    /// dimensions. If \p dims contains a single dimension, the index is along
+    /// the specified dimension. If \p dims contains all dimensions, the index
+    /// is into the flattend tensor.
+    Tensor ArgMax(const SizeVector& dims) const;
+
     /// Element-wise square root of a tensor, returns a new tensor.
     Tensor Sqrt() const;
 

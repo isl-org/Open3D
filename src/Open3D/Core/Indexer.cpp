@@ -32,19 +32,36 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                  const Tensor& output_tensor,
                  DtypePolicy dtype_policy,
                  const SizeVector& reduction_dims) {
+    if (input_tensors.size() < 1) {
+        utility::LogError("Indexer must have at list one input.");
+    }
+
     // Dtype sanity check and handling.
     if (dtype_policy == DtypePolicy::CAST ||
         dtype_policy == DtypePolicy::CAST_INPUTS) {
         utility::LogError("Unimplemented dtype_policy.");
     } else if (dtype_policy == DtypePolicy::ASSERT_SAME) {
-        Dtype output_dtype = output_tensor.GetDtype();
+        Dtype ref_dtype = output_tensor.GetDtype();
         for (const auto& input_tensor : input_tensors) {
-            if (input_tensor.GetDtype() != output_dtype) {
+            if (input_tensor.GetDtype() != ref_dtype) {
                 utility::LogError("Dype mismatch {} != {}.",
                                   DtypeUtil::ToString(input_tensor.GetDtype()),
-                                  DtypeUtil::ToString(output_dtype));
+                                  DtypeUtil::ToString(ref_dtype));
             }
         }
+    } else if (dtype_policy == DtypePolicy::ASSERT_SAME_INPUTS) {
+        Dtype ref_dtype = input_tensors[0].GetDtype();
+        for (const auto& input_tensor : input_tensors) {
+            if (input_tensor.GetDtype() != ref_dtype) {
+                utility::LogError("Dype mismatch {} != {}.",
+                                  DtypeUtil::ToString(input_tensor.GetDtype()),
+                                  DtypeUtil::ToString(ref_dtype));
+            }
+        }
+    } else if (dtype_policy == DtypePolicy::NONE) {
+        // Do nothing.
+    } else {
+        utility::LogError("Unimplemented dtype policy");
     }
 
     // Convert to TensorRef.

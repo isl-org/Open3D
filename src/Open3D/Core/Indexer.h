@@ -255,13 +255,14 @@ enum class DtypePolicy {
     NONE,         // Do not check. Expects the kernel to handle the conversion.
                   // E.g. in Copy kernel with type casting.
     ASSERT_SAME,  // Assert same Dtypes for inputs and output
-    CAST,         // Cast to common dtype.
-                  // E.g. Tensor::Add:
-                  // int64   + int32   = int64   (valid)
-                  // float32 + float32 = int32   (invalid)
-                  // float64 + float64 = float32 (valid)
-    CAST_INPUTS   // Cast inputs to common dtypes (e.g. comparison ops have
-                  // boolean output).
+    ASSERT_SAME_INPUTS,  // Assert same Dtypes for inputs and output
+    CAST,                // Cast to common dtype.
+                         // E.g. Tensor::Add:
+                         // int64   + int32   = int64   (valid)
+                         // float32 + float32 = int32   (invalid)
+                         // float64 + float64 = float32 (valid)
+    CAST_INPUTS  // Cast inputs to common dtypes (e.g. comparison ops have
+                 // boolean output).
 };
 
 /// Indexing engine for elementwise ops with broadcasting support.

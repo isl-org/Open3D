@@ -26,6 +26,9 @@
 
 #pragma once
 
+// This file is based on PyTorch's CUDA reduction code.
+// See: aten/src/ATen/native/cuda/Reduce.cuh
+
 #include "Open3D/Core/CUDAState.cuh"
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/FuncionTraits.h"
@@ -36,6 +39,8 @@
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
+#include <thrust/pair.h>
+#include <thrust/tuple.h>
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -147,6 +152,7 @@ public:
         // threads per CTA to deliver performance for larger problem size.
         int64_t dim0;
         int64_t dim1;
+
         if (reduction_on_fastest_striding_dimension) {
             // Map block.x to the fastest reducing dimension. It implies:
             //   1. BlockXReduce is required.
@@ -398,13 +404,14 @@ OPEN3D_DEVICE void StridedIterate(func_t f,
     }
 }
 
+/// Combime() and Reduce() are the same for regular reduction ops.
 template <typename out_scalar_t, typename func_t>
-class func_wrapper_t {
+class RegularReduceOps {
     using arg_t = typename BinaryFunctionTraits<func_t>::arg0_t;
     using scalar_t = typename BinaryFunctionTraits<func_t>::arg1_t;
 
 public:
-    func_wrapper_t(const func_t& op) : reduce_func_(op) {}
+    RegularReduceOps(const func_t& op) : reduce_func_(op) {}
 
     static inline OPEN3D_DEVICE out_scalar_t Project(arg_t arg) {
         return (out_scalar_t)arg;
@@ -414,7 +421,14 @@ public:
         return WARP_SHFL_DOWN(arg, offset);
     }
 
-    OPEN3D_DEVICE inline arg_t Reduce(arg_t acc, scalar_t val) const {
+    OPEN3D_DEVICE inline arg_t Combine(arg_t acc, scalar_t val) const {
+        return reduce_func_(acc, val);
+    }
+
+    /// Idx is ignored for RegularReduceOps.
+    OPEN3D_DEVICE inline arg_t Reduce(arg_t acc,
+                                      scalar_t val,
+                                      int64_t idx) const {
         return reduce_func_(acc, val);
     }
 
@@ -423,8 +437,49 @@ private:
 };
 
 template <typename scalar_t, typename func_t>
-func_wrapper_t<scalar_t, func_t> func_wrapper(const func_t& op) {
-    return func_wrapper_t<scalar_t, func_t>{op};
+RegularReduceOps<scalar_t, func_t> WrapRegularReduceOps(const func_t& op) {
+    return RegularReduceOps<scalar_t, func_t>{op};
+}
+
+template <typename func_t>
+class ArgReduceOps {
+    using scalar_t = typename BinaryFunctionTraits<func_t>::arg1_t;
+    using index_t = int64_t;
+    using arg_t = thrust::pair<scalar_t, index_t>;
+
+public:
+    ArgReduceOps(const func_t comp_func) : comp_func_(comp_func) {}
+
+    static OPEN3D_DEVICE index_t Project(arg_t arg) { return arg.second; }
+
+    static OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
+        return arg_t(WARP_SHFL_DOWN(arg.first, offset),
+                     WARP_SHFL_DOWN(arg.second, offset));
+    }
+
+    /// Combine(pair<val_t, idx_t>, pair<val_t, idx_t>) -> pair<val_t, idx_t>.
+    /// Called at subsequent rounds of reduction, when values are already
+    /// associated with indices.
+    OPEN3D_DEVICE inline arg_t Combine(arg_t a, arg_t b) const {
+        return comp_func_(a.first, b.first) ? a : b;
+    }
+
+    /// Reduce(pair<val_t, idx_t>, val_t, idx_t) -> pair<val_t, idx_t>.
+    /// Called at the first round of reduction, when values are not yet
+    /// associated with indices.
+    OPEN3D_DEVICE inline arg_t Reduce(arg_t arg,
+                                      scalar_t val,
+                                      int64_t idx) const {
+        return comp_func_(arg.first, val) ? arg : arg_t(val, idx);
+    }
+
+private:
+    func_t comp_func_ = nullptr;
+};
+
+template <typename func_t>
+ArgReduceOps<func_t> WrapArgReduceOps(const func_t& comp_func) {
+    return ArgReduceOps<func_t>{comp_func};
 }
 
 template <typename scalar_t,
@@ -511,7 +566,7 @@ public:
                 }
             } else {
                 if (accumulate_) {
-                    value = ops_.Reduce(*acc, value);
+                    value = ops_.Combine(*acc, value);
                 }
                 if (final_output_) {
                     SetResultsToOutput(value, base_offsets[0]);
@@ -556,7 +611,8 @@ public:
             // compute
             StridedIterate<vt0, index_t>(
                     [&](index_t i, index_t idx) {
-                        value_list[i] = ops_.Reduce(value_list[i], values[i]);
+                        value_list[i] =
+                                ops_.Reduce(value_list[i], values[i], idx);
                     },
                     idx, config_.num_inputs_per_output_, config_.step_input_);
             // step offset
@@ -564,7 +620,7 @@ public:
         }
 #pragma unroll
         for (int i = 1; i < vt0; i++) {
-            value_list[0] = ops_.Reduce(value_list[0], value_list[i]);
+            value_list[0] = ops_.Combine(value_list[0], value_list[i]);
         }
         return value_list[0];
     }
@@ -579,7 +635,7 @@ public:
                 __syncthreads();
                 if (threadIdx.x < offset && threadIdx.x + offset < blockDim.x) {
                     arg_t other = shared[address_base + offset];
-                    value = ops_.Reduce(value, other);
+                    value = ops_.Combine(value, other);
                     shared[address_base] = value;
                 }
             }
@@ -590,7 +646,7 @@ public:
 
         for (int offset = 1; offset < dim_x; offset <<= 1) {
             arg_t other = ops_.WarpShflDown(value, offset);
-            value = ops_.Reduce(value, other);
+            value = ops_.Combine(value, other);
         }
         return value;
     }
@@ -602,7 +658,7 @@ public:
             __syncthreads();
             if (threadIdx.y < offset && threadIdx.y + offset < blockDim.y) {
                 arg_t other = shared[config_.SharedMemoryOffset(offset)];
-                value = ops_.Reduce(value, other);
+                value = ops_.Combine(value, other);
                 shared[config_.SharedMemoryOffset(0)] = value;
             }
         }
@@ -628,7 +684,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
-        return ops_.Reduce(*out, value);
+        return ops_.Combine(*out, value);
     }
 
     // This function should never be called --
@@ -704,7 +760,7 @@ public:
                      input_offset += step) {
                     index_t idx = config_.StagingMemoryOffset(input_offset);
                     arg_t next = reduce_buffer[idx];
-                    value = ops_.Reduce(value, next);
+                    value = ops_.Combine(value, next);
                 }
             } else {
                 index_t input_offset = threadIdx.y;
@@ -713,7 +769,7 @@ public:
                      input_offset += step) {
                     index_t idx = config_.StagingMemoryOffset(input_offset);
                     arg_t next = reduce_buffer[idx];
-                    value = ops_.Reduce(value, next);
+                    value = ops_.Combine(value, next);
                 }
             }
             value = BlockYReduce(value, shared_memory);
@@ -734,7 +790,7 @@ public:
                     }
                 } else {
                     if (accumulate_) {
-                        value = ops_.Reduce(*acc, value);
+                        value = ops_.Combine(*acc, value);
                     }
                     if (final_output_) {
                         SetResultsToOutput(value, base_offsets[0]);
@@ -816,7 +872,6 @@ class CUDAReductionEngine {
 public:
     CUDAReductionEngine(const CUDAReductionEngine&) = delete;
     CUDAReductionEngine& operator=(const CUDAReductionEngine&) = delete;
-
     CUDAReductionEngine(const Indexer& indexer) : indexer_(indexer) {}
 
     template <typename func_t, typename scalar_t>
@@ -830,20 +885,30 @@ public:
             utility::LogError("Reduction op must have exactly one input.");
         }
 
-        // Currently we require all types to be the same.
-        // It is possible to support different input and output types.
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
         using arg0_t = typename BinaryFunctionTraits<func_t>::arg0_t;
         using arg1_t = typename BinaryFunctionTraits<func_t>::arg1_t;
-        using res_t = typename BinaryFunctionTraits<func_t>::res_t;
         if (!std::is_same<scalar_t, arg0_t>::value ||
-            !std::is_same<scalar_t, arg1_t>::value ||
-            !std::is_same<scalar_t, res_t>::value) {
-            utility::LogError("Function type mismatch.");
+            !std::is_same<scalar_t, arg1_t>::value) {
+            utility::LogError(
+                    "Function input type must match with the identity's type.");
         }
 
-        RunReduce<scalar_t, scalar_t>(
-                indexer_, func_wrapper<scalar_t>(reduce_func), identity);
+        using res_t = typename BinaryFunctionTraits<func_t>::res_t;
+        if (std::is_same<res_t, bool>::value) {
+            // func_t is a comparison function (for arg-reduction).
+            // Signature: (scalar_t, scalar_t) -> bool.
+            auto arg_reduce_ops = WrapArgReduceOps(reduce_func);
+            RunReduce<scalar_t, int64_t>(
+                    indexer_, WrapArgReduceOps(reduce_func),
+                    thrust::pair<scalar_t, int64_t>(identity, 0));
+        } else {
+            // func_t is a regular reduction function.
+            // Signature: (scalar_t, scalar_t) -> scalar_t.
+            RunReduce<scalar_t, scalar_t>(
+                    indexer_, WrapRegularReduceOps<scalar_t>(reduce_func),
+                    identity);
+        }
     }
 
 private:
@@ -852,10 +917,11 @@ private:
     template <typename scalar_t,
               typename out_scalar_t,
               int vt0 = 4,
-              typename ops_t>
+              typename ops_t,
+              typename ident_t>
     static void RunReduce(Indexer& indexer,
                           const ops_t& ops,
-                          scalar_t identity,
+                          ident_t identity,
                           AccumulationBuffer* acc_buf_ptr = nullptr) {
         using traits = FunctionTraits<decltype(&ops_t::Reduce)>;
         using arg_t = typename traits::template arg<0>::type;
@@ -896,7 +962,7 @@ private:
             return;
         }
 
-        auto config = ReduceConfig(sizeof(arg_t), indexer);
+        ReduceConfig config(sizeof(arg_t), indexer);
 
         void* buffer = nullptr;
         void* semaphores = nullptr;
@@ -927,6 +993,7 @@ private:
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
                 <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
                         reduce_op);
+        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 

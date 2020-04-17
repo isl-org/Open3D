@@ -42,10 +42,19 @@ void ReductionCUDA(const Tensor& src,
                    const SizeVector& dims,
                    bool keepdim,
                    ReductionOpCode op_code) {
-    Dtype dtype = dst.GetDtype();
-    Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME, dims);
+    DtypePolicy dtype_policy;
+    if (regular_reduce_ops.find(op_code) != regular_reduce_ops.end()) {
+        dtype_policy = DtypePolicy::ASSERT_SAME;
+    } else if (arg_reduce_ops.find(op_code) != regular_reduce_ops.end()) {
+        dtype_policy = DtypePolicy::ASSERT_SAME_INPUTS;
+    } else {
+        utility::LogError("Unsupported op code.");
+    }
+
+    Indexer indexer({src}, dst, dtype_policy, dims);
     CUDAReductionEngine re(indexer);
 
+    Dtype dtype = src.GetDtype();
     CUDADeviceSwitcher switcher(src.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         switch (op_code) {
@@ -86,6 +95,28 @@ void ReductionCUDA(const Tensor& src,
                 } else {
                     re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                    -> scalar_t { return a > b ? a : b; },
+                           static_cast<scalar_t>(
+                                   std::numeric_limits<scalar_t>::min()));
+                }
+                break;
+            case ReductionOpCode::ArgMin:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError(
+                            "Zero-size Tensor does not suport ArgMin.");
+                } else {
+                    re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                                   -> bool { return a < b; },
+                           static_cast<scalar_t>(
+                                   std::numeric_limits<scalar_t>::max()));
+                }
+                break;
+            case ReductionOpCode::ArgMax:
+                if (indexer.NumWorkloads() == 0) {
+                    utility::LogError(
+                            "Zero-size Tensor does not suport ArgMax.");
+                } else {
+                    re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
+                                   -> bool { return a > b; },
                            static_cast<scalar_t>(
                                    std::numeric_limits<scalar_t>::min()));
                 }

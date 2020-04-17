@@ -576,6 +576,20 @@ Tensor Tensor::Max(const SizeVector& dims, bool keepdim) const {
     return dst;
 }
 
+Tensor Tensor::ArgMin(const SizeVector& dims) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), Dtype::Int64,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMin);
+    return dst;
+}
+
+Tensor Tensor::ArgMax(const SizeVector& dims) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), Dtype::Int64,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMax);
+    return dst;
+}
+
 Tensor Tensor::Sqrt() const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Sqrt);

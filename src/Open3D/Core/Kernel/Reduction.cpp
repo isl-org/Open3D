@@ -35,6 +35,27 @@ void Reduction(const Tensor& src,
                const SizeVector& dims,
                bool keepdim,
                ReductionOpCode op_code) {
+    // For ArgMin and ArgMax, keepdim == false, and dims can only contain one or
+    // all dimensions.
+    if (arg_reduce_ops.find(op_code) != arg_reduce_ops.end()) {
+        if (keepdim) {
+            utility::LogError("Arg-reduction keepdim must be false");
+        }
+        if (dims.size() != 1) {
+            std::vector<bool> seen_dims(src.NumDims(), false);
+            for (const int64_t& dim : dims) {
+                seen_dims[dim] = true;
+            }
+            if (!std::all_of(seen_dims.begin(), seen_dims.end(),
+                             [](bool seen) { return seen; })) {
+                utility::LogError(
+                        "Arg-reduction can only have 1 or all reduction "
+                        "dimentions. However, dims = {}.",
+                        dims);
+            }
+        }
+    }
+
     SizeVector keepdim_shape =
             shape_util::ReductionShape(src.GetShape(), dims, true);
     SizeVector non_keepdim_shape =
