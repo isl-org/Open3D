@@ -307,6 +307,11 @@ INSTALL_HEADERS(fmt)
 # PoissonRecon
 set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 
+# Faiss
+if (BUILD_FAISS)
+    message(STATUS "Building faiss from source")
+    include(faiss/faiss.cmake)
+endif()
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${dirent_INCLUDE_DIRS}
@@ -329,6 +334,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
      ${poisson_INCLUDE_DIRS}
+     ${FAISS_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
@@ -348,6 +354,7 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${JSONCPP_LIBRARY_DIRS}
     ${PNG_LIBRARY_DIRS}
     ${JPEG_TURBO_LIBRARY_DIRS}
+    ${FAISS_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
@@ -363,6 +370,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${qhull_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
+     ${FAISS_LIBRARIES}
 )
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
