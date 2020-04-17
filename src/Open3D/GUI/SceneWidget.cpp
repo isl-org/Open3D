@@ -681,25 +681,28 @@ SceneWidget::MSAALevel SceneWidget::GetMSAALevel() const {
 }
 
 void SceneWidget::GoToCameraPreset(CameraPreset preset) {
-    auto boundsMax = impl_->bounds.GetMaxBound();
-    auto maxDim =
-            std::max(boundsMax.x(), std::max(boundsMax.y(), boundsMax.z()));
-    maxDim = 1.5f * maxDim;
+    // To get the eye position we move maxDim away from the center in the
+    // appropriate direction. We cannot simply use maxDim as that value
+    // for that dimension, because the model may not be centered around
+    // (0, 0, 0), and this will result in the far plane being not being
+    // far enough and clipping the model. To test, use
+    // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
+    float maxDim = 1.25f * impl_->bounds.GetMaxExtent();
     Eigen::Vector3f center = impl_->bounds.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
         case CameraPreset::PLUS_X: {
-            eye = Eigen::Vector3f(maxDim, center.y(), center.z());
+            eye = Eigen::Vector3f(center.x() + maxDim, center.y(), center.z());
             up = Eigen::Vector3f(0, 1, 0);
             break;
         }
         case CameraPreset::PLUS_Y: {
-            eye = Eigen::Vector3f(center.x(), maxDim, center.z());
+            eye = Eigen::Vector3f(center.x(), center.y() + maxDim, center.z());
             up = Eigen::Vector3f(1, 0, 0);
             break;
         }
         case CameraPreset::PLUS_Z: {
-            eye = Eigen::Vector3f(center.x(), center.y(), maxDim);
+            eye = Eigen::Vector3f(center.x(), center.y(), center.z() + maxDim);
             up = Eigen::Vector3f(0, 1, 0);
             break;
         }
