@@ -1085,7 +1085,7 @@ GuiVisualizer::GuiVisualizer(
             n++;
         }
     }
-    settings.wgtIBLs->AddItem("Custom...");
+    settings.wgtIBLs->AddItem("Custom KTX file...");
     settings.wgtIBLs->SetOnValueChanged([this](const char *name, int) {
         std::string path = gui::Application::GetInstance().GetResourcePath();
         path += std::string("/") + name + "_ibl.ktx";
