@@ -488,7 +488,7 @@ struct GuiVisualizer::Impl {
               0.0f,
               0.0f,
               3.0f}},
-            {"Plastic (white)",
+            {"Plastic",
              {visualization::MaterialInstanceHandle::kBad,
               {1.0f, 1.0f, 1.0f},
               0.0f,
@@ -498,7 +498,7 @@ struct GuiVisualizer::Impl {
               0.2f,
               0.0f,
               3.0f}},
-            {"Glazed ceramic (white)",
+            {"Glazed ceramic",
              {visualization::MaterialInstanceHandle::kBad,
               {1.0f, 1.0f, 1.0f},
               0.0f,
@@ -562,6 +562,7 @@ struct GuiVisualizer::Impl {
 
         MaterialType selectedType = LIT;
         Materials currentMaterials;
+        bool userHasChangedColor = false;
         std::shared_ptr<gui::Combobox> wgtMaterialType;
 
         std::shared_ptr<gui::Combobox> wgtPrefabMaterial;
@@ -575,7 +576,14 @@ struct GuiVisualizer::Impl {
 
     void SetMaterialsToDefault(visualization::Renderer &renderer) {
         Materials defaults;
+        if (this->settings.userHasChangedColor) {
+            defaults.unlit.baseColor =
+                    this->settings.currentMaterials.unlit.baseColor;
+            defaults.lit.baseColor =
+                    this->settings.currentMaterials.lit.baseColor;
+        }
         this->settings.currentMaterials = defaults;
+
         auto hLit = renderer.AddMaterialInstance(this->hLitMaterial);
         this->settings.currentMaterials.lit.handle =
                 renderer.ModifyMaterial(hLit)
@@ -679,12 +687,16 @@ struct GuiVisualizer::Impl {
             visualization::Renderer &renderer,
             visualization::MaterialInstanceHandle mat,
             const LitMaterial &prefab) {
-        auto color = settings.wgtMaterialColor->GetValue();
-        Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
-                               color.GetBlue());
+        Eigen::Vector3f color;
+        if (settings.userHasChangedColor) {
+            auto c = settings.wgtMaterialColor->GetValue();
+            color = Eigen::Vector3f(c.GetRed(), c.GetGreen(), c.GetBlue());
+        } else {
+            color = prefab.baseColor;
+        }
         float pointSize = settings.wgtPointSize->GetDoubleValue();
         return renderer.ModifyMaterial(mat)
-                .SetColor("baseColor", color3)
+                .SetColor("baseColor", color)
                 .SetParameter("roughness", prefab.roughness)
                 .SetParameter("metallic", prefab.metallic)
                 .SetParameter("reflectance", prefab.reflectance)
@@ -1199,11 +1211,13 @@ GuiVisualizer::GuiVisualizer(
                 auto prefabIt = this->impl_->prefabMaterials.find(name);
                 if (prefabIt != this->impl_->prefabMaterials.end()) {
                     auto &prefab = prefabIt->second;
-                    impl_->settings.currentMaterials.lit.baseColor =
-                            prefab.baseColor;
-                    impl_->settings.wgtMaterialColor->SetValue(
-                            prefab.baseColor.x(), prefab.baseColor.y(),
-                            prefab.baseColor.z());
+                    if (!impl_->settings.userHasChangedColor) {
+                        impl_->settings.currentMaterials.lit.baseColor =
+                                prefab.baseColor;
+                        impl_->settings.wgtMaterialColor->SetValue(
+                                prefab.baseColor.x(), prefab.baseColor.y(),
+                                prefab.baseColor.z());
+                    }
                     for (const auto &handle : impl_->geometryHandles) {
                         auto mat = impl_->geometryMaterials[handle].lit.handle;
                         mat = impl_->CreateLitMaterial(renderer, mat, prefab);
@@ -1228,6 +1242,8 @@ GuiVisualizer::GuiVisualizer(
                     this->impl_->settings.currentMaterials.unlit.baseColor =
                             color3;
                 }
+                this->impl_->settings.userHasChangedColor = true;
+
                 for (const auto &handle : impl_->geometryHandles) {
                     visualization::MaterialInstanceHandle mat;
                     if (impl_->settings.selectedType == Impl::Settings::UNLIT) {
