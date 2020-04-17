@@ -677,8 +677,17 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
 ///
 /// \param radius    The search radius.
 ///
-/// \param hash_table_size    The size of the hash table as number of entries.
-///        This should be smaller than \p num_points.
+/// \param hash_table_row_splits_size    This is the length of the
+///        hash_table_row_splits array.
+///
+/// \param hash_table_row_splits    This is an output of the function
+///        BuildSpatialHashTableCPU.The row splits array describing the start
+///        and end of each cell.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCPU. This is array storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        array must be equal to the number of points.
 ///
 /// \param metric    One of L1, L2, Linf. Defines the distance metric for the
 ///        search.
@@ -711,7 +720,9 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                            size_t num_queries,
                            const T* const queries,
                            const T radius,
-                           size_t hash_table_size,
+                           size_t hash_table_row_splits_size,
+                           const uint32_t* const hash_table_row_splits,
+                           const uint32_t* const hash_table_index,
                            const Metric metric,
                            const bool ignore_query_point,
                            const bool return_distances,
@@ -738,29 +749,6 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
-    std::pair<uint32_t*, size_t> hash_table_index =
-            mem_temp.Alloc<uint32_t>(num_points);
-    std::pair<uint32_t*, size_t> hash_table_row_splits =
-            mem_temp.Alloc<uint32_t>(hash_table_size + 1);
-
-    {
-        std::pair<void*, size_t> build_hash_table_temp(nullptr, 0);
-        BuildSpatialHashTableCUDA(
-                stream, build_hash_table_temp.first,
-                build_hash_table_temp.second, texture_alignment, num_points,
-                points, radius, hash_table_row_splits.second,
-                hash_table_row_splits.first, hash_table_index.first);
-        build_hash_table_temp = mem_temp.Alloc(build_hash_table_temp.second);
-        if (!get_temp_size) {
-            BuildSpatialHashTableCUDA(
-                    stream, build_hash_table_temp.first,
-                    build_hash_table_temp.second, texture_alignment, num_points,
-                    points, radius, hash_table_row_splits.second,
-                    hash_table_row_splits.first, hash_table_index.first);
-        }
-        mem_temp.Free(build_hash_table_temp);
-    }
-
     const T voxel_size = 2 * radius;
     const T inv_voxel_size = 1 / voxel_size;
 
@@ -769,11 +757,10 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
     // we need this value to compute the size of the index array
     if (!get_temp_size) {
-        CountNeighbors(stream, query_neighbors_count.first,
-                       hash_table_index.first, hash_table_row_splits.first,
-                       hash_table_row_splits.second, queries, num_queries,
-                       points, num_points, inv_voxel_size, radius, metric,
-                       ignore_query_point);
+        CountNeighbors(stream, query_neighbors_count.first, hash_table_index,
+                       hash_table_row_splits, hash_table_row_splits_size,
+                       queries, num_queries, points, num_points, inv_voxel_size,
+                       radius, metric, ignore_query_point);
     }
 
     // we need this value to compute the size of the index array
@@ -829,8 +816,8 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
     if (!get_temp_size) {
         WriteNeighborsIndicesAndDistances(
                 stream, indices_ptr, distances_ptr, query_neighbors_row_splits,
-                hash_table_index.first, hash_table_row_splits.first,
-                hash_table_row_splits.second, queries, num_queries, points,
+                hash_table_index, hash_table_row_splits,
+                hash_table_row_splits_size, queries, num_queries, points,
                 num_points, inv_voxel_size, radius, metric, ignore_query_point,
                 return_distances);
     }

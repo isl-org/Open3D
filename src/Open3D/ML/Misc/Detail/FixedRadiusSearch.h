@@ -169,7 +169,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                            size_t num_queries,
                            const T* const queries,
                            const T radius,
-                           size_t hash_table_size,
+                           size_t hash_table_row_splits_size,
+                           const uint32_t* const hash_table_row_splits,
+                           const uint32_t* const hash_table_index,
                            OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
 
@@ -193,21 +195,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
         return;
     }
 
+    const size_t hash_table_size = hash_table_row_splits_size - 1;
+
     // use squared radius for L2 to avoid sqrt
     const T threshold = (METRIC == L2 ? radius * radius : radius);
-
-    // We count the number of points which map to each entry in the hash table
-    // and then compute a prefix sum.
-    // +1 for the size because we use the inclusive prefix sum algorithm later
-    // and want the first element to be 0.
-    std::vector<Index_t> row_splits(hash_table_size + 1, 0);
-
-    // stores the indices to the points for each hash entry. Start and end of
-    // the hash entries is defined by the row_splits.
-    std::vector<Index_t> index_table(num_points);
-
-    BuildSpatialHashTableCPU(num_points, points, radius, row_splits.size(),
-                             row_splits.data(), index_table.data());
 
     const T voxel_size = 2 * radius;
     const T inv_voxel_size = 1 / voxel_size;
@@ -252,14 +243,11 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                     int vec_i = 0;
 
                     for (size_t bin : bins_to_visit) {
-                        size_t begin_idx = row_splits[bin];
-                        // note that the size of row_splits is hash_table_size+1
-                        size_t end_idx = (bin + 1 < row_splits.size() - 1
-                                                  ? row_splits[bin + 1]
-                                                  : num_points);
+                        size_t begin_idx = hash_table_row_splits[bin];
+                        size_t end_idx = hash_table_row_splits[bin + 1];
 
                         for (size_t j = begin_idx; j < end_idx; ++j) {
-                            int32_t idx = index_table[j];
+                            int32_t idx = hash_table_index[j];
                             if (IGNORE_QUERY_POINT) {
                                 if (points[idx * 3 + 0] == pos.x() &&
                                     points[idx * 3 + 1] == pos.y() &&
@@ -353,14 +341,11 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                     int vec_i = 0;
 
                     for (size_t bin : bins_to_visit) {
-                        size_t begin_idx = row_splits[bin];
-                        // note that the size of row_splits is hash_table_size+1
-                        size_t end_idx = (bin + 1 < row_splits.size() - 1
-                                                  ? row_splits[bin + 1]
-                                                  : num_points);
+                        size_t begin_idx = hash_table_row_splits[bin];
+                        size_t end_idx = hash_table_row_splits[bin + 1];
 
                         for (size_t j = begin_idx; j < end_idx; ++j) {
-                            int32_t idx = index_table[j];
+                            int32_t idx = hash_table_index[j];
                             if (IGNORE_QUERY_POINT) {
                                 if (points[idx * 3 + 0] == pos.x() &&
                                     points[idx * 3 + 1] == pos.y() &&
@@ -436,8 +421,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///
 /// \param num_points    The number of points.
 ///
-/// \param points    Array with the 3D point positions. This may be the same
-///        array as \p queries.
+/// \param points    Array with the 3D point positions. This must be the array
+///        that was used for building the spatial hash table.
 ///
 /// \param num_queries    The number of query points.
 ///
@@ -446,8 +431,17 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///
 /// \param radius    The search radius.
 ///
-/// \param hash_table_size    The size of the hash table as number of entries.
-///        This should be smaller than \p num_points.
+/// \param hash_table_row_splits_size    This is the length of the
+///        hash_table_row_splits array.
+///
+/// \param hash_table_row_splits    This is an output of the function
+///        BuildSpatialHashTableCPU.The row splits array describing the start
+///        and end of each cell.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCPU. This is array storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        array must be equal to the number of points.
 ///
 /// \param metric    One of L1, L2, Linf. Defines the distance metric for the
 ///        search.
@@ -476,7 +470,9 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                           size_t num_queries,
                           const T* const queries,
                           const T radius,
-                          size_t hash_table_size,
+                          size_t hash_table_row_splits_size,
+                          const uint32_t* const hash_table_row_splits,
+                          const uint32_t* const hash_table_index,
                           const Metric metric,
                           const bool ignore_query_point,
                           const bool return_distances,
@@ -485,7 +481,8 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
 #define FN_PARAMETERS                                                     \
     query_neighbors_row_splits, num_points, points, num_queries, queries, \
-            radius, hash_table_size, output_allocator
+            radius, hash_table_row_splits_size, hash_table_row_splits,    \
+            hash_table_index, output_allocator
 
 #define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \
     if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&        \

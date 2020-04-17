@@ -46,11 +46,20 @@ public:
                 tensorflow::Tensor& query_neighbors_row_splits) {
         OutputAllocator<T> output_allocator(context);
 
+        std::vector<uint32_t> hash_table_row_splits(hash_table_size + 1);
+        std::vector<uint32_t> hash_table_index(points.shape().dim_size(0));
+
+        BuildSpatialHashTableCPU(
+                points.shape().dim_size(0), points.flat<T>().data(),
+                radius.scalar<T>()(), hash_table_row_splits.size(),
+                hash_table_row_splits.data(), hash_table_index.data());
+
         FixedRadiusSearchCPU(
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_size, metric,
+                radius.scalar<T>()(), hash_table_row_splits.size(),
+                hash_table_row_splits.data(), hash_table_index.data(), metric,
                 ignore_query_point, return_distances, output_allocator);
     }
 };

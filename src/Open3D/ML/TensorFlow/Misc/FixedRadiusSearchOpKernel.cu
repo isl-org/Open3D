@@ -53,18 +53,44 @@ public:
 
         OutputAllocator<T> output_allocator(context);
 
+        Tensor hash_table_row_splits;
+        TensorShape hash_table_row_splits_shape({ssize_t(hash_table_size + 1)});
+        OP_REQUIRES_OK(context,
+                       context->allocate_temp(DataTypeToEnum<uint32_t>::v(),
+                                              hash_table_row_splits_shape,
+                                              &hash_table_row_splits));
+
+        Tensor hash_table_index;
+        TensorShape hash_table_index_shape({points.shape().dim_size(0)});
+        OP_REQUIRES_OK(context,
+                       context->allocate_temp(DataTypeToEnum<uint32_t>::v(),
+                                              hash_table_index_shape,
+                                              &hash_table_index));
+
         void* temp_ptr = nullptr;
         size_t temp_size = 0;
+        size_t temp_size_hash_table = 0;
 
         // determine temp_size
+        BuildSpatialHashTableCUDA(device.stream(), temp_ptr,
+                                  temp_size_hash_table, texture_alignment,
+                                  points.shape().dim_size(0),
+                                  points.flat<T>().data(), radius.scalar<T>()(),
+                                  hash_table_size + 1,
+                                  hash_table_row_splits.flat<uint32_t>().data(),
+                                  hash_table_index.flat<uint32_t>().data());
+
         FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_size, metric,
+                radius.scalar<T>()(), hash_table_row_splits.shape().dim_size(0),
+                hash_table_row_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
 
+        temp_size = std::max(temp_size, temp_size_hash_table);
         Tensor temp_tensor;
         TensorShape temp_shape({ssize_t(temp_size)});
         OP_REQUIRES_OK(context,
@@ -73,12 +99,22 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the search
+        BuildSpatialHashTableCUDA(device.stream(), temp_ptr,
+                                  temp_size_hash_table, texture_alignment,
+                                  points.shape().dim_size(0),
+                                  points.flat<T>().data(), radius.scalar<T>()(),
+                                  hash_table_size + 1,
+                                  hash_table_row_splits.flat<uint32_t>().data(),
+                                  hash_table_index.flat<uint32_t>().data());
+
         FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_size, metric,
+                radius.scalar<T>()(), hash_table_row_splits.shape().dim_size(0),
+                hash_table_row_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
     }
 
