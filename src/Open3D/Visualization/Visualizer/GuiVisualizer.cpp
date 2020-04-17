@@ -562,15 +562,18 @@ struct GuiVisualizer::Impl {
 
         MaterialType selectedType = LIT;
         Materials currentMaterials;
-        bool userHasChangedColor = false;
         std::shared_ptr<gui::Combobox> wgtMaterialType;
 
         std::shared_ptr<gui::Combobox> wgtPrefabMaterial;
         std::shared_ptr<gui::ColorEdit> wgtMaterialColor;
         std::shared_ptr<gui::Slider> wgtPointSize;
 
+        bool userHasChangedColor = false;
+        bool userHasChangedLighting = false;
+
         void SetCustomProfile() {
             wgtLightingProfile->SetSelectedIndex(gLightingProfiles.size());
+            userHasChangedLighting = true;
         }
     } settings;
 
@@ -1031,6 +1034,7 @@ GuiVisualizer::GuiVisualizer(
                 if (index < int(gLightingProfiles.size())) {
                     this->impl_->SetLightingProfile(this->GetRenderer(),
                                                     gLightingProfiles[index]);
+                    this->impl_->settings.userHasChangedLighting = true;
                 } else {
                     this->impl_->settings.wgtAdvanced->SetIsOpen(true);
                     this->SetNeedsLayout();
@@ -1065,6 +1069,7 @@ GuiVisualizer::GuiVisualizer(
         } else {
             renderScene->SetIndirectLight(IndirectLightHandle());
         }
+        this->impl_->settings.userHasChangedLighting = true;
     });
     checkboxes->AddChild(settings.wgtIBLEnabled);
     settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");
@@ -1397,7 +1402,8 @@ void GuiVisualizer::SetGeometry(
             }
         }
 
-        if (nPointClouds == geometries.size()) {
+        if (nPointClouds == geometries.size()
+            && !impl_->settings.userHasChangedLighting) {
             impl_->SetLightingProfile(GetRenderer(), kPointCloudProfileName);
         }
         impl_->settings.wgtPointSize->SetEnabled(nPointClouds > 0);
