@@ -45,6 +45,7 @@ struct Widget::Impl {
     std::vector<std::shared_ptr<Widget>> children;
     bool isVisible = true;
     bool isEnabled = true;
+    bool popDisabledFlagsAtEndOfDraw = false;
 };
 
 Widget::Widget() : impl_(new Widget::Impl()) {}
@@ -119,10 +120,17 @@ void Widget::DrawImGuiPushEnabledState() {
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
                             ImGui::GetStyle().Alpha * 0.5f);
     }
+    // As an immediate mode GUI, responses to UI events can happen
+    // during a draw. Store what the disabled flag was at the
+    // beginning of the draw, so we know how many things to pop
+    // to clean up. (An example of when this is needed is a reset
+    // button: after clicking it, it will probably disable itself
+    // since there is nothing to reset now)
+    impl_->popDisabledFlagsAtEndOfDraw = !IsEnabled();
 }
 
 void Widget::DrawImGuiPopEnabledState() {
-    if (!IsEnabled()) {
+    if (impl_->popDisabledFlagsAtEndOfDraw) {
         ImGui::PopStyleVar();
         ImGui::PopItemFlag();
     }
