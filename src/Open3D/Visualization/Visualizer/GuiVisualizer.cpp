@@ -1387,11 +1387,15 @@ void GuiVisualizer::SetGeometry(
         impl_->settings.wgtPointSize->SetEnabled(nPointClouds > 0);
     }
 
-    // Add axes
+    // Add axes. Axes length should be the longer of the bounds extent
+    // or 25% of the distance from the origin. The latter is necessary
+    // so that the axis is big enough to be visible even if the object
+    // is far from the origin. See caterpillar.ply from Tanks & Temples.
     auto axisLength = bounds.GetMaxExtent();
-    if (axisLength < 0.001) {
+    if (axisLength < 0.001) {  // avoid div by zero errors in CreateAxes()
         axisLength = 1.0;
     }
+    axisLength = std::max(axisLength, 0.25 * bounds.GetCenter().norm());
     auto axes = CreateAxes(axisLength);
     impl_->settings.hAxes = scene3d->AddGeometry(*axes);
     scene3d->SetGeometryShadows(impl_->settings.hAxes, false, false);
