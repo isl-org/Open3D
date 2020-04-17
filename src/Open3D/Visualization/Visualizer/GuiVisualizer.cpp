@@ -435,7 +435,9 @@ struct GuiVisualizer::Impl {
 
     struct UnlitMaterial {
         visualization::MaterialInstanceHandle handle;
-        Eigen::Vector3f baseColor = {1.f, 1.f, 1.f};
+        // The base color should NOT be {1, 1, 1}, because then the
+        // model will be invisible against the default white background.
+        Eigen::Vector3f baseColor = {0.9f, 0.9f, 0.9f};
         float pointSize = 5.f;
     };
 
@@ -588,7 +590,7 @@ struct GuiVisualizer::Impl {
                         .SetParameter("pointSize", defaults.lit.pointSize)
                         .Finish();
 
-        auto hUnlit = renderer.AddMaterialInstance(this->hLitMaterial);
+        auto hUnlit = renderer.AddMaterialInstance(this->hUnlitMaterial);
         this->settings.currentMaterials.unlit.handle =
                 renderer.ModifyMaterial(hUnlit)
                         .SetColor("baseColor", defaults.unlit.baseColor)
@@ -1083,7 +1085,7 @@ GuiVisualizer::GuiVisualizer(
             n++;
         }
     }
-    settings.wgtIBLs->AddItem("Custom...");
+    settings.wgtIBLs->AddItem("Custom KTX file...");
     settings.wgtIBLs->SetOnValueChanged([this](const char *name, int) {
         std::string path = gui::Application::GetInstance().GetResourcePath();
         path += std::string("/") + name + "_ibl.ktx";
