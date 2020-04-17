@@ -384,7 +384,7 @@ class JupyterDocsBuilder:
             )
 
             if execute:
-                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=None)
+                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
