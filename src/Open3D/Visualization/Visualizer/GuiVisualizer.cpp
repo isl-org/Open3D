@@ -1390,7 +1390,7 @@ void GuiVisualizer::SetGeometry(
     // so that the axis is big enough to be visible even if the object
     // is far from the origin. See caterpillar.ply from Tanks & Temples.
     auto axisLength = bounds.GetMaxExtent();
-    if (axisLength < 0.001) { // avoid div by zero errors in CreateAxes()
+    if (axisLength < 0.001) {  // avoid div by zero errors in CreateAxes()
         axisLength = 1.0;
     }
     axisLength = std::max(axisLength, 0.25 * bounds.GetCenter().norm());
