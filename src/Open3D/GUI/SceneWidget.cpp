@@ -609,7 +609,12 @@ void SceneWidget::SetupCamera(
     if (f.height > 0) {
         aspect = float(f.width) / float(f.height);
     }
-    auto far = std::max(MIN_FAR_PLANE, 2.0 * geometryBounds.GetExtent().norm());
+    // The far plane needs to be the max absolute distance, not just the
+    // max extent, so that axes are visible if requested.
+    // See also RotationInteractor::UpdateCameraFarPlane().
+    auto far = std::max(MIN_FAR_PLANE,
+                        2.0 * std::max(geometryBounds.GetMinBound().norm(),
+                                       geometryBounds.GetMaxBound().norm()));
     GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
                                visualization::Camera::FovType::Vertical);
 

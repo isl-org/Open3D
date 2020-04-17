@@ -157,6 +157,9 @@ void ModelInteractor::StartMouseDrag() {
     // Show axes while user is dragging
     isAxesVisible_ = scene_->GetEntityEnabled(axes_);
     scene_->SetEntityEnabled(axes_, true);
+
+    // Fix far plane if the center of the model is offset from origin
+    Super::UpdateCameraFarPlane();
 }
 
 void ModelInteractor::UpdateMouseDragUI() {}

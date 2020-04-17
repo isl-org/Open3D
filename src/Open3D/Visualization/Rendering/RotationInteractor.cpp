@@ -94,11 +94,16 @@ void RotationInteractor::EndMouseDrag() {}
 void RotationInteractor::UpdateCameraFarPlane() {
     // Remember that the camera matrix is not necessarily the
     // interactor's matrix.
+    // Also, the far plane needs to be able to show the
+    // axis if it is visible, so we need the far plane to include
+    // the origin. (See also SceneWidget::SetupCamera())
     auto pos = camera_->GetModelMatrix().translation().cast<double>();
-    auto far1 = (modelBounds_.GetMinBound() - pos).norm();
-    auto far2 = (modelBounds_.GetMaxBound() - pos).norm();
+    auto far1 = modelBounds_.GetMinBound().norm();
+    auto far2 = modelBounds_.GetMaxBound().norm();
+    auto far3 = pos.norm();
     auto modelSize = 2.0 * modelBounds_.GetExtent().norm();
-    auto far = std::max(minFarPlane_, std::max(far1, far2) + modelSize);
+    auto far = std::max(minFarPlane_,
+                        std::max(std::max(far1, far2), far3) + modelSize);
     float aspect = 1.0f;
     if (viewHeight_ > 0) {
         aspect = float(viewWidth_) / float(viewHeight_);
