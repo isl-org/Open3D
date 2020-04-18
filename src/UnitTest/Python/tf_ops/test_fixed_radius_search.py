@@ -76,14 +76,16 @@ def test_fixed_radius_search(dtype, device_name, num_points_queries, radius,
     gt_neighbors_index = tree.query_ball_point(queries, radius, p=p_norm)
 
     with tf.device(device_name):
-        ans = ml3d.ops.fixed_radius_search(
+        layer = ml3d.layers.FixedRadiusSearch(
+            metric=metric,
+            ignore_query_point=ignore_query_point,
+            return_distances=return_distances)
+        ans = layer(
             points,
             queries,
             radius,
             hash_table_size_factor,
-            metric,
-            ignore_query_point=ignore_query_point,
-            return_distances=return_distances)
+        )
         assert device_name in ans.neighbors_index.device
 
     # convert to numpy for convenience
@@ -129,11 +131,8 @@ def test_fixed_radius_search_empty_point_sets(device_name):
     queries = rng.random(size=(0, 3)).astype(dtype)
 
     with tf.device(device_name):
-        ans = ml3d.ops.fixed_radius_search(points,
-                                           queries,
-                                           radius,
-                                           hash_table_size_factor,
-                                           return_distances=True)
+        layer = ml3d.layers.FixedRadiusSearch(return_distances=True)
+        ans = layer(points, queries, radius, hash_table_size_factor)
         assert device_name in ans.neighbors_index.device
 
     assert ans.neighbors_index.shape.as_list() == [0]
@@ -145,11 +144,8 @@ def test_fixed_radius_search_empty_point_sets(device_name):
     queries = rng.random(size=(100, 3)).astype(dtype)
 
     with tf.device(device_name):
-        ans = ml3d.ops.fixed_radius_search(points,
-                                           queries,
-                                           radius,
-                                           hash_table_size_factor,
-                                           return_distances=True)
+        layer = ml3d.layers.FixedRadiusSearch(return_distances=True)
+        ans = layer(points, queries, radius, hash_table_size_factor)
         assert device_name in ans.neighbors_index.device
 
     assert ans.neighbors_index.shape.as_list() == [0]
