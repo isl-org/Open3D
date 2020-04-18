@@ -488,7 +488,7 @@ struct GuiVisualizer::Impl {
               0.0f,
               0.0f,
               3.0f}},
-            {"Plastic (white)",
+            {"Plastic",
              {visualization::MaterialInstanceHandle::kBad,
               {1.0f, 1.0f, 1.0f},
               0.0f,
@@ -498,7 +498,7 @@ struct GuiVisualizer::Impl {
               0.2f,
               0.0f,
               3.0f}},
-            {"Glazed ceramic (white)",
+            {"Glazed ceramic",
              {visualization::MaterialInstanceHandle::kBad,
               {1.0f, 1.0f, 1.0f},
               0.0f,
@@ -566,16 +566,28 @@ struct GuiVisualizer::Impl {
 
         std::shared_ptr<gui::Combobox> wgtPrefabMaterial;
         std::shared_ptr<gui::ColorEdit> wgtMaterialColor;
+        std::shared_ptr<gui::Button> wgtResetMaterialColor;
         std::shared_ptr<gui::Slider> wgtPointSize;
+
+        bool userHasChangedColor = false;
+        bool userHasChangedLighting = false;
 
         void SetCustomProfile() {
             wgtLightingProfile->SetSelectedIndex(gLightingProfiles.size());
+            userHasChangedLighting = true;
         }
     } settings;
 
     void SetMaterialsToDefault(visualization::Renderer &renderer) {
         Materials defaults;
+        if (this->settings.userHasChangedColor) {
+            defaults.unlit.baseColor =
+                    this->settings.currentMaterials.unlit.baseColor;
+            defaults.lit.baseColor =
+                    this->settings.currentMaterials.lit.baseColor;
+        }
         this->settings.currentMaterials = defaults;
+
         auto hLit = renderer.AddMaterialInstance(this->hLitMaterial);
         this->settings.currentMaterials.lit.handle =
                 renderer.ModifyMaterial(hLit)
@@ -635,6 +647,8 @@ struct GuiVisualizer::Impl {
                         this->settings.currentMaterials.lit.baseColor.y(),
                         this->settings.currentMaterials.lit.baseColor.z());
                 this->settings.wgtMaterialColor->SetValue(color);
+                this->settings.wgtResetMaterialColor->SetEnabled(
+                        this->settings.userHasChangedColor);
                 break;
             }
             case MaterialType::UNLIT: {
@@ -649,15 +663,19 @@ struct GuiVisualizer::Impl {
                         this->settings.currentMaterials.unlit.baseColor.y(),
                         this->settings.currentMaterials.unlit.baseColor.z());
                 this->settings.wgtMaterialColor->SetValue(color);
+                this->settings.wgtResetMaterialColor->SetEnabled(
+                        this->settings.userHasChangedColor);
                 break;
             }
             case MaterialType::NORMAL_MAP:
                 view->SetMode(ViewMode::Normals);
                 this->settings.wgtMaterialColor->SetEnabled(false);
+                this->settings.wgtResetMaterialColor->SetEnabled(false);
                 break;
             case MaterialType::DEPTH:
                 view->SetMode(ViewMode::Depth);
                 this->settings.wgtMaterialColor->SetEnabled(false);
+                this->settings.wgtResetMaterialColor->SetEnabled(false);
                 break;
         }
     }
@@ -679,12 +697,16 @@ struct GuiVisualizer::Impl {
             visualization::Renderer &renderer,
             visualization::MaterialInstanceHandle mat,
             const LitMaterial &prefab) {
-        auto color = settings.wgtMaterialColor->GetValue();
-        Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
-                               color.GetBlue());
+        Eigen::Vector3f color;
+        if (settings.userHasChangedColor) {
+            auto c = settings.wgtMaterialColor->GetValue();
+            color = Eigen::Vector3f(c.GetRed(), c.GetGreen(), c.GetBlue());
+        } else {
+            color = prefab.baseColor;
+        }
         float pointSize = settings.wgtPointSize->GetDoubleValue();
         return renderer.ModifyMaterial(mat)
-                .SetColor("baseColor", color3)
+                .SetColor("baseColor", color)
                 .SetParameter("roughness", prefab.roughness)
                 .SetParameter("metallic", prefab.metallic)
                 .SetParameter("reflectance", prefab.reflectance)
@@ -695,6 +717,25 @@ struct GuiVisualizer::Impl {
                 .Finish();
     }
 
+    void SetMaterialByName(visualization::Renderer &renderer,
+                           const std::string &name) {
+        auto prefabIt = this->prefabMaterials.find(name);
+        if (prefabIt != this->prefabMaterials.end()) {
+            auto &prefab = prefabIt->second;
+            if (!this->settings.userHasChangedColor) {
+                this->settings.currentMaterials.lit.baseColor =
+                        prefab.baseColor;
+                this->settings.wgtMaterialColor->SetValue(prefab.baseColor.x(),
+                                                          prefab.baseColor.y(),
+                                                          prefab.baseColor.z());
+            }
+            for (const auto &handle : this->geometryHandles) {
+                auto mat = this->geometryMaterials[handle].lit.handle;
+                mat = this->CreateLitMaterial(renderer, mat, prefab);
+                this->scene->GetScene()->AssignMaterial(handle, mat);
+            }
+        }
+    }
     void SetLightingProfile(visualization::Renderer &renderer,
                             const std::string &name) {
         for (size_t i = 0; i < gLightingProfiles.size(); ++i) {
@@ -1019,6 +1060,7 @@ GuiVisualizer::GuiVisualizer(
                 if (index < int(gLightingProfiles.size())) {
                     this->impl_->SetLightingProfile(this->GetRenderer(),
                                                     gLightingProfiles[index]);
+                    this->impl_->settings.userHasChangedLighting = true;
                 } else {
                     this->impl_->settings.wgtAdvanced->SetIsOpen(true);
                     this->SetNeedsLayout();
@@ -1053,6 +1095,7 @@ GuiVisualizer::GuiVisualizer(
         } else {
             renderScene->SetIndirectLight(IndirectLightHandle());
         }
+        this->impl_->settings.userHasChangedLighting = true;
     });
     checkboxes->AddChild(settings.wgtIBLEnabled);
     settings.wgtDirectionalEnabled = std::make_shared<gui::Checkbox>("Sun");
@@ -1194,22 +1237,9 @@ GuiVisualizer::GuiVisualizer(
     }
     settings.wgtPrefabMaterial->SetSelectedValue(kDefaultMaterialName.c_str());
     settings.wgtPrefabMaterial->SetOnValueChanged(
-            [this, renderScene](const char *name, int) {
+            [this](const char *name, int) {
                 auto &renderer = this->GetRenderer();
-                auto prefabIt = this->impl_->prefabMaterials.find(name);
-                if (prefabIt != this->impl_->prefabMaterials.end()) {
-                    auto &prefab = prefabIt->second;
-                    impl_->settings.currentMaterials.lit.baseColor =
-                            prefab.baseColor;
-                    impl_->settings.wgtMaterialColor->SetValue(
-                            prefab.baseColor.x(), prefab.baseColor.y(),
-                            prefab.baseColor.z());
-                    for (const auto &handle : impl_->geometryHandles) {
-                        auto mat = impl_->geometryMaterials[handle].lit.handle;
-                        mat = impl_->CreateLitMaterial(renderer, mat, prefab);
-                        renderScene->AssignMaterial(handle, mat);
-                    }
-                }
+                impl_->SetMaterialByName(renderer, name);
             });
 
     matGrid->AddChild(std::make_shared<gui::Label>("Material"));
@@ -1221,13 +1251,14 @@ GuiVisualizer::GuiVisualizer(
                 auto &renderer = this->GetRenderer();
                 Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
                                        color.GetBlue());
-                if (this->impl_->settings.selectedType == Impl::Settings::LIT) {
-                    this->impl_->settings.currentMaterials.lit.baseColor =
-                            color3;
+                if (impl_->settings.selectedType == Impl::Settings::LIT) {
+                    impl_->settings.currentMaterials.lit.baseColor = color3;
                 } else {
-                    this->impl_->settings.currentMaterials.unlit.baseColor =
-                            color3;
+                    impl_->settings.currentMaterials.unlit.baseColor = color3;
                 }
+                impl_->settings.userHasChangedColor = true;
+                impl_->settings.wgtResetMaterialColor->SetEnabled(true);
+
                 for (const auto &handle : impl_->geometryHandles) {
                     visualization::MaterialInstanceHandle mat;
                     if (impl_->settings.selectedType == Impl::Settings::UNLIT) {
@@ -1241,9 +1272,24 @@ GuiVisualizer::GuiVisualizer(
                     renderScene->AssignMaterial(handle, mat);
                 }
             });
+    settings.wgtResetMaterialColor = std::make_shared<SmallButton>("Reset");
+    settings.wgtResetMaterialColor->SetEnabled(
+            impl_->settings.userHasChangedColor);
+    settings.wgtResetMaterialColor->SetOnClicked([this]() {
+        auto &renderer = this->GetRenderer();
+        impl_->settings.userHasChangedColor = false;
+        impl_->settings.wgtResetMaterialColor->SetEnabled(false);
+        impl_->SetMaterialByName(
+                renderer,
+                impl_->settings.wgtPrefabMaterial->GetSelectedValue());
+    });
 
     matGrid->AddChild(std::make_shared<gui::Label>("Color"));
-    matGrid->AddChild(settings.wgtMaterialColor);
+    auto colorLayout = std::make_shared<gui::Horiz>();
+    colorLayout->AddChild(settings.wgtMaterialColor);
+    colorLayout->AddFixed(0.25 * em);
+    colorLayout->AddChild(impl_->settings.wgtResetMaterialColor);
+    matGrid->AddChild(colorLayout);
 
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
     settings.wgtPointSize = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
@@ -1381,7 +1427,8 @@ void GuiVisualizer::SetGeometry(
             }
         }
 
-        if (nPointClouds == geometries.size()) {
+        if (nPointClouds == geometries.size() &&
+            !impl_->settings.userHasChangedLighting) {
             impl_->SetLightingProfile(GetRenderer(), kPointCloudProfileName);
         }
         impl_->settings.wgtPointSize->SetEnabled(nPointClouds > 0);
