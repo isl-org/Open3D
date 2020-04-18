@@ -310,8 +310,32 @@ set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 # Faiss
 if (BUILD_FAISS)
     message(STATUS "Building faiss from source")
-    include(faiss/faiss.cmake)
+    #set(faiss_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss)
+    set(faiss_LIBRARIES faiss)
+    set(faiss_LIBRARY_DIRS /opt/anaconda3/pkgs/mkl-2019.3-199/lib)
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss"  faiss_INCLUDE_DIRS)
+    #set(lib_name "faiss")
+    #set(faiss_LIB_FILES
+    #    ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+    #)
+    #target_include_directories(faiss SYSTEM INTERFACE
+#	${3RDPARTY_INSTALL_PREFIX}/include
+#    )
+#    target_link_libraries(faiss INTERFACE
+#        ${turbojpeg_LIB_FILES}
+#    )
 endif()
+
+message(STATUS "#### ${JPEG_TURBO_INCLUDE_DIRS}")
+message(STATUS "#### ${JPEG_TURBO_LIBRARY_DIRS}")
+message(STATUS "#### ${JPEG_TURBO_LIBRARIES}")
+
+message(STATUS "#### ${qhull_INCLUDE_DIRS}")
+message(STATUS "#### ${}")
+message(STATUS "#### ${qhull_LIBRARIES}")
+
+message(STATUS "#### ${JSONCPP_LIBRARY_DIRS}")
+message(STATUS "#### ${JSONCPP_LIBRARIES}")
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${dirent_INCLUDE_DIRS}
@@ -334,7 +358,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${fmt_INCLUDE_DIRS}
      ${k4a_INCLUDE_DIRS}
      ${poisson_INCLUDE_DIRS}
-     ${FAISS_INCLUDE_DIRS}
+     ${faiss_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
@@ -354,7 +378,7 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${JSONCPP_LIBRARY_DIRS}
     ${PNG_LIBRARY_DIRS}
     ${JPEG_TURBO_LIBRARY_DIRS}
-    ${FAISS_LIBRARY_DIRS}
+    ${faiss_LIBRARY_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES
@@ -370,8 +394,11 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${qhull_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
-     ${FAISS_LIBRARIES}
+     ${faiss_LIBRARIES}
 )
+message(STATUS "$$$ ${3RDPARTY_INCLUDE_DIRS}")
+message(STATUS "$$$ ${3RDPARTY_LIBRARY_DIRS}")
+message(STATUS "$$$ ${3RDPARTY_LIBRARIES}")
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
@@ -388,6 +415,9 @@ if (NOT BUILD_PNG)
 endif ()
 if (NOT BUILD_TINYFILEDIALOGS)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${tinyfiledialogs_LIBRARIES})
+endif ()
+if (NOT BUILD_FAISS)
+    list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${faiss_LIBRARIES})
 endif ()
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
