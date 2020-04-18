@@ -264,24 +264,32 @@ std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axisLength) {
     return mesh_frame;
 }
 
-struct SmartMode {
-    static bool PointCloudHasUniformColor(const geometry::PointCloud &pcd) {
-        if (!pcd.HasColors()) {
-            return true;
+bool ColorArrayIsUniform(const std::vector<Eigen::Vector3d> &colors) {
+    static const double e = 1.0 / 255.0;
+    static const double kSqEpsilon = Eigen::Vector3d(e, e, e).squaredNorm();
+    const auto &color = colors[0];
+
+    for (const auto &c : colors) {
+        if ((color - c).squaredNorm() > kSqEpsilon) {
+            return false;
         }
+    }
 
-        static const double e = 1.0 / 255.0;
-        static const double kSqEpsilon = Eigen::Vector3d(e, e, e).squaredNorm();
-        const auto &color = pcd.colors_[0];
+    return true;
+}
 
-        for (const auto &c : pcd.colors_) {
-            if ((color - c).squaredNorm() > kSqEpsilon) {
-                return false;
-            }
-        }
-
+bool PointCloudHasUniformColor(const geometry::PointCloud &pcd) {
+    if (!pcd.HasColors()) {
         return true;
     }
+    return ColorArrayIsUniform(pcd.colors_);
+};
+
+bool MeshHasUniformColor(const geometry::MeshBase &mesh) {
+    if (!mesh.HasVertexColors()) {
+        return true;
+    }
+    return ColorArrayIsUniform(mesh.vertex_colors_);
 };
 
 std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
@@ -1320,18 +1328,20 @@ void GuiVisualizer::SetGeometry(
 
         visualization::MaterialInstanceHandle selectedMaterial;
 
+        // If a point cloud or mesh has no vertex colors or a single uniform
+        // color (usually white), then we want to display it normally, that is,
+        // lit. But if the cloud/mesh has differing vertex colors, then we
+        // assume that the vertex colors have the lighting value baked in
+        // (for example, fountain.ply at http://qianyi.info/scenedata.html)
         switch (g->GetGeometryType()) {
             case geometry::Geometry::GeometryType::PointCloud: {
                 nPointClouds++;
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
-                if (pcd->HasColors()) {
+                if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
                     selectedMaterial = materials.unlit.handle;
-
-                    if (SmartMode::PointCloudHasUniformColor(*pcd)) {
-                        selectedMaterial = materials.lit.handle;
-                    }
+                    nUnlit += 1;
                 } else {
                     selectedMaterial = materials.lit.handle;
                 }
@@ -1345,7 +1355,7 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::TriangleMesh>(
                                 g);
 
-                if (mesh->HasVertexColors()) {
+                if (mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) {
                     selectedMaterial = materials.unlit.handle;
                     nUnlit += 1;
                 } else {
