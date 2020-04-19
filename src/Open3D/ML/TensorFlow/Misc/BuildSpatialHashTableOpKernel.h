@@ -65,7 +65,7 @@ public:
                         hash_table_size_factor_tensor.shape().DebugString()));
         const double hash_table_size_factor =
                 hash_table_size_factor_tensor.scalar<double>()();
-        const size_t hash_table_size = std::min<int64_t>(
+        const int64_t hash_table_size = std::min<int64_t>(
                 std::max<int64_t>(
                         hash_table_size_factor * points.shape().dim_size(0), 1),
                 max_hash_table_size);
