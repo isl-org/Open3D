@@ -476,26 +476,6 @@ struct GuiVisualizer::Impl {
               0.0f,
               0.0f,
               3.0f}},
-            {"Copper",
-             {visualization::MaterialInstanceHandle::kBad,
-              {0.955f, 0.637f, 0.538f},
-              1.0f,
-              0.3f,
-              0.9f,
-              0.0f,
-              0.0f,
-              0.0f,
-              3.0f}},
-            {"Iron",
-             {visualization::MaterialInstanceHandle::kBad,
-              {0.560f, 0.570f, 0.580f},
-              1.0f,
-              0.5f,
-              0.9f,
-              0.0f,
-              0.0f,
-              0.0f,
-              3.0f}},
             {"Plastic",
              {visualization::MaterialInstanceHandle::kBad,
               {1.0f, 1.0f, 1.0f},
@@ -1461,7 +1441,6 @@ void GuiVisualizer::SetGeometry(
     impl_->scene->SetModel(impl_->settings.hAxes, objects);
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
-    impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_OBJ);
 }
 
 void GuiVisualizer::Layout(const gui::Theme &theme) {
