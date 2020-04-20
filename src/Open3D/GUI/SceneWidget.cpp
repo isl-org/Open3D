@@ -761,6 +761,15 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 }
 
 Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
+    // Disable MSAA while rotating, since we will be redrawing frequently.
+    // This will give a snappier feel to mouse movements, especially for
+    // point clouds, which are a little slow.
+    if (e.type == MouseEvent::BUTTON_DOWN) {
+        SetMSAALevel(MSAALevel::FAST);
+    } else if (e.type == MouseEvent::BUTTON_UP) {
+        SetMSAALevel(MSAALevel::BEST);
+    }
+
     impl_->controls->Mouse(e);
     return Widget::EventResult::CONSUMED;
 }
