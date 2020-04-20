@@ -783,20 +783,23 @@ void Window::OnResize() {
 
     if (impl_->wantsAutoSizeAndCenter) {
         impl_->wantsAutoSizeAndCenter = false;
-        ImGui::NewFrame();
-        ImGui::PushFont(impl_->imgui.systemFont);
-        auto pref = CalcPreferredSize();
-        Size size(pref.width / this->impl_->imgui.scaling,
-                  pref.height / this->impl_->imgui.scaling);
-        glfwSetWindowSize(impl_->window, size.width, size.height);
         auto* monitor = glfwGetWindowMonitor(impl_->window);
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        glfwSetWindowPos(impl_->window, (mode->width - size.width) / 2,
-                         (mode->height - size.height) / 2);
-
-        ImGui::PopFont();
-        ImGui::EndFrame();
-        OnResize();
+        if (monitor) {
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            if (mode) {
+                ImGui::NewFrame();
+                ImGui::PushFont(impl_->imgui.systemFont);
+                auto pref = CalcPreferredSize();
+                Size size(pref.width / this->impl_->imgui.scaling,
+                          pref.height / this->impl_->imgui.scaling);
+                glfwSetWindowSize(impl_->window, size.width, size.height);
+                glfwSetWindowPos(impl_->window, (mode->width - size.width) / 2,
+                                 (mode->height - size.height) / 2);
+                ImGui::PopFont();
+                ImGui::EndFrame();
+                OnResize();
+            }
+        }
     }
 
     // Resizing looks bad if drawing takes a long time, so turn off MSAA
