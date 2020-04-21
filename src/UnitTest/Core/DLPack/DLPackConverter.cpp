@@ -28,7 +28,7 @@
 #include "Open3D/Core/DLPack/dlpack.h"
 #include "Open3D/Core/Tensor.h"
 
-#include "Container/ContainerTest.h"
+#include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
 #include <vector>

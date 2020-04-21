@@ -40,17 +40,22 @@
 #include <cuda_runtime.h>
 
 #define OPEN3D_HOST_DEVICE __host__ __device__
+#define OPEN3D_DEVICE __device__
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
 #define OPEN3D_CUDA_CHECK(err) \
     open3d::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
+#define OPEN3D_GET_LAST_CUDA_ERROR(message) \
+    __OPEN3D_GET_LAST_CUDA_ERROR(message, __FILE__, __LINE__)
 
 #else  // #ifdef BUILD_CUDA_MODULE
 
 #define OPEN3D_HOST_DEVICE
+#define OPEN3D_DEVICE
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
 #define OPEN3D_CUDA_CHECK(err)
+#define OPEN3D_GET_LAST_CUDA_ERROR(message)
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
@@ -58,11 +63,21 @@ namespace open3d {
 
 #ifdef BUILD_CUDA_MODULE
 inline void __OPEN3D_CUDA_CHECK(cudaError_t err,
-                                const char *file,
+                                const char* file,
                                 const int line) {
     if (err != cudaSuccess) {
         utility::LogError("{}:{} CUDA runtime error: {}", file, line,
                           cudaGetErrorString(err));
+    }
+}
+
+inline void __OPEN3D_GET_LAST_CUDA_ERROR(const char* message,
+                                         const char* file,
+                                         const int line) {
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        utility::LogError("{}:{} {}: OPEN3D_GET_LAST_CUDA_ERROR(): {}", file,
+                          line, message, cudaGetErrorString(err));
     }
 }
 #endif

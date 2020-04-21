@@ -281,6 +281,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_property_readonly("dtype", &Tensor::GetDtype);
     tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
+    tensor.def_property_readonly("ndim", &Tensor::NumDims);
 
     // Unary element-wise ops
     tensor.def("sqrt", &Tensor::Sqrt);
@@ -297,6 +298,14 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("abs_", &Tensor::Abs_);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
+
+    // Reuduction ops
+    tensor.def("sum", &Tensor::Sum);
+    tensor.def("prod", &Tensor::Prod);
+    tensor.def("min", &Tensor::Min);
+    tensor.def("max", &Tensor::Max);
+    tensor.def("argmin_", &Tensor::ArgMin);
+    tensor.def("argmax_", &Tensor::ArgMax);
 
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });

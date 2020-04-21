@@ -26,23 +26,173 @@
 
 #pragma once
 
-#include "Open3D/Core/Broadcast.h"
 #include "Open3D/Core/CUDAUtils.h"
 #include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
+#include <sstream>
+
 namespace open3d {
 
+class Indexer;
+
+class IndexerIterator;
+
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 16;
+static constexpr int64_t MAX_DIMS = 10;
 
 // Maximum number of operands (inputs) of an op.
-static constexpr int64_t MAX_OPERANDS = 8;
+static constexpr int64_t MAX_OPERANDS = 10;
+
+// Fixed-size array type usable from host and device.
+template <typename T, int size>
+struct alignas(16) SmallArray {
+    T data_[size];
+
+    OPEN3D_HOST_DEVICE T operator[](int i) const { return data_[i]; }
+    OPEN3D_HOST_DEVICE T& operator[](int i) { return data_[i]; }
+
+    SmallArray() = default;
+    SmallArray(const SmallArray&) = default;
+    SmallArray& operator=(const SmallArray&) = default;
+};
+
+// Result of div/mod operation stored together.
+template <typename T>
+struct DivModPair {
+    T div_, mod_;
+    OPEN3D_HOST_DEVICE DivModPair(T div, T mod) : div_(div), mod_(mod) {}
+};
+
+// Base case: we only have an implementation for uint32_t for now.  For
+// everything else, we use plain division.
+template <typename T>
+struct IntDivider {
+    IntDivider() {}  // Dummy constructor for arrays.
+    IntDivider(T d) : divisor_(d) {}
+
+    OPEN3D_HOST_DEVICE inline T Div(T n) const { return n / divisor_; }
+    OPEN3D_HOST_DEVICE inline T Mod(T n) const { return n % divisor_; }
+    OPEN3D_HOST_DEVICE inline DivModPair<T> DivMod(T n) const {
+        return DivModPair<T>(n / divisor_, n % divisor_);
+    }
+
+    T divisor_;
+};
+
+// Implement fast integer division.
+template <>
+struct IntDivider<uint32_t> {
+    static_assert(sizeof(uint32_t) == 4, "Assumes 32-bit uint32_t.");
+
+    IntDivider() {}  // Dummy constructor for arrays.
+
+    IntDivider(uint32_t d) : divisor_(d) {
+        assert(divisor_ >= 1 && divisor_ <= INT32_MAX);
+
+        // TODO: gcc/clang has __builtin_clz() but it's not portable.
+        for (shift_ = 0; shift_ < 32; shift_++)
+            if ((1U << shift_) >= divisor_) break;
+
+        uint64_t one = 1;
+        uint64_t magic =
+                ((one << 32) * ((one << shift_) - divisor_)) / divisor_ + 1;
+        m1_ = magic;
+        assert(m1_ > 0 && m1_ == magic);  // m1_ must fit in 32 bits.
+    }
+
+    OPEN3D_HOST_DEVICE inline uint32_t Div(uint32_t n) const {
+#if defined(__CUDA_ARCH__)
+        // 't' is the higher 32-bits of unsigned 32-bit multiplication of 'n'
+        // and 'm1_'.
+        uint32_t t = __umulhi(n, m1_);
+        return (t + n) >> shift_;
+#else
+        // Using uint64_t so that the addition does not overflow.
+        uint64_t t = ((uint64_t)n * m1_) >> 32;
+        return (t + n) >> shift_;
+#endif
+    }
+
+    OPEN3D_HOST_DEVICE inline uint32_t Mod(uint32_t n) const {
+        return n - Div(n) * divisor_;
+    }
+
+    OPEN3D_HOST_DEVICE inline DivModPair<uint32_t> DivMod(uint32_t n) const {
+        uint32_t q = Div(n);
+        return DivModPair<uint32_t>(q, n - q * divisor_);
+    }
+
+    uint32_t divisor_;  // d above.
+    uint32_t m1_;       // Magic number: m' above.
+    uint32_t shift_;    // Shift amounts.
+};
+
+template <int NARGS, typename index_t = uint32_t>
+struct OffsetCalculator {
+    OffsetCalculator(int dims,
+                     const int64_t* sizes,
+                     const int64_t* const* strides)
+        : dims_(dims) {
+        if (dims_ > MAX_DIMS) {
+            utility::LogError("tensor has too many (>{}) dims_", MAX_DIMS);
+        }
+
+        for (int i = 0; i < MAX_DIMS; ++i) {
+            if (i < dims_) {
+                sizes_[i] = IntDivider<index_t>(sizes[i]);
+            } else {
+                sizes_[i] = IntDivider<index_t>(1);
+            }
+            for (int arg = 0; arg < NARGS; arg++) {
+                strides_[i][arg] = i < dims_ ? strides[arg][i] : 0;
+            }
+        }
+    }
+
+    OPEN3D_HOST_DEVICE SmallArray<index_t, NARGS> get(
+            index_t linear_idx) const {
+        SmallArray<index_t, NARGS> offsets;
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (int arg = 0; arg < NARGS; arg++) {
+            offsets[arg] = 0;
+        }
+
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (int dim = 0; dim < MAX_DIMS; ++dim) {
+            if (dim == dims_) {
+                break;
+            }
+            auto div_mod_pair = sizes_[dim].DivMod(linear_idx);
+            linear_idx = div_mod_pair.div_;
+
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+            for (int arg = 0; arg < NARGS; arg++) {
+                offsets[arg] += div_mod_pair.mod_ * strides_[dim][arg];
+            }
+        }
+        return offsets;
+    }
+
+    int dims_;
+    IntDivider<index_t> sizes_[MAX_DIMS];
+    index_t strides_[MAX_DIMS][NARGS];
+};
 
 /// A minimalistic class that reference a Tensor.
 struct TensorRef {
+    // The default copy constructor works on __device__ as well so we don't
+    // define it explicitly. shape_[MAX_DIMS] and strides[MAX_DIMS] will be
+    // copied fully.
     TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
 
     TensorRef(const Tensor& t) {
@@ -55,37 +205,70 @@ struct TensorRef {
         dtype_byte_size_ = DtypeUtil::ByteSize(t.GetDtype());
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
-            strides_[i] = t.GetStride(i);
+            byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
         }
     }
 
-    OPEN3D_HOST_DEVICE TensorRef(const TensorRef& tr) {
-        data_ptr_ = tr.data_ptr_;
-        ndims_ = tr.ndims_;
-        dtype_byte_size_ = tr.dtype_byte_size_;
+    void Permute(const SizeVector& dims) {
+        // Check dims are permuntation of [0, 1, 2, ..., n-1]
+        std::vector<bool> seen_dims(ndims_, false);
+        for (const int64_t& dim : dims) {
+            seen_dims[dim] = true;
+        }
+        if (!std::all_of(seen_dims.begin(), seen_dims.end(),
+                         [](bool seen) { return seen; })) {
+            utility::LogError(
+                    "Permute dims must be a permuntation from 0 to {}",
+                    dims.size() - 1);
+        }
+
+        // Map to new shape and strides
+        SizeVector new_shape(ndims_);
+        SizeVector new_byte_strides(ndims_);
         for (int64_t i = 0; i < ndims_; ++i) {
-            shape_[i] = tr.shape_[i];
-            strides_[i] = tr.strides_[i];
+            int64_t old_dim = shape_util::WrapDim(dims[i], ndims_);
+            new_shape[i] = shape_[old_dim];
+            new_byte_strides[i] = byte_strides_[old_dim];
+        }
+        for (int64_t i = 0; i < ndims_; ++i) {
+            shape_[i] = new_shape[i];
+            byte_strides_[i] = new_byte_strides[i];
         }
     }
+
+    bool operator==(const TensorRef& other) const {
+        bool rc = true;
+        rc = rc && (data_ptr_ == other.data_ptr_);
+        rc = rc && (ndims_ == other.ndims_);
+        rc = rc && (dtype_byte_size_ == other.dtype_byte_size_);
+        for (int64_t i = 0; i < ndims_; ++i) {
+            rc = rc && (shape_[i] == other.shape_[i]);
+            rc = rc && (byte_strides_[i] == other.byte_strides_[i]);
+        }
+        return rc;
+    }
+
+    bool operator!=(const TensorRef& other) const { return !(*this == other); }
 
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
-    int64_t strides_[MAX_DIMS];
+    int64_t byte_strides_[MAX_DIMS];
 };
 
 enum class DtypePolicy {
-    NONE,  // Do not check. Expects the kernel to handle the conversion.
-           // E.g. in Copy kernel with type casting.
-    ASSERT_SAME_OR_BOOL_OUT,  // Assert same Dtypes for inputs and output, with
-                              // the exception that the output can be bool.
+    NONE,         // Do not check. Expects the kernel to handle the conversion.
+                  // E.g. in Copy kernel with type casting.
+    ASSERT_SAME,  // Assert same Dtypes for inputs and output
+    ASSERT_SAME_INPUTS,       // Assert same Dtypes for inputs and output
     CAST,                     // Cast to common dtype.
                               // E.g. Tensor::Add:
                               // int64   + int32   = int64   (valid)
                               // float32 + float32 = int32   (invalid)
                               // float64 + float64 = float32 (valid)
+    ASSERT_SAME_OR_BOOL_OUT,  // Assert same Dtypes for inputs and output, with
+                              // the exception that the output can be bool.
     CAST_INPUTS  // Cast inputs to common dtypes (e.g. comparison ops have
                  // boolean output).
 };
@@ -93,78 +276,179 @@ enum class DtypePolicy {
 /// Indexing engine for elementwise ops with broadcasting support.
 ///
 /// Fancy indexing is supported by restriding input tensor and treating the
-/// operation as elementwise op. Reduction op will be supported by
-/// Indexer in the future.
+/// operation as elementwise op.
 ///
 /// After constructing Indexer on the host, the indexing methods can be
 /// used from both host and device.
 class Indexer {
 public:
     Indexer() {}
+    Indexer(const Indexer&) = default;
+    Indexer& operator=(const Indexer&) = default;
 
     /// Only single output is supported for simplicity. To extend this function
     /// to support multiple outputs, one may check for shape compatibility of
     /// all outputs.
     Indexer(const std::vector<Tensor>& input_tensors,
             const Tensor& output_tensor,
-            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME_OR_BOOL_OUT) {
-        // Must have at least one input input tensor(s)
-        if (input_tensors.size() == 0) {
-            utility::LogError("Must have at least one input tensor(s).");
-        }
+            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME,
+            const SizeVector& reduction_dims = {});
 
-        // Dtype sanity check and handling.
-        if (dtype_policy == DtypePolicy::CAST ||
-            dtype_policy == DtypePolicy::CAST_INPUTS) {
-            utility::LogError("Unimplemented dtype_policy.");
-        } else if (dtype_policy == DtypePolicy::ASSERT_SAME_OR_BOOL_OUT) {
-            Dtype ref_dtype = input_tensors[0].GetDtype();
+    Indexer(const std::vector<Tensor>& input_tensors,
+            const std::vector<Tensor>& output_tensors,
+            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME,
+            const SizeVector& reduction_dims = {});
 
-            Dtype output_dtype = output_tensor.GetDtype();
-            if (output_dtype != Dtype::Bool && output_dtype != ref_dtype) {
-                utility::LogError("Dype mismatch {} != {}.",
-                                  DtypeUtil::ToString(output_dtype),
-                                  DtypeUtil::ToString(ref_dtype));
-            }
+    /// Returns true iff the maximum_offsets in bytes are smaller than 2^31 - 1.
+    bool CanUse32BitIndexing() const;
 
-            for (const auto& input_tensor : input_tensors) {
-                if (input_tensor.GetDtype() != ref_dtype) {
-                    utility::LogError(
-                            "Dype mismatch {} != {}.",
-                            DtypeUtil::ToString(input_tensor.GetDtype()),
-                            DtypeUtil::ToString(ref_dtype));
-                }
-            }
-        }
+    /// Returns an iterator of Indexers, each of each can be indexed in 32 bits.
+    IndexerIterator SplitTo32BitIndexing() const;
 
-        // Conver to TensorRef.
-        num_inputs_ = static_cast<int64_t>(input_tensors.size());
-        if (num_inputs_ > MAX_OPERANDS) {
-            utility::LogError("Operation has too many inputs {} > {}",
-                              num_inputs_, MAX_OPERANDS);
-        }
-        for (int64_t i = 0; i < num_inputs_; ++i) {
-            inputs_[i] = TensorRef(input_tensors[i]);
-        }
-        output_ = TensorRef(output_tensor);
+    /// Split the indexer such that the largest-span-dimension is split into two
+    /// halves. The returned new indexer iterates the first half while the
+    /// current indexer iterates the second half.
+    std::unique_ptr<Indexer> SplitLargestDim();
 
-        // Broadcast inputs to match output shape.
-        for (int64_t i = 0; i < num_inputs_; ++i) {
-            BroadcastRestride(inputs_[i], output_);
-        }
-        ndims_ = output_.ndims_;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            master_shape_[i] = output_.shape_[i];
-        }
+    /// Get a sub-indexer that loops through all inputs corresponding to a
+    /// single output.
+    Indexer GetPerOutputIndexer(int64_t output_idx) const;
 
-        // Fill master_strides_.
-        int64_t stride = 1;
-        for (int64_t i = ndims_ - 1; i >= 0; --i) {
-            master_strides_[i] = stride;
-            // Handles 0-sized dimensions
-            stride *= std::max<int64_t>(master_shape_[i], 1);
+    bool ShouldAccumulate() const { return accumulate_; }
+
+    bool IsFinalOutput() const { return final_output_; }
+
+    /// Shrink iteration to a specific range in a specific dimension.
+    /// \param dim The dimension to be shrinked to.
+    /// \param start Starting index (inclusive) for dimension \p dim. No
+    /// dimension wraping is available.
+    /// \param size The size to iterate in dimension \p dim.
+    void ShrinkDim(int64_t dim, int64_t start, int64_t size);
+
+    /// Returns the number of reudction dimensions.
+    int64_t NumReductionDims() const;
+
+    /// Returns number of dimensions of the Indexer.
+    int64_t NumDims() const { return ndims_; }
+
+    /// Returns Indexer's master shape, one can iterate the Indexer with this
+    /// shape.
+    const int64_t* GetMasterShape() const { return master_shape_; }
+    int64_t* GetMasterShape() { return master_shape_; }
+
+    /// Returns Indexer's master strides, one can iterate the Indexer with this
+    /// strides. It is always set to be the default strides from master_shape_.
+    const int64_t* GetMasterStrides() const { return master_strides_; }
+
+    /// Returns the total number of workloads (e.g. computations) needed for
+    /// the op. The scheduler schedules these workloads to run on parallel
+    /// threads.
+    ///
+    /// For non-reduction ops, NumWorkloads() is the same as number of output
+    /// elements (e.g. for broadcasting ops).
+    ///
+    /// For reduction ops, NumWorkLoads() is the same as the number of input
+    /// elements. Currently we don't allow mixing broadcasting and reduction in
+    /// one op kernel.
+    int64_t NumWorkloads() const;
+
+    /// Returns the number of output elements.
+    int64_t NumOutputElements() const;
+
+    /// Number of input Tensors.
+    int64_t NumInputs() const { return num_inputs_; }
+
+    /// Returns input TensorRef.
+    TensorRef& GetInput(int64_t i) {
+        if (i >= num_inputs_ || i < 0) {
+            utility::LogError("0 <= i < {} required, however, i = {}.",
+                              num_inputs_, i);
         }
+        return inputs_[i];
     }
+    const TensorRef& GetInput(int64_t i) const {
+        if (i >= num_inputs_ || i < 0) {
+            utility::LogError("0 <= i < {} required, however, i = {}.",
+                              num_inputs_, i);
+        }
+        return inputs_[i];
+    }
+
+    /// Returns output TensorRef, if there's only one output.
+    TensorRef& GetOutput(int64_t i) {
+        if (i >= num_outputs_ || i < 0) {
+            utility::LogError("0 <= i < {} required, however, i = {}.",
+                              num_outputs_, i);
+        }
+        return outputs_[i];
+    }
+    const TensorRef& GetOutput(int64_t i) const {
+        if (i >= num_outputs_ || i < 0) {
+            utility::LogError("0 <= i < {} required, however, i = {}.",
+                              num_outputs_, i);
+        }
+        return outputs_[i];
+    }
+    TensorRef& GetOutput() {
+        if (num_outputs_ > 1) {
+            utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",
+                              num_outputs_);
+        }
+        return GetOutput(0);
+    }
+    const TensorRef& GetOutput() const {
+        if (num_outputs_ > 1) {
+            utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",
+                              num_outputs_);
+        }
+        return GetOutput(0);
+    }
+
+    /// Returns true if the \p dim -th dimension is reduced.
+    bool IsReductionDim(int64_t dim) const {
+        // All outputs have the same shape and reduction dims. Even if they
+        // don't have the same initial strides, the reduced strides are always
+        // set to 0. Thus it is okay to use outputs_[0].
+        return outputs_[0].byte_strides_[dim] == 0 && master_shape_[dim] > 1;
+    }
+
+    /// Get input Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param input_idx Input tensor index.
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
+    OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t input_idx,
+                                         int64_t workload_idx) const {
+        if (input_idx < 0 || input_idx >= num_inputs_) {
+            return nullptr;
+        }
+        return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
+    }
+
+    /// Get output Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
+    OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
+        return GetWorkloadDataPtr(outputs_[0], workload_idx);
+    }
+    OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t output_idx,
+                                          int64_t workload_idx) const {
+        return GetWorkloadDataPtr(outputs_[output_idx], workload_idx);
+    }
+
+protected:
+    /// Merge adjacent dimensions if either dim is 1 or if:
+    /// shape[n] * stride[n] == shape[n + 1]
+    void CoalesceDimensions();
+
+    // Permute reduction dimensions to front.
+    // TODO: Sort the dimensions based on strides in ascending orderto improve
+    // thread coalescing.
+    void ReorderDimensions(const SizeVector& reduction_dims);
+
+    /// Update master_strides_ based on master_shape_.
+    void UpdateMasterStrides();
 
     /// Broadcast src to dst by setting shape 1 to omitted dimensions and
     /// setting stride 0 to brocasted dimensions.
@@ -191,127 +475,97 @@ public:
     ///
     /// \param src The source TensorRef to be broadcasted.
     /// \param dst The destination TensorRef to be broadcasted to.
-    static void BroadcastRestride(TensorRef& src, const TensorRef& dst) {
-        int64_t src_ndims = src.ndims_;
-        int64_t ndims = dst.ndims_;
+    static void BroadcastRestride(TensorRef& src,
+                                  int64_t dst_ndims,
+                                  const int64_t* dst_shape);
 
-        // Fill omitted dimensions.
-        int64_t ndims_omitted = ndims - src_ndims;
-        for (int64_t i = src_ndims - 1; i >= 0; --i) {
-            src.shape_[ndims_omitted + i] = src.shape_[i];
-            src.strides_[ndims_omitted + i] = src.strides_[i];
-        }
-        for (int64_t i = 0; i < ndims_omitted; ++i) {
-            src.shape_[i] = 1;
-            src.strides_[i] = 0;
-        }
-        src.ndims_ = ndims;
+    /// Symmetrical to BroadcastRestride. Set the reduced dimensions' stride to
+    /// 0 at output. Currently only support the keepdim=true case.
+    static void ReductionRestride(TensorRef& dst,
+                                  int64_t src_ndims,
+                                  const int64_t* src_shape,
+                                  const SizeVector& reduction_dims);
 
-        // Fill broadcasted dimensions.
-        for (int64_t i = 0; i < ndims; ++i) {
-            if (src.shape_[i] == 1 && dst.shape_[i] != 1) {
-                src.strides_[i] = 0;
-            }
-        }
-    }
-
-    /// Returns number of dimensions of the Indexer.
-    OPEN3D_HOST_DEVICE int64_t NumDims() const { return ndims_; }
-
-    /// Returns Indexer's master shape, one can iterate the Indexer with this
-    /// shape.
-    OPEN3D_HOST_DEVICE const int64_t* GetMasterShape() const {
-        return master_shape_;
-    }
-
-    /// Returns Indexer's master strides, one can iterate the Indexer with this
-    /// strides. It is always set to be the default strides from master_shape_.
-    OPEN3D_HOST_DEVICE const int64_t* GetMasterStrides() const {
-        return master_strides_;
-    }
-
-    /// Return the total number of workloads (e.g. computations) needed for
-    /// the op. The scheduler schedules these workloads to run on parallel
-    /// threads.
-    ///
-    /// Typically for non-reduction ops, NumWorkloads() is the same as
-    /// number of output elements.
-    OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
-        int64_t num_workloads = 1;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            num_workloads *= master_shape_[i];
-        }
-        return num_workloads;
-    }
-
-    /// Get input Tensor data pointer based on \p workload_idx.
-    ///
-    /// \param input_idx Input tensor index.
-    /// \param workload_idx The index of the compute workload, similar to
-    /// thread_id, if a thread only processes one workload.
-    OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t input_idx,
-                                         int64_t workload_idx) const {
-        if (input_idx < 0 || input_idx >= num_inputs_) {
-            return nullptr;
-        }
-        return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
-    }
-
-    // Get output Tensor data pointer based on \p workload_idx.
-    ///
-    /// \param workload_idx The index of the compute workload, similar to
-    /// thread_id, if a thread only processes one workload.
-    OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
-        return GetWorkloadDataPtr(output_, workload_idx);
-    }
-
-    /// Number of input Tensors.
-    OPEN3D_HOST_DEVICE int64_t NumInputs() const { return num_inputs_; }
-
-    /// Returns input TensorRef.
-    /// Note: no out-of-range checks for in OPEN3D_HOST_DEVICE
-    OPEN3D_HOST_DEVICE TensorRef GetInput(int64_t i) { return inputs_[i]; }
-
-    /// Returns output TensorRef.
-    OPEN3D_HOST_DEVICE TensorRef GetOutput() { return output_; }
-
-protected:
     /// Get data pointer from a TensorRef with \p workload_idx.
     /// Note: can be optimized by computing all input ptrs and output ptr
     /// together.
     OPEN3D_HOST_DEVICE char* GetWorkloadDataPtr(const TensorRef& tr,
                                                 int64_t workload_idx) const {
-        if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
+        // For 0-sized input reduction op, the output Tensor
+        // workload_idx == 1 > NumWorkloads() == 0.
+        if (workload_idx < 0) {
             return nullptr;
         }
         int64_t offset = 0;
         for (int64_t i = 0; i < ndims_; ++i) {
-            offset += workload_idx / master_strides_[i] * tr.strides_[i];
+            offset += workload_idx / master_strides_[i] * tr.byte_strides_[i];
             workload_idx = workload_idx % master_strides_[i];
         }
-        return static_cast<char*>(tr.data_ptr_) + offset * tr.dtype_byte_size_;
+        return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
-    /// Number of input Tensors.
+    /// Number of input and output Tensors.
     int64_t num_inputs_ = 0;
+    int64_t num_outputs_ = 0;
 
     /// Array of input TensorRefs.
     TensorRef inputs_[MAX_OPERANDS];
 
     /// Output TensorRef.
-    TensorRef output_;
+    TensorRef outputs_[MAX_OPERANDS];
 
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.
-    /// For broadcasting, the shape is the same as the output shape. For
-    /// reduction, the shape is the same as the input shape.
+    /// - For broadcasting, master_shape_ is the same as the output shape.
+    /// - For reduction, master_shape_ is the same as the input shape.
+    /// - Currently we don't allow broadcasting mixed with reduction. But if
+    ///   broadcasting mixed with reduction is allowed, master_shape_ is a mix
+    ///   of input shape and output shape. First, fill in all omitted dimensions
+    ///   (in inputs for broadcasting) and reduction dimensions (as if
+    ///   keepdim=true always) with size 1. For each axis, the master dimension
+    ///   is the non-1 dimension (if both are 1, then the master dimension is 1
+    ///   in that axis).
     int64_t master_shape_[MAX_DIMS];
 
-    /// The default strides for master_shape_.
+    /// The default strides for master_shape_ for internal use only. Used to
+    /// compute the actual strides and ultimately the index offsets.
     int64_t master_strides_[MAX_DIMS];
 
     /// Indexer's global number of dimensions.
-    int64_t ndims_;
+    int64_t ndims_ = 0;
+
+    /// Whether this iterator produces the actual output, as opposed to
+    /// something that will be accumulated further. Only relevant for CUDA
+    /// reductions.
+    bool final_output_ = true;
+
+    /// If the kernel should accumulate into the output. Only relevant for CUDA
+    /// reductions.
+    bool accumulate_ = false;
+};
+
+class IndexerIterator {
+public:
+    struct Iterator {
+        Iterator(){};
+        Iterator(const Indexer& indexer);
+        Iterator(Iterator&& other) = default;
+
+        Indexer& operator*() const;
+        Iterator& operator++();
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
+
+        std::vector<std::unique_ptr<Indexer>> vec_;
+    };
+
+    IndexerIterator(const Indexer& indexer);
+
+    Iterator begin() const;
+    Iterator end() const;
+
+private:
+    const Indexer& indexer_;
 };
 
 }  // namespace open3d

@@ -30,11 +30,11 @@
 
 #include "Open3D/Core/AdvancedIndexing.h"
 #include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Broadcast.h"
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dispatch.h"
 #include "Open3D/Core/Dtype.h"
 #include "Open3D/Core/Kernel/Kernel.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/TensorKey.h"
 #include "Open3D/Utility/Console.h"
@@ -235,7 +235,7 @@ void Tensor::Assign(const Tensor& other) {
 
 /// Broadcast Tensor to a new broadcastable shape
 Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
-    if (!CanBeBrocastedToShape(shape_, dst_shape)) {
+    if (!shape_util::CanBeBrocastedToShape(shape_, dst_shape)) {
         utility::LogError("Cannot broadcast shape {} to shape {}.",
                           shape_.ToString(), dst_shape);
     }
@@ -245,7 +245,7 @@ Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
 }
 
 Tensor Tensor::Expand(const SizeVector& dst_shape) const {
-    if (!CanBeBrocastedToShape(shape_, dst_shape)) {
+    if (!shape_util::CanBeBrocastedToShape(shape_, dst_shape)) {
         utility::LogError("Cannot expand shape {} to shape {}.",
                           shape_.ToString(), dst_shape);
     }
@@ -278,7 +278,8 @@ Tensor Tensor::Expand(const SizeVector& dst_shape) const {
 }
 
 Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
-    SizeVector inferred_dst_shape = InferShape(dst_shape, NumElements());
+    SizeVector inferred_dst_shape =
+            shape_util::InferShape(dst_shape, NumElements());
     bool can_restride;
     SizeVector new_strides;
     std::tie(can_restride, new_strides) =
@@ -291,7 +292,8 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
 }
 
 Tensor Tensor::View(const SizeVector& dst_shape) const {
-    SizeVector inferred_dst_shape = InferShape(dst_shape, NumElements());
+    SizeVector inferred_dst_shape =
+            shape_util::InferShape(dst_shape, NumElements());
     bool can_restride;
     SizeVector new_strides;
     std::tie(can_restride, new_strides) =
@@ -361,11 +363,10 @@ std::pair<bool, SizeVector> Tensor::ComputeNewStrides(
         return std::make_pair(true, SizeVector(new_shape.size(), 1));
     }
 
-    // NOTE: stride is arbitrary in the numel() == 0 case;
-    // to match NumPy behavior we copy the strides if the size matches,
-    // otherwise we use the stride as if it were computed via resize. This could
-    // perhaps be combined with the below code, but the complexity didn't seem
-    // worth it.
+    // NOTE: Stride is arbitrary in the numel() == 0 case. To match NumPy
+    // behavior we copy the strides if the size matches, otherwise we use the
+    // stride as if it were computed via resize. This could perhaps be combined
+    // with the below code, but the complexity didn't seem worth it.
     int64_t numel = old_shape.NumElements();
     if (numel == 0 && old_shape == new_shape) {
         return std::make_pair(true, old_strides);
@@ -386,14 +387,14 @@ std::pair<bool, SizeVector> Tensor::ComputeNewStrides(
     }
 
     int64_t view_d = new_shape.size() - 1;
-    // stride for each subspace in the chunk
+    // Stride for each subspace in the chunk
     int64_t chunk_base_stride = old_strides.back();
-    // numel in current chunk
+    // Numel in current chunk
     int64_t tensor_numel = 1;
     int64_t view_numel = 1;
     for (int64_t tensor_d = old_shape.size() - 1; tensor_d >= 0; tensor_d--) {
         tensor_numel *= old_shape[tensor_d];
-        // if end of tensor size chunk, check view
+        // If end of tensor size chunk, check view
         if ((tensor_d == 0) ||
             (old_shape[tensor_d - 1] != 1 &&
              old_strides[tensor_d - 1] != tensor_numel * chunk_base_stride)) {
@@ -556,7 +557,7 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
     // Check dims are permuntation of [0, 1, 2, ..., n-1]
     std::vector<bool> seen_dims(n_dims, false);
     for (const int64_t& dim : dims) {
-        seen_dims[WrapDim(dim, n_dims)] = true;
+        seen_dims[shape_util::WrapDim(dim, n_dims)] = true;
     }
     if (!std::all_of(seen_dims.begin(), seen_dims.end(),
                      [](bool seen) { return seen; })) {
@@ -565,14 +566,12 @@ Tensor Tensor::Permute(const SizeVector& dims) const {
     }
 
     // Map to new shape and strides
-    const SizeVector& old_shape = shape_;
-    const SizeVector& old_stides = strides_;
     SizeVector new_shape(n_dims);
     SizeVector new_strides(n_dims);
     for (int64_t i = 0; i < n_dims; ++i) {
-        int64_t old_dim = WrapDim(dims[i], n_dims);
-        new_shape[i] = old_shape[old_dim];
-        new_strides[i] = old_stides[old_dim];
+        int64_t old_dim = shape_util::WrapDim(dims[i], n_dims);
+        new_shape[i] = shape_[old_dim];
+        new_strides[i] = strides_[old_dim];
     }
 
     return AsStrided(new_shape, new_strides);
@@ -587,8 +586,8 @@ Tensor Tensor::AsStrided(const SizeVector& new_shape,
 
 Tensor Tensor::Transpose(int64_t dim0, int64_t dim1) const {
     int64_t n_dims = NumDims();
-    dim0 = WrapDim(dim0, n_dims);
-    dim1 = WrapDim(dim1, n_dims);
+    dim0 = shape_util::WrapDim(dim0, n_dims);
+    dim1 = shape_util::WrapDim(dim1, n_dims);
     SizeVector dims(n_dims);
     std::iota(dims.begin(), dims.end(), 0);
     dims[dim0] = dim1;
@@ -610,8 +609,8 @@ Tensor Tensor::T() const {
 }
 
 Tensor Tensor::Add(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      dtype_, GetDevice());
     kernel::Add(*this, value, dst_tensor);
     return dst_tensor;
 }
@@ -622,8 +621,8 @@ Tensor Tensor::Add_(const Tensor& value) {
 }
 
 Tensor Tensor::Sub(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      dtype_, GetDevice());
     kernel::Sub(*this, value, dst_tensor);
     return dst_tensor;
 }
@@ -634,8 +633,8 @@ Tensor Tensor::Sub_(const Tensor& value) {
 }
 
 Tensor Tensor::Mul(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      dtype_, GetDevice());
     kernel::Mul(*this, value, dst_tensor);
     return dst_tensor;
 }
@@ -646,8 +645,8 @@ Tensor Tensor::Mul_(const Tensor& value) {
 }
 
 Tensor Tensor::Div(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), dtype_,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      dtype_, GetDevice());
     kernel::Div(*this, value, dst_tensor);
     return dst_tensor;
 }
@@ -655,6 +654,48 @@ Tensor Tensor::Div(const Tensor& value) const {
 Tensor Tensor::Div_(const Tensor& value) {
     kernel::Div(*this, value, *this);
     return *this;
+}
+
+Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Sum);
+    return dst;
+}
+
+Tensor Tensor::Prod(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Prod);
+    return dst;
+}
+
+Tensor Tensor::Min(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Min);
+    return dst;
+}
+
+Tensor Tensor::Max(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Max);
+    return dst;
+}
+
+Tensor Tensor::ArgMin(const SizeVector& dims) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), Dtype::Int64,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMin);
+    return dst;
+}
+
+Tensor Tensor::ArgMax(const SizeVector& dims) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), Dtype::Int64,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMax);
+    return dst;
 }
 
 Tensor Tensor::Sqrt() const {
@@ -723,6 +764,13 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
+Device Tensor::GetDevice() const {
+    if (blob_ == nullptr) {
+        utility::LogError("Blob is null, cannot get device");
+    }
+    return blob_->GetDevice();
+}
+
 Tensor Tensor::LogicalNot() const {
     Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
     kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::LogicalNot);
@@ -735,8 +783,8 @@ Tensor Tensor::LogicalNot_() {
 }
 
 Tensor Tensor::LogicalAnd(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalAnd);
     return dst_tensor;
@@ -748,8 +796,8 @@ Tensor Tensor::LogicalAnd_(const Tensor& value) {
 }
 
 Tensor Tensor::LogicalOr(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalOr);
     return dst_tensor;
@@ -761,8 +809,8 @@ Tensor Tensor::LogicalOr_(const Tensor& value) {
 }
 
 Tensor Tensor::LogicalXor(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalXor);
     return dst_tensor;
@@ -774,8 +822,8 @@ Tensor Tensor::LogicalXor_(const Tensor& value) {
 }
 
 Tensor Tensor::Gt(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
     return dst_tensor;
 }
@@ -786,8 +834,8 @@ Tensor Tensor::Gt_(const Tensor& value) {
 }
 
 Tensor Tensor::Lt(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
     return dst_tensor;
 }
@@ -798,8 +846,8 @@ Tensor Tensor::Lt_(const Tensor& value) {
 }
 
 Tensor Tensor::Ge(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
     return dst_tensor;
 }
@@ -810,8 +858,8 @@ Tensor Tensor::Ge_(const Tensor& value) {
 }
 
 Tensor Tensor::Le(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
     return dst_tensor;
 }
@@ -822,8 +870,8 @@ Tensor Tensor::Le_(const Tensor& value) {
 }
 
 Tensor Tensor::Eq(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
     return dst_tensor;
 }
@@ -834,8 +882,8 @@ Tensor Tensor::Eq_(const Tensor& value) {
 }
 
 Tensor Tensor::Ne(const Tensor& value) const {
-    Tensor dst_tensor(BroadcastedShape(shape_, value.shape_), Dtype::Bool,
-                      GetDevice());
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
+                      Dtype::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
     return dst_tensor;
 }

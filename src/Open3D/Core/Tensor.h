@@ -35,6 +35,7 @@
 #include "Open3D/Core/DLPack/dlpack.h"
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/TensorKey.h"
 
@@ -414,7 +415,47 @@ public:
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
 
-    /// Element-wise square root of a tensor, returning a new tensor.
+    /// Returns the sum of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Sum(const SizeVector& dims, bool keepdim = false) const;
+
+    /// Returns the product of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Prod(const SizeVector& dims, bool keepdim = false) const;
+
+    /// Returns min of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Min(const SizeVector& dims, bool keepdim = false) const;
+
+    /// Returns max of the tensor long the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Max(const SizeVector& dims, bool keepdim = false) const;
+
+    /// Returns minimum index of the tensor long the given \p dim. The returned
+    /// tensor has dtype int64_t, and has the same shape as original tensor
+    /// except that the reduced dimension is removed.
+    ///
+    /// \param dims \p dims can only contain a single dimension or all
+    /// dimensions. If \p dims contains a single dimension, the index is along
+    /// the specified dimension. If \p dims contains all dimensions, the index
+    /// is into the flattend tensor.
+    Tensor ArgMin(const SizeVector& dims) const;
+
+    /// Returns maximum index of the tensor long the given \p dim. The returned
+    /// tensor has dtype int64_t, and has the same shape as original tensor
+    /// except that the reduced dimension is removed.
+    ///
+    /// \param dims \p dims can only contain a single dimension or all
+    /// dimensions. If \p dims contains a single dimension, the index is along
+    /// the specified dimension. If \p dims contains all dimensions, the index
+    /// is into the flattend tensor.
+    Tensor ArgMax(const SizeVector& dims) const;
+
+    /// Element-wise square root of a tensor, returns a new tensor.
     Tensor Sqrt() const;
 
     /// Element-wise square root of a tensor, in-place.
@@ -585,7 +626,7 @@ public:
     inline const SizeVector& GetShapeRef() const { return shape_; }
 
     inline int64_t GetShape(int64_t dim) const {
-        return shape_[WrapDim(dim, NumDims())];
+        return shape_[shape_util::WrapDim(dim, NumDims())];
     }
 
     inline SizeVector GetStrides() const { return strides_; }
@@ -593,7 +634,7 @@ public:
     inline const SizeVector& GetStridesRef() const { return strides_; }
 
     inline int64_t GetStride(int64_t dim) const {
-        return strides_[WrapDim(dim, NumDims())];
+        return strides_[shape_util::WrapDim(dim, NumDims())];
     }
 
     inline void* GetDataPtr() { return data_ptr_; }
@@ -602,7 +643,7 @@ public:
 
     inline Dtype GetDtype() const { return dtype_; }
 
-    inline Device GetDevice() const { return GetBlob()->GetDevice(); }
+    Device GetDevice() const;
 
     inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
@@ -626,16 +667,13 @@ public:
 
     static SizeVector DefaultStrides(const SizeVector& shape);
 
-    /// On a high level,
-    /// 1. separate `oldshape` into chunks of dimensions, where the dimensions
-    /// are
-    ///    ``contiguous'' in each chunk, i.e., oldstride[i] = oldshape[i+1] *
-    ///     oldstride[i+1]
+    /// 1. Separate `oldshape` into chunks of dimensions, where the dimensions
+    ///    are ``contiguous'' in each chunk, i.e.,
+    ///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
     /// 2. `newshape` must be able to be separated into same number of chunks as
     ///    `oldshape` was separated into, where each chunk of newshape has
-    ///    matching
-    ///    ``numel'', i.e., number of subspaces, as the corresponding chunk of
-    ///    `oldshape`.
+    ///    matching ``numel'', i.e., number of subspaces, as the corresponding
+    ///    chunk of `oldshape`.
     /// Ref: aten/src/ATen/TensorUtils.cpp
     static std::pair<bool, SizeVector> ComputeNewStrides(
             const SizeVector& old_shape,
