@@ -1247,10 +1247,10 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit1D) {
 // np.sum(np.ones((2, large_dim)), dim=0)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
     Device device = GetParam();
-    int64_t large_dim = (1ULL << 28) + 10;
+    int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
     int64_t num_elements = shape.NumElements();
-    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    std::vector<int64_t> vals(num_elements, 1);
     Tensor src(vals, shape, Dtype::Int64, device);
     Tensor dst;
 
@@ -1262,10 +1262,10 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
 // np.sum(np.ones((2, large_dim)), dim=1)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
     Device device = GetParam();
-    int64_t large_dim = (1ULL << 28) + 10;
+    int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
     int64_t num_elements = shape.NumElements();
-    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    std::vector<int64_t> vals(num_elements, 1);
     Tensor src(vals, shape, Dtype::Int64, device);
     Tensor dst;
 
@@ -1277,10 +1277,10 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
 // np.sum(np.ones((large_dim, 2)), dim=0)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
     Device device = GetParam();
-    int64_t large_dim = (1ULL << 28) + 10;
+    int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{large_dim, 2};
     int64_t num_elements = shape.NumElements();
-    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    std::vector<int64_t> vals(num_elements, 1);
     Tensor src(vals, shape, Dtype::Int64, device);
     Tensor dst;
 
@@ -1292,10 +1292,10 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
 // np.sum(np.ones((large_dim, 2)), dim=1)
 TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase3) {
     Device device = GetParam();
-    int64_t large_dim = (1ULL << 28) + 10;
+    int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{large_dim, 2};
     int64_t num_elements = shape.NumElements();
-    std::vector<int64_t> vals(num_elements, 1);  // ~= 4GB
+    std::vector<int64_t> vals(num_elements, 1);
     Tensor src(vals, shape, Dtype::Int64, device);
     Tensor dst;
 
