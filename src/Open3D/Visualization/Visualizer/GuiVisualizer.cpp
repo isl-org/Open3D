@@ -1327,6 +1327,9 @@ void GuiVisualizer::SetTitle(const std::string &title) {
 void GuiVisualizer::SetGeometry(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
                 &geometries) {
+    const std::size_t kMinPointCloudPointsForDecimation = 6000000;
+
+    gui::SceneWidget::ModelDescription desc;
     auto *scene3d = impl_->scene->GetScene();
     if (impl_->settings.hAxes) {
         scene3d->RemoveGeometry(impl_->settings.hAxes);
@@ -1345,11 +1348,22 @@ void GuiVisualizer::SetGeometry(
 
     impl_->SetMaterialsToDefault(GetRenderer());
 
-    std::vector<visualization::GeometryHandle> objects;
-    geometry::AxisAlignedBoundingBox bounds;
     std::size_t nPointClouds = 0;
-    std::size_t nUnlit = 0;
+    std::size_t nPointCloudPoints = 0;
     for (auto &g : geometries) {
+        if (g->GetGeometryType() ==
+            geometry::Geometry::GeometryType::PointCloud) {
+            nPointClouds++;
+            auto cloud =
+                    std::static_pointer_cast<const geometry::PointCloud>(g);
+            nPointCloudPoints += cloud->points_.size();
+        }
+    }
+
+    geometry::AxisAlignedBoundingBox bounds;
+    std::size_t nUnlit = 0;
+    for (size_t i = 0; i < geometries.size(); ++i) {
+        std::shared_ptr<const geometry::Geometry> g = geometries[i];
         Impl::Materials materials = impl_->settings.currentMaterials;
 
         visualization::MaterialInstanceHandle selectedMaterial;
@@ -1361,7 +1375,6 @@ void GuiVisualizer::SetGeometry(
         // (for example, fountain.ply at http://qianyi.info/scenedata.html)
         switch (g->GetGeometryType()) {
             case geometry::Geometry::GeometryType::PointCloud: {
-                nPointClouds++;
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
@@ -1397,7 +1410,21 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         auto handle = scene3d->AddGeometry(*g3, selectedMaterial);
         bounds += scene3d->GetEntityBoundingBox(handle);
-        objects.push_back(handle);
+
+        if (g->GetGeometryType() ==
+            geometry::Geometry::GeometryType::PointCloud) {
+            desc.pointClouds.push_back(handle);
+            auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
+            if (nPointCloudPoints > kMinPointCloudPointsForDecimation) {
+                int sampleRate = nPointCloudPoints /
+                                 (kMinPointCloudPointsForDecimation / 2);
+                auto small = pcd->UniformDownSample(sampleRate);
+                handle = scene3d->AddGeometry(*small, selectedMaterial);
+                desc.fastPointClouds.push_back(handle);
+            }
+        } else {
+            desc.meshes.push_back(handle);
+        }
 
         impl_->geometryHandles.push_back(handle);
         impl_->geometryMaterials.emplace(handle, materials);
@@ -1438,7 +1465,8 @@ void GuiVisualizer::SetGeometry(
     scene3d->SetGeometryShadows(impl_->settings.hAxes, false, false);
     scene3d->SetEntityEnabled(impl_->settings.hAxes,
                               impl_->settings.wgtShowAxes->IsChecked());
-    impl_->scene->SetModel(impl_->settings.hAxes, objects);
+    desc.axes = impl_->settings.hAxes;
+    impl_->scene->SetModel(desc);
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }

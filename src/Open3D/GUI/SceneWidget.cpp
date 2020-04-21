@@ -559,6 +559,7 @@ struct SceneWidget::Impl {
     geometry::AxisAlignedBoundingBox bounds;
     std::shared_ptr<Interactors> controls;
     bool frameChanged = false;
+    ModelDescription model;
     visualization::LightHandle dirLight;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
 
@@ -640,10 +641,21 @@ void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
     impl_->controls->SetSkyboxHandle(skybox, isOn);
 }
 
-void SceneWidget::SetModel(
-        visualization::GeometryHandle axes,
-        const std::vector<visualization::GeometryHandle>& objects) {
-    impl_->controls->SetModel(axes, objects);
+void SceneWidget::SetModel(const ModelDescription& desc) {
+    impl_->model = desc;
+    for (auto p : desc.fastPointClouds) {
+        impl_->scene.SetEntityEnabled(p, false);
+    }
+
+    std::vector<visualization::GeometryHandle> objects;
+    objects.reserve(desc.pointClouds.size() + desc.meshes.size());
+    for (auto p : desc.pointClouds) {
+        objects.push_back(p);
+    }
+    for (auto m : desc.meshes) {
+        objects.push_back(m);
+    }
+    impl_->controls->SetModel(desc.axes, objects);
 }
 
 void SceneWidget::SetViewControls(Controls mode) {
@@ -766,8 +778,20 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     // point clouds, which are a little slow.
     if (e.type == MouseEvent::BUTTON_DOWN) {
         SetMSAALevel(MSAALevel::FAST);
+        for (auto p : impl_->model.pointClouds) {
+            impl_->scene.SetEntityEnabled(p, false);
+        }
+        for (auto p : impl_->model.fastPointClouds) {
+            impl_->scene.SetEntityEnabled(p, true);
+        }
     } else if (e.type == MouseEvent::BUTTON_UP) {
         SetMSAALevel(MSAALevel::BEST);
+        for (auto p : impl_->model.pointClouds) {
+            impl_->scene.SetEntityEnabled(p, true);
+        }
+        for (auto p : impl_->model.fastPointClouds) {
+            impl_->scene.SetEntityEnabled(p, false);
+        }
     }
 
     impl_->controls->Mouse(e);
