@@ -118,15 +118,15 @@ int keymodsFromGLFW(int glfwMods) {
     return keymods;
 }
 
-void ChangeAllMSAA(SceneWidget::MSAALevel level,
+void ChangeAllRenderQuality(SceneWidget::Quality quality,
                    const std::vector<std::shared_ptr<Widget>>& children) {
     for (auto child : children) {
         auto sw = std::dynamic_pointer_cast<SceneWidget>(child);
         if (sw) {
-            sw->SetMSAALevel(level);
+            sw->SetRenderQuality(quality);
         } else {
             if (child->GetChildren().size() > 0) {
-                ChangeAllMSAA(level, child->GetChildren());
+                ChangeAllRenderQuality(quality, child->GetChildren());
             }
         }
     }
@@ -812,7 +812,7 @@ void Window::OnResize() {
     // are no longer resizing.)
     if (!impl_->isResizing) {
         impl_->isResizing = true;
-        ChangeAllMSAA(SceneWidget::MSAALevel::FAST, impl_->children);
+        ChangeAllRenderQuality(SceneWidget::Quality::FAST, impl_->children);
     }
 
     RestoreCurrent(oldContext);
@@ -823,7 +823,7 @@ void Window::OnMouseEvent(const MouseEvent& e) {
     // likely action after resizing a window is to move the mouse.
     if (impl_->isResizing) {
         impl_->isResizing = false;
-        ChangeAllMSAA(SceneWidget::MSAALevel::BEST, impl_->children);
+        ChangeAllRenderQuality(SceneWidget::Quality::BEST, impl_->children);
     }
 
     impl_->mouseMods = e.modifiers;

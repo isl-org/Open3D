@@ -52,6 +52,7 @@ namespace gui {
 static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 1.0;
 
+static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2; // seconds
 // ----------------------------------------------------------------------------
 class MouseInteractor {
 public:
@@ -558,10 +559,12 @@ struct SceneWidget::Impl {
     visualization::Camera* camera;
     geometry::AxisAlignedBoundingBox bounds;
     std::shared_ptr<Interactors> controls;
-    bool frameChanged = false;
     ModelDescription model;
     visualization::LightHandle dirLight;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
+    int buttonsDown = 0;
+    double lastMouseTime = 0.0;
+    bool frameChanged = false;
 
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
@@ -682,21 +685,35 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
-void SceneWidget::SetMSAALevel(MSAALevel level) {
-    auto view = impl_->scene.GetView(impl_->viewId);
-    if (level == MSAALevel::FAST) {
-        view->SetSampleCount(1);
-    } else {
-        view->SetSampleCount(4);
+void SceneWidget::SetRenderQuality(Quality quality) {
+    auto currentQuality = GetRenderQuality();
+    if (currentQuality != quality) {
+        bool isFast = false;
+        auto view = impl_->scene.GetView(impl_->viewId);
+        if (quality == Quality::FAST) {
+            view->SetSampleCount(1);
+            isFast = true;
+        } else {
+            view->SetSampleCount(4);
+            isFast = false;
+        }
+        if (!impl_->model.fastPointClouds.empty()) {
+            for (auto p : impl_->model.pointClouds) {
+                impl_->scene.SetEntityEnabled(p, !isFast);
+            }
+            for (auto p : impl_->model.fastPointClouds) {
+                impl_->scene.SetEntityEnabled(p, isFast);
+            }
+        }
     }
 }
 
-SceneWidget::MSAALevel SceneWidget::GetMSAALevel() const {
+SceneWidget::Quality SceneWidget::GetRenderQuality() const {
     int n = impl_->scene.GetView(impl_->viewId)->GetSampleCount();
     if (n == 1) {
-        return MSAALevel::FAST;
+        return Quality::FAST;
     } else {
-        return MSAALevel::BEST;
+        return Quality::BEST;
     }
 }
 
@@ -776,29 +793,22 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 }
 
 Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
-    // Disable MSAA while rotating, since we will be redrawing frequently.
-    // This will give a snappier feel to mouse movements, especially for
-    // point clouds, which are a little slow.
+    // Lower render quality while rotating, since we will be redrawing.
+    // frequently This will give a snappier feel to mouse movements,
+    // especially for point clouds, which are a little slow.
+    if (e.type != MouseEvent::MOVE) {
+        SetRenderQuality(Quality::FAST);
+    }
+    // Render quality will revert back to BEST after a short delay,
+    // in the case the user starts rotating again, or is scroll-wheeling.
+    if (e.type == MouseEvent::DRAG || e.type == MouseEvent::WHEEL) {
+        impl_->lastMouseTime = Application::GetInstance().Now();
+    }
+
     if (e.type == MouseEvent::BUTTON_DOWN) {
-        SetMSAALevel(MSAALevel::FAST);
-        if (!impl_->model.fastPointClouds.empty()) {
-            for (auto p : impl_->model.pointClouds) {
-                impl_->scene.SetEntityEnabled(p, false);
-            }
-            for (auto p : impl_->model.fastPointClouds) {
-                impl_->scene.SetEntityEnabled(p, true);
-            }
-        }
+        impl_->buttonsDown |= int(e.button.button);
     } else if (e.type == MouseEvent::BUTTON_UP) {
-        SetMSAALevel(MSAALevel::BEST);
-        if (!impl_->model.fastPointClouds.empty()) {
-            for (auto p : impl_->model.pointClouds) {
-                impl_->scene.SetEntityEnabled(p, true);
-            }
-            for (auto p : impl_->model.fastPointClouds) {
-                impl_->scene.SetEntityEnabled(p, false);
-            }
-        }
+        impl_->buttonsDown &= ~int(e.button.button);
     }
 
     impl_->controls->Mouse(e);
@@ -811,7 +821,15 @@ Widget::EventResult SceneWidget::Key(const KeyEvent& e) {
 }
 
 Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
-    return impl_->controls->Tick(e);
+    auto result = impl_->controls->Tick(e);
+    if (impl_->buttonsDown == 0 && GetRenderQuality() == Quality::FAST) {
+        double now = Application::GetInstance().Now();
+        if (now - impl_->lastMouseTime > DELAY_FOR_BEST_RENDERING_SECS) {
+            SetRenderQuality(Quality::BEST);
+            result = Widget::DrawResult::REDRAW;
+        }
+    }
+    return result;
 }
 
 }  // namespace gui

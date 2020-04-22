@@ -86,9 +86,9 @@ public:
     };
     void SetModel(const ModelDescription& desc);
 
-    enum class MSAALevel { FAST, BEST };
-    void SetMSAALevel(MSAALevel level);
-    MSAALevel GetMSAALevel() const;
+    enum class Quality { FAST, BEST };
+    void SetRenderQuality(Quality level);
+    Quality GetRenderQuality() const;
 
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)

@@ -103,6 +103,7 @@ namespace gui {
 struct Application::Impl {
     std::string resourcePath;
     Theme theme;
+    double lastTime = 0.0;
     bool isGLFWinitalized = false;
     bool isRunning = false;
     bool shouldQuit = false;
@@ -210,6 +211,10 @@ void Application::Initialize() {
 void Application::Initialize(int argc, const char *argv[]) {
     impl_->resourcePath = findResourcePath(argc, argv);
     impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
+}
+
+double Application::Now() const {
+    return glfwGetTime();
 }
 
 std::shared_ptr<Menu> Application::GetMenubar() const { return impl_->menubar; }
@@ -334,6 +339,17 @@ Application::RunStatus Application::ProcessQueuedEvents() {
     // Since these are the only copy of the shared pointers, this will cause
     // the Window destructor to be called.
     impl_->windowsToBeDestroyed.clear();
+
+    // Handle tick messages.
+    double now = Now();
+    if (now - impl_->lastTime >= 0.95 * RUNLOOP_DELAY_SEC) {
+        for (auto w : impl_->windows) {
+            if (w->OnTickEvent(TickEvent())) {
+                w->PostRedraw();
+            }
+        }
+        impl_->lastTime = now;
+    }
 
     if (impl_->shouldQuit) {
         return RunStatus::DONE;
