@@ -245,4 +245,20 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     }
 }
 
+std::vector<Tensor> AdvancedIndexPreprocessor::ExpandBoolTensors(
+        const std::vector<Tensor>& index_tensors) {
+    std::vector<Tensor> res_index_tensors;
+    for (const Tensor& index_tensor : index_tensors) {
+        if (index_tensor.GetDtype() == Dtype::Bool) {
+            std::vector<Tensor> non_zero_indices = index_tensor.NonZeroNumpy();
+            res_index_tensors.insert(res_index_tensors.end(),
+                                     non_zero_indices.begin(),
+                                     non_zero_indices.end());
+        } else {
+            res_index_tensors.push_back(index_tensor);
+        }
+    }
+    return res_index_tensors;
+}
+
 }  // namespace open3d

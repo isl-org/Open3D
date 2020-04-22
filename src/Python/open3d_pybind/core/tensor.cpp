@@ -298,6 +298,10 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
+    // Boolean find
+    tensor.def("_non_zero", &Tensor::NonZero);
+    tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
+
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });
 }
