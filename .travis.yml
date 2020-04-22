@@ -49,6 +49,7 @@ matrix:
           packages:
             - cmake
             - doxygen
+            - libosmesa6-dev
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
@@ -56,8 +57,10 @@ matrix:
         - which python
         - python -V
         - pip install -U -q sphinx sphinx-rtd-theme
-        - cmake -DPYTHON_EXECUTABLE=`which python` ..
+        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON ..
         - make install-pip-package -j$NPROC
+        - make -j$NPROC
+        - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
         - ../util/scripts/make-documentation.sh
 

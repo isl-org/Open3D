@@ -100,7 +100,7 @@ size_t WordLength(const std::string& doc,
 
 void Sleep(int milliseconds) {
 #ifdef _WIN32
-    Sleep(milliseconds);
+    ::Sleep(milliseconds);
 #else
     usleep(milliseconds * 1000);
 #endif  // _WIN32

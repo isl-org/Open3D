@@ -102,9 +102,9 @@ public:
         if (current_ >= pcd_->points_.size()) {
             return false;
         }
-        p.coords[0] = pcd_->points_[current_](0);
-        p.coords[1] = pcd_->points_[current_](1);
-        p.coords[2] = pcd_->points_[current_](2);
+        p.coords[0] = static_cast<Real>(pcd_->points_[current_](0));
+        p.coords[1] = static_cast<Real>(pcd_->points_[current_](1));
+        p.coords[2] = static_cast<Real>(pcd_->points_[current_](2));
 
         if (xform_ != nullptr) {
             p = (*xform_) * p;
@@ -433,7 +433,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     float confidence_bias = 0.f;
     float samples_per_node = 1.5f;
     float cg_solver_accuracy = 1e-3f;
-    int full_depth = 5.f;
+    int full_depth = 5;
     int iters = 8;
     bool exact_interpolation = false;
 
@@ -457,7 +457,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
         Open3DPointStream<Real> pointStream(&pcd);
 
         if (width > 0) {
-            xForm = GetPointXForm<Real, Dim>(pointStream, width,
+            xForm = GetPointXForm<Real, Dim>(pointStream, (Real)width,
                                              (Real)(scale > 0 ? scale : 1.),
                                              depth) *
                     xForm;
@@ -751,8 +751,8 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
 
     auto mesh = std::make_shared<TriangleMesh>();
     std::vector<double> densities;
-    poisson::Execute<float>(pcd, mesh, densities, depth, width, scale,
-                            linear_fit, FEMSigs());
+    poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth),
+                            width, scale, linear_fit, FEMSigs());
 
     ThreadPool::Terminate();
 

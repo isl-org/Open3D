@@ -80,3 +80,7 @@ https://github.com/mkazhdan/PoissonRecon
 CUTLASS                     1.3.2                                    BSD license
 CUDA Templates for Linear Algebra Subroutines
 https://github.com/NVIDIA/cutlass
+--------------------------------------------------------------------------------
+benchmark                   1.5.0                               Apache-2 license
+A microbenchmark support library
+https://github.com/google/benchmark

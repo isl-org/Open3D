@@ -8,8 +8,8 @@ import open3d as o3d
 
 
 def display_inlier_outlier(cloud, ind):
-    inlier_cloud = cloud.select_down_sample(ind)
-    outlier_cloud = cloud.select_down_sample(ind, invert=True)
+    inlier_cloud = cloud.select_by_index(ind)
+    outlier_cloud = cloud.select_by_index(ind, invert=True)
 
     print("Showing outliers (red) and inliers (gray): ")
     outlier_cloud.paint_uniform_color([1, 0, 0])

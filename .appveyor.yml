@@ -14,6 +14,9 @@ environment:
   - PYTHON: 36
     CONFIG: Release
     SHARED: ON
+  - PYTHON: 36
+    CONFIG: Debug
+    SHARED: OFF  # Only check Debug mode with SHARED=OFF to save time.
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") {
@@ -31,7 +34,7 @@ build_script:
 - git submodule update --init --recursive
 - mkdir build
 - cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_PNG=ON ..
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_FLANN=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_PNG=ON ..
 - cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config %CONFIG% --target INSTALL
 
 # Test cmake install
@@ -40,10 +43,10 @@ build_script:
 - cd build
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% ..
 - cmake --build . --config %CONFIG%
-- Release\TestVisualizer
+- .\%CONFIG%\TestVisualizer
 
 # The following script has issues on SHARED = "ON"
 # - cd lib/Release/Tutorial/Basic && python file_io.py
 artifacts:
   # Archive the generated packages in the ci.appveyor.com build report.
-- path:  build\lib\Release\open3d.cp36-win_amd64.pyd
+- path:  build\lib\%CONFIG%\open3d.cp36-win_amd64.pyd

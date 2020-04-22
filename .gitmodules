@@ -13,7 +13,7 @@
 	url = https://github.com/google/googletest.git
 	branch = master
 [submodule "3rdparty/tinyobjloader"]
-	path = 3rdparty/tinyobjloader
+	path = 3rdparty/tinyobjloader/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader.git
 	branch = master
 [submodule "3rdparty/open3d_sphinx_theme"]
@@ -23,14 +23,17 @@
 	path = 3rdparty/fmt
 	url = https://github.com/fmtlib/fmt.git
 [submodule "3rdparty/tinygltf"]
-	path = 3rdparty/tinygltf
+	path = 3rdparty/tinygltf/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
 [submodule "3rdparty/libjpeg-turbo/libjpeg-turbo"]
 	path = 3rdparty/libjpeg-turbo/libjpeg-turbo
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
 [submodule "3rdparty/PoissonRecon/Open3D-PoissonRecon"]
-	path = 3rdparty/PoissonRecon
+	path = 3rdparty/PoissonRecon/PoissonRecon
 	url = https://github.com/intel-isl/Open3D-PoissonRecon.git
 [submodule "3rdparty/cutlass"]
 	path = 3rdparty/cutlass
 	url = https://github.com/NVIDIA/cutlass
+[submodule "3rdparty/benchmark"]
+	path = 3rdparty/benchmark
+	url = https://github.com/google/benchmark.git
