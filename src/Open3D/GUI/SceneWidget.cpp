@@ -655,6 +655,9 @@ void SceneWidget::SetModel(const ModelDescription& desc) {
     for (auto m : desc.meshes) {
         objects.push_back(m);
     }
+    for (auto p : desc.fastPointClouds) {
+        objects.push_back(p);
+    }
     impl_->controls->SetModel(desc.axes, objects);
 }
 
@@ -778,19 +781,23 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     // point clouds, which are a little slow.
     if (e.type == MouseEvent::BUTTON_DOWN) {
         SetMSAALevel(MSAALevel::FAST);
-        for (auto p : impl_->model.pointClouds) {
-            impl_->scene.SetEntityEnabled(p, false);
-        }
-        for (auto p : impl_->model.fastPointClouds) {
-            impl_->scene.SetEntityEnabled(p, true);
+        if (!impl_->model.fastPointClouds.empty()) {
+            for (auto p : impl_->model.pointClouds) {
+                impl_->scene.SetEntityEnabled(p, false);
+            }
+            for (auto p : impl_->model.fastPointClouds) {
+                impl_->scene.SetEntityEnabled(p, true);
+            }
         }
     } else if (e.type == MouseEvent::BUTTON_UP) {
         SetMSAALevel(MSAALevel::BEST);
-        for (auto p : impl_->model.pointClouds) {
-            impl_->scene.SetEntityEnabled(p, true);
-        }
-        for (auto p : impl_->model.fastPointClouds) {
-            impl_->scene.SetEntityEnabled(p, false);
+        if (!impl_->model.fastPointClouds.empty()) {
+            for (auto p : impl_->model.pointClouds) {
+                impl_->scene.SetEntityEnabled(p, true);
+            }
+            for (auto p : impl_->model.fastPointClouds) {
+                impl_->scene.SetEntityEnabled(p, false);
+            }
         }
     }
 
