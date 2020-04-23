@@ -374,38 +374,38 @@ static const bool kDefaultShowAxes = false;
 
 static const std::vector<LightingProfile> gLightingProfiles = {
         {.name = "Bright day with sun at +Y [default]",
-         .iblIntensity = 100000,
-         .sunIntensity = 100000,
+         .iblIntensity = 45000,
+         .sunIntensity = 45000,
          .sunDir = {0.577f, -0.577f, -0.577f}},
         {.name = "Bright day with sun at -Y",
-         .iblIntensity = 100000,
-         .sunIntensity = 100000,
+         .iblIntensity = 45000,
+         .sunIntensity = 45000,
          .sunDir = {0.577f, 0.577f, 0.577f},
          .sunColor = {1.0f, 1.0f, 1.0f},
          .iblRotation = Scene::Transform(
                  Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
         {.name = "Bright day with sun at +Z",
-         .iblIntensity = 100000,
-         .sunIntensity = 100000,
+         .iblIntensity = 45000,
+         .sunIntensity = 45000,
          .sunDir = {0.577f, 0.577f, -0.577f}},
         {.name = "Less bright day with sun at +Y",
-         .iblIntensity = 75000,
-         .sunIntensity = 100000,
+         .iblIntensity = 35000,
+         .sunIntensity = 50000,
          .sunDir = {0.577f, -0.577f, -0.577f}},
         {.name = "Less bright day with sun at -Y",
-         .iblIntensity = 75000,
-         .sunIntensity = 100000,
+         .iblIntensity = 35000,
+         .sunIntensity = 50000,
          .sunDir = {0.577f, 0.577f, 0.577f},
          .sunColor = {1.0f, 1.0f, 1.0f},
          .iblRotation = Scene::Transform(
                  Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()))},
         {.name = "Less bright day with sun at +Z",
-         .iblIntensity = 75000,
-         .sunIntensity = 100000,
+         .iblIntensity = 35000,
+         .sunIntensity = 50000,
          .sunDir = {0.577f, 0.577f, -0.577f}},
         {.name = kPointCloudProfileName,
          .iblIntensity = 60000,
-         .sunIntensity = 100000,
+         .sunIntensity = 50000,
          .sunDir = {0.577f, -0.577f, -0.577f},
          .sunColor = {1.0f, 1.0f, 1.0f},
          .iblRotation = Scene::Transform::Identity(),
@@ -1503,6 +1503,9 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
             mesh.reset();
         } else {
             mesh->ComputeVertexNormals();
+            if (mesh->vertex_colors_.empty()) {
+                mesh->PaintUniformColor({1, 1, 1});
+            }
             geometry = mesh;
         }
     } else {
