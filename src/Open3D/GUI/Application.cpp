@@ -213,9 +213,7 @@ void Application::Initialize(int argc, const char *argv[]) {
     impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
 }
 
-double Application::Now() const {
-    return glfwGetTime();
-}
+double Application::Now() const { return glfwGetTime(); }
 
 std::shared_ptr<Menu> Application::GetMenubar() const { return impl_->menubar; }
 

@@ -118,8 +118,9 @@ int keymodsFromGLFW(int glfwMods) {
     return keymods;
 }
 
-void ChangeAllRenderQuality(SceneWidget::Quality quality,
-                   const std::vector<std::shared_ptr<Widget>>& children) {
+void ChangeAllRenderQuality(
+        SceneWidget::Quality quality,
+        const std::vector<std::shared_ptr<Widget>>& children) {
     for (auto child : children) {
         auto sw = std::dynamic_pointer_cast<SceneWidget>(child);
         if (sw) {

@@ -52,7 +52,7 @@ namespace gui {
 static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 1.0;
 
-static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2; // seconds
+static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2;  // seconds
 // ----------------------------------------------------------------------------
 class MouseInteractor {
 public:
@@ -61,6 +61,7 @@ public:
     virtual visualization::MatrixInteractor& GetMatrixInteractor() = 0;
     virtual void Mouse(const MouseEvent& e) = 0;
     virtual void Key(const KeyEvent& e) = 0;
+    virtual bool Tick(const TickEvent& e) { return false; }
 };
 
 class RotateSunInteractor : public MouseInteractor {
@@ -225,52 +226,79 @@ public:
     }
 
     void Key(const KeyEvent& e) override {
-        if (e.type != KeyEvent::Type::UP) {
+        switch (e.type) {
+            case KeyEvent::Type::DOWN:
+                keysDown_.insert(e.key);
+                break;
+            case KeyEvent::Type::UP:
+                keysDown_.erase(e.key);
+                break;
+        }
+    }
+
+    bool Tick(const TickEvent& e) override {
+        bool redraw = false;
+        if (!keysDown_.empty()) {
             auto& bounds = cameraControls_->GetBoundingBox();
-            const float dist = 0.02f * bounds.GetExtent().norm();
+            const float dist = 0.0025f * bounds.GetExtent().norm();
             const float angleRad = 0.0075f;
 
-            auto hasKey = [&e](uint32_t key) -> bool { return (e.key == key); };
+            auto hasKey = [this](uint32_t key) -> bool {
+                return (keysDown_.find(key) != keysDown_.end());
+            };
 
             if (hasKey('a')) {
                 cameraControls_->MoveLocal({-dist, 0, 0});
+                redraw = true;
             }
             if (hasKey('d')) {
                 cameraControls_->MoveLocal({dist, 0, 0});
+                redraw = true;
             }
             if (hasKey('w')) {
                 cameraControls_->MoveLocal({0, 0, -dist});
+                redraw = true;
             }
             if (hasKey('s')) {
                 cameraControls_->MoveLocal({0, 0, dist});
+                redraw = true;
             }
             if (hasKey('q')) {
                 cameraControls_->MoveLocal({0, dist, 0});
+                redraw = true;
             }
             if (hasKey('z')) {
                 cameraControls_->MoveLocal({0, -dist, 0});
+                redraw = true;
             }
             if (hasKey('e')) {
                 cameraControls_->StartMouseDrag();
                 cameraControls_->RotateZ(0, -2);
+                redraw = true;
             }
             if (hasKey('r')) {
                 cameraControls_->StartMouseDrag();
                 cameraControls_->RotateZ(0, 2);
+                redraw = true;
             }
             if (hasKey(KEY_UP)) {
                 cameraControls_->RotateLocal(angleRad, {1, 0, 0});
+                redraw = true;
             }
             if (hasKey(KEY_DOWN)) {
                 cameraControls_->RotateLocal(-angleRad, {1, 0, 0});
+                redraw = true;
             }
             if (hasKey(KEY_LEFT)) {
                 cameraControls_->RotateLocal(angleRad, {0, 1, 0});
+                redraw = true;
             }
             if (hasKey(KEY_RIGHT)) {
                 cameraControls_->RotateLocal(-angleRad, {0, 1, 0});
+                redraw = true;
             }
         }
+        return redraw;
     }
 
 private:
@@ -279,6 +307,7 @@ private:
     int lastMouseX_ = 0;
     int lastMouseY_ = 0;
     visualization::Camera::Transform _mouseDownRotation;
+    std::set<uint32_t> keysDown_;
 };
 
 class RotationInteractor : public MouseInteractor {
@@ -538,6 +567,11 @@ public:
     }
 
     Widget::DrawResult Tick(const TickEvent& e) {
+        if (current_) {
+            if (current_->Tick(e)) {
+                return Widget::DrawResult::REDRAW;
+            }
+        }
         return Widget::DrawResult::NONE;
     }
 
@@ -563,8 +597,8 @@ struct SceneWidget::Impl {
     visualization::LightHandle dirLight;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
     int buttonsDown = 0;
-    double lastMouseTime = 0.0;
-    bool frameChanged = false;
+    double lastFastTime = 0.0;
+    bool frameRectChanged = false;
 
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
@@ -587,7 +621,7 @@ void SceneWidget::SetFrame(const Rect& f) {
     // We need to update the viewport and camera, but we can't do it here
     // because we need to know the window height to convert the frame
     // to OpenGL coordinates. We will actually do the updating in Draw().
-    impl_->frameChanged = true;
+    impl_->frameRectChanged = true;
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
@@ -763,8 +797,8 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // If the widget has changed size we need to update the viewport and the
     // camera. We can't do it in SetFrame() because we need to know the height
     // of the window to convert to OpenGL coordinates for the viewport.
-    if (impl_->frameChanged) {
-        impl_->frameChanged = false;
+    if (impl_->frameRectChanged) {
+        impl_->frameRectChanged = false;
 
         auto f = GetFrame();
         impl_->controls->SetViewSize(Size(f.width, f.height));
@@ -802,7 +836,7 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     // Render quality will revert back to BEST after a short delay,
     // in the case the user starts rotating again, or is scroll-wheeling.
     if (e.type == MouseEvent::DRAG || e.type == MouseEvent::WHEEL) {
-        impl_->lastMouseTime = Application::GetInstance().Now();
+        impl_->lastFastTime = Application::GetInstance().Now();
     }
 
     if (e.type == MouseEvent::BUTTON_DOWN) {
@@ -822,9 +856,16 @@ Widget::EventResult SceneWidget::Key(const KeyEvent& e) {
 
 Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
     auto result = impl_->controls->Tick(e);
+    // If Tick() redraws, then a key is down. Make sure we are rendering
+    // FAST and mark the time so that we don't timeout and revert back
+    // to slow rendering before the key up happens.
+    if (result == Widget::DrawResult::REDRAW) {
+        SetRenderQuality(Quality::FAST);
+        impl_->lastFastTime = Application::GetInstance().Now();
+    }
     if (impl_->buttonsDown == 0 && GetRenderQuality() == Quality::FAST) {
         double now = Application::GetInstance().Now();
-        if (now - impl_->lastMouseTime > DELAY_FOR_BEST_RENDERING_SECS) {
+        if (now - impl_->lastFastTime > DELAY_FOR_BEST_RENDERING_SECS) {
             SetRenderQuality(Quality::BEST);
             result = Widget::DrawResult::REDRAW;
         }
