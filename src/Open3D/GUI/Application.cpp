@@ -259,6 +259,11 @@ void Application::Quit() {
     }
 }
 
+void Application::OnTerminate() {
+    Quit();
+    impl_->windowsToBeDestroyed.clear();
+}
+
 void Application::OnMenuItemSelected(Menu::ItemId itemId) {
     for (auto w : impl_->windows) {
         if (w->IsActiveWindow()) {
