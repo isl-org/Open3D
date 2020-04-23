@@ -52,6 +52,7 @@ namespace gui {
 static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 1.0;
 
+static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2;  // seconds
 // ----------------------------------------------------------------------------
 class MouseInteractor {
 public:
@@ -60,6 +61,7 @@ public:
     virtual visualization::MatrixInteractor& GetMatrixInteractor() = 0;
     virtual void Mouse(const MouseEvent& e) = 0;
     virtual void Key(const KeyEvent& e) = 0;
+    virtual bool Tick(const TickEvent& e) { return false; }
 };
 
 class RotateSunInteractor : public MouseInteractor {
@@ -224,52 +226,80 @@ public:
     }
 
     void Key(const KeyEvent& e) override {
-        if (e.type != KeyEvent::Type::UP) {
+        switch (e.type) {
+            case KeyEvent::Type::DOWN:
+                keysDown_.insert(e.key);
+                break;
+            case KeyEvent::Type::UP:
+                keysDown_.erase(e.key);
+                break;
+        }
+    }
+
+    bool Tick(const TickEvent& e) override {
+        bool redraw = false;
+        if (!keysDown_.empty()) {
             auto& bounds = cameraControls_->GetBoundingBox();
-            const float dist = 0.02f * bounds.GetExtent().norm();
+            const float dist = 0.0025f * bounds.GetExtent().norm();
             const float angleRad = 0.0075f;
 
-            auto hasKey = [&e](uint32_t key) -> bool { return (e.key == key); };
+            auto hasKey = [this](uint32_t key) -> bool {
+                return (keysDown_.find(key) != keysDown_.end());
+            };
+
+            auto move = [this, &redraw](const Eigen::Vector3f& v) {
+                cameraControls_->MoveLocal(v);
+                redraw = true;
+            };
+            auto rotate = [this, &redraw](float angleRad,
+                                          const Eigen::Vector3f& axis) {
+                cameraControls_->RotateLocal(angleRad, axis);
+                redraw = true;
+            };
+            auto rotateZ = [this, &redraw](int dy) {
+                cameraControls_->StartMouseDrag();
+                cameraControls_->RotateZ(0, dy);
+                redraw = true;
+            };
 
             if (hasKey('a')) {
-                cameraControls_->MoveLocal({-dist, 0, 0});
+                move({-dist, 0, 0});
             }
             if (hasKey('d')) {
-                cameraControls_->MoveLocal({dist, 0, 0});
+                move({dist, 0, 0});
             }
             if (hasKey('w')) {
-                cameraControls_->MoveLocal({0, 0, -dist});
+                move({0, 0, -dist});
             }
             if (hasKey('s')) {
-                cameraControls_->MoveLocal({0, 0, dist});
+                move({0, 0, dist});
             }
             if (hasKey('q')) {
-                cameraControls_->MoveLocal({0, dist, 0});
+                move({0, dist, 0});
             }
             if (hasKey('z')) {
-                cameraControls_->MoveLocal({0, -dist, 0});
+                move({0, -dist, 0});
             }
             if (hasKey('e')) {
-                cameraControls_->StartMouseDrag();
-                cameraControls_->RotateZ(0, -2);
+                rotateZ(-2);
             }
             if (hasKey('r')) {
-                cameraControls_->StartMouseDrag();
-                cameraControls_->RotateZ(0, 2);
+                rotateZ(2);
             }
             if (hasKey(KEY_UP)) {
-                cameraControls_->RotateLocal(angleRad, {1, 0, 0});
+                rotate(angleRad, {1, 0, 0});
             }
             if (hasKey(KEY_DOWN)) {
-                cameraControls_->RotateLocal(-angleRad, {1, 0, 0});
+                rotate(-angleRad, {1, 0, 0});
             }
             if (hasKey(KEY_LEFT)) {
-                cameraControls_->RotateLocal(angleRad, {0, 1, 0});
+                rotate(angleRad, {0, 1, 0});
             }
             if (hasKey(KEY_RIGHT)) {
-                cameraControls_->RotateLocal(-angleRad, {0, 1, 0});
+                rotate(-angleRad, {0, 1, 0});
             }
         }
+        return redraw;
     }
 
 private:
@@ -278,6 +308,7 @@ private:
     int lastMouseX_ = 0;
     int lastMouseY_ = 0;
     visualization::Camera::Transform _mouseDownRotation;
+    std::set<uint32_t> keysDown_;
 };
 
 class RotationInteractor : public MouseInteractor {
@@ -537,6 +568,11 @@ public:
     }
 
     Widget::DrawResult Tick(const TickEvent& e) {
+        if (current_) {
+            if (current_->Tick(e)) {
+                return Widget::DrawResult::REDRAW;
+            }
+        }
         return Widget::DrawResult::NONE;
     }
 
@@ -558,9 +594,12 @@ struct SceneWidget::Impl {
     visualization::Camera* camera;
     geometry::AxisAlignedBoundingBox bounds;
     std::shared_ptr<Interactors> controls;
-    bool frameChanged = false;
+    ModelDescription model;
     visualization::LightHandle dirLight;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
+    int buttonsDown = 0;
+    double lastFastTime = 0.0;
+    bool frameRectChanged = false;
 
     explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
 };
@@ -583,7 +622,7 @@ void SceneWidget::SetFrame(const Rect& f) {
     // We need to update the viewport and camera, but we can't do it here
     // because we need to know the window height to convert the frame
     // to OpenGL coordinates. We will actually do the updating in Draw().
-    impl_->frameChanged = true;
+    impl_->frameRectChanged = true;
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
@@ -640,10 +679,24 @@ void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
     impl_->controls->SetSkyboxHandle(skybox, isOn);
 }
 
-void SceneWidget::SetModel(
-        visualization::GeometryHandle axes,
-        const std::vector<visualization::GeometryHandle>& objects) {
-    impl_->controls->SetModel(axes, objects);
+void SceneWidget::SetModel(const ModelDescription& desc) {
+    impl_->model = desc;
+    for (auto p : desc.fastPointClouds) {
+        impl_->scene.SetEntityEnabled(p, false);
+    }
+
+    std::vector<visualization::GeometryHandle> objects;
+    objects.reserve(desc.pointClouds.size() + desc.meshes.size());
+    for (auto p : desc.pointClouds) {
+        objects.push_back(p);
+    }
+    for (auto m : desc.meshes) {
+        objects.push_back(m);
+    }
+    for (auto p : desc.fastPointClouds) {
+        objects.push_back(p);
+    }
+    impl_->controls->SetModel(desc.axes, objects);
 }
 
 void SceneWidget::SetViewControls(Controls mode) {
@@ -667,21 +720,35 @@ void SceneWidget::SetViewControls(Controls mode) {
     }
 }
 
-void SceneWidget::SetMSAALevel(MSAALevel level) {
-    auto view = impl_->scene.GetView(impl_->viewId);
-    if (level == MSAALevel::FAST) {
-        view->SetSampleCount(1);
-    } else {
-        view->SetSampleCount(4);
+void SceneWidget::SetRenderQuality(Quality quality) {
+    auto currentQuality = GetRenderQuality();
+    if (currentQuality != quality) {
+        bool isFast = false;
+        auto view = impl_->scene.GetView(impl_->viewId);
+        if (quality == Quality::FAST) {
+            view->SetSampleCount(1);
+            isFast = true;
+        } else {
+            view->SetSampleCount(4);
+            isFast = false;
+        }
+        if (!impl_->model.fastPointClouds.empty()) {
+            for (auto p : impl_->model.pointClouds) {
+                impl_->scene.SetEntityEnabled(p, !isFast);
+            }
+            for (auto p : impl_->model.fastPointClouds) {
+                impl_->scene.SetEntityEnabled(p, isFast);
+            }
+        }
     }
 }
 
-SceneWidget::MSAALevel SceneWidget::GetMSAALevel() const {
+SceneWidget::Quality SceneWidget::GetRenderQuality() const {
     int n = impl_->scene.GetView(impl_->viewId)->GetSampleCount();
     if (n == 1) {
-        return MSAALevel::FAST;
+        return Quality::FAST;
     } else {
-        return MSAALevel::BEST;
+        return Quality::BEST;
     }
 }
 
@@ -731,8 +798,8 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // If the widget has changed size we need to update the viewport and the
     // camera. We can't do it in SetFrame() because we need to know the height
     // of the window to convert to OpenGL coordinates for the viewport.
-    if (impl_->frameChanged) {
-        impl_->frameChanged = false;
+    if (impl_->frameRectChanged) {
+        impl_->frameRectChanged = false;
 
         auto f = GetFrame();
         impl_->controls->SetViewSize(Size(f.width, f.height));
@@ -761,13 +828,22 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 }
 
 Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
-    // Disable MSAA while rotating, since we will be redrawing frequently.
-    // This will give a snappier feel to mouse movements, especially for
-    // point clouds, which are a little slow.
+    // Lower render quality while rotating, since we will be redrawing.
+    // frequently This will give a snappier feel to mouse movements,
+    // especially for point clouds, which are a little slow.
+    if (e.type != MouseEvent::MOVE) {
+        SetRenderQuality(Quality::FAST);
+    }
+    // Render quality will revert back to BEST after a short delay,
+    // in the case the user starts rotating again, or is scroll-wheeling.
+    if (e.type == MouseEvent::DRAG || e.type == MouseEvent::WHEEL) {
+        impl_->lastFastTime = Application::GetInstance().Now();
+    }
+
     if (e.type == MouseEvent::BUTTON_DOWN) {
-        SetMSAALevel(MSAALevel::FAST);
+        impl_->buttonsDown |= int(e.button.button);
     } else if (e.type == MouseEvent::BUTTON_UP) {
-        SetMSAALevel(MSAALevel::BEST);
+        impl_->buttonsDown &= ~int(e.button.button);
     }
 
     impl_->controls->Mouse(e);
@@ -780,7 +856,22 @@ Widget::EventResult SceneWidget::Key(const KeyEvent& e) {
 }
 
 Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
-    return impl_->controls->Tick(e);
+    auto result = impl_->controls->Tick(e);
+    // If Tick() redraws, then a key is down. Make sure we are rendering
+    // FAST and mark the time so that we don't timeout and revert back
+    // to slow rendering before the key up happens.
+    if (result == Widget::DrawResult::REDRAW) {
+        SetRenderQuality(Quality::FAST);
+        impl_->lastFastTime = Application::GetInstance().Now();
+    }
+    if (impl_->buttonsDown == 0 && GetRenderQuality() == Quality::FAST) {
+        double now = Application::GetInstance().Now();
+        if (now - impl_->lastFastTime > DELAY_FOR_BEST_RENDERING_SECS) {
+            SetRenderQuality(Quality::BEST);
+            result = Widget::DrawResult::REDRAW;
+        }
+    }
+    return result;
 }
 
 }  // namespace gui

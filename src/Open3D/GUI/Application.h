@@ -83,6 +83,10 @@ public:
     /// on the monitor where the Window is displayed.
     const Theme &GetTheme() const;
 
+    /// Returns high-resolution counter value (in seconds). Not valid
+    /// until Initialize() is called.
+    double Now() const;
+
     /// Delivers the itemId to the active window. Used internally.
     void OnMenuItemSelected(Menu::ItemId itemId);
 

@@ -508,9 +508,6 @@ struct GuiVisualizer::Impl {
               3.0f}},
     };
 
-    std::unordered_map<visualization::REHandle_abstract, Materials>
-            geometryMaterials;
-
     visualization::MaterialHandle hLitMaterial;
     visualization::MaterialHandle hUnlitMaterial;
 
@@ -626,7 +623,7 @@ struct GuiVisualizer::Impl {
             case MaterialType::LIT: {
                 view->SetMode(ViewMode::Color);
                 for (const auto &handle : this->geometryHandles) {
-                    auto mat = this->geometryMaterials[handle].lit.handle;
+                    auto mat = this->settings.currentMaterials.lit.handle;
                     renderScene->AssignMaterial(handle, mat);
                 }
                 this->settings.wgtMaterialColor->SetEnabled(true);
@@ -642,7 +639,7 @@ struct GuiVisualizer::Impl {
             case MaterialType::UNLIT: {
                 view->SetMode(ViewMode::Color);
                 for (const auto &handle : this->geometryHandles) {
-                    auto mat = this->geometryMaterials[handle].unlit.handle;
+                    auto mat = this->settings.currentMaterials.unlit.handle;
                     renderScene->AssignMaterial(handle, mat);
                 }
                 this->settings.wgtMaterialColor->SetEnabled(true);
@@ -717,11 +714,12 @@ struct GuiVisualizer::Impl {
                                                           prefab.baseColor.y(),
                                                           prefab.baseColor.z());
             }
+            auto mat = this->settings.currentMaterials.lit.handle;
+            mat = this->CreateLitMaterial(renderer, mat, prefab);
             for (const auto &handle : this->geometryHandles) {
-                auto mat = this->geometryMaterials[handle].lit.handle;
-                mat = this->CreateLitMaterial(renderer, mat, prefab);
                 this->scene->GetScene()->AssignMaterial(handle, mat);
             }
+            this->settings.currentMaterials.lit.handle = mat;
         }
     }
     void SetLightingProfile(visualization::Renderer &renderer,
@@ -1237,26 +1235,27 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtMaterialColor->SetOnValueChanged(
             [this, renderScene](const gui::Color &color) {
                 auto &renderer = this->GetRenderer();
+                auto &settings = impl_->settings;
                 Eigen::Vector3f color3(color.GetRed(), color.GetGreen(),
                                        color.GetBlue());
-                if (impl_->settings.selectedType == Impl::Settings::LIT) {
-                    impl_->settings.currentMaterials.lit.baseColor = color3;
+                if (settings.selectedType == Impl::Settings::LIT) {
+                    settings.currentMaterials.lit.baseColor = color3;
                 } else {
-                    impl_->settings.currentMaterials.unlit.baseColor = color3;
+                    settings.currentMaterials.unlit.baseColor = color3;
                 }
-                impl_->settings.userHasChangedColor = true;
-                impl_->settings.wgtResetMaterialColor->SetEnabled(true);
+                settings.userHasChangedColor = true;
+                settings.wgtResetMaterialColor->SetEnabled(true);
 
+                visualization::MaterialInstanceHandle mat;
+                if (settings.selectedType == Impl::Settings::UNLIT) {
+                    mat = settings.currentMaterials.unlit.handle;
+                } else {
+                    mat = settings.currentMaterials.lit.handle;
+                }
+                mat = renderer.ModifyMaterial(mat)
+                              .SetColor("baseColor", color3)
+                              .Finish();
                 for (const auto &handle : impl_->geometryHandles) {
-                    visualization::MaterialInstanceHandle mat;
-                    if (impl_->settings.selectedType == Impl::Settings::UNLIT) {
-                        mat = impl_->geometryMaterials[handle].unlit.handle;
-                    } else {
-                        mat = impl_->geometryMaterials[handle].lit.handle;
-                    }
-                    mat = renderer.ModifyMaterial(mat)
-                                  .SetColor("baseColor", color3)
-                                  .Finish();
                     renderScene->AssignMaterial(handle, mat);
                 }
             });
@@ -1283,17 +1282,14 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtPointSize = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
     settings.wgtPointSize->OnValueChanged = [this](double value) {
         float size = float(value);
-        this->impl_->settings.currentMaterials.unlit.pointSize = size;
+        impl_->settings.currentMaterials.unlit.pointSize = size;
         auto &renderer = GetRenderer();
-        for (const auto &pair : impl_->geometryMaterials) {
-            renderer.ModifyMaterial(pair.second.lit.handle)
-                    .SetParameter("pointSize", size)
-                    .Finish();
-            renderer.ModifyMaterial(pair.second.unlit.handle)
-                    .SetParameter("pointSize", size)
-                    .Finish();
-        }
-
+        renderer.ModifyMaterial(impl_->settings.currentMaterials.lit.handle)
+                .SetParameter("pointSize", size)
+                .Finish();
+        renderer.ModifyMaterial(impl_->settings.currentMaterials.unlit.handle)
+                .SetParameter("pointSize", size)
+                .Finish();
         renderer.ModifyMaterial(FilamentResourceManager::kDepthMaterial)
                 .SetParameter("pointSize", size)
                 .Finish();
@@ -1327,6 +1323,10 @@ void GuiVisualizer::SetTitle(const std::string &title) {
 void GuiVisualizer::SetGeometry(
         const std::vector<std::shared_ptr<const geometry::Geometry>>
                 &geometries) {
+    const std::size_t kMinPointCloudPointsForDecimation = 6000000;
+
+    gui::SceneWidget::ModelDescription desc;
+
     auto *scene3d = impl_->scene->GetScene();
     if (impl_->settings.hAxes) {
         scene3d->RemoveGeometry(impl_->settings.hAxes);
@@ -1336,20 +1336,24 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->geometryHandles.clear();
 
-    auto &renderer = GetRenderer();
-    for (const auto &pair : impl_->geometryMaterials) {
-        renderer.RemoveMaterialInstance(pair.second.unlit.handle);
-        renderer.RemoveMaterialInstance(pair.second.lit.handle);
-    }
-    impl_->geometryMaterials.clear();
-
     impl_->SetMaterialsToDefault(GetRenderer());
 
-    std::vector<visualization::GeometryHandle> objects;
-    geometry::AxisAlignedBoundingBox bounds;
     std::size_t nPointClouds = 0;
-    std::size_t nUnlit = 0;
+    std::size_t nPointCloudPoints = 0;
     for (auto &g : geometries) {
+        if (g->GetGeometryType() ==
+            geometry::Geometry::GeometryType::PointCloud) {
+            nPointClouds++;
+            auto cloud =
+                    std::static_pointer_cast<const geometry::PointCloud>(g);
+            nPointCloudPoints += cloud->points_.size();
+        }
+    }
+
+    geometry::AxisAlignedBoundingBox bounds;
+    std::size_t nUnlit = 0;
+    for (size_t i = 0; i < geometries.size(); ++i) {
+        std::shared_ptr<const geometry::Geometry> g = geometries[i];
         Impl::Materials materials = impl_->settings.currentMaterials;
 
         visualization::MaterialInstanceHandle selectedMaterial;
@@ -1361,7 +1365,6 @@ void GuiVisualizer::SetGeometry(
         // (for example, fountain.ply at http://qianyi.info/scenedata.html)
         switch (g->GetGeometryType()) {
             case geometry::Geometry::GeometryType::PointCloud: {
-                nPointClouds++;
                 auto pcd =
                         std::static_pointer_cast<const geometry::PointCloud>(g);
 
@@ -1397,10 +1400,23 @@ void GuiVisualizer::SetGeometry(
         auto g3 = std::static_pointer_cast<const geometry::Geometry3D>(g);
         auto handle = scene3d->AddGeometry(*g3, selectedMaterial);
         bounds += scene3d->GetEntityBoundingBox(handle);
-        objects.push_back(handle);
-
         impl_->geometryHandles.push_back(handle);
-        impl_->geometryMaterials.emplace(handle, materials);
+
+        if (g->GetGeometryType() ==
+            geometry::Geometry::GeometryType::PointCloud) {
+            desc.pointClouds.push_back(handle);
+            auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
+            if (nPointCloudPoints > kMinPointCloudPointsForDecimation) {
+                int sampleRate = nPointCloudPoints /
+                                 (kMinPointCloudPointsForDecimation / 2);
+                auto small = pcd->UniformDownSample(sampleRate);
+                handle = scene3d->AddGeometry(*small, selectedMaterial);
+                desc.fastPointClouds.push_back(handle);
+                impl_->geometryHandles.push_back(handle);
+            }
+        } else {
+            desc.meshes.push_back(handle);
+        }
     }
 
     if (!geometries.empty()) {
@@ -1438,7 +1454,8 @@ void GuiVisualizer::SetGeometry(
     scene3d->SetGeometryShadows(impl_->settings.hAxes, false, false);
     scene3d->SetEntityEnabled(impl_->settings.hAxes,
                               impl_->settings.wgtShowAxes->IsChecked());
-    impl_->scene->SetModel(impl_->settings.hAxes, objects);
+    desc.axes = impl_->settings.hAxes;
+    impl_->scene->SetModel(desc);
 
     impl_->scene->SetupCamera(60.0, bounds, bounds.GetCenter().cast<float>());
 }

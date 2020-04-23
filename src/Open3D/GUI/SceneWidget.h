@@ -74,12 +74,21 @@ public:
             visualization::LightHandle dirLight,
             std::function<void(const Eigen::Vector3f&)> onDirChanged);
     void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
-    void SetModel(visualization::GeometryHandle axes,
-                  const std::vector<visualization::GeometryHandle>& objects);
 
-    enum class MSAALevel { FAST, BEST };
-    void SetMSAALevel(MSAALevel level);
-    MSAALevel GetMSAALevel() const;
+    struct ModelDescription {
+        visualization::GeometryHandle axes;
+        std::vector<visualization::GeometryHandle> pointClouds;
+        std::vector<visualization::GeometryHandle> meshes;
+        // Optional point clouds drawn instead of 'pointClouds' when rotating.
+        // These should have substantially fewer points than the originals
+        // so that rotations are faster.
+        std::vector<visualization::GeometryHandle> fastPointClouds;
+    };
+    void SetModel(const ModelDescription& desc);
+
+    enum class Quality { FAST, BEST };
+    void SetRenderQuality(Quality level);
+    Quality GetRenderQuality() const;
 
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
