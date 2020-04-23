@@ -211,7 +211,7 @@ struct TensorRef {
 
     void Permute(const SizeVector& dims) {
         // Check dims are permuntation of [0, 1, 2, ..., n-1]
-        if (dims.size() != ndims_) {
+        if (static_cast<int64_t>(dims.size()) != ndims_) {
             utility::LogError("Number of dimensions mismatch {} != {}.",
                               dims.size(), ndims_);
         }
