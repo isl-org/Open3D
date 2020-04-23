@@ -39,7 +39,7 @@ class BuildSpatialHashTableOpKernelCUDA : public BuildSpatialHashTableOpKernel {
 public:
     explicit BuildSpatialHashTableOpKernelCUDA(
             OpKernelConstruction* construction)
-        : FixedRadiusSearchOpKernel(construction) {
+        : BuildSpatialHashTableOpKernel(construction) {
         texture_alignment = GetCUDACurrentDeviceTextureAlignment();
     }
 
@@ -57,7 +57,7 @@ public:
         BuildSpatialHashTableCUDA(device.stream(), temp_ptr, temp_size,
                                   texture_alignment, points.shape().dim_size(0),
                                   points.flat<T>().data(), radius.scalar<T>()(),
-                                  hash_table_size + 1,
+                                  hash_table_row_splits.shape().dim_size(0),
                                   hash_table_row_splits.flat<uint32_t>().data(),
                                   hash_table_index.flat<uint32_t>().data());
 
@@ -72,7 +72,7 @@ public:
         BuildSpatialHashTableCUDA(device.stream(), temp_ptr, temp_size,
                                   texture_alignment, points.shape().dim_size(0),
                                   points.flat<T>().data(), radius.scalar<T>()(),
-                                  hash_table_size + 1,
+                                  hash_table_row_splits.shape().dim_size(0),
                                   hash_table_row_splits.flat<uint32_t>().data(),
                                   hash_table_index.flat<uint32_t>().data());
     }
