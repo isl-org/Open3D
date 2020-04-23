@@ -415,27 +415,27 @@ public:
     Tensor Div_(const Tensor& value);
     Tensor operator/=(const Tensor& value) { return Div_(value); }
 
-    /// Returns the sum of the tensor long the given \p dims.
+    /// Returns the sum of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Sum(const SizeVector& dims, bool keepdim = false) const;
 
-    /// Returns the product of the tensor long the given \p dims.
+    /// Returns the product of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Prod(const SizeVector& dims, bool keepdim = false) const;
 
-    /// Returns min of the tensor long the given \p dims.
+    /// Returns min of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Min(const SizeVector& dims, bool keepdim = false) const;
 
-    /// Returns max of the tensor long the given \p dims.
+    /// Returns max of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Max(const SizeVector& dims, bool keepdim = false) const;
 
-    /// Returns minimum index of the tensor long the given \p dim. The returned
+    /// Returns minimum index of the tensor along the given \p dim. The returned
     /// tensor has dtype int64_t, and has the same shape as original tensor
     /// except that the reduced dimension is removed.
     ///
@@ -445,7 +445,7 @@ public:
     /// is into the flattend tensor.
     Tensor ArgMin(const SizeVector& dims) const;
 
-    /// Returns maximum index of the tensor long the given \p dim. The returned
+    /// Returns maximum index of the tensor along the given \p dim. The returned
     /// tensor has dtype int64_t, and has the same shape as original tensor
     /// except that the reduced dimension is removed.
     ///

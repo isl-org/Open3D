@@ -454,7 +454,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def sum(self, dim=None, keepdim=False):
         """
-        Returns the sum of along each the specified dimension `dim`. If `dim` is
+        Returns the sum along each the specified dimension `dim`. If `dim` is
         None, the reduction happens for all elements of the tensor. If `dim` is
         a list or tuple, the reduction happens in all of the specified `dim`.
         """
@@ -464,7 +464,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def prod(self, dim=None, keepdim=False):
         """
-        Returns the product of along each the specified dimension `dim`. If
+        Returns the product along each the specified dimension `dim`. If
         `dim` is None, the reduction happens for all elements of the tensor.
         If `dim` is a list or tuple, the reduction happens in all of the
         specified `dim`.
@@ -475,7 +475,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def min(self, dim=None, keepdim=False):
         """
-        Returns the min of along each the specified dimension `dim`. If
+        Returns the min along each the specified dimension `dim`. If
         `dim` is None, the reduction happens for all elements of the tensor.
         If `dim` is a list or tuple, the reduction happens in all of the
         specified `dim`.
@@ -488,7 +488,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def max(self, dim=None, keepdim=False):
         """
-        Returns the max of along each the specified dimension `dim`. If
+        Returns the max along each the specified dimension `dim`. If
         `dim` is None, the reduction happens for all elements of the tensor.
         If `dim` is a list or tuple, the reduction happens in all of the
         specified `dim`.
@@ -501,7 +501,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def argmin(self, dim=None):
         """
-        Returns minimum index of the tensor long the specified dimension. The
+        Returns minimum index of the tensor along the specified dimension. The
         returned tensor has dtype int64_t, and has the same shape as original
         tensor except that the reduced dimension is removed.
 
@@ -519,7 +519,7 @@ class Tensor(open3d_pybind.Tensor):
     @cast_to_py_tensor
     def argmax(self, dim=None):
         """
-        Returns maximum index of the tensor long the specified dimension. The
+        Returns maximum index of the tensor along the specified dimension. The
         returned tensor has dtype int64_t, and has the same shape as original
         tensor except that the reduced dimension is removed.
 

@@ -80,6 +80,7 @@ public:
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, f);
+        OPEN3D_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
     }
 
     template <typename func_t>
@@ -99,6 +100,7 @@ public:
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, f);
+        OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
     }
 
     template <typename func_t>
@@ -117,6 +119,7 @@ public:
 
         ElementWiseKernel<default_block_size, default_thread_size>
                 <<<grid_size, default_block_size, 0>>>(n, f);
+        OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
     }
 };
 }  // namespace kernel

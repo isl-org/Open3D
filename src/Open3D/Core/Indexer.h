@@ -211,6 +211,10 @@ struct TensorRef {
 
     void Permute(const SizeVector& dims) {
         // Check dims are permuntation of [0, 1, 2, ..., n-1]
+        if (dims.size() != ndims_) {
+            utility::LogError("Number of dimensions mismatch {} != {}.",
+                              dims.size(), ndims_);
+        }
         std::vector<bool> seen_dims(ndims_, false);
         for (const int64_t& dim : dims) {
             seen_dims[dim] = true;
@@ -218,7 +222,7 @@ struct TensorRef {
         if (!std::all_of(seen_dims.begin(), seen_dims.end(),
                          [](bool seen) { return seen; })) {
             utility::LogError(
-                    "Permute dims must be a permuntation from 0 to {}",
+                    "Permute dims must be a permuntation from 0 to {}.",
                     dims.size() - 1);
         }
 
@@ -302,7 +306,8 @@ public:
     /// Returns true iff the maximum_offsets in bytes are smaller than 2^31 - 1.
     bool CanUse32BitIndexing() const;
 
-    /// Returns an iterator of Indexers, each of each can be indexed in 32 bits.
+    /// Returns an iterator of Indexers, each of which can be indexed in 32
+    /// bits.
     IndexerIterator SplitTo32BitIndexing() const;
 
     /// Split the indexer such that the largest-span-dimension is split into two
@@ -374,7 +379,7 @@ public:
         return inputs_[i];
     }
 
-    /// Returns output TensorRef, if there's only one output.
+    /// Returns output TensorRef.
     TensorRef& GetOutput(int64_t i) {
         if (i >= num_outputs_ || i < 0) {
             utility::LogError("0 <= i < {} required, however, i = {}.",
@@ -389,6 +394,9 @@ public:
         }
         return outputs_[i];
     }
+
+    /// Returns output TensorRef. Only works if there's only one output.
+    /// Equivalent to GetOutput(0).
     TensorRef& GetOutput() {
         if (num_outputs_ > 1) {
             utility::LogError("num_outputs_ == {} > 0, use GetOutput(i)",

@@ -1155,6 +1155,23 @@ TEST_P(TensorPermuteDevices, ReduceSumKeepDim) {
     dst = src.Sum({0, 1, 2}, true);
     EXPECT_EQ(dst.GetShape(), SizeVector({1, 1, 1}));
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({276.f}));
+
+    // Dim order does not matter: {2, 1} -> {1, 2}.
+    dst = src.Sum({2, 1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({160.f, 116.f}));
+
+    // Dim should be wrapped automatically: {-1, 0} -> {2, 0} -> {0, 2}.
+    dst = src.Sum({-1, 0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({114.f, 86.f, 76.f}));
+
+    // Exception cases.
+    EXPECT_THROW(src.Sum({5}, true), std::runtime_error);      // Out-of-range.
+    EXPECT_THROW(src.Sum({0, -4}, true), std::runtime_error);  // Out-of-range.
+    EXPECT_THROW(src.Sum({0, 0}, true), std::runtime_error);   // Repeated.
+    EXPECT_THROW(src.Sum({2, -1}, true), std::runtime_error);  // Repeated.
 }
 
 TEST_P(TensorPermuteDevices, ReduceSumNotKeepDim) {
@@ -1257,6 +1274,14 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
     dst = src.Sum({0}, /*keepdim=*/false);
     EXPECT_EQ(dst.GetShape(), SizeVector({large_dim}));
     EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(large_dim, 2));
+
+    Tensor src_sliced = src.GetItem({TensorKey::Slice(None, None, None),
+                                     TensorKey::Slice(30, large_dim, None)});
+    EXPECT_EQ(src_sliced.GetShape(), SizeVector({2, large_dim - 30}));
+    dst = src_sliced.Sum({0}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({large_dim - 30}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(),
+              std::vector<int64_t>(large_dim - 30, 2));
 }
 
 // np.sum(np.ones((2, large_dim)), dim=1)
@@ -1272,6 +1297,14 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
     dst = src.Sum({1}, /*keepdim=*/false);
     EXPECT_EQ(dst.GetShape(), SizeVector({2}));
     EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(2, large_dim));
+
+    Tensor src_sliced = src.GetItem({TensorKey::Slice(None, None, None),
+                                     TensorKey::Slice(30, large_dim, None)});
+    EXPECT_EQ(src_sliced.GetShape(), SizeVector({2, large_dim - 30}));
+    dst = src_sliced.Sum({1}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(),
+              std::vector<int64_t>(2, large_dim - 30));
 }
 
 // np.sum(np.ones((large_dim, 2)), dim=0)
@@ -1287,6 +1320,14 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
     dst = src.Sum({0}, /*keepdim=*/false);
     EXPECT_EQ(dst.GetShape(), SizeVector({2}));
     EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(2, large_dim));
+
+    Tensor src_sliced = src.GetItem({TensorKey::Slice(30, large_dim, None),
+                                     TensorKey::Slice(None, None, None)});
+    EXPECT_EQ(src_sliced.GetShape(), SizeVector({large_dim - 30, 2}));
+    dst = src_sliced.Sum({0}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(),
+              std::vector<int64_t>(2, large_dim - 30));
 }
 
 // np.sum(np.ones((large_dim, 2)), dim=1)
@@ -1302,6 +1343,14 @@ TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase3) {
     dst = src.Sum({1}, /*keepdim=*/false);
     EXPECT_EQ(dst.GetShape(), SizeVector({large_dim}));
     EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>(large_dim, 2));
+
+    Tensor src_sliced = src.GetItem({TensorKey::Slice(30, large_dim, None),
+                                     TensorKey::Slice(None, None, None)});
+    EXPECT_EQ(src_sliced.GetShape(), SizeVector({large_dim - 30, 2}));
+    dst = src_sliced.Sum({1}, /*keepdim=*/false);
+    EXPECT_EQ(dst.GetShape(), SizeVector({large_dim - 30}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(),
+              std::vector<int64_t>(large_dim - 30, 2));
 }
 
 TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {

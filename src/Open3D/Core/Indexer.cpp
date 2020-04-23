@@ -210,7 +210,7 @@ bool Indexer::CanUse32BitIndexing() const {
         }
     }
 
-    // Chheck outputs
+    // Check outputs
     for (int64_t i = 0; i < num_outputs_; i++) {
         int64_t max_offset = 1;
         for (int dim = 0; dim < ndims_; dim++) {

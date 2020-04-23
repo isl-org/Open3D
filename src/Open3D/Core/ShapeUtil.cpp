@@ -124,9 +124,12 @@ SizeVector ReductionShape(const SizeVector& src_shape,
             out_shape[WrapDim(dim, src_ndims)] = 1;
         }
     } else {
-        // If dim i is reduced, dims_mask[i] == true
+        // If dim i is reduced, dims_mask[i] == true.
         std::vector<bool> dims_mask(src_ndims, false);
         for (const int64_t& dim : dims) {
+            if (dims_mask[WrapDim(dim, src_ndims)]) {
+                utility::LogError("Repeated reduction dimension {}", dim);
+            }
             dims_mask[WrapDim(dim, src_ndims)] = true;
         }
         int64_t to_fill = 0;
