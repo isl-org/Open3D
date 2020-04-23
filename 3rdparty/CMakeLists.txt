@@ -310,9 +310,20 @@ set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 # Faiss
 if (BUILD_FAISS)
     message(STATUS "Building faiss from source")
-    set(faiss_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss)
+    #set(faiss_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss)
     set(faiss_LIBRARIES faiss)
     set(faiss_LIBRARY_DIRS /opt/anaconda3/pkgs/mkl-2019.3-199/lib)
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss"  faiss_INCLUDE_DIRS)
+    #set(lib_name "faiss")
+    #set(faiss_LIB_FILES
+    #    ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+    #)
+    #target_include_directories(faiss SYSTEM INTERFACE
+#	${3RDPARTY_INSTALL_PREFIX}/include
+#    )
+#    target_link_libraries(faiss INTERFACE
+#        ${turbojpeg_LIB_FILES}
+#    )
 endif()
 
 message(STATUS "#### ${JPEG_TURBO_INCLUDE_DIRS}")
@@ -404,6 +415,9 @@ if (NOT BUILD_PNG)
 endif ()
 if (NOT BUILD_TINYFILEDIALOGS)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${tinyfiledialogs_LIBRARIES})
+endif ()
+if (NOT BUILD_FAISS)
+    list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${faiss_LIBRARIES})
 endif ()
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
