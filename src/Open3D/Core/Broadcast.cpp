@@ -34,7 +34,7 @@ namespace open3d {
 /// Expand a shape with ones in front. Returning a shape with size of ndims.
 /// E.g. ExpandFrontDims({2, 3}, 5) == {1, 1, 1, 2, 3}
 const SizeVector ExpandFrontDims(const SizeVector& shape, int64_t ndims) {
-    if (ndims < shape.size()) {
+    if (ndims < static_cast<int64_t>(shape.size())) {
         utility::LogError("Cannot expand a shape with ndims {} to ndims {}.",
                           shape.size(), ndims);
     }
