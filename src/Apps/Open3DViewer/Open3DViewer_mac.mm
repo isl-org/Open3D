@@ -77,7 +77,7 @@
     // in the Application object in main() getting destructed, but it still
     // thinks it is running. So tell Application to quit, which will post
     // the required events to the event loop to properly clean up.
-    open3d::gui::Application::GetInstance().Quit();
+    open3d::gui::Application::GetInstance().OnTerminate();
 }
 @end
 

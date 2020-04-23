@@ -54,7 +54,7 @@ public:
     /// just need something simple.
     void Run();
     bool RunOneTick();  // internal use
-    void Quit();        // sends a terminate event
+    void Quit();        // closes all windows (and exits as a result)
 
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menubar);
@@ -85,6 +85,12 @@ public:
 
     /// Delivers the itemId to the active window. Used internally.
     void OnMenuItemSelected(Menu::ItemId itemId);
+
+    /// Cleanup everything right now. An example of usage is Cocoa's
+    /// -applicationWillTermiate: AppDelegate message. Using Quit would result
+    /// in a crash (and an unsightly message from macOS) due to destructing
+    /// the windows at the wrong time.
+    void OnTerminate();
 
 private:
     Application();
