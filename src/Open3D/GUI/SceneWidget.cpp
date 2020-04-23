@@ -247,55 +247,56 @@ public:
                 return (keysDown_.find(key) != keysDown_.end());
             };
 
-            if (hasKey('a')) {
-                cameraControls_->MoveLocal({-dist, 0, 0});
+            auto move = [this, &redraw](const Eigen::Vector3f& v) {
+                cameraControls_->MoveLocal(v);
                 redraw = true;
+            };
+            auto rotate = [this, &redraw](float angleRad,
+                                          const Eigen::Vector3f& axis) {
+                cameraControls_->RotateLocal(angleRad, axis);
+                redraw = true;
+            };
+            auto rotateZ = [this, &redraw](int dy) {
+                cameraControls_->StartMouseDrag();
+                cameraControls_->RotateZ(0, dy);
+                redraw = true;
+            };
+
+            if (hasKey('a')) {
+                move({-dist, 0, 0});
             }
             if (hasKey('d')) {
-                cameraControls_->MoveLocal({dist, 0, 0});
-                redraw = true;
+                move({dist, 0, 0});
             }
             if (hasKey('w')) {
-                cameraControls_->MoveLocal({0, 0, -dist});
-                redraw = true;
+                move({0, 0, -dist});
             }
             if (hasKey('s')) {
-                cameraControls_->MoveLocal({0, 0, dist});
-                redraw = true;
+                move({0, 0, dist});
             }
             if (hasKey('q')) {
-                cameraControls_->MoveLocal({0, dist, 0});
-                redraw = true;
+                move({0, dist, 0});
             }
             if (hasKey('z')) {
-                cameraControls_->MoveLocal({0, -dist, 0});
-                redraw = true;
+                move({0, -dist, 0});
             }
             if (hasKey('e')) {
-                cameraControls_->StartMouseDrag();
-                cameraControls_->RotateZ(0, -2);
-                redraw = true;
+                rotateZ(-2);
             }
             if (hasKey('r')) {
-                cameraControls_->StartMouseDrag();
-                cameraControls_->RotateZ(0, 2);
-                redraw = true;
+                rotateZ(2);
             }
             if (hasKey(KEY_UP)) {
-                cameraControls_->RotateLocal(angleRad, {1, 0, 0});
-                redraw = true;
+                rotate(angleRad, {1, 0, 0});
             }
             if (hasKey(KEY_DOWN)) {
-                cameraControls_->RotateLocal(-angleRad, {1, 0, 0});
-                redraw = true;
+                rotate(-angleRad, {1, 0, 0});
             }
             if (hasKey(KEY_LEFT)) {
-                cameraControls_->RotateLocal(angleRad, {0, 1, 0});
-                redraw = true;
+                rotate(angleRad, {0, 1, 0});
             }
             if (hasKey(KEY_RIGHT)) {
-                cameraControls_->RotateLocal(-angleRad, {0, 1, 0});
-                redraw = true;
+                rotate(-angleRad, {0, 1, 0});
             }
         }
         return redraw;

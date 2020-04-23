@@ -170,7 +170,6 @@ struct Window::Impl {
             nullptr;  // only used if ImGUI isn't taking keystrokes
     int nSkippedFrames = 0;
     bool wantsAutoSizeAndCenter = false;
-    bool wantsTickEvents = false;
     bool needsLayout = true;
     bool isResizing = false;
 };
@@ -471,11 +470,6 @@ void Window::RaiseToTop() const { glfwFocusWindow(impl_->window); }
 
 bool Window::IsActiveWindow() const {
     return glfwGetWindowAttrib(impl_->window, GLFW_FOCUSED);
-}
-
-bool Window::GetTickEventsEnabled() const { return impl_->wantsTickEvents; }
-void Window::SetTickEventsEnabled(bool enable) {
-    impl_->wantsTickEvents = enable;
 }
 
 void Window::SetFocusWidget(Widget* w) { impl_->focusWidget = w; }

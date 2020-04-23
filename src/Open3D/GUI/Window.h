@@ -99,9 +99,6 @@ public:
 
     bool IsActiveWindow() const;
 
-    bool GetTickEventsEnabled() const;
-    void SetTickEventsEnabled(bool enable);
-
     void SetFocusWidget(Widget* w);
 
     void AddChild(std::shared_ptr<Widget> w);
