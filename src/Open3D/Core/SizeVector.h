@@ -70,7 +70,7 @@ public:
         if (this->size() == 0) {
             return 1;
         }
-        return std::accumulate(this->begin(), this->end(), 1,
+        return std::accumulate(this->begin(), this->end(), 1LL,
                                std::multiplies<int64_t>());
     }
 
