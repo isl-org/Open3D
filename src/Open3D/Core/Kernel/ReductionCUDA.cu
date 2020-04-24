@@ -212,6 +212,7 @@ public:
 
     /// Returns floor(log2(n))
     static inline int LastPow2(int n) {
+        // Dtype.h asserts sizeof(int) == 4.
         n |= (n >> 1);
         n |= (n >> 2);
         n |= (n >> 4);
