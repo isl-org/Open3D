@@ -266,7 +266,7 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
 
-    /// Returs a new tensor view with the same data but of a different shape.
+    /// Returns a new tensor view with the same data but of a different shape.
     ///
     /// The returned tensor shares the same data and must have the same number
     /// of elements, but may have a different size. For a tensor to be viewed,
