@@ -123,6 +123,26 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
     return true;
 }
 
+void ViewControl::SetLookat(const Eigen::Vector3d &lookat) {
+    lookat_ = lookat;
+    SetProjectionParameters();
+}
+
+void ViewControl::SetUp(const Eigen::Vector3d &up) {
+    up_ = up;
+    SetProjectionParameters();
+}
+
+void ViewControl::SetFront(const Eigen::Vector3d &front) {
+    front_ = front;
+    SetProjectionParameters();
+}
+
+void ViewControl::SetZoom(const double zoom) {
+    zoom_ = zoom;
+    SetProjectionParameters();
+}
+
 bool ViewControl::ConvertToPinholeCameraParameters(
         camera::PinholeCameraParameters &parameters) {
     if (window_height_ <= 0 || window_width_ <= 0) {

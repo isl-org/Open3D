@@ -29,6 +29,9 @@ Clone and build Open3D from source. Visit :ref:`compilation` for details.
     conda install sphinx sphinx-autobuild
 
 
+You further need to install `nbsphinx`. See `here <http://nbsphinx.readthedocs.io>`_ for installation instructions.
+
+
 3. Install Doxygen
 ``````````````````
 
