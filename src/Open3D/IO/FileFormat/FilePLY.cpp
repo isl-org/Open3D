@@ -26,6 +26,7 @@
 
 #include <rply/rply.h>
 
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/LineSetIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
@@ -354,6 +355,39 @@ int ReadColorCallback(p_ply_argument argument) {
 }  // unnamed namespace
 
 namespace io {
+
+FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
+    p_ply ply_file = ply_open(path.c_str(), NULL, 0, NULL);
+    if (!ply_file) {
+        return CONTENTS_UNKNOWN;
+    }
+    if (!ply_read_header(ply_file)) {
+        ply_close(ply_file);
+        return CONTENTS_UNKNOWN;
+    }
+
+    auto nVertices =
+            ply_set_read_cb(ply_file, "vertex", "x", nullptr, nullptr, 0);
+    auto nLines =
+            ply_set_read_cb(ply_file, "edge", "vertex1", nullptr, nullptr, 0);
+    auto nFaces = ply_set_read_cb(ply_file, "face", "vertex_indices", nullptr,
+                                  nullptr, 0);
+    if (nFaces == 0) {
+        nFaces = ply_set_read_cb(ply_file, "face", "vertex_index", nullptr,
+                                 nullptr, 0);
+    }
+    ply_close(ply_file);
+
+    int contents = 0;
+    if (nFaces > 0) {
+        contents |= CONTAINS_TRIANGLES;
+    } else if (nLines > 0) {
+        contents |= CONTAINS_LINES;
+    } else if (nVertices > 0) {
+        contents |= CONTAINS_POINTS;
+    }
+    return FileGeometry(contents);
+}
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,

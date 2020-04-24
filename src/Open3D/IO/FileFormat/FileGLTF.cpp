@@ -27,6 +27,7 @@
 #include <numeric>
 #include <vector>
 
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
@@ -88,6 +89,10 @@ struct IntArray : public IntArrayBase {
 
     size_t size() const override { return adapter.elem_count; }
 };
+
+FileGeometry ReadFileGeometryTypeGLTF(const std::string& path) {
+    return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
 
 bool ReadTriangleMeshFromGLTF(const std::string& filename,
                               geometry::TriangleMesh& mesh,

@@ -28,6 +28,7 @@
 #include <numeric>
 #include <vector>
 
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/Utility/Console.h"
@@ -38,6 +39,10 @@
 
 namespace open3d {
 namespace io {
+
+FileGeometry ReadFileGeometryTypeOBJ(const std::string& path) {
+    return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
 
 bool ReadTriangleMeshFromOBJ(const std::string& filename,
                              geometry::TriangleMesh& mesh,

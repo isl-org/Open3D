@@ -44,6 +44,7 @@
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/ImageIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
@@ -1489,12 +1490,16 @@ bool GuiVisualizer::SetIBL(const char *path) {
 bool GuiVisualizer::LoadGeometry(const std::string &path) {
     auto geometry = std::shared_ptr<geometry::Geometry3D>();
 
+    auto geometryType = io::ReadFileGeometryType(path);
+
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     bool meshSuccess = false;
-    try {
-        meshSuccess = io::ReadTriangleMesh(path, *mesh);
-    } catch (...) {
-        meshSuccess = false;
+    if (geometryType & io::CONTAINS_TRIANGLES) {
+        try {
+            meshSuccess = io::ReadTriangleMesh(path, *mesh);
+        } catch (...) {
+            meshSuccess = false;
+        }
     }
     if (meshSuccess) {
         if (mesh->triangles_.size() == 0) {
