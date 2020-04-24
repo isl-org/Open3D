@@ -60,77 +60,6 @@ struct alignas(16) SmallArray {
     SmallArray& operator=(const SmallArray&) = default;
 };
 
-// Result of div/mod operation stored together.
-template <typename T>
-struct DivModPair {
-    T div_, mod_;
-    OPEN3D_HOST_DEVICE DivModPair(T div, T mod) : div_(div), mod_(mod) {}
-};
-
-// Base case: we only have an implementation for uint32_t for now.  For
-// everything else, we use plain division.
-template <typename T>
-struct IntDivider {
-    IntDivider() {}  // Dummy constructor for arrays.
-    IntDivider(T d) : divisor_(d) {}
-
-    OPEN3D_HOST_DEVICE inline T Div(T n) const { return n / divisor_; }
-    OPEN3D_HOST_DEVICE inline T Mod(T n) const { return n % divisor_; }
-    OPEN3D_HOST_DEVICE inline DivModPair<T> DivMod(T n) const {
-        return DivModPair<T>(n / divisor_, n % divisor_);
-    }
-
-    T divisor_;
-};
-
-// Implement fast integer division.
-template <>
-struct IntDivider<uint32_t> {
-    static_assert(sizeof(uint32_t) == 4, "Assumes 32-bit uint32_t.");
-
-    IntDivider() {}  // Dummy constructor for arrays.
-
-    IntDivider(uint32_t d) : divisor_(d) {
-        assert(divisor_ >= 1 && divisor_ <= INT32_MAX);
-
-        // TODO: gcc/clang has __builtin_clz() but it's not portable.
-        for (shift_ = 0; shift_ < 32; shift_++)
-            if ((1U << shift_) >= divisor_) break;
-
-        uint64_t one = 1;
-        uint64_t magic =
-                ((one << 32) * ((one << shift_) - divisor_)) / divisor_ + 1;
-        m1_ = magic;
-        assert(m1_ > 0 && m1_ == magic);  // m1_ must fit in 32 bits.
-    }
-
-    OPEN3D_HOST_DEVICE inline uint32_t Div(uint32_t n) const {
-#if defined(__CUDA_ARCH__)
-        // 't' is the higher 32-bits of unsigned 32-bit multiplication of 'n'
-        // and 'm1_'.
-        uint32_t t = __umulhi(n, m1_);
-        return (t + n) >> shift_;
-#else
-        // Using uint64_t so that the addition does not overflow.
-        uint64_t t = ((uint64_t)n * m1_) >> 32;
-        return (t + n) >> shift_;
-#endif
-    }
-
-    OPEN3D_HOST_DEVICE inline uint32_t Mod(uint32_t n) const {
-        return n - Div(n) * divisor_;
-    }
-
-    OPEN3D_HOST_DEVICE inline DivModPair<uint32_t> DivMod(uint32_t n) const {
-        uint32_t q = Div(n);
-        return DivModPair<uint32_t>(q, n - q * divisor_);
-    }
-
-    uint32_t divisor_;  // d above.
-    uint32_t m1_;       // Magic number: m' above.
-    uint32_t shift_;    // Shift amounts.
-};
-
 template <int NARGS, typename index_t = uint32_t>
 struct OffsetCalculator {
     OffsetCalculator(int dims,
@@ -143,9 +72,9 @@ struct OffsetCalculator {
 
         for (int i = 0; i < MAX_DIMS; ++i) {
             if (i < dims_) {
-                sizes_[i] = IntDivider<index_t>(sizes[i]);
+                sizes_[i] = sizes[i];
             } else {
-                sizes_[i] = IntDivider<index_t>(1);
+                sizes_[i] = 1;
             }
             for (int arg = 0; arg < NARGS; arg++) {
                 strides_[i][arg] = i < dims_ ? strides[arg][i] : 0;
@@ -170,21 +99,21 @@ struct OffsetCalculator {
             if (dim == dims_) {
                 break;
             }
-            auto div_mod_pair = sizes_[dim].DivMod(linear_idx);
-            linear_idx = div_mod_pair.div_;
+            index_t mod = linear_idx % sizes_[dim];
+            linear_idx = linear_idx / sizes_[dim];
 
 #if defined(__CUDA_ARCH__)
 #pragma unroll
 #endif
             for (int arg = 0; arg < NARGS; arg++) {
-                offsets[arg] += div_mod_pair.mod_ * strides_[dim][arg];
+                offsets[arg] += mod * strides_[dim][arg];
             }
         }
         return offsets;
     }
 
     int dims_;
-    IntDivider<index_t> sizes_[MAX_DIMS];
+    index_t sizes_[MAX_DIMS];
     index_t strides_[MAX_DIMS][NARGS];
 };
 
