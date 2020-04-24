@@ -545,12 +545,6 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
         state.face_num = ply_set_read_cb(ply_file, "face", "vertex_index",
                                          ReadFaceCallBack, &state, 0);
     }
-    if (state.face_num == 0) {
-        utility::LogWarning("Read PLY as triangle mesh failed: no faces",
-                            filename);
-        ply_close(ply_file);
-        return false;
-    }
 
     state.vertex_index = 0;
     state.normal_index = 0;
