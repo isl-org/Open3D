@@ -144,6 +144,7 @@ struct Window::Impl {
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
     int mouseMods = 0;
+    double lastRenderTime = 0.0;
 
     Theme theme;  // so that the font size can be different based on scaling
     visualization::FilamentRenderer* renderer;
@@ -591,7 +592,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
 }
 }  // namespace
 
-Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
+Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     // These are here to provide fast unique window names. If you find yourself
     // needing more than a handful, you should probably be using a container
     // of some sort (see Layout.h).
@@ -602,6 +603,12 @@ Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
 
     bool needsLayout = false;
     bool needsRedraw = false;
+
+    // ImGUI uses the dt parameter to calculate double-clicks, so it
+    // needs to be reasonably accurate.
+    double now = Application::GetInstance().Now();
+    float dtSec = now - impl_->lastRenderTime;
+    impl_->lastRenderTime = now;
 
     // Run the deferred callbacks that need to happen outside a draw
     while (!impl_->deferredUntilBeforeDraw.empty()) {
@@ -732,10 +739,10 @@ Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
     }
 }
 
-Window::DrawResult Window::OnDraw(float dtSec) {
+Window::DrawResult Window::OnDraw() {
     bool neededLayout = impl_->needsLayout;
 
-    auto result = DrawOnce(dtSec, neededLayout);
+    auto result = DrawOnce(neededLayout);
     if (result == Widget::DrawResult::RELAYOUT) {
         impl_->needsLayout = true;
     }
@@ -745,7 +752,7 @@ Window::DrawResult Window::OnDraw(float dtSec) {
     // window first appears, as well as corrupted images if the
     // window initially appears underneath the mouse.
     if (neededLayout || impl_->needsLayout) {
-        DrawOnce(0.001, false);
+        DrawOnce(false);
     }
 
     return (result == Widget::DrawResult::NONE ? NONE : REDRAW);
@@ -972,7 +979,7 @@ void Window::OnDragDropped(const char* path) {}
 // ----------------------------------------------------------------------------
 void Window::DrawCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (w->OnDraw(0.1) == Window::REDRAW) {
+    if (w->OnDraw() == Window::REDRAW) {
         // Can't just draw here, because Filament sometimes fences within
         // a draw, and then you can get two draws happening at the same
         // time, which ends up with a crash.
