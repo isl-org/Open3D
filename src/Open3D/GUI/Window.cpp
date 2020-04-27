@@ -194,16 +194,13 @@ Window::Window(const std::string& title,
         height == AUTOSIZE_HEIGHT) {
         impl_->wantsAutoSizeAndCenter = true;
     }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // NOTE: Setting alpha and stencil bits to match GLX standard default
-    // values. GLFW sets these internally to 8 and 8 respectively if not
-    // specified which causes problems with Filament on Linux with Nvidia binary
-    // driver
-    glfwWindowHint(GLFW_ALPHA_BITS, 0);
-    glfwWindowHint(GLFW_STENCIL_BITS, 0);
+
+    // NOTE: Since Open3D does not use any graphics APIs itself there is no need
+    // to initialize GLFW for a graphics API. This avoids potential
+    // incompatibility issues between GLFW and Filament GLX Context (issue
+    // observed on Linux with Nvidia binary driver) and saves a few 10s of MB of
+    // GPU memory
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
