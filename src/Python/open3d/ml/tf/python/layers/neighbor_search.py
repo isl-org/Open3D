@@ -5,21 +5,21 @@ import tensorflow as tf
 class FixedRadiusSearch(tf.keras.layers.Layer):
     """Fixed radius search for 3D point clouds.
 
-    This layer computes the neighbors for a fixed radius on a point cloud. 
+    This layer computes the neighbors for a fixed radius on a point cloud.
 
     Arguments:
 
     metric:
-      Either L1, L2 or Linf. Default is L2
+      Either L1, L2 or Linf. Default is L2.
 
     ignore_query_point:
-      If true the points that coincide with the center of the search window will be
-      ignored. This excludes the query point if 'queries' and 'points' are the same 
+      If True the points that coincide with the center of the search window will be
+      ignored. This excludes the query point if 'queries' and 'points' are the same
       point cloud.
 
     return_distances:
       If True the distances for each neighbor will be returned.
-      If False a zero length Tensor will be returned instead
+      If False a zero length Tensor will be returned instead.
     """
 
     def __init__(self,
@@ -62,19 +62,18 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
 
         Returns: 3 Tensors in the following order
           neighbors_index
-            The compact list of indices of the neighbors. The corresponding query point 
+            The compact list of indices of the neighbors. The corresponding query point
             can be inferred from the 'neighbor_count_row_splits' vector.
 
           neighbors_row_splits
             The exclusive prefix sum of the neighbor count for the query points including
-            the total neighbor count as the last element. The size of this array is the 
+            the total neighbor count as the last element. The size of this array is the
             number of queries + 1.
 
           neighbors_distance
             Stores the distance to each neighbor if 'return_distances' is True.
             Note that the distances are squared if metric is L2.
-            This is a zero length Tensor if 'return_distances' is False. 
-
+            This is a zero length Tensor if 'return_distances' is False.
         """
         if hash_table is None:
             table = ops.build_spatial_hash_table(

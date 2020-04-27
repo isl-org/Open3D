@@ -681,11 +681,11 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
 ///        hash_table_row_splits array.
 ///
 /// \param hash_table_row_splits    This is an output of the function
-///        BuildSpatialHashTableCPU.The row splits array describing the start
+///        BuildSpatialHashTableCUDA. The row splits array describing the start
 ///        and end of each cell.
 ///
 /// \param hash_table_index    This is an output of the function
-///        BuildSpatialHashTableCPU. This is array storing the values of the
+///        BuildSpatialHashTableCUDA. This is array storing the values of the
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///

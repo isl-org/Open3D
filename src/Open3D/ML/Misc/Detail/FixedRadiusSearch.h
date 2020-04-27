@@ -435,7 +435,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///        hash_table_row_splits array.
 ///
 /// \param hash_table_row_splits    This is an output of the function
-///        BuildSpatialHashTableCPU.The row splits array describing the start
+///        BuildSpatialHashTableCPU. The row splits array describing the start
 ///        and end of each cell.
 ///
 /// \param hash_table_index    This is an output of the function
