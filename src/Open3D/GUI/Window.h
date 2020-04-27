@@ -142,6 +142,7 @@ private:
     static void MouseScrollCallback(GLFWwindow* window, double dx, double dy);
     static void KeyCallback(
             GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void CharCallback(GLFWwindow* window, unsigned int utf32char);
     static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
     static void CloseCallback(GLFWwindow* window);
     static void UpdateAfterEvent(Window* w);

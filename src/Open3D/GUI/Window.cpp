@@ -213,6 +213,7 @@ Window::Window(const std::string& title,
     glfwSetMouseButtonCallback(impl_->window, MouseButtonCallback);
     glfwSetScrollCallback(impl_->window, MouseScrollCallback);
     glfwSetKeyCallback(impl_->window, KeyCallback);
+    glfwSetCharCallback(impl_->window, CharCallback);
     glfwSetDropCallback(impl_->window, DragDropCallback);
     glfwSetWindowCloseCallback(impl_->window, CloseCallback);
 
@@ -609,11 +610,6 @@ Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
         impl_->deferredUntilBeforeDraw.pop();
     }
 
-    if (!isLayoutPass) {
-        impl_->renderer->BeginFrame();  // this can return false if Filament
-                                        // wants to skip a frame
-    }
-
     // Set current context
     MakeCurrent();  // make sure our ImGUI context is active
     ImGuiIO& io = ImGui::GetIO();
@@ -643,7 +639,14 @@ Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
     io.KeyCtrl = (impl_->mouseMods & int(KeyModifier::CTRL));
     io.KeySuper = (impl_->mouseMods & int(KeyModifier::META));
 
-    // Begin ImGUI frame
+    // Begin an ImGUI frame. We should NOT begin a filament frame here:
+    // a) ImGUI always needs to "draw", because event processing happens
+    //    during draw for immediate mode GUIs, but if this is a layout
+    //    pass (as ImGUI can take up two draws to layout widgets and text)
+    //    we aren't actually going to render it.
+    // b) Filament pumps events during a beginFrame(), which can cause
+    //    a key up event to process and erase the key down state from
+    //    the ImGuiIO structure before we get a chance to draw/process it.
     ImGui::NewFrame();
     ImGui::PushFont(impl_->imgui.systemFont);
 
@@ -719,6 +722,7 @@ Widget::DrawResult Window::DrawOnce(float dtSec, bool isLayoutPass) {
     // draw, and if we are drawing for layout purposes, don't actually
     // draw, because we are just going to draw again after this returns.
     if (!isLayoutPass) {
+        impl_->renderer->BeginFrame();
         impl_->renderer->Draw();
         impl_->renderer->EndFrame();
     }
@@ -1102,6 +1106,42 @@ void Window::KeyCallback(
     KeyEvent e = {type, k, (action == GLFW_REPEAT)};
 
     w->OnKeyEvent(e);
+    UpdateAfterEvent(w);
+}
+
+void Window::CharCallback(GLFWwindow* window, unsigned int utf32char) {
+    // Convert utf-32 to utf8
+    // From https://stackoverflow.com/a/42013433/218226
+    // Note: This code handles all characters, but non-European characters
+    //       won't draw unless we will include them in the ImGUI font (which
+    //       is prohibitively large for hanzi/kanji)
+    char utf8[5];
+    if (utf32char <= 0x7f) {
+        utf8[0] = utf32char;
+        utf8[1] = '\0';
+    } else if (utf32char <= 0x7ff) {
+        utf8[0] = 0xc0 | (utf32char >> 6);
+        utf8[1] = 0x80 | (utf32char & 0x3f);
+        utf8[2] = '\0';
+    } else if (utf32char <= 0xffff) {
+        utf8[0] = 0xe0 | (utf32char >> 12);
+        utf8[1] = 0x80 | ((utf32char >> 6) & 0x3f);
+        utf8[2] = 0x80 | (utf32char & 0x3f);
+        utf8[3] = '\0';
+    } else if (utf32char <= 0x10ffff) {
+        utf8[0] = 0xf0 | (utf32char >> 18);
+        utf8[1] = 0x80 | ((utf32char >> 12) & 0x3f);
+        utf8[2] = 0x80 | ((utf32char >> 6) & 0x3f);
+        utf8[3] = 0x80 | (utf32char & 0x3f);
+        utf8[4] = '\0';
+    } else {
+        // These characters are supposed to be forbidden, but just in case
+        utf8[0] = '?';
+        utf8[1] = '\0';
+    }
+
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    w->OnTextInput(TextInputEvent{utf8});
     UpdateAfterEvent(w);
 }
 
