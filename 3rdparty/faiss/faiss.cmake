@@ -1,5 +1,9 @@
 include(ExternalProject)
 
+find_package(MKL REQUIRED)
+include_directories(${MKL_INCLUDE_DIRS})
+set(BLAS_LIB ${MKL_LIBRARIES})
+
 if (WIN32)
     set(LIBDIR "lib")
 else()
@@ -7,12 +11,11 @@ else()
     set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
 endif()
 
-set(BLAS_DIR "/opt/anaconda3/envs/open3d/lib")
 ExternalProject_Add(
     ext_faiss
     PREFIX faiss
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss
-    CONFIGURE_COMMAND LDFLAGS=-L${BLAS_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss/configure --without-cuda --prefix=${3RDPARTY_INSTALL_PREFIX}
+    CONFIGURE_COMMAND LDFLAGS=-L${MKL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss/configure --without-cuda --prefix=${3RDPARTY_INSTALL_PREFIX}
     BUILD_COMMAND ${MAKE}
     BUILD_IN_SOURCE 1
 )
