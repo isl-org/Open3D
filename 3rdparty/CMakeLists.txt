@@ -310,34 +310,7 @@ set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 # Faiss
 if (BUILD_FAISS)
     message(STATUS "Building faiss from source")
-    set(BLAS_DIR "/opt/anaconda3/envs/open3d/lib")
-    ExternalProject_Add(
-        ext_faiss
-        PREFIX faiss
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss
-	CONFIGURE_COMMAND LDFLAGS=-L${BLAS_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/faiss/faiss/configure --without-cuda --prefix=${3RDPARTY_INSTALL_PREFIX}
-        BUILD_COMMAND ${MAKE}
-        BUILD_IN_SOURCE 1
-    )
-    add_library(faiss INTERFACE)
-    add_dependencies(faiss ext_faiss)
-    
-    if(MSVC)
-	    set(lib_name "faiss-static")
-    else()
-	    set(lib_name "faiss")
-    endif()
-
-    set(FAISS_LIBRARIES ${lib_name})
-    set(faiss_LIB_FILES ${3RDPARTY_INSTALL_PREFIX}/${LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
-    target_include_directories(faiss SYSTEM INTERFACE ${3RDPARTY_INSTALL_PREDIX}/include)
-    target_link_libraries(faiss INTERFACE ${faiss_LIB_FILES})
-    add_dependencies(build_all_3rd_party_libs faiss)
-    # set(FAISS_LIB_DIR ${3RDPARTY_INSTALL_PREFIX}/lib)
-    # add_library(faiss STATIC IMPORTED)
-    # set_target_properties(faiss PROPERTIES IMPORTED_LOCATION ${3RDPARTY_INSTALL_PREFIX/lib/libfaiss.a)
-    # include_directories(
-    
+    include(faiss/faiss.cmake)
 endif()
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
@@ -363,8 +336,6 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${poisson_INCLUDE_DIRS}
      ${faiss_INCLUDE_DIRS}
 )
-message(STATUS "3RDPARTY_INCLUDE_DIRS")
-message(STATUS ${3RDPARTY_INCLUDE_DIRS})
 
 # set 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
 # Open3D's header only dependes on Eigen and GL headers
@@ -375,8 +346,6 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS_AT_INSTALL
      ${GLFW_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
 )
-message(STATUS "3RDPARTY_INCLUDE_DIRS_AT_INSTALL")
-message(STATUS ${3RDPARTY_INCLUDE_DIRS_AT_INSTALL})
 
 # set 3RDPARTY_LIBRARY_DIRS
 list(APPEND 3RDPARTY_LIBRARY_DIRS
@@ -387,8 +356,6 @@ list(APPEND 3RDPARTY_LIBRARY_DIRS
     ${JPEG_TURBO_LIBRARY_DIRS}
     ${faiss_LIBRARY_DIRS}
 )
-message(STATUS "3RDPARTY_LIBRARY_DIRS")
-message(STATUS ${3RDPARTY_LIBRARY_DIRS})
 
 # set 3RDPARTY_LIBRARIES
 list(APPEND 3RDPARTY_LIBRARIES
@@ -405,8 +372,6 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${fmt_LIBRARIES}
      ${FAISS_LIBRARIES}
 )
-message(STATUS "3RDPARTY_LIBRARIES")
-message(STATUS ${3RDPARTY_LIBRARIES})
 
 # set PRE_BUILT_3RDPARTY_LIBRARIES. When building Open3D as shared library,
 # the user app that links Open3D also need to link PRE_BUILT_3RDPARTY_LIBRARIES,
@@ -423,9 +388,6 @@ if (NOT BUILD_PNG)
 endif ()
 if (NOT BUILD_TINYFILEDIALOGS)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${tinyfiledialogs_LIBRARIES})
-endif ()
-if (NOT BUILD_FAISS)
-    list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${faiss_LIBRARIES})
 endif ()
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
