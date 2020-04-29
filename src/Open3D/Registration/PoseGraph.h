@@ -35,8 +35,12 @@
 namespace open3d {
 namespace registration {
 
+/// \class PoseGraphNode
+///
+/// \brief Node of PoseGraph.
 class PoseGraphNode : public utility::IJsonConvertible {
 public:
+    /// \brief Default Constructor.
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
         : pose_(pose) {}
     ~PoseGraphNode();
@@ -49,8 +53,19 @@ public:
     Eigen::Matrix4d_u pose_;
 };
 
+/// \class PoseGraphEdge
+///
+/// \brief Edge of PoseGraph.
 class PoseGraphEdge : public utility::IJsonConvertible {
 public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param source_node_id Source PoseGraphNode id.
+    /// \param target_node_id Target PoseGraphNode id.
+    /// \param transformation Transformation matrix.
+    /// \param information Information matrix.
+    /// \param uncertain Whether the edge is uncertain.
+    /// \param confidence Confidence value of the edge.
     PoseGraphEdge(
             int source_node_id = -1,
             int target_node_id = -1,
@@ -71,13 +86,21 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
+    /// Source PoseGraphNode id.
     int source_node_id_;
+    /// Target PoseGraphNode id.
     int target_node_id_;
+    /// Transformation matrix.
     Eigen::Matrix4d_u transformation_;
+    /// Information matrix.
     Eigen::Matrix6d_u information_;
-    /// odometry edge has uncertain == false
+    /// \brief Whether the edge is uncertain.
+    ///
+    /// Odometry edge has uncertain == false
     /// loop closure edges has uncertain == true
     bool uncertain_;
+    /// \brief Confidence value of the edge.
+    ///
     /// if uncertain_ is true, it has confidence bounded in [0,1].
     /// 1 means reliable, and 0 means unreliable edge.
     /// This correspondence to line process value in [Choi et al 2015]
@@ -85,8 +108,12 @@ public:
     double confidence_;
 };
 
+/// \class PoseGraph
+///
+/// \brief Data structure defining the pose graph.
 class PoseGraph : public utility::IJsonConvertible {
 public:
+    /// \brief Default Constructor.
     PoseGraph();
     ~PoseGraph() override;
 
@@ -95,7 +122,9 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
+    /// List of PoseGraphNode.
     std::vector<PoseGraphNode> nodes_;
+    /// List of PoseGraphEdge.
     std::vector<PoseGraphEdge> edges_;
 };
 

@@ -39,7 +39,7 @@ class ViewerWithCallback:
                 vis.add_geometry(rgbd)
                 vis_geometry_added = True
 
-            vis.update_geometry()
+            vis.update_geometry(rgbd)
             vis.poll_events()
             vis.update_renderer()
 

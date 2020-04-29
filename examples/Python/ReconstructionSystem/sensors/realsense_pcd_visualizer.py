@@ -114,7 +114,7 @@ if __name__ == "__main__":
             if frame_count == 0:
                 vis.add_geometry(pcd)
 
-            vis.update_geometry()
+            vis.update_geometry(pcd)
             vis.poll_events()
             vis.update_renderer()
 

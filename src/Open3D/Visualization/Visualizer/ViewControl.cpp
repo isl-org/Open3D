@@ -123,6 +123,26 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
     return true;
 }
 
+void ViewControl::SetLookat(const Eigen::Vector3d &lookat) {
+    lookat_ = lookat;
+    SetProjectionParameters();
+}
+
+void ViewControl::SetUp(const Eigen::Vector3d &up) {
+    up_ = up;
+    SetProjectionParameters();
+}
+
+void ViewControl::SetFront(const Eigen::Vector3d &front) {
+    front_ = front;
+    SetProjectionParameters();
+}
+
+void ViewControl::SetZoom(const double zoom) {
+    zoom_ = zoom;
+    SetProjectionParameters();
+}
+
 bool ViewControl::ConvertToPinholeCameraParameters(
         camera::PinholeCameraParameters &parameters) {
     if (window_height_ <= 0 || window_width_ <= 0) {
@@ -201,7 +221,9 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     front_ = -extrinsic.block<1, 3>(2, 0).transpose();
     eye_ = extrinsic.block<3, 3>(0, 0).inverse() *
            (extrinsic.block<3, 1>(0, 3) * -1.0);
-    double ideal_distance = (eye_ - bounding_box_.GetCenter()).dot(front_);
+
+    auto bb_center = bounding_box_.GetCenter();
+    double ideal_distance = std::abs((eye_ - bb_center).dot(front_));
     double ideal_zoom = ideal_distance *
                         std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
                         bounding_box_.GetMaxExtent();

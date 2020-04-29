@@ -8,7 +8,7 @@ The first step of the scene reconstruction system is to create fragments from sh
 Input arguments
 ``````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``image`` and ``depth`` to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies the path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
+The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders ``image`` and ``depth`` to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies the path to a json file that stores the camera intrinsic matrix (See :ref:`/tutorial/Basic/rgbd_odometry.ipynb#read-camera-intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
 
 .. _make_fragments_register_rgbd_image_pairs:
 
@@ -35,7 +35,7 @@ Multiway registration
    :lines: 5,62-108
    :linenos:
 
-This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
+This script uses the technique demonstrated in :ref:`/tutorial/Advanced/multiway_registration.ipynb`. Function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
 
 Once a pose graph is created, multiway registration is performed by calling function ``optimize_posegraph_for_fragment``.
 
@@ -58,7 +58,7 @@ Make a fragment
    :lines: 5,111-145
    :linenos:
 
-Once the poses are estimates, :ref:`rgbd_integration` is used to reconstruct a colored fragment from each RGBD sequence.
+Once the poses are estimates, :ref:`/tutorial/Advanced/rgbd_integration.ipynb` is used to reconstruct a colored fragment from each RGBD sequence.
 
 Batch processing
 ``````````````````````````````````````

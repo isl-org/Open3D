@@ -35,8 +35,19 @@
 #include "open3d_pybind/utility/utility.h"
 #include "open3d_pybind/visualization/visualization.h"
 
+#include "Open3D/Utility/Console.h"
+
 PYBIND11_MODULE(open3d, m) {
+    open3d::utility::Logger::i().print_fcn_ = [](const std::string& msg) {
+        py::print(msg);
+    };
+
     m.doc() = "Python binding of Open3D";
+
+    // Check open3d CXX11_ABI with
+    // import open3d; print(open3d.open3d._GLIBCXX_USE_CXX11_ABI)
+    m.add_object("_GLIBCXX_USE_CXX11_ABI",
+                 _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False);
 
     // Register this first, other submodule (e.g. odometry) might depend on this
     pybind_utility(m);
