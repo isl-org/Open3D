@@ -12,6 +12,10 @@
 	path = 3rdparty/googletest
 	url = https://github.com/google/googletest.git
 	branch = master
+[submodule "3rdparty/tinyobjloader"]
+        path = 3rdparty/tinyobjloader/tinyobjloader
+        url = https://github.com/syoyo/tinyobjloader.git
+        branch = master
 [submodule "3rdparty/open3d_sphinx_theme"]
 	path = 3rdparty/open3d_sphinx_theme
 	url = https://github.com/intel-isl/open3d_sphinx_theme.git
