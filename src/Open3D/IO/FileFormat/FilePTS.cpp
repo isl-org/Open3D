@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
+#include "Open3D/IO/ClassIO/FileFormatIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
@@ -32,6 +33,10 @@
 
 namespace open3d {
 namespace io {
+
+FileGeometry ReadFileGeometryTypePTS(const std::string &path) {
+    return CONTAINS_POINTS;
+}
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
