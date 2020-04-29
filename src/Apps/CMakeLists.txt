@@ -76,6 +76,28 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
             COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
+        if (UNIX)
+            install(DIRECTORY   "${APP_DIR}"
+                    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+                    USE_SOURCE_PERMISSIONS)
+            if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
+                set(DESKTOP_INSTALL_DIR "/usr/share")
+            else()
+                set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share")
+            endif()
+            configure_file("${SOURCE_DIR}/${TARGET_NAME}.desktop.in"
+                           "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop")
+            # Install using freedesktop.org standards
+            install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/applications")
+            install(FILES "${SOURCE_DIR}/icon.svg"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable"
+                    RENAME "${APP_NAME}.svg")
+            install(FILES "${SOURCE_DIR}/${TARGET_NAME}.xml"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/mime/packages"
+                    RENAME "${APP_NAME}.xml")
+            install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
+        endif()
     endif()
 endmacro(APP)
 
