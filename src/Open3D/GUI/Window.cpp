@@ -511,7 +511,12 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     dlg->Layout(GetTheme());
 }
 
-void Window::CloseDialog() { impl_->activeDialog.reset(); }
+void Window::CloseDialog() {
+    if (impl_->focusWidget == impl_->activeDialog.get()) {
+        SetFocusWidget(nullptr);
+    }
+    impl_->activeDialog.reset();
+}
 
 void Window::ShowMessageBox(const char* title, const char* message) {
     auto em = GetTheme().fontSize;
