@@ -174,6 +174,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
                         shape.ToString());
             }
             inferred_dim = dim;
+            has_inferred_dim = true;
         } else if (shape[dim] >= 0) {
             new_size *= shape[dim];
         } else {
@@ -185,7 +186,7 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
         (has_inferred_dim && new_size > 0 && num_elements % new_size == 0)) {
         if (has_inferred_dim) {
             // We have a degree of freedom here to select the dimension size;
-            // follow NumPy semantics and just bail.  However, a nice error
+            // follow NumPy semantics and just bail. However, a nice error
             // message is needed because users often use `view` as a way to
             // flatten & unflatten dimensions and will otherwise be confused why
             //   empty_tensor.view( 0, 0)
