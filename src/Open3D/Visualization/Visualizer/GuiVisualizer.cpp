@@ -1524,7 +1524,7 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
             success = false;
         }
         if (success) {
-            utility::LogInfof("Successfully read %s", path.c_str());
+            utility::LogInfo("Successfully read %s", path.c_str());
             if (!cloud->HasNormals()) {
                 cloud->EstimateNormals();
             }

@@ -173,7 +173,7 @@ GeometryHandle FilamentScene::AddGeometry(
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::ColorOnlyMesh);
             // Mesh with textures
-        } else if (mesh.HasTexture()) {
+        } else if (mesh.HasTextures()) {
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::Mesh);
 
@@ -182,7 +182,7 @@ GeometryHandle FilamentScene::AddGeometry(
             auto mat = wMaterial.lock();
 
             auto hTexture = resourceManager_.CreateTexture(
-                    mesh.texture_.FlipVertical());
+                    mesh.textures_[0].FlipVertical());
 
             if (hTexture) {
                 auto& entity = entities_[handle];
