@@ -136,7 +136,8 @@ In SIGGRAPH, 1996)");
                      return new integration::UniformTSDFVolume(
                              length, resolution, sdf_trunc, color_type, origin);
                  }),
-                 "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a, "origin"_a)
+                 "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a,
+                 "origin"_a)
             .def("__repr__",
                  [](const integration::UniformTSDFVolume &vol) {
                      return std::string("integration::UniformTSDFVolume ") +
