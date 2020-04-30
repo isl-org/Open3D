@@ -80,9 +80,9 @@ public:
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
     virtual OrientedBoundingBox& Scale(const double scale,
-                                       bool center = true) override;
+                                       const Eigen::Vector3d& center) override;
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
-                                        bool center = true) override;
+                                        const Eigen::Vector3d& center) override;
 
     /// Returns the volume of the bounding box.
     double Volume() const;
@@ -161,10 +161,10 @@ public:
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(
             const Eigen::Vector3d& translation, bool relative = true) override;
-    virtual AxisAlignedBoundingBox& Scale(const double scale,
-                                          bool center = true) override;
-    virtual AxisAlignedBoundingBox& Rotate(const Eigen::Matrix3d& R,
-                                           bool center = true) override;
+    virtual AxisAlignedBoundingBox& Scale(
+            const double scale, const Eigen::Vector3d& center) override;
+    virtual AxisAlignedBoundingBox& Rotate(
+            const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 

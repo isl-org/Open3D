@@ -70,7 +70,7 @@ public:
     virtual TriangleMesh &Transform(
             const Eigen::Matrix4d &transformation) override;
     virtual TriangleMesh &Rotate(const Eigen::Matrix3d &R,
-                                 bool center = true) override;
+                                 const Eigen::Vector3d &center) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);

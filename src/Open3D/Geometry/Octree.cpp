@@ -379,12 +379,13 @@ Octree& Octree::Translate(const Eigen::Vector3d& translation, bool relative) {
     return *this;
 }
 
-Octree& Octree::Scale(const double scale, bool center) {
+Octree& Octree::Scale(const double scale, const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
 
-Octree& Octree::Rotate(const Eigen::Matrix3d& R, bool center) {
+Octree& Octree::Rotate(const Eigen::Matrix3d& R,
+                       const Eigen::Vector3d& center) {
     utility::LogError("Not implemented");
     return *this;
 }
