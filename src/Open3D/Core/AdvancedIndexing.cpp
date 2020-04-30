@@ -127,7 +127,7 @@ Tensor AdvancedIndexPreprocessor::RestrideIndexTensor(
 
 void AdvancedIndexPreprocessor::RunPreprocess() {
     // Dimension check
-    if (index_tensors_.size() > tensor_.NumDims()) {
+    if (static_cast<int64_t>(index_tensors_.size()) > tensor_.NumDims()) {
         utility::LogError(
                 "Number of index_tensors {} exceeds tensor dimension "
                 "{}.",

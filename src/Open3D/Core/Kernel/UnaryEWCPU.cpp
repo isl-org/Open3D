@@ -47,34 +47,38 @@ static void CPUCopyElementKernel(const void* src, void* dst) {
 
 template <typename scalar_t>
 static void CPUSqrtElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) =
-            std::sqrt(*static_cast<const scalar_t*>(src));
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            std::sqrt(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static void CPUSinElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = std::sin(*static_cast<const scalar_t*>(src));
+    *static_cast<scalar_t*>(dst) =
+            static_cast<scalar_t>(std::sin(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static void CPUCosElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = std::cos(*static_cast<const scalar_t*>(src));
+    *static_cast<scalar_t*>(dst) =
+            static_cast<scalar_t>(std::cos(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static void CPUNegElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = -*static_cast<const scalar_t*>(src);
+    *static_cast<scalar_t*>(dst) =
+            static_cast<scalar_t>(-*static_cast<const scalar_t*>(src));
 }
 
 template <typename scalar_t>
 static void CPUExpElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) = std::exp(*static_cast<const scalar_t*>(src));
+    *static_cast<scalar_t*>(dst) =
+            static_cast<scalar_t>(std::exp(*static_cast<const scalar_t*>(src)));
 }
 
 template <typename scalar_t>
 static void CPUAbsElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) =
-            std::abs(static_cast<double>(*static_cast<const scalar_t*>(src)));
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            std::abs(static_cast<double>(*static_cast<const scalar_t*>(src))));
 }
 
 template <typename src_t, typename dst_t>

@@ -267,15 +267,15 @@ public:
     ///      aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
 
-    /// returning a new tensor view with the same data but of a different shape.
+    /// Returns a new tensor view with the same data but of a different shape.
     ///
     /// The returned tensor shares the same data and must have the same number
     /// of elements, but may have a different size. For a tensor to be viewed,
     /// the new view size must be compatible with its original size and stride,
     /// i.e., each new view dimension must either be a subspace of an original
     /// dimension, or only span across original dimensions d, d+1, ...,
-    /// d+kd,d+1,…,d+k that satisfy the following contiguity-like condition that
-    /// for all i = 0, ..., k-1, strides[i] = stride[i + 1] * shape[i + 1].
+    /// d+kd,d+1, ..., d+k that satisfy the following contiguity-like condition
+    /// that for all i = 0, ..., k-1, strides[i] = stride[i + 1] * shape[i + 1].
     ///
     /// Otherwise, contiguous() needs to be called before the tensor can be
     /// viewed. See also: reshape(), which returns a view if the shapes are
