@@ -503,7 +503,7 @@ Tensor Tensor::Slice(int64_t dim,
         utility::LogError("Slice cannot be applied to 0-dim Tensor");
     }
     dim = WrapDim(dim, NumDims());
-    if (dim < 0 || dim >= shape_.size()) {
+    if (dim < 0 || dim >= static_cast<int64_t>(shape_.size())) {
         utility::LogError("Dim {} is out of bound for SizeVector of length {}",
                           dim, shape_.size());
     }

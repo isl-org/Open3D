@@ -82,7 +82,7 @@ void pybind_core_tensor(py::module& m) {
 
     // Device transfer
     tensor.def("cuda",
-               [](const Tensor& tensor, int64_t device_id = 0) {
+               [](const Tensor& tensor, int device_id = 0) {
                    if (!cuda::IsAvailable()) {
                        utility::LogError(
                                "CUDA is not available, cannot copy Tensor.");
