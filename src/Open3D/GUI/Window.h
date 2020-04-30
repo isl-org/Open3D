@@ -53,16 +53,22 @@ class Window {
 public:
     static const int FLAG_TOPMOST;
 
-    /// Window creation is NOT thread-safe. Window must be created on the
-    /// same thread that calls Application::Run(). Use
-    /// Application::Post() with a lambda that creates the window if you need
-    /// to create one after Application::Run() has been called.
-    explicit Window(const std::string& title,
-                    int flags = 0);  // auto-sized, centered
+    /// Creates a Window that is auto-sized and centered. Window creation is
+    /// NOT thread-safe. Window must be created on the same thread that
+    /// calls Application::Run().
+    explicit Window(const std::string& title, int flags = 0);
+
+    /// Creates a Window that is centered. Window creation is
+    /// NOT thread-safe. Window must be created on the same thread that
+    /// calls Application::Run().
     Window(const std::string& title,
            int width,
            int height,
            int flags = 0);  // centered
+
+    /// Creates a Window. Window creation is
+    /// NOT thread-safe. Window must be created on the same thread that
+    /// calls Application::Run().
     Window(const std::string& title,
            int x,
            int y,
@@ -74,24 +80,43 @@ public:
     const Theme& GetTheme() const;
     visualization::Renderer& GetRenderer() const;
 
-    Rect GetFrame() const;         // in OS pixels; not scaled
-    void SetFrame(const Rect& r);  // in OS pixels; not scaled
+    /// Gets the window's size and position in OS pixels, not actual
+    /// device pixels.
+    Rect GetOSFrame() const;
+    /// Gets the window's size and position in OS pixels, not actual
+    /// device pixels.
+    void SetOSFrame(const Rect& r);
 
     const char* GetTitle() const;
     void SetTitle(const char* title);
 
-    void SizeToFit();  // auto size
+    /// Auto-sizes the window to the results of CalcPreferredSize(),
+    /// which by default is the size that the layouts of the window want.
+    void SizeToFit();
+
+    /// Sets the size of the window in pixels. Includes menubar on Linux.
     void SetSize(const Size& size);
-    Size GetSize() const;  // total interior size of window, including menubar
-    Rect GetContentRect() const;  // size available to widgets
+    /// Returns the total interior size of window, in pixels. On Linux this
+    /// includes the menubar.
+    Size GetSize() const;
+    /// Returns the rectangle that is available to widgets to use;
+    /// excludes the menubar.
+    Rect GetContentRect() const;
+    /// Returns the scaling factor from OS pixels to device pixels
     float GetScaling() const;
+    /// Returns the global point (in OS pixels) in window local coordinates.
     Point GlobalToWindowCoord(int globalX, int globalY);
 
     bool IsVisible() const;
     void Show(bool vis = true);
-    void Close();  // same as calling Application::RemoveWindow()
+    /// Closes the window and destroys it.
+    /// (Same as calling Application::RemoveWindow())
+    void Close();
 
+    /// Instructs the window to relayout before the next draw.
     void SetNeedsLayout();
+    /// Sends a draw event to the window through the operating system's
+    /// event queue.
     void PostRedraw();
 
     void SetTopmost(bool topmost);
@@ -99,17 +124,27 @@ public:
 
     bool IsActiveWindow() const;
 
+    /// Sets \param w as widget with text focus.
     void SetFocusWidget(Widget* w);
 
     void AddChild(std::shared_ptr<Widget> w);
 
+    /// Shows the dialog. If a dialog is currently being shown it will be
+    /// closed.
     void ShowDialog(std::shared_ptr<Dialog> dlg);
+    /// Closes the dialog.
     void CloseDialog();
 
     void ShowMessageBox(const char* title, const char* message);
 
 protected:
-    virtual Size CalcPreferredSize(/*const Size& maxSize*/);
+    /// Returns the preferred size of the window. The window is not
+    /// obligated to honor this size. If all children of the window
+    /// are layouts, this function does not need to be overridden.
+    virtual Size CalcPreferredSize();
+    /// Lays out all the widgets in the window. If all children
+    /// of the window are layouts, this function does not need to
+    /// be override.
     virtual void Layout(const Theme& theme);
 
     // Override to handle menu items

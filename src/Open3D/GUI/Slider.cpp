@@ -50,6 +50,7 @@ struct Slider::Impl {
     double value = 0.0;
     double minValue = -1e35;
     double maxValue = 1e35;
+    std::function<void(double)> onValueChanged;
 };
 
 Slider::Slider(Type type) : impl_(new Slider::Impl()) {
@@ -86,6 +87,10 @@ void Slider::SetLimits(double minValue, double maxValue) {
     SetValue(impl_->value);  // make sure value is within new limits
 }
 
+void Slider::SetOnValueChanged(std::function<void(double)> onValueChanged) {
+    impl_->onValueChanged = onValueChanged;
+}
+
 Size Slider::CalcPreferredSize(const Theme& theme) const {
     auto lineHeight = ImGui::GetTextLineHeight();
     auto height = lineHeight + 2.0 * ImGui::GetStyle().FramePadding.y;
@@ -115,8 +120,8 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
 
     if (impl_->value != newValue) {
         impl_->value = newValue;
-        if (OnValueChanged) {
-            OnValueChanged(newValue);
+        if (impl_->onValueChanged) {
+            impl_->onValueChanged(newValue);
         }
         return Widget::DrawResult::REDRAW;
     }

@@ -44,7 +44,10 @@ public:
     const float* GetPointer() const;
     float* GetMutablePointer();
 
-    Color Lightened(float amount);  // amount is between 0 and 1
+    /// Returns a lighter color.
+    /// \param amount is between 0 and 1, with 0 being the same color and
+    /// 1 being white.
+    Color Lightened(float amount);
 
     unsigned int ToABGR32() const;
 

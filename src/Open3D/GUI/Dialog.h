@@ -33,6 +33,7 @@ namespace gui {
 
 class Window;
 
+/// Base class for dialogs.
 class Dialog : public Widget {
     using Super = Widget;
 

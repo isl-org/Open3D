@@ -40,21 +40,27 @@ public:
     ~Combobox() override;
 
     void ClearItems();
+    /// Adds an item to the combobox. Its index is the order in which it is
+    /// added, so the first item's index is 0, the second is 1, etc.
     void AddItem(const char* name);
     const char* GetItem(int index) const;
 
     int GetSelectedIndex() const;
-    // Returns "" if nothing is selected
+    /// Returns the text of the selected value, or "" if nothing is selected
     const char* GetSelectedValue() const;
+    /// Sets the selected item by index. Does not call the onValueChanged
+    /// callback.
     void SetSelectedIndex(int index);
-    // Does nothing if 'value' is not an item
+    /// Sets the selected item by value. Does nothing if \param value is not an
+    /// item. Does not call the onValueChanged callback
     void SetSelectedValue(const char* value);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 
-    // Calls onValueChanged(newValue, newIndex) when value changes
+    /// Specifies a callback function which will be called when the value
+    /// changes as a result of user action.
     void SetOnValueChanged(
             std::function<void(const char*, int)> onValueChanged);
 
