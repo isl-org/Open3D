@@ -1,4 +1,4 @@
-from open3d.ml.tf import ops
+from open3d.ml.tf import ops, layers
 import tensorflow as tf
 
 
@@ -109,6 +109,11 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         self.window_function = window_function
 
+        self.fixed_radius_search = layers.FixedRadiusSearch(
+            metric=self.radius_search_metric,
+            ignore_query_point=self.radius_search_ignore_query_points,
+            return_distances=not self.window_function is None)
+
         super().__init__(**kwargs)
 
     def build(self, inp_features_shape):
@@ -140,7 +145,8 @@ class ContinuousConv(tf.keras.layers.Layer):
              inp_positions,
              out_positions,
              extents,
-             inp_importance=None):
+             inp_importance=None,
+             fixed_radius_search_hash_table=None):
         """This function computes the output features.
 
         Arguments:
@@ -162,6 +168,12 @@ class ContinuousConv(tf.keras.layers.Layer):
 
           inp_importance: Optional scalar importance value for each input point.
 
+          fixed_radius_search_hash_table: A precomputed hash table generated with build_spatial_hash_table().
+            This input can be used to explicitly force the reuse of a hash table in special
+            cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points' array.
+            Note that this parameter is only used if 'extents' is a scalar.
+
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
@@ -179,14 +191,12 @@ class ContinuousConv(tf.keras.layers.Layer):
         if extents.shape.rank == 0:
             radius = 0.5 * extents
             hash_table_size_factor = 1 / 64
-            self.nns = ops.fixed_radius_search(
-                ignore_query_point=self.radius_search_ignore_query_points,
-                return_distances=return_distances,
-                metric=self.radius_search_metric,
-                points=inp_positions,
+            self.nns = self.fixed_radius_search(
+                inp_positions,
                 queries=out_positions,
                 radius=radius,
-                hash_table_size_factor=hash_table_size_factor)
+                hash_table_size_factor=hash_table_size_factor,
+                hash_table=fixed_radius_search_hash_table)
             if return_distances:
                 if self.radius_search_metric == 'L2':
                     neighbors_distance_normalized = self.nns.neighbors_distance / (

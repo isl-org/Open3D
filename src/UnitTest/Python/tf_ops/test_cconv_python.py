@@ -84,9 +84,12 @@ def test_compare_to_conv3d(dtype, filter_size, out_channels, in_channels,
 
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
-    neighbors_index, neighbors_row_splits, _ = ml3d.ops.fixed_radius_search(
-        inp_positions / extent, out_positions / extent,
-        voxel_size[0] / 2 + 0.01, 1 / 64, 'Linf')
+    fixed_radius_search = ml3d.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = fixed_radius_search(
+        inp_positions / extent,
+        out_positions / extent,
+        voxel_size[0] / 2 + 0.01,
+    )
     neighbors_index = neighbors_index.numpy()
     neighbors_row_splits = neighbors_row_splits.numpy()
 
@@ -170,8 +173,9 @@ def test_cconv_gradient(filter_size, out_channels, in_channels,
 
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
-    neighbors_index, neighbors_row_splits, _ = ml3d.ops.fixed_radius_search(
-        inp_positions, out_positions, extent[0, 0] / 2, 1 / 64, 'Linf')
+    fixed_radius_search = ml3d.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = fixed_radius_search(
+        inp_positions, out_positions, extent[0, 0] / 2)
     neighbors_index = neighbors_index.numpy()
     neighbors_row_splits = neighbors_row_splits.numpy()
 

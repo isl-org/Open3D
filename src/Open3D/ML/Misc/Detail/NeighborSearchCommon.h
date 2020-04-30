@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "Open3D/Utility/Eigen.h"
 #include "nanoflann.hpp"
 
 namespace open3d {
@@ -34,6 +35,39 @@ namespace detail {
 
 /// Supported metrics
 enum Metric { L1, L2, Linf };
+
+#ifdef __CUDACC__
+#define HOST_DEVICE __host__ __device__
+#else
+#define HOST_DEVICE
+#endif
+
+/// Spatial hashing function for integer coordinates.
+HOST_DEVICE inline size_t SpatialHash(int x, int y, int z) {
+    return x * 73856096 ^ y * 193649663 ^ z * 83492791;
+}
+
+inline size_t SpatialHash(const Eigen::Vector3i& xyz) {
+    return SpatialHash(xyz.x(), xyz.y(), xyz.z());
+}
+
+/// Computes an integer voxel index for a 3D position.
+///
+/// \param pos               A 3D position.
+/// \param inv_voxel_size    The reciprocal of the voxel size
+///
+template <class TDerived>
+HOST_DEVICE inline Eigen::Vector3i ComputeVoxelIndex(
+        const Eigen::ArrayBase<TDerived>& pos,
+        const typename TDerived::Scalar& inv_voxel_size) {
+    typedef typename TDerived::Scalar Scalar_t;
+    Eigen::Array<Scalar_t, 3, 1> ref_coord = pos * inv_voxel_size;
+
+    Eigen::Vector3i voxel_index;
+    voxel_index = ref_coord.floor().template cast<int>();
+    return voxel_index;
+}
+#undef HOST_DEVICE
 
 /// Adaptor for nanoflann
 template <class T>

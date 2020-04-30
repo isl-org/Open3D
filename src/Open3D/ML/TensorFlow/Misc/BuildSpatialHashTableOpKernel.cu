@@ -26,47 +26,40 @@
 //
 
 #define EIGEN_USE_GPU
-#include "FixedRadiusSearchOpKernel.h"
+#include "BuildSpatialHashTableOpKernel.h"
 #include "Open3D/Core/CUDAUtils.h"
 #include "Open3D/ML/Misc/Detail/FixedRadiusSearch.cuh"
 
 using namespace open3d;
 using namespace open3d::ml::detail;
-using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
 template <class T>
-class FixedRadiusSearchOpKernelCUDA : public FixedRadiusSearchOpKernel {
+class BuildSpatialHashTableOpKernelCUDA : public BuildSpatialHashTableOpKernel {
 public:
-    explicit FixedRadiusSearchOpKernelCUDA(OpKernelConstruction* construction)
-        : FixedRadiusSearchOpKernel(construction) {
+    explicit BuildSpatialHashTableOpKernelCUDA(
+            OpKernelConstruction* construction)
+        : BuildSpatialHashTableOpKernel(construction) {
         texture_alignment = GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
-                const tensorflow::Tensor& queries,
                 const tensorflow::Tensor& radius,
-                const tensorflow::Tensor& hash_table_index,
-                const tensorflow::Tensor& hash_table_row_splits,
-                tensorflow::Tensor& query_neighbors_row_splits) {
+                tensorflow::Tensor& hash_table_index,
+                tensorflow::Tensor& hash_table_row_splits) {
         auto device = context->eigen_gpu_device();
-
-        OutputAllocator<T> output_allocator(context);
 
         void* temp_ptr = nullptr;
         size_t temp_size = 0;
 
         // determine temp_size
-        FixedRadiusSearchCUDA(
-                device.stream(), temp_ptr, temp_size, texture_alignment,
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
-                points.shape().dim_size(0), points.flat<T>().data(),
-                queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_row_splits.shape().dim_size(0),
-                hash_table_row_splits.flat<uint32_t>().data(),
-                hash_table_index.flat<uint32_t>().data(), metric,
-                ignore_query_point, return_distances, output_allocator);
+        BuildSpatialHashTableCUDA(device.stream(), temp_ptr, temp_size,
+                                  texture_alignment, points.shape().dim_size(0),
+                                  points.flat<T>().data(), radius.scalar<T>()(),
+                                  hash_table_row_splits.shape().dim_size(0),
+                                  hash_table_row_splits.flat<uint32_t>().data(),
+                                  hash_table_index.flat<uint32_t>().data());
 
         Tensor temp_tensor;
         TensorShape temp_shape({ssize_t(temp_size)});
@@ -75,27 +68,25 @@ public:
                                               temp_shape, &temp_tensor));
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
-        // actually run the search
-        FixedRadiusSearchCUDA(
-                device.stream(), temp_ptr, temp_size, texture_alignment,
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
-                points.shape().dim_size(0), points.flat<T>().data(),
-                queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_row_splits.shape().dim_size(0),
-                hash_table_row_splits.flat<uint32_t>().data(),
-                hash_table_index.flat<uint32_t>().data(), metric,
-                ignore_query_point, return_distances, output_allocator);
+        // actually build the table
+        BuildSpatialHashTableCUDA(device.stream(), temp_ptr, temp_size,
+                                  texture_alignment, points.shape().dim_size(0),
+                                  points.flat<T>().data(), radius.scalar<T>()(),
+                                  hash_table_row_splits.shape().dim_size(0),
+                                  hash_table_row_splits.flat<uint32_t>().data(),
+                                  hash_table_index.flat<uint32_t>().data());
     }
 
 private:
     int texture_alignment;
 };
 
-#define REG_KB(type)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")    \
-                                    .Device(DEVICE_GPU)        \
-                                    .TypeConstraint<type>("T") \
-                                    .HostMemory("radius"),     \
-                            FixedRadiusSearchOpKernelCUDA<type>);
+#define REG_KB(type)                                                       \
+    REGISTER_KERNEL_BUILDER(Name("Open3DBuildSpatialHashTable")            \
+                                    .Device(DEVICE_GPU)                    \
+                                    .TypeConstraint<type>("T")             \
+                                    .HostMemory("radius")                  \
+                                    .HostMemory("hash_table_size_factor"), \
+                            BuildSpatialHashTableOpKernelCUDA<type>);
 REG_KB(float)
 #undef REG_KB

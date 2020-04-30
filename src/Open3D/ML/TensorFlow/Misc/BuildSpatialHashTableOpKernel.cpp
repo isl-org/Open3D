@@ -25,44 +25,37 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "FixedRadiusSearchOpKernel.h"
+#include "BuildSpatialHashTableOpKernel.h"
 #include "Open3D/ML/Misc/Detail/FixedRadiusSearch.h"
 
 using namespace open3d::ml::detail;
-using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
 template <class T>
-class FixedRadiusSearchOpKernelCPU : public FixedRadiusSearchOpKernel {
+class BuildSpatialHashTableOpKernelCPU : public BuildSpatialHashTableOpKernel {
 public:
-    explicit FixedRadiusSearchOpKernelCPU(OpKernelConstruction* construction)
-        : FixedRadiusSearchOpKernel(construction) {}
+    explicit BuildSpatialHashTableOpKernelCPU(
+            OpKernelConstruction* construction)
+        : BuildSpatialHashTableOpKernel(construction) {}
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
-                const tensorflow::Tensor& queries,
                 const tensorflow::Tensor& radius,
-                const tensorflow::Tensor& hash_table_index,
-                const tensorflow::Tensor& hash_table_row_splits,
-                tensorflow::Tensor& query_neighbors_row_splits) {
-        OutputAllocator<T> output_allocator(context);
-
-        FixedRadiusSearchCPU(
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
-                points.shape().dim_size(0), points.flat<T>().data(),
-                queries.shape().dim_size(0), queries.flat<T>().data(),
-                radius.scalar<T>()(), hash_table_row_splits.shape().dim_size(0),
-                hash_table_row_splits.flat<uint32_t>().data(),
-                hash_table_index.flat<uint32_t>().data(), metric,
-                ignore_query_point, return_distances, output_allocator);
+                tensorflow::Tensor& hash_table_index,
+                tensorflow::Tensor& hash_table_row_splits) {
+        BuildSpatialHashTableCPU(points.shape().dim_size(0),
+                                 points.flat<T>().data(), radius.scalar<T>()(),
+                                 hash_table_row_splits.shape().dim_size(0),
+                                 hash_table_row_splits.flat<uint32_t>().data(),
+                                 hash_table_index.flat<uint32_t>().data());
     }
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")     \
+    REGISTER_KERNEL_BUILDER(Name("Open3DBuildSpatialHashTable") \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
-                            FixedRadiusSearchOpKernelCPU<type>);
+                            BuildSpatialHashTableOpKernelCPU<type>);
 REG_KB(float)
 REG_KB(double)
 #undef REG_KB
