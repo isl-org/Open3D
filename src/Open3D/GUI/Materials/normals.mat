@@ -1,6 +1,7 @@
 material {
     name : normals,
     shadingModel : unlit,
+    doubleSided : true,
 
     parameters : [
         { type : float,  name : pointSize }

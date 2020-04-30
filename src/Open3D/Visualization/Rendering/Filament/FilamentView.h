@@ -73,6 +73,8 @@ public:
                      std::uint32_t h) override;
     void SetClearColor(const Eigen::Vector3f& color) override;
 
+    void SetSSAOEnabled(bool enabled) override;
+
     Camera* GetCamera() const override;
 
     // Copies available settings for view and camera

@@ -195,11 +195,11 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
 
 }  // namespace
 
+const MaterialHandle FilamentResourceManager::kDefaultPBR =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
-        MaterialHandle::Next();
-const MaterialHandle FilamentResourceManager::kUbermaterial =
         MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
@@ -211,15 +211,18 @@ const TextureHandle FilamentResourceManager::kDefaultTexture =
         TextureHandle::Next();
 const TextureHandle FilamentResourceManager::kDefaulColorMap =
         TextureHandle::Next();
+const MaterialHandle FilamentResourceManager::kObsoleteLit =
+        MaterialHandle::Next();
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
+        FilamentResourceManager::kDefaultPBR,
         FilamentResourceManager::kDefaultLit,
         FilamentResourceManager::kDefaultUnlit,
-        FilamentResourceManager::kUbermaterial,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
-        FilamentResourceManager::kDefaulColorMap};
+        FilamentResourceManager::kDefaulColorMap,
+        FilamentResourceManager::kObsoleteLit};
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
@@ -280,6 +283,79 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
     return {};
 }
 
+MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
+        const geometry::TriangleMesh::Material& descriptor) {
+    MaterialInstanceHandle handle;
+    auto matHandle = descriptor.isPBR ? kDefaultPBR : kObsoleteLit;
+    if (auto pbrRef = materials_[matHandle]) {
+        auto materialInstance = pbrRef->createInstance();
+        handle = RegisterResource<MaterialInstanceHandle>(
+                engine_, materialInstance, materialInstances_);
+
+        static const auto sampler =
+                FilamentMaterialModifier::SamplerFromSamplerParameters(
+                        TextureSamplerParameters::Pretty());
+
+        auto baseColor = filament::math::float3{descriptor.baseColor.r,
+                                                descriptor.baseColor.g,
+                                                descriptor.baseColor.b};
+        materialInstance->setParameter("baseColor", filament::RgbType::sRGB,
+                                       baseColor);
+
+#define TRY_ASSIGN_MAP(map)                                                    \
+    {                                                                          \
+        if (descriptor.map && descriptor.map->HasData()) {                     \
+            auto hMapTex = CreateTexture(descriptor.map);                      \
+            if (hMapTex) {                                                     \
+                materialInstance->setParameter(#map, textures_[hMapTex].get(), \
+                                               sampler);                       \
+                dependencies_[handle].insert(hMapTex);                         \
+            }                                                                  \
+        }                                                                      \
+    }
+
+        if (descriptor.isPBR) {
+            materialInstance->setParameter("baseRoughness",
+                                           descriptor.baseRoughness);
+            materialInstance->setParameter("baseMetallic",
+                                           descriptor.baseMetallic);
+
+            TRY_ASSIGN_MAP(roughness);
+            TRY_ASSIGN_MAP(metallic);
+        } else {
+            auto baseSpecularColor =
+                    filament::math::float3{descriptor.baseSpecularColor.r,
+                                           descriptor.baseSpecularColor.g,
+                                           descriptor.baseSpecularColor.b};
+            materialInstance->setParameter("baseSpecularColor",
+                                           filament::RgbType::sRGB,
+                                           baseSpecularColor);
+
+            materialInstance->setParameter("illum", descriptor.illum);
+
+            // we have exception for glossiness, because materials looks better
+            // then we use specularColor for it instead
+            if (descriptor.specularColor &&
+                descriptor.specularColor->HasData()) {
+                auto hGlossinessTex = CreateTexture(descriptor.specularColor);
+                if (hGlossinessTex) {
+                    materialInstance->setParameter(
+                            "glossiness", textures_[hGlossinessTex].get(),
+                            sampler);
+                    dependencies_[handle].insert(hGlossinessTex);
+                }
+            }
+        }
+
+        TRY_ASSIGN_MAP(albedo);
+        TRY_ASSIGN_MAP(normalMap);
+        TRY_ASSIGN_MAP(ambientOcclusion);
+#undef TRY_ASSIGN_MAP
+    }
+
+    return handle;
+}
+
 TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
     std::shared_ptr<geometry::Image> img;
 
@@ -314,6 +390,31 @@ TextureHandle FilamentResourceManager::CreateTexture(
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
     }
+
+    return handle;
+}
+
+TextureHandle FilamentResourceManager::CreateTextureFilled(
+        const Eigen::Vector3f& color, size_t dimension) {
+    TextureHandle handle;
+    auto image = std::make_shared<geometry::Image>();
+    image->Prepare(dimension, dimension, 3, 1);
+
+    struct RGB {
+        std::uint8_t r, g, b;
+    };
+
+    RGB c = {static_cast<uint8_t>(color(0) * 255.f),
+             static_cast<uint8_t>(color(1) * 255.f),
+             static_cast<uint8_t>(color(2) * 255.f)};
+
+    auto data = reinterpret_cast<RGB*>(image->data_.data());
+    for (size_t i = 0; i < dimension * dimension; ++i) {
+        data[i] = c;
+    }
+
+    auto texture = LoadTextureFromImage(image);
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
 
     return handle;
 }
@@ -580,6 +681,55 @@ void FilamentResourceManager::LoadDefaults() {
                     TextureSamplerParameters::Pretty());
     const auto defaultColor = filament::math::float3{1.0f, 1.0f, 1.0f};
 
+    auto defaultRoughnessTex =
+            CreateTextureFilled(Eigen::Vector3f(0.7f, 0.7f, 0.7f), 1);
+    auto defaultMetallicTex =
+            CreateTextureFilled(Eigen::Vector3f(0.0f, 0.0f, 0.0f), 1);
+    auto defaultNormalMap =
+            CreateTextureFilled(Eigen::Vector3f(0.0f, 0.0f, 1.0f), 1);
+
+    dependencies_[kDefaultPBR].insert(defaultRoughnessTex);
+    dependencies_[kDefaultPBR].insert(defaultMetallicTex);
+    dependencies_[kDefaultPBR].insert(defaultNormalMap);
+
+    const auto pbrPath = resourceRoot + "/defaultPBR.filamat";
+    auto pbrMat = LoadMaterialFromFile(pbrPath, engine_);
+    pbrMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                defaultColor);
+    pbrMat->setDefaultParameter("baseRoughness", 1.0f);
+    pbrMat->setDefaultParameter("baseMetallic", 1.f);
+    pbrMat->setDefaultParameter("albedo", texture, defaultSampler);
+    pbrMat->setDefaultParameter(
+            "roughness", textures_[defaultRoughnessTex].get(), defaultSampler);
+    pbrMat->setDefaultParameter("metallic", textures_[defaultMetallicTex].get(),
+                                defaultSampler);
+    pbrMat->setDefaultParameter("normalMap", textures_[defaultNormalMap].get(),
+                                defaultSampler);
+    pbrMat->setDefaultParameter("ambientOcclusion", texture, defaultSampler);
+    materials_[kDefaultPBR] = MakeShared(pbrMat, engine_);
+    dependencies_[kDefaultPBR].insert(defaultRoughnessTex);
+    dependencies_[kDefaultPBR].insert(defaultMetallicTex);
+    dependencies_[kDefaultPBR].insert(defaultNormalMap);
+
+    const auto obsoletePath = resourceRoot + "/obsolete.filamat";
+    auto obsoleteMat = LoadMaterialFromFile(obsoletePath, engine_);
+    obsoleteMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                     defaultColor);
+    obsoleteMat->setDefaultParameter("baseSpecularColor",
+                                     filament::RgbType::sRGB, {0.f, 0.f, 0.f});
+    obsoleteMat->setDefaultParameter("illum", int(0));
+    obsoleteMat->setDefaultParameter("albedo", texture, defaultSampler);
+    obsoleteMat->setDefaultParameter("specularColor",
+                                     textures_[defaultMetallicTex].get(),
+                                     defaultSampler);
+    obsoleteMat->setDefaultParameter(
+            "glossiness", textures_[defaultMetallicTex].get(), defaultSampler);
+    obsoleteMat->setDefaultParameter(
+            "normalMap", textures_[defaultNormalMap].get(), defaultSampler);
+    obsoleteMat->setDefaultParameter("ambientOcclusion", texture,
+                                     defaultSampler);
+    materials_[kObsoleteLit] = MakeShared(obsoleteMat, engine_);
+
     const auto litPath = resourceRoot + "/defaultLit.filamat";
     auto litMat = LoadMaterialFromFile(litPath, engine_);
     litMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
@@ -599,14 +749,6 @@ void FilamentResourceManager::LoadDefaults() {
                                   defaultColor);
     unlitMat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultUnlit] = MakeShared(unlitMat, engine_);
-
-    const auto uberPath = resourceRoot + "/ubermaterial.filamat";
-    auto uberMat = LoadMaterialFromFile(uberPath, engine_);
-    uberMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                 defaultColor);
-    uberMat->setDefaultParameter("diffuse", texture, defaultSampler);
-    // TODO: Add some more pretty defaults
-    materials_[kUbermaterial] = MakeShared(uberMat, engine_);
 
     const auto depthPath = resourceRoot + "/depth.filamat";
     const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));

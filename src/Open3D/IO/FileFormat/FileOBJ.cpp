@@ -150,15 +150,85 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         mesh.triangle_uvs_.clear();
     }
 
-    // Now we assert only one shape is stored, we only select the first
-    // diffuse material
+    auto textureLoader = [&mtl_base_path](std::string& relativePath) {
+        auto image = io::CreateImageFromFile(mtl_base_path + relativePath);
+        return image->HasData() ? image : std::shared_ptr<geometry::Image>();
+    };
+
+    using MaterialParameter =
+            geometry::TriangleMesh::Material::MaterialParameter;
+
     for (auto& material : materials) {
-        if (!material.diffuse_texname.empty()) {
-            mesh.texture_ = *(io::CreateImageFromFile(mtl_base_path +
-                                                      material.diffuse_texname)
-                                      ->FlipVertical());
-            break;
+        auto& meshMaterial = mesh.materials_[material.name];
+
+        meshMaterial.baseColor = MaterialParameter::RGB(
+                material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+
+        if (!material.normal_texname.empty()) {
+            meshMaterial.normalMap = textureLoader(material.normal_texname);
+        } else if (!material.bump_texname.empty()) {
+            // try bump, because there is often a misunderstanding of
+            // what bump map or normal map is
+            meshMaterial.normalMap = textureLoader(material.bump_texname);
         }
+
+        if (!material.ambient_texname.empty()) {
+            meshMaterial.ambientOcclusion =
+                    textureLoader(material.ambient_texname);
+        }
+
+        if (!material.diffuse_texname.empty()) {
+            meshMaterial.albedo = textureLoader(material.diffuse_texname);
+
+            if (mesh.texture_.IsEmpty() && meshMaterial.albedo) {
+                mesh.texture_ = *meshMaterial.albedo->FlipVertical();
+            }
+        }
+
+        meshMaterial.isPBR = !material.metallic_texname.empty() ||
+                             !material.roughness_texname.empty() ||
+                             material.metallic > 0.0 ||
+                             material.roughness > 0.0;
+
+        if (meshMaterial.isPBR) {
+            meshMaterial.baseMetallic = material.metallic;
+            meshMaterial.baseRoughness = material.roughness;
+
+            if (!material.metallic_texname.empty()) {
+                meshMaterial.metallic =
+                        textureLoader(material.metallic_texname);
+            }
+            if (!material.roughness_texname.empty()) {
+                meshMaterial.roughness =
+                        textureLoader(material.roughness_texname);
+            }
+        } else {
+            meshMaterial.illum = material.illum;
+            meshMaterial.baseSpecularColor = MaterialParameter::RGB(
+                    material.specular[0], material.specular[1],
+                    material.specular[2]);
+
+            if (!material.specular_texname.empty()) {
+                meshMaterial.specularColor =
+                        textureLoader(material.specular_texname);
+            }
+        }
+
+        // Values that not parsed, but could appear useful for PBR:
+        //    real_t emission[3];
+        //    real_t ior;       // index of refraction
+        //    real_t dissolve;  // 1 == opaque; 0 == fully transparent
+        //
+        //    std::string displacement_texname;        // disp
+        //    std::string alpha_texname;               // map_d
+        //    std::string reflection_texname;          // refl
+        //    real_t sheen;                // [0, 1] default 0
+        //    real_t clearcoat_thickness;  // [0, 1] default 0
+        //    real_t clearcoat_roughness;  // [0, 1] default 0
+        //    real_t anisotropy;           // aniso. [0, 1] default 0
+        //    real_t anisotropy_rotation;  // anisor. [0, 1] default 0
+        //    std::string sheen_texname;      // map_Ps
+        //    std::string emissive_texname;   // map_Ke
     }
 
     return true;

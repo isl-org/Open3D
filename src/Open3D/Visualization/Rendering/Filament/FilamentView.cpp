@@ -170,6 +170,12 @@ void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
 #endif
 }
 
+void FilamentView::SetSSAOEnabled(const bool enabled) {
+    const auto option = enabled ? filament::View::AmbientOcclusion::SSAO
+                                : filament::View::AmbientOcclusion::NONE;
+    view_->setAmbientOcclusion(option);
+}
+
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
 void FilamentView::CopySettingsFrom(const FilamentView& other) {

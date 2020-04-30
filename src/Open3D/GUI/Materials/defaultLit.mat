@@ -15,7 +15,7 @@ material {
         { type : float,     name : pointSize }
     ],
     requires : [
-        uv0, color
+        color
     ]
 }
 

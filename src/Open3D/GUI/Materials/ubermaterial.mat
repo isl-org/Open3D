@@ -43,6 +43,7 @@ material {
         { type : sampler2d, name : tClearCoat },
         { type : sampler2d, name : tClearCoatRoughness },
         { type : sampler2d, name : tAnisotropy },
+        { type : sampler2d, name : heightMap },
         //{ type : sampler2d, name : tTransmission },
         //{ type : sampler2d, name : tIor },
         //{ type : sampler2d, name : tThickness },
@@ -62,46 +63,83 @@ material {
 
 fragment {
     void material(inout MaterialInputs material) {
-        vec3 normal = texture(materialParams_normalMap, getUV0()).xyz;
+        vec2 uv0 = getUV0();
+
+        vec2 uvDx = dFdx(uv0);
+        vec2 uvDy = dFdy(uv0);
+
+        mat3 tangentFromWorld = transpose(getWorldTangentFrame());
+        vec3 tangentCameraPosition = tangentFromWorld * getWorldCameraPosition();
+        vec3 tangentFragPosition = tangentFromWorld * getWorldPosition();
+        vec3 v = normalize(tangentCameraPosition - tangentFragPosition);
+
+        float minLayers = 8.0;
+        float maxLayers = 48.0;
+        float numLayers = mix(maxLayers, minLayers,
+                dot(getWorldGeometricNormalVector(), getWorldViewVector()));
+        float heightScale = 0.05;
+
+        float layerDepth = 1.0 / numLayers;
+        float currLayerDepth = 0.0;
+
+        vec2 deltaUV = v.xy * heightScale / (v.z * numLayers);
+        vec2 currUV = uv0;
+        float height = 1.0 - textureGrad(materialParams_heightMap, currUV, uvDx, uvDy).r;
+        for (int i = 0; i < numLayers; i++) {
+            currLayerDepth += layerDepth;
+            currUV -= deltaUV;
+            height = 1.0 - textureGrad(materialParams_heightMap, currUV, uvDx, uvDy).r;
+            if (height < currLayerDepth) {
+                break;
+            }
+        }
+
+        vec2 prevUV = currUV + deltaUV;
+        float nextDepth = height - currLayerDepth;
+        float prevDepth = 1.0 - textureGrad(materialParams_heightMap, prevUV, uvDx, uvDy).r -
+                currLayerDepth + layerDepth;
+        uv0 = mix(currUV, prevUV, nextDepth / (nextDepth - prevDepth));
+
+        vec3 normal = texture(materialParams_normalMap, uv0).xyz;
         // not available when the shading model is unlit
         // using a normal map increases the runtime cost of the material model.
         material.normal = normal * 2.0 - 1.0;
 
         prepareMaterial(material);
 
-        material.baseColor = materialParams.baseColor * texture(materialParams_diffuse, getUV0());
-        //material.emissive = texture(materialParams_emissive, getUV0());
-        //material.postLightingColor = texture(materialParams_postLightingColor, getUV0());
+        material.baseColor = materialParams.baseColor * texture(materialParams_diffuse, uv0);
+        //material.emissive = texture(materialParams_emissive, uv0);
+        //material.postLightingColor = texture(materialParams_postLightingColor, uv0);
 
         // no other field is available with the unlit shading model
-        material.roughness = materialParams.roughness * texture(materialParams_tRoughness, getUV0()).r;
-        material.metallic = materialParams.metallic * texture(materialParams_tMetallic, getUV0()).r;
-        material.reflectance = materialParams.reflectance * texture(materialParams_tReflectance, getUV0()).r;
-        material.ambientOcclusion = texture(materialParams_ambientOcclusion, getUV0()).r;
+        material.roughness = materialParams.roughness * texture(materialParams_tRoughness, uv0).r;
+        material.metallic = materialParams.metallic * texture(materialParams_tMetallic, uv0).r;
+        material.reflectance = materialParams.reflectance * texture(materialParams_tReflectance, uv0).r;
+        material.ambientOcclusion = texture(materialParams_ambientOcclusion, uv0).r;
 
         // the clear coat layer effectively doubles the cost of specular computations.
         // do not assign a value, even 0.0, to the clear coat property if you don't need this second layer.
-        material.clearCoat = materialParams.clearCoat * texture(materialParams_tClearCoat, getUV0()).r;
+        material.clearCoat = materialParams.clearCoat * texture(materialParams_tClearCoat, uv0).r;
 
-        material.clearCoatRoughness = materialParams.clearCoatRoughness * texture(materialParams_tClearCoatRoughness, getUV0()).r;
+        material.clearCoatRoughness = materialParams.clearCoatRoughness * texture(materialParams_tClearCoatRoughness, uv0).r;
 
         // using a clear coat normal map increases the runtime cost of the material model.
-        //material.clearCoatNormal = texture(materialParams_clearCoatNormal, getUV0()).rgb;
+        //material.clearCoatNormal = texture(materialParams_clearCoatNormal, uv0).rgb;
 
         // the anisotropic material model is slightly more expensive than the standard material model.
         // do not assign a value (even 0.0) to the anisotropy property if you don't need anisotropy.
-        material.anisotropy = materialParams.anisotropy * texture(materialParams_tAnisotropy, getUV0()).r;
+        material.anisotropy = materialParams.anisotropy * texture(materialParams_tAnisotropy, uv0).r;
 
-        //material.anisotropyDirection = texture(materialParams_anisotropyDirection, getUV0()).rgb;
+        //material.anisotropyDirection = texture(materialParams_anisotropyDirection, uv0).rgb;
 
         // only available when the shading model is subsurface or refraction is enabled
-        //material.thickness = materialParams.thickness * texture(materialParams_tThickness, getUV0()).r;
+        //material.thickness = materialParams.thickness * texture(materialParams_tThickness, uv0).r;
 
         // only available when refraction is enabled
-        //material.transmission = materialParams.transmission * texture(materialParams_tTransmission, getUV0()).r;
-        //material.absorption = texture(materialParams_absorption, getUV0()).rgb;
-        //material.ior = materialParams.ior * texture(materialParams_tIor, getUV0()).r;
+        //material.transmission = materialParams.transmission * texture(materialParams_tTransmission, uv0).r;
+        //material.absorption = texture(materialParams_absorption, uv0).rgb;
+        //material.ior = materialParams.ior * texture(materialParams_tIor, uv0).r;
         // not available with refractionType "solid"
-        //material.microThickness = materialParams.microThickness * texture(materialParams_tMicroThickness, getUV0()).r;
+        //material.microThickness = materialParams.microThickness * texture(materialParams_tMicroThickness, uv0).r;
     }
 }

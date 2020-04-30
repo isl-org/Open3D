@@ -82,6 +82,8 @@ public:
 
     bool HasTexture() const { return !texture_.IsEmpty(); }
 
+    bool HasMaterials() const { return !materials_.empty(); }
+
     TriangleMesh &NormalizeNormals() {
         MeshBase::NormalizeNormals();
         for (size_t i = 0; i < triangle_normals_.size(); i++) {
@@ -615,6 +617,92 @@ public:
     std::vector<Eigen::Vector3d> triangle_normals_;
     std::vector<std::unordered_set<int>> adjacency_list_;
     std::vector<Eigen::Vector2d> triangle_uvs_;
+
+    struct Material {
+        struct MaterialParameter {
+            union {
+                float f4[4] = {0};
+                float f3[3];
+                float f2[2];
+                float f;
+
+                float x, y, z, w;
+                float r, g, b, a;
+            };
+
+            MaterialParameter() {
+                f4[0] = 0;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            MaterialParameter(const float v1,
+                              const float v2,
+                              const float v3,
+                              const float v4) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = v4;
+            }
+
+            MaterialParameter(const float v1, const float v2, const float v3) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = 1;
+            }
+
+            MaterialParameter(const float v1, const float v2) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            explicit MaterialParameter(const float v1) {
+                f4[0] = v1;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            static MaterialParameter RGB(const float r,
+                                         const float g,
+                                         const float b) {
+                return {r, g, b, 1.f};
+            }
+        };
+
+        // if true, pbr attributes is present and valid
+        // else use attributes for specular-glossiness
+        bool isPBR = true;
+
+        // PBR model
+        float baseMetallic = 1.f;
+        float baseRoughness = 1.f;
+        std::shared_ptr<Image> metallic;
+        std::shared_ptr<Image> roughness;
+
+        // Obsolete specular-glossiness model
+        MaterialParameter baseSpecularColor;
+        std::shared_ptr<Image> specularColor;
+        std::shared_ptr<Image> glossiness;
+        int illum = 0;
+
+        MaterialParameter baseColor;
+        std::shared_ptr<Image> albedo;
+        std::shared_ptr<Image> normalMap;
+        std::shared_ptr<Image> ambientOcclusion;
+
+        std::unordered_map<std::string, MaterialParameter> floatParameters;
+        std::unordered_map<std::string, Image> additionalMaps;
+    };
+
+    std::unordered_map<std::string, Material> materials_;
+
+    // Deprecated, use with old visualizer
     Image texture_;
 };
 

@@ -57,7 +57,7 @@ using ResourceManager = open3d::visualization::FilamentResourceManager;
 
 MaterialHandle ColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle PlainMesh = ResourceManager::kDefaultLit;
-MaterialHandle Mesh = ResourceManager::kDefaultLit;
+MaterialHandle Mesh = ResourceManager::kDefaultPBR;
 
 MaterialHandle ColoredPointcloud = ResourceManager::kDefaultUnlit;
 MaterialHandle Pointcloud = ResourceManager::kDefaultLit;
@@ -168,38 +168,14 @@ GeometryHandle FilamentScene::AddGeometry(
     if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
         const auto& mesh = static_cast<const geometry::TriangleMesh&>(geometry);
 
-        // Mesh with vertex color attribute set
-        if (mesh.HasVertexColors()) {
+        if (mesh.HasMaterials()) {  // Mesh with materials
+            materialInstance = resourceManager_.CreateFromDescriptor(
+                    mesh.materials_.begin()->second);
+        } else if (mesh.HasVertexColors()) {  // Mesh with vertex color
+                                              // attribute set
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::ColorOnlyMesh);
-            // Mesh with textures
-        } else if (mesh.HasTexture()) {
-            materialInstance = resourceManager_.CreateMaterialInstance(
-                    defaults_mapping::Mesh);
-
-            auto wMaterial =
-                    resourceManager_.GetMaterialInstance(materialInstance);
-            auto mat = wMaterial.lock();
-
-            auto hTexture = resourceManager_.CreateTexture(
-                    mesh.texture_.FlipVertical());
-
-            if (hTexture) {
-                auto& entity = entities_[handle];
-                entity.texture = hTexture;
-
-                auto wTexture = resourceManager_.GetTexture(hTexture);
-                auto tex = wTexture.lock();
-                if (tex) {
-                    static const auto kDefaultSampler =
-                            FilamentMaterialModifier::
-                                    SamplerFromSamplerParameters(
-                                            TextureSamplerParameters::Pretty());
-                    mat->setParameter("texture", tex.get(), kDefaultSampler);
-                }
-            }
-            // Mesh without any attributes set, only tangents are needed
-        } else {
+        } else {  // Mesh without any attributes set, only tangents are needed
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::PlainMesh);
 

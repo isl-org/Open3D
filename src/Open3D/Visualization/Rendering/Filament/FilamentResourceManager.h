@@ -26,12 +26,13 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/Renderer.h"
-#include "Open3D/Visualization/Rendering/RendererHandle.h"
-
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Visualization/Rendering/Renderer.h"
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace filament {
 class Engine;
@@ -57,14 +58,16 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
+    static const MaterialHandle kDefaultPBR;
     static const MaterialHandle kDefaultLit;
     static const MaterialHandle kDefaultUnlit;
-    static const MaterialHandle kUbermaterial;
     static const MaterialInstanceHandle kDepthMaterial;
     static const MaterialInstanceHandle kNormalsMaterial;
     static const MaterialInstanceHandle kColorMapMaterial;
     static const TextureHandle kDefaultTexture;
     static const TextureHandle kDefaulColorMap;
+    // For using with old lighting model based on specular color and glossiness
+    static const MaterialHandle kObsoleteLit;
 
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
@@ -72,11 +75,16 @@ public:
     MaterialHandle CreateMaterial(const void* materialData, size_t dataSize);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
+    MaterialInstanceHandle CreateFromDescriptor(
+            const geometry::TriangleMesh::Material& materialAttributes);
 
     TextureHandle CreateTexture(const char* path);
     TextureHandle CreateTexture(const std::shared_ptr<geometry::Image>& image);
     // Slow, will make copy of image data and free it after.
     TextureHandle CreateTexture(const geometry::Image& image);
+    // Creates texture of size 'dimension' filled with color 'color'
+    TextureHandle CreateTextureFilled(const Eigen::Vector3f& color,
+                                      size_t dimension);
 
     IndirectLightHandle CreateIndirectLight(const ResourceLoadRequest& request);
     SkyboxHandle CreateSkybox(const ResourceLoadRequest& request);
