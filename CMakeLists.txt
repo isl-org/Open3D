@@ -87,7 +87,7 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
-option(BUILD_CUDA_MODULE         "Build the CUDA module"                    ON)
+option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
 option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 

@@ -240,8 +240,8 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
                           master_shape_[ndims_ - 1]);
     }
     int64_t max_extent = -1;
-    int dim_to_split = -1;
-    for (int dim = ndims_ - 1; dim >= 0; dim--) {
+    int64_t dim_to_split = -1;
+    for (int64_t dim = ndims_ - 1; dim >= 0; dim--) {
         int64_t size = master_shape_[dim];
 
         // Inputs
