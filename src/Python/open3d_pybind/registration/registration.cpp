@@ -341,7 +341,7 @@ must hold true for all edges.)");
             .def_readwrite("distance_threshold",
                            &registration::CorrespondenceCheckerBasedOnDistance::
                                    distance_threshold_,
-                           "Distance threashold for the check.");
+                           "Distance threshold for the check.");
 
     // open3d.registration.CorrespondenceCheckerBasedOnNormal:
     // CorrespondenceChecker
