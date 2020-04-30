@@ -253,6 +253,10 @@ elseif (UNIX)
     message(STATUS "Compiling on Unix")
     message(STATUS "Disable RealSense since it is not fully supported on Linux.")
     set(BUILD_LIBREALSENSE OFF)
+    if (ENABLE_GUI)
+        message(STATUS "Compiling with Filament: specifically link -lstdc++ before -lc++")
+        list(INSERT 3RDPARTY_LIBRARIES 0 "-lstdc++")
+    endif ()
 endif ()
 
 # Set OpenMP
