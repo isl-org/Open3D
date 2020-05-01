@@ -83,7 +83,7 @@ public:
     /// Gets the window's size and position in OS pixels, not actual
     /// device pixels.
     Rect GetOSFrame() const;
-    /// Gets the window's size and position in OS pixels, not actual
+    /// Sets the window's size and position in OS pixels, not actual
     /// device pixels.
     void SetOSFrame(const Rect& r);
 
