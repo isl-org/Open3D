@@ -26,7 +26,7 @@
 
 #include "Open3D/Core/Kernel/UnaryEW.h"
 
-#include "Open3D/Core/Broadcast.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 
@@ -35,7 +35,7 @@ namespace kernel {
 
 void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     // Check shape
-    if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
+    if (!shape_util::CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
         utility::LogError("Shape {} can not be broadcasted to {}.",
                           src.GetShape(), dst.GetShape());
     }
@@ -63,7 +63,7 @@ void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
 
 void Copy(const Tensor& src, Tensor& dst) {
     // Check shape
-    if (!CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
+    if (!shape_util::CanBeBrocastedToShape(src.GetShape(), dst.GetShape())) {
         utility::LogError("Shape {} can not be broadcasted to {}.",
                           src.GetShape(), dst.GetShape());
     }

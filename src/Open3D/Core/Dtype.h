@@ -35,6 +35,7 @@ static_assert(sizeof(float) == 4,
               "Unsupported platform: float must be 4 bytes");
 static_assert(sizeof(double) == 8,
               "Unsupported platform: double must be 8 bytes");
+static_assert(sizeof(int) == 4, "Unsupported platform: int must be 4 bytes");
 static_assert(sizeof(int32_t) == 4,
               "Unsupported platform: int32_t must be 4 bytes");
 static_assert(sizeof(int64_t) == 8,

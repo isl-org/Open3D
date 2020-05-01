@@ -26,7 +26,43 @@
 
 #pragma once
 
-#include "Open3D/Core/Kernel/BinaryEW.h"
-#include "Open3D/Core/Kernel/IndexGetSet.h"
-#include "Open3D/Core/Kernel/Reduction.h"
-#include "Open3D/Core/Kernel/UnaryEW.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/Helper.h"
+
+#include <unordered_set>
+
+namespace open3d {
+namespace kernel {
+
+enum class ReductionOpCode { Sum, Prod, Min, Max, ArgMin, ArgMax };
+
+static const std::unordered_set<ReductionOpCode, utility::hash_enum_class::hash>
+        regular_reduce_ops = {ReductionOpCode::Sum, ReductionOpCode::Prod,
+                              ReductionOpCode::Min, ReductionOpCode::Max};
+static const std::unordered_set<ReductionOpCode, utility::hash_enum_class::hash>
+        arg_reduce_ops = {ReductionOpCode::ArgMin, ReductionOpCode::ArgMax};
+
+void Reduction(const Tensor& src,
+               Tensor& dst,
+               const SizeVector& dims,
+               bool keepdim,
+               ReductionOpCode op_code);
+
+void ReductionCPU(const Tensor& src,
+                  Tensor& dst,
+                  const SizeVector& dims,
+                  bool keepdim,
+                  ReductionOpCode op_code);
+
+#ifdef BUILD_CUDA_MODULE
+void ReductionCUDA(const Tensor& src,
+                   Tensor& dst,
+                   const SizeVector& dims,
+                   bool keepdim,
+                   ReductionOpCode op_code);
+#endif
+
+}  // namespace kernel
+}  // namespace open3d

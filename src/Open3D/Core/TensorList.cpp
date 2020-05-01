@@ -126,7 +126,7 @@ void TensorList::Resize(int64_t n) {
 }
 
 void TensorList::PushBack(const Tensor& tensor) {
-    if (!CanBeBrocastedToShape(tensor.GetShape(), shape_)) {
+    if (!shape_util::CanBeBrocastedToShape(tensor.GetShape(), shape_)) {
         utility::LogError("Incompatible shape {} and {}", shape_,
                           tensor.GetShape());
     }
