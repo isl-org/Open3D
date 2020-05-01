@@ -165,6 +165,8 @@ if (WIN32)
         # Ignore certain warnings
         # C4522: multiple assignment operators specified
         set(MSVC_WARNING_IGNORE "/wd4522")
+        # Ignore [[nodiscard]] warnings (since we're only using C++14)
+        set(MSVC_WARNING_IGNORE "${MSVC_WARNING_IGNORE} /Wv:18")
 
         # Multi-thread compile, two ways to enable
         # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
