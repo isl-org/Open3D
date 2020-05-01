@@ -12,3 +12,9 @@
        overflow: visible !important;
     }
  }
+
+/* Limit visible text output to about 30 lines and show scrollbar */
+.nboutput .output_area div > pre {
+        overflow-y: scroll !important;
+        max-height: 30em;
+}

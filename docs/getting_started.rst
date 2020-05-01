@@ -74,29 +74,7 @@ Running Open3D tutorials
 ========================
 
 A complete set of Python tutorials and testing data will also be copied to
-demonstrate the usage of Open3D Python interface.
-For example, tutorial ``Basic/rgbd_redwood.py`` can be run with:
-
-.. code-block:: bash
-
-    cd lib/Tutorial/Basic
-    python rgbd_redwood.py
-
-It reads a pair of RGB-D images and visualizes them.
-
-.. image:: _static/Basic/rgbd_images/redwood_rgbd.png
-    :width: 400px
-
-It then transforms the RGB-D image into a point cloud, then renders the point
-cloud using Open3D visualizer.
-
-.. image:: _static/Basic/rgbd_images/redwood_pcd.png
-    :width: 400px
-
-The Python code is quite straightforward, and the detailed explanation can be
-found in :ref:`rgbd_redwood`.
-You may further experiment with different tutorials or check out the complete
-tutorial list in the :ref:`tutorial_index` page.
+demonstrate the usage of Open3D Python interface. See ``examples/Python`` for all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction

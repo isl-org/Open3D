@@ -105,7 +105,15 @@ void pybind_viewcontrol(py::module &m) {
                  &visualization::ViewControl::UnsetConstantZFar,
                  "Function to remove a previously set constant z far value, "
                  "i.e., far z-plane of the visualizer is dynamically set "
-                 "dependent on zoom and bounding box size.");
+                 "dependent on zoom and bounding box size.")
+            .def("set_lookat", &visualization::ViewControl::SetLookat,
+                 "Set the lookat vector of the visualizer", "lookat"_a)
+            .def("set_up", &visualization::ViewControl::SetUp,
+                 "Set the up vector of the visualizer", "up"_a)
+            .def("set_front", &visualization::ViewControl::SetFront,
+                 "Set the front vector of the visualizer", "front"_a)
+            .def("set_zoom", &visualization::ViewControl::SetZoom,
+                 "Set the zoom of the visualizer", "zoom"_a);
     docstring::ClassMethodDocInject(m, "ViewControl", "change_field_of_view",
                                     map_view_control_docstrings);
     docstring::ClassMethodDocInject(m, "ViewControl",

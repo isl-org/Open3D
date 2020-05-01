@@ -288,7 +288,7 @@ void pybind_trianglemesh(py::module &m) {
                  &geometry::TriangleMesh::ClusterConnectedTriangles,
                  "Function that clusters connected triangles, i.e., triangles "
                  "that are connected via edges are assigned the same cluster "
-                 "index.  This function retuns an array that contains the "
+                 "index.  This function returns an array that contains the "
                  "cluster index per triangle, a second array contains the "
                  "number of triangles per cluster, and a third vector contains "
                  "the surface area per cluster.")
@@ -322,7 +322,10 @@ void pybind_trianglemesh(py::module &m) {
                  "and Alexa, "
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
-                 "max_iter"_a)
+                 "max_iter"_a,
+                 "energy"_a = geometry::MeshBase::
+                         DeformAsRigidAsPossibleEnergy::Spokes,
+                 "smoothed_alpha"_a = 0.01)
             .def_static("create_from_point_cloud_alpha_shape",
                         [](const geometry::PointCloud &pcd, double alpha) {
                             return geometry::TriangleMesh::
@@ -615,7 +618,7 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "simplify_quadric_decimation",
             {{"target_number_of_triangles",
               "The number of triangles that the simplified mesh should have. "
-              "It is not guranteed that this number will be reached."}});
+              "It is not guaranteed that this number will be reached."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_convex_hull");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "cluster_connected_triangles");
@@ -648,14 +651,19 @@ void pybind_trianglemesh(py::module &m) {
              {"constraint_vertex_positions",
               "Vertex positions used for the constraints."},
              {"max_iter",
-              "Maximum number of iterations to minimize energy functional."}});
+              "Maximum number of iterations to minimize energy functional."},
+             {"energy",
+              "Energy model that is minimized in the deformation process"},
+             {"smoothed_alpha",
+              "trade-off parameter for the smoothed energy functional for the "
+              "regularization term."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
             {{"pcd",
               "PointCloud from whicht the TriangleMesh surface is "
               "reconstructed."},
              {"alpha",
-              "Parameter to controll the shape. A very big value will give a "
+              "Parameter to control the shape. A very big value will give a "
               "shape close to the convex hull."},
              {"tetra_mesh",
               "If not None, than uses this to construct the alpha shape. "

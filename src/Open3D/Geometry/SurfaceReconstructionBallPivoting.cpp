@@ -318,7 +318,7 @@ public:
         bool ret = normal.dot(v0->normal_) > -1e-16 &&
                    normal.dot(v1->normal_) > -1e-16 &&
                    normal.dot(v2->normal_) > -1e-16;
-        utility::LogDebug("[IsCompatible] retuns = {}", ret);
+        utility::LogDebug("[IsCompatible] returns = {}", ret);
         return ret;
     }
 
@@ -389,7 +389,7 @@ public:
                                      mp, candidate->point_, tgt->point_,
                                      opp->point_) < 1e-12)) {
                 utility::LogDebug(
-                        "[FindCandidateVertex] candidate {:d} is interesecting "
+                        "[FindCandidateVertex] candidate {:d} is intersecting "
                         "the existing triangle",
                         candidate->idx_);
                 continue;
