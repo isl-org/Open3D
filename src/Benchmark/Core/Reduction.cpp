@@ -24,42 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Device.h"
+#include "Open3D/Core/AdvancedIndexing.h"
+#include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/Kernel/Kernel.h"
 #include "Open3D/Core/MemoryManager.h"
-#include "TestUtility/UnitTest.h"
+#include "Open3D/Core/SizeVector.h"
+#include "Open3D/Core/Tensor.h"
 
-#include "Container/ContainerTest.h"
+#include <benchmark/benchmark.h>
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
 
-class BlobPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Blob,
-                         BlobPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
-
-TEST_P(BlobPermuteDevices, BlobConstructor) {
-    Device device = GetParam();
-
-    Blob b(10, Device(device));
-}
-
-TEST_P(BlobPermuteDevices, BlobConstructorWithExternalMemory) {
-    Device device = GetParam();
-
-    void* data_ptr = MemoryManager::Malloc(8, device);
-    bool deleter_called = false;
-
-    auto deleter = [&device, &deleter_called, data_ptr](void* dummy) -> void {
-        MemoryManager::Free(data_ptr, device);
-        deleter_called = true;
-    };
-
-    {
-        Blob b(device, data_ptr, deleter);
-        EXPECT_EQ(b.GetDataPtr(), data_ptr);
-        EXPECT_FALSE(deleter_called);
+static void ReductionCPU(benchmark::State& state) {
+    Device device("CPU:0");
+    int64_t large_dim = (1ULL << 27) + 10;
+    SizeVector shape{2, large_dim};
+    Tensor src(shape, Dtype::Int64, device);
+    Tensor warm_up = src.Sum({1});
+    (void)warm_up;
+    for (auto _ : state) {
+        Tensor dst = src.Sum({1});
     }
-    EXPECT_TRUE(deleter_called);
 }
+
+// Fixture does play very well with static initialization in Open3D. Use the
+// simple BENCHMARK here.
+// https://github.com/google/benchmark/issues/498
+BENCHMARK(ReductionCPU)->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+
+static void ReductionCUDA(benchmark::State& state) {
+    Device device("CUDA:0");
+    int64_t large_dim = (1ULL << 27) + 10;
+    SizeVector shape{2, large_dim};
+    Tensor src(shape, Dtype::Int64, device);
+    Tensor warm_up = src.Sum({1});
+    (void)warm_up;
+    for (auto _ : state) {
+        Tensor dst = src.Sum({1});
+    }
+}
+
+BENCHMARK(ReductionCUDA)->Unit(benchmark::kMillisecond);
+
+#endif
+
+}  // namespace open3d

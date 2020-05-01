@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include "Open3D/Core/Broadcast.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Utility/Console.h"
 

@@ -28,7 +28,9 @@
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/SizeVector.h"
 
-#include "Container/ContainerTest.h"
+#include <unordered_map>
+
+#include "Core/CoreTest.h"
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
@@ -65,7 +67,40 @@ TEST_P(IndexerPermuteDevices, TensorRef) {
     EXPECT_EQ(tr.dtype_byte_size_, 4);
     EXPECT_EQ(tr.data_ptr_, t.GetDataPtr());
     EXPECT_EQ(SizeVector(tr.shape_, tr.shape_ + 3), SizeVector({2, 1, 3}));
-    EXPECT_EQ(SizeVector(tr.strides_, tr.strides_ + 3), SizeVector({3, 3, 1}));
+    EXPECT_EQ(SizeVector(tr.byte_strides_, tr.byte_strides_ + 3),
+              SizeVector({3 * 4, 3 * 4, 1 * 4}));
+
+    // Test default copy constructor.
+    TensorRef tr_new = tr;
+    EXPECT_EQ(tr_new.ndims_, tr.ndims_);
+    EXPECT_EQ(tr_new.dtype_byte_size_, tr.dtype_byte_size_);
+    EXPECT_EQ(tr_new.data_ptr_, tr.data_ptr_);
+    EXPECT_EQ(SizeVector(tr_new.shape_, tr_new.shape_ + 3),
+              SizeVector({2, 1, 3}));
+    EXPECT_EQ(SizeVector(tr_new.byte_strides_, tr_new.byte_strides_ + 3),
+              SizeVector({3 * 4, 3 * 4, 1 * 4}));
+}
+
+TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
+    Device device = GetParam();
+
+    Tensor input0({2, 1, 1, 3}, Dtype::Float32, device);
+    Tensor input1({1, 3}, Dtype::Float32, device);
+    Tensor output({2, 2, 2, 1, 3}, Dtype::Float32, device);
+    Indexer indexer_a({input0, input1}, output);
+    Indexer indexer_b = indexer_a;
+
+    EXPECT_EQ(indexer_a.NumInputs(), indexer_b.NumInputs());
+    EXPECT_EQ(indexer_a.GetInput(0), indexer_b.GetInput(0));
+    EXPECT_EQ(indexer_a.GetInput(1), indexer_b.GetInput(1));
+    EXPECT_EQ(indexer_a.GetOutput(), indexer_b.GetOutput());
+    EXPECT_EQ(indexer_a.NumDims(), indexer_b.NumDims());
+    for (int64_t i = 0; i < indexer_a.NumDims(); i++) {
+        EXPECT_EQ(indexer_a.GetMasterShape()[i], indexer_b.GetMasterShape()[i]);
+        EXPECT_EQ(indexer_a.GetMasterStrides()[i],
+                  indexer_b.GetMasterStrides()[i]);
+        EXPECT_EQ(indexer_a.IsReductionDim(i), indexer_b.IsReductionDim(i));
+    }
 }
 
 TEST_P(IndexerPermuteDevices, BroadcastRestride) {
@@ -103,15 +138,15 @@ TEST_P(IndexerPermuteDevices, BroadcastRestride) {
               SizeVector({2, 2, 2, 1, 3}));
 
     // Check tensor strides
-    EXPECT_EQ(SizeVector(input0_tr.strides_,
-                         input0_tr.strides_ + input0_tr.ndims_),
-              SizeVector({0, 3, 0, 3, 1}));
-    EXPECT_EQ(SizeVector(input1_tr.strides_,
-                         input1_tr.strides_ + input1_tr.ndims_),
-              SizeVector({0, 0, 0, 3, 1}));
-    EXPECT_EQ(SizeVector(output_tr.strides_,
-                         output_tr.strides_ + output_tr.ndims_),
-              SizeVector({12, 6, 3, 3, 1}));
+    EXPECT_EQ(SizeVector(input0_tr.byte_strides_,
+                         input0_tr.byte_strides_ + input0_tr.ndims_),
+              SizeVector({0, 3 * 4, 0, 3 * 4, 1 * 4}));
+    EXPECT_EQ(SizeVector(input1_tr.byte_strides_,
+                         input1_tr.byte_strides_ + input1_tr.ndims_),
+              SizeVector({0, 0, 0, 3 * 4, 1 * 4}));
+    EXPECT_EQ(SizeVector(output_tr.byte_strides_,
+                         output_tr.byte_strides_ + output_tr.ndims_),
+              SizeVector({12 * 4, 6 * 4, 3 * 4, 3 * 4, 1 * 4}));
 }
 
 TEST_P(IndexerPermuteDevices, GetPointers) {

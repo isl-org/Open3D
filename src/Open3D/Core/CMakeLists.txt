@@ -7,6 +7,8 @@ set (KERNEL_SRC
     Kernel/UnaryEWCPU.cpp
     Kernel/BinaryEW.cpp
     Kernel/BinaryEWCPU.cpp
+    Kernel/Reduction.cpp
+    Kernel/ReductionCPU.cpp
 )
 
 set (KERNEL_CUDA_SRC
@@ -14,13 +16,15 @@ set (KERNEL_CUDA_SRC
     Kernel/NonZeroCUDA.cu
     Kernel/UnaryEWCUDA.cu
     Kernel/BinaryEWCUDA.cu
+    Kernel/ReductionCUDA.cu
 )
 
 set (CORE_SRC
     DLPack/DLPackConverter.cpp
     AdvancedIndexing.cpp
-    Broadcast.cpp
+    ShapeUtil.cpp
     CUDAUtils.cpp
+    Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
     MemoryManagerCUDA.cu

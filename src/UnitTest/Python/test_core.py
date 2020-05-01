@@ -501,6 +501,78 @@ def test_cast_to_py_tensor():
     assert isinstance(c, o3d.Tensor)  # Not o3d.open3d-pybind.Tensor
 
 
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_sum(dim, keepdim):
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.sum(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.sum(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_prod(dim, keepdim):
+    np_src = np.array(range(24)).reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.prod(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.prod(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_min(dim, keepdim):
+    np_src = np.array(range(24))
+    np.random.shuffle(np_src)
+    np_src = np_src.reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.min(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.min(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize(
+    "dim",
+    [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
+@pytest.mark.parametrize("keepdim", [True, False])
+def test_reduction_max(dim, keepdim):
+    np_src = np.array(range(24))
+    np.random.shuffle(np_src)
+    np_src = np_src.reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.max(axis=dim, keepdims=keepdim)
+    o3_dst = o3_src.max(dim=dim, keepdim=keepdim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
+@pytest.mark.parametrize("dim", [0, 1, 2, None])
+def test_reduction_argmin_argmax(dim):
+    np_src = np.array(range(24))
+    np.random.shuffle(np_src)
+    np_src = np_src.reshape((2, 3, 4))
+    o3_src = o3d.Tensor(np_src)
+
+    np_dst = np_src.argmin(axis=dim)
+    o3_dst = o3_src.argmin(dim=dim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+    np_dst = np_src.argmax(axis=dim)
+    o3_dst = o3_src.argmax(dim=dim)
+    np.testing.assert_allclose(o3_dst.numpy(), np_dst)
+
+
 def test_advanced_index_get_mixed():
     np_src = np.array(range(24)).reshape((2, 3, 4))
     o3_src = o3d.Tensor(np_src)
