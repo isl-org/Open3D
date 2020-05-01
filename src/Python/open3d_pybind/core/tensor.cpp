@@ -77,6 +77,17 @@ void pybind_core_tensor(py::module& m) {
         return t;
     }));
 
+    // Tensor creation API
+    tensor.def_static("empty", &Tensor::Empty);
+    tensor.def_static("full", &Tensor::Full<float>);
+    tensor.def_static("full", &Tensor::Full<double>);
+    tensor.def_static("full", &Tensor::Full<int32_t>);
+    tensor.def_static("full", &Tensor::Full<int64_t>);
+    tensor.def_static("full", &Tensor::Full<uint8_t>);
+    tensor.def_static("full", &Tensor::Full<bool>);
+    tensor.def_static("zeros", &Tensor::Zeros);
+    tensor.def_static("ones", &Tensor::Ones);
+
     // Tensor copy
     tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 

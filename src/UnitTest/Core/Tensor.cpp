@@ -1975,3 +1975,80 @@ TEST_P(TensorPermuteDevices, Ne) {
     a.Ne_(b);
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 1}));
 }
+
+TEST_P(TensorPermuteDevices, CreationEmpty) {
+    Device device = GetParam();
+
+    Tensor a = Tensor::Empty({}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({}));
+    EXPECT_EQ(a.NumElements(), 1);
+
+    a = Tensor::Empty({0}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0}));
+    EXPECT_EQ(a.NumElements(), 0);
+
+    a = Tensor::Empty({1}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({1}));
+    EXPECT_EQ(a.NumElements(), 1);
+
+    a = Tensor::Empty({0, 1}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(a.NumElements(), 0);
+
+    a = Tensor::Empty({2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+}
+
+TEST_P(TensorPermuteDevices, CreationFull) {
+    Device device = GetParam();
+
+    const float fill_value = 100;
+    Tensor a = Tensor::Full({}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({}));
+    EXPECT_EQ(a.NumElements(), 1);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({0}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0}));
+    EXPECT_EQ(a.NumElements(), 0);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({1}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({1}));
+    EXPECT_EQ(a.NumElements(), 1);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({0, 1}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(a.NumElements(), 0);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({2, 3}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+}
+
+TEST_P(TensorPermuteDevices, CreationZeros) {
+    Device device = GetParam();
+
+    Tensor a = Tensor::Zeros({2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>(a.NumElements(), 0));
+}
+
+TEST_P(TensorPermuteDevices, CreationOnes) {
+    Device device = GetParam();
+
+    Tensor a = Tensor::Ones({2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>(a.NumElements(), 1));
+}

@@ -113,6 +113,67 @@ class Tensor(open3d_pybind.Tensor):
             raise TypeError(f"Invalid type {type(key)} for getitem.")
         return self
 
+    @staticmethod
+    @cast_to_py_tensor
+    def empty(shape, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with uninitilized values.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).empty(shape, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def full(shape, fill_value, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with fill with the specified value.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            fill_value (scalar): The value to be filled.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).full(shape, fill_value, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def zeros(shape, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with fill with zeros.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).zeros(shape, dtype, device)
+
+    @staticmethod
+    @cast_to_py_tensor
+    def ones(shape, dtype, device=o3d.Device("CPU:0")):
+        """
+        Create a tensor with fill with ones.
+
+        Args:
+            shape (list, tuple, o3d.SizeVector): Shape of the tensor.
+            dtype (o3d.Dtype): Data type of the tensor.
+            device (o3d.Device): Device where the tensor is created.
+        """
+        if not isinstance(shape, o3d.SizeVector):
+            shape = o3d.SizeVector(shape)
+        return super(Tensor, Tensor).ones(shape, dtype, device)
+
     @cast_to_py_tensor
     def cuda(self, device_id=0):
         """

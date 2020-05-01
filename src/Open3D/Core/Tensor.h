@@ -145,6 +145,32 @@ public:
         return *this;
     }
 
+    /// Create a tensor with uninitilized values.
+    static Tensor Empty(const SizeVector& shape,
+                        Dtype dtype,
+                        const Device& device = Device("CPU:0"));
+
+    /// Create a tensor fill with specified value.
+    template <typename T>
+    static Tensor Full(const SizeVector& shape,
+                       T fill_value,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0")) {
+        Tensor t = Empty(shape, dtype, device);
+        t.Fill(fill_value);
+        return t;
+    }
+
+    /// Create a tensor fill with zeros.
+    static Tensor Zeros(const SizeVector& shape,
+                        Dtype dtype,
+                        const Device& device = Device("CPU:0"));
+
+    /// Create a tensor fill with ones.
+    static Tensor Ones(const SizeVector& shape,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0"));
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is

@@ -54,6 +54,28 @@ def list_devices():
     return devices
 
 
+def test_creation():
+    # Shape takes tuple, list or o3d.SizeVector
+    t = o3d.Tensor.empty((2, 3), o3d.Dtype.Float32)
+    assert t.shape == o3d.SizeVector([2, 3])
+    t = o3d.Tensor.empty([2, 3], o3d.Dtype.Float32)
+    assert t.shape == o3d.SizeVector([2, 3])
+    t = o3d.Tensor.empty(o3d.SizeVector([2, 3]), o3d.Dtype.Float32)
+    assert t.shape == o3d.SizeVector([2, 3])
+
+    # Test zeros and ones
+    t = o3d.Tensor.zeros((2, 3), o3d.Dtype.Float32)
+    np.testing.assert_equal(t.numpy(), np.zeros((2, 3), dtype=np.float32))
+    t = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    np.testing.assert_equal(t.numpy(), np.ones((2, 3), dtype=np.float32))
+
+    # Automatic casting of dtype.
+    t = o3d.Tensor.full((2,), False, o3d.Dtype.Float32)
+    np.testing.assert_equal(t.numpy(), np.full((2,), False, dtype=np.float32))
+    t = o3d.Tensor.full((2,), 3.5, o3d.Dtype.UInt8)
+    np.testing.assert_equal(t.numpy(), np.full((2,), 3.5, dtype=np.uint8))
+
+
 def test_dtype():
     dtype = o3d.Dtype.Int32
     assert o3d.DtypeUtil.byte_size(dtype) == 4
