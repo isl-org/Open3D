@@ -747,3 +747,91 @@ def test_comparision_ops():
     np.testing.assert_equal((o3_a <= o3_b).numpy(), np_a <= np_b)
     np.testing.assert_equal((o3_a == o3_b).numpy(), np_a == np_b)
     np.testing.assert_equal((o3_a != o3_b).numpy(), np_a != np_b)
+
+
+def test_scalar_op():
+    # +
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    b = a.add(1)
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    b = a + 1
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    b = 1 + a
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+    b = a + True
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+
+    # +=
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    a.add_(1)
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 2))
+    a += 1
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 3))
+    a += True
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 4))
+
+    # -
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    b = a.sub(1)
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0))
+    b = a - 1
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0))
+    b = 10 - a
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 9))
+    b = a - True
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0))
+
+    # -=
+    a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)
+    a.sub_(1)
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 0))
+    a -= 1
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), -1))
+    a -= True
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), -2))
+
+    # *
+    a = o3d.Tensor.full((2, 3), 2, o3d.Dtype.Float32)
+    b = a.mul(10)
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    b = a * 10
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    b = 10 * a
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+    b = a * True
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 2))
+
+    # *=
+    a = o3d.Tensor.full((2, 3), 2, o3d.Dtype.Float32)
+    a.mul_(10)
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 20))
+    a *= 10
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 200))
+    a *= True
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 200))
+
+    # /
+    a = o3d.Tensor.full((2, 3), 20, o3d.Dtype.Float32)
+    b = a.div(2)
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 10))
+    b = a / 2
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 10))
+    b = a // 2
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 10))
+    b = 10 / a
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0.5))
+    b = 10 // a
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 0.5))
+    b = a / True
+    np.testing.assert_equal(b.numpy(), np.full((2, 3), 20))
+
+    # /=
+    a = o3d.Tensor.full((2, 3), 20, o3d.Dtype.Float32)
+    a.div_(2)
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 10))
+    a /= 2
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 5))
+    a //= 2
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 2.5))
+    a /= True
+    np.testing.assert_equal(a.numpy(), np.full((2, 3), 2.5))

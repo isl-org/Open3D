@@ -470,16 +470,25 @@ class Tensor(open3d_pybind.Tensor):
     def __add__(self, value):
         return self.add(value)
 
+    def __radd__(self, value):
+        return self.add(value)
+
     def __iadd__(self, value):
         return self.add_(value)
 
     def __sub__(self, value):
         return self.sub(value)
 
+    def __rsub__(self, value):
+        return o3d.Tensor.full((), value, self.dtype, self.device) - self
+
     def __isub__(self, value):
         return self.sub_(value)
 
     def __mul__(self, value):
+        return self.mul(value)
+
+    def __rmul__(self, value):
         return self.mul(value)
 
     def __imul__(self, value):
@@ -489,6 +498,9 @@ class Tensor(open3d_pybind.Tensor):
         # True div and floor div are the same for Tensor.
         return self.div(value)
 
+    def __rtruediv__(self, value):
+        return o3d.Tensor.full((), value, self.dtype, self.device) / self
+
     def __itruediv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div_(value)
@@ -496,6 +508,10 @@ class Tensor(open3d_pybind.Tensor):
     def __floordiv__(self, value):
         # True div and floor div are the same for Tensor.
         return self.div(value)
+
+    def __rfloordiv__(self, value):
+        # True div and floor div are the same for Tensor.
+        return o3d.Tensor.full((), value, self.dtype, self.device) // self
 
     def __ifloordiv__(self, value):
         # True div and floor div are the same for Tensor.
