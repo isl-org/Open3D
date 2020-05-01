@@ -1516,7 +1516,7 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
     } else {
         // LogError throws an exception, which we don't want, because this might
         // be a point cloud.
-        utility::LogInfof("%s appears to be a point cloud", path.c_str());
+        utility::LogInfo("%s appears to be a point cloud", path.c_str());
         mesh.reset();
     }
 
@@ -1536,7 +1536,7 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
             cloud->NormalizeNormals();
             geometry = cloud;
         } else {
-            utility::LogWarningf("Failed to read point cloud %s", path.c_str());
+            utility::LogWarning("Failed to read point cloud %s", path.c_str());
             cloud.reset();
         }
     }
