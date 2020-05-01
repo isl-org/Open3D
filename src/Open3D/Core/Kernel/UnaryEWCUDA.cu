@@ -154,7 +154,6 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     // src and dst have been chaged to have the same shape, dtype, device
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
-    Indexer indexer({src}, dst, DtypePolicy::ASSERT_SAME_OR_BOOL_OUT);
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
         if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
@@ -166,17 +165,31 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
 
     if (op_code == UnaryEWOpCode::LogicalNot) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            using src_t = scalar_t;
-            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
-                using dst_t = scalar_t;
+            if (dst_dtype == src_dtype) {
+                Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
                 CUDALauncher::LaunchUnaryEWKernel(
                         indexer,
                         [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
-                            CUDALogicalNotElementKernel<src_t, dst_t>(src, dst);
+                            CUDALogicalNotElementKernel<scalar_t, scalar_t>(
+                                    src, dst);
                         });
-            });
+            } else if (dst_dtype == Dtype::Bool) {
+                Indexer indexer({src}, dst,
+                                DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+                CUDALauncher::LaunchUnaryEWKernel(
+                        indexer,
+                        [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                            CUDALogicalNotElementKernel<scalar_t, bool>(src,
+                                                                        dst);
+                        });
+            } else {
+                utility::LogError(
+                        "Boolean op's output type must be boolean or the "
+                        "same type as the input.");
+            }
         });
     } else {
+        Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
