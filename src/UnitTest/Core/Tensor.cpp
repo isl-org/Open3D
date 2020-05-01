@@ -1040,6 +1040,26 @@ TEST_P(TensorPermuteDevices, Add_) {
               std::vector<float>({10, 12, 14, 16, 18, 20}));
 }
 
+TEST_P(TensorPermuteDevices, Add_BroadcastException) {
+    // A.shape = (   3, 4)
+    // B.shape = (2, 3, 4)
+    // A += B should throw exception.
+    // B += A is fine.
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}), {3, 4},
+             Dtype::Float32, device);
+    Tensor b(std::vector<float>({0,  1,  2,  3,  4,  5,  6,  7,
+                                 8,  9,  10, 11, 12, 13, 14, 15,
+                                 16, 17, 18, 19, 20, 21, 22, 23}),
+             {2, 3, 4}, Dtype::Float32, device);
+    EXPECT_THROW(a += b, std::runtime_error);
+    b += a;
+    EXPECT_EQ(b.ToFlatVector<float>(),
+              std::vector<float>({0,  2,  4,  6,  8,  10, 12, 14,
+                                  16, 18, 20, 22, 12, 14, 16, 18,
+                                  20, 22, 24, 26, 28, 30, 32, 34}));
+}
+
 TEST_P(TensorPermuteDevices, Sub) {
     Device device = GetParam();
     Tensor a(std::vector<float>({10, 12, 14, 16, 18, 20}), {2, 3},
