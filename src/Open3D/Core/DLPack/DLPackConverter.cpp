@@ -79,7 +79,8 @@ DLManagedTensor* ToDLPack(const Tensor& t) {
         default:
             utility::LogError("Unsupported data type");
     }
-    dl_data_type.bits = DtypeUtil::ByteSize(t.GetDtype()) * 8;
+    dl_data_type.bits =
+            static_cast<uint8_t>(DtypeUtil::ByteSize(t.GetDtype()) * 8);
     dl_data_type.lanes = 1;
 
     Open3DDLManagedTensor* o3d_dl_tensor(new Open3DDLManagedTensor);
@@ -89,7 +90,7 @@ DLManagedTensor* ToDLPack(const Tensor& t) {
     // Not Blob's data pointer.
     dl_tensor.data = const_cast<void*>(t.GetDataPtr());
     dl_tensor.ctx = dl_context;
-    dl_tensor.ndim = t.GetShape().size();
+    dl_tensor.ndim = static_cast<int>(t.GetShape().size());
     dl_tensor.dtype = dl_data_type;
     // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
     dl_tensor.shape = const_cast<int64_t*>(

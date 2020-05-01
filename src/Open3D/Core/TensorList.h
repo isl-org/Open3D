@@ -31,9 +31,9 @@
 #include <string>
 
 #include "Open3D/Core/Blob.h"
-#include "Open3D/Core/Broadcast.h"
 #include "Open3D/Core/Device.h"
 #include "Open3D/Core/Dtype.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorKey.h"
@@ -189,8 +189,8 @@ protected:
         shape_ = std::accumulate(
                 std::next(first), last, first->GetShape(),
                 [](const SizeVector shape, const Tensor& tensor) {
-                    return BroadcastedShape(std::move(shape),
-                                            tensor.GetShape());
+                    return shape_util::BroadcastedShape(std::move(shape),
+                                                        tensor.GetShape());
                 });
 
         // Infer dtype

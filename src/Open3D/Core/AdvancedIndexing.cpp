@@ -26,7 +26,7 @@
 
 #include "Open3D/Core/AdvancedIndexing.h"
 
-#include "Open3D/Core/Broadcast.h"
+#include "Open3D/Core/ShapeUtil.h"
 #include "Open3D/Core/SizeVector.h"
 #include "Open3D/Core/Tensor.h"
 
@@ -83,8 +83,8 @@ AdvancedIndexPreprocessor::ExpandToCommonShapeExceptZeroDim(
     SizeVector replacement_shape({});  // {} can be broadcasted to any shape.
     for (const Tensor& index_tensor : index_tensors) {
         if (index_tensor.NumDims() != 0) {
-            replacement_shape = BroadcastedShape(replacement_shape,
-                                                 index_tensor.GetShape());
+            replacement_shape = shape_util::BroadcastedShape(
+                    replacement_shape, index_tensor.GetShape());
         }
     }
 
@@ -127,7 +127,7 @@ Tensor AdvancedIndexPreprocessor::RestrideIndexTensor(
 
 void AdvancedIndexPreprocessor::RunPreprocess() {
     // Dimension check
-    if (index_tensors_.size() > tensor_.NumDims()) {
+    if (static_cast<int64_t>(index_tensors_.size()) > tensor_.NumDims()) {
         utility::LogError(
                 "Number of index_tensors {} exceeds tensor dimension "
                 "{}.",

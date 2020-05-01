@@ -158,6 +158,14 @@ public:
 
     int GetNumDevices() const { return num_devices_; }
 
+    int GetWarpSize() const { return warp_sizes_[GetCurentDeviceID()]; }
+
+    int GetCurentDeviceID() const {
+        int device_id;
+        OPEN3D_CUDA_CHECK(cudaGetDevice(&device_id));
+        return device_id;
+    }
+
     /// Disable P2P device transfer by marking p2p_enabled_ to `false`, in order
     /// to run non-p2p tests on a p2p-capable machine.
     void ForceDisableP2PForTesting() {
@@ -206,10 +214,19 @@ private:
                 }
             }
         }
+
+        // Cache warp sizes
+        warp_sizes_.resize(num_devices_);
+        for (int device_id = 0; device_id < num_devices_; ++device_id) {
+            cudaDeviceProp device_prop;
+            OPEN3D_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_id));
+            warp_sizes_[device_id] = device_prop.warpSize;
+        }
     }
 
 private:
-    int num_devices_;
+    int num_devices_ = 0;
+    std::vector<int> warp_sizes_;
     std::vector<std::vector<bool>> p2p_enabled_;
 };
 

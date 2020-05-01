@@ -344,7 +344,7 @@ void pybind_eigen(py::module &m) {
             py::py_array_to_vectors_double<Eigen::Vector3d>);
     vector3dvector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert float64 numpy array of shape ``(n, 3)`` to Open3D format..
+                return R"(Convert float64 numpy array of shape ``(n, 3)`` to Open3D format.
 
 Example usage
 
@@ -414,6 +414,16 @@ Example usage
     vector2ivector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int32 numpy array of shape ``(n, 2)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
+    auto vector2dvector = pybind_eigen_vector_of_vector<Eigen::Vector2d>(
+            m, "Vector2dVector", "std::vector<Eigen::Vector2d>",
+            py::py_array_to_vectors_double<Eigen::Vector2d>);
+    vector2dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 2)`` to "
                        "Open3D format.";
             }),
             py::none(), py::none(), "");

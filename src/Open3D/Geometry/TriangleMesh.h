@@ -349,15 +349,19 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal);
+            bool use_triangle_normal,
+            int seed);
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh. \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points, bool use_triangle_normal = false);
+            size_t number_of_points,
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to sample \param number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
@@ -368,12 +372,14 @@ public:
     /// \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false);
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
@@ -413,7 +419,7 @@ public:
     /// output TriangleMesh
     /// Vertices with indices in \param indices are selected.
     /// \param indices defines Indices of vertices to be selected.
-    std::shared_ptr<TriangleMesh> SelectDownSample(
+    std::shared_ptr<TriangleMesh> SelectByIndex(
             const std::vector<size_t> &indices) const;
 
     /// Function to crop pointcloud into output pointcloud

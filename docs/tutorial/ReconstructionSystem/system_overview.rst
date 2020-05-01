@@ -36,7 +36,7 @@ Put all color images in the ``image`` folder, and all depth images in the ``dept
     cd examples/Python/ReconstructionSystem/
     python run_system.py [config_file] [--make] [--register] [--refine] [--integrate]
 
-``config_file`` has parameters and file paths. For example, ReconstructionSystem/config/redwood.json has the following script.
+``config_file`` has parameters and file paths. For example, ReconstructionSystem/config/tutorial.json has the following script.
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/config/tutorial.json
    :language: json

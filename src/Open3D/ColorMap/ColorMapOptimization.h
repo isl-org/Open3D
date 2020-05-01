@@ -142,7 +142,7 @@ public:
 ///
 /// \param mesh The input geometry mesh.
 /// \param imgs_rgbd A list of RGBDImages seen by cameras.
-/// \param camera Cameras’ parameters.
+/// \param camera Cameras' parameters.
 /// \param option Color map optimization options. Takes the original
 /// ColorMapOptimizationOption values by default.
 void ColorMapOptimization(

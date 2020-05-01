@@ -53,7 +53,7 @@ TetraMesh &TetraMesh::operator+=(const TetraMesh &mesh) {
     size_t add_tetra_num = mesh.tetras_.size();
     MeshBase::operator+=(mesh);
     tetras_.resize(tetras_.size() + mesh.tetras_.size());
-    Vector4i index_shift = Vector4i::Constant((int64_t)old_vert_num);
+    Vector4i index_shift = Vector4i::Constant(static_cast<int>(old_vert_num));
     for (size_t i = 0; i < add_tetra_num; i++) {
         tetras_[old_tetra_num + i] = mesh.tetras_[i] + index_shift;
     }
@@ -280,12 +280,12 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
         // add vertices and get the vertex indices
         for (int i = 0; i < num_verts; ++i) {
             if (intersecting_edges.count(keys[i]) == 0) {
-                Index idx = intersecting_edges.size();
+                Index idx = static_cast<Index>(intersecting_edges.size());
                 verts_indices[i] = idx;
                 intersecting_edges[keys[i]] = idx;
                 triangle_mesh->vertices_.push_back(verts[i]);
             } else {
-                verts_indices[i] = intersecting_edges[keys[i]];
+                verts_indices[i] = Index(intersecting_edges[keys[i]]);
             }
         }
 

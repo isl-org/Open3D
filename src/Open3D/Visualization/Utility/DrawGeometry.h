@@ -52,13 +52,16 @@ class Visualizer;
 /// \param height The height of the visualization window.
 /// \param left margin of the visualization window.
 /// \param top The top margin of the visualization window.
+/// \param point_show_normal visualize point normals if set to true.
 bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                             &geometry_ptrs,
                     const std::string &window_name = "Open3D",
                     int width = 640,
                     int height = 480,
                     int left = 50,
-                    int top = 50);
+                    int top = 50,
+                    bool point_show_normal = false);
+
 /// \brief Function to draw a list of geometry objects with a GUI that
 /// supports animation.
 ///

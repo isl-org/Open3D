@@ -3,4 +3,4 @@
 # lines.
 #
 #project(rply)
-#add_library(rply STATIC rply.c rply.h)
+#add_library(rply STATIC rply/rply.c rply/rply.h)
