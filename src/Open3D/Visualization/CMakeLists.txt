@@ -36,7 +36,6 @@ source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
 
-ShowAndAbortOnWarning(Visualization)
-
-# Enforce 3rd party dependencies
-add_dependencies(Visualization build_all_3rd_party_libs)
+open3d_show_and_abort_on_warning(Visualization)
+open3d_set_global_properties(Visualization)
+open3d_link_3rdparty_libraries(Visualization)

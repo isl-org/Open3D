@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <rply/rply.h>
+#include <rply.h>
 
 #include "Open3D/IO/ClassIO/LineSetIO.h"
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
