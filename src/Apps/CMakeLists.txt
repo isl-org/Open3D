@@ -91,11 +91,12 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
             install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop"
                     DESTINATION "${DESKTOP_INSTALL_DIR}/applications")
             install(FILES "${SOURCE_DIR}/icon.svg"
-                    DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable"
+                    DESTINATION "${DESKTOP_INSTALL_DIR}/icons/hicolor/scalable/apps"
                     RENAME "${APP_NAME}.svg")
             install(FILES "${SOURCE_DIR}/${TARGET_NAME}.xml"
                     DESTINATION "${DESKTOP_INSTALL_DIR}/mime/packages"
                     RENAME "${APP_NAME}.xml")
+            # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
         endif()
     endif()
