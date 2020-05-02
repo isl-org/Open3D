@@ -3,13 +3,7 @@
 #           virtual environment.
 # Option 2: You can also define `cmake -DPYTHON_EXECUTABLE` to specify a python
 #           executable.
-if (NOT PYTHON_EXECUTABLE)
-    # find_program will returns the python executable in current PATH, which
-    # works with virtualenv
-    find_program(PYTHON_IN_PATH "python")
-    set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
-endif()
-message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
+find_package( PythonExecutable REQUIRED ) # invokes the module in 3rdparty/CMake
 
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
@@ -39,7 +33,7 @@ execute_process(
 )
 message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
 
-set(PACKAGE_NAME open3d)
+set(PACKAGE_NAME open3d_pybind)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "open3d_pybind/*.cpp")
 
@@ -48,9 +42,16 @@ if (NOT BUILD_AZURE_KINECT)
         "${CMAKE_CURRENT_SOURCE_DIR}/open3d_pybind/io/sensor.cpp")
 endif()
 
-pybind11_add_module(${PACKAGE_NAME}
-    ${PY_ALL_SOURCE_FILES}
-)
+# NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
+if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
+    pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS
+        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    )
+else ()
+    pybind11_add_module(${PACKAGE_NAME}
+        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
+    )
+endif ()
 
 target_include_directories(${PACKAGE_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -59,7 +60,9 @@ target_include_directories(${PACKAGE_NAME} PRIVATE
 # Suppress Pybind11 warnings
 target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
+
 
 # The Python headers won't be included outside the project, so it is okay to
 # use the target_compile_definitions approach. Otherwise, use configure_file.
@@ -89,13 +92,23 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
+
+# add the open3d python module first
+set( COMPILED_MODULE_PATH_LIST $<TARGET_FILE:${PACKAGE_NAME}> )
+
+# add additional optional compiled modules
+if ( BUILD_TENSORFLOW_OPS )
+    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+endif ()
+
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
-            -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
+            "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             -DENABLE_JUPYTER=${ENABLE_JUPYTER}
+            -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
@@ -105,6 +118,7 @@ add_custom_target(python-package
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
+    VERBATIM
 )
 
 # Use `make pip-package` to create the pip package in the build directory
@@ -122,6 +136,17 @@ add_custom_target(install-pip-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_install_pip_package.cmake
     DEPENDS pip-package
+)
+
+# FOR DEBUGGING ONLY Use `make install-python-package` to build and install
+# python package in the current python environment. This is substantially
+# faster than `make install-pip-package`. However this approach does not create
+# wheel or egg files thus not suitable for deployment.
+# Ref: https://stackoverflow.com/a/33791008/1255535
+add_custom_target(install-python-package
+    COMMAND ${PYTHON_EXECUTABLE} setup.py install --single-version-externally-managed --root=/
+    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+    DEPENDS python-package
 )
 
 # Use `make conda-package` to create conda package in the build directory

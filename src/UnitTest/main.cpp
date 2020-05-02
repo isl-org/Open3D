@@ -25,15 +25,42 @@
 // ----------------------------------------------------------------------------
 
 #include <gtest/gtest.h>
+#include <cstring>
 #include <string>
 
+#ifdef BUILD_CUDA_MODULE
+#include "Open3D/Core/CUDAState.cuh"
+#endif
+
+#include "Open3D/Utility/Console.h"
 #include "TestUtility/Print.h"
 #include "TestUtility/Rand.h"
 #include "TestUtility/Raw.h"
-using namespace std;
 
-int main(int argc, char **argv) {
+#ifdef BUILD_CUDA_MODULE
+/// Returns true if --disable_p2p flag is used.
+bool ShallDisableP2P(int argc, char** argv) {
+    bool shall_disable_p2p = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
+            shall_disable_p2p = true;
+            break;
+        }
+    }
+    return shall_disable_p2p;
+}
+#endif
+
+int main(int argc, char** argv) {
+#ifdef BUILD_CUDA_MODULE
+    if (ShallDisableP2P(argc, argv)) {
+        std::shared_ptr<open3d::CUDAState> cuda_state =
+                open3d::CUDAState::GetInstance();
+        cuda_state->ForceDisableP2PForTesting();
+        open3d::utility::LogInfo("P2P device transfer has been disabled.");
+    }
+#endif
     testing::InitGoogleTest(&argc, argv);
-
+    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
     return RUN_ALL_TESTS();
 }
