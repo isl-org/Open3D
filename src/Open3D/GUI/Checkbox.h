@@ -45,6 +45,8 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
+    /// Specifies a callback function which will be called when the box
+    /// changes checked state as a result of user action.
     void SetOnChecked(std::function<void(bool)> onChecked);
 
 private:

@@ -397,7 +397,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {
         utility::LogWarning("Read PLY failed: unable to open file: {}",
-                            filename);
+                            filename.c_str());
         return false;
     }
     if (!ply_read_header(ply_file)) {

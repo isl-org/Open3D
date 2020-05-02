@@ -73,6 +73,7 @@ public:
     void SelectDirectionalLight(
             visualization::LightHandle dirLight,
             std::function<void(const Eigen::Vector3f&)> onDirChanged);
+    /// Enables showing the skybox while in skybox ROTATE_IBL mode.
     void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
 
     struct ModelDescription {
@@ -93,8 +94,8 @@ public:
     enum class CameraPreset {
         PLUS_X,  // at (X, 0, 0), looking (-1, 0, 0)
         PLUS_Y,  // at (0, Y, 0), looking (0, -1, 0)
-        PLUS_Z
-    };  // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
+        PLUS_Z   // at (0, 0, Z), looking (0, 0, 1) [default OpenGL camera]
+    };
     void GoToCameraPreset(CameraPreset preset);
 
     visualization::View* GetView() const;

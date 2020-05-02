@@ -47,6 +47,8 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
+    /// Specifies a callback function which will be called when the value
+    /// changes as a result of user action.
     void SetOnValueChanged(std::function<void(const Color&)> onValueChanged);
 
 private:
