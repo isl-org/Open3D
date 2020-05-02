@@ -44,17 +44,21 @@ public:
 
     virtual ~Application();
 
-    // Initializes the application, and in particular, finds the path for
-    // the resources. If you can provide the argc/argv arguments it is more
-    // reliable.
+    /// Initializes the application, and in particular, finds the path for
+    /// the resources. If you can provide the argc/argv arguments it is more
+    /// reliable.
     void Initialize();
+    /// Initializes the application, and in particular, finds the path for
+    /// the resources. If you can provide the argc/argv arguments it is more
+    /// reliable.
     void Initialize(int argc, const char *argv[]);
 
     /// Does not return until the UI is completely finished. Use this if you
     /// just need something simple.
     void Run();
     bool RunOneTick();  // internal use
-    void Quit();        // closes all windows (and exits as a result)
+    /// Closes all the windows, which exits as a result
+    void Quit();
 
     std::shared_ptr<Menu> GetMenubar() const;
     void SetMenubar(std::shared_ptr<Menu> menubar);
@@ -79,7 +83,7 @@ public:
 
     /// This is primarily intended for use by the Window class. Any size-related
     /// fields (for example, fontSize) should be accessed through
-    /// Window::GetTheme() as they be updated to reflect the pixel scaling
+    /// Window::GetTheme() as they are updated to reflect the pixel scaling
     /// on the monitor where the Window is displayed.
     const Theme &GetTheme() const;
 

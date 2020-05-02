@@ -58,6 +58,7 @@ public:
 
     /// The OnCancel and OnDone callbacks *must* be specified.
     void SetOnCancel(std::function<void()> onCancel);
+    /// The OnCancel and OnDone callbacks *must* be specified.
     void SetOnDone(std::function<void(const char *)> onDone);
 
     Size CalcPreferredSize(const Theme &theme) const override;
