@@ -51,8 +51,8 @@ REGISTER_OP("Open3DRadiusSearch")
             using namespace open3d::ml::shape_checking;
             ShapeHandle points_shape, queries_shape, radii_shape,
                     points_row_splits_shape, queries_row_splits_shape,
-                    hash_table_size_factor_shape, neighbors_index_shape,
-                    neighbors_row_splits_shape, neighbors_distance_shape;
+                    neighbors_index_shape, neighbors_row_splits_shape,
+                    neighbors_distance_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));

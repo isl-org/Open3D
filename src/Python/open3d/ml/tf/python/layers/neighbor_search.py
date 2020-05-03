@@ -190,3 +190,93 @@ class RadiusSearch(tf.keras.layers.Layer):
                                    points_row_splits=points_row_splits,
                                    queries_row_splits=queries_row_splits)
         return result
+
+
+class KNNSearch(tf.keras.layers.Layer):
+    """KNN search for 3D point clouds.
+
+    This layer computes the k nearest neighbors for each query point.
+
+    Arguments:
+
+    metric:
+      Either L1, L2 or Linf. Default is L2.
+
+    ignore_query_point:
+      If True the points that coincide with the center of the search window will be
+      ignored. This excludes the query point if 'queries' and 'points' are the same
+      point cloud.
+
+    return_distances:
+      If True the distances for each neighbor will be returned.
+      If False a zero length Tensor will be returned instead.
+    """
+
+    def __init__(self,
+                 metric='L2',
+                 ignore_query_point=False,
+                 return_distances=False,
+                 **kwargs):
+        self.metric = metric
+        self.ignore_query_point = ignore_query_point
+        self.return_distances = return_distances
+        super().__init__(autocast=False, **kwargs)
+
+    def build(self, inp_shape):
+        super().build(inp_shape)
+
+    def call(self,
+             points,
+             queries,
+             k,
+             points_row_splits=None,
+             queries_row_splits=None):
+        """This function the neighbors within a radius for each query point.
+
+        Arguments:
+
+          points: The 3D positions of the input points.
+
+          queries: The 3D positions of the query points.
+
+          k: The number of nearest neighbors to search.
+
+          points_row_splits:
+            Optional 1D vector with the row splits information if points is batched.
+            This vector is [0, num_points] if there is only 1 batch item.
+
+          queries_row_splits:
+            Optional 1D vector with the row splits information if queries is batched.
+            This vector is [0, num_queries] if there is only 1 batch item.
+
+        Returns: 3 Tensors in the following order
+          neighbors_index
+            The compact list of indices of the neighbors. The corresponding query point
+            can be inferred from the 'neighbor_count_row_splits' vector.
+
+          neighbors_row_splits
+            The exclusive prefix sum of the neighbor count for the query points including
+            the total neighbor count as the last element. The size of this array is the
+            number of queries + 1.
+
+          neighbors_distance
+            Stores the distance to each neighbor if 'return_distances' is True.
+            Note that the distances are squared if metric is L2.
+            This is a zero length Tensor if 'return_distances' is False.
+        """
+        if points_row_splits is None:
+            points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
+                                        dtype=tf.int64)
+        if queries_row_splits is None:
+            queries_row_splits = tf.cast(tf.stack([0, tf.shape(queries)[0]]),
+                                         dtype=tf.int64)
+
+        result = ops.knn_search(ignore_query_point=self.ignore_query_point,
+                                return_distances=self.return_distances,
+                                metric=self.metric,
+                                points=points,
+                                queries=queries,
+                                k=k,
+                                points_row_splits=points_row_splits,
+                                queries_row_splits=queries_row_splits)
+        return result
