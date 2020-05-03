@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "../TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -40,50 +41,41 @@ REGISTER_OP("Open3DRadiusSearch")
         .Input("points: T")
         .Input("queries: T")
         .Input("radii: T")
+        .Input("points_row_splits: int64")
+        .Input("queries_row_splits: int64")
         .Output("neighbors_index: int32")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
+            using namespace open3d::ml::shape_checking;
             ShapeHandle points_shape, queries_shape, radii_shape,
-                    hash_table_size_factor_shape, indices_shape,
+                    points_row_splits_shape, queries_row_splits_shape,
+                    hash_table_size_factor_shape, neighbors_index_shape,
                     neighbors_row_splits_shape, neighbors_distance_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 1, &radii_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(3), 1, &points_row_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(4), 1, &queries_row_splits_shape));
 
-            // check if we have [N,3] tensors for the positions
-            if (c->RankKnown(points_shape)) {
-                DimensionHandle d;
-                TF_RETURN_IF_ERROR(
-                        c->WithValue(c->Dim(points_shape, -1), 3, &d));
-            }
-
-            DimensionHandle num_query_points = c->UnknownDim();
-            if (c->RankKnown(queries_shape)) {
-                num_query_points = c->Dim(queries_shape, 0);
-
-                DimensionHandle d;
-                TF_RETURN_IF_ERROR(
-                        c->WithValue(c->Dim(queries_shape, -1), 3, &d));
-            }
-
-            if (c->RankKnown(queries_shape) && c->RankKnown(radii_shape)) {
-                DimensionHandle d;
-                TF_RETURN_IF_ERROR(c->Merge(c->Dim(queries_shape, 0),
-                                            c->Dim(radii_shape, 0), &d));
-            }
+            Dim num_points("num_points");
+            Dim num_queries("num_queries");
+            Dim batch_size("batch_size");
+            CHECK_SHAPE_HANDLE(c, points_shape, num_points, 3);
+            CHECK_SHAPE_HANDLE(c, queries_shape, num_queries, 3);
+            CHECK_SHAPE_HANDLE(c, radii_shape, num_queries);
+            CHECK_SHAPE_HANDLE(c, points_row_splits_shape, batch_size + 1);
+            CHECK_SHAPE_HANDLE(c, queries_row_splits_shape, batch_size + 1);
 
             // we cannot infer the number of neighbors
-            indices_shape = c->MakeShape({c->UnknownDim()});
-            c->set_output(0, indices_shape);
+            neighbors_index_shape = c->MakeShape({c->UnknownDim()});
+            c->set_output(0, neighbors_index_shape);
 
-            DimensionHandle neighbors_row_splits_size;
-            TF_RETURN_IF_ERROR(
-                    c->Add(num_query_points, 1, &neighbors_row_splits_size));
-            neighbors_row_splits_shape =
-                    c->MakeShape({neighbors_row_splits_size});
+            neighbors_row_splits_shape = MakeShapeHandle(c, num_queries + 1);
             c->set_output(1, neighbors_row_splits_shape);
 
             bool return_distances;
@@ -126,7 +118,15 @@ queries:
   The 3D positions of the query points.
 
 radii:
-  A vector with the individual radii for each query point
+  A vector with the individual radii for each query point.
+
+points_row_splits:
+  1D vector with the row splits information if points is batched.
+  This vector is [0, num_points] if there is only 1 batch item.
+
+queries_row_splits:
+  1D vector with the row splits information if queries is batched.
+  This vector is [0, num_queries] if there is only 1 batch item.
 
 neighbors_index:
   The compact list of indices of the neighbors. The corresponding query point

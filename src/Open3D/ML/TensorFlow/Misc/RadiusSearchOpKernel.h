@@ -22,6 +22,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
+#include "../TensorFlowHelper.h"
 #include "Open3D/ML/Misc/Detail/RadiusSearch.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -29,37 +30,6 @@
 
 // namespace for code that is common for all kernels
 namespace radius_search_opkernel {
-
-template <class T>
-class OutputAllocator {
-public:
-    OutputAllocator(tensorflow::OpKernelContext* context) : context(context) {}
-
-    void AllocIndices(int32_t** ptr, size_t num) {
-        using namespace tensorflow;
-        *ptr = nullptr;
-        Tensor* tensor = 0;
-        TensorShape shape({int64_t(num)});
-        OP_REQUIRES_OK(context, context->allocate_output(0, shape, &tensor));
-        auto flat_tensor = tensor->flat<int32>();
-        static_assert(sizeof(int32) == sizeof(int32_t),
-                      "int32 and int32_t not compatible");
-        *ptr = (int32_t*)flat_tensor.data();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        using namespace tensorflow;
-        *ptr = nullptr;
-        Tensor* tensor = 0;
-        TensorShape shape({int64_t(num)});
-        OP_REQUIRES_OK(context, context->allocate_output(2, shape, &tensor));
-        auto flat_tensor = tensor->flat<T>();
-        *ptr = flat_tensor.data();
-    }
-
-private:
-    tensorflow::OpKernelContext* context;
-};
 
 class RadiusSearchOpKernel : public tensorflow::OpKernel {
 public:
@@ -93,21 +63,22 @@ public:
                       "int64 type is not compatible");
 
         const Tensor& points = context->input(0);
-        OP_REQUIRES(context, points.shape().dims() == 2,
-                    errors::InvalidArgument("points must be a rank 2 tensor"));
-
         const Tensor& queries = context->input(1);
-        OP_REQUIRES(context, queries.shape().dims() == 2,
-                    errors::InvalidArgument("queries must be a rank 2 tensor"));
-
         const Tensor& radii = context->input(2);
-        OP_REQUIRES(context, radii.shape().dims() == 1,
-                    errors::InvalidArgument("radii must be a rank 1 tensor"));
+        const Tensor& points_row_splits = context->input(3);
+        const Tensor& queries_row_splits = context->input(4);
+        {
+            using namespace open3d::ml::shape_checking;
 
-        OP_REQUIRES(context,
-                    queries.shape().dim_size(0) == radii.shape().dim_size(0),
-                    errors::InvalidArgument("number of output points and the "
-                                            "length of radii do not match"));
+            Dim num_points("num_points");
+            Dim num_queries("num_queries");
+            Dim batch_size("batch_size");
+            CHECK_SHAPE(context, points, num_points, 3);
+            CHECK_SHAPE(context, queries, num_queries, 3);
+            CHECK_SHAPE(context, radii, num_queries);
+            CHECK_SHAPE(context, points_row_splits, batch_size + 1);
+            CHECK_SHAPE(context, queries_row_splits, batch_size + 1);
+        }
 
         Tensor* query_neighbors_row_splits = 0;
         TensorShape query_neighbors_row_splits_shape(
@@ -116,13 +87,16 @@ public:
                                         1, query_neighbors_row_splits_shape,
                                         &query_neighbors_row_splits));
 
-        Kernel(context, points, queries, radii, *query_neighbors_row_splits);
+        Kernel(context, points, queries, radii, points_row_splits,
+               queries_row_splits, *query_neighbors_row_splits);
     }
 
     virtual void Kernel(tensorflow::OpKernelContext* context,
                         const tensorflow::Tensor& points,
                         const tensorflow::Tensor& queries,
                         const tensorflow::Tensor& radius,
+                        const tensorflow::Tensor& points_row_splits,
+                        const tensorflow::Tensor& queries_row_splits,
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
