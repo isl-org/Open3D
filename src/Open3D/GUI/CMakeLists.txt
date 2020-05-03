@@ -48,7 +48,8 @@ foreach(matsrc IN ITEMS ${GUI_MATERIAL_SOURCE_FILES})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/Materials/" "${GUI_RESOURCE_DIR}/" matdest ${matdest})
     list(APPEND GUI_MATERIAL_COMPILED_FILES ${matdest})
     add_custom_command(OUTPUT ${matdest}
-                       COMMAND ${FILAMENT_MATC} ${GUI_MATC_ARGS} -o ${matdest} ${matsrc})
+                       COMMAND ${FILAMENT_MATC} ${GUI_MATC_ARGS} -o ${matdest} ${matsrc}
+		       DEPENDS ${matsrc})
 endforeach()
 
 add_custom_target(GuiResources
