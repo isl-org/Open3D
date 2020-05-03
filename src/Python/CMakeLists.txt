@@ -62,7 +62,7 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
-
+open3d_set_global_properties(${PACKAGE_NAME})
 
 # The Python headers won't be included outside the project, so it is okay to
 # use the target_compile_definitions approach. Otherwise, use configure_file.
