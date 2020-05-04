@@ -135,8 +135,6 @@ void ChangeAllRenderQuality(
 
 }  // namespace
 
-const int Window::FLAG_TOPMOST = (1 << 0);
-
 struct Window::Impl {
     GLFWwindow* window = nullptr;
     std::string title;  // there is no glfwGetWindowTitle()...
