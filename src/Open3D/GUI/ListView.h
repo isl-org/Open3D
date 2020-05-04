@@ -43,15 +43,19 @@ public:
 
     void SetItems(const std::vector<std::string>& items);
 
+    /// Returns the currently selected item in the list.
     int GetSelectedIndex() const;
+    /// Returns the value of the currently selected item in the list.
     const char* GetSelectedValue() const;
+    /// Selects the indicated row of the list. Does not call onValueChanged.
     void SetSelectedIndex(int index);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 
-    /// calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    /// when the list selection changes because of user action.
     void SetOnValueChanged(
             std::function<void(const char*, bool)> onValueChanged);
 

@@ -361,14 +361,14 @@ visualization::Renderer& Window::GetRenderer() const {
     return *impl_->renderer;
 }
 
-Rect Window::GetFrame() const {
+Rect Window::GetOSFrame() const {
     int x, y, w, h;
     glfwGetWindowPos(impl_->window, &x, &y);
     glfwGetWindowSize(impl_->window, &w, &h);
     return Rect(x, y, w, h);
 }
 
-void Window::SetFrame(const Rect& r) {
+void Window::SetOSFrame(const Rect& r) {
     glfwSetWindowPos(impl_->window, r.x, r.y);
     glfwSetWindowSize(impl_->window, r.width, r.height);
 }
@@ -399,11 +399,7 @@ Size Window::CalcPreferredSize() {
 void Window::SizeToFit() {
     // CalcPreferredSize() can only be called during draw, but we probably
     // aren't calling this in a draw, we are probably setting up the window.
-    auto autoSize = [this]() {
-        auto pref = CalcPreferredSize();
-        SetSize(Size(pref.width / this->impl_->imgui.scaling,
-                     pref.height / this->impl_->imgui.scaling));
-    };
+    auto autoSize = [this]() { SetSize(CalcPreferredSize()); };
     impl_->deferredUntilDraw.push(autoSize);
 }
 
@@ -411,7 +407,9 @@ void Window::SetSize(const Size& size) {
     // Make sure we do the resize outside of a draw, to avoid unsightly
     // errors if we happen to do this in the middle of a draw.
     auto resize = [this, size /*copy*/]() {
-        glfwSetWindowSize(this->impl_->window, size.width, size.height);
+        glfwSetWindowSize(this->impl_->window,
+                          size.width / this->impl_->imgui.scaling,
+                          size.height / this->impl_->imgui.scaling);
         // SDL_SetWindowSize() doesn't generate an event, so we need to update
         // the size ourselves
         this->OnResize();
