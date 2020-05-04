@@ -11,11 +11,11 @@ material {
         { type : float,     name : clearCoat },
         { type : float,     name : clearCoatRoughness },
         { type : float,     name : anisotropy },
-
-        { type : float,     name : pointSize }
+        { type : float,     name : pointSize },
+	{ type : sampler2d, name : albedo }
     ],
     requires : [
-        color
+        color, uv0
     ]
 }
 
@@ -28,7 +28,7 @@ vertex {
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        material.baseColor.rgb = getColor().rgb*materialParams.baseColor;
+        material.baseColor.rgb = getColor().rgb*materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
         material.metallic = materialParams.metallic;
         material.roughness = materialParams.roughness;
         material.reflectance = materialParams.reflectance;
