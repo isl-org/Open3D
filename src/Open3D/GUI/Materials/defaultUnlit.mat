@@ -4,11 +4,12 @@ material {
     doubleSided : true,
 
     parameters : [
-        { type : float3, name : baseColor },
-        { type : float,  name : pointSize }
+        { type : float3,    name : baseColor },
+        { type : float,     name : pointSize },
+	{ type : sampler2d, name : albedo }
     ],
     requires : [
-        color
+        color, uv0
     ]
 }
 
@@ -21,6 +22,7 @@ vertex {
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        material.baseColor.rgb = materialParams.baseColor*getColor().rgb;
+
+	material.baseColor.rgb = materialParams.baseColor*getColor().rgb * texture(materialParams_albedo, getUV0()).rgb;
     }
 }

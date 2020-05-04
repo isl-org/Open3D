@@ -448,6 +448,7 @@ struct GuiVisualizer::Impl {
         // model will be invisible against the default white background.
         Eigen::Vector3f baseColor = {0.9f, 0.9f, 0.9f};
         float pointSize = 5.f;
+        TextureHandle albedoMap;
     };
 
     struct Materials {
@@ -572,6 +573,7 @@ struct GuiVisualizer::Impl {
             defaults.lit.baseColor =
                     this->settings.currentMaterials.lit.baseColor;
         }
+        defaults.unlit.albedoMap = FilamentResourceManager::kDefaultTexture;
         this->settings.currentMaterials = defaults;
 
         auto hLit = renderer.AddMaterialInstance(this->hLitMaterial);
@@ -593,7 +595,10 @@ struct GuiVisualizer::Impl {
                 renderer.ModifyMaterial(hUnlit)
                         .SetColor("baseColor", defaults.unlit.baseColor)
                         .SetParameter("pointSize", defaults.unlit.pointSize)
+                        .SetTexture("albedo", defaults.unlit.albedoMap,
+                                    TextureSamplerParameters::Pretty())
                         .Finish();
+
         if (this->settings.wgtPrefabMaterial) {
             this->settings.wgtPrefabMaterial->SetSelectedValue(
                     kDefaultMaterialName.c_str());
@@ -605,6 +610,38 @@ struct GuiVisualizer::Impl {
                              : defaults.unlit.baseColor);
             this->settings.wgtMaterialColor->SetValue(color.x(), color.y(),
                                                       color.z());
+        }
+    }
+
+    void SetMaterialToCurrent(visualization::Renderer &renderer,
+                              Impl::Settings::MaterialType type) {
+        using MaterialType = Impl::Settings::MaterialType;
+
+        switch (type) {
+            case MaterialType::LIT: {
+                break;
+            }
+            case MaterialType::UNLIT: {
+                this->settings.currentMaterials.unlit.handle =
+                        renderer.ModifyMaterial(this->settings.currentMaterials
+                                                        .unlit.handle)
+                                .SetColor("baseColor",
+                                          this->settings.currentMaterials.unlit
+                                                  .baseColor)
+                                .SetParameter("pointSize",
+                                              this->settings.currentMaterials
+                                                      .unlit.pointSize)
+                                .SetTexture("albedo",
+                                            this->settings.currentMaterials
+                                                    .unlit.albedoMap,
+                                            TextureSamplerParameters::Pretty())
+                                .Finish();
+                break;
+                case MaterialType::NORMAL_MAP:
+                    break;
+                case MaterialType::DEPTH:
+                    break;
+            }
         }
     }
 
@@ -1355,7 +1392,7 @@ void GuiVisualizer::SetGeometry(
     std::size_t nUnlit = 0;
     for (size_t i = 0; i < geometries.size(); ++i) {
         std::shared_ptr<const geometry::Geometry> g = geometries[i];
-        Impl::Materials materials = impl_->settings.currentMaterials;
+        Impl::Materials& materials = impl_->settings.currentMaterials;
 
         visualization::MaterialInstanceHandle selectedMaterial;
 
@@ -1385,6 +1422,18 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::TriangleMesh>(
                                 g);
 
+                if (mesh->HasMaterials()) {
+                    auto mesh_material = mesh->materials_.begin()->second;
+                    materials.unlit.baseColor.x() = mesh_material.baseColor.r;
+                    materials.unlit.baseColor.y() = mesh_material.baseColor.g;
+                    materials.unlit.baseColor.z() = mesh_material.baseColor.b;
+                    if (mesh_material.albedo &&
+                        mesh_material.albedo->HasData()) {
+                        materials.unlit.albedoMap =
+                                GetRenderer().AddTexture(mesh_material.albedo);
+                    }
+                    impl_->SetMaterialToCurrent(GetRenderer(), Impl::Settings::UNLIT);
+                }
                 if (mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) {
                     selectedMaterial = materials.unlit.handle;
                     nUnlit += 1;

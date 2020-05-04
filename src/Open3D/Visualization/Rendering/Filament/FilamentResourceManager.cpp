@@ -748,6 +748,7 @@ void FilamentResourceManager::LoadDefaults() {
     unlitMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                   defaultColor);
     unlitMat->setDefaultParameter("pointSize", 3.f);
+    unlitMat->setDefaultParameter("albedo", texture, defaultSampler);
     materials_[kDefaultUnlit] = MakeShared(unlitMat, engine_);
 
     const auto depthPath = resourceRoot + "/depth.filamat";
