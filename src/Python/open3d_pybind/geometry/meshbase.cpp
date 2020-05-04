@@ -42,6 +42,7 @@ void pybind_meshbase(py::module &m) {
                      "may also contain vertex normals and vertex colors.");
     py::detail::bind_default_constructor<geometry::MeshBase>(meshbase);
     py::detail::bind_copy_functions<geometry::MeshBase>(meshbase);
+
     py::enum_<geometry::MeshBase::SimplificationContraction>(
             m, "SimplificationContraction")
             .value("Average",
@@ -52,6 +53,7 @@ void pybind_meshbase(py::module &m) {
                    "The vertex positions are computed by minimizing the "
                    "distance to the adjacent triangle planes.")
             .export_values();
+
     py::enum_<geometry::MeshBase::FilterScope>(m, "FilterScope")
             .value("All", geometry::MeshBase::FilterScope::All,
                    "All properties (color, normal, vertex position) are "
@@ -63,6 +65,18 @@ void pybind_meshbase(py::module &m) {
             .value("Vertex", geometry::MeshBase::FilterScope::Vertex,
                    "Only the vertex positions are filtered.")
             .export_values();
+
+    py::enum_<geometry::MeshBase::DeformAsRigidAsPossibleEnergy>(
+            m, "DeformAsRigidAsPossibleEnergy")
+            .value("Spokes",
+                   geometry::MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
+                   "is the original energy as formulated in orkine and Alexa, "
+                   "\"As-Rigid-As-Possible Surface Modeling\", 2007.")
+            .value("Smoothed",
+                   geometry::MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
+                   "adds a rotation smoothing term to the rotations.")
+            .export_values();
+
     meshbase.def("__repr__",
                  [](const geometry::MeshBase &mesh) {
                      return std::string("geometry::MeshBase with ") +
@@ -77,9 +91,10 @@ void pybind_meshbase(py::module &m) {
             .def("has_vertex_colors", &geometry::MeshBase::HasVertexColors,
                  "Returns ``True`` if the mesh contains vertex colors.")
             .def("normalize_normals", &geometry::MeshBase::NormalizeNormals,
-                 "Normalize vertex normals to legnth 1.")
+                 "Normalize vertex normals to length 1.")
             .def("paint_uniform_color", &geometry::MeshBase::PaintUniformColor,
-                 "Assigns each vertex in the MeshBase the same color.")
+                 "Assigns each vertex in the MeshBase the same color.",
+                 "color"_a)
             .def("compute_convex_hull", &geometry::MeshBase::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
             .def_readwrite("vertices", &geometry::MeshBase::vertices_,
@@ -103,9 +118,8 @@ void pybind_meshbase(py::module &m) {
               "Set to ``True`` to normalize the normal to length 1."}});
     docstring::ClassMethodDocInject(m, "MeshBase", "has_vertices");
     docstring::ClassMethodDocInject(m, "MeshBase", "normalize_normals");
-    docstring::ClassMethodDocInject(
-            m, "MeshBase", "paint_uniform_color",
-            {{"color", "RGB color for the PointCloud."}});
+    docstring::ClassMethodDocInject(m, "MeshBase", "paint_uniform_color",
+                                    {{"color", "RGB colors of vertices."}});
     docstring::ClassMethodDocInject(m, "MeshBase", "compute_convex_hull");
 }
 

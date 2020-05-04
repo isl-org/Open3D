@@ -35,7 +35,9 @@
 // Including windows.h causes all kinds of #defines like "OPAQUE", "near",
 // "far", causes compile errors with Filament includes, and generally wrecks
 // havoc.
+#ifndef FMT_USE_WINDOWS_H
 #define FMT_USE_WINDOWS_H 0
+#endif
 #include <fmt/format.h>
 
 namespace open3d {

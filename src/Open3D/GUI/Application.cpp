@@ -131,7 +131,7 @@ Application &Application::GetInstance() {
 }
 
 void Application::ShowMessageBox(const char *title, const char *message) {
-    utility::LogInfof("%s", message);
+    utility::LogInfo("%s", message);
 
     auto alert = std::make_shared<Window>("Alert", Window::FLAG_TOPMOST);
     auto em = alert->GetTheme().fontSize;

@@ -46,19 +46,42 @@ class Index;
 namespace open3d {
 namespace geometry {
 
+/// \class KDTreeFlann
+///
+/// \brief KDTree with FLANN for nearest neighbor search.
 class KDTreeFlann {
 public:
+    /// \brief Default Constructor.
     KDTreeFlann();
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param data Provides set of data points for KDTree construction.
     KDTreeFlann(const Eigen::MatrixXd &data);
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param geometry Provides geometry from which KDTree is constructed.
     KDTreeFlann(const Geometry &geometry);
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param feature Provides a set of features from which the KDTree is
+    /// constructed.
     KDTreeFlann(const registration::Feature &feature);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 
 public:
+    /// Sets the data for the KDTree from a matrix.
+    ///
+    /// \param data Data points for KDTree Construction.
     bool SetMatrixData(const Eigen::MatrixXd &data);
+    /// Sets the data for the KDTree from geometry.
+    ///
+    /// \param geometry Geometry for KDTree Construction.
     bool SetGeometry(const Geometry &geometry);
+    /// Sets the data for the KDTree from the feature data.
+    ///
+    /// \param feature Set of features for KDTree construction.
     bool SetFeature(const registration::Feature &feature);
 
     template <typename T>
@@ -87,6 +110,10 @@ public:
                      std::vector<double> &distance2) const;
 
 private:
+    /// \brief Sets the KDTree data from the data provided by the other methods.
+    ///
+    /// Internal method that sets all the members of KDTree by data provided by
+    /// features, geometry, etc.
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
 protected:

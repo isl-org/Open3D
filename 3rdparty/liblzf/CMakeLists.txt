@@ -3,4 +3,4 @@
 # lines.
 #
 #project(liblzf)
-#add_library(liblzf STATIC lzf_c.c lzf_d.c lzf.h)
+#add_library(liblzf STATIC liblzf/lzf_c.c liblzf/lzf_d.c liblzf/lzf.h)

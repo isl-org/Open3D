@@ -62,8 +62,10 @@ def plane(height=0.2, width=1):
 
 
 def non_manifold_edge():
-    verts = np.array([[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
-                     dtype=np.float64)
+    verts = np.array(
+        [[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
+        dtype=np.float64,
+    )
     triangles = np.array([[0, 1, 3], [1, 2, 3], [1, 3, 4]])
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(verts)
@@ -165,8 +167,12 @@ def bunny():
         with tarfile.open(bunny_path + ".tar.gz") as tar:
             tar.extractall(path=os.path.dirname(bunny_path))
         shutil.move(
-            os.path.join(os.path.dirname(bunny_path), "bunny", "reconstruction",
-                         "bun_zipper.ply"),
+            os.path.join(
+                os.path.dirname(bunny_path),
+                "bunny",
+                "reconstruction",
+                "bun_zipper.ply",
+            ),
             bunny_path,
         )
         os.remove(bunny_path + ".tar.gz")

@@ -3,6 +3,7 @@ find_package(OpenGL    QUIET)
 find_package(pybind11  QUIET)
 
 if (PKGCONFIG_FOUND)
+    pkg_search_module(FLANN           flann           QUIET)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
     pkg_search_module(GLFW            glfw3           QUIET)
     pkg_search_module(GLEW            glew            QUIET)
@@ -24,7 +25,12 @@ macro(INSTALL_HEADERS source)
 endmacro()
 
 # dirent
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
+if (WIN32)
+    message(STATUS "On windows, so using 3rdparty/dirent")
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
+else ()
+    message(STATUS "Using system dirent")
+endif ()
 
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
 if (BUILD_EIGEN3)
@@ -43,7 +49,13 @@ if (BUILD_EIGEN3)
 endif ()
 
 # flann
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann"  flann_INCLUDE_DIRS)
+if (BUILD_FLANN OR NOT FLANN_FOUND)
+  message(STATUS "Using open3d's flann")
+  Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann"  FLANN_INCLUDE_DIRS)
+else ()
+  message(STATUS "Using system flann ${FLANN_VERSION}")
+endif ()
+message(STATUS "Flann includes ${FLANN_INCLUDE_DIRS}")
 
 # GLEW
 if (BUILD_GLEW)
@@ -102,37 +114,16 @@ endif ()
 # Azure Kinect
 include(azure_kinect/azure_kinect.cmake)
 
-# JSONCPP
-if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-    # It is a known bug that g++ on OSX only supports libstdc++
-    # The jsoncpp installed by brew by default is compiled with libc++
-    # If the two libraries are linked together, they break the build
-    # https://github.com/open-source-parsers/jsoncpp/issues/597
-    # https://github.com/IntelVCL/Open3D/issues/9
-    message(STATUS "Building JSONCPP from source, without installing headers")
-    add_subdirectory(jsoncpp)
-    set(BUILD_JSONCPP ON)
-else ()
-    if (BUILD_JSONCPP)
-        message(STATUS "Building JSONCPP from source (BUILD_JSONCPP=ON)")
-    elseif (JSONCPP_FOUND)
-        message(STATUS "Using installed JSONCPP ${JSONCPP_VERSION}")
-    else ()
-        message(STATUS "Unable to find JSONCPP installed in the system")
-        message(STATUS "Building JSONCPP from source")
-        set(BUILD_JSONCPP ON)
-    endif ()
+# JSONCPP is always built from source to avoid ABI compatibility issues
+message(STATUS "Building JSONCPP from source")
+add_subdirectory(jsoncpp)
 
-    if (BUILD_JSONCPP)
-        add_subdirectory(jsoncpp)
-    endif ()
-endif ()
 
 # liblzf
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
 
 # tritriintersect
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/tomasakeninemoeller" tomasakeninemoeller_INCLUDE_DIRS)
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/tomasakeninemoeller/include" tomasakeninemoeller_INCLUDE_DIRS)
 
 # PNG
 if (BUILD_PNG)
@@ -197,7 +188,7 @@ endif ()
 if (BUILD_TINYFILEDIALOGS)
     message(STATUS "Building TINYFILEDIALOGS from source")
     add_subdirectory(tinyfiledialogs)
-    set(tinyfiledialogs_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyfiledialogs")
+    set(tinyfiledialogs_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyfiledialogs/include")
     set(tinyfiledialogs_LIBRARIES tinyfiledialogs)
 else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
@@ -210,7 +201,7 @@ set(tinygltf_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinygltf")
 # tinyobjloader
 message(STATUS "Building tinyobjloader from source")
 include_directories("tinyobjloader/")
-add_library(tinyobjloader STATIC tinyobjloader/tiny_obj_loader.cc)
+add_library(tinyobjloader STATIC tinyobjloader/tinyobjloader/tiny_obj_loader.cc)
 if (NOT BUILD_SHARED_LIBS)
   install(TARGETS tinyobjloader
         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
@@ -309,12 +300,33 @@ if (BUILD_UNIT_TESTS)
     set(googletest_LIBRARIES googletest)
 endif()
 
+# benchmark
+if (BUILD_BENCHMARKS)
+    # turn off installing and testing of the benchmark lib
+    set( BENCHMARK_ENABLE_INSTALL  OFF CACHE BOOL "This should be OFF. Enables installing the benchmark lib" ) 
+    set( BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "This should be OFF. Enables gtest framework for the benchmark lib" )
+    set( BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "This should be OFF. Enables tests for the benchmark lib" )
+    add_subdirectory(benchmark)
+    # set the cache vars introduced by the benchmark lib as advanced to not
+    # clutter the cmake interfaces
+    mark_as_advanced( BENCHMARK_ENABLE_INSTALL 
+                      BENCHMARK_ENABLE_GTEST_TESTS 
+                      BENCHMARK_ENABLE_TESTING 
+                      BENCHMARK_ENABLE_ASSEMBLY_TESTS
+                      BENCHMARK_DOWNLOAD_DEPENDENCIES
+                      BENCHMARK_BUILD_32_BITS
+                      BENCHMARK_ENABLE_EXCEPTIONS
+                      BENCHMARK_ENABLE_LTO
+                      BENCHMARK_USE_LIBCXX
+                      )
+endif()
+
 # fmt library
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
 INSTALL_HEADERS(fmt)
 
 # PoissonRecon
-set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/)
+set(poisson_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/PoissonRecon)
 
 # Filament library
 if (ENABLE_GUI)
@@ -371,9 +383,9 @@ int main(int argc, char *argv[]) { return 0; }"
 endif()
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
-     # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
+     ${dirent_INCLUDE_DIRS}
      ${EIGEN3_INCLUDE_DIRS}
-     ${flann_INCLUDE_DIRS}
+     ${FLANN_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
      ${GLFW_INCLUDE_DIRS}
      ${JPEG_TURBO_INCLUDE_DIRS}
@@ -385,7 +397,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${rply_INCLUDE_DIRS}
      ${tinyfiledialogs_INCLUDE_DIRS}
      ${tinygltf_INCLUDE_DIRS}
-     ${tinyfobjloader_INCLUDE_DIRS}
+     ${tinyobjloader_INCLUDE_DIRS}
      ${qhull_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
@@ -436,6 +448,7 @@ if (ENABLE_GUI)
     endif() 
 endif()
 list(APPEND 3RDPARTY_LIBRARIES
+     ${FLANN_LIBRARIES}
      ${GLEW_LIBRARIES}
      ${GLFW_LIBRARIES}
      ${JPEG_TURBO_LIBRARIES}
@@ -457,9 +470,6 @@ if (NOT BUILD_GLEW)
 endif ()
 if (NOT BUILD_GLFW)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${GLFW_LIBRARIES})
-endif ()
-if (NOT BUILD_JSONCPP)
-    list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${JSONCPP_LIBRARIES})
 endif ()
 if (NOT BUILD_PNG)
     list(APPEND PRE_BUILT_3RDPARTY_LIBRARIES ${PNG_LIBRARIES})
