@@ -19,6 +19,7 @@ add_subdirectory(Visualization)
 # Source group for Visual Studio
 add_source_group(Camera)
 add_source_group(ColorMap)
+add_source_group(Core)
 add_source_group(Geometry)
 add_source_group(Integration)
 add_source_group(Odometry)
@@ -26,14 +27,6 @@ add_source_group(Registration)
 add_source_group(Utility)
 add_source_group(IO)
 add_source_group(Visualization)
-
-# Install headers
-install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
-        PATTERN     "Visualization/Shader/GLSL" EXCLUDE
-        PATTERN     "*.cpp" EXCLUDE
-        PATTERN     "*.in" EXCLUDE
-        PATTERN     "*.txt" EXCLUDE)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
@@ -78,10 +71,12 @@ install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
         LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
 )
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}
     FILES_MATCHING
         PATTERN "*.h"
+        PATTERN "*.cuh"
 )
 
 # Install the Open3DConfig.cmake and Open3DConfigVersion.cmake
