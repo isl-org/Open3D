@@ -157,6 +157,12 @@ if (APPLE AND ENABLE_HEADLESS_RENDERING)
     set(ENABLE_HEADLESS_RENDERING OFF)
 endif()
 
+if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
+    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
+    set(BUILD_GLEW ON)
+    set(BUILD_GLFW ON)
+endif()
+
 # CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
 
