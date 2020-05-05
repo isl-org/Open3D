@@ -26,13 +26,6 @@
 
 #include "FilamentRenderToBuffer.h"
 
-#include "FilamentEngine.h"
-#include "FilamentRenderer.h"
-#include "FilamentScene.h"
-#include "FilamentView.h"
-
-#include "Open3D/Utility/Console.h"
-
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
 #include <filament/Renderer.h>
@@ -41,6 +34,12 @@
 #include <filament/Texture.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
+
+#include "FilamentEngine.h"
+#include "FilamentRenderer.h"
+#include "FilamentScene.h"
+#include "FilamentView.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
 namespace visualization {
@@ -52,9 +51,7 @@ FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
 
 FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine,
                                                FilamentRenderer& parent)
-    : parent_(&parent),
-      engine_(engine) {
-
+    : parent_(&parent), engine_(engine) {
     renderer_ = engine_.createRenderer();
 }
 

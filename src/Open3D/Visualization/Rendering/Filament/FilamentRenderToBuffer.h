@@ -59,12 +59,11 @@ public:
 private:
     friend class FilamentRenderer;
 
-    FilamentRenderer*    parent_    = nullptr;
-    filament::Engine&    engine_;
-    filament::Renderer*  renderer_  = nullptr;
+    FilamentRenderer* parent_ = nullptr;
+    filament::Engine& engine_;
+    filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;
-    FilamentView*        view_      = nullptr;
-
+    FilamentView* view_ = nullptr;
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;
