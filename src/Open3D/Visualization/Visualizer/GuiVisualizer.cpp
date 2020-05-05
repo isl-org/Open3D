@@ -441,6 +441,10 @@ struct GuiVisualizer::Impl {
         float anisotropy = 0.f;
         float pointSize = 5.f;
         TextureHandle albedoMap;
+        TextureHandle normalMap;
+        TextureHandle ambientOcclusionMap;
+        TextureHandle roughnessMap;
+        TextureHandle metallicMap;
     };
 
     struct UnlitMaterial {
@@ -576,14 +580,21 @@ struct GuiVisualizer::Impl {
         }
         defaults.unlit.albedoMap = FilamentResourceManager::kDefaultTexture;
         defaults.lit.albedoMap = FilamentResourceManager::kDefaultTexture;
+        defaults.lit.normalMap = FilamentResourceManager::kDefaultNormalMap;
+        defaults.lit.ambientOcclusionMap =
+                FilamentResourceManager::kDefaultTexture;
+        defaults.lit.roughnessMap =
+                FilamentResourceManager::kDefaultTexture;
+        defaults.lit.metallicMap =
+                FilamentResourceManager::kDefaultTexture;
         this->settings.currentMaterials = defaults;
 
         auto hLit = renderer.AddMaterialInstance(this->hLitMaterial);
         this->settings.currentMaterials.lit.handle =
                 renderer.ModifyMaterial(hLit)
                         .SetColor("baseColor", defaults.lit.baseColor)
-                        .SetParameter("roughness", defaults.lit.roughness)
-                        .SetParameter("metallic", defaults.lit.metallic)
+                        .SetParameter("baseRoughness", defaults.lit.roughness)
+                        .SetParameter("baseMetallic", defaults.lit.metallic)
                         .SetParameter("reflectance", defaults.lit.reflectance)
                         .SetParameter("clearCoat", defaults.lit.clearCoat)
                         .SetParameter("clearCoatRoughness",
@@ -591,6 +602,17 @@ struct GuiVisualizer::Impl {
                         .SetParameter("anisotropy", defaults.lit.anisotropy)
                         .SetParameter("pointSize", defaults.lit.pointSize)
                         .SetTexture("albedo", defaults.lit.albedoMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("albedo", defaults.lit.albedoMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("normalMap", defaults.lit.normalMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("ambientOcclusionMap",
+                                    defaults.lit.ambientOcclusionMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("roughnessMap", defaults.lit.roughnessMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("metallicMap", defaults.lit.metallicMap,
                                     TextureSamplerParameters::Pretty())
                         .Finish();
 
@@ -622,6 +644,12 @@ struct GuiVisualizer::Impl {
         // Update the material settings
         this->settings.currentMaterials.lit.baseColor = material.baseColor;
         this->settings.currentMaterials.lit.albedoMap = material.albedoMap;
+        this->settings.currentMaterials.lit.normalMap = material.normalMap;
+        this->settings.currentMaterials.lit.ambientOcclusionMap =
+                material.ambientOcclusionMap;
+        this->settings.currentMaterials.lit.roughnessMap =
+                material.roughnessMap;
+        this->settings.currentMaterials.lit.metallicMap = material.metallicMap;
         this->settings.currentMaterials.unlit.baseColor = material.baseColor;
         this->settings.currentMaterials.unlit.albedoMap = material.albedoMap;
 
@@ -631,6 +659,15 @@ struct GuiVisualizer::Impl {
                                 this->settings.currentMaterials.lit.handle)
                         .SetColor("baseColor", material.baseColor)
                         .SetTexture("albedo", material.albedoMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("normalMap", material.normalMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("ambientOcclusionMap",
+                                    material.ambientOcclusionMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("roughnessMap", material.roughnessMap,
+                                    TextureSamplerParameters::Pretty())
+                        .SetTexture("metallicMap", material.metallicMap,
                                     TextureSamplerParameters::Pretty())
                         .Finish();
         this->settings.currentMaterials.unlit.handle =
@@ -727,8 +764,8 @@ struct GuiVisualizer::Impl {
         float pointSize = settings.wgtPointSize->GetDoubleValue();
         return renderer.ModifyMaterial(mat)
                 .SetColor("baseColor", color)
-                .SetParameter("roughness", prefab.roughness)
-                .SetParameter("metallic", prefab.metallic)
+                .SetParameter("baseRoughness", prefab.roughness)
+                .SetParameter("baseMetallic", prefab.metallic)
                 .SetParameter("reflectance", prefab.reflectance)
                 .SetParameter("clearCoat", prefab.clearCoat)
                 .SetParameter("clearCoatRoughness", prefab.clearCoatRoughness)
@@ -1430,9 +1467,41 @@ void GuiVisualizer::SetGeometry(
                         material.albedoMap =
                                 GetRenderer().AddTexture(mesh_material.albedo);
                     } else {
-                        material.albedoMap = FilamentResourceManager::kDefaultTexture;
+                        material.albedoMap =
+                                FilamentResourceManager::kDefaultTexture;
                     }
-                    
+                    if (mesh_material.normalMap &&
+                        mesh_material.normalMap->HasData()) {
+                        material.normalMap = GetRenderer().AddTexture(
+                                mesh_material.normalMap);
+                    } else {
+                        material.normalMap =
+                                FilamentResourceManager::kDefaultNormalMap;
+                    }
+                    if (mesh_material.ambientOcclusion &&
+                        mesh_material.ambientOcclusion->HasData()) {
+                        material.ambientOcclusionMap = GetRenderer().AddTexture(
+                                mesh_material.ambientOcclusion);
+                    } else {
+                        material.ambientOcclusionMap =
+                                FilamentResourceManager::kDefaultTexture;
+                    }
+                    if (mesh_material.roughness &&
+                        mesh_material.roughness->HasData()) {
+                        material.roughnessMap = GetRenderer().AddTexture(
+                                mesh_material.roughness);
+                    } else {
+                        material.roughnessMap =
+                                FilamentResourceManager::kDefaultTexture;
+                    }
+                    if (mesh_material.metallic &&
+                        mesh_material.metallic->HasData()) {
+                        material.metallicMap = GetRenderer().AddTexture(
+                                mesh_material.metallic);
+                    } else {
+                        material.metallicMap =
+                                FilamentResourceManager::kDefaultTexture;
+                    }
                     impl_->SetMaterialsToCurrent(GetRenderer(), material);
                 }
                 if (mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) {
@@ -1566,7 +1635,7 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
     } else {
         // LogError throws an exception, which we don't want, because this might
         // be a point cloud.
-        utility::LogWarning("Failed to read %s", path.c_str());
+        utility::LogWarning("Failed to read {}", path.c_str());
         mesh.reset();
     }
 
@@ -1579,14 +1648,14 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
             success = false;
         }
         if (success) {
-            utility::LogInfof("Successfully read %s", path.c_str());
+            utility::LogInfo("Successfully read {}", path.c_str());
             if (!cloud->HasNormals()) {
                 cloud->EstimateNormals();
             }
             cloud->NormalizeNormals();
             geometry = cloud;
         } else {
-            utility::LogWarning("Failed to read points %s", path.c_str());
+            utility::LogWarning("Failed to read points {}", path.c_str());
             cloud.reset();
         }
     }

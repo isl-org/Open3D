@@ -65,7 +65,8 @@ public:
     static const MaterialInstanceHandle kNormalsMaterial;
     static const MaterialInstanceHandle kColorMapMaterial;
     static const TextureHandle kDefaultTexture;
-    static const TextureHandle kDefaulColorMap;
+    static const TextureHandle kDefaultColorMap;
+    static const TextureHandle kDefaultNormalMap;
     // For using with old lighting model based on specular color and glossiness
     static const MaterialHandle kObsoleteLit;
 
@@ -135,6 +136,8 @@ private:
 
     filament::Texture* LoadTextureFromImage(
             const std::shared_ptr<geometry::Image>& image);
+    filament::Texture* LoadFilledTexture(const Eigen::Vector3f& color,
+                                         size_t dimension);
 
     void LoadDefaults();
 };
