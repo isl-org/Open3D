@@ -185,50 +185,26 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             }
         }
 
-        meshMaterial.isPBR = !material.metallic_texname.empty() ||
-                             !material.roughness_texname.empty() ||
-                             material.metallic > 0.0 ||
-                             material.roughness > 0.0;
-
-        if (meshMaterial.isPBR) {
-            meshMaterial.baseMetallic = material.metallic;
-            meshMaterial.baseRoughness = material.roughness;
-
-            if (!material.metallic_texname.empty()) {
-                meshMaterial.metallic =
-                        textureLoader(material.metallic_texname);
-            }
-            if (!material.roughness_texname.empty()) {
-                meshMaterial.roughness =
-                        textureLoader(material.roughness_texname);
-            }
-        } else {
-            meshMaterial.illum = material.illum;
-            meshMaterial.baseSpecularColor = MaterialParameter::RGB(
-                    material.specular[0], material.specular[1],
-                    material.specular[2]);
-
-            if (!material.specular_texname.empty()) {
-                meshMaterial.specularColor =
-                        textureLoader(material.specular_texname);
-            }
+        if (!material.metallic_texname.empty()) {
+            meshMaterial.metallic = textureLoader(material.metallic_texname);
         }
 
-        // Values that not parsed, but could appear useful for PBR:
-        //    real_t emission[3];
-        //    real_t ior;       // index of refraction
-        //    real_t dissolve;  // 1 == opaque; 0 == fully transparent
-        //
-        //    std::string displacement_texname;        // disp
-        //    std::string alpha_texname;               // map_d
-        //    std::string reflection_texname;          // refl
-        //    real_t sheen;                // [0, 1] default 0
-        //    real_t clearcoat_thickness;  // [0, 1] default 0
-        //    real_t clearcoat_roughness;  // [0, 1] default 0
-        //    real_t anisotropy;           // aniso. [0, 1] default 0
-        //    real_t anisotropy_rotation;  // anisor. [0, 1] default 0
-        //    std::string sheen_texname;      // map_Ps
-        //    std::string emissive_texname;   // map_Ke
+        if (!material.roughness_texname.empty()) {
+            meshMaterial.roughness = textureLoader(material.roughness_texname);
+        }
+
+        // NOTE: We want defaults of 0.0 and 1.0 for baseMetallic and
+        // baseRoughness respectively but 0.0 is a valid value for both and
+        // tiny_obj_loader defaults to 0.0 for both. So, we will assume that
+        // only if one of the values is greater than 0.0 that there are
+        // non-default values set in the .mtl file
+        if(material.roughness > 0.f || material.metallic > 0.f) {
+            meshMaterial.baseMetallic = material.metallic;
+            meshMaterial.baseRoughness = material.roughness;
+        }
+
+        // NOTE: PBR OBJ 'extension' supports additional parameters that could
+        // be useful in the future. See tiny_obj_loader.h for details.
     }
 
     return true;

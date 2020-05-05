@@ -644,10 +644,9 @@ struct GuiVisualizer::Impl {
                                        TextureMaps maps) {
         // Update the material settings
         this->settings.currentMaterials.lit.baseColor = material.baseColor;
-        this->settings.currentMaterials.unlit.baseColor = material.baseColor;
-        // NOTE: TODO
+        this->settings.currentMaterials.lit.roughness = material.roughness;
         this->settings.currentMaterials.lit.metallic = material.metallic;
-        // this->settings.currentMaterials.lit.rought;
+        this->settings.currentMaterials.unlit.baseColor = material.baseColor;
 
         // Update maps
         this->settings.currentMaterials.maps.albedoMap = maps.albedoMap;
@@ -662,6 +661,7 @@ struct GuiVisualizer::Impl {
                 renderer.ModifyMaterial(
                                 this->settings.currentMaterials.lit.handle)
                         .SetColor("baseColor", material.baseColor)
+                        .SetParameter("baseRoughness", material.roughness)
                         .SetParameter("baseMetallic", material.metallic)
                         .SetTexture("albedo", maps.albedoMap,
                                     TextureSamplerParameters::Pretty())
@@ -1465,10 +1465,11 @@ void GuiVisualizer::SetGeometry(
                     auto mesh_material = mesh->materials_.begin()->second;
                     Impl::LitMaterial material;
                     Impl::TextureMaps maps;
-                    // TODO: Get roughness and metallic
                     material.baseColor.x() = mesh_material.baseColor.r;
                     material.baseColor.y() = mesh_material.baseColor.g;
                     material.baseColor.z() = mesh_material.baseColor.b;
+                    material.roughness = mesh_material.baseRoughness;
+                    
                     if (mesh_material.albedo &&
                         mesh_material.albedo->HasData()) {
                         maps.albedoMap =

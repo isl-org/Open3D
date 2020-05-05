@@ -195,8 +195,6 @@ TextureSettings GetSettingsFromImage(const geometry::Image& image) {
 
 }  // namespace
 
-const MaterialHandle FilamentResourceManager::kDefaultPBR =
-        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
@@ -213,19 +211,16 @@ const TextureHandle FilamentResourceManager::kDefaultColorMap =
         TextureHandle::Next();
 const TextureHandle FilamentResourceManager::kDefaultNormalMap =
         TextureHandle::Next();
-const MaterialHandle FilamentResourceManager::kObsoleteLit =
-        MaterialHandle::Next();
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
-        FilamentResourceManager::kDefaultPBR,
         FilamentResourceManager::kDefaultLit,
         FilamentResourceManager::kDefaultUnlit,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
         FilamentResourceManager::kDefaultColorMap,
-        FilamentResourceManager::kDefaultNormalMap,
-        FilamentResourceManager::kObsoleteLit};
+        FilamentResourceManager::kDefaultNormalMap
+};
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
@@ -289,21 +284,20 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
 MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
         const geometry::TriangleMesh::Material& descriptor) {
     MaterialInstanceHandle handle;
-    auto matHandle = descriptor.isPBR ? kDefaultPBR : kObsoleteLit;
-    if (auto pbrRef = materials_[matHandle]) {
-        auto materialInstance = pbrRef->createInstance();
-        handle = RegisterResource<MaterialInstanceHandle>(
-                engine_, materialInstance, materialInstances_);
+    auto pbrRef = materials_[kDefaultLit];
+    auto materialInstance = pbrRef->createInstance();
+    handle = RegisterResource<MaterialInstanceHandle>(engine_, materialInstance,
+                                                      materialInstances_);
 
-        static const auto sampler =
-                FilamentMaterialModifier::SamplerFromSamplerParameters(
-                        TextureSamplerParameters::Pretty());
+    static const auto sampler =
+            FilamentMaterialModifier::SamplerFromSamplerParameters(
+                    TextureSamplerParameters::Pretty());
 
-        auto baseColor = filament::math::float3{descriptor.baseColor.r,
-                                                descriptor.baseColor.g,
-                                                descriptor.baseColor.b};
-        materialInstance->setParameter("baseColor", filament::RgbType::sRGB,
-                                       baseColor);
+    auto baseColor = filament::math::float3{descriptor.baseColor.r,
+                                            descriptor.baseColor.g,
+                                            descriptor.baseColor.b};
+    materialInstance->setParameter("baseColor", filament::RgbType::sRGB,
+                                   baseColor);
 
 #define TRY_ASSIGN_MAP(map)                                                    \
     {                                                                          \
@@ -317,44 +311,16 @@ MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
         }                                                                      \
     }
 
-        if (descriptor.isPBR) {
-            materialInstance->setParameter("baseRoughness",
-                                           descriptor.baseRoughness);
-            materialInstance->setParameter("baseMetallic",
-                                           descriptor.baseMetallic);
+    materialInstance->setParameter("baseRoughness", descriptor.baseRoughness);
+    materialInstance->setParameter("baseMetallic", descriptor.baseMetallic);
 
-            TRY_ASSIGN_MAP(roughness);
-            TRY_ASSIGN_MAP(metallic);
-        } else {
-            auto baseSpecularColor =
-                    filament::math::float3{descriptor.baseSpecularColor.r,
-                                           descriptor.baseSpecularColor.g,
-                                           descriptor.baseSpecularColor.b};
-            materialInstance->setParameter("baseSpecularColor",
-                                           filament::RgbType::sRGB,
-                                           baseSpecularColor);
+    TRY_ASSIGN_MAP(albedo);
+    TRY_ASSIGN_MAP(normalMap);
+    TRY_ASSIGN_MAP(ambientOcclusion);
+    TRY_ASSIGN_MAP(metallic);
+    TRY_ASSIGN_MAP(roughness);
 
-            materialInstance->setParameter("illum", descriptor.illum);
-
-            // we have exception for glossiness, because materials looks better
-            // then we use specularColor for it instead
-            if (descriptor.specularColor &&
-                descriptor.specularColor->HasData()) {
-                auto hGlossinessTex = CreateTexture(descriptor.specularColor);
-                if (hGlossinessTex) {
-                    materialInstance->setParameter(
-                            "glossiness", textures_[hGlossinessTex].get(),
-                            sampler);
-                    dependencies_[handle].insert(hGlossinessTex);
-                }
-            }
-        }
-
-        TRY_ASSIGN_MAP(albedo);
-        TRY_ASSIGN_MAP(normalMap);
-        TRY_ASSIGN_MAP(ambientOcclusion);
 #undef TRY_ASSIGN_MAP
-    }
 
     return handle;
 }
@@ -687,60 +653,11 @@ void FilamentResourceManager::LoadDefaults() {
 
     auto normalMap = LoadFilledTexture(Eigen::Vector3f(0.5, 0.5, 1.f), 1);
     textures_[kDefaultNormalMap] = MakeShared(normalMap, engine_);
-    
+
     const auto defaultSampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
                     TextureSamplerParameters::Pretty());
     const auto defaultColor = filament::math::float3{1.0f, 1.0f, 1.0f};
-
-    auto defaultRoughnessTex =
-            CreateTextureFilled(Eigen::Vector3f(0.7f, 0.7f, 0.7f), 1);
-    auto defaultMetallicTex =
-            CreateTextureFilled(Eigen::Vector3f(0.0f, 0.0f, 0.0f), 1);
-    auto defaultNormalMap =
-            CreateTextureFilled(Eigen::Vector3f(0.0f, 0.0f, 1.0f), 1);
-
-    dependencies_[kDefaultPBR].insert(defaultRoughnessTex);
-    dependencies_[kDefaultPBR].insert(defaultMetallicTex);
-    dependencies_[kDefaultPBR].insert(defaultNormalMap);
-
-    const auto pbrPath = resourceRoot + "/defaultPBR.filamat";
-    auto pbrMat = LoadMaterialFromFile(pbrPath, engine_);
-    pbrMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                defaultColor);
-    pbrMat->setDefaultParameter("baseRoughness", 1.0f);
-    pbrMat->setDefaultParameter("baseMetallic", 1.f);
-    pbrMat->setDefaultParameter("albedo", texture, defaultSampler);
-    pbrMat->setDefaultParameter(
-            "roughness", textures_[defaultRoughnessTex].get(), defaultSampler);
-    pbrMat->setDefaultParameter("metallic", textures_[defaultMetallicTex].get(),
-                                defaultSampler);
-    pbrMat->setDefaultParameter("normalMap", textures_[defaultNormalMap].get(),
-                                defaultSampler);
-    pbrMat->setDefaultParameter("ambientOcclusion", texture, defaultSampler);
-    materials_[kDefaultPBR] = MakeShared(pbrMat, engine_);
-    dependencies_[kDefaultPBR].insert(defaultRoughnessTex);
-    dependencies_[kDefaultPBR].insert(defaultMetallicTex);
-    dependencies_[kDefaultPBR].insert(defaultNormalMap);
-
-    const auto obsoletePath = resourceRoot + "/obsolete.filamat";
-    auto obsoleteMat = LoadMaterialFromFile(obsoletePath, engine_);
-    obsoleteMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                     defaultColor);
-    obsoleteMat->setDefaultParameter("baseSpecularColor",
-                                     filament::RgbType::sRGB, {0.f, 0.f, 0.f});
-    obsoleteMat->setDefaultParameter("illum", int(0));
-    obsoleteMat->setDefaultParameter("albedo", texture, defaultSampler);
-    obsoleteMat->setDefaultParameter("specularColor",
-                                     textures_[defaultMetallicTex].get(),
-                                     defaultSampler);
-    obsoleteMat->setDefaultParameter(
-            "glossiness", textures_[defaultMetallicTex].get(), defaultSampler);
-    obsoleteMat->setDefaultParameter(
-            "normalMap", textures_[defaultNormalMap].get(), defaultSampler);
-    obsoleteMat->setDefaultParameter("ambientOcclusion", texture,
-                                     defaultSampler);
-    materials_[kObsoleteLit] = MakeShared(obsoleteMat, engine_);
 
     const auto litPath = resourceRoot + "/defaultLit.filamat";
     auto litMat = LoadMaterialFromFile(litPath, engine_);

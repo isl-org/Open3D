@@ -675,26 +675,14 @@ public:
             }
         };
 
-        // if true, pbr attributes is present and valid
-        // else use attributes for specular-glossiness
-        bool isPBR = true;
-
-        // PBR model
-        float baseMetallic = 1.f;
-        float baseRoughness = 1.f;
-        std::shared_ptr<Image> metallic;
-        std::shared_ptr<Image> roughness;
-
-        // Obsolete specular-glossiness model
-        MaterialParameter baseSpecularColor;
-        std::shared_ptr<Image> specularColor;
-        std::shared_ptr<Image> glossiness;
-        int illum = 0;
-
         MaterialParameter baseColor;
+        float baseMetallic = 0.f;
+        float baseRoughness = 1.f;
         std::shared_ptr<Image> albedo;
         std::shared_ptr<Image> normalMap;
         std::shared_ptr<Image> ambientOcclusion;
+        std::shared_ptr<Image> metallic;
+        std::shared_ptr<Image> roughness;
 
         std::unordered_map<std::string, MaterialParameter> floatParameters;
         std::unordered_map<std::string, Image> additionalMaps;

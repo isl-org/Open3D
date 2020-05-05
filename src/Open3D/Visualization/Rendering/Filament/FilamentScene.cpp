@@ -57,7 +57,7 @@ using ResourceManager = open3d::visualization::FilamentResourceManager;
 
 MaterialHandle ColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle PlainMesh = ResourceManager::kDefaultLit;
-MaterialHandle Mesh = ResourceManager::kDefaultPBR;
+MaterialHandle Mesh = ResourceManager::kDefaultLit;
 
 MaterialHandle ColoredPointcloud = ResourceManager::kDefaultUnlit;
 MaterialHandle Pointcloud = ResourceManager::kDefaultLit;

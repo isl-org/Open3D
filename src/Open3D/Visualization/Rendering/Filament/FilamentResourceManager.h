@@ -58,7 +58,6 @@ namespace visualization {
 // Owns all added resources.
 class FilamentResourceManager {
 public:
-    static const MaterialHandle kDefaultPBR;
     static const MaterialHandle kDefaultLit;
     static const MaterialHandle kDefaultUnlit;
     static const MaterialInstanceHandle kDepthMaterial;
@@ -67,8 +66,6 @@ public:
     static const TextureHandle kDefaultTexture;
     static const TextureHandle kDefaultColorMap;
     static const TextureHandle kDefaultNormalMap;
-    // For using with old lighting model based on specular color and glossiness
-    static const MaterialHandle kObsoleteLit;
 
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
