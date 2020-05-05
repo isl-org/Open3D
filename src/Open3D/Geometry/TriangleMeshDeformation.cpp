@@ -147,7 +147,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             if (Rs[i].determinant() <= 0) {
                 utility::LogError(
                         "[DeformAsRigidAsPossible] something went wrong with "
-                        "updateing R");
+                        "updating R");
             }
         }
 

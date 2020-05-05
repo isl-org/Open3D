@@ -501,7 +501,7 @@ public:
     /// decreasing alpha value the shape schrinks and creates cavities.
     /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
     /// \param pcd PointCloud for what the alpha shape should be computed.
-    /// \param alpha parameter to controll the shape. A very big value will
+    /// \param alpha parameter to control the shape. A very big value will
     /// give a shape close to the convex hull.
     /// \param tetra_mesh If not a nullptr, than uses this to construct the
     /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.

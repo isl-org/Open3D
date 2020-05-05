@@ -32,6 +32,7 @@ include requirements.txt
 # Compiled module
 include open3d/open3d*.pyd
 include open3d/open3d*.so
+include open3d/open3d*.dylib
 include open3d/*depthengine*
 include open3d/*k4a*
 include open3d/*libstdc*
@@ -41,3 +42,6 @@ recursive-include open3d/static *.*
 
 # Exclude
 global-exclude *.py[co]
+
+# ml module
+recursive-include open3d/ml *.py
