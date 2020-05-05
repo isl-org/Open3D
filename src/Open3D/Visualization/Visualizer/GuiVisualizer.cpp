@@ -440,11 +440,6 @@ struct GuiVisualizer::Impl {
         float clearCoatRoughness = 0.2f;
         float anisotropy = 0.f;
         float pointSize = 5.f;
-        TextureHandle albedoMap;
-        TextureHandle normalMap;
-        TextureHandle ambientOcclusionMap;
-        TextureHandle roughnessMap;
-        TextureHandle metallicMap;
     };
 
     struct UnlitMaterial {
@@ -453,12 +448,20 @@ struct GuiVisualizer::Impl {
         // model will be invisible against the default white background.
         Eigen::Vector3f baseColor = {0.9f, 0.9f, 0.9f};
         float pointSize = 5.f;
-        TextureHandle albedoMap;
     };
 
+    struct TextureMaps {
+        TextureHandle albedoMap;
+        TextureHandle normalMap;
+        TextureHandle ambientOcclusionMap;
+        TextureHandle roughnessMap;
+        TextureHandle metallicMap;
+    };
+        
     struct Materials {
         LitMaterial lit;
         UnlitMaterial unlit;
+        TextureMaps maps;
     };
 
     std::map<std::string, LitMaterial> prefabMaterials = {
@@ -578,15 +581,12 @@ struct GuiVisualizer::Impl {
             defaults.lit.baseColor =
                     this->settings.currentMaterials.lit.baseColor;
         }
-        defaults.unlit.albedoMap = FilamentResourceManager::kDefaultTexture;
-        defaults.lit.albedoMap = FilamentResourceManager::kDefaultTexture;
-        defaults.lit.normalMap = FilamentResourceManager::kDefaultNormalMap;
-        defaults.lit.ambientOcclusionMap =
+        defaults.maps.albedoMap = FilamentResourceManager::kDefaultTexture;
+        defaults.maps.normalMap = FilamentResourceManager::kDefaultNormalMap;
+        defaults.maps.ambientOcclusionMap =
                 FilamentResourceManager::kDefaultTexture;
-        defaults.lit.roughnessMap =
-                FilamentResourceManager::kDefaultTexture;
-        defaults.lit.metallicMap =
-                FilamentResourceManager::kDefaultTexture;
+        defaults.maps.roughnessMap = FilamentResourceManager::kDefaultTexture;
+        defaults.maps.metallicMap = FilamentResourceManager::kDefaultTexture;
         this->settings.currentMaterials = defaults;
 
         auto hLit = renderer.AddMaterialInstance(this->hLitMaterial);
@@ -601,18 +601,18 @@ struct GuiVisualizer::Impl {
                                       defaults.lit.clearCoatRoughness)
                         .SetParameter("anisotropy", defaults.lit.anisotropy)
                         .SetParameter("pointSize", defaults.lit.pointSize)
-                        .SetTexture("albedo", defaults.lit.albedoMap,
+                        .SetTexture("albedo", defaults.maps.albedoMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("albedo", defaults.lit.albedoMap,
+                        .SetTexture("albedo", defaults.maps.albedoMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("normalMap", defaults.lit.normalMap,
+                        .SetTexture("normalMap", defaults.maps.normalMap,
                                     TextureSamplerParameters::Pretty())
                         .SetTexture("ambientOcclusionMap",
-                                    defaults.lit.ambientOcclusionMap,
+                                    defaults.maps.ambientOcclusionMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("roughnessMap", defaults.lit.roughnessMap,
+                        .SetTexture("roughnessMap", defaults.maps.roughnessMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("metallicMap", defaults.lit.metallicMap,
+                        .SetTexture("metallicMap", defaults.maps.metallicMap,
                                     TextureSamplerParameters::Pretty())
                         .Finish();
 
@@ -621,7 +621,7 @@ struct GuiVisualizer::Impl {
                 renderer.ModifyMaterial(hUnlit)
                         .SetColor("baseColor", defaults.unlit.baseColor)
                         .SetParameter("pointSize", defaults.unlit.pointSize)
-                        .SetTexture("albedo", defaults.unlit.albedoMap,
+                        .SetTexture("albedo", defaults.maps.albedoMap,
                                     TextureSamplerParameters::Pretty())
                         .Finish();
 
@@ -639,42 +639,47 @@ struct GuiVisualizer::Impl {
         }
     }
 
-    void SetMaterialsToCurrent(visualization::Renderer &renderer,
-                               LitMaterial material) {
+    void SetMaterialsToCurrentSettings(visualization::Renderer &renderer,
+                                       LitMaterial material,
+                                       TextureMaps maps) {
         // Update the material settings
         this->settings.currentMaterials.lit.baseColor = material.baseColor;
-        this->settings.currentMaterials.lit.albedoMap = material.albedoMap;
-        this->settings.currentMaterials.lit.normalMap = material.normalMap;
-        this->settings.currentMaterials.lit.ambientOcclusionMap =
-                material.ambientOcclusionMap;
-        this->settings.currentMaterials.lit.roughnessMap =
-                material.roughnessMap;
-        this->settings.currentMaterials.lit.metallicMap = material.metallicMap;
         this->settings.currentMaterials.unlit.baseColor = material.baseColor;
-        this->settings.currentMaterials.unlit.albedoMap = material.albedoMap;
+        // NOTE: TODO
+        this->settings.currentMaterials.lit.metallic = material.metallic;
+        // this->settings.currentMaterials.lit.rought;
+
+        // Update maps
+        this->settings.currentMaterials.maps.albedoMap = maps.albedoMap;
+        this->settings.currentMaterials.maps.normalMap = maps.normalMap;
+        this->settings.currentMaterials.maps.ambientOcclusionMap =
+                maps.ambientOcclusionMap;
+        this->settings.currentMaterials.maps.roughnessMap = maps.roughnessMap;
+        this->settings.currentMaterials.maps.metallicMap = maps.metallicMap;
 
         // update materials
         this->settings.currentMaterials.lit.handle =
                 renderer.ModifyMaterial(
                                 this->settings.currentMaterials.lit.handle)
                         .SetColor("baseColor", material.baseColor)
-                        .SetTexture("albedo", material.albedoMap,
+                        .SetParameter("baseMetallic", material.metallic)
+                        .SetTexture("albedo", maps.albedoMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("normalMap", material.normalMap,
+                        .SetTexture("normalMap", maps.normalMap,
                                     TextureSamplerParameters::Pretty())
                         .SetTexture("ambientOcclusionMap",
-                                    material.ambientOcclusionMap,
+                                    maps.ambientOcclusionMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("roughnessMap", material.roughnessMap,
+                        .SetTexture("roughnessMap", maps.roughnessMap,
                                     TextureSamplerParameters::Pretty())
-                        .SetTexture("metallicMap", material.metallicMap,
+                        .SetTexture("metallicMap", maps.metallicMap,
                                     TextureSamplerParameters::Pretty())
                         .Finish();
         this->settings.currentMaterials.unlit.handle =
                 renderer.ModifyMaterial(
                                 this->settings.currentMaterials.unlit.handle)
                         .SetColor("baseColor", material.baseColor)
-                        .SetTexture("albedo", material.albedoMap,
+                        .SetTexture("albedo", maps.albedoMap,
                                     TextureSamplerParameters::Pretty())
                         .Finish();
     }
@@ -1459,50 +1464,55 @@ void GuiVisualizer::SetGeometry(
                 if (mesh->HasMaterials()) {
                     auto mesh_material = mesh->materials_.begin()->second;
                     Impl::LitMaterial material;
+                    Impl::TextureMaps maps;
+                    // TODO: Get roughness and metallic
                     material.baseColor.x() = mesh_material.baseColor.r;
                     material.baseColor.y() = mesh_material.baseColor.g;
                     material.baseColor.z() = mesh_material.baseColor.b;
                     if (mesh_material.albedo &&
                         mesh_material.albedo->HasData()) {
-                        material.albedoMap =
+                        maps.albedoMap =
                                 GetRenderer().AddTexture(mesh_material.albedo);
                     } else {
-                        material.albedoMap =
+                        maps.albedoMap =
                                 FilamentResourceManager::kDefaultTexture;
                     }
                     if (mesh_material.normalMap &&
                         mesh_material.normalMap->HasData()) {
-                        material.normalMap = GetRenderer().AddTexture(
+                        maps.normalMap = GetRenderer().AddTexture(
                                 mesh_material.normalMap);
                     } else {
-                        material.normalMap =
+                        maps.normalMap =
                                 FilamentResourceManager::kDefaultNormalMap;
                     }
                     if (mesh_material.ambientOcclusion &&
                         mesh_material.ambientOcclusion->HasData()) {
-                        material.ambientOcclusionMap = GetRenderer().AddTexture(
+                        maps.ambientOcclusionMap = GetRenderer().AddTexture(
                                 mesh_material.ambientOcclusion);
                     } else {
-                        material.ambientOcclusionMap =
+                        maps.ambientOcclusionMap =
                                 FilamentResourceManager::kDefaultTexture;
                     }
                     if (mesh_material.roughness &&
                         mesh_material.roughness->HasData()) {
-                        material.roughnessMap = GetRenderer().AddTexture(
+                        maps.roughnessMap = GetRenderer().AddTexture(
                                 mesh_material.roughness);
                     } else {
-                        material.roughnessMap =
+                        maps.roughnessMap =
                                 FilamentResourceManager::kDefaultTexture;
                     }
                     if (mesh_material.metallic &&
                         mesh_material.metallic->HasData()) {
-                        material.metallicMap = GetRenderer().AddTexture(
+                        material.metallic = 1.f;
+                        maps.metallicMap = GetRenderer().AddTexture(
                                 mesh_material.metallic);
                     } else {
-                        material.metallicMap =
+                        material.metallic = 0.f;
+                        maps.metallicMap =
                                 FilamentResourceManager::kDefaultTexture;
                     }
-                    impl_->SetMaterialsToCurrent(GetRenderer(), material);
+                    impl_->SetMaterialsToCurrentSettings(GetRenderer(),
+                                                         material, maps);
                 }
                 if (mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) {
                     selectedMaterial = materials.unlit.handle;
