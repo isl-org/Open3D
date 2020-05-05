@@ -131,7 +131,7 @@ static bool readBinaryFile(const std::string& path,
     }
 
     // Get file size
-    size_t filesize = (size_t)lseek(fd, 0, SEEK_END);
+    off_t filesize = (off_t)lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
 
     // Read data
