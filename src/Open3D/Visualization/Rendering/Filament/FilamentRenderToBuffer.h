@@ -63,7 +63,7 @@ private:
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;
-    std::unique_ptr<FilamentView> view_;
+    FilamentView* view_ = nullptr;
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;
