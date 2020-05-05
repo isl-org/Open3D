@@ -136,11 +136,14 @@ static bool readBinaryFile(const std::string& path,
 
     // Read data
     bytes->resize(filesize);
-    read(fd, bytes->data(), filesize);
+    bool result = true;
+    if (read(fd, bytes->data(), filesize) != filesize) {
+        result = false;
+    }
 
     // We're done, close and return
     close(fd);
-    return true;
+    return result;
 }
 
 static Material* loadMaterialTemplate(const std::string& path, Engine& engine) {
