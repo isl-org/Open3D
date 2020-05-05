@@ -48,18 +48,14 @@ namespace visualization {
 FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine)
     : engine_(engine) {
     renderer_ = engine_.createRenderer();
-    view_ = std::make_unique<FilamentView>(
-            engine, EngineInstance::GetResourceManager());
 }
 
 FilamentRenderToBuffer::FilamentRenderToBuffer(filament::Engine& engine,
                                                FilamentRenderer& parent)
-    : FilamentRenderToBuffer(engine) {
-    parent_ = &parent;
+    : parent_(&parent),
+      engine_(engine) {
 
     renderer_ = engine_.createRenderer();
-    view_ = std::make_unique<FilamentView>(
-            engine, EngineInstance::GetResourceManager());
 }
 
 FilamentRenderToBuffer::~FilamentRenderToBuffer() {
@@ -100,9 +96,12 @@ void FilamentRenderToBuffer::SetDimensions(const std::size_t width,
 
 void FilamentRenderToBuffer::CopySettings(const View* view) {
     auto* downcast = dynamic_cast<const FilamentView*>(view);
+    // NOTE: This class used to copy parameters from the view into a view
+    // managed by this class. However, the copied view caused anomalies when
+    // rendering an image for export. As a workaround, we keep a pointer to the
+    // original view here instead.
+    view_ = const_cast<FilamentView*>(downcast);
     if (downcast) {
-        view_->CopySettingsFrom(*downcast);
-
         auto vp = view_->GetNativeView()->getViewport();
         SetDimensions(vp.width, vp.height);
     }
@@ -134,8 +133,6 @@ void FilamentRenderToBuffer::RequestFrame(Scene* scene,
         buffer_ = static_cast<std::uint8_t*>(malloc(bufferSize_));
     }
 
-    auto* downcast = dynamic_cast<FilamentScene*>(scene);
-    view_->SetScene(*downcast);
     callback_ = callback;
 }
 
