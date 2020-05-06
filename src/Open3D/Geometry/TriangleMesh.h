@@ -791,9 +791,9 @@ public:
                 f4[3] = 0;
             }
 
-            static MaterialParameter RGB(const float r,
-                                         const float g,
-                                         const float b) {
+            static MaterialParameter CreateRGB(const float r,
+                                               const float g,
+                                               const float b) {
                 return {r, g, b, 1.f};
             }
         };

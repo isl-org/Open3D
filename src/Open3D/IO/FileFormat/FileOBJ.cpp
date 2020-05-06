@@ -162,7 +162,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     for (auto& material : materials) {
         auto& meshMaterial = mesh.materials_[material.name];
 
-        meshMaterial.baseColor = MaterialParameter::RGB(
+        meshMaterial.baseColor = MaterialParameter::CreateRGB(
                 material.diffuse[0], material.diffuse[1], material.diffuse[2]);
 
         if (!material.normal_texname.empty()) {
