@@ -409,12 +409,12 @@ public:
     Tensor Add(const Tensor& value) const;
     template <typename T>
     Tensor Add(T scalar_value) const {
-        return Add(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Add(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator+(const Tensor& value) const { return Add(value); }
     template <typename T>
     Tensor operator+(T scalar_value) const {
-        return Add(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Add(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Inplace version of Tensor::Add. Adds a tensor to the current tensor and
@@ -422,24 +422,24 @@ public:
     Tensor Add_(const Tensor& value);
     template <typename T>
     Tensor Add_(T scalar_value) {
-        return Add_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Add_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator+=(const Tensor& value) { return Add_(value); }
     template <typename T>
     Tensor operator+=(T scalar_value) {
-        return Add_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Add_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Substracts a tensor and returns the resulting tensor.
     Tensor Sub(const Tensor& value) const;
     template <typename T>
     Tensor Sub(T scalar_value) const {
-        return Sub(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Sub(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator-(const Tensor& value) const { return Sub(value); }
     template <typename T>
     Tensor operator-(T scalar_value) const {
-        return Sub(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Sub(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Inplace version of Tensor::Sub. Substracts a tensor to the current
@@ -447,24 +447,24 @@ public:
     Tensor Sub_(const Tensor& value);
     template <typename T>
     Tensor Sub_(T scalar_value) {
-        return Sub_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Sub_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator-=(const Tensor& value) { return Sub_(value); }
     template <typename T>
     Tensor operator-=(T scalar_value) {
-        return Sub_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Sub_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Multiplies a tensor and returns the resulting tensor.
     Tensor Mul(const Tensor& value) const;
     template <typename T>
     Tensor Mul(T scalar_value) const {
-        return Mul(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Mul(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator*(const Tensor& value) const { return Mul(value); }
     template <typename T>
     Tensor operator*(T scalar_value) const {
-        return Mul(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Mul(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Inplace version of Tensor::Mul. Multiplies a tensor to the current
@@ -472,24 +472,24 @@ public:
     Tensor Mul_(const Tensor& value);
     template <typename T>
     Tensor Mul_(T scalar_value) {
-        return Mul_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Mul_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator*=(const Tensor& value) { return Mul_(value); }
     template <typename T>
     Tensor operator*=(T scalar_value) {
-        return Mul_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Mul_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Divides a tensor and returns the resulting tensor.
     Tensor Div(const Tensor& value) const;
     template <typename T>
     Tensor Div(T scalar_value) const {
-        return Div(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Div(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator/(const Tensor& value) const { return Div(value); }
     template <typename T>
     Tensor operator/(T scalar_value) const {
-        return Div(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Div(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Inplace version of Tensor::Div. Divides a tensor to the current
@@ -497,12 +497,12 @@ public:
     Tensor Div_(const Tensor& value);
     template <typename T>
     Tensor Div_(T scalar_value) {
-        return Div_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Div_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
     Tensor operator/=(const Tensor& value) { return Div_(value); }
     template <typename T>
     Tensor operator/=(T scalar_value) {
-        return Div_(Tensor::Full(shape_, scalar_value, dtype_, GetDevice()));
+        return Div_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
     }
 
     /// Returns the sum of the tensor along the given \p dims.
