@@ -76,3 +76,7 @@ https://github.com/pybind/pybind11
 PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
+--------------------------------------------------------------------------------
+benchmark                   1.5.0                               Apache-2 license
+A microbenchmark support library
+https://github.com/google/benchmark

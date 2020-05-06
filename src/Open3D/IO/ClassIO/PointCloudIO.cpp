@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Open3D/IO/ClassIO/PointCloudIO.h"
+#include <iostream>
 
 #include <unordered_map>
 
@@ -88,6 +89,10 @@ bool ReadPointCloud(const std::string &filename,
     } else {
         filename_ext = format;
     }
+
+    std::cout << "Format = " << format << std::endl;
+    std::cout << "Extension = " << filename_ext << std::endl;
+
     if (filename_ext.empty()) {
         utility::LogWarning(
                 "Read geometry::PointCloud failed: unknown file extension.");
@@ -104,8 +109,8 @@ bool ReadPointCloud(const std::string &filename,
     utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
                       (int)pointcloud.points_.size());
     if (remove_nan_points || remove_infinite_points) {
-        pointcloud.RemoveNoneFinitePoints(remove_nan_points,
-                                          remove_infinite_points);
+        pointcloud.RemoveNonFinitePoints(remove_nan_points,
+                                         remove_infinite_points);
     }
     return success;
 }

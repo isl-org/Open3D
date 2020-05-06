@@ -11,7 +11,8 @@ interface of Open3D.
     file_io
     pointcloud
     mesh
-    rgbd_images/index
+    transformation
+    rgbd_image
     rgbd_odometry
     visualization
     kdtree

@@ -87,7 +87,6 @@ void Renderer::RenderToImage(
         Scene* scene,
         std::function<void(std::shared_ptr<geometry::Image>)> cb) {
     auto render = CreateBufferRenderer();
-    render->SetDimensions(width, height);
     render->CopySettings(view);
     render->RequestFrame(
             scene,

@@ -38,7 +38,7 @@ void pybind_renderoption(py::module &m) {
     py::class_<visualization::RenderOption,
                std::shared_ptr<visualization::RenderOption>>
             renderoption(m, "RenderOption",
-                         "Defines rendering options for visulizer.");
+                         "Defines rendering options for visualizer.");
     py::detail::bind_default_constructor<visualization::RenderOption>(
             renderoption);
     renderoption
@@ -137,7 +137,7 @@ void pybind_renderoption(py::module &m) {
                                    "MeshShadeOption");
     enum_mesh_shade_option.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for msh shading for ``TriangleMesh``.";
+                return "Enum class for mesh shading for ``TriangleMesh``.";
             }),
             py::none(), py::none(), "");
     enum_mesh_shade_option

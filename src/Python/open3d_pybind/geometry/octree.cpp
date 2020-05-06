@@ -46,7 +46,7 @@ static const std::unordered_map<std::string, std::string>
                 {"point_cloud", "Input point cloud."},
                 {"size_expand",
                  "A small expansion size such that the octree is slightly "
-                 "bigger than the original point cloud bounds to accmondate "
+                 "bigger than the original point cloud bounds to accomodate "
                  "all points."}};
 
 void pybind_octree(py::module &m) {
@@ -106,7 +106,7 @@ void pybind_octree(py::module &m) {
                std::shared_ptr<geometry::OctreeInternalNode>,
                geometry::OctreeNode>
             octree_internal_node(m, "OctreeInternalNode",
-                                 "OctreeInternalNode class, conataining "
+                                 "OctreeInternalNode class, containing "
                                  "OctreeNode children.");
     octree_internal_node.def(
             "__repr__", [](const geometry::OctreeInternalNode &internal_node) {
@@ -235,13 +235,18 @@ void pybind_octree(py::module &m) {
             .def_readwrite("root_node", &geometry::Octree::root_node_,
                            "OctreeNode: The root octree node.")
             .def_readwrite("origin", &geometry::Octree::origin_,
-                           "(3, 1) float numpy array: Origin coordinate "
-                           "of the octree.")
+                           "(3, 1) float numpy array: Global min bound "
+                           "(include). A point is within bound iff origin <= "
+                           "point < origin + size.")
             .def_readwrite("size", &geometry::Octree::size_,
-                           "float: Size of the octree, i.e. the size of the "
-                           "outer bound.")
+                           "float: Outer bounding box edge size for the whole "
+                           "octree. A point is within bound iff origin <= "
+                           "point < origin + size.")
             .def_readwrite("max_depth", &geometry::Octree::max_depth_,
-                           "int: Maximum depth of the octree.");
+                           "int: Maximum depth of the octree. The depth is "
+                           "defined as the distance from the deepest leaf node "
+                           "to root. A tree with only the root node has depth "
+                           "0.");
 
     docstring::ClassMethodDocInject(m, "Octree", "__init__");
     docstring::ClassMethodDocInject(m, "Octree", "insert_point",

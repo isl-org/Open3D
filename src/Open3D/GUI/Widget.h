@@ -54,8 +54,6 @@ class Widget {
     friend class Window;
 
 public:
-    enum class DrawResult { NONE, REDRAW, RELAYOUT };
-
     Widget();
     explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Widget();
@@ -63,13 +61,14 @@ public:
     void AddChild(std::shared_ptr<Widget> child);
     const std::vector<std::shared_ptr<Widget>> GetChildren() const;
 
+    /// Returns the frame size in pixels.
     const Rect& GetFrame() const;
-    // The frame is in pixels. The size of a pixel varies on different
-    // and operatings sytems now frequently scale text sizes on high DPI
-    // monitors. Prefer using a Layout to using this function, but if you
-    // must use it, it is best to use a multiple of
-    // Window::GetTheme().fontSize, which represents 1em and is scaled
-    // according to the scaling factor of the window.
+    /// The frame is in pixels. The size of a pixel varies on different
+    /// and operatings sytems now frequently scale text sizes on high DPI
+    /// monitors. Prefer using a Layout to using this function, but if you
+    /// must use it, it is best to use a multiple of
+    /// Window::GetTheme().fontSize, which represents 1em and is scaled
+    /// according to the scaling factor of the window.
     virtual void SetFrame(const Rect& f);
 
     const Color& GetBackgroundColor() const;
@@ -86,6 +85,13 @@ public:
     virtual Size CalcPreferredSize(const Theme& theme) const;
 
     virtual void Layout(const Theme& theme);
+
+    enum class DrawResult { NONE, REDRAW, RELAYOUT };
+    /// Draws the widget. If this is a Dear ImGUI widget, this is where
+    /// the actual event processing happens. Return NONE if no action
+    /// needs to be taken, REDRAW if the widget needs to be redrawn
+    /// (e.g. its value changed), and RELAYOUT if the widget wishes to
+    /// change size.
     virtual DrawResult Draw(const DrawContext& context);
 
     enum class EventResult { IGNORED, CONSUMED, DISCARD };
@@ -100,10 +106,8 @@ public:
     /// the Draw().
     virtual EventResult Key(const KeyEvent& e);
 
-    /// If sending tick events is enabled for the window, a tick event
-    /// will be sent each time the event loop processes events. This
-    /// allows for things like animation or smoothly moving the camera
-    /// as long as a key is pressed without necessarily always redrawing.
+    /// Tick events are sent regularly and allow for things like smoothly
+    /// moving the camera based on keys that are pressed, or animations.
     /// Return DrawResult::REDRAW if you want to be redrawn.
     virtual DrawResult Tick(const TickEvent& e);
 

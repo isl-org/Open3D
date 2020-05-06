@@ -61,10 +61,16 @@ bool LoadAndCreateWindow(const char *path) {
     }
     gui::Application::GetInstance().AddWindow(vis);  // add even if failed
 
+    // NOTE: gui::ShowNativeAlert crashes on Linux because ShowNativeAlert uses
+    // Application::ShowMessageBox but app isn't running yet. Errors will have
+    // been output to console and the typical Linux user will know to check
+    // console when the window shows up empty.
+#if defined(__APPLE__) || defined(_WIN32)
     if (!loaded && isPathValid) {
         auto err = std::string("Error reading geometry file '") + path + "'";
         gui::ShowNativeAlert(err.c_str());
     }
+#endif
 
     return loaded;
 }

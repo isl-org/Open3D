@@ -3,7 +3,7 @@
 Capture your own dataset
 -------------------------------------
 
-If you have a `RealSense camera <https://www.intel.com/content/www/us/en/architecture-and-technology/realsense-overview.html>`_, capturing RGBD frames is easy by using ``sensors/realsense_recoder.py``.
+If you have a `RealSense camera <https://www.intel.com/content/www/us/en/architecture-and-technology/realsense-overview.html>`_, capturing RGBD frames is easy by using ``sensors/realsense_recorder.py``.
 
 .. note:: This tutorial assumes that valid RealSense Python package and OpenCV Python package are installed in your environment. Please follow `this instruction <https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python>`_ to install RealSense Python package.
 
@@ -14,9 +14,9 @@ The script runs with one of the following three options:
 
 .. code-block:: bash
 
-    python realsense_recoder.py --record_imgs
-    python realsense_recoder.py --record_rosbag
-    python realsense_recoder.py --playback_rosbag
+    python realsense_recorder.py --record_imgs
+    python realsense_recorder.py --record_rosbag
+    python realsense_recorder.py --playback_rosbag
 
 In either ``record_imgs`` and ``record_rosbag`` mode, the script displays the following capturing preview.
 

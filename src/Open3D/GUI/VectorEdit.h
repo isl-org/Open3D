@@ -41,8 +41,11 @@ public:
     ~VectorEdit();
 
     Eigen::Vector3f GetValue() const;
+    /// Sets the value of the widget. Does not call onValueChanged.
     void SetValue(const Eigen::Vector3f& val);
 
+    /// Sets the function that is called whenever the value in the widget
+    /// changes because of user behavior
     void SetOnValueChanged(
             std::function<void(const Eigen::Vector3f&)> onChanged);
 

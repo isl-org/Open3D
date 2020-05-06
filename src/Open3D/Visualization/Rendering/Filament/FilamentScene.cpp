@@ -175,7 +175,33 @@ GeometryHandle FilamentScene::AddGeometry(
                                               // attribute set
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::ColorOnlyMesh);
-        } else {  // Mesh without any attributes set, only tangents are needed
+
+        } else if (mesh.HasTextures()) {  // Mesh with textures
+            materialInstance = resourceManager_.CreateMaterialInstance(
+                    defaults_mapping::Mesh);
+
+            auto wMaterial =
+                    resourceManager_.GetMaterialInstance(materialInstance);
+            auto mat = wMaterial.lock();
+
+            auto hTexture = resourceManager_.CreateTexture(
+                    mesh.textures_[0].FlipVertical());
+
+            if (hTexture) {
+                auto& entity = entities_[handle];
+                entity.texture = hTexture;
+
+                auto wTexture = resourceManager_.GetTexture(hTexture);
+                auto tex = wTexture.lock();
+                if (tex) {
+                    static const auto kDefaultSampler =
+                            FilamentMaterialModifier::
+                                    SamplerFromSamplerParameters(
+                                            TextureSamplerParameters::Pretty());
+                    mat->setParameter("texture", tex.get(), kDefaultSampler);
+                }
+            }
+        } else {             // Mesh without any attributes set, only tangents are needed
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::PlainMesh);
 

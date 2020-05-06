@@ -1212,11 +1212,11 @@ GuiVisualizer::GuiVisualizer(
 
     settings.wgtIBLIntensity = MakeSlider(gui::Slider::INT, 0.0, 150000.0,
                                           lightingProfile.iblIntensity);
-    settings.wgtIBLIntensity->OnValueChanged = [this,
-                                                renderScene](double newValue) {
-        renderScene->SetIndirectLightIntensity(newValue);
-        this->impl_->settings.SetCustomProfile();
-    };
+    settings.wgtIBLIntensity->SetOnValueChanged(
+            [this, renderScene](double newValue) {
+                renderScene->SetIndirectLightIntensity(newValue);
+                this->impl_->settings.SetCustomProfile();
+            });
 
     auto ambientLayout = std::make_shared<gui::VGrid>(2, gridSpacing);
     ambientLayout->AddChild(std::make_shared<gui::Label>("HDR map"));
@@ -1233,12 +1233,12 @@ GuiVisualizer::GuiVisualizer(
     // ... directional light (sun)
     settings.wgtSunIntensity = MakeSlider(gui::Slider::INT, 0.0, 500000.0,
                                           lightingProfile.sunIntensity);
-    settings.wgtSunIntensity->OnValueChanged = [this,
-                                                renderScene](double newValue) {
-        renderScene->SetLightIntensity(impl_->settings.hDirectionalLight,
-                                       newValue);
-        this->impl_->settings.SetCustomProfile();
-    };
+    settings.wgtSunIntensity->SetOnValueChanged(
+            [this, renderScene](double newValue) {
+                renderScene->SetLightIntensity(
+                        impl_->settings.hDirectionalLight, newValue);
+                this->impl_->settings.SetCustomProfile();
+            });
 
     auto setSunDir = [this, renderScene](const Eigen::Vector3f &dir) {
         this->impl_->settings.wgtSunDir->SetValue(dir);
@@ -1357,7 +1357,7 @@ GuiVisualizer::GuiVisualizer(
 
     matGrid->AddChild(std::make_shared<gui::Label>("Point size"));
     settings.wgtPointSize = MakeSlider(gui::Slider::INT, 1.0, 10.0, 3);
-    settings.wgtPointSize->OnValueChanged = [this](double value) {
+    settings.wgtPointSize->SetOnValueChanged([this](double value) {
         float size = float(value);
         impl_->settings.currentMaterials.unlit.pointSize = size;
         auto &renderer = GetRenderer();
@@ -1373,7 +1373,7 @@ GuiVisualizer::GuiVisualizer(
         renderer.ModifyMaterial(FilamentResourceManager::kNormalsMaterial)
                 .SetParameter("pointSize", size)
                 .Finish();
-    };
+    });
     matGrid->AddChild(settings.wgtPointSize);
     materials->AddChild(matGrid);
 
@@ -1646,7 +1646,7 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
     } else {
         // LogError throws an exception, which we don't want, because this might
         // be a point cloud.
-        utility::LogWarning("Failed to read {}", path.c_str());
+        utility::LogInfo("%s appears to be a point cloud", path.c_str());
         mesh.reset();
     }
 

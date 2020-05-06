@@ -278,7 +278,7 @@ void SetGeometryColorAverage(
     }
     if (invisible_vertex_color_knn > 0) {
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-                mesh.SelectDownSample(valid_vertices);
+                mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -294,7 +294,7 @@ void SetGeometryColorAverage(
                 new_color += valid_mesh->vertex_colors_[index];
             }
             if (indices.size() > 0) {
-                new_color /= indices.size();
+                new_color /= static_cast<double>(indices.size());
             }
             mesh.vertex_colors_[invalid_vertex] = new_color;
         }
@@ -356,7 +356,7 @@ void SetGeometryColorAverage(
     }
     if (invisible_vertex_color_knn > 0) {
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-                mesh.SelectDownSample(valid_vertices);
+                mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -372,7 +372,7 @@ void SetGeometryColorAverage(
                 new_color += valid_mesh->vertex_colors_[index];
             }
             if (indices.size() > 0) {
-                new_color /= indices.size();
+                new_color /= static_cast<double>(indices.size());
             }
             mesh.vertex_colors_[invalid_vertex] = new_color;
         }

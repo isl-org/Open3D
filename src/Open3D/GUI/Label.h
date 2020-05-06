@@ -38,7 +38,7 @@ public:
     explicit Label(const char* text = nullptr);
     ~Label();
 
-    const char* GetText() const;  // std::string can cause ABI issues
+    const char* GetText() const;
     void SetText(const char* text);
 
     Color GetTextColor() const;
