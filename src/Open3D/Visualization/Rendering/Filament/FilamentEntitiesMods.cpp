@@ -193,9 +193,6 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
                 EngineInstance::GetResourceManager().GetTexture(textureHandle);
 
         if (auto texturePtr = wTexture.lock()) {
-            filament::TextureSampler sampler(TextureSampler::MinFilter::LINEAR,
-                                             TextureSampler::MagFilter::LINEAR);
-
             materialInstance_->setParameter(
                     parameter, texturePtr.get(),
                     SamplerFromSamplerParameters(samplerConfig));

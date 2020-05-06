@@ -1,6 +1,8 @@
 material {
     name : depth,
     shadingModel : unlit,
+    doubleSided : true,
+
     parameters : [
             { type : float,  name : cameraFar },
             { type : float,  name : cameraNear },

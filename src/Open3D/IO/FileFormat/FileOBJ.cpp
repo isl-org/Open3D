@@ -151,15 +151,62 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         mesh.triangle_uvs_.clear();
     }
 
-    // Now we assert only one shape is stored, we only select the first
-    // diffuse material
+    auto textureLoader = [&mtl_base_path](std::string& relativePath) {
+        auto image = io::CreateImageFromFile(mtl_base_path + relativePath);
+        return image->HasData() ? image : std::shared_ptr<geometry::Image>();
+    };
+
+    using MaterialParameter =
+            geometry::TriangleMesh::Material::MaterialParameter;
+
     for (auto& material : materials) {
-        if (!material.diffuse_texname.empty()) {
-            mesh.textures_.push_back(
-                    *(io::CreateImageFromFile(mtl_base_path +
-                                              material.diffuse_texname)
-                              ->FlipVertical()));
+        auto& meshMaterial = mesh.materials_[material.name];
+
+        meshMaterial.baseColor = MaterialParameter::CreateRGB(
+                material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+
+        if (!material.normal_texname.empty()) {
+            meshMaterial.normalMap = textureLoader(material.normal_texname);
+        } else if (!material.bump_texname.empty()) {
+            // try bump, because there is often a misunderstanding of
+            // what bump map or normal map is
+            meshMaterial.normalMap = textureLoader(material.bump_texname);
         }
+
+        if (!material.ambient_texname.empty()) {
+            meshMaterial.ambientOcclusion =
+                    textureLoader(material.ambient_texname);
+        }
+
+        if (!material.diffuse_texname.empty()) {
+            meshMaterial.albedo = textureLoader(material.diffuse_texname);
+
+            // Legacy texture map support
+            if (meshMaterial.albedo) {
+                mesh.textures_.push_back(*meshMaterial.albedo->FlipVertical());
+            }
+        }
+
+        if (!material.metallic_texname.empty()) {
+            meshMaterial.metallic = textureLoader(material.metallic_texname);
+        }
+
+        if (!material.roughness_texname.empty()) {
+            meshMaterial.roughness = textureLoader(material.roughness_texname);
+        }
+
+        // NOTE: We want defaults of 0.0 and 1.0 for baseMetallic and
+        // baseRoughness respectively but 0.0 is a valid value for both and
+        // tiny_obj_loader defaults to 0.0 for both. So, we will assume that
+        // only if one of the values is greater than 0.0 that there are
+        // non-default values set in the .mtl file
+        if (material.roughness > 0.f || material.metallic > 0.f) {
+            meshMaterial.baseMetallic = material.metallic;
+            meshMaterial.baseRoughness = material.roughness;
+        }
+
+        // NOTE: PBR OBJ 'extension' supports additional parameters that could
+        // be useful in the future. See tiny_obj_loader.h for details.
     }
 
     return true;

@@ -168,12 +168,15 @@ GeometryHandle FilamentScene::AddGeometry(
     if (geometryType == geometry::Geometry::GeometryType::TriangleMesh) {
         const auto& mesh = static_cast<const geometry::TriangleMesh&>(geometry);
 
-        // Mesh with vertex color attribute set
-        if (mesh.HasVertexColors()) {
+        if (mesh.HasMaterials()) {  // Mesh with materials
+            materialInstance = resourceManager_.CreateFromDescriptor(
+                    mesh.materials_.begin()->second);
+        } else if (mesh.HasVertexColors()) {  // Mesh with vertex color
+                                              // attribute set
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::ColorOnlyMesh);
-            // Mesh with textures
-        } else if (mesh.HasTextures()) {
+
+        } else if (mesh.HasTextures()) {  // Mesh with textures
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::Mesh);
 
@@ -198,8 +201,7 @@ GeometryHandle FilamentScene::AddGeometry(
                     mat->setParameter("texture", tex.get(), kDefaultSampler);
                 }
             }
-            // Mesh without any attributes set, only tangents are needed
-        } else {
+        } else {  // Mesh without any attributes set, only tangents are needed
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::PlainMesh);
 

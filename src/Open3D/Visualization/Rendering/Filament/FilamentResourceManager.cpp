@@ -26,12 +26,6 @@
 
 #include "FilamentResourceManager.h"
 
-#include "FilamentEntitiesMods.h"
-#include "Open3D/GUI/Application.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
 #include <filament/IndirectLight.h>
@@ -44,6 +38,12 @@
 #include <filament/TextureSampler.h>
 #include <filament/image/KtxBundle.h>
 #include <filament/image/KtxUtility.h>
+
+#include "FilamentEntitiesMods.h"
+#include "Open3D/GUI/Application.h"
+#include "Open3D/IO/ClassIO/ImageIO.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 namespace visualization {
@@ -199,8 +199,6 @@ const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlit =
         MaterialHandle::Next();
-const MaterialHandle FilamentResourceManager::kUbermaterial =
-        MaterialHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kDepthMaterial =
         MaterialInstanceHandle::Next();
 const MaterialInstanceHandle FilamentResourceManager::kNormalsMaterial =
@@ -209,17 +207,19 @@ const MaterialInstanceHandle FilamentResourceManager::kColorMapMaterial =
         MaterialInstanceHandle::Next();
 const TextureHandle FilamentResourceManager::kDefaultTexture =
         TextureHandle::Next();
-const TextureHandle FilamentResourceManager::kDefaulColorMap =
+const TextureHandle FilamentResourceManager::kDefaultColorMap =
+        TextureHandle::Next();
+const TextureHandle FilamentResourceManager::kDefaultNormalMap =
         TextureHandle::Next();
 
 static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultLit,
         FilamentResourceManager::kDefaultUnlit,
-        FilamentResourceManager::kUbermaterial,
         FilamentResourceManager::kDepthMaterial,
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
-        FilamentResourceManager::kDefaulColorMap};
+        FilamentResourceManager::kDefaultColorMap,
+        FilamentResourceManager::kDefaultNormalMap};
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {
@@ -280,6 +280,50 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
     return {};
 }
 
+MaterialInstanceHandle FilamentResourceManager::CreateFromDescriptor(
+        const geometry::TriangleMesh::Material& descriptor) {
+    MaterialInstanceHandle handle;
+    auto pbrRef = materials_[kDefaultLit];
+    auto materialInstance = pbrRef->createInstance();
+    handle = RegisterResource<MaterialInstanceHandle>(engine_, materialInstance,
+                                                      materialInstances_);
+
+    static const auto sampler =
+            FilamentMaterialModifier::SamplerFromSamplerParameters(
+                    TextureSamplerParameters::Pretty());
+
+    auto baseColor = filament::math::float3{descriptor.baseColor.r,
+                                            descriptor.baseColor.g,
+                                            descriptor.baseColor.b};
+    materialInstance->setParameter("baseColor", filament::RgbType::sRGB,
+                                   baseColor);
+
+#define TRY_ASSIGN_MAP(map)                                                    \
+    {                                                                          \
+        if (descriptor.map && descriptor.map->HasData()) {                     \
+            auto hMapTex = CreateTexture(descriptor.map);                      \
+            if (hMapTex) {                                                     \
+                materialInstance->setParameter(#map, textures_[hMapTex].get(), \
+                                               sampler);                       \
+                dependencies_[handle].insert(hMapTex);                         \
+            }                                                                  \
+        }                                                                      \
+    }
+
+    materialInstance->setParameter("baseRoughness", descriptor.baseRoughness);
+    materialInstance->setParameter("baseMetallic", descriptor.baseMetallic);
+
+    TRY_ASSIGN_MAP(albedo);
+    TRY_ASSIGN_MAP(normalMap);
+    TRY_ASSIGN_MAP(ambientOcclusion);
+    TRY_ASSIGN_MAP(metallic);
+    TRY_ASSIGN_MAP(roughness);
+
+#undef TRY_ASSIGN_MAP
+
+    return handle;
+}
+
 TextureHandle FilamentResourceManager::CreateTexture(const char* path) {
     std::shared_ptr<geometry::Image> img;
 
@@ -314,6 +358,15 @@ TextureHandle FilamentResourceManager::CreateTexture(
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
     }
+
+    return handle;
+}
+
+TextureHandle FilamentResourceManager::CreateTextureFilled(
+        const Eigen::Vector3f& color, size_t dimension) {
+    TextureHandle handle;
+    auto texture = LoadFilledTexture(color, dimension);
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
 
     return handle;
 }
@@ -560,6 +613,28 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     return texture;
 }
 
+filament::Texture* FilamentResourceManager::LoadFilledTexture(
+        const Eigen::Vector3f& color, size_t dimension) {
+    auto image = std::make_shared<geometry::Image>();
+    image->Prepare(dimension, dimension, 3, 1);
+
+    struct RGB {
+        std::uint8_t r, g, b;
+    };
+
+    RGB c = {static_cast<uint8_t>(color(0) * 255.f),
+             static_cast<uint8_t>(color(1) * 255.f),
+             static_cast<uint8_t>(color(2) * 255.f)};
+
+    auto data = reinterpret_cast<RGB*>(image->data_.data());
+    for (size_t i = 0; i < dimension * dimension; ++i) {
+        data[i] = c;
+    }
+
+    auto texture = LoadTextureFromImage(image);
+    return texture;
+}
+
 void FilamentResourceManager::LoadDefaults() {
     // FIXME: Move to precompiled resource blobs
     const std::string resourceRoot =
@@ -573,7 +648,10 @@ void FilamentResourceManager::LoadDefaults() {
     const auto colorMapPath = resourceRoot + "/defaultGradient.png";
     auto colorMapImg = io::CreateImageFromFile(colorMapPath);
     auto colorMap = LoadTextureFromImage(colorMapImg);
-    textures_[kDefaulColorMap] = MakeShared(colorMap, engine_);
+    textures_[kDefaultColorMap] = MakeShared(colorMap, engine_);
+
+    auto normalMap = LoadFilledTexture(Eigen::Vector3f(0.5, 0.5, 1.f), 1);
+    textures_[kDefaultNormalMap] = MakeShared(normalMap, engine_);
 
     const auto defaultSampler =
             FilamentMaterialModifier::SamplerFromSamplerParameters(
@@ -584,13 +662,18 @@ void FilamentResourceManager::LoadDefaults() {
     auto litMat = LoadMaterialFromFile(litPath, engine_);
     litMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                 defaultColor);
-    litMat->setDefaultParameter("roughness", 0.7f);
+    litMat->setDefaultParameter("baseRoughness", 0.7f);
     litMat->setDefaultParameter("reflectance", 0.5f);
-    litMat->setDefaultParameter("metallic", 0.f);
+    litMat->setDefaultParameter("baseMetallic", 0.f);
     litMat->setDefaultParameter("clearCoat", 0.f);
     litMat->setDefaultParameter("clearCoatRoughness", 0.f);
     litMat->setDefaultParameter("anisotropy", 0.f);
     litMat->setDefaultParameter("pointSize", 3.f);
+    litMat->setDefaultParameter("albedo", texture, defaultSampler);
+    litMat->setDefaultParameter("metallicMap", texture, defaultSampler);
+    litMat->setDefaultParameter("roughnessMap", texture, defaultSampler);
+    litMat->setDefaultParameter("normalMap", normalMap, defaultSampler);
+    litMat->setDefaultParameter("ambientOcclusionMap", texture, defaultSampler);
     materials_[kDefaultLit] = MakeShared(litMat, engine_);
 
     const auto unlitPath = resourceRoot + "/defaultUnlit.filamat";
@@ -598,15 +681,8 @@ void FilamentResourceManager::LoadDefaults() {
     unlitMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                   defaultColor);
     unlitMat->setDefaultParameter("pointSize", 3.f);
+    unlitMat->setDefaultParameter("albedo", texture, defaultSampler);
     materials_[kDefaultUnlit] = MakeShared(unlitMat, engine_);
-
-    const auto uberPath = resourceRoot + "/ubermaterial.filamat";
-    auto uberMat = LoadMaterialFromFile(uberPath, engine_);
-    uberMat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                 defaultColor);
-    uberMat->setDefaultParameter("diffuse", texture, defaultSampler);
-    // TODO: Add some more pretty defaults
-    materials_[kUbermaterial] = MakeShared(uberMat, engine_);
 
     const auto depthPath = resourceRoot + "/depth.filamat";
     const auto hDepth = CreateMaterial(ResourceLoadRequest(depthPath.data()));

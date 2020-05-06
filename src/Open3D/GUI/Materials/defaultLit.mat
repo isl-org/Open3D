@@ -5,17 +5,21 @@ material {
 
     parameters : [
         { type : float3,    name : baseColor },
-        { type : float,     name : metallic },
-        { type : float,     name : roughness },
+        { type : float,     name : baseMetallic },
+        { type : float,     name : baseRoughness },
         { type : float,     name : reflectance },
         { type : float,     name : clearCoat },
         { type : float,     name : clearCoatRoughness },
         { type : float,     name : anisotropy },
-
-        { type : float,     name : pointSize }
+        { type : float,     name : pointSize },
+	{ type : sampler2d, name : albedo },
+	{ type : sampler2d, name : metallicMap },
+	{ type : sampler2d, name : roughnessMap },
+	{ type : sampler2d, name : normalMap },
+	{ type : sampler2d, name : ambientOcclusionMap }
     ],
     requires : [
-        uv0, color
+        color, uv0
     ]
 }
 
@@ -27,10 +31,16 @@ vertex {
 
 fragment {
     void material(inout MaterialInputs material) {
+        // Modifications to normal must be done before prepareMaterial call
+        material.normal = texture(materialParams_normalMap, getUV0()).xyz * 2.0 - 1.0;
+	material.normal.y *= -1.0; // NOTE: including this line because Filament samples do
+	
         prepareMaterial(material);
-        material.baseColor.rgb = getColor().rgb*materialParams.baseColor;
-        material.metallic = materialParams.metallic;
-        material.roughness = materialParams.roughness;
+
+        material.baseColor.rgb = getColor().rgb*materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;
+        material.metallic = materialParams.baseMetallic * texture(materialParams_metallicMap, getUV0()).r;
+        material.roughness = materialParams.baseRoughness * texture(materialParams_roughnessMap, getUV0()).r;
+	material.ambientOcclusion = texture(materialParams_ambientOcclusionMap, getUV0()).r;
         material.reflectance = materialParams.reflectance;
         material.clearCoat = materialParams.clearCoat;
         material.clearCoatRoughness = materialParams.clearCoatRoughness;

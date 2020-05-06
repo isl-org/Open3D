@@ -1,7 +1,7 @@
 material {
     name : colorMap,
     shadingModel : unlit,
-    doubleSided : false,
+    doubleSided : true,
 
     parameters : [
         { type : int,       name : coordinateIndex },
