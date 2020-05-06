@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 
-# config options
+# Config options
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
 option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
@@ -86,7 +86,7 @@ if(NOT DEFINED PYPI_PACKAGE_NAME)
     set(PYPI_PACKAGE_NAME "open3d")
 endif()
 
-# set additional info
+# Set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
