@@ -6,6 +6,7 @@ option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
+option(BUILD_GOOGLETEST          "Build googletest framework from source"   ON)
 option(BUILD_BENCHMARKS          "Build the micro benchmarks"               OFF)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    OFF)
 option(BUILD_FLANN               "Use the flann that comes with Open3D"     ON)
@@ -30,7 +31,6 @@ option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-option(WITH_SYSTEM_GOOGLETEST    "Use the system Googletest sources"        OFF)
 
 # Cache variables for specifying the GPU architectures
 set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \

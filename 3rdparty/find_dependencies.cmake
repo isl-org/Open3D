@@ -702,20 +702,23 @@ list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${FMT_TARGET}")
 
 # Googletest
 if (BUILD_UNIT_TESTS)
-    if(WITH_SYSTEM_GOOGLETEST)
-        set(googletest_DIR "/usr/src/googletest")
-        message(STATUS "Building googletest from ${googletest_DIR}")
-        add_library(3rdparty_googletest STATIC
-            ${googletest_DIR}/googletest/src/gtest-all.cc
-            ${googletest_DIR}/googlemock/src/gmock-all.cc
-        )
-        target_include_directories(3rdparty_googletest SYSTEM PUBLIC
-            ${googletest_DIR}/googletest/include
-            ${googletest_DIR}/googletest
-            ${googletest_DIR}/googlemock/include
-            ${googletest_DIR}/googlemock
-        )
-    else()
+    if(NOT BUILD_GOOGLETEST)
+        find_path(gtest_INCLUDE_DIRS gtest/gtest.h)
+        find_library(gtest_LIBRARY gtest)
+        find_path(gmock_INCLUDE_DIRS gmock/gmock.h)
+        find_library(gmock_LIBRARY gmock)
+        if(gtest_INCLUDE_DIRS AND gtest_LIBRARY AND gmock_INCLUDE_DIRS AND gmock_LIBRARY)
+            message(STATUS "Using installed googletest")
+            add_library(3rdparty_googletest INTERFACE)
+            target_include_directories(3rdparty_googletest INTERFACE ${gtest_INCLUDE_DIRS} ${gmock_INCLUDE_DIRS})
+            target_link_libraries(3rdparty_googletest INTERFACE ${gtest_LIBRARY} ${gmock_LIBRARY})
+            set(GOOGLETEST_TARGET "3rdparty_googletest")
+        else()
+            message(STATUS "Unable to find installed googletest")
+            set(BUILD_GOOGLETEST ON)
+        endif()
+    endif()
+    if(BUILD_GOOGLETEST)
         build_3rdparty_library(3rdparty_googletest DIRECTORY googletest
             SOURCES
                 googletest/src/gtest-all.cc
@@ -726,10 +729,10 @@ if (BUILD_UNIT_TESTS)
                 googlemock/include/
                 googlemock/
         )
+        # Googletest wants to be compiled with the same compile options as the tests
+        open3d_set_global_properties(3rdparty_googletest)
+        set(GOOGLETEST_TARGET "3rdparty_googletest")
     endif()
-    # Googletest needs to be compiled with the same compile options as the tests
-    open3d_set_global_properties(3rdparty_googletest)
-    set(GOOGLETEST_TARGET "3rdparty_googletest")
 endif()
 
 # PoissonRecon
