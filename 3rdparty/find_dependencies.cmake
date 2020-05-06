@@ -30,7 +30,7 @@ set(Open3D_3RDPARTY_PRIVATE_TARGETS)
 find_package(PkgConfig QUIET)
 
 #
-# build_3rd_party_library(name ...)
+# build_3rdparty_library(name ...)
 #
 # Builds a third-party library from source
 #
@@ -46,9 +46,11 @@ find_package(PkgConfig QUIET)
 #        the library sources are in the subdirectory <dir> of 3rdparty/
 #    INCLUDE_DIRS <dir> [<dir> ...]
 #        include headers are in the subdirectories <dir>. Trailing slashes
-#        have the same meaning as with install(DIRECTORY)
+#        have the same meaning as with install(DIRECTORY). <dir> must be
+#        relative to the library source directory.
 #    SOURCES <src> [<src> ...]
-#        the library sources. Can be omitted for header-only libraries
+#        the library sources. Can be omitted for header-only libraries.
+#        All sources must be relative to the library source directory.
 #    LIBS <target> [<target> ...]
 #        extra link dependencies
 #
@@ -145,35 +147,34 @@ function(build_3rdparty_library name)
 endfunction()
 
 #
-# pkg_config_3rd_party_library(name ...)
+# pkg_config_3rdparty_library(name ...)
 #
 # Creates an interface library for a pkg-config dependency.
 # All arguments are passed verbatim to pkg_search_module()
 #
+# The function will set ${name}_FOUND to TRUE or FALSE
+# indicating whether or not the library could be found.
+#
 function(pkg_config_3rdparty_library name)
-    string(TOUPPER "${name}" name_uc)
     if(PKGCONFIG_FOUND)
-        pkg_search_module(${name_uc} ${ARGN})
+        pkg_search_module(pc_${name} ${ARGN})
     endif()
-    if(${name_uc}_FOUND)
+    if(pc_${name}_FOUND)
         message(STATUS "Using installed third-party library ${name} ${${name_uc}_VERSION}")
         add_library(${name} INTERFACE)
-        target_include_directories(${name} SYSTEM INTERFACE ${${name_uc}_INCLUDE_DIRS})
-        foreach(lib IN LISTS ${name_uc}_LIBRARIES)
-            find_library(${lib}_LIBRARY NAMES ${lib} PATHS ${${name_uc}_LIBRARY_DIRS})
-            target_link_libraries(${name} INTERFACE ${${lib}_LIBRARY})
-        endforeach()
-        foreach(flag IN LISTS ${name_uc}_CFLAGS ${name_uc}_CFLAGS_OTHER)
-            if(flag MATCHES "-D.*")
-                target_compile_definitions(${name} INTERFACE ${flag})
+        target_include_directories(${name} SYSTEM INTERFACE ${pc_${name}_INCLUDE_DIRS})
+        target_link_libraries(${name} INTERFACE ${pc_${name}_LINK_LIBRARIES})
+        foreach(flag IN LISTS pc_${name}_CFLAGS_OTHER)
+            if(flag MATCHES "-D(.*)")
+                target_compile_definitions(${name} INTERFACE ${CMAKE_MATCH_1})
             endif()
         endforeach()
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
-        set(${name_uc}_FOUND TRUE PARENT_SCOPE)
+        set(${name}_FOUND TRUE PARENT_SCOPE)
         add_library(${PROJECT_NAME}::${name} ALIAS ${name})
     else()
         message(STATUS "Unable to find installed third-party library ${name}")
-        set(${name_uc}_FOUND FALSE PARENT_SCOPE)
+        set(${name}_FOUND FALSE PARENT_SCOPE)
     endif()
 endfunction()
 
@@ -250,7 +251,7 @@ if(WITH_OPENMP)
     if(TARGET OpenMP::OpenMP_CXX)
         message(STATUS "Building with OpenMP")
         set(OPENMP_TARGET "OpenMP::OpenMP_CXX")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "OpenMP::OpenMP_CXX")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENMP_TARGET}")
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif()
@@ -289,7 +290,7 @@ list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${EIGEN3_TARGET}")
 if(NOT BUILD_FLANN)
     pkg_config_3rdparty_library(3rdparty_flann flann)
 endif()
-if(BUILD_FLANN OR NOT FLANN_FOUND)
+if(BUILD_FLANN OR NOT 3rdparty_flann_FOUND)
     build_3rdparty_library(3rdparty_flann DIRECTORY flann)
 endif()
 set(FLANN_TARGET "3rdparty_flann")
@@ -304,7 +305,7 @@ if(NOT BUILD_GLEW)
         set(GLEW_TARGET "GLEW::GLEW")
     else()
         pkg_config_3rdparty_library(3rdparty_glew glew)
-        if(GLEW_FOUND)
+        if(3rdparty_glew_FOUND)
             set(GLEW_TARGET "3rdparty_glew")
         else()
             set(BUILD_GLEW ON)
@@ -333,7 +334,7 @@ if(NOT BUILD_GLFW)
         set(GLFW_TARGET "glfw")
     else()
         pkg_config_3rdparty_library(3rdparty_glfw3 glfw3)
-        if(GLFW_FOUND)
+        if(3rdparty_glfw3_FOUND)
             set(GLFW_TARGET "3rdparty_glfw3")
         else()
             set(BUILD_GLFW ON)
