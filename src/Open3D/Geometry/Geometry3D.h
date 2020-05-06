@@ -77,6 +77,8 @@ public:
     virtual Geometry3D& Translate(const Eigen::Vector3d& translation,
                                   bool relative = true) = 0;
     /// \brief Apply scaling to the geometry coordinates.
+    /// Given a scaling factor \f$s\f$, and center \f$c\f$, a given point
+    /// \f$p\f$ is transformed according to \f$s (p - c) + c\f$.
     ///
     /// \param scale The scale parameter that is multiplied to the
     /// points/vertices of the geometry.
@@ -85,6 +87,8 @@ public:
                               const Eigen::Vector3d& center) = 0;
 
     /// \brief Apply rotation to the geometry coordinates and normals.
+    /// Given a rotation matrix \f$R\f$, and center \f$c\f$, a given point
+    /// \f$p\f$ is transformed according to \f$R (p - c) + c\f$.
     ///
     /// \param R A 3x3 rotation matrix
     /// \param center Rotation center that is used for the rotation.
