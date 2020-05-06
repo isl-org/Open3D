@@ -442,7 +442,7 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
             valid = true;
         if (!valid) {
             utility::LogWarning(
-                    "Invalid PoseGraph - an edge references an invalide "
+                    "Invalid PoseGraph - an edge references an invalid "
                     "node.");
             return false;
         }

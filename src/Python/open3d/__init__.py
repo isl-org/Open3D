@@ -64,17 +64,17 @@ from open3d.core import TensorList
 from open3d.open3d_pybind import NoneType
 none = NoneType()
 
-__version__ = '@PROJECT_VERSION@'
+__version__ = "@PROJECT_VERSION@"
 
 if "@ENABLE_JUPYTER@" == "ON":
     from .j_visualizer import *
 
     def _jupyter_nbextension_paths():
         return [{
-            'section': 'notebook',
-            'src': 'static',
-            'dest': 'open3d',
-            'require': 'open3d/extension'
+            "section": "notebook",
+            "src": "static",
+            "dest": "open3d",
+            "require": "open3d/extension",
         }]
 
 

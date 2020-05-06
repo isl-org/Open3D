@@ -42,6 +42,9 @@ import warnings
 import weakref
 from tempfile import mkdtemp
 import re
+from pathlib import Path
+import nbformat
+import nbconvert
 
 
 def _create_or_clear_dir(dir_path):
@@ -81,6 +84,7 @@ class PyAPIDocsBuilder:
     def _get_open3d_module(full_module_name):
         """Returns the module object for the given module path"""
         import open3d  # make sure the root module is loaded
+
         try:
             # try to import directly. This will work for pure python submodules
             module = importlib.import_module(full_module_name)
@@ -91,7 +95,7 @@ class PyAPIDocsBuilder:
             # define a specific module path (e.g. the modules defined with
             # pybind).
             current_module = open3d
-            for sub_module_name in full_module_name.split('.')[1:]:
+            for sub_module_name in full_module_name.split(".")[1:]:
                 current_module = getattr(current_module, sub_module_name)
             return current_module
 
@@ -126,12 +130,8 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _generate_sub_module_doc(
-            sub_module_full_name,
-            class_names,
-            function_names,
-            sub_module_doc_path,
-    ):
+    def _generate_sub_module_doc(sub_module_full_name, class_names,
+                                 function_names, sub_module_doc_path):
         # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
@@ -200,9 +200,12 @@ class PyAPIDocsBuilder:
         # Submodule docs
         sub_module_doc_path = os.path.join(output_dir,
                                            sub_module_full_name + ".rst")
-        PyAPIDocsBuilder._generate_sub_module_doc(sub_module_full_name,
-                                                  class_names, function_names,
-                                                  sub_module_doc_path)
+        PyAPIDocsBuilder._generate_sub_module_doc(
+            sub_module_full_name,
+            class_names,
+            function_names,
+            sub_module_doc_path,
+        )
 
 
 class SphinxDocsBuilder:
@@ -216,7 +219,6 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, html_output_dir, is_release):
-
         # Get the modules for which we want to build the documentation.
         # We use the modules listed in the index.rst file here.
         self.documented_modules = self._get_module_names_from_index_rst()
@@ -231,9 +233,9 @@ class SphinxDocsBuilder:
     def _get_module_names_from_index_rst():
         """Reads the modules of the python api from the index.rst"""
         module_names = []
-        with open('index.rst', 'r') as f:
+        with open("index.rst", "r") as f:
             for line in f:
-                m = re.match('^\s*python_api/(.*)\s*$', line)
+                m = re.match("^\s*python_api/(.*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
         return module_names
@@ -261,10 +263,10 @@ class SphinxDocsBuilder:
 
         if self.is_release:
             version_list = [
-                line.rstrip('\n').split(' ')[1]
-                for line in open('../src/Open3D/version.txt')
+                line.rstrip("\n").split(" ")[1]
+                for line in open("../src/Open3D/version.txt")
             ]
-            release_version = '.'.join(version_list[:3])
+            release_version = ".".join(version_list[:3])
             print("Building docs for release:", release_version)
 
             cmd = [
@@ -306,30 +308,140 @@ class DoxygenDocsBuilder:
         cmd = ["doxygen", "Doxyfile"]
         print('Calling: "%s"' % " ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
-        shutil.copytree(os.path.join("doxygen", "html"),
-                        os.path.join(self.html_output_dir, "html", "cpp_api"))
+        shutil.copytree(
+            os.path.join("doxygen", "html"),
+            os.path.join(self.html_output_dir, "html", "cpp_api"),
+        )
 
         if os.path.exists(doxygen_temp_dir):
             shutil.rmtree(doxygen_temp_dir)
 
 
+class JupyterDocsBuilder:
+
+    def __init__(self, current_file_dir, clean_notebooks, execute_notebooks):
+        """
+        execute_notebooks is one of {"auto", "always", "never"}
+        """
+        if execute_notebooks not in {"auto", "always", "never"}:
+            raise ValueError(f"Invalid execute option: {execute_notebooks}.")
+        self.clean_notebooks = clean_notebooks
+        self.execute_notebooks = execute_notebooks
+        self.current_file_dir = current_file_dir
+        print(f"Notebook execution mode: {self.execute_notebooks}")
+
+    def run(self):
+        # Copy TestData directory to the tutorial folder
+        test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
+                            "TestData")
+        test_data_out_dir = Path(self.current_file_dir) / "TestData"
+        if test_data_out_dir.exists():
+            shutil.rmtree(test_data_out_dir)
+        shutil.copytree(test_data_in_dir, test_data_out_dir)
+
+        # Copy and execute notebooks in the tutorial folder
+        nb_paths = []
+        example_dirs = ["Basic", "Advanced"]
+        for example_dir in example_dirs:
+            in_dir = (Path(self.current_file_dir).parent / "examples" /
+                      "Python" / example_dir)
+            out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
+            shutil.copy(
+                in_dir.parent / "open3d_tutorial.py",
+                out_dir.parent / "open3d_tutorial.py",
+            )
+
+            if self.clean_notebooks:
+                for nb_out_path in out_dir.glob("*.ipynb"):
+                    print(f"Delete: {nb_out_path}")
+                    nb_out_path.unlink()
+
+            for nb_in_path in in_dir.glob("*.ipynb"):
+                nb_out_path = out_dir / nb_in_path.name
+                if not nb_out_path.is_file():
+                    print(f"Copy: {nb_in_path}\n   -> {nb_out_path}")
+                    shutil.copy(nb_in_path, nb_out_path)
+                else:
+                    print(f"Copy skipped: {nb_out_path}")
+                nb_paths.append(nb_out_path)
+
+        # Execute Jupyter notebooks
+        for nb_path in nb_paths:
+            print(f"[Processing notebook {nb_path.name}]")
+            with open(nb_path) as f:
+                nb = nbformat.read(f, as_version=4)
+
+            # https://github.com/spatialaudio/nbsphinx/blob/master/src/nbsphinx.py
+            has_code = any(c.source for c in nb.cells if c.cell_type == "code")
+            has_output = any(
+                c.get("outputs") or c.get("execution_count")
+                for c in nb.cells
+                if c.cell_type == "code")
+            execute = (self.execute_notebooks == "auto" and has_code and
+                       not has_output) or self.execute_notebooks == "always"
+            print(
+                f"has_code: {has_code}, has_output: {has_output}, execute: {execute}"
+            )
+
+            if execute:
+                ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
+                try:
+                    ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
+                except nbconvert.preprocessors.execute.CellExecutionError:
+                    print(f"Execution of {nb_path.name} failed")
+
+                with open(nb_path, "w", encoding="utf-8") as f:
+                    nbformat.write(nb, f)
+
+
 if __name__ == "__main__":
+    """
+    # Clean existing notebooks in docs/tutorial, execute notebooks if the
+    # notebook does not have outputs, and build docs for Python and C++.
+    $ python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen
+
+    # Build docs for Python (--sphinx) and C++ (--doxygen).
+    $ python make_docs.py --execute_notebooks=auto --sphinx --doxygen
+
+    # Build docs for release (version number will be used instead of git hash).
+    $ python make_docs.py --is_release --sphinx --doxygen
+    """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sphinx",
-                        dest="build_sphinx",
-                        action="store_true",
-                        default=False,
-                        help="Build Sphinx for main docs and Python API docs.")
-    parser.add_argument("--doxygen",
-                        dest="build_doxygen",
-                        action="store_true",
-                        default=False,
-                        help="Build Doxygen for C++ API docs.")
-    parser.add_argument("--is_release",
-                        dest="is_release",
-                        action="store_true",
-                        default=False,
-                        help="Show Open3D version number rather than git hash.")
+    parser.add_argument(
+        "--clean_notebooks",
+        dest="clean_notebooks",
+        action="store_true",
+        default=False,
+        help=("Whether to clean existing notebooks in docs/tutorial. "
+              "Notebooks are copied from examples/Python to docs/tutorial."),
+    )
+    parser.add_argument(
+        "--execute_notebooks",
+        dest="execute_notebooks",
+        default="auto",
+        help="Jupyter notebook execution mode, one of {auto, always, never}.",
+    )
+    parser.add_argument(
+        "--sphinx",
+        dest="build_sphinx",
+        action="store_true",
+        default=False,
+        help="Build Sphinx for main docs and Python API docs.",
+    )
+    parser.add_argument(
+        "--doxygen",
+        dest="build_doxygen",
+        action="store_true",
+        default=False,
+        help="Build Doxygen for C++ API docs.",
+    )
+    parser.add_argument(
+        "--is_release",
+        dest="is_release",
+        action="store_true",
+        default=False,
+        help="Show Open3D version number rather than git hash.",
+    )
     args = parser.parse_args()
 
     pwd = os.path.dirname(os.path.realpath(__file__))
@@ -348,6 +460,11 @@ if __name__ == "__main__":
     # To customize build, run sphinx-build manually
     if args.build_sphinx:
         print("Sphinx build enabled")
+        print("Building Jupyter docs")
+        jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
+                                 args.execute_notebooks)
+        jdb.run()
+        print("Building Sphinx docs")
         sdb = SphinxDocsBuilder(html_output_dir, args.is_release)
         sdb.run()
     else:

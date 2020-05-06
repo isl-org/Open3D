@@ -1040,6 +1040,26 @@ TEST_P(TensorPermuteDevices, Add_) {
               std::vector<float>({10, 12, 14, 16, 18, 20}));
 }
 
+TEST_P(TensorPermuteDevices, Add_BroadcastException) {
+    // A.shape = (   3, 4)
+    // B.shape = (2, 3, 4)
+    // A += B should throw exception.
+    // B += A is fine.
+    Device device = GetParam();
+    Tensor a(std::vector<float>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}), {3, 4},
+             Dtype::Float32, device);
+    Tensor b(std::vector<float>({0,  1,  2,  3,  4,  5,  6,  7,
+                                 8,  9,  10, 11, 12, 13, 14, 15,
+                                 16, 17, 18, 19, 20, 21, 22, 23}),
+             {2, 3, 4}, Dtype::Float32, device);
+    EXPECT_THROW(a += b, std::runtime_error);
+    b += a;
+    EXPECT_EQ(b.ToFlatVector<float>(),
+              std::vector<float>({0,  2,  4,  6,  8,  10, 12, 14,
+                                  16, 18, 20, 22, 12, 14, 16, 18,
+                                  20, 22, 24, 26, 28, 30, 32, 34}));
+}
+
 TEST_P(TensorPermuteDevices, Sub) {
     Device device = GetParam();
     Tensor a(std::vector<float>({10, 12, 14, 16, 18, 20}), {2, 3},
@@ -1991,4 +2011,167 @@ TEST_P(TensorPermuteDevices, NonZeroNumpy) {
               std::vector<int64_t>({1, 0, 0}));
     EXPECT_EQ(results[0].GetShape(), SizeVector{3});
     EXPECT_EQ(results[1].GetShape(), SizeVector{3});
+}
+
+TEST_P(TensorPermuteDevices, CreationEmpty) {
+    Device device = GetParam();
+
+    Tensor a = Tensor::Empty({}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({}));
+    EXPECT_EQ(a.NumElements(), 1);
+
+    a = Tensor::Empty({0}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0}));
+    EXPECT_EQ(a.NumElements(), 0);
+
+    a = Tensor::Empty({1}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({1}));
+    EXPECT_EQ(a.NumElements(), 1);
+
+    a = Tensor::Empty({0, 1}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(a.NumElements(), 0);
+
+    a = Tensor::Empty({2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+}
+
+TEST_P(TensorPermuteDevices, CreationFull) {
+    Device device = GetParam();
+
+    const float fill_value = 100;
+    Tensor a = Tensor::Full({}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({}));
+    EXPECT_EQ(a.NumElements(), 1);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({0}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0}));
+    EXPECT_EQ(a.NumElements(), 0);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({1}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({1}));
+    EXPECT_EQ(a.NumElements(), 1);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({0, 1}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(a.NumElements(), 0);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+
+    a = Tensor::Full({2, 3}, fill_value, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+    EXPECT_EQ(a.ToFlatVector<float>(),
+              std::vector<float>(a.NumElements(), fill_value));
+}
+
+TEST_P(TensorPermuteDevices, CreationZeros) {
+    Device device = GetParam();
+
+    Tensor a = Tensor::Zeros({2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>(a.NumElements(), 0));
+}
+
+TEST_P(TensorPermuteDevices, CreationOnes) {
+    Device device = GetParam();
+
+    Tensor a = Tensor::Ones({2, 3}, Dtype::Float32, device);
+    EXPECT_EQ(a.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(a.NumElements(), 6);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>(a.NumElements(), 1));
+}
+
+TEST_P(TensorPermuteDevices, ScalarOperatorOverload) {
+    Device device = GetParam();
+    Tensor a;
+    Tensor b;
+
+    // +
+    a = Tensor::Ones({2}, Dtype::Float32, device);
+    b = a.Add(1);
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({2, 2}));
+    b = a + 1;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({2, 2}));
+    b = 1 + a;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({2, 2}));
+    b = a + true;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({2, 2}));
+
+    // +=
+    a = Tensor::Ones({2}, Dtype::Float32, device);
+    a.Add_(1);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({2, 2}));
+    a += 1;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({3, 3}));
+    a += true;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({4, 4}));
+
+    // -
+    a = Tensor::Ones({2}, Dtype::Float32, device);
+    b = a.Sub(1);
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({0, 0}));
+    b = a - 1;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({0, 0}));
+    b = 10 - a;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({9, 9}));
+    b = a - true;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({0, 0}));
+
+    // -=
+    a = Tensor::Ones({2}, Dtype::Float32, device);
+    a.Sub_(1);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 0}));
+    a -= 1;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({-1, -1}));
+    a -= true;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({-2, -2}));
+
+    // *
+    a = Tensor::Full({2}, 2, Dtype::Float32, device);
+    b = a.Mul(10);
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({20, 20}));
+    b = a * 10;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({20, 20}));
+    b = 10 * a;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({20, 20}));
+    b = a * true;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({2, 2}));
+
+    // *=
+    a = Tensor::Full({2}, 2, Dtype::Float32, device);
+    a.Mul_(10);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({20, 20}));
+    a *= 10;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({200, 200}));
+    a *= true;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({200, 200}));
+
+    // /
+    a = Tensor::Full({2}, 20, Dtype::Float32, device);
+    b = a.Div(2);
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({10, 10}));
+    b = a / 2;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({10, 10}));
+    b = 10 / a;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({0.5, 0.5}));
+    b = a / true;
+    EXPECT_EQ(b.ToFlatVector<float>(), std::vector<float>({20, 20}));
+
+    // /=
+    a = Tensor::Full({2}, 20, Dtype::Float32, device);
+    a.Div_(2);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({10, 10}));
+    a /= 2;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({5, 5}));
+    a /= true;
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({5, 5}));
 }

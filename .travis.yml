@@ -36,7 +36,7 @@ matrix:
         - pip install -U yapf==0.28.0
         - make check-style
 
-    # Build docs only
+    # Build headless and docs 
     - os: linux
       dist: bionic
       sudo: true
@@ -49,6 +49,9 @@ matrix:
           packages:
             - cmake
             - doxygen
+            - texlive
+            - texlive-latex-extra
+            - pandoc
             - libosmesa6-dev
       before_install: ./util/scripts/setup-linux.sh
       script:
@@ -56,13 +59,13 @@ matrix:
         - cd build
         - which python
         - python -V
-        - pip install -U -q sphinx sphinx-rtd-theme
-        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON ..
+        - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow
+        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DWITH_OPENMP=OFF ..
         - make install-pip-package -j$NPROC
         - make -j$NPROC
         - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
-        - ../util/scripts/make-documentation.sh
+        - travis_wait 40 ../util/scripts/make-documentation.sh
 
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
