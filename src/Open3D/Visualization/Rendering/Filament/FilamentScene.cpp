@@ -201,7 +201,7 @@ GeometryHandle FilamentScene::AddGeometry(
                     mat->setParameter("texture", tex.get(), kDefaultSampler);
                 }
             }
-        } else {             // Mesh without any attributes set, only tangents are needed
+        } else {  // Mesh without any attributes set, only tangents are needed
             materialInstance = resourceManager_.CreateMaterialInstance(
                     defaults_mapping::PlainMesh);
 

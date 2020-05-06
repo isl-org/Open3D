@@ -26,12 +26,6 @@
 
 #include "FilamentResourceManager.h"
 
-#include "FilamentEntitiesMods.h"
-#include "Open3D/GUI/Application.h"
-#include "Open3D/IO/ClassIO/ImageIO.h"
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
 #include <filament/IndirectLight.h>
@@ -44,6 +38,12 @@
 #include <filament/TextureSampler.h>
 #include <filament/image/KtxBundle.h>
 #include <filament/image/KtxUtility.h>
+
+#include "FilamentEntitiesMods.h"
+#include "Open3D/GUI/Application.h"
+#include "Open3D/IO/ClassIO/ImageIO.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
 
 namespace open3d {
 namespace visualization {
@@ -219,8 +219,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kNormalsMaterial,
         FilamentResourceManager::kDefaultTexture,
         FilamentResourceManager::kDefaultColorMap,
-        FilamentResourceManager::kDefaultNormalMap
-};
+        FilamentResourceManager::kDefaultNormalMap};
 
 FilamentResourceManager::FilamentResourceManager(filament::Engine& aEngine)
     : engine_(aEngine) {

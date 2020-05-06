@@ -182,7 +182,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             meshMaterial.albedo = textureLoader(material.diffuse_texname);
 
             // Legacy texture map support
-            if(meshMaterial.albedo) {
+            if (meshMaterial.albedo) {
                 mesh.textures_.push_back(*meshMaterial.albedo->FlipVertical());
             }
         }
@@ -200,7 +200,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         // tiny_obj_loader defaults to 0.0 for both. So, we will assume that
         // only if one of the values is greater than 0.0 that there are
         // non-default values set in the .mtl file
-        if(material.roughness > 0.f || material.metallic > 0.f) {
+        if (material.roughness > 0.f || material.metallic > 0.f) {
             meshMaterial.baseMetallic = material.metallic;
             meshMaterial.baseRoughness = material.roughness;
         }

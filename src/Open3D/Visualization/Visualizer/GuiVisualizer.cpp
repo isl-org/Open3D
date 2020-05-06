@@ -457,7 +457,7 @@ struct GuiVisualizer::Impl {
         TextureHandle roughnessMap;
         TextureHandle metallicMap;
     };
-        
+
     struct Materials {
         LitMaterial lit;
         UnlitMaterial unlit;
@@ -1469,7 +1469,7 @@ void GuiVisualizer::SetGeometry(
                     material.baseColor.y() = mesh_material.baseColor.g;
                     material.baseColor.z() = mesh_material.baseColor.b;
                     material.roughness = mesh_material.baseRoughness;
-                    
+
                     if (mesh_material.albedo &&
                         mesh_material.albedo->HasData()) {
                         maps.albedoMap =
