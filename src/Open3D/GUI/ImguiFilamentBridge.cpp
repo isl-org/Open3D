@@ -131,16 +131,19 @@ static bool readBinaryFile(const std::string& path,
     }
 
     // Get file size
-    size_t filesize = (size_t)lseek(fd, 0, SEEK_END);
+    off_t filesize = (off_t)lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);  // reset file pointer back to beginning
 
     // Read data
     bytes->resize(filesize);
-    read(fd, bytes->data(), filesize);
+    bool result = true;
+    if (read(fd, bytes->data(), filesize) != filesize) {
+        result = false;
+    }
 
     // We're done, close and return
     close(fd);
-    return true;
+    return result;
 }
 
 static Material* loadMaterialTemplate(const std::string& path, Engine& engine) {

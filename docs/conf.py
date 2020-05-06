@@ -29,9 +29,12 @@ import shutil
 
 
 def get_git_short_hash():
-    rc = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-    rc = rc.decode("utf-8").strip()
-    return rc
+    try:
+        rc = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+        rc = rc.decode("utf-8").strip()
+        return rc
+    except subprocess.CalledProcessError:
+        return "unknown"
 
 
 # Import open3d raw python package with the highest priority

@@ -85,8 +85,12 @@ void ClassMethodDocInject(py::module& pybind_module,
     }
 
     // TODO: parse __init__ separately, currently __init__ can be overloaded
-    // which might cause parsing error. So they are skipped.
+    // which might cause parsing error. So we only do namespace fix and skip the
+    // parsing.
     if (function_name == "__init__") {
+        std::string pybind_doc = f->m_ml->ml_doc;
+        pybind_doc = FunctionDoc::NamespaceFix(pybind_doc);
+        f->m_ml->ml_doc = strdup(pybind_doc.c_str());
         return;
     }
 
@@ -279,7 +283,8 @@ std::string FunctionDoc::ToGoogleDocString() const {
 
 std::string FunctionDoc::NamespaceFix(const std::string& s) {
     std::string rc = std::regex_replace(s, std::regex("::"), ".");
-    rc = std::regex_replace(rc, std::regex("open3d\\.open3d\\."), "open3d.");
+    rc = std::regex_replace(rc, std::regex("open3d\\.open3d_pybind\\."),
+                            "open3d.");
     return rc;
 }
 
