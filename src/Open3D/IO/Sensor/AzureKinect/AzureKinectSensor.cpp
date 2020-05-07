@@ -86,7 +86,8 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     }
 
     // open device
-    if (K4A_FAILED(k4a_plugin::k4a_device_open(sensor_index, &device_))) {
+    if (K4A_FAILED(k4a_plugin::k4a_device_open(
+                static_cast<uint32_t>(sensor_index), &device_))) {
         utility::LogWarning(
                 "Runtime error: k4a_plugin::k4a_device_open() failed");
         return false;
