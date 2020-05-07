@@ -189,7 +189,7 @@ endif()
 # Set OS-specific things here
 if (WIN32)
     message(STATUS "New GUI is not currently supported on Windows, setting ENABLE_GUI to OFF")
-	set(ENABLE_GUI OFF)
+    set(ENABLE_GUI OFF)
 
     # can't hide the unit testing option on Windows only
     # as a precaution: disable unit testing on Windows regardless of user input

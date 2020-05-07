@@ -73,6 +73,24 @@ Tensor& Tensor::operator=(Tensor&& other) && {
     return *this;
 }
 
+Tensor Tensor::Empty(const SizeVector& shape,
+                     Dtype dtype,
+                     const Device& device) {
+    return Tensor(shape, dtype, device);
+}
+
+Tensor Tensor::Zeros(const SizeVector& shape,
+                     Dtype dtype,
+                     const Device& device) {
+    return Full(shape, 0, dtype, device);
+}
+
+Tensor Tensor::Ones(const SizeVector& shape,
+                    Dtype dtype,
+                    const Device& device) {
+    return Full(shape, 1, dtype, device);
+}
+
 Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
