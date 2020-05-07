@@ -86,7 +86,26 @@ public:
 
     /// Returns the volume of the bounding box.
     double Volume() const;
+
     /// Returns the eight points that define the bounding box.
+    ///
+    ///      ------- x
+    ///     /|
+    ///    / |
+    ///   /  | z
+    ///  y
+    ///      0 ------------------- 1
+    ///       /|                /|
+    ///      / |               / |
+    ///     /  |              /  |
+    ///    /   |             /   |
+    /// 2 ------------------- 7  |
+    ///   |    |____________|____| 6
+    ///   |   /3            |   /
+    ///   |  /              |  /
+    ///   | /               | /
+    ///   |/                |/
+    /// 5 ------------------- 4
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
