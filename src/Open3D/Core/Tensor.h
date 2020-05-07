@@ -510,6 +510,11 @@ public:
     /// \param keepdim If true, the reduced dims will be retained as size 1.
     Tensor Sum(const SizeVector& dims, bool keepdim = false) const;
 
+    /// Returns the mean of the tensor along the given \p dims.
+    /// \param dims A list of dimensions to be reduced.
+    /// \param keepdim If true, the reduced dims will be retained as size 1.
+    Tensor Mean(const SizeVector& dims, bool keepdim = false) const;
+
     /// Returns the product of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
     /// \param keepdim If true, the reduced dims will be retained as size 1.

@@ -360,6 +360,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
+    tensor.def("num_elements", &Tensor::NumElements);
 
     // Unary element-wise ops
     tensor.def("sqrt", &Tensor::Sqrt);
@@ -379,6 +380,7 @@ void pybind_core_tensor(py::module& m) {
 
     // Reduction ops
     tensor.def("sum", &Tensor::Sum);
+    tensor.def("mean", &Tensor::Mean);
     tensor.def("prod", &Tensor::Prod);
     tensor.def("min", &Tensor::Min);
     tensor.def("max", &Tensor::Max);
