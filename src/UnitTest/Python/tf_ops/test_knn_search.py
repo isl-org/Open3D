@@ -169,6 +169,7 @@ def test_knn_search_batches(batch_size):
     points = rng.random(size=(num_points, 3)).astype(dtype)
     if ignore_query_point:
         queries = points
+        queries_row_splits = points_row_splits
     else:
         queries = rng.random(size=(num_queries, 3)).astype(dtype)
 
