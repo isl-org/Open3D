@@ -41,6 +41,8 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
              points,
              queries,
              radius,
+             points_row_splits=None,
+             queries_row_splits=None,
              hash_table_size_factor=1 / 64,
              hash_table=None):
         """This function computes the neighbors within a fixed radius for each query point.
@@ -52,6 +54,14 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
           queries: The 3D positions of the query points.
 
           radius: A scalar with the neighborhood radius
+
+          points_row_splits:
+            Optional 1D vector with the row splits information if points is batched.
+            This vector is [0, num_points] if there is only 1 batch item.
+
+          queries_row_splits:
+            Optional 1D vector with the row splits information if queries is batched.
+            This vector is [0, num_queries] if there is only 1 batch item.
 
           hash_table_size_factor: Scalar. The size of the hash table as fraction of points.
 
@@ -75,11 +85,18 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             Note that the distances are squared if metric is L2.
             This is a zero length Tensor if 'return_distances' is False.
         """
+        if points_row_splits is None:
+            points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
+                                        dtype=tf.int64)
+        if queries_row_splits is None:
+            queries_row_splits = tf.cast(tf.stack([0, tf.shape(queries)[0]]),
+                                         dtype=tf.int64)
         if hash_table is None:
             table = ops.build_spatial_hash_table(
                 max_hash_table_size=self.max_hash_table_size,
                 points=points,
                 radius=radius,
+                points_row_splits=points_row_splits,
                 hash_table_size_factor=hash_table_size_factor)
         else:
             table = hash_table
@@ -90,8 +107,11 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             points=points,
             queries=queries,
             radius=radius,
+            points_row_splits=points_row_splits,
+            queries_row_splits=queries_row_splits,
+            hash_table_splits=table.hash_table_splits,
             hash_table_index=table.hash_table_index,
-            hash_table_row_splits=table.hash_table_row_splits)
+            hash_table_cell_splits=table.hash_table_cell_splits)
         return result
 
 

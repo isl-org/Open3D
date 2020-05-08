@@ -114,6 +114,12 @@ class ContinuousConv(tf.keras.layers.Layer):
             ignore_query_point=self.radius_search_ignore_query_points,
             return_distances=not self.window_function is None)
 
+        self.radius_search = layers.RadiusSearch(
+            metric=self.radius_search_metric,
+            ignore_query_point=self.radius_search_ignore_query_points,
+            return_distances=not self.window_function is None,
+            normalize_distances=not self.window_function is None)
+
         super().__init__(**kwargs)
 
     def build(self, inp_features_shape):
@@ -206,11 +212,8 @@ class ContinuousConv(tf.keras.layers.Layer):
 
         elif extents.shape.rank == 1:
             radii = 0.5 * extents
-            self.nns = ops.radius_search(
+            self.nns = self.radius_search(
                 ignore_query_point=self.radius_search_ignore_query_points,
-                return_distances=return_distances,
-                normalize_distances=return_distances,
-                metric=self.radius_search_metric,
                 points=inp_positions,
                 queries=out_positions,
                 radii=radii)

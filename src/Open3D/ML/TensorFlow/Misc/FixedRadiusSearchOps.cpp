@@ -40,8 +40,11 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Input("points: T")
         .Input("queries: T")
         .Input("radius: T")
+        .Input("points_row_splits: int64")
+        .Input("queries_row_splits: int64")
+        .Input("hash_table_splits: uint32")
         .Input("hash_table_index: uint32")
-        .Input("hash_table_row_splits: uint32")
+        .Input("hash_table_cell_splits: uint32")
         .Output("neighbors_index: int32")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
@@ -49,6 +52,7 @@ REGISTER_OP("Open3DFixedRadiusSearch")
             using namespace ::tensorflow::shape_inference;
             using namespace open3d::ml::shape_checking;
             ShapeHandle points_shape, queries_shape, radius_shape,
+                    points_row_splits_shape, queries_row_splits_shape, hash_table_splits_shape,
                     hash_table_index_shape, hash_table_row_splits_shape,
                     neighbors_index_shape, neighbors_row_splits_shape,
                     neighbors_distance_shape;
@@ -56,16 +60,21 @@ REGISTER_OP("Open3DFixedRadiusSearch")
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &radius_shape));
-            TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(3), 1, &hash_table_index_shape));
-            TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(4), 1, &hash_table_row_splits_shape));
+            TF_RETURN_IF_ERROR( c->WithRank(c->input(3), 1, &points_row_splits_shape));
+            TF_RETURN_IF_ERROR( c->WithRank(c->input(4), 1, &queries_row_splits_shape));
+            TF_RETURN_IF_ERROR( c->WithRank(c->input(5), 1, &hash_table_splits_shape));
+            TF_RETURN_IF_ERROR( c->WithRank(c->input(6), 1, &hash_table_index_shape));
+            TF_RETURN_IF_ERROR( c->WithRank(c->input(7), 1, &hash_table_row_splits_shape));
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");
+            Dim batch_size("batch_size");
             CHECK_SHAPE_HANDLE(c, points_shape, num_points, 3);
             CHECK_SHAPE_HANDLE(c, hash_table_index_shape, num_points);
             CHECK_SHAPE_HANDLE(c, queries_shape, num_queries, 3);
+            CHECK_SHAPE_HANDLE(c, points_row_splits_shape, batch_size + 1);
+            CHECK_SHAPE_HANDLE(c, queries_row_splits_shape, batch_size + 1);
+            CHECK_SHAPE_HANDLE(c, hash_table_splits_shape, batch_size + 1);
 
             // we cannot infer the number of neighbors
             neighbors_index_shape = c->MakeShape({c->UnknownDim()});
@@ -113,10 +122,22 @@ queries:
 radius:
   A scalar with the neighborhood radius
 
-hash_table_index: Stores the values of the hash table, which are the indices of
-  the points. The start and end of each cell is defined by hash_table_row_splits.
+points_row_splits:
+  1D vector with the row splits information if points is batched.
+  This vector is [0, num_points] if there is only 1 batch item.
 
-hash_table_row_splits: Defines the start and end of each hash table cell.
+queries_row_splits:
+  1D vector with the row splits information if queries is batched.
+  This vector is [0, num_queries] if there is only 1 batch item.
+
+hash_table_splits: Array defining the start and end the hash table
+  for each batch item. This is [0, number of cells] if there is only
+  1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+
+hash_table_index: Stores the values of the hash table, which are the indices of
+  the points. The start and end of each cell is defined by hash_table_cell_splits.
+
+hash_table_cell_splits: Defines the start and end of each hash table cell.
 
 neighbors_index:
   The compact list of indices of the neighbors. The corresponding query point 
