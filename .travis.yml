@@ -64,7 +64,8 @@ matrix:
         - make install-pip-package -j$NPROC
         - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
-        - travis_wait 40 ../util/scripts/make-documentation.sh
+        - cd .. # Back to Open3D/
+        - travis_wait 40 ./util/scripts/make-documentation.sh
         - ./.travis/deploy_docs.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
