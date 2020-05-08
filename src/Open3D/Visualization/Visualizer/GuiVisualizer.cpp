@@ -1058,6 +1058,11 @@ GuiVisualizer::GuiVisualizer(
         impl_->SetMouseControls(*this, gui::SceneWidget::Controls::ROTATE_IBL);
     });
 
+    auto resetCamera = std::make_shared<SmallButton>("Reset camera");
+    resetCamera->SetOnClicked([this]() {
+        impl_->scene->GoToCameraPreset(gui::SceneWidget::CameraPreset::PLUS_Z);
+    });
+
     auto cameraControls1 = std::make_shared<gui::Horiz>(gridSpacing);
     cameraControls1->AddStretch();
     cameraControls1->AddChild(settings.wgtMouseArcball);
@@ -1073,6 +1078,8 @@ GuiVisualizer::GuiVisualizer(
     viewCtrls->AddChild(cameraControls1);
     viewCtrls->AddFixed(0.25 * em);
     viewCtrls->AddChild(cameraControls2);
+    viewCtrls->AddFixed(separationHeight);
+    viewCtrls->AddChild(gui::Horiz::MakeCentered(resetCamera));
 
     // ... background
     settings.wgtSkyEnabled = std::make_shared<gui::Checkbox>("Show skymap");
