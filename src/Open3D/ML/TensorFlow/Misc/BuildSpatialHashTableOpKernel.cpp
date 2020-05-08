@@ -47,8 +47,7 @@ public:
                 tensorflow::Tensor& hash_table_cell_splits) {
         BuildSpatialHashTableCPU(
                 points.shape().dim_size(0), points.flat<T>().data(),
-                radius.scalar<T>()(),
-                points_row_splits.shape().dim_size(0),
+                radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 hash_table_splits.data(),
                 hash_table_cell_splits.shape().dim_size(0),

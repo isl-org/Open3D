@@ -52,19 +52,24 @@ REGISTER_OP("Open3DFixedRadiusSearch")
             using namespace ::tensorflow::shape_inference;
             using namespace open3d::ml::shape_checking;
             ShapeHandle points_shape, queries_shape, radius_shape,
-                    points_row_splits_shape, queries_row_splits_shape, hash_table_splits_shape,
-                    hash_table_index_shape, hash_table_row_splits_shape,
-                    neighbors_index_shape, neighbors_row_splits_shape,
-                    neighbors_distance_shape;
+                    points_row_splits_shape, queries_row_splits_shape,
+                    hash_table_splits_shape, hash_table_index_shape,
+                    hash_table_row_splits_shape, neighbors_index_shape,
+                    neighbors_row_splits_shape, neighbors_distance_shape;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &queries_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &radius_shape));
-            TF_RETURN_IF_ERROR( c->WithRank(c->input(3), 1, &points_row_splits_shape));
-            TF_RETURN_IF_ERROR( c->WithRank(c->input(4), 1, &queries_row_splits_shape));
-            TF_RETURN_IF_ERROR( c->WithRank(c->input(5), 1, &hash_table_splits_shape));
-            TF_RETURN_IF_ERROR( c->WithRank(c->input(6), 1, &hash_table_index_shape));
-            TF_RETURN_IF_ERROR( c->WithRank(c->input(7), 1, &hash_table_row_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(3), 1, &points_row_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(4), 1, &queries_row_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(5), 1, &hash_table_splits_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(6), 1, &hash_table_index_shape));
+            TF_RETURN_IF_ERROR(
+                    c->WithRank(c->input(7), 1, &hash_table_row_splits_shape));
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");

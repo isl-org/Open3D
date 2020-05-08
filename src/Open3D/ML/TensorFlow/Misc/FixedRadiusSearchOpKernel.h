@@ -129,7 +129,8 @@ public:
                                         1, query_neighbors_row_splits_shape,
                                         &query_neighbors_row_splits));
 
-        Kernel(context, points, queries, radius, points_row_splits, queries_row_splits, hash_table_splits, hash_table_index,
+        Kernel(context, points, queries, radius, points_row_splits,
+               queries_row_splits, hash_table_splits, hash_table_index,
                hash_table_cell_splits, *query_neighbors_row_splits);
     }
 

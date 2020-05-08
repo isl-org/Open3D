@@ -77,7 +77,7 @@ public:
             int64_t hash_table_size = std::min<int64_t>(
                     std::max<int64_t>(hash_table_size_factor * num_points_i, 1),
                     max_hash_table_size);
-            hash_table_splits[i+1] = hash_table_splits[i] + hash_table_size;
+            hash_table_splits[i + 1] = hash_table_splits[i] + hash_table_size;
         }
 
         Tensor* hash_table_index = 0;
