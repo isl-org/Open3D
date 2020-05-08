@@ -36,7 +36,7 @@ matrix:
         - pip install -U yapf==0.28.0
         - make check-style
 
-    # Build headless and docs 
+    # Build headless and docs
     - os: linux
       dist: bionic
       sudo: true
@@ -66,7 +66,7 @@ matrix:
         - bin/GLInfo
         - python -c "from open3d import *; import open3d; print(open3d)"
         - travis_wait 40 ../util/scripts/make-documentation.sh
-
+        - .travis/deploy_docs.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - os: linux

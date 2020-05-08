@@ -1,3 +1,6 @@
+# Docs tar file created by travis deploy
+.travis/*.tar.gz
+
 # CMake configured files
 src/Open3D/Open3D.h
 src/Open3D/Open3DConfig.h
