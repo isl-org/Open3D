@@ -1461,6 +1461,7 @@ void GuiVisualizer::SetGeometry(
                         std::static_pointer_cast<const geometry::TriangleMesh>(
                                 g);
 
+                bool albedo_only = true;
                 if (mesh->HasMaterials()) {
                     auto mesh_material = mesh->materials_.begin()->second;
                     Impl::LitMaterial material;
@@ -1482,6 +1483,7 @@ void GuiVisualizer::SetGeometry(
                         mesh_material.normalMap->HasData()) {
                         maps.normalMap = GetRenderer().AddTexture(
                                 mesh_material.normalMap);
+                        albedo_only = false;
                     } else {
                         maps.normalMap =
                                 FilamentResourceManager::kDefaultNormalMap;
@@ -1490,6 +1492,7 @@ void GuiVisualizer::SetGeometry(
                         mesh_material.ambientOcclusion->HasData()) {
                         maps.ambientOcclusionMap = GetRenderer().AddTexture(
                                 mesh_material.ambientOcclusion);
+                        albedo_only = false;
                     } else {
                         maps.ambientOcclusionMap =
                                 FilamentResourceManager::kDefaultTexture;
@@ -1498,6 +1501,7 @@ void GuiVisualizer::SetGeometry(
                         mesh_material.roughness->HasData()) {
                         maps.roughnessMap = GetRenderer().AddTexture(
                                 mesh_material.roughness);
+                        albedo_only = false;
                     } else {
                         maps.roughnessMap =
                                 FilamentResourceManager::kDefaultTexture;
@@ -1507,6 +1511,7 @@ void GuiVisualizer::SetGeometry(
                         material.metallic = 1.f;
                         maps.metallicMap = GetRenderer().AddTexture(
                                 mesh_material.metallic);
+                        albedo_only = false;
                     } else {
                         material.metallic = 0.f;
                         maps.metallicMap =
@@ -1515,7 +1520,9 @@ void GuiVisualizer::SetGeometry(
                     impl_->SetMaterialsToCurrentSettings(GetRenderer(),
                                                          material, maps);
                 }
-                if (mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) {
+
+                if ((mesh->HasVertexColors() && !MeshHasUniformColor(*mesh)) ||
+                    (mesh->HasMaterials() && albedo_only)) {
                     selectedMaterial = materials.unlit.handle;
                     nUnlit += 1;
                 } else {
@@ -1646,7 +1653,7 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
     } else {
         // LogError throws an exception, which we don't want, because this might
         // be a point cloud.
-        utility::LogInfo("%s appears to be a point cloud", path.c_str());
+        utility::LogInfo("{} appears to be a point cloud", path.c_str());
         mesh.reset();
     }
 
