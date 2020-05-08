@@ -932,10 +932,16 @@ void Window::OnMouseEvent(const MouseEvent& e) {
     if (impl_->activeDialog) {
         handleMouseForChild(e, impl_->activeDialog);
     } else {
-        std::vector<std::shared_ptr<Widget>>& children = impl_->children;
-        for (auto it = children.rbegin(); it != children.rend(); ++it) {
-            if (handleMouseForChild(e, *it)) {
-                break;
+        // Mouse move and wheel always get delivered.
+        // Button up and down get delivered if they weren't in an ImGUI popup.
+        // Drag should only be delivered if the grabber widget exists;
+        // if it is null, then the mouse is being dragged over an ImGUI popup.
+        if (e.type != MouseEvent::DRAG || impl_->mouseGrabberWidget) {
+            std::vector<std::shared_ptr<Widget>>& children = impl_->children;
+            for (auto it = children.rbegin(); it != children.rend(); ++it) {
+                if (handleMouseForChild(e, *it)) {
+                    break;
+                }
             }
         }
     }
