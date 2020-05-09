@@ -66,6 +66,8 @@ public:
     void SetupCamera(float verticalFoV,
                      const geometry::AxisAlignedBoundingBox& geometryBounds,
                      const Eigen::Vector3f& centerOfRotation);
+    void SetCameraChangedCallback(
+            std::function<void(visualization::Camera*)> onCamChanged);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is

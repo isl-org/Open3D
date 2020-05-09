@@ -51,6 +51,7 @@
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 #include "Open3D/Visualization/Rendering/RenderToBuffer.h"
 #include "Open3D/Visualization/Rendering/RendererStructs.h"
@@ -184,6 +185,31 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addRow("Down", "Look down");
     addRow("Left", "Look left");
     addRow("Right", "Look right");
+
+    return layout;
+}
+
+std::shared_ptr<gui::VGrid> createCameraDisplay(gui::Window *window) {
+    auto &theme = window->GetTheme();
+
+    gui::Margins margins(theme.fontSize);
+    auto layout = std::make_shared<gui::VGrid>(2, 0, margins);
+    layout->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
+
+    auto addLabel = [layout](const char *text) {
+        auto label = std::make_shared<gui::Label>(text);
+        label->SetTextColor(gui::Color(1, 1, 1));
+        layout->AddChild(label);
+    };
+    auto addRow = [layout, &addLabel](const char *left, const char *right) {
+        addLabel(left);
+        addLabel(right);
+    };
+
+    addRow("Position:", "[0 0 0]");
+    addRow("Forward:", "[0 0 0]");
+    addRow("Left:", "[0 0 0]");
+    addRow("Up:", "[0 0 0]");
 
     return layout;
 }
@@ -420,6 +446,7 @@ enum MenuId {
     FILE_QUIT,
     SETTINGS_LIGHT_AND_MATERIALS,
     HELP_KEYS,
+    HELP_CAMERA,
     HELP_ABOUT,
     HELP_CONTACT
 };
@@ -429,6 +456,7 @@ struct GuiVisualizer::Impl {
 
     std::shared_ptr<gui::SceneWidget> scene;
     std::shared_ptr<gui::VGrid> helpKeys;
+    std::shared_ptr<gui::VGrid> helpCamera;
 
     struct LitMaterial {
         visualization::MaterialInstanceHandle handle;
@@ -927,6 +955,7 @@ GuiVisualizer::GuiVisualizer(
 #endif
         auto helpMenu = std::make_shared<gui::Menu>();
         helpMenu->AddItem("Show Controls", HELP_KEYS);
+        helpMenu->AddItem("Show Camera Info", HELP_CAMERA);
         helpMenu->AddSeparator();
         helpMenu->AddItem("About", HELP_ABOUT);
         helpMenu->AddItem("Contact", HELP_CONTACT);
@@ -1386,6 +1415,9 @@ GuiVisualizer::GuiVisualizer(
     impl_->helpKeys = createHelpDisplay(this);
     impl_->helpKeys->SetVisible(false);
     AddChild(impl_->helpKeys);
+    impl_->helpCamera = createCameraDisplay(this);
+    impl_->helpCamera->SetVisible(false);
+    AddChild(impl_->helpCamera);
 
     // Set the actual geometries
     SetGeometry(geometries);  // also updates the camera
@@ -1608,6 +1640,12 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     impl_->helpKeys->SetFrame(gui::Rect(0, r.y, pref.width, pref.height));
     impl_->helpKeys->Layout(theme);
 
+    // Draw camera HUD in lower left
+    const auto prefcam = impl_->helpCamera->CalcPreferredSize(theme);
+    impl_->helpCamera->SetFrame(gui::Rect(0, r.height + r.y - prefcam.height,
+                                          prefcam.width, prefcam.height));
+    impl_->helpCamera->Layout(theme);
+
     // Settings in upper right
     const auto kLightSettingsWidth = 18 * em;
     auto lightSettingsSize = impl_->settings.wgtBase->CalcPreferredSize(theme);
@@ -1766,6 +1804,38 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             impl_->helpKeys->SetVisible(isVisible);
             auto menubar = gui::Application::GetInstance().GetMenubar();
             menubar->SetChecked(HELP_KEYS, isVisible);
+            break;
+        }
+        case HELP_CAMERA: {
+            bool isVisible = !impl_->helpCamera->IsVisible();
+            impl_->helpCamera->SetVisible(isVisible);
+            auto menubar = gui::Application::GetInstance().GetMenubar();
+            menubar->SetChecked(HELP_CAMERA, isVisible);
+            if (isVisible) {
+                impl_->scene->SetCameraChangedCallback(
+                        [this](visualization::Camera *cam) {
+                            auto children =
+                                    this->impl_->helpCamera->GetChildren();
+                            auto set_text = [](const Eigen::Vector3f &v,
+                                               std::shared_ptr<gui::Widget>
+                                                       label) {
+                                auto l = std::dynamic_pointer_cast<gui::Label>(
+                                        label);
+                                l->SetText(fmt::format("[{:.2f} {:.2f} "
+                                                       "{:.2f}]",
+                                                       v.x(), v.y(), v.z())
+                                                   .c_str());
+                            };
+                            set_text(cam->GetPosition(), children[1]);
+                            set_text(cam->GetForwardVector(), children[3]);
+                            set_text(cam->GetLeftVector(), children[5]);
+                            set_text(cam->GetUpVector(), children[7]);
+                            this->SetNeedsLayout();
+                        });
+            } else {
+                impl_->scene->SetCameraChangedCallback(
+                        std::function<void(visualization::Camera *)>());
+            }
             break;
         }
         case HELP_ABOUT: {
