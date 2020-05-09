@@ -44,8 +44,6 @@
 
 #include <set>
 
-#define ENABLE_PAN 1
-
 namespace open3d {
 namespace gui {
 
@@ -332,20 +330,24 @@ public:
                 mouseDownY_ = e.y;
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
-                        state_ = State::DOLLY;
-#if ENABLE_PAN
+#ifdef __APPLE__
+                        if (e.modifiers & int(KeyModifier::ALT)) {
+#else
+                        if (e.modifiers & int(KeyModifier::CTRL)) {
+#endif  // __APPLE__
+                            state_ = State::ROTATE_Z;
+                        } else {
+                            state_ = State::DOLLY;
+                        }
                     } else if (e.modifiers & int(KeyModifier::CTRL)) {
                         state_ = State::PAN;
-#endif  // ENABLE_PAN
                     } else if (e.modifiers & int(KeyModifier::META)) {
                         state_ = State::ROTATE_Z;
                     } else {
                         state_ = State::ROTATE_XY;
                     }
-#if ENABLE_PAN
                 } else if (e.button.button == MouseButton::RIGHT) {
                     state_ = State::PAN;
-#endif  // ENABLE_PAN
                 }
                 interactor_->StartMouseDrag();
                 break;
@@ -440,7 +442,7 @@ public:
                 Super::Mouse(e);
                 break;
             case MouseEvent::WHEEL: {
-                if (e.modifiers & int(KeyModifier::SHIFT)) {
+                if (e.modifiers == int(KeyModifier::SHIFT)) {
                     cameraControls_->Zoom(
                             e.wheel.dy,
                             e.wheel.isTrackpad
@@ -545,7 +547,7 @@ public:
         if (current_ == rotate_.get()) {
             if (e.type == MouseEvent::Type::BUTTON_DOWN &&
                 (e.button.button == MouseButton::MIDDLE ||
-                 e.modifiers & int(KeyModifier::ALT))) {
+                 e.modifiers == int(KeyModifier::ALT))) {
                 override_ = lightDir_.get();
             }
         }

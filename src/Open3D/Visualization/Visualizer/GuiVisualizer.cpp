@@ -136,7 +136,7 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
 
     addRow("Arcball mode", " ");
     addRow("Left-drag", "Rotate camera");
-    addRow("Shift + left-drag    ", "Forward/backward");
+    addRow("Shift + left-drag", "Forward/backward");
 
 #if defined(__APPLE__)
     addLabel("Cmd + left-drag");
@@ -146,10 +146,15 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     addLabel("Pan camera");
 
 #if defined(__APPLE__)
-    addLabel("Opt + left-drag (up/down)");
+    addLabel("Opt + left-drag (up/down)  ");
 #else
-    addLabel("Win + left-drag (up/down)");
+    addLabel("Win + left-drag (up/down)  ");
 #endif  // __APPLE__
+    addLabel("Rotate around forward axis");
+
+    // GNOME3 uses Win/Meta as a shortcut to move windows around, so we
+    // need another way to rotate around the forward axis.
+    addLabel("Ctrl + Shift + left-drag");
     addLabel("Rotate around forward axis");
 
 #if defined(__APPLE__)
