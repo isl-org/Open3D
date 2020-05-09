@@ -597,6 +597,7 @@ struct SceneWidget::Impl {
     ModelDescription model;
     visualization::LightHandle dirLight;
     std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
+    std::function<void(visualization::Camera*)> onCameraChanged;
     int buttonsDown = 0;
     double lastFastTime = 0.0;
     bool frameRectChanged = false;
@@ -658,6 +659,11 @@ void SceneWidget::SetupCamera(
                                visualization::Camera::FovType::Vertical);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
+}
+
+void SceneWidget::SetCameraChangedCallback(
+        std::function<void(visualization::Camera*)> onCamChanged) {
+    impl_->onCameraChanged = onCamChanged;
 }
 
 void SceneWidget::SelectDirectionalLight(
@@ -847,11 +853,20 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     }
 
     impl_->controls->Mouse(e);
+
+    if (impl_->onCameraChanged) {
+        impl_->onCameraChanged(GetCamera());
+    }
+
     return Widget::EventResult::CONSUMED;
 }
 
 Widget::EventResult SceneWidget::Key(const KeyEvent& e) {
     impl_->controls->Key(e);
+
+    if (impl_->onCameraChanged) {
+        impl_->onCameraChanged(GetCamera());
+    }
     return Widget::EventResult::CONSUMED;
 }
 
