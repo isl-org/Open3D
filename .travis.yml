@@ -1,4 +1,4 @@
-language: ruby
+language: cpp
 env:
   global:
     - SHARED=OFF
@@ -60,7 +60,7 @@ matrix:
         - which python
         - python -V
         - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow
-        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DWITH_OPENMP=ON ..
+        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DENABLE_JUPYTER=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DWITH_OPENMP=ON ..
         - make install-pip-package -j$NPROC
         - make -j$NPROC
         - bin/GLInfo
