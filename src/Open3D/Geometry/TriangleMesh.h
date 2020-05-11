@@ -801,11 +801,20 @@ public:
         MaterialParameter baseColor;
         float baseMetallic = 0.f;
         float baseRoughness = 1.f;
+        float baseReflectance = 0.5f;
+        float baseClearCoat = 0.f;
+        float baseClearCoatRoughness = 0.f;
+        float baseAnisotropy = 0.f;
+
         std::shared_ptr<Image> albedo;
         std::shared_ptr<Image> normalMap;
         std::shared_ptr<Image> ambientOcclusion;
         std::shared_ptr<Image> metallic;
         std::shared_ptr<Image> roughness;
+        std::shared_ptr<Image> reflectance;
+        std::shared_ptr<Image> clearCoat;
+        std::shared_ptr<Image> clearCoatRoughness;
+        std::shared_ptr<Image> anisotropy;
 
         std::unordered_map<std::string, MaterialParameter> floatParameters;
         std::unordered_map<std::string, Image> additionalMaps;

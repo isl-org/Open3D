@@ -195,6 +195,10 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             meshMaterial.roughness = textureLoader(material.roughness_texname);
         }
 
+        if (!material.sheen_texname.empty()) {
+            meshMaterial.reflectance = textureLoader(material.sheen_texname);
+        }
+
         // NOTE: We want defaults of 0.0 and 1.0 for baseMetallic and
         // baseRoughness respectively but 0.0 is a valid value for both and
         // tiny_obj_loader defaults to 0.0 for both. So, we will assume that
@@ -205,8 +209,15 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             meshMaterial.baseRoughness = material.roughness;
         }
 
-        // NOTE: PBR OBJ 'extension' supports additional parameters that could
-        // be useful in the future. See tiny_obj_loader.h for details.
+        if (material.sheen > 0.f) {
+            meshMaterial.baseReflectance = material.sheen;
+        }
+
+        // NOTE: We will unconditionally copy the following parameters because
+        // the TinyObj defaults match Open3D's internal defaults
+        meshMaterial.baseClearCoat = material.clearcoat_thickness;
+        meshMaterial.baseClearCoatRoughness = material.clearcoat_roughness;
+        meshMaterial.baseAnisotropy = material.anisotropy;
     }
 
     return true;
