@@ -16,4 +16,4 @@ jobs:
         cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=ON ..
     - name: build
       run: |
-        cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config %CONFIG% --target INSTALL
+        cmake --build . --parallel 2 --config Release --target INSTALL
