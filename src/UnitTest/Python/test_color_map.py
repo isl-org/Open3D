@@ -96,9 +96,9 @@ def test_color_map():
         o3d.color_map.color_map_optimization(mesh, rgbd_images, camera, option)
 
     # Black box test with hard-coded result values. The results of
-    # color_map_optimization are deterministic. This test ensures the
-    # refactored code produced same output. This is only valid for using
-    # exactly the same inputs and optimization options.
+    # color_map_optimization are deterministic. This test ensures the refactored
+    # code produces the same output. This is only valid for using exactly the
+    # same inputs and optimization options.
     vertex_colors = np.asarray(mesh.vertex_colors)
     assert vertex_colors.shape == (536872, 3)
     np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
