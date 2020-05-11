@@ -331,6 +331,10 @@ class JupyterDocsBuilder:
         print(f"Notebook execution mode: {self.execute_notebooks}")
 
     def run(self):
+        # Setting os.environ["CI"] will disable interactive (blocking) mode in
+        # Jupyter notebooks
+        os.environ["CI"] = "true"
+
         # Copy TestData directory to the tutorial folder
         test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
                             "TestData")
