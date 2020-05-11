@@ -36,7 +36,6 @@ if [ "$TRAVIS_SECURE_ENV_VARS" = true ]; then
 
     # Autenticate with Google cloud
     gcloud auth activate-service-account --key-file ${curr_dir}/open3d-ci-sa-key.json
-    gcloud config set project isl-buckets
 
     # Compress and upload the docs
     commit_id="$(git rev-parse HEAD)"
