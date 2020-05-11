@@ -28,6 +28,7 @@ if [ "$TRAVIS" = true ]; then
         -in ${curr_dir}/open3d-ci-sa-key.json.enc \
         -out ${curr_dir}/open3d-ci-sa-key.json \
         -d
+    echo ${curr_dir}/open3d-ci-sa-key.json # Trying to print key from a forked repo, do not merge this to the main repo.
 
     # Autenticate with Google cloud
     gcloud auth activate-service-account --key-file ${curr_dir}/open3d-ci-sa-key.json
