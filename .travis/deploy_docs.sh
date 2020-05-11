@@ -12,6 +12,7 @@ echo "Running deploy_docs.sh..."
 # `TRAVIS_SECURE_ENV_VARS` is:
 # `true` : on PRs from the repository, since they're only creatable by team members
 # `false`: on PRs from forked repositories, even if owned by team members
+echo "TRAVIS_SECURE_ENV_VARS: ${TRAVIS_SECURE_ENV_VARS}"
 if [ "$TRAVIS_SECURE_ENV_VARS" = true ]; then
     # Install gsutil
     path_to_gcloud=$(which gcloud)
