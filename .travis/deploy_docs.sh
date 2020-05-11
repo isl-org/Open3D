@@ -27,7 +27,7 @@ if [ "$TRAVIS_SECURE_ENV_VARS" = true ]; then
     gcloud --quiet version
 
     if [ "$TRAVIS" = true ]; then
-        # Decrypt key
+        # Decrypt key, this only works if PR is created from the main repo.
         openssl aes-256-cbc \
             -K $encrypted_72034960ad12_key \
             -iv $encrypted_72034960ad12_iv \
@@ -49,5 +49,5 @@ if [ "$TRAVIS_SECURE_ENV_VARS" = true ]; then
     gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
     echo "Download the docs at: https://storage.googleapis.com/open3d-docs/${tar_file}"
 else
-    echo "For Open3D team members, create a PR from the main repo to trigger docs upload."
+    echo "For Open3D team members, create a PR from the main repo to trigger docs uploading."
 fi
