@@ -3,11 +3,14 @@
 #include <Eigen/Core>
 #include <memory>
 #include <vector>
-#include <faiss/IndexFlat.h>
 
 #include "Open3D/Geometry/Geometry.h"
 #include "Open3D/Geometry/KDTreeSearchParam.h"
 #include "Open3D/Registration/Feature.h"
+
+namespace faiss {
+struct Index;
+}
 
 namespace open3d {
 namespace geometry {
@@ -53,19 +56,19 @@ public:
     template <typename T>
     int Search(const T &query,
                const KDTreeSearchParam &param,
-               std::vector<int> &indices,
+               std::vector<long> &indices,
                std::vector<float> &distance2) const;
 
     template <typename T>
     int SearchKNN(const T &query,
                   int knn,
-                  std::vector<int> &indices,
+                  std::vector<long> &indices,
                   std::vector<float> &distance2) const;
 
     template <typename T>
     int SearchRadius(const T &query,
                      float radius,
-                     std::vector<int> &indices,
+                     std::vector<long> &indices,
                      std::vector<float> &distance2) const;
 
 private:

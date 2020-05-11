@@ -28,7 +28,7 @@
 #pragma warning(push)
 #pragma warning(disable : 4267)
 #endif
-
+#include <iostream>
 #include "Open3D/Geometry/KnnFaiss.h"
 
 #include <faiss/IndexFlat.h>
@@ -37,6 +37,7 @@
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Utility/Console.h"
+
 
 namespace open3d {
 namespace geometry {
@@ -87,7 +88,7 @@ bool KnnFaiss::SetFeature(const registration::Feature &feature) {
 template <typename T>
 int KnnFaiss::Search(const T &query,
                         const KDTreeSearchParam &param,
-                        std::vector<int> &indices,
+                        std::vector<long> &indices,
                         std::vector<float> &distance2) const {
     switch (param.GetSearchType()) {
         case KDTreeSearchParam::SearchType::Knn:
@@ -107,7 +108,7 @@ int KnnFaiss::Search(const T &query,
 template <typename T>
 int KnnFaiss::SearchKNN(const T &query,
                            int knn,
-                           std::vector<int> &indices,
+                           std::vector<long> &indices,
                            std::vector<float> &distance2) const {
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
@@ -116,32 +117,34 @@ int KnnFaiss::SearchKNN(const T &query,
         size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
-
-    index->search(query.cols(), query.data(), knn, distance2.data(), indices.data());
+    std::cout << "query" << query.cols() << query.rows() << std::endl;
+    index->search(query.rows(), (const float*)query.data(), knn, distance2.data(), indices.data());
     return knn;
 }
 
 template <typename T>
 int KnnFaiss::SearchRadius(const T &query,
                               float radius,
-                              std::vector<int> &indices,
+                              std::vector<long> &indices,
                               std::vector<float> &distance2) const {
     // This is optimized code for heavily repeated search.
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory management and CPU caching.
-    if (data_.empty() || dataset_size_ <= 0 ||
-        size_t(query.rows()) != dimension_) {
-        return -1;
-    }
-    faiss::RangeSearchResult result(query.cols());
-    result.labels = indices.data();
-    result.distances = distance2.data();
-    index->range_search(query.cols(), query.data(), radius, &result);
+//    if (data_.empty() || dataset_size_ <= 0 ||
+//        size_t(query.rows()) != dimension_) {
+//        return -1;
+//    }
+//    faiss::RangeSearchResult* result = new faiss::RangeSearchResult(query.cols());
+//    result->labels = indices.data();
+//    result->distances = distance2.data();
+//    index->range_search(query.cols(), query.data(), radius, result);
     return 1;
 }
 
 bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
+    std::cout << data << std::endl;
+
     dimension_ = data.rows();
     dataset_size_ = data.cols();
     if (dimension_ == 0 || dataset_size_ == 0) {
@@ -151,41 +154,41 @@ bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     data_.resize(dataset_size_ * dimension_);
     memcpy(data_.data(), data.data(),
            dataset_size_ * dimension_ * sizeof(float));
-    index.reset(new faiss::indexFlatL2(dimension));
-    index->add(dataset_size_, data_.data())
+    index.reset(new faiss::IndexFlatL2(dimension_));
+    index->add(dataset_size_, data_.data());
     return true;
 }
 
 template int KnnFaiss::Search<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         const KDTreeSearchParam &param,
-        std::vector<int> &indices,
+        std::vector<long> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchKNN<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         int knn,
-        std::vector<int> &indices,
+        std::vector<long> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchRadius<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         float radius,
-        std::vector<int> &indices,
+        std::vector<long> &indices,
         std::vector<float> &distance2) const;
 
 template int KnnFaiss::Search<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         const KDTreeSearchParam &param,
-        std::vector<int> &indices,
+        std::vector<long> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchKNN<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         int knn,
-        std::vector<int> &indices,
+        std::vector<long> &indices,
         std::vector<float> &distance2) const;
 template int KnnFaiss::SearchRadius<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         float radius,
-        std::vector<int> &indices,
+        std::vector<long> &indices,
         std::vector<float> &distance2) const;
 
 }  // namespace geometry

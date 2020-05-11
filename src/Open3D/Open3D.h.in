@@ -37,6 +37,7 @@
 #include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/KDTreeFlann.h"
+#include "Open3D/Geometry/KnnFaiss.h"
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/Octree.h"
 #include "Open3D/Geometry/PointCloud.h"
