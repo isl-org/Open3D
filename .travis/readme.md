@@ -27,15 +27,7 @@
    - Install `gcloud`
    - `gcloud init` and login with admin's google account on the web
 
-2. Create service account
-
-   ```bash
-   gcloud iam service-accounts create open3d-ci-sa \
-       --description="Service account for Open3D CI" \
-       --display-name="open3d-ci-sa"
-   ```
-
-3. Create storage bucket
+2. Create storage bucket
 
    ```bash
    # Create with uniform bucket-level access: `-b`
@@ -46,6 +38,14 @@
    # Grant public read permission
    # The current user must have appropriate permission, you may do this in the web interface
    gsutil acl ch -u AllUsers:R gs://open3d-docs/
+   ```
+
+3. Create service account
+
+   ```bash
+   gcloud iam service-accounts create open3d-ci-sa \
+       --description="Service account for Open3D CI" \
+       --display-name="open3d-ci-sa"
    ```
 
 4. Grant `objectAdmin` to the service account
