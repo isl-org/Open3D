@@ -26,19 +26,17 @@ if [ "$TRAVIS_SECURE_ENV_VARS" = true ]; then
     fi
     gcloud --quiet version
 
-    if [ "$TRAVIS" = true ]; then
-        # Decrypt key, this only works if PR is created from the main repo.
-        openssl aes-256-cbc \
-            -K $encrypted_72034960ad12_key \
-            -iv $encrypted_72034960ad12_iv \
-            -in ${curr_dir}/open3d-ci-sa-key.json.enc \
-            -out ${curr_dir}/open3d-ci-sa-key.json \
-            -d
+    # Decrypt key, this only works if PR is created from the main repo.
+    openssl aes-256-cbc \
+        -K $encrypted_72034960ad12_key \
+        -iv $encrypted_72034960ad12_iv \
+        -in ${curr_dir}/open3d-ci-sa-key.json.enc \
+        -out ${curr_dir}/open3d-ci-sa-key.json \
+        -d
 
-        # Autenticate with Google cloud
-        gcloud auth activate-service-account --key-file ${curr_dir}/open3d-ci-sa-key.json
-        gcloud config set project isl-buckets
-    fi
+    # Autenticate with Google cloud
+    gcloud auth activate-service-account --key-file ${curr_dir}/open3d-ci-sa-key.json
+    gcloud config set project isl-buckets
 
     # Compress and upload the docs
     commit_id="$(git rev-parse HEAD)"
