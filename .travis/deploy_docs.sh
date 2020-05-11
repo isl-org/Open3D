@@ -34,10 +34,11 @@ if [ "$TRAVIS" = true ]; then
     gcloud config set project isl-buckets
 fi
 
-# Compress the docs
+# Compress and upload the docs
 commit_id="$(git rev-parse HEAD)"
 docs_out_dir="${curr_dir}/../docs/_out" # Docs in ${docs_out_dir}/html
 tar_file="${commit_id}.tar.gz"
 rm -rf ${tar_file}
 tar -C ${docs_out_dir} -czvf ${tar_file} html
 gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
+echo "Download the docs at: https://storage.googleapis.com/open3d-docs/${tar_file}"
