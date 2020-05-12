@@ -113,12 +113,20 @@ int KnnFaiss::SearchKNN(const T &query,
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
     // memory allocation/deallocation.
+    //std::cout << "query : col=" << query.cols() << ", row=" << query.rows() << std::endl;
+    //std::cout << "exptected dimension : " << dimension_ << std::endl;
+
     if (data_.empty() || dataset_size_ <= 0 ||
         size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
-    std::cout << "query" << query.cols() << query.rows() << std::endl;
-    index->search(query.rows(), (const float*)query.data(), knn, distance2.data(), indices.data());
+    std::vector<float> tmp_query(query.size());
+    for(unsigned int i = 0; i < query.size(); i++){
+        tmp_query[i] = (float)query.data()[i];
+    }
+    indices.resize(knn * query.cols());
+    distance2.resize(knn * query.cols());
+    index->search(query.cols(), tmp_query.data(), knn, distance2.data(), indices.data());
     return knn;
 }
 
@@ -143,17 +151,32 @@ int KnnFaiss::SearchRadius(const T &query,
 }
 
 bool KnnFaiss::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
-    std::cout << data << std::endl;
+    //std::cout << "data : cols=" << data.cols() <<", rows=" << data.rows() << std::endl;
 
     dimension_ = data.rows();
     dataset_size_ = data.cols();
+    /*for(unsigned int i =0; i < dataset_size_; i++){
+        std::cout << i << " : ";
+        for(unsigned int j =0; j < dimension_; j++){
+            std::cout << data.data()[i*dimension_ + j] << " ";
+        } std::cout << std::endl;
+    }*/
     if (dimension_ == 0 || dataset_size_ == 0) {
         utility::LogWarning("[KnnFaiss::SetRawData] Failed due to no data.");
         return false;
     }
     data_.resize(dataset_size_ * dimension_);
-    memcpy(data_.data(), data.data(),
-           dataset_size_ * dimension_ * sizeof(float));
+    for(unsigned int i = 0; i < dimension_*dataset_size_; i++){
+        data_[i] = data.data()[i];
+    }
+    /*memcpy(data_.data(), data.data(),
+           dataset_size_ * dimension_ * sizeof(float));*/
+    /*for(unsigned int i =0; i < dataset_size_; i++){
+        std::cout << i << " : ";
+        for(unsigned int j =0; j < dimension_; j++){
+            std::cout << data_.data()[i*dimension_ + j] << " ";
+        } std::cout << std::endl;
+    }*/
     index.reset(new faiss::IndexFlatL2(dimension_));
     index->add(dataset_size_, data_.data());
     return true;
