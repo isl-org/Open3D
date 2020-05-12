@@ -41,8 +41,6 @@ namespace util {
 
 ImVec4 colorToImgui(const Color& color);
 
-std::vector<std::string> PathToComponents(const char* path);
-
 }  // namespace util
 
 }  // namespace gui

@@ -132,10 +132,10 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
         ImGui::TextWrapped("%s", impl_->text.c_str());
         ImGui::PopTextWrapPos();
     }
-    ImGui::PopItemWidth();
     if (!isDefaultColor) {
         ImGui::PopStyleColor();
     }
+    ImGui::PopItemWidth();
     return Widget::DrawResult::NONE;
 }
 

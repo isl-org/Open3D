@@ -45,6 +45,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory);
 
 std::string GetWorkingDirectory();
 
+std::vector<std::string> GetPathComponents(const std::string &path);
+
 bool ChangeWorkingDirectory(const std::string &directory);
 
 bool DirectoryExists(const std::string &directory);

@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018 www.open3d.org
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -81,13 +88,13 @@ void SetNativeMenubar(void* menubar) {
     NSApplication.sharedApplication.mainMenu = menu;
 }
 
-void ShowNativeFileDialog(FileDialog::Type type,
+void ShowNativeFileDialog(FileDialog::Mode type,
                           const std::string& path,
                           const std::vector<std::pair<std::string, std::string>>& filters,
                           std::function<void(const char*)> onOk,
                           std::function<void()> onCancel) {
     NSSavePanel *dlg; // NSOpenPanel inherits from NSSavePanel, oddly enough
-    if (type == FileDialog::Type::OPEN) {
+    if (type == FileDialog::Mode::OPEN) {
         NSOpenPanel *openDlg = [NSOpenPanel openPanel];
         openDlg.allowsMultipleSelection = NO;
         openDlg.canChooseDirectories = NO;

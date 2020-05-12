@@ -499,3 +499,39 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
+
+// ----------------------------------------------------------------------------
+// Split path into components
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetPathComponents) {
+    // setup
+    auto oldCwd = utility::filesystem::GetWorkingDirectory();
+    // On macOS /tmp is actually /private/tmp, while on Linux it is still /tmp.
+    // So use /home since GetWorkingDirectory() will return consistent results.
+    std::string cwd = "/home";
+    utility::filesystem::ChangeWorkingDirectory(cwd);
+    
+    // test
+    std::vector<std::string> result;
+
+    result = utility::filesystem::GetPathComponents("");
+    EXPECT_EQ(result, { "/", "home" });
+
+    result = utility::filesystem::GetPathComponents("/");
+    EXPECT_EQ(result, { "/" });
+
+    result = utility::filesystem::GetPathComponents("c:\\");
+    EXPECT_EQ(result, { "c:" });
+
+    result = utility::filesystem::GetPathComponents("../bogus/test.abc");
+    EXPECT_EQ(result, { "/", "bogus", "test.abc" });
+
+    result = utility::filesystem::GetPathComponents("/usr/lib/../local/bin");
+    EXPECT_EQ(result, { "/", "usr", "local", "bin" });
+
+    result = utility::filesystem::GetPathComponents("c:\\windows\\system\\winnt.dll");
+    EXPECT_EQ(result, { "c:", "windows", "system", "winnt.dll" });
+
+    // clean-up
+    utility::filesystem::ChangeWorkingDirectory(oldCwd);
+}

@@ -37,24 +37,6 @@ ImVec4 colorToImgui(const Color &color) {
                   color.GetAlpha());
 }
 
-std::vector<std::string> PathToComponents(const char *path) {
-    std::vector<std::string> components;
-    const char *end = path;
-    while (*end != '\0') {
-        const char *start = end;
-        while (*end != '\0' && *end != '\\' && *end != '/') {
-            end++;
-        }
-        if (end > start) {
-            components.push_back(std::string(start, end - start));
-        }
-        if (*end != '\0') {
-            end++;
-        }
-    }
-    return components;
-}
-
 }  // namespace util
 }  // namespace gui
 }  // namespace open3d

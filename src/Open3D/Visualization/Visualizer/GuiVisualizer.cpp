@@ -1046,7 +1046,7 @@ GuiVisualizer::GuiVisualizer(
     settings.wgtLoadSky = std::make_shared<SmallButton>("Load skybox");
     settings.wgtLoadSky->SetOnClicked([this, renderScene]() {
         auto dlg = std::make_shared<gui::FileDialog>(
-                gui::FileDialog::Type::OPEN, "Open skybox", GetTheme());
+                gui::FileDialog::Mode::OPEN, "Open skybox", GetTheme());
         dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
         dlg->SetOnCancel([this]() { this->CloseDialog(); });
         dlg->SetOnDone([this, renderScene](const char *path) {
@@ -1239,7 +1239,7 @@ GuiVisualizer::GuiVisualizer(
         if (!this->SetIBL(path.c_str())) {
             // must be the "Custom..." option
             auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Type::OPEN, "Open HDR Map", GetTheme());
+                    gui::FileDialog::Mode::OPEN, "Open HDR Map", GetTheme());
             dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
             dlg->SetOnCancel([this]() { this->CloseDialog(); });
             dlg->SetOnDone([this](const char *path) {
@@ -1754,7 +1754,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
     switch (menuId) {
         case FILE_OPEN: {
             auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Type::OPEN, "Open Geometry", GetTheme());
+                    gui::FileDialog::Mode::OPEN, "Open Geometry", GetTheme());
             dlg->AddFilter(".ply .stl .obj .off .gltf .glb",
                            "Triangle mesh files (.ply, .stl, .obj, .off, "
                            ".gltf, .glb)");
@@ -1784,7 +1784,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
         }
         case FILE_EXPORT_RGB: {
             auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Type::SAVE, "Save File", GetTheme());
+                    gui::FileDialog::Mode::SAVE, "Save File", GetTheme());
             dlg->AddFilter(".png", "PNG images (.png)");
             dlg->AddFilter("", "All files");
             dlg->SetOnCancel([this]() { this->CloseDialog(); });

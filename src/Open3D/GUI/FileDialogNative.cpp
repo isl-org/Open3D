@@ -37,16 +37,16 @@ namespace open3d {
 namespace gui {
 
 struct FileDialog::Impl {
-    FileDialog::Type type;
+    FileDialog::Mode mode;
     std::string path;
     std::vector<std::pair<std::string, std::string>> filters;
     std::function<void()> onCancel;
     std::function<void(const char *)> onDone;
 };
 
-FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
+FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     : Dialog(title), impl_(new FileDialog::Impl()) {
-    impl_->type = type;
+    impl_->mode = mode;
 }
 
 FileDialog::~FileDialog() {}
@@ -73,7 +73,7 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
 void FileDialog::OnWillShow() {
     auto onOk = [this](const char *path) { this->impl_->onDone(path); };
     auto onCancel = [this]() { this->impl_->onCancel(); };
-    ShowNativeFileDialog(impl_->type, impl_->path, impl_->filters, onOk,
+    ShowNativeFileDialog(impl_->mode, impl_->path, impl_->filters, onOk,
                          onCancel);
 }
 
