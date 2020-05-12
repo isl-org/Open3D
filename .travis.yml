@@ -4,7 +4,7 @@ env:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
     - BUILD_TENSORFLOW_OPS=ON
-    - NPROC=1
+    - NPROC=2
 
 notifications:
   email:
