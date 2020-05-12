@@ -331,6 +331,10 @@ class JupyterDocsBuilder:
         print(f"Notebook execution mode: {self.execute_notebooks}")
 
     def run(self):
+        # Setting os.environ["CI"] will disable interactive (blocking) mode in
+        # Jupyter notebooks
+        os.environ["CI"] = "true"
+
         # Copy TestData directory to the tutorial folder
         test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
                             "TestData")
@@ -388,7 +392,11 @@ class JupyterDocsBuilder:
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
-                    print(f"Execution of {nb_path.name} failed")
+                    print(
+                        f"Execution of {nb_path.name} failed, this will cause Travis to fail."
+                    )
+                    if "TRAVIS" in os.environ:
+                        raise
 
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
