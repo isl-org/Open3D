@@ -293,6 +293,10 @@ std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axisLength) {
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
+    // Add UVs because material shader for axes expects them
+    mesh_frame->triangle_uvs_.resize(mesh_frame->triangles_.size() * 3,
+                                     {0.0, 0.0});
+
     return mesh_frame;
 }
 
