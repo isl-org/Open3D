@@ -509,9 +509,9 @@ struct GuiVisualizer::Impl {
 
     std::map<std::string, LitMaterial> prefabMaterials = {
             {kDefaultMaterialName, {}},
-            {"Aluminum",
+            {"Metal (rougher)",
              {visualization::MaterialInstanceHandle::kBad,
-              {0.913f, 0.921f, 0.925f},
+              {1.0f, 1.0f, 1.0f},
               1.0f,
               0.5f,
               0.9f,
@@ -519,9 +519,9 @@ struct GuiVisualizer::Impl {
               0.0f,
               0.0f,
               3.0f}},
-            {"Gold",
+            {"Metal (smoother)",
              {visualization::MaterialInstanceHandle::kBad,
-              {1.000f, 0.766f, 0.336f},
+              {1.0f, 1.0f, 1.0f},
               1.0f,
               0.3f,
               0.9f,
