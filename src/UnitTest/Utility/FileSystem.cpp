@@ -512,25 +512,32 @@ TEST(FileSystem, GetPathComponents) {
     utility::filesystem::ChangeWorkingDirectory(cwd);
     
     // test
+    std::vector<std::string> expected;
     std::vector<std::string> result;
 
     result = utility::filesystem::GetPathComponents("");
-    EXPECT_EQ(result, { "/", "home" });
+    expected = { "/", "home" };
+    EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("/");
-    EXPECT_EQ(result, { "/" });
+    expected = { "/" };
+    EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("c:\\");
-    EXPECT_EQ(result, { "c:" });
+    expected = { "c:" };
+    EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("../bogus/test.abc");
-    EXPECT_EQ(result, { "/", "bogus", "test.abc" });
+    expected = { "/", "bogus", "test.abc" };
+    EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("/usr/lib/../local/bin");
-    EXPECT_EQ(result, { "/", "usr", "local", "bin" });
+    expected = { "/", "usr", "local", "bin" };
+    EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("c:\\windows\\system\\winnt.dll");
-    EXPECT_EQ(result, { "c:", "windows", "system", "winnt.dll" });
+    expected = { "c:", "windows", "system", "winnt.dll" };
+    EXPECT_EQ(result, expected);
 
     // clean-up
     utility::filesystem::ChangeWorkingDirectory(oldCwd);
