@@ -674,6 +674,11 @@ void FilamentResourceManager::LoadDefaults() {
     litMat->setDefaultParameter("roughnessMap", texture, defaultSampler);
     litMat->setDefaultParameter("normalMap", normalMap, defaultSampler);
     litMat->setDefaultParameter("ambientOcclusionMap", texture, defaultSampler);
+    litMat->setDefaultParameter("reflectanceMap", texture, defaultSampler);
+    litMat->setDefaultParameter("clearCoatMap", texture, defaultSampler);
+    litMat->setDefaultParameter("clearCoatRoughnessMap", texture,
+                                defaultSampler);
+    litMat->setDefaultParameter("anisotropyMap", texture, defaultSampler);
     materials_[kDefaultLit] = MakeShared(litMat, engine_);
 
     const auto unlitPath = resourceRoot + "/defaultUnlit.filamat";
