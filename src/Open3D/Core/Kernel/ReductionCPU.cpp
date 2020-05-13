@@ -271,7 +271,7 @@ void ReductionCPU(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport Max.");
                     } else {
-                        identity = std::numeric_limits<scalar_t>::min();
+                        identity = std::numeric_limits<scalar_t>::lowest();
                         dst.Fill(identity);
                         re.Run(CPUMaxReductionKernel<scalar_t>, identity);
                     }
@@ -310,7 +310,7 @@ void ReductionCPU(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not suport ArgMax.");
                     } else {
-                        identity = std::numeric_limits<scalar_t>::min();
+                        identity = std::numeric_limits<scalar_t>::lowest();
                         dst_acc.Fill(identity);
                         re.Run(CPUArgMaxReductionKernel<scalar_t>, identity);
                     }

@@ -1553,6 +1553,18 @@ TEST_P(TensorPermuteDevices, ReduceMax) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23.f}));
 }
 
+TEST_P(TensorPermuteDevices, ReduceMaxFloatLimit) {
+    // std::numeric_limits<scalar_t> should use lowest() instead of min().
+    Device device = GetParam();
+    Tensor src(std::vector<float>({-2.f, -1.f}), {2}, Dtype::Float32, device);
+
+    Tensor dst = src.Max({0});
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({-1.f}));
+
+    dst = src.ArgMax({0});
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
+}
+
 TEST_P(TensorPermuteDevices, ReduceArgMin) {
     Device device = GetParam();
     Tensor src(
