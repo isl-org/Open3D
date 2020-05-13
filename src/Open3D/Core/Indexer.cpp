@@ -41,11 +41,24 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                  const std::vector<Tensor>& output_tensors,
                  DtypePolicy dtype_policy,
                  const SizeVector& reduction_dims) {
-    if (input_tensors.size() < 1) {
+    // Check the number of inputs and outputs.
+    num_inputs_ = static_cast<int64_t>(input_tensors.size());
+    num_outputs_ = static_cast<int64_t>(output_tensors.size());
+    if (num_inputs_ < 1) {
         utility::LogError("Indexer must have at least one input.");
     }
-    if (output_tensors.size() < 1) {
+    if (num_inputs_ > MAX_INPUTS) {
+        utility::LogError(
+                "Indexer cannot have more than {} inputs, but got {}.",
+                MAX_INPUTS, num_inputs_);
+    }
+    if (num_outputs_ < 1) {
         utility::LogError("Indexer must have at least one input.");
+    }
+    if (num_outputs_ > MAX_OUTPUTS) {
+        utility::LogError(
+                "Indexer cannot have more than {} outputs, but got {}.",
+                MAX_OUTPUTS, num_outputs_);
     }
 
     // Dtype sanity check and handling.
@@ -100,6 +113,14 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         utility::LogError("Unimplemented dtype policy");
     }
 
+    // Convert to TensorRef.
+    for (int64_t i = 0; i < num_inputs_; ++i) {
+        inputs_[i] = TensorRef(input_tensors[i]);
+    }
+    for (int64_t i = 0; i < num_outputs_; ++i) {
+        outputs_[i] = TensorRef(output_tensors[i]);
+    }
+
     // For simplicity, all outputs must have the same shape.
     SizeVector ref_output_shape = output_tensors[0].GetShape();
     for (const auto& output_tensor : output_tensors) {
@@ -109,25 +130,6 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                     "but {} != {}",
                     output_tensor.GetShape(), ref_output_shape);
         }
-    }
-
-    // Convert to TensorRef.
-    num_inputs_ = static_cast<int64_t>(input_tensors.size());
-    if (num_inputs_ > MAX_OPERANDS) {
-        utility::LogError("Operation has too many inputs {} > {}", num_inputs_,
-                          MAX_OPERANDS);
-    }
-    for (int64_t i = 0; i < num_inputs_; ++i) {
-        inputs_[i] = TensorRef(input_tensors[i]);
-    }
-
-    num_outputs_ = static_cast<int64_t>(output_tensors.size());
-    if (num_outputs_ > MAX_OPERANDS) {
-        utility::LogError("Operation has too many outputs {} > {}",
-                          num_outputs_, MAX_OPERANDS);
-    }
-    for (int64_t i = 0; i < num_outputs_; ++i) {
-        outputs_[i] = TensorRef(output_tensors[i]);
     }
 
     // Theoretically, reduction can be mixed with broadcasting. For

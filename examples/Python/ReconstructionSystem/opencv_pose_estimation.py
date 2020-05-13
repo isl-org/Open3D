@@ -227,7 +227,7 @@ def get_xyz_from_pts(pts_row, depth, px, py, focal):
         d0 = depth[v0, u0]
         d1 = depth[v0, u0 + 1]
         d2 = depth[v0 + 1, u0]
-        d3 = depth[v0 + 1, u0]
+        d3 = depth[v0 + 1, u0 + 1]
         d = (1 - vp) * (d1 * up + d0 * (1 - up)) + vp * (d3 * up + d2 *
                                                          (1 - up))
         return get_xyz_from_uv(u, v, d, px, py, focal)

@@ -145,6 +145,11 @@ public:
         return *this;
     }
 
+    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
+    /// casted to the Tensor's dtype.
+    template <typename T>
+    void Fill(T v);
+
     /// Create a tensor with uninitilized values.
     static Tensor Empty(const SizeVector& shape,
                         Dtype dtype,
@@ -258,18 +263,6 @@ public:
     /// change. Slices of the original Tensor still keeps the original memory.
     /// After assignment, the Tensor will be contiguous.
     void Assign(const Tensor& other);
-
-    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
-    /// casted to the Tensor's dtype.
-    template <typename T>
-    void Fill(T v) {
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
-            scalar_t casted_v = static_cast<scalar_t>(v);
-            Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
-                       GetDtype(), GetDevice());
-            AsRvalue() = tmp;
-        });
-    }
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
@@ -854,23 +847,33 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
     return values;
 }
 
+template <typename Scalar>
+inline void Tensor::Fill(Scalar v) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
+        scalar_t casted_v = static_cast<scalar_t>(v);
+        Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
+                   GetDtype(), GetDevice());
+        AsRvalue() = tmp;
+    });
+}
+
 template <typename T>
-Tensor operator+(T scalar_lhs, const Tensor& rhs) {
+inline Tensor operator+(T scalar_lhs, const Tensor& rhs) {
     return rhs + scalar_lhs;
 }
 
 template <typename T>
-Tensor operator-(T scalar_lhs, const Tensor& rhs) {
+inline Tensor operator-(T scalar_lhs, const Tensor& rhs) {
     return Tensor::Full({}, scalar_lhs, rhs.GetDtype(), rhs.GetDevice()) - rhs;
 }
 
 template <typename T>
-Tensor operator*(T scalar_lhs, const Tensor& rhs) {
+inline Tensor operator*(T scalar_lhs, const Tensor& rhs) {
     return rhs * scalar_lhs;
 }
 
 template <typename T>
-Tensor operator/(T scalar_lhs, const Tensor& rhs) {
+inline Tensor operator/(T scalar_lhs, const Tensor& rhs) {
     return Tensor::Full({}, scalar_lhs, rhs.GetDtype(), rhs.GetDevice()) / rhs;
 }
 
