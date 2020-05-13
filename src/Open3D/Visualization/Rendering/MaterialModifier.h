@@ -98,7 +98,7 @@ struct TextureSamplerParameters {
     TextureSamplerParameters(
             MinFilter min, MagFilter mag, WrapMode u, WrapMode v, WrapMode w);
 
-    // Measured in powers-of-two
+    // \param a needs to be a power of 2
     void SetAnisotropy(std::uint8_t a);
 
     std::uint8_t GetAnisotropy() const { return anisotropy; }

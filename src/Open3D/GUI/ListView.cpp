@@ -74,7 +74,7 @@ const char *ListView::GetSelectedValue() const {
 }
 
 void ListView::SetSelectedIndex(int index) {
-    impl_->selectedIndex = std::min(int(impl_->items.size()), index);
+    impl_->selectedIndex = std::min(int(impl_->items.size() - 1), index);
 }
 
 void ListView::SetOnValueChanged(

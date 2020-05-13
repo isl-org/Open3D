@@ -48,7 +48,7 @@ static int gNextNumberEditId = 1;
 struct NumberEdit::Impl {
     std::string id;
     NumberEdit::Type type;
-    // Double has 24-bits of integer range, which is sufficient for the
+    // Double has 53-bits of integer range, which is sufficient for the
     // numbers that are reasonable for users to be entering. (Since JavaScript
     // only uses doubles, apparently it works for a lot more situations, too.)
     double value;

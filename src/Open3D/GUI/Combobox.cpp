@@ -52,7 +52,6 @@ struct Combobox::Impl {
     std::string imguiId;
     std::vector<std::string> items;
     int currentIndex = 0;
-    int selectedIndex = -1;
     std::function<void(const char*, int)> onValueChanged;
 };
 
@@ -73,7 +72,6 @@ Combobox::~Combobox() {}
 void Combobox::ClearItems() {
     impl_->items.clear();
     impl_->currentIndex = 0;
-    impl_->selectedIndex = -1;
 }
 
 void Combobox::AddItem(const char* name) { impl_->items.push_back(name); }
@@ -152,10 +150,9 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
             didOpen = true;
         }
         for (size_t i = 0; i < impl_->items.size(); ++i) {
-            bool isSelected = (impl_->selectedIndex == int(i));
+            bool isSelected = false;
             if (ImGui::Selectable(impl_->items[i].c_str(), &isSelected, 0)) {
                 impl_->currentIndex = i;
-                impl_->selectedIndex = -1;
                 valueChanged = true;
                 if (impl_->onValueChanged) {
                     impl_->onValueChanged(GetSelectedValue(), i);

@@ -39,9 +39,9 @@ class FileDialog : public Dialog {
     using Super = Dialog;
 
 public:
-    enum class Type { OPEN, SAVE };
+    enum class Mode { OPEN, SAVE };
 
-    FileDialog(Type type, const char *title, const Theme &theme);
+    FileDialog(Mode type, const char *title, const Theme &theme);
     virtual ~FileDialog();
 
     /// May either be a directory or a file. If path is a file, it will be

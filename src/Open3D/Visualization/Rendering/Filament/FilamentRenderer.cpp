@@ -250,15 +250,18 @@ std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     auto found = scenes_.find(id);
+    // TODO: assert(found != scenes_.end())
     if (found != scenes_.end()) {
-        // TODO: Warning on guiScene != nullptr
-
+        if (guiScene_ != nullptr) {
+            utility::LogWarning(
+                    "FilamentRenderer::ConvertToGuiScene: guiScene_ is already "
+                    "set");
+        }
         guiScene_ = std::move(found->second);
         scenes_.erase(found);
     }
-
-    // TODO: assert
 }
+
 TextureHandle FilamentRenderer::AddTexture(
         const std::shared_ptr<geometry::Image>& image) {
     return resourceManager_.CreateTexture(image);

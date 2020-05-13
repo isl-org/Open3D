@@ -7,5 +7,3 @@ ShowAndAbortOnWarning(Camera)
 
 # Enforce 3rd party dependencies
 add_dependencies(Camera build_all_3rd_party_libs)
-
-message("[debug] CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")

@@ -285,17 +285,7 @@ void Layout1D::Layout(const Theme& theme) {
                 }
             }
         }
-    } /*else if (totalExtra != 0) {
-        int each = totalExtra / major.size();
-        int leftover = totalExtra - major.size() * each;
-        for (size_t i = 0;  i < major.size();  ++i) {
-            major[i] += each;
-            if (leftover != 0) {
-                auto one = leftover / std::abs(leftover); // 1 with leftovers'
-    sign major[i] += one; leftover -= one;
-            }
-        }
-    } */
+    }
 
     int x = frame.GetLeft() + impl_->margins.left;
     int y = frame.GetTop() + impl_->margins.top;

@@ -102,6 +102,78 @@ std::string GetWorkingDirectory() {
     return std::string(buff);
 }
 
+std::vector<std::string> GetPathComponents(const std::string &path) {
+    auto SplitByPathSeparators = [](const std::string &path) {
+        std::vector<std::string> components;
+        // Split path by '/' and '\'
+        if (!path.empty()) {
+            size_t end = 0;
+            while (end < path.size()) {
+                size_t start = end;
+                while (end < path.size() && path[end] != '\\' &&
+                       path[end] != '/') {
+                    end++;
+                }
+                if (end > start) {
+                    components.push_back(path.substr(start, end - start));
+                }
+                if (end < path.size()) {
+                    end++;
+                }
+            }
+        }
+        return components;
+    };
+
+    auto pathComponents = SplitByPathSeparators(path.c_str());
+
+    // Handle "/" and "" paths
+    if (pathComponents.empty()) {
+        if (path == "/") {
+            // absolute path; the "/" component will be added
+            // later, so don't do anything here
+        } else {
+            pathComponents.push_back(".");
+        }
+    }
+
+    char firstChar = path[0];  // '/' doesn't get stored in components
+    bool isRelative = (firstChar != '/');
+    bool isWindowsPath = false;
+    // Check for Windows full path (e.g. "d:")
+    if (isRelative && pathComponents[0].size() >= 2 &&
+        ((firstChar >= 'a' && firstChar <= 'z') ||
+         (firstChar >= 'A' && firstChar <= 'Z')) &&
+        pathComponents[0][1] == ':') {
+        isRelative = false;
+        isWindowsPath = true;
+    }
+
+    std::vector<std::string> components;
+    if (!isWindowsPath) {
+        components.push_back("/");
+    }
+    if (isRelative) {
+        auto cwd = utility::filesystem::GetWorkingDirectory();
+        auto cwdComponents = SplitByPathSeparators(cwd);
+        components.insert(components.end(), cwdComponents.begin(),
+                          cwdComponents.end());
+    } else {
+        // absolute path, don't need any prefix
+    }
+
+    for (auto &dir : pathComponents) {
+        if (dir == ".") { /* ignore */
+        } else if (dir == "..") {
+            components.pop_back();
+        } else {
+            components.push_back(dir);
+        }
+    }
+
+    return components;
+}
+
 bool ChangeWorkingDirectory(const std::string &directory) {
     return (chdir(directory.c_str()) == 0);
 }

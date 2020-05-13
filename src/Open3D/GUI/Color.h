@@ -39,7 +39,7 @@ public:
     float GetBlue() const;
     float GetAlpha() const;
 
-    void SetRGB(float r, float g, float b);
+    void SetRGB(float r, float g, float b, float a = 1.0);
 
     const float* GetPointer() const;
     float* GetMutablePointer();

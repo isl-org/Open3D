@@ -44,9 +44,9 @@ static int gNextSliderId = 1;
 struct Slider::Impl {
     Slider::Type type;
     std::string id;
-    // A double has 24-bits of integer value, which should be enough for
+    // A double has 53-bits of integer value, which should be enough for
     // anything we want a slider for. A slider isn't really useful for
-    // a range of 2^24 = 16 million anyway.
+    // a range of 2^53 anyway.
     double value = 0.0;
     double minValue = -1e35;
     double maxValue = 1e35;

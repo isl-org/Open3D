@@ -60,7 +60,7 @@ namespace gui {
 
 namespace {
 // The current path of the dialog should persist across runs of the dialog.
-// This is defined here rather than in the class definition because we can't
+// This is defined here rather than in the class definition because we don't
 // need to be exporting internal details of the class.
 static std::string gFileDialogDir;
 }  // namespace
@@ -121,7 +121,7 @@ private:
 };
 
 struct FileDialog::Impl {
-    Type type;
+    Mode mode;
     std::vector<DirEntry> entries;
     std::shared_ptr<TextEdit> filename;
     std::shared_ptr<Combobox> dirtree;
@@ -196,7 +196,7 @@ struct FileDialog::Impl {
         }
 
         this->filelist->SetSelectedIndex(-1);
-        if (this->type == Type::OPEN) {
+        if (this->mode == Mode::OPEN) {
             this->filename->SetText("");
             UpdateOk();
         }
@@ -220,16 +220,16 @@ struct FileDialog::Impl {
     }
 };
 
-FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
+FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     : Dialog("File"), impl_(std::make_unique<FileDialog::Impl>()) {
     auto em = theme.fontSize;
     auto layout = std::make_shared<Vert>(0.5 * em, Margins(em));
-    impl_->type = type;
+    impl_->mode = mode;
 
     // 'filename' needs to always exist, as we use it to store the name of
     // the picked file, however, it is only displayed for SAVE.
     impl_->filename = std::make_shared<TextEdit>();
-    if (type == Type::SAVE) {
+    if (mode == Mode::SAVE) {
         auto filenameLabel = std::make_shared<Label>("Save as:");
         auto horiz = std::make_shared<Horiz>();
         horiz->AddStretch();
@@ -246,9 +246,9 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
     layout->AddChild(impl_->filelist);
 
     impl_->cancel = std::make_shared<Button>("Cancel");
-    if (type == Type::OPEN) {
+    if (mode == Mode::OPEN) {
         impl_->ok = std::make_shared<Button>("Open");
-    } else if (type == Type::SAVE) {
+    } else if (mode == Mode::SAVE) {
         impl_->ok = std::make_shared<Button>("Save");
     }
 
@@ -290,7 +290,7 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
                     if (entry.GetType() == DirEntry::Type::FILE) {
                         this->impl_->filename->SetText(entry.GetName().c_str());
                     } else {
-                        if (this->impl_->type == Type::OPEN) {
+                        if (this->impl_->mode == Mode::OPEN) {
                             this->impl_->filename->SetText("");
                         }
                     }
@@ -320,52 +320,7 @@ FileDialog::FileDialog(Type type, const char *title, const Theme &theme)
 FileDialog::~FileDialog() {}
 
 void FileDialog::SetPath(const char *path) {
-    // Test cases:
-    //   "../../test.abc", "/usr/lib/../local/bin",
-    //   "/",              "c:/windows/system/winnt.dll"
-    auto pathComponents = util::PathToComponents(path);
-    if (pathComponents.empty()) {
-        if (path[0] == '/' && path[1] == '\0') {
-            // absolute path; the "/" component will be added
-            // later, so don't do anything here
-        } else {
-            pathComponents.push_back(".");
-        }
-    }
-
-    char firstChar = path[0];  // '/' doesn't get stored in components
-    bool isRelative = (firstChar != '/');
-    bool isWindowsPath = false;
-    // Check for Windows full path (e.g. "d:")
-    if (isRelative && pathComponents[0].size() >= 2 &&
-        ((firstChar >= 'a' && firstChar <= 'z') ||
-         (firstChar >= 'A' && firstChar <= 'Z')) &&
-        pathComponents[0][1] == ':') {
-        isRelative = false;
-        isWindowsPath = true;
-    }
-
-    std::vector<std::string> components;
-    if (!isWindowsPath) {
-        components.push_back("/");
-    }
-    if (isRelative) {
-        auto cwd = utility::filesystem::GetWorkingDirectory();
-        auto cwdComponents = util::PathToComponents(cwd.c_str());
-        components.insert(components.end(), cwdComponents.begin(),
-                          cwdComponents.end());
-    } else {
-        // absolute path, don't need any prefix
-    }
-
-    for (auto &dir : pathComponents) {
-        if (dir == ".") { /* ignore */
-        } else if (dir == "..") {
-            components.pop_back();
-        } else {
-            components.push_back(dir);
-        }
-    }
+    auto components = utility::filesystem::GetPathComponents(path);
 
     std::string dirpath = "";
     for (auto &dir : components) {

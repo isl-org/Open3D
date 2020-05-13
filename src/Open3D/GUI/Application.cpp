@@ -92,14 +92,6 @@ std::string findResourcePath(int argc, const char *argv[]) {
 namespace open3d {
 namespace gui {
 
-/*void PostWindowEvent(Window *w, SDL_WindowEventID type) {
-    SDL_Event e;
-    e.type = SDL_WINDOWEVENT;
-    e.window.windowID = w->GetID();
-    e.window.event = type;
-    SDL_PushEvent(&e);
-}
-*/
 struct Application::Impl {
     std::string resourcePath;
     Theme theme;

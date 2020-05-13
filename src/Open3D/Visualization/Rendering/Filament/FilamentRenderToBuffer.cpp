@@ -142,6 +142,7 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     callback({self->width_, self->height_, self->buffer_, self->bufferSize_});
 
     self->frameDone_ = true;
+    delete params;
 }
 
 void FilamentRenderToBuffer::Render() {

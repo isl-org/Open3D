@@ -39,7 +39,7 @@ void SetNativeMenubar(void* menubar);
 
 #if defined(__APPLE__) || defined(_WIN32)
 void ShowNativeFileDialog(
-        FileDialog::Type type,
+        FileDialog::Mode mode,
         const std::string& path,
         const std::vector<std::pair<std::string, std::string>>& filters,
         std::function<void(const char*)> onOk,
