@@ -47,7 +47,6 @@ add_library(Visualization OBJECT
             ${SHADER_FILES}
             ${VISUALIZATION_ALL_HEADER_FILES}
             ${VISUALIZATION_ALL_SOURCE_FILES})
-set_property(TARGET Visualization PROPERTY CXX_STANDARD 14)
 
 source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 

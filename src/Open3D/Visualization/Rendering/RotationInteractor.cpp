@@ -44,7 +44,7 @@ void RotationInteractor::Pan(int dx, int dy) {
     centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
 
     auto matrix = matrixAtMouseDown_;  // copy
-    // matrix.translate(cameraLocalMove) would world if
+    // matrix.translate(cameraLocalMove) would work if
     // matrix == camara matrix. Since it isn't necessarily true,
     // we need to translate the position of the matrix in the world
     // coordinate system.

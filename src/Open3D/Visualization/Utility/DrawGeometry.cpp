@@ -81,16 +81,6 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     visualizer.Run();
     visualizer.DestroyVisualizerWindow();
     return true;
-
-    /*    auto &app = gui::Application::GetInstance();
-        app.Initialize();
-        auto vis = std::make_shared<GuiVisualizer>(geometry_ptrs, window_name,
-                                                   width, height, left, top);
-        app.AddWindow(vis);
-        app.Run();
-
-        return true;
-    */
 }
 
 bool DrawGeometriesWithCustomAnimation(

@@ -170,8 +170,6 @@ double MatrixInteractor::CalcRotateZRadians(int dx, int dy) {
     return 4.0 * M_PI * dy / viewHeight_;
 }
 
-enum class DragType { MOUSE, WHEEL, TWO_FINGER };
-
 void MatrixInteractor::Dolly(int dy, DragType dragType) {
     float dist = CalcDollyDist(dy, dragType);
     if (dragType == DragType::MOUSE) {

@@ -102,7 +102,7 @@ public:
     virtual EventResult Mouse(const MouseEvent& e);
 
     /// Widgets that use Dear ImGUI should not need to override this,
-    /// as Dear ImGUI will take care of all the mouse handling during
+    /// as Dear ImGUI will take care of all the key handling during
     /// the Draw().
     virtual EventResult Key(const KeyEvent& e);
 
