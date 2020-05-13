@@ -26,6 +26,7 @@
 
 #include "Color.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace open3d {
@@ -50,10 +51,10 @@ float Color::GetGreen() const { return rgba_[1]; }
 float Color::GetBlue() const { return rgba_[2]; }
 float Color::GetAlpha() const { return rgba_[3]; }
 
-void Color::SetRGB(const float r,
-                   const float g,
-                   const float b,
-                   const float a /*= 1.0 */) {
+void Color::SetColor(const float r,
+                     const float g,
+                     const float b,
+                     const float a /*= 1.0 */) {
     rgba_[0] = r;
     rgba_[1] = g;
     rgba_[2] = b;
@@ -63,7 +64,8 @@ void Color::SetRGB(const float r,
 const float* Color::GetPointer() const { return rgba_; }
 float* Color::GetMutablePointer() { return rgba_; }
 
-Color Color::Lightened(const float amount) {
+Color Color::Lightened(float amount) {
+    amount = std::max(0.0f, std::min(1.0f, amount));
     return Color((1.0f - amount) * GetRed() + amount * 1.0f,
                  (1.0f - amount) * GetGreen() + amount * 1.0f,
                  (1.0f - amount) * GetBlue() + amount * 1.0f, GetAlpha());

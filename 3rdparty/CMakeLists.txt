@@ -341,12 +341,13 @@ if (ENABLE_GUI)
             find_program(FILAMENT_CC_PATH NAMES clang-7 clang)
             find_program(FILAMENT_CXX_PATH NAMES clang++-7 clang++)
 
-            # If it does, check that it is at least version 7 (required by Filament)
+            # If it does, check that it is at least version 7 (required by
+            # Filament)
             if (FILAMENT_CXX_PATH)
-                # Can't use check_c_source_compiles() because it uses the current
-                # compiler. Also, CMake appears to have no way to make a temporary
-                # file, so we have to do it ourselves. Since we are guaranteed to
-                # be on Unix here, using /tmp is safe.
+                # Can't use check_c_source_compiles() because it uses the
+                # current compiler. Also, CMake appears to have no way to make
+                # a temporary file, so we have to do it ourselves. Since we are
+                # guaranteed to be on Unix here, using /tmp is safe.
                 set(CHKVER_C /tmp/open3d.checkclang.c)
                 file(WRITE ${CHKVER_C} 
 "#if __clang_major__ < 7
@@ -365,8 +366,8 @@ int main(int argc, char *argv[]) { return 0; }"
 
             # If the version is not >= 7, then disable GUI
             if (NOT FILAMENT_CXX_PATH)
-                message(STATUS "Filament requires Clang >= 7, it cannot be built with GCC.")
-                message(STATUS "ENABLE_GUI is set to OFF")
+                message(WARNING "Filament requires Clang >= 7, it cannot be built with GCC.")
+                message(WARNING  "ENABLE_GUI is set to OFF")
                 set(ENABLE_GUI OFF)
             endif()
         endif()

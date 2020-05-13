@@ -57,7 +57,7 @@ ColorEdit::~ColorEdit() {}
 void ColorEdit::SetValue(const Color& color) { impl_->value = color; }
 
 void ColorEdit::SetValue(const float r, const float g, const float b) {
-    impl_->value.SetRGB(r, g, b);
+    impl_->value.SetColor(r, g, b);
 }
 
 const Color& ColorEdit::GetValue() const { return impl_->value; }

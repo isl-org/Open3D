@@ -90,7 +90,6 @@ option(ENABLE_GUI                "Builds new GUI"                           ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
-option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 
 # This should be a folder with next hierarchy:
 # root
@@ -269,14 +268,9 @@ if (WIN32)
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
-    # enable c++14
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_definitions(-DCYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
-    # enable c++14
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v") # debugging
     add_compile_options(-Wno-deprecated-declarations)
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -289,7 +283,7 @@ elseif (APPLE)
 elseif (UNIX)
     add_definitions(-DUNIX)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
     # In Release build -O3 will be added automatically by CMake
     # We still enable -O3 at debug build to optimize performance
