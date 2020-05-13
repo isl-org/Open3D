@@ -510,33 +510,34 @@ TEST(FileSystem, GetPathComponents) {
     // So use /home since GetWorkingDirectory() will return consistent results.
     std::string cwd = "/home";
     utility::filesystem::ChangeWorkingDirectory(cwd);
-    
+
     // test
     std::vector<std::string> expected;
     std::vector<std::string> result;
 
     result = utility::filesystem::GetPathComponents("");
-    expected = { "/", "home" };
+    expected = {"/", "home"};
     EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("/");
-    expected = { "/" };
+    expected = {"/"};
     EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("c:\\");
-    expected = { "c:" };
+    expected = {"c:"};
     EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("../bogus/test.abc");
-    expected = { "/", "bogus", "test.abc" };
+    expected = {"/", "bogus", "test.abc"};
     EXPECT_EQ(result, expected);
 
     result = utility::filesystem::GetPathComponents("/usr/lib/../local/bin");
-    expected = { "/", "usr", "local", "bin" };
+    expected = {"/", "usr", "local", "bin"};
     EXPECT_EQ(result, expected);
 
-    result = utility::filesystem::GetPathComponents("c:\\windows\\system\\winnt.dll");
-    expected = { "c:", "windows", "system", "winnt.dll" };
+    result = utility::filesystem::GetPathComponents(
+            "c:\\windows\\system\\winnt.dll");
+    expected = {"c:", "windows", "system", "winnt.dll"};
     EXPECT_EQ(result, expected);
 
     // clean-up

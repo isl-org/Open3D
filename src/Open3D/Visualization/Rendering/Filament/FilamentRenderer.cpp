@@ -253,7 +253,9 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
     // TODO: assert(found != scenes_.end())
     if (found != scenes_.end()) {
         if (guiScene_ != nullptr) {
-            utility::LogWarning("FilamentRenderer::ConvertToGuiScene: guiScene_ is already set");
+            utility::LogWarning(
+                    "FilamentRenderer::ConvertToGuiScene: guiScene_ is already "
+                    "set");
         }
         guiScene_ = std::move(found->second);
         scenes_.erase(found);

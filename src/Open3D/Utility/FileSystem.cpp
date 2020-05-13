@@ -110,7 +110,8 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
             size_t end = 0;
             while (end < path.size()) {
                 size_t start = end;
-                while (end < path.size() && path[end] != '\\' && path[end] != '/') {
+                while (end < path.size() && path[end] != '\\' &&
+                       path[end] != '/') {
                     end++;
                 }
                 if (end > start) {

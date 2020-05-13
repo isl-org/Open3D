@@ -50,7 +50,9 @@ float Color::GetGreen() const { return rgba_[1]; }
 float Color::GetBlue() const { return rgba_[2]; }
 float Color::GetAlpha() const { return rgba_[3]; }
 
-void Color::SetRGB(const float r, const float g, const float b,
+void Color::SetRGB(const float r,
+                   const float g,
+                   const float b,
                    const float a /*= 1.0 */) {
     rgba_[0] = r;
     rgba_[1] = g;
