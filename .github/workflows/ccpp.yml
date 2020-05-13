@@ -3,6 +3,22 @@ name: C/C++ CI
 on: [push, pull_request]
 
 jobs:
+  macos_with_dep:
+    runs-on: macos-latest
+    env:
+      BUILD_DEPENDENCY_FROM_SOURCE: OFF
+      BUILD_TENSORFLOW_OPS: ON
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: configure
+      run: |
+        brew update
+        brew upgrade python || true
+        ./util/scripts/install-deps-osx.sh
+        ./util/scripts/run-travis.sh
+
   build:
     runs-on: windows-latest
     strategy:
