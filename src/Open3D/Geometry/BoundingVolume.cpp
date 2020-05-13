@@ -86,24 +86,16 @@ OrientedBoundingBox& OrientedBoundingBox::Translate(
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Scale(const double scale,
-                                                bool center) {
-    if (center) {
-        extent_ *= scale;
-    } else {
-        center_ *= scale;
-        extent_ *= scale;
-    }
+                                                const Eigen::Vector3d& center) {
+    extent_ *= scale;
+    center_ = center;
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Rotate(const Eigen::Matrix3d& R,
-                                                 bool center) {
-    if (center) {
-        R_ *= R;
-    } else {
-        center_ = R * center_;
-        R_ *= R;
-    }
+OrientedBoundingBox& OrientedBoundingBox::Rotate(
+        const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+    R_ = R;
+    center_ = center;
     return *this;
 }
 
@@ -263,21 +255,15 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(const double scale,
-                                                      bool center) {
-    if (center) {
-        Eigen::Vector3d center = GetCenter();
-        min_bound_ = center + scale * (min_bound_ - center);
-        max_bound_ = center + scale * (max_bound_ - center);
-    } else {
-        min_bound_ *= scale;
-        max_bound_ *= scale;
-    }
+AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(
+        const double scale, const Eigen::Vector3d& center) {
+    min_bound_ = center + scale * (min_bound_ - center);
+    max_bound_ = center + scale * (max_bound_ - center);
     return *this;
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
-        const Eigen::Matrix3d& rotation, bool center) {
+        const Eigen::Matrix3d& rotation, const Eigen::Vector3d& center) {
     utility::LogError(
             "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
             "anymore, convert it to an OrientedBoundingBox first");
