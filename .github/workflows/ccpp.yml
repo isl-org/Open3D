@@ -1,6 +1,10 @@
 name: C/C++ CI
 
-on: pull_request
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
   macos_with_dep:
