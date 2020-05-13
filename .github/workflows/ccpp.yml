@@ -1,6 +1,6 @@
 name: C/C++ CI
 
-on: [push, pull_request]
+on: pull_request
 
 jobs:
   macos_with_dep:
@@ -8,15 +8,18 @@ jobs:
     env:
       BUILD_DEPENDENCY_FROM_SOURCE: OFF
       BUILD_TENSORFLOW_OPS: ON
+      SHARED: OFF
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: configure
+    - name: install_deps
       run: |
         brew update
         brew upgrade python || true
         ./util/scripts/install-deps-osx.sh
+    - name: config_and_build
+      run: |
         ./util/scripts/run-travis.sh
 
   build:
