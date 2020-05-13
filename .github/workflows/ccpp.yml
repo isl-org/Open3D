@@ -1,10 +1,6 @@
 name: C/C++ CI
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   macos_with_dep:
@@ -21,7 +17,7 @@ jobs:
       run: |
         brew update
         brew upgrade python || true
-        ./util/scripts/install-deps-osx.sh
+        ./util/scripts/install-deps-osx.sh || true
     - name: config_and_build
       run: |
         ./util/scripts/run-travis.sh
