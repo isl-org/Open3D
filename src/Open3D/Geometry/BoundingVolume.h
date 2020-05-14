@@ -79,14 +79,48 @@ public:
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
                                            bool relative = true) override;
+
+    /// \brief Scales the oriented bounding boxs.
+    /// The extent parameter is multiplied by the scale factor and
+    /// the center is set to the given parameter..
+    ///
+    /// \param scale The scale parameter that is multiplied to the
+    /// extent parameter of the oriented bounding box.
+    /// \param center New center of the oriented bounding box.
     virtual OrientedBoundingBox& Scale(const double scale,
-                                       bool center = true) override;
+                                       const Eigen::Vector3d& center) override;
+
+    /// \brief Rotates the oriented bounding boxs.
+    /// Sets the rotation and center of the oriented bounding box
+    /// to the given parameters.
+    ///
+    /// \param R New rotation matrix of the oriented bounding box.
+    /// \param center New center of the oriented bounding box.
     virtual OrientedBoundingBox& Rotate(const Eigen::Matrix3d& R,
-                                        bool center = true) override;
+                                        const Eigen::Vector3d& center) override;
 
     /// Returns the volume of the bounding box.
     double Volume() const;
+
     /// Returns the eight points that define the bounding box.
+    ///
+    ///      ------- x
+    ///     /|
+    ///    / |
+    ///   /  | z
+    ///  y
+    ///      0 ------------------- 1
+    ///       /|                /|
+    ///      / |               / |
+    ///     /  |              /  |
+    ///    /   |             /   |
+    /// 2 ------------------- 7  |
+    ///   |    |____________|____| 6
+    ///   |   /3            |   /
+    ///   |  /              |  /
+    ///   | /               | /
+    ///   |/                |/
+    /// 5 ------------------- 4
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
@@ -161,10 +195,23 @@ public:
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(
             const Eigen::Vector3d& translation, bool relative = true) override;
-    virtual AxisAlignedBoundingBox& Scale(const double scale,
-                                          bool center = true) override;
-    virtual AxisAlignedBoundingBox& Rotate(const Eigen::Matrix3d& R,
-                                           bool center = true) override;
+
+    /// \brief Scales the axis-aligned bounding boxs.
+    /// If \f$mi\f$ is the min_bound and \f$ma\f$ is the max_bound of
+    /// the axis aligned bounding box, and \f$s\f$ and \f$c\f$ are the
+    /// provided scaling factor and center respectively, then the new
+    /// min_bound and max_bound are given by \f$mi = c + s (mi - c)\f$
+    /// and \f$ma = c + s (ma - c)\f$.
+    ///
+    /// \param scale The scale parameter.
+    /// \param center Center used for the scaling operation.
+    virtual AxisAlignedBoundingBox& Scale(
+            const double scale, const Eigen::Vector3d& center) override;
+
+    /// \brief an AxisAlignedBoundingBox can not be rotated. This method
+    /// will throw an error.
+    virtual AxisAlignedBoundingBox& Rotate(
+            const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
 
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
 

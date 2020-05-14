@@ -90,9 +90,10 @@ public:
     virtual MeshBase &Transform(const Eigen::Matrix4d &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,
                                 bool relative = true) override;
-    virtual MeshBase &Scale(const double scale, bool center = true) override;
+    virtual MeshBase &Scale(const double scale,
+                            const Eigen::Vector3d &center) override;
     virtual MeshBase &Rotate(const Eigen::Matrix3d &R,
-                             bool center = true) override;
+                             const Eigen::Vector3d &center) override;
 
     MeshBase &operator+=(const MeshBase &mesh);
     MeshBase operator+(const MeshBase &mesh) const;

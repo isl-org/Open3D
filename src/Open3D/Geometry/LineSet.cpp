@@ -69,12 +69,13 @@ LineSet &LineSet::Translate(const Eigen::Vector3d &translation, bool relative) {
     return *this;
 }
 
-LineSet &LineSet::Scale(const double scale, bool center) {
+LineSet &LineSet::Scale(const double scale, const Eigen::Vector3d &center) {
     ScalePoints(scale, points_, center);
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Matrix3d &R, bool center) {
+LineSet &LineSet::Rotate(const Eigen::Matrix3d &R,
+                         const Eigen::Vector3d &center) {
     RotatePoints(R, points_, center);
     return *this;
 }
