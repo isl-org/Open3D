@@ -3,11 +3,15 @@ name: C/C++ CI
 on: [push, pull_request]
 
 jobs:
-  macos_with_dep:
+  macos:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_TENSORFLOW_OPS: [ON, OFF]
     env:
-      BUILD_DEPENDENCY_FROM_SOURCE: OFF
-      BUILD_TENSORFLOW_OPS: ON
+      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_TENSORFLOW_OPS }}
       SHARED: OFF
       NPROC: 2
     steps:
@@ -22,23 +26,3 @@ jobs:
     - name: config_and_build
       run: |
         ./util/scripts/run-travis.sh
-
-  build:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        shared: [ON, OFF]
-        config: [Release, Debug]
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: configure
-      run: |
-        mkdir build
-        cd build
-        cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} ..
-    - name: build
-      run: |
-        cd build
-        cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL

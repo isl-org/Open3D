@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+# The following environment variables are required:
+# - SHARED
+# - BUILD_TENSORFLOW_OPS
+# - BUILD_DEPENDENCY_FROM_SOURCE
+# - NPROC
+
 set -euo pipefail
 
 python --version
