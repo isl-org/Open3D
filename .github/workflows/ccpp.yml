@@ -51,4 +51,4 @@ jobs:
     - name: build
       run: |
         cd build
-        cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL
+        cmake --build . --verbose --parallel 2 --config ${{ matrix.config }} --target INSTALL
