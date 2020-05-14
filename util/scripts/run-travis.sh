@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
+flushOutput() {
+    for i in $(seq 1000)
+    do
+        echo 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE'
+    done
+}
+trap 'flushOutput' EXIT
 
 python --version
 cmake --version
