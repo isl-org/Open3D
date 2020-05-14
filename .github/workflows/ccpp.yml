@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   macos:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     strategy:
       matrix:
         BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
