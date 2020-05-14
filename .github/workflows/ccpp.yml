@@ -1,6 +1,11 @@
 name: C/C++ CI
 
-on: [push, pull_request]
+# on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
 
 jobs:
   macos:
@@ -18,11 +23,11 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: install_deps
+    - name: Install Dependencies
       run: |
         brew update
         brew upgrade python || true
-        ./util/scripts/install-deps-osx.sh || true
-    - name: config_and_build
+        ./util/scripts/install-deps-osx.sh
+    - name: Config and Build
       run: |
         ./util/scripts/run-travis.sh
