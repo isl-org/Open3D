@@ -117,15 +117,15 @@ matrix:
     #   before_install: ./util/scripts/setup-linux.sh
     #   script: ./util/scripts/run-travis.sh
 
-    # # Default environment of macOS 10.14 (Xcode 11.2)
-    # - os: osx
-    #   osx_image: xcode10.2
-    #   env: BUILD_TENSORFLOW_OPS=OFF
-    #   before_install:
-    #     - brew update
-    #     - brew upgrade python || true
-    #     - ./util/scripts/install-deps-osx.sh
-    #   script: travis_wait 90 ./util/scripts/run-travis.sh
+    # Default environment of macOS 10.14 (Xcode 11.2)
+    - os: osx
+      osx_image: xcode10.2
+       env: BUILD_TENSORFLOW_OPS=OFF
+       before_install:
+         - brew update
+         - brew upgrade python || true
+         - ./util/scripts/install-deps-osx.sh
+       script: ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode10.2
