@@ -6,7 +6,7 @@ on:
     branches:
     - master
   pull_request:
-    types: [synchronize] # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
 jobs:
   macos:
