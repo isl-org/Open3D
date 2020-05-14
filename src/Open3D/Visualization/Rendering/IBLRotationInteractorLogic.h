@@ -26,37 +26,38 @@
 
 #pragma once
 
-#include "MatrixInteractor.h"
+#include "MatrixInteractorLogic.h"
 
 #include "RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
 
-class Camera;
 class Scene;
 
-class LightDirectionInteractor : public MatrixInteractor {
-    using Super = MatrixInteractor;
+class IBLRotationInteractorLogic : public MatrixInteractorLogic {
+    using Super = MatrixInteractorLogic;
 
 public:
-    LightDirectionInteractor(Scene* scene, Camera* camera);
-
-    void SetDirectionalLight(LightHandle dirLight);
+    IBLRotationInteractorLogic(Scene* scene, Camera* camera);
 
     void Rotate(int dx, int dy) override;
+    void RotateZ(int dx, int dy) override;
+
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
 
     void StartMouseDrag();
     void UpdateMouseDragUI();
     void EndMouseDrag();
 
-    Eigen::Vector3f GetCurrentDirection() const;
+    Camera::Transform GetCurrentRotation() const;
 
 private:
     Scene* scene_;
     Camera* camera_;
-    LightHandle dirLight_;
-    Eigen::Vector3f lightDirAtMouseDown_;
+    visualization::SkyboxHandle skybox_;
+    bool skyboxIsNormallyOn_;
+    Camera::Transform iblRotationAtMouseDown_;
 
     struct UIObj {
         GeometryHandle handle;

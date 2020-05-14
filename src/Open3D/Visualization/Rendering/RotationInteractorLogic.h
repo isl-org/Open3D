@@ -26,18 +26,18 @@
 
 #pragma once
 
-#include "MatrixInteractor.h"
+#include "MatrixInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
 
-class RotationInteractor : public MatrixInteractor {
-    using Super = MatrixInteractor;
+class RotationInteractorLogic : public MatrixInteractorLogic {
+    using Super = MatrixInteractorLogic;
 
 public:
-    explicit RotationInteractor(visualization::Camera *camera,
-                                double minFarPlane);
-    ~RotationInteractor();
+    explicit RotationInteractorLogic(visualization::Camera *camera,
+                                     double minFarPlane);
+    ~RotationInteractorLogic();
 
     virtual void SetCenterOfRotation(const Eigen::Vector3f &center);
 

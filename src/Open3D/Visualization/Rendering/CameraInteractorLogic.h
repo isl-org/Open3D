@@ -26,52 +26,42 @@
 
 #pragma once
 
-#include "RotationInteractor.h"
-
-#include "RendererHandle.h"
-
-#include <map>
+#include "RotationInteractorLogic.h"
 
 namespace open3d {
-
 namespace visualization {
 
-class Scene;
-
-class ModelInteractor : public RotationInteractor {
-    using Super = RotationInteractor;
+class CameraInteractorLogic : public RotationInteractorLogic {
+    using Super = RotationInteractorLogic;
 
 public:
-    ModelInteractor(visualization::Scene* scene,
-                    visualization::Camera* camera,
-                    double minFarPlane);
-    virtual ~ModelInteractor();
+    CameraInteractorLogic(Camera* c, double minFarPlane);
 
     void SetBoundingBox(
             const geometry::AxisAlignedBoundingBox& bounds) override;
 
-    void SetModel(GeometryHandle axes,
-                  const std::vector<GeometryHandle>& objects);
-
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType dragType) override;
+    void Dolly(int dy, DragType type) override;
+    void Dolly(float zDist, Camera::Transform matrixIn) override;
+
     void Pan(int dx, int dy) override;
 
+    /// Sets camera field of view
+    void Zoom(int dy, DragType dragType);
+
+    void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
+    void MoveLocal(const Eigen::Vector3f& v);
+
+    void RotateFly(int dx, int dy);
+
     void StartMouseDrag() override;
+    void ResetMouseDrag();
     void UpdateMouseDragUI() override;
     void EndMouseDrag() override;
 
 private:
-    Scene* scene_;
-    GeometryHandle axes_;
-    std::vector<GeometryHandle> model_;
-    bool isAxesVisible_;
-
-    geometry::AxisAlignedBoundingBox boundsAtMouseDown_;
-    std::map<GeometryHandle, Camera::Transform> transformsAtMouseDown_;
-
-    void UpdateBoundingBox(const Camera::Transform& t);
+    double fovAtMouseDown_;
 };
 
 }  // namespace visualization

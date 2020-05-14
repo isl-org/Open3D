@@ -144,13 +144,13 @@ protected:
     virtual Size CalcPreferredSize();
     /// Lays out all the widgets in the window. If all children
     /// of the window are layouts, this function does not need to
-    /// be override.
+    /// be overriden.
     virtual void Layout(const Theme& theme);
 
     // Override to handle menu items
     virtual void OnMenuItemSelected(Menu::ItemId itemId);
 
-    // Override to handle drag and drop on the windowx
+    // Override to handle drag and drop on the windows.
     virtual void OnDragDropped(const char* path);
 
 private:

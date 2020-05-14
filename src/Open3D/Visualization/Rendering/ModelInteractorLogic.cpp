@@ -24,23 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ModelInteractor.h"
+#include "ModelInteractorLogic.h"
 
 #include "Open3D/Visualization/Rendering/Scene.h"
 
 namespace open3d {
 namespace visualization {
 
-ModelInteractor::ModelInteractor(visualization::Scene* scene,
-                                 visualization::Camera* camera,
-                                 double minFarPlane)
-    : RotationInteractor(camera, minFarPlane),
+ModelInteractorLogic::ModelInteractorLogic(visualization::Scene* scene,
+                                           visualization::Camera* camera,
+                                           double minFarPlane)
+    : RotationInteractorLogic(camera, minFarPlane),
       scene_(scene),
       isAxesVisible_(false) {}
 
-ModelInteractor::~ModelInteractor() {}
+ModelInteractorLogic::~ModelInteractorLogic() {}
 
-void ModelInteractor::SetBoundingBox(
+void ModelInteractorLogic::SetBoundingBox(
         const geometry::AxisAlignedBoundingBox& bounds) {
     Super::SetBoundingBox(bounds);
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
@@ -49,13 +49,13 @@ void ModelInteractor::SetBoundingBox(
                      bounds.GetCenter().cast<float>());
 }
 
-void ModelInteractor::SetModel(GeometryHandle axes,
-                               const std::vector<GeometryHandle>& objects) {
+void ModelInteractorLogic::SetModel(
+        GeometryHandle axes, const std::vector<GeometryHandle>& objects) {
     axes_ = axes;
     model_ = objects;
 }
 
-void ModelInteractor::Rotate(int dx, int dy) {
+void ModelInteractorLogic::Rotate(int dx, int dy) {
     Eigen::Vector3f xAxis = -camera_->GetLeftVector();
     Eigen::Vector3f yAxis = camera_->GetUpVector();
 
@@ -79,7 +79,7 @@ void ModelInteractor::Rotate(int dx, int dy) {
     UpdateBoundingBox(Camera::Transform(rotMatrix));
 }
 
-void ModelInteractor::RotateZ(int dx, int dy) {
+void ModelInteractorLogic::RotateZ(int dx, int dy) {
     auto rad = CalcRotateZRadians(dx, dy);
     Eigen::AngleAxisf rotMatrix(rad, camera_->GetForwardVector());
 
@@ -95,7 +95,7 @@ void ModelInteractor::RotateZ(int dx, int dy) {
     UpdateBoundingBox(Camera::Transform(rotMatrix));
 }
 
-void ModelInteractor::Dolly(int dy, DragType dragType) {
+void ModelInteractorLogic::Dolly(int dy, DragType dragType) {
     float zDist = CalcDollyDist(dy, dragType);
     Eigen::Vector3f worldMove = -zDist * camera_->GetForwardVector();
 
@@ -119,7 +119,7 @@ void ModelInteractor::Dolly(int dy, DragType dragType) {
     UpdateCameraFarPlane();
 }
 
-void ModelInteractor::Pan(int dx, int dy) {
+void ModelInteractorLogic::Pan(int dx, int dy) {
     Eigen::Vector3f worldMove = CalcPanVectorWorld(-dx, -dy);
     centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
 
@@ -135,7 +135,7 @@ void ModelInteractor::Pan(int dx, int dy) {
     UpdateBoundingBox(t);
 }
 
-void ModelInteractor::UpdateBoundingBox(const Camera::Transform& t) {
+void ModelInteractorLogic::UpdateBoundingBox(const Camera::Transform& t) {
     using Transform4 = Eigen::Transform<double, 3, Eigen::Affine>;
     Transform4 change = t.cast<double>();
     Eigen::Vector3d newMin = change * modelBounds_.GetMinBound();
@@ -146,7 +146,7 @@ void ModelInteractor::UpdateBoundingBox(const Camera::Transform& t) {
     Super::SetBoundingBox(geometry::AxisAlignedBoundingBox(newMin, newMax));
 }
 
-void ModelInteractor::StartMouseDrag() {
+void ModelInteractorLogic::StartMouseDrag() {
     SetMouseDownInfo(Camera::Transform::Identity(), centerOfRotation_);
 
     transformsAtMouseDown_.clear();
@@ -162,9 +162,9 @@ void ModelInteractor::StartMouseDrag() {
     Super::UpdateCameraFarPlane();
 }
 
-void ModelInteractor::UpdateMouseDragUI() {}
+void ModelInteractorLogic::UpdateMouseDragUI() {}
 
-void ModelInteractor::EndMouseDrag() {
+void ModelInteractorLogic::EndMouseDrag() {
     scene_->SetEntityEnabled(axes_, isAxesVisible_);
 }
 

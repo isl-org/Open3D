@@ -26,46 +26,52 @@
 
 #pragma once
 
-#include "MatrixInteractor.h"
+#include "RotationInteractorLogic.h"
 
 #include "RendererHandle.h"
 
+#include <map>
+
 namespace open3d {
+
 namespace visualization {
 
 class Scene;
 
-class IBLRotationInteractor : public MatrixInteractor {
-    using Super = MatrixInteractor;
+class ModelInteractorLogic : public RotationInteractorLogic {
+    using Super = RotationInteractorLogic;
 
 public:
-    IBLRotationInteractor(Scene* scene, Camera* camera);
+    ModelInteractorLogic(visualization::Scene* scene,
+                         visualization::Camera* camera,
+                         double minFarPlane);
+    virtual ~ModelInteractorLogic();
+
+    void SetBoundingBox(
+            const geometry::AxisAlignedBoundingBox& bounds) override;
+
+    void SetModel(GeometryHandle axes,
+                  const std::vector<GeometryHandle>& objects);
 
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
+    void Dolly(int dy, DragType dragType) override;
+    void Pan(int dx, int dy) override;
 
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn);
-
-    void StartMouseDrag();
-    void UpdateMouseDragUI();
-    void EndMouseDrag();
-
-    Camera::Transform GetCurrentRotation() const;
+    void StartMouseDrag() override;
+    void UpdateMouseDragUI() override;
+    void EndMouseDrag() override;
 
 private:
     Scene* scene_;
-    Camera* camera_;
-    visualization::SkyboxHandle skybox_;
-    bool skyboxIsNormallyOn_;
-    Camera::Transform iblRotationAtMouseDown_;
+    GeometryHandle axes_;
+    std::vector<GeometryHandle> model_;
+    bool isAxesVisible_;
 
-    struct UIObj {
-        GeometryHandle handle;
-        Camera::Transform transform;
-    };
-    std::vector<UIObj> uiObjs_;
+    geometry::AxisAlignedBoundingBox boundsAtMouseDown_;
+    std::map<GeometryHandle, Camera::Transform> transformsAtMouseDown_;
 
-    void ClearUI();
+    void UpdateBoundingBox(const Camera::Transform& t);
 };
 
 }  // namespace visualization

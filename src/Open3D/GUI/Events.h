@@ -40,6 +40,8 @@ enum class MouseButton {
     BUTTON5 = (1 << 4)
 };
 
+// The key modifiers are labeled by functionality; for instance,
+// Ctrl on Windows and Command on macOS have roughly the samee functionality.
 enum class KeyModifier {
     NONE = 0,
     SHIFT = (1 << 0),

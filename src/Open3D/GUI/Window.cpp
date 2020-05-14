@@ -143,15 +143,15 @@ struct Window::Impl {
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
     // the time we monitor key up/down events.
-    int mouseMods = 0;
+    int mouseMods = 0;  // ORed KeyModifiers
     double lastRenderTime = 0.0;
 
     Theme theme;  // so that the font size can be different based on scaling
     visualization::FilamentRenderer* renderer;
     struct {
-        std::unique_ptr<ImguiFilamentBridge> imguiBridge = nullptr;
-        ImGuiContext* context;
-        ImFont* systemFont;  // is a reference; owned by imguiContext
+        std::unique_ptr<ImguiFilamentBridge> imguiBridge;
+        ImGuiContext* context = nullptr;
+        ImFont* systemFont = nullptr;  // reference; owned by imguiContext
         float scaling = 1.0;
     } imgui;
     std::vector<std::shared_ptr<Widget>> children;
@@ -211,7 +211,11 @@ Window::Window(const std::string& title,
 #endif
     glfwWindowHint(GLFW_VISIBLE,
                    impl_->wantsAutoSizeAndCenter ? GLFW_TRUE : GLFW_FALSE);
-    impl_->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+    glfwWindowHint(GLFW_FLOATING,
+                   ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
+
+    impl_->window = glfwCreateWindow(std::max(10, width), std::max(10, height),
+                                     title.c_str(), NULL, NULL);
     impl_->title = title;
 
     glfwSetWindowUserPointer(impl_->window, this);
@@ -799,23 +803,27 @@ void Window::OnResize() {
 
     if (impl_->wantsAutoSizeAndCenter) {
         impl_->wantsAutoSizeAndCenter = false;
+        int screenWidth = 1024;  // defaults in case monitor == nullptr
+        int screenHeight = 768;
         auto* monitor = glfwGetWindowMonitor(impl_->window);
         if (monitor) {
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
             if (mode) {
-                ImGui::NewFrame();
-                ImGui::PushFont(impl_->imgui.systemFont);
-                auto pref = CalcPreferredSize();
-                Size size(pref.width / this->impl_->imgui.scaling,
-                          pref.height / this->impl_->imgui.scaling);
-                glfwSetWindowSize(impl_->window, size.width, size.height);
-                glfwSetWindowPos(impl_->window, (mode->width - size.width) / 2,
-                                 (mode->height - size.height) / 2);
-                ImGui::PopFont();
-                ImGui::EndFrame();
-                OnResize();
+                screenWidth = mode->width;
+                screenHeight = mode->height;
             }
         }
+        ImGui::NewFrame();
+        ImGui::PushFont(impl_->imgui.systemFont);
+        auto pref = CalcPreferredSize();
+        Size size(pref.width / this->impl_->imgui.scaling,
+                  pref.height / this->impl_->imgui.scaling);
+        glfwSetWindowSize(impl_->window, size.width, size.height);
+        glfwSetWindowPos(impl_->window, (screenWidth - size.width) / 2,
+                         (screenHeight - size.height) / 2);
+        ImGui::PopFont();
+        ImGui::EndFrame();
+        OnResize();
     }
 
     // Resizing looks bad if drawing takes a long time, so turn off MSAA

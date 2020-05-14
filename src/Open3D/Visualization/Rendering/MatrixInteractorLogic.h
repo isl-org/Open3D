@@ -37,9 +37,9 @@ namespace visualization {
 /// Base class for rotating and dollying (translating along forward axis).
 /// Could be used for a camera, or also something else, like a the
 /// direction of a directional light.
-class MatrixInteractor {
+class MatrixInteractorLogic {
 public:
-    virtual ~MatrixInteractor();
+    virtual ~MatrixInteractorLogic();
 
     void SetViewSize(int width, int height);
 

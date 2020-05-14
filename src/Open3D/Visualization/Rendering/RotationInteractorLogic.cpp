@@ -24,22 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RotationInteractor.h"
+#include "RotationInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
 
-RotationInteractor::RotationInteractor(visualization::Camera* camera,
-                                       double minFarPlane)
+RotationInteractorLogic::RotationInteractorLogic(visualization::Camera* camera,
+                                                 double minFarPlane)
     : minFarPlane_(minFarPlane), camera_(camera) {}
 
-RotationInteractor::~RotationInteractor() {}
+RotationInteractorLogic::~RotationInteractorLogic() {}
 
-void RotationInteractor::SetCenterOfRotation(const Eigen::Vector3f& center) {
+void RotationInteractorLogic::SetCenterOfRotation(
+        const Eigen::Vector3f& center) {
     centerOfRotation_ = center;
 }
 
-void RotationInteractor::Pan(int dx, int dy) {
+void RotationInteractorLogic::Pan(int dx, int dy) {
     Eigen::Vector3f worldMove = CalcPanVectorWorld(dx, dy);
     centerOfRotation_ = centerOfRotationAtMouseDown_ + worldMove;
 
@@ -54,7 +55,7 @@ void RotationInteractor::Pan(int dx, int dy) {
     SetMatrix(matrix);
 }
 
-Eigen::Vector3f RotationInteractor::CalcPanVectorWorld(int dx, int dy) {
+Eigen::Vector3f RotationInteractorLogic::CalcPanVectorWorld(int dx, int dy) {
     // Calculate the depth to the pixel we clicked on, so that we
     // can compensate for perspective and have the mouse stays on
     // that location. Unfortunately, we don't really have access to
@@ -83,15 +84,15 @@ Eigen::Vector3f RotationInteractor::CalcPanVectorWorld(int dx, int dy) {
     return worldMove;
 }
 
-void RotationInteractor::StartMouseDrag() {
+void RotationInteractorLogic::StartMouseDrag() {
     Super::SetMouseDownInfo(GetMatrix(), centerOfRotation_);
 }
 
-void RotationInteractor::UpdateMouseDragUI() {}
+void RotationInteractorLogic::UpdateMouseDragUI() {}
 
-void RotationInteractor::EndMouseDrag() {}
+void RotationInteractorLogic::EndMouseDrag() {}
 
-void RotationInteractor::UpdateCameraFarPlane() {
+void RotationInteractorLogic::UpdateCameraFarPlane() {
     // Remember that the camera matrix is not necessarily the
     // interactor's matrix.
     // Also, the far plane needs to be able to show the

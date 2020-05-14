@@ -60,7 +60,7 @@ public:
     void SetBackgroundColor(const Color& color);
     void SetDiscardBuffers(const visualization::View::TargetBuffers& buffers);
 
-    enum Controls { ROTATE_OBJ, FPS, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
+    enum Controls { ROTATE_OBJ, FLY, ROTATE_SUN, ROTATE_IBL, ROTATE_MODEL };
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,

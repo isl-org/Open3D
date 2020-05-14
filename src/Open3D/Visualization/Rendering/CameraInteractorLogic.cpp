@@ -24,15 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "CameraInteractor.h"
+#include "CameraInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
 
-CameraInteractor::CameraInteractor(Camera* c, double minFarPlane)
-    : RotationInteractor(c, minFarPlane), fovAtMouseDown_(60.0) {}
+CameraInteractorLogic::CameraInteractorLogic(Camera* c, double minFarPlane)
+    : RotationInteractorLogic(c, minFarPlane), fovAtMouseDown_(60.0) {}
 
-void CameraInteractor::SetBoundingBox(
+void CameraInteractorLogic::SetBoundingBox(
         const geometry::AxisAlignedBoundingBox& bounds) {
     Super::SetBoundingBox(bounds);
     // Initialize parent's matrix_ (in case we do a mouse wheel, which
@@ -41,18 +41,18 @@ void CameraInteractor::SetBoundingBox(
                      bounds.GetCenter().cast<float>());
 }
 
-void CameraInteractor::Rotate(int dx, int dy) {
+void CameraInteractorLogic::Rotate(int dx, int dy) {
     Super::Rotate(dx, dy);
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractor::RotateZ(int dx, int dy) {
+void CameraInteractorLogic::RotateZ(int dx, int dy) {
     Super::RotateZ(dx, dy);
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractor::RotateFPS(int dx, int dy) {
-    // First-person shooter rotation is always about the current camera
+void CameraInteractorLogic::RotateFly(int dx, int dy) {
+    // Fly/first-person shooter rotation is always about the current camera
     // matrix, and the camera's position, so we need to update Super's
     // matrix information.
     Super::SetMouseDownInfo(camera_->GetModelMatrix(), camera_->GetPosition());
@@ -60,7 +60,7 @@ void CameraInteractor::RotateFPS(int dx, int dy) {
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractor::Dolly(int dy, DragType type) {
+void CameraInteractorLogic::Dolly(int dy, DragType type) {
     // Parent's matrix_ may not have been set yet
     if (type != DragType::MOUSE) {
         SetMouseDownInfo(camera_->GetModelMatrix(), centerOfRotation_);
@@ -68,7 +68,7 @@ void CameraInteractor::Dolly(int dy, DragType type) {
     Super::Dolly(dy, type);
 }
 
-void CameraInteractor::Dolly(float zDist, Camera::Transform matrixIn) {
+void CameraInteractorLogic::Dolly(float zDist, Camera::Transform matrixIn) {
     Super::Dolly(zDist, matrixIn);
     auto matrix = GetMatrix();
     camera_->SetModelMatrix(matrix);
@@ -76,25 +76,25 @@ void CameraInteractor::Dolly(float zDist, Camera::Transform matrixIn) {
     UpdateCameraFarPlane();
 }
 
-void CameraInteractor::Pan(int dx, int dy) {
+void CameraInteractorLogic::Pan(int dx, int dy) {
     Super::Pan(dx, dy);
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractor::RotateLocal(float angleRad,
-                                   const Eigen::Vector3f& axis) {
+void CameraInteractorLogic::RotateLocal(float angleRad,
+                                        const Eigen::Vector3f& axis) {
     auto modelMatrix = camera_->GetModelMatrix();  // copy
     modelMatrix.rotate(Eigen::AngleAxis<float>(angleRad, axis));
     camera_->SetModelMatrix(modelMatrix);
 }
 
-void CameraInteractor::MoveLocal(const Eigen::Vector3f& v) {
+void CameraInteractorLogic::MoveLocal(const Eigen::Vector3f& v) {
     auto modelMatrix = camera_->GetModelMatrix();  // copy
     modelMatrix.translate(v);
     camera_->SetModelMatrix(modelMatrix);
 }
 
-void CameraInteractor::Zoom(int dy, DragType dragType) {
+void CameraInteractorLogic::Zoom(int dy, DragType dragType) {
     float dFOV = 0.0f;  // initialize to make GCC happy
     switch (dragType) {
         case DragType::MOUSE:
@@ -149,14 +149,16 @@ void CameraInteractor::Zoom(int dy, DragType dragType) {
                            camera_->GetFar(), camera_->GetFieldOfViewType());
 }
 
-void CameraInteractor::StartMouseDrag() {
+void CameraInteractorLogic::StartMouseDrag() {
     Super::SetMouseDownInfo(camera_->GetModelMatrix(), centerOfRotation_);
     fovAtMouseDown_ = camera_->GetFieldOfView();
 }
 
-void CameraInteractor::UpdateMouseDragUI() {}
+void CameraInteractorLogic::ResetMouseDrag() { StartMouseDrag(); }
 
-void CameraInteractor::EndMouseDrag() {}
+void CameraInteractorLogic::UpdateMouseDragUI() {}
+
+void CameraInteractorLogic::EndMouseDrag() {}
 
 }  // namespace visualization
 }  // namespace open3d

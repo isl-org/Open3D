@@ -957,7 +957,7 @@ struct GuiVisualizer::Impl {
         this->scene->SetViewControls(mode);
         window.SetFocusWidget(this->scene.get());
         this->settings.wgtMouseArcball->SetOn(mode == Controls::ROTATE_OBJ);
-        this->settings.wgtMouseFly->SetOn(mode == Controls::FPS);
+        this->settings.wgtMouseFly->SetOn(mode == Controls::FLY);
         this->settings.wgtMouseModel->SetOn(mode == Controls::ROTATE_MODEL);
         this->settings.wgtMouseSun->SetOn(mode == Controls::ROTATE_SUN);
         this->settings.wgtMouseIBL->SetOn(mode == Controls::ROTATE_IBL);
@@ -1106,7 +1106,7 @@ GuiVisualizer::GuiVisualizer(
     });
     settings.wgtMouseFly = std::make_shared<SmallToggleButton>("Fly");
     settings.wgtMouseFly->SetOnClicked([this]() {
-        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::FPS);
+        impl_->SetMouseControls(*this, gui::SceneWidget::Controls::FLY);
     });
     settings.wgtMouseModel = std::make_shared<SmallToggleButton>("Model");
     settings.wgtMouseModel->SetOnClicked([this]() {

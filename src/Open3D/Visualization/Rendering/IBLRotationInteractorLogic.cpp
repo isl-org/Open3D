@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "IBLRotationInteractor.h"
+#include "IBLRotationInteractorLogic.h"
 
 #include "Camera.h"
 #include "Scene.h"
@@ -34,10 +34,11 @@
 namespace open3d {
 namespace visualization {
 
-IBLRotationInteractor::IBLRotationInteractor(Scene* scene, Camera* camera)
+IBLRotationInteractorLogic::IBLRotationInteractorLogic(Scene* scene,
+                                                       Camera* camera)
     : scene_(scene), camera_(camera) {}
 
-void IBLRotationInteractor::Rotate(int dx, int dy) {
+void IBLRotationInteractorLogic::Rotate(int dx, int dy) {
     Eigen::Vector3f up = camera_->GetUpVector();
     Eigen::Vector3f right = -camera_->GetLeftVector();
     RotateWorld(-dx, -dy, up, right);
@@ -45,20 +46,20 @@ void IBLRotationInteractor::Rotate(int dx, int dy) {
     UpdateMouseDragUI();
 }
 
-void IBLRotationInteractor::RotateZ(int dx, int dy) {
+void IBLRotationInteractorLogic::RotateZ(int dx, int dy) {
     Eigen::Vector3f forward = camera_->GetForwardVector();
     RotateWorld(0, dy, {0, 0, 0}, forward);
     scene_->SetIndirectLightRotation(GetCurrentRotation());
     UpdateMouseDragUI();
 }
 
-void IBLRotationInteractor::SetSkyboxHandle(visualization::SkyboxHandle skybox,
-                                            bool isOn) {
+void IBLRotationInteractorLogic::SetSkyboxHandle(
+        visualization::SkyboxHandle skybox, bool isOn) {
     skybox_ = skybox;
     skyboxIsNormallyOn_ = isOn;
 }
 
-void IBLRotationInteractor::StartMouseDrag() {
+void IBLRotationInteractorLogic::StartMouseDrag() {
     iblRotationAtMouseDown_ = scene_->GetIndirectLightRotation();
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
@@ -72,28 +73,28 @@ void IBLRotationInteractor::StartMouseDrag() {
     UpdateMouseDragUI();
 }
 
-void IBLRotationInteractor::UpdateMouseDragUI() {
+void IBLRotationInteractorLogic::UpdateMouseDragUI() {
     Camera::Transform current = GetCurrentRotation();
     for (auto& o : uiObjs_) {
         scene_->SetEntityTransform(o.handle, current);
     }
 }
 
-void IBLRotationInteractor::EndMouseDrag() {
+void IBLRotationInteractorLogic::EndMouseDrag() {
     ClearUI();
     if (!skyboxIsNormallyOn_) {
         scene_->SetSkybox(visualization::SkyboxHandle());
     }
 }
 
-void IBLRotationInteractor::ClearUI() {
+void IBLRotationInteractorLogic::ClearUI() {
     for (auto& o : uiObjs_) {
         scene_->RemoveGeometry(o.handle);
     }
     uiObjs_.clear();
 }
 
-Camera::Transform IBLRotationInteractor::GetCurrentRotation() const {
+Camera::Transform IBLRotationInteractorLogic::GetCurrentRotation() const {
     return GetMatrix() * iblRotationAtMouseDown_;
 }
 

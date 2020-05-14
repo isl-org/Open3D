@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "LightDirectionInteractor.h"
+#include "LightDirectionInteractorLogic.h"
 
 #include "Camera.h"
 #include "Scene.h"
@@ -117,21 +117,22 @@ std::shared_ptr<geometry::TriangleMesh> CreateArrow(const Eigen::Vector3d& dir,
 static const Eigen::Vector3d SKY_COLOR(0.0f, 0.0f, 1.0f);
 static const Eigen::Vector3d SUN_COLOR(1.0f, 0.9f, 0.0f);
 
-LightDirectionInteractor::LightDirectionInteractor(Scene* scene, Camera* camera)
+LightDirectionInteractorLogic::LightDirectionInteractorLogic(Scene* scene,
+                                                             Camera* camera)
     : scene_(scene), camera_(camera) {}
 
-void LightDirectionInteractor::SetDirectionalLight(LightHandle dirLight) {
+void LightDirectionInteractorLogic::SetDirectionalLight(LightHandle dirLight) {
     dirLight_ = dirLight;
 }
 
-void LightDirectionInteractor::Rotate(int dx, int dy) {
+void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
     Eigen::Vector3f up = camera_->GetUpVector();
     Eigen::Vector3f right = -camera_->GetLeftVector();
     RotateWorld(-dx, -dy, up, right);
     UpdateMouseDragUI();
 }
 
-void LightDirectionInteractor::StartMouseDrag() {
+void LightDirectionInteractorLogic::StartMouseDrag() {
     lightDirAtMouseDown_ = scene_->GetLightDirection(dirLight_);
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
@@ -176,7 +177,7 @@ void LightDirectionInteractor::StartMouseDrag() {
     UpdateMouseDragUI();
 }
 
-void LightDirectionInteractor::UpdateMouseDragUI() {
+void LightDirectionInteractorLogic::UpdateMouseDragUI() {
     Eigen::Vector3f modelCenter = modelBounds_.GetCenter().cast<float>();
     for (auto& o : uiObjs_) {
         Camera::Transform t = GetMatrix() * o.transform;
@@ -185,16 +186,16 @@ void LightDirectionInteractor::UpdateMouseDragUI() {
     }
 }
 
-void LightDirectionInteractor::EndMouseDrag() { ClearUI(); }
+void LightDirectionInteractorLogic::EndMouseDrag() { ClearUI(); }
 
-void LightDirectionInteractor::ClearUI() {
+void LightDirectionInteractorLogic::ClearUI() {
     for (auto& o : uiObjs_) {
         scene_->RemoveGeometry(o.handle);
     }
     uiObjs_.clear();
 }
 
-Eigen::Vector3f LightDirectionInteractor::GetCurrentDirection() const {
+Eigen::Vector3f LightDirectionInteractorLogic::GetCurrentDirection() const {
     return GetMatrix() * lightDirAtMouseDown_;
 }
 

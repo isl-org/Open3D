@@ -26,41 +26,45 @@
 
 #pragma once
 
-#include "RotationInteractor.h"
+#include "MatrixInteractorLogic.h"
+
+#include "RendererHandle.h"
 
 namespace open3d {
 namespace visualization {
 
-class CameraInteractor : public RotationInteractor {
-    using Super = RotationInteractor;
+class Camera;
+class Scene;
+
+class LightDirectionInteractorLogic : public MatrixInteractorLogic {
+    using Super = MatrixInteractorLogic;
 
 public:
-    CameraInteractor(Camera* c, double minFarPlane);
+    LightDirectionInteractorLogic(Scene* scene, Camera* camera);
 
-    void SetBoundingBox(
-            const geometry::AxisAlignedBoundingBox& bounds) override;
+    void SetDirectionalLight(LightHandle dirLight);
 
     void Rotate(int dx, int dy) override;
-    void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType type) override;
-    void Dolly(float zDist, Camera::Transform matrixIn) override;
 
-    void Pan(int dx, int dy) override;
+    void StartMouseDrag();
+    void UpdateMouseDragUI();
+    void EndMouseDrag();
 
-    /// Sets camera field of view
-    void Zoom(int dy, DragType dragType);
-
-    void RotateLocal(float angleRad, const Eigen::Vector3f& axis);
-    void MoveLocal(const Eigen::Vector3f& v);
-
-    void RotateFPS(int dx, int dy);
-
-    void StartMouseDrag() override;
-    void UpdateMouseDragUI() override;
-    void EndMouseDrag() override;
+    Eigen::Vector3f GetCurrentDirection() const;
 
 private:
-    double fovAtMouseDown_;
+    Scene* scene_;
+    Camera* camera_;
+    LightHandle dirLight_;
+    Eigen::Vector3f lightDirAtMouseDown_;
+
+    struct UIObj {
+        GeometryHandle handle;
+        Camera::Transform transform;
+    };
+    std::vector<UIObj> uiObjs_;
+
+    void ClearUI();
 };
 
 }  // namespace visualization
