@@ -5,6 +5,7 @@ flushOutput() {
     do
         echo 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE'
     done
+    sleep 10
 }
 trap 'flushOutput' EXIT
 
