@@ -32,3 +32,23 @@ jobs:
     - name: Config and Build
       run: |
         ./util/scripts/run-travis.sh
+
+  # windows:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       shared: [ON, OFF]
+  #       config: [Release, Debug]
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #     with:
+  #       submodules: true
+  #   - name: configure
+  #     run: |
+  #       mkdir build
+  #       cd build
+  #       cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" -DBUILD_SHARED_LIBS=${{ matrix.shared }} ..
+  #   - name: build
+  #     run: |
+  #       cd build
+  #       cmake --build . --parallel 2 --config ${{ matrix.config }} --target INSTALL
