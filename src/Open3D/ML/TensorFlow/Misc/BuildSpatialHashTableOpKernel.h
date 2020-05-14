@@ -71,8 +71,8 @@ public:
 
         std::vector<uint32_t> hash_table_splits(batch_size.value() + 1, 0);
         for (int i = 0; i < batch_size.value(); ++i) {
-            size_t num_points_i = points_row_splits.flat<int64>()(i + 1) -
-                                  points_row_splits.flat<int64>()(i);
+            int64_t num_points_i = points_row_splits.flat<int64>()(i + 1) -
+                                   points_row_splits.flat<int64>()(i);
 
             int64_t hash_table_size = std::min<int64_t>(
                     std::max<int64_t>(hash_table_size_factor * num_points_i, 1),

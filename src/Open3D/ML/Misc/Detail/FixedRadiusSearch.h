@@ -98,10 +98,10 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                 hash_table_splits[i + 1] - hash_table_splits[i];
         const size_t first_cell_idx = hash_table_splits[i];
         tbb::parallel_for(
-                tbb::blocked_range<size_t>(points_row_splits[i],
-                                           points_row_splits[i + 1]),
-                [&](const tbb::blocked_range<size_t>& r) {
-                    for (size_t i = r.begin(); i != r.end(); ++i) {
+                tbb::blocked_range<int64_t>(points_row_splits[i],
+                                            points_row_splits[i + 1]),
+                [&](const tbb::blocked_range<int64_t>& r) {
+                    for (int64_t i = r.begin(); i != r.end(); ++i) {
                         Eigen::Map<const Vec3_t> pos(points + 3 * i);
 
                         Eigen::Vector3i voxel_index =
@@ -293,7 +293,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             size_t end_idx = hash_table_cell_splits[bin + 1];
 
                             for (size_t j = begin_idx; j < end_idx; ++j) {
-                                int32_t idx = hash_table_index[j];
+                                uint32_t idx = hash_table_index[j];
                                 if (IGNORE_QUERY_POINT) {
                                     if (points[idx * 3 + 0] == pos.x() &&
                                         points[idx * 3 + 1] == pos.y() &&
@@ -400,7 +400,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             size_t end_idx = hash_table_cell_splits[bin + 1];
 
                             for (size_t j = begin_idx; j < end_idx; ++j) {
-                                int32_t idx = hash_table_index[j];
+                                uint32_t idx = hash_table_index[j];
                                 if (IGNORE_QUERY_POINT) {
                                     if (points[idx * 3 + 0] == pos.x() &&
                                         points[idx * 3 + 1] == pos.y() &&
