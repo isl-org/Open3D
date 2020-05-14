@@ -38,7 +38,7 @@ struct Dialog::Impl {
     Window *parent = nullptr;
 };
 
-Dialog::Dialog(const char *title) : impl_(std::make_unique<Dialog::Impl>()) {}
+Dialog::Dialog(const char *title) : impl_(new Dialog::Impl()) {}
 
 Dialog::~Dialog() {}
 

@@ -340,7 +340,7 @@ CollapsableVert::CollapsableVert(const char* text)
 CollapsableVert::CollapsableVert(const char* text,
                                  int spacing,
                                  const Margins& margins /*= Margins()*/)
-    : Vert(spacing, margins), impl_(std::make_unique<CollapsableVert::Impl>()) {
+    : Vert(spacing, margins), impl_(new CollapsableVert::Impl()) {
     static int gNextId = 1;
 
     impl_->text = text;

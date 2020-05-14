@@ -47,7 +47,7 @@ struct VectorEdit::Impl {
     std::function<void(const Eigen::Vector3f&)> onChanged;
 };
 
-VectorEdit::VectorEdit() : impl_(std::make_unique<VectorEdit::Impl>()) {
+VectorEdit::VectorEdit() : impl_(new VectorEdit::Impl()) {
     std::stringstream s;
     s << "##vectoredit" << gNextVectorEditId++ << std::endl;
 }

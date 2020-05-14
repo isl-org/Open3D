@@ -59,7 +59,7 @@ struct NumberEdit::Impl {
 };
 
 NumberEdit::NumberEdit(Type type)
-    : impl_(std::make_unique<NumberEdit::Impl>()) {
+    : impl_(new NumberEdit::Impl()) {
     impl_->type = type;
     std::stringstream s;
     s << "##numedit" << gNextNumberEditId++;

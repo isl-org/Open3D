@@ -221,7 +221,7 @@ struct FileDialog::Impl {
 };
 
 FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
-    : Dialog("File"), impl_(std::make_unique<FileDialog::Impl>()) {
+    : Dialog("File"), impl_(new FileDialog::Impl()) {
     auto em = theme.fontSize;
     auto layout = std::make_shared<Vert>(0.5 * em, Margins(em));
     impl_->mode = mode;

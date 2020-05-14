@@ -49,7 +49,7 @@ struct ListView::Impl {
     std::function<void(const char *, bool)> onValueChanged;
 };
 
-ListView::ListView() : impl_(std::make_unique<ListView::Impl>()) {
+ListView::ListView() : impl_(new ListView::Impl()) {
     std::stringstream s;
     s << "##listview_" << gNextListBoxId++;
     impl_->imguiId = s.str();
