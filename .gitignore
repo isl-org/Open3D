@@ -1,3 +1,6 @@
+# Windows build temp cmake file
+CMakeSettings.json
+
 # Docs tar file created by travis deploy
 .travis/*.tar.gz
 
