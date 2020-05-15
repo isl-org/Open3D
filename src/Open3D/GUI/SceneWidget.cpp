@@ -642,10 +642,10 @@ void SceneWidget::SetDiscardBuffers(
 
 void SceneWidget::SetupCamera(
         float verticalFoV,
-        const geometry::AxisAlignedBoundingBox& geometryBounds,
-        const Eigen::Vector3f& centerOfRotation) {
-    impl_->bounds_ = geometryBounds;
-    impl_->controls_->SetBoundingBox(geometryBounds);
+        const geometry::AxisAlignedBoundingBox& geometry_bounds,
+        const Eigen::Vector3f& center_of_rotation) {
+    impl_->bounds_ = geometry_bounds;
+    impl_->controls_->SetBoundingBox(geometry_bounds);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 
@@ -669,18 +669,18 @@ void SceneWidget::SetupCamera(
 }
 
 void SceneWidget::SetCameraChangedCallback(
-        std::function<void(visualization::Camera*)> onCamChanged) {
-    impl_->on_camera_changed_ = onCamChanged;
+        std::function<void(visualization::Camera*)> on_cam_changed) {
+    impl_->on_camera_changed_ = on_cam_changed;
 }
 
 void SceneWidget::SelectDirectionalLight(
-        visualization::LightHandle dirLight,
-        std::function<void(const Eigen::Vector3f&)> onDirChanged) {
-    impl_->dir_light_ = dirLight;
-    impl_->on_light_dir_changed_ = onDirChanged;
+        visualization::LightHandle dir_light,
+        std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
+    impl_->dir_light_ = dir_light;
+    impl_->on_light_dir_changed_ = on_dir_changed;
     impl_->controls_->SetDirectionalLight(
-            dirLight, [this, dirLight](const Eigen::Vector3f& dir) {
-                impl_->scene_.SetLightDirection(dirLight, dir);
+            dir_light, [this, dir_light](const Eigen::Vector3f& dir) {
+                impl_->scene_.SetLightDirection(dir_light, dir);
                 if (impl_->on_light_dir_changed_) {
                     impl_->on_light_dir_changed_(dir);
                 }
@@ -688,25 +688,25 @@ void SceneWidget::SelectDirectionalLight(
 }
 
 void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
-                                  bool isOn) {
-    impl_->controls_->SetSkyboxHandle(skybox, isOn);
+                                  bool is_on) {
+    impl_->controls_->SetSkyboxHandle(skybox, is_on);
 }
 
 void SceneWidget::SetModel(const ModelDescription& desc) {
     impl_->model_ = desc;
-    for (auto p : desc.fastPointClouds) {
+    for (auto p : desc.fast_point_clouds) {
         impl_->scene_.SetEntityEnabled(p, false);
     }
 
     std::vector<visualization::GeometryHandle> objects;
-    objects.reserve(desc.pointClouds.size() + desc.meshes.size());
-    for (auto p : desc.pointClouds) {
+    objects.reserve(desc.point_clouds.size() + desc.meshes.size());
+    for (auto p : desc.point_clouds) {
         objects.push_back(p);
     }
     for (auto m : desc.meshes) {
         objects.push_back(m);
     }
-    for (auto p : desc.fastPointClouds) {
+    for (auto p : desc.fast_point_clouds) {
         objects.push_back(p);
     }
     impl_->controls_->SetModel(desc.axes, objects);
@@ -745,11 +745,11 @@ void SceneWidget::SetRenderQuality(Quality quality) {
             view->SetSampleCount(4);
             isFast = false;
         }
-        if (!impl_->model_.fastPointClouds.empty()) {
-            for (auto p : impl_->model_.pointClouds) {
+        if (!impl_->model_.fast_point_clouds.empty()) {
+            for (auto p : impl_->model_.point_clouds) {
                 impl_->scene_.SetEntityEnabled(p, !isFast);
             }
-            for (auto p : impl_->model_.fastPointClouds) {
+            for (auto p : impl_->model_.fast_point_clouds) {
                 impl_->scene_.SetEntityEnabled(p, isFast);
             }
         }

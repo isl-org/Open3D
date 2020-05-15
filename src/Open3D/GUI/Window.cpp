@@ -65,13 +65,13 @@ static constexpr int AUTOSIZE_WIDTH = 0;
 static constexpr int AUTOSIZE_HEIGHT = 0;
 
 // Assumes the correct ImGuiContext is current
-void updateImGuiForScaling(float newScaling) {
+void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
-    style.FrameRounding *= newScaling;
+    style.FrameRounding *= new_scaling;
 }
 
-int mouseButtonFromGLFW(int button) {
+int MouseButtonFromGLFW(int button) {
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
             return int(MouseButton::LEFT);
@@ -88,26 +88,26 @@ int mouseButtonFromGLFW(int button) {
     }
 }
 
-int keymodsFromGLFW(int glfwMods) {
+int KeymodsFromGLFW(int glfw_mods) {
     int keymods = 0;
-    if (glfwMods & GLFW_MOD_SHIFT) {
+    if (glfw_mods & GLFW_MOD_SHIFT) {
         keymods |= int(KeyModifier::SHIFT);
     }
-    if (glfwMods & GLFW_MOD_CONTROL) {
+    if (glfw_mods & GLFW_MOD_CONTROL) {
 #if __APPLE__
         keymods |= int(KeyModifier::ALT);
 #else
         keymods |= int(KeyModifier::CTRL);
 #endif  // __APPLE__
     }
-    if (glfwMods & GLFW_MOD_ALT) {
+    if (glfw_mods & GLFW_MOD_ALT) {
 #if __APPLE__
         keymods |= int(KeyModifier::META);
 #else
         keymods |= int(KeyModifier::ALT);
 #endif  // __APPLE__
     }
-    if (glfwMods & GLFW_MOD_SUPER) {
+    if (glfw_mods & GLFW_MOD_SUPER) {
 #if __APPLE__
         keymods |= int(KeyModifier::CTRL);
 #else
@@ -292,7 +292,7 @@ Window::Window(const std::string& title,
         int textureW, textureH, bytesPerPx;
         io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                      &bytesPerPx);
-        impl_->imgui_.imgui_bridge->createAtlasTextureAlpha8(
+        impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
                 pixels, textureW, textureH, bytesPerPx);
     }
 
@@ -457,10 +457,10 @@ float Window::GetScaling() const {
 #endif  // GLFW version >= 3.3
 }
 
-Point Window::GlobalToWindowCoord(int globalX, int globalY) {
+Point Window::GlobalToWindowCoord(int global_x, int global_y) {
     int wx, wy;
     glfwGetWindowPos(impl_->window_, &wx, &wy);
-    return Point(globalX - wx, globalY - wy);
+    return Point(global_y - wx, global_y - wy);
 }
 
 bool Window::IsVisible() const {
@@ -550,7 +550,7 @@ void Window::Layout(const Theme& theme) {
     }
 }
 
-void Window::OnMenuItemSelected(Menu::ItemId itemId) {}
+void Window::OnMenuItemSelected(Menu::ItemId item_id) {}
 
 namespace {
 enum Mode { NORMAL, DIALOG, NO_INPUT };
@@ -611,7 +611,7 @@ Widget::DrawResult DrawChild(DrawContext& dc,
 }
 }  // namespace
 
-Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
+Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // These are here to provide fast unique window names. (Hence using
     // char* instead of a std::string, just in case c_str() recreates
     // the buffer on some platform and unwittingly makes
@@ -751,12 +751,12 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     ImGui::Render();  // creates the draw data (i.e. Render()s to data)
 
     // Draw the ImGui commands
-    impl_->imgui_.imgui_bridge->update(ImGui::GetDrawData());
+    impl_->imgui_.imgui_bridge->Update(ImGui::GetDrawData());
 
     // Draw. Since ImGUI is an immediate mode gui, it does layout during
     // draw, and if we are drawing for layout purposes, don't actually
     // draw, because we are just going to draw again after this returns.
-    if (!isLayoutPass) {
+    if (!is_layout_pass) {
         impl_->renderer_->BeginFrame();
         impl_->renderer_->Draw();
         impl_->renderer_->EndFrame();
@@ -799,7 +799,7 @@ void Window::OnResize() {
     impl_->renderer_->UpdateSwapChain();
 #endif  // __APPLE__
 
-    impl_->imgui_.imgui_bridge->onWindowResized(*this);
+    impl_->imgui_.imgui_bridge->OnWindowResized(*this);
 
     auto size = GetSize();
     auto scaling = GetScaling();
@@ -808,8 +808,8 @@ void Window::OnResize() {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(size.width, size.height);
     if (impl_->imgui_.scaling != scaling) {
-        updateImGuiForScaling(1.0 / impl_->imgui_.scaling);  // undo previous
-        updateImGuiForScaling(scaling);
+        UpdateImGuiForScaling(1.0 / impl_->imgui_.scaling);  // undo previous
+        UpdateImGuiForScaling(scaling);
         impl_->imgui_.scaling = scaling;
     }
     io.DisplayFramebufferScale.x = 1.0f;
@@ -1035,7 +1035,7 @@ void Window::DrawCallback(GLFWwindow* window) {
     }
 }
 
-void Window::ResizeCallback(GLFWwindow* window, int osWidth, int osHeight) {
+void Window::ResizeCallback(GLFWwindow* window, int os_width, int os_height) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
     UpdateAfterEvent(w);
@@ -1052,7 +1052,7 @@ void Window::MouseMoveCallback(GLFWwindow* window, double x, double y) {
     int buttons = 0;
     for (int b = GLFW_MOUSE_BUTTON_1; b < GLFW_MOUSE_BUTTON_5; ++b) {
         if (glfwGetMouseButton(window, b) == GLFW_PRESS) {
-            buttons |= mouseButtonFromGLFW(b);
+            buttons |= MouseButtonFromGLFW(b);
         }
     }
     float scaling = w->GetScaling();
@@ -1081,8 +1081,8 @@ void Window::MouseButtonCallback(GLFWwindow* window,
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
-    MouseEvent me = {type, ix, iy, keymodsFromGLFW(mods)};
-    me.button.button = MouseButton(mouseButtonFromGLFW(button));
+    MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
+    me.button.button = MouseButton(MouseButtonFromGLFW(button));
 
     w->OnMouseEvent(me);
     UpdateAfterEvent(w);

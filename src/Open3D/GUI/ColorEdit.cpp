@@ -62,8 +62,8 @@ void ColorEdit::SetValue(const float r, const float g, const float b) {
 const Color& ColorEdit::GetValue() const { return impl_->value_; }
 
 void ColorEdit::SetOnValueChanged(
-        std::function<void(const Color&)> onValueChanged) {
-    impl_->on_value_changed_ = onValueChanged;
+        std::function<void(const Color&)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 Size ColorEdit::CalcPreferredSize(const Theme& theme) const {

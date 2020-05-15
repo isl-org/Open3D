@@ -47,11 +47,11 @@ public:
 
     double GetMinimumValue() const;
     double GetMaximumValue() const;
-    void SetLimits(double minValue, double maxValue);
+    void SetLimits(double min_value, double max_value);
 
-    void SetDecimalPrecision(int nDigits);
+    void SetDecimalPrecision(int num_digits);
 
-    void SetOnValueChanged(std::function<void(double)> onChanged);
+    void SetOnValueChanged(std::function<void(double)> on_changed);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     Widget::DrawResult Draw(const DrawContext& context) override;

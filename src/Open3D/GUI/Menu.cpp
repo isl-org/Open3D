@@ -78,14 +78,14 @@ struct Menu::Impl {
     std::vector<MenuItem> items_;
     std::unordered_map<int, size_t> id2idx_;
 
-    MenuItem *FindMenuItem(ItemId itemId) {
-        auto it = this->id2idx_.find(itemId);
+    MenuItem *FindMenuItem(ItemId item_id) {
+        auto it = this->id2idx_.find(item_id);
         if (it != this->id2idx_.end()) {
             return &this->items_[it->second];
         }
         for (auto &item : this->items_) {
             if (item.submenu_) {
-                auto *possibility = item.submenu_impl_->FindMenuItem(itemId);
+                auto *possibility = item.submenu_impl_->FindMenuItem(item_id);
                 if (possibility) {
                     return possibility;
                 }
@@ -118,31 +118,31 @@ void Menu::AddSeparator() {
             {NO_ITEM, "", KEY_NONE, nullptr, nullptr, false, false, true});
 }
 
-bool Menu::IsEnabled(ItemId itemId) const {
-    auto *item = impl_->FindMenuItem(itemId);
+bool Menu::IsEnabled(ItemId item_id) const {
+    auto *item = impl_->FindMenuItem(item_id);
     if (item) {
         return item->is_enabled_;
     }
     return false;
 }
 
-void Menu::SetEnabled(ItemId itemId, bool enabled) {
-    auto *item = impl_->FindMenuItem(itemId);
+void Menu::SetEnabled(ItemId item_id, bool enabled) {
+    auto *item = impl_->FindMenuItem(item_id);
     if (item) {
         item->is_enabled_ = enabled;
     }
 }
 
-bool Menu::IsChecked(ItemId itemId) const {
-    auto *item = impl_->FindMenuItem(itemId);
+bool Menu::IsChecked(ItemId item_id) const {
+    auto *item = impl_->FindMenuItem(item_id);
     if (item) {
         return item->is_checked_;
     }
     return false;
 }
 
-void Menu::SetChecked(ItemId itemId, bool checked) {
-    auto *item = impl_->FindMenuItem(itemId);
+void Menu::SetChecked(ItemId item_id, bool checked) {
+    auto *item = impl_->FindMenuItem(item_id);
     if (item) {
         item->is_checked_ = checked;
     }
@@ -154,7 +154,7 @@ int Menu::CalcHeight(const Theme &theme) const {
     return std::ceil(em + 2.0f * (padding.y + EXTRA_PADDING_Y));
 }
 
-Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool isEnabled) {
+Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     ItemId activatedId = NO_ITEM;
 
     ImVec2 size;
@@ -167,8 +167,8 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool isEnabled) {
     ImGui::BeginMainMenuBar();
     for (auto &item : impl_->items_) {
         if (item.submenu_) {
-            auto id =
-                    item.submenu_->Draw(context, item.name_.c_str(), isEnabled);
+            auto id = item.submenu_->Draw(context, item.name_.c_str(),
+                                          is_enabled);
             if (id >= 0) {
                 activatedId = id;
             }
@@ -193,7 +193,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool isEnabled) {
 
 Menu::ItemId Menu::Draw(const DrawContext &context,
                         const char *name,
-                        bool isEnabled) {
+                        bool is_enabled) {
     ItemId activatedId = NO_ITEM;
 
     // The default ImGUI menus are hideous:  there is no margin and the items
@@ -229,7 +229,7 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
             ImGuiStyleVar_ItemSpacing,
             ImVec2(context.theme.default_margin, context.theme.default_margin));
 
-    if (ImGui::BeginMenu(name, isEnabled)) {
+    if (ImGui::BeginMenu(name, is_enabled)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             auto &item = impl_->items_[i];
             if (item.is_separator_) {
@@ -237,7 +237,7 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
             } else if (item.submenu_) {
                 ImGui::SetCursorPosX(padding);
                 auto possibility = item.submenu_->Draw(
-                        context, item.name_.c_str(), isEnabled);
+                        context, item.name_.c_str(), is_enabled);
                 if (possibility != NO_ITEM) {
                     activatedId = possibility;
                 }

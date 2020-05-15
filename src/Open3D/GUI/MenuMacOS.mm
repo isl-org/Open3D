@@ -93,7 +93,7 @@ Menu::~Menu() {} // ARC will automatically release impl_->menu
 void* Menu::GetNativePointer() { return impl_->menu_; }
 
 void Menu::AddItem(const char *name,
-                   ItemId itemId /*= NO_ITEM*/,
+                   ItemId item_id /*= NO_ITEM*/,
                    KeyName key /*= KEY_NONE*/) {
     std::string shortcut;
     shortcut += char(key);
@@ -102,10 +102,10 @@ void Menu::AddItem(const char *name,
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:@selector(run)
                  keyEquivalent:objcShortcut];
-    item.target = [[Open3DRunnable alloc] initWithFunction:[itemId]() {
-        Application::GetInstance().OnMenuItemSelected(itemId);
+    item.target = [[Open3DRunnable alloc] initWithFunction:[item_id]() {
+        Application::GetInstance().OnMenuItemSelected(item_id);
     }];
-    item.tag = itemId;
+    item.tag = item_id;
     [impl_->menu_ addItem:item];
 }
 
@@ -124,31 +124,31 @@ void Menu::AddSeparator() {
     [impl_->menu_ addItem: [NSMenuItem separatorItem]];
 }
 
-bool Menu::IsEnabled(ItemId itemId) const {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+bool Menu::IsEnabled(ItemId item_id) const {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         return (item.enabled == YES ? true : false);
     }
     return false;
 }
 
-void Menu::SetEnabled(ItemId itemId, bool enabled) {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+void Menu::SetEnabled(ItemId item_id, bool enabled) {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         item.enabled = (enabled ? YES : NO);
     }
 }
 
-bool Menu::IsChecked(ItemId itemId) const {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+bool Menu::IsChecked(ItemId item_id) const {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         return (item.state == NSControlStateValueOn);
     }
     return false;
 }
 
-void Menu::SetChecked(ItemId itemId, bool checked) {
-    NSMenuItem *item = impl_->FindMenuItem(itemId);
+void Menu::SetChecked(ItemId item_id, bool checked) {
+    NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
         item.state = (checked ? NSControlStateValueOn
                               : NSControlStateValueOff);
@@ -159,13 +159,13 @@ int Menu::CalcHeight(const Theme &theme) const {
     return 0;  // menu is not part of window on macOS
 }
 
-Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool isEnabled) {
+Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     return NO_ITEM;
 }
 
 Menu::ItemId Menu::Draw(const DrawContext &context,
                         const char *name,
-                        bool isEnabled) {
+                        bool is_enabled) {
     return NO_ITEM;
 }
 

@@ -49,7 +49,7 @@ public:
 
     /// Specifies a callback function which will be called when the value
     /// changes as a result of user action.
-    void SetOnValueChanged(std::function<void(const Color&)> onValueChanged);
+    void SetOnValueChanged(std::function<void(const Color&)> on_value_changed);
 
 private:
     struct Impl;

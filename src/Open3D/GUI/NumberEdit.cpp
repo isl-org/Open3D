@@ -81,23 +81,23 @@ double NumberEdit::GetMinimumValue() const { return impl_->min_value_; }
 
 double NumberEdit::GetMaximumValue() const { return impl_->max_value_; }
 
-void NumberEdit::SetLimits(double minValue, double maxValue) {
+void NumberEdit::SetLimits(double min_value, double max_value) {
     if (impl_->type_ == INT) {
-        impl_->min_value_ = std::round(minValue);
-        impl_->max_value_ = std::round(maxValue);
+        impl_->min_value_ = std::round(min_value);
+        impl_->max_value_ = std::round(max_value);
     } else {
-        impl_->min_value_ = minValue;
-        impl_->max_value_ = maxValue;
+        impl_->min_value_ = min_value;
+        impl_->max_value_ = min_value;
     }
-    impl_->value_ = std::min(maxValue, std::max(minValue, impl_->value_));
+    impl_->value_ = std::min(max_value, std::max(min_value, impl_->value_));
 }
 
-void NumberEdit::SetDecimalPrecision(int nDigits) {
-    impl_->num_decimal_digits_ = nDigits;
+void NumberEdit::SetDecimalPrecision(int num_digits) {
+    impl_->num_decimal_digits_ = num_digits;
 }
 
-void NumberEdit::SetOnValueChanged(std::function<void(double)> onChanged) {
-    impl_->on_changed_ = onChanged;
+void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
+    impl_->on_changed_ = on_changed;
 }
 
 Size NumberEdit::CalcPreferredSize(const Theme &theme) const {

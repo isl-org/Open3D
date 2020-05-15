@@ -53,7 +53,7 @@
     return self;
 }
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
     // -application:openFile: runs befure applicationDidFinishLaunching: so we
     // need to check if we loaded a file or we need to display an empty window.
     if (open_empty_window_) {

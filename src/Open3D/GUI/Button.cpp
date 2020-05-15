@@ -55,14 +55,14 @@ void Button::SetToggleable(bool toggles) { impl_->is_toggleable_ = toggles; }
 
 bool Button::GetIsOn() const { return impl_->is_on_; }
 
-void Button::SetOn(bool isOn) {
+void Button::SetOn(bool is_on) {
     if (impl_->is_toggleable_) {
-        impl_->is_on_ = isOn;
+        impl_->is_on_ = is_on;
     }
 }
 
-void Button::SetOnClicked(std::function<void()> onClicked) {
-    impl_->on_clicked_ = onClicked;
+void Button::SetOnClicked(std::function<void()> on_clicked) {
+    impl_->on_clicked_ = on_clicked;
 }
 
 Size Button::CalcPreferredSize(const Theme& theme) const {

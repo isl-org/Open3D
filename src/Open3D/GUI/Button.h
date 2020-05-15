@@ -42,13 +42,13 @@ public:
     void SetToggleable(bool toggles);
 
     bool GetIsOn() const;
-    void SetOn(bool isOn);
+    void SetOn(bool is_on);
 
     Size CalcPreferredSize(const Theme& theme) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 
-    void SetOnClicked(std::function<void()> onClicked);
+    void SetOnClicked(std::function<void()> on_clicked);
 
 private:
     struct Impl;

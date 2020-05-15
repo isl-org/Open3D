@@ -64,7 +64,7 @@ namespace visualization {
 
 namespace {
 
-std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
+std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
     auto &theme = window->GetTheme();
     auto dlg = std::make_shared<gui::Dialog>("About");
 
@@ -117,7 +117,7 @@ std::shared_ptr<gui::Dialog> createAboutDialog(gui::Window *window) {
     return dlg;
 }
 
-std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
+std::shared_ptr<gui::VGrid> CreateHelpDisplay(gui::Window *window) {
     auto &theme = window->GetTheme();
 
     gui::Margins margins(theme.font_size);
@@ -194,7 +194,7 @@ std::shared_ptr<gui::VGrid> createHelpDisplay(gui::Window *window) {
     return layout;
 }
 
-std::shared_ptr<gui::VGrid> createCameraDisplay(gui::Window *window) {
+std::shared_ptr<gui::VGrid> CreateCameraDisplay(gui::Window *window) {
     auto &theme = window->GetTheme();
 
     gui::Margins margins(theme.font_size);
@@ -219,7 +219,7 @@ std::shared_ptr<gui::VGrid> createCameraDisplay(gui::Window *window) {
     return layout;
 }
 
-std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
+std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
     auto &theme = window->GetTheme();
     auto em = theme.font_size;
     auto dlg = std::make_shared<gui::Dialog>("Contact Us");
@@ -255,12 +255,12 @@ std::shared_ptr<gui::Dialog> createContactDialog(gui::Window *window) {
     return dlg;
 }
 
-std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axisLength) {
-    const double sphereRadius = 0.005 * axisLength;
-    const double cylRadius = 0.0025 * axisLength;
-    const double coneRadius = 0.0075 * axisLength;
-    const double cylHeight = 0.975 * axisLength;
-    const double coneHeight = 0.025 * axisLength;
+std::shared_ptr<geometry::TriangleMesh> CreateAxes(double axis_length) {
+    const double sphereRadius = 0.005 * axis_length;
+    const double cylRadius = 0.0025 * axis_length;
+    const double coneRadius = 0.0075 * axis_length;
+    const double cylHeight = 0.975 * axis_length;
+    const double coneHeight = 0.025 * axis_length;
 
     auto mesh_frame = geometry::TriangleMesh::CreateSphere(sphereRadius);
     mesh_frame->ComputeVertexNormals();
@@ -1428,10 +1428,10 @@ GuiVisualizer::GuiVisualizer(
     AddChild(settings.wgt_base);
 
     // Other items
-    impl_->help_keys_ = createHelpDisplay(this);
+    impl_->help_keys_ = CreateHelpDisplay(this);
     impl_->help_keys_->SetVisible(false);
     AddChild(impl_->help_keys_);
-    impl_->help_camera_ = createCameraDisplay(this);
+    impl_->help_camera_ = CreateCameraDisplay(this);
     impl_->help_camera_->SetVisible(false);
     AddChild(impl_->help_camera_);
 
@@ -1597,14 +1597,14 @@ void GuiVisualizer::SetGeometry(
 
         if (g->GetGeometryType() ==
             geometry::Geometry::GeometryType::PointCloud) {
-            desc.pointClouds.push_back(handle);
+            desc.point_clouds.push_back(handle);
             auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
             if (nPointCloudPoints > kMinPointCloudPointsForDecimation) {
                 int sampleRate = nPointCloudPoints /
                                  (kMinPointCloudPointsForDecimation / 2);
                 auto small = pcd->UniformDownSample(sampleRate);
                 handle = scene3d->AddGeometry(*small, selectedMaterial);
-                desc.fastPointClouds.push_back(handle);
+                desc.fast_point_clouds.push_back(handle);
                 impl_->geometry_handles_.push_back(handle);
             }
         } else {
@@ -1765,8 +1765,8 @@ void GuiVisualizer::ExportCurrentImage(int width,
             });
 }
 
-void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
-    auto menuId = MenuId(itemId);
+void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
+    auto menuId = MenuId(item_id);
     switch (menuId) {
         case FILE_OPEN: {
             auto dlg = std::make_shared<gui::FileDialog>(
@@ -1867,12 +1867,12 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId itemId) {
             break;
         }
         case HELP_ABOUT: {
-            auto dlg = createAboutDialog(this);
+            auto dlg = CreateAboutDialog(this);
             ShowDialog(dlg);
             break;
         }
         case HELP_CONTACT: {
-            auto dlg = createContactDialog(this);
+            auto dlg = CreateContactDialog(this);
             ShowDialog(dlg);
             break;
         }

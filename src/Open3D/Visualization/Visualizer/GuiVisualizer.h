@@ -68,7 +68,7 @@ public:
     void Layout(const gui::Theme& theme) override;
 
 protected:
-    void OnMenuItemSelected(gui::Menu::ItemId itemId) override;
+    void OnMenuItemSelected(gui::Menu::ItemId item_id) override;
     void OnDragDropped(const char* path) override;
 
 private:

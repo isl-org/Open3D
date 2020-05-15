@@ -77,9 +77,9 @@ double Slider::GetMinimumValue() const { return impl_->min_value_; }
 
 double Slider::GetMaximumValue() const { return impl_->max_value_; }
 
-void Slider::SetLimits(double minValue, double maxValue) {
-    impl_->min_value_ = minValue;
-    impl_->max_value_ = maxValue;
+void Slider::SetLimits(double min_value, double max_value) {
+    impl_->min_value_ = min_value;
+    impl_->max_value_ = max_value;
     if (impl_->type_ == INT) {
         impl_->min_value_ = std::round(impl_->min_value_);
         impl_->max_value_ = std::round(impl_->max_value_);
@@ -87,8 +87,8 @@ void Slider::SetLimits(double minValue, double maxValue) {
     SetValue(impl_->value_);  // make sure value is within new limits
 }
 
-void Slider::SetOnValueChanged(std::function<void(double)> onValueChanged) {
-    impl_->on_value_changed_ = onValueChanged;
+void Slider::SetOnValueChanged(std::function<void(double)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 Size Slider::CalcPreferredSize(const Theme& theme) const {

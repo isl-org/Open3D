@@ -40,7 +40,7 @@ namespace gui {
 
 namespace {
 
-std::vector<int> calcMajor(const Theme& theme,
+std::vector<int> CalcMajor(const Theme& theme,
                            Layout1D::Dir dir,
                            const std::vector<std::shared_ptr<Widget>>& children,
                            int* minor = nullptr) {
@@ -87,7 +87,7 @@ std::vector<int> calcMajor(const Theme& theme,
     return major;
 }
 
-std::vector<std::vector<std::shared_ptr<Widget>>> calcColumns(
+std::vector<std::vector<std::shared_ptr<Widget>>> CalcColumns(
         int nCols, const std::vector<std::shared_ptr<Widget>>& children) {
     std::vector<std::vector<std::shared_ptr<Widget>>> columns(nCols);
     int col = 0;
@@ -100,7 +100,7 @@ std::vector<std::vector<std::shared_ptr<Widget>>> calcColumns(
     return columns;
 }
 
-std::vector<Size> calcColumnSizes(
+std::vector<Size> CalcColumnSizes(
         const std::vector<std::vector<std::shared_ptr<Widget>>>& columns,
         const Theme& theme) {
     std::vector<Size> sizes;
@@ -124,10 +124,10 @@ std::vector<Size> calcColumnSizes(
 // ----------------------------------------------------------------------------
 Margins::Margins() : left(0), top(0), right(0), bottom(0) {}
 Margins::Margins(int px) : left(px), top(px), right(px), bottom(px) {}
-Margins::Margins(int horizPx, int vertPx)
-    : left(horizPx), top(vertPx), right(horizPx), bottom(vertPx) {}
-Margins::Margins(int leftPx, int topPx, int rightPx, int bottomPx)
-    : left(leftPx), top(topPx), right(rightPx), bottom(bottomPx) {}
+Margins::Margins(int horiz_px, int vert_px)
+    : left(horiz_px), top(vert_px), right(horiz_px), bottom(vert_px) {}
+Margins::Margins(int left_px, int top_px, int right_px, int bottom_px)
+    : left(left_px), top(top_px), right(right_px), bottom(bottom_px) {}
 
 int Margins::GetHoriz() const { return this->left + this->right; }
 
@@ -224,7 +224,7 @@ void Layout1D::AddStretch() { AddChild(std::make_shared<Stretch>()); }
 Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     int minor;
     std::vector<int> major =
-            calcMajor(theme, impl_->dir_, GetChildren(), &minor);
+            CalcMajor(theme, impl_->dir_, GetChildren(), &minor);
 
     int totalSpacing = impl_->spacing_ * (major.size() - 1);
     int majorSize = 0;
@@ -244,7 +244,7 @@ Size Layout1D::CalcPreferredSize(const Theme& theme) const {
 void Layout1D::Layout(const Theme& theme) {
     auto frame = GetFrame();
     auto& children = GetChildren();
-    std::vector<int> major = calcMajor(theme, impl_->dir_, children, nullptr);
+    std::vector<int> major = CalcMajor(theme, impl_->dir_, children, nullptr);
     int total = 0, nStretch = 0, nGrow = 0;
     for (auto& mj : major) {
         total += mj;
@@ -351,7 +351,7 @@ CollapsableVert::CollapsableVert(const char* text,
 
 CollapsableVert::~CollapsableVert() {}
 
-void CollapsableVert::SetIsOpen(bool isOpen) { impl_->is_open_ = isOpen; }
+void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 
 Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     auto* font = ImGui::GetFont();
@@ -456,11 +456,11 @@ struct VGrid::Impl {
     Margins margins_;
 };
 
-VGrid::VGrid(int nCols,
+VGrid::VGrid(int num_cols,
              int spacing /*= 0*/,
              const Margins& margins /*= Margins()*/)
     : impl_(new VGrid::Impl()) {
-    impl_->num_cols_ = nCols;
+    impl_->num_cols_ = num_cols;
     impl_->spacing_ = spacing;
     impl_->margins_ = margins;
 }
@@ -471,8 +471,8 @@ int VGrid::GetSpacing() const { return impl_->spacing_; }
 const Margins& VGrid::GetMargins() const { return impl_->margins_; }
 
 Size VGrid::CalcPreferredSize(const Theme& theme) const {
-    auto columns = calcColumns(impl_->num_cols_, GetChildren());
-    auto columnSizes = calcColumnSizes(columns, theme);
+    auto columns = CalcColumns(impl_->num_cols_, GetChildren());
+    auto columnSizes = CalcColumnSizes(columns, theme);
 
     int width = 0, height = 0;
     for (size_t i = 0; i < columnSizes.size(); ++i) {
@@ -490,8 +490,8 @@ Size VGrid::CalcPreferredSize(const Theme& theme) const {
 }
 
 void VGrid::Layout(const Theme& theme) {
-    auto columns = calcColumns(impl_->num_cols_, GetChildren());
-    auto columnSizes = calcColumnSizes(columns, theme);
+    auto columns = CalcColumns(impl_->num_cols_, GetChildren());
+    auto columnSizes = CalcColumnSizes(columns, theme);
 
     // Shrink columns that are too big.
     // TODO: right now this only handles DIM_GROW columns; extend to

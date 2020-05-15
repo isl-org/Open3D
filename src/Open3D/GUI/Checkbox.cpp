@@ -54,8 +54,8 @@ bool Checkbox::IsChecked() const { return impl_->is_checked_; }
 
 void Checkbox::SetChecked(bool checked) { impl_->is_checked_ = checked; }
 
-void Checkbox::SetOnChecked(std::function<void(bool)> onChecked) {
-    impl_->on_checked_ = onChecked;
+void Checkbox::SetOnChecked(std::function<void(bool)> on_checked) {
+    impl_->on_checked_ = on_checked;
 }
 
 Size Checkbox::CalcPreferredSize(const Theme& theme) const {

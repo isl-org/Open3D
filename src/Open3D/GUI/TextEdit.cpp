@@ -82,13 +82,13 @@ void TextEdit::SetPlaceholderText(const char *text) {
 }
 
 void TextEdit::SetOnTextChanged(
-        std::function<void(const char *)> onTextChanged) {
-    impl_->on_text_changed_ = onTextChanged;
+        std::function<void(const char *)> on_text_changed) {
+    impl_->on_text_changed_ = on_text_changed;
 }
 
 void TextEdit::SetOnValueChanged(
-        std::function<void(const char *)> onValueChanged) {
-    impl_->on_value_changed_ = onValueChanged;
+        std::function<void(const char *)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 bool TextEdit::ValidateNewText(const char *text) { return true; }

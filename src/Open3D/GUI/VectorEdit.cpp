@@ -64,8 +64,8 @@ void VectorEdit::SetValue(const Eigen::Vector3f& val) {
 }
 
 void VectorEdit::SetOnValueChanged(
-        std::function<void(const Eigen::Vector3f&)> onChanged) {
-    impl_->on_changed_ = onChanged;
+        std::function<void(const Eigen::Vector3f&)> on_changed) {
+    impl_->on_changed_ = on_changed;
 }
 
 Size VectorEdit::CalcPreferredSize(const Theme& theme) const {

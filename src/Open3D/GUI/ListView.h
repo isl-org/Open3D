@@ -57,7 +57,7 @@ public:
     /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)
     /// when the list selection changes because of user action.
     void SetOnValueChanged(
-            std::function<void(const char*, bool)> onValueChanged);
+            std::function<void(const char*, bool)> on_value_changed);
 
 private:
     struct Impl;

@@ -107,8 +107,8 @@ void Combobox::SetSelectedValue(const char* value) {
 }
 
 void Combobox::SetOnValueChanged(
-        std::function<void(const char*, int)> onValueChanged) {
-    impl_->on_value_changed_ = onValueChanged;
+        std::function<void(const char*, int)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 Size Combobox::CalcPreferredSize(const Theme& theme) const {

@@ -77,8 +77,8 @@ void ListView::SetSelectedIndex(int index) {
 }
 
 void ListView::SetOnValueChanged(
-        std::function<void(const char *, bool)> onValueChanged) {
-    impl_->on_value_changed_ = onValueChanged;
+        std::function<void(const char *, bool)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 Size ListView::CalcPreferredSize(const Theme &theme) const {

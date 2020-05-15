@@ -47,7 +47,7 @@ public:
 
     /// Specifies a callback function which will be called when the box
     /// changes checked state as a result of user action.
-    void SetOnChecked(std::function<void(bool)> onChecked);
+    void SetOnChecked(std::function<void(bool)> on_checked);
 
 private:
     struct Impl;
