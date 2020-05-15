@@ -73,7 +73,7 @@ matrix:
       script:
         - mkdir build
         - cd build
-        - |
+        - >
           cmake -DPYTHON_EXECUTABLE=`which python`
                 -DENABLE_HEADLESS_RENDERING=ON
                 -DENABLE_JUPYTER=ON
