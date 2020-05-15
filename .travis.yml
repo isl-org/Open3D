@@ -28,7 +28,7 @@ matrix:
             - cmake
             - clang-7
             - clang-format-5.0
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
         - cd build
@@ -53,14 +53,30 @@ matrix:
             - texlive-latex-extra
             - pandoc
             - libosmesa6-dev
-      before_install: ./util/scripts/setup-linux.sh
-      script:
-        - mkdir build
-        - cd build
+      install:
+        # Install ubuntu dependencies
+        - ./util/scripts/setup-linux.sh
+        # Install Kinect k4a package
+        - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        - sudo apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
+        - sudo apt-get update
+        - sudo apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
+        # Install Python dependencies for building docs
         - which python
         - python -V
         - pip install -U -q sphinx sphinx-rtd-theme nbsphinx Pillow
-        - cmake -DPYTHON_EXECUTABLE=`which python` -DENABLE_HEADLESS_RENDERING=ON -DENABLE_JUPYTER=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DWITH_OPENMP=ON ..
+      script:
+        - mkdir build
+        - cd build
+        - |
+          cmake -DPYTHON_EXECUTABLE=`which python`
+                -DENABLE_HEADLESS_RENDERING=ON
+                -DENABLE_JUPYTER=ON
+                -DBUILD_GLEW=ON
+                -DBUILD_GLFW=ON
+                -DWITH_OPENMP=ON
+                -DBUILD_AZURE_KINECT=ON
+                ..
         - make install-pip-package -j$NPROC
         - make -j$NPROC
         - bin/GLInfo
@@ -82,7 +98,7 @@ matrix:
           packages:
             - cmake
       env: SHARED=ON
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
     # SHARED=OFF, BUILD_DEPENDENCY_FROM_SOURCE=ON
@@ -98,7 +114,7 @@ matrix:
           packages:
             - cmake
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
     # SHARED=ON, BUILD_DEPENDENCY_FROM_SOURCE=ON
@@ -114,14 +130,14 @@ matrix:
           packages:
             - cmake
       env: SHARED=ON BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh
+      install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
     # Default environment of macOS 10.13 High Sierra
     # compiled using clang shipped with xcode10.1
     - os: osx
       osx_image: xcode10.1
-      before_install:
+      install:
         - brew update
         - brew upgrade python || true
         - ./util/scripts/install-deps-osx.sh
@@ -134,8 +150,8 @@ matrix:
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   before_install: sudo apt-get update && sudo apt-get install -y realpath
+    #   install: sudo apt-get update && sudo apt-get install -y realpath
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
-    #   before_install: sudo apt-get update && sudo apt-get install -y realpath
+    #   install: sudo apt-get update && sudo apt-get install -y realpath
