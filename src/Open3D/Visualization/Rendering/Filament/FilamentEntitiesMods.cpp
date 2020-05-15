@@ -61,7 +61,7 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
         const TextureSamplerParameters& samplerConfig) {
     TextureSampler sampler;
 
-    switch (samplerConfig.filterMag) {
+    switch (samplerConfig.filter_mag) {
         case TextureSamplerParameters::MagFilter::Nearest:
             sampler.setMagFilter(TextureSampler::MagFilter::NEAREST);
             break;
@@ -70,7 +70,7 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
             break;
     }
 
-    switch (samplerConfig.filterMin) {
+    switch (samplerConfig.filter_min) {
         case TextureSamplerParameters::MinFilter::Nearest:
             sampler.setMinFilter(TextureSampler::MinFilter::NEAREST);
             break;
@@ -95,9 +95,9 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
             break;
     }
 
-    sampler.setWrapModeS(ConvertWrapMode(samplerConfig.wrapU));
-    sampler.setWrapModeT(ConvertWrapMode(samplerConfig.wrapV));
-    sampler.setWrapModeR(ConvertWrapMode(samplerConfig.wrapW));
+    sampler.setWrapModeS(ConvertWrapMode(samplerConfig.wrap_u));
+    sampler.setWrapModeT(ConvertWrapMode(samplerConfig.wrap_v));
+    sampler.setWrapModeR(ConvertWrapMode(samplerConfig.wrap_w));
 
     sampler.setAnisotropy(sampler.getAnisotropy());
 

@@ -248,23 +248,23 @@ MaterialHandle FilamentResourceManager::CreateMaterial(
         const ResourceLoadRequest& request) {
     MaterialHandle handle;
 
-    if (false == request.path.empty()) {
+    if (false == request.path_.empty()) {
         std::vector<char> materialData;
         std::string errorStr;
 
-        if (utility::filesystem::FReadToBuffer(request.path, materialData,
+        if (utility::filesystem::FReadToBuffer(request.path_, materialData,
                                                &errorStr)) {
             handle = CreateMaterial(materialData.data(), materialData.size());
         } else {
-            request.errorCallback(request, errno, errorStr);
+            request.error_callback_(request, errno, errorStr);
         }
-    } else if (request.dataSize > 0) {
+    } else if (request.data_size_ > 0) {
         // TODO: Filament throws an exception if it can't parse the
         // material. Handle this exception across library boundary
         // to avoid aborting.
-        handle = CreateMaterial(request.data, request.dataSize);
+        handle = CreateMaterial(request.data_, request.data_size_);
     } else {
-        request.errorCallback(request, -1, "");
+        request.error_callback_(request, -1, "");
     }
 
     return handle;
@@ -378,11 +378,11 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
         const ResourceLoadRequest& request) {
     IndirectLightHandle handle;
 
-    if (false == request.path.empty()) {
+    if (false == request.path_.empty()) {
         std::vector<char> iblData;
         std::string errorStr;
 
-        if (utility::filesystem::FReadToBuffer(request.path, iblData,
+        if (utility::filesystem::FReadToBuffer(request.path_, iblData,
                                                &errorStr)) {
             using namespace filament;
             // will be destroyed later by image::ktx::createTexture
@@ -395,7 +395,7 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
             filament::math::float3 bands[9] = {};
             if (!iblKtx->getSphericalHarmonics(bands)) {
                 engine_.destroy(iblTexture);
-                request.errorCallback(
+                request.error_callback_(
                         request, 2,
                         "Failed to read spherical harmonics from ktx");
                 return handle;
@@ -415,15 +415,15 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
                         engine_, iblTexture, textures_);
                 dependencies_[handle].insert(hTexture);
             } else {
-                request.errorCallback(
+                request.error_callback_(
                         request, 3, "Failed to create indirect light from ktx");
                 engine_.destroy(iblTexture);
             }
         } else {
-            request.errorCallback(request, errno, errorStr);
+            request.error_callback_(request, errno, errorStr);
         }
     } else {
-        request.errorCallback(request, -1, "");
+        request.error_callback_(request, -1, "");
     }
 
     return handle;
@@ -433,11 +433,11 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
         const ResourceLoadRequest& request) {
     SkyboxHandle handle;
 
-    if (false == request.path.empty()) {
+    if (false == request.path_.empty()) {
         std::vector<char> skyData;
         std::string errorStr;
 
-        if (utility::filesystem::FReadToBuffer(request.path, skyData,
+        if (utility::filesystem::FReadToBuffer(request.path_, skyData,
                                                &errorStr)) {
             using namespace filament;
             // will be destroyed later by image::ktx::createTexture
@@ -460,15 +460,15 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
                         engine_, skyTexture, textures_);
                 dependencies_[handle].insert(hTexture);
             } else {
-                request.errorCallback(
+                request.error_callback_(
                         request, 3, "Failed to create indirect light from ktx");
                 engine_.destroy(skyTexture);
             }
         } else {
-            request.errorCallback(request, errno, errorStr);
+            request.error_callback_(request, errno, errorStr);
         }
     } else {
-        request.errorCallback(request, -1, "");
+        request.error_callback_(request, -1, "");
     }
 
     return handle;

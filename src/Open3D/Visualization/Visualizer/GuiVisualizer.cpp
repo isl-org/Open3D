@@ -1025,8 +1025,8 @@ GuiVisualizer::GuiVisualizer(
     visualization::LightDescription lightDescription;
     lightDescription.intensity = lightingProfile.sunIntensity;
     lightDescription.direction = lightingProfile.sunDir;
-    lightDescription.castShadows = true;
-    lightDescription.customAttributes["custom_type"] = "SUN";
+    lightDescription.cast_shadows = true;
+    lightDescription.custom_attributes["custom_type"] = "SUN";
 
     impl_->settings.hDirectionalLight =
             scene->GetScene()->AddLight(lightDescription);

@@ -24,13 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "LightDirectionInteractorLogic.h"
-
-#include "Camera.h"
-#include "Scene.h"
+#include "Open3D/Visualization/Rendering/LightDirectionInteractorLogic.h"
 
 #include "Open3D/Geometry/LineSet.h"
 #include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
+#include "Open3D/Visualization/Rendering/Scene.h"
 
 namespace open3d {
 namespace visualization {
@@ -41,11 +40,11 @@ void CreateCircle(const Eigen::Vector3d& center,
                   const Eigen::Vector3d& u,
                   const Eigen::Vector3d& v,
                   double radius,
-                  int nSegs,
+                  int n_segs,
                   std::vector<Eigen::Vector3d>& points,
                   std::vector<Eigen::Vector3d>& normals) {
-    for (int i = 0; i <= nSegs; ++i) {
-        double theta = 2.0 * M_PI * double(i) / double(nSegs);
+    for (int i = 0; i <= n_segs; ++i) {
+        double theta = 2.0 * M_PI * double(i) / double(n_segs);
         double cosT = std::cos(theta);
         double sinT = std::sin(theta);
         Eigen::Vector3d p = center + radius * cosT * u + radius * sinT * v;
@@ -58,55 +57,56 @@ void CreateCircle(const Eigen::Vector3d& center,
 std::shared_ptr<geometry::TriangleMesh> CreateArrow(const Eigen::Vector3d& dir,
                                                     double radius,
                                                     double length,
-                                                    double headLength,
-                                                    int nSegs = 20) {
+                                                    double head_length,
+                                                    int n_segs = 20) {
     Eigen::Vector3d tmp(dir.y(), dir.z(), dir.x());
     Eigen::Vector3d u = dir.cross(tmp).normalized();
     Eigen::Vector3d v = dir.cross(u);
 
     Eigen::Vector3d start(0, 0, 0);
-    Eigen::Vector3d headStart((length - headLength) * dir.x(),
-                              (length - headLength) * dir.y(),
-                              (length - headLength) * dir.z());
+    Eigen::Vector3d head_start((length - head_length) * dir.x(),
+                               (length - head_length) * dir.y(),
+                               (length - head_length) * dir.z());
     Eigen::Vector3d end(length * dir.x(), length * dir.y(), length * dir.z());
     auto arrow = std::make_shared<geometry::TriangleMesh>();
 
     // Cylinder
-    CreateCircle(start, u, v, radius, nSegs, arrow->vertices_,
+    CreateCircle(start, u, v, radius, n_segs, arrow->vertices_,
                  arrow->vertex_normals_);
-    int nVertsInCircle = nSegs + 1;
-    CreateCircle(headStart, u, v, radius, nSegs, arrow->vertices_,
+    int n_verts_in_circle = n_segs + 1;
+    CreateCircle(head_start, u, v, radius, n_segs, arrow->vertices_,
                  arrow->vertex_normals_);
-    for (int i = 0; i < nSegs; ++i) {
-        arrow->triangles_.push_back({i, i + 1, nVertsInCircle + i + 1});
+    for (int i = 0; i < n_segs; ++i) {
+        arrow->triangles_.push_back({i, i + 1, n_verts_in_circle + i + 1});
         arrow->triangles_.push_back(
-                {nVertsInCircle + i + 1, nVertsInCircle + i, i});
+                {n_verts_in_circle + i + 1, n_verts_in_circle + i, i});
     }
 
     // End of cone
-    int startIdx = int(arrow->vertices_.size());
-    CreateCircle(headStart, u, v, 2.0 * radius, nSegs, arrow->vertices_,
+    int start_idx = int(arrow->vertices_.size());
+    CreateCircle(head_start, u, v, 2.0 * radius, n_segs, arrow->vertices_,
                  arrow->vertex_normals_);
-    for (int i = startIdx; i < int(arrow->vertices_.size()); ++i) {
+    for (int i = start_idx; i < int(arrow->vertices_.size()); ++i) {
         arrow->vertex_normals_.push_back(-dir);
     }
-    int centerIdx = int(arrow->vertices_.size());
-    arrow->vertices_.push_back(headStart);
+    int center_idx = int(arrow->vertices_.size());
+    arrow->vertices_.push_back(head_start);
     arrow->vertex_normals_.push_back(-dir);
-    for (int i = 0; i < nSegs; ++i) {
+    for (int i = 0; i < n_segs; ++i) {
         arrow->triangles_.push_back(
-                {startIdx + i, startIdx + i + 1, centerIdx});
+                {start_idx + i, start_idx + i + 1, center_idx});
     }
 
     // Cone
-    startIdx = int(arrow->vertices_.size());
-    CreateCircle(headStart, u, v, 2.0 * radius, nSegs, arrow->vertices_,
+    start_idx = int(arrow->vertices_.size());
+    CreateCircle(head_start, u, v, 2.0 * radius, n_segs, arrow->vertices_,
                  arrow->vertex_normals_);
-    for (int i = 0; i < nSegs; ++i) {
+    for (int i = 0; i < n_segs; ++i) {
         int pointIdx = int(arrow->vertices_.size());
         arrow->vertices_.push_back(end);
-        arrow->vertex_normals_.push_back(arrow->vertex_normals_[startIdx + i]);
-        arrow->triangles_.push_back({startIdx + i, startIdx + i + 1, pointIdx});
+        arrow->vertex_normals_.push_back(arrow->vertex_normals_[start_idx + i]);
+        arrow->triangles_.push_back(
+                {start_idx + i, start_idx + i + 1, pointIdx});
     }
 
     return arrow;
@@ -114,15 +114,15 @@ std::shared_ptr<geometry::TriangleMesh> CreateArrow(const Eigen::Vector3d& dir,
 
 }  // namespace
 
-static const Eigen::Vector3d SKY_COLOR(0.0f, 0.0f, 1.0f);
-static const Eigen::Vector3d SUN_COLOR(1.0f, 0.9f, 0.0f);
+static const Eigen::Vector3d kSkyColor(0.0f, 0.0f, 1.0f);
+static const Eigen::Vector3d kSunColor(1.0f, 0.9f, 0.0f);
 
 LightDirectionInteractorLogic::LightDirectionInteractorLogic(Scene* scene,
                                                              Camera* camera)
     : scene_(scene), camera_(camera) {}
 
-void LightDirectionInteractorLogic::SetDirectionalLight(LightHandle dirLight) {
-    dirLight_ = dirLight;
+void LightDirectionInteractorLogic::SetDirectionalLight(LightHandle dir_light) {
+    dir_light_ = dir_light;
 }
 
 void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
@@ -133,55 +133,55 @@ void LightDirectionInteractorLogic::Rotate(int dx, int dy) {
 }
 
 void LightDirectionInteractorLogic::StartMouseDrag() {
-    lightDirAtMouseDown_ = scene_->GetLightDirection(dirLight_);
+    light_dir_at_mouse_down_ = scene_->GetLightDirection(dir_light_);
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
     ClearUI();
 
-    Eigen::Vector3f dir = scene_->GetLightDirection(dirLight_);
+    Eigen::Vector3f dir = scene_->GetLightDirection(dir_light_);
 
-    double size = modelSize_;
+    double size = model_size_;
     if (size <= 0.001) {
         size = 10;
     }
-    double sphereSize = 0.5 * size;  // size is a diameter
-    auto sphereTris = geometry::TriangleMesh::CreateSphere(sphereSize, 20);
-    auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphereTris);
-    sphere->PaintUniformColor(SKY_COLOR);
+    double sphere_size = 0.5 * size;  // size is a diameter
+    auto sphere_tris = geometry::TriangleMesh::CreateSphere(sphere_size, 20);
+    auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
+    sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
-    uiObjs_.push_back({scene_->AddGeometry(*sphere), t0});
-    scene_->SetEntityTransform(uiObjs_[0].handle, t0);
-    scene_->SetGeometryShadows(uiObjs_[0].handle, false, false);
+    ui_objs_.push_back({scene_->AddGeometry(*sphere), t0});
+    scene_->SetEntityTransform(ui_objs_[0].handle, t0);
+    scene_->SetGeometryShadows(ui_objs_[0].handle, false, false);
 
-    auto sunRadius = 0.05 * size;
-    auto sun = geometry::TriangleMesh::CreateSphere(sunRadius, 20);
-    sun->PaintUniformColor(SUN_COLOR);
+    auto sun_radius = 0.05 * size;
+    auto sun = geometry::TriangleMesh::CreateSphere(sun_radius, 20);
+    sun->PaintUniformColor(kSunColor);
     auto t1 = Camera::Transform::Identity();
-    t1.translate(-sphereSize * dir);
-    uiObjs_.push_back({scene_->AddGeometry(*sun), t1});
-    scene_->SetEntityTransform(uiObjs_[1].handle, t1);
-    scene_->SetGeometryShadows(uiObjs_[1].handle, false, false);
+    t1.translate(-sphere_size * dir);
+    ui_objs_.push_back({scene_->AddGeometry(*sun), t1});
+    scene_->SetEntityTransform(ui_objs_[1].handle, t1);
+    scene_->SetGeometryShadows(ui_objs_[1].handle, false, false);
 
-    const double arrowRadius = 0.075 * sunRadius;
-    const double arrowLength = 0.333 * size;
-    auto sunDir = CreateArrow(dir.cast<double>(), arrowRadius, arrowLength,
-                              0.1 * arrowLength, 20);
-    sunDir->PaintUniformColor(SUN_COLOR);
+    const double arrow_radius = 0.075 * sun_radius;
+    const double arrow_length = 0.333 * size;
+    auto sun_dir = CreateArrow(dir.cast<double>(), arrow_radius, arrow_length,
+                               0.1 * arrow_length, 20);
+    sun_dir->PaintUniformColor(kSunColor);
     auto t2 = Camera::Transform::Identity();
-    t2.translate(-sphereSize * dir);
-    uiObjs_.push_back({scene_->AddGeometry(*sunDir), t2});
-    scene_->SetEntityTransform(uiObjs_[2].handle, t2);
-    scene_->SetGeometryShadows(uiObjs_[2].handle, false, false);
+    t2.translate(-sphere_size * dir);
+    ui_objs_.push_back({scene_->AddGeometry(*sun_dir), t2});
+    scene_->SetEntityTransform(ui_objs_[2].handle, t2);
+    scene_->SetGeometryShadows(ui_objs_[2].handle, false, false);
 
     UpdateMouseDragUI();
 }
 
 void LightDirectionInteractorLogic::UpdateMouseDragUI() {
-    Eigen::Vector3f modelCenter = modelBounds_.GetCenter().cast<float>();
-    for (auto& o : uiObjs_) {
+    Eigen::Vector3f model_center = model_bounds_.GetCenter().cast<float>();
+    for (auto& o : ui_objs_) {
         Camera::Transform t = GetMatrix() * o.transform;
-        t.pretranslate(modelCenter);
+        t.pretranslate(model_center);
         scene_->SetEntityTransform(o.handle, t);
     }
 }
@@ -189,14 +189,14 @@ void LightDirectionInteractorLogic::UpdateMouseDragUI() {
 void LightDirectionInteractorLogic::EndMouseDrag() { ClearUI(); }
 
 void LightDirectionInteractorLogic::ClearUI() {
-    for (auto& o : uiObjs_) {
+    for (auto& o : ui_objs_) {
         scene_->RemoveGeometry(o.handle);
     }
-    uiObjs_.clear();
+    ui_objs_.clear();
 }
 
 Eigen::Vector3f LightDirectionInteractorLogic::GetCurrentDirection() const {
-    return GetMatrix() * lightDirAtMouseDown_;
+    return GetMatrix() * light_dir_at_mouse_down_;
 }
 
 }  // namespace visualization

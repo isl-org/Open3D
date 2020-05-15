@@ -367,8 +367,8 @@ void FilamentScene::RemoveGeometry(const GeometryHandle& geometryId) {
 LightHandle FilamentScene::AddLight(const LightDescription& descr) {
     filament::LightManager::Type lightType =
             filament::LightManager::Type::POINT;
-    if (descr.customAttributes["custom_type"].isString()) {
-        auto customType = descr.customAttributes["custom_type"];
+    if (descr.custom_attributes["custom_type"].isString()) {
+        auto customType = descr.custom_attributes["custom_type"];
         if (customType == "SUN") {
             lightType = filament::LightManager::Type::SUN;
         }
@@ -395,9 +395,9 @@ LightHandle FilamentScene::AddLight(const LightDescription& descr) {
                                descr.position.z()})
                     .intensity(descr.intensity)
                     .falloff(descr.falloff)
-                    .castShadows(descr.castShadows)
+                    .castShadows(descr.cast_shadows)
                     .color({descr.color.x(), descr.color.y(), descr.color.z()})
-                    .spotLightCone(descr.lightConeInner, descr.lightConeOuter)
+                    .spotLightCone(descr.light_cone_inner, descr.light_cone_outer)
                     .build(engine_, light);
 
     LightHandle handle;
