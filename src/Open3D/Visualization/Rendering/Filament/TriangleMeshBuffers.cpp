@@ -91,7 +91,7 @@ void SetVertexUV(VertexType& vertex, const Eigen::Vector2d& UV) {
 
 template <typename VertexType>
 size_t GetVertexPositionOffset() {
-    return 0;
+    return offsetof(VertexType, position);
 }
 
 template <typename VertexType>
@@ -167,6 +167,7 @@ struct ibdata {
     size_t stride = 0;
 };
 
+// Transfers ownership on return for vbdata.bytes and ibdata.bytes
 std::tuple<vbdata, ibdata> CreatePlainBuffers(
         const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertexData;
@@ -204,6 +205,7 @@ std::tuple<vbdata, ibdata> CreatePlainBuffers(
     return std::make_tuple(vertexData, indexData);
 }
 
+// Transfers ownership on return for vbdata.bytes and ibdata.bytes
 std::tuple<vbdata, ibdata> CreateColoredBuffers(
         const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertexData;
@@ -247,6 +249,7 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
     return std::make_tuple(vertexData, indexData);
 }
 
+// Transfers ownership on return for vbdata.bytes and ibdata.bytes
 std::tuple<vbdata, ibdata> CreateTexturedBuffers(
         const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertexData;
@@ -263,8 +266,10 @@ std::tuple<vbdata, ibdata> CreateTexturedBuffers(
             values[4] = uv.y();
         }
 
+        // Not necessarily transitive for points within kEpsilon.
+        // TODO: does this break sort and map?
         bool operator<(const LookupKey& other) const {
-            for (std::uint8_t i = 0; i < 5; ++i) {
+            for (int i = 0; i < 5; ++i) {
                 double diff = abs(values[i] - other.values[i]);
                 if (diff > kEpsilon) {
                     return values[i] < other.values[i];
@@ -388,12 +393,13 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                 "first.");
     }
 
-    // We defaulting to have vertex color attribute for all geometries, even if
-    // a geometry doesn't have one That's all due to our default material and
+    // We default to using vertex color attribute for all geometries, even if
+    // a geometry doesn't have one. That's all due to our default material and
     // large variety of geometries it should support
     const bool hasColors = true;  // geometry_.HasVertexColors();
     const bool hasUVs = geometry_.HasTriangleUvs();
 
+    // We take ownership of vbdata.bytes and ibdata.bytes here.
     std::tuple<vbdata, ibdata> buffersData;
     if (hasUVs) {
         buffersData = CreateTexturedBuffers(float4VTangents, geometry_);
@@ -429,6 +435,8 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
+    // Gives ownership of vertexData.bytes to VertexBuffer, which will
+    // be deallocated later with DeallocateBuffer.
     VertexBuffer::BufferDescriptor vertexbufferDescriptor(
             vertexData.bytes, vertexData.bytesToCopy);
     vertexbufferDescriptor.setCallback(
@@ -439,8 +447,8 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
             indexData.bytesCount / indexData.stride, indexData.stride);
     auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
 
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
+    // Gives ownership of indexData.bytes to IndexBuffer, which will
+    // be deallocated later with DeallocateBuffer.
     IndexBuffer::BufferDescriptor indicesDescriptor(indexData.bytes,
                                                     indexData.bytesCount);
     indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);

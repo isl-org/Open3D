@@ -187,7 +187,7 @@ static Material* loadMaterialTemplate(const std::string& path, Engine& engine) {
 }
 
 struct ImguiFilamentBridge::Impl {
-    // Bridge is managing filament resources by itself
+    // Bridge manages filament resources directly
     filament::Material* material = nullptr;
     std::vector<filament::VertexBuffer*> vertexBuffers;
     std::vector<filament::IndexBuffer*> indexBuffers;
@@ -198,7 +198,7 @@ struct ImguiFilamentBridge::Impl {
     unsigned char* fontPixels = nullptr;
     bool hasSynced = false;
 
-    visualization::FilamentView* view = nullptr;  // we are not owning this
+    visualization::FilamentView* view = nullptr;  // we do not own this
 };
 
 ImguiFilamentBridge::ImguiFilamentBridge(

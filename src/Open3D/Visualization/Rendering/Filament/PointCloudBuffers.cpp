@@ -162,6 +162,8 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     free(float4VTangents);
 
+    // Moving `vertices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
     VertexBuffer::BufferDescriptor vertexbufferDescriptor(vertices,
                                                           verticesBytesCount);
     vertexbufferDescriptor.setCallback(
@@ -183,8 +185,8 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
     auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
 
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
+    // Moving `uintIndices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
     IndexBuffer::BufferDescriptor indicesDescriptor(uintIndices,
                                                     indicesBytesCount);
     indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);

@@ -35,10 +35,12 @@ class Label : public Widget {
     using Super = Widget;
 
 public:
+    /// Copies text
     explicit Label(const char* text = nullptr);
     ~Label();
 
     const char* GetText() const;
+    /// Sets the text of the label (copies text)
     void SetText(const char* text);
 
     Color GetTextColor() const;

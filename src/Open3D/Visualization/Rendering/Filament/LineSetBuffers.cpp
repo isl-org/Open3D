@@ -94,8 +94,10 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
             values[5] = color.z();
         }
 
+        // Not necessarily transitive.
+        // TODO: does this break sort and map?
         bool operator<(const LookupKey& other) const {
-            for (std::uint8_t i = 0; i < 6; ++i) {
+            for (int i = 0; i < 6; ++i) {
                 double diff = abs(values[i] - other.values[i]);
                 if (diff > kEpsilon) {
                     return values[i] < other.values[i];
@@ -181,6 +183,8 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
+    // Moving `vertices` to VertexBuffer, which will clean them up later
+    // with DeallocateBuffer
     VertexBuffer::BufferDescriptor vertexbufferDescriptor(
             vertices, verticesCount * sizeof(ColoredVertex));
     vertexbufferDescriptor.setCallback(
@@ -197,8 +201,8 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
 
     auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
 
-    // Moving copied indices to IndexBuffer
-    // they will be freed later with freeBufferDescriptor
+    // Moving `indices` to IndexBuffer, which will clean them up later
+    // with DeallocateBuffer
     IndexBuffer::BufferDescriptor indicesDescriptor(indices, indicesBytesCount);
     indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     ibuf->setBuffer(engine, std::move(indicesDescriptor));

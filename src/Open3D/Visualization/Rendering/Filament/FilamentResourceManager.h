@@ -70,6 +70,8 @@ public:
     explicit FilamentResourceManager(filament::Engine& engine);
     ~FilamentResourceManager();
 
+    // \param materialData must remain valid for the duration of the call to
+    // CreateMaterial(), and may be freed afterwards.
     MaterialHandle CreateMaterial(const void* materialData, size_t dataSize);
     MaterialHandle CreateMaterial(const ResourceLoadRequest& request);
     MaterialInstanceHandle CreateMaterialInstance(const MaterialHandle& id);
@@ -125,9 +127,10 @@ private:
     ResourcesContainer<filament::VertexBuffer> vertexBuffers_;
     ResourcesContainer<filament::IndexBuffer> indexBuffers_;
 
-    // Lists dependent resources, which should be deallocated when
+    // Stores dependent resources, which should be deallocated when
     // resource referred by map key is deallocated.
-    // WARNING: Don't put in dependent list resources which available publicly
+    // WARNING: Don't put in dependent list resources which are available
+    //          publicly
     std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>>
             dependencies_;
 

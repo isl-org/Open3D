@@ -41,6 +41,7 @@
 
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Utility/Console.h"
 
 #include <GLFW/glfw3.h>
 #include <filament/Engine.h>
@@ -147,7 +148,7 @@ struct Window::Impl {
     double lastRenderTime = 0.0;
 
     Theme theme;  // so that the font size can be different based on scaling
-    visualization::FilamentRenderer* renderer;
+    std::unique_ptr<visualization::FilamentRenderer> renderer;
     struct {
         std::unique_ptr<ImguiFilamentBridge> imguiBridge;
         ImGuiContext* context = nullptr;
@@ -244,15 +245,15 @@ Window::Window(const std::string& title,
     auto& engineInstance = visualization::EngineInstance::GetInstance();
     auto& resourceManager = visualization::EngineInstance::GetResourceManager();
 
-    impl_->renderer = new visualization::FilamentRenderer(
+    impl_->renderer = std::make_unique<visualization::FilamentRenderer>(
             engineInstance, GetNativeDrawable(), resourceManager);
 
     auto& theme = impl_->theme;  // shorter alias
     impl_->imgui.context = ImGui::CreateContext();
-    auto oldContext = MakeCurrent();
+    auto oldContext = MakeDrawContextCurrent();
 
     impl_->imgui.imguiBridge =
-            std::make_unique<ImguiFilamentBridge>(impl_->renderer, GetSize());
+            std::make_unique<ImguiFilamentBridge>(impl_->renderer.get(), GetSize());
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -336,24 +337,24 @@ Window::Window(const std::string& title,
     // (This is quite likely, since ImGUI only handles things like button
     // presses during draw. A file open dialog is likely to create a window
     // after pressing "Open".)
-    RestoreCurrent(oldContext);
+    RestoreDrawContext(oldContext);
 }
 
 Window::~Window() {
     impl_->children.clear();  // needs to happen before deleting renderer
     ImGui::SetCurrentContext(impl_->imgui.context);
     ImGui::DestroyContext();
-    delete impl_->renderer;
+    impl_->renderer.reset();
     glfwDestroyWindow(impl_->window);
 }
 
-void* Window::MakeCurrent() const {
+void* Window::MakeDrawContextCurrent() const {
     auto oldContext = ImGui::GetCurrentContext();
     ImGui::SetCurrentContext(impl_->imgui.context);
     return oldContext;
 }
 
-void Window::RestoreCurrent(void* oldContext) const {
+void Window::RestoreDrawContext(void* oldContext) const {
     ImGui::SetCurrentContext((ImGuiContext*)oldContext);
 }
 
@@ -386,7 +387,9 @@ void Window::SetTitle(const char* title) {
     glfwSetWindowTitle(impl_->window, title);
 }
 
-// Note: this can only be called during draw!
+// Note: can only be called if the ImGUI context is current (that is,
+//       after MakeDrawContextCurrent() has been called), otherwise
+//       ImGUI won't be able to access the font.
 Size Window::CalcPreferredSize() {
     Rect bbox(0, 0, 0, 0);
     for (auto& child : impl_->children) {
@@ -403,8 +406,9 @@ Size Window::CalcPreferredSize() {
 }
 
 void Window::SizeToFit() {
-    // CalcPreferredSize() can only be called during draw, but we probably
-    // aren't calling this in a draw, we are probably setting up the window.
+    // CalcPreferredSize() can only be called while the ImGUI context
+    // is current, but we are probably calling this while setting up the
+    // window.
     auto autoSize = [this]() { SetSize(CalcPreferredSize()); };
     impl_->deferredUntilDraw.push(autoSize);
 }
@@ -444,7 +448,7 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
-#if GLFW_VERSION_MAJOR >= 3 && GLFW_VERSION_MINOR >= 3
+#if GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3)
     float xscale, yscale;
     glfwGetWindowContentScale(impl_->window, &xscale, &yscale);
     return xscale;
@@ -608,11 +612,15 @@ Widget::DrawResult DrawChild(DrawContext& dc,
 }  // namespace
 
 Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
-    // These are here to provide fast unique window names. If you find yourself
-    // needing more than a handful, you should probably be using a container
-    // of some sort (see Layout.h).
-    static const char* winNames[] = {
-            "win1",  "win2",  "win3",  "win4",  "win5",  "win6",  "win7",
+    // These are here to provide fast unique window names. (Hence using
+    // char* instead of a std::string, just in case c_str() recreates
+    // the buffer on some platform and unwittingly makes
+    // ImGui::DrawChild(dc, name.c_str(), ...) slow.
+    // If you find yourself needing more than a handful of top-level
+    // children, you should probably be using a layout of some sort
+    // (gui::Vert, gui::Horiz, gui::VGrid, etc. See Layout.h).
+    static const std::vector<const char*> winNames = {
+            "win1", "win2",  "win3",  "win4",  "win5",  "win6",  "win7",
             "win8",  "win9",  "win10", "win11", "win12", "win13", "win14",
             "win15", "win16", "win17", "win18", "win19", "win20"};
 
@@ -632,7 +640,7 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     }
 
     // Set current context
-    MakeCurrent();  // make sure our ImGUI context is active
+    MakeDrawContextCurrent();  // make sure our ImGUI context is active
     ImGuiIO& io = ImGui::GetIO();
     io.DeltaTime = dtSec;
 
@@ -692,11 +700,15 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     DrawContext dc{theme, 0, 0, size.width, size.height, em, dtSec};
 
     // Draw all the widgets. These will get recorded by ImGui.
-    int winIdx = 0;
+    size_t winIdx = 0;
     Mode drawMode = (impl_->activeDialog ? NO_INPUT : NORMAL);
     for (auto& child : this->impl_->children) {
         if (!child->IsVisible()) {
             continue;
+        }
+        if (winIdx >= winNames.size()) {
+            winIdx = winNames.size() - 1;
+            utility::LogWarning("Using too many top-level child widgets; use a layout instead.");
         }
         auto result = DrawChild(dc, winNames[winIdx++], child, drawMode);
         if (result != Widget::DrawResult::NONE) {
@@ -790,7 +802,7 @@ void Window::OnResize() {
     auto size = GetSize();
     auto scaling = GetScaling();
 
-    auto oldContext = MakeCurrent();
+    auto oldContext = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(size.width, size.height);
     if (impl_->imgui.scaling != scaling) {
@@ -831,7 +843,7 @@ void Window::OnResize() {
     // not release the memory for all the buffers of the new sizes right away
     // so it eats up GBs of memory rapidly and then resizing looks awful and
     // eventually stops working correctly. Unfortunately, there isn't a good
-    // way to tell when we've stopped resizing, so we use the mouse mouvement.
+    // way to tell when we've stopped resizing, so we use the mouse movement.
     // (We get no mouse events while resizing, so any mouse even must mean we
     // are no longer resizing.)
     if (!impl_->isResizing) {
@@ -839,10 +851,12 @@ void Window::OnResize() {
         ChangeAllRenderQuality(SceneWidget::Quality::FAST, impl_->children);
     }
 
-    RestoreCurrent(oldContext);
+    RestoreDrawContext(oldContext);
 }
 
 void Window::OnMouseEvent(const MouseEvent& e) {
+    MakeDrawContextCurrent();
+
     // We don't have a good way of determining when resizing ends; the most
     // likely action after resizing a window is to move the mouse.
     if (impl_->isResizing) {
@@ -852,7 +866,6 @@ void Window::OnMouseEvent(const MouseEvent& e) {
 
     impl_->mouseMods = e.modifiers;
 
-    MakeCurrent();
     switch (e.type) {
         case MouseEvent::MOVE:
         case MouseEvent::BUTTON_DOWN:
@@ -863,10 +876,10 @@ void Window::OnMouseEvent(const MouseEvent& e) {
             ImGuiIO& io = ImGui::GetIO();
             float dx = 0.0, dy = 0.0;
             if (e.wheel.dx != 0) {
-                dx = e.wheel.dx / std::abs(e.wheel.dx);
+                dx = e.wheel.dx / std::abs(e.wheel.dx);  // get sign
             }
             if (e.wheel.dy != 0) {
-                dy = e.wheel.dy / std::abs(e.wheel.dy);
+                dy = e.wheel.dy / std::abs(e.wheel.dy);  // get sign
             }
             // Note: ImGUI's documentation says that 1 unit of wheel movement
             //       is about 5 lines of text scrolling.
@@ -973,6 +986,7 @@ void Window::OnKeyEvent(const KeyEvent& e) {
         impl_->mouseMods |= thisMod;
     }
 
+    auto oldContext = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
     if (e.key < IM_ARRAYSIZE(io.KeysDown)) {
         io.KeysDown[e.key] = (e.type == KeyEvent::DOWN);
@@ -983,22 +997,26 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focusWidget) {
         impl_->focusWidget->Key(e);
     }
+
+    RestoreDrawContext(oldContext);
 }
 
 void Window::OnTextInput(const TextInputEvent& e) {
-    MakeCurrent();
+    auto oldContext = MakeDrawContextCurrent();
     ImGuiIO& io = ImGui::GetIO();
     io.AddInputCharactersUTF8(e.utf8);
+    RestoreDrawContext(oldContext);
 }
 
 bool Window::OnTickEvent(const TickEvent& e) {
-    MakeCurrent();
+    auto oldContext = MakeDrawContextCurrent();
     bool redraw = false;
     for (auto child : impl_->children) {
         if (child->Tick(e) == Widget::DrawResult::REDRAW) {
             redraw = true;
         }
     }
+    RestoreDrawContext(oldContext);
     return redraw;
 }
 

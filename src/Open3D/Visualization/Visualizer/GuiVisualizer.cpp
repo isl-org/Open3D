@@ -1061,9 +1061,6 @@ GuiVisualizer::GuiVisualizer(
     const int lm = std::ceil(0.5 * em);
     const int gridSpacing = std::ceil(0.25 * em);
 
-    auto drawTimeLabel = std::make_shared<DrawTimeLabel>(this);
-    drawTimeLabel->SetTextColor(gui::Color(0.5, 0.5, 0.5));
-
     AddChild(scene);
 
     // Add settings widget
@@ -1072,27 +1069,6 @@ GuiVisualizer::GuiVisualizer(
     // only thing there, and visually it looks larger than the right.)
     const gui::Margins baseMargins(0.5 * lm, lm, lm, lm);
     settings.wgtBase = std::make_shared<gui::Vert>(0, baseMargins);
-
-    settings.wgtLoadSky = std::make_shared<SmallButton>("Load skybox");
-    settings.wgtLoadSky->SetOnClicked([this, renderScene]() {
-        auto dlg = std::make_shared<gui::FileDialog>(
-                gui::FileDialog::Mode::OPEN, "Open skybox", GetTheme());
-        dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
-        dlg->SetOnCancel([this]() { this->CloseDialog(); });
-        dlg->SetOnDone([this, renderScene](const char *path) {
-            this->CloseDialog();
-            auto newSky = GetRenderer().AddSkybox(ResourceLoadRequest(path));
-            if (newSky) {
-                impl_->settings.hSky = newSky;
-                impl_->settings.wgtSkyEnabled->SetChecked(true);
-                impl_->settings.SetCustomProfile();
-
-                renderScene->SetSkybox(newSky);
-                impl_->scene->SetSkyboxHandle(newSky, true);
-            }
-        });
-        ShowDialog(dlg);
-    });
 
     gui::Margins indent(em, 0, 0, 0);
     auto viewCtrls =

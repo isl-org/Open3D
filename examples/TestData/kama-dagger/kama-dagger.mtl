@@ -1,9 +1,0 @@
-# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
-# File Created: 04.11.2019 10:42:30
-
-newmtl dagger_material
-Kd 1 1 1
-map_Kd albedo.jpg
-map_Ka ao.png
-map_Pm metallic.jpg
-norm normal.jpg

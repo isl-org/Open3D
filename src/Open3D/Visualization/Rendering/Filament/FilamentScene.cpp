@@ -49,6 +49,8 @@
 #include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Utility/Console.h"
 
+namespace {  // avoid polluting global namespace, since only used here
+
 namespace defaults_mapping {
 
 using GeometryType = open3d::geometry::Geometry::GeometryType;
@@ -87,6 +89,8 @@ FilamentMatrix FilamentMatrixFromEigenMatrix(const EigenMatrix& em) {
             em(3, 0), em(3, 1), em(3, 2), em(3, 3)});
 }
 }  // namespace converters
+
+}  // namespace
 
 namespace open3d {
 namespace visualization {

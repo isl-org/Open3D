@@ -50,8 +50,7 @@ namespace visualization {
 
 namespace {
 template <class ResourceType>
-using ResourcesContainer =
-        std::unordered_map<REHandle_abstract, std::shared_ptr<ResourceType>>;
+using ResourcesContainer = FilamentResourceManager::ResourcesContainer<ResourceType>;
 
 // We need custom shared pointer make function to
 // use engine deleter for allocated filament entities
@@ -102,7 +101,7 @@ void DestroyResource(const REHandle_abstract& id,
     container.erase(found);
 }
 
-// Image data that retained by renderer thread,
+// Image data that is retained by renderer thread,
 // will be freed on PixelBufferDescriptor callback
 std::unordered_map<std::uint32_t, std::shared_ptr<geometry::Image>>
         pendingImages;
@@ -259,6 +258,9 @@ MaterialHandle FilamentResourceManager::CreateMaterial(
             request.errorCallback(request, errno, errorStr);
         }
     } else if (request.dataSize > 0) {
+        // TODO: Filament throws an exception if it can't parse the
+        // material. Handle this exception across library boundary
+        // to avoid aborting.
         handle = CreateMaterial(request.data, request.dataSize);
     } else {
         request.errorCallback(request, -1, "");
@@ -539,6 +541,8 @@ void FilamentResourceManager::DestroyAll() {
     textures_.clear();
     vertexBuffers_.clear();
     indexBuffers_.clear();
+    ibls_.clear();
+    skyboxes_.clear();
 }
 
 void FilamentResourceManager::Destroy(const REHandle_abstract& id) {

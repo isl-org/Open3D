@@ -141,7 +141,10 @@ protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window
     /// are layouts, this function does not need to be overridden.
+    /// This function can only be called after MakeDrawContextCurrent()
+    /// has been called.
     virtual Size CalcPreferredSize();
+
     /// Lays out all the widgets in the window. If all children
     /// of the window are layouts, this function does not need to
     /// be overriden.
@@ -162,8 +165,8 @@ private:
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
     bool OnTickEvent(const TickEvent& e);
-    void* MakeCurrent() const;
-    void RestoreCurrent(void* oldContext) const;
+    void* MakeDrawContextCurrent() const;
+    void RestoreDrawContext(void* oldContext) const;
     void* GetNativeDrawable() const;
 
     static void DrawCallback(GLFWwindow* window);
