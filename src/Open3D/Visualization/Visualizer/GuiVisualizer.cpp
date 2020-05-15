@@ -1712,6 +1712,10 @@ bool GuiVisualizer::LoadGeometry(const std::string &path) {
             }
             geometry = mesh;
         }
+        // Make sure the mesh has texture coordinates
+        if (!mesh->HasTriangleUvs()) {
+            mesh->triangle_uvs_.resize(mesh->triangles_.size() * 3, {0.0, 0.0});
+        }
     } else {
         // LogError throws an exception, which we don't want, because this might
         // be a point cloud.
