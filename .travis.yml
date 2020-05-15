@@ -73,14 +73,14 @@ matrix:
       script:
         - mkdir build
         - cd build
-        - >
-          cmake -DPYTHON_EXECUTABLE=`which python`
-                -DENABLE_HEADLESS_RENDERING=ON
-                -DENABLE_JUPYTER=ON
-                -DBUILD_GLEW=ON
-                -DBUILD_GLFW=ON
-                -DWITH_OPENMP=ON
-                -DBUILD_AZURE_KINECT=ON
+        - |
+          cmake -DPYTHON_EXECUTABLE=`which python` \
+                -DENABLE_HEADLESS_RENDERING=ON \
+                -DENABLE_JUPYTER=ON \
+                -DBUILD_GLEW=ON \
+                -DBUILD_GLFW=ON \
+                -DWITH_OPENMP=ON \
+                -DBUILD_AZURE_KINECT=ON \
                 ..
         - make install-pip-package -j$NPROC
         - make -j$NPROC
