@@ -41,13 +41,18 @@ public:
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
                 const tensorflow::Tensor& radius,
+                const tensorflow::Tensor& points_row_splits,
+                const std::vector<uint32_t>& hash_table_splits,
                 tensorflow::Tensor& hash_table_index,
-                tensorflow::Tensor& hash_table_row_splits) {
-        BuildSpatialHashTableCPU(points.shape().dim_size(0),
-                                 points.flat<T>().data(), radius.scalar<T>()(),
-                                 hash_table_row_splits.shape().dim_size(0),
-                                 hash_table_row_splits.flat<uint32_t>().data(),
-                                 hash_table_index.flat<uint32_t>().data());
+                tensorflow::Tensor& hash_table_cell_splits) {
+        BuildSpatialHashTableCPU(
+                points.shape().dim_size(0), points.flat<T>().data(),
+                radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
+                (int64_t*)points_row_splits.flat<int64>().data(),
+                hash_table_splits.data(),
+                hash_table_cell_splits.shape().dim_size(0),
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data());
     }
 };
 

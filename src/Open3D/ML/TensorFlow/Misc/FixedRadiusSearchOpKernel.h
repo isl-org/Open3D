@@ -100,17 +100,27 @@ public:
                     errors::InvalidArgument("radius must be scalar, got shape ",
                                             radius.shape().DebugString()));
 
-        const Tensor& hash_table_index = context->input(3);
-        const Tensor& hash_table_row_splits = context->input(4);
+        const Tensor& points_row_splits = context->input(3);
+        const Tensor& queries_row_splits = context->input(4);
+
+        const Tensor& hash_table_splits = context->input(5);
+        const Tensor& hash_table_index = context->input(6);
+        const Tensor& hash_table_cell_splits = context->input(7);
 
         {
             using namespace open3d::ml::shape_checking;
 
             Dim num_points("num_points");
             Dim num_queries("num_queries");
+            Dim batch_size("batch_size");
+            Dim num_cells("num_cells");
             CHECK_SHAPE(context, points, num_points, 3);
             CHECK_SHAPE(context, hash_table_index, num_points);
             CHECK_SHAPE(context, queries, num_queries, 3);
+            CHECK_SHAPE(context, points_row_splits, batch_size + 1);
+            CHECK_SHAPE(context, queries_row_splits, batch_size + 1);
+            CHECK_SHAPE(context, hash_table_splits, batch_size + 1);
+            CHECK_SHAPE(context, hash_table_cell_splits, num_cells + 1);
         }
         Tensor* query_neighbors_row_splits = 0;
         TensorShape query_neighbors_row_splits_shape(
@@ -119,16 +129,20 @@ public:
                                         1, query_neighbors_row_splits_shape,
                                         &query_neighbors_row_splits));
 
-        Kernel(context, points, queries, radius, hash_table_index,
-               hash_table_row_splits, *query_neighbors_row_splits);
+        Kernel(context, points, queries, radius, points_row_splits,
+               queries_row_splits, hash_table_splits, hash_table_index,
+               hash_table_cell_splits, *query_neighbors_row_splits);
     }
 
     virtual void Kernel(tensorflow::OpKernelContext* context,
                         const tensorflow::Tensor& points,
                         const tensorflow::Tensor& queries,
                         const tensorflow::Tensor& radius,
+                        const tensorflow::Tensor& points_row_splits,
+                        const tensorflow::Tensor& queries_row_splits,
+                        const tensorflow::Tensor& hash_table_splits,
                         const tensorflow::Tensor& hash_table_index,
-                        const tensorflow::Tensor& hash_table_row_splits,
+                        const tensorflow::Tensor& hash_table_cell_splits,
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:

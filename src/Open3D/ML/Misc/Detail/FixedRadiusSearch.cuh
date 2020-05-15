@@ -99,8 +99,9 @@ __global__ void CountHashTableEntriesKernel(uint32_t* count_table,
 /// Counts for each hash entry the number of points that map to this entry.
 ///
 /// \param count_table    Pointer to the table for counting.
-///        The first element will be set to zero and will not be used, i.e. the
+///        The first element will not be used, i.e. the
 ///        number of points for the first hash entry is in count_table[1].
+///        This array must be initialized before calling this function.
 ///
 /// \param count_table_size    This is the size of the hash table + 1.
 ///
@@ -117,9 +118,6 @@ void CountHashTableEntries(const cudaStream_t& stream,
                            T inv_voxel_size,
                            const T* points,
                            size_t num_points) {
-    cudaMemsetAsync(count_table, 0, sizeof(uint32_t) * count_table_size,
-                    stream);
-
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
     dim3 grid(0, 1, 1);
@@ -136,13 +134,14 @@ template <class T>
 __global__ void ComputePointIndexTableKernel(
         uint32_t* __restrict__ point_index_table,
         uint32_t* __restrict__ count_tmp,
-        const uint32_t* const __restrict__ hash_table_row_splits,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         T inv_voxel_size,
         const T* const __restrict__ points,
-        size_t num_points) {
-    const int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx >= num_points) return;
+        const size_t points_start_idx,
+        const size_t points_end_idx) {
+    const int idx = blockDim.x * blockIdx.x + threadIdx.x + points_start_idx;
+    if (idx >= points_end_idx) return;
 
     Vec3<T> pos(
             {points[idx * 3 + 0], points[idx * 3 + 1], points[idx * 3 + 2]});
@@ -151,7 +150,7 @@ __global__ void ComputePointIndexTableKernel(
     size_t hash = SpatialHash(voxel_index[0], voxel_index[1], voxel_index[2]) %
                   hash_table_size;
 
-    point_index_table[hash_table_row_splits[hash] +
+    point_index_table[hash_table_cell_splits[hash] +
                       atomicAdd(&count_tmp[hash], 1)] = idx;
 }
 
@@ -161,12 +160,13 @@ __global__ void ComputePointIndexTableKernel(
 ///        all cells. Start and end of each cell is defined by
 ///        \p hash_table_prefix_sum
 ///
-/// \param count_tmp    Temporary memory of size \p hash_table_row_splits_size .
+/// \param count_tmp    Temporary memory of size \p hash_table_cell_splits_size
+/// .
 ///
-/// \param hash_table_row_splits    The row splits array describing the start
+/// \param hash_table_cell_splits    The row splits array describing the start
 ///        and end of each cell.
 ///
-/// \param hash_table_row_splits_size    The size of the hash table.
+/// \param hash_table_cell_splits_size    The size of the hash table.
 ///
 /// \param inv_voxel_size    Reciproval of the voxel size
 ///
@@ -179,13 +179,15 @@ void ComputePointIndexTable(
         const cudaStream_t& stream,
         uint32_t* __restrict__ point_index_table,
         uint32_t* __restrict__ count_tmp,
-        const uint32_t* const __restrict__ hash_table_row_splits,
-        size_t hash_table_row_splits_size,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
+        size_t hash_table_cell_splits_size,
         T inv_voxel_size,
         const T* const __restrict__ points,
-        size_t num_points) {
-    cudaMemsetAsync(count_tmp, 0, sizeof(uint32_t) * hash_table_row_splits_size,
-                    stream);
+        size_t points_start_idx,
+        size_t points_end_idx) {
+    cudaMemsetAsync(count_tmp, 0,
+                    sizeof(uint32_t) * hash_table_cell_splits_size, stream);
+    size_t num_points = points_end_idx - points_start_idx;
 
     const int BLOCKSIZE = 64;
     dim3 block(BLOCKSIZE, 1, 1);
@@ -194,9 +196,9 @@ void ComputePointIndexTable(
 
     if (grid.x)
         ComputePointIndexTableKernel<T><<<grid, block, 0, stream>>>(
-                point_index_table, count_tmp, hash_table_row_splits,
-                hash_table_row_splits_size - 1, inv_voxel_size, points,
-                num_points);
+                point_index_table, count_tmp, hash_table_cell_splits,
+                hash_table_cell_splits_size - 1, inv_voxel_size, points,
+                points_start_idx, points_end_idx);
 }
 
 /// Kernel for CountNeighbors
@@ -204,7 +206,7 @@ template <int METRIC, bool IGNORE_QUERY_POINT, class T>
 __global__ void CountNeighborsKernel(
         uint32_t* __restrict__ neighbors_count,
         const uint32_t* const __restrict__ point_index_table,
-        const uint32_t* const __restrict__ hash_table_row_splits,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -252,8 +254,8 @@ __global__ void CountNeighborsKernel(
         int bin = bins_to_visit[bin_i];
         if (bin == -1) break;
 
-        size_t begin_idx = hash_table_row_splits[bin];
-        size_t end_idx = hash_table_row_splits[bin + 1];
+        size_t begin_idx = hash_table_cell_splits[bin];
+        size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
             uint32_t idx = point_index_table[j];
@@ -278,13 +280,13 @@ __global__ void CountNeighborsKernel(
 ///
 /// \param point_index_table    The array storing the point indices for all
 ///        cells. Start and end of each cell is defined by \p
-///        hash_table_row_splits
+///        hash_table_cell_splits
 ///
-/// \param hash_table_row_splits    The row splits array describing the start
+/// \param hash_table_cell_splits    The row splits array describing the start
 ///        and end of each cell.
 ///
-/// \param hash_table_row_splits_size    This is the length of the
-///        hash_table_row_splits array.
+/// \param hash_table_cell_splits_size    This is the length of the
+///        hash_table_cell_splits array.
 ///
 /// \param query_points    Array with the 3D query positions. This may be the
 ///        same array as \p points.
@@ -309,8 +311,8 @@ template <class T>
 void CountNeighbors(const cudaStream_t& stream,
                     uint32_t* neighbors_count,
                     const uint32_t* const point_index_table,
-                    const uint32_t* const hash_table_row_splits,
-                    size_t hash_table_row_splits_size,
+                    const uint32_t* const hash_table_cell_splits,
+                    size_t hash_table_cell_splits_size,
                     const T* const query_points,
                     size_t num_queries,
                     const T* const points,
@@ -327,10 +329,10 @@ void CountNeighbors(const cudaStream_t& stream,
     grid.x = DivUp(num_queries, block.x);
 
     if (grid.x) {
-#define FN_PARAMETERS                                                          \
-    neighbors_count, point_index_table, hash_table_row_splits,                 \
-            hash_table_row_splits_size - 1, query_points, num_queries, points, \
-            num_points, inv_voxel_size, radius, threshold
+#define FN_PARAMETERS                                                   \
+    neighbors_count, point_index_table, hash_table_cell_splits,         \
+            hash_table_cell_splits_size - 1, query_points, num_queries, \
+            points, num_points, inv_voxel_size, radius, threshold
 
 #define CALL_TEMPLATE(METRIC)                                    \
     if (METRIC == metric) {                                      \
@@ -358,7 +360,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         T* __restrict__ distances,
         const int64_t* const __restrict__ neighbors_row_splits,
         const uint32_t* const __restrict__ point_index_table,
-        const uint32_t* const __restrict__ hash_table_row_splits,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -408,8 +410,8 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         int bin = bins_to_visit[bin_i];
         if (bin == -1) break;
 
-        size_t begin_idx = hash_table_row_splits[bin];
-        size_t end_idx = hash_table_row_splits[bin + 1];
+        size_t begin_idx = hash_table_cell_splits[bin];
+        size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
             uint32_t idx = point_index_table[j];
@@ -444,13 +446,13 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 ///
 /// \param point_index_table    The array storing the point indices for all
 ///        cells. Start and end of each cell is defined by \p
-///        hash_table_row_splits
+///        hash_table_cell_splits
 ///
-/// \param hash_table_row_splits    The row splits array describing the start
+/// \param hash_table_cell_splits    The row splits array describing the start
 ///        and end of each cell.
 ///
-/// \param hash_table_row_splits_size    This is the length of the
-///        hash_table_row_splits array.
+/// \param hash_table_cell_splits_size    This is the length of the
+///        hash_table_cell_splits array.
 ///
 /// \param query_points    Array with the 3D query positions. This may be the
 ///        same array as \p points.
@@ -482,8 +484,8 @@ void WriteNeighborsIndicesAndDistances(
         T* distances,
         const int64_t* const neighbors_row_splits,
         const uint32_t* const point_index_table,
-        const uint32_t* const hash_table_row_splits,
-        size_t hash_table_row_splits_size,
+        const uint32_t* const hash_table_cell_splits,
+        size_t hash_table_cell_splits_size,
         const T* const query_points,
         size_t num_queries,
         const T* const points,
@@ -503,7 +505,7 @@ void WriteNeighborsIndicesAndDistances(
     if (grid.x) {
 #define FN_PARAMETERS                                                      \
     indices, distances, neighbors_row_splits, point_index_table,           \
-            hash_table_row_splits, hash_table_row_splits_size - 1,         \
+            hash_table_cell_splits, hash_table_cell_splits_size - 1,       \
             query_points, num_queries, points, num_points, inv_voxel_size, \
             radius, threshold
 
@@ -539,6 +541,8 @@ void WriteNeighborsIndicesAndDistances(
 
 /// Builds a spatial hash table for a fixed radius search of 3D points.
 ///
+/// All pointer arguments point to device memory unless stated otherwise.
+///
 /// \param temp    Pointer to temporary memory. If nullptr then the required
 ///        size of temporary memory will be written to \p temp_size and no
 ///        work is done.
@@ -555,13 +559,26 @@ void WriteNeighborsIndicesAndDistances(
 ///
 /// \param radius    The radius that will be used for searching.
 ///
-/// \param hash_table_row_splits_size    This is the length of the
-///        hash_table_row_splits array.
+/// \param points_row_splits_size    The size of the points_row_splits array.
+///        The size of the array is batch_size+1.
 ///
-/// \param hash_table_row_splits    This is an output array storing the start
+/// \param points_row_splits    This pointer points to host memory.
+///        Defines the start and end of the points in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_points]
+///
+/// \param hash_table_splits    This pointer points to host memory.
+///        Array defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_cell_splits_size    This is the length of the
+///        hash_table_cell_splits array.
+///
+/// \param hash_table_cell_splits    This is an output array storing the start
 ///        of each hash table entry. The size of this array defines the size of
 ///        the hash table.
-///        The hash table size is hash_table_row_splits_size - 1.
+///        The hash table size is hash_table_cell_splits_size - 1.
 ///
 /// \param hash_table_index    This is an output array storing the values of the
 ///        hash table, which are the indices to the points. The size of the
@@ -575,8 +592,11 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
                                const size_t num_points,
                                const TReal* const points,
                                const TReal radius,
-                               const size_t hash_table_row_splits_size,
-                               TIndex* hash_table_row_splits,
+                               const size_t points_row_splits_size,
+                               const int64_t* points_row_splits,
+                               const TIndex* hash_table_splits,
+                               const size_t hash_table_cell_splits_size,
+                               TIndex* hash_table_cell_splits,
                                TIndex* hash_table_index) {
     const bool get_temp_size = !temp;
 
@@ -588,24 +608,38 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
     std::pair<TIndex*, size_t> count_tmp =
-            mem_temp.Alloc<TIndex>(hash_table_row_splits_size);
+            mem_temp.Alloc<TIndex>(hash_table_cell_splits_size);
 
+    const int batch_size = points_row_splits_size - 1;
     const TReal voxel_size = 2 * radius;
     const TReal inv_voxel_size = 1 / voxel_size;
 
     // count number of points per hash entry
     if (!get_temp_size) {
-        CountHashTableEntries(stream, count_tmp.first, count_tmp.second,
-                              inv_voxel_size, points, num_points);
+        cudaMemsetAsync(count_tmp.first, 0, sizeof(TIndex) * count_tmp.second,
+                        stream);
+
+        for (int i = 0; i < batch_size; ++i) {
+            const size_t hash_table_size =
+                    hash_table_splits[i + 1] - hash_table_splits[i];
+            const size_t first_cell_idx = hash_table_splits[i];
+            const size_t num_points_i =
+                    points_row_splits[i + 1] - points_row_splits[i];
+            const TReal* const points_i = points + 3 * points_row_splits[i];
+
+            CountHashTableEntries(stream, count_tmp.first + first_cell_idx,
+                                  hash_table_size + 1, inv_voxel_size, points_i,
+                                  num_points_i);
+        }
     }
 
     // compute prefix sum of the hash entry counts and store in
-    // hash_table_row_splits
+    // hash_table_cell_splits
     {
         std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
         cub::DeviceScan::InclusiveSum(inclusive_scan_temp.first,
                                       inclusive_scan_temp.second,
-                                      count_tmp.first, hash_table_row_splits,
+                                      count_tmp.first, hash_table_cell_splits,
                                       count_tmp.second, stream);
 
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
@@ -613,7 +647,7 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
         if (!get_temp_size) {
             cub::DeviceScan::InclusiveSum(
                     inclusive_scan_temp.first, inclusive_scan_temp.second,
-                    count_tmp.first, hash_table_row_splits, count_tmp.second,
+                    count_tmp.first, hash_table_cell_splits, count_tmp.second,
                     stream);
         }
 
@@ -623,10 +657,17 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
     // now compute the global indices which allows us to lookup the point index
     // for the entries in the hash cell
     if (!get_temp_size) {
-        ComputePointIndexTable(stream, hash_table_index, count_tmp.first,
-                               hash_table_row_splits,
-                               hash_table_row_splits_size, inv_voxel_size,
-                               points, num_points);
+        for (int i = 0; i < batch_size; ++i) {
+            const size_t hash_table_size =
+                    hash_table_splits[i + 1] - hash_table_splits[i];
+            const size_t first_cell_idx = hash_table_splits[i];
+            const size_t points_start_idx = points_row_splits[i];
+            const size_t points_end_idx = points_row_splits[i + 1];
+            ComputePointIndexTable(stream, hash_table_index, count_tmp.first,
+                                   hash_table_cell_splits + first_cell_idx,
+                                   hash_table_size + 1, inv_voxel_size, points,
+                                   points_start_idx, points_end_idx);
+        }
     }
 
     mem_temp.Free(count_tmp);
@@ -677,10 +718,31 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
 ///
 /// \param radius    The search radius.
 ///
-/// \param hash_table_row_splits_size    This is the length of the
-///        hash_table_row_splits array.
+/// \param points_row_splits_size    The size of the points_row_splits array.
+///        The size of the array is batch_size+1.
 ///
-/// \param hash_table_row_splits    This is an output of the function
+/// \param points_row_splits    This pointer points to host memory.
+///        Defines the start and end of the points in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_points]
+///
+/// \param queries_row_splits_size    The size of the queries_row_splits array.
+///        The size of the array is batch_size+1.
+///
+/// \param queries_row_splits    This pointer points to host memory.
+///        Defines the start and end of the queries in each batch item.
+///        The size of the array is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_queries]
+///
+/// \param hash_table_splits    This pointer points to host memory.
+///        Array defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_cell_splits_size    This is the length of the
+///        hash_table_cell_splits array.
+///
+/// \param hash_table_cell_splits    This is an output of the function
 ///        BuildSpatialHashTableCUDA. The row splits array describing the start
 ///        and end of each cell.
 ///
@@ -720,8 +782,13 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                            size_t num_queries,
                            const T* const queries,
                            const T radius,
-                           size_t hash_table_row_splits_size,
-                           const uint32_t* const hash_table_row_splits,
+                           const size_t points_row_splits_size,
+                           const int64_t* const points_row_splits,
+                           const size_t queries_row_splits_size,
+                           const int64_t* const queries_row_splits,
+                           const uint32_t* const hash_table_splits,
+                           size_t hash_table_cell_splits_size,
+                           const uint32_t* const hash_table_cell_splits,
                            const uint32_t* const hash_table_index,
                            const Metric metric,
                            const bool ignore_query_point,
@@ -749,6 +816,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
     MemoryAllocation mem_temp(temp, temp_size, texture_alignment);
 
+    const int batch_size = points_row_splits_size - 1;
     const T voxel_size = 2 * radius;
     const T inv_voxel_size = 1 / voxel_size;
 
@@ -757,10 +825,23 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 
     // we need this value to compute the size of the index array
     if (!get_temp_size) {
-        CountNeighbors(stream, query_neighbors_count.first, hash_table_index,
-                       hash_table_row_splits, hash_table_row_splits_size,
-                       queries, num_queries, points, num_points, inv_voxel_size,
-                       radius, metric, ignore_query_point);
+        for (int i = 0; i < batch_size; ++i) {
+            const size_t hash_table_size =
+                    hash_table_splits[i + 1] - hash_table_splits[i];
+            const size_t first_cell_idx = hash_table_splits[i];
+            const size_t queries_start_idx = queries_row_splits[i];
+            const size_t queries_end_idx = queries_row_splits[i + 1];
+            const T* const queries_i = queries + 3 * queries_row_splits[i];
+            const size_t num_queries_i =
+                    queries_row_splits[i + 1] - queries_row_splits[i];
+
+            CountNeighbors(
+                    stream, query_neighbors_count.first + queries_start_idx,
+                    hash_table_index, hash_table_cell_splits + first_cell_idx,
+                    hash_table_size + 1, queries_i, num_queries_i, points,
+                    num_points, inv_voxel_size, radius, metric,
+                    ignore_query_point);
+        }
     }
 
     // we need this value to compute the size of the index array
@@ -814,12 +895,24 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
         output_allocator.AllocDistances(&distances_ptr, 0);
 
     if (!get_temp_size) {
-        WriteNeighborsIndicesAndDistances(
-                stream, indices_ptr, distances_ptr, query_neighbors_row_splits,
-                hash_table_index, hash_table_row_splits,
-                hash_table_row_splits_size, queries, num_queries, points,
-                num_points, inv_voxel_size, radius, metric, ignore_query_point,
-                return_distances);
+        for (int i = 0; i < batch_size; ++i) {
+            const size_t hash_table_size =
+                    hash_table_splits[i + 1] - hash_table_splits[i];
+            const size_t first_cell_idx = hash_table_splits[i];
+            const size_t queries_start_idx = queries_row_splits[i];
+            const size_t queries_end_idx = queries_row_splits[i + 1];
+            const T* const queries_i = queries + 3 * queries_row_splits[i];
+            const size_t num_queries_i =
+                    queries_row_splits[i + 1] - queries_row_splits[i];
+
+            WriteNeighborsIndicesAndDistances(
+                    stream, indices_ptr, distances_ptr,
+                    query_neighbors_row_splits + queries_row_splits[i],
+                    hash_table_index, hash_table_cell_splits + first_cell_idx,
+                    hash_table_size + 1, queries_i, num_queries_i, points,
+                    num_points, inv_voxel_size, radius, metric,
+                    ignore_query_point, return_distances);
+        }
     }
 }
 
