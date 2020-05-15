@@ -650,6 +650,8 @@ void SceneWidget::SetupCamera(
     impl_->bounds = geometryBounds;
     impl_->controls->SetBoundingBox(geometryBounds);
 
+    GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
+
     auto f = GetFrame();
     float aspect = 1.0f;
     if (f.height > 0) {
@@ -657,14 +659,16 @@ void SceneWidget::SetupCamera(
     }
     // The far plane needs to be the max absolute distance, not just the
     // max extent, so that axes are visible if requested.
-    // See also RotationInteractor::UpdateCameraFarPlane().
+    // See also RotationInteractorLogic::UpdateCameraFarPlane().
+    auto far1 = impl_->bounds.GetMinBound().norm();
+    auto far2 = impl_->bounds.GetMaxBound().norm();
+    auto far3 =
+            GetCamera()->GetModelMatrix().translation().cast<double>().norm();
+    auto modelSize = 2.0 * impl_->bounds.GetExtent().norm();
     auto far = std::max(MIN_FAR_PLANE,
-                        2.0 * std::max(geometryBounds.GetMinBound().norm(),
-                                       geometryBounds.GetMaxBound().norm()));
+                        std::max(std::max(far1, far2), far3) + modelSize);
     GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
                                visualization::Camera::FovType::Vertical);
-
-    GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 }
 
 void SceneWidget::SetCameraChangedCallback(
