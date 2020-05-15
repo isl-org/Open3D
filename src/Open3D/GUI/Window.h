@@ -30,11 +30,11 @@
 #include <memory>
 #include <string>
 
-#include "Events.h"
-#include "Gui.h"
-#include "Menu.h"
+#include "Open3D/GUI/Events.h"
+#include "Open3D/GUI/Gui.h"
+#include "Open3D/GUI/Menu.h"
+#include "Open3D/GUI/Widget.h"
 #include "Open3D/Visualization/Rendering/Renderer.h"
-#include "Widget.h"
 
 struct GLFWwindow;
 

@@ -24,22 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Menu.h"  // defines GUI_USE_NATIVE_MENUS
+#include "Open3D/GUI/Menu.h"  // defines GUI_USE_NATIVE_MENUS
 
 #if defined(__APPLE__) && GUI_USE_NATIVE_MENUS
 // See MenuMacOS.mm
 #else
 
-#include "Theme.h"
-#include "Widget.h"
-
 #include <imgui.h>
-
 #include <algorithm>
 #include <cmath>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {

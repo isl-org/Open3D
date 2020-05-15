@@ -24,34 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Window.h"
-
-#include "Application.h"
-#include "Button.h"
-#include "Dialog.h"
-#include "ImguiFilamentBridge.h"
-#include "Label.h"
-#include "Layout.h"
-#include "Menu.h"
-#include "Native.h"
-#include "SceneWidget.h"
-#include "Theme.h"
-#include "Util.h"
-#include "Widget.h"
-
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/GUI/Window.h"
 
 #include <GLFW/glfw3.h>
 #include <filament/Engine.h>
 #include <imgui.h>
 #include <imgui_internal.h>
-
 #include <cmath>
 #include <queue>
 #include <unordered_map>
 #include <vector>
+
+#include "Open3D/GUI/Application.h"
+#include "Open3D/GUI/Button.h"
+#include "Open3D/GUI/Dialog.h"
+#include "Open3D/GUI/ImguiFilamentBridge.h"
+#include "Open3D/GUI/Label.h"
+#include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/Menu.h"
+#include "Open3D/GUI/Native.h"
+#include "Open3D/GUI/SceneWidget.h"
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
+#include "Open3D/GUI/Widget.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 
 using namespace open3d::gui::util;
 

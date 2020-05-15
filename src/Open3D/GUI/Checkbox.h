@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Widget.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {

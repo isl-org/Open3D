@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "GuiVisualizer.h"
+#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
 
 #include "Open3D/GUI/Application.h"
 #include "Open3D/GUI/Button.h"

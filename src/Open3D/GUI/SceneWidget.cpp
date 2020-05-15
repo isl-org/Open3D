@@ -24,25 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "SceneWidget.h"
+#include "Open3D/GUI/SceneWidget.h"
 
-#include "Application.h"
-#include "Color.h"
-#include "Events.h"
+#include <Eigen/Geometry>
+#include <set>
 
+#include "Open3D/GUI/Application.h"
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Events.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
-#include "Open3D/Visualization/Rendering/Scene.h"
-#include "Open3D/Visualization/Rendering/View.h"
-
 #include "Open3D/Visualization/Rendering/CameraInteractorLogic.h"
 #include "Open3D/Visualization/Rendering/IBLRotationInteractorLogic.h"
 #include "Open3D/Visualization/Rendering/LightDirectionInteractorLogic.h"
 #include "Open3D/Visualization/Rendering/ModelInteractorLogic.h"
-
-#include <Eigen/Geometry>
-
-#include <set>
+#include "Open3D/Visualization/Rendering/Scene.h"
+#include "Open3D/Visualization/Rendering/View.h"
 
 namespace open3d {
 namespace gui {

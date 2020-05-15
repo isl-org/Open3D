@@ -24,16 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Combobox.h"
-
-#include "Theme.h"
-#include "Util.h"
+#include "Open3D/GUI/Combobox.h"
 
 #include <imgui.h>
-
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
 
 namespace open3d {
 namespace gui {

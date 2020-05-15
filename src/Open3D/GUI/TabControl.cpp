@@ -24,15 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TabControl.h"
-
-#include "Theme.h"
+#include "Open3D/GUI/TabControl.h"
 
 #include <imgui.h>
-
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+
+#include "Open3D/GUI/Theme.h"
 
 namespace open3d {
 namespace gui {

@@ -26,11 +26,11 @@
 
 #include "Widget.h"
 
-#include "Color.h"
-#include "Events.h"
-
 #include <imgui.h>
 #include <imgui_internal.h>
+
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Events.h"
 
 namespace open3d {
 namespace gui {

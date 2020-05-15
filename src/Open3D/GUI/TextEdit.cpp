@@ -24,16 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TextEdit.h"
-
-#include "Theme.h"
-#include "Util.h"
+#include "Open3D/GUI/TextEdit.h"
 
 #include <imgui.h>
-
 #include <cmath>
 #include <sstream>
 #include <string>
+
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
 
 namespace open3d {
 namespace gui {

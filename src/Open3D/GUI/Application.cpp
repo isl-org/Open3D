@@ -24,25 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Application.h"
-
-#include "Button.h"
-#include "Events.h"
-#include "Label.h"
-#include "Layout.h"
-#include "Native.h"
-#include "Theme.h"
-#include "Window.h"
-
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/GUI/Application.h"
 
 #include <GLFW/glfw3.h>
-
 #include <chrono>
 #include <thread>
 #include <unordered_set>
+
+#include "Open3D/GUI/Button.h"
+#include "Open3D/GUI/Events.h"
+#include "Open3D/GUI/Label.h"
+#include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/Native.h"
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Window.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 namespace {
 

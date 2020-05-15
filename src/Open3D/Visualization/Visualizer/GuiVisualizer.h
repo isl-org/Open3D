@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Open3D/GUI/Window.h"
-
 #include <vector>
+
+#include "Open3D/GUI/Window.h"
 
 namespace open3d {
 

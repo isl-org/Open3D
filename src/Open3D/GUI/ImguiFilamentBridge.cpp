@@ -42,22 +42,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
+#include "Open3D/GUI/ImguiFilamentBridge.h"
 
-#include "ImguiFilamentBridge.h"
-
-#include "Application.h"
-#include "Color.h"
-#include "Gui.h"
-#include "Theme.h"
-#include "Window.h"
-
+#include "Open3D/GUI/Application.h"
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Gui.h"
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Window.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
+#include <fcntl.h>
 #include <filament/Fence.h>
 #include <filament/IndexBuffer.h>
 #include <filament/Material.h>
@@ -70,21 +68,18 @@
 #include <filament/VertexBuffer.h>
 #include <filament/filamat/MaterialBuilder.h>
 #include <filament/utils/EntityManager.h>
-
+#include <imgui.h>
+#include <cerrno>
+#include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
+#include <iostream>
 #include <unordered_map>
 #include <vector>
 
-#include <imgui.h>
-
-#include <fcntl.h>
-#include <cerrno>
 #if !defined(WIN32)
 #include <unistd.h>
 #else
 #include <io.h>
 #endif
-
-#include <iostream>
 
 using namespace filament::math;
 using namespace filament;

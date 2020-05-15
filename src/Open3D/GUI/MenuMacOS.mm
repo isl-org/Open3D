@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Menu.h"  // defines GUI_USE_NATIVE_MENUS
+#include "Open3D/GUI/Menu.h"  // defines GUI_USE_NATIVE_MENUS
 
 #if GUI_USE_NATIVE_MENUS
 
 #import "AppKit/AppKit.h"
 
-#include "Application.h"
-
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "Open3D/GUI/Application.h"
 
 @interface Open3DRunnable : NSObject
 {

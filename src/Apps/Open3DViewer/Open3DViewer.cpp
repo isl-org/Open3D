@@ -26,12 +26,11 @@
 
 #include "Open3DViewer.h"
 
-#include "Open3D/Open3D.h"
-#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
+#include <string>
 
 #include "Open3D/GUI/Native.h"
-
-#include <string>
+#include "Open3D/Open3D.h"
+#include "Open3D/Visualization/Visualizer/GuiVisualizer.h"
 
 using namespace open3d;
 using namespace open3d::geometry;

@@ -26,12 +26,11 @@
 
 #pragma once
 
-#include "Widget.h"
-
-#include "Color.h"
-#include "Gui.h"
-
 #include <string>
+
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Gui.h"
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {

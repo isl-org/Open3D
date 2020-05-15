@@ -24,19 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "NumberEdit.h"
-
-#include "Theme.h"
-#include "Util.h"
+#include "Open3D/GUI/NumberEdit.h"
 
 #include <imgui.h>
-
+#include <string.h>
 #include <algorithm>  // for min, max
 #include <cmath>
 #include <sstream>
 #include <unordered_set>
 
-#include <string.h>
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Util.h"
 
 namespace open3d {
 namespace gui {

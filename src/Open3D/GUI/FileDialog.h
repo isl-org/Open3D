@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Dialog.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Dialog.h"
 
 namespace open3d {
 namespace gui {
