@@ -437,7 +437,7 @@ Rect Window::GetContentRect() const {
     auto size = GetSize();
     int menuHeight = 0;
 #if !(GUI_USE_NATIVE_MENUS && defined(__APPLE__))
-    MakeCurrent();
+    MakeDrawContextCurrent();
     auto menubar = Application::GetInstance().GetMenubar();
     if (menubar) {
         menuHeight = menubar->CalcHeight(GetTheme());
