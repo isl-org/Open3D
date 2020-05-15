@@ -36,34 +36,34 @@ namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextColorEditId = 1;
+static int g_next_color_edit_id = 1;
 }
 
 struct ColorEdit::Impl {
-    std::string id;
-    Color value;
-    std::function<void(const Color&)> onValueChanged;
+    std::string id_;
+    Color value_;
+    std::function<void(const Color&)> on_value_changed_;
 };
 
 ColorEdit::ColorEdit() : impl_(new ColorEdit::Impl()) {
     std::stringstream s;
-    s << "##colorEdit_" << gNextColorEditId++;
-    impl_->id = s.str();
+    s << "##colorEdit_" << g_next_color_edit_id++;
+    impl_->id_ = s.str();
 }
 
 ColorEdit::~ColorEdit() {}
 
-void ColorEdit::SetValue(const Color& color) { impl_->value = color; }
+void ColorEdit::SetValue(const Color& color) { impl_->value_ = color; }
 
 void ColorEdit::SetValue(const float r, const float g, const float b) {
-    impl_->value.SetColor(r, g, b);
+    impl_->value_.SetColor(r, g, b);
 }
 
-const Color& ColorEdit::GetValue() const { return impl_->value; }
+const Color& ColorEdit::GetValue() const { return impl_->value_; }
 
 void ColorEdit::SetOnValueChanged(
         std::function<void(const Color&)> onValueChanged) {
-    impl_->onValueChanged = onValueChanged;
+    impl_->on_value_changed_ = onValueChanged;
 }
 
 Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
@@ -78,17 +78,17 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    auto newValue = impl_->value;
+    auto newValue = impl_->value_;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    ImGui::ColorEdit3(impl_->id.c_str(), newValue.GetMutablePointer());
+    ImGui::ColorEdit3(impl_->id_.c_str(), newValue.GetMutablePointer());
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
 
-    if (impl_->value != newValue) {
-        impl_->value = newValue;
-        if (impl_->onValueChanged) {
-            impl_->onValueChanged(newValue);
+    if (impl_->value_ != newValue) {
+        impl_->value_ = newValue;
+        if (impl_->on_value_changed_) {
+            impl_->on_value_changed_(newValue);
         }
 
         return Widget::DrawResult::REDRAW;

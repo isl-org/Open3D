@@ -37,7 +37,7 @@ namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextTabControlId = 1;
+static int g_next_tab_control_id_ = 1;
 
 int CalcTabHeight(const Theme& theme) {
     auto em = std::ceil(ImGui::GetTextLineHeight());
@@ -46,21 +46,21 @@ int CalcTabHeight(const Theme& theme) {
 }  // namespace
 
 struct TabControl::Impl {
-    std::vector<std::string> tabNames;
-    std::string imguiId;
+    std::vector<std::string> tab_names_;
+    std::string imgui_id_;
 };
 
 TabControl::TabControl() : impl_(new TabControl::Impl()) {
     std::stringstream s;
-    s << "tabcontrol_" << gNextTabControlId++;
-    impl_->imguiId = s.str();
+    s << "tabcontrol_" << g_next_tab_control_id_++;
+    impl_->imgui_id_ = s.str();
 }
 
 TabControl::~TabControl() {}
 
 void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
     AddChild(panel);
-    impl_->tabNames.push_back(name);
+    impl_->tab_names_.push_back(name);
 }
 
 Size TabControl::CalcPreferredSize(const Theme& theme) const {
@@ -95,9 +95,9 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (ImGui::BeginTabBar(impl_->imguiId.c_str())) {
-        for (size_t i = 0; i < impl_->tabNames.size(); ++i) {
-            if (ImGui::BeginTabItem(impl_->tabNames[i].c_str())) {
+    if (ImGui::BeginTabBar(impl_->imgui_id_.c_str())) {
+        for (size_t i = 0; i < impl_->tab_names_.size(); ++i) {
+            if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str())) {
                 auto r = GetChildren()[i]->Draw(context);
                 if (r != Widget::DrawResult::NONE) {
                     result = r;

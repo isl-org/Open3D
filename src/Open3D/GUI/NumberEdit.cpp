@@ -40,77 +40,77 @@ namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextNumberEditId = 1;
+static int g_next_number_edit_id = 1;
 }
 
 struct NumberEdit::Impl {
-    std::string id;
-    NumberEdit::Type type;
+    std::string id_;
+    NumberEdit::Type type_;
     // Double has 53-bits of integer range, which is sufficient for the
     // numbers that are reasonable for users to be entering. (Since JavaScript
     // only uses doubles, apparently it works for a lot more situations, too.)
-    double value;
-    double minValue = -2e9;  // -2 billion, which is roughly -INT_MAX
-    double maxValue = 2e9;
-    int nDecimalDigits = -1;
-    std::function<void(double)> onChanged;
+    double value_;
+    double min_value_ = -2e9;  // -2 billion, which is roughly -INT_MAX
+    double max_value_ = 2e9;
+    int num_decimal_digits_ = -1;
+    std::function<void(double)> on_changed_;
 };
 
 NumberEdit::NumberEdit(Type type) : impl_(new NumberEdit::Impl()) {
-    impl_->type = type;
+    impl_->type_ = type;
     std::stringstream s;
-    s << "##numedit" << gNextNumberEditId++;
-    impl_->id = s.str();
+    s << "##numedit" << g_next_number_edit_id++;
+    impl_->id_ = s.str();
 }
 
 NumberEdit::~NumberEdit() {}
 
-int NumberEdit::GetIntValue() const { return int(impl_->value); }
+int NumberEdit::GetIntValue() const { return int(impl_->value_); }
 
-double NumberEdit::GetDoubleValue() const { return impl_->value; }
+double NumberEdit::GetDoubleValue() const { return impl_->value_; }
 
 void NumberEdit::SetValue(double val) {
-    if (impl_->type == INT) {
-        impl_->value = std::round(val);
+    if (impl_->type_ == INT) {
+        impl_->value_ = std::round(val);
     } else {
-        impl_->value = val;
+        impl_->value_ = val;
     }
 }
 
-double NumberEdit::GetMinimumValue() const { return impl_->minValue; }
+double NumberEdit::GetMinimumValue() const { return impl_->min_value_; }
 
-double NumberEdit::GetMaximumValue() const { return impl_->maxValue; }
+double NumberEdit::GetMaximumValue() const { return impl_->max_value_; }
 
 void NumberEdit::SetLimits(double minValue, double maxValue) {
-    if (impl_->type == INT) {
-        impl_->minValue = std::round(minValue);
-        impl_->maxValue = std::round(maxValue);
+    if (impl_->type_ == INT) {
+        impl_->min_value_ = std::round(minValue);
+        impl_->max_value_ = std::round(maxValue);
     } else {
-        impl_->minValue = minValue;
-        impl_->maxValue = maxValue;
+        impl_->min_value_ = minValue;
+        impl_->max_value_ = maxValue;
     }
-    impl_->value = std::min(maxValue, std::max(minValue, impl_->value));
+    impl_->value_ = std::min(maxValue, std::max(minValue, impl_->value_));
 }
 
 void NumberEdit::SetDecimalPrecision(int nDigits) {
-    impl_->nDecimalDigits = nDigits;
+    impl_->num_decimal_digits_ = nDigits;
 }
 
 void NumberEdit::SetOnValueChanged(std::function<void(double)> onChanged) {
-    impl_->onChanged = onChanged;
+    impl_->on_changed_ = onChanged;
 }
 
 Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
-    int nMinDigits = std::ceil(std::log10(std::abs(impl_->minValue)));
-    int nMaxDigits = std::ceil(std::log10(std::abs(impl_->maxValue)));
+    int nMinDigits = std::ceil(std::log10(std::abs(impl_->min_value_)));
+    int nMaxDigits = std::ceil(std::log10(std::abs(impl_->max_value_)));
     int nDigits = std::max(6, std::max(nMinDigits, nMaxDigits));
-    if (impl_->minValue < 0) {
+    if (impl_->min_value_ < 0) {
         nDigits += 1;
     }
 
     auto pref = Super::CalcPreferredSize(theme);
-    auto padding = pref.height - theme.fontSize;
-    return Size((nDigits * theme.fontSize) / 2 + padding, pref.height);
+    auto padding = pref.height - theme.font_size;
+    return Size((nDigits * theme.font_size) / 2 + padding, pref.height);
 }
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
@@ -123,42 +123,42 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
 
     ImGui::PushStyleColor(
             ImGuiCol_FrameBg,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgHovered,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
     ImGui::PushStyleColor(
             ImGuiCol_FrameBgActive,
-            util::colorToImgui(context.theme.textEditBackgroundColor));
+            util::colorToImgui(context.theme.text_edit_background_color));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (impl_->type == INT) {
-        int iValue = impl_->value;
-        if (ImGui::InputInt(impl_->id.c_str(), &iValue)) {
+    if (impl_->type_ == INT) {
+        int iValue = impl_->value_;
+        if (ImGui::InputInt(impl_->id_.c_str(), &iValue)) {
             SetValue(iValue);
             result = Widget::DrawResult::REDRAW;
         }
     } else {
         std::string fmt;
-        if (impl_->nDecimalDigits >= 0) {
+        if (impl_->num_decimal_digits_ >= 0) {
             char buff[32];
-            snprintf(buff, 31, "%%.%df", impl_->nDecimalDigits);
+            snprintf(buff, 31, "%%.%df", impl_->num_decimal_digits_);
             fmt = buff;
         } else {
-            if (impl_->value < 10) {
+            if (impl_->value_ < 10) {
                 fmt = "%.3f";
-            } else if (impl_->value < 100) {
+            } else if (impl_->value_ < 100) {
                 fmt = "%.2f";
-            } else if (impl_->value < 1000) {
+            } else if (impl_->value_ < 1000) {
                 fmt = "%.1f";
             } else {
                 fmt = "%.0f";
             }
         }
-        double dValue = impl_->value;
-        if (ImGui::InputDouble(impl_->id.c_str(), &dValue, 0.0, 0.0,
+        double dValue = impl_->value_;
+        if (ImGui::InputDouble(impl_->id_.c_str(), &dValue, 0.0, 0.0,
                                fmt.c_str())) {
             SetValue(dValue);
             result = Widget::DrawResult::REDRAW;
@@ -171,8 +171,8 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
-        if (impl_->onChanged) {
-            impl_->onChanged(impl_->value);
+        if (impl_->on_changed_) {
+            impl_->on_changed_(impl_->value_);
         }
         result = Widget::DrawResult::REDRAW;
     }

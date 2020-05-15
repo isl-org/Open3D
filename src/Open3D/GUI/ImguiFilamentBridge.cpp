@@ -183,17 +183,16 @@ static Material* loadMaterialTemplate(const std::string& path, Engine& engine) {
 
 struct ImguiFilamentBridge::Impl {
     // Bridge manages filament resources directly
-    filament::Material* material = nullptr;
-    std::vector<filament::VertexBuffer*> vertexBuffers;
-    std::vector<filament::IndexBuffer*> indexBuffers;
-    std::vector<filament::MaterialInstance*> materialInstances;
+    filament::Material* material_ = nullptr;
+    std::vector<filament::VertexBuffer*> vertex_buffers_;
+    std::vector<filament::IndexBuffer*> index_buffers_;
+    std::vector<filament::MaterialInstance*> material_instances_;
 
-    utils::Entity renderable;
-    filament::Texture* texture = nullptr;
-    unsigned char* fontPixels = nullptr;
-    bool hasSynced = false;
+    utils::Entity renderable_;
+    filament::Texture* texture_ = nullptr;
+    bool has_synced_ = false;
 
-    visualization::FilamentView* view = nullptr;  // we do not own this
+    visualization::FilamentView* view_ = nullptr;  // we do not own this
 };
 
 ImguiFilamentBridge::ImguiFilamentBridge(
@@ -201,7 +200,7 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     : impl_(new ImguiFilamentBridge::Impl()) {
     // The UI needs a special material (just a pass-through blit)
     std::string resourcePath = Application::GetInstance().GetResourcePath();
-    impl_->material =
+    impl_->material_ =
             loadMaterialTemplate(resourcePath + "/ui_blit.filamat",
                                  visualization::EngineInstance::GetInstance());
 
@@ -210,29 +209,29 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     auto scene = renderer->GetGuiScene();
 
     auto viewId = scene->AddView(0, 0, windowSize.width, windowSize.height);
-    impl_->view =
+    impl_->view_ =
             dynamic_cast<visualization::FilamentView*>(scene->GetView(viewId));
 
-    auto nativeView = impl_->view->GetNativeView();
+    auto nativeView = impl_->view_->GetNativeView();
     nativeView->setClearTargets(false, false, false);
     nativeView->setRenderTarget(View::TargetBufferFlags::DEPTH_AND_STENCIL);
     nativeView->setPostProcessingEnabled(false);
     nativeView->setShadowsEnabled(false);
 
     EntityManager& em = utils::EntityManager::get();
-    impl_->renderable = em.create();
-    scene->GetNativeScene()->addEntity(impl_->renderable);
+    impl_->renderable_ = em.create();
+    scene->GetNativeScene()->addEntity(impl_->renderable_);
 }
 
 ImguiFilamentBridge::ImguiFilamentBridge(Engine* engine,
                                          filament::Scene* scene,
                                          filament::Material* uiblitMaterial)
     : impl_(new ImguiFilamentBridge::Impl()) {
-    impl_->material = uiblitMaterial;
+    impl_->material_ = uiblitMaterial;
 
     EntityManager& em = utils::EntityManager::get();
-    impl_->renderable = em.create();
-    scene->addEntity(impl_->renderable);
+    impl_->renderable_ = em.create();
+    scene->addEntity(impl_->renderable_);
 }
 
 void ImguiFilamentBridge::createAtlasTextureAlpha8(unsigned char* pixels,
@@ -241,38 +240,38 @@ void ImguiFilamentBridge::createAtlasTextureAlpha8(unsigned char* pixels,
                                                    int bytesPerPx) {
     auto& engineInstance = visualization::EngineInstance::GetInstance();
 
-    engineInstance.destroy(impl_->texture);
+    engineInstance.destroy(impl_->texture_);
 
     size_t size = (size_t)(width * height);
     Texture::PixelBufferDescriptor pb(pixels, size, Texture::Format::R,
                                       Texture::Type::UBYTE);
-    impl_->texture = Texture::Builder()
-                             .width((uint32_t)width)
-                             .height((uint32_t)height)
-                             .levels((uint8_t)1)
-                             .format(Texture::InternalFormat::R8)
-                             .sampler(Texture::Sampler::SAMPLER_2D)
-                             .build(engineInstance);
-    impl_->texture->setImage(engineInstance, 0, std::move(pb));
+    impl_->texture_ = Texture::Builder()
+                              .width((uint32_t)width)
+                              .height((uint32_t)height)
+                              .levels((uint8_t)1)
+                              .format(Texture::InternalFormat::R8)
+                              .sampler(Texture::Sampler::SAMPLER_2D)
+                              .build(engineInstance);
+    impl_->texture_->setImage(engineInstance, 0, std::move(pb));
 
     TextureSampler sampler(TextureSampler::MinFilter::LINEAR,
                            TextureSampler::MagFilter::LINEAR);
-    impl_->material->setDefaultParameter("albedo", impl_->texture, sampler);
+    impl_->material_->setDefaultParameter("albedo", impl_->texture_, sampler);
 }
 
 ImguiFilamentBridge::~ImguiFilamentBridge() {
     auto& engineInstance = visualization::EngineInstance::GetInstance();
 
-    engineInstance.destroy(impl_->renderable);
-    for (auto& mi : impl_->materialInstances) {
+    engineInstance.destroy(impl_->renderable_);
+    for (auto& mi : impl_->material_instances_) {
         engineInstance.destroy(mi);
     }
-    engineInstance.destroy(impl_->material);
-    engineInstance.destroy(impl_->texture);
-    for (auto& vb : impl_->vertexBuffers) {
+    engineInstance.destroy(impl_->material_);
+    engineInstance.destroy(impl_->texture_);
+    for (auto& vb : impl_->vertex_buffers_) {
         engineInstance.destroy(vb);
     }
-    for (auto& ib : impl_->indexBuffers) {
+    for (auto& ib : impl_->index_buffers_) {
         engineInstance.destroy(ib);
     }
 }
@@ -289,7 +288,7 @@ static uint64_t makeScissorKey(int fbheight, const ImVec4& clipRect) {
 }
 
 void ImguiFilamentBridge::update(ImDrawData* imguiData) {
-    impl_->hasSynced = false;
+    impl_->has_synced_ = false;
 
     auto& engineInstance = visualization::EngineInstance::GetInstance();
 
@@ -321,19 +320,19 @@ void ImguiFilamentBridge::update(ImDrawData* imguiData) {
     rbuilder.boundingBox({{0, 0, 0}, {10000, 10000, 10000}}).culling(false);
 
     // Ensure that we have a material instance for each scissor rectangle.
-    size_t previousSize = impl_->materialInstances.size();
-    if (scissorRects.size() > impl_->materialInstances.size()) {
-        impl_->materialInstances.resize(scissorRects.size());
-        for (size_t i = previousSize; i < impl_->materialInstances.size();
+    size_t previousSize = impl_->material_instances_.size();
+    if (scissorRects.size() > impl_->material_instances_.size()) {
+        impl_->material_instances_.resize(scissorRects.size());
+        for (size_t i = previousSize; i < impl_->material_instances_.size();
              i++) {
-            impl_->materialInstances[i] = impl_->material->createInstance();
+            impl_->material_instances_[i] = impl_->material_->createInstance();
         }
     }
 
     // Push each unique scissor rectangle to a MaterialInstance.
     size_t matIndex = 0;
     for (auto& pair : scissorRects) {
-        pair.second = impl_->materialInstances[matIndex++];
+        pair.second = impl_->material_instances_[matIndex++];
         uint32_t left = (pair.first >> 0ull) & 0xffffull;
         uint32_t bottom = (pair.first >> 16ull) & 0xffffull;
         uint32_t width = (pair.first >> 32ull) & 0xffffull;
@@ -342,7 +341,7 @@ void ImguiFilamentBridge::update(ImDrawData* imguiData) {
     }
 
     // Recreate the Renderable component and point it to the vertex buffers.
-    rcm.destroy(impl_->renderable);
+    rcm.destroy(impl_->renderable_);
     int bufferIndex = 0;
     int primIndex = 0;
     for (int cmdListIndex = 0; cmdListIndex < imguiData->CmdListsCount;
@@ -362,9 +361,9 @@ void ImguiFilamentBridge::update(ImDrawData* imguiData) {
                 assert(miter != scissorRects.end());
                 rbuilder.geometry(primIndex,
                                   RenderableManager::PrimitiveType::TRIANGLES,
-                                  impl_->vertexBuffers[bufferIndex],
-                                  impl_->indexBuffers[bufferIndex], indexOffset,
-                                  pcmd.ElemCount)
+                                  impl_->vertex_buffers_[bufferIndex],
+                                  impl_->index_buffers_[bufferIndex],
+                                  indexOffset, pcmd.ElemCount)
                         .blendOrder(primIndex, primIndex)
                         .material(primIndex, miter->second);
                 primIndex++;
@@ -374,15 +373,15 @@ void ImguiFilamentBridge::update(ImDrawData* imguiData) {
         bufferIndex++;
     }
     if (imguiData->CmdListsCount > 0) {
-        rbuilder.build(engineInstance, impl_->renderable);
+        rbuilder.build(engineInstance, impl_->renderable_);
     }
 }
 
 void ImguiFilamentBridge::onWindowResized(const Window& window) {
     auto size = window.GetSize();
-    impl_->view->SetViewport(0, 0, size.width, size.height);
+    impl_->view_->SetViewport(0, 0, size.width, size.height);
 
-    auto camera = impl_->view->GetCamera();
+    auto camera = impl_->view_->GetCamera();
     camera->SetProjection(visualization::Camera::Projection::Ortho, 0.0,
                           size.width, size.height, 0.0, 0.0, 1.0);
 }
@@ -393,8 +392,8 @@ void ImguiFilamentBridge::createVertexBuffer(size_t bufferIndex,
 
     auto& engineInstance = visualization::EngineInstance::GetInstance();
 
-    engineInstance.destroy(impl_->vertexBuffers[bufferIndex]);
-    impl_->vertexBuffers[bufferIndex] =
+    engineInstance.destroy(impl_->vertex_buffers_[bufferIndex]);
+    impl_->vertex_buffers_[bufferIndex] =
             VertexBuffer::Builder()
                     .vertexCount(capacity)
                     .bufferCount(1)
@@ -419,8 +418,8 @@ void ImguiFilamentBridge::createIndexBuffer(size_t bufferIndex,
 
     auto& engineInstance = visualization::EngineInstance::GetInstance();
 
-    engineInstance.destroy(impl_->indexBuffers[bufferIndex]);
-    impl_->indexBuffers[bufferIndex] =
+    engineInstance.destroy(impl_->index_buffers_[bufferIndex]);
+    impl_->index_buffers_[bufferIndex] =
             IndexBuffer::Builder()
                     .indexCount(capacity)
                     .bufferType(IndexBuffer::IndexType::USHORT)
@@ -428,18 +427,18 @@ void ImguiFilamentBridge::createIndexBuffer(size_t bufferIndex,
 }
 
 void ImguiFilamentBridge::createBuffers(size_t numRequiredBuffers) {
-    if (numRequiredBuffers > impl_->vertexBuffers.size()) {
-        size_t previousSize = impl_->vertexBuffers.size();
-        impl_->vertexBuffers.resize(numRequiredBuffers, nullptr);
-        for (size_t i = previousSize; i < impl_->vertexBuffers.size(); i++) {
+    if (numRequiredBuffers > impl_->vertex_buffers_.size()) {
+        size_t previousSize = impl_->vertex_buffers_.size();
+        impl_->vertex_buffers_.resize(numRequiredBuffers, nullptr);
+        for (size_t i = previousSize; i < impl_->vertex_buffers_.size(); i++) {
             // Pick a reasonable starting capacity; it will grow if needed.
             createVertexBuffer(i, 1000);
         }
     }
-    if (numRequiredBuffers > impl_->indexBuffers.size()) {
-        size_t previousSize = impl_->indexBuffers.size();
-        impl_->indexBuffers.resize(numRequiredBuffers, nullptr);
-        for (size_t i = previousSize; i < impl_->indexBuffers.size(); i++) {
+    if (numRequiredBuffers > impl_->index_buffers_.size()) {
+        size_t previousSize = impl_->index_buffers_.size();
+        impl_->index_buffers_.resize(numRequiredBuffers, nullptr);
+        for (size_t i = previousSize; i < impl_->index_buffers_.size(); i++) {
             // Pick a reasonable starting capacity; it will grow if needed.
             createIndexBuffer(i, 5000);
         }
@@ -458,14 +457,14 @@ void ImguiFilamentBridge::populateVertexData(size_t bufferIndex,
     // consume the data at any time.
     size_t requiredVertCount = vbSizeInBytes / sizeof(ImDrawVert);
     size_t capacityVertCount =
-            impl_->vertexBuffers[bufferIndex]->getVertexCount();
+            impl_->vertex_buffers_[bufferIndex]->getVertexCount();
     if (requiredVertCount > capacityVertCount) {
         createVertexBuffer(bufferIndex, requiredVertCount);
     }
     size_t nVbBytes = requiredVertCount * sizeof(ImDrawVert);
     void* vbFilamentData = malloc(nVbBytes);
     memcpy(vbFilamentData, vbImguiData, nVbBytes);
-    impl_->vertexBuffers[bufferIndex]->setBufferAt(
+    impl_->vertex_buffers_[bufferIndex]->setBufferAt(
             engineInstance, 0,
             VertexBuffer::BufferDescriptor(
                     vbFilamentData, nVbBytes,
@@ -477,14 +476,14 @@ void ImguiFilamentBridge::populateVertexData(size_t bufferIndex,
     // consume the data at any time.
     size_t requiredIndexCount = ibSizeInBytes / 2;
     size_t capacityIndexCount =
-            impl_->indexBuffers[bufferIndex]->getIndexCount();
+            impl_->index_buffers_[bufferIndex]->getIndexCount();
     if (requiredIndexCount > capacityIndexCount) {
         createIndexBuffer(bufferIndex, requiredIndexCount);
     }
     size_t nIbBytes = requiredIndexCount * 2;
     void* ibFilamentData = malloc(nIbBytes);
     memcpy(ibFilamentData, ibImguiData, nIbBytes);
-    impl_->indexBuffers[bufferIndex]->setBuffer(
+    impl_->index_buffers_[bufferIndex]->setBuffer(
             engineInstance,
             IndexBuffer::BufferDescriptor(
                     ibFilamentData, nIbBytes,
@@ -494,13 +493,13 @@ void ImguiFilamentBridge::populateVertexData(size_t bufferIndex,
 
 void ImguiFilamentBridge::syncThreads() {
 #if UTILS_HAS_THREADING
-    if (!impl_->hasSynced) {
+    if (!impl_->has_synced_) {
         auto& engineInstance = visualization::EngineInstance::GetInstance();
 
         // This is called only when ImGui needs to grow a vertex buffer, which
         // occurs a few times after launching and rarely (if ever) after that.
         Fence::waitAndDestroy(engineInstance.createFence());
-        impl_->hasSynced = true;
+        impl_->has_synced_ = true;
     }
 #endif
 }

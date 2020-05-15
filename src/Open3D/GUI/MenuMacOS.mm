@@ -60,17 +60,17 @@ namespace open3d {
 namespace gui {
 
 struct Menu::Impl {
-    NSMenu *menu;
-    std::vector<std::shared_ptr<Menu>> submenus;
+    NSMenu *menu_;
+    std::vector<std::shared_ptr<Menu>> submenus_;
 
     NSMenuItem* FindMenuItem(ItemId itemId) const {
 
-        auto item = [this->menu itemWithTag:itemId];
+        auto item = [this->menu_ itemWithTag:itemId];
         if (item != nil) {
             return item;
         }
         // Not sure if -itemWithTag searches recursively
-        for (auto sm : this->submenus) {
+        for (auto sm : this->submenus_) {
             item = sm->impl_->FindMenuItem(itemId);
             if (item != nil) {
                 return item;
@@ -84,13 +84,13 @@ struct Menu::Impl {
 
 Menu::Menu()
 : impl_(new Menu::Impl()) {
-    impl_->menu = [[NSMenu alloc] initWithTitle:@""];
-    impl_->menu.autoenablesItems = NO;
+    impl_->menu_ = [[NSMenu alloc] initWithTitle:@""];
+    impl_->menu_.autoenablesItems = NO;
 }
 
 Menu::~Menu() {} // ARC will automatically release impl_->menu
 
-void* Menu::GetNativePointer() { return impl_->menu; }
+void* Menu::GetNativePointer() { return impl_->menu_; }
 
 void Menu::AddItem(const char *name,
                    ItemId itemId /*= NO_ITEM*/,
@@ -106,22 +106,22 @@ void Menu::AddItem(const char *name,
         Application::GetInstance().OnMenuItemSelected(itemId);
     }];
     item.tag = itemId;
-    [impl_->menu addItem:item];
+    [impl_->menu_ addItem:item];
 }
 
 void Menu::AddMenu(const char *name, std::shared_ptr<Menu> submenu) {
-    submenu->impl_->menu.title = [NSString stringWithUTF8String:name];
+    submenu->impl_->menu_.title = [NSString stringWithUTF8String:name];
     auto item = [[NSMenuItem alloc]
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:nil
                  keyEquivalent:@""];
-    [impl_->menu addItem:item];
-    [impl_->menu setSubmenu:submenu->impl_->menu forItem:item];
-    impl_->submenus.push_back(submenu);
+    [impl_->menu_ addItem:item];
+    [impl_->menu_ setSubmenu:submenu->impl_->menu_ forItem:item];
+    impl_->submenus_.push_back(submenu);
 }
 
 void Menu::AddSeparator() {
-    [impl_->menu addItem: [NSMenuItem separatorItem]];
+    [impl_->menu_ addItem: [NSMenuItem separatorItem]];
 }
 
 bool Menu::IsEnabled(ItemId itemId) const {

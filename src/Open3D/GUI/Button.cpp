@@ -37,39 +37,39 @@ namespace open3d {
 namespace gui {
 
 struct Button::Impl {
-    std::string title;
-    bool isToggleable = false;
-    bool isOn = false;
-    std::function<void()> onClicked;
+    std::string title_;
+    bool is_toggleable_ = false;
+    bool is_on_ = false;
+    std::function<void()> on_clicked_;
 };
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
-    impl_->title = title;
+    impl_->title_ = title;
 }
 
 Button::~Button() {}
 
-bool Button::GetIsToggleable() const { return impl_->isToggleable; }
+bool Button::GetIsToggleable() const { return impl_->is_toggleable_; }
 
-void Button::SetToggleable(bool toggles) { impl_->isToggleable = toggles; }
+void Button::SetToggleable(bool toggles) { impl_->is_toggleable_ = toggles; }
 
-bool Button::GetIsOn() const { return impl_->isOn; }
+bool Button::GetIsOn() const { return impl_->is_on_; }
 
 void Button::SetOn(bool isOn) {
-    if (impl_->isToggleable) {
-        impl_->isOn = isOn;
+    if (impl_->is_toggleable_) {
+        impl_->is_on_ = isOn;
     }
 }
 
 void Button::SetOnClicked(std::function<void()> onClicked) {
-    impl_->onClicked = onClicked;
+    impl_->on_clicked_ = onClicked;
 }
 
 Size Button::CalcPreferredSize(const Theme& theme) const {
     auto font = ImGui::GetFont();
     auto em = std::ceil(ImGui::GetTextLineHeight());
-    auto size = font->CalcTextSizeA(theme.fontSize, 10000, 10000,
-                                    impl_->title.c_str());
+    auto size = font->CalcTextSizeA(theme.font_size, 10000, 10000,
+                                    impl_->title_.c_str());
     return Size(std::ceil(size.x) + 2.0 * em, 2 * em);
 }
 
@@ -77,30 +77,31 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
-    bool oldIsOn = impl_->isOn;
+    bool oldIsOn = impl_->is_on_;
     if (oldIsOn) {
         ImGui::PushStyleColor(
                 ImGuiCol_Text,
-                util::colorToImgui(context.theme.buttonOnTextColor));
-        ImGui::PushStyleColor(ImGuiCol_Button,
-                              util::colorToImgui(context.theme.buttonOnColor));
+                util::colorToImgui(context.theme.button_on_text_color));
+        ImGui::PushStyleColor(
+                ImGuiCol_Button,
+                util::colorToImgui(context.theme.button_on_color));
         ImGui::PushStyleColor(
                 ImGuiCol_ButtonHovered,
-                util::colorToImgui(context.theme.buttonOnHoverColor));
+                util::colorToImgui(context.theme.button_on_hover_color));
         ImGui::PushStyleColor(
                 ImGuiCol_ButtonActive,
-                util::colorToImgui(context.theme.buttonOnActiveColor));
+                util::colorToImgui(context.theme.button_on_active_color));
     }
     DrawImGuiPushEnabledState();
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
-    if (ImGui::Button(impl_->title.c_str(),
+    if (ImGui::Button(impl_->title_.c_str(),
                       ImVec2(GetFrame().width, GetFrame().height))) {
-        if (impl_->isToggleable) {
-            impl_->isOn = !impl_->isOn;
+        if (impl_->is_toggleable_) {
+            impl_->is_on_ = !impl_->is_on_;
         }
-        if (impl_->onClicked) {
-            impl_->onClicked();
+        if (impl_->on_clicked_) {
+            impl_->on_clicked_();
         }
         result = Widget::DrawResult::REDRAW;
     }
