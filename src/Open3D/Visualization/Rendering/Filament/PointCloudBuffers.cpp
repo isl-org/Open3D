@@ -48,7 +48,7 @@ struct ColoredVertex {
     math::float4 color = {1.0f, 1.0f, 1.0f, 1.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float2 uv = {0.f, 0.f};
-    
+
     static size_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
     }
