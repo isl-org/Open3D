@@ -98,14 +98,14 @@ void FilamentRenderer::UpdateSwapChain() {
     void* metal_layer = nullptr;
     auto backend = engine_.getBackend();
     if (backend == filament::Engine::Backend::METAL) {
-        metal_layer = resizeMetalLayer(native_win);
+        metal_layer = resize_metal_layer(native_win);
         // The swap chain on Metal is a CAMetalLayer.
         native_swap_chain = metal_layer;
     }
 
 #if defined(FILAMENT_DRIVER_SUPPORTS_VULKAN)
     if (backend == filament::Engine::Backend::VULKAN) {
-        resizeMetalLayer(native_win);
+        resize_native_layer(native_win);
     }
 #endif  // vulkan
 #endif  // __APPLE__
