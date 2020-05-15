@@ -47,7 +47,8 @@ struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
     math::float4 color = {1.0f, 1.0f, 1.0f, 1.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
-
+    math::float2 uv = {0.f, 0.f};
+    
     static size_t GetPositionOffset() {
         return offsetof(ColoredVertex, position);
     }
@@ -55,7 +56,7 @@ struct ColoredVertex {
     static size_t GetTangentOffset() {
         return offsetof(ColoredVertex, tangent);
     }
-
+    static size_t GetUVOffset() { return offsetof(ColoredVertex, uv); }
     void SetVertexPosition(const Eigen::Vector3d& pos) {
         auto floatPos = pos.cast<float>();
         position.x = floatPos(0);
@@ -112,6 +113,10 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetTangentOffset(),
                                             sizeof(ColoredVertex))
+                                 .attribute(VertexAttribute::UV0, 0,
+                                            VertexBuffer::AttributeType::FLOAT2,
+                                            ColoredVertex::GetUVOffset(),
+                                            sizeof(ColoredVertex))
                                  .build(engine);
 
     VertexBufferHandle vbHandle;
@@ -158,6 +163,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
         } else {
             element.tangent = kDefault.tangent;
         }
+        element.uv = kDefault.uv;
     }
 
     free(float4VTangents);
