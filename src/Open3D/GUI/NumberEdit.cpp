@@ -58,8 +58,7 @@ struct NumberEdit::Impl {
     std::function<void(double)> onChanged;
 };
 
-NumberEdit::NumberEdit(Type type)
-    : impl_(new NumberEdit::Impl()) {
+NumberEdit::NumberEdit(Type type) : impl_(new NumberEdit::Impl()) {
     impl_->type = type;
     std::stringstream s;
     s << "##numedit" << gNextNumberEditId++;

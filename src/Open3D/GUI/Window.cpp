@@ -39,9 +39,9 @@
 #include "Util.h"
 #include "Widget.h"
 
+#include "Open3D/Utility/Console.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 #include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
-#include "Open3D/Utility/Console.h"
 
 #include <GLFW/glfw3.h>
 #include <filament/Engine.h>
@@ -252,8 +252,8 @@ Window::Window(const std::string& title,
     impl_->imgui.context = ImGui::CreateContext();
     auto oldContext = MakeDrawContextCurrent();
 
-    impl_->imgui.imguiBridge =
-            std::make_unique<ImguiFilamentBridge>(impl_->renderer.get(), GetSize());
+    impl_->imgui.imguiBridge = std::make_unique<ImguiFilamentBridge>(
+            impl_->renderer.get(), GetSize());
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -448,7 +448,8 @@ Rect Window::GetContentRect() const {
 }
 
 float Window::GetScaling() const {
-#if GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3)
+#if GLFW_VERSION_MAJOR > 3 || \
+        (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3)
     float xscale, yscale;
     glfwGetWindowContentScale(impl_->window, &xscale, &yscale);
     return xscale;
@@ -620,7 +621,7 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
     // children, you should probably be using a layout of some sort
     // (gui::Vert, gui::Horiz, gui::VGrid, etc. See Layout.h).
     static const std::vector<const char*> winNames = {
-            "win1", "win2",  "win3",  "win4",  "win5",  "win6",  "win7",
+            "win1",  "win2",  "win3",  "win4",  "win5",  "win6",  "win7",
             "win8",  "win9",  "win10", "win11", "win12", "win13", "win14",
             "win15", "win16", "win17", "win18", "win19", "win20"};
 
@@ -708,7 +709,9 @@ Widget::DrawResult Window::DrawOnce(bool isLayoutPass) {
         }
         if (winIdx >= winNames.size()) {
             winIdx = winNames.size() - 1;
-            utility::LogWarning("Using too many top-level child widgets; use a layout instead.");
+            utility::LogWarning(
+                    "Using too many top-level child widgets; use a layout "
+                    "instead.");
         }
         auto result = DrawChild(dc, winNames[winIdx++], child, drawMode);
         if (result != Widget::DrawResult::NONE) {

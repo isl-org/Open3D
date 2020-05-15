@@ -50,7 +50,8 @@ namespace visualization {
 
 namespace {
 template <class ResourceType>
-using ResourcesContainer = FilamentResourceManager::ResourcesContainer<ResourceType>;
+using ResourcesContainer =
+        FilamentResourceManager::ResourcesContainer<ResourceType>;
 
 // We need custom shared pointer make function to
 // use engine deleter for allocated filament entities
