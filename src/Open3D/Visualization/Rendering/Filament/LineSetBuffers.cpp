@@ -24,19 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FilamentGeometryBuffersBuilder.h"
-
-#include "FilamentEngine.h"
-#include "FilamentResourceManager.h"
-#include "Open3D/Geometry/BoundingVolume.h"
-#include "Open3D/Geometry/LineSet.h"
-
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
-
 #include <Eigen/Core>
-
 #include <map>
+
+#include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentGeometryBuffersBuilder.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
 
 using namespace filament;
 
@@ -54,17 +51,17 @@ struct ColoredVertex {
     static size_t GetColorOffset() { return offsetof(ColoredVertex, color); }
 
     void SetVertexPosition(const Eigen::Vector3d& pos) {
-        auto floatPos = pos.cast<float>();
-        position.x = floatPos(0);
-        position.y = floatPos(1);
-        position.z = floatPos(2);
+        auto float_pos = pos.cast<float>();
+        position.x = float_pos(0);
+        position.y = float_pos(1);
+        position.z = float_pos(2);
     }
 
     void SetVertexColor(const Eigen::Vector3d& c) {
-        auto floatColor = c.cast<float>();
-        color.x = floatColor(0);
-        color.y = floatColor(1);
-        color.z = floatColor(2);
+        auto float_color = c.cast<float>();
+        color.x = float_color(0);
+        color.y = float_color(1);
+        color.z = float_color(2);
     }
 };
 
@@ -80,7 +77,7 @@ RenderableManager::PrimitiveType LineSetBuffersBuilder::GetPrimitiveType()
 
 LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
-    auto& resourceManager = EngineInstance::GetResourceManager();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
 
     struct LookupKey {
         LookupKey() = default;
@@ -114,55 +111,55 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
     // <source, real>
     std::map<LookupKey, std::pair<GeometryBuffersBuilder::IndexType,
                                   GeometryBuffersBuilder::IndexType>>
-            indexLookup;
+            index_lookup;
 
-    const size_t linesCount = geometry_.lines_.size();
-    const size_t verticesBytesCount = linesCount * 2 * sizeof(ColoredVertex);
-    auto* vertices = static_cast<ColoredVertex*>(malloc(verticesBytesCount));
+    const size_t lines_count = geometry_.lines_.size();
+    const size_t vertices_bytes_count = lines_count * 2 * sizeof(ColoredVertex);
+    auto* vertices = static_cast<ColoredVertex*>(malloc(vertices_bytes_count));
 
-    const size_t indicesBytesCount = linesCount * 2 * sizeof(IndexType);
-    auto* indices = static_cast<IndexType*>(malloc(indicesBytesCount));
+    const size_t indices_bytes_count = lines_count * 2 * sizeof(IndexType);
+    auto* indices = static_cast<IndexType*>(malloc(indices_bytes_count));
 
-    const bool hasColors = geometry_.HasColors();
+    const bool has_colors = geometry_.HasColors();
     Eigen::Vector3d kWhite(1.0, 1.0, 1.0);
-    size_t vertexIndex = 0;
-    for (size_t i = 0; i < linesCount; ++i) {
+    size_t vertex_idx = 0;
+    for (size_t i = 0; i < lines_count; ++i) {
         const auto& line = geometry_.lines_[i];
 
         for (size_t j = 0; j < 2; ++j) {
             size_t index = line(j);
 
             auto& color = kWhite;
-            if (hasColors) {
+            if (has_colors) {
                 color = geometry_.colors_[i];
             }
             const auto& pos = geometry_.points_[index];
 
-            LookupKey lookupKey(pos, color);
-            auto found = indexLookup.find(lookupKey);
-            if (found != indexLookup.end()) {
+            LookupKey lookup_key(pos, color);
+            auto found = index_lookup.find(lookup_key);
+            if (found != index_lookup.end()) {
                 index = found->second.second;
             } else {
-                auto& element = vertices[vertexIndex];
+                auto& element = vertices[vertex_idx];
 
                 element.SetVertexPosition(pos);
                 element.SetVertexColor(color);
 
-                indexLookup[lookupKey] = {index, vertexIndex};
-                index = vertexIndex;
+                index_lookup[lookup_key] = {index, vertex_idx};
+                index = vertex_idx;
 
-                ++vertexIndex;
+                ++vertex_idx;
             }
 
             indices[2 * i + j] = index;
         }
     }
 
-    const size_t verticesCount = vertexIndex;
+    const size_t vertices_count = vertex_idx;
 
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(1)
-                                 .vertexCount(verticesCount)
+                                 .vertexCount(vertices_count)
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
@@ -174,9 +171,9 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
                                             sizeof(ColoredVertex))
                                  .build(engine);
 
-    VertexBufferHandle vbHandle;
+    VertexBufferHandle vb_handle;
     if (vbuf) {
-        vbHandle = resourceManager.AddVertexBuffer(vbuf);
+        vb_handle = resource_mgr.AddVertexBuffer(vbuf);
     } else {
         free(vertices);
         free(indices);
@@ -185,40 +182,39 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
 
     // Moving `vertices` to VertexBuffer, which will clean them up later
     // with DeallocateBuffer
-    VertexBuffer::BufferDescriptor vertexbufferDescriptor(
-            vertices, verticesCount * sizeof(ColoredVertex));
-    vertexbufferDescriptor.setCallback(
-            GeometryBuffersBuilder::DeallocateBuffer);
-    vbuf->setBufferAt(engine, 0, std::move(vertexbufferDescriptor));
+    VertexBuffer::BufferDescriptor vb_descriptor(
+            vertices, vertices_count * sizeof(ColoredVertex));
+    vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
 
-    const size_t indicesCount = linesCount * 2;
-    auto ibHandle =
-            resourceManager.CreateIndexBuffer(indicesCount, sizeof(IndexType));
-    if (!ibHandle) {
+    const size_t indices_count = lines_count * 2;
+    auto ib_handle =
+            resource_mgr.CreateIndexBuffer(indices_count, sizeof(IndexType));
+    if (!ib_handle) {
         free(indices);
         return {};
     }
 
-    auto ibuf = resourceManager.GetIndexBuffer(ibHandle).lock();
+    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
 
     // Moving `indices` to IndexBuffer, which will clean them up later
     // with DeallocateBuffer
-    IndexBuffer::BufferDescriptor indicesDescriptor(indices, indicesBytesCount);
-    indicesDescriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    ibuf->setBuffer(engine, std::move(indicesDescriptor));
+    IndexBuffer::BufferDescriptor ib_descriptor(indices, indices_bytes_count);
+    ib_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    ibuf->setBuffer(engine, std::move(ib_descriptor));
 
-    return std::make_tuple(vbHandle, ibHandle);
+    return std::make_tuple(vb_handle, ib_handle);
 }
 
 Box LineSetBuffersBuilder::ComputeAABB() {
-    const auto geometryAABB = geometry_.GetAxisAlignedBoundingBox();
+    const auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
 
-    const filament::math::float3 min(geometryAABB.min_bound_.x(),
-                                     geometryAABB.min_bound_.y(),
-                                     geometryAABB.min_bound_.z());
-    const filament::math::float3 max(geometryAABB.max_bound_.x(),
-                                     geometryAABB.max_bound_.y(),
-                                     geometryAABB.max_bound_.z());
+    const filament::math::float3 min(geometry_aabb.min_bound_.x(),
+                                     geometry_aabb.min_bound_.y(),
+                                     geometry_aabb.min_bound_.z());
+    const filament::math::float3 max(geometry_aabb.max_bound_.x(),
+                                     geometry_aabb.max_bound_.y(),
+                                     geometry_aabb.max_bound_.z());
 
     Box aabb;
     aabb.set(min, max);

@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
 
 namespace open3d {
 

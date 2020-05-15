@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FilamentCamera.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
 
 #include <filament/Camera.h>
 #include <filament/Engine.h>
@@ -32,22 +32,22 @@
 namespace open3d {
 namespace visualization {
 
-FilamentCamera::FilamentCamera(filament::Engine& aEngine) : engine_(aEngine) {
+FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
     camera_ = engine_.createCamera();
 }
 
 FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
 
 void FilamentCamera::SetProjection(
-        double fov, double aspect, double near, double far, FovType fovType) {
+        double fov, double aspect, double near, double far, FovType fov_type) {
     if (aspect > 0.0) {
-        filament::Camera::Fov dir = (fovType == FovType::Horizontal)
+        filament::Camera::Fov dir = (fov_type == FovType::Horizontal)
                                             ? filament::Camera::Fov::HORIZONTAL
                                             : filament::Camera::Fov::VERTICAL;
 
         camera_->setProjection(fov, aspect, near, far, dir);
         fov_ = fov;
-        fovType_ = fovType;
+        fov_type_ = fov_type;
     }
 }
 
@@ -76,19 +76,19 @@ double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
 double FilamentCamera::GetFieldOfView() const { return fov_; }
 
-Camera::FovType FilamentCamera::GetFieldOfViewType() const { return fovType_; }
+Camera::FovType FilamentCamera::GetFieldOfViewType() const { return fov_type_; }
 
 void FilamentCamera::SetModelMatrix(const Transform& view) {
     using namespace filament::math;
 
-    auto eMatrix = view.matrix();
-    mat4f fTransform(mat4f::row_major_init{
-            eMatrix(0, 0), eMatrix(0, 1), eMatrix(0, 2), eMatrix(0, 3),
-            eMatrix(1, 0), eMatrix(1, 1), eMatrix(1, 2), eMatrix(1, 3),
-            eMatrix(2, 0), eMatrix(2, 1), eMatrix(2, 2), eMatrix(2, 3),
-            eMatrix(3, 0), eMatrix(3, 1), eMatrix(3, 2), eMatrix(3, 3)});
+    auto e_matrix = view.matrix();
+    mat4f ftransform(mat4f::row_major_init{
+            e_matrix(0, 0), e_matrix(0, 1), e_matrix(0, 2), e_matrix(0, 3),
+            e_matrix(1, 0), e_matrix(1, 1), e_matrix(1, 2), e_matrix(1, 3),
+            e_matrix(2, 0), e_matrix(2, 1), e_matrix(2, 2), e_matrix(2, 3),
+            e_matrix(3, 0), e_matrix(3, 1), e_matrix(3, 2), e_matrix(3, 3)});
 
-    camera_->setModelMatrix(fTransform);
+    camera_->setModelMatrix(ftransform);
 }
 
 void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
@@ -96,12 +96,12 @@ void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
                                     const Eigen::Vector3f& up) {
     using namespace filament;
 
-    math::mat4f fTransform = camera_->getModelMatrix();
-    fTransform[0].xyz = math::float3(left.x(), left.y(), left.z());
-    fTransform[1].xyz = math::float3(up.x(), up.y(), up.z());
-    fTransform[2].xyz = math::float3(forward.x(), forward.y(), forward.z());
+    math::mat4f ftransform = camera_->getModelMatrix();
+    ftransform[0].xyz = math::float3(left.x(), left.y(), left.z());
+    ftransform[1].xyz = math::float3(up.x(), up.y(), up.z());
+    ftransform[2].xyz = math::float3(forward.x(), forward.y(), forward.z());
 
-    camera_->setModelMatrix(fTransform);
+    camera_->setModelMatrix(ftransform);
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,
@@ -113,8 +113,8 @@ void FilamentCamera::LookAt(const Eigen::Vector3f& center,
 }
 
 Eigen::Vector3f FilamentCamera::GetPosition() const {
-    auto camPos = camera_->getPosition();
-    return {camPos.x, camPos.y, camPos.z};
+    auto cam_pos = camera_->getPosition();
+    return {cam_pos.x, cam_pos.y, cam_pos.z};
 }
 
 Eigen::Vector3f FilamentCamera::GetForwardVector() const {
@@ -133,46 +133,46 @@ Eigen::Vector3f FilamentCamera::GetUpVector() const {
 }
 
 FilamentCamera::Transform FilamentCamera::GetModelMatrix() const {
-    auto fTransform = camera_->getModelMatrix();
+    auto ftransform = camera_->getModelMatrix();
 
     Transform::MatrixType matrix;
 
-    matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
-            fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
-            fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
-            fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
-            fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
-            fTransform(3, 3);
+    matrix << ftransform(0, 0), ftransform(0, 1), ftransform(0, 2),
+            ftransform(0, 3), ftransform(1, 0), ftransform(1, 1),
+            ftransform(1, 2), ftransform(1, 3), ftransform(2, 0),
+            ftransform(2, 1), ftransform(2, 2), ftransform(2, 3),
+            ftransform(3, 0), ftransform(3, 1), ftransform(3, 2),
+            ftransform(3, 3);
 
     return Transform(matrix);
 }
 
 FilamentCamera::Transform FilamentCamera::GetViewMatrix() const {
-    auto fTransform = camera_->getViewMatrix();
+    auto ftransform = camera_->getViewMatrix();
 
     Transform::MatrixType matrix;
 
-    matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
-            fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
-            fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
-            fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
-            fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
-            fTransform(3, 3);
+    matrix << ftransform(0, 0), ftransform(0, 1), ftransform(0, 2),
+            ftransform(0, 3), ftransform(1, 0), ftransform(1, 1),
+            ftransform(1, 2), ftransform(1, 3), ftransform(2, 0),
+            ftransform(2, 1), ftransform(2, 2), ftransform(2, 3),
+            ftransform(3, 0), ftransform(3, 1), ftransform(3, 2),
+            ftransform(3, 3);
 
     return Transform(matrix);
 }
 
 FilamentCamera::Transform FilamentCamera::GetProjectionMatrix() const {
-    auto fTransform = camera_->getProjectionMatrix();
+    auto ftransform = camera_->getProjectionMatrix();
 
     Transform::MatrixType matrix;
 
-    matrix << fTransform(0, 0), fTransform(0, 1), fTransform(0, 2),
-            fTransform(0, 3), fTransform(1, 0), fTransform(1, 1),
-            fTransform(1, 2), fTransform(1, 3), fTransform(2, 0),
-            fTransform(2, 1), fTransform(2, 2), fTransform(2, 3),
-            fTransform(3, 0), fTransform(3, 1), fTransform(3, 2),
-            fTransform(3, 3);
+    matrix << ftransform(0, 0), ftransform(0, 1), ftransform(0, 2),
+            ftransform(0, 3), ftransform(1, 0), ftransform(1, 1),
+            ftransform(1, 2), ftransform(1, 3), ftransform(2, 0),
+            ftransform(2, 1), ftransform(2, 2), ftransform(2, 3),
+            ftransform(3, 0), ftransform(3, 1), ftransform(3, 2),
+            ftransform(3, 3);
 
     return Transform(matrix);
 }

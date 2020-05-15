@@ -26,9 +26,9 @@
 
 #include "Open3D/Visualization/Rendering/IBLRotationInteractorLogic.h"
 
+#include "Open3D/Geometry/TriangleMesh.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
 #include "Open3D/Visualization/Rendering/Scene.h"
-#include "Open3D/Geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace visualization {
@@ -53,7 +53,7 @@ void IBLRotationInteractorLogic::RotateZ(int dx, int dy) {
 }
 
 void IBLRotationInteractorLogic::SetSkyboxHandle(
-    visualization::SkyboxHandle skybox, bool is_on) {
+        visualization::SkyboxHandle skybox, bool is_on) {
     skybox_ = skybox;
     skybox_is_normally_on_ = is_on;
 }

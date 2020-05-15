@@ -68,9 +68,10 @@ public:
     virtual GeometryHandle AddGeometry(
             const geometry::Geometry3D& geometry,
             const MaterialInstanceHandle& material_id) = 0;
-    virtual GeometryHandle AddGeometry(const geometry::Geometry3D& geometry,
-                                       const MaterialInstanceHandle& material_id,
-                                       const std::string& name) = 0;
+    virtual GeometryHandle AddGeometry(
+            const geometry::Geometry3D& geometry,
+            const MaterialInstanceHandle& material_id,
+            const std::string& name) = 0;
     virtual void AssignMaterial(const GeometryHandle& geometry_id,
                                 const MaterialInstanceHandle& material_id) = 0;
     virtual MaterialInstanceHandle GetMaterial(
@@ -110,7 +111,8 @@ public:
     virtual bool GetEntityEnabled(const REHandle_abstract& entity_id) = 0;
     virtual void SetEntityTransform(const REHandle_abstract& entity_id,
                                     const Transform& transform) = 0;
-    virtual Transform GetEntityTransform(const REHandle_abstract& entity_id) = 0;
+    virtual Transform GetEntityTransform(
+            const REHandle_abstract& entity_id) = 0;
 
     // Returns world space AABB
     virtual geometry::AxisAlignedBoundingBox GetEntityBoundingBox(
