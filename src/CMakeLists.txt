@@ -10,6 +10,7 @@ endfunction()
 
 add_subdirectory(Open3D)
 add_subdirectory(Tools)
+add_subdirectory(Apps)
 if (BUILD_UNIT_TESTS)
     add_subdirectory(UnitTest)
 endif ()

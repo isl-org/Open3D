@@ -14,6 +14,9 @@ add_subdirectory(Odometry)
 add_subdirectory(Registration)
 add_subdirectory(Utility)
 add_subdirectory(IO)
+if (ENABLE_GUI)
+    add_subdirectory(GUI)
+endif()
 add_subdirectory(Visualization)
 
 # Source group for Visual Studio
@@ -26,6 +29,14 @@ ADD_SOURCE_GROUP(Odometry)
 ADD_SOURCE_GROUP(Registration)
 ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
+if (ENABLE_GUI)
+    ADD_SOURCE_GROUP(GUI)
+else ()
+    # Need a GUI target so that $<TARGET_OBJECTS:GUI> below works
+    # We can't create an empty library, but Gui.cpp has no dependencies on
+    # any other files.
+    add_library(GUI OBJECT "GUI/Gui.cpp")
+endif()
 ADD_SOURCE_GROUP(Visualization)
 
 # Install headers
@@ -49,6 +60,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:Registration>
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
+    $<TARGET_OBJECTS:GUI>
     $<TARGET_OBJECTS:Visualization>
 )
 ShowAndAbortOnWarning(${CMAKE_PROJECT_NAME})
@@ -60,9 +72,11 @@ if (ENABLE_HEADLESS_RENDERING)
     list(APPEND 3RDPARTY_INCLUDE_DIRS ${OSMESA_INCLUDE_DIR})
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OSMESA_LIBRARY})
     list(APPEND 3RDPARTY_LIBRARIES ${OSMESA_LIBRARY})
+    set(OGL_LIBS ${OSMESA_LIBRARY})
 else ()
     find_package(OpenGL REQUIRED)
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
+    set(OGL_LIBS ${OPENGL_LIBRARIES})
 endif ()
 
 # Use whole-archive to support static registration
@@ -134,7 +148,7 @@ list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 #           1) Open3D
 #           2) Pre-installed 3rd-party libraries
 #           3) Built-from-source 3rd-party libraries
-list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OMP_LIBRARIES})
+list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OGL_LIBS} ${OMP_LIBRARIES})
 if (BUILD_SHARED_LIBS)
     list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
 else ()
@@ -208,3 +222,6 @@ if (NOT TARGET uninstall)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif ()
+
+# Export GUI_RESOURCE_FILES up to parent CMake context (src/)
+set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)

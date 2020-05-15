@@ -1,0 +1,9 @@
+# Hand authored mtl file
+
+newmtl monkey_mat
+Kd 1 1 1
+map_Kd albedo.png
+map_Ka ao.png
+map_Pr roughness.png
+map_Pm metallic.png
+norm normal.png

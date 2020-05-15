@@ -3,7 +3,7 @@
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
 cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CUDA_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
@@ -85,8 +85,21 @@ option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_AZURE_KINECT        "Build support for Azure Kinect sensor"    OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
+option(BUILD_FILAMENT            "Build filament from source"               OFF)
+option(ENABLE_GUI                "Builds new GUI"                           ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
+option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+
+# This should be a folder with next hierarchy:
+# root
+# |-bin <- Here filament tools are located
+# |-include
+# |-lib
+# | |-<platform_type> <- For precompiled libs
+# For Windows we need even more specific folders struct, check 'filament_download.cmake' for details
+set(PATH_TO_FILAMENT "" CACHE STRING "Path to prebuilt filament libraries")
+
 option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
 option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
@@ -158,6 +171,9 @@ if (ENABLE_HEADLESS_RENDERING)
         set(ENABLE_HEADLESS_RENDERING OFF)
     else()
         add_definitions(-DHEADLESS_RENDERING)
+        if (ENABLE_GUI AND UNIX)
+            message(FATAL_ERROR "Headless rendering is not compatible with ENABLE_GUI=ON, which requires libX11")
+        endif()
     endif()
 endif()
 
@@ -174,6 +190,9 @@ endif()
 
 # Set OS-specific things here
 if (WIN32)
+    message(STATUS "New GUI is not currently supported on Windows, setting ENABLE_GUI to OFF")
+    set(ENABLE_GUI OFF)
+
     # can't hide the unit testing option on Windows only
     # as a precaution: disable unit testing on Windows regardless of user input
     message(STATUS "Disable unit tests since this feature is not fully supported on Windows.")
@@ -193,6 +212,8 @@ if (WIN32)
         # Ignore certain warnings
         # C4522: multiple assignment operators specified
         set(MSVC_WARNING_IGNORE "/wd4522")
+        # Ignore [[nodiscard]] warnings (since we're only using C++14)
+        set(MSVC_WARNING_IGNORE "${MSVC_WARNING_IGNORE} /Wv:18")
 
         # Multi-thread compile, two ways to enable
         # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
@@ -216,6 +237,17 @@ if (WIN32)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
     endif (MSVC)
 
+    if (ENABLE_GUI)
+        # Filament links normally only against static runtime
+        set(STATIC_WINDOWS_RUNTIME ON)
+
+        # GLEW, Open3D make direct OpenGL calls and link to opengl32.lib;
+        # Filament needs to link through bluegl.lib.
+        # See https://github.com/google/filament/issues/652
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
+    endif()
+
     if (STATIC_WINDOWS_RUNTIME)
         # /MT  links libcmt.lib   libvcruntime.lib   libucrt.lib
         # /MTd links libcmtd.lib  libvcruntimed.lib  libucrtd.lib
@@ -233,10 +265,6 @@ if (WIN32)
         string(REPLACE "/MT" "/MD" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
         string(REPLACE "/MTd" "/MDd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     endif ()
-    message(STATUS "CMAKE_C_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-    message(STATUS "CMAKE_C_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
-    message(STATUS "CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-    message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
@@ -266,6 +294,10 @@ elseif (UNIX)
     message(STATUS "Compiling on Unix")
     message(STATUS "Disable RealSense since it is not fully supported on Linux.")
     set(BUILD_LIBREALSENSE OFF)
+    if (ENABLE_GUI)
+        message(STATUS "Compiling with Filament: specifically link -lstdc++ before -lc++")
+        list(INSERT 3RDPARTY_LIBRARIES 0 "-lstdc++")
+    endif ()
 endif ()
 
 # Set OpenMP

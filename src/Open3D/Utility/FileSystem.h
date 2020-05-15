@@ -45,6 +45,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory);
 
 std::string GetWorkingDirectory();
 
+std::vector<std::string> GetPathComponents(const std::string &path);
+
 bool ChangeWorkingDirectory(const std::string &directory);
 
 bool DirectoryExists(const std::string &directory);
@@ -59,6 +61,10 @@ bool FileExists(const std::string &filename);
 
 bool RemoveFile(const std::string &filename);
 
+bool ListDirectory(const std::string &directory,
+                   std::vector<std::string> &subdirs,
+                   std::vector<std::string> &filenames);
+
 bool ListFilesInDirectory(const std::string &directory,
                           std::vector<std::string> &filenames);
 
@@ -68,6 +74,9 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
+bool FReadToBuffer(const std::string &path,
+                   std::vector<char> &bytes,
+                   std::string *errorStr);
 
 }  // namespace filesystem
 }  // namespace utility

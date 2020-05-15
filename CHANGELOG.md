@@ -1,6 +1,8 @@
 ## Master
 
-* Fix for appveyor to build all branches
+* Added GUI widgets and model-viewing app
+* Fixes travis for race-condition on macOS
+* Fixes appveyor configuration and to build all branches
 * Updated travis.yml to support Ubuntu 18.04, gcc-7, and clang-7.0
 * Contributors guidelines updated
 * Avoid cstdlib random generators in ransac registration, use C++11 random instead.
