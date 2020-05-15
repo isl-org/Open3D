@@ -23,8 +23,24 @@ add_custom_target(ShaderFileTarget ALL
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 # build
-file(GLOB_RECURSE VISUALIZATION_ALL_HEADER_FILES "*.h")
-file(GLOB_RECURSE VISUALIZATION_ALL_SOURCE_FILES "*.cpp")
+set(VISUALIZATION_ALL_HEADER_FILES "")
+set(VISUALIZATION_ALL_SOURCE_FILES "")
+macro(AddSourceDir DIR)
+    file(GLOB_RECURSE HEADER_FILES "${DIR}/*.h")
+    file(GLOB_RECURSE SOURCE_FILES "${DIR}/*.cpp")
+    list(APPEND VISUALIZATION_ALL_HEADER_FILES ${HEADER_FILES})
+    list(APPEND VISUALIZATION_ALL_SOURCE_FILES ${SOURCE_FILES})
+endmacro(AddSourceDir)
+AddSourceDir("Shader")
+AddSourceDir("Utility")
+AddSourceDir("Visualizer")
+
+if (ENABLE_GUI)
+    AddSourceDir("Rendering")
+else ()
+    list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
+    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)
+endif()
 
 # create object library
 add_library(Visualization OBJECT

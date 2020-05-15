@@ -31,6 +31,8 @@
 
 #include "Open3D/Utility/Console.h"
 
+#include <algorithm>
+
 namespace open3d {
 namespace visualization {
 
@@ -250,6 +252,22 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
     show_coordinate_frame_ =
             value.get("show_coordinate_frame", show_coordinate_frame_).asBool();
     return true;
+}
+
+void RenderOption::ChangePointSize(double change) {
+    point_size_ = std::max(
+            std::min(point_size_ + change * POINT_SIZE_STEP, POINT_SIZE_MAX),
+            POINT_SIZE_MIN);
+}
+
+void RenderOption::SetPointSize(double size) {
+    point_size_ = std::max(std::min(size, POINT_SIZE_MAX), POINT_SIZE_MIN);
+}
+
+void RenderOption::ChangeLineWidth(double change) {
+    line_width_ = std::max(
+            std::min(line_width_ + change * LINE_WIDTH_STEP, LINE_WIDTH_MAX),
+            LINE_WIDTH_MIN);
 }
 
 int RenderOption::GetGLDepthFunc() const {

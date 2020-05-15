@@ -144,19 +144,9 @@ public:
             interpolation_option_ = TextureInterpolationOption::Nearest;
         }
     }
-    void ChangePointSize(double change) {
-        point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
-                                        POINT_SIZE_MAX),
-                               POINT_SIZE_MIN);
-    }
-    void SetPointSize(double size) {
-        point_size_ = std::max(std::min(size, POINT_SIZE_MAX), POINT_SIZE_MIN);
-    }
-    void ChangeLineWidth(double change) {
-        line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
-                                        LINE_WIDTH_MAX),
-                               LINE_WIDTH_MIN);
-    }
+    void ChangePointSize(double change);
+    void SetPointSize(double size);
+    void ChangeLineWidth(double change);
     void TogglePointShowNormal() { point_show_normal_ = !point_show_normal_; }
     void ToggleShadingOption() {
         if (mesh_shade_option_ == MeshShadeOption::FlatShade) {

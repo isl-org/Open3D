@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 
+#include "Open3D/Utility/Console.h"
 #include "Open3D/Utility/FileSystem.h"
 #include "TestUtility/UnitTest.h"
 
@@ -498,4 +499,49 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
 
     status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
+}
+
+// ----------------------------------------------------------------------------
+// Split path into components
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetPathComponents) {
+    // setup
+    std::string cwd = utility::filesystem::GetWorkingDirectory();
+    std::vector<std::string> cwd_components =
+            utility::filesystem::GetPathComponents(cwd);
+    if (cwd_components.size() < 2) {
+        utility::LogError("Please do not run unit test from root directory.");
+    }
+    std::vector<std::string> parent_components(cwd_components.begin(),
+                                               cwd_components.end() - 1);
+
+    // test
+    std::vector<std::string> expected;
+    std::vector<std::string> result;
+
+    result = utility::filesystem::GetPathComponents("");
+    EXPECT_EQ(result, cwd_components);
+
+    result = utility::filesystem::GetPathComponents("/");
+    expected = {"/"};
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents("c:\\");
+    expected = {"c:"};
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents("../bogus/test.abc");
+    expected = parent_components;
+    expected.push_back("bogus");
+    expected.push_back("test.abc");
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents("/usr/lib/../local/bin");
+    expected = {"/", "usr", "local", "bin"};
+    EXPECT_EQ(result, expected);
+
+    result = utility::filesystem::GetPathComponents(
+            "c:\\windows\\system\\winnt.dll");
+    expected = {"c:", "windows", "system", "winnt.dll"};
+    EXPECT_EQ(result, expected);
 }

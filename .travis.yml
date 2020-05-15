@@ -77,6 +77,7 @@ matrix:
           cmake -DPYTHON_EXECUTABLE=`which python` \
                 -DENABLE_HEADLESS_RENDERING=ON \
                 -DENABLE_JUPYTER=ON \
+                -DENABLE_GUI=OFF \
                 -DBUILD_GLEW=ON \
                 -DBUILD_GLFW=ON \
                 -DWITH_OPENMP=ON \
@@ -137,21 +138,6 @@ matrix:
       env: SHARED=ON BUILD_DEPENDENCY_FROM_SOURCE=ON
       install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
-
-    # Default environment of macOS 10.13 High Sierra
-    # compiled using clang shipped with xcode10.1
-    - os: osx
-      osx_image: xcode10.1
-      install:
-        - brew update
-        - brew upgrade python || true
-        - ./util/scripts/install-deps-osx.sh
-      script: travis_wait 40 ./util/scripts/run-travis.sh
-
-    - os: osx
-      osx_image: xcode10.1
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON BUILD_TENSORFLOW_OPS=OFF
-      script: travis_wait 40 ./util/scripts/run-travis.sh
 
     # - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
     #   script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
