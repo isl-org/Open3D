@@ -31,8 +31,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include <filament/utils/Entity.h>
-#include <filament/utils/EntityInstance.h>
+#include <utils/Entity.h>
+#include <utils/EntityInstance.h>
 
 namespace filament {
 class Engine;

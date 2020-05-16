@@ -14,6 +14,7 @@ option(BUILD_FLANN               "Use the flann that comes with Open3D"     ON)
 option(BUILD_FMT                 "Build fmtlib from source"                 ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
+option(BUILD_IMGUI               "Build Dear ImGui from source"             ON)
 option(BUILD_JSONCPP             "Build jsoncpp from source"                ON)
 option(BUILD_LIBLZF              "Build liblzf from source"                 ON)
 option(BUILD_PNG                 "Build png from source"                    OFF)
@@ -34,6 +35,9 @@ option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(USE_VULKAN                "Enables Vulkan support for renderer"      OFF)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+
+set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT=OFF)")
+set(FILAMENT_SOURCE_ROOT "" CACHE PATH "Path to Filament library sources (used if BUILD_FILAMENT=ON)")
 
 # Cache variables for specifying the GPU architectures
 set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
@@ -160,10 +164,27 @@ if (APPLE AND ENABLE_HEADLESS_RENDERING)
     set(ENABLE_HEADLESS_RENDERING OFF)
 endif()
 
+if(ENABLE_HEADLESS_RENDERING AND ENABLE_GUI)
+    message(STATUS "Headless rendering disables the Open3D GUI")
+    set(ENABLE_GUI OFF)
+endif()
+
 if(ENABLE_HEADLESS_RENDERING AND (NOT BUILD_GLEW OR NOT BUILD_GLFW))
     message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
     set(BUILD_GLEW ON)
     set(BUILD_GLFW ON)
+endif()
+
+if(ENABLE_GUI AND WIN32)
+    # Filament links normally only against static runtime
+    set(STATIC_WINDOWS_RUNTIME ON)
+    if(NOT COMMAND target_link_options)
+        # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+        # Filament needs to link through bluegl.lib.
+        # See https://github.com/google/filament/issues/652
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /FORCE:MULTIPLE")
+    endif()
 endif()
 
 # CMake modules
@@ -208,8 +229,8 @@ function(open3d_set_global_properties target)
     if (NOT target_type STREQUAL "EXECUTABLE")
         set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
-    # Tell CMake we want a compiler that supports C++11 features
-    target_compile_features(${target} PUBLIC cxx_variadic_templates cxx_constexpr cxx_override cxx_static_assert)
+    # Tell CMake we want a compiler that supports C++14 features
+    target_compile_features(${target} PUBLIC cxx_variadic_templates cxx_constexpr cxx_override cxx_static_assert cxx_trailing_return_types cxx_return_type_deduction)
     target_include_directories(${target} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
@@ -248,6 +269,12 @@ function(open3d_set_global_properties target)
             # ref: https://stackoverflow.com/a/15110915
             # ref: https://stackoverflow.com/a/19026241
             target_compile_options(${target} PRIVATE /EHsc /wd4522 /WX /bigobj)
+            if(ENABLE_GUI AND COMMAND target_link_options)
+                # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+                # Filament needs to link through bluegl.lib.
+                # See https://github.com/google/filament/issues/652
+                target_link_options(${target} PRIVATE /force:multiple)
+            endif()
         endif()
         if (STATIC_WINDOWS_RUNTIME)
             set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -257,7 +284,7 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations")
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
-        target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations" $<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-result>)
+        target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations" "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-result>")
     endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>" "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_GENCODES}>")
 endfunction()

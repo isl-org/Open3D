@@ -36,8 +36,8 @@
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/VertexBuffer.h>
-#include <filament/filament/MaterialEnums.h>
-#include <filament/geometry/SurfaceOrientation.h>
+#include <filament/MaterialEnums.h>
+#include <geometry/SurfaceOrientation.h>
 
 #include <map>
 

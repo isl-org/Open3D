@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <filament/utils/Entity.h>
+#include <utils/Entity.h>
 
 #include <memory>
 #include <unordered_map>

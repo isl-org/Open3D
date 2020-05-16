@@ -35,7 +35,7 @@
 
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
-#include <filament/geometry/SurfaceOrientation.h>
+#include <geometry/SurfaceOrientation.h>
 
 using namespace filament;
 

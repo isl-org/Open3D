@@ -36,8 +36,8 @@
 #include <filament/Skybox.h>
 #include <filament/Texture.h>
 #include <filament/TextureSampler.h>
-#include <filament/image/KtxBundle.h>
-#include <filament/image/KtxUtility.h>
+#include <image/KtxBundle.h>
+#include <image/KtxUtility.h>
 
 #include "FilamentEntitiesMods.h"
 #include "Open3D/GUI/Application.h"

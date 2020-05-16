@@ -192,8 +192,8 @@ endfunction()
 #    INCLUDE_DIR
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
-#    LIBRARY
-#        the built library name. It is assumed that the library is static.
+#    LIBRARIES
+#        the built library name(s). It is assumed that the library is static.
 #        If the library is PUBLIC, it will be renamed to Open3D_${name} at
 #        install time to prevent name collisions in the install space.
 #    LIB_DIR
@@ -201,7 +201,7 @@ endfunction()
 #        CMAKE_ARCHIVE_OUTPUT_DIRECTORY.
 #
 function(import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "INCLUDE_DIR;LIBRARY;LIB_DIR" "" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "INCLUDE_DIR;LIB_DIR" "LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
     endif()
@@ -215,7 +215,7 @@ function(import_3rdparty_library name)
         else()
             get_filename_component(incl_path "${incl}" DIRECTORY)
         endif()
-        target_include_directories(${name} INTERFACE $<BUILD_INTERFACE:${incl_path}>)
+        target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
         if(arg_PUBLIC OR arg_HEADER)
             install(DIRECTORY ${arg_INCLUDE_DIR} DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty
                 FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
@@ -223,17 +223,24 @@ function(import_3rdparty_library name)
             target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/${PROJECT_NAME}/3rdparty>)
         endif()
     endif()
-    if(arg_LIBRARY)
-        set(library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
-        set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}${CMAKE_STATIC_LIBRARY_SUFFIX})
-        target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
-        if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-            install(FILES ${arg_LIB_DIR}/${library_filename}
-                DESTINATION ${Open3D_INSTALL_LIB_DIR}
-                RENAME ${installed_library_filename}
-            )
-            target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${installed_library_filename}>)
-        endif()
+    if(arg_LIBRARIES)
+        list(LENGTH arg_LIBRARIES libcount)
+        foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
+            set(library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
+            if(libcount EQUAL 1)
+                set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+            else()
+                set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
+            endif()
+            target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
+            if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+                install(FILES ${arg_LIB_DIR}/${library_filename}
+                    DESTINATION ${Open3D_INSTALL_LIB_DIR}
+                    RENAME ${installed_library_filename}
+                )
+                target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${installed_library_filename}>)
+            endif()
+        endforeach()
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
@@ -255,6 +262,19 @@ if(WITH_OPENMP)
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif()
+    endif()
+endif()
+
+# X11
+if(UNIX)
+    find_package(X11 QUIET)
+    if(X11_FOUND)
+        add_library(3rdparty_x11 INTERFACE)
+        target_link_libraries(3rdparty_x11 INTERFACE ${X11_X11_LIB} ${CMAKE_THREAD_LIBS_INIT})
+        if(NOT BUILD_SHARED_LIBS)
+            install(TARGETS 3rdparty_x11 EXPORT ${PROJECT_NAME}Targets)
+        endif()
+        set(X11_TARGET "3rdparty_x11")
     endif()
 endif()
 
@@ -344,13 +364,12 @@ endif()
 if(BUILD_GLFW)
     message(STATUS "Building library 3rdparty_glfw3 from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/GLFW)
-    import_3rdparty_library(3rdparty_glfw3 HEADER INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/GLFW/include/ LIBRARY glfw3)
+    import_3rdparty_library(3rdparty_glfw3 HEADER INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/GLFW/include/ LIBRARIES glfw3)
     add_dependencies(3rdparty_glfw3 glfw)
     target_link_libraries(3rdparty_glfw3 INTERFACE Threads::Threads)
     if(UNIX AND NOT APPLE)
-        find_package(X11 QUIET)
-        if(X11_FOUND)
-            target_link_libraries(3rdparty_glfw3 INTERFACE ${X11_X11_LIB} ${CMAKE_THREAD_LIBS_INIT})
+        if(X11_TARGET)
+            target_link_libraries(3rdparty_glfw3 INTERFACE ${X11_TARGET})
         endif()
         find_library(RT_LIBRARY rt)
         if(RT_LIBRARY)
@@ -509,17 +528,28 @@ endif()
 if(BUILD_PNG)
     message(STATUS "Building third-party library libpng from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/libpng)
-    import_3rdparty_library(3rdparty_png INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARY ${PNG_LIBRARIES})
+    import_3rdparty_library(3rdparty_png INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/libpng/ LIBRARIES ${PNG_LIBRARIES})
     add_dependencies(3rdparty_png ${PNG_LIBRARIES})
     set(PNG_TARGET "3rdparty_png")
     message(STATUS "Building third-party library zlib from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/zlib)
-    import_3rdparty_library(3rdparty_zlib INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/zlib LIBRARY ${ZLIB_LIBRARY})
+    import_3rdparty_library(3rdparty_zlib INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/zlib LIBRARIES ${ZLIB_LIBRARY})
     add_dependencies(3rdparty_zlib ${ZLIB_LIBRARY})
     target_link_libraries(3rdparty_png INTERFACE 3rdparty_zlib)
     set(ZLIB_TARGET "3rdparty_zlib")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PNG_TARGET}")
+
+# TurboJPEG
+if(NOT BUILD_JPEG AND BUILD_AZURE_KINECT)
+    pkg_config_3rdparty_library(3rdparty_turbojpeg turbojpeg)
+    if(3rdparty_turbojpeg_FOUND)
+        set(TURBOJPEG_TARGET "3rdparty_turbojpeg")
+    else()
+        message(STATUS "Azure Kinect driver needs TurboJPEG API")
+        set(BUILD_JPEG ON)
+    endif()
+endif()
 
 # JPEG
 if(NOT BUILD_JPEG)
@@ -530,6 +560,9 @@ if(NOT BUILD_JPEG)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "JPEG")
         endif()
         set(JPEG_TARGET "JPEG::JPEG")
+        if(TURBOJPEG_TARGET)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TURBOJPEG_TARGET}")
+        endif()
     else()
         message(STATUS "Unable to find installed third-party library JPEG")
         set(BUILD_JPEG ON)
@@ -540,7 +573,7 @@ if (BUILD_JPEG)
     include(${Open3D_3RDPARTY_DIR}/libjpeg-turbo/libjpeg-turbo.cmake)
     import_3rdparty_library(3rdparty_jpeg
         INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/include/
-        LIBRARY ${JPEG_TURBO_LIBRARIES}
+        LIBRARIES ${JPEG_TURBO_LIBRARIES}
         LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install/lib
     )
     add_dependencies(3rdparty_jpeg ext_turbojpeg)
@@ -552,7 +585,7 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${JPEG_TARGET}")
 if (BUILD_LIBREALSENSE)
     message(STATUS "Building third-party library librealsense from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/librealsense)
-    import_3rdparty_library(3rdparty_realsense INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARY ${REALSENSE_LIBRARY})
+    import_3rdparty_library(3rdparty_realsense INCLUDE_DIR ${Open3D_3RDPARTY_DIR}/librealsense/include/ LIBRARIES ${REALSENSE_LIBRARY})
     add_dependencies(3rdparty_realsense ${REALSENSE_LIBRARY})
     set(REALSENSE_TARGET "3rdparty_realsense")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${REALSENSE_TARGET}")
@@ -740,7 +773,85 @@ build_3rdparty_library(3rdparty_poisson DIRECTORY PoissonRecon INCLUDE_DIRS Pois
 set(POISSON_TARGET "3rdparty_poisson")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${POISSON_TARGET}")
 
-# benchmark
+# imgui
+if(ENABLE_GUI)
+    if(NOT BUILD_IMGUI)
+        find_package(ImGui)
+        if(TARGET ImGui::ImGui)
+            message(STATUS "Using installed third-party library ImGui")
+            if(NOT BUILD_SHARED_LIBS)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "ImGui")
+            endif()
+            set(IMGUI_TARGET "ImGui::ImGui")
+        else()
+            message(STATUS "Unable to find installed third-party library ImGui")
+            set(BUILD_IMGUI ON)
+        endif()
+    endif()
+    if(BUILD_IMGUI)
+        build_3rdparty_library(3rdparty_imgui DIRECTORY imgui
+            SOURCES
+                imgui_demo.cpp
+                imgui_draw.cpp
+                imgui_widgets.cpp
+                imgui.cpp
+        )
+        set(IMGUI_TARGET "3rdparty_imgui")
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IMGUI_TARGET}")
+endif()
+
+# Filament
+if(ENABLE_GUI)
+    if(BUILD_FILAMENT)
+        message(STATUS "Building third-party library Filament from source")
+        if(MSVC OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+            set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
+            set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+        else()
+            find_program(CLANG_CC NAMES clang-7 clang-8 clang-9 clang-10 clang)
+            find_program(CLANG_CXX NAMES clang++-7 clang++-8 clang++-9 clang++-10 clang++)
+            if (CLANG_CC AND CLANG_CXX)
+                set(FILAMENT_C_COMPILER "${CLANG_CC}")
+                set(FILAMENT_CXX_COMPILER "${CLANG_CXX}")
+            else()
+                message(FATAL_ERROR "Need Clang compiler to compile Filament from source")
+            endif()
+        endif()
+        include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
+    else()
+        message(STATUS "Using prebuilt third-party library Filament")
+        include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
+    endif()
+    import_3rdparty_library(3rdparty_filament HEADER
+        INCLUDE_DIR ${FILAMENT_ROOT}/include/
+        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64
+        LIBRARIES ${filament_LIBRARIES}
+    )
+    set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
+    target_link_libraries(3rdparty_filament INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+    find_library(CPP_LIBRARY c++)
+    if(CPP_LIBRARY)
+        target_link_libraries(3rdparty_filament INTERFACE ${CPP_LIBRARY})
+    endif()
+    if (APPLE)
+        find_library(CORE_VIDEO CoreVideo)
+        find_library(QUARTZ_CORE QuartzCore)
+        find_library(OPENGL_LIBRARY OpenGL)
+        find_library(METAL_LIBRARY Metal)
+        find_library(APPKIT_LIBRARY AppKit)
+        target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
+        target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
+    endif()
+    if(TARGET ext_filament)
+        # Make sure that the external project is built first
+        add_dependencies(3rdparty_filament ext_filament)
+    endif()
+    set(FILAMENT_TARGET "3rdparty_filament")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FILAMENT_TARGET}")
+endif()
+
+# Benchmark
 if(BUILD_BENCHMARKS)
     # turn off installing and testing of the benchmark lib
     set(BENCHMARK_ENABLE_INSTALL  OFF CACHE BOOL "This should be OFF. Enables installing the benchmark lib")

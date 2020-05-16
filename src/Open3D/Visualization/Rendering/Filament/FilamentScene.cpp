@@ -37,7 +37,7 @@
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
-#include <filament/utils/EntityManager.h>
+#include <utils/EntityManager.h>
 
 #include "FilamentEntitiesMods.h"
 #include "FilamentGeometryBuffersBuilder.h"

@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <json/json.h>
-
 #include "Open3D/Geometry/RGBDImage.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectRecorder.h"
 #include "Open3D/IO/Sensor/AzureKinect/AzureKinectSensor.h"

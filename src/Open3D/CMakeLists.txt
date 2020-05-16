@@ -16,6 +16,7 @@ add_subdirectory(Utility)
 add_subdirectory(IO)
 if (ENABLE_GUI)
     add_subdirectory(GUI)
+    set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
 endif()
 add_subdirectory(Visualization)
 
@@ -31,11 +32,6 @@ add_source_group(Utility)
 add_source_group(IO)
 if (ENABLE_GUI)
     add_source_group(GUI)
-else ()
-    # Need a GUI target so that $<TARGET_OBJECTS:GUI> below works
-    # We can't create an empty library, but Gui.cpp has no dependencies on
-    # any other files.
-    add_library(GUI OBJECT "GUI/Gui.cpp")
 endif()
 add_source_group(Visualization)
 
@@ -52,13 +48,15 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:Registration>
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
-    $<TARGET_OBJECTS:GUI>
+    ${GUI_OBJECTS}
     $<TARGET_OBJECTS:Visualization>
 )
 open3d_show_and_abort_on_warning(${PROJECT_NAME})
 open3d_set_global_properties(${PROJECT_NAME})
 open3d_link_3rdparty_libraries(${PROJECT_NAME})
-
+if(X11_TARGET)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})
+endif()
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 include(CMakePackageConfigHelpers)
@@ -97,11 +95,14 @@ install(FILES
         DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
 
 # uninstall target
-if (NOT TARGET uninstall)
+if(NOT TARGET uninstall)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
                    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
                    IMMEDIATE @ONLY)
 
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif ()
+endif()
+
+# Export GUI_RESOURCE_FILES to parent CMake context (src/Open3D/)
+set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)
