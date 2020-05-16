@@ -87,9 +87,9 @@ Size ListView::CalcPreferredSize(const Theme &theme) const {
     ImVec2 size(0, 0);
 
     for (auto &item : impl_->items_) {
-        auto itemSize = font->CalcTextSizeA(theme.font_size, Widget::DIM_GROW,
+        auto item_size = font->CalcTextSizeA(theme.font_size, Widget::DIM_GROW,
                                             0.0, item.c_str());
-        size.x = std::max(size.x, itemSize.x);
+        size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }
     return Size(std::ceil(size.x + 2.0f * padding.x), Widget::DIM_GROW);
@@ -101,35 +101,35 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
 
-    int heightNItems = int(std::floor(frame.height / ImGui::GetFrameHeight()));
+    int height_nitems = int(std::floor(frame.height / ImGui::GetFrameHeight()));
 
     auto result = Widget::DrawResult::NONE;
-    auto newSelectedIdx = impl_->selected_index_;
-    bool isDoubleClick = false;
+    auto new_selected_idx = impl_->selected_index_;
+    bool is_double_click = false;
     DrawImGuiPushEnabledState();
     if (ImGui::ListBoxHeader(impl_->imgui_id_.c_str(), impl_->items_.size(),
-                             heightNItems)) {
+                             height_nitems)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
-            bool isSelected = (int(i) == impl_->selected_index_);
-            if (ImGui::Selectable(impl_->items_[i].c_str(), &isSelected,
+            bool is_selected = (int(i) == impl_->selected_index_);
+            if (ImGui::Selectable(impl_->items_[i].c_str(), &is_selected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
-                if (isSelected) {
-                    newSelectedIdx = i;
+                if (is_selected) {
+                    new_selected_idx = i;
                 }
                 // Dear ImGUI seems to have a bug where it registers a
                 // double-click as long as you haven't moved the mouse,
                 // no matter how long the time between clicks was.
                 if (ImGui::IsMouseDoubleClicked(0)) {
-                    isDoubleClick = true;
+                    is_double_click = true;
                 }
             }
         }
         ImGui::ListBoxFooter();
 
-        if (newSelectedIdx != impl_->selected_index_ || isDoubleClick) {
-            impl_->selected_index_ = newSelectedIdx;
+        if (new_selected_idx != impl_->selected_index_ || is_double_click) {
+            impl_->selected_index_ = new_selected_idx;
             if (impl_->on_value_changed_) {
-                impl_->on_value_changed_(GetSelectedValue(), isDoubleClick);
+                impl_->on_value_changed_(GetSelectedValue(), is_double_click);
                 result = Widget::DrawResult::REDRAW;
             }
         }

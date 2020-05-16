@@ -155,7 +155,7 @@ int Menu::CalcHeight(const Theme &theme) const {
 }
 
 Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
-    ItemId activatedId = NO_ITEM;
+    ItemId activate_id = NO_ITEM;
 
     ImVec2 size;
     size.x = ImGui::GetIO().DisplaySize.x;
@@ -170,7 +170,7 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
             auto id = item.submenu_->Draw(context, item.name_.c_str(),
                                           is_enabled);
             if (id >= 0) {
-                activatedId = id;
+                activate_id = id;
             }
         }
     }
@@ -180,21 +180,21 @@ Menu::ItemId Menu::DrawMenuBar(const DrawContext &context, bool is_enabled) {
     // it just ends and looks a bit odd. This should probably be a pretty
     // subtle difference from the menubar background.
     auto y = size.y - 1;
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
-    drawList->AddLine(ImVec2(0, y), ImVec2(size.x, y),
-                      context.theme.menubar_border_color.ToABGR32(), 1.0f);
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
+    draw_list->AddLine(ImVec2(0, y), ImVec2(size.x, y),
+                       context.theme.menubar_border_color.ToABGR32(), 1.0f);
 
     ImGui::EndMainMenuBar();
 
     ImGui::PopStyleVar();
 
-    return activatedId;
+    return activate_id;
 }
 
 Menu::ItemId Menu::Draw(const DrawContext &context,
                         const char *name,
                         bool is_enabled) {
-    ItemId activatedId = NO_ITEM;
+    ItemId activate_id = NO_ITEM;
 
     // The default ImGUI menus are hideous:  there is no margin and the items
     // are spaced way too tightly. However, you can't just add WindowPadding
@@ -207,17 +207,17 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
     auto *font = ImGui::GetFont();
     int em = std::ceil(ImGui::GetTextLineHeight());
     int padding = context.theme.default_margin;
-    int nameWidth = 0, shortcutWidth = 0;
+    int name_width = 0, shortcut_width = 0;
     for (auto &item : impl_->items_) {
         auto size1 = font->CalcTextSizeA(context.theme.font_size, 10000, 10000,
                                          item.name_.c_str());
         auto shortcut = CalcShortcutText(item.shortcut_key_);
         auto size2 = font->CalcTextSizeA(context.theme.font_size, 10000, 10000,
                                          shortcut.c_str());
-        nameWidth = std::max(nameWidth, int(std::ceil(size1.x)));
-        shortcutWidth = std::max(shortcutWidth, int(std::ceil(size2.x)));
+        name_width = std::max(name_width, int(std::ceil(size1.x)));
+        shortcut_width = std::max(shortcut_width, int(std::ceil(size2.x)));
     }
-    int width = padding + nameWidth + 2 * em + shortcutWidth + 2 * em +
+    int width = padding + name_width + 2 * em + shortcut_width + 2 * em +
                 std::ceil(1.5 * em) + padding;  // checkbox
 
     ImGui::SetNextWindowContentWidth(width);
@@ -239,22 +239,22 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
                 auto possibility = item.submenu_->Draw(
                         context, item.name_.c_str(), is_enabled);
                 if (possibility != NO_ITEM) {
-                    activatedId = possibility;
+                    activate_id = possibility;
                 }
             } else {
                 // Save y position, then draw empty item for the highlight.
                 // Set the enabled flag, in case the real item isn't.
                 auto y = ImGui::GetCursorPosY();
                 if (ImGui::MenuItem("", "", false, item.is_enabled_)) {
-                    activatedId = item.id_;
+                    activate_id = item.id_;
                 }
                 // Restore the y position, and draw the menu item with the
                 // proper margins on top.
                 // Note: can't set width (width - 2 * padding) because
                 //       SetNextItemWidth is ignored.
                 ImGui::SetCursorPos(ImVec2(padding, y));
-                auto shortcutText = CalcShortcutText(item.shortcut_key_);
-                ImGui::MenuItem(item.name_.c_str(), shortcutText.c_str(),
+                auto shortcut_text = CalcShortcutText(item.shortcut_key_);
+                ImGui::MenuItem(item.name_.c_str(), shortcut_text.c_str(),
                                 item.is_checked_, item.is_enabled_);
             }
         }
@@ -263,7 +263,7 @@ Menu::ItemId Menu::Draw(const DrawContext &context,
 
     ImGui::PopStyleVar(3);
 
-    return activatedId;
+    return activate_id;
 }
 
 }  // namespace gui

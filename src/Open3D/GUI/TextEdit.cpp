@@ -117,9 +117,9 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
             ImGuiCol_FrameBgActive,
             util::colorToImgui(context.theme.text_edit_background_color));
 
-    int textFlags = ImGuiInputTextFlags_CallbackResize;
+    int text_flags = ImGuiInputTextFlags_CallbackResize;
     if (!IsEnabled()) {
-        textFlags = ImGuiInputTextFlags_ReadOnly;
+        text_flags = ImGuiInputTextFlags_ReadOnly;
     }
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
@@ -127,7 +127,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     if (ImGui::InputTextWithHint(
                 impl_->id_.c_str(), impl_->placeholder_.c_str(),
                 (char *)impl_->text_.c_str(), impl_->text_.capacity(),
-                textFlags, InputTextCallback, &impl_->text_)) {
+                text_flags, InputTextCallback, &impl_->text_)) {
         if (impl_->on_text_changed_) {
             impl_->on_text_changed_(impl_->text_.c_str());
         }

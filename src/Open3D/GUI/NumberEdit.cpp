@@ -101,16 +101,16 @@ void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
 }
 
 Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
-    int nMinDigits = std::ceil(std::log10(std::abs(impl_->min_value_)));
-    int nMaxDigits = std::ceil(std::log10(std::abs(impl_->max_value_)));
-    int nDigits = std::max(6, std::max(nMinDigits, nMaxDigits));
+    int num_min_digits = std::ceil(std::log10(std::abs(impl_->min_value_)));
+    int num_max_digits = std::ceil(std::log10(std::abs(impl_->max_value_)));
+    int num_digits = std::max(6, std::max(num_min_digits, num_max_digits));
     if (impl_->min_value_ < 0) {
-        nDigits += 1;
+        num_digits += 1;
     }
 
     auto pref = Super::CalcPreferredSize(theme);
     auto padding = pref.height - theme.font_size;
-    return Size((nDigits * theme.font_size) / 2 + padding, pref.height);
+    return Size((num_digits * theme.font_size) / 2 + padding, pref.height);
 }
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
@@ -135,9 +135,9 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (impl_->type_ == INT) {
-        int iValue = impl_->value_;
-        if (ImGui::InputInt(impl_->id_.c_str(), &iValue)) {
-            SetValue(iValue);
+        int ivalue = impl_->value_;
+        if (ImGui::InputInt(impl_->id_.c_str(), &ivalue)) {
+            SetValue(ivalue);
             result = Widget::DrawResult::REDRAW;
         }
     } else {
@@ -157,10 +157,10 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
                 fmt = "%.0f";
             }
         }
-        double dValue = impl_->value_;
-        if (ImGui::InputDouble(impl_->id_.c_str(), &dValue, 0.0, 0.0,
+        double dvalue = impl_->value_;
+        if (ImGui::InputDouble(impl_->id_.c_str(), &dvalue, 0.0, 0.0,
                                fmt.c_str())) {
-            SetValue(dValue);
+            SetValue(dvalue);
             result = Widget::DrawResult::REDRAW;
         }
     }

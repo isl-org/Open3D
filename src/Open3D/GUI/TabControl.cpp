@@ -77,11 +77,11 @@ Size TabControl::CalcPreferredSize(const Theme& theme) const {
 void TabControl::Layout(const Theme& theme) {
     auto tabHeight = CalcTabHeight(theme);
     auto frame = GetFrame();
-    auto childRect = Rect(frame.x, frame.y + tabHeight, frame.width,
-                          frame.height - tabHeight);
+    auto child_rect = Rect(frame.x, frame.y + tabHeight, frame.width,
+                           frame.height - tabHeight);
 
     for (auto& child : GetChildren()) {
-        child->SetFrame(childRect);
+        child->SetFrame(child_rect);
     }
 
     Super::Layout(theme);

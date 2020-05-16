@@ -61,11 +61,11 @@ void Checkbox::SetOnChecked(std::function<void(bool)> on_checked) {
 Size Checkbox::CalcPreferredSize(const Theme& theme) const {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding;
-    auto textSize = ImGui::GetFont()->CalcTextSizeA(
+    auto text_size = ImGui::GetFont()->CalcTextSizeA(
             theme.font_size, 10000, 10000, impl_->name_.c_str());
     int height = std::ceil(em + 2.0f * padding.y);
-    auto checkboxWidth = height + padding.x;
-    return Size(checkboxWidth + std::ceil(textSize.x + 2.0f * padding.x),
+    auto checkbox_width = height + padding.x;
+    return Size(checkbox_width + std::ceil(text_size.x + 2.0f * padding.x),
                 height);
 }
 

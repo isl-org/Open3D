@@ -92,8 +92,8 @@ void Slider::SetOnValueChanged(std::function<void(double)> on_value_changed) {
 }
 
 Size Slider::CalcPreferredSize(const Theme& theme) const {
-    auto lineHeight = ImGui::GetTextLineHeight();
-    auto height = lineHeight + 2.0 * ImGui::GetStyle().FramePadding.y;
+    auto line_height = ImGui::GetTextLineHeight();
+    auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
     return Size(Widget::DIM_GROW, std::ceil(height));
 }
@@ -103,25 +103,25 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    float newValue = impl_->value_;
+    float new_value = impl_->value_;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
     if (impl_->type_ == INT) {
-        int iNewValue = newValue;
-        ImGui::SliderInt(impl_->id_.c_str(), &iNewValue, impl_->min_value_,
+        int i_new_value = new_value;
+        ImGui::SliderInt(impl_->id_.c_str(), &i_new_value, impl_->min_value_,
                          impl_->max_value_);
-        newValue = double(iNewValue);
+        new_value = double(i_new_value);
     } else {
-        ImGui::SliderFloat(impl_->id_.c_str(), &newValue, impl_->min_value_,
+        ImGui::SliderFloat(impl_->id_.c_str(), &new_value, impl_->min_value_,
                            impl_->max_value_);
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
 
-    if (impl_->value_ != newValue) {
-        impl_->value_ = newValue;
+    if (impl_->value_ != new_value) {
+        impl_->value_ = new_value;
         if (impl_->on_value_changed_) {
-            impl_->on_value_changed_(newValue);
+            impl_->on_value_changed_(new_value);
         }
         return Widget::DrawResult::REDRAW;
     }

@@ -44,40 +44,40 @@ std::vector<int> CalcMajor(const Theme& theme,
                            Layout1D::Dir dir,
                            const std::vector<std::shared_ptr<Widget>>& children,
                            int* minor = nullptr) {
-    std::vector<Size> preferredSizes;
-    preferredSizes.reserve(children.size());
+    std::vector<Size> preferred_sizes;
+    preferred_sizes.reserve(children.size());
     for (auto& child : children) {
-        preferredSizes.push_back(child->CalcPreferredSize(theme));
+        preferred_sizes.push_back(child->CalcPreferredSize(theme));
     }
 
     // Preferred size in the minor direction is the maximum preferred size,
     // not including the items that want to be as big as possible (unless they
     // are the only items).
     int other = 0;
-    int nOtherMaxgrowItems = 0;
+    int num_other_maxgrow_items = 0;
     std::vector<int> major;
-    major.reserve(preferredSizes.size());
+    major.reserve(preferred_sizes.size());
     if (dir == Layout1D::VERT) {
-        for (auto& preferred : preferredSizes) {
+        for (auto& preferred : preferred_sizes) {
             major.push_back(preferred.height);
             if (preferred.width >= Widget::DIM_GROW) {
-                nOtherMaxgrowItems += 1;
+                num_other_maxgrow_items += 1;
             } else {
                 other = std::max(other, preferred.width);
             }
         }
     } else {
-        for (auto& preferred : preferredSizes) {
+        for (auto& preferred : preferred_sizes) {
             major.push_back(preferred.width);
             if (preferred.height >= Widget::DIM_GROW) {
-                nOtherMaxgrowItems += 1;
+                num_other_maxgrow_items += 1;
             } else {
                 other = std::max(other, preferred.height);
             }
         }
     }
 
-    if (other == 0 && nOtherMaxgrowItems > 0) {
+    if (other == 0 && num_other_maxgrow_items > 0) {
         other = Widget::DIM_GROW;
     }
 
@@ -88,12 +88,12 @@ std::vector<int> CalcMajor(const Theme& theme,
 }
 
 std::vector<std::vector<std::shared_ptr<Widget>>> CalcColumns(
-        int nCols, const std::vector<std::shared_ptr<Widget>>& children) {
-    std::vector<std::vector<std::shared_ptr<Widget>>> columns(nCols);
+    int num_cols, const std::vector<std::shared_ptr<Widget>>& children) {
+    std::vector<std::vector<std::shared_ptr<Widget>>> columns(num_cols);
     int col = 0;
     for (auto& child : children) {
         columns[col++].push_back(child);
-        if (col >= nCols) {
+        if (col >= num_cols) {
             col = 0;
         }
     }
@@ -145,10 +145,10 @@ void Layout1D::debug_PrintPreferredSizes(Layout1D* layout,
                                          int depth /*= 0*/) {
     static const char spaces[21] = "                    ";
     const char* indent = spaces + (20 - 3 * depth);
-    auto prefTotal = layout->CalcPreferredSize(theme);
+    auto pref_total = layout->CalcPreferredSize(theme);
     std::cout << "[debug] " << indent << "Layout1D ("
               << (layout->impl_->dir_ == Layout1D::VERT ? "VERT" : "HORIZ")
-              << "): pref: (" << prefTotal.width << ", " << prefTotal.height
+              << "): pref: (" << pref_total.width << ", " << pref_total.height
               << ")" << std::endl;
     std::cout << "[debug] " << indent << "spacing: " << layout->impl_->spacing_
               << ", margins: (l:" << layout->impl_->margins_.left
@@ -160,14 +160,14 @@ void Layout1D::debug_PrintPreferredSizes(Layout1D* layout,
         auto pref = child->CalcPreferredSize(theme);
         std::cout << "[debug] " << indent << "i: " << i << " (" << pref.width
                   << ", " << pref.height << ")" << std::endl;
-        Layout1D* childLayout = dynamic_cast<Layout1D*>(child.get());
-        if (childLayout) {
-            debug_PrintPreferredSizes(childLayout, theme, depth + 1);
+        Layout1D* child_layout = dynamic_cast<Layout1D*>(child.get());
+        if (child_layout) {
+            debug_PrintPreferredSizes(child_layout, theme, depth + 1);
         }
         VGrid* vgrid = dynamic_cast<VGrid*>(child.get());
         if (vgrid) {
-            const char* gridIndent = spaces + (20 - 3 * (depth + 1));
-            std::cout << "[debug] " << gridIndent
+            const char* grid_indent = spaces + (20 - 3 * (depth + 1));
+            std::cout << "[debug] " << grid_indent
                       << "VGrid: spacing: " << vgrid->GetSpacing()
                       << ", margins: (l:" << vgrid->GetMargins().left
                       << ", t:" << vgrid->GetMargins().top
@@ -177,7 +177,7 @@ void Layout1D::debug_PrintPreferredSizes(Layout1D* layout,
             for (size_t i = 0; i < vgrid->GetChildren().size(); ++i) {
                 auto e = vgrid->GetChildren()[i];
                 auto pref = e->CalcPreferredSize(theme);
-                std::cout << "[debug] " << gridIndent << "i: " << i << " ("
+                std::cout << "[debug] " << grid_indent << "i: " << i << " ("
                           << pref.width << ", " << pref.height << ")"
                           << std::endl;
             }
@@ -226,17 +226,17 @@ Size Layout1D::CalcPreferredSize(const Theme& theme) const {
     std::vector<int> major =
             CalcMajor(theme, impl_->dir_, GetChildren(), &minor);
 
-    int totalSpacing = impl_->spacing_ * (major.size() - 1);
-    int majorSize = 0;
+    int total_spacing = impl_->spacing_ * (major.size() - 1);
+    int major_size = 0;
     for (auto& size : major) {
-        majorSize += size;
+        major_size += size;
     }
 
     if (impl_->dir_ == VERT) {
         return Size(minor + impl_->margins_.GetHoriz(),
-                    majorSize + impl_->margins_.GetVert() + totalSpacing);
+                    major_size + impl_->margins_.GetVert() + total_spacing);
     } else {
-        return Size(majorSize + impl_->margins_.GetHoriz() + totalSpacing,
+        return Size(major_size + impl_->margins_.GetHoriz() + total_spacing,
                     minor + impl_->margins_.GetVert());
     }
 }
@@ -245,36 +245,36 @@ void Layout1D::Layout(const Theme& theme) {
     auto frame = GetFrame();
     auto& children = GetChildren();
     std::vector<int> major = CalcMajor(theme, impl_->dir_, children, nullptr);
-    int total = 0, nStretch = 0, nGrow = 0;
+    int total = 0, num_stretch = 0, num_grow = 0;
     for (auto& mj : major) {
         total += mj;
         if (mj <= 0) {
-            nStretch += 1;
+            num_stretch += 1;
         }
         if (mj >= Widget::DIM_GROW) {
-            nGrow += 1;
+            num_grow += 1;
         }
     }
-    int frameSize = (impl_->dir_ == VERT ? frame.height : frame.width);
-    auto totalExtra =
-            frameSize - total - impl_->spacing_ * int(major.size() - 1);
-    if (nStretch > 0 && frameSize > total) {
-        auto stretch = totalExtra / nStretch;
-        auto leftoverStretch = totalExtra - stretch * nStretch;
+    int frame_size = (impl_->dir_ == VERT ? frame.height : frame.width);
+    auto total_extra =
+            frame_size - total - impl_->spacing_ * int(major.size() - 1);
+    if (num_stretch > 0 && frame_size > total) {
+        auto stretch = total_extra / num_stretch;
+        auto leftover_stretch = total_extra - stretch * num_stretch;
         for (size_t i = 0; i < major.size(); ++i) {
             if (major[i] <= 0) {
                 major[i] = stretch;
-                if (leftoverStretch > 0) {
+                if (leftover_stretch > 0) {
                     major[i] += 1;
-                    leftoverStretch -= 1;
+                    leftover_stretch -= 1;
                 }
             }
         }
-    } else if (nGrow > 0 && frameSize < total) {
-        auto totalExcess = total - (frameSize - impl_->margins_.GetVert() -
-                                    impl_->spacing_ * (major.size() - 1));
-        auto excess = totalExcess / nGrow;
-        auto leftover = totalExcess - excess * nStretch;
+    } else if (num_grow > 0 && frame_size < total) {
+        auto total_excess = total - (frame_size - impl_->margins_.GetVert() -
+                                     impl_->spacing_ * (major.size() - 1));
+        auto excess = total_excess / num_grow;
+        auto leftover = total_excess - excess * num_stretch;
         for (size_t i = 0; i < major.size(); ++i) {
             if (major[i] >= Widget::DIM_GROW) {
                 major[i] -= excess;
@@ -340,12 +340,12 @@ CollapsableVert::CollapsableVert(const char* text,
                                  int spacing,
                                  const Margins& margins /*= Margins()*/)
     : Vert(spacing, margins), impl_(new CollapsableVert::Impl()) {
-    static int gNextId = 1;
+    static int g_next_id = 1;
 
     impl_->text_ = text;
 
     std::stringstream s;
-    s << text << "##collapsing" << gNextId++;
+    s << text << "##collapsing" << g_next_id++;
     impl_->id_ = s.str();
 }
 
@@ -356,10 +356,10 @@ void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     auto* font = ImGui::GetFont();
     auto padding = ImGui::GetStyle().FramePadding;
-    int textHeight =
+    int text_height =
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
-    int textWidth = std::ceil(font->CalcTextSizeA(theme.font_size, FLT_MAX,
-                                                  FLT_MAX, impl_->text_.c_str())
+    int text_width = std::ceil(font->CalcTextSizeA(theme.font_size, FLT_MAX,
+                                                   FLT_MAX, impl_->text_.c_str())
                                       .x);
 
     auto pref = Super::CalcPreferredSize(theme);
@@ -368,27 +368,27 @@ Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     }
 
     auto& margins = GetMargins();
-    return Size(std::max(textWidth, pref.width) + margins.GetHoriz(),
-                textHeight + pref.height + margins.GetVert());
+    return Size(std::max(text_width, pref.width) + margins.GetHoriz(),
+                text_height + pref.height + margins.GetVert());
 }
 
 void CollapsableVert::Layout(const Theme& theme) {
     auto padding = ImGui::GetStyle().FramePadding;
-    int textHeight =
+    int text_height =
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
 
     auto& margins = GetMutableMargins();
-    auto origTop = margins.top;
-    margins.top = origTop + textHeight;
+    auto orig_top = margins.top;
+    margins.top = orig_top + text_height;
 
     Super::Layout(theme);
 
-    margins.top = origTop;
+    margins.top = orig_top;
 }
 
 Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     auto result = Widget::DrawResult::NONE;
-    bool oldIsOpen = impl_->is_open_;
+    bool was_open = impl_->is_open_;
 
     auto& frame = GetFrame();
     ImGui::SetCursorPos(
@@ -416,7 +416,7 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     ImGui::PopStyleVar();
     ImGui::PopItemWidth();
 
-    if (impl_->is_open_ != oldIsOpen) {
+    if (impl_->is_open_ != was_open) {
         return DrawResult::RELAYOUT;
     }
     return result;
@@ -472,16 +472,16 @@ const Margins& VGrid::GetMargins() const { return impl_->margins_; }
 
 Size VGrid::CalcPreferredSize(const Theme& theme) const {
     auto columns = CalcColumns(impl_->num_cols_, GetChildren());
-    auto columnSizes = CalcColumnSizes(columns, theme);
+    auto column_sizes = CalcColumnSizes(columns, theme);
 
     int width = 0, height = 0;
-    for (size_t i = 0; i < columnSizes.size(); ++i) {
-        auto& sz = columnSizes[i];
+    for (size_t i = 0; i < column_sizes.size(); ++i) {
+        auto& sz = column_sizes[i];
         width += sz.width;
-        auto vSpacing = (columns[i].size() - 1) * impl_->spacing_;
-        height = std::max(height, sz.height) + vSpacing;
+        auto v_spacing = (columns[i].size() - 1) * impl_->spacing_;
+        height = std::max(height, sz.height) + v_spacing;
     }
-    width += (columnSizes.size() - 1) * impl_->spacing_;
+    width += (column_sizes.size() - 1) * impl_->spacing_;
     width = std::max(width, 0);  // in case width or height has no items
     height = std::max(height, 0);
 
@@ -491,34 +491,34 @@ Size VGrid::CalcPreferredSize(const Theme& theme) const {
 
 void VGrid::Layout(const Theme& theme) {
     auto columns = CalcColumns(impl_->num_cols_, GetChildren());
-    auto columnSizes = CalcColumnSizes(columns, theme);
+    auto column_sizes = CalcColumnSizes(columns, theme);
 
     // Shrink columns that are too big.
     // TODO: right now this only handles DIM_GROW columns; extend to
     //       proportionally shrink columns that together add up to too much.
     //       Probably should figure out how to reuse for other layouts.
     auto& frame = GetFrame();
-    const int layoutWidth =
+    const int layout_width =
             frame.width - impl_->margins_.left - impl_->margins_.right;
-    int wantedWidth = 0;
-    int totalNotGrowingWidth = 0;
-    int nGrowing = 0;
-    for (auto& sz : columnSizes) {
-        wantedWidth += sz.width;
+    int wanted_width = 0;
+    int total_not_growing_width = 0;
+    int num_growing = 0;
+    for (auto& sz : column_sizes) {
+        wanted_width += sz.width;
         if (sz.width < DIM_GROW) {
-            totalNotGrowingWidth += sz.width;
+            total_not_growing_width += sz.width;
         } else {
-            nGrowing += 1;
+            num_growing += 1;
         }
     }
-    if (wantedWidth > layoutWidth && nGrowing > 0) {
-        int growingSize = (layoutWidth - totalNotGrowingWidth) / nGrowing;
-        if (growingSize < 0) {
-            growingSize = layoutWidth / nGrowing;
+    if (wanted_width > layout_width && num_growing > 0) {
+        int growing_size = (layout_width - total_not_growing_width) / num_growing;
+        if (growing_size < 0) {
+            growing_size = layout_width / num_growing;
         }
-        for (auto& sz : columnSizes) {
+        for (auto& sz : column_sizes) {
             if (sz.width >= DIM_GROW) {
-                sz.width = growingSize;
+                sz.width = growing_size;
             }
         }
     }
@@ -527,9 +527,9 @@ void VGrid::Layout(const Theme& theme) {
     // without taking intra-element spacing, so do that here.
     int leftHalf = int(std::floor(float(impl_->spacing_) / 2.0));
     int rightHalf = int(std::ceil(float(impl_->spacing_) / 2.0));
-    for (size_t i = 0; i < columnSizes.size() - 1; ++i) {
-        columnSizes[i].width -= leftHalf;
-        columnSizes[i + 1].width -= rightHalf;
+    for (size_t i = 0; i < column_sizes.size() - 1; ++i) {
+        column_sizes[i].width -= leftHalf;
+        column_sizes[i + 1].width -= rightHalf;
     }
 
     // Do the layout
@@ -538,10 +538,10 @@ void VGrid::Layout(const Theme& theme) {
         int y = frame.GetTop() + impl_->margins_.top;
         for (auto& w : columns[i]) {
             auto preferred = w->CalcPreferredSize(theme);
-            w->SetFrame(Rect(x, y, columnSizes[i].width, preferred.height));
+            w->SetFrame(Rect(x, y, column_sizes[i].width, preferred.height));
             y += preferred.height + impl_->spacing_;
         }
-        x += columnSizes[i].width + impl_->spacing_;
+        x += column_sizes[i].width + impl_->spacing_;
     }
 
     Super::Layout(theme);

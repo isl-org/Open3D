@@ -67,8 +67,8 @@ void ColorEdit::SetOnValueChanged(
 }
 
 Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
-    auto lineHeight = ImGui::GetTextLineHeight();
-    auto height = lineHeight + 2.0 * ImGui::GetStyle().FramePadding.y;
+    auto line_height = ImGui::GetTextLineHeight();
+    auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
     return Size(Widget::DIM_GROW, std::ceil(height));
 }
@@ -78,17 +78,17 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    auto newValue = impl_->value_;
+    auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    ImGui::ColorEdit3(impl_->id_.c_str(), newValue.GetMutablePointer());
+    ImGui::ColorEdit3(impl_->id_.c_str(), new_value.GetMutablePointer());
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
 
-    if (impl_->value_ != newValue) {
-        impl_->value_ = newValue;
+    if (impl_->value_ != new_value) {
+        impl_->value_ = new_value;
         if (impl_->on_value_changed_) {
-            impl_->on_value_changed_(newValue);
+            impl_->on_value_changed_(new_value);
         }
 
         return Widget::DrawResult::REDRAW;

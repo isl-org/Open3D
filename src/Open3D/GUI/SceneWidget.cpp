@@ -72,10 +72,10 @@ public:
     }
 
     void SetDirectionalLight(
-            visualization::LightHandle dirLight,
-            std::function<void(const Eigen::Vector3f&)> onChanged) {
-        light_dir_->SetDirectionalLight(dirLight);
-        on_light_dir_changed_ = onChanged;
+            visualization::LightHandle dir_light,
+            std::function<void(const Eigen::Vector3f&)> on_changed) {
+        light_dir_->SetDirectionalLight(dir_light);
+        on_light_dir_changed_ = on_changed;
     }
 
     void Mouse(const MouseEvent& e) override {
@@ -125,14 +125,14 @@ public:
         return *ibl_.get();
     }
 
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn) {
-        ibl_->SetSkyboxHandle(skybox, isOn);
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on) {
+        ibl_->SetSkyboxHandle(skybox, is_on);
     }
 
     void SetOnChanged(
             std::function<void(const visualization::Camera::Transform&)>
-                    onChanged) {
-        on_rotation_changed_ = onChanged;
+                    on_changed) {
+        on_rotation_changed_ = on_changed;
     }
 
     void Mouse(const MouseEvent& e) override {
@@ -238,9 +238,9 @@ public:
         if (!keys_down_.empty()) {
             auto& bounds = camera_controls_->GetBoundingBox();
             const float dist = 0.0025f * bounds.GetExtent().norm();
-            const float angleRad = 0.0075f;
+            const float angle_rad = 0.0075f;
 
-            auto hasKey = [this](uint32_t key) -> bool {
+            auto HasKey = [this](uint32_t key) -> bool {
                 return (keys_down_.find(key) != keys_down_.end());
             };
 
@@ -248,9 +248,9 @@ public:
                 camera_controls_->MoveLocal(v);
                 redraw = true;
             };
-            auto rotate = [this, &redraw](float angleRad,
+            auto rotate = [this, &redraw](float angle_rad,
                                           const Eigen::Vector3f& axis) {
-                camera_controls_->RotateLocal(angleRad, axis);
+                camera_controls_->RotateLocal(angle_rad, axis);
                 redraw = true;
             };
             auto rotateZ = [this, &redraw](int dy) {
@@ -259,41 +259,41 @@ public:
                 redraw = true;
             };
 
-            if (hasKey('a')) {
+            if (HasKey('a')) {
                 move({-dist, 0, 0});
             }
-            if (hasKey('d')) {
+            if (HasKey('d')) {
                 move({dist, 0, 0});
             }
-            if (hasKey('w')) {
+            if (HasKey('w')) {
                 move({0, 0, -dist});
             }
-            if (hasKey('s')) {
+            if (HasKey('s')) {
                 move({0, 0, dist});
             }
-            if (hasKey('q')) {
+            if (HasKey('q')) {
                 move({0, dist, 0});
             }
-            if (hasKey('z')) {
+            if (HasKey('z')) {
                 move({0, -dist, 0});
             }
-            if (hasKey('e')) {
+            if (HasKey('e')) {
                 rotateZ(-2);
             }
-            if (hasKey('r')) {
+            if (HasKey('r')) {
                 rotateZ(2);
             }
-            if (hasKey(KEY_UP)) {
-                rotate(angleRad, {1, 0, 0});
+            if (HasKey(KEY_UP)) {
+                rotate(angle_rad, {1, 0, 0});
             }
-            if (hasKey(KEY_DOWN)) {
-                rotate(-angleRad, {1, 0, 0});
+            if (HasKey(KEY_DOWN)) {
+                rotate(-angle_rad, {1, 0, 0});
             }
-            if (hasKey(KEY_LEFT)) {
-                rotate(angleRad, {0, 1, 0});
+            if (HasKey(KEY_LEFT)) {
+                rotate(angle_rad, {0, 1, 0});
             }
-            if (hasKey(KEY_RIGHT)) {
-                rotate(-angleRad, {0, 1, 0});
+            if (HasKey(KEY_RIGHT)) {
+                rotate(-angle_rad, {0, 1, 0});
             }
         }
         return redraw;
@@ -661,9 +661,9 @@ void SceneWidget::SetupCamera(
     auto far2 = impl_->bounds_.GetMaxBound().norm();
     auto far3 =
             GetCamera()->GetModelMatrix().translation().cast<double>().norm();
-    auto modelSize = 2.0 * impl_->bounds_.GetExtent().norm();
+    auto model_size = 2.0 * impl_->bounds_.GetExtent().norm();
     auto far = std::max(MIN_FAR_PLANE,
-                        std::max(std::max(far1, far2), far3) + modelSize);
+                        std::max(std::max(far1, far2), far3) + model_size);
     GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
                                visualization::Camera::FovType::Vertical);
 }
@@ -722,11 +722,11 @@ void SceneWidget::SetViewControls(Controls mode) {
         // panning distance so that the cursor stays in roughly the same
         // position as the user moves the mouse. Use the distance to the
         // center of the model, which should be reasonable.
-        Eigen::Vector3f toCenter = impl_->bounds_.GetCenter().cast<float>() -
-                                   impl_->camera_->GetPosition();
+        Eigen::Vector3f to_center = impl_->bounds_.GetCenter().cast<float>() -
+                                    impl_->camera_->GetPosition();
         Eigen::Vector3f forward = impl_->camera_->GetForwardVector();
         Eigen::Vector3f center =
-                impl_->camera_->GetPosition() + toCenter.norm() * forward;
+                impl_->camera_->GetPosition() + to_center.norm() * forward;
         impl_->controls_->SetCenterOfRotation(center);
     } else {
         impl_->controls_->SetControls(mode);
@@ -736,21 +736,21 @@ void SceneWidget::SetViewControls(Controls mode) {
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
-        bool isFast = false;
+        bool is_fast = false;
         auto view = impl_->scene_.GetView(impl_->view_id_);
         if (quality == Quality::FAST) {
             view->SetSampleCount(1);
-            isFast = true;
+            is_fast = true;
         } else {
             view->SetSampleCount(4);
-            isFast = false;
+            is_fast = false;
         }
         if (!impl_->model_.fast_point_clouds.empty()) {
             for (auto p : impl_->model_.point_clouds) {
-                impl_->scene_.SetEntityEnabled(p, !isFast);
+                impl_->scene_.SetEntityEnabled(p, !is_fast);
             }
             for (auto p : impl_->model_.fast_point_clouds) {
-                impl_->scene_.SetEntityEnabled(p, isFast);
+                impl_->scene_.SetEntityEnabled(p, is_fast);
             }
         }
     }
@@ -772,22 +772,22 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float maxDim = 1.25f * impl_->bounds_.GetMaxExtent();
+    float max_dim = 1.25f * impl_->bounds_.GetMaxExtent();
     Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
         case CameraPreset::PLUS_X: {
-            eye = Eigen::Vector3f(center.x() + maxDim, center.y(), center.z());
+            eye = Eigen::Vector3f(center.x() + max_dim, center.y(), center.z());
             up = Eigen::Vector3f(0, 1, 0);
             break;
         }
         case CameraPreset::PLUS_Y: {
-            eye = Eigen::Vector3f(center.x(), center.y() + maxDim, center.z());
+            eye = Eigen::Vector3f(center.x(), center.y() + max_dim, center.z());
             up = Eigen::Vector3f(1, 0, 0);
             break;
         }
         case CameraPreset::PLUS_Z: {
-            eye = Eigen::Vector3f(center.x(), center.y(), center.z() + maxDim);
+            eye = Eigen::Vector3f(center.x(), center.y(), center.z() + max_dim);
             up = Eigen::Vector3f(0, 1, 0);
             break;
         }

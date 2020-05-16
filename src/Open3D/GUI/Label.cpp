@@ -85,27 +85,27 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
                     std::ceil(em + 2.0f * padding.y));
     } else {
         ImVec2 size(0, 0);
-        size_t lineStart = 0;
-        auto lineEnd = impl_->text_.find('\n');
-        float wrapWidth = PREFERRED_WRAP_WIDTH_EM * em;
+        size_t line_start = 0;
+        auto line_end = impl_->text_.find('\n');
+        float wrap_width = PREFERRED_WRAP_WIDTH_EM * em;
         float spacing = ImGui::GetTextLineHeightWithSpacing() -
                         ImGui::GetTextLineHeight();
         do {
             ImVec2 sz;
-            if (lineEnd == std::string::npos) {
-                sz = font->CalcTextSizeA(theme.font_size, FLT_MAX, wrapWidth,
-                                         impl_->text_.c_str() + lineStart);
-                lineStart = lineEnd;
+            if (line_end == std::string::npos) {
+                sz = font->CalcTextSizeA(theme.font_size, FLT_MAX, wrap_width,
+                                         impl_->text_.c_str() + line_start);
+                line_start = line_end;
             } else {
-                sz = font->CalcTextSizeA(theme.font_size, FLT_MAX, wrapWidth,
-                                         impl_->text_.c_str() + lineStart,
-                                         impl_->text_.c_str() + lineEnd);
-                lineStart = lineEnd + 1;
-                lineEnd = impl_->text_.find('\n', lineStart);
+                sz = font->CalcTextSizeA(theme.font_size, FLT_MAX, wrap_width,
+                                         impl_->text_.c_str() + line_start,
+                                         impl_->text_.c_str() + line_end);
+                line_start = line_end + 1;
+                line_end = impl_->text_.find('\n', line_start);
             }
             size.x = std::max(size.x, sz.x);
             size.y += sz.y + spacing;
-        } while (lineStart != std::string::npos);
+        } while (line_start != std::string::npos);
 
         return Size(std::ceil(size.x) + std::ceil(2.0f * padding.x),
                     std::ceil(size.y - spacing) + std::ceil(2.0f * padding.y));
@@ -117,8 +117,8 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
-    bool isDefaultColor = (impl_->color_ == DEFAULT_COLOR);
-    if (!isDefaultColor) {
+    bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
+    if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, util::colorToImgui(impl_->color_));
     }
     if (impl_->is_single_line) {
@@ -131,7 +131,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
         ImGui::TextWrapped("%s", impl_->text_.c_str());
         ImGui::PopTextWrapPos();
     }
-    if (!isDefaultColor) {
+    if (!is_default_color) {
         ImGui::PopStyleColor();
     }
     ImGui::PopItemWidth();

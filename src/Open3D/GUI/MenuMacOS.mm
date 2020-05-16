@@ -97,11 +97,11 @@ void Menu::AddItem(const char *name,
                    KeyName key /*= KEY_NONE*/) {
     std::string shortcut;
     shortcut += char(key);
-    NSString *objcShortcut = [NSString stringWithUTF8String:shortcut.c_str()];
+    NSString *objc_shortcut = [NSString stringWithUTF8String:shortcut.c_str()];
     auto item = [[NSMenuItem alloc]
                  initWithTitle:[NSString stringWithUTF8String:name]
                         action:@selector(run)
-                 keyEquivalent:objcShortcut];
+                 keyEquivalent:objc_shortcut];
     item.target = [[Open3DRunnable alloc] initWithFunction:[item_id]() {
         Application::GetInstance().OnMenuItemSelected(item_id);
     }];

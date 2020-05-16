@@ -77,8 +77,8 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
-    bool oldIsOn = impl_->is_on_;
-    if (oldIsOn) {
+    bool was_on = impl_->is_on_;
+    if (was_on) {
         ImGui::PushStyleColor(
                 ImGuiCol_Text,
                 util::colorToImgui(context.theme.button_on_text_color));
@@ -106,7 +106,7 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
         result = Widget::DrawResult::REDRAW;
     }
     DrawImGuiPopEnabledState();
-    if (oldIsOn) {
+    if (was_on) {
         ImGui::PopStyleColor(4);
     }
 

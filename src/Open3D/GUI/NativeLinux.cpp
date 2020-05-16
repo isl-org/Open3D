@@ -37,13 +37,13 @@
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(GLFWwindow* glfwWindow) {
-    return (void*)glfwGetX11Window(glfwWindow);
+void* GetNativeDrawable(GLFWwindow* glfw_window) {
+    return (void*)glfwGetX11Window(glfw_window);
 }
 
-void PostNativeExposeEvent(GLFWwindow* glfwWindow) {
+void PostNativeExposeEvent(GLFWwindow* glfw_window) {
     Display* d = glfwGetX11Display();
-    auto x11win = glfwGetX11Window(glfwWindow);
+    auto x11win = glfwGetX11Window(glfw_window);
 
     XEvent e;
     memset(&e, 0, sizeof(e));

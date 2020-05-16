@@ -60,8 +60,8 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     }
 
     // Chop off the process name
-    auto lastSlash = argv0.rfind("/");
-    auto path = argv0.substr(0, lastSlash);
+    auto last_slash = argv0.rfind("/");
+    auto path = argv0.substr(0, last_slash);
 
     if (argv0[0] == '/' ||
         (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
@@ -116,8 +116,8 @@ struct Application::Impl {
 };
 
 Application &Application::GetInstance() {
-    static Application gApp;
-    return gApp;
+    static Application g_app;
+    return g_app;
 }
 
 void Application::ShowMessageBox(const char *title, const char *message) {
@@ -139,7 +139,7 @@ void Application::ShowMessageBox(const char *title, const char *message) {
 }
 
 Application::Application() : impl_(new Application::Impl()) {
-    Color highlightColor(0.5, 0.5, 0.5);
+    Color highlight_color(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
     impl_->theme_.font_path =
@@ -162,14 +162,14 @@ Application::Application() : impl_(new Application::Impl()) {
     impl_->theme_.button_on_active_color = Color(0.8, 0.8, 0.8);
     impl_->theme_.button_on_text_color = Color(0, 0, 0);
     impl_->theme_.checkbox_background_off_color = Color(0.333, 0.333, .333);
-    impl_->theme_.checkbox_background_on_color = highlightColor;
+    impl_->theme_.checkbox_background_on_color = highlight_color;
     impl_->theme_.checkbox_background_hover_off_color = Color(0.5, 0.5, 0.5);
     impl_->theme_.checkbox_background_hover_on_color =
-            highlightColor.Lightened(0.15);
+            highlight_color.Lightened(0.15);
     impl_->theme_.checkbox_check_color = Color(1, 1, 1);
     impl_->theme_.combobox_background_color = Color(0.4, 0.4, 0.4);
     impl_->theme_.combobox_hover_color = Color(0.5, 0.5, 0.5);
-    impl_->theme_.combobox_arrow_background_color = highlightColor;
+    impl_->theme_.combobox_arrow_background_color = highlight_color;
     impl_->theme_.slider_grab_color = Color(0.666, 0.666, 0.666);
     impl_->theme_.text_edit_background_color = Color(0.25, 0.25, 0.25);
     impl_->theme_.tab_inactive_color = impl_->theme_.button_color;

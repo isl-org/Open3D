@@ -135,45 +135,44 @@ struct FileDialog::Impl {
     std::function<void(const char *)> on_done_;
 
     const DirEntry &GetSelectedEntry() {
-        static DirEntry gBogus("", DirEntry::Type::FILE);
+        static DirEntry g_bogus("", DirEntry::Type::FILE);
 
-        int idx = this->filelist_->GetSelectedIndex();
+        int idx = filelist_->GetSelectedIndex();
         if (idx >= 0) {
-            return this->entries_[idx];
+            return entries_[idx];
         } else {
-            return gBogus;
+            return g_bogus;
         }
     }
 
     void UpdateDirectoryListing() {
         auto path = CalcCurrentDirectory();
 
-        std::vector<std::string> rawSubdirs, rawFiles;
-        utility::filesystem::ListDirectory(path, rawSubdirs, rawFiles);
+        std::vector<std::string> raw_subdirs, raw_files;
+        utility::filesystem::ListDirectory(path, raw_subdirs, raw_files);
 
-        this->entries_.clear();
-        this->entries_.reserve(rawSubdirs.size() + rawFiles.size());
-        for (auto &dir : rawSubdirs) {
+        entries_.clear();
+        entries_.reserve(raw_subdirs.size() + raw_files.size());
+        for (auto &dir : raw_subdirs) {
             auto d = utility::filesystem::GetFileNameWithoutDirectory(dir);
-            this->entries_.emplace_back(d, DirEntry::Type::DIR);
+            entries_.emplace_back(d, DirEntry::Type::DIR);
         }
         std::unordered_set<std::string> filter;
-        auto it = this->filter_idx_2_filter.find(
-                this->filter_->GetSelectedIndex());
-        if (it != this->filter_idx_2_filter.end()) {
+        auto it = filter_idx_2_filter.find(filter_->GetSelectedIndex());
+        if (it != filter_idx_2_filter.end()) {
             filter = it->second;
         }
-        for (auto &file : rawFiles) {
+        for (auto &file : raw_files) {
             auto f = utility::filesystem::GetFileNameWithoutDirectory(file);
             auto ext = utility::filesystem::GetFileExtensionInLowerCase(f);
             if (!ext.empty()) {
                 ext = std::string(".") + ext;
             }
             if (filter.empty() || filter.find(ext) != filter.end()) {
-                this->entries_.emplace_back(f, DirEntry::Type::FILE);
+                entries_.emplace_back(f, DirEntry::Type::FILE);
             }
         }
-        std::sort(this->entries_.begin(), this->entries_.end());
+        std::sort(entries_.begin(), this->entries_.end());
 
         // Include an entry for ".." for convenience on Linux.
         // Don't do this on macOS because the native dialog has neither
@@ -185,27 +184,27 @@ struct FileDialog::Impl {
         // include an up icon.
 #ifndef __APPLE__
         if (path != "/") {
-            this->entries.insert(this->entries.begin(),
-                                 DirEntry("..", DirEntry::Type::DIR));
+            entries.insert(entries.begin(),
+                           DirEntry("..", DirEntry::Type::DIR));
         }
 #endif  // __APPLE__
 
         std::vector<std::string> display;
-        display.reserve(this->entries_.size());
-        for (auto &e : this->entries_) {
+        display.reserve(entries_.size());
+        for (auto &e : entries_) {
             display.push_back(e.GetDisplayText());
         }
 
-        this->filelist_->SetSelectedIndex(-1);
-        if (this->mode_ == Mode::OPEN) {
-            this->filename_->SetText("");
+        filelist_->SetSelectedIndex(-1);
+        if (mode_ == Mode::OPEN) {
+            filename_->SetText("");
             UpdateOk();
         }
-        this->filelist_->SetItems(display);
+        filelist_->SetItems(display);
     }
 
     std::string CalcCurrentDirectory() const {
-        auto idx = this->dirtree_->GetSelectedIndex();
+        auto idx = dirtree_->GetSelectedIndex();
         std::string path;
         for (int i = 0; i <= idx; ++i) {
             if (i >= 2) {  // 0 is "/", so don't need "/" until 2.
@@ -217,7 +216,7 @@ struct FileDialog::Impl {
     }
 
     void UpdateOk() {
-        this->ok_->SetEnabled(std::string(this->filename_->GetText()) != "");
+        ok_->SetEnabled(std::string(filename_->GetText()) != "");
     }
 };
 
@@ -254,10 +253,10 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     }
 
     impl_->filter_ = std::make_shared<Combobox>();
-    auto filterLabel = std::make_shared<Label>("File type:");
+    auto filter_label = std::make_shared<Label>("File type:");
     impl_->filter_row_ = std::make_shared<Horiz>();
     impl_->filter_row_->AddStretch();
-    impl_->filter_row_->AddChild(filterLabel);
+    impl_->filter_row_->AddChild(filter_label);
     impl_->filter_row_->AddChild(impl_->filter_);
     impl_->filter_row_->AddStretch();
     impl_->filter_row_->SetVisible(false);
@@ -276,16 +275,16 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
         this->impl_->UpdateDirectoryListing();
     });
     impl_->filelist_->SetOnValueChanged([this](const char *value,
-                                               bool isDoubleClick) {
+                                               bool is_double_click) {
         auto &entry = this->impl_->GetSelectedEntry();
-        if (isDoubleClick) {
+        if (is_double_click) {
             if (entry.GetType() == DirEntry::Type::FILE) {
                 this->OnDone();
                 return;
             } else {
-                auto newDir = this->impl_->CalcCurrentDirectory();
-                newDir = newDir + "/" + entry.GetName();
-                this->SetPath(newDir.c_str());
+                auto new_dir = this->impl_->CalcCurrentDirectory();
+                new_dir = new_dir + "/" + entry.GetName();
+                this->SetPath(new_dir.c_str());
             }
         } else {
             if (entry.GetType() == DirEntry::Type::FILE) {
@@ -330,20 +329,20 @@ void FileDialog::SetPath(const char *path) {
         }
         dirpath += dir;
     }
-    bool isDir = utility::filesystem::DirectoryExists(dirpath);
+    bool is_dir = utility::filesystem::DirectoryExists(dirpath);
 
     impl_->dirtree_->ClearItems();
-    size_t n = (isDir ? components.size() : components.size() - 1);
+    size_t n = (is_dir ? components.size() : components.size() - 1);
     for (size_t i = 0; i < n; ++i) {
         impl_->dirtree_->AddItem(components[i].c_str());
     }
     impl_->dirtree_->SetSelectedIndex(n - 1);
     impl_->UpdateDirectoryListing();
-    if (isDir) {
+    if (is_dir) {
         g_file_dialog_dir = dirpath;
     }
 
-    if (!isDir) {
+    if (!is_dir) {
         impl_->filename_->SetText(components.back().c_str());
     }
 }
@@ -352,15 +351,15 @@ void FileDialog::AddFilter(const char *filter, const char *description) {
     std::vector<std::string> exts;
     utility::SplitString(exts, filter, ", ");
 
-    std::unordered_set<std::string> extFilter;
+    std::unordered_set<std::string> ext_filter;
     for (auto &ext : exts) {
-        extFilter.insert(ext);
+        ext_filter.insert(ext);
     }
 
-    bool firstFilter = impl_->filter_idx_2_filter.empty();
-    impl_->filter_idx_2_filter[impl_->filter_idx_2_filter.size()] = extFilter;
+    bool first_filter = impl_->filter_idx_2_filter.empty();
+    impl_->filter_idx_2_filter[impl_->filter_idx_2_filter.size()] = ext_filter;
     impl_->filter_->AddItem(description);
-    if (firstFilter) {
+    if (first_filter) {
         impl_->filter_->SetSelectedIndex(0);
         impl_->UpdateDirectoryListing();  // apply filter
     }

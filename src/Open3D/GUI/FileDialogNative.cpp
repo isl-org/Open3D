@@ -71,10 +71,10 @@ Size FileDialog::CalcPreferredSize(const Theme &theme) const {
 }
 
 void FileDialog::OnWillShow() {
-    auto onOk = [this](const char *path) { this->impl_->on_done_(path); };
-    auto onCancel = [this]() { this->impl_->on_cancel_(); };
-    ShowNativeFileDialog(impl_->mode_, impl_->path_, impl_->filters_, onOk,
-                         onCancel);
+    auto on_ok = [this](const char *path) { this->impl_->on_done_(path); };
+    auto on_cancel = [this]() { this->impl_->on_cancel_(); };
+    ShowNativeFileDialog(impl_->mode_, impl_->path_, impl_->filters_, on_ok,
+                         on_cancel);
 }
 
 void FileDialog::OnDone() {}

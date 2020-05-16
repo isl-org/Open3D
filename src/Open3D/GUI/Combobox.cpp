@@ -112,7 +112,7 @@ void Combobox::SetOnValueChanged(
 }
 
 Size Combobox::CalcPreferredSize(const Theme& theme) const {
-    auto buttonWidth = ImGui::GetFrameHeight();  // button is square
+    auto button_width = ImGui::GetFrameHeight();  // button is square
     auto padding = ImGui::GetStyle().FramePadding;
     int width = 0;
     for (auto& item : impl_->items_) {
@@ -120,13 +120,13 @@ Size Combobox::CalcPreferredSize(const Theme& theme) const {
                                                     10000, item.c_str());
         width = std::max(width, int(std::ceil(size.x)));
     }
-    return Size(width + buttonWidth + 2.0 * padding.x, CalcItemHeight(theme));
+    return Size(width + button_width + 2.0 * padding.x, CalcItemHeight(theme));
 }
 
 Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
-    bool valueChanged = false;
-    bool wasOpen = ImGui::IsPopupOpen(impl_->imgui_id_.c_str());
-    bool didOpen = false;
+    bool value_changed = false;
+    bool was_open = ImGui::IsPopupOpen(impl_->imgui_id_.c_str());
+    bool did_open = false;
 
     auto& frame = GetFrame();
     ImGui::SetCursorPos(
@@ -145,14 +145,14 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(frame.width);
     if (ImGui::BeginCombo(impl_->imgui_id_.c_str(), GetSelectedValue())) {
-        if (!wasOpen) {
-            didOpen = true;
+        if (!was_open) {
+            did_open = true;
         }
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool isSelected = false;
             if (ImGui::Selectable(impl_->items_[i].c_str(), &isSelected, 0)) {
                 impl_->current_index_ = i;
-                valueChanged = true;
+                value_changed = true;
                 if (impl_->on_value_changed_) {
                     impl_->on_value_changed_(GetSelectedValue(), i);
                 }
@@ -168,8 +168,8 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
 
     ImGui::PopStyleColor(3);
 
-    return ((valueChanged || didOpen) ? Widget::DrawResult::REDRAW
-                                      : Widget::DrawResult::NONE);
+    return ((value_changed || did_open) ? Widget::DrawResult::REDRAW
+                                        : Widget::DrawResult::NONE);
 }
 
 }  // namespace gui
