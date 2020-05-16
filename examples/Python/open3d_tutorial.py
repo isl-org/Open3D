@@ -107,7 +107,10 @@ def get_non_manifold_edge_mesh():
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
     mesh.compute_vertex_normals()
-    mesh.rotate(mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)))
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)),
+        center=mesh.get_center(),
+    )
     return mesh
 
 
@@ -138,7 +141,10 @@ def get_non_manifold_vertex_mesh():
     mesh.vertices = o3d.utility.Vector3dVector(verts)
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
     mesh.compute_vertex_normals()
-    mesh.rotate(mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)))
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)),
+        center=mesh.get_center(),
+    )
     return mesh
 
 
@@ -147,7 +153,9 @@ def get_open_box_mesh():
     mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:-2])
     mesh.compute_vertex_normals()
     mesh.rotate(
-        mesh.get_rotation_matrix_from_xyz((0.8 * np.pi, 0, 0.66 * np.pi)))
+        mesh.get_rotation_matrix_from_xyz((0.8 * np.pi, 0, 0.66 * np.pi)),
+        center=mesh.get_center(),
+    )
     return mesh
 
 
@@ -159,8 +167,10 @@ def get_intersecting_boxes_mesh():
     mesh1.transform(T)
     mesh = mesh0 + mesh1
     mesh.compute_vertex_normals()
-    mesh.rotate(mesh.get_rotation_matrix_from_xyz(
-        (0.7 * np.pi, 0, 0.6 * np.pi)))
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((0.7 * np.pi, 0, 0.6 * np.pi)),
+        center=mesh.get_center(),
+    )
     return mesh
 
 

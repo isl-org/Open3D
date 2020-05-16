@@ -98,6 +98,8 @@ void TryGLVersion(int major,
 
 int main(int argc, char **argv) {
     TryGLVersion(1, 0, false, false, GLFW_OPENGL_ANY_PROFILE);
+    TryGLVersion(3, 2, true, true, GLFW_OPENGL_CORE_PROFILE);
+    TryGLVersion(4, 1, false, false, GLFW_OPENGL_ANY_PROFILE);
     TryGLVersion(3, 3, false, true, GLFW_OPENGL_CORE_PROFILE);
     TryGLVersion(3, 3, true, true, GLFW_OPENGL_CORE_PROFILE);
     TryGLVersion(3, 3, false, true, GLFW_OPENGL_COMPAT_PROFILE);

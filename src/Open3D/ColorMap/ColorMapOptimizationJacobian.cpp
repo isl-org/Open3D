@@ -44,11 +44,11 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
         const std::shared_ptr<geometry::Image>& images_dy,
         const Eigen::Matrix4d& intrinsic,
         const Eigen::Matrix4d& extrinsic,
-        const std::vector<int>& visiblity_image_to_vertex,
+        const std::vector<int>& visibility_image_to_vertex,
         const int image_boundary_margin) {
     J_r.setZero();
     r = 0;
-    int vid = visiblity_image_to_vertex[row];
+    int vid = visibility_image_to_vertex[row];
     Eigen::Vector3d x = mesh.vertices_[vid];
     Eigen::Vector4d g = extrinsic * Eigen::Vector4d(x(0), x(1), x(2), 1);
     Eigen::Vector4d uv = intrinsic * g;
@@ -88,14 +88,14 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
         const ImageWarpingField& warping_fields_init,
         const Eigen::Matrix4d& intrinsic,
         const Eigen::Matrix4d& extrinsic,
-        const std::vector<int>& visiblity_image_to_vertex,
+        const std::vector<int>& visibility_image_to_vertex,
         const int image_boundary_margin) {
     J_r.setZero();
     pattern.setZero();
     r = 0;
     int anchor_w = warping_fields.anchor_w_;
     double anchor_step = warping_fields.anchor_step_;
-    int vid = visiblity_image_to_vertex[row];
+    int vid = visibility_image_to_vertex[row];
     Eigen::Vector3d V = mesh.vertices_[vid];
     Eigen::Vector4d G = extrinsic * Eigen::Vector4d(V(0), V(1), V(2), 1);
     Eigen::Vector4d L = intrinsic * G;

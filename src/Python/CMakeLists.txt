@@ -71,6 +71,10 @@ if (BUILD_AZURE_KINECT)
 endif()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
+if (WIN32)
+    target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
+endif()
+
 if (${PYTHON_VERSION_MAJOR} EQUAL 2)
     target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
 endif ()

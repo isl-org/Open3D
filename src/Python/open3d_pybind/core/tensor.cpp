@@ -77,6 +77,17 @@ void pybind_core_tensor(py::module& m) {
         return t;
     }));
 
+    // Tensor creation API
+    tensor.def_static("empty", &Tensor::Empty);
+    tensor.def_static("full", &Tensor::Full<float>);
+    tensor.def_static("full", &Tensor::Full<double>);
+    tensor.def_static("full", &Tensor::Full<int32_t>);
+    tensor.def_static("full", &Tensor::Full<int64_t>);
+    tensor.def_static("full", &Tensor::Full<uint8_t>);
+    tensor.def_static("full", &Tensor::Full<bool>);
+    tensor.def_static("zeros", &Tensor::Zeros);
+    tensor.def_static("ones", &Tensor::Ones);
+
     // Tensor copy
     tensor.def("shallow_copy_from", &Tensor::ShallowCopyFrom);
 
@@ -243,14 +254,81 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("to", &Tensor::To);
 
     // Binary element-wise ops
-    tensor.def("add", &Tensor::Add);
-    tensor.def("add_", &Tensor::Add_);
-    tensor.def("sub", &Tensor::Sub);
-    tensor.def("sub_", &Tensor::Sub_);
-    tensor.def("mul", &Tensor::Mul);
-    tensor.def("mul_", &Tensor::Mul_);
-    tensor.def("div", &Tensor::Div);
-    tensor.def("div_", &Tensor::Div_);
+    tensor.def("add", [](const Tensor& self, const Tensor& other) {
+        return self.Add(other);
+    });
+    tensor.def("add", &Tensor::Add<float>);
+    tensor.def("add", &Tensor::Add<double>);
+    tensor.def("add", &Tensor::Add<int32_t>);
+    tensor.def("add", &Tensor::Add<int64_t>);
+    tensor.def("add", &Tensor::Add<uint8_t>);
+    tensor.def("add", &Tensor::Add<bool>);
+    tensor.def("add_", [](Tensor& self, const Tensor& other) {
+        return self.Add_(other);
+    });
+    tensor.def("add_", &Tensor::Add_<float>);
+    tensor.def("add_", &Tensor::Add_<double>);
+    tensor.def("add_", &Tensor::Add_<int32_t>);
+    tensor.def("add_", &Tensor::Add_<int64_t>);
+    tensor.def("add_", &Tensor::Add_<uint8_t>);
+    tensor.def("add_", &Tensor::Add_<bool>);
+
+    tensor.def("sub", [](const Tensor& self, const Tensor& other) {
+        return self.Sub(other);
+    });
+    tensor.def("sub", &Tensor::Sub<float>);
+    tensor.def("sub", &Tensor::Sub<double>);
+    tensor.def("sub", &Tensor::Sub<int32_t>);
+    tensor.def("sub", &Tensor::Sub<int64_t>);
+    tensor.def("sub", &Tensor::Sub<uint8_t>);
+    tensor.def("sub", &Tensor::Sub<bool>);
+    tensor.def("sub_", [](Tensor& self, const Tensor& other) {
+        return self.Sub_(other);
+    });
+    tensor.def("sub_", &Tensor::Sub_<float>);
+    tensor.def("sub_", &Tensor::Sub_<double>);
+    tensor.def("sub_", &Tensor::Sub_<int32_t>);
+    tensor.def("sub_", &Tensor::Sub_<int64_t>);
+    tensor.def("sub_", &Tensor::Sub_<uint8_t>);
+    tensor.def("sub_", &Tensor::Sub_<bool>);
+
+    tensor.def("mul", [](const Tensor& self, const Tensor& other) {
+        return self.Mul(other);
+    });
+    tensor.def("mul", &Tensor::Mul<float>);
+    tensor.def("mul", &Tensor::Mul<double>);
+    tensor.def("mul", &Tensor::Mul<int32_t>);
+    tensor.def("mul", &Tensor::Mul<int64_t>);
+    tensor.def("mul", &Tensor::Mul<uint8_t>);
+    tensor.def("mul", &Tensor::Mul<bool>);
+    tensor.def("mul_", [](Tensor& self, const Tensor& other) {
+        return self.Mul_(other);
+    });
+    tensor.def("mul_", &Tensor::Mul_<float>);
+    tensor.def("mul_", &Tensor::Mul_<double>);
+    tensor.def("mul_", &Tensor::Mul_<int32_t>);
+    tensor.def("mul_", &Tensor::Mul_<int64_t>);
+    tensor.def("mul_", &Tensor::Mul_<uint8_t>);
+    tensor.def("mul_", &Tensor::Mul_<bool>);
+
+    tensor.def("div", [](const Tensor& self, const Tensor& other) {
+        return self.Div(other);
+    });
+    tensor.def("div", &Tensor::Div<float>);
+    tensor.def("div", &Tensor::Div<double>);
+    tensor.def("div", &Tensor::Div<int32_t>);
+    tensor.def("div", &Tensor::Div<int64_t>);
+    tensor.def("div", &Tensor::Div<uint8_t>);
+    tensor.def("div", &Tensor::Div<bool>);
+    tensor.def("div_", [](Tensor& self, const Tensor& other) {
+        return self.Div_(other);
+    });
+    tensor.def("div_", &Tensor::Div_<float>);
+    tensor.def("div_", &Tensor::Div_<double>);
+    tensor.def("div_", &Tensor::Div_<int32_t>);
+    tensor.def("div_", &Tensor::Div_<int64_t>);
+    tensor.def("div_", &Tensor::Div_<uint8_t>);
+    tensor.def("div_", &Tensor::Div_<bool>);
 
     // Binary boolean element-wise ops
     tensor.def("logical_and", &Tensor::LogicalAnd);
@@ -308,5 +386,7 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("argmax_", &Tensor::ArgMax);
 
     tensor.def("__repr__",
+               [](const Tensor& tensor) { return tensor.ToString(); });
+    tensor.def("__str__",
                [](const Tensor& tensor) { return tensor.ToString(); });
 }

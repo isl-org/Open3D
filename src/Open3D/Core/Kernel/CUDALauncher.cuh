@@ -70,6 +70,9 @@ public:
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
         int64_t n = indexer.NumWorkloads();
+        if (n == 0) {
+            return;
+        }
         int64_t items_per_block = default_block_size * default_thread_size;
         int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
@@ -89,6 +92,9 @@ public:
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
         int64_t n = indexer.NumWorkloads();
+        if (n == 0) {
+            return;
+        }
         int64_t items_per_block = default_block_size * default_thread_size;
         int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
@@ -109,6 +115,9 @@ public:
         OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
         int64_t n = indexer.NumWorkloads();
+        if (n == 0) {
+            return;
+        }
         int64_t items_per_block = default_block_size * default_thread_size;
         int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 

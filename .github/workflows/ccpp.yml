@@ -1,0 +1,34 @@
+name: C/C++ CI
+
+# on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        BUILD_DEPENDENCY_FROM_SOURCE: [ON, OFF]
+        BUILD_TENSORFLOW_OPS: [ON, OFF]
+    env:
+      BUILD_DEPENDENCY_FROM_SOURCE: ${{ matrix.BUILD_DEPENDENCY_FROM_SOURCE }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_TENSORFLOW_OPS }}
+      SHARED: OFF
+      NPROC: 2
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Install Dependencies
+      run: |
+        brew update
+        brew upgrade python || true
+        ./util/scripts/install-deps-osx.sh
+    - name: Config and Build
+      run: |
+        ./util/scripts/run-travis.sh

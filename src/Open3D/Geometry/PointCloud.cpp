@@ -77,14 +77,16 @@ PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation,
     return *this;
 }
 
-PointCloud &PointCloud::Scale(const double scale, bool center) {
+PointCloud &PointCloud::Scale(const double scale,
+                              const Eigen::Vector3d &center) {
     ScalePoints(scale, points_, center);
     return *this;
 }
 
-PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R, bool center) {
+PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R,
+                               const Eigen::Vector3d &center) {
     RotatePoints(R, points_, center);
-    RotateNormals(R, normals_, center);
+    RotateNormals(R, normals_);
     return *this;
 }
 

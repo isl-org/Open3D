@@ -58,46 +58,67 @@ CreateVertexAndImageVisibility(
         const std::vector<std::shared_ptr<geometry::Image>>& images_mask,
         const camera::PinholeCameraTrajectory& camera,
         double maximum_allowable_depth,
-        double depth_threshold_for_visiblity_check) {
-    auto n_camera = camera.parameters_.size();
-    auto n_vertex = mesh.vertices_.size();
-    std::vector<std::vector<int>> visiblity_vertex_to_image;
-    std::vector<std::vector<int>> visiblity_image_to_vertex;
-    visiblity_vertex_to_image.resize(n_vertex);
-    visiblity_image_to_vertex.resize(n_camera);
+        double depth_threshold_for_visibility_check) {
+    size_t n_camera = camera.parameters_.size();
+    size_t n_vertex = mesh.vertices_.size();
+    // visibility_image_to_vertex[c]: vertices visible by camera c.
+    std::vector<std::vector<int>> visibility_image_to_vertex;
+    visibility_image_to_vertex.resize(n_camera);
+    // visibility_vertex_to_image[v]: cameras that can see vertex v.
+    std::vector<std::vector<int>> visibility_vertex_to_image;
+    visibility_vertex_to_image.resize(n_vertex);
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int c = 0; c < int(n_camera); c++) {
-        int viscnt = 0;
-        for (size_t vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
+    for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
+        for (int vertex_id = 0; vertex_id < int(n_vertex); vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
             float u, v, d;
-            std::tie(u, v, d) = Project3DPointAndGetUVDepth(X, camera, c);
+            std::tie(u, v, d) =
+                    Project3DPointAndGetUVDepth(X, camera, camera_id);
             int u_d = int(round(u)), v_d = int(round(v));
-            if (d < 0.0 || !images_depth[c]->TestImageBoundary(u_d, v_d))
+            // Skip if vertex in image boundary.
+            if (d < 0.0 ||
+                !images_depth[camera_id]->TestImageBoundary(u_d, v_d)) {
                 continue;
-            float d_sensor = *images_depth[c]->PointerAt<float>(u_d, v_d);
-            if (d_sensor > maximum_allowable_depth) continue;
-            if (*images_mask[c]->PointerAt<unsigned char>(u_d, v_d) == 255)
+            }
+            // Skip if vertex's depth is too large (e.g. background).
+            float d_sensor =
+                    *images_depth[camera_id]->PointerAt<float>(u_d, v_d);
+            if (d_sensor > maximum_allowable_depth) {
                 continue;
-            if (std::fabs(d - d_sensor) < depth_threshold_for_visiblity_check) {
+            }
+            // Check depth boundary mask. If a vertex is located at the boundary
+            // of an object, its color will be highly diverse from different
+            // viewing angles.
+            if (*images_mask[camera_id]->PointerAt<unsigned char>(u_d, v_d) ==
+                255) {
+                continue;
+            }
+            // Check depth errors.
+            if (std::fabs(d - d_sensor) >=
+                depth_threshold_for_visibility_check) {
+                continue;
+            }
+            visibility_image_to_vertex[camera_id].push_back(vertex_id);
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-                {
-                    visiblity_vertex_to_image[vertex_id].push_back(c);
-                    visiblity_image_to_vertex[c].push_back(int(vertex_id));
-                    viscnt++;
-                }
-            }
+            { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
         }
-        utility::LogDebug("[cam {:d}] {:.5f} percents are visible", c,
-                          double(viscnt) / n_vertex * 100);
-        fflush(stdout);
     }
-    return std::make_tuple(visiblity_vertex_to_image,
-                           visiblity_image_to_vertex);
+
+    for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
+        size_t n_visible_vertex = visibility_image_to_vertex[camera_id].size();
+        utility::LogDebug(
+                "[cam {:d}]: {:d}/{:d} ({:.5f}%) vertices are visible",
+                camera_id, n_visible_vertex, n_vertex,
+                double(n_visible_vertex) / n_vertex * 100);
+    }
+
+    return std::make_tuple(visibility_vertex_to_image,
+                           visibility_image_to_vertex);
 }
 
 template <typename T>
@@ -158,7 +179,7 @@ void SetProxyIntensityForVertex(
         const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const std::vector<ImageWarpingField>& warping_field,
         const camera::PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
         int image_boundary_margin) {
     auto n_vertex = mesh.vertices_.size();
@@ -170,9 +191,9 @@ void SetProxyIntensityForVertex(
     for (int i = 0; i < int(n_vertex); i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
-        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
              iter++) {
-            int j = visiblity_vertex_to_image[i][iter];
+            int j = visibility_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
@@ -193,7 +214,7 @@ void SetProxyIntensityForVertex(
         const geometry::TriangleMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const camera::PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
         int image_boundary_margin) {
     auto n_vertex = mesh.vertices_.size();
@@ -205,9 +226,9 @@ void SetProxyIntensityForVertex(
     for (int i = 0; i < int(n_vertex); i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
-        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
              iter++) {
-            int j = visiblity_vertex_to_image[i][iter];
+            int j = visibility_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
@@ -228,7 +249,7 @@ void SetGeometryColorAverage(
         geometry::TriangleMesh& mesh,
         const std::vector<std::shared_ptr<geometry::Image>>& images_color,
         const camera::PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin /*= 10*/,
         int invisible_vertex_color_knn /*= 3*/) {
     size_t n_vertex = mesh.vertices_.size();
@@ -242,9 +263,9 @@ void SetGeometryColorAverage(
     for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
-        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
              iter++) {
-            int j = visiblity_vertex_to_image[i][iter];
+            int j = visibility_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
@@ -306,7 +327,7 @@ void SetGeometryColorAverage(
         const std::vector<std::shared_ptr<geometry::Image>>& images_color,
         const std::vector<ImageWarpingField>& warping_fields,
         const camera::PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin /*= 10*/,
         int invisible_vertex_color_knn /*= 3*/) {
     size_t n_vertex = mesh.vertices_.size();
@@ -320,9 +341,9 @@ void SetGeometryColorAverage(
     for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
-        for (size_t iter = 0; iter < visiblity_vertex_to_image[i].size();
+        for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
              iter++) {
-            int j = visiblity_vertex_to_image[i][iter];
+            int j = visibility_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(

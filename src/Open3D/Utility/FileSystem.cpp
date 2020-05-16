@@ -26,12 +26,15 @@
 
 #include "Open3D/Utility/FileSystem.h"
 
+#include <fcntl.h>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 #ifdef WINDOWS
 #include <direct.h>
 #include <dirent/dirent.h>
+#include <io.h>
 #include <windows.h>
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
@@ -99,6 +102,78 @@ std::string GetWorkingDirectory() {
     return std::string(buff);
 }
 
+std::vector<std::string> GetPathComponents(const std::string &path) {
+    auto SplitByPathSeparators = [](const std::string &path) {
+        std::vector<std::string> components;
+        // Split path by '/' and '\'
+        if (!path.empty()) {
+            size_t end = 0;
+            while (end < path.size()) {
+                size_t start = end;
+                while (end < path.size() && path[end] != '\\' &&
+                       path[end] != '/') {
+                    end++;
+                }
+                if (end > start) {
+                    components.push_back(path.substr(start, end - start));
+                }
+                if (end < path.size()) {
+                    end++;
+                }
+            }
+        }
+        return components;
+    };
+
+    auto pathComponents = SplitByPathSeparators(path.c_str());
+
+    // Handle "/" and "" paths
+    if (pathComponents.empty()) {
+        if (path == "/") {
+            // absolute path; the "/" component will be added
+            // later, so don't do anything here
+        } else {
+            pathComponents.push_back(".");
+        }
+    }
+
+    char firstChar = path[0];  // '/' doesn't get stored in components
+    bool isRelative = (firstChar != '/');
+    bool isWindowsPath = false;
+    // Check for Windows full path (e.g. "d:")
+    if (isRelative && pathComponents[0].size() >= 2 &&
+        ((firstChar >= 'a' && firstChar <= 'z') ||
+         (firstChar >= 'A' && firstChar <= 'Z')) &&
+        pathComponents[0][1] == ':') {
+        isRelative = false;
+        isWindowsPath = true;
+    }
+
+    std::vector<std::string> components;
+    if (!isWindowsPath) {
+        components.push_back("/");
+    }
+    if (isRelative) {
+        auto cwd = utility::filesystem::GetWorkingDirectory();
+        auto cwdComponents = SplitByPathSeparators(cwd);
+        components.insert(components.end(), cwdComponents.begin(),
+                          cwdComponents.end());
+    } else {
+        // absolute path, don't need any prefix
+    }
+
+    for (auto &dir : pathComponents) {
+        if (dir == ".") { /* ignore */
+        } else if (dir == "..") {
+            components.pop_back();
+        } else {
+            components.push_back(dir);
+        }
+    }
+
+    return components;
+}
+
 bool ChangeWorkingDirectory(const std::string &directory) {
     return (chdir(directory.c_str()) == 0);
 }
@@ -156,8 +231,9 @@ bool RemoveFile(const std::string &filename) {
     return (std::remove(filename.c_str()) == 0);
 }
 
-bool ListFilesInDirectory(const std::string &directory,
-                          std::vector<std::string> &filenames) {
+bool ListDirectory(const std::string &directory,
+                   std::vector<std::string> &subdirs,
+                   std::vector<std::string> &filenames) {
     if (directory.empty()) {
         return false;
     }
@@ -175,10 +251,19 @@ bool ListFilesInDirectory(const std::string &directory,
         std::string full_file_name =
                 GetRegularizedDirectoryName(directory) + file_name;
         if (stat(full_file_name.c_str(), &st) == -1) continue;
-        if (S_ISREG(st.st_mode)) filenames.push_back(full_file_name);
+        if (S_ISDIR(st.st_mode))
+            subdirs.push_back(full_file_name);
+        else if (S_ISREG(st.st_mode))
+            filenames.push_back(full_file_name);
     }
     closedir(dir);
     return true;
+}
+
+bool ListFilesInDirectory(const std::string &directory,
+                          std::vector<std::string> &filenames) {
+    std::vector<std::string> subdirs;
+    return ListDirectory(directory, subdirs, filenames);
 }
 
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
@@ -216,6 +301,105 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
     fp = _wfopen(filename_w.c_str(), mode_w.c_str());
 #endif
     return fp;
+}
+
+static std::string GetIOErrorString(const int errnoVal) {
+    switch (errnoVal) {
+        case EPERM:
+            return "Operation not permitted";
+        case EACCES:
+            return "Access denied";
+        // Error below could be EWOULDBLOCK on Linux
+        case EAGAIN:
+            return "Resource unavailable, try again";
+#if !defined(WIN32)
+        case EDQUOT:
+            return "Over quota";
+#endif
+        case EEXIST:
+            return "File already exists";
+        case EFAULT:
+            return "Bad filename pointer";
+        case EINTR:
+            return "open() interrupted by a signal";
+        case EIO:
+            return "I/O error";
+        case ELOOP:
+            return "Too many symlinks, could be a loop";
+        case EMFILE:
+            return "Process is out of file descriptors";
+        case ENAMETOOLONG:
+            return "Filename is too long";
+        case ENFILE:
+            return "File system table is full";
+        case ENOENT:
+            return "No such file or directory";
+        case ENOSPC:
+            return "No space available to create file";
+        case ENOTDIR:
+            return "Bad path";
+        case EOVERFLOW:
+            return "File is too big";
+        case EROFS:
+            return "Can't modify file on read-only filesystem";
+#if EWOULDBLOCK != EAGAIN
+        case EWOULDBLOCK:
+            return "Operation would block calling process";
+#endif
+        default: {
+            std::stringstream s;
+            s << "IO error " << errnoVal << " (see sys/errno.h)";
+            return s.str();
+        }
+    }
+}
+
+bool FReadToBuffer(const std::string &path,
+                   std::vector<char> &bytes,
+                   std::string *errorStr) {
+    bytes.clear();
+    if (errorStr) {
+        errorStr->clear();
+    }
+
+    FILE *file = FOpen(path.c_str(), "rb");
+    if (!file) {
+        if (errorStr) {
+            *errorStr = GetIOErrorString(errno);
+        }
+
+        return false;
+    }
+
+    if (fseek(file, 0, SEEK_END) != 0) {
+        // We ignore that fseek will block our process
+        if (errno && errno != EWOULDBLOCK) {
+            if (errorStr) {
+                *errorStr = GetIOErrorString(errno);
+            }
+
+            fclose(file);
+            return false;
+        }
+    }
+
+    const size_t filesize = ftell(file);
+    rewind(file);  // reset file pointer back to beginning
+
+    bytes.resize(filesize);
+    const size_t result = fread(bytes.data(), 1, filesize, file);
+
+    if (result != filesize) {
+        if (errorStr) {
+            *errorStr = GetIOErrorString(errno);
+        }
+
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return true;
 }
 
 }  // namespace filesystem

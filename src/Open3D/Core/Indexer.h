@@ -44,8 +44,13 @@ class IndexerIterator;
 // Maximum number of dimensions of TensorRef.
 static constexpr int64_t MAX_DIMS = 10;
 
-// Maximum number of operands (inputs) of an op.
-static constexpr int64_t MAX_OPERANDS = 10;
+// Maximum number of inputs of an op.
+// MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
+static constexpr int64_t MAX_INPUTS = 10;
+
+// Maximum number of outputs of an op. This number can be increased when
+// necessary.
+static constexpr int64_t MAX_OUTPUTS = 2;
 
 // Fixed-size array type usable from host and device.
 template <typename T, int size>
@@ -446,10 +451,10 @@ protected:
     int64_t num_outputs_ = 0;
 
     /// Array of input TensorRefs.
-    TensorRef inputs_[MAX_OPERANDS];
+    TensorRef inputs_[MAX_INPUTS];
 
     /// Output TensorRef.
-    TensorRef outputs_[MAX_OPERANDS];
+    TensorRef outputs_[MAX_OUTPUTS];
 
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.

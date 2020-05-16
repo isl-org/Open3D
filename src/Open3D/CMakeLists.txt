@@ -14,6 +14,9 @@ add_subdirectory(Odometry)
 add_subdirectory(Registration)
 add_subdirectory(Utility)
 add_subdirectory(IO)
+if (ENABLE_GUI)
+    add_subdirectory(GUI)
+endif()
 add_subdirectory(Visualization)
 
 # Source group for Visual Studio
@@ -26,12 +29,19 @@ add_source_group(Odometry)
 add_source_group(Registration)
 add_source_group(Utility)
 add_source_group(IO)
+if (ENABLE_GUI)
+    add_source_group(GUI)
+else ()
+    # Need a GUI target so that $<TARGET_OBJECTS:GUI> below works
+    # We can't create an empty library, but Gui.cpp has no dependencies on
+    # any other files.
+    add_library(GUI OBJECT "GUI/Gui.cpp")
+endif()
 add_source_group(Visualization)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-add_library(${PROJECT_NAME}
-    Open3DConfig.h
+add_library(${CMAKE_PROJECT_NAME}
     Open3DConfig.cpp
     $<TARGET_OBJECTS:Camera>
     $<TARGET_OBJECTS:ColorMap>
@@ -42,6 +52,7 @@ add_library(${PROJECT_NAME}
     $<TARGET_OBJECTS:Registration>
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
+    $<TARGET_OBJECTS:GUI>
     $<TARGET_OBJECTS:Visualization>
 )
 open3d_show_and_abort_on_warning(${PROJECT_NAME})
@@ -93,4 +104,4 @@ if (NOT TARGET uninstall)
 
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif()
+endif ()

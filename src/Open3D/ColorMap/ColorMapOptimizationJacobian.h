@@ -65,7 +65,7 @@ public:
             const std::shared_ptr<geometry::Image>& images_dy,
             const Eigen::Matrix4d& intrinsic,
             const Eigen::Matrix4d& extrinsic,
-            const std::vector<int>& visiblity_image_to_vertex,
+            const std::vector<int>& visibility_image_to_vertex,
             const int image_boundary_margin);
 
     /// Function to compute i-th row of J and r
@@ -86,7 +86,7 @@ public:
             const ImageWarpingField& warping_fields_init,
             const Eigen::Matrix4d& intrinsic,
             const Eigen::Matrix4d& extrinsic,
-            const std::vector<int>& visiblity_image_to_vertex,
+            const std::vector<int>& visibility_image_to_vertex,
             const int image_boundary_margin);
 };
 }  // namespace color_map

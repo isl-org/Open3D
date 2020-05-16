@@ -145,6 +145,37 @@ public:
         return *this;
     }
 
+    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
+    /// casted to the Tensor's dtype.
+    template <typename T>
+    void Fill(T v);
+
+    /// Create a tensor with uninitilized values.
+    static Tensor Empty(const SizeVector& shape,
+                        Dtype dtype,
+                        const Device& device = Device("CPU:0"));
+
+    /// Create a tensor fill with specified value.
+    template <typename T>
+    static Tensor Full(const SizeVector& shape,
+                       T fill_value,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0")) {
+        Tensor t = Empty(shape, dtype, device);
+        t.Fill(fill_value);
+        return t;
+    }
+
+    /// Create a tensor fill with zeros.
+    static Tensor Zeros(const SizeVector& shape,
+                        Dtype dtype,
+                        const Device& device = Device("CPU:0"));
+
+    /// Create a tensor fill with ones.
+    static Tensor Ones(const SizeVector& shape,
+                       Dtype dtype,
+                       const Device& device = Device("CPU:0"));
+
     /// Pythonic __getitem__ for tensor.
     ///
     /// Returns a view of the original tensor, if TensorKey is
@@ -232,18 +263,6 @@ public:
     /// change. Slices of the original Tensor still keeps the original memory.
     /// After assignment, the Tensor will be contiguous.
     void Assign(const Tensor& other);
-
-    /// \brief Fill the whole Tensor with a scalar value, the scalar will be
-    /// casted to the Tensor's dtype.
-    template <typename T>
-    void Fill(const T& v) {
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
-            scalar_t casted_v = static_cast<scalar_t>(v);
-            Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
-                       GetDtype(), GetDevice());
-            AsRvalue() = tmp;
-        });
-    }
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
@@ -381,39 +400,103 @@ public:
 
     /// Adds a tensor and returns the resulting tensor.
     Tensor Add(const Tensor& value) const;
+    template <typename T>
+    Tensor Add(T scalar_value) const {
+        return Add(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator+(const Tensor& value) const { return Add(value); }
+    template <typename T>
+    Tensor operator+(T scalar_value) const {
+        return Add(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Inplace version of Tensor::Add. Adds a tensor to the current tensor and
     /// returns the current tensor.
     Tensor Add_(const Tensor& value);
+    template <typename T>
+    Tensor Add_(T scalar_value) {
+        return Add_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator+=(const Tensor& value) { return Add_(value); }
+    template <typename T>
+    Tensor operator+=(T scalar_value) {
+        return Add_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Substracts a tensor and returns the resulting tensor.
     Tensor Sub(const Tensor& value) const;
+    template <typename T>
+    Tensor Sub(T scalar_value) const {
+        return Sub(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator-(const Tensor& value) const { return Sub(value); }
+    template <typename T>
+    Tensor operator-(T scalar_value) const {
+        return Sub(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Inplace version of Tensor::Sub. Substracts a tensor to the current
     /// tensor and returns the current tensor.
     Tensor Sub_(const Tensor& value);
+    template <typename T>
+    Tensor Sub_(T scalar_value) {
+        return Sub_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator-=(const Tensor& value) { return Sub_(value); }
+    template <typename T>
+    Tensor operator-=(T scalar_value) {
+        return Sub_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Multiplies a tensor and returns the resulting tensor.
     Tensor Mul(const Tensor& value) const;
+    template <typename T>
+    Tensor Mul(T scalar_value) const {
+        return Mul(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator*(const Tensor& value) const { return Mul(value); }
+    template <typename T>
+    Tensor operator*(T scalar_value) const {
+        return Mul(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Inplace version of Tensor::Mul. Multiplies a tensor to the current
     /// tensor and returns the current tensor.
     Tensor Mul_(const Tensor& value);
+    template <typename T>
+    Tensor Mul_(T scalar_value) {
+        return Mul_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator*=(const Tensor& value) { return Mul_(value); }
+    template <typename T>
+    Tensor operator*=(T scalar_value) {
+        return Mul_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Divides a tensor and returns the resulting tensor.
     Tensor Div(const Tensor& value) const;
+    template <typename T>
+    Tensor Div(T scalar_value) const {
+        return Div(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator/(const Tensor& value) const { return Div(value); }
+    template <typename T>
+    Tensor operator/(T scalar_value) const {
+        return Div(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Inplace version of Tensor::Div. Divides a tensor to the current
     /// tensor and returns the current tensor.
     Tensor Div_(const Tensor& value);
+    template <typename T>
+    Tensor Div_(T scalar_value) {
+        return Div_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
     Tensor operator/=(const Tensor& value) { return Div_(value); }
+    template <typename T>
+    Tensor operator/=(T scalar_value) {
+        return Div_(Tensor::Full({}, scalar_value, dtype_, GetDevice()));
+    }
 
     /// Returns the sum of the tensor along the given \p dims.
     /// \param dims A list of dimensions to be reduced.
@@ -762,6 +845,36 @@ inline std::vector<bool> Tensor::ToFlatVector() const {
             values_uchar.begin(), values_uchar.end(), values.begin(),
             [](unsigned char v) -> bool { return static_cast<bool>(v); });
     return values;
+}
+
+template <typename Scalar>
+inline void Tensor::Fill(Scalar v) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(GetDtype(), [&]() {
+        scalar_t casted_v = static_cast<scalar_t>(v);
+        Tensor tmp(std::vector<scalar_t>({casted_v}), SizeVector({}),
+                   GetDtype(), GetDevice());
+        AsRvalue() = tmp;
+    });
+}
+
+template <typename T>
+inline Tensor operator+(T scalar_lhs, const Tensor& rhs) {
+    return rhs + scalar_lhs;
+}
+
+template <typename T>
+inline Tensor operator-(T scalar_lhs, const Tensor& rhs) {
+    return Tensor::Full({}, scalar_lhs, rhs.GetDtype(), rhs.GetDevice()) - rhs;
+}
+
+template <typename T>
+inline Tensor operator*(T scalar_lhs, const Tensor& rhs) {
+    return rhs * scalar_lhs;
+}
+
+template <typename T>
+inline Tensor operator/(T scalar_lhs, const Tensor& rhs) {
+    return Tensor::Full({}, scalar_lhs, rhs.GetDtype(), rhs.GetDevice()) / rhs;
 }
 
 }  // namespace open3d

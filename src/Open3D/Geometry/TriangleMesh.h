@@ -70,7 +70,7 @@ public:
     virtual TriangleMesh &Transform(
             const Eigen::Matrix4d &transformation) override;
     virtual TriangleMesh &Rotate(const Eigen::Matrix3d &R,
-                                 bool center = true) override;
+                                 const Eigen::Vector3d &center) override;
 
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
@@ -103,6 +103,8 @@ public:
                 [](bool a, const Image &b) { return a && !b.IsEmpty(); });
         return !textures_.empty() && is_all_texture_valid;
     }
+
+    bool HasMaterials() const { return !materials_.empty(); }
 
     bool HasTriangleMaterialIds() const {
         return HasTriangles() &&
@@ -738,6 +740,88 @@ public:
     std::vector<std::unordered_set<int>> adjacency_list_;
     /// List of uv coordinates per triangle.
     std::vector<Eigen::Vector2d> triangle_uvs_;
+
+    struct Material {
+        struct MaterialParameter {
+            union {
+                float f4[4] = {0};
+                float f3[3];
+                float f2[2];
+                float f;
+
+                float x, y, z, w;
+                float r, g, b, a;
+            };
+
+            MaterialParameter() {
+                f4[0] = 0;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            MaterialParameter(const float v1,
+                              const float v2,
+                              const float v3,
+                              const float v4) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = v4;
+            }
+
+            MaterialParameter(const float v1, const float v2, const float v3) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = v3;
+                f4[3] = 1;
+            }
+
+            MaterialParameter(const float v1, const float v2) {
+                f4[0] = v1;
+                f4[1] = v2;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            explicit MaterialParameter(const float v1) {
+                f4[0] = v1;
+                f4[1] = 0;
+                f4[2] = 0;
+                f4[3] = 0;
+            }
+
+            static MaterialParameter CreateRGB(const float r,
+                                               const float g,
+                                               const float b) {
+                return {r, g, b, 1.f};
+            }
+        };
+
+        MaterialParameter baseColor;
+        float baseMetallic = 0.f;
+        float baseRoughness = 1.f;
+        float baseReflectance = 0.5f;
+        float baseClearCoat = 0.f;
+        float baseClearCoatRoughness = 0.f;
+        float baseAnisotropy = 0.f;
+
+        std::shared_ptr<Image> albedo;
+        std::shared_ptr<Image> normalMap;
+        std::shared_ptr<Image> ambientOcclusion;
+        std::shared_ptr<Image> metallic;
+        std::shared_ptr<Image> roughness;
+        std::shared_ptr<Image> reflectance;
+        std::shared_ptr<Image> clearCoat;
+        std::shared_ptr<Image> clearCoatRoughness;
+        std::shared_ptr<Image> anisotropy;
+
+        std::unordered_map<std::string, MaterialParameter> floatParameters;
+        std::unordered_map<std::string, Image> additionalMaps;
+    };
+
+    std::unordered_map<std::string, Material> materials_;
+
     /// List of material ids.
     std::vector<int> triangle_material_ids_;
     /// Textures of the image.

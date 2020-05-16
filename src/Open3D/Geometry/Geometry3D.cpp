@@ -123,31 +123,22 @@ void Geometry3D::TranslatePoints(const Eigen::Vector3d& translation,
 
 void Geometry3D::ScalePoints(const double scale,
                              std::vector<Eigen::Vector3d>& points,
-                             bool center) const {
-    Eigen::Vector3d points_center(0, 0, 0);
-    if (center && !points.empty()) {
-        points_center = ComputeCenter(points);
-    }
+                             const Eigen::Vector3d& center) const {
     for (auto& point : points) {
-        point = (point - points_center) * scale + points_center;
+        point = (point - center) * scale + center;
     }
 }
 
 void Geometry3D::RotatePoints(const Eigen::Matrix3d& R,
                               std::vector<Eigen::Vector3d>& points,
-                              bool center) const {
-    Eigen::Vector3d points_center(0, 0, 0);
-    if (center && !points.empty()) {
-        points_center = ComputeCenter(points);
-    }
+                              const Eigen::Vector3d& center) const {
     for (auto& point : points) {
-        point = R * (point - points_center) + points_center;
+        point = R * (point - center) + center;
     }
 }
 
 void Geometry3D::RotateNormals(const Eigen::Matrix3d& R,
-                               std::vector<Eigen::Vector3d>& normals,
-                               bool center) const {
+                               std::vector<Eigen::Vector3d>& normals) const {
     for (auto& normal : normals) {
         normal = R * normal;
     }
