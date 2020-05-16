@@ -178,30 +178,31 @@ void BinaryEWCPU(const Tensor& lhs,
                  BinaryEWOpCode op_code) {
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
-    Indexer indexer({lhs, rhs}, dst, DtypePolicy::ASSERT_SAME_OR_BOOL_OUT);
 
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            if (src_dtype == dst_dtype) {
+            if (dst_dtype == src_dtype) {
                 // Inplace boolean op's output type is the same as the
                 // input. e.g. np.logical_and(a, b, out=a), where a, b are
                 // floats.
+                Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
                 LaunchBoolBinaryEWCPUKernel<scalar_t, scalar_t>(
                         lhs, rhs, dst, op_code, indexer);
-            } else {
+            } else if (dst_dtype == Dtype::Bool) {
                 // By default, output is boolean type.
-                if (dst_dtype != Dtype::Bool) {
-                    utility::LogError(
-                            "Boolean op's output type must be boolean or the "
-                            "same type as the input.");
-                }
+                Indexer indexer({lhs, rhs}, dst,
+                                DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
                 LaunchBoolBinaryEWCPUKernel<scalar_t, bool>(lhs, rhs, dst,
                                                             op_code, indexer);
+            } else {
+                utility::LogError(
+                        "Boolean op's output type must be boolean or the "
+                        "same type as the input.");
             }
-
         });
     } else {
+        Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case BinaryEWOpCode::Add:

@@ -911,4 +911,15 @@ Tensor Tensor::Ne_(const Tensor& value) {
     return *this;
 }
 
+std::vector<Tensor> Tensor::NonZeroNumpy() const {
+    Tensor result = kernel::NonZero(*this);
+    std::vector<Tensor> results;
+    for (int64_t dim = 0; dim < NumDims(); dim++) {
+        results.push_back(result[dim].Copy(GetDevice()));
+    }
+    return results;
+}
+
+Tensor Tensor::NonZero() const { return kernel::NonZero(*this); }
+
 }  // namespace open3d

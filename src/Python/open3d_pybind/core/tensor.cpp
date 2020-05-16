@@ -377,6 +377,10 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
 
+    // Boolean find
+    tensor.def("_non_zero", &Tensor::NonZero);
+    tensor.def("_non_zero_numpy", &Tensor::NonZeroNumpy);
+
     // Reduction ops
     tensor.def("sum", &Tensor::Sum);
     tensor.def("prod", &Tensor::Prod);
