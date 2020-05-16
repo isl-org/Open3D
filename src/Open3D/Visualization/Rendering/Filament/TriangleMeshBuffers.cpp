@@ -394,10 +394,9 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
                 "first.");
     }
 
-    // We default to using vertex color attribute for all geometries, even if
-    // a geometry doesn't have one. That's all due to our default material and
-    // large variety of geometries it should support
-    const bool has_colors = true;  // geometry_.HasVertexColors();
+    // NOTE: Both default lit and unlit material shaders require per-vertex
+    // colors so we unconditionally assume the triangle mesh has color.
+    const bool has_colors = true;
     const bool has_uvs = geometry_.HasTriangleUvs();
 
     // We take ownership of vbdata.bytes and ibdata.bytes here.
@@ -419,7 +418,7 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     VertexBuffer* vbuf = nullptr;
     if (has_uvs) {
         stride = sizeof(TexturedVertex);
-    } else if (has_colors) {
+    } else {
         stride = sizeof(ColoredVertex);
     }
 
