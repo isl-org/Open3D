@@ -1066,7 +1066,7 @@ void ReductionCUDA(const Tensor& src,
                     re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                    -> scalar_t { return a > b ? a : b; },
                            static_cast<scalar_t>(
-                                   std::numeric_limits<scalar_t>::min()));
+                                   std::numeric_limits<scalar_t>::lowest()));
                 }
                 break;
             case ReductionOpCode::ArgMin:
@@ -1088,7 +1088,7 @@ void ReductionCUDA(const Tensor& src,
                     re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                    -> bool { return a > b; },
                            static_cast<scalar_t>(
-                                   std::numeric_limits<scalar_t>::min()));
+                                   std::numeric_limits<scalar_t>::lowest()));
                 }
                 break;
             default:
