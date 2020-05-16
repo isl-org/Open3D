@@ -1031,14 +1031,15 @@ GuiVisualizer::GuiVisualizer(
     auto &settings = impl_->settings_;
     std::string rsrc_path = app.GetResourcePath();
     auto ibl_path = rsrc_path + "/default_ibl.ktx";
-    settings.ibl =
-            GetRenderer().AddIndirectLight(ResourceLoadRequest(ibl_path.data()));
+    settings.ibl = GetRenderer().AddIndirectLight(
+            ResourceLoadRequest(ibl_path.data()));
     render_scene->SetIndirectLight(settings.ibl);
     render_scene->SetIndirectLightIntensity(lighting_profile.ibl_intensity);
     render_scene->SetIndirectLightRotation(lighting_profile.ibl_rotation);
 
     auto sky_path = rsrc_path + "/" + DEFAULT_IBL + "_skybox.ktx";
-    settings.sky = GetRenderer().AddSkybox(ResourceLoadRequest(sky_path.data()));
+    settings.sky =
+            GetRenderer().AddSkybox(ResourceLoadRequest(sky_path.data()));
     scene->SetSkyboxHandle(settings.sky, DEFAULT_SHOW_SKYBOX);
 
     // Create materials
@@ -1161,7 +1162,8 @@ GuiVisualizer::GuiVisualizer(
                 g_lighting_profiles[i].name.c_str());
     }
     settings.wgt_lighting_profile->AddItem("Custom");
-    settings.wgt_lighting_profile->SetSelectedIndex(default_lighting_profile_idx);
+    settings.wgt_lighting_profile->SetSelectedIndex(
+            default_lighting_profile_idx);
     settings.wgt_lighting_profile->SetOnValueChanged(
             [this](const char *, int index) {
                 if (index < int(g_lighting_profiles.size())) {
@@ -1285,7 +1287,7 @@ GuiVisualizer::GuiVisualizer(
     auto SetSunDir = [this, render_scene](const Eigen::Vector3f &dir) {
         this->impl_->settings_.wgt_sun_dir->SetValue(dir);
         render_scene->SetLightDirection(impl_->settings_.directional_light,
-                                       dir.normalized());
+                                        dir.normalized());
         this->impl_->settings_.SetCustomProfile();
     };
 
@@ -1597,7 +1599,8 @@ void GuiVisualizer::SetGeometry(
             geometry::Geometry::GeometryType::PointCloud) {
             desc.point_clouds.push_back(handle);
             auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
-            if (num_point_cloud_points > MIN_POINT_CLOUD_POINTS_FOR_DECIMATION) {
+            if (num_point_cloud_points >
+                MIN_POINT_CLOUD_POINTS_FOR_DECIMATION) {
                 int sample_rate = num_point_cloud_points /
                                   (MIN_POINT_CLOUD_POINTS_FOR_DECIMATION / 2);
                 auto small = pcd->UniformDownSample(sample_rate);
@@ -1672,7 +1675,8 @@ void GuiVisualizer::Layout(const gui::Theme &theme) {
     auto light_settings_size =
             impl_->settings_.wgt_base->CalcPreferredSize(theme);
     gui::Rect lightSettingsRect(r.width - LIGHT_SETTINGS_WIDTH, r.y,
-                                LIGHT_SETTINGS_WIDTH, light_settings_size.height);
+                                LIGHT_SETTINGS_WIDTH,
+                                light_settings_size.height);
     impl_->settings_.wgt_base->SetFrame(lightSettingsRect);
 
     Super::Layout(theme);

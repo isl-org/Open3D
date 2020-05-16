@@ -88,7 +88,7 @@ Size ListView::CalcPreferredSize(const Theme &theme) const {
 
     for (auto &item : impl_->items_) {
         auto item_size = font->CalcTextSizeA(theme.font_size, Widget::DIM_GROW,
-                                            0.0, item.c_str());
+                                             0.0, item.c_str());
         size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }

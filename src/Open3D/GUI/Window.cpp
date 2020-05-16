@@ -240,7 +240,8 @@ Window::Window(const std::string& title,
     impl_->theme_.default_layout_spacing *= scaling;
 
     auto& engine = visualization::EngineInstance::GetInstance();
-    auto& resource_manager = visualization::EngineInstance::GetResourceManager();
+    auto& resource_manager =
+            visualization::EngineInstance::GetResourceManager();
 
     impl_->renderer_ = std::make_unique<visualization::FilamentRenderer>(
             engine, GetNativeDrawable(), resource_manager);
@@ -513,8 +514,8 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     }
     w = std::min(w, int(std::round(0.8 * win_size.width)));
     h = std::min(h, int(std::round(0.8 * win_size.height)));
-    dlg->SetFrame(
-            gui::Rect((win_size.width - w) / 2, (win_size.height - h) / 2, w, h));
+    dlg->SetFrame(gui::Rect((win_size.width - w) / 2, (win_size.height - h) / 2,
+                            w, h));
     dlg->Layout(GetTheme());
 }
 

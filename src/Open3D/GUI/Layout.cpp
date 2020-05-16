@@ -88,7 +88,7 @@ std::vector<int> CalcMajor(const Theme& theme,
 }
 
 std::vector<std::vector<std::shared_ptr<Widget>>> CalcColumns(
-    int num_cols, const std::vector<std::shared_ptr<Widget>>& children) {
+        int num_cols, const std::vector<std::shared_ptr<Widget>>& children) {
     std::vector<std::vector<std::shared_ptr<Widget>>> columns(num_cols);
     int col = 0;
     for (auto& child : children) {
@@ -358,9 +358,10 @@ Size CollapsableVert::CalcPreferredSize(const Theme& theme) const {
     auto padding = ImGui::GetStyle().FramePadding;
     int text_height =
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y);
-    int text_width = std::ceil(font->CalcTextSizeA(theme.font_size, FLT_MAX,
-                                                   FLT_MAX, impl_->text_.c_str())
-                                      .x);
+    int text_width =
+            std::ceil(font->CalcTextSizeA(theme.font_size, FLT_MAX, FLT_MAX,
+                                          impl_->text_.c_str())
+                              .x);
 
     auto pref = Super::CalcPreferredSize(theme);
     if (!impl_->is_open_) {
@@ -512,7 +513,8 @@ void VGrid::Layout(const Theme& theme) {
         }
     }
     if (wanted_width > layout_width && num_growing > 0) {
-        int growing_size = (layout_width - total_not_growing_width) / num_growing;
+        int growing_size =
+                (layout_width - total_not_growing_width) / num_growing;
         if (growing_size < 0) {
             growing_size = layout_width / num_growing;
         }
