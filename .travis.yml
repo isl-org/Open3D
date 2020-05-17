@@ -51,6 +51,7 @@ matrix:
             - doxygen
             - texlive
             - texlive-latex-extra
+            - ghostscript
             - pandoc
             - libosmesa6-dev
       install:
