@@ -28,9 +28,13 @@
 
 #include "open3d_pybind/open3d_pybind.h"
 
+namespace open3d {
+
 void pybind_registration(py::module &m);
 
 void pybind_feature(py::module &m);
 void pybind_feature_methods(py::module &m);
 void pybind_global_optimization(py::module &m);
 void pybind_global_optimization_methods(py::module &m);
+
+}  // namespace open3d

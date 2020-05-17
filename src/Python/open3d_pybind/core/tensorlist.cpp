@@ -39,7 +39,8 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 #include "open3d_pybind/pybind_utils.h"
-using namespace open3d;
+
+namespace open3d {
 
 void pybind_core_tensorlist(py::module& m) {
     py::class_<TensorList> tensorlist(
@@ -91,3 +92,5 @@ void pybind_core_tensorlist(py::module& m) {
                             return TensorList::Concatenate(tl_a, tl_b);
                         });
 }
+
+}  // namespace open3d

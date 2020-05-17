@@ -27,8 +27,6 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-using namespace open3d;
-
 namespace pybind11 {
 
 template <typename Vector,
@@ -323,6 +321,8 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
 
 }  // unnamed namespace
 
+namespace open3d {
+
 void pybind_eigen(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
     intvector.attr("__doc__") = docstring::static_property(
@@ -448,3 +448,5 @@ Example usage
             }),
             py::none(), py::none(), "");
 }
+
+}  // namespace open3d

@@ -31,7 +31,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_meshbase(py::module &m) {
     py::class_<geometry::MeshBase, PyGeometry3D<geometry::MeshBase>,
@@ -124,3 +124,5 @@ void pybind_meshbase(py::module &m) {
 }
 
 void pybind_meshbase_methods(py::module &m) {}
+
+}  // namespace open3d

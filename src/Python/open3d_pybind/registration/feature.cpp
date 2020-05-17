@@ -30,7 +30,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/registration/registration.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_feature(py::module &m) {
     // open3d.registration.Feature
@@ -71,3 +71,5 @@ void pybind_feature_methods(py::module &m) {
             {{"input", "The Input point cloud."},
              {"search_param", "KDTree KNN search parameter."}});
 }
+
+}  // namespace open3d

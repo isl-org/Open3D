@@ -31,7 +31,7 @@
 #include "open3d_pybind/visualization/visualization.h"
 #include "open3d_pybind/visualization/visualization_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_renderoption(py::module &m) {
     // open3d.visualization.RenderOption
@@ -173,3 +173,5 @@ void pybind_renderoption(py::module &m) {
 }
 
 void pybind_renderoption_method(py::module &m) {}
+
+}  // namespace open3d

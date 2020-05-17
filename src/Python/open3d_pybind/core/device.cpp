@@ -30,7 +30,7 @@
 
 #include "Open3D/Core/Device.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_core_device(py::module &m) {
     py::class_<Device> device(
@@ -52,3 +52,4 @@ void pybind_core_device(py::module &m) {
             .value("CUDA", Device::DeviceType::CUDA)
             .export_values();
 }
+}  // namespace open3d

@@ -30,7 +30,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_boundingvolume(py::module &m) {
     py::class_<geometry::OrientedBoundingBox,
@@ -174,3 +174,5 @@ void pybind_boundingvolume(py::module &m) {
                                     "create_from_points",
                                     {{"points", "A list of points."}});
 }
+
+}  // namespace open3d

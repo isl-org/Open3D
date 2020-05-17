@@ -36,6 +36,8 @@
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 #include "open3d_pybind/geometry/octree.h"
 
+namespace open3d {
+
 static const std::unordered_map<std::string, std::string>
         map_octree_argument_docstrings = {
                 {"origin", "Origin coordinates."},
@@ -265,3 +267,5 @@ void pybind_octree(py::module &m) {
 }
 
 void pybind_octree_methods(py::module &m) {}
+
+}  // namespace open3d

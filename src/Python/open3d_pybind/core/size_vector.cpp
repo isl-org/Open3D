@@ -30,7 +30,7 @@
 
 #include "Open3D/Core/SizeVector.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_core_size_vector(py::module &m) {
     py::class_<SizeVector> size_vector(m, "SizeVector",
@@ -57,3 +57,5 @@ void pybind_core_size_vector(py::module &m) {
                         return src == dst;
                     });
 }
+
+}  // namespace open3d

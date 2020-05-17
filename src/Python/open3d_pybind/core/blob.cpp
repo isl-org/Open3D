@@ -30,8 +30,10 @@
 
 #include "Open3D/Core/Blob.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_core_blob(py::module &m) {
     py::class_<Blob, std::shared_ptr<Blob>> blob(m, "Blob");
 }
+
+}  // namespace open3d
