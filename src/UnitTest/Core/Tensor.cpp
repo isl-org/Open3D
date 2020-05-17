@@ -2295,7 +2295,7 @@ TEST_P(TensorPermuteDevices, ReduceMean) {
     src = Tensor::Ones({2, 3}, Dtype::Int64, device);
     EXPECT_THROW(src.Mean({}), std::runtime_error);
 
-    // Input shape {2, 3}.
+    // Input shape {2, 3}, not keepdim.
     src = Tensor(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
                  device);
     dst = src.Mean({}, false);
@@ -2309,20 +2309,47 @@ TEST_P(TensorPermuteDevices, ReduceMean) {
     EXPECT_EQ(dst.GetShape(), SizeVector({2}));
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1, 4}));
 
-    // Input shape {}, one element.
+    // Input shape {2, 3}, keepdim.
+    src = Tensor(std::vector<float>({0, 1, 2, 3, 4, 5}), {2, 3}, Dtype::Float32,
+                 device);
+    dst = src.Mean({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(),
+              std::vector<float>({0, 1, 2, 3, 4, 5}));
+    dst = src.Mean({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 3}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1.5, 2.5, 3.5}));
+    dst = src.Mean({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({2, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1, 4}));
+
+    // Input shape {}, one element, not keepdim.
     src = Tensor::Ones({}, Dtype::Float32, device);
     dst = src.Mean({}, false);
     EXPECT_EQ(dst.GetShape(), SizeVector({}));
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1}));
+    EXPECT_THROW(src.Mean({0}, false), std::runtime_error);
+
+    // Input shape {}, one element, keepdim.
+    src = Tensor::Ones({}, Dtype::Float32, device);
+    dst = src.Mean({}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({1}));
     EXPECT_THROW(src.Mean({0}, true), std::runtime_error);
 
-    // Input shape {0}
+    // Input shape {0}, not keepdim.
     src = Tensor::Ones({0}, Dtype::Float32, device);
     dst = src.Mean({0}, false);
     EXPECT_EQ(dst.GetShape(), SizeVector({}));  // 1D becomes 0D.
     EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
 
-    // Input shape {0, 2}
+    // Input shape {0}, keepdim.
+    src = Tensor::Ones({0}, Dtype::Float32, device);
+    dst = src.Mean({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1}));  // 1D, filled with identity.
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+
+    // Input shape {0, 2}, not keepdim.
     src = Tensor::Ones({0, 2}, Dtype::Float32, device);
     dst = src.Mean({0}, false);
     EXPECT_EQ(dst.GetShape(), SizeVector({2}));
@@ -2333,5 +2360,18 @@ TEST_P(TensorPermuteDevices, ReduceMean) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
     dst = src.Mean({0, 1}, false);
     EXPECT_EQ(dst.GetShape(), SizeVector({}));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+
+    // Input shape {0, 2}, keepdim.
+    src = Tensor::Ones({0, 2}, Dtype::Float32, device);
+    dst = src.Mean({0}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 2}));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
+    EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[1]));
+    dst = src.Mean({1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({0, 1}));
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({}));
+    dst = src.Mean({0, 1}, true);
+    EXPECT_EQ(dst.GetShape(), SizeVector({1, 1}));
     EXPECT_TRUE(std::isnan(dst.ToFlatVector<float>()[0]));
 }
