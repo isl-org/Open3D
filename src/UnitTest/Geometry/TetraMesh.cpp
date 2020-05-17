@@ -31,7 +31,6 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
-using namespace open3d;
 using namespace std;
 
 namespace open3d {

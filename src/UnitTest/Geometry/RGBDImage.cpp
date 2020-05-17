@@ -30,7 +30,6 @@
 #include "Open3D/Geometry/RGBDImage.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
 using namespace std;
 
 namespace open3d {

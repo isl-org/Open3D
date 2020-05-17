@@ -35,9 +35,6 @@
 #include "Open3D/Visualization/Utility/DrawGeometry.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace unit_test;
-
 namespace open3d {
 namespace unit_test {
 

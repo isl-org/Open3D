@@ -27,8 +27,6 @@
 #include "Open3D/Utility/Console.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-
 namespace open3d {
 namespace unit_test {
 

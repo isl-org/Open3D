@@ -30,7 +30,6 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
-using namespace open3d;
 
 namespace open3d {
 namespace unit_test {
