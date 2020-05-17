@@ -29,8 +29,6 @@
 #include "Open3D/Camera/PinholeCameraTrajectory.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-
 namespace open3d {
 namespace unit_test {
 
@@ -48,10 +46,10 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
         camera::PinholeCameraIntrinsic intrinsic;
         intrinsic.width_ = width;
         intrinsic.height_ = height;
-        intrinsic.intrinsic_matrix_ = Matrix3d::Random();
+        intrinsic.intrinsic_matrix_ = Eigen::Matrix3d::Random();
 
         src.parameters_[i].intrinsic_ = intrinsic;
-        src.parameters_[i].extrinsic_ = Matrix4d::Random();
+        src.parameters_[i].extrinsic_ = Eigen::Matrix4d::Random();
     }
 
     Json::Value value;

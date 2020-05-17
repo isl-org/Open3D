@@ -29,8 +29,6 @@
 #include "Open3D/Geometry/PointCloud.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-
 namespace open3d {
 namespace unit_test {
 
@@ -77,11 +75,11 @@ TEST(TriangleMesh, DISABLED_MemberData) { NotImplemented(); }
 TEST(TriangleMesh, Clear) {
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm;
 
@@ -99,8 +97,9 @@ TEST(TriangleMesh, Clear) {
 
     EXPECT_FALSE(tm.IsEmpty());
 
-    ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
+    ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+             tm.GetMaxBound());
 
     EXPECT_TRUE(tm.HasVertices());
     EXPECT_TRUE(tm.HasVertexNormals());
@@ -138,40 +137,41 @@ TEST(TriangleMesh, IsEmpty) {
 TEST(TriangleMesh, GetMinBound) {
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
 }
 
 TEST(TriangleMesh, GetMaxBound) {
     int size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
     Rand(tm.vertices_, dmin, dmax, 0);
 
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
+    ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+             tm.GetMaxBound());
 }
 
 TEST(TriangleMesh, Transform) {
-    std::vector<Vector3d> ref_vertices = {
+    std::vector<Eigen::Vector3d> ref_vertices = {
             {1.411252, 4.274168, 3.130918}, {1.231757, 4.154505, 3.183678},
             {1.403168, 4.268779, 2.121679}, {1.456767, 4.304511, 2.640845},
             {1.620902, 4.413935, 1.851255}, {1.374684, 4.249790, 3.062485},
             {1.328160, 4.218773, 1.795728}, {1.713446, 4.475631, 1.860145},
             {1.409239, 4.272826, 2.011462}, {1.480169, 4.320113, 1.177780}};
 
-    std::vector<Vector3d> ref_vertex_normals = {
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {
             {396.470588, 1201.176471, 880.352941},
             {320.392157, 1081.176471, 829.019608},
             {268.627451, 817.647059, 406.666667},
@@ -183,7 +183,7 @@ TEST(TriangleMesh, Transform) {
             {134.117647, 407.058824, 191.882353},
             {274.509804, 801.568627, 218.627451}};
 
-    std::vector<Vector3d> ref_triangle_normals = {
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {
             {396.470588, 1201.176471, 880.352941},
             {320.392157, 1081.176471, 829.019608},
             {268.627451, 817.647059, 406.666667},
@@ -197,8 +197,8 @@ TEST(TriangleMesh, Transform) {
 
     int size = 10;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     geometry::TriangleMesh tm;
 
@@ -210,7 +210,7 @@ TEST(TriangleMesh, Transform) {
     Rand(tm.vertex_normals_, dmin, dmax, 0);
     Rand(tm.triangle_normals_, dmin, dmax, 0);
 
-    Matrix4d transformation;
+    Eigen::Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90,
             0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16;
 
@@ -224,11 +224,11 @@ TEST(TriangleMesh, Transform) {
 TEST(TriangleMesh, OperatorAppend) {
     size_t size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm0;
     geometry::TriangleMesh tm1;
@@ -282,9 +282,9 @@ TEST(TriangleMesh, OperatorAppend) {
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
-        ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
-                          tm1.triangles_[i](1, 0) + size,
-                          tm1.triangles_[i](2, 0) + size),
+        ExpectEQ(Eigen::Vector3i(tm1.triangles_[i](0, 0) + size,
+                                 tm1.triangles_[i](1, 0) + size,
+                                 tm1.triangles_[i](2, 0) + size),
                  tm.triangles_[i + size]);
     }
 
@@ -298,11 +298,11 @@ TEST(TriangleMesh, OperatorAppend) {
 TEST(TriangleMesh, OperatorADD) {
     size_t size = 100;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm0;
     geometry::TriangleMesh tm1;
@@ -355,9 +355,9 @@ TEST(TriangleMesh, OperatorADD) {
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
-        ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
-                          tm1.triangles_[i](1, 0) + size,
-                          tm1.triangles_[i](2, 0) + size),
+        ExpectEQ(Eigen::Vector3i(tm1.triangles_[i](0, 0) + size,
+                                 tm1.triangles_[i](1, 0) + size,
+                                 tm1.triangles_[i](2, 0) + size),
                  tm.triangles_[i + size]);
     }
 
@@ -369,39 +369,39 @@ TEST(TriangleMesh, OperatorADD) {
 }
 
 TEST(TriangleMesh, ComputeTriangleNormals) {
-    std::vector<Vector3d> ref = {{-0.119231, 0.738792, 0.663303},
-                                 {-0.115181, 0.730934, 0.672658},
-                                 {-0.589738, -0.764139, -0.261344},
-                                 {-0.330250, 0.897644, -0.291839},
-                                 {-0.164192, 0.976753, 0.137819},
-                                 {-0.475702, 0.727947, 0.493762},
-                                 {0.990884, -0.017339, -0.133596},
-                                 {0.991673, 0.091418, -0.090700},
-                                 {0.722410, 0.154580, -0.673965},
-                                 {0.598552, -0.312929, -0.737435},
-                                 {0.712875, -0.628251, -0.311624},
-                                 {0.233815, -0.638800, -0.732984},
-                                 {0.494773, -0.472428, -0.729391},
-                                 {0.583861, 0.796905, 0.155075},
-                                 {-0.277650, -0.948722, -0.151119},
-                                 {-0.791337, 0.093176, 0.604238},
-                                 {0.569287, 0.158108, 0.806793},
-                                 {0.115315, 0.914284, 0.388314},
-                                 {0.105421, 0.835841, -0.538754},
-                                 {0.473326, 0.691900, -0.545195},
-                                 {0.719515, 0.684421, -0.117757},
-                                 {-0.713642, -0.691534, -0.111785},
-                                 {-0.085377, -0.916925, 0.389820},
-                                 {0.787892, 0.611808, -0.070127},
-                                 {0.788022, 0.488544, 0.374628}};
+    std::vector<Eigen::Vector3d> ref = {{-0.119231, 0.738792, 0.663303},
+                                        {-0.115181, 0.730934, 0.672658},
+                                        {-0.589738, -0.764139, -0.261344},
+                                        {-0.330250, 0.897644, -0.291839},
+                                        {-0.164192, 0.976753, 0.137819},
+                                        {-0.475702, 0.727947, 0.493762},
+                                        {0.990884, -0.017339, -0.133596},
+                                        {0.991673, 0.091418, -0.090700},
+                                        {0.722410, 0.154580, -0.673965},
+                                        {0.598552, -0.312929, -0.737435},
+                                        {0.712875, -0.628251, -0.311624},
+                                        {0.233815, -0.638800, -0.732984},
+                                        {0.494773, -0.472428, -0.729391},
+                                        {0.583861, 0.796905, 0.155075},
+                                        {-0.277650, -0.948722, -0.151119},
+                                        {-0.791337, 0.093176, 0.604238},
+                                        {0.569287, 0.158108, 0.806793},
+                                        {0.115315, 0.914284, 0.388314},
+                                        {0.105421, 0.835841, -0.538754},
+                                        {0.473326, 0.691900, -0.545195},
+                                        {0.719515, 0.684421, -0.117757},
+                                        {-0.713642, -0.691534, -0.111785},
+                                        {-0.085377, -0.916925, 0.389820},
+                                        {0.787892, 0.611808, -0.070127},
+                                        {0.788022, 0.488544, 0.374628}};
 
     size_t size = 25;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm;
 
@@ -409,7 +409,8 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
     Rand(tm.vertices_, dmin, dmax, 0);
 
     for (size_t i = 0; i < size; i++)
-        tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
+        tm.triangles_.push_back(
+                Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeTriangleNormals();
 
@@ -417,7 +418,7 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
 }
 
 TEST(TriangleMesh, ComputeVertexNormals) {
-    std::vector<Vector3d> ref = {
+    std::vector<Eigen::Vector3d> ref = {
             {0.635868, 0.698804, 0.327636},    {0.327685, 0.717012, 0.615237},
             {-0.346072, 0.615418, 0.708163},   {-0.690485, 0.663544, 0.287992},
             {-0.406664, 0.913428, -0.016549},  {-0.356568, 0.888296, 0.289466},
@@ -434,11 +435,11 @@ TEST(TriangleMesh, ComputeVertexNormals) {
 
     size_t size = 25;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm;
 
@@ -446,7 +447,8 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     Rand(tm.vertices_, dmin, dmax, 0);
 
     for (size_t i = 0; i < size; i++)
-        tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
+        tm.triangles_.push_back(
+                Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeVertexNormals();
 
@@ -485,32 +487,7 @@ TEST(TriangleMesh, ComputeAdjacencyList) {
 }
 
 TEST(TriangleMesh, Purge) {
-    std::vector<Vector3d> ref_vertices = {{839.215686, 392.156863, 780.392157},
-                                          {796.078431, 909.803922, 196.078431},
-                                          {333.333333, 764.705882, 274.509804},
-                                          {552.941176, 474.509804, 627.450980},
-                                          {364.705882, 509.803922, 949.019608},
-                                          {913.725490, 635.294118, 713.725490},
-                                          {141.176471, 603.921569, 15.686275},
-                                          {239.215686, 133.333333, 803.921569},
-                                          {152.941176, 400.000000, 129.411765},
-                                          {105.882353, 996.078431, 215.686275},
-                                          {509.803922, 835.294118, 611.764706},
-                                          {294.117647, 635.294118, 521.568627},
-                                          {490.196078, 972.549020, 290.196078},
-                                          {768.627451, 525.490196, 768.627451},
-                                          {400.000000, 890.196078, 282.352941},
-                                          {349.019608, 803.921569, 917.647059},
-                                          {66.666667, 949.019608, 525.490196},
-                                          {82.352941, 192.156863, 662.745098},
-                                          {890.196078, 345.098039, 62.745098},
-                                          {19.607843, 454.901961, 62.745098},
-                                          {235.294118, 968.627451, 901.960784},
-                                          {847.058824, 262.745098, 537.254902},
-                                          {372.549020, 756.862745, 509.803922},
-                                          {666.666667, 529.411765, 39.215686}};
-
-    std::vector<Vector3d> ref_vertex_normals = {
+    std::vector<Eigen::Vector3d> ref_vertices = {
             {839.215686, 392.156863, 780.392157},
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
@@ -536,7 +513,7 @@ TEST(TriangleMesh, Purge) {
             {372.549020, 756.862745, 509.803922},
             {666.666667, 529.411765, 39.215686}};
 
-    std::vector<Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {
             {839.215686, 392.156863, 780.392157},
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
@@ -562,14 +539,40 @@ TEST(TriangleMesh, Purge) {
             {372.549020, 756.862745, 509.803922},
             {666.666667, 529.411765, 39.215686}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
+            {839.215686, 392.156863, 780.392157},
+            {796.078431, 909.803922, 196.078431},
+            {333.333333, 764.705882, 274.509804},
+            {552.941176, 474.509804, 627.450980},
+            {364.705882, 509.803922, 949.019608},
+            {913.725490, 635.294118, 713.725490},
+            {141.176471, 603.921569, 15.686275},
+            {239.215686, 133.333333, 803.921569},
+            {152.941176, 400.000000, 129.411765},
+            {105.882353, 996.078431, 215.686275},
+            {509.803922, 835.294118, 611.764706},
+            {294.117647, 635.294118, 521.568627},
+            {490.196078, 972.549020, 290.196078},
+            {768.627451, 525.490196, 768.627451},
+            {400.000000, 890.196078, 282.352941},
+            {349.019608, 803.921569, 917.647059},
+            {66.666667, 949.019608, 525.490196},
+            {82.352941, 192.156863, 662.745098},
+            {890.196078, 345.098039, 62.745098},
+            {19.607843, 454.901961, 62.745098},
+            {235.294118, 968.627451, 901.960784},
+            {847.058824, 262.745098, 537.254902},
+            {372.549020, 756.862745, 509.803922},
+            {666.666667, 529.411765, 39.215686}};
+
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {20, 9, 18},  {19, 21, 4}, {8, 18, 6}, {13, 11, 15}, {8, 12, 22},
             {21, 15, 17}, {3, 14, 0},  {5, 3, 19}, {2, 23, 5},   {12, 20, 14},
             {7, 15, 12},  {11, 23, 6}, {9, 21, 6}, {8, 19, 22},  {1, 22, 12},
             {1, 4, 15},   {21, 8, 1},  {0, 10, 1}, {5, 23, 21},  {20, 6, 12},
             {8, 18, 12},  {16, 12, 0}};
 
-    std::vector<Vector3d> ref_triangle_normals = {
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {
             {839.215686, 392.156863, 780.392157},
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
@@ -595,11 +598,11 @@ TEST(TriangleMesh, Purge) {
 
     int size = 25;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm0;
     geometry::TriangleMesh tm1;
@@ -699,8 +702,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
     EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
 
-    std::vector<Vector3d> vertices = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
-    std::vector<Vector3i> triangles = {{0, 1, 2}};
+    std::vector<Eigen::Vector3d> vertices = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
+    std::vector<Eigen::Vector3i> triangles = {{0, 1, 2}};
 
     auto mesh_simple = geometry::TriangleMesh();
     mesh_simple.vertices_ = vertices;
@@ -712,8 +715,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     EXPECT_TRUE(pcd_simple->colors_.size() == 0);
     EXPECT_TRUE(pcd_simple->normals_.size() == 0);
 
-    std::vector<Vector3d> colors = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
-    std::vector<Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
+    std::vector<Eigen::Vector3d> colors = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
+    std::vector<Eigen::Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
     mesh_simple.vertex_colors_ = colors;
     mesh_simple.vertex_normals_ = normals;
     pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
@@ -722,8 +725,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
 
     for (size_t pidx = 0; pidx < n_points; ++pidx) {
-        ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
-        ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 1, 0));
+        ExpectEQ(pcd_simple->colors_[pidx], Eigen::Vector3d(1, 0, 0));
+        ExpectEQ(pcd_simple->normals_[pidx], Eigen::Vector3d(0, 1, 0));
     }
 
     // use triangle normal instead of the vertex normals
@@ -736,8 +739,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
 
     for (size_t pidx = 0; pidx < n_points; ++pidx) {
-        ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
-        ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 0, 1));
+        ExpectEQ(pcd_simple->colors_[pidx], Eigen::Vector3d(1, 0, 0));
+        ExpectEQ(pcd_simple->normals_[pidx], Eigen::Vector3d(0, 0, 1));
     }
 
     // use triangle normal, this time the mesh has no vertex normals
@@ -748,8 +751,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
 
     for (size_t pidx = 0; pidx < n_points; ++pidx) {
-        ExpectEQ(pcd_simple->colors_[pidx], Vector3d(1, 0, 0));
-        ExpectEQ(pcd_simple->normals_[pidx], Vector3d(0, 0, 1));
+        ExpectEQ(pcd_simple->colors_[pidx], Eigen::Vector3d(1, 0, 0));
+        ExpectEQ(pcd_simple->normals_[pidx], Eigen::Vector3d(0, 0, 1));
     }
 }
 
@@ -901,7 +904,7 @@ TEST(TriangleMesh, HasTriangleNormals) {
 }
 
 TEST(TriangleMesh, NormalizeNormals) {
-    std::vector<Vector3d> ref_vertex_normals = {
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {
             {0.692861, 0.323767, 0.644296}, {0.650010, 0.742869, 0.160101},
             {0.379563, 0.870761, 0.312581}, {0.575046, 0.493479, 0.652534},
             {0.320665, 0.448241, 0.834418}, {0.691127, 0.480526, 0.539850},
@@ -916,7 +919,7 @@ TEST(TriangleMesh, NormalizeNormals) {
             {0.377967, 0.767871, 0.517219}, {0.782281, 0.621223, 0.046017},
             {0.314385, 0.671253, 0.671253}};
 
-    std::vector<Vector3d> ref_triangle_normals = {
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {
             {0.331843, 0.660368, 0.673642}, {0.920309, 0.198342, 0.337182},
             {0.778098, 0.279317, 0.562624}, {0.547237, 0.723619, 0.420604},
             {0.360898, 0.671826, 0.646841}, {0.657733, 0.738934, 0.146163},
@@ -933,8 +936,8 @@ TEST(TriangleMesh, NormalizeNormals) {
 
     int size = 25;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
 
     geometry::TriangleMesh tm;
 
@@ -952,15 +955,15 @@ TEST(TriangleMesh, NormalizeNormals) {
 TEST(TriangleMesh, PaintUniformColor) {
     int size = 25;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
 
     geometry::TriangleMesh tm;
 
     tm.vertices_.resize(size);
     tm.vertex_colors_.resize(size);
 
-    Vector3d color(233. / 255., 171. / 255., 53.0 / 255.);
+    Eigen::Vector3d color(233. / 255., 171. / 255., 53.0 / 255.);
     tm.PaintUniformColor(color);
 
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
@@ -1433,33 +1436,34 @@ TEST(TriangleMesh, DeformAsRigidAsPossible) {
 }
 
 TEST(TriangleMesh, SelectByIndex) {
-    std::vector<Vector3d> ref_vertices = {{349.019608, 803.921569, 917.647059},
-                                          {439.215686, 117.647059, 588.235294},
-                                          {290.196078, 356.862745, 874.509804},
-                                          {258.823529, 647.058824, 549.019608},
-                                          {764.705882, 333.333333, 533.333333},
-                                          {886.274510, 945.098039, 54.901961},
-                                          {600.000000, 129.411765, 78.431373},
-                                          {529.411765, 454.901961, 639.215686},
-                                          {39.215686, 435.294118, 929.411765},
-                                          {90.196078, 133.333333, 517.647059},
-                                          {588.235294, 576.470588, 529.411765},
-                                          {866.666667, 545.098039, 737.254902},
-                                          {447.058824, 486.274510, 792.156863},
-                                          {90.196078, 960.784314, 866.666667},
-                                          {47.058824, 525.490196, 176.470588},
-                                          {831.372549, 713.725490, 631.372549},
-                                          {811.764706, 682.352941, 909.803922},
-                                          {39.215686, 411.764706, 694.117647},
-                                          {913.725490, 858.823529, 200.000000},
-                                          {647.058824, 360.784314, 286.274510},
-                                          {635.294118, 984.313725, 337.254902},
-                                          {360.784314, 717.647059, 800.000000},
-                                          {811.764706, 752.941176, 352.941176},
-                                          {341.176471, 47.058824, 764.705882},
-                                          {945.098039, 98.039216, 274.509804}};
+    std::vector<Eigen::Vector3d> ref_vertices = {
+            {349.019608, 803.921569, 917.647059},
+            {439.215686, 117.647059, 588.235294},
+            {290.196078, 356.862745, 874.509804},
+            {258.823529, 647.058824, 549.019608},
+            {764.705882, 333.333333, 533.333333},
+            {886.274510, 945.098039, 54.901961},
+            {600.000000, 129.411765, 78.431373},
+            {529.411765, 454.901961, 639.215686},
+            {39.215686, 435.294118, 929.411765},
+            {90.196078, 133.333333, 517.647059},
+            {588.235294, 576.470588, 529.411765},
+            {866.666667, 545.098039, 737.254902},
+            {447.058824, 486.274510, 792.156863},
+            {90.196078, 960.784314, 866.666667},
+            {47.058824, 525.490196, 176.470588},
+            {831.372549, 713.725490, 631.372549},
+            {811.764706, 682.352941, 909.803922},
+            {39.215686, 411.764706, 694.117647},
+            {913.725490, 858.823529, 200.000000},
+            {647.058824, 360.784314, 286.274510},
+            {635.294118, 984.313725, 337.254902},
+            {360.784314, 717.647059, 800.000000},
+            {811.764706, 752.941176, 352.941176},
+            {341.176471, 47.058824, 764.705882},
+            {945.098039, 98.039216, 274.509804}};
 
-    std::vector<Vector3d> ref_vertex_normals = {
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {
             {803.921569, 917.647059, 66.666667},
             {117.647059, 588.235294, 576.470588},
             {356.862745, 874.509804, 341.176471},
@@ -1486,7 +1490,7 @@ TEST(TriangleMesh, SelectByIndex) {
             {47.058824, 764.705882, 800.000000},
             {98.039216, 274.509804, 239.215686}};
 
-    std::vector<Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
             {654.901961, 439.215686, 396.078431},
             {94.117647, 945.098039, 274.509804},
             {125.490196, 82.352941, 784.313725},
@@ -1513,14 +1517,14 @@ TEST(TriangleMesh, SelectByIndex) {
             {337.254902, 133.333333, 3.921569},
             {764.705882, 533.333333, 474.509804}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {19, 7, 12},  {8, 23, 2},  {6, 14, 24},  {16, 0, 20},  {22, 17, 10},
             {11, 15, 13}, {21, 19, 7}, {12, 8, 23},  {2, 5, 3},    {4, 6, 14},
             {24, 16, 0},  {9, 22, 17}, {10, 11, 15}, {3, 8, 10},   {7, 12, 8},
             {23, 2, 5},   {18, 4, 6},  {14, 24, 16}, {12, 10, 23}, {17, 10, 11},
             {15, 13, 1}};
 
-    std::vector<Vector3d> ref_triangle_normals = {
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {
             {909.803922, 274.509804, 364.705882},
             {635.294118, 15.686275, 152.941176},
             {262.745098, 156.862745, 207.843137},
@@ -1545,11 +1549,11 @@ TEST(TriangleMesh, SelectByIndex) {
 
     int size = 1000;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm;
 
@@ -1578,14 +1582,15 @@ TEST(TriangleMesh, SelectByIndex) {
 }
 
 TEST(TriangleMesh, CropTriangleMesh) {
-    std::vector<Vector3d> ref_vertices = {{615.686275, 639.215686, 517.647059},
-                                          {615.686275, 760.784314, 772.549020},
-                                          {678.431373, 643.137255, 443.137255},
-                                          {345.098039, 529.411765, 454.901961},
-                                          {360.784314, 576.470588, 592.156863},
-                                          {317.647059, 666.666667, 525.490196}};
+    std::vector<Eigen::Vector3d> ref_vertices = {
+            {615.686275, 639.215686, 517.647059},
+            {615.686275, 760.784314, 772.549020},
+            {678.431373, 643.137255, 443.137255},
+            {345.098039, 529.411765, 454.901961},
+            {360.784314, 576.470588, 592.156863},
+            {317.647059, 666.666667, 525.490196}};
 
-    std::vector<Vector3d> ref_vertex_normals = {
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {
             {639.215686, 517.647059, 400.000000},
             {760.784314, 772.549020, 282.352941},
             {643.137255, 443.137255, 266.666667},
@@ -1593,7 +1598,7 @@ TEST(TriangleMesh, CropTriangleMesh) {
             {576.470588, 592.156863, 662.745098},
             {666.666667, 525.490196, 847.058824}};
 
-    std::vector<Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
             {647.058824, 325.490196, 603.921569},
             {941.176471, 121.568627, 513.725490},
             {807.843137, 309.803922, 3.921569},
@@ -1601,19 +1606,19 @@ TEST(TriangleMesh, CropTriangleMesh) {
             {576.470588, 698.039216, 831.372549},
             {854.901961, 341.176471, 878.431373}};
 
-    std::vector<Vector3i> ref_triangles = {{1, 0, 3}, {5, 2, 4}};
+    std::vector<Eigen::Vector3i> ref_triangles = {{1, 0, 3}, {5, 2, 4}};
 
-    std::vector<Vector3d> ref_triangle_normals = {
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {
             {125.490196, 160.784314, 913.725490},
             {764.705882, 901.960784, 807.843137}};
 
     int size = 1000;
 
-    Vector3d dmin(0.0, 0.0, 0.0);
-    Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Vector3i imin(0, 0, 0);
-    Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
     geometry::TriangleMesh tm;
 
@@ -1629,8 +1634,8 @@ TEST(TriangleMesh, CropTriangleMesh) {
     Rand(tm.triangles_, imin, imax, 3);
     Rand(tm.triangle_normals_, dmin, dmax, 4);
 
-    Vector3d cropBoundMin(300.0, 300.0, 300.0);
-    Vector3d cropBoundMax(800.0, 800.0, 800.0);
+    Eigen::Vector3d cropBoundMin(300.0, 300.0, 300.0);
+    Eigen::Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
     auto output_tm = tm.Crop(
             geometry::AxisAlignedBoundingBox(cropBoundMin, cropBoundMax));
@@ -1902,50 +1907,51 @@ TEST(TriangleMesh, CreateFromPointCloudAlphaShape) {
 }
 
 TEST(TriangleMesh, CreateMeshSphere) {
-    std::vector<Vector3d> ref_vertices = {{0.000000, 0.000000, 1.000000},
-                                          {0.000000, 0.000000, -1.000000},
-                                          {0.587785, 0.000000, 0.809017},
-                                          {0.475528, 0.345492, 0.809017},
-                                          {0.181636, 0.559017, 0.809017},
-                                          {-0.181636, 0.559017, 0.809017},
-                                          {-0.475528, 0.345492, 0.809017},
-                                          {-0.587785, 0.000000, 0.809017},
-                                          {-0.475528, -0.345492, 0.809017},
-                                          {-0.181636, -0.559017, 0.809017},
-                                          {0.181636, -0.559017, 0.809017},
-                                          {0.475528, -0.345492, 0.809017},
-                                          {0.951057, 0.000000, 0.309017},
-                                          {0.769421, 0.559017, 0.309017},
-                                          {0.293893, 0.904508, 0.309017},
-                                          {-0.293893, 0.904508, 0.309017},
-                                          {-0.769421, 0.559017, 0.309017},
-                                          {-0.951057, 0.000000, 0.309017},
-                                          {-0.769421, -0.559017, 0.309017},
-                                          {-0.293893, -0.904508, 0.309017},
-                                          {0.293893, -0.904508, 0.309017},
-                                          {0.769421, -0.559017, 0.309017},
-                                          {0.951057, 0.000000, -0.309017},
-                                          {0.769421, 0.559017, -0.309017},
-                                          {0.293893, 0.904508, -0.309017},
-                                          {-0.293893, 0.904508, -0.309017},
-                                          {-0.769421, 0.559017, -0.309017},
-                                          {-0.951057, 0.000000, -0.309017},
-                                          {-0.769421, -0.559017, -0.309017},
-                                          {-0.293893, -0.904508, -0.309017},
-                                          {0.293893, -0.904508, -0.309017},
-                                          {0.769421, -0.559017, -0.309017},
-                                          {0.587785, 0.000000, -0.809017},
-                                          {0.475528, 0.345492, -0.809017},
-                                          {0.181636, 0.559017, -0.809017},
-                                          {-0.181636, 0.559017, -0.809017},
-                                          {-0.475528, 0.345492, -0.809017},
-                                          {-0.587785, 0.000000, -0.809017},
-                                          {-0.475528, -0.345492, -0.809017},
-                                          {-0.181636, -0.559017, -0.809017},
-                                          {0.181636, -0.559017, -0.809017},
-                                          {0.475528, -0.345492, -0.809017}};
+    std::vector<Eigen::Vector3d> ref_vertices = {
+            {0.000000, 0.000000, 1.000000},
+            {0.000000, 0.000000, -1.000000},
+            {0.587785, 0.000000, 0.809017},
+            {0.475528, 0.345492, 0.809017},
+            {0.181636, 0.559017, 0.809017},
+            {-0.181636, 0.559017, 0.809017},
+            {-0.475528, 0.345492, 0.809017},
+            {-0.587785, 0.000000, 0.809017},
+            {-0.475528, -0.345492, 0.809017},
+            {-0.181636, -0.559017, 0.809017},
+            {0.181636, -0.559017, 0.809017},
+            {0.475528, -0.345492, 0.809017},
+            {0.951057, 0.000000, 0.309017},
+            {0.769421, 0.559017, 0.309017},
+            {0.293893, 0.904508, 0.309017},
+            {-0.293893, 0.904508, 0.309017},
+            {-0.769421, 0.559017, 0.309017},
+            {-0.951057, 0.000000, 0.309017},
+            {-0.769421, -0.559017, 0.309017},
+            {-0.293893, -0.904508, 0.309017},
+            {0.293893, -0.904508, 0.309017},
+            {0.769421, -0.559017, 0.309017},
+            {0.951057, 0.000000, -0.309017},
+            {0.769421, 0.559017, -0.309017},
+            {0.293893, 0.904508, -0.309017},
+            {-0.293893, 0.904508, -0.309017},
+            {-0.769421, 0.559017, -0.309017},
+            {-0.951057, 0.000000, -0.309017},
+            {-0.769421, -0.559017, -0.309017},
+            {-0.293893, -0.904508, -0.309017},
+            {0.293893, -0.904508, -0.309017},
+            {0.769421, -0.559017, -0.309017},
+            {0.587785, 0.000000, -0.809017},
+            {0.475528, 0.345492, -0.809017},
+            {0.181636, 0.559017, -0.809017},
+            {-0.181636, 0.559017, -0.809017},
+            {-0.475528, 0.345492, -0.809017},
+            {-0.587785, 0.000000, -0.809017},
+            {-0.475528, -0.345492, -0.809017},
+            {-0.181636, -0.559017, -0.809017},
+            {0.181636, -0.559017, -0.809017},
+            {0.475528, -0.345492, -0.809017}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {0, 2, 3},    {1, 33, 32},  {0, 3, 4},    {1, 34, 33},
             {0, 4, 5},    {1, 35, 34},  {0, 5, 6},    {1, 36, 35},
             {0, 6, 7},    {1, 37, 36},  {0, 7, 8},    {1, 38, 37},
@@ -1974,35 +1980,36 @@ TEST(TriangleMesh, CreateMeshSphere) {
 }
 
 TEST(TriangleMesh, CreateMeshCylinder) {
-    std::vector<Vector3d> ref_vertices = {{0.000000, 0.000000, 1.000000},
-                                          {0.000000, 0.000000, -1.000000},
-                                          {1.000000, 0.000000, 1.000000},
-                                          {0.309017, 0.951057, 1.000000},
-                                          {-0.809017, 0.587785, 1.000000},
-                                          {-0.809017, -0.587785, 1.000000},
-                                          {0.309017, -0.951057, 1.000000},
-                                          {1.000000, 0.000000, 0.500000},
-                                          {0.309017, 0.951057, 0.500000},
-                                          {-0.809017, 0.587785, 0.500000},
-                                          {-0.809017, -0.587785, 0.500000},
-                                          {0.309017, -0.951057, 0.500000},
-                                          {1.000000, 0.000000, 0.000000},
-                                          {0.309017, 0.951057, 0.000000},
-                                          {-0.809017, 0.587785, 0.000000},
-                                          {-0.809017, -0.587785, 0.000000},
-                                          {0.309017, -0.951057, 0.000000},
-                                          {1.000000, 0.000000, -0.500000},
-                                          {0.309017, 0.951057, -0.500000},
-                                          {-0.809017, 0.587785, -0.500000},
-                                          {-0.809017, -0.587785, -0.500000},
-                                          {0.309017, -0.951057, -0.500000},
-                                          {1.000000, 0.000000, -1.000000},
-                                          {0.309017, 0.951057, -1.000000},
-                                          {-0.809017, 0.587785, -1.000000},
-                                          {-0.809017, -0.587785, -1.000000},
-                                          {0.309017, -0.951057, -1.000000}};
+    std::vector<Eigen::Vector3d> ref_vertices = {
+            {0.000000, 0.000000, 1.000000},
+            {0.000000, 0.000000, -1.000000},
+            {1.000000, 0.000000, 1.000000},
+            {0.309017, 0.951057, 1.000000},
+            {-0.809017, 0.587785, 1.000000},
+            {-0.809017, -0.587785, 1.000000},
+            {0.309017, -0.951057, 1.000000},
+            {1.000000, 0.000000, 0.500000},
+            {0.309017, 0.951057, 0.500000},
+            {-0.809017, 0.587785, 0.500000},
+            {-0.809017, -0.587785, 0.500000},
+            {0.309017, -0.951057, 0.500000},
+            {1.000000, 0.000000, 0.000000},
+            {0.309017, 0.951057, 0.000000},
+            {-0.809017, 0.587785, 0.000000},
+            {-0.809017, -0.587785, 0.000000},
+            {0.309017, -0.951057, 0.000000},
+            {1.000000, 0.000000, -0.500000},
+            {0.309017, 0.951057, -0.500000},
+            {-0.809017, 0.587785, -0.500000},
+            {-0.809017, -0.587785, -0.500000},
+            {0.309017, -0.951057, -0.500000},
+            {1.000000, 0.000000, -1.000000},
+            {0.309017, 0.951057, -1.000000},
+            {-0.809017, 0.587785, -1.000000},
+            {-0.809017, -0.587785, -1.000000},
+            {0.309017, -0.951057, -1.000000}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {0, 2, 3},    {1, 23, 22},  {0, 3, 4},    {1, 24, 23},
             {0, 4, 5},    {1, 25, 24},  {0, 5, 6},    {1, 26, 25},
             {0, 6, 2},    {1, 22, 26},  {7, 3, 2},    {7, 8, 3},
@@ -2024,13 +2031,13 @@ TEST(TriangleMesh, CreateMeshCylinder) {
 }
 
 TEST(TriangleMesh, CreateMeshCone) {
-    std::vector<Vector3d> ref_vertices = {
+    std::vector<Eigen::Vector3d> ref_vertices = {
             {0.000000, 0.000000, 0.000000},  {0.000000, 0.000000, 2.000000},
             {1.000000, 0.000000, 0.000000},  {0.309017, 0.951057, 0.000000},
             {-0.809017, 0.587785, 0.000000}, {-0.809017, -0.587785, 0.000000},
             {0.309017, -0.951057, 0.000000}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {0, 3, 2}, {1, 2, 3}, {0, 4, 3}, {1, 3, 4}, {0, 5, 4},
             {1, 4, 5}, {0, 6, 5}, {1, 5, 6}, {0, 2, 6}, {1, 6, 2}};
 
@@ -2041,7 +2048,7 @@ TEST(TriangleMesh, CreateMeshCone) {
 }
 
 TEST(TriangleMesh, CreateMeshArrow) {
-    std::vector<Vector3d> ref_vertices = {
+    std::vector<Eigen::Vector3d> ref_vertices = {
             {0.000000, 0.000000, 2.000000},   {0.000000, 0.000000, 0.000000},
             {1.000000, 0.000000, 2.000000},   {0.309017, 0.951057, 2.000000},
             {-0.809017, 0.587785, 2.000000},  {-0.809017, -0.587785, 2.000000},
@@ -2060,7 +2067,7 @@ TEST(TriangleMesh, CreateMeshArrow) {
             {0.463525, 1.426585, 2.000000},   {-1.213525, 0.881678, 2.000000},
             {-1.213525, -0.881678, 2.000000}, {0.463525, -1.426585, 2.000000}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {0, 2, 3},    {1, 23, 22},  {0, 3, 4},    {1, 24, 23},
             {0, 4, 5},    {1, 25, 24},  {0, 5, 6},    {1, 26, 25},
             {0, 6, 2},    {1, 22, 26},  {7, 3, 2},    {7, 8, 3},
@@ -2084,7 +2091,7 @@ TEST(TriangleMesh, CreateMeshArrow) {
 }
 
 TEST(TriangleMesh, CreateMeshCoordinateFrame) {
-    std::vector<Vector3d> ref_vertices = {
+    std::vector<Eigen::Vector3d> ref_vertices = {
             {0, 0, 0.006},
             {0.000938607, 0, 0.00592613},
             {0.000927051, 0.00014683, 0.00592613},
@@ -2110,7 +2117,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
             {-0.0033287, -0.00108156, 0.06},
             {-0.0035, 4.28626e-19, 0.04}};
 
-    std::vector<Vector3d> ref_vertex_normals = {
+    std::vector<Eigen::Vector3d> ref_vertex_normals = {
             {0.000000, 0.000000, 1.000000},   {0.182067, -0.006090, 0.983267},
             {0.180778, 0.022466, 0.983267},   {-0.005496, -0.461174, 0.887292},
             {0.066715, -0.456356, 0.887292},  {-0.004990, -0.592357, 0.805660},
@@ -2124,7 +2131,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
             {0.000000, 0.000000, 1.000000},   {-1.000000, 0.000000, 0.000000},
             {-0.951057, -0.309017, 0.000000}, {-1.000000, 0.000000, 0.000000}};
 
-    std::vector<Vector3d> ref_vertex_colors = {
+    std::vector<Eigen::Vector3d> ref_vertex_colors = {
             {0.500000, 0.500000, 0.500000}, {0.500000, 0.500000, 0.500000},
             {0.500000, 0.500000, 0.500000}, {0.500000, 0.500000, 0.500000},
             {0.500000, 0.500000, 0.500000}, {0.500000, 0.500000, 0.500000},
@@ -2138,11 +2145,11 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
             {0.000000, 1.000000, 0.000000}, {0.000000, 0.000000, 1.000000},
             {0.000000, 0.000000, 1.000000}, {0.000000, 0.000000, 1.000000}};
 
-    std::vector<Vector3i> ref_triangles = {
+    std::vector<Eigen::Vector3i> ref_triangles = {
             {0, 1, 2},    {5, 4, 3},    {8, 7, 6},    {11, 10, 9},
             {14, 13, 12}, {17, 16, 15}, {20, 19, 18}, {23, 22, 21}};
 
-    std::vector<Vector3d> ref_triangle_normals = {
+    std::vector<Eigen::Vector3d> ref_triangle_normals = {
             {0.078458, 0.006175, 0.996898},   {0.041087, -0.522057, 0.851920},
             {-0.921447, -0.072519, 0.381676}, {-0.076304, 0.969535, -0.232765},
             {0.648601, 0.051046, -0.759415},  {0.018369, -0.233406, -0.972206},

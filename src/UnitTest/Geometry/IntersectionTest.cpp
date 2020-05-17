@@ -28,8 +28,6 @@
 #include "TestUtility/Raw.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-
 namespace open3d {
 namespace unit_test {
 

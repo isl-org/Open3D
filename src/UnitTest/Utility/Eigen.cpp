@@ -27,45 +27,44 @@
 #include "Open3D/Utility/Eigen.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-
 namespace open3d {
 namespace unit_test {
 
 TEST(Eigen, TransformVector6dToMatrix4d) {
-    Matrix4d ref_matrix4d;
+    Eigen::Matrix4d ref_matrix4d;
     ref_matrix4d << 0.829278, -0.425147, 0.362696, 0.666667, 0.453036, 0.891445,
             0.009104, 0.833333, -0.327195, 0.156765, 0.931863, 1.000000,
             0.000000, 0.000000, 0.000000, 1.000000;
 
-    Vector6d vector6d = Vector6d::Zero();
+    Eigen::Vector6d vector6d = Eigen::Vector6d::Zero();
 
     ExpectEQ(Zero6d, vector6d);
 
     for (int i = 0; i < 6; i++) vector6d(i, 0) = (i + 1) / 6.0;
 
-    Matrix4d matrix4d = utility::TransformVector6dToMatrix4d(vector6d);
+    Eigen::Matrix4d matrix4d = utility::TransformVector6dToMatrix4d(vector6d);
 
     ExpectEQ(ref_matrix4d, matrix4d);
 }
 
 TEST(Eigen, TransformMatrix4dToVector6d) {
-    Matrix4d ref_matrix4d;
+    Eigen::Matrix4d ref_matrix4d;
     ref_matrix4d << 0.829278, -0.425147, 0.362696, 0.666667, 0.453036, 0.891445,
             0.009104, 0.833333, -0.327195, 0.156765, 0.931863, 1.000000,
             0.000000, 0.000000, 0.000000, 1.000000;
 
-    Vector6d vector6d = utility::TransformMatrix4dToVector6d(ref_matrix4d);
+    Eigen::Vector6d vector6d =
+            utility::TransformMatrix4dToVector6d(ref_matrix4d);
 
     for (int i = 0; i < 6; i++)
         EXPECT_NEAR((i + 1) / 6.0, vector6d(i, 0), THRESHOLD_1E_6);
 }
 
 TEST(Eigen, SolveLinearSystemPSD) {
-    Matrix3d A;
-    Vector3d b;
-    Vector3d x;
-    Vector3d x_ref;
+    Eigen::Matrix3d A;
+    Eigen::Vector3d b;
+    Eigen::Vector3d x;
+    Eigen::Vector3d x_ref;
     bool status = false;
 
     // API: SolveLinearSystemPSD(A, b, prefer_sparse,
@@ -115,64 +114,64 @@ TEST(Eigen, SolveLinearSystemPSD) {
 }
 
 TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix) {
-    Matrix6d JTJ = Matrix6d::Random();
+    Eigen::Matrix6d JTJ = Eigen::Matrix6d::Random();
 
     // make sure JTJ is positive semi-definite
     JTJ = JTJ.transpose() * JTJ;
 
     // make sure det(JTJ) != 0
-    JTJ = JTJ + Matrix6d::Identity();
+    JTJ = JTJ + Eigen::Matrix6d::Identity();
 
     bool status = false;
-    Matrix4d result;
+    Eigen::Matrix4d result;
 
     int loops = 10000;
     srand((unsigned int)time(0));
     for (int i = 0; i < loops; i++) {
-        Vector6d x = Vector6d::Random();
+        Eigen::Vector6d x = Eigen::Vector6d::Random();
 
-        Vector6d JTr = JTJ * x;
+        Eigen::Vector6d JTr = JTJ * x;
 
         std::tie(status, result) =
                 utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, -JTr);
 
-        Vector6d r = utility::TransformMatrix4dToVector6d(result);
+        Eigen::Vector6d r = utility::TransformMatrix4dToVector6d(result);
 
         ExpectEQ(r, x);
     }
 }
 
 TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
-    Matrix6d JTJ = Matrix6d::Random();
+    Eigen::Matrix6d JTJ = Eigen::Matrix6d::Random();
 
     // make sure JTJ is positive semi-definite
     JTJ = JTJ.transpose() * JTJ;
 
     // make sure det(JTJ) != 0
-    JTJ = JTJ + Matrix6d::Identity();
+    JTJ = JTJ + Eigen::Matrix6d::Identity();
 
     bool status = false;
-    std::vector<Matrix4d, utility::Matrix4d_allocator> result;
+    std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator> result;
 
     int loops = 10000;
     srand((unsigned int)time(0));
     for (int i = 0; i < loops; i++) {
-        Vector6d x = Vector6d::Random();
+        Eigen::Vector6d x = Eigen::Vector6d::Random();
 
-        Vector6d JTr = JTJ * x;
+        Eigen::Vector6d JTr = JTJ * x;
 
         std::tie(status, result) =
                 utility::SolveJacobianSystemAndObtainExtrinsicMatrixArray(JTJ,
                                                                           -JTr);
 
-        Vector6d r = utility::TransformMatrix4dToVector6d(result[0]);
+        Eigen::Vector6d r = utility::TransformMatrix4dToVector6d(result[0]);
 
         ExpectEQ(r, x);
     }
 }
 
 TEST(Eigen, ComputeJTJandJTr) {
-    Matrix6d ref_JTJ;
+    Eigen::Matrix6d ref_JTJ;
     ref_JTJ << 2.819131, 0.023929, -0.403568, 1.276125, 0.437555, -1.123875,
             0.023929, 2.817778, 0.086121, 1.133195, -0.124291, -0.695210,
             -0.403568, 0.086121, 3.435509, -0.094671, 0.466959, -0.215179,
@@ -180,10 +179,10 @@ TEST(Eigen, ComputeJTJandJTr) {
             0.437555, -0.124291, 0.466959, -0.235632, 2.802768, -0.496025,
             -1.123875, -0.695210, -0.215179, -0.917586, -0.496025, 2.951511;
 
-    Vector6d ref_JTr;
+    Eigen::Vector6d ref_JTr;
     ref_JTr << 0.477778, -0.262092, -0.162745, -0.545752, -0.643791, -0.883007;
 
-    auto testFunction = [&](int i, Vector6d &J_r, double &r) {
+    auto testFunction = [&](int i, Eigen::Vector6d &J_r, double &r) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
@@ -199,19 +198,20 @@ TEST(Eigen, ComputeJTJandJTr) {
 
     int iteration_num = 10;
 
-    Matrix6d JTJ = Matrix6d::Zero();
-    Vector6d JTr = Vector6d::Zero();
+    Eigen::Matrix6d JTJ = Eigen::Matrix6d::Zero();
+    Eigen::Vector6d JTr = Eigen::Vector6d::Zero();
     double r = 0.0;
 
-    std::tie(JTJ, JTr, r) = utility::ComputeJTJandJTr<Matrix6d, Vector6d>(
-            testFunction, iteration_num);
+    std::tie(JTJ, JTr, r) =
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    testFunction, iteration_num);
 
     ExpectEQ(ref_JTr, JTr);
     ExpectEQ(ref_JTJ, JTJ);
 }
 
 TEST(Eigen, ComputeJTJandJTr_vector) {
-    Matrix6d ref_JTJ;
+    Eigen::Matrix6d ref_JTJ;
     ref_JTJ << 28.191311, 0.239293, -4.035679, 12.761246, 4.375548, -11.238754,
             0.239293, 28.177778, 0.861207, 11.331949, -1.242907, -6.952095,
             -4.035679, 0.861207, 34.355094, -0.946713, 4.669589, -2.151788,
@@ -219,11 +219,12 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
             4.375548, -1.242907, 4.669589, -2.356324, 28.027682, -4.960246,
             -11.238754, -6.952095, -2.151788, -9.175855, -4.960246, 29.515110;
 
-    Vector6d ref_JTr;
+    Eigen::Vector6d ref_JTr;
     ref_JTr << 2.896078, 4.166667, -1.629412, 1.386275, -4.468627, -7.115686;
 
     auto testFunction =
-            [&](int i, std::vector<Vector6d, utility::Vector6d_allocator> &J_r,
+            [&](int i,
+                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
                 std::vector<double> &r) {
 #ifdef _OPENMP
 #pragma omp critical
@@ -247,12 +248,13 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
 
     int iteration_num = 10;
 
-    Matrix6d JTJ = Matrix6d::Zero();
-    Vector6d JTr = Vector6d::Zero();
+    Eigen::Matrix6d JTJ = Eigen::Matrix6d::Zero();
+    Eigen::Vector6d JTr = Eigen::Vector6d::Zero();
     double r = 0.0;
 
-    std::tie(JTJ, JTr, r) = utility::ComputeJTJandJTr<Matrix6d, Vector6d>(
-            testFunction, iteration_num);
+    std::tie(JTJ, JTr, r) =
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    testFunction, iteration_num);
 
     ExpectEQ(ref_JTr, JTr);
     ExpectEQ(ref_JTJ, JTJ);

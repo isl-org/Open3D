@@ -30,22 +30,20 @@
 
 #include "UnitTest/TestUtility/Raw.h"
 
-using namespace Eigen;
-
 namespace open3d {
 namespace unit_test {
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector3d.
+// Initialize an Eigen::Vector3d.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(Vector3d &v,
-          const Vector3d &vmin,
-          const Vector3d &vmax,
+void Rand(Eigen::Vector3d &v,
+          const Eigen::Vector3d &vmin,
+          const Eigen::Vector3d &vmax,
           const int &seed) {
     Raw raw(seed);
 
-    Vector3d factor;
+    Eigen::Vector3d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
     factor(2, 0) = vmax(2, 0) - vmin(2, 0);
@@ -56,10 +54,10 @@ void Rand(Vector3d &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector3d.
+// Initialize an Eigen::Vector3d.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(Vector3d &v,
+void Rand(Eigen::Vector3d &v,
           const double &vmin,
           const double &vmax,
           const int &seed) {
@@ -74,16 +72,16 @@ void Rand(Vector3d &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector2i vector.
+// Initialize an Eigen::Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Vector2i> &v,
-          const Vector2i &vmin,
-          const Vector2i &vmax,
+void Rand(std::vector<Eigen::Vector2i> &v,
+          const Eigen::Vector2i &vmin,
+          const Eigen::Vector2i &vmax,
           const int &seed) {
     Raw raw(seed);
 
-    Vector2d factor;
+    Eigen::Vector2d factor;
     factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
 
@@ -94,16 +92,16 @@ void Rand(std::vector<Vector2i> &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector3i vector.
+// Initialize an Eigen::Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Vector3i> &v,
-          const Vector3i &vmin,
-          const Vector3i &vmax,
+void Rand(std::vector<Eigen::Vector3i> &v,
+          const Eigen::Vector3i &vmin,
+          const Eigen::Vector3i &vmax,
           const int &seed) {
     Raw raw(seed);
 
-    Vector3d factor;
+    Eigen::Vector3d factor;
     factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
     factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / Raw::VMAX;
@@ -116,16 +114,16 @@ void Rand(std::vector<Vector3i> &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector2d vector.
+// Initialize an Eigen::Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
-          const Vector2d &vmin,
-          const Vector2d &vmax,
+void Rand(std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator> &v,
+          const Eigen::Vector2d &vmin,
+          const Eigen::Vector2d &vmax,
           const int &seed) {
     Raw raw(seed);
 
-    Vector2d factor;
+    Eigen::Vector2d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
 
@@ -136,16 +134,16 @@ void Rand(std::vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector3d vector.
+// Initialize an Eigen::Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Vector3d> &v,
-          const Vector3d &vmin,
-          const Vector3d &vmax,
+void Rand(std::vector<Eigen::Vector3d> &v,
+          const Eigen::Vector3d &vmin,
+          const Eigen::Vector3d &vmax,
           const int &seed) {
     Raw raw(seed);
 
-    Vector3d factor;
+    Eigen::Vector3d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
     factor(2, 0) = vmax(2, 0) - vmin(2, 0);
@@ -158,10 +156,10 @@ void Rand(std::vector<Vector3d> &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector4i vector.
+// Initialize an Eigen::Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
+void Rand(std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator> &v,
           const int &vmin,
           const int &vmax,
           const int &seed) {
@@ -178,16 +176,16 @@ void Rand(std::vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Vector4i vector.
+// Initialize an Eigen::Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(std::vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
-          const Vector4i &vmin,
-          const Vector4i &vmax,
+void Rand(std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator> &v,
+          const Eigen::Vector4i &vmin,
+          const Eigen::Vector4i &vmax,
           const int &seed) {
     Raw raw(seed);
 
-    Vector4d factor;
+    Eigen::Vector4d factor;
     factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
     factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / Raw::VMAX;

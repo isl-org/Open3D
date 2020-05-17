@@ -28,8 +28,6 @@
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace Eigen;
-
 namespace open3d {
 namespace unit_test {
 
@@ -90,7 +88,7 @@ TEST(Image, CreateImage) {
     EXPECT_TRUE(image.HasData());
 
     ExpectEQ(Zero2d, image.GetMinBound());
-    ExpectEQ(Vector2d(width, height), image.GetMaxBound());
+    ExpectEQ(Eigen::Vector2d(width, height), image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(width * num_of_channels * bytes_per_channel,
