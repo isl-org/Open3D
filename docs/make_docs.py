@@ -328,7 +328,7 @@ class JupyterDocsBuilder:
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
         self.current_file_dir = current_file_dir
-        print(f"Notebook execution mode: {self.execute_notebooks}")
+        print("Notebook execution mode: {}".format(self.execute_notebooks))
 
     def run(self):
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
@@ -357,21 +357,21 @@ class JupyterDocsBuilder:
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
-                    print(f"Delete: {nb_out_path}")
+                    print("Delete: {}".format(nb_out_path))
                     nb_out_path.unlink()
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
                 if not nb_out_path.is_file():
-                    print(f"Copy: {nb_in_path}\n   -> {nb_out_path}")
+                    print("Copy: {}\n   -> {}".format(nb_in_path, nb_out_path))
                     shutil.copy(nb_in_path, nb_out_path)
                 else:
-                    print(f"Copy skipped: {nb_out_path}")
+                    print("Copy skipped: {}.format(nb_out_path)")
                 nb_paths.append(nb_out_path)
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
-            print(f"[Processing notebook {nb_path.name}]")
+            print("[Processing notebook {}]".format(nb_path.name))
             with open(nb_path) as f:
                 nb = nbformat.read(f, as_version=4)
 

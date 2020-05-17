@@ -213,18 +213,18 @@ def print_1D_array_for_cpp(prefix, array):
         dtype = "bool"
     else:
         raise Exception("invalid dtype")
-    print(f"std::vector<{dtype}> {prefix} = {{")
+    print("std::vector<{}> {} = {{".format(dtype, prefix))
     print(", ".join(map(str, array)))
     print("};")
 
 
 def print_2D_array_for_cpp(prefix, values, fmt):
     if values.shape[0] > 0:
-        print(f"{prefix} = {{")
-        print(",\n".join([
-            f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}" for v in values
-        ]))
-        print(f"}};")
+        print("{} = {{".format(prefix))
+        # e.g. if fmt == ".6f", v3d_fmt == "  {{{0:.6f}, {0:.6f}, {0:.6f}}}'
+        v3d_fmt = "  {{{0:%s}, {0:%s}, {0:%s}}}" % (".6f", ".6f", ".6f")
+        print(",\n".join([v3d_fmt.format(v[0], v[1], v[2]) for v in values]))
+        print("};")
 
 
 def print_mesh_for_cpp(mesh, prefix=""):

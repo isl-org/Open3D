@@ -52,7 +52,7 @@ echo
 echo "build & install Open3D..."
 date
 make install -j$NPROC
-make install-python-package -j$NPROC
+make install-pip-package -j$NPROC
 echo
 
 echo "running Open3D unit tests..."
