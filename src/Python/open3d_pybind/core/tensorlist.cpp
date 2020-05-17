@@ -90,4 +90,8 @@ void pybind_core_tensorlist(py::module& m) {
                         [](const TensorList& tl_a, const TensorList& tl_b) {
                             return TensorList::Concatenate(tl_a, tl_b);
                         });
+
+    tensorlist.def_property_readonly("shape", &TensorList::GetShape);
+    tensorlist.def_property_readonly("dtype", &TensorList::GetDtype);
+    tensorlist.def_property_readonly("device", &TensorList::GetDevice);
 }
