@@ -8,7 +8,11 @@
 
 set -euo pipefail
 
+echo "installing Python unit test dependencies ..."
+pip install -U -q pytest
+
 python --version
+pytest --version
 cmake --version
 echo
 
@@ -18,7 +22,7 @@ echo "cmake configure the Open3D project..."
 date
 if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
     pip install --upgrade pip
-    pip install tensorflow==2.0.0
+    pip install -U -q tensorflow==2.0.0
 fi
 mkdir build
 cd build
@@ -48,11 +52,17 @@ echo
 echo "build & install Open3D..."
 date
 make install -j$NPROC
+make install-python-package -j$NPROC
 echo
 
 echo "running Open3D unit tests..."
 date
 ./bin/unitTests
+echo
+
+echo "running Open3D python tests..."
+date
+pytest ../src/UnitTest/Python/
 echo
 
 if $runBenchmarks; then

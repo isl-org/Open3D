@@ -85,6 +85,15 @@ def test_creation(device):
     np.testing.assert_equal(t.cpu().numpy(), np.full((2,), 3.5, dtype=np.uint8))
 
 
+@pytest.mark.parametrize("shape", [(), (0,), (1,), (0, 2), (0, 0, 2),
+                                   (2, 0, 3)])
+@pytest.mark.parametrize("device", list_devices())
+def test_creation_special_shapes(shape, device):
+    o3_t = o3d.Tensor.full(shape, 3.14, o3d.Dtype.Float32, device=device)
+    np_t = np.full(shape, 3.14, dtype=np.float32)
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+
+
 def test_dtype():
     dtype = o3d.Dtype.Int32
     assert o3d.DtypeUtil.byte_size(dtype) == 4
@@ -557,6 +566,27 @@ def test_reduction_sum(dim, keepdim, device):
     np_dst = np_src.sum(axis=dim, keepdims=keepdim)
     o3_dst = o3_src.sum(dim=dim, keepdim=keepdim)
     np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
+
+
+@pytest.mark.parametrize("shape_and_axis", [
+    ((), ()),
+    ((0,), ()),
+    ((0,), (0)),
+    ((0, 2), ()),
+    ((0, 2), (0)),
+    ((0, 2), (1)),
+])
+@pytest.mark.parametrize("keepdim", [True, False])
+@pytest.mark.parametrize("device", list_devices())
+def test_reduction_special_shapes(shape_and_axis, keepdim, device):
+    shape, axis = shape_and_axis
+    np_src = np.array(np.random.rand(*shape))
+    o3_src = o3d.Tensor(np_src, device=device)
+    np.testing.assert_equal(o3_src.cpu().numpy(), np_src)
+
+    np_dst = np_src.sum(axis=axis, keepdims=keepdim)
+    o3_dst = o3_src.sum(dim=axis, keepdim=keepdim)
+    np.testing.assert_equal(o3_dst.cpu().numpy(), np_dst)
 
 
 @pytest.mark.parametrize(
