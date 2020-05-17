@@ -30,10 +30,12 @@
 #include "UnitTest/Odometry/OdometryTools.h"
 
 using namespace Eigen;
-using namespace odometry_tools;
-using namespace open3d;
 using namespace std;
-using namespace unit_test;
+
+namespace open3d {
+namespace unit_test {
+
+using namespace odometry_tools;
 
 TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
     vector<Vector6d, utility::Vector6d_allocator> ref_J_r(20);
@@ -128,3 +130,6 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
         ExpectEQ(ref_J_r[2 * row + 1], J_r[1]);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

@@ -38,7 +38,9 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
-using namespace open3d;
+
+namespace open3d {
+namespace unit_test {
 
 class TensorPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
@@ -2187,3 +2189,6 @@ TEST_P(TensorPermuteDevices, ScalarOperatorOverload) {
     a /= true;
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({5, 5}));
 }
+
+}  // namespace unit_test
+}  // namespace open3d

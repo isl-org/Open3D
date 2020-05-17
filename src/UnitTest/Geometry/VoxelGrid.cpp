@@ -33,6 +33,9 @@
 using namespace open3d;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(VoxelGrid, Bounds) {
     auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
     voxel_grid->origin_ = Eigen::Vector3d(0, 0, 0);
@@ -73,3 +76,6 @@ TEST(VoxelGrid, Visualization) {
     // Uncomment the line below for visualization test
     // visualization::DrawGeometries({voxel_grid});
 }
+
+}  // namespace unit_test
+}  // namespace open3d

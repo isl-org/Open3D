@@ -33,6 +33,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(IntersectionTest, PointsCoplanar) {
     Eigen::Vector3d p0(0, 0, 0);
     Eigen::Vector3d p1(1, 0, 0);
@@ -87,3 +90,6 @@ TEST(IntersectionTest, LineSegmentsMinimumDistance) {
                                                                       q0, q1),
               1.);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

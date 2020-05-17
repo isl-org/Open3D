@@ -32,6 +32,9 @@
 using namespace open3d;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(VoxelGridIO, PLYWriteRead) {
     // Create voxel_grid (two voxels)
     auto src_voxel_grid = std::make_shared<geometry::VoxelGrid>();
@@ -70,3 +73,6 @@ TEST(VoxelGridIO, PLYWriteRead) {
     // Uncomment the line below for visualization test
     // visualization::DrawGeometries({dst_voxel_grid});
 }
+
+}  // namespace unit_test
+}  // namespace open3d

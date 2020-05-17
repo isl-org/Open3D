@@ -26,38 +26,34 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(ScalableTSDFVolume, DISABLED_VolumeUnit) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(ScalableTSDFVolume, DISABLED_Constructor) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_VolumeUnit) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_Destructor) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_Constructor) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_Destructor) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_Reset) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_MemberData) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_Integrate) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_Reset) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_ExtractPointCloud) {
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_Integrate) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_ExtractTriangleMesh) {
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_ExtractPointCloud) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_ExtractVoxelPointCloud) {
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_ExtractTriangleMesh) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_LocateVolumeUnit) {
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_ExtractVoxelPointCloud) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_OpenVolumeUnit) {
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_LocateVolumeUnit) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_GetNormalAt) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_OpenVolumeUnit) { NotImplemented(); }
 
-TEST(ScalableTSDFVolume, DISABLED_GetTSDFAt) { unit_test::NotImplemented(); }
+TEST(ScalableTSDFVolume, DISABLED_GetNormalAt) { NotImplemented(); }
+
+TEST(ScalableTSDFVolume, DISABLED_GetTSDFAt) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

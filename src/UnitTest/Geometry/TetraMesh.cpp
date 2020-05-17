@@ -33,7 +33,9 @@
 using namespace Eigen;
 using namespace open3d;
 using namespace std;
-using namespace unit_test;
+
+namespace open3d {
+namespace unit_test {
 
 TEST(TetraMesh, Constructor) {
     geometry::TetraMesh tm;
@@ -57,7 +59,7 @@ TEST(TetraMesh, Constructor) {
     EXPECT_FALSE(tm.HasTetras());
 }
 
-TEST(TetraMesh, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(TetraMesh, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(TetraMesh, Clear) {
     int size = 100;
@@ -480,3 +482,6 @@ TEST(TetraMesh, ExtractTriangleMesh) {
         EXPECT_EQ(triangle_mesh->triangles_.size(), size_t(246));
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

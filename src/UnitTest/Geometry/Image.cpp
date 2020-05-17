@@ -33,6 +33,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 using ConversionType = geometry::Image::ColorToIntensityConversionType;
 using FilterType = geometry::Image::FilterType;
 
@@ -1081,3 +1084,6 @@ TEST(Image, CreatePyramid) {
         expected_height /= 2;
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

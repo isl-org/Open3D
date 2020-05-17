@@ -34,6 +34,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 void ExpectEQ(const open3d::geometry::TriangleMesh& mesh0,
               const open3d::geometry::TriangleMesh& mesh1,
               double threshold = 1e-6) {
@@ -72,7 +75,7 @@ TEST(TriangleMesh, Constructor) {
     EXPECT_FALSE(tm.HasTriangleNormals());
 }
 
-TEST(TriangleMesh, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(TriangleMesh, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(TriangleMesh, Clear) {
     int size = 100;
@@ -2169,3 +2172,6 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame) {
     ExpectEQ(ref_triangles, output->triangles_);
     ExpectEQ(ref_triangle_normals, output->triangle_normals_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

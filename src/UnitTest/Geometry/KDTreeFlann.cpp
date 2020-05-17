@@ -34,7 +34,10 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-TEST(KDTreeFlann, DISABLED_Search) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
+
+TEST(KDTreeFlann, DISABLED_Search) { NotImplemented(); }
 
 TEST(KDTreeFlann, SearchKNN) {
     vector<int> ref_indices = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
@@ -144,3 +147,6 @@ TEST(KDTreeFlann, SearchHybrid) {
     ExpectEQ(ref_indices, indices);
     ExpectEQ(ref_distance2, distance2);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

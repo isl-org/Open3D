@@ -34,9 +34,10 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-TEST(PinholeCameraTrajectory, DISABLED_MemberData) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
+
+TEST(PinholeCameraTrajectory, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
     camera::PinholeCameraTrajectory src;
@@ -78,3 +79,6 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
         ExpectEQ(src_params.extrinsic_, dst_params.extrinsic_);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

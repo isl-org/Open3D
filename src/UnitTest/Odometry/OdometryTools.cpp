@@ -26,9 +26,10 @@
 
 #include "UnitTest/Odometry/OdometryTools.h"
 
-using namespace open3d;
 using namespace std;
-using namespace unit_test;
+
+namespace open3d {
+namespace unit_test {
 
 shared_ptr<geometry::Image> odometry_tools::GenerateImage(
         const int& width,
@@ -125,3 +126,6 @@ shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
 
     return image;
 }
+
+}  // namespace unit_test
+}  // namespace open3d

@@ -32,6 +32,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(Eigen, TransformVector6dToMatrix4d) {
     Matrix4d ref_matrix4d;
     ref_matrix4d << 0.829278, -0.425147, 0.362696, 0.666667, 0.453036, 0.891445,
@@ -257,3 +260,6 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
     ExpectEQ(ref_JTr, JTr);
     ExpectEQ(ref_JTJ, JTJ);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

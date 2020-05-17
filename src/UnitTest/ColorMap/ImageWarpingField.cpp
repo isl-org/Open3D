@@ -30,6 +30,9 @@
 
 using namespace std;
 
+namespace open3d {
+namespace unit_test {
+
 /* TODO
 As the color_map::ColorMapOptimization subcomponents go back into hiding several
 lines of code had to commented out. Do not remove these lines, they may become
@@ -143,9 +146,7 @@ TEST(ImageWarpingField, DISABLED_Constructor) {
 // ----------------------------------------------------------------------------
 // Same as ImageWarpingField.Constructor.
 // ----------------------------------------------------------------------------
-TEST(ImageWarpingField, DISABLED_InitializeWarpingFields) {
-    unit_test::NotImplemented();
-}
+TEST(ImageWarpingField, DISABLED_InitializeWarpingFields) { NotImplemented(); }
 
 TEST(ImageWarpingField, QueryFlow) {
     // vector<int> x = {5,   6,   7,   10,  13,  16,  18,  20,  20,  20,
@@ -237,3 +238,6 @@ TEST(ImageWarpingField, GetImageWarpingField) {
     //     unit_test::ExpectEQ(ref_output[i], elem);
     // }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

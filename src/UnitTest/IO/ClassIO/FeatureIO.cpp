@@ -26,10 +26,16 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(FeatureIO, DISABLED_ReadFeature) { unit_test::NotImplemented(); }
+namespace open3d {
+namespace unit_test {
 
-TEST(FeatureIO, DISABLED_WriteFeature) { unit_test::NotImplemented(); }
+TEST(FeatureIO, DISABLED_ReadFeature) { NotImplemented(); }
 
-TEST(FeatureIO, DISABLED_ReadFeatureFromBIN) { unit_test::NotImplemented(); }
+TEST(FeatureIO, DISABLED_WriteFeature) { NotImplemented(); }
 
-TEST(FeatureIO, DISABLED_WriteFeatureToBIN) { unit_test::NotImplemented(); }
+TEST(FeatureIO, DISABLED_ReadFeatureFromBIN) { NotImplemented(); }
+
+TEST(FeatureIO, DISABLED_WriteFeatureToBIN) { NotImplemented(); }
+
+}  // namespace unit_test
+}  // namespace open3d

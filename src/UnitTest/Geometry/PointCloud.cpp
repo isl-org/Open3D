@@ -38,6 +38,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(PointCloud, Constructor) {
     geometry::PointCloud pc;
 
@@ -1078,3 +1081,6 @@ TEST(PointCloud, SegmentPlane) {
 
     ExpectEQ(ref, output_pc->points_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

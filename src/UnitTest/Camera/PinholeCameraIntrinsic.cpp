@@ -34,6 +34,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(PinholeCameraIntrinsic, Constructor_Default) {
     camera::PinholeCameraIntrinsic intrinsic;
 
@@ -107,9 +110,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Init) {
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
-TEST(PinholeCameraIntrinsic, DISABLED_MemberData) {
-    unit_test::NotImplemented();
-}
+TEST(PinholeCameraIntrinsic, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     camera::PinholeCameraIntrinsic intrinsic;
@@ -256,3 +257,6 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
 
     ExpectEQ(reference, dst.intrinsic_matrix_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

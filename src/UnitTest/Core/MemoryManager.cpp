@@ -36,6 +36,9 @@
 using namespace std;
 using namespace open3d;
 
+namespace open3d {
+namespace unit_test {
+
 class MemoryManagerPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(MemoryManager,
                          MemoryManagerPermuteDevices,
@@ -76,3 +79,6 @@ TEST_P(MemoryManagerPermuteDevicePairs, Memcpy) {
     MemoryManager::Free(dst_ptr, dst_device);
     MemoryManager::Free(src_ptr, src_device);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

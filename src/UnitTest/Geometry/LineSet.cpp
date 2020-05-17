@@ -34,6 +34,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(LineSet, Constructor) {
     geometry::LineSet ls;
 
@@ -57,7 +60,7 @@ TEST(LineSet, Constructor) {
     EXPECT_FALSE(ls.HasColors());
 }
 
-TEST(LineSet, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(LineSet, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(LineSet, Clear) {
     int size = 100;
@@ -473,3 +476,6 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     ExpectEQ(ref_points, ls->points_);
     ExpectEQ(ref_lines, ls->lines_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

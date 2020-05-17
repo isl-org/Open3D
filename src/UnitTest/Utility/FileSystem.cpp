@@ -36,6 +36,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 // ----------------------------------------------------------------------------
 // Get the file extension and convert to lower case.
 // ----------------------------------------------------------------------------
@@ -545,3 +548,6 @@ TEST(FileSystem, GetPathComponents) {
     expected = {"c:", "windows", "system", "winnt.dll"};
     EXPECT_EQ(result, expected);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

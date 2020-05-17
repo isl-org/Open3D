@@ -34,6 +34,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 /* TODO
 As the color_map::ColorMapOptimization subcomponents go back into hiding several
 lines of code had to commented out. Do not remove these lines, they may become
@@ -1113,3 +1116,6 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     for (size_t i = 0; i < ref_triangle_normals.size(); i++)
         ExpectEQ(ref_triangle_normals[i], mesh->triangle_normals_[i]);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

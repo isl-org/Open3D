@@ -29,7 +29,9 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace std;
-using namespace open3d;
+
+namespace open3d {
+namespace unit_test {
 
 TEST(Device, DefaultConstructor) {
     Device ctx;
@@ -59,3 +61,6 @@ TEST(Device, StringConstructorLower) {
     EXPECT_EQ(ctx.GetType(), Device::DeviceType::CUDA);
     EXPECT_EQ(ctx.GetID(), 1);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

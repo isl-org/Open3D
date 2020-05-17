@@ -28,8 +28,8 @@
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     geometry::TriangleMesh tm_gt;
@@ -45,3 +45,6 @@ TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

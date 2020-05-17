@@ -34,6 +34,9 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 // ----------------------------------------------------------------------------
 // Test the conversion of Eigen::Vector3d to and from JsonArray.
 // ----------------------------------------------------------------------------
@@ -208,3 +211,6 @@ TEST(IJsonConvertible, EigenMatrix6d_uToFromJsonArray) {
         ExpectEQ(ref, m6d_u);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

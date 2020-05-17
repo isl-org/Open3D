@@ -38,6 +38,9 @@
 using namespace open3d;
 using namespace unit_test;
 
+namespace open3d {
+namespace unit_test {
+
 TEST(Octree, ConstructorWithoutSize) {
     geometry::Octree octree(10);
     ExpectEQ(octree.origin_, Eigen::Vector3d(0, 0, 0));
@@ -314,3 +317,6 @@ TEST(Octree, ConvertToJsonValue) {
 
     EXPECT_TRUE(src_octree == dst_octree);
 }
+
+}  // namespace unit_test
+}  // namespace open3d

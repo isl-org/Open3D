@@ -32,8 +32,9 @@
 
 using namespace open3d;
 using namespace std;
-using namespace unit_test;
-using namespace unit_test;
+
+namespace open3d {
+namespace unit_test {
 
 TEST(RGBDImage, Constructor) {
     geometry::Image image;
@@ -69,7 +70,7 @@ TEST(RGBDImage, Constructor) {
     ExpectEQ(depth->data_, rgbd_image.depth_.data_);
 }
 
-TEST(RGBDImage, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(RGBDImage, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(RGBDImage, CreateFromColorAndDepth) {
     vector<uint8_t> ref_color = {
@@ -462,3 +463,6 @@ TEST(RGBDImage, CreatePyramid) {
         EXPECT_EQ(ref_depth[j], pyramid[j]->depth_.data_);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d
