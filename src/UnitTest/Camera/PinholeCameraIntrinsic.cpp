@@ -30,7 +30,6 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
-using namespace std;
 
 namespace open3d {
 namespace unit_test {
@@ -155,7 +154,7 @@ TEST(PinholeCameraIntrinsic, GetFocalLength) {
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    pair<double, double> output = intrinsic.GetFocalLength();
+    std::pair<double, double> output = intrinsic.GetFocalLength();
 
     EXPECT_NEAR(fx, output.first, THRESHOLD_1E_6);
     EXPECT_NEAR(fy, output.second, THRESHOLD_1E_6);
@@ -178,7 +177,7 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    pair<double, double> output = intrinsic.GetPrincipalPoint();
+    std::pair<double, double> output = intrinsic.GetPrincipalPoint();
 
     EXPECT_NEAR(cx, output.first, THRESHOLD_1E_6);
     EXPECT_NEAR(cy, output.second, THRESHOLD_1E_6);

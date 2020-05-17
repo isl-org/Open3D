@@ -31,7 +31,6 @@
 #include "UnitTest/TestUtility/Raw.h"
 
 using namespace Eigen;
-using namespace std;
 
 namespace open3d {
 namespace unit_test {
@@ -78,7 +77,7 @@ void Rand(Vector3d &v,
 // Initialize an Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<Vector2i> &v,
+void Rand(std::vector<Vector2i> &v,
           const Vector2i &vmin,
           const Vector2i &vmax,
           const int &seed) {
@@ -98,7 +97,7 @@ void Rand(vector<Vector2i> &v,
 // Initialize an Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<Vector3i> &v,
+void Rand(std::vector<Vector3i> &v,
           const Vector3i &vmin,
           const Vector3i &vmax,
           const int &seed) {
@@ -120,7 +119,7 @@ void Rand(vector<Vector3i> &v,
 // Initialize an Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
+void Rand(std::vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
           const Vector2d &vmin,
           const Vector2d &vmax,
           const int &seed) {
@@ -140,7 +139,7 @@ void Rand(vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
 // Initialize an Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<Vector3d> &v,
+void Rand(std::vector<Vector3d> &v,
           const Vector3d &vmin,
           const Vector3d &vmax,
           const int &seed) {
@@ -162,7 +161,7 @@ void Rand(vector<Vector3d> &v,
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
+void Rand(std::vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
           const int &vmin,
           const int &vmax,
           const int &seed) {
@@ -182,7 +181,7 @@ void Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
+void Rand(std::vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
           const Vector4i &vmin,
           const Vector4i &vmax,
           const int &seed) {
@@ -206,7 +205,7 @@ void Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<uint8_t> &v,
+void Rand(std::vector<uint8_t> &v,
           const uint8_t &vmin,
           const uint8_t &vmax,
           const int &seed) {
@@ -239,7 +238,10 @@ void Rand(int *const v,
 // Initialize an int vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<int> &v, const int &vmin, const int &vmax, const int &seed) {
+void Rand(std::vector<int> &v,
+          const int &vmin,
+          const int &vmax,
+          const int &seed) {
     Rand(&v[0], v.size(), vmin, vmax, seed);
 }
 
@@ -247,7 +249,7 @@ void Rand(vector<int> &v, const int &vmin, const int &vmax, const int &seed) {
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<size_t> &v,
+void Rand(std::vector<size_t> &v,
           const size_t &vmin,
           const size_t &vmax,
           const int &seed) {
@@ -279,7 +281,7 @@ void Rand(float *const v,
 // Initialize a float vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<float> &v,
+void Rand(std::vector<float> &v,
           const float &vmin,
           const float &vmax,
           const int &seed) {
@@ -306,7 +308,7 @@ void Rand(double *const v,
 // Initialize a double vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void Rand(vector<double> &v,
+void Rand(std::vector<double> &v,
           const double &vmin,
           const double &vmax,
           const int &seed) {

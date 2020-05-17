@@ -30,7 +30,6 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
-using namespace std;
 
 namespace open3d {
 namespace unit_test {
@@ -148,14 +147,14 @@ TEST(LineSet, GetMaxBound) {
 }
 
 TEST(LineSet, Transform) {
-    vector<Vector3d> ref_points = {
+    std::vector<Vector3d> ref_points = {
             {1.411252, 4.274168, 3.130918}, {1.231757, 4.154505, 3.183678},
             {1.403168, 4.268779, 2.121679}, {1.456767, 4.304511, 2.640845},
             {1.620902, 4.413935, 1.851255}, {1.374684, 4.249790, 3.062485},
             {1.328160, 4.218773, 1.795728}, {1.713446, 4.475631, 1.860145},
             {1.409239, 4.272826, 2.011462}, {1.480169, 4.320113, 1.177780}};
 
-    vector<Vector2i> ref_lines = {
+    std::vector<Vector2i> ref_lines = {
             {839, 392}, {780, 796}, {909, 196}, {333, 764}, {274, 552},
             {474, 627}, {364, 509}, {949, 913}, {635, 713}, {141, 603}};
 
@@ -232,15 +231,15 @@ TEST(LineSet, OperatorAppend) {
     Rand(ls1.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
     Rand(ls1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Vector3d> p;
+    std::vector<Vector3d> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
     p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
-    vector<Vector2i> n;
+    std::vector<Vector2i> n;
     n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
     n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
-    vector<Vector3d> c;
+    std::vector<Vector3d> c;
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
@@ -291,15 +290,15 @@ TEST(LineSet, OperatorADD) {
     Rand(ls1.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
     Rand(ls1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Vector3d> p;
+    std::vector<Vector3d> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
     p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
-    vector<Vector2i> n;
+    std::vector<Vector2i> n;
     n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
     n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
-    vector<Vector3d> c;
+    std::vector<Vector3d> c;
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
@@ -367,7 +366,7 @@ TEST(LineSet, HasColors) {
 }
 
 TEST(LineSet, GetLineCoordinate) {
-    vector<vector<Vector3d>> ref_points = {
+    std::vector<std::vector<Vector3d>> ref_points = {
             {{239.215686, 133.333333, 803.921569},
              {552.941176, 474.509804, 627.450980}},
             {{239.215686, 133.333333, 803.921569},
@@ -416,33 +415,34 @@ TEST(LineSet, GetLineCoordinate) {
 TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     size_t size = 10;
 
-    vector<Vector3d> ref_points = {{839.215686, 392.156863, 780.392157},
-                                   {796.078431, 909.803922, 196.078431},
-                                   {333.333333, 764.705882, 274.509804},
-                                   {552.941176, 474.509804, 627.450980},
-                                   {364.705882, 509.803922, 949.019608},
-                                   {913.725490, 635.294118, 713.725490},
-                                   {141.176471, 603.921569, 15.686275},
-                                   {239.215686, 133.333333, 803.921569},
-                                   {152.941176, 400.000000, 129.411765},
-                                   {105.882353, 996.078431, 215.686275},
-                                   {839.215686, 392.156863, 780.392157},
-                                   {796.078431, 909.803922, 196.078431},
-                                   {333.333333, 764.705882, 274.509804},
-                                   {552.941176, 474.509804, 627.450980},
-                                   {364.705882, 509.803922, 949.019608},
-                                   {913.725490, 635.294118, 713.725490},
-                                   {141.176471, 603.921569, 15.686275},
-                                   {239.215686, 133.333333, 803.921569},
-                                   {152.941176, 400.000000, 129.411765},
-                                   {105.882353, 996.078431, 215.686275}};
+    std::vector<Vector3d> ref_points = {{839.215686, 392.156863, 780.392157},
+                                        {796.078431, 909.803922, 196.078431},
+                                        {333.333333, 764.705882, 274.509804},
+                                        {552.941176, 474.509804, 627.450980},
+                                        {364.705882, 509.803922, 949.019608},
+                                        {913.725490, 635.294118, 713.725490},
+                                        {141.176471, 603.921569, 15.686275},
+                                        {239.215686, 133.333333, 803.921569},
+                                        {152.941176, 400.000000, 129.411765},
+                                        {105.882353, 996.078431, 215.686275},
+                                        {839.215686, 392.156863, 780.392157},
+                                        {796.078431, 909.803922, 196.078431},
+                                        {333.333333, 764.705882, 274.509804},
+                                        {552.941176, 474.509804, 627.450980},
+                                        {364.705882, 509.803922, 949.019608},
+                                        {913.725490, 635.294118, 713.725490},
+                                        {141.176471, 603.921569, 15.686275},
+                                        {239.215686, 133.333333, 803.921569},
+                                        {152.941176, 400.000000, 129.411765},
+                                        {105.882353, 996.078431, 215.686275}};
 
-    vector<Vector2i> ref_lines = {{8, 13}, {7, 17}, {9, 11}, {3, 17}, {2, 15},
-                                  {4, 16}, {3, 15}, {9, 19}, {6, 17}, {1, 16}};
+    std::vector<Vector2i> ref_lines = {{8, 13}, {7, 17}, {9, 11}, {3, 17},
+                                       {2, 15}, {4, 16}, {3, 15}, {9, 19},
+                                       {6, 17}, {1, 16}};
 
     geometry::PointCloud pc0;
     geometry::PointCloud pc1;
-    vector<pair<int, int>> correspondence(size);
+    std::vector<std::pair<int, int>> correspondence(size);
 
     pc0.points_.resize(size);
     pc0.normals_.resize(size);
@@ -465,7 +465,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
         int first = size * raw.Next<int>() / Raw::VMAX;
         int second = size * raw.Next<int>() / Raw::VMAX;
 
-        correspondence[i] = pair<int, int>(first, second);
+        correspondence[i] = std::pair<int, int>(first, second);
     }
 
     auto ls = geometry::LineSet::CreateFromPointCloudCorrespondences(

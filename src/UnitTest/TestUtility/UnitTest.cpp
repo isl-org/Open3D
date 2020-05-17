@@ -29,8 +29,6 @@
 
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-
 namespace open3d {
 namespace unit_test {
 
@@ -38,12 +36,12 @@ namespace unit_test {
 // Default message to use for tests missing an implementation.
 // ----------------------------------------------------------------------------
 void NotImplemented() {
-    cout << "\033[0;32m"
-         << "[          ] "
-         << "\033[0;0m";
-    cout << "\033[0;31m"
-         << "Not implemented."
-         << "\033[0;0m" << endl;
+    std::cout << "\033[0;32m"
+              << "[          ] "
+              << "\033[0;0m";
+    std::cout << "\033[0;31m"
+              << "Not implemented."
+              << "\033[0;0m" << std::endl;
 
     GTEST_NONFATAL_FAILURE_("Not implemented");
 }
@@ -60,7 +58,7 @@ void ExpectEQ(const uint8_t* const v0,
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of uint8_t.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const vector<uint8_t>& v0, const vector<uint8_t>& v1) {
+void ExpectEQ(const std::vector<uint8_t>& v0, const std::vector<uint8_t>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size());
 }
@@ -75,7 +73,7 @@ void ExpectEQ(const int* const v0, const int* const v1, const size_t& size) {
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of int.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const vector<int>& v0, const vector<int>& v1) {
+void ExpectEQ(const std::vector<int>& v0, const std::vector<int>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size());
 }
@@ -93,8 +91,8 @@ void ExpectEQ(const float* const v0,
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of float.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const vector<float>& v0,
-              const vector<float>& v1,
+void ExpectEQ(const std::vector<float>& v0,
+              const std::vector<float>& v1,
               float threshold) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size(), threshold);
@@ -113,8 +111,8 @@ void ExpectEQ(const double* const v0,
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of double.
 // ----------------------------------------------------------------------------
-void ExpectEQ(const vector<double>& v0,
-              const vector<double>& v1,
+void ExpectEQ(const std::vector<double>& v0,
+              const std::vector<double>& v1,
               double threshold) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size(), threshold);

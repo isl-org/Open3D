@@ -28,7 +28,6 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
-using namespace std;
 
 namespace open3d {
 namespace unit_test {
@@ -75,7 +74,7 @@ TEST(Eigen, SolveLinearSystemPSD) {
     A << 3, 2, 1, 30, 20, 10, -1, 0.5, -1;
     b << 1, -2, 0;
     x_ref << 0, 0, 0;
-    tie(status, x) =
+    std::tie(status, x) =
             utility::SolveLinearSystemPSD(A, b, false, false, true, false);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
@@ -84,7 +83,7 @@ TEST(Eigen, SolveLinearSystemPSD) {
     A << 3, 2, -1, 2, -2, 4, -1, 0.5, -1;
     b << 1, -2, 0;
     x_ref << 0, 0, 0;
-    tie(status, x) =
+    std::tie(status, x) =
             utility::SolveLinearSystemPSD(A, b, false, false, false, true);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
@@ -94,7 +93,7 @@ TEST(Eigen, SolveLinearSystemPSD) {
     A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
     b << 39, 34, 26;
     x_ref << 0, 0, 0;  // 9.25, 4.25, 2.75 if solved in general form
-    tie(status, x) =
+    std::tie(status, x) =
             utility::SolveLinearSystemPSD(A, b, false, false, false, true);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
@@ -103,13 +102,13 @@ TEST(Eigen, SolveLinearSystemPSD) {
     A << 3, 0, 1, 0, 3, 0, 1, 0, 3;
     b << 18, 15, 22;
     x_ref << 4, 5, 6;
-    tie(status, x) =
+    std::tie(status, x) =
             utility::SolveLinearSystemPSD(A, b, false, false, true, true);
     EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
 
     // The sparse solver shall work as well
-    tie(status, x) =
+    std::tie(status, x) =
             utility::SolveLinearSystemPSD(A, b, true, false, true, true);
     EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
@@ -134,7 +133,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix) {
 
         Vector6d JTr = JTJ * x;
 
-        tie(status, result) =
+        std::tie(status, result) =
                 utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, -JTr);
 
         Vector6d r = utility::TransformMatrix4dToVector6d(result);
@@ -153,7 +152,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
     JTJ = JTJ + Matrix6d::Identity();
 
     bool status = false;
-    vector<Matrix4d, utility::Matrix4d_allocator> result;
+    std::vector<Matrix4d, utility::Matrix4d_allocator> result;
 
     int loops = 10000;
     srand((unsigned int)time(0));
@@ -162,7 +161,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
 
         Vector6d JTr = JTJ * x;
 
-        tie(status, result) =
+        std::tie(status, result) =
                 utility::SolveJacobianSystemAndObtainExtrinsicMatrixArray(JTJ,
                                                                           -JTr);
 
@@ -189,7 +188,7 @@ TEST(Eigen, ComputeJTJandJTr) {
 #pragma omp critical
 #endif
         {
-            vector<double> v(6);
+            std::vector<double> v(6);
             Rand(v, -1.0, 1.0, i);
 
             for (int k = 0; k < 6; k++) J_r(k) = v[k];
@@ -204,7 +203,7 @@ TEST(Eigen, ComputeJTJandJTr) {
     Vector6d JTr = Vector6d::Zero();
     double r = 0.0;
 
-    tie(JTJ, JTr, r) = utility::ComputeJTJandJTr<Matrix6d, Vector6d>(
+    std::tie(JTJ, JTr, r) = utility::ComputeJTJandJTr<Matrix6d, Vector6d>(
             testFunction, iteration_num);
 
     ExpectEQ(ref_JTr, JTr);
@@ -223,28 +222,28 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
     Vector6d ref_JTr;
     ref_JTr << 2.896078, 4.166667, -1.629412, 1.386275, -4.468627, -7.115686;
 
-    auto testFunction = [&](int i,
-                            vector<Vector6d, utility::Vector6d_allocator> &J_r,
-                            vector<double> &r) {
+    auto testFunction =
+            [&](int i, std::vector<Vector6d, utility::Vector6d_allocator> &J_r,
+                std::vector<double> &r) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        {
-            size_t size = 10;
+                {
+                    size_t size = 10;
 
-            J_r.resize(size);
-            r.resize(size);
+                    J_r.resize(size);
+                    r.resize(size);
 
-            vector<double> v(6);
-            for (size_t s = 0; s < size; s++) {
-                Rand(v, -1.0, 1.0, i);
+                    std::vector<double> v(6);
+                    for (size_t s = 0; s < size; s++) {
+                        Rand(v, -1.0, 1.0, i);
 
-                for (int k = 0; k < 6; k++) J_r[s](k) = v[k];
+                        for (int k = 0; k < 6; k++) J_r[s](k) = v[k];
 
-                r[s] = (double)((i * s) % 6) / 6;
-            }
-        }
-    };
+                        r[s] = (double)((i * s) % 6) / 6;
+                    }
+                }
+            };
 
     int iteration_num = 10;
 
@@ -252,7 +251,7 @@ TEST(Eigen, ComputeJTJandJTr_vector) {
     Vector6d JTr = Vector6d::Zero();
     double r = 0.0;
 
-    tie(JTJ, JTr, r) = utility::ComputeJTJandJTr<Matrix6d, Vector6d>(
+    std::tie(JTJ, JTr, r) = utility::ComputeJTJandJTr<Matrix6d, Vector6d>(
             testFunction, iteration_num);
 
     ExpectEQ(ref_JTr, JTr);

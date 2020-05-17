@@ -28,8 +28,6 @@
 
 #include "TestUtility/UnitTest.h"
 
-using namespace std;
-
 namespace open3d {
 namespace unit_test {
 

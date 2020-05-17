@@ -31,7 +31,6 @@
 #include "TestUtility/UnitTest.h"
 
 using namespace Eigen;
-using namespace std;
 
 namespace open3d {
 namespace unit_test {
@@ -138,7 +137,7 @@ TEST(TetraMesh, GetMaxBound) {
 }
 
 TEST(TetraMesh, Transform) {
-    vector<Vector3d> ref_vertices = {
+    std::vector<Vector3d> ref_vertices = {
             {1.411252, 4.274168, 3.130918}, {1.231757, 4.154505, 3.183678},
             {1.403168, 4.268779, 2.121679}, {1.456767, 4.304511, 2.640845},
             {1.620902, 4.413935, 1.851255}, {1.374684, 4.249790, 3.062485},
@@ -253,18 +252,18 @@ TEST(TetraMesh, OperatorADD) {
 }
 
 TEST(TetraMesh, Purge) {
-    typedef vector<Vector4i, aligned_allocator<Vector4i>> vector_Vector4i;
+    typedef std::vector<Vector4i, aligned_allocator<Vector4i>> vector_Vector4i;
 
-    vector<Vector3d> vertices = {// duplicate
-                                 {796.078431, 909.803922, 196.078431},
-                                 {796.078431, 909.803922, 196.078431},
-                                 {333.333333, 764.705882, 274.509804},
-                                 {552.941176, 474.509804, 627.450980},
-                                 {364.705882, 509.803922, 949.019608},
-                                 {913.725490, 635.294118, 713.725490},
-                                 {141.176471, 603.921569, 15.686275},
-                                 // unreferenced
-                                 {239.215686, 133.333333, 803.921569}};
+    std::vector<Vector3d> vertices = {// duplicate
+                                      {796.078431, 909.803922, 196.078431},
+                                      {796.078431, 909.803922, 196.078431},
+                                      {333.333333, 764.705882, 274.509804},
+                                      {552.941176, 474.509804, 627.450980},
+                                      {364.705882, 509.803922, 949.019608},
+                                      {913.725490, 635.294118, 713.725490},
+                                      {141.176471, 603.921569, 15.686275},
+                                      // unreferenced
+                                      {239.215686, 133.333333, 803.921569}};
 
     vector_Vector4i tetras = {{2, 6, 3, 4},
                               // same tetra after vertex duplicate is removed
@@ -292,7 +291,7 @@ TEST(TetraMesh, Purge) {
 
     tm.RemoveDuplicatedVertices();
 
-    vector<Vector3d> ref_vertices_after_duplicate_removal = {
+    std::vector<Vector3d> ref_vertices_after_duplicate_removal = {
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
             {552.941176, 474.509804, 627.450980},
@@ -310,7 +309,7 @@ TEST(TetraMesh, Purge) {
 
     tm.RemoveUnreferencedVertices();
 
-    vector<Vector3d> ref_vertices_after_unreferenced_removal = {
+    std::vector<Vector3d> ref_vertices_after_unreferenced_removal = {
             {796.078431, 909.803922, 196.078431},
             {333.333333, 764.705882, 274.509804},
             {552.941176, 474.509804, 627.450980},
@@ -442,7 +441,7 @@ TEST(TetraMesh, ExtractTriangleMesh) {
     std::vector<size_t> pt_map;
     std::tie(tm, pt_map) = geometry::TetraMesh::CreateFromPointCloud(pc);
 
-    vector<double> values(tm->vertices_.size());
+    std::vector<double> values(tm->vertices_.size());
 
     // distance to center as values
     Vector3d center(0.5 * (dmin + dmax));

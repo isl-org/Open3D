@@ -31,8 +31,6 @@
 
 #include "Core/CoreTest.h"
 
-using namespace std;
-
 namespace open3d {
 namespace unit_test {
 

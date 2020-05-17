@@ -26,8 +26,6 @@
 
 #include "UnitTest/TestUtility/Sort.h"
 
-using namespace std;
-
 namespace open3d {
 namespace unit_test {
 
@@ -51,7 +49,7 @@ bool Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1) {
 // ----------------------------------------------------------------------------
 // Sort a vector of Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-void Sort::Do(vector<Eigen::Vector3d>& v) {
+void Sort::Do(std::vector<Eigen::Vector3d>& v) {
     Eigen::Vector3d temp(0.0, 0.0, 0.0);
     for (size_t i = 0; i < v.size(); i++) {
         for (size_t j = 0; j < v.size(); j++) {
