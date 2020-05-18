@@ -50,8 +50,9 @@ def list_devices():
     if _torch_imported:
         if (o3d.cuda.device_count() != torch.cuda.device_count()):
             raise RuntimeError(
-                f"o3d.cuda.device_count() != torch.cuda.device_count(), "
-                f"{o3d.cuda.device_count()} != {torch.cuda.device_count()}")
+                "o3d.cuda.device_count() != torch.cuda.device_count(), "
+                "{} != {}".format(o3d.cuda.device_count(),
+                                  torch.cuda.device_count()))
     else:
         print("Warning: PyTorch is not imported")
     if o3d.cuda.device_count() > 0:
@@ -97,7 +98,7 @@ def test_creation_special_shapes(shape, device):
 def test_dtype():
     dtype = o3d.Dtype.Int32
     assert o3d.DtypeUtil.byte_size(dtype) == 4
-    assert f"{dtype}" == "Dtype.Int32"
+    assert "{}".format(dtype) == "Dtype.Int32"
 
 
 def test_device():
@@ -122,33 +123,33 @@ def test_device():
 def test_size_vector():
     # List
     sv = o3d.SizeVector([-1, 2, 3])
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # Tuple
     sv = o3d.SizeVector((-1, 2, 3))
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # Numpy 1D array
     sv = o3d.SizeVector(np.array([-1, 2, 3]))
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # Empty
     sv = o3d.SizeVector()
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
     sv = o3d.SizeVector([])
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
     sv = o3d.SizeVector(())
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
     sv = o3d.SizeVector(np.array([]))
-    assert f"{sv}" == "{}"
+    assert "{}".format(sv) == "{}"
 
     # Automatic int casting (not rounding to nearest)
     sv = o3d.SizeVector((1.9, 2, 3))
-    assert f"{sv}" == "{1, 2, 3}"
+    assert "{}".format(sv) == "{1, 2, 3}"
 
     # Automatic casting negative
     sv = o3d.SizeVector((-1.5, 2, 3))
-    assert f"{sv}" == "{-1, 2, 3}"
+    assert "{}".format(sv) == "{-1, 2, 3}"
 
     # 2D list exception
     with pytest.raises(ValueError):

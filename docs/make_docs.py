@@ -324,7 +324,8 @@ class JupyterDocsBuilder:
         execute_notebooks is one of {"auto", "always", "never"}
         """
         if execute_notebooks not in {"auto", "always", "never"}:
-            raise ValueError(f"Invalid execute option: {execute_notebooks}.")
+            raise ValueError(
+                "Invalid execute option: {}.".format(execute_notebooks))
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
         self.current_file_dir = current_file_dir
@@ -383,9 +384,8 @@ class JupyterDocsBuilder:
                 if c.cell_type == "code")
             execute = (self.execute_notebooks == "auto" and has_code and
                        not has_output) or self.execute_notebooks == "always"
-            print(
-                f"has_code: {has_code}, has_output: {has_output}, execute: {execute}"
-            )
+            print("has_code: {}, has_output: {}, execute: {}".format(
+                has_code, has_output, execute))
 
             if execute:
                 ep = nbconvert.preprocessors.ExecutePreprocessor(timeout=6000)
@@ -393,8 +393,8 @@ class JupyterDocsBuilder:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
                     print(
-                        f"Execution of {nb_path.name} failed, this will cause Travis to fail."
-                    )
+                        "Execution of {} failed, this will cause Travis to fail."
+                        .format(nb_path.name))
                     if "TRAVIS" in os.environ:
                         raise
 
