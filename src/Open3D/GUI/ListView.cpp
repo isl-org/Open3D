@@ -24,62 +24,61 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ListView.h"
-
-#include "Theme.h"
+#include "Open3D/GUI/ListView.h"
 
 #include <imgui.h>
-
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+
+#include "Open3D/GUI/Theme.h"
 
 namespace open3d {
 namespace gui {
 
 namespace {
 static const int NO_SELECTION = -1;
-static int gNextListBoxId = 1;
+static int g_next_list_box_id = 1;
 }  // namespace
 
 struct ListView::Impl {
-    std::string imguiId;
-    std::vector<std::string> items;
-    int selectedIndex = NO_SELECTION;
-    std::function<void(const char *, bool)> onValueChanged;
+    std::string imgui_id_;
+    std::vector<std::string> items_;
+    int selected_index_ = NO_SELECTION;
+    std::function<void(const char *, bool)> on_value_changed_;
 };
 
 ListView::ListView() : impl_(new ListView::Impl()) {
     std::stringstream s;
-    s << "##listview_" << gNextListBoxId++;
-    impl_->imguiId = s.str();
+    s << "##listview_" << g_next_list_box_id++;
+    impl_->imgui_id_ = s.str();
 }
 
 ListView::~ListView() {}
 
 void ListView::SetItems(const std::vector<std::string> &items) {
-    impl_->items = items;
-    impl_->selectedIndex = NO_SELECTION;
+    impl_->items_ = items;
+    impl_->selected_index_ = NO_SELECTION;
 }
 
-int ListView::GetSelectedIndex() const { return impl_->selectedIndex; }
+int ListView::GetSelectedIndex() const { return impl_->selected_index_; }
 
 const char *ListView::GetSelectedValue() const {
-    if (impl_->selectedIndex < 0 ||
-        impl_->selectedIndex >= int(impl_->items.size())) {
+    if (impl_->selected_index_ < 0 ||
+        impl_->selected_index_ >= int(impl_->items_.size())) {
         return "";
     } else {
-        return impl_->items[impl_->selectedIndex].c_str();
+        return impl_->items_[impl_->selected_index_].c_str();
     }
 }
 
 void ListView::SetSelectedIndex(int index) {
-    impl_->selectedIndex = std::min(int(impl_->items.size() - 1), index);
+    impl_->selected_index_ = std::min(int(impl_->items_.size() - 1), index);
 }
 
 void ListView::SetOnValueChanged(
-        std::function<void(const char *, bool)> onValueChanged) {
-    impl_->onValueChanged = onValueChanged;
+        std::function<void(const char *, bool)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 Size ListView::CalcPreferredSize(const Theme &theme) const {
@@ -87,10 +86,10 @@ Size ListView::CalcPreferredSize(const Theme &theme) const {
     auto *font = ImGui::GetFont();
     ImVec2 size(0, 0);
 
-    for (auto &item : impl_->items) {
-        auto itemSize = font->CalcTextSizeA(theme.fontSize, Widget::DIM_GROW,
-                                            0.0, item.c_str());
-        size.x = std::max(size.x, itemSize.x);
+    for (auto &item : impl_->items_) {
+        auto item_size = font->CalcTextSizeA(theme.font_size, Widget::DIM_GROW,
+                                             0.0, item.c_str());
+        size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }
     return Size(std::ceil(size.x + 2.0f * padding.x), Widget::DIM_GROW);
@@ -102,35 +101,36 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
 
-    int heightNItems = int(std::floor(frame.height / ImGui::GetFrameHeight()));
+    int height_in_items =
+            int(std::floor(frame.height / ImGui::GetFrameHeight()));
 
     auto result = Widget::DrawResult::NONE;
-    auto newSelectedIdx = impl_->selectedIndex;
-    bool isDoubleClick = false;
+    auto new_selected_idx = impl_->selected_index_;
+    bool is_double_click = false;
     DrawImGuiPushEnabledState();
-    if (ImGui::ListBoxHeader(impl_->imguiId.c_str(), impl_->items.size(),
-                             heightNItems)) {
-        for (size_t i = 0; i < impl_->items.size(); ++i) {
-            bool isSelected = (int(i) == impl_->selectedIndex);
-            if (ImGui::Selectable(impl_->items[i].c_str(), &isSelected,
+    if (ImGui::ListBoxHeader(impl_->imgui_id_.c_str(), impl_->items_.size(),
+                             height_in_items)) {
+        for (size_t i = 0; i < impl_->items_.size(); ++i) {
+            bool is_selected = (int(i) == impl_->selected_index_);
+            if (ImGui::Selectable(impl_->items_[i].c_str(), &is_selected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
-                if (isSelected) {
-                    newSelectedIdx = i;
+                if (is_selected) {
+                    new_selected_idx = i;
                 }
                 // Dear ImGUI seems to have a bug where it registers a
                 // double-click as long as you haven't moved the mouse,
                 // no matter how long the time between clicks was.
                 if (ImGui::IsMouseDoubleClicked(0)) {
-                    isDoubleClick = true;
+                    is_double_click = true;
                 }
             }
         }
         ImGui::ListBoxFooter();
 
-        if (newSelectedIdx != impl_->selectedIndex || isDoubleClick) {
-            impl_->selectedIndex = newSelectedIdx;
-            if (impl_->onValueChanged) {
-                impl_->onValueChanged(GetSelectedValue(), isDoubleClick);
+        if (new_selected_idx != impl_->selected_index_ || is_double_click) {
+            impl_->selected_index_ = new_selected_idx;
+            if (impl_->on_value_changed_) {
+                impl_->on_value_changed_(GetSelectedValue(), is_double_click);
                 result = Widget::DrawResult::REDRAW;
             }
         }

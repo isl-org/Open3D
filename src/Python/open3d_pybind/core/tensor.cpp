@@ -40,7 +40,7 @@
 #include "Open3D/Core/Tensor.h"
 #include "Open3D/Core/TensorKey.h"
 
-using namespace open3d;
+namespace open3d {
 
 template <typename T>
 void bind_templated_constructor(py::class_<Tensor>& tensor) {
@@ -394,3 +394,5 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("__str__",
                [](const Tensor& tensor) { return tensor.ToString(); });
 }
+
+}  // namespace open3d

@@ -26,9 +26,8 @@
 
 #pragma once
 
-#include "Camera.h"
-
 #include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Visualization/Rendering/Camera.h"
 
 namespace open3d {
 
@@ -47,7 +46,7 @@ public:
     virtual void SetBoundingBox(const geometry::AxisAlignedBoundingBox& bounds);
 
     void SetMouseDownInfo(const Camera::Transform& matrix,
-                          const Eigen::Vector3f& centerOfRotation);
+                          const Eigen::Vector3f& center_of_rotation);
 
     const Camera::Transform& GetMatrix() const;
 
@@ -61,8 +60,8 @@ public:
     /// specified
     virtual void RotateWorld(int dx,
                              int dy,
-                             const Eigen::Vector3f& xAxis,
-                             const Eigen::Vector3f& yAxis);
+                             const Eigen::Vector3f& x_axis,
+                             const Eigen::Vector3f& y_axis);
 
     /// Rotates about the forward axis of the matrix
     virtual void RotateZ(int dx, int dy);
@@ -73,26 +72,26 @@ public:
 
     /// Moves the matrix along the forward axis. (This is one type
     /// of zoom.)
-    virtual void Dolly(int dy, DragType dragType);
-    virtual void Dolly(float zDist, Camera::Transform matrix);
+    virtual void Dolly(int dy, DragType drag_type);
+    virtual void Dolly(float z_dist, Camera::Transform matrix);
 
 private:
     Camera::Transform matrix_;
 
 protected:
-    int viewWidth_ = 1;
-    int viewHeight_ = 1;
-    double modelSize_ = 20.0;
-    geometry::AxisAlignedBoundingBox modelBounds_;
-    Eigen::Vector3f centerOfRotation_;
+    int view_width_ = 1;
+    int view_height_ = 1;
+    double model_size_ = 20.0;
+    geometry::AxisAlignedBoundingBox model_bounds_;
+    Eigen::Vector3f center_of_rotation_;
 
-    Camera::Transform matrixAtMouseDown_;
-    Eigen::Vector3f centerOfRotationAtMouseDown_;
+    Camera::Transform matrix_at_mouse_down_;
+    Eigen::Vector3f center_of_rotation_at_mouse_down_;
 
     void SetMatrix(const Camera::Transform& matrix);
     double CalcRotateRadians(int dx, int dy);
     double CalcRotateZRadians(int dx, int dy);
-    float CalcDollyDist(int dy, DragType dragType);
+    float CalcDollyDist(int dy, DragType drag_type);
 };
 
 }  // namespace visualization

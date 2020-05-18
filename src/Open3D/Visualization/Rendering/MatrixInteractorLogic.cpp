@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "MatrixInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/MatrixInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
@@ -32,29 +32,29 @@ namespace visualization {
 MatrixInteractorLogic::~MatrixInteractorLogic() {}
 
 void MatrixInteractorLogic::SetViewSize(int width, int height) {
-    viewWidth_ = width;
-    viewHeight_ = height;
+    view_width_ = width;
+    view_height_ = height;
 }
 
 const geometry::AxisAlignedBoundingBox& MatrixInteractorLogic::GetBoundingBox()
         const {
-    return modelBounds_;
+    return model_bounds_;
 }
 
 void MatrixInteractorLogic::SetBoundingBox(
         const geometry::AxisAlignedBoundingBox& bounds) {
-    modelSize_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
-    modelBounds_ = bounds;
+    model_size_ = (bounds.GetMaxBound() - bounds.GetMinBound()).norm();
+    model_bounds_ = bounds;
 }
 
 void MatrixInteractorLogic::SetMouseDownInfo(
         const Camera::Transform& matrix,
-        const Eigen::Vector3f& centerOfRotation) {
+        const Eigen::Vector3f& center_of_rotation) {
     matrix_ = matrix;
-    centerOfRotation_ = centerOfRotation;
+    center_of_rotation_ = center_of_rotation;
 
-    matrixAtMouseDown_ = matrix;
-    centerOfRotationAtMouseDown_ = centerOfRotation;
+    matrix_at_mouse_down_ = matrix;
+    center_of_rotation_at_mouse_down_ = center_of_rotation;
 }
 
 void MatrixInteractorLogic::SetMatrix(const Camera::Transform& matrix) {
@@ -66,8 +66,8 @@ const Camera::Transform& MatrixInteractorLogic::GetMatrix() const {
 }
 
 void MatrixInteractorLogic::Rotate(int dx, int dy) {
-    auto matrix = matrixAtMouseDown_;  // copy
-    Eigen::AngleAxisf rotMatrix(0, Eigen::Vector3f(1, 0, 0));
+    auto matrix = matrix_at_mouse_down_;  // copy
+    Eigen::AngleAxisf rot_matrix(0, Eigen::Vector3f(1, 0, 0));
 
     // We want to rotate as if we were rotating an imaginary trackball
     // centered at the point of rotation. To do this we need an axis
@@ -87,23 +87,23 @@ void MatrixInteractorLogic::Rotate(int dx, int dy) {
     float theta = CalcRotateRadians(dx, dy);
 
     axis = matrix.rotation() * axis;  // convert axis to world coords
-    rotMatrix = rotMatrix * Eigen::AngleAxisf(-theta, axis);
+    rot_matrix = rot_matrix * Eigen::AngleAxisf(-theta, axis);
 
     auto pos = matrix * Eigen::Vector3f(0, 0, 0);
-    Eigen::Vector3f toCOR = centerOfRotation_ - pos;
-    auto dist = toCOR.norm();
+    Eigen::Vector3f to_cor = center_of_rotation_ - pos;
+    auto dist = to_cor.norm();
     // If the center of rotation is behind the camera we need to flip
     // the sign of 'dist'. We can just dotprod with the forward vector
     // of the camera. Forward is [0, 0, -1] for an identity matrix,
     // so forward is simply rotation * [0, 0, -1].
     Eigen::Vector3f forward =
             matrix.rotation() * Eigen::Vector3f{0.0f, 0.0f, -1.0f};
-    if (toCOR.dot(forward) < 0) {
+    if (to_cor.dot(forward) < 0) {
         dist = -dist;
     }
     visualization::Camera::Transform m;
-    m.fromPositionOrientationScale(centerOfRotation_,
-                                   rotMatrix * matrix.rotation(),
+    m.fromPositionOrientationScale(center_of_rotation_,
+                                   rot_matrix * matrix.rotation(),
                                    Eigen::Vector3f(1, 1, 1));
     m.translate(Eigen::Vector3f(0, 0, dist));
 
@@ -112,25 +112,25 @@ void MatrixInteractorLogic::Rotate(int dx, int dy) {
 
 void MatrixInteractorLogic::RotateWorld(int dx,
                                         int dy,
-                                        const Eigen::Vector3f& xAxis,
-                                        const Eigen::Vector3f& yAxis) {
-    auto matrix = matrixAtMouseDown_;  // copy
+                                        const Eigen::Vector3f& x_axis,
+                                        const Eigen::Vector3f& y_axis) {
+    auto matrix = matrix_at_mouse_down_;  // copy
 
     dy = -dy;  // up is negative, but the calculations are easiest to
                // imagine up is positive.
-    Eigen::Vector3f axis = dx * xAxis + dy * yAxis;
+    Eigen::Vector3f axis = dx * x_axis + dy * y_axis;
     axis = axis.normalized();
     float theta = CalcRotateRadians(dx, dy);
 
     axis = matrix.rotation() * axis;  // convert axis to world coords
-    auto rotMatrix = visualization::Camera::Transform::Identity() *
-                     Eigen::AngleAxisf(-theta, axis);
+    auto rot_matrix = visualization::Camera::Transform::Identity() *
+                      Eigen::AngleAxisf(-theta, axis);
 
     auto pos = matrix * Eigen::Vector3f(0, 0, 0);
-    auto dist = (centerOfRotation_ - pos).norm();
+    auto dist = (center_of_rotation_ - pos).norm();
     visualization::Camera::Transform m;
-    m.fromPositionOrientationScale(centerOfRotation_,
-                                   rotMatrix * matrix.rotation(),
+    m.fromPositionOrientationScale(center_of_rotation_,
+                                   rot_matrix * matrix.rotation(),
                                    Eigen::Vector3f(1, 1, 1));
     m.translate(Eigen::Vector3f(0, 0, dist));
 
@@ -139,7 +139,7 @@ void MatrixInteractorLogic::RotateWorld(int dx,
 
 double MatrixInteractorLogic::CalcRotateRadians(int dx, int dy) {
     Eigen::Vector3f moved(dx, dy, 0);
-    return 0.5 * M_PI * moved.norm() / (0.5f * float(viewHeight_));
+    return 0.5 * M_PI * moved.norm() / (0.5f * float(view_height_));
 }
 
 void MatrixInteractorLogic::RotateZ(int dx, int dy) {
@@ -148,7 +148,7 @@ void MatrixInteractorLogic::RotateZ(int dx, int dy) {
     // about (0, 0, 1).
     Eigen::Vector3f axis(0, 0, 1);
     auto rad = CalcRotateZRadians(dx, dy);
-    auto matrix = matrixAtMouseDown_;  // copy
+    auto matrix = matrix_at_mouse_down_;  // copy
     matrix.rotate(Eigen::AngleAxisf(rad, axis));
     matrix_ = matrix;
 }
@@ -157,25 +157,25 @@ void MatrixInteractorLogic::RotateZWorld(int dx,
                                          int dy,
                                          const Eigen::Vector3f& forward) {
     auto rad = CalcRotateZRadians(dx, dy);
-    Eigen::AngleAxisf rotMatrix(rad, forward);
+    Eigen::AngleAxisf rot_matrix(rad, forward);
 
-    Camera::Transform matrix = matrixAtMouseDown_;  // copy
-    matrix.translate(centerOfRotation_);
-    matrix *= rotMatrix;
-    matrix.translate(-centerOfRotation_);
+    Camera::Transform matrix = matrix_at_mouse_down_;  // copy
+    matrix.translate(center_of_rotation_);
+    matrix *= rot_matrix;
+    matrix.translate(-center_of_rotation_);
     matrix_ = matrix;
 }
 
 double MatrixInteractorLogic::CalcRotateZRadians(int dx, int dy) {
     // Moving half the height should rotate 360 deg (= 2 * PI).
     // This makes it easy to rotate enough without rotating too much.
-    return 4.0 * M_PI * dy / viewHeight_;
+    return 4.0 * M_PI * dy / view_height_;
 }
 
-void MatrixInteractorLogic::Dolly(int dy, DragType dragType) {
-    float dist = CalcDollyDist(dy, dragType);
-    if (dragType == DragType::MOUSE) {
-        Dolly(dist, matrixAtMouseDown_);  // copies the matrix
+void MatrixInteractorLogic::Dolly(int dy, DragType drag_type) {
+    float dist = CalcDollyDist(dy, drag_type);
+    if (drag_type == DragType::MOUSE) {
+        Dolly(dist, matrix_at_mouse_down_);  // copies the matrix
     } else {
         Dolly(dist, matrix_);
     }
@@ -183,7 +183,7 @@ void MatrixInteractorLogic::Dolly(int dy, DragType dragType) {
 
 // Note: we pass `matrix` by value because we want to copy it,
 //       as translate() will be modifying it.
-void MatrixInteractorLogic::Dolly(float zDist, Camera::Transform matrix) {
+void MatrixInteractorLogic::Dolly(float z_dist, Camera::Transform matrix) {
     // Dolly is just moving the camera forward. Filament uses right as +x,
     // up as +y, and forward as -z (standard OpenGL coordinates). So to
     // move forward all we need to do is translate the camera matrix by
@@ -192,26 +192,26 @@ void MatrixInteractorLogic::Dolly(float zDist, Camera::Transform matrix) {
     // vector in world space, but the translation happens in camera space.)
     // Since we want trackpad down (negative) to go forward ("pulling" the
     // model toward the viewer) we need to negate dy.
-    auto forward = Eigen::Vector3f(0, 0, -zDist);  // zDist * (0, 0, -1)
+    auto forward = Eigen::Vector3f(0, 0, -z_dist);  // zDist * (0, 0, -1)
     matrix.translate(forward);
     matrix_ = matrix;
 }
 
-float MatrixInteractorLogic::CalcDollyDist(int dy, DragType dragType) {
+float MatrixInteractorLogic::CalcDollyDist(int dy, DragType drag_type) {
     float dist = 0.0f;  // initialize to make GCC happy
-    switch (dragType) {
+    switch (drag_type) {
         case DragType::MOUSE:
             // Zoom out is "push away" or up, is a negative value for
             // mousing
-            dist = float(dy) * 0.0025f * modelSize_;
+            dist = float(dy) * 0.0025f * model_size_;
             break;
         case DragType::TWO_FINGER:
             // Zoom out is "push away" or up, is a positive value for
             // two-finger scrolling, so we need to invert dy.
-            dist = float(-dy) * 0.01f * modelSize_;
+            dist = float(-dy) * 0.01f * model_size_;
             break;
         case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
-            dist = float(-dy) * 0.1f * modelSize_;
+            dist = float(-dy) * 0.1f * model_size_;
             break;
     }
     return dist;

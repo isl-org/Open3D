@@ -28,6 +28,8 @@
 
 #include "Open3D/Geometry/Octree.h"
 
+namespace open3d {
+
 // Trampoline classes for octree datastructures
 template <class OctreeNodeBase = geometry::OctreeNode>
 class PyOctreeNode : public OctreeNodeBase {
@@ -50,3 +52,5 @@ public:
                                OctreeLeafNodeBase, );
     };
 };
+
+}  // namespace open3d

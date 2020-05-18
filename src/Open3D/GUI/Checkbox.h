@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Widget.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -47,7 +47,7 @@ public:
 
     /// Specifies a callback function which will be called when the box
     /// changes checked state as a result of user action.
-    void SetOnChecked(std::function<void(bool)> onChecked);
+    void SetOnChecked(std::function<void(bool)> on_checked);
 
 private:
     struct Impl;

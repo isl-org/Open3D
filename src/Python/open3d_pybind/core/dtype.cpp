@@ -30,7 +30,7 @@
 
 #include "Open3D/Core/Dtype.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_core_dtype(py::module &m) {
     py::enum_<Dtype>(m, "Dtype")
@@ -46,3 +46,5 @@ void pybind_core_dtype(py::module &m) {
     py::class_<DtypeUtil> dtype_util(m, "DtypeUtil");
     dtype_util.def(py::init<>()).def("byte_size", &DtypeUtil::ByteSize);
 }
+
+}  // namespace open3d

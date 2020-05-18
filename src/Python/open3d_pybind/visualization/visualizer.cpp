@@ -34,7 +34,7 @@
 #include "open3d_pybind/visualization/visualization.h"
 #include "open3d_pybind/visualization/visualization_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 // Functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
@@ -277,3 +277,5 @@ void pybind_visualizer(py::module &m) {
 }
 
 void pybind_visualizer_method(py::module &m) {}
+
+}  // namespace open3d

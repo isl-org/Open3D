@@ -33,8 +33,8 @@
 
 #include <vector>
 
-using namespace std;
-using namespace open3d;
+namespace open3d {
+namespace unit_test {
 
 class DLPackPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
@@ -81,3 +81,6 @@ TEST_P(DLPackPermuteDevices, ToDLPackFromDLPack) {
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 }
+
+}  // namespace unit_test
+}  // namespace open3d

@@ -26,11 +26,10 @@
 
 #pragma once
 
-#include "RotationInteractorLogic.h"
-
-#include "RendererHandle.h"
-
 #include <map>
+
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
+#include "Open3D/Visualization/Rendering/RotationInteractorLogic.h"
 
 namespace open3d {
 
@@ -44,7 +43,7 @@ class ModelInteractorLogic : public RotationInteractorLogic {
 public:
     ModelInteractorLogic(visualization::Scene* scene,
                          visualization::Camera* camera,
-                         double minFarPlane);
+                         double min_far_plane);
     virtual ~ModelInteractorLogic();
 
     void SetBoundingBox(
@@ -55,7 +54,7 @@ public:
 
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType dragType) override;
+    void Dolly(int dy, DragType drag_type) override;
     void Pan(int dx, int dy) override;
 
     void StartMouseDrag() override;
@@ -66,10 +65,10 @@ private:
     Scene* scene_;
     GeometryHandle axes_;
     std::vector<GeometryHandle> model_;
-    bool isAxesVisible_;
+    bool is_axes_visible_;
 
-    geometry::AxisAlignedBoundingBox boundsAtMouseDown_;
-    std::map<GeometryHandle, Camera::Transform> transformsAtMouseDown_;
+    geometry::AxisAlignedBoundingBox bounds_at_mouse_down_;
+    std::map<GeometryHandle, Camera::Transform> transforms_at_mouse_down_;
 
     void UpdateBoundingBox(const Camera::Transform& t);
 };

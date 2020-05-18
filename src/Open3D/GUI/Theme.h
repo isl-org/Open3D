@@ -26,59 +26,58 @@
 
 #pragma once
 
-#include "Widget.h"
-
-#include "Color.h"
-#include "Gui.h"
-
 #include <string>
+
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Gui.h"
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
 
 struct Theme {
-    Color backgroundColor;
+    Color background_color;
 
-    std::string fontPath;
-    int fontSize;
-    int defaultMargin;
-    int defaultLayoutSpacing;
-    Color textColor;
+    std::string font_path;
+    int font_size;
+    int default_margin;
+    int default_layout_spacing;
+    Color text_color;
 
-    int borderWidth;
-    int borderRadius;
-    Color borderColor;
+    int border_width;
+    int border_radius;
+    Color border_color;
 
-    Color menubarBorderColor;
+    Color menubar_border_color;
 
-    Color buttonColor;
-    Color buttonHoverColor;
-    Color buttonActiveColor;
-    Color buttonOnColor;
-    Color buttonOnHoverColor;
-    Color buttonOnActiveColor;
-    Color buttonOnTextColor;
+    Color button_color;
+    Color button_hover_color;
+    Color button_active_color;
+    Color button_on_color;
+    Color button_on_hover_color;
+    Color button_on_active_color;
+    Color button_on_text_color;
 
-    Color checkboxBackgroundOffColor;
-    Color checkboxBackgroundOnColor;
-    Color checkboxBackgroundHoverOffColor;
-    Color checkboxBackgroundHoverOnColor;
-    Color checkboxCheckColor;
+    Color checkbox_background_off_color;
+    Color checkbox_background_on_color;
+    Color checkbox_background_hover_off_color;
+    Color checkbox_background_hover_on_color;
+    Color checkbox_check_color;
 
-    Color comboboxBackgroundColor;
-    Color comboboxHoverColor;
-    Color comboboxArrowBackgroundColor;
+    Color combobox_background_color;
+    Color combobox_hover_color;
+    Color combobox_arrow_background_color;
 
-    Color sliderGrabColor;
+    Color slider_grab_color;
 
-    Color textEditBackgroundColor;
+    Color text_edit_background_color;
 
-    Color tabInactiveColor;
-    Color tabHoverColor;
-    Color tabActiveColor;
+    Color tab_inactive_color;
+    Color tab_hover_color;
+    Color tab_active_color;
 
-    int dialogBorderWidth;
-    int dialogBorderRadius;
+    int dialog_border_width;
+    int dialog_border_radius;
 };
 
 }  // namespace gui

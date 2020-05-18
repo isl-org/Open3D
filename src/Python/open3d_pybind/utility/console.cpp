@@ -29,7 +29,7 @@
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/open3d_pybind.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_console(py::module& m) {
     py::enum_<utility::VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
@@ -74,3 +74,5 @@ void pybind_console(py::module& m) {
                      pybind11::object traceback) { cm.exit(); },
                  "Exit the context manager");
 }
+
+}  // namespace open3d

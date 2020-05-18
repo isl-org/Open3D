@@ -41,17 +41,17 @@ namespace visualization {
 class FilamentMaterialModifier : public MaterialModifier {
 public:
     static filament::TextureSampler SamplerFromSamplerParameters(
-            const TextureSamplerParameters& samplerConfig);
+            const TextureSamplerParameters& sampler_config);
 
-    FilamentMaterialModifier(
-            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-            const MaterialInstanceHandle& id);
+    FilamentMaterialModifier(const std::shared_ptr<filament::MaterialInstance>&
+                                     material_instance,
+                             const MaterialInstanceHandle& id);
     FilamentMaterialModifier() = default;
 
     void Reset();
-    void Init(
-            const std::shared_ptr<filament::MaterialInstance>& materialInstance,
-            const MaterialInstanceHandle& id);
+    void
+    Init(const std::shared_ptr<filament::MaterialInstance>& material_instance,
+         const MaterialInstanceHandle& id);
 
     MaterialModifier& SetParameter(const char* parameter, int value) override;
     MaterialModifier& SetParameter(const char* parameter, float value) override;
@@ -67,13 +67,13 @@ public:
             const TextureHandle& texture,
             const TextureSamplerParameters& sampler) override;
 
-    MaterialModifier& SetDoubleSided(bool doubleSided) override;
+    MaterialModifier& SetDoubleSided(bool double_sided) override;
 
     MaterialInstanceHandle Finish() override;
 
 private:
-    MaterialInstanceHandle currentHandle_;
-    std::shared_ptr<filament::MaterialInstance> materialInstance_;
+    MaterialInstanceHandle current_handle_;
+    std::shared_ptr<filament::MaterialInstance> material_instance_;
 };
 
 }  // namespace visualization

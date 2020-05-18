@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "RendererHandle.h"
-
 #include <json/json.h>
 #include <Eigen/Geometry>
+
+#include "Open3D/Visualization/Rendering/RendererHandle.h"
 
 namespace open3d {
 
@@ -46,26 +46,26 @@ struct LightDescription {
     float intensity;
     float falloff;
     // Spot lights only
-    float lightConeInner;
+    float light_cone_inner;
     // Spot lights only
-    float lightConeOuter;
+    float light_cone_outer;
     Eigen::Vector3f color;
     Eigen::Vector3f direction;
     Eigen::Vector3f position;
-    bool castShadows;
+    bool cast_shadows;
 
-    Json::Value customAttributes;
+    Json::Value custom_attributes;
 
     LightDescription()
         : type(POINT),
           intensity(10000),
           falloff(10),
-          lightConeInner(M_PI / 4),
-          lightConeOuter(M_PI / 2),
+          light_cone_inner(M_PI / 4),
+          light_cone_outer(M_PI / 2),
           color(1.f, 1.f, 1.f),
           direction(0.f, 0.f, -1.f),
           position(0.f, 0.f, 0.f),
-          castShadows(true) {}
+          cast_shadows(true) {}
 };
 
 }  // namespace visualization

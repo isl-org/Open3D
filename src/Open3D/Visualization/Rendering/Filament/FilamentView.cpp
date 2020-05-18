@@ -24,14 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FilamentView.h"
-
-#include "FilamentCamera.h"
-#include "FilamentEntitiesMods.h"
-#include "FilamentResourceManager.h"
-#include "FilamentScene.h"
-
-#include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
 #include <filament/Camera.h>
 #include <filament/Engine.h>
@@ -39,6 +32,12 @@
 #include <filament/Scene.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
+
+#include "Open3D/Geometry/BoundingVolume.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEntitiesMods.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentResourceManager.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
 
 namespace open3d {
 namespace visualization {
@@ -56,26 +55,28 @@ filament::View::TargetBufferFlags FlagsFromTargetBuffers(
         const View::TargetBuffers& buffers) {
     using namespace std;
 
-    auto rawBuffers = static_cast<uint8_t>(buffers);
-    uint8_t rawFilamentBuffers = 0;
-    if (rawBuffers | (uint8_t)View::TargetBuffers::Color) {
-        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::COLOR;
+    auto raw_buffers = static_cast<uint8_t>(buffers);
+    uint8_t raw_filament_buffers = 0;
+    if (raw_buffers | (uint8_t)View::TargetBuffers::Color) {
+        raw_filament_buffers |=
+                (uint8_t)filament::View::TargetBufferFlags::COLOR;
     }
-    if (rawBuffers | (uint8_t)View::TargetBuffers::Depth) {
-        rawFilamentBuffers |= (uint8_t)filament::View::TargetBufferFlags::DEPTH;
+    if (raw_buffers | (uint8_t)View::TargetBuffers::Depth) {
+        raw_filament_buffers |=
+                (uint8_t)filament::View::TargetBufferFlags::DEPTH;
     }
-    if (rawBuffers | (uint8_t)View::TargetBuffers::Stencil) {
-        rawFilamentBuffers |=
+    if (raw_buffers | (uint8_t)View::TargetBuffers::Stencil) {
+        raw_filament_buffers |=
                 (uint8_t)filament::View::TargetBufferFlags::STENCIL;
     }
 
-    return static_cast<filament::View::TargetBufferFlags>(rawFilamentBuffers);
+    return static_cast<filament::View::TargetBufferFlags>(raw_filament_buffers);
 }
 }  // namespace
 
 FilamentView::FilamentView(filament::Engine& engine,
-                           FilamentResourceManager& resourceManager)
-    : engine_(engine), resourceManager_(resourceManager) {
+                           FilamentResourceManager& resource_mgr)
+    : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
     view_->setSampleCount(4);
     view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
@@ -90,13 +91,13 @@ FilamentView::FilamentView(filament::Engine& engine,
     camera_->SetProjection(90, 4.f / 3.f, 0.01, 1000,
                            Camera::FovType::Horizontal);
 
-    discardBuffers_ = View::TargetBuffers::All;
+    discard_buffers_ = View::TargetBuffers::All;
 }
 
 FilamentView::FilamentView(filament::Engine& engine,
                            FilamentScene& scene,
-                           FilamentResourceManager& resourceManager)
-    : FilamentView(engine, resourceManager) {
+                           FilamentResourceManager& resource_mgr)
+    : FilamentView(engine, resource_mgr) {
     scene_ = &scene;
 
     view_->setScene(scene_->GetNativeScene());
@@ -143,7 +144,7 @@ void FilamentView::SetMode(Mode mode) {
 }
 
 void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
-    discardBuffers_ = buffers;
+    discard_buffers_ = buffers;
     view_->setRenderTarget(nullptr, FlagsFromTargetBuffers(buffers));
 }
 
@@ -159,7 +160,7 @@ void FilamentView::SetViewport(std::int32_t x,
 }
 
 void FilamentView::SetClearColor(const Eigen::Vector3f& color) {
-    clearColor_ = color;
+    clear_color_ = color;
 
 #if AUTO_CLEAR_COLOR
     if (mode_ == Mode::Color || mode_ >= Mode::ColorMapX) {
@@ -181,16 +182,16 @@ Camera* FilamentView::GetCamera() const { return camera_.get(); }
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
     SetMode(other.mode_);
     view_->setRenderTarget(nullptr,
-                           FlagsFromTargetBuffers(other.discardBuffers_));
+                           FlagsFromTargetBuffers(other.discard_buffers_));
 
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
 
-    SetClearColor(other.clearColor_);
+    SetClearColor(other.clear_color_);
 
     // TODO: Consider moving this code to FilamentCamera
     auto& camera = view_->getCamera();
-    auto& otherCamera = other.GetNativeView()->getCamera();
+    auto& other_camera = other.GetNativeView()->getCamera();
 
     // TODO: Code below could introduce problems with culling,
     //        because Camera::setCustomProjection method
@@ -199,10 +200,10 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     //        makes culling matrix with infinite far plane for PERSPECTIVE
     //        See FCamera::setCustomProjection and FCamera::setProjection
     //        There is no easy way to fix it currently (Filament 1.4.3)
-    camera.setCustomProjection(otherCamera.getProjectionMatrix(),
-                               otherCamera.getNear(),
-                               otherCamera.getCullingFar());
-    camera.setModelMatrix(otherCamera.getModelMatrix());
+    camera.setCustomProjection(other_camera.getProjectionMatrix(),
+                               other_camera.getNear(),
+                               other_camera.getCullingFar());
+    camera.setModelMatrix(other_camera.getModelMatrix());
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {
@@ -211,52 +212,52 @@ void FilamentView::SetScene(FilamentScene& scene) {
 }
 
 void FilamentView::PreRender() {
-    auto& renderableManager = engine_.getRenderableManager();
+    auto& renderable_mgr = engine_.getRenderableManager();
 
-    MaterialInstanceHandle materialHandle;
-    std::shared_ptr<filament::MaterialInstance> selectedMaterial;
+    MaterialInstanceHandle material_handle;
+    std::shared_ptr<filament::MaterialInstance> selected_material;
     if (mode_ == Mode::Depth) {
-        materialHandle = FilamentResourceManager::kDepthMaterial;
+        material_handle = FilamentResourceManager::kDepthMaterial;
         // FIXME: Refresh parameters only then something ACTUALLY changed
-        selectedMaterial =
-                resourceManager_.GetMaterialInstance(materialHandle).lock();
-        if (selectedMaterial) {
+        selected_material =
+                resource_mgr_.GetMaterialInstance(material_handle).lock();
+        if (selected_material) {
             const auto f = camera_->GetNativeCamera()->getCullingFar();
             const auto n = camera_->GetNativeCamera()->getNear();
 
-            FilamentMaterialModifier(selectedMaterial, materialHandle)
+            FilamentMaterialModifier(selected_material, material_handle)
                     .SetParameter("cameraNear", n)
                     .SetParameter("cameraFar", f)
                     .Finish();
         }
     } else if (mode_ == Mode::Normals) {
-        materialHandle = FilamentResourceManager::kNormalsMaterial;
-        selectedMaterial =
-                resourceManager_.GetMaterialInstance(materialHandle).lock();
+        material_handle = FilamentResourceManager::kNormalsMaterial;
+        selected_material =
+                resource_mgr_.GetMaterialInstance(material_handle).lock();
     } else if (mode_ >= Mode::ColorMapX) {
-        materialHandle = FilamentResourceManager::kColorMapMaterial;
+        material_handle = FilamentResourceManager::kColorMapMaterial;
 
-        int coordinateIndex = 0;
+        int coordinate_index = 0;
         switch (mode_) {
             case Mode::ColorMapX:
-                coordinateIndex = 0;
+                coordinate_index = 0;
                 break;
             case Mode::ColorMapY:
-                coordinateIndex = 1;
+                coordinate_index = 1;
                 break;
             case Mode::ColorMapZ:
-                coordinateIndex = 2;
+                coordinate_index = 2;
                 break;
 
             default:
                 break;
         }
 
-        selectedMaterial =
-                resourceManager_.GetMaterialInstance(materialHandle).lock();
-        if (selectedMaterial) {
-            FilamentMaterialModifier(selectedMaterial, materialHandle)
-                    .SetParameter("coordinateIndex", coordinateIndex)
+        selected_material =
+                resource_mgr_.GetMaterialInstance(material_handle).lock();
+        if (selected_material) {
+            FilamentMaterialModifier(selected_material, material_handle)
+                    .SetParameter("coordinateIndex", coordinate_index)
                     .Finish();
         }
     }
@@ -265,32 +266,32 @@ void FilamentView::PreRender() {
         for (const auto& pair : scene_->entities_) {
             const auto& entity = pair.second;
             if (entity.info.type == EntityType::Geometry) {
-                std::shared_ptr<filament::MaterialInstance> matInst;
-                if (selectedMaterial) {
-                    matInst = selectedMaterial;
+                std::shared_ptr<filament::MaterialInstance> mat_inst;
+                if (selected_material) {
+                    mat_inst = selected_material;
 
                     if (mode_ >= Mode::ColorMapX) {
                         auto bbox = scene_->GetEntityBoundingBox(pair.first);
-                        Eigen::Vector3f bboxMin =
+                        Eigen::Vector3f bbox_min =
                                 bbox.GetMinBound().cast<float>();
-                        Eigen::Vector3f bboxMax =
+                        Eigen::Vector3f bbox_max =
                                 bbox.GetMaxBound().cast<float>();
 
-                        FilamentMaterialModifier(selectedMaterial,
-                                                 materialHandle)
-                                .SetParameter("bboxMin", bboxMin)
-                                .SetParameter("bboxMax", bboxMax)
+                        FilamentMaterialModifier(selected_material,
+                                                 material_handle)
+                                .SetParameter("bboxMin", bbox_min)
+                                .SetParameter("bboxMax", bbox_max)
                                 .Finish();
                     }
                 } else {
-                    matInst = resourceManager_
-                                      .GetMaterialInstance(entity.material)
-                                      .lock();
+                    mat_inst =
+                            resource_mgr_.GetMaterialInstance(entity.material)
+                                    .lock();
                 }
 
                 filament::RenderableManager::Instance inst =
-                        renderableManager.getInstance(entity.info.self);
-                renderableManager.setMaterialInstanceAt(inst, 0, matInst.get());
+                        renderable_mgr.getInstance(entity.info.self);
+                renderable_mgr.setMaterialInstanceAt(inst, 0, mat_inst.get());
             }
         }
     }

@@ -14,18 +14,19 @@ Open3D Python packages are distributed via
 
 Supported Python versions:
 
-* 2.7
 * 3.5
 * 3.6
+* 3.7
+* 3.8
 
 Supported operating systems:
 
-* Ubuntu (tested on 16.04, should work on other modern versions)
-* MacOS
-* Windows 10 (32-bit and 64-bit)
+* Ubuntu 18.04+
+* macOS
+* Windows 10 (64-bit)
 
-PyPI
-----
+Pip (PyPI)
+----------
 
 .. code-block:: bash
 
@@ -65,7 +66,7 @@ Now, try importing Open3D.
 
 .. code-block:: bash
 
-    python -c "import open3d"
+    python -c "import open3d as o3d"
 
 If this works, congratulations, now Open3D has been successfully installed!
 

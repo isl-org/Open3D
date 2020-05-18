@@ -26,13 +26,14 @@
 
 #pragma once
 
+// NOTE: This header must precede the Filament headers otherwise a conflict
+// occurs between Filament and standard headers
 #include "Open3D/Visualization/Rendering/RendererHandle.h"
-
-#include <memory>
-#include <tuple>
 
 #include <filament/Box.h>
 #include <filament/RenderableManager.h>
+#include <memory>
+#include <tuple>
 
 namespace open3d {
 
@@ -61,7 +62,7 @@ public:
     virtual filament::Box ComputeAABB() = 0;
 
 protected:
-    static void DeallocateBuffer(void* buffer, size_t size, void* userPtr);
+    static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr);
 };
 
 class TriangleMeshBuffersBuilder : public GeometryBuffersBuilder {

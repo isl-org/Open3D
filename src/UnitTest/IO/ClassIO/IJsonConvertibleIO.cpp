@@ -26,26 +26,28 @@
 
 #include "TestUtility/UnitTest.h"
 
-TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertible) {
-    unit_test::NotImplemented();
-}
+namespace open3d {
+namespace unit_test {
 
-TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertible) {
-    unit_test::NotImplemented();
-}
+TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertible) { NotImplemented(); }
+
+TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertible) { NotImplemented(); }
 
 TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSON) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSON) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSONString) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSONString) {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
+
+}  // namespace unit_test
+}  // namespace open3d

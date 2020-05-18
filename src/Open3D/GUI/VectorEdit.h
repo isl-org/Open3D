@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Widget.h"
-
 #include <Eigen/Geometry>
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -47,7 +47,7 @@ public:
     /// Sets the function that is called whenever the value in the widget
     /// changes because of user behavior
     void SetOnValueChanged(
-            std::function<void(const Eigen::Vector3f&)> onChanged);
+            std::function<void(const Eigen::Vector3f&)> on_changed);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     Widget::DrawResult Draw(const DrawContext& context) override;

@@ -30,11 +30,11 @@
 #include <memory>
 #include <string>
 
-#include "Events.h"
-#include "Gui.h"
-#include "Menu.h"
+#include "Open3D/GUI/Events.h"
+#include "Open3D/GUI/Gui.h"
+#include "Open3D/GUI/Menu.h"
+#include "Open3D/GUI/Widget.h"
 #include "Open3D/Visualization/Rendering/Renderer.h"
-#include "Widget.h"
 
 struct GLFWwindow;
 
@@ -105,7 +105,7 @@ public:
     /// Returns the scaling factor from OS pixels to device pixels
     float GetScaling() const;
     /// Returns the global point (in OS pixels) in window local coordinates.
-    Point GlobalToWindowCoord(int globalX, int globalY);
+    Point GlobalToWindowCoord(int global_x, int global_y);
 
     bool IsVisible() const;
     void Show(bool vis = true);
@@ -151,7 +151,7 @@ protected:
     virtual void Layout(const Theme& theme);
 
     // Override to handle menu items
-    virtual void OnMenuItemSelected(Menu::ItemId itemId);
+    virtual void OnMenuItemSelected(Menu::ItemId item_id);
 
     // Override to handle drag and drop on the windows.
     virtual void OnDragDropped(const char* path);
@@ -159,18 +159,18 @@ protected:
 private:
     enum DrawResult { NONE, REDRAW };
     DrawResult OnDraw();
-    Widget::DrawResult DrawOnce(bool isLayoutPass);
+    Widget::DrawResult DrawOnce(bool is_layout_pass);
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
     bool OnTickEvent(const TickEvent& e);
     void* MakeDrawContextCurrent() const;
-    void RestoreDrawContext(void* oldContext) const;
+    void RestoreDrawContext(void* old_context) const;
     void* GetNativeDrawable() const;
 
     static void DrawCallback(GLFWwindow* window);
-    static void ResizeCallback(GLFWwindow* window, int osWidth, int osHeight);
+    static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);
     static void RescaleCallback(GLFWwindow* window, float xscale, float yscale);
     static void MouseMoveCallback(GLFWwindow* window, double x, double y);
     static void MouseButtonCallback(GLFWwindow* window,

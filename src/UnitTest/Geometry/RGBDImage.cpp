@@ -30,10 +30,8 @@
 #include "Open3D/Geometry/RGBDImage.h"
 #include "TestUtility/UnitTest.h"
 
-using namespace open3d;
-using namespace std;
-using namespace unit_test;
-using namespace unit_test;
+namespace open3d {
+namespace unit_test {
 
 TEST(RGBDImage, Constructor) {
     geometry::Image image;
@@ -69,10 +67,10 @@ TEST(RGBDImage, Constructor) {
     ExpectEQ(depth->data_, rgbd_image.depth_.data_);
 }
 
-TEST(RGBDImage, DISABLED_MemberData) { unit_test::NotImplemented(); }
+TEST(RGBDImage, DISABLED_MemberData) { NotImplemented(); }
 
 TEST(RGBDImage, CreateFromColorAndDepth) {
-    vector<uint8_t> ref_color = {
+    std::vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
             30,  63,  123, 6,   19,  63,  193, 10,  23,  63,  83,  253, 46,
@@ -82,7 +80,7 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
             21,  63,  135, 1,   54,  63,  220, 15,  35,  63,  177, 246, 44,
             63,  207, 89,  38,  63,  56,  66,  57,  63};
 
-    vector<uint8_t> ref_depth = {
+    std::vector<uint8_t> ref_depth = {
             208, 254, 91,  58,  103, 154, 205, 57,  59,  147, 76,  58,  236,
             175, 80,  58,  232, 127, 110, 58,  103, 154, 77,  57,  62,  195,
             174, 57,  139, 118, 72,  58,  22,  236, 143, 57,  66,  243, 16,
@@ -126,7 +124,7 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
 }
 
 TEST(RGBDImage, CreateFromRedwoodFormat) {
-    vector<uint8_t> ref_color = {
+    std::vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
             30,  63,  123, 6,   19,  63,  193, 10,  23,  63,  83,  253, 46,
@@ -136,7 +134,7 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
             21,  63,  135, 1,   54,  63,  220, 15,  35,  63,  177, 246, 44,
             63,  207, 89,  38,  63,  56,  66,  57,  63};
 
-    vector<uint8_t> ref_depth = {
+    std::vector<uint8_t> ref_depth = {
             208, 254, 91,  58,  103, 154, 205, 57,  59,  147, 76,  58,  236,
             175, 80,  58,  232, 127, 110, 58,  103, 154, 77,  57,  62,  195,
             174, 57,  139, 118, 72,  58,  22,  236, 143, 57,  66,  243, 16,
@@ -180,7 +178,7 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
 }
 
 TEST(RGBDImage, CreateFromTUMFormat) {
-    vector<uint8_t> ref_color = {
+    std::vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
             30,  63,  123, 6,   19,  63,  193, 10,  23,  63,  83,  253, 46,
@@ -190,7 +188,7 @@ TEST(RGBDImage, CreateFromTUMFormat) {
             21,  63,  135, 1,   54,  63,  220, 15,  35,  63,  177, 246, 44,
             63,  207, 89,  38,  63,  56,  66,  57,  63};
 
-    vector<uint8_t> ref_depth = {
+    std::vector<uint8_t> ref_depth = {
             13,  255, 47,  57,  134, 123, 164, 56,  252, 168, 35,  57,  35,
             243, 38,  57,  186, 204, 62,  57,  134, 123, 36,  56,  101, 207,
             139, 56,  214, 94,  32,  57,  137, 70,  102, 56,  156, 235, 231,
@@ -233,7 +231,7 @@ TEST(RGBDImage, CreateFromTUMFormat) {
 }
 
 TEST(RGBDImage, CreateFromSUNFormat) {
-    vector<uint8_t> ref_color = {
+    std::vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
             30,  63,  123, 6,   19,  63,  193, 10,  23,  63,  83,  253, 46,
@@ -243,7 +241,7 @@ TEST(RGBDImage, CreateFromSUNFormat) {
             21,  63,  135, 1,   54,  63,  220, 15,  35,  63,  177, 246, 44,
             63,  207, 89,  38,  63,  56,  66,  57,  63};
 
-    vector<uint8_t> ref_depth = {
+    std::vector<uint8_t> ref_depth = {
             145, 158, 240, 194, 183, 111, 222, 2,   251, 170, 237, 226, 0,
             0,   0,   0,   181, 238, 242, 2,   105, 13,  206, 2,   0,   0,
             0,   0,   0,   0,   0,   0,   237, 185, 214, 130, 32,  61,  231,
@@ -286,7 +284,7 @@ TEST(RGBDImage, CreateFromSUNFormat) {
 }
 
 TEST(RGBDImage, CreateFromNYUFormat) {
-    vector<uint8_t> ref_color = {
+    std::vector<uint8_t> ref_color = {
             216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
             72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
             30,  63,  123, 6,   19,  63,  193, 10,  23,  63,  83,  253, 46,
@@ -296,7 +294,7 @@ TEST(RGBDImage, CreateFromNYUFormat) {
             21,  63,  135, 1,   54,  63,  220, 15,  35,  63,  177, 246, 44,
             63,  207, 89,  38,  63,  56,  66,  57,  63};
 
-    vector<uint8_t> ref_depth = {
+    std::vector<uint8_t> ref_depth = {
             0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
             0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
             0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -339,7 +337,7 @@ TEST(RGBDImage, CreateFromNYUFormat) {
 }
 
 TEST(RGBDImage, FilterPyramid) {
-    vector<vector<uint8_t>> ref_color = {
+    std::vector<std::vector<uint8_t>> ref_color = {
             {49,  63,  46,  63,  234, 198, 45,  63,  152, 189, 39,  63,  151,
              141, 36,  63,  165, 233, 38,  63,  44,  66,  47,  63,  54,  137,
              40,  63,  10,  229, 34,  63,  34,  30,  36,  63,  102, 55,  42,
@@ -350,7 +348,7 @@ TEST(RGBDImage, FilterPyramid) {
              63,  255, 106, 40,  63,  94,  171, 45,  63},
             {159, 3, 43, 63, 135, 253, 38, 63, 128, 50, 43, 63, 2, 65, 39, 63}};
 
-    vector<vector<uint8_t>> ref_depth = {
+    std::vector<std::vector<uint8_t>> ref_depth = {
             {38,  31,  30,  58,  91,  210, 16,  58,  248, 34,  42,  58,  238,
              234, 63,  58,  236, 245, 76,  58,  110, 243, 222, 57,  98,  12,
              254, 57,  47,  168, 17,  58,  162, 44,  25,  58,  168, 28,  48,
@@ -402,7 +400,7 @@ TEST(RGBDImage, FilterPyramid) {
 }
 
 TEST(RGBDImage, CreatePyramid) {
-    vector<vector<uint8_t>> ref_color = {
+    std::vector<std::vector<uint8_t>> ref_color = {
             {216, 2,   42,  63,  21,  162, 57,  63,  62,  210, 42,  63,  216,
              72,  38,  63,  116, 49,  38,  63,  55,  245, 52,  63,  150, 19,
              30,  63,  123, 6,   19,  63,  193, 10,  23,  63,  83,  253, 46,
@@ -414,7 +412,7 @@ TEST(RGBDImage, CreatePyramid) {
             {96, 244, 44, 63, 151, 211, 36, 63, 137, 61, 45, 63, 40, 111, 37,
              63}};
 
-    vector<vector<uint8_t>> ref_depth = {
+    std::vector<std::vector<uint8_t>> ref_depth = {
             {208, 254, 91,  58,  103, 154, 205, 57,  59,  147, 76,  58,  236,
              175, 80,  58,  232, 127, 110, 58,  103, 154, 77,  57,  62,  195,
              174, 57,  139, 118, 72,  58,  22,  236, 143, 57,  66,  243, 16,
@@ -462,3 +460,6 @@ TEST(RGBDImage, CreatePyramid) {
         EXPECT_EQ(ref_depth[j], pyramid[j]->depth_.data_);
     }
 }
+
+}  // namespace unit_test
+}  // namespace open3d

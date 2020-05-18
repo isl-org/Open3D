@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "MatrixInteractorLogic.h"
+#include "Open3D/Visualization/Rendering/MatrixInteractorLogic.h"
 
 namespace open3d {
 namespace visualization {
@@ -36,7 +36,7 @@ class RotationInteractorLogic : public MatrixInteractorLogic {
 
 public:
     explicit RotationInteractorLogic(visualization::Camera *camera,
-                                     double minFarPlane);
+                                     double min_far_plane);
     ~RotationInteractorLogic();
 
     virtual void SetCenterOfRotation(const Eigen::Vector3f &center);
@@ -50,7 +50,7 @@ public:
     virtual void EndMouseDrag();
 
 protected:
-    double minFarPlane_;
+    double min_far_plane_;
     visualization::Camera *camera_;
 
     Eigen::Vector3f CalcPanVectorWorld(int dx, int dy);

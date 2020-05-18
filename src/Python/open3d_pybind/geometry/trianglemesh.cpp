@@ -32,7 +32,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 void pybind_trianglemesh(py::module &m) {
     py::class_<geometry::TriangleMesh, PyGeometry3D<geometry::TriangleMesh>,
@@ -697,8 +697,8 @@ void pybind_trianglemesh(py::module &m) {
               "Specifies the ratio between the diameter of the cube used for "
               "reconstruction and the diameter of the samples' bounding cube."},
              {"linear_fit",
-              "If true, the reconstructor use linear interpolation to estimate "
-              "the positions of iso-vertices."}});
+              "If true, the reconstructor will use linear interpolation to "
+              "estimate the positions of iso-vertices."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},
@@ -787,3 +787,5 @@ void pybind_trianglemesh(py::module &m) {
 }
 
 void pybind_trianglemesh_methods(py::module &m) {}
+
+}  // namespace open3d

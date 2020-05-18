@@ -30,7 +30,7 @@
 #include "open3d_pybind/geometry/geometry.h"
 #include "open3d_pybind/geometry/geometry_trampoline.h"
 
-using namespace open3d;
+namespace open3d {
 
 // Image functions have similar arguments, thus the arg docstrings may be shared
 static const std::unordered_map<std::string, std::string>
@@ -290,3 +290,5 @@ void pybind_image(py::module &m) {
 }
 
 void pybind_image_methods(py::module &m) {}
+
+}  // namespace open3d
