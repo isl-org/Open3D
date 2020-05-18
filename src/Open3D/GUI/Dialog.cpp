@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Dialog.h"
-
-#include "Window.h"
+#include "Open3D/GUI/Dialog.h"
 
 #include <string>
+
+#include "Open3D/GUI/Window.h"
 
 namespace open3d {
 namespace gui {

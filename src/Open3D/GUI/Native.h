@@ -29,8 +29,8 @@ struct GLFWwindow;
 namespace open3d {
 namespace gui {
 
-void* GetNativeDrawable(GLFWwindow* glfwWindow);
-void PostNativeExposeEvent(GLFWwindow* glfwWindow);
+void* GetNativeDrawable(GLFWwindow* glfw_window);
+void PostNativeExposeEvent(GLFWwindow* glfw_window);
 void ShowNativeAlert(const char* message);
 
 #ifdef __APPLE__
@@ -42,8 +42,8 @@ void ShowNativeFileDialog(
         FileDialog::Mode mode,
         const std::string& path,
         const std::vector<std::pair<std::string, std::string>>& filters,
-        std::function<void(const char*)> onOk,
-        std::function<void()> onCancel);
+        std::function<void(const char*)> on_ok,
+        std::function<void()> on_cancel);
 #endif  // __APPLE__ || _WIN32
 
 }  // namespace gui

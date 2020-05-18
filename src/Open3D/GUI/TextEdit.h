@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include "Widget.h"
-
 #include <functional>
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -55,10 +55,10 @@ public:
 
     /// Sets the function that is called whenever the text in the widget
     /// changes. This will be called for every keystroke and edit.
-    void SetOnTextChanged(std::function<void(const char*)> onTextChanged);
+    void SetOnTextChanged(std::function<void(const char*)> on_text_changed);
     /// Sets the function that is called whenever the text is the widget
     /// is finished editing via pressing enter or clicking off the widget.
-    void SetOnValueChanged(std::function<void(const char*)> onValueChanged);
+    void SetOnValueChanged(std::function<void(const char*)> on_value_changed);
 
 protected:
     /// Returns true if new text is valid. Otherwise call SetText() with a

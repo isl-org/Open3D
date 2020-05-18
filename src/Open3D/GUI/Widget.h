@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include "Gui.h"
-
 #include <memory>
 #include <vector>
+
+#include "Open3D/GUI/Gui.h"
 
 namespace open3d {
 namespace gui {

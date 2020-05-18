@@ -25,7 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include "Widget.h"
+
+#include "Open3D/GUI/Widget.h"
 
 namespace open3d {
 namespace gui {
@@ -44,8 +45,8 @@ struct Margins {
     /// a good size for a margin.
     Margins();  // all values zero
     Margins(int px);
-    Margins(int horizPx, int vertPx);
-    Margins(int leftPx, int topPx, int rightPx, int bottomPx);
+    Margins(int horiz_px, int vert_px);
+    Margins(int left_px, int top_px, int right_px, int bottom_px);
 
     /// Convenience function that returns left + right
     int GetHoriz() const;
@@ -143,7 +144,7 @@ public:
     /// (If you call this before the widnows is displayed everything
     /// will work out fine, as layout will automatically be called when
     /// the window is shown.)
-    void SetIsOpen(bool isOpen);
+    void SetIsOpen(bool is_open);
 
     Size CalcPreferredSize(const Theme& theme) const override;
     void Layout(const Theme& theme) override;
@@ -178,7 +179,7 @@ class VGrid : public Widget {
     using Super = Widget;
 
 public:
-    VGrid(int nCols, int spacing = 0, const Margins& margins = Margins());
+    VGrid(int num_cols, int spacing = 0, const Margins& margins = Margins());
     virtual ~VGrid();
 
     int GetSpacing() const;
