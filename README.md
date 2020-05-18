@@ -42,7 +42,7 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 ## Open3D viewer app
 
 Open3D now comes with a standalone 3D viewer app available on Ubuntu and macOS.
-Please stay tuned for Windows. Download
+Please stay tuned for Windows. You can download the viewer app
 [here](https://github.com/intel-isl/Open3D/releases).
 
 ## Python quick start
