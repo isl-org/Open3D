@@ -44,17 +44,6 @@
 
 #include "Open3D/GUI/ImguiFilamentBridge.h"
 
-#include "Open3D/GUI/Application.h"
-#include "Open3D/GUI/Color.h"
-#include "Open3D/GUI/Gui.h"
-#include "Open3D/GUI/Theme.h"
-#include "Open3D/GUI/Window.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
-
 #include <fcntl.h>
 #include <filament/Fence.h>
 #include <filament/IndexBuffer.h>
@@ -80,6 +69,17 @@
 #else
 #include <io.h>
 #endif
+
+#include "Open3D/GUI/Application.h"
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Gui.h"
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Window.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentCamera.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentRenderer.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentScene.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentView.h"
 
 using namespace filament::math;
 using namespace filament;

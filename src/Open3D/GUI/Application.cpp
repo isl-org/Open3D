@@ -78,11 +78,11 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     }
 #endif  // __APPLE__
 
-    auto rsrc_path = path + "/resources";
-    if (!open3d::utility::filesystem::DirectoryExists(rsrc_path)) {
+    auto resource_path = path + "/resources";
+    if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
         return path + "/../resources";  // building with Xcode
     }
-    return rsrc_path;
+    return resource_path;
 }
 
 }  // namespace

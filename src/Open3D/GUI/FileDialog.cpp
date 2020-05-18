@@ -172,7 +172,7 @@ struct FileDialog::Impl {
                 entries_.emplace_back(f, DirEntry::Type::FILE);
             }
         }
-        std::sort(entries_.begin(), this->entries_.end());
+        std::sort(entries_.begin(), entries_.end());
 
         // Include an entry for ".." for convenience on Linux.
         // Don't do this on macOS because the native dialog has neither

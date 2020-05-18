@@ -27,7 +27,7 @@
 #include "Open3D/GUI/NumberEdit.h"
 
 #include <imgui.h>
-#include <string.h>
+#include <string.h>   // for snprintf
 #include <algorithm>  // for min, max
 #include <cmath>
 #include <sstream>

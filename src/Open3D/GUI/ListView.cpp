@@ -101,14 +101,15 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
     ImGui::PushItemWidth(frame.width);
 
-    int height_nitems = int(std::floor(frame.height / ImGui::GetFrameHeight()));
+    int height_in_items =
+            int(std::floor(frame.height / ImGui::GetFrameHeight()));
 
     auto result = Widget::DrawResult::NONE;
     auto new_selected_idx = impl_->selected_index_;
     bool is_double_click = false;
     DrawImGuiPushEnabledState();
     if (ImGui::ListBoxHeader(impl_->imgui_id_.c_str(), impl_->items_.size(),
-                             height_nitems)) {
+                             height_in_items)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool is_selected = (int(i) == impl_->selected_index_);
             if (ImGui::Selectable(impl_->items_[i].c_str(), &is_selected,

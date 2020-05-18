@@ -1029,25 +1029,25 @@ GuiVisualizer::GuiVisualizer(
             scene->GetScene()->AddLight(light_description);
 
     auto &settings = impl_->settings_;
-    std::string rsrc_path = app.GetResourcePath();
-    auto ibl_path = rsrc_path + "/default_ibl.ktx";
+    std::string resource_path = app.GetResourcePath();
+    auto ibl_path = resource_path + "/default_ibl.ktx";
     settings.ibl = GetRenderer().AddIndirectLight(
             ResourceLoadRequest(ibl_path.data()));
     render_scene->SetIndirectLight(settings.ibl);
     render_scene->SetIndirectLightIntensity(lighting_profile.ibl_intensity);
     render_scene->SetIndirectLightRotation(lighting_profile.ibl_rotation);
 
-    auto sky_path = rsrc_path + "/" + DEFAULT_IBL + "_skybox.ktx";
+    auto sky_path = resource_path + "/" + DEFAULT_IBL + "_skybox.ktx";
     settings.sky =
             GetRenderer().AddSkybox(ResourceLoadRequest(sky_path.data()));
     scene->SetSkyboxHandle(settings.sky, DEFAULT_SHOW_SKYBOX);
 
     // Create materials
-    auto lit_path = rsrc_path + "/defaultLit.filamat";
+    auto lit_path = resource_path + "/defaultLit.filamat";
     impl_->lit_material_ = GetRenderer().AddMaterial(
             visualization::ResourceLoadRequest(lit_path.data()));
 
-    auto unlit_path = rsrc_path + "/defaultUnlit.filamat";
+    auto unlit_path = resource_path + "/defaultUnlit.filamat";
     impl_->unlit_material_ = GetRenderer().AddMaterial(
             visualization::ResourceLoadRequest(unlit_path.data()));
 
@@ -1223,7 +1223,7 @@ GuiVisualizer::GuiVisualizer(
     // ....... IBL
     settings.wgt_ibls = std::make_shared<gui::Combobox>();
     std::vector<std::string> resource_files;
-    utility::filesystem::ListFilesInDirectory(rsrc_path, resource_files);
+    utility::filesystem::ListFilesInDirectory(resource_path, resource_files);
     std::sort(resource_files.begin(), resource_files.end());
     int n = 0;
     for (auto &f : resource_files) {

@@ -43,9 +43,9 @@ static int g_next_text_edit_id = 1;
 // See 3rdparty/imgui/misc/imgui_stdlib.cpp
 int InputTextCallback(ImGuiInputTextCallbackData *data) {
     if (data && data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        std::string *s = (std::string *)data->UserData;
+        std::string *s = reinterpret_cast<std::string *>(data->UserData);
         s->resize(data->BufTextLen);
-        data->Buf = (char *)s->c_str();
+        data->Buf = const_cast<char *>(s->c_str());
     }
     return 0;
 }
@@ -124,10 +124,11 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (ImGui::InputTextWithHint(
-                impl_->id_.c_str(), impl_->placeholder_.c_str(),
-                (char *)impl_->text_.c_str(), impl_->text_.capacity(),
-                text_flags, InputTextCallback, &impl_->text_)) {
+    if (ImGui::InputTextWithHint(impl_->id_.c_str(),
+                                 impl_->placeholder_.c_str(),
+                                 const_cast<char *>(impl_->text_.c_str()),
+                                 impl_->text_.capacity(), text_flags,
+                                 InputTextCallback, &impl_->text_)) {
         if (impl_->on_text_changed_) {
             impl_->on_text_changed_(impl_->text_.c_str());
         }

@@ -605,7 +605,7 @@ struct SceneWidget::Impl {
     double last_fast_time_ = 0.0;
     bool frame_rect_changed_ = false;
 
-    explicit Impl(visualization::Scene& aScene) : scene_(aScene) {}
+    explicit Impl(visualization::Scene& scene) : scene_(scene) {}
 };
 
 SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {

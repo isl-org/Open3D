@@ -29,7 +29,7 @@
 #include <GLFW/glfw3.h>
 #include <filament/Engine.h>
 #include <imgui.h>
-#include <imgui_internal.h>
+#include <imgui_internal.h>  // so we can examine the current context
 #include <cmath>
 #include <queue>
 #include <unordered_map>

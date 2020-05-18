@@ -168,9 +168,8 @@ Widget::EventResult Widget::Key(const KeyEvent& e) {
 
 Widget::DrawResult Widget::Tick(const TickEvent& e) {
     auto result = DrawResult::NONE;
-    for (auto it = impl_->children_.begin(); it != impl_->children_.end();
-         ++it) {
-        if ((*it)->Tick(e) == DrawResult::REDRAW) {
+    for (auto child : impl_->children_) {
+        if (child->Tick(e) == DrawResult::REDRAW) {
             result = DrawResult::REDRAW;
         }
     }
