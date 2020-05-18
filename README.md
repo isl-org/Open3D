@@ -25,7 +25,7 @@ the open-source community.
 [![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/)
 [![Build status](https://ci.appveyor.com/api/projects/status/3hasjo041lv6srsi/branch/master?svg=true)](https://ci.appveyor.com/project/yxlao/open3d/branch/master)
 
-Core features of Open3D includes:
+###### Core features of Open3D includes:
 
 * 3D data structures
 * 3D data processing algorithms
@@ -34,7 +34,19 @@ Core features of Open3D includes:
 * 3D visualization
 * Available in C++ and Python
 
-For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
+###### Open3D standalone viewer app (New!)
+
+<div id="left" style="width:30%; float:left;">
+  <center>
+    <img style="width:15em" src="https://github.com/intel-isl/Open3D/tree/master/docs/resources/images/open3d_app_sd.png"/>
+  </center>
+</div>
+<div id="right" style="width:65%; float:right;">
+  Open3D now comes with a standalone
+  [3D viewer app](https://github.com/intel-isl/Open3D/releases) available on
+  Ubuntu and macOS. Stay tuned for Windows. For further information, please visit the [Open3D documentation](http://www.open3d.org/docs).
+</div>
+<div style="clear: both;"></div>
 
 ## Python quick start
 
@@ -72,12 +84,6 @@ started.
 
 Please refer to [compiling from source](http://www.open3d.org/docs/release/compilation.html)
 and [Open3D C++ interface](http://www.open3d.org/docs/release/tutorial/C++/cplusplus_interface.html).
-
-## Open3D standalone viewer app (New!)
-
-Open3D now comes with a standalone
-[3D viewer app](https://github.com/intel-isl/Open3D/releases) available on
-Ubuntu and macOS. Stay tuned for Windows.
 
 ## Communication channels
 
