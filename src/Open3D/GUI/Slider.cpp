@@ -24,76 +24,76 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Slider.h"
-
-#include "Theme.h"
+#include "Open3D/GUI/Slider.h"
 
 #include <imgui.h>
-
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+
+#include "Open3D/GUI/Theme.h"
 
 namespace open3d {
 namespace gui {
 
 namespace {
-static int gNextSliderId = 1;
+static int g_next_slider_id = 1;
 }
 
 struct Slider::Impl {
-    Slider::Type type;
-    std::string id;
+    Slider::Type type_;
+    std::string id_;
     // A double has 53-bits of integer value, which should be enough for
     // anything we want a slider for. A slider isn't really useful for
     // a range of 2^53 anyway.
-    double value = 0.0;
-    double minValue = -1e35;
-    double maxValue = 1e35;
-    std::function<void(double)> onValueChanged;
+    double value_ = 0.0;
+    double min_value_ = -1e35;
+    double max_value_ = 1e35;
+    std::function<void(double)> on_value_changed_;
 };
 
 Slider::Slider(Type type) : impl_(new Slider::Impl()) {
     std::stringstream s;
-    s << "##slider_" << gNextSliderId++;
-    impl_->id = s.str();
-    impl_->type = type;
+    s << "##slider_" << g_next_slider_id++;
+    impl_->id_ = s.str();
+    impl_->type_ = type;
 }
 
 Slider::~Slider() {}
 
-int Slider::GetIntValue() const { return int(impl_->value); }
+int Slider::GetIntValue() const { return int(impl_->value_); }
 
-double Slider::GetDoubleValue() const { return impl_->value; }
+double Slider::GetDoubleValue() const { return impl_->value_; }
 
 void Slider::SetValue(double val) {
-    impl_->value = std::max(impl_->minValue, std::min(impl_->maxValue, val));
-    if (impl_->type == INT) {
-        impl_->value = std::round(impl_->value);
+    impl_->value_ =
+            std::max(impl_->min_value_, std::min(impl_->max_value_, val));
+    if (impl_->type_ == INT) {
+        impl_->value_ = std::round(impl_->value_);
     }
 }
 
-double Slider::GetMinimumValue() const { return impl_->minValue; }
+double Slider::GetMinimumValue() const { return impl_->min_value_; }
 
-double Slider::GetMaximumValue() const { return impl_->maxValue; }
+double Slider::GetMaximumValue() const { return impl_->max_value_; }
 
-void Slider::SetLimits(double minValue, double maxValue) {
-    impl_->minValue = minValue;
-    impl_->maxValue = maxValue;
-    if (impl_->type == INT) {
-        impl_->minValue = std::round(impl_->minValue);
-        impl_->maxValue = std::round(impl_->maxValue);
+void Slider::SetLimits(double min_value, double max_value) {
+    impl_->min_value_ = min_value;
+    impl_->max_value_ = max_value;
+    if (impl_->type_ == INT) {
+        impl_->min_value_ = std::round(impl_->min_value_);
+        impl_->max_value_ = std::round(impl_->max_value_);
     }
-    SetValue(impl_->value);  // make sure value is within new limits
+    SetValue(impl_->value_);  // make sure value is within new limits
 }
 
-void Slider::SetOnValueChanged(std::function<void(double)> onValueChanged) {
-    impl_->onValueChanged = onValueChanged;
+void Slider::SetOnValueChanged(std::function<void(double)> on_value_changed) {
+    impl_->on_value_changed_ = on_value_changed;
 }
 
 Size Slider::CalcPreferredSize(const Theme& theme) const {
-    auto lineHeight = ImGui::GetTextLineHeight();
-    auto height = lineHeight + 2.0 * ImGui::GetStyle().FramePadding.y;
+    auto line_height = ImGui::GetTextLineHeight();
+    auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
     return Size(Widget::DIM_GROW, std::ceil(height));
 }
@@ -103,25 +103,25 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
     ImGui::SetCursorPos(
             ImVec2(frame.x - context.uiOffsetX, frame.y - context.uiOffsetY));
 
-    float newValue = impl_->value;
+    float new_value = impl_->value_;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(GetFrame().width);
-    if (impl_->type == INT) {
-        int iNewValue = newValue;
-        ImGui::SliderInt(impl_->id.c_str(), &iNewValue, impl_->minValue,
-                         impl_->maxValue);
-        newValue = double(iNewValue);
+    if (impl_->type_ == INT) {
+        int i_new_value = new_value;
+        ImGui::SliderInt(impl_->id_.c_str(), &i_new_value, impl_->min_value_,
+                         impl_->max_value_);
+        new_value = double(i_new_value);
     } else {
-        ImGui::SliderFloat(impl_->id.c_str(), &newValue, impl_->minValue,
-                           impl_->maxValue);
+        ImGui::SliderFloat(impl_->id_.c_str(), &new_value, impl_->min_value_,
+                           impl_->max_value_);
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
 
-    if (impl_->value != newValue) {
-        impl_->value = newValue;
-        if (impl_->onValueChanged) {
-            impl_->onValueChanged(newValue);
+    if (impl_->value_ != new_value) {
+        impl_->value_ = new_value;
+        if (impl_->on_value_changed_) {
+            impl_->on_value_changed_(new_value);
         }
         return Widget::DrawResult::REDRAW;
     }

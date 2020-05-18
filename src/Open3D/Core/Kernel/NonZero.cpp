@@ -24,48 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Dialog.h"
+#include "Open3D/Core/Kernel/NonZero.h"
 
-#include <string>
-
-#include "Open3D/GUI/Window.h"
+#include "Open3D/Core/Device.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
-namespace gui {
+namespace kernel {
 
-struct Dialog::Impl {
-    std::string title;
-    Window *parent = nullptr;
-};
-
-Dialog::Dialog(const char *title) : impl_(new Dialog::Impl()) {}
-
-Dialog::~Dialog() {}
-
-Size Dialog::CalcPreferredSize(const Theme &theme) const {
-    if (GetChildren().size() == 1) {
-        auto child = GetChildren()[0];
-        return child->CalcPreferredSize(theme);
+Tensor NonZero(const Tensor& src) {
+    Device::DeviceType device_type = src.GetDevice().GetType();
+    if (device_type == Device::DeviceType::CPU) {
+        return NonZeroCPU(src);
+    } else if (device_type == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        return NonZeroCUDA(src);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
     } else {
-        return Super::CalcPreferredSize(theme);
+        utility::LogError("NonZero: Unimplemented device");
     }
 }
 
-void Dialog::Layout(const Theme &theme) {
-    if (GetChildren().size() == 1) {
-        auto child = GetChildren()[0];
-        child->SetFrame(GetFrame());
-        child->Layout(theme);
-    } else {
-        Super::Layout(theme);
-    }
-}
-
-void Dialog::OnWillShow() {}
-
-Widget::DrawResult Dialog::Draw(const DrawContext &context) {
-    return Super::Draw(context);
-}
-
-}  // namespace gui
+}  // namespace kernel
 }  // namespace open3d

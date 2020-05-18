@@ -24,31 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Application.h"
-
-#include "Button.h"
-#include "Events.h"
-#include "Label.h"
-#include "Layout.h"
-#include "Native.h"
-#include "Theme.h"
-#include "Window.h"
-
-#include "Open3D/Utility/Console.h"
-#include "Open3D/Utility/FileSystem.h"
-#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
+#include "Open3D/GUI/Application.h"
 
 #include <GLFW/glfw3.h>
-
 #include <chrono>
 #include <thread>
 #include <unordered_set>
+
+#include "Open3D/GUI/Button.h"
+#include "Open3D/GUI/Events.h"
+#include "Open3D/GUI/Label.h"
+#include "Open3D/GUI/Layout.h"
+#include "Open3D/GUI/Native.h"
+#include "Open3D/GUI/Theme.h"
+#include "Open3D/GUI/Window.h"
+#include "Open3D/Utility/Console.h"
+#include "Open3D/Utility/FileSystem.h"
+#include "Open3D/Visualization/Rendering/Filament/FilamentEngine.h"
 
 namespace {
 
 const double RUNLOOP_DELAY_SEC = 0.010;
 
-std::string findResourcePath(int argc, const char *argv[]) {
+std::string FindResourcePath(int argc, const char *argv[]) {
     std::string argv0;
     if (argc != 0 && argv) {
         argv0 = argv[0];
@@ -62,8 +60,8 @@ std::string findResourcePath(int argc, const char *argv[]) {
     }
 
     // Chop off the process name
-    auto lastSlash = argv0.rfind("/");
-    auto path = argv0.substr(0, lastSlash);
+    auto last_slash = argv0.rfind("/");
+    auto path = argv0.substr(0, last_slash);
 
     if (argv0[0] == '/' ||
         (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
@@ -80,11 +78,11 @@ std::string findResourcePath(int argc, const char *argv[]) {
     }
 #endif  // __APPLE__
 
-    auto rsrcPath = path + "/resources";
-    if (!open3d::utility::filesystem::DirectoryExists(rsrcPath)) {
+    auto resource_path = path + "/resources";
+    if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
         return path + "/../resources";  // building with Xcode
     }
-    return rsrcPath;
+    return resource_path;
 }
 
 }  // namespace
@@ -93,19 +91,19 @@ namespace open3d {
 namespace gui {
 
 struct Application::Impl {
-    std::string resourcePath;
-    Theme theme;
-    double lastTime = 0.0;
-    bool isGLFWinitalized = false;
-    bool isRunning = false;
-    bool shouldQuit = false;
+    std::string resource_path_;
+    Theme theme_;
+    double last_time_ = 0.0;
+    bool is_GLFW_initalized_ = false;
+    bool is_running_ = false;
+    bool should_quit_ = false;
 
-    std::shared_ptr<Menu> menubar;
-    std::unordered_set<std::shared_ptr<Window>> windows;
-    std::unordered_set<std::shared_ptr<Window>> windowsToBeDestroyed;
+    std::shared_ptr<Menu> menubar_;
+    std::unordered_set<std::shared_ptr<Window>> windows_;
+    std::unordered_set<std::shared_ptr<Window>> windows_to_be_destroyed_;
 
     void InitGFLW() {
-        if (this->isGLFWinitalized) {
+        if (this->is_GLFW_initalized_) {
             return;
         }
 
@@ -113,13 +111,13 @@ struct Application::Impl {
         glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
 #endif
         glfwInit();
-        this->isGLFWinitalized = true;
+        this->is_GLFW_initalized_ = true;
     }
 };
 
 Application &Application::GetInstance() {
-    static Application gApp;
-    return gApp;
+    static Application g_app;
+    return g_app;
 }
 
 void Application::ShowMessageBox(const char *title, const char *message) {
@@ -127,7 +125,7 @@ void Application::ShowMessageBox(const char *title, const char *message) {
 
     auto alert = std::make_shared<Window>((title ? title : "Alert"),
                                           Window::FLAG_TOPMOST);
-    auto em = alert->GetTheme().fontSize;
+    auto em = alert->GetTheme().font_size;
     auto layout = std::make_shared<Vert>(em, Margins(em));
     auto msg = std::make_shared<Label>(message);
     auto ok = std::make_shared<Button>("Ok");
@@ -141,44 +139,44 @@ void Application::ShowMessageBox(const char *title, const char *message) {
 }
 
 Application::Application() : impl_(new Application::Impl()) {
-    Color highlightColor(0.5, 0.5, 0.5);
+    Color highlight_color(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
-    impl_->theme.fontPath =
-            "Roboto-Medium.ttf";     // full path will be added in Initialize()
-    impl_->theme.fontSize = 16;      // 1 em (font size is em in digital type)
-    impl_->theme.defaultMargin = 8;  // 0.5 * em
-    impl_->theme.defaultLayoutSpacing = 6;  // 0.333 * em
+    impl_->theme_.font_path =
+            "Roboto-Medium.ttf";   // full path will be added in Initialize()
+    impl_->theme_.font_size = 16;  // 1 em (font size is em in digital type)
+    impl_->theme_.default_margin = 8;          // 0.5 * em
+    impl_->theme_.default_layout_spacing = 6;  // 0.333 * em
 
-    impl_->theme.backgroundColor = Color(0.175, 0.175, 0.175);
-    impl_->theme.textColor = Color(0.875, 0.875, 0.875);
-    impl_->theme.borderWidth = 1;
-    impl_->theme.borderRadius = 3;
-    impl_->theme.borderColor = Color(0.5, 0.5, 0.5);
-    impl_->theme.menubarBorderColor = Color(0.25, 0.25, 0.25);
-    impl_->theme.buttonColor = Color(0.4, 0.4, 0.4);
-    impl_->theme.buttonHoverColor = Color(0.6, 0.6, 0.6);
-    impl_->theme.buttonActiveColor = Color(0.5, 0.5, 0.5);
-    impl_->theme.buttonOnColor = Color(0.7, 0.7, 0.7);
-    impl_->theme.buttonOnHoverColor = Color(0.9, 0.9, 0.9);
-    impl_->theme.buttonOnActiveColor = Color(0.8, 0.8, 0.8);
-    impl_->theme.buttonOnTextColor = Color(0, 0, 0);
-    impl_->theme.checkboxBackgroundOffColor = Color(0.333, 0.333, .333);
-    impl_->theme.checkboxBackgroundOnColor = highlightColor;
-    impl_->theme.checkboxBackgroundHoverOffColor = Color(0.5, 0.5, 0.5);
-    impl_->theme.checkboxBackgroundHoverOnColor =
-            highlightColor.Lightened(0.15);
-    impl_->theme.checkboxCheckColor = Color(1, 1, 1);
-    impl_->theme.comboboxBackgroundColor = Color(0.4, 0.4, 0.4);
-    impl_->theme.comboboxHoverColor = Color(0.5, 0.5, 0.5);
-    impl_->theme.comboboxArrowBackgroundColor = highlightColor;
-    impl_->theme.sliderGrabColor = Color(0.666, 0.666, 0.666);
-    impl_->theme.textEditBackgroundColor = Color(0.25, 0.25, 0.25);
-    impl_->theme.tabInactiveColor = impl_->theme.buttonColor;
-    impl_->theme.tabHoverColor = impl_->theme.buttonHoverColor;
-    impl_->theme.tabActiveColor = impl_->theme.buttonActiveColor;
-    impl_->theme.dialogBorderWidth = 1;
-    impl_->theme.dialogBorderRadius = 10;
+    impl_->theme_.background_color = Color(0.175, 0.175, 0.175);
+    impl_->theme_.text_color = Color(0.875, 0.875, 0.875);
+    impl_->theme_.border_width = 1;
+    impl_->theme_.border_radius = 3;
+    impl_->theme_.border_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.menubar_border_color = Color(0.25, 0.25, 0.25);
+    impl_->theme_.button_color = Color(0.4, 0.4, 0.4);
+    impl_->theme_.button_hover_color = Color(0.6, 0.6, 0.6);
+    impl_->theme_.button_active_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.button_on_color = Color(0.7, 0.7, 0.7);
+    impl_->theme_.button_on_hover_color = Color(0.9, 0.9, 0.9);
+    impl_->theme_.button_on_active_color = Color(0.8, 0.8, 0.8);
+    impl_->theme_.button_on_text_color = Color(0, 0, 0);
+    impl_->theme_.checkbox_background_off_color = Color(0.333, 0.333, .333);
+    impl_->theme_.checkbox_background_on_color = highlight_color;
+    impl_->theme_.checkbox_background_hover_off_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.checkbox_background_hover_on_color =
+            highlight_color.Lightened(0.15);
+    impl_->theme_.checkbox_check_color = Color(1, 1, 1);
+    impl_->theme_.combobox_background_color = Color(0.4, 0.4, 0.4);
+    impl_->theme_.combobox_hover_color = Color(0.5, 0.5, 0.5);
+    impl_->theme_.combobox_arrow_background_color = highlight_color;
+    impl_->theme_.slider_grab_color = Color(0.666, 0.666, 0.666);
+    impl_->theme_.text_edit_background_color = Color(0.25, 0.25, 0.25);
+    impl_->theme_.tab_inactive_color = impl_->theme_.button_color;
+    impl_->theme_.tab_hover_color = impl_->theme_.button_hover_color;
+    impl_->theme_.tab_active_color = impl_->theme_.button_active_color;
+    impl_->theme_.dialog_border_width = 1;
+    impl_->theme_.dialog_border_radius = 10;
 
     visualization::EngineInstance::SelectBackend(
             filament::backend::Backend::OPENGL);
@@ -202,21 +200,24 @@ void Application::Initialize() {
 }
 
 void Application::Initialize(int argc, const char *argv[]) {
-    impl_->resourcePath = findResourcePath(argc, argv);
-    impl_->theme.fontPath = impl_->resourcePath + "/" + impl_->theme.fontPath;
+    impl_->resource_path_ = FindResourcePath(argc, argv);
+    impl_->theme_.font_path =
+            impl_->resource_path_ + "/" + impl_->theme_.font_path;
 }
 
 double Application::Now() const { return glfwGetTime(); }
 
-std::shared_ptr<Menu> Application::GetMenubar() const { return impl_->menubar; }
+std::shared_ptr<Menu> Application::GetMenubar() const {
+    return impl_->menubar_;
+}
 
 void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
-    auto old = impl_->menubar;
-    impl_->menubar = menubar;
+    auto old = impl_->menubar_;
+    impl_->menubar_ = menubar;
     // If added or removed menubar, the size of the window's content region
     // may have changed (in not on macOS), so need to relayout.
     if ((!old && menubar) || (old && !menubar)) {
-        for (auto w : impl_->windows) {
+        for (auto w : impl_->windows_) {
             w->OnResize();
         }
     }
@@ -232,36 +233,36 @@ void Application::SetMenubar(std::shared_ptr<Menu> menubar) {
 void Application::AddWindow(std::shared_ptr<Window> window) {
     window->OnResize();  // so we get an initial resize
     window->Show();
-    impl_->windows.insert(window);
+    impl_->windows_.insert(window);
 }
 
 void Application::RemoveWindow(Window *window) {
-    for (auto it = impl_->windows.begin(); it != impl_->windows.end(); ++it) {
+    for (auto it = impl_->windows_.begin(); it != impl_->windows_.end(); ++it) {
         if (it->get() == window) {
-            impl_->windowsToBeDestroyed.insert(*it);
-            impl_->windows.erase(it);
+            impl_->windows_to_be_destroyed_.insert(*it);
+            impl_->windows_.erase(it);
             break;
         }
     }
 
-    if (impl_->windows.empty()) {
-        impl_->shouldQuit = true;
+    if (impl_->windows_.empty()) {
+        impl_->should_quit_ = true;
     }
 }
 
 void Application::Quit() {
-    while (!impl_->windows.empty()) {
-        RemoveWindow(impl_->windows.begin()->get());
+    while (!impl_->windows_.empty()) {
+        RemoveWindow(impl_->windows_.begin()->get());
     }
 }
 
 void Application::OnTerminate() {
     Quit();
-    impl_->windowsToBeDestroyed.clear();
+    impl_->windows_to_be_destroyed_.clear();
 }
 
 void Application::OnMenuItemSelected(Menu::ItemId itemId) {
-    for (auto w : impl_->windows) {
+    for (auto w : impl_->windows_) {
         if (w->IsActiveWindow()) {
             w->OnMenuItemSelected(itemId);
             // This is a menu selection that came from a native menu.
@@ -284,25 +285,25 @@ void Application::Run() {
 
 bool Application::RunOneTick() {
     // Initialize if we have not started yet
-    if (!impl_->isRunning) {
+    if (!impl_->is_running_) {
         // Verify that the resource path is valid. If it is not, display a
         // message box (std::cerr may not be visible to the user, if we were run
         // as app).
-        if (impl_->resourcePath.empty()) {
+        if (impl_->resource_path_.empty()) {
             ShowNativeAlert(
                     "Internal error: Application::Initialize() was not called");
             return false;
         }
-        if (!utility::filesystem::DirectoryExists(impl_->resourcePath)) {
+        if (!utility::filesystem::DirectoryExists(impl_->resource_path_)) {
             std::stringstream err;
             err << "Could not find resource directory:\n'"
-                << impl_->resourcePath << "' does not exist";
+                << impl_->resource_path_ << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
         }
-        if (!utility::filesystem::FileExists(impl_->theme.fontPath)) {
+        if (!utility::filesystem::FileExists(impl_->theme_.font_path)) {
             std::stringstream err;
-            err << "Could not load UI font:\n'" << impl_->theme.fontPath
+            err << "Could not load UI font:\n'" << impl_->theme_.font_path
                 << "' does not exist";
             ShowNativeAlert(err.str().c_str());
             return false;
@@ -312,7 +313,7 @@ bool Application::RunOneTick() {
         // (but unlikely) that the run loop finished and is starting again.
         impl_->InitGFLW();
 
-        impl_->isRunning = true;
+        impl_->is_running_ = true;
     }
 
     // Process the events that have queued up
@@ -321,11 +322,11 @@ bool Application::RunOneTick() {
     // Cleanup if we are done
     if (status == RunStatus::DONE) {
         glfwTerminate();
-        impl_->isGLFWinitalized = false;
-        impl_->isRunning = false;
+        impl_->is_GLFW_initalized_ = false;
+        impl_->is_running_ = false;
     }
 
-    return impl_->isRunning;
+    return impl_->is_running_;
 }
 
 Application::RunStatus Application::ProcessQueuedEvents() {
@@ -334,30 +335,30 @@ Application::RunStatus Application::ProcessQueuedEvents() {
     // We can't destroy a GLFW window in a callback, so we need to do it here.
     // Since these are the only copy of the shared pointers, this will cause
     // the Window destructor to be called.
-    impl_->windowsToBeDestroyed.clear();
+    impl_->windows_to_be_destroyed_.clear();
 
     // Handle tick messages.
     double now = Now();
-    if (now - impl_->lastTime >= 0.95 * RUNLOOP_DELAY_SEC) {
-        for (auto w : impl_->windows) {
+    if (now - impl_->last_time_ >= 0.95 * RUNLOOP_DELAY_SEC) {
+        for (auto w : impl_->windows_) {
             if (w->OnTickEvent(TickEvent())) {
                 w->PostRedraw();
             }
         }
-        impl_->lastTime = now;
+        impl_->last_time_ = now;
     }
 
-    if (impl_->shouldQuit) {
+    if (impl_->should_quit_) {
         return RunStatus::DONE;
     }
     return RunStatus::CONTINUE;
 }
 
 const char *Application::GetResourcePath() const {
-    return impl_->resourcePath.c_str();
+    return impl_->resource_path_.c_str();
 }
 
-const Theme &Application::GetTheme() const { return impl_->theme; }
+const Theme &Application::GetTheme() const { return impl_->theme_; }
 
 }  // namespace gui
 }  // namespace open3d

@@ -43,11 +43,22 @@ def cast_to_py_tensor(func):
         A function which returns a python object `o3d.Tensor`.
     """
 
+    def _maybe_to_py_tensor(c_tensor):
+        if isinstance(c_tensor, open3d_pybind.Tensor):
+            py_tensor = Tensor([])
+            py_tensor.shallow_copy_from(c_tensor)
+            return py_tensor
+        else:
+            return c_tensor
+
     def wrapped_func(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        wrapped_result = Tensor([])
-        wrapped_result.shallow_copy_from(result)
-        return wrapped_result
+        if isinstance(result, list):
+            return [_maybe_to_py_tensor(val) for val in result]
+        elif isinstance(result, tuple):
+            return tuple([_maybe_to_py_tensor(val) for val in result])
+        else:
+            return _maybe_to_py_tensor(result)
 
     return wrapped_func
 
@@ -466,6 +477,13 @@ class Tensor(open3d_pybind.Tensor):
                   dtype.
         """
         return super(Tensor, self).to(dtype, copy)
+
+    @cast_to_py_tensor
+    def nonzero(self, as_tuple=False):
+        if as_tuple:
+            return super(Tensor, self)._non_zero_numpy()
+        else:
+            return super(Tensor, self)._non_zero()
 
     def __add__(self, value):
         return self.add(value)

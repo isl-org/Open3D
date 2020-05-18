@@ -24,25 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "SceneWidget.h"
+#include "Open3D/GUI/SceneWidget.h"
 
-#include "Application.h"
-#include "Color.h"
-#include "Events.h"
+#include <Eigen/Geometry>
+#include <set>
 
+#include "Open3D/GUI/Application.h"
+#include "Open3D/GUI/Color.h"
+#include "Open3D/GUI/Events.h"
 #include "Open3D/Geometry/BoundingVolume.h"
 #include "Open3D/Visualization/Rendering/Camera.h"
-#include "Open3D/Visualization/Rendering/Scene.h"
-#include "Open3D/Visualization/Rendering/View.h"
-
 #include "Open3D/Visualization/Rendering/CameraInteractorLogic.h"
 #include "Open3D/Visualization/Rendering/IBLRotationInteractorLogic.h"
 #include "Open3D/Visualization/Rendering/LightDirectionInteractorLogic.h"
 #include "Open3D/Visualization/Rendering/ModelInteractorLogic.h"
-
-#include <Eigen/Geometry>
-
-#include <set>
+#include "Open3D/Visualization/Rendering/Scene.h"
+#include "Open3D/Visualization/Rendering/View.h"
 
 namespace open3d {
 namespace gui {
@@ -66,34 +63,34 @@ class RotateSunInteractor : public MouseInteractor {
 public:
     RotateSunInteractor(visualization::Scene* scene,
                         visualization::Camera* camera)
-        : lightDir_(std::make_unique<
-                    visualization::LightDirectionInteractorLogic>(scene,
-                                                                  camera)) {}
+        : light_dir_(std::make_unique<
+                     visualization::LightDirectionInteractorLogic>(scene,
+                                                                   camera)) {}
 
     visualization::MatrixInteractorLogic& GetMatrixInteractor() override {
-        return *lightDir_.get();
+        return *light_dir_.get();
     }
 
     void SetDirectionalLight(
-            visualization::LightHandle dirLight,
-            std::function<void(const Eigen::Vector3f&)> onChanged) {
-        lightDir_->SetDirectionalLight(dirLight);
-        onLightDirChanged_ = onChanged;
+            visualization::LightHandle dir_light,
+            std::function<void(const Eigen::Vector3f&)> on_changed) {
+        light_dir_->SetDirectionalLight(dir_light);
+        on_light_dir_changed_ = on_changed;
     }
 
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
             case MouseEvent::BUTTON_DOWN:
-                mouseDownX_ = e.x;
-                mouseDownY_ = e.y;
-                lightDir_->StartMouseDrag();
+                mouse_down_x_ = e.x;
+                mouse_down_y_ = e.y;
+                light_dir_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
-                int dx = e.x - mouseDownX_;
-                int dy = e.y - mouseDownY_;
-                lightDir_->Rotate(dx, dy);
-                if (onLightDirChanged_) {
-                    onLightDirChanged_(lightDir_->GetCurrentDirection());
+                int dx = e.x - mouse_down_x_;
+                int dy = e.y - mouse_down_y_;
+                light_dir_->Rotate(dx, dy);
+                if (on_light_dir_changed_) {
+                    on_light_dir_changed_(light_dir_->GetCurrentDirection());
                 }
                 break;
             }
@@ -101,7 +98,7 @@ public:
                 break;
             }
             case MouseEvent::BUTTON_UP:
-                lightDir_->EndMouseDrag();
+                light_dir_->EndMouseDrag();
                 break;
             default:
                 break;
@@ -111,10 +108,10 @@ public:
     void Key(const KeyEvent& e) override {}
 
 private:
-    std::unique_ptr<visualization::LightDirectionInteractorLogic> lightDir_;
-    int mouseDownX_ = 0;
-    int mouseDownY_ = 0;
-    std::function<void(const Eigen::Vector3f&)> onLightDirChanged_;
+    std::unique_ptr<visualization::LightDirectionInteractorLogic> light_dir_;
+    int mouse_down_x_ = 0;
+    int mouse_down_y_ = 0;
+    std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
 };
 
 class RotateIBLInteractor : public MouseInteractor {
@@ -128,33 +125,33 @@ public:
         return *ibl_.get();
     }
 
-    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool isOn) {
-        ibl_->SetSkyboxHandle(skybox, isOn);
+    void SetSkyboxHandle(visualization::SkyboxHandle skybox, bool is_on) {
+        ibl_->SetSkyboxHandle(skybox, is_on);
     }
 
     void SetOnChanged(
             std::function<void(const visualization::Camera::Transform&)>
-                    onChanged) {
-        onRotationChanged_ = onChanged;
+                    on_changed) {
+        on_rotation_changed_ = on_changed;
     }
 
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
             case MouseEvent::BUTTON_DOWN:
-                mouseDownX_ = e.x;
-                mouseDownY_ = e.y;
+                mouse_down_x_ = e.x;
+                mouse_down_y_ = e.y;
                 ibl_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
-                int dx = e.x - mouseDownX_;
-                int dy = e.y - mouseDownY_;
+                int dx = e.x - mouse_down_x_;
+                int dy = e.y - mouse_down_y_;
                 if (e.modifiers & int(KeyModifier::META)) {
                     ibl_->RotateZ(dx, dy);
                 } else {
                     ibl_->Rotate(dx, dy);
                 }
-                if (onRotationChanged_) {
-                    onRotationChanged_(ibl_->GetCurrentRotation());
+                if (on_rotation_changed_) {
+                    on_rotation_changed_(ibl_->GetCurrentRotation());
                 }
                 break;
             }
@@ -173,52 +170,52 @@ public:
 
 private:
     std::unique_ptr<visualization::IBLRotationInteractorLogic> ibl_;
-    int mouseDownX_ = 0;
-    int mouseDownY_ = 0;
+    int mouse_down_x_ = 0;
+    int mouse_down_y_ = 0;
     std::function<void(const visualization::Camera::Transform&)>
-            onRotationChanged_;
+            on_rotation_changed_;
 };
 
 class FlyInteractor : public MouseInteractor {
 public:
     explicit FlyInteractor(visualization::Camera* camera)
-        : cameraControls_(
+        : camera_controls_(
                   std::make_unique<visualization::CameraInteractorLogic>(
                           camera, MIN_FAR_PLANE)) {}
 
     visualization::MatrixInteractorLogic& GetMatrixInteractor() override {
-        return *cameraControls_.get();
+        return *camera_controls_.get();
     }
 
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
             case MouseEvent::BUTTON_DOWN:
-                lastMouseX_ = e.x;
-                lastMouseY_ = e.y;
-                cameraControls_->StartMouseDrag();
+                last_mouse_x_ = e.x;
+                last_mouse_y_ = e.y;
+                camera_controls_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
                 // Use relative movement because user may be moving
                 // with keys at the same time.
-                int dx = e.x - lastMouseX_;
-                int dy = e.y - lastMouseY_;
+                int dx = e.x - last_mouse_x_;
+                int dy = e.y - last_mouse_y_;
                 if (e.modifiers & int(KeyModifier::META)) {
                     // RotateZ() was not intended to be used for relative
                     // movement, so reset the mouse-down matrix first.
-                    cameraControls_->ResetMouseDrag();
-                    cameraControls_->RotateZ(dx, dy);
+                    camera_controls_->ResetMouseDrag();
+                    camera_controls_->RotateZ(dx, dy);
                 } else {
-                    cameraControls_->RotateFly(-dx, -dy);
+                    camera_controls_->RotateFly(-dx, -dy);
                 }
-                lastMouseX_ = e.x;
-                lastMouseY_ = e.y;
+                last_mouse_x_ = e.x;
+                last_mouse_y_ = e.y;
                 break;
             }
             case MouseEvent::WHEEL: {
                 break;
             }
             case MouseEvent::BUTTON_UP:
-                cameraControls_->EndMouseDrag();
+                camera_controls_->EndMouseDrag();
                 break;
             default:
                 break;
@@ -228,85 +225,85 @@ public:
     void Key(const KeyEvent& e) override {
         switch (e.type) {
             case KeyEvent::Type::DOWN:
-                keysDown_.insert(e.key);
+                keys_down_.insert(e.key);
                 break;
             case KeyEvent::Type::UP:
-                keysDown_.erase(e.key);
+                keys_down_.erase(e.key);
                 break;
         }
     }
 
     bool Tick(const TickEvent& e) override {
         bool redraw = false;
-        if (!keysDown_.empty()) {
-            auto& bounds = cameraControls_->GetBoundingBox();
+        if (!keys_down_.empty()) {
+            auto& bounds = camera_controls_->GetBoundingBox();
             const float dist = 0.0025f * bounds.GetExtent().norm();
-            const float angleRad = 0.0075f;
+            const float angle_rad = 0.0075f;
 
-            auto hasKey = [this](uint32_t key) -> bool {
-                return (keysDown_.find(key) != keysDown_.end());
+            auto HasKey = [this](uint32_t key) -> bool {
+                return (keys_down_.find(key) != keys_down_.end());
             };
 
             auto move = [this, &redraw](const Eigen::Vector3f& v) {
-                cameraControls_->MoveLocal(v);
+                camera_controls_->MoveLocal(v);
                 redraw = true;
             };
-            auto rotate = [this, &redraw](float angleRad,
+            auto rotate = [this, &redraw](float angle_rad,
                                           const Eigen::Vector3f& axis) {
-                cameraControls_->RotateLocal(angleRad, axis);
+                camera_controls_->RotateLocal(angle_rad, axis);
                 redraw = true;
             };
             auto rotateZ = [this, &redraw](int dy) {
-                cameraControls_->StartMouseDrag();
-                cameraControls_->RotateZ(0, dy);
+                camera_controls_->StartMouseDrag();
+                camera_controls_->RotateZ(0, dy);
                 redraw = true;
             };
 
-            if (hasKey('a')) {
+            if (HasKey('a')) {
                 move({-dist, 0, 0});
             }
-            if (hasKey('d')) {
+            if (HasKey('d')) {
                 move({dist, 0, 0});
             }
-            if (hasKey('w')) {
+            if (HasKey('w')) {
                 move({0, 0, -dist});
             }
-            if (hasKey('s')) {
+            if (HasKey('s')) {
                 move({0, 0, dist});
             }
-            if (hasKey('q')) {
+            if (HasKey('q')) {
                 move({0, dist, 0});
             }
-            if (hasKey('z')) {
+            if (HasKey('z')) {
                 move({0, -dist, 0});
             }
-            if (hasKey('e')) {
+            if (HasKey('e')) {
                 rotateZ(-2);
             }
-            if (hasKey('r')) {
+            if (HasKey('r')) {
                 rotateZ(2);
             }
-            if (hasKey(KEY_UP)) {
-                rotate(angleRad, {1, 0, 0});
+            if (HasKey(KEY_UP)) {
+                rotate(angle_rad, {1, 0, 0});
             }
-            if (hasKey(KEY_DOWN)) {
-                rotate(-angleRad, {1, 0, 0});
+            if (HasKey(KEY_DOWN)) {
+                rotate(-angle_rad, {1, 0, 0});
             }
-            if (hasKey(KEY_LEFT)) {
-                rotate(angleRad, {0, 1, 0});
+            if (HasKey(KEY_LEFT)) {
+                rotate(angle_rad, {0, 1, 0});
             }
-            if (hasKey(KEY_RIGHT)) {
-                rotate(-angleRad, {0, 1, 0});
+            if (HasKey(KEY_RIGHT)) {
+                rotate(-angle_rad, {0, 1, 0});
             }
         }
         return redraw;
     }
 
 private:
-    std::unique_ptr<visualization::CameraInteractorLogic> cameraControls_;
-    int lastMouseX_ = 0;
-    int lastMouseY_ = 0;
-    std::set<uint32_t> keysDown_;
+    std::unique_ptr<visualization::CameraInteractorLogic> camera_controls_;
+    int last_mouse_x_ = 0;
+    int last_mouse_y_ = 0;
+    std::set<uint32_t> keys_down_;
 };
 
 class RotationInteractor : public MouseInteractor {
@@ -327,8 +324,8 @@ public:
     void Mouse(const MouseEvent& e) override {
         switch (e.type) {
             case MouseEvent::BUTTON_DOWN:
-                mouseDownX_ = e.x;
-                mouseDownY_ = e.y;
+                mouse_down_x_ = e.x;
+                mouse_down_y_ = e.y;
                 if (e.button.button == MouseButton::LEFT) {
                     if (e.modifiers & int(KeyModifier::SHIFT)) {
 #ifdef __APPLE__
@@ -353,8 +350,8 @@ public:
                 interactor_->StartMouseDrag();
                 break;
             case MouseEvent::DRAG: {
-                int dx = e.x - mouseDownX_;
-                int dy = e.y - mouseDownY_;
+                int dx = e.x - mouse_down_x_;
+                int dy = e.y - mouse_down_y_;
                 switch (state_) {
                     case State::NONE:
                         break;
@@ -399,8 +396,8 @@ public:
 
 protected:
     visualization::RotationInteractorLogic* interactor_ = nullptr;
-    int mouseDownX_ = 0;
-    int mouseDownY_ = 0;
+    int mouse_down_x_ = 0;
+    int mouse_down_y_ = 0;
 
     enum class State { NONE, PAN, DOLLY, ROTATE_XY, ROTATE_Z };
     State state_ = State::NONE;
@@ -431,10 +428,10 @@ class RotateCameraInteractor : public RotationInteractor {
 
 public:
     explicit RotateCameraInteractor(visualization::Camera* camera)
-        : cameraControls_(
+        : camera_controls_(
                   std::make_unique<visualization::CameraInteractorLogic>(
                           camera, MIN_FAR_PLANE)) {
-        SetInteractor(cameraControls_.get());
+        SetInteractor(camera_controls_.get());
     }
 
     void Mouse(const MouseEvent& e) override {
@@ -447,7 +444,7 @@ public:
                 break;
             case MouseEvent::WHEEL: {
                 if (e.modifiers == int(KeyModifier::SHIFT)) {
-                    cameraControls_->Zoom(
+                    camera_controls_->Zoom(
                             e.wheel.dy,
                             e.wheel.isTrackpad
                                     ? visualization::MatrixInteractorLogic::
@@ -463,7 +460,7 @@ public:
     }
 
 private:
-    std::unique_ptr<visualization::CameraInteractorLogic> cameraControls_;
+    std::unique_ptr<visualization::CameraInteractorLogic> camera_controls_;
 };
 
 // ----------------------------------------------------------------------------
@@ -595,60 +592,60 @@ private:
 
 // ----------------------------------------------------------------------------
 struct SceneWidget::Impl {
-    visualization::Scene& scene;
-    visualization::ViewHandle viewId;
-    visualization::Camera* camera;
-    geometry::AxisAlignedBoundingBox bounds;
-    std::shared_ptr<Interactors> controls;
-    ModelDescription model;
-    visualization::LightHandle dirLight;
-    std::function<void(const Eigen::Vector3f&)> onLightDirChanged;
-    std::function<void(visualization::Camera*)> onCameraChanged;
-    int buttonsDown = 0;
-    double lastFastTime = 0.0;
-    bool frameRectChanged = false;
+    visualization::Scene& scene_;
+    visualization::ViewHandle view_id_;
+    visualization::Camera* camera_;
+    geometry::AxisAlignedBoundingBox bounds_;
+    std::shared_ptr<Interactors> controls_;
+    ModelDescription model_;
+    visualization::LightHandle dir_light_;
+    std::function<void(const Eigen::Vector3f&)> on_light_dir_changed_;
+    std::function<void(visualization::Camera*)> on_camera_changed_;
+    int buttons_down_ = 0;
+    double last_fast_time_ = 0.0;
+    bool frame_rect_changed_ = false;
 
-    explicit Impl(visualization::Scene& aScene) : scene(aScene) {}
+    explicit Impl(visualization::Scene& scene) : scene_(scene) {}
 };
 
 SceneWidget::SceneWidget(visualization::Scene& scene) : impl_(new Impl(scene)) {
-    impl_->viewId = scene.AddView(0, 0, 1, 1);
+    impl_->view_id_ = scene.AddView(0, 0, 1, 1);
 
-    auto view = impl_->scene.GetView(impl_->viewId);
-    impl_->camera = view->GetCamera();
-    impl_->controls = std::make_shared<Interactors>(&scene, view->GetCamera());
+    auto view = impl_->scene_.GetView(impl_->view_id_);
+    impl_->camera_ = view->GetCamera();
+    impl_->controls_ = std::make_shared<Interactors>(&scene, view->GetCamera());
 }
 
-SceneWidget::~SceneWidget() { impl_->scene.RemoveView(impl_->viewId); }
+SceneWidget::~SceneWidget() { impl_->scene_.RemoveView(impl_->view_id_); }
 
 void SceneWidget::SetFrame(const Rect& f) {
     Super::SetFrame(f);
 
-    impl_->controls->SetViewSize(Size(f.width, f.height));
+    impl_->controls_->SetViewSize(Size(f.width, f.height));
 
     // We need to update the viewport and camera, but we can't do it here
     // because we need to know the window height to convert the frame
     // to OpenGL coordinates. We will actually do the updating in Draw().
-    impl_->frameRectChanged = true;
+    impl_->frame_rect_changed_ = true;
 }
 
 void SceneWidget::SetBackgroundColor(const Color& color) {
-    auto view = impl_->scene.GetView(impl_->viewId);
+    auto view = impl_->scene_.GetView(impl_->view_id_);
     view->SetClearColor({color.GetRed(), color.GetGreen(), color.GetBlue()});
 }
 
 void SceneWidget::SetDiscardBuffers(
         const visualization::View::TargetBuffers& buffers) {
-    auto view = impl_->scene.GetView(impl_->viewId);
+    auto view = impl_->scene_.GetView(impl_->view_id_);
     view->SetDiscardBuffers(buffers);
 }
 
 void SceneWidget::SetupCamera(
         float verticalFoV,
-        const geometry::AxisAlignedBoundingBox& geometryBounds,
-        const Eigen::Vector3f& centerOfRotation) {
-    impl_->bounds = geometryBounds;
-    impl_->controls->SetBoundingBox(geometryBounds);
+        const geometry::AxisAlignedBoundingBox& geometry_bounds,
+        const Eigen::Vector3f& center_of_rotation) {
+    impl_->bounds_ = geometry_bounds;
+    impl_->controls_->SetBoundingBox(geometry_bounds);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 
@@ -660,107 +657,107 @@ void SceneWidget::SetupCamera(
     // The far plane needs to be the max absolute distance, not just the
     // max extent, so that axes are visible if requested.
     // See also RotationInteractorLogic::UpdateCameraFarPlane().
-    auto far1 = impl_->bounds.GetMinBound().norm();
-    auto far2 = impl_->bounds.GetMaxBound().norm();
+    auto far1 = impl_->bounds_.GetMinBound().norm();
+    auto far2 = impl_->bounds_.GetMaxBound().norm();
     auto far3 =
             GetCamera()->GetModelMatrix().translation().cast<double>().norm();
-    auto modelSize = 2.0 * impl_->bounds.GetExtent().norm();
+    auto model_size = 2.0 * impl_->bounds_.GetExtent().norm();
     auto far = std::max(MIN_FAR_PLANE,
-                        std::max(std::max(far1, far2), far3) + modelSize);
+                        std::max(std::max(far1, far2), far3) + model_size);
     GetCamera()->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
                                visualization::Camera::FovType::Vertical);
 }
 
 void SceneWidget::SetCameraChangedCallback(
-        std::function<void(visualization::Camera*)> onCamChanged) {
-    impl_->onCameraChanged = onCamChanged;
+        std::function<void(visualization::Camera*)> on_cam_changed) {
+    impl_->on_camera_changed_ = on_cam_changed;
 }
 
 void SceneWidget::SelectDirectionalLight(
-        visualization::LightHandle dirLight,
-        std::function<void(const Eigen::Vector3f&)> onDirChanged) {
-    impl_->dirLight = dirLight;
-    impl_->onLightDirChanged = onDirChanged;
-    impl_->controls->SetDirectionalLight(
-            dirLight, [this, dirLight](const Eigen::Vector3f& dir) {
-                impl_->scene.SetLightDirection(dirLight, dir);
-                if (impl_->onLightDirChanged) {
-                    impl_->onLightDirChanged(dir);
+        visualization::LightHandle dir_light,
+        std::function<void(const Eigen::Vector3f&)> on_dir_changed) {
+    impl_->dir_light_ = dir_light;
+    impl_->on_light_dir_changed_ = on_dir_changed;
+    impl_->controls_->SetDirectionalLight(
+            dir_light, [this, dir_light](const Eigen::Vector3f& dir) {
+                impl_->scene_.SetLightDirection(dir_light, dir);
+                if (impl_->on_light_dir_changed_) {
+                    impl_->on_light_dir_changed_(dir);
                 }
             });
 }
 
 void SceneWidget::SetSkyboxHandle(visualization::SkyboxHandle skybox,
-                                  bool isOn) {
-    impl_->controls->SetSkyboxHandle(skybox, isOn);
+                                  bool is_on) {
+    impl_->controls_->SetSkyboxHandle(skybox, is_on);
 }
 
 void SceneWidget::SetModel(const ModelDescription& desc) {
-    impl_->model = desc;
-    for (auto p : desc.fastPointClouds) {
-        impl_->scene.SetEntityEnabled(p, false);
+    impl_->model_ = desc;
+    for (auto p : desc.fast_point_clouds) {
+        impl_->scene_.SetEntityEnabled(p, false);
     }
 
     std::vector<visualization::GeometryHandle> objects;
-    objects.reserve(desc.pointClouds.size() + desc.meshes.size());
-    for (auto p : desc.pointClouds) {
+    objects.reserve(desc.point_clouds.size() + desc.meshes.size());
+    for (auto p : desc.point_clouds) {
         objects.push_back(p);
     }
     for (auto m : desc.meshes) {
         objects.push_back(m);
     }
-    for (auto p : desc.fastPointClouds) {
+    for (auto p : desc.fast_point_clouds) {
         objects.push_back(p);
     }
-    impl_->controls->SetModel(desc.axes, objects);
+    impl_->controls_->SetModel(desc.axes, objects);
 }
 
 void SceneWidget::SetViewControls(Controls mode) {
     if (mode == Controls::ROTATE_OBJ &&
-        impl_->controls->GetControls() == Controls::FLY) {
-        impl_->controls->SetControls(mode);
+        impl_->controls_->GetControls() == Controls::FLY) {
+        impl_->controls_->SetControls(mode);
         // If we're going from fly to standard rotate obj, we need to
         // adjust the center of rotation or it will jump to a different
         // matrix rather abruptly. The center of rotation is used for the
         // panning distance so that the cursor stays in roughly the same
         // position as the user moves the mouse. Use the distance to the
         // center of the model, which should be reasonable.
-        Eigen::Vector3f toCenter = impl_->bounds.GetCenter().cast<float>() -
-                                   impl_->camera->GetPosition();
-        Eigen::Vector3f forward = impl_->camera->GetForwardVector();
+        Eigen::Vector3f to_center = impl_->bounds_.GetCenter().cast<float>() -
+                                    impl_->camera_->GetPosition();
+        Eigen::Vector3f forward = impl_->camera_->GetForwardVector();
         Eigen::Vector3f center =
-                impl_->camera->GetPosition() + toCenter.norm() * forward;
-        impl_->controls->SetCenterOfRotation(center);
+                impl_->camera_->GetPosition() + to_center.norm() * forward;
+        impl_->controls_->SetCenterOfRotation(center);
     } else {
-        impl_->controls->SetControls(mode);
+        impl_->controls_->SetControls(mode);
     }
 }
 
 void SceneWidget::SetRenderQuality(Quality quality) {
     auto currentQuality = GetRenderQuality();
     if (currentQuality != quality) {
-        bool isFast = false;
-        auto view = impl_->scene.GetView(impl_->viewId);
+        bool is_fast = false;
+        auto view = impl_->scene_.GetView(impl_->view_id_);
         if (quality == Quality::FAST) {
             view->SetSampleCount(1);
-            isFast = true;
+            is_fast = true;
         } else {
             view->SetSampleCount(4);
-            isFast = false;
+            is_fast = false;
         }
-        if (!impl_->model.fastPointClouds.empty()) {
-            for (auto p : impl_->model.pointClouds) {
-                impl_->scene.SetEntityEnabled(p, !isFast);
+        if (!impl_->model_.fast_point_clouds.empty()) {
+            for (auto p : impl_->model_.point_clouds) {
+                impl_->scene_.SetEntityEnabled(p, !is_fast);
             }
-            for (auto p : impl_->model.fastPointClouds) {
-                impl_->scene.SetEntityEnabled(p, isFast);
+            for (auto p : impl_->model_.fast_point_clouds) {
+                impl_->scene_.SetEntityEnabled(p, is_fast);
             }
         }
     }
 }
 
 SceneWidget::Quality SceneWidget::GetRenderQuality() const {
-    int n = impl_->scene.GetView(impl_->viewId)->GetSampleCount();
+    int n = impl_->scene_.GetView(impl_->view_id_)->GetSampleCount();
     if (n == 1) {
         return Quality::FAST;
     } else {
@@ -775,38 +772,38 @@ void SceneWidget::GoToCameraPreset(CameraPreset preset) {
     // (0, 0, 0), and this will result in the far plane being not being
     // far enough and clipping the model. To test, use
     // https://docs.google.com/uc?export=download&id=0B-ePgl6HF260ODdvT09Xc1JxOFE
-    float maxDim = 1.25f * impl_->bounds.GetMaxExtent();
-    Eigen::Vector3f center = impl_->bounds.GetCenter().cast<float>();
+    float max_dim = 1.25f * impl_->bounds_.GetMaxExtent();
+    Eigen::Vector3f center = impl_->bounds_.GetCenter().cast<float>();
     Eigen::Vector3f eye, up;
     switch (preset) {
         case CameraPreset::PLUS_X: {
-            eye = Eigen::Vector3f(center.x() + maxDim, center.y(), center.z());
+            eye = Eigen::Vector3f(center.x() + max_dim, center.y(), center.z());
             up = Eigen::Vector3f(0, 1, 0);
             break;
         }
         case CameraPreset::PLUS_Y: {
-            eye = Eigen::Vector3f(center.x(), center.y() + maxDim, center.z());
+            eye = Eigen::Vector3f(center.x(), center.y() + max_dim, center.z());
             up = Eigen::Vector3f(1, 0, 0);
             break;
         }
         case CameraPreset::PLUS_Z: {
-            eye = Eigen::Vector3f(center.x(), center.y(), center.z() + maxDim);
+            eye = Eigen::Vector3f(center.x(), center.y(), center.z() + max_dim);
             up = Eigen::Vector3f(0, 1, 0);
             break;
         }
     }
-    impl_->camera->LookAt(center, eye, up);
-    impl_->controls->SetCenterOfRotation(center);
+    impl_->camera_->LookAt(center, eye, up);
+    impl_->controls_->SetCenterOfRotation(center);
 }
 
 visualization::View* SceneWidget::GetView() const {
-    return impl_->scene.GetView(impl_->viewId);
+    return impl_->scene_.GetView(impl_->view_id_);
 }
 
-visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene; }
+visualization::Scene* SceneWidget::GetScene() const { return &impl_->scene_; }
 
 visualization::Camera* SceneWidget::GetCamera() const {
-    auto view = impl_->scene.GetView(impl_->viewId);
+    auto view = impl_->scene_.GetView(impl_->view_id_);
     return view->GetCamera();
 }
 
@@ -814,16 +811,16 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // If the widget has changed size we need to update the viewport and the
     // camera. We can't do it in SetFrame() because we need to know the height
     // of the window to convert to OpenGL coordinates for the viewport.
-    if (impl_->frameRectChanged) {
-        impl_->frameRectChanged = false;
+    if (impl_->frame_rect_changed_) {
+        impl_->frame_rect_changed_ = false;
 
         auto f = GetFrame();
-        impl_->controls->SetViewSize(Size(f.width, f.height));
+        impl_->controls_->SetViewSize(Size(f.width, f.height));
         // GUI has origin of Y axis at top, but renderer has it at bottom
         // so we need to convert coordinates.
         int y = context.screenHeight - (f.height + f.y);
 
-        auto view = impl_->scene.GetView(impl_->viewId);
+        auto view = impl_->scene_.GetView(impl_->view_id_);
         view->SetViewport(f.x, y, f.width, f.height);
 
         auto* camera = GetCamera();
@@ -853,45 +850,45 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     // Render quality will revert back to BEST after a short delay,
     // unless the user starts rotating again, or is scroll-wheeling.
     if (e.type == MouseEvent::DRAG || e.type == MouseEvent::WHEEL) {
-        impl_->lastFastTime = Application::GetInstance().Now();
+        impl_->last_fast_time_ = Application::GetInstance().Now();
     }
 
     if (e.type == MouseEvent::BUTTON_DOWN) {
-        impl_->buttonsDown |= int(e.button.button);
+        impl_->buttons_down_ |= int(e.button.button);
     } else if (e.type == MouseEvent::BUTTON_UP) {
-        impl_->buttonsDown &= ~int(e.button.button);
+        impl_->buttons_down_ &= ~int(e.button.button);
     }
 
-    impl_->controls->Mouse(e);
+    impl_->controls_->Mouse(e);
 
-    if (impl_->onCameraChanged) {
-        impl_->onCameraChanged(GetCamera());
+    if (impl_->on_camera_changed_) {
+        impl_->on_camera_changed_(GetCamera());
     }
 
     return Widget::EventResult::CONSUMED;
 }
 
 Widget::EventResult SceneWidget::Key(const KeyEvent& e) {
-    impl_->controls->Key(e);
+    impl_->controls_->Key(e);
 
-    if (impl_->onCameraChanged) {
-        impl_->onCameraChanged(GetCamera());
+    if (impl_->on_camera_changed_) {
+        impl_->on_camera_changed_(GetCamera());
     }
     return Widget::EventResult::CONSUMED;
 }
 
 Widget::DrawResult SceneWidget::Tick(const TickEvent& e) {
-    auto result = impl_->controls->Tick(e);
+    auto result = impl_->controls_->Tick(e);
     // If Tick() redraws, then a key is down. Make sure we are rendering
     // FAST and mark the time so that we don't timeout and revert back
     // to slow rendering before the key up happens.
     if (result == Widget::DrawResult::REDRAW) {
         SetRenderQuality(Quality::FAST);
-        impl_->lastFastTime = Application::GetInstance().Now();
+        impl_->last_fast_time_ = Application::GetInstance().Now();
     }
-    if (impl_->buttonsDown == 0 && GetRenderQuality() == Quality::FAST) {
+    if (impl_->buttons_down_ == 0 && GetRenderQuality() == Quality::FAST) {
         double now = Application::GetInstance().Now();
-        if (now - impl_->lastFastTime > DELAY_FOR_BEST_RENDERING_SECS) {
+        if (now - impl_->last_fast_time_ > DELAY_FOR_BEST_RENDERING_SECS) {
             SetRenderQuality(Quality::BEST);
             result = Widget::DrawResult::REDRAW;
         }

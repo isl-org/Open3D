@@ -1553,6 +1553,18 @@ TEST_P(TensorPermuteDevices, ReduceMax) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23.f}));
 }
 
+TEST_P(TensorPermuteDevices, ReduceMaxFloatLimit) {
+    // std::numeric_limits<scalar_t> should use lowest() instead of min().
+    Device device = GetParam();
+    Tensor src(std::vector<float>({-2.f, -1.f}), {2}, Dtype::Float32, device);
+
+    Tensor dst = src.Max({0});
+    EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({-1.f}));
+
+    dst = src.ArgMax({0});
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
+}
+
 TEST_P(TensorPermuteDevices, ReduceArgMin) {
     Device device = GetParam();
     Tensor src(
@@ -1974,6 +1986,43 @@ TEST_P(TensorPermuteDevices, Ne) {
     // Inplace version.
     a.Ne_(b);
     EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 1}));
+}
+
+TEST_P(TensorPermuteDevices, BooleanIndex) {
+    Device device = GetParam();
+
+    // a[a < 0] = 0
+    Tensor a(std::vector<float>({1, -1, -2, 3}), {4}, Dtype::Float32, device);
+    Tensor b(std::vector<float>({0}), {1}, Dtype::Float32, device);
+    a.SetItem(TensorKey::IndexTensor(a.Le(b)), b);
+    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({1, 0, 0, 3}));
+
+    // x = np.array([[0, 1], [1, 1], [2, 2]])
+    // row_sum = np.array([1, 2, 4])
+    // y = x[row_sum <= 2, :]
+    Tensor x(std::vector<float>{0, 1, 1, 1, 2, 2}, {3, 2}, Dtype::Float32,
+             device);
+    Tensor row_sum(std::vector<float>{1, 2, 4}, {3}, Dtype::Float32, device);
+    Tensor two(std::vector<float>({2}), {1}, Dtype::Float32, device);
+    Tensor y = x.GetItem({TensorKey::IndexTensor(row_sum.Le(two)),
+                          TensorKey::Slice(None, None, None)});
+    EXPECT_EQ(y.ToFlatVector<float>(), std::vector<float>({0, 1, 1, 1}));
+    EXPECT_EQ(y.GetShape(), SizeVector({2, 2}));
+    EXPECT_EQ(y.GetDtype(), Dtype::Float32);
+}
+
+TEST_P(TensorPermuteDevices, NonZeroNumpy) {
+    Device device = GetParam();
+
+    Tensor a(std::vector<float>({0, 1, 1, 0, 1, 0}), {3, 2}, Dtype::Float32,
+             device);
+    std::vector<Tensor> results = a.NonZeroNumpy();
+    EXPECT_EQ(results[0].ToFlatVector<int64_t>(),
+              std::vector<int64_t>({0, 1, 2}));
+    EXPECT_EQ(results[1].ToFlatVector<int64_t>(),
+              std::vector<int64_t>({1, 0, 0}));
+    EXPECT_EQ(results[0].GetShape(), SizeVector{3});
+    EXPECT_EQ(results[1].GetShape(), SizeVector{3});
 }
 
 TEST_P(TensorPermuteDevices, CreationEmpty) {

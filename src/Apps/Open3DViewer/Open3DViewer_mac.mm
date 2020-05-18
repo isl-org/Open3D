@@ -40,7 +40,7 @@
 
 @interface AppDelegate ()
 {
-    bool mOpenEmptyWindow;
+    bool open_empty_window_;
 }
 @property (retain) NSTimer *timer;
 @end
@@ -48,15 +48,15 @@
 @implementation AppDelegate
 - (id)init {
     if ([super init]) {
-        mOpenEmptyWindow = true;
+        open_empty_window_ = true;
     }
     return self;
 }
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
     // -application:openFile: runs befure applicationDidFinishLaunching: so we
     // need to check if we loaded a file or we need to display an empty window.
-    if (mOpenEmptyWindow) {
+    if (open_empty_window_) {
         LoadAndCreateWindow("");
     }
 }
@@ -68,7 +68,7 @@
 // after launching if the user double-clicks a file in the Finder or drops
 // a file onto the app icon and the application is already launched.
 - (BOOL)application:(NSApplication *)sender openFile:(NSString *)filename {
-    mOpenEmptyWindow = false;  // LoadAndCreateWindow() always opens a window
+    open_empty_window_ = false;  // LoadAndCreateWindow() always opens a window
     return (LoadAndCreateWindow(filename.UTF8String));
 }
 

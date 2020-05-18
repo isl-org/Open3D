@@ -196,19 +196,58 @@ struct TensorRef {
 };
 
 enum class DtypePolicy {
-    NONE,         // Do not check. Expects the kernel to handle the conversion.
-                  // E.g. in Copy kernel with type casting.
-    ASSERT_SAME,  // Assert same Dtypes for inputs and output
-    ASSERT_SAME_INPUTS,       // Assert same Dtypes for inputs and output
-    CAST,                     // Cast to common dtype.
-                              // E.g. Tensor::Add:
-                              // int64   + int32   = int64   (valid)
-                              // float32 + float32 = int32   (invalid)
-                              // float64 + float64 = float32 (valid)
-    ASSERT_SAME_OR_BOOL_OUT,  // Assert same Dtypes for inputs and output, with
-                              // the exception that the output can be bool.
-    CAST_INPUTS  // Cast inputs to common dtypes (e.g. comparison ops have
-                 // boolean output).
+    NONE,        // Do not check. Expects the kernel to handle the conversion.
+                 // E.g. in Copy kernel with type casting.
+    ALL_SAME,    // All inputs and outputs to to have the same dtype.
+    INPUT_SAME,  // All inputs have the same dtype.
+    INPUT_SAME_OUTPUT_BOOL  // All inputs have the same dtype. Outputs
+                            // have bool dtype.
+};
+
+/// Indexer to one Tensor
+///
+/// Example usage:
+///
+/// ```cpp
+/// // Create a float Tensor and set all elements to 100.
+/// std::vector<float> vals{0, 1, 2, 3, 4};
+/// Tensor a(vals, SizeVector{5}, Dtype::Float32);
+/// TensorIterator iter(a);
+/// for (int64_t i = 0; i < iter.NumWorkloads(); ++i) {
+///     *static_cast<float*>(iter.GetPtr(i)) = 100.f;
+/// }
+/// ```
+class TensorIterator {
+public:
+    TensorIterator(const Tensor& tensor)
+        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {}
+
+    OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
+        int64_t num_workloads = 1;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            num_workloads *= input_.shape_[i];
+        }
+        return num_workloads;
+    }
+
+    OPEN3D_HOST_DEVICE void* GetPtr(int64_t workload_idx) const {
+        if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
+            return nullptr;
+        }
+        int64_t offset = 0;
+        workload_idx = workload_idx * input_.dtype_byte_size_;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            offset += workload_idx / input_.byte_strides_[i] *
+                      input_.byte_strides_[i];
+            workload_idx = workload_idx % input_.byte_strides_[i];
+        }
+        return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
+                                  offset);
+    }
+
+protected:
+    TensorRef input_;
+    int64_t ndims_;
 };
 
 /// Indexing engine for elementwise ops with broadcasting support.
@@ -229,12 +268,12 @@ public:
     /// all outputs.
     Indexer(const std::vector<Tensor>& input_tensors,
             const Tensor& output_tensor,
-            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME,
+            DtypePolicy dtype_policy = DtypePolicy::ALL_SAME,
             const SizeVector& reduction_dims = {});
 
     Indexer(const std::vector<Tensor>& input_tensors,
             const std::vector<Tensor>& output_tensors,
-            DtypePolicy dtype_policy = DtypePolicy::ASSERT_SAME,
+            DtypePolicy dtype_policy = DtypePolicy::ALL_SAME,
             const SizeVector& reduction_dims = {});
 
     /// Returns true iff the maximum_offsets in bytes are smaller than 2^31 - 1.

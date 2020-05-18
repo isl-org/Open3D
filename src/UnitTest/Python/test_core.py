@@ -749,6 +749,31 @@ def test_comparision_ops():
     np.testing.assert_equal((o3_a != o3_b).numpy(), np_a != np_b)
 
 
+def test_non_zero():
+    np_x = np.array([[3, 0, 0], [0, 4, 0], [5, 6, 0]])
+    np_nonzero_tuple = np.nonzero(np_x)
+    o3_x = o3d.Tensor(np_x)
+    o3_nonzero_tuple = o3_x.nonzero(as_tuple=True)
+    for np_t, o3_t in zip(np_nonzero_tuple, o3_nonzero_tuple):
+        np.testing.assert_equal(np_t, o3_t.numpy())
+
+
+def boolean_advanced_indexing():
+    np_a = np.array([1, -1, -2, 3])
+    o3_a = o3d.Tensor(np_a)
+    np_a[np_a < 0] = 0
+    o3_a[o3_a < 0] = 0
+    np.testing.assert_equal(np_a, o3_a.numpy())
+
+    np_x = np.array([[0, 1], [1, 1], [2, 2]])
+    np_row_sum = np.array([1, 2, 4])
+    np_y = np_x[np_row_sum <= 2, :]
+    o3_x = o3d.Tensor(np_x)
+    o3_row_sum = o3d.Tensor(np_row_sum)
+    o3_y = o3_x[o3_row_sum <= 2, :]
+    np.testing.assert_equal(np_y, o3_y.numpy())
+
+
 def test_scalar_op():
     # +
     a = o3d.Tensor.ones((2, 3), o3d.Dtype.Float32)

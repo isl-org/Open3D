@@ -24,48 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3D/GUI/Dialog.h"
+#pragma once
 
-#include <string>
-
-#include "Open3D/GUI/Window.h"
+#include "Open3D/Core/Tensor.h"
+#include "Open3D/Utility/Console.h"
 
 namespace open3d {
-namespace gui {
+namespace kernel {
 
-struct Dialog::Impl {
-    std::string title;
-    Window *parent = nullptr;
-};
+Tensor NonZero(const Tensor& src);
 
-Dialog::Dialog(const char *title) : impl_(new Dialog::Impl()) {}
+Tensor NonZeroCPU(const Tensor& src);
 
-Dialog::~Dialog() {}
+#ifdef BUILD_CUDA_MODULE
+Tensor NonZeroCUDA(const Tensor& src);
+#endif
 
-Size Dialog::CalcPreferredSize(const Theme &theme) const {
-    if (GetChildren().size() == 1) {
-        auto child = GetChildren()[0];
-        return child->CalcPreferredSize(theme);
-    } else {
-        return Super::CalcPreferredSize(theme);
-    }
-}
-
-void Dialog::Layout(const Theme &theme) {
-    if (GetChildren().size() == 1) {
-        auto child = GetChildren()[0];
-        child->SetFrame(GetFrame());
-        child->Layout(theme);
-    } else {
-        Super::Layout(theme);
-    }
-}
-
-void Dialog::OnWillShow() {}
-
-Widget::DrawResult Dialog::Draw(const DrawContext &context) {
-    return Super::Draw(context);
-}
-
-}  // namespace gui
+}  // namespace kernel
 }  // namespace open3d

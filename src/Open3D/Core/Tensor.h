@@ -682,6 +682,17 @@ public:
     /// operation won't change the tensor's dtype.
     Tensor Ne_(const Tensor& value);
 
+    /// Find the indices of the elements that are non-zero. Returns a vector of
+    /// int64 Tensors, each containing the indices of the non-zero elements in
+    /// each dimension.
+    std::vector<Tensor> NonZeroNumpy() const;
+
+    /// Find the indices of the elements that are non-zero. Returns an int64
+    /// tensor of shape {num_dims, num_non_zeros}, where the i-th row contains
+    /// the indices of the non-zero elements in i-th dimension of the original
+    /// tensor.
+    Tensor NonZero() const;
+
     /// Retrive all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
@@ -798,7 +809,7 @@ protected:
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
-};
+};  // namespace open3d
 
 template <>
 inline Tensor::Tensor(const std::vector<bool>& init_vals,
