@@ -4,16 +4,16 @@
 
 # Open3D: A Modern Library for 3D Data Processing
 
-**[Homepage](http://www.open3d.org") |**
-**[Docs](http://www.open3d.org/docs") |**
-**[Viewer App](https://github.com/intel-isl/Open3D/releases") |**
-**[Quick Start](http://www.open3d.org/docs/release/getting_started.html") |**
-**[Build from Source](http://www.open3d.org/docs/release/compilation.html") |**
-**[Python API](http://www.open3d.org/docs/release/index.html#python-api-index") |**
-**[C++ API](http://www.open3d.org/docs/release/cpp_api/index.html") |**
-**[Contribute](http://www.open3d.org/docs/release/contribute.html") |**
-**[Demo](https://www.youtube.com/watch?v=I3UjXlA4IsU") |**
-**[Forum](https://forum.open3d.org")**
+**[Homepage](http://www.open3d.org) |**
+**[Docs](http://www.open3d.org/docs) |**
+**[Viewer App](https://github.com/intel-isl/Open3D/releases) |**
+**[Quick Start](http://www.open3d.org/docs/release/getting_started.html) |**
+**[Build from Source](http://www.open3d.org/docs/release/compilation.html) |**
+**[Python API](http://www.open3d.org/docs/release/index.html#python-api-index) |**
+**[C++ API](http://www.open3d.org/docs/release/cpp_api/index.html) |**
+**[Contribute](http://www.open3d.org/docs/release/contribute.html) |**
+**[Demo](https://www.youtube.com/watch?v=I3UjXlA4IsU) |**
+**[Forum](https://forum.open3d.org)**
 
 Open3D is an open-source library that supports rapid development of software
 that deals with 3D data. The Open3D frontend exposes a set of carefully selected
