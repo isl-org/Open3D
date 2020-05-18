@@ -52,7 +52,7 @@ REGISTER_OP("Open3DBuildSpatialHashTable")
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points_shape));
             TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &radius_shape));
             TF_RETURN_IF_ERROR(
-                    c->WithRank(c->input(2), 0, &points_row_splits_shape));
+                    c->WithRank(c->input(2), 1, &points_row_splits_shape));
             TF_RETURN_IF_ERROR(
                     c->WithRank(c->input(3), 0, &hash_table_size_factor_shape));
 
