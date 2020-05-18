@@ -696,7 +696,9 @@ void pybind_trianglemesh(py::module &m) {
              {"scale",
               "Specifies the ratio between the diameter of the cube used for "
               "reconstruction and the diameter of the samples' bounding cube."},
-             {"linear_fit", "the positions of iso-vertices."}});
+             {"linear_fit",
+              "If true, the reconstructor will use linear interpolation to "
+              "estimate the positions of iso-vertices."}});
     docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
                                     {{"width", "x-directional length."},
                                      {"height", "y-directional length."},
